@@ -17,59 +17,88 @@ PRESERVE_ATTR_NAME = 'user.preserve'
 PRESERVE_ATTR_VALUE = b'1'
 PRESERVE_COUNT = 5
 
+class Priority:
+  PRESERVED = 1
+  CRITICAL = 2
+
 
 def has_preserve_xattr(d: str) -> bool:
   return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
-def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
-  # skip deleting most recent N preserved segments (and their prior segment)
-  preserved = []
-  for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
-    if n == PRESERVE_COUNT:
-      break
-    date_str, _, seg_str = d.rpartition("--")
+# def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
+#   # skip deleting most recent N preserved segments (and their prior segment)
+#   preserved = []
+#   for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
+#     if n == PRESERVE_COUNT:
+#       break
+#     date_str, _, seg_str = d.rpartition("--")
 
-    # ignore non-segment directories
-    if not date_str:
-      continue
-    try:
-      seg_num = int(seg_str)
-    except ValueError:
-      continue
+#     # ignore non-segment directories
+#     if not date_str:
+#       continue
+#     try:
+#       seg_num = int(seg_str)
+#     except ValueError:
+#       continue
 
-    # preserve segment and two prior
-    for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
-      preserved.append(f"{date_str}--{_seg_num}")
+#     # preserve segment and two prior
+#     for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
+#       preserved.append(f"{date_str}--{_seg_num}")
 
-  return preserved
+#   return preserved
 
 
 def deleter_thread(exit_event: threading.Event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
-
-    if out_of_percent or out_of_bytes:
-      dirs = listdir_by_creation(Paths.log_root())
-      preserved_dirs = get_preserved_segments(dirs)
-
-      # remove the earliest directory we can
-      for delete_dir in sorted(dirs, key=lambda d: (d in DELETE_LAST, d in preserved_dirs)):
-        delete_path = os.path.join(Paths.log_root(), delete_dir)
-
-        if any(name.endswith(".lock") for name in os.listdir(delete_path)):
-          continue
-
-        try:
-          cloudlog.info(f"deleting {delete_path}")
-          shutil.rmtree(delete_path)
-          break
-        except OSError:
-          cloudlog.exception(f"issue deleting {delete_path}")
-      exit_event.wait(.1)
-    else:
+    if not (out_of_bytes or out_of_percent):
       exit_event.wait(30)
+      continue
+
+    # get all directories in root, oldest first
+    dirs = listdir_by_creation(Paths.log_root())
+
+    priority_map = dict()
+    deletion_candidates = []
+
+    preserved_count = 0
+
+    # iterate from newest to oldest to identify routes to preserve
+    for d in reversed(dirs):
+      fs = os.listdir(os.path.join(Paths.log_root(), d))
+
+      if any(f.endswith(".lock") for f in fs):
+        continue
+
+      if d in DELETE_LAST:
+        priority = Priority.CRITICAL
+      elif preserved_count < PRESERVE_COUNT and has_preserve_xattr(d):
+        # TODO: preserve prior segment
+        priority = Priority.PRESERVED
+        preserved_count += 1
+      else:
+        priority = 0
+
+      for f in fs:
+        fp = os.path.join(d, f)
+        deletion_candidates.append(fp)
+        priority_map[fp] = priority
+
+    # sort by priority, and oldest to newest
+    for to_delete in sorted(reversed(deletion_candidates), key=priority_map.get):  # noqa: C414
+      delete_path = os.path.join(Paths.log_root(), to_delete)
+      try:
+        cloudlog.info(f"deleting {delete_path}")
+        if os.path.isfile(delete_path):
+          os.remove(delete_path)
+        else:
+          shutil.rmtree(delete_path)
+        break
+      except OSError:
+        cloudlog.exception(f"issue deleting {delete_path}")
+    exit_event.wait(.1)
 
 
 def main():
