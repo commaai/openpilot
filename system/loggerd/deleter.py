@@ -57,15 +57,13 @@ def deleter_thread(exit_event: threading.Event):
       exit_event.wait(30)
       continue
 
-    # get all directories in root, oldest first
     dirs = listdir_by_creation(Paths.log_root())
     preserved_segments = get_preserved_segments(dirs)
 
     priority_map = dict()
     deletion_candidates = []
 
-    # iterate from newest to oldest to identify routes to preserve
-    for d in reversed(dirs):
+    for d in dirs:
       fs = os.listdir(os.path.join(Paths.log_root(), d))
 
       if any(f.endswith(".lock") for f in fs):
@@ -84,7 +82,7 @@ def deleter_thread(exit_event: threading.Event):
         priority_map[fp] = priority
 
     # sort by priority, and oldest to newest
-    for to_delete in sorted(reversed(deletion_candidates), key=priority_map.get):  # noqa: C414
+    for to_delete in sorted(deletion_candidates, key=priority_map.get):
       delete_path = os.path.join(Paths.log_root(), to_delete)
       try:
         cloudlog.info(f"deleting {delete_path}")
