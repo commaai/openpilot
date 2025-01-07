@@ -70,3 +70,10 @@ class Paths:
       return str(Path(Paths.comma_home()) / "media" / "0" / "models")
     else:
       return "/data/media/0/models"
+
+  @staticmethod
+  def crash_log_root() -> str:
+    if PC:
+      return str(Path(Paths.comma_home()) / "community" / "crashes")
+    else:
+      return "/data/community/crashes"

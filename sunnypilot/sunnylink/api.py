@@ -14,7 +14,7 @@ from openpilot.system.hardware.hw import Paths
 API_HOST = os.getenv('SUNNYLINK_API_HOST', 'https://stg.api.sunnypilot.ai')
 UNREGISTERED_SUNNYLINK_DONGLE_ID = "UnregisteredDevice"
 MAX_RETRIES = 6
-CRASH_LOG_DIR = '/data/community/crashes'
+CRASH_LOG_DIR = Paths.crash_log_root()
 
 
 class SunnylinkApi(BaseApi):
