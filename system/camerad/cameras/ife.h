@@ -111,7 +111,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   dst += write_cont(dst, 0x500, s->linearization_pts);
   dst += write_cont(dst, 0x510, s->linearization_pts);
   // TODO: this is DMI64 in the dump, does that matter?
-  dst += write_dmi(dst, &addr, s->linearization_lut.size(), 0xc24, 9);
+  dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0xc24, 9);
   patches.push_back(addr - (uint64_t)start);
   /* TODO
   cdm_dmi_cmd_t 248
@@ -134,9 +134,9 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0xec4e4000,
     0x0100c003,
   });
-  dst += write_dmi(dst, &addr, s->vignetting_lut.size(), 0xc24, 14); // GRR
+  dst += write_dmi(dst, &addr, s->vignetting_lut.size()*sizeof(uint32_t), 0xc24, 14); // GRR
   patches.push_back(addr - (uint64_t)start);
-  dst += write_dmi(dst, &addr, s->vignetting_lut.size(), 0xc24, 15); // GBB
+  dst += write_dmi(dst, &addr, s->vignetting_lut.size()*sizeof(uint32_t), 0xc24, 15); // GBB
   patches.push_back(addr - (uint64_t)start);
 
   // debayer
@@ -155,11 +155,11 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   dst += write_cont(dst, 0x798, {
     0x00000000,
   });
-  dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size(), 0xc24, 26);  // G
+  dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size()*sizeof(uint32_t), 0xc24, 26);  // G
   patches.push_back(addr - (uint64_t)start);
-  dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size(), 0xc24, 28);  // B
+  dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size()*sizeof(uint32_t), 0xc24, 28);  // B
   patches.push_back(addr - (uint64_t)start);
-  dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size(), 0xc24, 30);  // R
+  dst += write_dmi(dst, &addr, s->gamma_lut_rgb.size()*sizeof(uint32_t), 0xc24, 30);  // R
   patches.push_back(addr - (uint64_t)start);
 
   // YUV
