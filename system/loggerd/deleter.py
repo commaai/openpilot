@@ -17,9 +17,14 @@ PRESERVE_ATTR_NAME = 'user.preserve'
 PRESERVE_ATTR_VALUE = b'1'
 PRESERVE_COUNT = 5
 
+DASHCAM_FILES = {'qlog', 'qcamera.ts'}
+TRAINING_FILES = {'rlog', 'dcamera.hevc', 'ecamera.hevc', 'fcamera.hevc'}
+TRAINING_MAX_BYTES = 5 * 1024 * 1024 * 1024
+
 class Priority:
-  PRESERVED = 1
-  CRITICAL = 2
+  DASHCAM = TRAINING = 1
+  PRESERVED = 2
+  CRITICAL = 4
 
 
 def has_preserve_xattr(d: str) -> bool:
@@ -49,6 +54,20 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
   return preserved
 
 
+def get_training_segments(dirs_by_creation: list[str]) -> list[str]:
+  training = []
+  training_bytes = 0
+  for d in reversed(dirs_by_creation):
+    training_files = [f for f in os.listdir(os.path.join(Paths.log_root(), d)) if f in TRAINING_FILES]
+    if not training_files:
+      continue
+    training_bytes += sum(os.stat(os.path.join(Paths.log_root(), d, f)).st_size for f in training_files)
+    training.append(d)
+    if training_bytes > TRAINING_MAX_BYTES:
+      break
+  return training
+
+
 def deleter_thread(exit_event: threading.Event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
@@ -59,6 +78,7 @@ def deleter_thread(exit_event: threading.Event):
 
     dirs = listdir_by_creation(Paths.log_root())
     preserved_segments = get_preserved_segments(dirs)
+    training_segments = get_training_segments(dirs)
 
     priority_map = dict()
     deletion_candidates = []
@@ -79,6 +99,11 @@ def deleter_thread(exit_event: threading.Event):
       for f in fs:
         fp = os.path.join(d, f)
         deletion_candidates.append(fp)
+
+        if f in DASHCAM_FILES:
+          priority += Priority.DASHCAM
+        elif f in TRAINING_FILES and d in training_segments:
+          priority += Priority.TRAINING
         priority_map[fp] = priority
 
     # sort by priority, and oldest to newest

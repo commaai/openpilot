@@ -17,6 +17,7 @@ class TestDeleter(UploaderTestCase):
 
   def setup_method(self):
     self.f_type = "fcamera.hevc"
+    self.q_type = "qcamera.ts"
     super().setup_method()
     self.fake_stats = Stats(f_bavail=0, f_blocks=10, f_frsize=4096)
     deleter.os.statvfs = self.fake_statvfs
@@ -69,6 +70,16 @@ class TestDeleter(UploaderTestCase):
       self.make_file_with_data(self.seg_format.format(0), self.f_type),
       self.make_file_with_data(self.seg_format.format(1), self.f_type),
       self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+    ])
+
+  def test_delete_training_before_dashcam(self):
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(0), self.q_type),
+      self.make_file_with_data(self.seg_format.format(1), self.q_type),
+      self.make_file_with_data(self.seg_format2.format(0), self.q_type),
     ])
 
   def test_delete_many_preserved(self):
