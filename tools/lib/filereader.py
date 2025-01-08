@@ -8,6 +8,9 @@ DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 
 def internal_source_available(url=DATA_ENDPOINT):
+  if os.path.isdir(url):
+    return True
+
   try:
     hostname = urlparse(url).hostname
     port = urlparse(url).port or 80
