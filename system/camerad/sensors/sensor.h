@@ -79,9 +79,9 @@ public:
     }
     gamma_lut_rgb.pop_back();
   }
-  std::vector<uint32_t> linearization_lut;     // length 288
+  std::vector<uint32_t> linearization_lut;     // length 36
   std::vector<uint32_t> linearization_pts;     // length 4
-  std::vector<uint32_t> vignetting_lut;        // 2x length 884
+  std::vector<uint32_t> vignetting_lut;        // length 221
 };
 
 class AR0231 : public SensorInfo {

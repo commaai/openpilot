@@ -507,9 +507,9 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     // stream of IFE register writes
     if (!is_raw) {
       if (init) {
-        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches);
+        buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches, cc.camera_num);
       } else {
-        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches);
+        buf_desc[0].length = build_update((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches, cc.camera_num);
       }
     }
 
@@ -879,20 +879,25 @@ void SpectraCamera::configISP() {
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu, ife_buf_depth);
   if (!is_raw) {
-    ife_gamma_lut.init(m, 64*sizeof(uint32_t), 0x20,
+    assert(sensor->gamma_lut_rgb.size() == 64);
+    ife_gamma_lut.init(m, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20,
                        CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                        m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
     for (int i = 0; i < 3; i++) {
       memcpy(ife_gamma_lut.ptr + ife_gamma_lut.size*i, sensor->gamma_lut_rgb.data(), ife_gamma_lut.size);
     }
-    ife_linearization_lut.init(m, sensor->linearization_lut.size(), 0x20,
+    assert(sensor->linearization_lut.size() == 36);
+    ife_linearization_lut.init(m, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20,
                                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                                m->device_iommu, m->cdm_iommu);
     memcpy(ife_linearization_lut.ptr, sensor->linearization_lut.data(), ife_linearization_lut.size);
-    ife_vignetting_lut.init(m, sensor->vignetting_lut.size(), 0x20,
+    assert(sensor->vignetting_lut.size() == 221);
+    ife_vignetting_lut.init(m, sensor->vignetting_lut.size()*sizeof(uint32_t), 0x20,
                             CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                             m->device_iommu, m->cdm_iommu, 2);
-    memcpy(ife_vignetting_lut.ptr, sensor->vignetting_lut.data(), ife_vignetting_lut.size*2);
+    for (int i = 0; i < 2; i++) {
+      memcpy(ife_vignetting_lut.ptr + ife_vignetting_lut.size*i, sensor->vignetting_lut.data(), ife_vignetting_lut.size);
+    }
   }
 
   config_ife(0, 1, true);
