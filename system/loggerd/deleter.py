@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import shutil
 import threading
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
@@ -22,9 +21,9 @@ TRAINING_FILES = {'rlog', 'dcamera.hevc', 'ecamera.hevc', 'fcamera.hevc'}
 TRAINING_MAX_BYTES = 5 * 1024 * 1024 * 1024
 
 class Priority:
-  DASHCAM = TRAINING = 1
-  PRESERVED = 2
   CRITICAL = 4
+  PRESERVED = 2
+  NORMAL = 1
 
 
 def has_preserve_xattr(d: str) -> bool:
@@ -63,7 +62,7 @@ def get_training_segments(dirs_by_creation: list[str]) -> list[str]:
       continue
     training_bytes += sum(os.stat(os.path.join(Paths.log_root(), d, f)).st_size for f in training_files)
     training.append(d)
-    if training_bytes > TRAINING_MAX_BYTES:
+    if training_bytes >= TRAINING_MAX_BYTES:
       break
   return training
 
@@ -72,53 +71,49 @@ def deleter_thread(exit_event: threading.Event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
-    if not (out_of_bytes or out_of_percent):
-      exit_event.wait(30)
-      continue
 
-    dirs = listdir_by_creation(Paths.log_root())
-    preserved_segments = get_preserved_segments(dirs)
-    training_segments = get_training_segments(dirs)
+    if out_of_percent or out_of_bytes:
+      dirs = listdir_by_creation(Paths.log_root())
+      preserved_segments = get_preserved_segments(dirs)
+      training_segments = get_training_segments(dirs)
 
-    priority_map = dict()
-    deletion_candidates = []
+      priority_map = dict()
+      candidates = []
 
-    for d in dirs:
-      fs = os.listdir(os.path.join(Paths.log_root(), d))
+      for delete_dir in dirs:
+        fns = os.listdir(os.path.join(Paths.log_root(), delete_dir))
+        if any(name.endswith(".lock") for name in fns):
+          continue
 
-      if any(f.endswith(".lock") for f in fs):
-        continue
-
-      if d in DELETE_LAST:
-        priority = Priority.CRITICAL
-      elif d in preserved_segments:
-        priority = Priority.PRESERVED
-      else:
-        priority = 0
-
-      for f in fs:
-        fp = os.path.join(d, f)
-        deletion_candidates.append(fp)
-
-        if f in DASHCAM_FILES:
-          priority += Priority.DASHCAM
-        elif f in TRAINING_FILES and d in training_segments:
-          priority += Priority.TRAINING
-        priority_map[fp] = priority
-
-    # sort by priority, and oldest to newest
-    for to_delete in sorted(deletion_candidates, key=priority_map.get):
-      delete_path = os.path.join(Paths.log_root(), to_delete)
-      try:
-        cloudlog.info(f"deleting {delete_path}")
-        if os.path.isfile(delete_path):
-          os.remove(delete_path)
+        if delete_dir in DELETE_LAST:
+          priority = Priority.CRITICAL
+        elif delete_dir in preserved_segments:
+          priority = Priority.PRESERVED
         else:
-          shutil.rmtree(delete_path)
-        break
-      except OSError:
-        cloudlog.exception(f"issue deleting {delete_path}")
-    exit_event.wait(.1)
+          priority = 0
+
+        for fn in fns:
+          if fn in DASHCAM_FILES:
+            priority += Priority.NORMAL
+          elif fn in TRAINING_FILES and delete_dir in training_segments:
+            priority += Priority.NORMAL
+
+          fp = os.path.join(delete_dir, fn)
+          priority_map[fp] = priority
+          candidates.append(fp)
+
+      # sort by priority, and oldest to newest
+      for candidate in sorted(candidates, key=priority_map.get):
+        delete_path = os.path.join(Paths.log_root(), candidate)
+        try:
+          cloudlog.info(f"deleting {delete_path}")
+          os.remove(delete_path)
+          break
+        except OSError:
+          cloudlog.exception(f"issue deleting {delete_path}")
+      exit_event.wait(.1)
+    else:
+      exit_event.wait(30)
 
 
 def main():

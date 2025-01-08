@@ -72,14 +72,26 @@ class TestDeleter(UploaderTestCase):
       self.make_file_with_data(self.seg_format2.format(0), self.f_type),
     ])
 
-  def test_delete_training_before_dashcam(self):
+  def test_delete_oldest_training_data_over_limit_before_dashcam(self):
     self.assertDeleteOrder([
-      self.make_file_with_data(self.seg_format.format(0), self.f_type),
-      self.make_file_with_data(self.seg_format.format(1), self.f_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.f_type),
+      self.make_file_with_data(self.seg_format.format(0), self.f_type, size_mb=1024),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type, size_mb=1024),
+      self.make_file_with_data(self.seg_format.format(2), self.f_type, size_mb=1024),
       self.make_file_with_data(self.seg_format.format(0), self.q_type),
       self.make_file_with_data(self.seg_format.format(1), self.q_type),
-      self.make_file_with_data(self.seg_format2.format(0), self.q_type),
+      self.make_file_with_data(self.seg_format.format(2), self.q_type),
+      self.make_file_with_data(self.seg_format.format(3), self.f_type, size_mb=5 * 1024),
+      self.make_file_with_data(self.seg_format.format(3), self.q_type),
+    ])
+
+  def test_no_delete_training_data_below_limit_before_dashcam(self):
+    self.assertDeleteOrder([
+      self.make_file_with_data(self.seg_format.format(0), self.f_type, size_mb=1024),
+      self.make_file_with_data(self.seg_format.format(0), self.q_type),
+      self.make_file_with_data(self.seg_format.format(1), self.f_type, size_mb=1024),
+      self.make_file_with_data(self.seg_format.format(1), self.q_type),
+      self.make_file_with_data(self.seg_format.format(2), self.f_type, size_mb=1024),
+      self.make_file_with_data(self.seg_format.format(2), self.q_type),
     ])
 
   def test_delete_many_preserved(self):
