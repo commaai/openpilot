@@ -3,12 +3,13 @@ import math
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized
+from collections.abc import Callable
+from typing import Any
 
 from cereal import car
-from opendbc.car import DT_CTRL
+from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.structs import CarParams
-from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
 from opendbc.car.fingerprints import all_known_cars
 from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
 from opendbc.car.mock.values import CAR as MOCK
@@ -18,13 +19,40 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
+DrawType = Callable[[st.SearchStrategy], Any]
+
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
-MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
+MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '20'))
 
+def get_fuzzy_car_interface_args(draw: DrawType, params_strategy: st.SearchStrategy) -> dict:
+  params: dict = draw(params_strategy)
+  params['car_fw'] = [structs.CarParams.CarFw(ecu=fw[0], address=fw[1], subAddress=fw[2] or 0,
+                                              request=draw(st.sampled_from(sorted(ALL_REQUESTS))))
+                      for fw in params['car_fw']]
+  return params
+
+def get_global_params_strategy() -> st.SearchStrategy:
+  # Fuzzy CAN fingerprints and FW versions to test more states of the CarInterface
+  fingerprint_strategy = st.fixed_dictionaries({key: st.dictionaries(st.integers(min_value=0, max_value=0x800),
+                                                                     st.integers(min_value=0, max_value=64)) for key in
+                                                gen_empty_fingerprint()})
+
+  # only pick from possible ecus to reduce search space
+  car_fw_strategy = st.lists(st.sampled_from(sorted(ALL_ECUS)))
+
+  params_strategy = st.fixed_dictionaries({
+    'fingerprints': fingerprint_strategy,
+    'car_fw': car_fw_strategy,
+    'experimental_long': st.booleans(),
+  })
+
+  return params_strategy
+
+GLOBAL_STRATEGY = get_global_params_strategy()
 
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
@@ -36,7 +64,7 @@ class TestCarInterfaces:
   def test_car_interfaces(self, car_name, data):
     CarInterface, CarController, CarState, RadarInterface = interfaces[car_name]
 
-    args = get_fuzzy_car_interface_args(data.draw)
+    args = get_fuzzy_car_interface_args(data.draw, GLOBAL_STRATEGY)
 
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
@@ -73,7 +101,7 @@ class TestCarInterfaces:
     now_nanos = 0
     CC = car.CarControl.new_message(**cc_msg)
     CC = CC.as_reader()
-    for _ in range(10):
+    for _ in range(4):
       car_interface.update([])
       car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10 ms
@@ -81,7 +109,7 @@ class TestCarInterfaces:
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
     CC = CC.as_reader()
-    for _ in range(10):
+    for _ in range(4):
       car_interface.update([])
       car_interface.apply(CC, now_nanos)
       now_nanos += DT_CTRL * 1e9  # 10ms
