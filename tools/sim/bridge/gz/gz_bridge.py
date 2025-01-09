@@ -7,4 +7,6 @@ class GZDriveBridge(SimulatorBridge):
     super().__init__(dual_camera, high_quality)
 
   def spawn_world(self, q: Queue):
-    return GZWorld(q)
+    world =  GZWorld(q)
+    world.start_vehicle()
+    return world

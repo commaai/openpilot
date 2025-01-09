@@ -1,3 +1,5 @@
+import capnp
+capnp.remove_import_hook()
 import ctypes
 import multiprocessing
 import socket
@@ -16,6 +18,9 @@ from openpilot.tools.sim.lib.camerad import W, H
 from PIL import Image
 from numpy import asarray
 import numpy as np
+MAX_BUFFER_SIZE = 10*1024*1024  # 10MB
+log_capnp = capnp.load("/workspaces/openpilot/cereal/log.capnp")
+car_capnp = capnp.load("/workspaces/openpilot/cereal/car.capnp")
 
 class GZWorld(World):
   def __init__(self, status_q):
@@ -51,16 +56,16 @@ class GZWorld(World):
     self.velocity = vec3(0,0,0)
     self.bearing = 0
     self.steering = 0
-    self.gps = [0,0,0]
+    self.gps = GPSState()
     self.vc = [0.0,0.0]
     self.reset_time = 0
     self.should_reset = False
     self.image_lock.release()
 
 
-    self.file = open("/tmp/gz_log.csv", "w")
-    self.writer = csv.writer(self.file)
-    self.writer.writerow([
+    self.sensors_file = open("/tmp/sensors_log.csv", "w")
+    self.sensors_log = csv.writer(self.sensors_file)
+    self.sensors_log.writerow([
       "time",
       "velocity_x",
       "velocity_y",
@@ -71,63 +76,95 @@ class GZWorld(World):
       "latitude",
       "altitude"
       ])
+    self.control_file = open("/tmp/control_log.csv", "w")
+    self.control_log = csv.writer(self.control_file)
+    self.control_log.writerow([
+      "time",
+      "throttle",
+      "brake",
+      "steer"
+    ])
 
   def poll(self):
     while not self.exit_event.is_set():
-      client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-      client.connect(("host.docker.internal", 8069))
-      serialized = json.dumps({"intention": "GET_REPORT"}).encode("utf-8")
-      client.send(len(serialized).to_bytes(4, "little"))
-      client.sendall(serialized)
-      inlen = client.recv(4)
-      inlen = int.from_bytes(inlen, "little")
-      data = bytes()
-      while len(data) < inlen:
-        data += client.recv(inlen - len(data))
-      msg = pickle.loads(data)
-      client.close()
-      if(len(msg.image.data) > 0):
-        original= np.frombuffer(bytes(msg.image.data), dtype=np.uint8).reshape((msg.image.height, msg.image.width, 3))
-        self.road_image[...] = np.pad(original, [(0, H - msg.image.height), (0, W - msg.image.width), (0,0)], mode='constant', constant_values=0)
-      self.image_lock.release()
-      self.velocity = vec3(float(msg.odometry.velocity[0]),
-                           float(msg.odometry.velocity[1]),
-                           0.0)
-      self.bearing = msg.odometry.yaw
-      self.gps = msg.gps
-      self.steering = msg.odometry.heading
+        data = bytearray(MAX_BUFFER_SIZE)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(("host.docker.internal", 4069))
+            s.send(bytes([0]))
+            offset = 0
+            while offset < len(data):
+                recv = s.recv(len(data) - offset)
+                data[offset:offset+len(recv)] = recv
+                offset += len(recv)
+                if len(recv) == 0:
+                    break
+
+        thumbnail = log_capnp.Thumbnail.from_bytes_packed(data)
+        if(len(thumbnail.thumbnail) > 0):
+            original= np.frombuffer(thumbnail.thumbnail, dtype=np.uint8).reshape((1080, 1920, 3))
+            self.road_image[...] = np.pad(original, [(0, H - 1080), (0, W - 1920), (0,0)], mode='constant', constant_values=0)
+        self.image_lock.release()
+
+        data = bytearray(MAX_BUFFER_SIZE)
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(("host.docker.internal", 4069))
+            s.send(bytes([1]))
+            offset = 0
+            while offset < len(data):
+                recv = s.recv(len(data) - offset)
+                data[offset:offset+len(recv)] = recv
+                offset += len(recv)
+                if len(recv) == 0:
+                    break
+
+        gpsData = log_capnp.GpsLocationData.from_bytes_packed(data)
+        self.velocity = gpsData.vNED
+        self.gps.latitude = gpsData.latitude
+        self.gps.longitude = gpsData.longitude
+        self.gps.altitude = gpsData.altitude
+        self.bearing = gpsData.bearingDeg
+        self.steering = gpsData.speed
+
+  def start_vehicle(self):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            s.connect(("host.docker.internal", 4069))
+            s.send(bytes([3]))
+            confirmed = s.recv(1)
+            if len(confirmed) == 0:
+              raise Exception("Failed to start vehicle")
+
+            if confirmed[0] != 0:
+              raise Exception("Failed to start vehicle")
+
 
   def apply_controls(self, steer_angle, throttle_out, brake_out):
-    print(f"steer_angle: {steer_angle}, throttle_out: {throttle_out}, brake_out: {brake_out}")
-    client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    client.connect(("host.docker.internal", 8069))
-    serialized = json.dumps({"intention": "IN_COMMAND", "data": {
-        "steer_angle": steer_angle,
-        "throttle_out": throttle_out,
-        "brake_out": brake_out
-      }}).encode("utf-8")
-    client.send(len(serialized).to_bytes(4, "little"))
-    client.sendall(serialized)
-    ilen = client.recv(4)
-    ilen = int.from_bytes(ilen, "little")
-    data = client.recv(ilen)
-    if data != b'OK':
-      print(f'Unexpected response: {data}')
-    client.close()
+    self.control_log.writerow([time.time(), throttle_out, brake_out, steer_angle])
+    actuators = car_capnp.CarControl.Actuators.new_message(
+            steeringAngleDeg = steer_angle,
+            gas = throttle_out)
+    actuators.brake = brake_out
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+        s.connect(("host.docker.internal", 4069))
+        s.send(bytes([2]))
+        s.sendall(actuators.to_bytes_packed())
 
   def read_cameras(self):
     pass
 
   def read_sensors(self, state: SimulatorState):
-    state.velocity = self.velocity
-    state.bearing = math.degrees(self.bearing)
-    state.steering_angle = math.degrees(self.steering)
+    state.velocity = vec3(
+        self.velocity[0],
+        self.velocity[1],
+        0
+        )
+    state.bearing = self.bearing
+    state.steering_angle = self.steering
     state.gps = GPSState()
     state.gps.latitude = self.gps.latitude
     state.gps.longitude = self.gps.longitude
     state.gps.altitude = 0
     state.valid = True
-    self.writer.writerow([
+    self.sensors_log.writerow([
       time.monotonic(),
       state.velocity[0],
       state.velocity[1],
