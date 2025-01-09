@@ -103,7 +103,7 @@ TIMINGS = {
 
 LOGS_SIZE_RATE = {
   "qlog": 0.0083,
-  "rlog": 0.1528,
+  "rlog": 0.135,
   "qcamera.ts": 0.03828,
 }
 LOGS_SIZE_RATE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2740))

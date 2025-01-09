@@ -30,7 +30,7 @@ if __name__ == '__main__':
         elif event.type == 3 and event.code == 57 and event.value == -1:
           fingers[current_slot] = [-1, -1]
         elif event.type == 3 and event.code == 53:
-          fingers[current_slot][1] = h - (h - event.value)
+          fingers[current_slot][1] = event.value
           if fingers[current_slot][0] != -1:
             touch_points.append(fingers[current_slot].copy())
         elif event.type == 3 and event.code == 54:

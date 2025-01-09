@@ -5,15 +5,9 @@
 #include <QPainter>
 
 void Sparkline::update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size) {
-  const auto &msgs = can->events(msg_id);
-
-  auto range_start = can->toMonoTime(last_msg_ts - range);
-  auto range_end = can->toMonoTime(last_msg_ts);
-  auto first = std::lower_bound(msgs.cbegin(), msgs.cend(), range_start, CompareCanEvent());
-  auto last = std::upper_bound(first, msgs.cend(), range_end, CompareCanEvent());
-
   points.clear();
   double value = 0;
+  auto [first, last] = can->eventsInRange(msg_id, std::make_pair(last_msg_ts -range, last_msg_ts));
   for (auto it = first; it != last; ++it) {
     if (sig->getValue((*it)->dat, (*it)->size, &value)) {
       points.emplace_back(((*it)->mono_time - (*first)->mono_time) / 1e9, value);

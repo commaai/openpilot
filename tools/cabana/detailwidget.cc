@@ -2,7 +2,8 @@
 
 #include <QFormLayout>
 #include <QMenu>
-#include <QSpacerItem>
+#include <QRadioButton>
+#include <QToolBar>
 
 #include "tools/cabana/commands.h"
 #include "tools/cabana/mainwin.h"
@@ -20,19 +21,7 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tabbar->setContextMenuPolicy(Qt::CustomContextMenu);
   main_layout->addWidget(tabbar);
 
-  // message title
-  QHBoxLayout *title_layout = new QHBoxLayout();
-  title_layout->setContentsMargins(3, 6, 3, 0);
-  auto spacer = new QSpacerItem(0, 1);
-  title_layout->addItem(spacer);
-  title_layout->addWidget(name_label = new ElidedLabel(this), 1);
-  name_label->setStyleSheet("QLabel{font-weight:bold;}");
-  name_label->setAlignment(Qt::AlignCenter);
-  auto edit_btn = new ToolButton("pencil", tr("Edit Message"));
-  title_layout->addWidget(edit_btn);
-  title_layout->addWidget(remove_btn = new ToolButton("x-lg", tr("Remove Message")));
-  spacer->changeSize(edit_btn->sizeHint().width() * 2 + 9, 1);
-  main_layout->addLayout(title_layout);
+  createToolBar();
 
   // warning
   warning_widget = new QWidget(this);
@@ -58,8 +47,6 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   tab_widget->addTab(history_log = new LogsWidget(this), utils::icon("stopwatch"), "&Logs");
   main_layout->addWidget(tab_widget);
 
-  QObject::connect(edit_btn, &QToolButton::clicked, this, &DetailWidget::editMsg);
-  QObject::connect(remove_btn, &QToolButton::clicked, this, &DetailWidget::removeMsg);
   QObject::connect(binary_view, &BinaryView::signalHovered, signal_view, &SignalView::signalHovered);
   QObject::connect(binary_view, &BinaryView::signalClicked, [this](const cabana::Signal *s) { signal_view->selectSignal(s, true); });
   QObject::connect(binary_view, &BinaryView::editSignal, signal_view->model, &SignalModel::saveSignal);
@@ -78,6 +65,41 @@ DetailWidget::DetailWidget(ChartsWidget *charts, QWidget *parent) : charts(chart
   });
   QObject::connect(tabbar, &QTabBar::tabCloseRequested, tabbar, &QTabBar::removeTab);
   QObject::connect(charts, &ChartsWidget::seriesChanged, signal_view, &SignalView::updateChartState);
+}
+
+void DetailWidget::createToolBar() {
+  QToolBar *toolbar = new QToolBar(this);
+  int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
+  toolbar->setIconSize({icon_size, icon_size});
+  toolbar->addWidget(name_label = new ElidedLabel(this));
+  name_label->setStyleSheet("QLabel{font-weight:bold;}");
+
+  QWidget *spacer = new QWidget();
+  spacer->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
+
+// Heatmap label and radio buttons
+  toolbar->addWidget(new QLabel(tr("Heatmap:"), this));
+  auto *heatmap_live = new QRadioButton(tr("Live"), this);
+  auto *heatmap_all = new QRadioButton(tr("All"), this);
+  heatmap_live->setChecked(true);
+
+  toolbar->addWidget(heatmap_live);
+  toolbar->addWidget(heatmap_all);
+
+  // Edit and remove buttons
+  toolbar->addSeparator();
+  toolbar->addAction(utils::icon("pencil"), tr("Edit Message"), this, &DetailWidget::editMsg);
+  action_remove_msg = toolbar->addAction(utils::icon("x-lg"), tr("Remove Message"), this, &DetailWidget::removeMsg);
+
+  layout()->addWidget(toolbar);
+
+  connect(heatmap_live, &QAbstractButton::toggled, this, [this](bool on) { binary_view->setHeatmapLiveMode(on); });
+  connect(can, &AbstractStream::timeRangeChanged, this, [=](const std::optional<std::pair<double, double>> &range) {
+    auto text = range ? QString("%1 - %2").arg(range->first, 0, 'f', 3).arg(range->second, 0, 'f', 3) : "All";
+    heatmap_all->setText(text);
+    (range ? heatmap_all : heatmap_live)->setChecked(true);
+  });
 }
 
 void DetailWidget::showTabBarContextMenu(const QPoint &pt) {
@@ -131,14 +153,11 @@ void DetailWidget::refresh() {
     for (auto s : binary_view->getOverlappingSignals()) {
       warnings.push_back(tr("%1 has overlapping bits.").arg(s->name));
     }
-  } else {
-    warnings.push_back(tr("Drag-Select in binary view to create new signal."));
   }
-
   QString msg_name = msg ? QString("%1 (%2)").arg(msg->name, msg->transmitter) : msgName(msg_id);
   name_label->setText(msg_name);
   name_label->setToolTip(msg_name);
-  remove_btn->setEnabled(msg != nullptr);
+  action_remove_msg->setEnabled(msg != nullptr);
 
   if (!warnings.isEmpty()) {
     warning_label->setText(warnings.join('\n'));
@@ -184,8 +203,7 @@ EditMessageDialog::EditMessageDialog(const MessageId &msg_id, const QString &tit
   name_edit->setValidator(new NameValidator(name_edit));
 
   form_layout->addRow(tr("Size"), size_spin = new QSpinBox(this));
-  // TODO: limit the maximum?
-  size_spin->setMinimum(1);
+  size_spin->setRange(1, CAN_MAX_DATA_BYTES);
   size_spin->setValue(size);
 
   form_layout->addRow(tr("Node"), node = new QLineEdit(this));
