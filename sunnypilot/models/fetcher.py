@@ -92,7 +92,7 @@ class ModelCache:
     """Checks if the cache has expired"""
     current_time = int(time.monotonic() * 1e9)
     last_sync = int(self.params.get(self._LAST_SYNC_KEY, encoding="utf-8") or 0)
-    return (current_time - last_sync) >= self.cache_timeout
+    return last_sync == 0 or (current_time - last_sync) >= self.cache_timeout
 
   def get(self) -> tuple[dict, bool]:
     """
