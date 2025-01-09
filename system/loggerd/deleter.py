@@ -21,7 +21,7 @@ TRAINING_FILES = {'rlog', 'dcamera.hevc', 'ecamera.hevc', 'fcamera.hevc'}
 TRAINING_MAX_BYTES = 5 * 1024 * 1024 * 1024
 
 class Priority:
-  HIGHEST = 4
+  HIGHEST = 3
   HIGH = 2
   NORMAL = 1
   LOW = 0
@@ -78,17 +78,18 @@ def deleter_thread(exit_event: threading.Event):
       preserved_segments = get_preserved_segments(dirs)
       training_segments = get_training_segments(dirs)
 
-      priority_map = dict()
-      candidates = []
+      priority_map: dict[str, int] = dict()
+      delete_dirs: list[str] = []
 
       for delete_dir in dirs:
-        fns = os.listdir(os.path.join(Paths.log_root(), delete_dir))
+        delete_path = os.path.join(Paths.log_root(), delete_dir)
+        fns = os.listdir(delete_path)
+
         if any(name.endswith(".lock") for name in fns):
           continue
         elif not fns:
-          # delete empty folder
           try:
-            os.rmdir(os.path.join(Paths.log_root(), delete_dir))
+            os.rmdir(delete_path)
           except OSError:
             cloudlog.exception(f"issue deleting empty {delete_dir}")
           continue
@@ -105,11 +106,11 @@ def deleter_thread(exit_event: threading.Event):
 
           fp = os.path.join(delete_dir, fn)
           priority_map[fp] = priority
-          candidates.append(fp)
+          delete_dirs.append(fp)
 
       # sort by priority, and oldest to newest
-      for candidate in sorted(candidates, key=priority_map.get):
-        delete_path = os.path.join(Paths.log_root(), candidate)
+      for delete_dir in sorted(delete_dirs, key=priority_map.get):
+        delete_path = os.path.join(Paths.log_root(), delete_dir)
         try:
           cloudlog.info(f"deleting {delete_path}")
           os.remove(delete_path)
