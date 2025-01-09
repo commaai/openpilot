@@ -24,6 +24,7 @@ class Priority:
   CRITICAL = 4
   PRESERVED = 2
   NORMAL = 1
+  LOWEST = 0
 
 
 def has_preserve_xattr(d: str) -> bool:
@@ -96,7 +97,7 @@ def deleter_thread(exit_event: threading.Event):
         elif delete_dir in preserved_segments:
           priority = Priority.PRESERVED
         else:
-          priority = 0
+          priority = Priority.LOWEST
 
         for fn in fns:
           if fn in DASHCAM_FILES:
