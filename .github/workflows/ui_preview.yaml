@@ -7,6 +7,7 @@ on:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
       - 'master'
+      - 'add-missing-ui-view'
     paths:
       - 'selfdrive/ui/**'
   workflow_dispatch:
