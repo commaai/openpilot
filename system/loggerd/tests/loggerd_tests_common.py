@@ -10,20 +10,16 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.loggerd.xattr_cache import setxattr
 
 
-def create_random_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: bytes = None) -> None:
+def create_sparse_file(file_path: Path, size_mb: float, lock: bool = False, upload_xattr: bytes = None) -> None:
   file_path.parent.mkdir(parents=True, exist_ok=True)
 
   if lock:
     lock_path = str(file_path) + ".lock"
     os.close(os.open(lock_path, os.O_CREAT | os.O_EXCL))
 
-  chunks = 128
-  chunk_bytes = int(size_mb * 1024 * 1024 / chunks)
-  data = os.urandom(chunk_bytes)
-
   with open(file_path, "wb") as f:
-    for _ in range(chunks):
-      f.write(data)
+    f.seek(int(size_mb * 1024 * 1024) - 1)
+    f.write(b"\0")
 
   if upload_xattr is not None:
     setxattr(str(file_path), uploader.UPLOAD_ATTR_NAME, upload_xattr)
@@ -82,7 +78,7 @@ class UploaderTestCase:
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,
                           upload_xattr: bytes = None, preserve_xattr: bytes = None) -> Path:
     file_path = Path(Paths.log_root()) / f_dir / fn
-    create_random_file(file_path, size_mb, lock, upload_xattr)
+    create_sparse_file(file_path, size_mb, lock, upload_xattr)
 
     if preserve_xattr is not None:
       setxattr(str(file_path.parent), deleter.PRESERVE_ATTR_NAME, preserve_xattr)
