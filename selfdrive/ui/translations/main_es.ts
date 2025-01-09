@@ -740,6 +740,10 @@ Esto puede tardar un minuto.</translation>
         <source>sunnylink</source>
         <translation>sunnylink</translation>
     </message>
+    <message>
+        <source>Trips</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Setup</name>
