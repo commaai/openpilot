@@ -7,6 +7,8 @@
 
 #include "selfdrive/ui/sunnypilot/qt/home.h"
 
+#include "selfdrive/ui/sunnypilot/qt/widgets/drive_stats.h"
+
 HomeWindowSP::HomeWindowSP(QWidget *parent) : HomeWindow(parent) {
 }
 

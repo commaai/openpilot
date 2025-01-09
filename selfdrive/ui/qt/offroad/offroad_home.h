@@ -15,14 +15,17 @@
 #include "selfdrive/ui/sunnypilot/qt/widgets/controls.h"
 #include "selfdrive/ui/sunnypilot/qt/onroad/onroad_home.h"
 #include "selfdrive/ui/sunnypilot/qt/sidebar.h"
+#include "selfdrive/ui/sunnypilot/qt/widgets/prime.h"
 #define OnroadWindow OnroadWindowSP
 #define LayoutWidget LayoutWidgetSP
 #define Sidebar SidebarSP
 #define ElidedLabel ElidedLabelSP
+#define SetupWidget SetupWidgetSP
 #else
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/onroad/onroad_home.h"
 #include "selfdrive/ui/qt/sidebar.h"
+#include "selfdrive/ui/qt/widgets/prime.h"
 #endif
 
 class OffroadHome : public QFrame {
@@ -33,6 +36,9 @@ public:
 
   signals:
     void openSettings(int index = 0, const QString &param = "");
+
+protected:
+  QHBoxLayout *home_layout;
 
 private:
   void showEvent(QShowEvent *event) override;

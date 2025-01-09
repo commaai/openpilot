@@ -45,10 +45,11 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
 
   QWidget *home_widget = new QWidget(this);
   {
-    QHBoxLayout *home_layout = new QHBoxLayout(home_widget);
+    home_layout = new QHBoxLayout(home_widget);
     home_layout->setContentsMargins(0, 0, 0, 0);
     home_layout->setSpacing(30);
 
+#ifndef SUNNYPILOT
     // left: PrimeAdWidget
     QStackedWidget *left_widget = new QStackedWidget(this);
     QVBoxLayout *left_prime_layout = new QVBoxLayout();
@@ -69,6 +70,7 @@ OffroadHome::OffroadHome(QWidget* parent) : QFrame(parent) {
     });
 
     home_layout->addWidget(left_widget, 1);
+#endif
 
     // right: ExperimentalModeButton, SetupWidget
     QWidget* right_widget = new QWidget(this);

@@ -221,7 +221,7 @@ SetupWidget::SetupWidget(QWidget* parent) : QFrame(parent) {
   outer_layout->addWidget(mainLayout);
 
   QWidget *content = new QWidget;
-  QVBoxLayout *content_layout = new QVBoxLayout(content);
+  content_layout = new QVBoxLayout(content);
   content_layout->setContentsMargins(0, 0, 0, 0);
   content_layout->setSpacing(30);
 
