@@ -21,10 +21,10 @@ TRAINING_FILES = {'rlog', 'dcamera.hevc', 'ecamera.hevc', 'fcamera.hevc'}
 TRAINING_MAX_BYTES = 5 * 1024 * 1024 * 1024
 
 class Priority:
-  CRITICAL = 4
-  PRESERVED = 2
+  HIGHEST = 4
+  HIGH = 2
   NORMAL = 1
-  LOWEST = 0
+  LOW = 0
 
 
 def has_preserve_xattr(d: str) -> bool:
@@ -93,18 +93,15 @@ def deleter_thread(exit_event: threading.Event):
             cloudlog.exception(f"issue deleting empty {delete_dir}")
           continue
 
-        if delete_dir in DELETE_LAST:
-          priority = Priority.CRITICAL
-        elif delete_dir in preserved_segments:
-          priority = Priority.PRESERVED
-        else:
-          priority = Priority.LOWEST
-
         for fn in fns:
-          if fn in DASHCAM_FILES:
-            priority += Priority.NORMAL
-          elif fn in TRAINING_FILES and delete_dir in training_segments:
-            priority += Priority.NORMAL
+          if delete_dir in DELETE_LAST:
+            priority = Priority.HIGHEST
+          elif delete_dir in preserved_segments:
+            priority = Priority.HIGH
+          elif fn in DASHCAM_FILES or fn in TRAINING_FILES and delete_dir in training_segments:
+            priority = Priority.NORMAL
+          else:
+            priority = Priority.LOW
 
           fp = os.path.join(delete_dir, fn)
           priority_map[fp] = priority
