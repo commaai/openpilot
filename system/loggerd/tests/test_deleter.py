@@ -114,7 +114,7 @@ class TestDeleter(UploaderTestCase):
     ])
 
   def test_no_delete_when_available_space(self):
-    f_path = self.make_file_with_data(self.seg_dir, self.f_type)
+    f_paths = [self.make_file_with_data(self.seg_dir, f_type) for f_type in (self.f_type, self.q_type)]
 
     block_size = 4096
     available = (10 * 1024 * 1024 * 1024) / block_size  # 10GB free
@@ -122,11 +122,11 @@ class TestDeleter(UploaderTestCase):
 
     self.start_thread()
     start_time = time.monotonic()
-    while f_path.exists() and time.monotonic() - start_time < 2:
+    while all(f_path.exists() for f_path in f_paths) and time.monotonic() - start_time < 2:
       time.sleep(0.01)
     self.join_thread()
 
-    assert f_path.exists(), "File deleted with available space"
+    assert all(f_path.exists() for f_path in f_paths), "File deleted with available space"
 
   def test_no_delete_with_lock_file(self):
     f_path = self.make_file_with_data(self.seg_dir, self.f_type, lock=True)
