@@ -13,6 +13,7 @@ qt_src = [
   "sunnypilot/qt/sidebar.cc",
   "sunnypilot/qt/window.cc",
   "sunnypilot/qt/home.cc",
+  "sunnypilot/qt/offroad/offroad_home.cc",
   "sunnypilot/qt/offroad/settings/settings.cc",
   "sunnypilot/qt/offroad/settings/software_panel.cc",
   "sunnypilot/qt/offroad/settings/sunnylink_panel.cc",
