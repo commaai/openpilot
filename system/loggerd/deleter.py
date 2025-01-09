@@ -84,6 +84,12 @@ def deleter_thread(exit_event: threading.Event):
         fns = os.listdir(os.path.join(Paths.log_root(), delete_dir))
         if any(name.endswith(".lock") for name in fns):
           continue
+        elif not fns:
+          try:
+            os.rmdir(os.path.join(Paths.log_root(), delete_dir))
+          except OSError:
+            cloudlog.exception(f"issue deleting empty {delete_dir}")
+          continue
 
         if delete_dir in DELETE_LAST:
           priority = Priority.CRITICAL

@@ -138,3 +138,14 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_delete_empty_folder(self):
+    f_path = self.make_file_with_data(self.seg_dir, self.f_type)
+    f_path.unlink()
+    self.start_thread()
+    try:
+      with Timeout(2, "Timeout waiting folder to be deleted"):
+        while f_path.parent.exists():
+          time.sleep(0.01)
+    finally:
+      self.join_thread()
