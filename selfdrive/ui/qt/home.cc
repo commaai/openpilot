@@ -3,9 +3,7 @@
 #include <QHBoxLayout>
 #include <QMouseEvent>
 
-#include "selfdrive/ui/qt/offroad/experimental_mode.h"
 #include "selfdrive/ui/qt/util.h"
-#include "selfdrive/ui/qt/widgets/prime.h"
 
 // HomeWindow: the container for the offroad and onroad UIs
 
