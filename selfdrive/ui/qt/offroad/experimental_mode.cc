@@ -8,12 +8,18 @@
 
 #include "selfdrive/ui/ui.h"
 
+#ifdef SUNNYPILOT
+constexpr int toggles_settings_index = 3;
+#else
+constexpr int toggles_settings_index = 2;
+#endif
+
 ExperimentalModeButton::ExperimentalModeButton(QWidget *parent) : QPushButton(parent) {
   chill_pixmap = QPixmap("../assets/img_couch.svg").scaledToWidth(img_width, Qt::SmoothTransformation);
   experimental_pixmap = QPixmap("../assets/img_experimental_grey.svg").scaledToWidth(img_width, Qt::SmoothTransformation);
 
   // go to toggles and expand experimental mode description
-  connect(this, &QPushButton::clicked, [=]() { emit openSettings(2, "ExperimentalMode"); });
+  connect(this, &QPushButton::clicked, [=]() { emit openSettings(toggles_settings_index, "ExperimentalMode"); });
 
   setFixedHeight(125);
   QHBoxLayout *main_layout = new QHBoxLayout;
