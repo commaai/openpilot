@@ -19,12 +19,11 @@ env:
 
 jobs:
   preview:
-    if: github.repository == 'commaai/openpilot'
     name: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
-      contents: read
+      contents: write
       pull-requests: write
       actions: read
     steps:
@@ -58,7 +57,7 @@ jobs:
       - name: Getting master ui
         uses: actions/checkout@v4
         with:
-          repository: commaai/ci-artifacts
+          repository: ugtthis/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
           path: ${{ github.workspace }}/master_ui
           ref: openpilot_master_ui
