@@ -7,7 +7,6 @@
 #include <QLabel>
 #include <QScrollArea>
 #include <QTimer>
-#include <QToolBar>
 #include <QUndoCommand>
 #include <QUndoStack>
 
@@ -53,7 +52,6 @@ public slots:
 signals:
   void toggleChartsDocking();
   void seriesChanged();
-  void showTip(double seconds);
 
 private:
   QSize minimumSizeHint() const override;
@@ -90,7 +88,6 @@ private:
   bool is_docked = true;
   ToolButton *dock_btn;
 
-  QToolBar *toolbar;
   QAction *undo_zoom_action;
   QAction *redo_zoom_action;
   QAction *reset_zoom_action;

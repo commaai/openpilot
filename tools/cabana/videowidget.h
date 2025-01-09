@@ -1,14 +1,15 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <set>
 #include <string>
 #include <utility>
 
+#include <QHBoxLayout>
 #include <QFrame>
 #include <QPropertyAnimation>
 #include <QSlider>
-#include <QToolBar>
 #include <QTabBar>
 
 #include "selfdrive/ui/qt/widgets/cameraview.h"
@@ -27,7 +28,6 @@ public:
   void mousePressEvent(QMouseEvent *e) override;
   void paintEvent(QPaintEvent *ev) override;
   const double factor = 1000.0;
-  double thumbnail_dispaly_time = -1;
 };
 
 class StreamCameraView : public CameraWidget {
@@ -43,14 +43,11 @@ private:
   QPixmap generateThumbnail(QPixmap thumbnail, double seconds);
   void drawAlert(QPainter &p, const QRect &rect, const Timeline::Entry &alert);
   void drawThumbnail(QPainter &p);
-  void drawScrubThumbnail(QPainter &p);
-  void drawTime(QPainter &p, const QRect &rect, double seconds);
+  bool eventFilter(QObject *obj, QEvent *event) override;
 
   QPropertyAnimation *fade_animation;
-  QMap<uint64_t, QPixmap> big_thumbnails;
   QMap<uint64_t, QPixmap> thumbnails;
-  double thumbnail_dispaly_time = -1;
-  friend class VideoWidget;
+  std::optional<QPoint> thumbnail_pt_;
 };
 
 class VideoWidget : public QFrame {
@@ -58,25 +55,25 @@ class VideoWidget : public QFrame {
 
 public:
   VideoWidget(QWidget *parnet = nullptr);
-  void showThumbnail(double seconds);
 
 protected:
-  bool eventFilter(QObject *obj, QEvent *event) override;
   QString formatTime(double sec, bool include_milliseconds = false);
   void timeRangeChanged();
   void updateState();
   void updatePlayBtnState();
   QWidget *createCameraWidget();
-  void createPlaybackController();
-  void createSpeedDropdown(QToolBar *toolbar);
+  QHBoxLayout *createPlaybackController();
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
 
   StreamCameraView *cam_widget;
-  QAction *time_display_action = nullptr;
-  QAction *play_toggle_action = nullptr;
+  QToolButton *time_btn = nullptr;
+  ToolButton *seek_backward_btn = nullptr;
+  ToolButton *play_btn = nullptr;
+  ToolButton *seek_forward_btn = nullptr;
+  ToolButton *loop_btn = nullptr;
   QToolButton *speed_btn = nullptr;
-  QAction *skip_to_end_action = nullptr;
+  ToolButton *skip_to_end_btn = nullptr;
   Slider *slider = nullptr;
   QTabBar *camera_tab = nullptr;
 };

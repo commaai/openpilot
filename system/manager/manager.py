@@ -67,8 +67,7 @@ def manager_init() -> None:
   except PermissionError:
     print(f"WARNING: failed to make {Paths.shm_path()}")
 
-  # set params
-  serial = HARDWARE.get_serial()
+  # set version params
   params.put("Version", build_metadata.openpilot.version)
   params.put("TermsVersion", terms_version)
   params.put("TrainingVersion", training_version)
@@ -78,13 +77,13 @@ def manager_init() -> None:
   params.put("GitRemote", build_metadata.openpilot.git_origin)
   params.put_bool("IsTestedBranch", build_metadata.tested_channel)
   params.put_bool("IsReleaseBranch", build_metadata.release_channel)
-  params.put("HardwareSerial", serial)
 
   # set dongle id
   reg_res = register(show_spinner=True)
   if reg_res:
     dongle_id = reg_res
   else:
+    serial = params.get("HardwareSerial")
     raise Exception(f"Registration failed for device {serial}")
   os.environ['DONGLE_ID'] = dongle_id  # Needed for swaglog
   os.environ['GIT_ORIGIN'] = build_metadata.openpilot.git_normalized_origin # Needed for swaglog

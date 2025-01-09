@@ -57,7 +57,7 @@ def generate_report(proposed, master, tmp, commit):
                      (lambda x: x.action.desiredCurvature, "desiredCurvature"),
                      (lambda x: x.leadsV3[0].x[0], "leadsV3.x"),
                      (lambda x: x.laneLines[1].y[0], "laneLines.y"),
-                     #(lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPressProbs")
+                     (lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPressProbs")
                     ], "modelV2")
   DriverStateV2_Plots = zl([
                      (lambda x: x.wheelOnRightProb, "wheelOnRightProb"),

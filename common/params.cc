@@ -133,6 +133,7 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"GsmRoaming", PERSISTENT | BACKUP},
     {"HardwareSerial", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
+    {"IMEI", PERSISTENT},
     {"InstallDate", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},
     {"IsEngaged", PERSISTENT},

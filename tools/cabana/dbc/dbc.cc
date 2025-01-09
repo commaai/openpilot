@@ -45,7 +45,6 @@ cabana::Msg &cabana::Msg::operator=(const cabana::Msg &other) {
   name = other.name;
   size = other.size;
   comment = other.comment;
-  transmitter = other.transmitter;
 
   for (auto s : sigs) delete s;
   sigs.clear();

@@ -32,6 +32,7 @@ public:
   inline float getSpeed() const { return replay->getSpeed(); }
   inline Replay *getReplay() const { return replay.get(); }
   inline bool isPaused() const override { return replay->isPaused(); }
+  void resumeStream() override { return replay->resumeStream(); }
   void pause(bool pause) override;
 
 signals:

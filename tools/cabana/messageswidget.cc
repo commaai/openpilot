@@ -13,6 +13,21 @@
 
 #include "tools/cabana/commands.h"
 
+static bool isMessageActive(const MessageId &id) {
+  if (id.source == INVALID_SOURCE) {
+    return false;
+  }
+  // Check if the message is active based on time difference and frequency
+  const auto &m = can->lastMessage(id);
+  float delta = can->currentSec() - m.ts;
+
+  if (m.freq < std::numeric_limits<double>::epsilon()) {
+    return delta < 1.5;
+  }
+
+  return delta < (5.0 / m.freq) + (1.0 / settings.fps);
+}
+
 MessagesWidget::MessagesWidget(QWidget *parent) : menu(new QMenu(this)), QWidget(parent) {
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(0, 0, 0, 0);
@@ -192,7 +207,7 @@ QVariant MessageListModel::data(const QModelIndex &index, int role) const {
     switch (index.column()) {
       case Column::NAME: return item.name;
       case Column::SOURCE: return item.id.source != INVALID_SOURCE ? QString::number(item.id.source) : NA;
-      case Column::ADDRESS: return toHexString(item.id.address);
+      case Column::ADDRESS: return QString::number(item.id.address, 16);
       case Column::NODE: return item.node;
       case Column::FREQ: return item.id.source != INVALID_SOURCE ? getFreq(can->lastMessage(item.id).freq) : NA;
       case Column::COUNT: return item.id.source != INVALID_SOURCE ? QString::number(can->lastMessage(item.id).count) : NA;
@@ -285,7 +300,7 @@ bool MessageListModel::match(const MessageListModel::Item &item) {
         match = parseRange(txt, item.id.source);
         break;
       case Column::ADDRESS:
-        match = toHexString(item.id.address).contains(txt, Qt::CaseInsensitive);
+        match = QString::number(item.id.address, 16).contains(txt, Qt::CaseInsensitive);
         match = match || parseRange(txt, item.id.address, 16);
         break;
       case Column::NODE:
@@ -320,7 +335,7 @@ bool MessageListModel::filterAndSort() {
   std::vector<Item> items;
   items.reserve(all_messages.size());
   for (const auto &id : all_messages) {
-    if (show_inactive_messages || can->isMessageActive(id)) {
+    if (show_inactive_messages || isMessageActive(id)) {
       auto msg = dbc()->msg(id);
       Item item = {.id = id,
                   .name = msg ? msg->name : UNTITLED,
@@ -363,7 +378,7 @@ void MessageListModel::sort(int column, Qt::SortOrder order) {
 
 void MessageView::drawRow(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const {
    const auto &item = ((MessageListModel*)model())->items_[index.row()];
-  if (!can->isMessageActive(item.id)) {
+  if (!isMessageActive(item.id)) {
     QStyleOptionViewItem custom_option = option;
     custom_option.palette.setBrush(QPalette::Text, custom_option.palette.color(QPalette::Disabled, QPalette::Text));
     auto color = QApplication::palette().color(QPalette::HighlightedText);

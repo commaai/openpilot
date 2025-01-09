@@ -106,27 +106,31 @@ void Replay::seekTo(double seconds, bool relative) {
   rInfo("Seeking to %d s, segment %d", (int)target_time, target_segment);
   notifyEvent(onSeeking, target_time);
 
+  double seeked_to_sec = -1;
   interruptStream([&]() {
-    current_segment_.store(target_segment);
+    current_segment_ = target_segment;
     cur_mono_time_ = route_start_ts_ + target_time * 1e9;
-    seeking_to_.store(target_time, std::memory_order_relaxed);
+    seeking_to_ = target_time;
+
+    if (event_data_->isSegmentLoaded(target_segment)) {
+      seeked_to_sec = *seeking_to_;
+      seeking_to_.reset();
+    }
     return false;
   });
 
+  checkSeekProgress(seeked_to_sec);
   seg_mgr_->setCurrentSegment(target_segment);
-  checkSeekProgress();
 }
 
-void Replay::checkSeekProgress() {
-  if (!seg_mgr_->getEventData()->isSegmentLoaded(current_segment_.load())) return;
-
-  double seek_to = seeking_to_.exchange(-1.0, std::memory_order_acquire);
-  if (seek_to >= 0 && onSeekedTo) {
-    onSeekedTo(seek_to);
+void Replay::checkSeekProgress(double seeked_to_sec) {
+  if (seeked_to_sec >= 0) {
+    if (onSeekedTo) {
+      onSeekedTo(seeked_to_sec);
+    } else {
+      interruptStream([]() { return true; });
+    }
   }
-
-  // Resume the interrupted stream
-  interruptStream([]() { return true; });
 }
 
 void Replay::seekToFlag(FindFlag flag) {
@@ -148,19 +152,29 @@ void Replay::pause(bool pause) {
 void Replay::handleSegmentMerge() {
   if (exit_) return;
 
-  auto event_data = seg_mgr_->getEventData();
-  if (!stream_thread_.joinable() && !event_data->segments.empty()) {
-    startStream(event_data->segments.begin()->second);
-  }
-  notifyEvent(onSegmentsMerged);
+  double seeked_to_sec = -1;
+  interruptStream([&]() {
+    event_data_ = seg_mgr_->getEventData();
+    notifyEvent(onSegmentsMerged);
 
-  // Interrupt the stream to handle segment merge
-  interruptStream([]() { return false; });
-  checkSeekProgress();
+    bool segment_loaded = event_data_->isSegmentLoaded(current_segment_);
+    if (seeking_to_ && segment_loaded) {
+      seeked_to_sec = *seeking_to_;
+      seeking_to_.reset();
+      return false;
+    }
+    return segment_loaded;
+  });
+
+  checkSeekProgress(seeked_to_sec);
+  if (!stream_thread_.joinable() && !event_data_->events.empty()) {
+    startStream();
+  }
 }
 
-void Replay::startStream(const std::shared_ptr<Segment> segment) {
-  const auto &events = segment->log->events;
+void Replay::startStream() {
+  const auto &cur_segment = event_data_->segments.begin()->second;
+  const auto &events = cur_segment->log->events;
   route_start_ts_ = events.front().mono_time;
   cur_mono_time_ += route_start_ts_ - 1;
 
@@ -198,7 +212,7 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
   if (!hasFlag(REPLAY_FLAG_NO_VIPC)) {
     std::pair<int, int> camera_size[MAX_CAMERAS] = {};
     for (auto type : ALL_CAMERAS) {
-      if (auto &fr = segment->frames[type]) {
+      if (auto &fr = cur_segment->frames[type]) {
         camera_size[type] = {fr->width, fr->height};
       }
     }
@@ -257,7 +271,6 @@ void Replay::streamThread() {
     stream_cv_.wait(lk, [this]() { return exit_ || (events_ready_ && !interrupt_requested_); });
     if (exit_) break;
 
-    event_data_ = seg_mgr_->getEventData();
     const auto &events = event_data_->events;
     auto first = std::upper_bound(events.cbegin(), events.cend(), Event(cur_which, cur_mono_time_, {}));
     if (first == events.cend()) {
@@ -295,11 +308,11 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
 
   for (; !interrupt_requested_ && first != last; ++first) {
     const Event &evt = *first;
-
     int segment = toSeconds(evt.mono_time) / 60;
-    if (current_segment_.load(std::memory_order_relaxed) != segment) {
-      current_segment_.store(segment, std::memory_order_relaxed);
-      seg_mgr_->setCurrentSegment(segment);
+
+    if (current_segment_ != segment) {
+      current_segment_ = segment;
+      seg_mgr_->setCurrentSegment(current_segment_);
     }
 
     // Skip events if socket is not present

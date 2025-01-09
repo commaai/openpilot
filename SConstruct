@@ -49,6 +49,10 @@ AddOption('--ccflags',
           default='',
           help='pass arbitrary flags over the command line')
 
+AddOption('--snpe',
+          action='store_true',
+          help='use SNPE on PC')
+
 AddOption('--external-sconscript',
           action='store',
           metavar='FILE',

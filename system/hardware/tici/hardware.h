@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdlib>
-#include <cassert>
 #include <fstream>
 #include <map>
 #include <string>
@@ -23,7 +22,7 @@ public:
 
   static std::string get_name() {
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
-    return util::strip(model.substr(std::string("comma ").size()));
+    return model.substr(std::string("comma ").size());
   }
 
   static cereal::InitData::DeviceType get_device_type() {
@@ -33,8 +32,7 @@ public:
       {"mici", cereal::InitData::DeviceType::MICI}
     };
     auto it = device_map.find(get_name());
-    assert(it != device_map.end());
-    return it->second;
+    return it != device_map.end() ? it->second : cereal::InitData::DeviceType::UNKNOWN;
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
@@ -84,17 +82,17 @@ public:
       return;
     }
 
-    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255);
+    percent = std::clamp(percent, 0, 100);
 
     std::ofstream torch_brightness("/sys/class/leds/led:torch_2/brightness");
     if (torch_brightness.is_open()) {
-      torch_brightness << value << "\n";
+      torch_brightness << percent << "\n";
       torch_brightness.close();
     }
 
     std::ofstream switch_brightness("/sys/class/leds/led:switch_2/brightness");
     if (switch_brightness.is_open()) {
-      switch_brightness << value << "\n";
+      switch_brightness << percent << "\n";
       switch_brightness.close();
     }
   }
