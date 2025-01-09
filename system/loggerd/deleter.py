@@ -86,6 +86,7 @@ def deleter_thread(exit_event: threading.Event):
         if any(name.endswith(".lock") for name in fns):
           continue
         elif not fns:
+          # delete empty folder
           try:
             os.rmdir(os.path.join(Paths.log_root(), delete_dir))
           except OSError:
