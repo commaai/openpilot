@@ -8,6 +8,7 @@ import pywinctl
 import pyautogui
 import pickle
 import time
+from PIL import Image, ImageDraw
 
 from cereal import log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -127,7 +128,7 @@ def setup_keyboard(click, pm: PubMaster):
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  click(100, 700)
+  click(150, 600, draw_marker=True)
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
@@ -235,9 +236,18 @@ class TestUI:
     assert im.width == 2160
     assert im.height == 1080
 
-  def click(self, x, y, *args, **kwargs):
+  def click(self, x, y, *args, draw_marker=False, **kwargs):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
-    time.sleep(UI_DELAY) # give enough time for the UI to react
+    if draw_marker:
+      # Draw a red circle at click location
+      img_path = str(SCREENSHOTS_DIR / "keyboard_uppercase.png")
+      if os.path.exists(img_path):
+        img = Image.open(img_path)
+        draw = ImageDraw.Draw(img)
+        radius = 20
+        draw.ellipse([x - radius, y - radius, x + radius, y + radius], outline='red', width=3)
+        img.save(img_path)
+    time.sleep(UI_DELAY)  # give enough time for the UI to react
 
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
