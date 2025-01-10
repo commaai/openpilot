@@ -75,13 +75,13 @@ std::string rsa_sign(const std::string &data) {
   return std::string(sig.begin(), sig.begin() + sig_len);
 }
 
-std::string create_jwt(const json11::Json &extra, int exp_time) {
+std::string create_jwt(const json::Json &extra, int exp_time) {
   int now = std::chrono::seconds(std::time(nullptr)).count();
   std::string dongle_id = Params().get("DongleId");
 
   // Create header and payload
-  json11::Json header = json11::Json::object{{"alg", "RS256"}};
-  auto payload = json11::Json::object{
+  json::Json header = json::Json::object{{"alg", "RS256"}};
+  auto payload = json::Json::object{
       {"identity", dongle_id},
       {"iat", now},
       {"nbf", now},
@@ -94,7 +94,7 @@ std::string create_jwt(const json11::Json &extra, int exp_time) {
 
   // JWT construction
   std::string jwt = base64url_encode(header.dump()) + '.' +
-                    base64url_encode(json11::Json(payload).dump());
+                    base64url_encode(json::Json(payload).dump());
 
   // Hash and sign
   std::string hash(SHA256_DIGEST_LENGTH, '\0');
@@ -104,14 +104,14 @@ std::string create_jwt(const json11::Json &extra, int exp_time) {
   return jwt + "." + base64url_encode(signature);
 }
 
-std::string create_token(bool use_jwt, const json11::Json &payloads, int expiry) {
+std::string create_token(bool use_jwt, const json::Json &payloads, int expiry) {
   if (use_jwt) {
     return create_jwt(payloads, expiry);
   }
 
   std::string token_json = util::read_file(util::getenv("HOME") + "/.comma/auth.json");
   std::string err;
-  auto json = json11::Json::parse(token_json, err);
+  auto json = json::Json::parse(token_json, err);
   if (!err.empty()) {
     std::cerr << "Error parsing auth.json " << err << std::endl;
     return "";

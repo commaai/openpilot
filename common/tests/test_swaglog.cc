@@ -7,7 +7,7 @@
 #include "common/util.h"
 #include "common/version.h"
 #include "system/hardware/hw.h"
-#include "third_party/json11/json11.hpp"
+#include "third_party/json/json_helper.hpp"
 
 std::string daemon_name = "testy";
 std::string dongle_id = "test_dongle_id";
@@ -39,7 +39,7 @@ void recv_log(int thread_cnt, int thread_msg_cnt) {
 
     REQUIRE(buf[0] == CLOUDLOG_DEBUG);
     std::string err;
-    auto msg = json11::Json::parse(buf + 1, err);
+    auto msg = json::Json::parse(buf + 1, err);
     REQUIRE(!msg.is_null());
 
     REQUIRE(msg["levelnum"].int_value() == CLOUDLOG_DEBUG);

@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <regex>
 
-#include "third_party/json11/json11.hpp"
+#include "third_party/json/json_helper.hpp"
 #include "system/hardware/hw.h"
 #include "tools/replay/api.h"
 #include "tools/replay/replay.h"
@@ -100,7 +100,7 @@ bool Route::loadFromServer(int retries) {
 bool Route::loadFromJson(const std::string &json) {
   const static std::regex rx(R"(\/(\d+)\/)");
   std::string err;
-  auto jsonData = json11::Json::parse(json, err);
+  auto jsonData = json::Json::parse(json, err);
   if (!err.empty()) {
     rWarning("JSON parsing error: %s", err.c_str());
     return false;

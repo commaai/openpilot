@@ -5,6 +5,7 @@ import copy
 import json
 import time
 import uuid
+import locale
 import socket
 import logging
 import traceback
@@ -12,11 +13,15 @@ from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
 
+# Set locale to use comma as decimal separator for testing
+# locale.setlocale(locale.LC_ALL, 'de_DE.UTF-8')
+
 LOG_TIMESTAMPS = "LOG_TIMESTAMPS" in os.environ
 
 def json_handler(obj):
-  # if isinstance(obj, (datetime.date, datetime.time)):
-  #   return obj.isoformat()
+  # Convert float numbers to use locale-specific formatting
+  if isinstance(obj, float):
+    return locale.str(obj)
   return repr(obj)
 
 def json_robust_dumps(obj):

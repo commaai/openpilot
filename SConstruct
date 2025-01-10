@@ -195,7 +195,7 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
-    "#third_party/json11",
+    "#third_party/json",
     "#third_party/linux/include",
     "#third_party/snpe/include",
     "#third_party",
@@ -335,7 +335,7 @@ Export('env', 'qt_env', 'arch', 'real_arch')
 SConscript(['common/SConscript'])
 Import('_common', '_gpucommon')
 
-common = [_common, 'json11', 'zmq']
+common = [_common, 'json', 'zmq']
 gpucommon = [_gpucommon]
 
 Export('common', 'gpucommon')
