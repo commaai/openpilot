@@ -8,7 +8,6 @@ import pywinctl
 import pyautogui
 import pickle
 import time
-from PIL import Image, ImageDraw
 
 from cereal import log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -128,7 +127,7 @@ def setup_keyboard(click, pm: PubMaster):
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  click(200, 800, draw_marker=True)
+  click(200, 800)
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
@@ -216,7 +215,6 @@ class TestUI:
   def __init__(self):
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
-    self.click_markers = []
 
   def setup(self):
     self.pm = PubMaster(list(DATA.keys()))
