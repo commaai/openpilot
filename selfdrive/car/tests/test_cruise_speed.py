@@ -59,7 +59,7 @@ class TestVCruiseHelper:
 
   def enable(self, v_ego, experimental_mode):
     # Simulates user pressing set with a current speed
-    self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego), experimental_mode)
+    self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego), experimental_mode, False)
 
   def test_adjust_speed(self):
     """
