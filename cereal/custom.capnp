@@ -64,6 +64,11 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
     progress @1 :Float32;
     eta @2 :UInt32;
   }
+  
+  enum Runner {
+    snpe @0;
+    tinygrad @1;
+  }
 
   struct ModelBundle {
     index @0 :UInt32;
