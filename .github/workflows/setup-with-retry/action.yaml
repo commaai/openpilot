@@ -1,12 +1,12 @@
-name: 'openpilot env setup, with retry on failure'
-
+name: "openpilot env setup, with retry on failure"
+# change something
 inputs:
   docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    description: "Auth token for Docker Hub, required for BuildJet jobs"
     required: false
-    default: ''
+    default: ""
   sleep_time:
-    description: 'Time to sleep between retries'
+    description: "Time to sleep between retries"
     required: false
     default: 30
 
