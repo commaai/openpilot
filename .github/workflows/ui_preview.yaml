@@ -14,7 +14,7 @@ on:
 
 env:
   UI_JOB_NAME: "Create UI Report"
-  REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+  REPORT_NAME: ${{ github.event.pull_request && github.event.pull_request.number || (github.ref == 'refs/heads/master' && 'master' || '') }}
   SHA: ${{ github.event.pull_request && github.event.pull_request.head.sha || github.sha }}
   BRANCH_NAME: "openpilot/pr-${{ github.event.number }}"
 
