@@ -1,4 +1,5 @@
 import os
+import posixpath
 import socket
 from urllib.parse import urlparse
 
@@ -8,6 +9,9 @@ DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 
 def internal_source_available(url=DATA_ENDPOINT):
+  if os.path.isdir(url):
+    return True
+
   try:
     hostname = urlparse(url).hostname
     port = urlparse(url).port or 80
@@ -22,7 +26,7 @@ def internal_source_available(url=DATA_ENDPOINT):
 
 def resolve_name(fn):
   if fn.startswith("cd:/"):
-    return fn.replace("cd:/", DATA_ENDPOINT)
+    return posixpath.join(DATA_ENDPOINT, fn[4:])
   return fn
 
 
