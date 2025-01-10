@@ -14,8 +14,7 @@ on:
 
 env:
   UI_JOB_NAME: "Create UI Report"
-  REPORT_NAME: ${{ github.event_name == 'pull_request_target' && github.event.number || (github.ref == 'refs/heads/master' && 'master' || '') }}
-  SHA: ${{ github.event.pull_request && github.event.pull_request.head.sha || github.sha }}
+  SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
   BRANCH_NAME: "openpilot/pr-${{ github.event.number }}"
 
 jobs:
@@ -58,7 +57,7 @@ jobs:
       - name: Getting master ui
         uses: actions/checkout@v4
         with:
-          repository: ugtthis/ci-artifacts
+          repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
           path: ${{ github.workspace }}/master_ui
           ref: openpilot_master_ui

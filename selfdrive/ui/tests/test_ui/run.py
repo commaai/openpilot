@@ -237,20 +237,9 @@ class TestUI:
     assert im.width == 2160
     assert im.height == 1080
 
-    if self.click_markers:
-      img = Image.open(SCREENSHOTS_DIR / f"{name}.png")
-      draw = ImageDraw.Draw(img)
-      for x, y in self.click_markers:
-        radius = 20
-        draw.ellipse([x - radius, y - radius, x + radius, y + radius], outline='red', width=3)
-      img.save(SCREENSHOTS_DIR / f"{name}.png")
-      self.click_markers = []
-
-  def click(self, x, y, *args, draw_marker=False, **kwargs):
+  def click(self, x, y, *args, **kwargs):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
-    if draw_marker:
-      self.click_markers.append((x, y))
-    time.sleep(UI_DELAY)
+    time.sleep(UI_DELAY) # give enough time for the UI to react
 
   @with_processes(["ui"])
   def test_ui(self, name, setup_case):
