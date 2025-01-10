@@ -1,7 +1,7 @@
 name: prebuilt
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 env:
@@ -20,20 +20,21 @@ jobs:
       contents: read
       packages: write
     steps:
-    - name: Wait for green check mark
-      if: ${{ github.event_name != 'workflow_dispatch' }}
-      uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
-      with:
-        ref: master
-        wait-interval: 30
-        running-workflow-name: 'build prebuilt'
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        check-regexp: ^((?!.*(build master-ci).*).)*$
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
-    - run: git lfs pull
-    - name: Build and Push docker image
-      run: |
-        $DOCKER_LOGIN
-        eval "$BUILD"
+      - name: Wait for green check mark
+        if: ${{ github.event_name != 'workflow_dispatch' }}
+        uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
+        with:
+          ref: master
+          wait-interval: 30
+          running-workflow-name: "build prebuilt"
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          check-regexp: ^((?!.*(build master-ci).*).)*$
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+          fetch-depth: 1
+      - run: git lfs pull
+      - name: Build and Push docker image
+        run: |
+          $DOCKER_LOGIN
+          eval "$BUILD"

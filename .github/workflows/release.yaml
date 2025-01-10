@@ -34,7 +34,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-        fetch-depth: 0
+        fetch-depth: 1
+        fetch-depth: 1
     - name: Pull LFS
       run: |
         git config --global --add safe.directory '*'
