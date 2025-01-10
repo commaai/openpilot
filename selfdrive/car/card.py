@@ -25,6 +25,7 @@ from openpilot.selfdrive.car.car_specific import MockCarState
 REPLAY = "REPLAY" in os.environ
 
 EventName = log.OnroadEvent.EventName
+ButtonType = car.CarState.ButtonEvent.Type
 
 # forward
 carlog.addHandler(ForwardingHandler(cloudlog))
@@ -73,6 +74,7 @@ class Car:
 
     self.CC_prev = car.CarControl.new_message()
     self.initialized_prev = False
+    self.resume_prev = False
 
     self.last_actuators_output = structs.CarControl.Actuators()
 
@@ -239,7 +241,7 @@ class Car:
     CS, RD = self.state_update()
 
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
-      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode, self.resume_prev)
 
     self.state_publish(CS, RD)
 
@@ -249,6 +251,11 @@ class Car:
       self.controls_update(CS, self.sm['carControl'])
 
     self.initialized_prev = initialized
+
+    if any(b.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for b in CS.buttonEvents):
+      self.resume_prev = True
+    else:
+      self.resume_prev = False
 
   def params_thread(self, evt):
     while not evt.is_set():
