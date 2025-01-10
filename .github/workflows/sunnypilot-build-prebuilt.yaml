@@ -51,9 +51,10 @@ jobs:
         with:
           path: ${{env.SCONS_CACHE_DIR}}
           key: scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          # Note: GitHub Actions enforces cache isolation between different build sources (PR builds, workflow dispatches, etc.) 
+          #   for security. Only caches from the default branch are shared across all builds. This is by design and cannot be overridden.
           restore-keys: |
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref }}
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.ref_name }}
+            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}
             scons-${{ runner.os }}-${{ runner.arch }}-${{ env.MASTER_NEW_BRANCH }}
             scons-${{ runner.os }}-${{ runner.arch }}-${{ env.MASTER_BRANCH }}
             scons-${{ runner.os }}-${{ runner.arch }}
@@ -119,6 +120,7 @@ jobs:
           if [[ "${{ runner.debug }}" == "1" ]]; then
             printenv
           fi
+          PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/ ${{ github.workspace }}/scripts/manage-powersave.py --disable
 
       - name: Build Panda
         run: |
@@ -186,6 +188,11 @@ jobs:
         with:
           name: prebuilt
           path: prebuilt.tar.gz
+
+      - name: Re-enable powersave
+        if: always()
+        run: |
+          PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/ ${{ github.workspace }}/scripts/manage-powersave.py --enable
 
   publish:
     concurrency:
