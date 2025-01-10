@@ -231,7 +231,6 @@ CASES.update({
   "settings_sunnylink": setup_settings_sunnylink,
   "settings_sunnypilot": setup_settings_sunnypilot,
   "settings_sunnypilot_mads": setup_settings_sunnypilot_mads,
-  "settings_trips": setup_settings_trips,
 })
 
 TEST_DIR = pathlib.Path(__file__).parent
