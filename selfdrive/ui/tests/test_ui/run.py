@@ -128,7 +128,7 @@ def setup_keyboard(click, pm: PubMaster):
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  click(250, 700, draw_marker=True)
+  click(100, 800, draw_marker=True)
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
