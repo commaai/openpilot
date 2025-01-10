@@ -74,6 +74,9 @@ comma*.sh
 selfdrive/modeld/thneed/compile
 selfdrive/modeld/models/*.thneed
 selfdrive/modeld/models/*.pkl
+sunnypilot/modeld/thneed/compile
+sunnypilot/modeld/models/*.thneed
+sunnypilot/modeld/models/*.pkl
 
 *.bz2
 *.zst
