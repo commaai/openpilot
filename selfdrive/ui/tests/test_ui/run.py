@@ -128,7 +128,14 @@ def setup_keyboard(click, pm: PubMaster):
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
-  click(200, 800, draw_marker=True)
+  x, y = 200, 800  # Coordinates for shift key
+  click(x, y)
+
+  # Draw circle on the screenshot
+  img = Image.open(SCREENSHOTS_DIR / "keyboard_uppercase.png")
+  draw = ImageDraw.Draw(img)
+  draw.ellipse([x - 20, y - 20, x + 20, y + 20], outline='red', width=3)
+  img.save(SCREENSHOTS_DIR / "keyboard_uppercase.png")
 
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
@@ -216,40 +223,14 @@ class TestUI:
   def __init__(self):
     os.environ["SCALE"] = "1"
     sys.modules["mouseinfo"] = False
-    self.click_markers = []
-
-  def setup(self):
-    self.pm = PubMaster(list(DATA.keys()))
-    DATA['deviceState'].deviceState.networkType = log.DeviceState.NetworkType.wifi
-    DATA['deviceState'].deviceState.lastAthenaPingTime = 0
-    for _ in range(10):
-      self.pm.send('deviceState', DATA['deviceState'])
-      DATA['deviceState'].clear_write_flag()
-      time.sleep(0.05)
-    try:
-      self.ui = pywinctl.getWindowsWithTitle("ui")[0]
-    except Exception as e:
-      print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
-      self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0,0,2160,1080)
 
   def screenshot(self, name):
     im = pyautogui.screenshot(SCREENSHOTS_DIR / f"{name}.png", region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
     assert im.width == 2160
     assert im.height == 1080
 
-    if self.click_markers:
-      img = Image.open(SCREENSHOTS_DIR / f"{name}.png")
-      draw = ImageDraw.Draw(img)
-      for x, y in self.click_markers:
-        radius = 20
-        draw.ellipse([x - radius, y - radius, x + radius, y + radius], outline='red', width=3)
-      img.save(SCREENSHOTS_DIR / f"{name}.png")
-      self.click_markers = []
-
   def click(self, x, y, *args, draw_marker=False, **kwargs):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
-    if draw_marker:
-      self.click_markers.append((x, y))
     time.sleep(UI_DELAY)
 
   @with_processes(["ui"])
