@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 
 from openpilot.common.realtime import DT_HW
-from openpilot.common.numpy_fast import interp
+import numpy as np
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.pid import PIDController
 
@@ -30,7 +30,7 @@ class TiciFanController(BaseFanController):
     error = 70 - cur_temp
     fan_pwr_out = -int(self.controller.update(
                       error=error,
-                      feedforward=interp(cur_temp, [60.0, 100.0], [0, -100])
+                      feedforward=np.interp(cur_temp, [60.0, 100.0], [0, -100])
                     ))
 
     self.last_ignition = ignition

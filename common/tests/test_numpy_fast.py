@@ -1,6 +1,5 @@
 import numpy as np
 
-from openpilot.common.numpy_fast import interp
 
 
 class TestInterp:
@@ -11,11 +10,11 @@ class TestInterp:
                  39.999999, 40, 41]
 
     expected = np.interp(v_ego_arr, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
-    actual = interp(v_ego_arr, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+    actual = np.interp(v_ego_arr, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
 
     np.testing.assert_equal(actual, expected)
 
     for v_ego in v_ego_arr:
       expected = np.interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
-      actual = interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
+      actual = np.interp(v_ego, _A_CRUISE_MIN_BP, _A_CRUISE_MIN_V)
       np.testing.assert_equal(actual, expected)
