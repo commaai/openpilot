@@ -3,19 +3,24 @@ FROM ubuntu:24.04
 ENV PYTHONUNBUFFERED=1
 
 ENV DEBIAN_FRONTEND=noninteractive
+
+
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot python3-tk python3-dev \
+    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb gnome-screenshot python3-tk python3-dev \
+    python3-venv \
     ca-certificates \
-    clang \
-    build-essential \
-    gcc-arm-none-eabi \
-    liblzma-dev \
     capnproto \
     libcapnp-dev \
     libcurl4-openssl-dev \
     git \
-    git-lfs \
-    ffmpeg && \
+    git-lfs && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    build-essential \
+    clang \
+    liblzma-dev && \
     rm -rf /var/lib/apt/lists/* /tmp/*
 
 RUN apt-get update && \
@@ -61,8 +66,8 @@ RUN apt-get update && \
     qtchooser \
     qt5-qmake \
     qtbase5-dev-tools \
-    python3-dev \
     python3-venv \
+    ffmpeg \
     libqt5opengl5-dev && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
     cd /usr/lib/gcc/arm-none-eabi/* && \
@@ -77,20 +82,16 @@ ENV LC_ALL=en_US.UTF-8
 
 # Add OpenCL
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    apt-utils \
-    alien \
     tar \
-    xz-utils \
     dbus \
     gcc-arm-none-eabi \
     libx11-6 \
-    wget \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /tmp/opencl-driver-intel && \
     cd /tmp/opencl-driver-intel && \
-    wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
-    wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz && \
+    curl -L -O https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
+    curl -L -O https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz && \
     mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel && \
     cd /opt/intel/oclcpuexp_2024.17.3.0.09_rel && \
     tar -zxvf /tmp/opencl-driver-intel/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
