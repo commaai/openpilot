@@ -80,11 +80,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
     alien \
     tar \
-    curl \
     xz-utils \
     dbus \
     gcc-arm-none-eabi \
-    vim \
     libx11-6 \
     wget \
   && rm -rf /var/lib/apt/lists/*
