@@ -1,6 +1,6 @@
-import numpy as np
 from abc import abstractmethod, ABC
 
+import numpy as np
 from openpilot.common.realtime import DT_CTRL
 
 MIN_LATERAL_CONTROL_SPEED = 0.3  # m/s
