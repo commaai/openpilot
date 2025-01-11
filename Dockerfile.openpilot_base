@@ -4,31 +4,86 @@ ENV PYTHONUNBUFFERED=1
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot python3-tk python3-dev && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot python3-tk python3-dev \
+    ca-certificates \
+    clang \
+    build-essential \
+    gcc-arm-none-eabi \
+    liblzma-dev \
+    capnproto \
+    libcapnp-dev \
+    libcurl4-openssl-dev \
+    git \
+    git-lfs \
+    ffmpeg && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libavformat-dev \q
+    libavcodec-dev \
+    libavdevice-dev \
+    libavutil-dev \
+    libavfilter-dev \
+    libbz2-dev \
+    libeigen3-dev \
+    libffi-dev \
+    libglew-dev \
+    libgles2-mesa-dev \
+    libglfw3-dev \
+    libglib2.0-0 \
+    libqt5charts5-dev \
+    libncurses5-dev \
+    libssl-dev \
+    libusb-1.0-0-dev \
+    libzmq3-dev \
+    libzstd-dev \
+    libsqlite3-dev \
+    libsystemd-dev && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    opencl-headers \
+    ocl-icd-libopencl1 \
+    ocl-icd-opencl-dev \
+    portaudio19-dev \
+    qttools5-dev-tools \
+    libqt5svg5-dev \
+    libqt5serialbus5-dev  \
+    libqt5x11extras5-dev \
+    g++-12 && \
+    rm -rf /var/lib/apt/lists/* /tmp/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    qtbase5-dev \
+    qtchooser \
+    qt5-qmake \
+    qtbase5-dev-tools \
+    python3-dev \
+    python3-venv \
+    libqt5opengl5-dev && \
+    rm -rf /var/lib/apt/lists/* /tmp/* && \
+    cd /usr/lib/gcc/arm-none-eabi/* && \
+    rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
+
+
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN /tmp/tools/install_ubuntu_dependencies.sh && \
-    rm -rf /var/lib/apt/lists/* /tmp/* && \
-    cd /usr/lib/gcc/arm-none-eabi/* && \
-    rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
-
 # Add OpenCL
 RUN apt-get update && apt-get install -y --no-install-recommends \
     apt-utils \
     alien \
-    unzip \
     tar \
     curl \
     xz-utils \
     dbus \
     gcc-arm-none-eabi \
-    tmux \
     vim \
     libx11-6 \
     wget \
@@ -61,6 +116,8 @@ ENV QTWEBENGINE_DISABLE_SANDBOX=1
 
 RUN dbus-uuidgen > /etc/machine-id
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 ARG USER=batman
 ARG USER_UID=1001
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
@@ -69,13 +126,15 @@ RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
 COPY --chown=$USER pyproject.toml uv.lock /home/$USER
-COPY --chown=$USER tools/install_python_dependencies.sh /home/$USER/tools/
 
 ENV VIRTUAL_ENV=/home/$USER/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN cd /home/$USER && \
-    tools/install_python_dependencies.sh && \
+    uv sync --frozen --all-extras && \
+    . .venv/bin/activate && \
     rm -rf tools/ pyproject.toml uv.lock .cache
+
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot
+
