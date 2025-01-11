@@ -69,7 +69,8 @@ RUN apt-get update && \
     python3-venv \
     ffmpeg \
     wget \
-    libqt5opengl5-dev && \
+    libqt5opengl5-dev \
+    x11-xserver-utils && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
