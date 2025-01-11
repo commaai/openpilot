@@ -1,5 +1,5 @@
 from cereal import log
-import numpy np
+import numpy as np
 from openpilot.common.realtime import DT_CTRL
 
 MIN_SPEED = 1.0
