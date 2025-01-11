@@ -68,9 +68,9 @@ RUN apt-get update && \
     qtbase5-dev-tools \
     python3-venv \
     ffmpeg \
+    wget \
     libqt5opengl5-dev && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
-    cd /usr/lib/gcc/arm-none-eabi/* && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
 
@@ -82,7 +82,6 @@ ENV LC_ALL=en_US.UTF-8
 
 # Add OpenCL
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    tar \
     dbus \
     gcc-arm-none-eabi \
     libx11-6 \
@@ -90,8 +89,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 RUN mkdir -p /tmp/opencl-driver-intel && \
     cd /tmp/opencl-driver-intel && \
-    curl -L -O https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
-    curl -L -O https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz && \
+    wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
+    wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz && \
     mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel && \
     cd /opt/intel/oclcpuexp_2024.17.3.0.09_rel && \
     tar -zxvf /tmp/opencl-driver-intel/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
