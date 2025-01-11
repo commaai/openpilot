@@ -28,7 +28,7 @@ class PIDController:
 
   @property
   def k_p(self):
-    return interp(self.speed, self._k_p[0], self._k_p[1])
+    return np.interp(self.speed, self._k_p[0], self._k_p[1])
 
   @property
   def k_i(self):
