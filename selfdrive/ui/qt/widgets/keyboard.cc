@@ -145,8 +145,8 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleCapsPress() {
-  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_THRESHOLD_MS;
-  last_caps_press = QDateTime::currentMSecsSinceEpoch();
+  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_shift_key_press) <= DOUBLE_TAP_THRESHOLD_MS;
+  last_shift_key_press = QDateTime::currentMSecsSinceEpoch();
 
   bool was_locked = caps_lock_on;
   caps_lock_on = !was_locked && is_double_tap;
