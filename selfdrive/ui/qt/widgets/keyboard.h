@@ -31,7 +31,7 @@ private:
   QStackedLayout* main_layout;
   bool caps_locked = false;
   qint64 last_caps_press = 0;
-  static const int DOUBLE_TAP_INTERVAL_MS = 250;  // Time window for double tap
+  static const int DOUBLE_TAP_INTERVAL_MS = 250;
 
 private slots:
   void handleButton(QAbstractButton* m_button);

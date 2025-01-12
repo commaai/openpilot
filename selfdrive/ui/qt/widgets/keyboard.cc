@@ -148,12 +148,10 @@ void Keyboard::handleCapsPress() {
   bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_INTERVAL_MS;
   last_caps_press = QDateTime::currentMSecsSinceEpoch();
 
-  // Simple state transitions
   bool was_locked = caps_locked;
   caps_locked = !was_locked && is_double_tap;
   main_layout->setCurrentIndex(caps_locked || (!was_locked && main_layout->currentIndex() == 0));
 
-  // Update caps button
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
       btn->setText(caps_locked ? CAPS_LOCK_KEY : CAPS_KEY);
