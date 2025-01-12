@@ -45,7 +45,7 @@ private:
   std::mutex mutex_;
   std::condition_variable cv_;
   std::thread thread_;
-  std::atomic<int> cur_seg_num_ = -1;
+  int cur_seg_num_ = -1;
   bool needs_update_ = false;
   bool exit_ = false;
 
