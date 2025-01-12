@@ -128,12 +128,12 @@ class ModelManagerSP:
     os.makedirs(destination_path, exist_ok=True)
 
     try:
-      tasks = [self._process_model(model, destination_path)
-               for model in self.selected_bundle.models]
+      tasks = [self._process_model(model, destination_path) for model in self.selected_bundle.models]
       await asyncio.gather(*tasks)
-      self.selected_bundle.status = custom.ModelManagerSP.DownloadStatus.downloaded
       self.active_bundle = self.selected_bundle
-      self.params.put("ModelManager_ActiveBundle", self.selected_bundle.to_bytes())
+      self.active_bundle.status = custom.ModelManagerSP.DownloadStatus.downloaded
+      self.params.put("ModelManager_ActiveBundle", self.active_bundle.to_bytes())
+      self.selected_bundle = None
 
     except Exception:
       self.selected_bundle.status = custom.ModelManagerSP.DownloadStatus.failed
@@ -153,6 +153,7 @@ class ModelManagerSP:
     while True:
       try:
         self.available_models = self.model_fetcher.get_available_models()
+        self.active_bundle = get_active_bundle(self.params)
 
         if index_to_download := self.params.get("ModelManager_DownloadIndex", block=False, encoding="utf-8"):
           if model_to_download := next((model for model in self.available_models if model.index == int(index_to_download)), None):

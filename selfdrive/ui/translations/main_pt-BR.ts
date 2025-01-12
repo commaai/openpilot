@@ -1083,15 +1083,7 @@ Isso pode levar até um minuto.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 model [%2] downloaded</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 model [%2] download failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 model [%2] from cache</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1104,6 +1096,34 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Model download has started in the background.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 model [%2] %3</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>downloaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ready</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>from cache</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use Default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>No custom model selected!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Default</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

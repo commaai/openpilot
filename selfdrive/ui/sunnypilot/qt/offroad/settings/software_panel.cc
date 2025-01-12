@@ -29,16 +29,17 @@ SoftwarePanelSP::SoftwarePanelSP(QWidget *parent) : SoftwarePanel(parent) {
  * Reads status from modelManagerSP cereal message and displays status for all models
  */
 void SoftwarePanelSP::handleBundleDownloadProgress() {
-  const SubMaster &sm = *(uiStateSP()->sm);
-  const auto model_manager = sm["modelManagerSP"].getModelManagerSP();
-
-  if (!model_manager.hasSelectedBundle()) {
-    currentModelLblBtn->setDescription("");
+  using DS = cereal::ModelManagerSP::DownloadStatus;
+  if (!model_manager.hasSelectedBundle() && !model_manager.hasActiveBundle()) {
+    currentModelLblBtn->setDescription(tr("No custom model selected!"));
     return;
   }
 
-  const auto &bundle = model_manager.getSelectedBundle();
+  const bool showSelectedBundle = model_manager.hasSelectedBundle() && (isDownloading() || model_manager.getSelectedBundle().getStatus() == DS::FAILED);
+  const auto &bundle = showSelectedBundle ? model_manager.getSelectedBundle() : model_manager.getActiveBundle();
   const auto &models = bundle.getModels();
+  download_status = bundle.getStatus();
+  const auto download_status_changed = prev_download_status != download_status;
   QStringList status;
 
   // Get status for each model type in order
@@ -67,9 +68,9 @@ void SoftwarePanelSP::handleBundleDownloadProgress() {
     if (progress.getStatus() == cereal::ModelManagerSP::DownloadStatus::DOWNLOADING) {
       line = tr("Downloading %1 model [%2]... (%3%)").arg(typeName, modelName).arg(progress.getProgress(), 0, 'f', 2);
     } else if (progress.getStatus() == cereal::ModelManagerSP::DownloadStatus::DOWNLOADED) {
-      line = tr("%1 model [%2] downloaded").arg(typeName, modelName);
+      line = tr("%1 model [%2] %3").arg(typeName, modelName, download_status_changed ? tr("downloaded") : tr("ready"));
     } else if (progress.getStatus() == cereal::ModelManagerSP::DownloadStatus::CACHED) {
-      line = tr("%1 model [%2] from cache").arg(typeName, modelName);
+      line = tr("%1 model [%2] %3").arg(typeName, modelName, download_status_changed ? tr("from cache") : tr("ready"));
     } else if (progress.getStatus() == cereal::ModelManagerSP::DownloadStatus::FAILED) {
       line = tr("%1 model [%2] download failed").arg(typeName, modelName);
     } else {
@@ -80,9 +81,19 @@ void SoftwarePanelSP::handleBundleDownloadProgress() {
 
   currentModelLblBtn->setDescription(status.join("\n"));
 
-  if (bundle.getStatus() == cereal::ModelManagerSP::DownloadStatus::DOWNLOADING) {
-    currentModelLblBtn->showDescription();
+  if (prev_download_status != download_status) {
+    switch (bundle.getStatus()) {
+      case cereal::ModelManagerSP::DownloadStatus::DOWNLOADING:
+      case cereal::ModelManagerSP::DownloadStatus::CACHED:
+      case cereal::ModelManagerSP::DownloadStatus::DOWNLOADED:
+        currentModelLblBtn->showDescription();
+        break;
+      case cereal::ModelManagerSP::DownloadStatus::FAILED:
+      default:
+        break;
+    }
   }
+  prev_download_status = download_status;
 }
 
 /**
@@ -90,14 +101,16 @@ void SoftwarePanelSP::handleBundleDownloadProgress() {
  * @return Display name of the selected bundle or default model name
  */
 QString SoftwarePanelSP::GetActiveModelName() {
-  const SubMaster &sm = *(uiStateSP()->sm);
-  const auto model_manager = sm["modelManagerSP"].getModelManagerSP();
-
   if (model_manager.hasActiveBundle()) {
     return QString::fromStdString(model_manager.getActiveBundle().getDisplayName());
   }
 
   return "";
+}
+
+void SoftwarePanelSP::updateModelManagerState() {
+  const SubMaster &sm = *(uiStateSP()->sm);
+  model_manager = sm["modelManagerSP"].getModelManagerSP();
 }
 
 /**
@@ -108,9 +121,6 @@ void SoftwarePanelSP::handleCurrentModelLblBtnClicked() {
   currentModelLblBtn->setEnabled(false);
   currentModelLblBtn->setValue(tr("Fetching models..."));
 
-  const SubMaster &sm = *(uiStateSP()->sm);
-  const auto model_manager = sm["modelManagerSP"].getModelManagerSP();
-
   // Create mapping of bundle indices to display names
   QMap<uint32_t, QString> index_to_bundle;
   const auto bundles = model_manager.getAvailableBundles();
@@ -120,6 +130,9 @@ void SoftwarePanelSP::handleCurrentModelLblBtnClicked() {
 
   // Sort bundles by index in descending order
   QStringList bundleNames;
+  // Add "Default" as the first option
+  bundleNames.append(tr("Use Default"));
+
   auto indices = index_to_bundle.keys();
   std::sort(indices.begin(), indices.end(), std::greater<uint32_t>());
   for (const auto &index: indices) {
@@ -135,14 +148,21 @@ void SoftwarePanelSP::handleCurrentModelLblBtnClicked() {
     return;
   }
 
-  // Find selected bundle and initiate download
-  for (const auto &bundle: bundles) {
-    if (QString::fromStdString(bundle.getDisplayName()) == selectedBundleName) {
-      params.put("ModelManager_DownloadIndex", std::to_string(bundle.getIndex()));
-      if (bundle.getGeneration() != model_manager.getActiveBundle().getGeneration()) {
-        showResetParamsDialog();
+  // Handle "Stock" selection differently
+  if (selectedBundleName == tr("Use Default")) {
+    params.remove("ModelManager_ActiveBundle");
+    currentModelLblBtn->setValue(tr("Default"));
+    showResetParamsDialog();
+  } else {
+    // Find selected bundle and initiate download
+    for (const auto &bundle: bundles) {
+      if (QString::fromStdString(bundle.getDisplayName()) == selectedBundleName) {
+        params.put("ModelManager_DownloadIndex", std::to_string(bundle.getIndex()));
+        if (bundle.getGeneration() != model_manager.getActiveBundle().getGeneration()) {
+          showResetParamsDialog();
+        }
+        break;
       }
-      break;
     }
   }
 
@@ -157,9 +177,11 @@ void SoftwarePanelSP::updateLabels() {
     return;
   }
 
+  updateModelManagerState();
   handleBundleDownloadProgress();
   currentModelLblBtn->setEnabled(!is_onroad && !isDownloading());
   currentModelLblBtn->setValue(GetActiveModelName());
+
   SoftwarePanel::updateLabels();
 }
 

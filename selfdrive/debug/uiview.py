@@ -3,14 +3,19 @@ import time
 
 from cereal import car, log, messaging
 from openpilot.common.params import Params
-from openpilot.system.manager.process_config import managed_processes
+from openpilot.system.manager.process_config import managed_processes, is_snpe_model
 from openpilot.system.hardware import HARDWARE
 
 if __name__ == "__main__":
   CP = car.CarParams(notCar=True, wheelbase=1, steerRatio=10)
-  Params().put("CarParams", CP.to_bytes())
+  params = Params()
+  params.put("CarParams", CP.to_bytes())
+  if use_snpe_modeld := is_snpe_model(False, params, CP):
+    print("Using SNPE modeld")
+  HARDWARE.set_power_save(False)
 
-  procs = ['camerad', 'ui', 'modeld', 'calibrationd', 'plannerd', 'dmonitoringmodeld', 'dmonitoringd']
+  procs = ['camerad', 'ui', 'calibrationd', 'plannerd', 'dmonitoringmodeld', 'dmonitoringd']
+  procs += ["modeld_snpe" if use_snpe_modeld else "modeld"]
   for p in procs:
     managed_processes[p].start()
 

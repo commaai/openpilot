@@ -19,12 +19,10 @@ public:
 
 private:
   QString GetActiveModelName();
+  void updateModelManagerState();
 
   bool isDownloading() const {
-    const SubMaster &sm = *(uiStateSP()->sm);
-    const auto model_manager = sm["modelManagerSP"].getModelManagerSP();
-
-    if (!model_manager.hasSelectedBundle() || !sm.updated("modelManagerSP")) {
+    if (!model_manager.hasSelectedBundle()) {
       return false;
     }
 
@@ -37,6 +35,9 @@ private:
   void handleCurrentModelLblBtnClicked();
   void handleBundleDownloadProgress();
   void showResetParamsDialog();
+  cereal::ModelManagerSP::Reader model_manager;
+  cereal::ModelManagerSP::DownloadStatus download_status{};
+  cereal::ModelManagerSP::DownloadStatus prev_download_status{};
 
   bool canContinueOnMeteredDialog() {
     if (!is_metered) return true;
