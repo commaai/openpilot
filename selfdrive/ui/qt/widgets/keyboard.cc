@@ -148,22 +148,18 @@ void Keyboard::handleCapsPress() {
   bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_INTERVAL_MS;
   last_caps_press = QDateTime::currentMSecsSinceEpoch();
 
-  // Handle caps state
-  if (caps_locked) {
-    caps_locked = false;
-    main_layout->setCurrentIndex(0);
-  } else if (is_double_tap) {
+  // Simple state changes
+  if (is_double_tap && !caps_locked) {
     caps_locked = true;
-    main_layout->setCurrentIndex(1);
-  } else {
-    main_layout->setCurrentIndex(1 - main_layout->currentIndex());
+  } else if (caps_locked) {
+    caps_locked = false;
   }
 
-  // Update caps button
-  QWidget* current_layout = main_layout->currentWidget();
-  if (current_layout) {
-    QList<KeyButton*> buttons = current_layout->findChildren<KeyButton*>();
-    for (KeyButton* btn : buttons) {
+  // Set keyboard and update button
+  main_layout->setCurrentIndex(caps_locked || (!caps_locked && main_layout->currentIndex() == 0) ? 1 : 0);
+
+  if (QWidget* current = main_layout->currentWidget()) {
+    for (KeyButton* btn : current->findChildren<KeyButton*>()) {
       if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
         btn->setText(caps_locked ? CAPS_LOCK_KEY : CAPS_KEY);
         btn->setStyleSheet(main_layout->currentIndex() == 1 ? "background-color: #465BEA;" : "");
