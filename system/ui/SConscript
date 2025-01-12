@@ -21,3 +21,4 @@ if not UBUNTU_FOCAL:
 
   if arch != 'aarch64':
     renv.Program("spinner", ["raylib/spinner.cc"], LIBS=linked_libs, FRAMEWORKS=mac_frameworks)
+    renv.Program("wifi_demo", ["raylib/wifi_manager/wifi_manager.cc", "raylib/wifi_manager/nmcli_backend.cc", "raylib/wifi_manager/main.cc"], LIBS=linked_libs, FRAMEWORKS=mac_frameworks)
