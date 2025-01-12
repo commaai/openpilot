@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 
 from openpilot.common.realtime import DT_HW
-from openpilot.common.numpy_fast import interp
+from numpy import interp
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.pid import PIDController
 

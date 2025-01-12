@@ -5,7 +5,7 @@ import threading
 from inputs import UnpluggedError, get_gamepad
 
 from cereal import messaging
-from openpilot.common.numpy_fast import interp, clip
+from numpy import interp, clip
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.system.hardware import HARDWARE

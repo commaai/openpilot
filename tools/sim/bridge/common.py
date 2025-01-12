@@ -6,10 +6,10 @@ from collections import namedtuple
 from enum import Enum
 from multiprocessing import Process, Queue, Value
 from abc import ABC, abstractmethod
+from numpy import clip
 
 from opendbc.car.honda.values import CruiseButtons
 from openpilot.common.params import Params
-from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import Ratekeeper
 from openpilot.selfdrive.test.helpers import set_params_enabled
 from openpilot.tools.sim.lib.common import SimulatorState, World
