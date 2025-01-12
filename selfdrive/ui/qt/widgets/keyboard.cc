@@ -11,12 +11,12 @@
 
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "→";
-const QString CAPS_KEY = "⇧";
+const QString SHIFT_KEY = "⇧";
 const QString CAPS_LOCK_KEY = "⇪";
 
 const QMap<QString, int> KEY_STRETCH = {{"  ", 3}, {ENTER_KEY, 2}};
 
-const QStringList CONTROL_BUTTONS = {CAPS_KEY, CAPS_LOCK_KEY, "ABC", "#+=", "123", BACKSPACE_KEY, ENTER_KEY};
+const QStringList CONTROL_BUTTONS = {SHIFT_KEY, CAPS_LOCK_KEY, "ABC", "#+=", "123", BACKSPACE_KEY, ENTER_KEY};
 
 const float key_spacing_vertical = 20;
 const float key_spacing_horizontal = 15;
@@ -109,7 +109,7 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> lowercase = {
     {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p"},
     {"a", "s", "d", "f", "g", "h", "j", "k", "l"},
-    {CAPS_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY},
+    {SHIFT_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY},
     {"123", "/", "-", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
@@ -118,7 +118,7 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> uppercase = {
     {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"},
     {"A", "S", "D", "F", "G", "H", "J", "K", "L"},
-    {CAPS_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY},
+    {SHIFT_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY},
     {"123", "/", "-", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
@@ -153,8 +153,8 @@ void Keyboard::handleCapsPress() {
   main_layout->setCurrentIndex(caps_lock_on || (!was_locked && main_layout->currentIndex() == 0));
 
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
-    if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
-      btn->setText(caps_lock_on ? CAPS_LOCK_KEY : CAPS_KEY);
+    if (btn->text() == SHIFT_KEY || btn->text() == CAPS_LOCK_KEY) {
+      btn->setText(caps_lock_on ? CAPS_LOCK_KEY : SHIFT_KEY);
       btn->setStyleSheet(main_layout->currentIndex() == 1 ? "background-color: #465BEA;" : "");
     }
   }
@@ -166,7 +166,7 @@ void Keyboard::handleButton(QAbstractButton* btn) {
     if (key == "ABC") {
       caps_lock_on = false;
       main_layout->setCurrentIndex(0);
-    } else if (key == CAPS_KEY || key == CAPS_LOCK_KEY) {
+    } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
     } else if (key == "123") {
       main_layout->setCurrentIndex(2);
