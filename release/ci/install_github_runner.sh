@@ -4,6 +4,7 @@ set -e
 # Default values
 DEFAULT_REPO_URL="https://github.com/sunnypilot"
 START_AT_BOOT=false
+RESTORE_MODE=false
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -20,6 +21,10 @@ while [[ $# -gt 0 ]]; do
             REPO_URL="$2"
             shift 2
             ;;
+        --restore)
+            RESTORE_MODE=true
+            shift
+            ;;
         *)
             if [ -z "$GITHUB_TOKEN" ]; then
                 GITHUB_TOKEN="$1"
@@ -30,19 +35,6 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
-
-# Check required arguments
-if [ -z "$GITHUB_TOKEN" ]; then
-    echo "Usage: $0 [--start-at-boot] [--token <github_token>] [--repo <repository_url>]"
-    echo "Required argument: github_token"
-    echo "Optional arguments:"
-    echo "  --start-at-boot    Enable auto-start at boot (default: false)"
-    echo "  --repo            Repository URL (default: ${DEFAULT_REPO_URL})"
-    exit 1
-fi
-
-# Set repository URL if not provided
-REPO_URL="${REPO_URL:-$DEFAULT_REPO_URL}"
 
 # Determine BASE_DIR based on mount point
 if mountpoint -q /data/media; then
@@ -60,19 +52,18 @@ LOGS_DIR="${BASE_DIR}/logs"
 CACHE_DIR="${BASE_DIR}/cache"
 OPENPILOT_DIR="${BASE_DIR}/openpilot"
 
-create_directories() {
-    sudo mkdir -p "$RUNNER_DIR" "$BUILDS_DIR" "$LOGS_DIR" "$CACHE_DIR" "$OPENPILOT_DIR"
-    mkdir -p "/data/openpilot"
-    sudo chown -R comma:comma "/data/openpilot"
+# Basic utility functions (no dependencies)
+remount_rw() {
+    sudo mount -o remount,rw /
 }
 
-download_and_setup_runner() {
-    cd "$RUNNER_DIR"
-    curl -o actions-runner-linux-arm64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-linux-arm64-2.321.0.tar.gz
-    tar xzf ./actions-runner-linux-arm64-2.321.0.tar.gz
-    rm ./actions-runner-linux-arm64-2.321.0.tar.gz
-    chmod +x ./config.sh
+remount_ro() {
+    sync || true  # Try to sync but continue even if it fails
+    sudo mount -o remount,ro /  # Always try to remount as read-only
 }
+
+# Always ensure we try to remount as read-only on exit
+trap remount_ro EXIT
 
 setup_runner_user() {
     sudo useradd --comment 'GitHub Runner' --create-home --home-dir ${BASE_DIR} ${RUNNER_USER} --shell /bin/bash -G ${USER_GROUPS} || sudo usermod -aG ${USER_GROUPS} ${RUNNER_USER}
@@ -84,18 +75,45 @@ create_sudoers_entry() {
     sudo grep -qxF "${RUNNER_USER} ALL=(ALL) NOPASSWD: ALL" /etc/sudoers || echo "${RUNNER_USER} ALL=(ALL) NOPASSWD: ALL" | sudo tee -a /etc/sudoers
 }
 
-configure_runner() {
-    cd "$RUNNER_DIR"
-    sudo -u ${RUNNER_USER} ./config.sh --url "$REPO_URL" --token "$GITHUB_TOKEN" --name $(hostname) --runnergroup "tici-tizi" --labels "tici" --work "$BUILDS_DIR" --unattended
-}
-
 set_directory_permissions() {
     sudo chown -R ${RUNNER_USER}:comma "$BASE_DIR"
     sudo chmod g+rwx "$BASE_DIR"
     sudo chmod g+s "$BASE_DIR"
 }
 
-modify_service_template() {
+setup_directories() {
+    echo "Creating necessary directories..."
+    sudo mkdir -p "$RUNNER_DIR" "$BUILDS_DIR" "$LOGS_DIR" "$CACHE_DIR" "$OPENPILOT_DIR"
+    mkdir -p "/data/openpilot"
+    sudo chown -R comma:comma "/data/openpilot"
+}
+
+# System configuration functions (depends on basic utility functions)
+setup_system_configs() {
+    echo "Setting up system configurations..."
+    setup_runner_user
+    create_sudoers_entry
+    set_directory_permissions
+}
+
+# Runner setup functions
+install_runner() {
+    echo "Downloading and setting up runner..."
+    cd "$RUNNER_DIR"
+    curl -o actions-runner-linux-arm64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-linux-arm64-2.321.0.tar.gz
+    tar xzf ./actions-runner-linux-arm64-2.321.0.tar.gz
+    rm ./actions-runner-linux-arm64-2.321.0.tar.gz
+    chmod +x ./config.sh
+}
+
+configure_runner() {
+    echo "Configuring runner..."
+    cd "$RUNNER_DIR"
+    sudo -u ${RUNNER_USER} ./config.sh --url "$REPO_URL" --token "$GITHUB_TOKEN" --name $(hostname) --runnergroup "tici-tizi" --labels "tici" --work "$BUILDS_DIR" --unattended
+}
+
+create_service_template() {
+    echo "Creating service template..."
     cat <<EOL > "$RUNNER_DIR/bin/actions.runner.service.template"
 [Unit]
 Description={{Description}}
@@ -120,28 +138,116 @@ WantedBy=multi-user.target
 EOL
 }
 
-# Make filesystem writable
-sudo mount -o remount,rw /
+install_service() {
+    echo "Installing systemd service..."
+    cd "$RUNNER_DIR"
+    sudo ./svc.sh install $RUNNER_USER
 
-# Ensure filesystem is remounted as read-only on script exit
-trap "sudo mount -o remount,ro /" EXIT
+    if [ "$START_AT_BOOT" = false ]; then
+        local service_name
+        if [ -f "${RUNNER_DIR}/.service" ]; then
+            service_name=$(cat "${RUNNER_DIR}/.service")
+        else
+            service_name="actions.runner.sunnypilot.$(uname -n)"
+        fi
+        sudo systemctl disable "${service_name}"
+    fi
+}
 
-# Execute installation steps
-setup_runner_user
-create_sudoers_entry
-create_directories
-download_and_setup_runner
-modify_service_template
-configure_runner
-set_directory_permissions
+check_restore_prerequisites() {
+    local needs_restore=false
+    local can_restore=false
+    local service_name=""
 
-# Install and start service using built-in installer
-cd "$RUNNER_DIR"
-sudo ./svc.sh install $RUNNER_USER
+    # Check if base runner directory exists
+    if [ ! -d "${RUNNER_DIR}" ]; then
+        echo "ERROR: Runner directory ${RUNNER_DIR} does not exist"
+        echo "This directory is required for restore operations"
+        exit 1
+    fi
 
-# Handle auto-start configuration
-if [ "$START_AT_BOOT" = false ]; then
-    sudo systemctl disable actions.runner.sunnypilot.$(uname -n)
-fi
+    # First check if we have the required files for restoration
+    if [ -f "${RUNNER_DIR}/.credentials" ] && [ -f "${RUNNER_DIR}/.service" ]; then
+        can_restore=true
+        service_name=$(cat "${RUNNER_DIR}/.service")
+        echo "Found required runner configuration files"
+    else
+        echo "Missing required runner configuration files"
+        echo "Required: .credentials and .service files in ${RUNNER_DIR}"
+        exit 1
+    fi
 
-sudo ./svc.sh start
+    # Then check if restoration is needed (if either service or user is missing)
+    if ! systemctl list-unit-files "${service_name}" &>/dev/null; then
+        echo "Service ${service_name} not found in systemd"
+        needs_restore=true
+    fi
+
+    if ! id "${RUNNER_USER}" &>/dev/null; then
+        echo "User ${RUNNER_USER} does not exist"
+        needs_restore=true
+    fi
+
+    # Only proceed if we can restore AND need to restore
+    if [ "$can_restore" = true ] && [ "$needs_restore" = true ]; then
+        echo "Restoration is needed and possible"
+        return 0
+    else
+        if [ "$needs_restore" = false ]; then
+            echo "System is already properly configured (user and service exist)"
+        fi
+        exit 0
+    fi
+}
+
+perform_restore() {
+    echo "Starting runner restoration..."
+    setup_directories
+    remount_rw
+    setup_system_configs
+    install_service
+    remount_ro
+    echo "Runner restoration completed successfully"
+}
+
+perform_install() {
+    echo "Starting fresh installation..."
+    setup_directories
+    install_runner
+    create_service_template
+    remount_rw
+    setup_system_configs
+    configure_runner
+    install_service
+    remount_ro
+    echo "Installation completed successfully"
+}
+
+main() {
+    if [ "$RESTORE_MODE" = true ]; then
+        echo "Running in restore mode - will only restore system configurations..."
+        check_restore_prerequisites
+        perform_restore
+    else
+        # Check required arguments for normal installation
+        if [ -z "$GITHUB_TOKEN" ]; then
+            echo "Usage: $0 [--start-at-boot] [--token <github_token>] [--repo <repository_url>] [--restore]"
+            echo "Required argument (except for --restore): github_token"
+            echo "Optional arguments:"
+            echo "  --start-at-boot    Enable auto-start at boot (default: false)"
+            echo "  --repo            Repository URL (default: ${DEFAULT_REPO_URL})"
+            echo "  --restore         Restore existing runner configuration"
+            exit 1
+        fi
+
+        # Set repository URL if not provided
+        REPO_URL="${REPO_URL:-$DEFAULT_REPO_URL}"
+        perform_install
+    fi
+
+    echo "Starting runner service..."
+    cd "$RUNNER_DIR"
+    sudo ./svc.sh start
+}
+
+main
