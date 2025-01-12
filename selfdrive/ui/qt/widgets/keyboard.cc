@@ -148,15 +148,16 @@ void Keyboard::handleCapsPress() {
   bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_INTERVAL_MS;
   last_caps_press = QDateTime::currentMSecsSinceEpoch();
 
-  caps_locked = is_double_tap && !caps_locked;  // Enable on double tap, any tap disables
-  bool to_upper = caps_locked || (!caps_locked && main_layout->currentIndex() == 0);
-  main_layout->setCurrentIndex(to_upper);
+  // Simple state transitions
+  bool was_locked = caps_locked;
+  caps_locked = !was_locked && is_double_tap;
+  main_layout->setCurrentIndex(caps_locked || (!was_locked && main_layout->currentIndex() == 0));
 
-  // Update visuals
+  // Update caps button
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
       btn->setText(caps_locked ? CAPS_LOCK_KEY : CAPS_KEY);
-      btn->setStyleSheet(to_upper ? "background-color: #465BEA;" : "");
+      btn->setStyleSheet(main_layout->currentIndex() ? "background-color: #465BEA;" : "");
     }
   }
 }
