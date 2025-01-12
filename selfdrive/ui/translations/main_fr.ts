@@ -276,6 +276,45 @@
     </message>
 </context>
 <context>
+    <name>DevicePanelSP</name>
+    <message>
+        <source>Driver Camera Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Training Guide</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="unfinished">Redémarrer</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="unfinished">Réglementaire</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="unfinished">Êtes-vous sûr de vouloir revoir le guide de formation ?</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="unfinished">Revoir</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="unfinished">Choisir une langue</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="unfinished">Éteindre</translation>
+    </message>
+</context>
+<context>
     <name>DriveStats</name>
     <message>
         <source>Drives</source>

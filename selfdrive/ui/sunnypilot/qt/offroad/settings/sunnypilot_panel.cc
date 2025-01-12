@@ -27,13 +27,13 @@ SunnypilotPanel::SunnypilotPanel(SettingsWindowSP *parent) : QFrame(parent) {
   madsToggle->setConfirmation(true, false);
   list->addItem(madsToggle);
 
-  madsSettingsButton = new SubPanelButton(tr("Customize MADS"));
+  madsSettingsButton = new PushButtonSP(tr("Customize MADS"));
   madsSettingsButton->setObjectName("mads_btn");
   connect(madsSettingsButton, &QPushButton::clicked, [=]() {
     sunnypilotScroller->setLastScrollPosition();
     main_layout->setCurrentWidget(madsWidget);
   });
-  QObject::connect(madsToggle, &ToggleControl::toggleFlipped, madsSettingsButton, &SubPanelButton::setEnabled);
+  QObject::connect(madsToggle, &ToggleControl::toggleFlipped, madsSettingsButton, &PushButtonSP::setEnabled);
 
   madsWidget = new MadsSettings(this);
   connect(madsWidget, &MadsSettings::backPress, [=]() {

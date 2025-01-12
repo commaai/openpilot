@@ -276,6 +276,45 @@
     </message>
 </context>
 <context>
+    <name>DevicePanelSP</name>
+    <message>
+        <source>Driver Camera Preview</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Training Guide</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="unfinished">إعادة التشغيل</translation>
+    </message>
+    <message>
+        <source>Regulatory</source>
+        <translation type="unfinished">التنظيمية</translation>
+    </message>
+    <message>
+        <source>Are you sure you want to review the training guide?</source>
+        <translation type="unfinished">هل أنت متأكد أنك تريد مراجعة دليل التدريب؟</translation>
+    </message>
+    <message>
+        <source>Review</source>
+        <translation type="unfinished">مراجعة</translation>
+    </message>
+    <message>
+        <source>Select a language</source>
+        <translation type="unfinished">اختر لغة</translation>
+    </message>
+    <message>
+        <source>Power Off</source>
+        <translation type="unfinished">إيقاف التشغيل</translation>
+    </message>
+</context>
+<context>
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
