@@ -8,7 +8,7 @@ from libc.stdint cimport uintptr_t
 
 from msgq.visionipc.visionipc cimport cl_mem
 from msgq.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
-from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
+from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context, cl_release_context
 from .commonmodel cimport mat3, ModelFrame as cppModelFrame, DrivingModelFrame as cppDrivingModelFrame, MonitoringModelFrame as cppMonitoringModelFrame
 
 
@@ -16,6 +16,10 @@ cdef class CLContext(BaseCLContext):
   def __cinit__(self):
     self.device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT)
     self.context = cl_create_context(self.device_id)
+
+  def __dealloc__(self):
+    if self.context:
+      cl_release_context(self.context)
 
 cdef class CLMem:
   @staticmethod
