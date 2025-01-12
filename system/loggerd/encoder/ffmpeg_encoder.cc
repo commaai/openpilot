@@ -138,7 +138,7 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
       printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", encoder_info.publish_name, pkt.size, pkt.flags, counter, extra->frame_id);
     }
 
-    publisher_publish(this, segment_num, counter, *extra,
+    publisher_publish(segment_num, counter, *extra,
       (pkt.flags & AV_PKT_FLAG_KEY) ? V4L2_BUF_FLAG_KEYFRAME : 0,
       kj::arrayPtr<capnp::byte>(pkt.data, (size_t)0), // TODO: get the header
       kj::arrayPtr<capnp::byte>(pkt.data, pkt.size));
