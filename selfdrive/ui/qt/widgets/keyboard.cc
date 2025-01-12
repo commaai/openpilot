@@ -145,21 +145,18 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleCapsPress() {
-  qint64 current_time = QDateTime::currentMSecsSinceEpoch();
-  bool is_double_tap = (current_time - last_caps_press) <= DOUBLE_TAP_INTERVAL_MS;
-  last_caps_press = current_time;
+  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_INTERVAL_MS;
+  last_caps_press = QDateTime::currentMSecsSinceEpoch();
 
+  // Handle caps state
   if (caps_locked) {
-    // If caps locked, a single tap disables it and returns to lowercase
     caps_locked = false;
     main_layout->setCurrentIndex(0);
   } else if (is_double_tap) {
-    // Double tap when not caps locked enables caps lock
     caps_locked = true;
     main_layout->setCurrentIndex(1);
   } else {
-    // Single tap when not caps locked just toggles case
-    main_layout->setCurrentIndex(main_layout->currentIndex() == 0 ? 1 : 0);
+    main_layout->setCurrentIndex(1 - main_layout->currentIndex());
   }
 
   // Update caps button
@@ -169,8 +166,7 @@ void Keyboard::handleCapsPress() {
     for (KeyButton* btn : buttons) {
       if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
         btn->setText(caps_locked ? CAPS_LOCK_KEY : CAPS_KEY);
-        btn->setStyleSheet(caps_locked || main_layout->currentIndex() == 1 ?
-                          "background-color: #465BEA;" : "");
+        btn->setStyleSheet(main_layout->currentIndex() == 1 ? "background-color: #465BEA;" : "");
       }
     }
   }
@@ -180,8 +176,8 @@ void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
     if (key == "ABC") {
-      main_layout->setCurrentIndex(0);  // Always go to lowercase
-      caps_locked = false;  // Reset caps lock state
+      caps_locked = false;
+      main_layout->setCurrentIndex(0);
     } else if (key == CAPS_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
     } else if (key == "123") {
@@ -194,8 +190,7 @@ void Keyboard::handleButton(QAbstractButton* btn) {
       emit emitBackspace();
     }
   } else {
-    // Only switch to lowercase after typing an uppercase letter if not caps locked
-    if ("A" <= key && key <= "Z" && !caps_locked) {
+    if (!caps_locked && "A" <= key && key <= "Z") {
       main_layout->setCurrentIndex(0);
     }
     emit emitKey(key);
