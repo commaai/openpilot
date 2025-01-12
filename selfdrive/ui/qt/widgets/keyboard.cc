@@ -155,7 +155,7 @@ void Keyboard::handleCapsPress() {
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
       btn->setText(caps_lock_on ? CAPS_LOCK_KEY : CAPS_KEY);
-      btn->setStyleSheet(main_layout->currentIndex() ? "background-color: #465BEA;" : "");
+      btn->setStyleSheet(main_layout->currentIndex() == 1 ? "background-color: #465BEA;" : "");
     }
   }
 }
