@@ -25,15 +25,15 @@ class PIDController:
 
   @property
   def k_p(self):
-    return np.interp(self.speed, self._k_p[0], self._k_p[1])
+    return float(np.interp(self.speed, self._k_p[0], self._k_p[1]))
 
   @property
   def k_i(self):
-    return np.interp(self.speed, self._k_i[0], self._k_i[1])
+    return float(np.interp(self.speed, self._k_i[0], self._k_i[1]))
 
   @property
   def k_d(self):
-    return np.interp(self.speed, self._k_d[0], self._k_d[1])
+    return float(np.interp(self.speed, self._k_d[0], self._k_d[1]))
 
   @property
   def error_integral(self):
@@ -61,10 +61,10 @@ class PIDController:
 
         # Clip i to prevent exceeding control limits
         control_no_i = self.p + self.d + self.f
-        control_no_i = np.clip(control_no_i, self.neg_limit, self.pos_limit)
-        self.i = np.clip(self.i, self.neg_limit - control_no_i, self.pos_limit - control_no_i)
+        control_no_i = float(np.clip(control_no_i, self.neg_limit, self.pos_limit))
+        self.i = float(np.clip(self.i, self.neg_limit - control_no_i, self.pos_limit - control_no_i))
 
     control = self.p + self.i + self.d + self.f
 
-    self.control = np.clip(control, self.neg_limit, self.pos_limit)
+    self.control = float(np.clip(control, self.neg_limit, self.pos_limit))
     return self.control

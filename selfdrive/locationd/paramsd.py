@@ -65,7 +65,7 @@ class ParamsLearner:
         # This is done to bound the road roll estimate when localizer values are invalid
         roll = 0.0
         roll_std = np.radians(10.0)
-      self.roll = np.clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
+      self.roll = float(np.clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA))
 
       yaw_rate_valid = msg.angularVelocityDevice.valid and self.calibrator.calib_valid
       yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
@@ -202,11 +202,11 @@ def main():
         learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
         x = learner.kf.x
 
-      angle_offset_average = np.clip(math.degrees(x[States.ANGLE_OFFSET].item()),
-                                  angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
-      angle_offset = np.clip(math.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
-                          angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
-      roll = np.clip(float(x[States.ROAD_ROLL].item()), roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA)
+      angle_offset_average = float(np.clip(math.degrees(x[States.ANGLE_OFFSET].item()),
+                                  angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA))
+      angle_offset = float(np.clip(math.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
+                          angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA))
+      roll = float(np.clip(float(x[States.ROAD_ROLL].item()), roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA))
       roll_std = float(P[States.ROAD_ROLL].item())
       if learner.active and learner.speed > LOW_ACTIVE_SPEED:
         # Account for the opposite signs of the yaw rates

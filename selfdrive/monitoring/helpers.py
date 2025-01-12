@@ -205,12 +205,12 @@ class DriverMonitoring:
     bp = model_data.meta.disengagePredictions.brakeDisengageProbs[0] # brake disengage prob in next 2s
     k1 = max(-0.00156*((car_speed-16)**2)+0.6, 0.2)
     bp_normal = max(min(bp / k1, 0.5),0)
-    self.pose.cfactor_pitch = np.interp(bp_normal, [0, 0.5],
+    self.pose.cfactor_pitch = float(np.interp(bp_normal, [0, 0.5],
                                            [self.settings._POSE_PITCH_THRESHOLD_SLACK,
-                                            self.settings._POSE_PITCH_THRESHOLD_STRICT]) / self.settings._POSE_PITCH_THRESHOLD
-    self.pose.cfactor_yaw = np.interp(bp_normal, [0, 0.5],
+                                            self.settings._POSE_PITCH_THRESHOLD_STRICT])) / self.settings._POSE_PITCH_THRESHOLD
+    self.pose.cfactor_yaw = float(np.interp(bp_normal, [0, 0.5],
                                            [self.settings._POSE_YAW_THRESHOLD_SLACK,
-                                            self.settings._POSE_YAW_THRESHOLD_STRICT]) / self.settings._POSE_YAW_THRESHOLD
+                                            self.settings._POSE_YAW_THRESHOLD_STRICT])) / self.settings._POSE_YAW_THRESHOLD
 
   def _get_distracted_types(self):
     distracted_types = []
