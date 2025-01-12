@@ -18,6 +18,18 @@ on:
         description: 'Custom name for the model'
         required: false
         type: string
+      file_name:
+        description: 'File name prefix for the model files'
+        required: false
+        type: string
+      is_20hz:
+        description: 'Is this a 20Hz model'
+        required: false
+        type: boolean
+        default: false
+
+
+run-name: Build model [${{ inputs.custom_name || inputs.upstream_branch }}] from ref [${{ inputs.upstream_branch }}]
 
 jobs:
   build_model:
@@ -72,6 +84,8 @@ jobs:
         run: |
           sudo rm -rf ${OUTPUT_DIR}
           mkdir -p ${OUTPUT_DIR}
+          
+          # Copy the model files
           rsync -avm \
             --include='*.dlc' \
             --include='*.thneed' \
@@ -81,6 +95,36 @@ jobs:
             --delete-excluded \
             --chown=comma:comma \
             ./selfdrive/modeld/models/ ${OUTPUT_DIR}/
+          
+          # Rename files if file_name is provided
+          if [ ! -z "${{ inputs.file_name }}" ]; then
+            mv ${OUTPUT_DIR}/supercombo.thneed ${OUTPUT_DIR}/supercombo-${{ inputs.file_name }}.thneed
+            mv ${OUTPUT_DIR}/supercombo_metadata.pkl ${OUTPUT_DIR}/supercombo-${{ inputs.file_name }}_metadata.pkl
+          fi
+          
+          # Calculate SHA256 hashes
+          HASH=$(sha256sum ${OUTPUT_DIR}/supercombo*.thneed | cut -d' ' -f1)
+          METADATA_HASH=$(sha256sum ${OUTPUT_DIR}/supercombo*_metadata.pkl | cut -d' ' -f1)
+          
+          # Create metadata.json
+          cat > ${OUTPUT_DIR}/metadata.json << EOF
+          {
+            "display_name": "${{ inputs.custom_name || inputs.upstream_branch }}",
+            "full_name": "${{ inputs.file_name || 'default' }}",
+            "is_20hz": ${{ inputs.is_20hz || false }},
+            "files": {
+              "drive_model": {
+                "file_name": "$(basename ${OUTPUT_DIR}/supercombo*.thneed)",
+                "sha256": "${HASH}"
+              },
+              "metadata": {
+                "file_name": "$(basename ${OUTPUT_DIR}/supercombo*_metadata.pkl)",
+                "sha256": "${METADATA_HASH}"
+              }
+            },
+            "ref": "${{ inputs.upstream_branch }}",
+            "build_time": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          }     
 
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
