@@ -145,16 +145,16 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleCapsPress() {
-  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_INTERVAL_MS;
+  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_caps_press) <= DOUBLE_TAP_THRESHOLD_MS;
   last_caps_press = QDateTime::currentMSecsSinceEpoch();
 
-  bool was_locked = caps_locked;
-  caps_locked = !was_locked && is_double_tap;
-  main_layout->setCurrentIndex(caps_locked || (!was_locked && main_layout->currentIndex() == 0));
+  bool was_locked = caps_lock_on;
+  caps_lock_on = !was_locked && is_double_tap;
+  main_layout->setCurrentIndex(caps_lock_on || (!was_locked && main_layout->currentIndex() == 0));
 
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == CAPS_KEY || btn->text() == CAPS_LOCK_KEY) {
-      btn->setText(caps_locked ? CAPS_LOCK_KEY : CAPS_KEY);
+      btn->setText(caps_lock_on ? CAPS_LOCK_KEY : CAPS_KEY);
       btn->setStyleSheet(main_layout->currentIndex() ? "background-color: #465BEA;" : "");
     }
   }
@@ -164,7 +164,7 @@ void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
     if (key == "ABC") {
-      caps_locked = false;
+      caps_lock_on = false;
       main_layout->setCurrentIndex(0);
     } else if (key == CAPS_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
@@ -178,7 +178,7 @@ void Keyboard::handleButton(QAbstractButton* btn) {
       emit emitBackspace();
     }
   } else {
-    if (!caps_locked && "A" <= key && key <= "Z") {
+    if (!caps_lock_on && "A" <= key && key <= "Z") {
       main_layout->setCurrentIndex(0);
     }
     emit emitKey(key);
