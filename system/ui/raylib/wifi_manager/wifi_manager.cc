@@ -42,6 +42,7 @@ void WifiManager::draw(const Rectangle& rect) {
 }
 
 void WifiManager::showPasswordDialog() {
+  // TODO: Implement a keyboard input dialog
   const auto& ssid = wifi_networks_[selected_network_index_].ssid;
   int result = GuiTextInputBox(
       (Rectangle){GetScreenWidth() / 2.0f - 120, GetScreenHeight() / 2.0f - 60, 240, 140},
