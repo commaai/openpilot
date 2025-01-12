@@ -2,7 +2,7 @@ import math
 
 from cereal import log
 from opendbc.car.interfaces import LatControlInputs
-import numpy as np 
+import numpy as np
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY

@@ -4,7 +4,7 @@ import capnp
 from collections import defaultdict
 
 from cereal.messaging import SubMaster
-import numpy as np 
+import numpy as np
 
 def cputime_total(ct):
   return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq
