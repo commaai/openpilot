@@ -17,6 +17,12 @@ WifiManager::WifiManager() {
 }
 
 void WifiManager::draw(const Rectangle& rect) {
+  double current_time = GetTime();
+  if (current_time - last_scan_time_ > 60.0) {  // 1 minute
+    last_scan_time_ = current_time;
+    loadWifiNetworksAsync();  // Rescan the Wi-Fi networks
+  }
+
   std::unique_lock lock(mutex_);
   if (wifi_networks_.empty()) {
     GuiDrawText("Loading Wi-Fi networks...", rect, TEXT_ALIGN_CENTER, RAYLIB_WHITE);
