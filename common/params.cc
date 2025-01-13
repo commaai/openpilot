@@ -223,6 +223,12 @@ std::unordered_map<std::string, uint32_t> keys = {
     {"SunnylinkDongleId", PERSISTENT},
     {"SunnylinkdPid", PERSISTENT},
     {"SunnylinkEnabled", PERSISTENT},
+
+    // sunnypilot car specific params
+    {"HyundaiRadarTracks", PERSISTENT},
+    {"HyundaiRadarTracksConfirmed", PERSISTENT},
+    {"HyundaiRadarTracksPersistent", PERSISTENT},
+    {"HyundaiRadarTracksToggle", PERSISTENT},
 };
 
 } // namespace

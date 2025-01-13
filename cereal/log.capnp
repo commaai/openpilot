@@ -198,6 +198,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     silentSeatbeltNotLatched @161;
     silentParkBrake @162;
     controlsMismatchLateral @163;
+    hyundaiRadarTracksConfirmed @164;
 
     soundsUnavailableDEPRECATED @47;
   }

@@ -24,6 +24,7 @@ from openpilot.selfdrive.controls.lib.latcontrol import MIN_LATERAL_CONTROL_SPEE
 from openpilot.system.version import get_build_metadata
 
 from openpilot.sunnypilot.mads.mads import ModularAssistiveDrivingSystem
+from openpilot.sunnypilot.selfdrive.car.car_specific import CarSpecificEventsSP
 
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
@@ -137,6 +138,8 @@ class SelfdriveD:
     sock_services = list(self.pm.sock.keys()) + ['selfdriveStateSP']
     self.pm = messaging.PubMaster(sock_services)
 
+    self.car_events_sp = CarSpecificEventsSP(self.CP, self.params)
+
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
 
@@ -176,6 +179,9 @@ class SelfdriveD:
     if CS.canValid:
       car_events = self.car_events.update(CS, self.CS_prev, self.sm['carControl']).to_msg()
       self.events.add_from_msg(car_events)
+
+      car_events_sp = self.car_events_sp.update().to_msg()
+      self.events.add_from_msg(car_events_sp)
 
       if self.CP.notCar:
         # wait for everything to init first
@@ -495,6 +501,7 @@ class SelfdriveD:
       self.personality = self.read_personality_param()
 
       self.mads.read_params()
+      self.car_events_sp.read_params()
       time.sleep(0.1)
 
   def run(self):
