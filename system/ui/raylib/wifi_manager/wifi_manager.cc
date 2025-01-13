@@ -1,7 +1,8 @@
 
 #include "system/ui/raylib/wifi_manager/wifi_manager.h"
 #define RAYGUI_IMPLEMENTATION
-#include "raygui.h"  // Raylib's GUI extension
+#define BLANK RAYLIB_BLANK
+#include "third_party/raylib/include/raygui.h"
 #include "system/ui/raylib/util.h"
 
 WifiManager::WifiManager() {
