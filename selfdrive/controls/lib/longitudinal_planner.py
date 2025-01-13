@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-
 import cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.conversions import Conversions as CV
@@ -199,9 +198,9 @@ class LongitudinalPlanner:
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
                                                 action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
-    longitudinalPlan.aTarget = float(a_target)
-    longitudinalPlan.shouldStop = bool(should_stop)
+    longitudinalPlan.aTarget = a_target
+    longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
-    longitudinalPlan.allowThrottle = bool(self.allow_throttle)
+    longitudinalPlan.allowThrottle = self.allow_throttle
 
     pm.send('longitudinalPlan', plan_send)
