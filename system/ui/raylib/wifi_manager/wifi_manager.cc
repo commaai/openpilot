@@ -2,17 +2,27 @@
 #include "system/ui/raylib/wifi_manager/wifi_manager.h"
 #define RAYGUI_IMPLEMENTATION
 #define BLANK RAYLIB_BLANK
-#include "third_party/raylib/include/raygui.h"
-#include "system/ui/raylib/util.h"
+#include <cassert>
 
+#include "system/ui/raylib/util.h"
+#include "third_party/raylib/include/raygui.h"
 WifiManager::WifiManager() {
-  auto font = getFont();
-  font.baseSize = 50;
-  GuiSetFont(font);
-  wifi_networks_ = list_wifi_networks();
+  GuiSetFont(getFont());
+  GuiSetStyle(DEFAULT, TEXT_SIZE, 40);
+  GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt((Color){30, 30, 30, 255}));      // Dark grey background
+  GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, ColorToInt((Color){50, 50, 50, 255}));     // Dark button background
+  GuiSetStyle(DEFAULT, TEXT_COLOR_NORMAL, ColorToInt((Color){200, 200, 200, 255}));  // Light grey text
+
+  loadWifiNetworksAsync();
 }
 
 void WifiManager::draw(const Rectangle& rect) {
+  std::unique_lock lock(mutex_);
+  if (wifi_networks_.empty()) {
+    GuiDrawText("Loading Wi-Fi networks...", rect, TEXT_ALIGN_CENTER, RAYLIB_WHITE);
+    return;
+  }
+
   if (is_connecting_) {
     showPasswordDialog();
     return;
@@ -26,17 +36,22 @@ void WifiManager::draw(const Rectangle& rect) {
   // Draw Wi-Fi networks inside the scrollable area
   BeginScissorMode(scissor.x, scissor.y, scissor.width, scissor.height);
   for (int i = 0; i < wifi_networks_.size(); ++i) {
-    // Draw network SSID and buttons for each network
     float yPos = i * item_height_ + scroll_offset_.y;
-    GuiLabel((Rectangle){20, yPos, 500, item_height_}, wifi_networks_[i].ssid.c_str());
-    if (GuiButton((Rectangle){550, yPos + 2, 80, item_height_ - 4}, "Connect")) {
+    const auto& network = wifi_networks_[i];
+
+    // Draw network SSID and buttons for each network
+    GuiLabel((Rectangle){20, yPos, 500, item_height_}, network.ssid.c_str());
+    if (network.connected) {
+      GuiLabel((Rectangle){550, yPos + 3, 220, item_height_ - 6}, "Connected");
+    } else if (GuiButton((Rectangle){550, yPos + 3, 180, item_height_ - 6}, "Connect")) {
       selected_network_index_ = i;
       memset(password_input_, 0, sizeof(password_input_));
       is_connecting_ = true;
     }
-    if (GuiButton((Rectangle){670, yPos + 2, 80, item_height_ - 4}, "Forget")) {
-      forget_wifi(wifi_networks_[i].ssid);
-      wifi_networks_ = list_wifi_networks();  // Refresh the list
+    if (saved_networks_.count(network.ssid) && GuiButton((Rectangle){780, yPos + 3, 150, item_height_ - 6}, "Forget")) {
+      wifi::forget(network.ssid);
+      saved_networks_.erase(network.ssid);
+      wifi_networks_ = wifi::scan_networks();  // Refresh the list
     }
   }
   EndScissorMode();
@@ -50,6 +65,18 @@ void WifiManager::showPasswordDialog() {
       ("Connect to " + ssid).c_str(), "Password:", "Ok;Cancel", password_input_, 128, NULL);
   is_connecting_ = (result < 0);
   if (result == 1) {
-    connect_to_wifi(ssid, password_input_);
+    wifi::connect(ssid, password_input_);
+    saved_networks_.insert(ssid);
   }
+}
+
+void WifiManager::loadWifiNetworksAsync() {
+  async_task_ = std::async(std::launch::async, [this]() {
+    auto networks = wifi::scan_networks();
+    auto known_networks = wifi::saved_networks();
+
+    std::unique_lock lock(mutex_);
+    wifi_networks_.swap(networks);
+    saved_networks_.swap(known_networks);
+  });
 }
