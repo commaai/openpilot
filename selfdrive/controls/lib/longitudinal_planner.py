@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
+
 import cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.conversions import Conversions as CV
@@ -137,7 +138,7 @@ class LongitudinalPlanner:
     if reset_state:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
-      self.a_desired = float(np.clip(sm['carState'].aEgo,   accel_limits[0], accel_limits[1]))
+      self.a_desired = np.clip(sm['carState'].aEgo, accel_limits[0], accel_limits[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -174,7 +175,7 @@ class LongitudinalPlanner:
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory)
+    self.a_desired = float(np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
@@ -199,8 +200,8 @@ class LongitudinalPlanner:
     a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
                                                 action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
     longitudinalPlan.aTarget = float(a_target)
-    longitudinalPlan.shouldStop = should_stop
+    longitudinalPlan.shouldStop = bool(should_stop)
     longitudinalPlan.allowBrake = True
-    longitudinalPlan.allowThrottle = self.allow_throttle
+    longitudinalPlan.allowThrottle = bool(self.allow_throttle)
 
     pm.send('longitudinalPlan', plan_send)
