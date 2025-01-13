@@ -30,7 +30,7 @@ _A_TOTAL_MAX_BP = [20., 40.]
 
 
 def get_max_accel(v_ego):
-  return float(np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS))
+  return np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
 def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
@@ -43,7 +43,7 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   """
   # FIXME: This function to calculate lateral accel is incorrect and should use the VehicleModel
   # The lookup table for turns should also be updated if we do this
-  a_total_max = float(np.interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V))
+  a_total_max = np.interp(v_ego, _A_TOTAL_MAX_BP, _A_TOTAL_MAX_V)
   a_y = v_ego ** 2 * angle_steers * CV.DEG_TO_RAD / (CP.steerRatio * CP.wheelbase)
   a_x_allowed = math.sqrt(max(a_total_max ** 2 - a_y ** 2, 0.))
 
@@ -55,9 +55,9 @@ def get_accel_from_plan(speeds, accels, action_t=DT_MDL, vEgoStopping=0.05):
     v_now = speeds[0]
     a_now = accels[0]
 
-    v_target = float(np.interp(action_t, CONTROL_N_T_IDX, speeds))
+    v_target = np.interp(action_t, CONTROL_N_T_IDX, speeds)
     a_target = 2 * (v_target - v_now) / (action_t) - a_now
-    v_target_1sec = float(np.interp(action_t + 1.0, CONTROL_N_T_IDX, speeds))
+    v_target_1sec = np.interp(action_t + 1.0, CONTROL_N_T_IDX, speeds)
   else:
     v_target = 0.0
     v_target_1sec = 0.0
@@ -89,9 +89,9 @@ class LongitudinalPlanner:
     if (len(model_msg.position.x) == ModelConstants.IDX_N and
       len(model_msg.velocity.x) == ModelConstants.IDX_N and
       len(model_msg.acceleration.x) == ModelConstants.IDX_N):
-      x = float(np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.position.x)) - model_error * T_IDXS_MPC
-      v = float(np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.velocity.x)) - model_error
-      a = float(np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.acceleration.x))
+      x = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.position.x) - model_error * T_IDXS_MPC
+      v = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.velocity.x) - model_error
+      a = np.interp(T_IDXS_MPC, ModelConstants.T_IDXS, model_msg.acceleration.x)
       j = np.zeros(len(T_IDXS_MPC))
     else:
       x = np.zeros(len(T_IDXS_MPC))
@@ -151,7 +151,7 @@ class LongitudinalPlanner:
 
     if not self.allow_throttle:
       clipped_accel_coast = max(accel_coast, accel_limits_turns[0])
-      clipped_accel_coast_interp = float(np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [accel_limits_turns[1], clipped_accel_coast]))
+      clipped_accel_coast_interp = np.interp(v_ego, [MIN_ALLOW_THROTTLE_SPEED, MIN_ALLOW_THROTTLE_SPEED*2], [accel_limits_turns[1], clipped_accel_coast])
       accel_limits_turns[1] = min(accel_limits_turns[1], clipped_accel_coast_interp)
 
     if force_slow_decel:
@@ -165,9 +165,9 @@ class LongitudinalPlanner:
     self.mpc.set_cur_state(self.v_desired_filter.x, self.a_desired)
     self.mpc.update(sm['radarState'], v_cruise, x, v, a, j, personality=sm['selfdriveState'].personality)
 
-    self.v_desired_trajectory = float(np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution))
-    self.a_desired_trajectory = float(np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution))
-    self.j_desired_trajectory = float(np.interp(CONTROL_N_T_IDX, T_IDXS_MPC[:-1], self.mpc.j_solution))
+    self.v_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.v_solution)
+    self.a_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC, self.mpc.a_solution)
+    self.j_desired_trajectory = np.interp(CONTROL_N_T_IDX, T_IDXS_MPC[:-1], self.mpc.j_solution)
 
     # TODO counter is only needed because radar is glitchy, remove once radar is gone
     self.fcw = self.mpc.crash_cnt > 2 and not sm['carState'].standstill
@@ -176,7 +176,7 @@ class LongitudinalPlanner:
 
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
-    self.a_desired = float(np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
+    self.a_desired = np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory)
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
