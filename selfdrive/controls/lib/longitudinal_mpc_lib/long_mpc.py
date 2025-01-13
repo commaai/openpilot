@@ -297,7 +297,7 @@ class LongitudinalMpc:
   @staticmethod
   def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
     a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
-    v_lead_traj = float(np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8))
+    v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
     x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
     lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
     return lead_xv
@@ -319,9 +319,9 @@ class LongitudinalMpc:
     # MPC will not converge if immediate crash is expected
     # Clip lead distance to what is still possible to brake for
     min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
-    x_lead = float(np.clip(x_lead, min_x_lead, 1e8))
-    v_lead = float(np.clip(v_lead, 0.0, 1e8))
-    a_lead = float(np.clip(a_lead, -10., 5.))
+    x_lead = np.clip(x_lead, min_x_lead, 1e8)
+    v_lead = np.clip(v_lead, 0.0, 1e8)
+    a_lead = np.clip(a_lead, -10., 5.)
     lead_xv = self.extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
     return lead_xv
 
@@ -358,9 +358,9 @@ class LongitudinalMpc:
       v_lower = v_ego + (T_IDXS * self.cruise_min_a * 1.05)
       # TODO does this make sense when max_a is negative?
       v_upper = v_ego + (T_IDXS * self.max_a * 1.05)
-      v_cruise_clipped = float(np.clip(v_cruise * np.ones(N+1),
+      v_cruise_clipped = np.clip(v_cruise * np.ones(N+1),
                                  v_lower,
-                                 v_upper))
+                                 v_upper)
       cruise_obstacle = np.cumsum(T_DIFFS * v_cruise_clipped) + get_safe_obstacle_distance(v_cruise_clipped, t_follow)
       x_obstacles = np.column_stack([lead_0_obstacle, lead_1_obstacle, cruise_obstacle])
       self.source = SOURCES[np.argmin(x_obstacles[0])]
@@ -373,7 +373,7 @@ class LongitudinalMpc:
 
       x_obstacles = np.column_stack([lead_0_obstacle,
                                      lead_1_obstacle])
-      cruise_target = T_IDXS * float(np.clip(v_cruise, v_ego - 2.0, 1e3)) + x[0]
+      cruise_target = T_IDXS * np.clip(v_cruise, v_ego - 2.0, 1e3) + x[0]
       xforward = ((v[1:] + v[:-1]) / 2) * (T_IDXS[1:] - T_IDXS[:-1])
       x = np.cumsum(np.insert(xforward, 0, x[0]))
 
