@@ -17,6 +17,7 @@ protected:
   void scanNetworksAsync();
   void rescanIfNeeded();
   void drawNetworkList(const Rectangle &rect);
+  void drawNetworkItem(const Rectangle& rect, const Network &network);
   void initiateConnection(const std::string &ssid);
   void forgetNetwork(const std::string& ssid);
 
