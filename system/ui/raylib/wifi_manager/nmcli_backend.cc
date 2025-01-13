@@ -28,13 +28,13 @@ namespace wifi {
 
 std::vector<Network> scan_networks() {
   std::vector<Network> networks;
-
   std::string output = util::check_output("nmcli -t -f SSID,IN-USE,SIGNAL,SECURITY --colors no device wifi list");
-  for (const auto& line : split(output, '\n')) {
-    auto items = split(line, ':');
-    if (items.size() != 4 || items[0].empty()) continue;
 
-    networks.emplace_back(Network{items[0], items[1] == "*", std::stoi(items[2]), getSecurityType(items[3])});
+  for (const auto& line : split(output, '\n')) {
+    auto fields = split(line, ':');
+    if (fields.size() == 4 && !fields[0].empty()) {
+      networks.emplace_back(Network{fields[0], fields[1] == "*", std::stoi(fields[2]), getSecurityType(fields[3])});
+    }
   }
 
   std::sort(networks.begin(), networks.end(), [](const Network& a, const Network& b) {
@@ -51,7 +51,10 @@ std::set<std::string> saved_networks() {
 }
 
 bool connect(const std::string& ssid, const std::string& password) {
-  std::string command = "nmcli device wifi connect '" + ssid + "' password '" + password + "'";
+  std::string command = "nmcli device wifi connect '" + ssid + "'";
+  if (!password.empty()) {
+    command += " password '" + password + "'";
+  }
   return system(command.c_str()) == 0;
 }
 

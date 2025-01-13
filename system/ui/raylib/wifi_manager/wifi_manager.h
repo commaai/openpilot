@@ -14,7 +14,11 @@ public:
 
 protected:
   void showPasswordDialog();
-  void loadWifiNetworksAsync();
+  void scanNetworksAsync();
+  void rescanIfNeeded();
+  void drawNetworkList(const Rectangle &rect);
+  void initiateConnection(const std::string &ssid);
+  void forgetNetwork(const std::string& ssid);
 
   std::mutex mutex_;
   std::future<void> async_task_;
@@ -23,9 +27,8 @@ protected:
   double last_scan_time_ = 0;
 
   Vector2 scroll_offset_ = {0, 0};
-  int selected_network_index_ = 0;
-  const float item_height_ = 60;
-  bool is_connecting_ = false;
+  std::string connecting_ssid_;
+  const float item_height_ = 160;
+  bool requires_password_ = false;
   char password_input_[128] = {};
-
 };
