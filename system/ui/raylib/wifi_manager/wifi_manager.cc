@@ -43,23 +43,26 @@ void WifiManager::drawNetworkList(const Rectangle& rect) {
   Rectangle scissor = {0};
   GuiScrollPanel(rect, nullptr, content_rect, &scroll_offset_, &scissor);
 
+  const int btn_width = 200;
+  const int padding = 20;
   bool left_btn_pressed = IsMouseButtonPressed(MOUSE_LEFT_BUTTON);
   BeginScissorMode(scissor.x, scissor.y, scissor.width, scissor.height);
   for (int i = 0; i < wifi_networks_.size(); ++i) {
-    Rectangle item_rect = {rect.x, rect.y + i * item_height_ + scroll_offset_.y, rect.width, item_height_};
+    float y = content_rect.y + i * item_height_ + scroll_offset_.y;
+    Rectangle item_rect = {content_rect.x + padding, y, content_rect.width - padding * 2, item_height_};
     const auto& network = wifi_networks_[i];
 
     // Display SSID and buttons for each network
-    Rectangle label_rect{item_rect.x + 20, item_rect.y, 500, item_height_};
+    Rectangle label_rect{item_rect.x, item_rect.y, item_rect.width - btn_width * 2, item_height_};
     GuiLabel(label_rect, network.ssid.c_str());
     if (network.connected) {
-      GuiLabel((Rectangle){550, item_rect.y + 3, 220, item_height_ - 6}, "Connected");
+      GuiLabel({item_rect.x + item_rect.width - btn_width * 2 - padding, item_rect.y, btn_width, item_height_}, "Connected");
     } else if (left_btn_pressed && CheckCollisionPointRec(GetMousePosition(), label_rect)) {
       initiateConnection(network.ssid);
     }
 
     if (saved_networks_.count(network.ssid)) {
-      if (GuiButton({780, item_rect.y + (item_height_ - 80) / 2, 150, 80}, "Forget")) {
+      if (GuiButton({item_rect.x + item_rect.width - btn_width, item_rect.y + (item_height_ - 80) / 2, btn_width, 80}, "Forget")) {
         forgetNetwork(network.ssid);
       }
     }
