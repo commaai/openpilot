@@ -1,5 +1,7 @@
 #include "system/ui/raylib/wifi_manager/wifi_manager.h"
 
+#include <chrono>
+
 #include "system/ui/raylib/util.h"
 #define RAYGUI_IMPLEMENTATION
 #define BLANK RAYLIB_BLANK
@@ -115,6 +117,11 @@ void WifiManager::showPasswordDialog() {
 }
 
 void WifiManager::scanNetworksAsync() {
+  // Check if the previous scan is still running
+  if (async_task_.valid() && async_task_.wait_for(std::chrono::seconds(0)) != std::future_status::ready) {
+    return;
+  }
+
   async_task_ = std::async(std::launch::async, [this]() {
     auto networks = wifi::scan_networks();
     auto known_networks = wifi::saved_networks();
