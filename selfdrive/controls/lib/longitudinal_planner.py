@@ -198,7 +198,7 @@ class LongitudinalPlanner:
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     a_target, should_stop = get_accel_from_plan(longitudinalPlan.speeds, longitudinalPlan.accels,
                                                 action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
-    longitudinalPlan.aTarget = a_target
+    longitudinalPlan.aTarget = float(a_target)
     longitudinalPlan.shouldStop = should_stop
     longitudinalPlan.allowBrake = True
     longitudinalPlan.allowThrottle = self.allow_throttle
