@@ -82,14 +82,7 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
   }
 }
 
-struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
-  mpcSource @0 :MpcSource;
-  dynamicExperimentalControl @1 :Bool;
-  
-  enum MpcSource {
-    acc @0;
-    blended @1;
-  }
+struct CustomReserved2 @0xf35cc4560bbf6ec2 {
 }
 
 struct CustomReserved3 @0xda96579883444c35 {
