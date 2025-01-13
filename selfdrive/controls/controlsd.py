@@ -115,7 +115,8 @@ class Controls:
                                                                             self.steer_limited, self.desired_curvature,
                                                                             self.calibrated_pose) # TODO what if not available
     actuators.steer = float(steer)
-    actuators.steeringAngleDeg = float(steeringAngleDeg)actuators.steer = float(steer)
+    actuators.steeringAngleDeg = float(steeringAngleDeg)
+    actuators.steer = float(steer)
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
