@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 import math
 import numpy as np
-
-
 import cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.conversions import Conversions as CV
