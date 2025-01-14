@@ -5,7 +5,7 @@ import time
 from typing import NoReturn
 
 import cereal.messaging as messaging
-from openpilot.common.time import min_date, system_time_valid
+from openpilot.common.time_helpers import min_date, system_time_valid
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.common.gps import get_gps_location_service

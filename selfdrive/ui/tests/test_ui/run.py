@@ -125,6 +125,10 @@ def setup_keyboard(click, pm: PubMaster):
   click(250, 965)
   click(1930, 228)
 
+def setup_keyboard_uppercase(click, pm: PubMaster):
+  setup_keyboard(click, pm)
+  click(200, 800)
+
 def setup_driver_camera(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(1950, 435)
@@ -197,7 +201,8 @@ CASES = {
   "body": setup_body,
   "offroad_alert": setup_offroad_alert,
   "update_available": setup_update_available,
-  "keyboard": setup_keyboard
+  "keyboard": setup_keyboard,
+  "keyboard_uppercase": setup_keyboard_uppercase
 }
 
 TEST_DIR = pathlib.Path(__file__).parent
