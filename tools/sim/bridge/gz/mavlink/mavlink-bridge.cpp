@@ -35,7 +35,6 @@ using namespace mavsdk;
 using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::this_thread::sleep_for;
-bool help = false;
 
 MavlinkBridge::MavlinkBridge(const BridgeConfig config)
     : mavsdk_(Mavsdk::Configuration{Mavsdk::ComponentType::GroundStation}),
@@ -193,9 +192,9 @@ void MavlinkBridge::apply_command(int client_socket_fd) {
   cereal::CarControl::Actuators::Reader command =
       message.getRoot<cereal::CarControl::Actuators>();
   mavsdk::Offboard::VelocityBodyYawspeed body_command{};
-  auto velocity = this->last_odometry.velocity_body.x_m_s;
+  float velocity = std::sqrt(std::pow(this->last_odometry.velocity_body.x_m_s,2) + std::pow(this->last_odometry.velocity_body.y_m_s,2));
   body_command.forward_m_s =
-      (velocity * 0.90) +
+      (velocity * 0.97) +
       ((command.getGas() - command.getBrake()) * this->config_.throttle_rate);
   if (body_command.forward_m_s < 0.0) {
     body_command.forward_m_s = 0.0;
@@ -211,25 +210,28 @@ void MavlinkBridge::apply_command(int client_socket_fd) {
         │       |
   █─────┴─────█ -
   */
-  float w = 4.5, s = 1.5;
+  //  float w = 4.5, s = 1.5;
+  float w = 4.5;
   //  float b=5, c=4, a=6;
   float angle_rad = command.getSteeringAngleDeg() * M_PI / 180.0;
-  this->last_angle = command.getSteeringAngleDeg() * this->config_.steering_rate;
-  angle_rad *= this->config_.steering_rate;
+  this->last_angle =
+      command.getSteeringAngleDeg() * this->config_.steering_rate;
+  angle_rad *= -this->config_.steering_rate;
   float abs_angle = abs(angle_rad);
   if (abs_angle > M_PI / 4) {
-    abs_angle = M_PI / 4;
+    angle_rad = angle_rad > 0 ? M_PI / 4 : -M_PI / 4;
   }
   //  float tire_r = b/std::sin(abs_angle) - ((a-c)/2);
-  float tire_r = w * std::tan(abs_angle) + s / 2;
-  float circumference = 2 * M_PI * tire_r;
-  float turn = velocity * 360 / circumference;
-  if (turn > 44) {
-    turn = 44;
-  }
-  if (angle_rad < 0) {
-    turn *= -1;
-  }
+  //  float tire_r = w * std::tan(abs_angle) + s / 2;
+  float turn = body_command.forward_m_s * std::sin(angle_rad) / w;
+  //  float circumference = 2 * M_PI * tire_r;
+  //  float turn = velocity * 360 / circumference;
+  //  if (turn > 44) {
+  //    turn = 44;
+  //  }
+  //  if (angle_rad < 0) {
+  //    turn *= -1;
+  //  }
   if (abs_angle < M_PI / 180.0) {
     turn = 0;
   }
@@ -237,7 +239,7 @@ void MavlinkBridge::apply_command(int client_socket_fd) {
   //      this->last_odometry.angular_velocity_body.yaw_rad_s * 180.0 / M_PI;
   //  body_command.yawspeed_deg_s =
   //      this->pid_controller_yaw_.compute(turn - current_yaw_speed);
-  body_command.yawspeed_deg_s = turn;
+  body_command.yawspeed_deg_s = turn * 180.0 / M_PI;
   if (this->last_position.relative_altitude_m < 2.5) {
     body_command.down_m_s = -0.5f;
   }
@@ -340,7 +342,8 @@ void MavlinkBridge::send_odometry(int client_socket_fd) {
       this->last_position_velocity.velocity.east_m_s,
       this->last_position_velocity.velocity.down_m_s};
   odom.setVNED(velocities);
-  odom.setSpeed(this->last_angle);
+  odom.setSpeed(this->last_odometry.angular_velocity_body.yaw_rad_s * 180.0 /
+                M_PI * -1.0);
   if (isFileDescriptiorValid(client_socket_fd)) {
     writePackedMessageToFd(client_socket_fd, message);
   }
