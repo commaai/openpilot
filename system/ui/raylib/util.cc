@@ -45,7 +45,10 @@ App::App(const char *title, int fps) {
   // Load fonts
   fonts_.reserve(FONT_FILE_PATHS.size());
   for (int i = 0; i < FONT_FILE_PATHS.size(); ++i) {
-    fonts_.push_back(LoadFontEx(FONT_FILE_PATHS[i], 120, nullptr, 250));
+    fonts_.push_back(LoadFontEx(FONT_FILE_PATHS[i], 260, nullptr, 0));
+    // Improve font texture quality with mipmaps and bilinear filtering
+    GenTextureMipmaps(&fonts_[i].texture);
+    SetTextureFilter(fonts_[i].texture, TEXTURE_FILTER_BILINEAR);
   }
 
   pApp = this;

@@ -28,7 +28,7 @@ namespace wifi {
 
 std::vector<Network> scan_networks() {
   std::vector<Network> networks;
-  std::string output = util::check_output("nmcli -t -f SSID,IN-USE,SIGNAL,SECURITY --colors no device wifi list");
+  std::string output = util::check_output("nmcli -t -c no -f SSID,IN-USE,SIGNAL,SECURITY device wifi list");
 
   for (const auto& line : split(output, '\n')) {
     auto fields = split(line, ':');
@@ -37,17 +37,28 @@ std::vector<Network> scan_networks() {
     }
   }
 
-  std::sort(networks.begin(), networks.end(), [](const Network& a, const Network& b) {
-    return std::tie(b.connected, b.strength, b.ssid) < std::tie(a.connected, a.strength, a.ssid);
-  });
-
+  std::sort(networks.begin(), networks.end());
   return networks;
 }
 
 std::set<std::string> saved_networks() {
-  std::string cmd = "nmcli -t -f NAME,TYPE --colors no connection show | grep \":802-11-wireless\" | sed 's/^Auto //g' | cut -d':' -f1";
-  auto networks = split(util::check_output(cmd), '\n');
-  return std::set<std::string>(networks.begin(), networks.end());
+  std::string uuids;
+  std::string cmd = "nmcli -t -f UUID,TYPE connection show | grep 802-11-wireless";
+  for (auto& line : split(util::check_output(cmd), '\n')) {
+    auto connection_info = split(line, ':');
+    if (connection_info.size() >= 2) {
+      uuids += connection_info[0] + " ";
+    }
+  }
+
+  std::set<std::string> network_ssids;
+  std::string ssid_cmd = "nmcli -t -f 802-11-wireless.ssid connection show " + uuids;
+  for (const auto& line : split(util::check_output(ssid_cmd), '\n')) {
+    if (!line.empty()) {
+      network_ssids.insert(split(line, ':')[1]);
+    }
+  }
+  return network_ssids;
 }
 
 bool connect(const std::string& ssid, const std::string& password) {

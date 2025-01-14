@@ -1,7 +1,9 @@
 #pragma once
 
+#include <atomic>
 #include <future>
 #include <mutex>
+#include <optional>
 #include <thread>
 
 #include "system/ui/raylib/raylib.h"
@@ -10,26 +12,37 @@
 class WifiManager {
 public:
   WifiManager();
-  void draw(const Rectangle &rect);
+  void render(const Rectangle &rect);
 
 protected:
-  void showPasswordDialog();
+  enum class ActionState {
+    None,
+    Connect,
+    Connecting,
+    Forget,
+    Forgetting
+  };
+
+  bool connectToNetwork();
   void scanNetworksAsync();
   void rescanIfNeeded();
-  void drawNetworkList(const Rectangle &rect);
-  void drawNetworkItem(const Rectangle& rect, const Network &network);
-  void initiateConnection(const std::string &ssid);
-  void forgetNetwork(const std::string& ssid);
+  bool forgetNetwork();
+  void renderNetworkList(const Rectangle &rect);
+  void renderNetworkItem(const Rectangle& rect, const Network &network);
+  void connectToNetworkAsync(const std::string &ssid, const std::string &password = "");
+  void initiateAction(const Network& network, ActionState action);
 
   std::mutex mutex_;
-  std::future<void> async_task_;
-  std::vector<Network> wifi_networks_;
+  std::atomic<ActionState> current_action_ = ActionState::None;
+  std::future<void> async_scan_task_;
+  std::future<void> async_connection_task_;
+  std::future<void> async_forget_task_;
+  std::vector<Network> available_networks_;
   std::set<std::string> saved_networks_;
-  double last_scan_time_ = 0;
+  std::optional<Network> selected_network_;
 
   Vector2 scroll_offset_ = {0, 0};
-  std::string connecting_ssid_;
   const float item_height_ = 160;
-  bool requires_password_ = false;
-  char password_input_[128] = {};
+  char password_input_buffer_[128] = {};
+  double last_scan_time_ = 0;
 };

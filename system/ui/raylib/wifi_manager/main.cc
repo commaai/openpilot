@@ -10,7 +10,7 @@ int main() {
     BeginDrawing();
       ClearBackground(RAYLIB_BLACK);
       GuiLabel({40, 20, 300, 40}, "Wi-Fi Manager");
-      wifi_manager.draw({40, 100, GetScreenWidth() - 80.0f, GetScreenHeight() - 180.0f});
+      wifi_manager.render({40, 100, GetScreenWidth() - 80.0f, GetScreenHeight() - 180.0f});
     EndDrawing();
   }
   return 0;
