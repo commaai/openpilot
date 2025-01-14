@@ -1,5 +1,5 @@
+import numpy as np
 from cereal import log
-from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 
 MIN_SPEED = 1.0
@@ -13,10 +13,10 @@ MAX_LATERAL_JERK = 5.0
 MAX_VEL_ERR = 5.0
 
 def clip_curvature(v_ego, prev_curvature, new_curvature):
-  new_curvature = clip(new_curvature, -MAX_CURVATURE, MAX_CURVATURE)
+  new_curvature = np.clip(new_curvature, -MAX_CURVATURE, MAX_CURVATURE)
   v_ego = max(MIN_SPEED, v_ego)
   max_curvature_rate = MAX_LATERAL_JERK / (v_ego**2) # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
-  safe_desired_curvature = clip(new_curvature,
+  safe_desired_curvature = np.clip(new_curvature,
                                 prev_curvature - max_curvature_rate * DT_CTRL,
                                 prev_curvature + max_curvature_rate * DT_CTRL)
 
@@ -26,6 +26,6 @@ def clip_curvature(v_ego, prev_curvature, new_curvature):
 def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
   # ToDo: Try relative error, and absolute speed
   if len(modelV2.temporalPose.trans):
-    vel_err = clip(modelV2.temporalPose.trans[0] - v_ego, -MAX_VEL_ERR, MAX_VEL_ERR)
+    vel_err = np.clip(modelV2.temporalPose.trans[0] - v_ego, -MAX_VEL_ERR, MAX_VEL_ERR)
     return float(vel_err)
   return 0.0
