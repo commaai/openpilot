@@ -1,5 +1,5 @@
 from math import atan2
-import np as numpy 
+import numpy as np
 
 from cereal import car, log
 import cereal.messaging as messaging

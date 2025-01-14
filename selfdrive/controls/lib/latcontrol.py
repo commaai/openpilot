@@ -1,4 +1,4 @@
-import numpy 
+import numpy as np
 from abc import abstractmethod, ABC
 
 from openpilot.common.realtime import DT_CTRL

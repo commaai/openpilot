@@ -1,5 +1,5 @@
 import math
-import numpy
+import numpy as np
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV

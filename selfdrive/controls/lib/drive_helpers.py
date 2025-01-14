@@ -1,4 +1,4 @@
-import numpy
+import numpy as np
 from cereal import log
 from openpilot.common.realtime import DT_CTRL
 
