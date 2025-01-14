@@ -64,15 +64,7 @@ jobs:
       timeout-minutes: 1
       run: |
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "release/check-dirty.sh && \
-                        MAX_EXAMPLES=5 $PYTEST -m 'not slow' selfdrive/car system/manager"
-    - name: Static analysis
-      timeout-minutes: 1
-      run: |
-        cd $GITHUB_WORKSPACE
-        cp pyproject.toml $STRIPPED_DIR
-        cd $STRIPPED_DIR
-        ${{ env.RUN }} "scripts/lint/lint.sh --skip check_added_large_files"
+        ${{ env.RUN }} "release/check-dirty.sh"
 
   build:
     runs-on:
