@@ -19,7 +19,7 @@ blacklist = [
 ]
 
 # gets you through the blacklist
-whitelist = [
+whitelist: list[str] = [
 ]
 
 if __name__ == "__main__":
