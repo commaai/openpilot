@@ -428,9 +428,15 @@ def migrate_onroadEvents(msgs):
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
 
-    # dict converts name enum into string representation
-    new_msg.onroadEvents = [log.OnroadEvent(**event.to_dict()) for event in msg.onroadEventsDEPRECATED if
-                            not str(event.name).endswith('DEPRECATED')]
+    onroadEvents = []
+    for event in msg.onroadEventsDEPRECATED:
+      try:
+        if not str(event.name).endswith('DEPRECATED'):
+          # dict converts name enum into string representation
+          onroadEvents.append(log.OnroadEvent(**event.to_dict()))
+      except RuntimeError: # Member was null
+        continue
+    new_msg.onroadEvents = onroadEvents
     ops.append((index, new_msg.as_reader()))
 
   return ops, [], []
@@ -441,10 +447,15 @@ def migrate_driverMonitoringState(msgs):
   ops = []
   for index, msg in msgs:
     msg = msg.as_builder()
-    # dict converts name enum into string representation
-    msg.driverMonitoringState.events = [log.OnroadEvent(**event.to_dict()) for event in
-                                        msg.driverMonitoringState.eventsDEPRECATED if
-                                        not str(event.name).endswith('DEPRECATED')]
+    events = []
+    for event in msg.driverMonitoringState.eventsDEPRECATED:
+      try:
+        if not str(event.name).endswith('DEPRECATED'):
+          # dict converts name enum into string representation
+          events.append(log.OnroadEvent(**event.to_dict()))
+      except RuntimeError: # Member was null
+        continue
+    msg.driverMonitoringState.events = events
     ops.append((index, msg.as_reader()))
 
   return ops, [], []
