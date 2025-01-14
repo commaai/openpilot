@@ -3,7 +3,7 @@
 #include "third_party/raylib/include/raygui.h"
 
 int main() {
-  initApp("Wi-Fi Manager", 30);
+  App app("Wi-Fi Manager", 30);
 
   WifiManager wifi_manager;
   while (!WindowShouldClose()) {
@@ -13,7 +13,5 @@ int main() {
       wifi_manager.draw({40, 100, GetScreenWidth() - 80.0f, GetScreenHeight() - 180.0f});
     EndDrawing();
   }
-
-  CloseWindow();
   return 0;
 }

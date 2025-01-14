@@ -8,7 +8,7 @@
 #include "third_party/raylib/include/raygui.h"
 
 WifiManager::WifiManager() {
-  GuiSetFont(getFont());
+  GuiSetFont(pApp->getFont());
   GuiSetStyle(DEFAULT, TEXT_SIZE, 40);
   GuiSetStyle(DEFAULT, BACKGROUND_COLOR, ColorToInt({30, 30, 30, 255}));
   GuiSetStyle(DEFAULT, BASE_COLOR_NORMAL, ColorToInt({50, 50, 50, 255}));
