@@ -106,7 +106,7 @@ class VCruiseHelper:
     if CS.gasPressed and button_type in (ButtonType.decelCruise, ButtonType.setCruise):
       self.v_cruise_kph = max(self.v_cruise_kph, CS.vEgo * CV.MS_TO_KPH)
 
-    self.v_cruise_kph =np.clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
+    self.v_cruise_kph = np.clip(round(self.v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX)
 
   def update_button_timers(self, CS, enabled):
     # increment timer for buttons still pressed
