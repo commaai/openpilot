@@ -42,6 +42,7 @@ std::vector<Network> scan_networks() {
 }
 
 std::set<std::string> saved_networks() {
+  // Get UUIDs of all saved wireless connections
   std::string uuids;
   std::string cmd = "nmcli -t -f UUID,TYPE connection show | grep 802-11-wireless";
   for (auto& line : split(util::check_output(cmd), '\n')) {
@@ -51,6 +52,7 @@ std::set<std::string> saved_networks() {
     }
   }
 
+  // Get SSIDs for the saved connections
   std::set<std::string> network_ssids;
   std::string ssid_cmd = "nmcli -t -f 802-11-wireless.ssid connection show " + uuids;
   for (const auto& line : split(util::check_output(ssid_cmd), '\n')) {
