@@ -1,7 +1,8 @@
 from collections import defaultdict
 from collections.abc import Callable
-import functools
 import capnp
+import functools
+import traceback
 
 from cereal import messaging, car, log
 from opendbc.car.fingerprints import MIGRATION
@@ -424,18 +425,19 @@ def migrate_sensorEvents(msgs):
 def migrate_onroadEvents(msgs):
   ops = []
   for index, msg in msgs:
-    new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
-    new_msg.valid = msg.valid
-    new_msg.logMonoTime = msg.logMonoTime
-
     onroadEvents = []
     for event in msg.onroadEventsDEPRECATED:
       try:
         if not str(event.name).endswith('DEPRECATED'):
           # dict converts name enum into string representation
           onroadEvents.append(log.OnroadEvent(**event.to_dict()))
-      except RuntimeError: # Member was null
+      except RuntimeError:  # Member was null
+        traceback.print_exc()
         continue
+
+    new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
+    new_msg.valid = msg.valid
+    new_msg.logMonoTime = msg.logMonoTime
     new_msg.onroadEvents = onroadEvents
     ops.append((index, new_msg.as_reader()))
 
@@ -453,8 +455,10 @@ def migrate_driverMonitoringState(msgs):
         if not str(event.name).endswith('DEPRECATED'):
           # dict converts name enum into string representation
           events.append(log.OnroadEvent(**event.to_dict()))
-      except RuntimeError: # Member was null
+      except RuntimeError:  # Member was null
+        traceback.print_exc()
         continue
+
     msg.driverMonitoringState.events = events
     ops.append((index, msg.as_reader()))
 
