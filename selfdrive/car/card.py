@@ -240,6 +240,7 @@ class Car:
     CS, RD = self.state_update()
 
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
+      # Use CarState w/ buttons from previous step, what
       self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode)
 
     self.state_publish(CS, RD)
