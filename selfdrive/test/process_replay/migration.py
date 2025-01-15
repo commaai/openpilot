@@ -27,7 +27,7 @@ MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 ## 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
 ## 4. it must return a list of operations to be applied to the logreader (replace, add, delete)
 ## 5. all migration functions must be independent of each other
-def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
+def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False, strict: bool = True):
   migrations = [
     migrate_sensorEvents,
     migrate_carParams,
@@ -51,10 +51,10 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
   if camera_states:
     migrations.append(migrate_cameraStates)
 
-  return migrate(lr, migrations)
+  return migrate(lr, migrations, strict)
 
 
-def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
+def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc], strict: bool):
   lr = list(lr)
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):
@@ -68,10 +68,15 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
 
     sorted_indices = sorted(ii for i in migration.inputs for ii in grouped[i])
     msg_gen = [(i, lr[i]) for i in sorted_indices]
-    r_ops, a_ops, d_ops = migration(msg_gen)
-    replace_ops.extend(r_ops)
-    add_ops.extend(a_ops)
-    del_ops.extend(d_ops)
+    try:
+      r_ops, a_ops, d_ops = migration(msg_gen)
+      replace_ops.extend(r_ops)
+      add_ops.extend(a_ops)
+      del_ops.extend(d_ops)
+    except Exception:
+      if strict:
+        raise
+      traceback.print_exc()
 
   for index, msg in replace_ops:
     lr[index] = msg
