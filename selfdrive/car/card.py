@@ -185,6 +185,9 @@ class Car:
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
+    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
+      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+
     return CS, RD
 
   def state_publish(self, CS: car.CarState, RD: structs.RadarDataT | None):
@@ -237,9 +240,6 @@ class Car:
 
   def step(self):
     CS, RD = self.state_update()
-
-    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
-      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
 
     self.state_publish(CS, RD)
 
