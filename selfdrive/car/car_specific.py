@@ -122,7 +122,7 @@ class CarSpecificEvents:
 
     elif self.CP.carName == 'volkswagen':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-                                         pcm_enable=not self.CP.openpilotLongitudinalControl,
+                                         pcm_enable=self.CP.pcmCruise,
                                          enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
 
       # Low speed steer alert hysteresis logic
