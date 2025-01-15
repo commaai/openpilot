@@ -180,13 +180,13 @@ class Car:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    # TODO: mirror the carState.cruiseState struct?
     self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
-    CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
-    CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
-
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
       self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+
+    # TODO: mirror the carState.cruiseState struct?
+    CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
+    CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
     return CS, RD
 
