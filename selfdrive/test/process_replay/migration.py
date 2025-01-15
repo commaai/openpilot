@@ -433,7 +433,6 @@ def migrate_onroadEvents(msgs):
           onroadEvents.append(log.OnroadEvent(**event.to_dict()))
       except RuntimeError:  # Member was null
         traceback.print_exc()
-        continue
 
     new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
     new_msg.valid = msg.valid
@@ -457,7 +456,6 @@ def migrate_driverMonitoringState(msgs):
           events.append(log.OnroadEvent(**event.to_dict()))
       except RuntimeError:  # Member was null
         traceback.print_exc()
-        continue
 
     msg.driverMonitoringState.events = events
     ops.append((index, msg.as_reader()))
