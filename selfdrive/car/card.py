@@ -72,6 +72,7 @@ class Car:
     self.can_rcv_cum_timeout_counter = 0
 
     self.CC_prev = car.CarControl.new_message()
+    self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
     self.last_actuators_output = structs.CarControl.Actuators()
@@ -239,7 +240,7 @@ class Car:
     CS, RD = self.state_update()
 
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
-      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode)
 
     self.state_publish(CS, RD)
 
@@ -249,6 +250,7 @@ class Car:
       self.controls_update(CS, self.sm['carControl'])
 
     self.initialized_prev = initialized
+    self.CS_prev = CS
 
   def params_thread(self, evt):
     while not evt.is_set():
