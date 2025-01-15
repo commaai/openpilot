@@ -256,7 +256,7 @@ def create_screenshots():
   segnum = 2
   lr = LogReader(route.qlog_paths()[segnum])
   DATA['carParams'] = next((event.as_builder() for event in lr if event.which() == 'carParams'), None)
-  for event in migrate(lr, [migrate_controlsState, migrate_carState]):
+  for event in migrate(lr, [migrate_controlsState, migrate_carState], True):
     if event.which() in DATA:
       DATA[event.which()] = event.as_builder()
 
