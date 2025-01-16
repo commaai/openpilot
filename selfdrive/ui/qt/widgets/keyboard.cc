@@ -144,14 +144,11 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 
 void Keyboard::handleCapsPress() {
   shift_state = (shift_state + 1) % 3;  // Cycle through states 0->1->2->0
-
-  bool is_caps = shift_state == 2;
-  caps_lock_on = is_caps;
   main_layout->setCurrentIndex(shift_state > 0 ? 1 : 0);
 
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == SHIFT_KEY || btn->text() == CAPS_LOCK_KEY) {
-      btn->setText(is_caps ? CAPS_LOCK_KEY : SHIFT_KEY);
+      btn->setText(shift_state == 2 ? CAPS_LOCK_KEY : SHIFT_KEY);
       btn->setStyleSheet(shift_state > 0 ? "background-color: #465BEA;" : "");
     }
   }
@@ -160,28 +157,20 @@ void Keyboard::handleCapsPress() {
 void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
-    if (key == "ABC") {
-      caps_lock_on = false;
-      shift_state = 0;  // Reset state
-      main_layout->setCurrentIndex(0);
+    if (key == "ABC" || key == "123" || key == "#+=") {
+      shift_state = 0;
+      main_layout->setCurrentIndex(key == "ABC" ? 0 : (key == "123" ? 2 : 3));
     } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
-    } else if (key == "123") {
-      caps_lock_on = false;
-      shift_state = 0;  // Reset state
-      main_layout->setCurrentIndex(2);
-    } else if (key == "#+=") {
-      caps_lock_on = false;
-      shift_state = 0;  // Reset state
-      main_layout->setCurrentIndex(3);
     } else if (key == ENTER_KEY) {
       emit emitEnter();
     } else if (key == BACKSPACE_KEY) {
       emit emitBackspace();
     }
   } else {
-    if (!caps_lock_on && "A" <= key && key <= "Z") {
+    if (shift_state == 1 && "A" <= key && key <= "Z") {
       main_layout->setCurrentIndex(0);
+      shift_state = 0;
     }
     emit emitKey(key);
   }

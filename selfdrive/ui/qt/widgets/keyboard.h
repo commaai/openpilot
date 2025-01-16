@@ -29,7 +29,6 @@ public:
 
 private:
   QStackedLayout* main_layout;
-  bool caps_lock_on = false;
   int shift_state = 0;  // 0: normal, 1: temp shift, 2: caps lock
 
 private slots:
