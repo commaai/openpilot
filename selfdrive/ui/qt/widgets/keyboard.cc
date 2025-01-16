@@ -1,8 +1,6 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
 #include <vector>
-#include <QDateTime>
-
 #include <QButtonGroup>
 #include <QHBoxLayout>
 #include <QMap>
@@ -145,17 +143,16 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleCapsPress() {
-  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_shift_key_press) <= DOUBLE_TAP_THRESHOLD_MS;
-  last_shift_key_press = QDateTime::currentMSecsSinceEpoch();
+  shift_state = (shift_state + 1) % 3;  // Cycle through states 0->1->2->0
 
-  bool was_locked = caps_lock_on;
-  caps_lock_on = !was_locked && is_double_tap;
-  main_layout->setCurrentIndex(caps_lock_on || (!was_locked && main_layout->currentIndex() == 0));
+  bool is_caps = shift_state == 2;
+  caps_lock_on = is_caps;
+  main_layout->setCurrentIndex(shift_state > 0 ? 1 : 0);
 
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == SHIFT_KEY || btn->text() == CAPS_LOCK_KEY) {
-      btn->setText(caps_lock_on ? CAPS_LOCK_KEY : SHIFT_KEY);
-      btn->setStyleSheet(main_layout->currentIndex() == 1 ? "background-color: #465BEA;" : "");
+      btn->setText(is_caps ? CAPS_LOCK_KEY : SHIFT_KEY);
+      btn->setStyleSheet(shift_state > 0 ? "background-color: #465BEA;" : "");
     }
   }
 }
@@ -165,12 +162,17 @@ void Keyboard::handleButton(QAbstractButton* btn) {
   if (CONTROL_BUTTONS.contains(key)) {
     if (key == "ABC") {
       caps_lock_on = false;
+      shift_state = 0;  // Reset state
       main_layout->setCurrentIndex(0);
     } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
     } else if (key == "123") {
+      caps_lock_on = false;
+      shift_state = 0;  // Reset state
       main_layout->setCurrentIndex(2);
     } else if (key == "#+=") {
+      caps_lock_on = false;
+      shift_state = 0;  // Reset state
       main_layout->setCurrentIndex(3);
     } else if (key == ENTER_KEY) {
       emit emitEnter();
