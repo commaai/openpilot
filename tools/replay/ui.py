@@ -233,6 +233,6 @@ if __name__ == "__main__":
 
   if args.ip_address != "127.0.0.1":
     os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
+    messaging.reset_context()
 
   ui_thread(args.ip_address)
