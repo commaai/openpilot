@@ -29,9 +29,7 @@ public:
 
 private:
   QStackedLayout* main_layout;
-  bool caps_lock_on = false;
-  qint64 last_shift_key_press = 0;
-  static const int DOUBLE_TAP_THRESHOLD_MS = 250;
+  int shift_state = 0;
 
 private slots:
   void handleButton(QAbstractButton* m_button);

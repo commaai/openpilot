@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/widgets/keyboard.h"
 
 #include <vector>
-#include <QDateTime>
 
 #include <QButtonGroup>
 #include <QHBoxLayout>
@@ -145,17 +144,14 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleCapsPress() {
-  bool is_double_tap = (QDateTime::currentMSecsSinceEpoch() - last_shift_key_press) <= DOUBLE_TAP_THRESHOLD_MS;
-  last_shift_key_press = QDateTime::currentMSecsSinceEpoch();
-
-  bool was_locked = caps_lock_on;
-  caps_lock_on = !was_locked && is_double_tap;
-  main_layout->setCurrentIndex(caps_lock_on || (!was_locked && main_layout->currentIndex() == 0));
+  shift_state = (shift_state + 1) % 3;
+  bool is_uppercase = shift_state > 0;
+  main_layout->setCurrentIndex(is_uppercase);
 
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == SHIFT_KEY || btn->text() == CAPS_LOCK_KEY) {
-      btn->setText(caps_lock_on ? CAPS_LOCK_KEY : SHIFT_KEY);
-      btn->setStyleSheet(main_layout->currentIndex() == 1 ? "background-color: #465BEA;" : "");
+      btn->setText(shift_state == 2 ? CAPS_LOCK_KEY : SHIFT_KEY);
+      btn->setStyleSheet(is_uppercase ? "background-color: #465BEA;" : "");
     }
   }
 }
@@ -163,23 +159,21 @@ void Keyboard::handleCapsPress() {
 void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
-    if (key == "ABC") {
-      caps_lock_on = false;
-      main_layout->setCurrentIndex(0);
+    if (key == "ABC" || key == "123" || key == "#+=") {
+      int index = (key == "ABC") ? 0 : (key == "123" ? 2 : 3);
+      main_layout->setCurrentIndex(index);
+      shift_state = 0;
     } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
-    } else if (key == "123") {
-      main_layout->setCurrentIndex(2);
-    } else if (key == "#+=") {
-      main_layout->setCurrentIndex(3);
     } else if (key == ENTER_KEY) {
       emit emitEnter();
     } else if (key == BACKSPACE_KEY) {
       emit emitBackspace();
     }
   } else {
-    if (!caps_lock_on && "A" <= key && key <= "Z") {
+    if (shift_state == 1 && "A" <= key && key <= "Z") {
       main_layout->setCurrentIndex(0);
+      shift_state = 0;
     }
     emit emitKey(key);
   }
