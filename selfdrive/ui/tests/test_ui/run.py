@@ -127,6 +127,10 @@ def setup_keyboard(click, pm: PubMaster, scroll=None):
   click(278, 970)
   click(1930, 228)
 
+def setup_keyboard_uppercase(click, pm: PubMaster, scroll=None):
+  setup_keyboard(click, pm, scroll)
+  click(200, 800)
+
 def setup_driver_camera(click, pm: PubMaster, scroll=None):
   setup_settings_device(click, pm)
   click(950, 620)
@@ -224,7 +228,8 @@ CASES = {
   "body": setup_body,
   "offroad_alert": setup_offroad_alert,
   "update_available": setup_update_available,
-  "keyboard": setup_keyboard
+  "keyboard": setup_keyboard,
+  "keyboard_uppercase": setup_keyboard_uppercase
 }
 
 CASES.update({

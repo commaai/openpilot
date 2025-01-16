@@ -133,7 +133,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         assert(extra.timestamp_eof/1000 == ts); // stay in sync
         frame_id = extra.frame_id;
         ++idx;
-        e->publisher_publish(e, e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
+        e->publisher_publish(e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
       }
 
       if (env_debug_encoder) {

@@ -8,7 +8,6 @@ import cereal.messaging as messaging
 from cereal import car, log
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
-from openpilot.common.numpy_fast import clip
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman, ObservationKind, States
 from openpilot.selfdrive.locationd.models.constants import GENERATED_DIR
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
@@ -66,7 +65,7 @@ class ParamsLearner:
         # This is done to bound the road roll estimate when localizer values are invalid
         roll = 0.0
         roll_std = np.radians(10.0)
-      self.roll = clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
+      self.roll = np.clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
 
       yaw_rate_valid = msg.angularVelocityDevice.valid and self.calibrator.calib_valid
       yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
@@ -203,11 +202,11 @@ def main():
         learner = ParamsLearner(CP, CP.steerRatio, 1.0, 0.0)
         x = learner.kf.x
 
-      angle_offset_average = clip(math.degrees(x[States.ANGLE_OFFSET].item()),
+      angle_offset_average = np.clip(math.degrees(x[States.ANGLE_OFFSET].item()),
                                   angle_offset_average - MAX_ANGLE_OFFSET_DELTA, angle_offset_average + MAX_ANGLE_OFFSET_DELTA)
-      angle_offset = clip(math.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
+      angle_offset = np.clip(math.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
                           angle_offset - MAX_ANGLE_OFFSET_DELTA, angle_offset + MAX_ANGLE_OFFSET_DELTA)
-      roll = clip(float(x[States.ROAD_ROLL].item()), roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA)
+      roll = np.clip(float(x[States.ROAD_ROLL].item()), roll - ROLL_MAX_DELTA, roll + ROLL_MAX_DELTA)
       roll_std = float(P[States.ROAD_ROLL].item())
       if learner.active and learner.speed > LOW_ACTIVE_SPEED:
         # Account for the opposite signs of the yaw rates
@@ -226,9 +225,9 @@ def main():
       liveParameters.sensorValid = sensors_valid
       liveParameters.steerRatio = float(x[States.STEER_RATIO].item())
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS].item())
-      liveParameters.roll = roll
-      liveParameters.angleOffsetAverageDeg = angle_offset_average
-      liveParameters.angleOffsetDeg = angle_offset
+      liveParameters.roll = float(roll)
+      liveParameters.angleOffsetAverageDeg = float(angle_offset_average)
+      liveParameters.angleOffsetDeg = float(angle_offset)
       liveParameters.valid = all((
         avg_offset_valid,
         total_offset_valid,
