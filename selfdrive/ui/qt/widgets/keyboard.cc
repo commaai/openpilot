@@ -166,6 +166,8 @@ void Keyboard::handleButton(QAbstractButton* btn) {
     } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
     } else if (key == ENTER_KEY) {
+      main_layout->setCurrentIndex(0);
+      shift_state = 0;
       emit emitEnter();
     } else if (key == BACKSPACE_KEY) {
       emit emitBackspace();
