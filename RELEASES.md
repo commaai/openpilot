@@ -1,4 +1,11 @@
-Version 0.9.8 (2025-02-27)
+Version 0.9.9 (2025-03-30)
+========================
+* Coming soon
+  * Rivian support
+  * F-150 & Mach-E support
+  * Tesla Model 3 support
+
+Version 0.9.8 (2025-01-30)
 ========================
 * New driving monitoring model
   * Reduced false positives related to passengers
@@ -9,9 +16,8 @@ Version 0.9.8 (2025-02-27)
 * Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune
 * Coming soon
-  * Rivian support
-  * F-150 & Mach-E support
-  * Tesla Model 3 support
+  * New driving model with gas gating
+  * Training data upload mode
 
 Version 0.9.7 (2024-06-13)
 ========================

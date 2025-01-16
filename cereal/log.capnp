@@ -409,6 +409,7 @@ struct GpsLocationData {
   speedAccuracy @12 :Float32;
 
   hasFix @13 :Bool;
+  satelliteCount @14 :Int8;
 
   enum SensorSource {
     android @0;
