@@ -32,9 +32,11 @@ xgettext_cmd = f"xgettext --keyword=_ -o {pot_file} -D {project_root} " + " ".jo
 xgettext_action = Command(pot_file, source_files, xgettext_cmd)
 
 # Mark translation files as important to keep
-renv.NoClean(translation_sources)
+renv.Precious(pot_file)
+renv.NoCache(pot_file)
 renv.Precious(translation_sources)
 renv.NoCache(translation_sources)
+renv.Precious(translation_targets)
 renv.NoCache(translation_targets)
 
 # Create .po files if they don't exist
