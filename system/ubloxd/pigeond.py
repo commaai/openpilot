@@ -9,7 +9,7 @@ import urllib.parse
 from datetime import datetime, UTC
 
 from cereal import messaging
-from openpilot.common.time import system_time_valid
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import TICI

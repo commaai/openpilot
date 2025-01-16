@@ -3,9 +3,9 @@
 import argparse
 import struct
 from enum import IntEnum
-from panda import Panda
-from panda.python.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
+from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE
+from panda import Panda
 from datetime import date
 
 # TODO: extend UDS library to allow custom/vendor-defined data identifiers without ignoring type checks
