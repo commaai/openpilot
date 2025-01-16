@@ -157,9 +157,15 @@ void Keyboard::handleCapsPress() {
 void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
-    if (key == "ABC" || key == "123" || key == "#+=") {
+    if (key == "ABC") {
+      main_layout->setCurrentIndex(0);
       shift_state = 0;
-      main_layout->setCurrentIndex(key == "ABC" ? 0 : (key == "123" ? 2 : 3));
+    } else if (key == "123") {
+      main_layout->setCurrentIndex(2);
+      shift_state = 0;
+    } else if (key == "#+=") {
+      main_layout->setCurrentIndex(3);
+      shift_state = 0;
     } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
       handleCapsPress();
     } else if (key == ENTER_KEY) {
