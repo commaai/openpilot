@@ -29,7 +29,7 @@ public:
 
 private:
   QStackedLayout* main_layout;
-  int shift_state = 0;  // 0: normal, 1: temp shift, 2: caps lock
+  int shift_state = 0;
 
 private slots:
   void handleButton(QAbstractButton* m_button);

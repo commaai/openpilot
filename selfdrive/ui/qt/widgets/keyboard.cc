@@ -143,13 +143,14 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
 }
 
 void Keyboard::handleCapsPress() {
-  shift_state = (shift_state + 1) % 3;  // Cycle through states 0->1->2->0
-  main_layout->setCurrentIndex(shift_state > 0 ? 1 : 0);
+  shift_state = (shift_state + 1) % 3;
+  bool is_uppercase = shift_state > 0;
+  main_layout->setCurrentIndex(is_uppercase);
 
   for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
     if (btn->text() == SHIFT_KEY || btn->text() == CAPS_LOCK_KEY) {
       btn->setText(shift_state == 2 ? CAPS_LOCK_KEY : SHIFT_KEY);
-      btn->setStyleSheet(shift_state > 0 ? "background-color: #465BEA;" : "");
+      btn->setStyleSheet(is_uppercase ? "background-color: #465BEA;" : "");
     }
   }
 }
