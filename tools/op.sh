@@ -334,7 +334,9 @@ function op_switch() {
   git clean -df
   git submodule update --init --recursive
   git submodule foreach git reset --hard
-  git submodule foreach git clean -df
+  if [[ -f "/AGNOS" ]]; then
+    git submodule foreach git clean -df
+  fi
 }
 
 function op_start() {
