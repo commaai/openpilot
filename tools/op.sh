@@ -338,18 +338,24 @@ function op_switch() {
 }
 
 function op_start() {
-  op_before_cmd
-  op_run_command sudo systemctl start comma $@
+  if [[ -f "/AGNOS" ]]; then
+    op_before_cmd
+    op_run_command sudo systemctl start comma $@
+  fi
 }
 
 function op_stop() {
-  op_before_cmd
-  op_run_command sudo systemctl stop comma $@
+  if [[ -f "/AGNOS" ]]; then
+    op_before_cmd
+    op_run_command sudo systemctl stop comma $@
+  fi
 }
 
 function op_restart() {
-  op_before_cmd
-  op_run_command sudo systemctl restart comma $@
+  if [[ -f "/AGNOS" ]]; then
+    op_before_cmd
+    op_run_command sudo systemctl restart comma $@
+  fi
 }
 
 function op_default() {
