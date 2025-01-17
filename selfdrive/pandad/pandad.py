@@ -175,7 +175,6 @@ def main() -> NoReturn:
     process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
     process.wait()
 
-  sys.exit(1)
 
 if __name__ == "__main__":
   main()
