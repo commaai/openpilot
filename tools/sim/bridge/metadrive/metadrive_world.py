@@ -113,11 +113,11 @@ class MetaDriveWorld(World):
 
       imu_update_interval = 1
       if since_last_check >= imu_update_interval:
-          state.set_accelerometer(self.prev_velocity, since_last_check)
-          state.set_gyroscope(self.prev_bearing, since_last_check)
+        state.set_accelerometer(self.prev_velocity, since_last_check)
+        state.set_gyroscope(self.prev_bearing, since_last_check)
 
-          self.prev_velocity = state.velocity
-          self.prev_bearing = state.bearing
+        self.prev_velocity = state.velocity
+        self.prev_bearing = state.bearing
 
 
       time_check_threshold = 29

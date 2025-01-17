@@ -62,10 +62,11 @@ class SimulatorState:
 
   def set_accelerometer(self, prev_velocity: vec3, dt: float) -> vec3:
     if prev_velocity is None:  # First time
-      return vec3(0, 0, 0)
+      prev_velocity = vec3(0, 0, 0)
 
     if dt <= 0:
-      raise ValueError("Time difference (dt) must be greater than zero.")
+      print("Warning: Time difference (dt) must be greater than zero. Skipping IMU update.")
+      return vec3(0, 0, 0)  # Return a default acceleration value
 
     # Compute acceleration for each component
     acc_x = (self.velocity.x - prev_velocity.x) / dt
@@ -85,7 +86,8 @@ class SimulatorState:
       prev_bearing = 0
 
     if dt <= 0:
-      raise ValueError("Time difference (dt) must be greater than zero.")
+      print("Warning: Time difference (dt) must be greater than zero. Skipping IMU update.")
+      return vec3(0, 0, 0)
 
     # Calculate change in bearing (yaw)
     delta_bearing = self.bearing - prev_bearing
