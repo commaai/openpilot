@@ -337,6 +337,21 @@ function op_switch() {
   git submodule foreach git clean -df
 }
 
+function op_start() {
+  op_before_cmd
+  op_run_command sudo systemctl start comma $@
+}
+
+function op_stop() {
+  op_before_cmd
+  op_run_command sudo systemctl stop comma $@
+}
+
+function op_restart() {
+  op_before_cmd
+  op_run_command sudo systemctl restart comma $@
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -359,6 +374,9 @@ function op_default() {
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
   echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
+  echo -e "  ${BOLD}start${NC}        Starts openpilot"
+  echo -e "  ${BOLD}stop${NC}         Stops openpilot"
+  echo -e "  ${BOLD}restart${NC}      Restarts openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
