@@ -1,10 +1,6 @@
 name: 'openpilot env setup'
 
 inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: true
-    default: ''
   is_retried:
     description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
     required: false
@@ -20,22 +16,19 @@ runs:
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
 
+    - shell: bash
+      name: No retries!
+      run: |
+        if [ "${{ github.run_attempt }}" -gt 1 ]; then
+          echo -e "\033[0;31m##################################################"
+          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
+          echo -e "\033[0;31m##################################################\033[0m"
+          exit 1
+        fi
+
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
-
-    # on BuildJet runners, must be logged into DockerHub to avoid rate limiting
-    # https://buildjet.com/for-github-actions/docs/guides/docker
-    - shell: bash
-      if: ${{ contains(runner.name, 'buildjet') && inputs.docker_hub_pat == '' }}
-      run: |
-        echo "Need to set the Docker Hub PAT secret as an input to this action"
-        exit 1
-    - name: Login to Docker Hub
-      if: contains(runner.name, 'buildjet')
-      shell: bash
-      run: |
-        docker login -u adeebshihadeh -p ${{ inputs.docker_hub_pat }}
 
     # build cache
     - id: date

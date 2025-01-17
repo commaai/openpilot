@@ -83,7 +83,8 @@ void SignalSelector::updateAvailableList(int index) {
   MessageId msg_id = msgs_combo->itemData(index).value<MessageId>();
   auto selected_items = seletedItems();
   for (auto s : dbc()->msg(msg_id)->getSignals()) {
-    bool is_selected = std::any_of(selected_items.begin(), selected_items.end(), [=, sig = s](auto it) { return it->msg_id == msg_id && it->sig == sig; });
+    bool is_selected = std::any_of(selected_items.begin(), selected_items.end(),
+                                   [sig = s, &msg_id](auto it) { return it->msg_id == msg_id && it->sig == sig; });
     if (!is_selected) {
       addItemToList(available_list, msg_id, s);
     }

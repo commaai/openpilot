@@ -1,0 +1,17 @@
+name: weekly CI test run
+on:
+  workflow_call:
+    inputs:
+      run_number:
+        required: true
+        type: string
+
+concurrency:
+  group: ci-run-${{ inputs.run_number }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  selfdrive_tests:
+    uses: commaai/openpilot/.github/workflows/selfdrive_tests.yaml@master
+    with:
+      run_number: ${{ inputs.run_number }}

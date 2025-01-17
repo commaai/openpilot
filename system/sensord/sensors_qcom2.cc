@@ -39,6 +39,7 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
     }
   }
 
+  uint64_t offset = nanos_since_epoch() - nanos_since_boot();
   struct pollfd fd_list[1] = {0};
   fd_list[0].fd = fd;
   fd_list[0].events = POLLIN | POLLPRI;
@@ -62,15 +63,25 @@ void interrupt_loop(std::vector<std::tuple<Sensor *, std::string>> sensors) {
 
     // Read all events
     struct gpioevent_data evdata[16];
-    err = read(fd, evdata, sizeof(evdata));
+    err = HANDLE_EINTR(read(fd, evdata, sizeof(evdata)));
     if (err < 0 || err % sizeof(*evdata) != 0) {
       LOGE("error reading event data %d", err);
       continue;
     }
 
+    uint64_t cur_offset = nanos_since_epoch() - nanos_since_boot();
+    uint64_t diff = cur_offset > offset ? cur_offset - offset : offset - cur_offset;
+    if (diff > 10*1e6) { // 10ms
+      LOGW("time jumped: %lu %lu", cur_offset, offset);
+      offset = cur_offset;
+
+      // we don't have a valid timestamp since the
+      // time jumped, so throw out this measurement.
+      continue;
+    }
+
     int num_events = err / sizeof(*evdata);
-    uint64_t offset = nanos_since_epoch() - nanos_since_boot();
-    uint64_t ts = evdata[num_events - 1].timestamp - offset;
+    uint64_t ts = evdata[num_events - 1].timestamp - cur_offset;
 
     for (auto &[sensor, msg_name] : sensors) {
       if (!sensor->has_interrupt_enabled()) {

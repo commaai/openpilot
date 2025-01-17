@@ -39,6 +39,7 @@ public:
   void showTip(double sec);
   void hideTip();
   void startAnimation();
+  double secondsAtPoint(const QPointF &pt) const { return chart()->mapToValue(pt).x(); }
 
   struct SigItem {
     MessageId msg_id;
@@ -76,7 +77,6 @@ private:
   void dragLeaveEvent(QDragLeaveEvent *event) override { drawDropIndicator(false); }
   void dragMoveEvent(QDragMoveEvent *event) override;
   void dropEvent(QDropEvent *event) override;
-  void leaveEvent(QEvent *event) override;
   void resizeEvent(QResizeEvent *event) override;
   QSize sizeHint() const override;
   void updateAxisY();

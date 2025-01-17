@@ -24,8 +24,8 @@ def input_ready():
 def replay(route, segment, loop):
   route = route.replace('|', '/')
 
-  lr = LogReader(get_url(route, segment))
-  fr = FrameReader(get_url(route, segment, "fcamera"), readahead=True)
+  lr = LogReader(get_url(route, segment, "rlog.bz2"))
+  fr = FrameReader(get_url(route, segment, "fcamera.hevc"), readahead=True)
 
   # Build mapping from frameId to segmentId from roadEncodeIdx, type == fullHEVC
   msgs = [m for m in lr if m.which() not in IGNORE]

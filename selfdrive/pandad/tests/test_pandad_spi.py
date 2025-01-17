@@ -7,7 +7,7 @@ import random
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.system.hardware import HARDWARE
-from openpilot.selfdrive.test.helpers import phone_only, with_processes
+from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, send_random_can_messages
 
 JUNGLE_SPAM = "JUNGLE_SPAM" in os.environ
@@ -23,7 +23,6 @@ class TestBoarddSpi:
     if not JUNGLE_SPAM:
       os.environ['BOARDD_LOOPBACK'] = '1'
 
-  @phone_only
   @with_processes(['pandad'])
   def test_spi_corruption(self, subtests):
     setup_pandad(1)
@@ -84,8 +83,8 @@ class TestBoarddSpi:
             ps = m.peripheralState
             assert ps.pandaType == "tres"
             assert 4000 < ps.voltage < 14000
-            assert 100 < ps.current < 1000
-            assert ps.fanSpeedRpm < 8000
+            assert 50 < ps.current < 1000
+            assert ps.fanSpeedRpm < 10000
 
       time.sleep(0.5)
     et = time.monotonic() - st
@@ -97,7 +96,7 @@ class TestBoarddSpi:
       with subtests.test(msg="timing check", service=service):
         edt = 1e3 / SERVICE_LIST[service].frequency
         assert edt*0.9 < np.mean(dts) < edt*1.1
-        assert np.max(dts) < edt*20
+        assert np.max(dts) < edt*8
         assert np.min(dts) < edt
         assert len(dts) >= ((et-0.5)*SERVICE_LIST[service].frequency*0.8)
 

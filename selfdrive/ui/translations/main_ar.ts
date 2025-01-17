@@ -88,29 +88,6 @@
     </message>
 </context>
 <context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation>كم/س</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>ميل/س</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>MAX</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>SPEED</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>LIMIT</translation>
-    </message>
-</context>
-<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -137,30 +114,14 @@
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
+    <name>DeveloperPanel</name>
     <message>
-        <source>Home</source>
-        <translation>المنزل</translation>
+        <source>Joystick Debug Mode</source>
+        <translation>وضع تصحيح أخطاء عصا التحكم</translation>
     </message>
     <message>
-        <source>Work</source>
-        <translation>العمل</translation>
-    </message>
-    <message>
-        <source>No destination set</source>
-        <translation>لم يتم ضبط الوجهة</translation>
-    </message>
-    <message>
-        <source>home</source>
-        <translation>المنزل</translation>
-    </message>
-    <message>
-        <source>work</source>
-        <translation>العمل</translation>
-    </message>
-    <message>
-        <source>No %1 location set</source>
-        <translation>لم يتم ضبط %1 موقع</translation>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation>وضع المناورة الطولية</translation>
     </message>
 </context>
 <context>
@@ -325,6 +286,21 @@
     </message>
 </context>
 <context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>كم/س</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>ميل/س</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>MAX</translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message>
         <source>Cancel</source>
@@ -347,47 +323,6 @@
     <message>
         <source>Installing...</source>
         <translation>جارٍ التثبيت...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>الوصول</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>د</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>س</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation>التنقل</translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation>الإدارة في connect.comma.ai</translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>تحميل الخريطة</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>بانتظار GPS</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation>بانتظار الطريق</translation>
     </message>
 </context>
 <context>
@@ -465,10 +400,6 @@
         <translation>لم يكن openpilot قادراً على تحديد سيارتك. إما أن تكون سيارتك غير مدعومة أو أنه لم يتم التعرف على وحدة التحكم الإلكتروني (ECUs) فيها. يرجى تقديم طلب سحب من أجل إضافة نسخ برمجيات ثابتة إلى السيارة المناسبة. هل تحتاج إلى أي مساعدة؟ لا تتردد في التواصل مع doscord.comma.ai.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>لم يتمكن openpilot من تحديد سيارتك. تحقق من سلامة الكابلات وتأكد من تأمين جميع الوصلات، لا سيما أنه قد تم إدخال طاقة الفاصلة بالكامل في منفذ OBD-II في السيارة. هل تريد أي مساعدة؟ لا تتردد في الانضمام إلى discord.comma.ai.</translation>
-    </message>
-    <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>لقد اكتشف openpilot تغييراً في موقع تركيب الجهاز. تأكد من تثبيت الجهاز بشكل كامل في موقعه وتثبيته بإحكام على الزجاج الأمامي.</translation>
     </message>
@@ -495,20 +426,20 @@
         <translation>openpilot غير متوفر</translation>
     </message>
     <message>
-        <source>Waiting for controls to start</source>
-        <translation>في انتظار بدء عناصر التحكم</translation>
-    </message>
-    <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
         <translation>تحكم على الفور</translation>
     </message>
     <message>
-        <source>Controls Unresponsive</source>
-        <translation>الضوابط غير مستجيبة</translation>
-    </message>
-    <message>
         <source>Reboot Device</source>
         <translation>إعادة التشغيل</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation>في انتظار البدء</translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation>النظام لا يستجيب</translation>
     </message>
 </context>
 <context>
@@ -568,8 +499,8 @@
         <translation>سنة واحدة من تخزين القرص</translation>
     </message>
     <message>
-        <source>Turn-by-turn navigation</source>
-        <translation>التنقل خطوة بخطوة</translation>
+        <source>Remote snapshots</source>
+        <translation>لقطات عن بُعد</translation>
     </message>
 </context>
 <context>
@@ -629,22 +560,6 @@
             <numerusform>منذ %n أيام</numerusform>
             <numerusform>منذ %n يوم</numerusform>
         </translation>
-    </message>
-    <message>
-        <source>km</source>
-        <translation>كم</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>م</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ميل</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>قدم</translation>
     </message>
     <message>
         <source>now</source>
@@ -713,6 +628,10 @@ This may take up to a minute.</source>
     <message>
         <source>Software</source>
         <translation>البرنامج</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>المطور</translation>
     </message>
 </context>
 <context>
@@ -870,14 +789,6 @@ This may take up to a minute.</source>
     <message>
         <source>PANDA</source>
         <translation>PANDA</translation>
-    </message>
-    <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>بحث</translation>
     </message>
     <message>
         <source>--</source>
@@ -1091,22 +1002,6 @@ This may take up to a minute.</source>
         <translation>عند تمكين هذه الميزة، فإن الضغط على دواسة الوقود سيؤدي إلى فك ارتباط openpilot.</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>إظهار الوقت المقدر للوصول بصيغة 24 ساعة</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>استخدام صيغة 24 ساعة بدلاً من صباحاً/مساء</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>عرض الخريطة على الجانب الأيسر من واجهة المستخدم</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>عرض الخريطة عل الجانب الأيسر عندما تكون وضعية العرض بطريقة الشاشة المنقسمة.</translation>
-    </message>
-    <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
         <translation>التحكم الطولي openpilot (ألفا)</translation>
     </message>
@@ -1176,15 +1071,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>ستتحول واجهة القيادة إلى الكاميرا الواسعة المواجهة للطريق عند السرعات المنخفضة لعرض بعض المنعطفات بشكل أفضل. كما سيتم عرض شعار وضع التجريبي في الزاوية العلوية اليمنى.</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>مراقبة السائق المستمرة</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>تمكين مراقبة السائق حتى عندما لا يكون نظام OpenPilot مُفعّلاً.</translation>
     </message>
 </context>
 <context>

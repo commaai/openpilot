@@ -18,12 +18,12 @@ struct EncoderdState {
   // Sync logic for startup
   std::atomic<int> encoders_ready = 0;
   std::atomic<uint32_t> start_frame_id = 0;
-  bool camera_ready[WideRoadCam + 1] = {};
-  bool camera_synced[WideRoadCam + 1] = {};
+  bool camera_ready[VISION_STREAM_WIDE_ROAD + 1] = {};
+  bool camera_synced[VISION_STREAM_WIDE_ROAD + 1] = {};
 };
 
 // Handle initial encoder syncing by waiting for all encoders to reach the same frame id
-bool sync_encoders(EncoderdState *s, CameraType cam_type, uint32_t frame_id) {
+bool sync_encoders(EncoderdState *s, VisionStreamType cam_type, uint32_t frame_id) {
   if (s->camera_synced[cam_type]) return true;
 
   if (s->max_waiting > 1 && s->encoders_ready != s->max_waiting) {
@@ -59,7 +59,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
     // init encoders
     if (encoders.empty()) {
-      VisionBuf buf_info = vipc_client.buffers[0];
+      const VisionBuf &buf_info = vipc_client.buffers[0];
       LOGW("encoder %s init %zux%zu", cam_info.thread_name, buf_info.width, buf_info.height);
       assert(buf_info.width > 0 && buf_info.height > 0);
 
@@ -85,7 +85,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
       lagging = false;
 
-      if (!sync_encoders(s, cam_info.type, extra.frame_id)) {
+      if (!sync_encoders(s, cam_info.stream_type, extra.frame_id)) {
         continue;
       }
       if (do_exit) break;

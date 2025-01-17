@@ -15,6 +15,7 @@
 #include <mutex>
 #include <numeric>
 #include <utility>
+#include <zstd.h>
 
 #include "common/timing.h"
 #include "common/util.h"
@@ -300,7 +301,7 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
     if (bzerror == BZ_OK && prev_write_pos == strm.next_out) {
       // content is corrupt
       bzerror = BZ_STREAM_END;
-      rWarning("decompressBZ2 error : content is corrupt");
+      rWarning("decompressBZ2 error: content is corrupt");
       break;
     }
 
@@ -318,33 +319,66 @@ std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool>
   return {};
 }
 
-void precise_nano_sleep(int64_t nanoseconds) {
-#ifdef __APPLE__
-  const long estimate_ns = 1 * 1e6;  // 1ms
-  struct timespec req = {.tv_nsec = estimate_ns};
-  uint64_t start_sleep = nanos_since_boot();
-  while (nanoseconds > estimate_ns) {
-    nanosleep(&req, nullptr);
-    uint64_t end_sleep = nanos_since_boot();
-    nanoseconds -= (end_sleep - start_sleep);
-    start_sleep = end_sleep;
-  }
-  // spin wait
-  if (nanoseconds > 0) {
-    while ((nanos_since_boot() - start_sleep) <= nanoseconds) {
-      std::this_thread::yield();
-    }
-  }
-#else
-  struct timespec req, rem;
+std::string decompressZST(const std::string &in, std::atomic<bool> *abort) {
+  return decompressZST((std::byte *)in.data(), in.size(), abort);
+}
 
-  req.tv_sec = nanoseconds / 1e9;
-  req.tv_nsec = nanoseconds % (int64_t)1e9;
-  while (clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem) && errno == EINTR) {
+std::string decompressZST(const std::byte *in, size_t in_size, std::atomic<bool> *abort) {
+  ZSTD_DCtx *dctx = ZSTD_createDCtx();
+  assert(dctx != nullptr);
+
+  // Initialize input and output buffers
+  ZSTD_inBuffer input = {in, in_size, 0};
+
+  // Estimate and reserve memory for decompressed data
+  size_t estimatedDecompressedSize = ZSTD_getFrameContentSize(in, in_size);
+  if (estimatedDecompressedSize == ZSTD_CONTENTSIZE_ERROR || estimatedDecompressedSize == ZSTD_CONTENTSIZE_UNKNOWN) {
+    estimatedDecompressedSize = in_size * 2;  // Use a fallback size
+  }
+
+  std::string decompressedData;
+  decompressedData.reserve(estimatedDecompressedSize);
+
+  const size_t bufferSize = ZSTD_DStreamOutSize();  // Recommended output buffer size
+  std::string outputBuffer(bufferSize, '\0');
+
+  while (input.pos < input.size && !(abort && *abort)) {
+    ZSTD_outBuffer output = {outputBuffer.data(), bufferSize, 0};
+
+    size_t result = ZSTD_decompressStream(dctx, &output, &input);
+    if (ZSTD_isError(result)) {
+      rWarning("decompressZST error: content is corrupt");
+      break;
+    }
+
+    decompressedData.append(outputBuffer.data(), output.pos);
+  }
+
+  ZSTD_freeDCtx(dctx);
+  if (!(abort && *abort)) {
+    decompressedData.shrink_to_fit();
+    return decompressedData;
+  }
+  return {};
+}
+
+void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_requested) {
+  struct timespec req, rem;
+  req.tv_sec = nanoseconds / 1000000000;
+  req.tv_nsec = nanoseconds % 1000000000;
+  while (!interrupt_requested) {
+#ifdef __APPLE__
+    int ret = nanosleep(&req, &rem);
+    if (ret == 0 || errno != EINTR)
+      break;
+#else
+    int ret = clock_nanosleep(CLOCK_MONOTONIC, 0, &req, &rem);
+    if (ret == 0 || ret != EINTR)
+      break;
+#endif
     // Retry sleep if interrupted by a signal
     req = rem;
   }
-#endif
 }
 
 std::string sha256(const std::string &str) {
@@ -354,6 +388,26 @@ std::string sha256(const std::string &str) {
   SHA256_Update(&sha256, str.c_str(), str.size());
   SHA256_Final(hash, &sha256);
   return util::hexdump(hash, SHA256_DIGEST_LENGTH);
+}
+
+std::vector<std::string> split(std::string_view source, char delimiter) {
+  std::vector<std::string> fields;
+  size_t last = 0;
+  for (size_t i = 0; i < source.length(); ++i) {
+    if (source[i] == delimiter) {
+      fields.emplace_back(source.substr(last, i - last));
+      last = i + 1;
+    }
+  }
+  fields.emplace_back(source.substr(last));
+  return fields;
+}
+
+std::string extractFileName(const std::string &file) {
+  size_t queryPos = file.find_first_of("?");
+  std::string path = (queryPos != std::string::npos) ? file.substr(0, queryPos) : file;
+  size_t lastSlash = path.find_last_of("/\\");
+  return (lastSlash != std::string::npos) ? path.substr(lastSlash + 1) : path;
 }
 
 // MonotonicBuffer

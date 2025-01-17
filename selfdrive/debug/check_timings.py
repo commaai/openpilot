@@ -1,25 +1,36 @@
 #!/usr/bin/env python3
-
 import sys
 import time
 import numpy as np
+import datetime
 from collections.abc import MutableSequence
-from collections import defaultdict, deque
+from collections import defaultdict
 
 import cereal.messaging as messaging
 
-socks = {s: messaging.sub_sock(s, conflate=False) for s in sys.argv[1:]}
-ts: defaultdict[str, MutableSequence[float]] = defaultdict(lambda: deque(maxlen=100))
 
 if __name__ == "__main__":
-  while True:
-    print()
+  ts: defaultdict[str, MutableSequence[float]] = defaultdict(list)
+  socks = {s: messaging.sub_sock(s, conflate=False) for s in sys.argv[1:]}
+  try:
+    st = time.monotonic()
+    while True:
+      print()
+      for s, sock in socks.items():
+        msgs = messaging.drain_sock(sock)
+        for m in msgs:
+          ts[s].append(m.logMonoTime / 1e6)
+
+        if len(ts[s]) > 2:
+          d = np.diff(ts[s])[-100:]
+          print(f"{s:25} {np.mean(d):7.2f} {np.std(d):7.2f} {np.max(d):7.2f} {np.min(d):7.2f}")
+      time.sleep(1)
+  except KeyboardInterrupt:
+    print("\n")
+    print("="*5, "timing summary", "="*5)
     for s, sock in socks.items():
       msgs = messaging.drain_sock(sock)
-      for m in msgs:
-        ts[s].append(m.logMonoTime / 1e6)
-
       if len(ts[s]) > 2:
         d = np.diff(ts[s])
         print(f"{s:25} {np.mean(d):7.2f} {np.std(d):7.2f} {np.max(d):7.2f} {np.min(d):7.2f}")
-    time.sleep(1)
+    print("="*5, datetime.timedelta(seconds=time.monotonic()-st), "="*5)

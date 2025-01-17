@@ -37,6 +37,8 @@ const double MS_TO_MPH = MS_TO_KPH * KM_TO_MILE;
 const double METER_TO_MILE = KM_TO_MILE / 1000.0;
 const double METER_TO_FOOT = 3.28084;
 
+#define ALIGNED_SIZE(x, align) (((x) + (align)-1) & ~((align)-1))
+
 namespace util {
 
 void set_thread_name(const char* name);
@@ -72,6 +74,7 @@ float getenv(const char* key, float default_val);
 std::string hexdump(const uint8_t* in, const size_t size);
 bool starts_with(const std::string &s1, const std::string &s2);
 bool ends_with(const std::string &s, const std::string &suffix);
+std::string strip(const std::string &str);
 
 // ***** random helpers *****
 int random_int(int min, int max);

@@ -4,13 +4,13 @@ import random
 
 from cereal import car, log
 import cereal.messaging as messaging
+from opendbc.car.honda.interface import CarInterface
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car.honda.interface import CarInterface
-from openpilot.selfdrive.controls.lib.events import ET, Events
-from openpilot.selfdrive.controls.lib.alertmanager import AlertManager
+from openpilot.selfdrive.selfdrived.events import ET, Events
+from openpilot.selfdrive.selfdrived.alertmanager import AlertManager
 from openpilot.system.manager.process_config import managed_processes
 
-EventName = car.CarEvent.EventName
+EventName = log.OnroadEvent.EventName
 
 def randperc() -> float:
   return 100. * random.random()
@@ -54,10 +54,10 @@ def cycle_alerts(duration=200, is_metric=False):
   CS = car.CarState.new_message()
   CP = CarInterface.get_non_essential_params("HONDA_CIVIC")
   sm = messaging.SubMaster(['deviceState', 'pandaStates', 'roadCameraState', 'modelV2', 'liveCalibration',
-                            'driverMonitoringState', 'longitudinalPlan', 'liveLocationKalman',
+                            'driverMonitoringState', 'longitudinalPlan', 'livePose',
                             'managerState'] + cameras)
 
-  pm = messaging.PubMaster(['controlsState', 'pandaStates', 'deviceState'])
+  pm = messaging.PubMaster(['selfdriveState', 'pandaStates', 'deviceState'])
 
   events = Events()
   AM = AlertManager()
@@ -100,18 +100,17 @@ def cycle_alerts(duration=200, is_metric=False):
       print(alert)
       for _ in range(duration):
         dat = messaging.new_message()
-        dat.init('controlsState')
-        dat.controlsState.enabled = False
+        dat.init('selfdriveState')
+        dat.selfdriveState.enabled = False
 
         if alert:
-          dat.controlsState.alertText1 = alert.alert_text_1
-          dat.controlsState.alertText2 = alert.alert_text_2
-          dat.controlsState.alertSize = alert.alert_size
-          dat.controlsState.alertStatus = alert.alert_status
-          dat.controlsState.alertBlinkingRate = alert.alert_rate
-          dat.controlsState.alertType = alert.alert_type
-          dat.controlsState.alertSound = alert.audible_alert
-        pm.send('controlsState', dat)
+          dat.selfdriveState.alertText1 = alert.alert_text_1
+          dat.selfdriveState.alertText2 = alert.alert_text_2
+          dat.selfdriveState.alertSize = alert.alert_size
+          dat.selfdriveState.alertStatus = alert.alert_status
+          dat.selfdriveState.alertType = alert.alert_type
+          dat.selfdriveState.alertSound = alert.audible_alert
+        pm.send('selfdriveState', dat)
 
         dat = messaging.new_message()
         dat.init('deviceState')

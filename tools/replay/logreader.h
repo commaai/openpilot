@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "tools/replay/util.h"
 
 const CameraType ALL_CAMERAS[] = {RoadCam, DriverCam, WideRoadCam};
@@ -34,7 +33,10 @@ public:
   std::vector<Event> events;
 
 private:
+  void migrateOldEvents();
+
   std::string raw_;
+  bool requires_migration = true;
   std::vector<bool> filters_;
   MonotonicBuffer buffer_{1024 * 1024};
 };

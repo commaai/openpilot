@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from openpilot.selfdrive.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
+from opendbc.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
 import cereal.messaging as messaging
 
 

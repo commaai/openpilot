@@ -5,8 +5,6 @@
 
 #include "tools/cabana/dbc/dbc.h"
 
-const QString AUTO_SAVE_EXTENSION = ".tmp";
-
 class DBCFile {
 public:
   DBCFile(const QString &dbc_file_name);
@@ -15,9 +13,7 @@ public:
 
   bool save();
   bool saveAs(const QString &new_filename);
-  bool autoSave();
   bool writeContents(const QString &fn);
-  void cleanupAutoSaveFile();
   QString generateDBC();
 
   void updateMsg(const MessageId &id, const QString &name, uint32_t size, const QString &node, const QString &comment);
@@ -27,7 +23,7 @@ public:
   cabana::Msg *msg(uint32_t address);
   cabana::Msg *msg(const QString &name);
   inline cabana::Msg *msg(const MessageId &id) { return msg(id.address); }
-  cabana::Signal *signal(uint32_t address, const QString name);
+  cabana::Signal *signal(uint32_t address, const QString &name);
 
   inline QString name() const { return name_.isEmpty() ? "untitled" : name_; }
   inline bool isEmpty() const { return msgs.empty() && name_.isEmpty(); }

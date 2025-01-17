@@ -197,17 +197,12 @@ def maybe_update_radar_points(lt, lid_overlay):
   if lt is not None:
     ar_pts = {}
     for track in lt:
-      ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel, track.oncoming, track.stationary]
+      ar_pts[track.trackId] = [track.dRel, track.yRel, track.vRel, track.aRel]
   for ids, pt in ar_pts.items():
     # negative here since radar is left positive
     px, py = to_topdown_pt(pt[0], -pt[1])
     if px != -1:
-      if pt[-1]:
-        color = 240
-      elif pt[-2]:
-        color = 230
-      else:
-        color = 255
+      color = 255
       if int(ids) == 1:
         lid_overlay[px - 2:px + 2, py - 10:py + 10] = 100
       else:

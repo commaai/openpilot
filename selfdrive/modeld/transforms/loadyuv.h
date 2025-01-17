@@ -13,4 +13,8 @@ void loadyuv_destroy(LoadYUVState* s);
 
 void loadyuv_queue(LoadYUVState* s, cl_command_queue q,
                    cl_mem y_cl, cl_mem u_cl, cl_mem v_cl,
-                   cl_mem out_cl, bool do_shift = false);
+                   cl_mem out_cl);
+
+
+void copy_queue(LoadYUVState* s, cl_command_queue q, cl_mem src, cl_mem dst,
+                 size_t src_offset, size_t dst_offset, size_t size);

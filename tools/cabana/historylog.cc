@@ -13,7 +13,7 @@ QVariant HistoryLogModel::data(const QModelIndex &index, int role) const {
   const auto &m = messages[index.row()];
   const int col = index.column();
   if (role == Qt::DisplayRole) {
-    if (col == 0) return QString::number((m.mono_time / (double)1e9) - can->routeStartTime(), 'f', 3);
+    if (col == 0) return QString::number(can->toSeconds(m.mono_time), 'f', 3);
     if (!isHexMode()) return sigs[col - 1]->formatValue(m.sig_values[col - 1], false);
   } else if (role == Qt::TextAlignmentRole) {
     return (uint32_t)(Qt::AlignRight | Qt::AlignVCenter);
@@ -80,7 +80,7 @@ void HistoryLogModel::updateState(bool clear) {
     messages.clear();
     endRemoveRows();
   }
-  uint64_t current_time = (can->lastMessage(msg_id).ts + can->routeStartTime()) * 1e9 + 1;
+  uint64_t current_time = can->toMonoTime(can->lastMessage(msg_id).ts) + 1;
   fetchData(messages.begin(), current_time, messages.empty() ? 0 : messages.front().mono_time);
 }
 

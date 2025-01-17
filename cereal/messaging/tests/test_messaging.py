@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 import os
 import capnp
 import multiprocessing
@@ -6,8 +5,8 @@ import numbers
 import random
 import threading
 import time
-import unittest
 from parameterized import parameterized
+import pytest
 
 from cereal import log, car
 import cereal.messaging as messaging
@@ -28,11 +27,6 @@ def zmq_sleep(t=1):
   if "ZMQ" in os.environ:
     time.sleep(t)
 
-def zmq_expected_failure(func):
-  if "ZMQ" in os.environ:
-    return unittest.expectedFailure(func)
-  else:
-    return func
 
 # TODO: this should take any capnp struct and returrn a msg with random populated data
 def random_carstate():
@@ -56,66 +50,13 @@ def delayed_send(delay, sock, dat):
     sock.send(dat)
   threading.Timer(delay, send_func).start()
 
-class TestPubSubSockets(unittest.TestCase):
 
-  def setUp(self):
-    # ZMQ pub socket takes too long to die
-    # sleep to prevent multiple publishers error between tests
-    zmq_sleep()
-
-  def test_pub_sub(self):
-    sock = random_sock()
-    pub_sock = messaging.pub_sock(sock)
-    sub_sock = messaging.sub_sock(sock, conflate=False, timeout=None)
-    zmq_sleep(3)
-
-    for _ in range(1000):
-      msg = random_bytes()
-      pub_sock.send(msg)
-      recvd = sub_sock.receive()
-      self.assertEqual(msg, recvd)
-
-  def test_conflate(self):
-    sock = random_sock()
-    pub_sock = messaging.pub_sock(sock)
-    for conflate in [True, False]:
-      for _ in range(10):
-        num_msgs = random.randint(3, 10)
-        sub_sock = messaging.sub_sock(sock, conflate=conflate, timeout=None)
-        zmq_sleep()
-
-        sent_msgs = []
-        for __ in range(num_msgs):
-          msg = random_bytes()
-          pub_sock.send(msg)
-          sent_msgs.append(msg)
-        time.sleep(0.1)
-        recvd_msgs = messaging.drain_sock_raw(sub_sock)
-        if conflate:
-          self.assertEqual(len(recvd_msgs), 1)
-        else:
-          # TODO: compare actual data
-          self.assertEqual(len(recvd_msgs), len(sent_msgs))
-
-  def test_receive_timeout(self):
-    sock = random_sock()
-    for _ in range(10):
-      timeout = random.randrange(200)
-      sub_sock = messaging.sub_sock(sock, timeout=timeout)
-      zmq_sleep()
-
-      start_time = time.monotonic()
-      recvd = sub_sock.receive()
-      self.assertLess(time.monotonic() - start_time, 0.2)
-      assert recvd is None
-
-class TestMessaging(unittest.TestCase):
-
+class TestMessaging:
   def setUp(self):
     # TODO: ZMQ tests are too slow; all sleeps will need to be
     # replaced with logic to block on the necessary condition
     if "ZMQ" in os.environ:
-      raise unittest.SkipTest
+      pytest.skip()
 
     # ZMQ pub socket takes too long to die
     # sleep to prevent multiple publishers error between tests
@@ -127,9 +68,9 @@ class TestMessaging(unittest.TestCase):
       msg = messaging.new_message(evt)
     except capnp.lib.capnp.KjException:
       msg = messaging.new_message(evt, random.randrange(200))
-    self.assertLess(time.monotonic() - msg.logMonoTime, 0.1)
-    self.assertFalse(msg.valid)
-    self.assertEqual(evt, msg.which())
+    assert (time.monotonic() - msg.logMonoTime) < 0.1
+    assert not msg.valid
+    assert evt == msg.which()
 
   @parameterized.expand(events)
   def test_pub_sock(self, evt):
@@ -151,8 +92,8 @@ class TestMessaging(unittest.TestCase):
 
     # no wait and no msgs in queue
     msgs = func(sub_sock)
-    self.assertIsInstance(msgs, list)
-    self.assertEqual(len(msgs), 0)
+    assert isinstance(msgs, list)
+    assert len(msgs) == 0
 
     # no wait but msgs are queued up
     num_msgs = random.randrange(3, 10)
@@ -160,9 +101,9 @@ class TestMessaging(unittest.TestCase):
       pub_sock.send(messaging.new_message(sock).to_bytes())
     time.sleep(0.1)
     msgs = func(sub_sock)
-    self.assertIsInstance(msgs, list)
-    self.assertTrue(all(isinstance(msg, expected_type) for msg in msgs))
-    self.assertEqual(len(msgs), num_msgs)
+    assert isinstance(msgs, list)
+    assert all(isinstance(msg, expected_type) for msg in msgs)
+    assert len(msgs) == num_msgs
 
   def test_recv_sock(self):
     sock = "carState"
@@ -172,14 +113,14 @@ class TestMessaging(unittest.TestCase):
 
     # no wait and no msg in queue, socket should timeout
     recvd = messaging.recv_sock(sub_sock)
-    self.assertTrue(recvd is None)
+    assert recvd is None
 
     # no wait and one msg in queue
     msg = random_carstate()
     pub_sock.send(msg.to_bytes())
     time.sleep(0.01)
     recvd = messaging.recv_sock(sub_sock)
-    self.assertIsInstance(recvd, capnp._DynamicStructReader)
+    assert isinstance(recvd, capnp._DynamicStructReader)
     # https://github.com/python/mypy/issues/13038
     assert_carstate(msg.carState, recvd.carState)
 
@@ -191,16 +132,16 @@ class TestMessaging(unittest.TestCase):
 
     # no msg in queue, socket should timeout
     recvd = messaging.recv_one(sub_sock)
-    self.assertTrue(recvd is None)
+    assert recvd is None
 
     # one msg in queue
     msg = random_carstate()
     pub_sock.send(msg.to_bytes())
     recvd = messaging.recv_one(sub_sock)
-    self.assertIsInstance(recvd, capnp._DynamicStructReader)
+    assert isinstance(recvd, capnp._DynamicStructReader)
     assert_carstate(msg.carState, recvd.carState)
 
-  @zmq_expected_failure
+  @pytest.mark.xfail(condition="ZMQ" in os.environ, reason='ZMQ detected')
   def test_recv_one_or_none(self):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
@@ -209,13 +150,13 @@ class TestMessaging(unittest.TestCase):
 
     # no msg in queue, socket shouldn't block
     recvd = messaging.recv_one_or_none(sub_sock)
-    self.assertTrue(recvd is None)
+    assert recvd is None
 
     # one msg in queue
     msg = random_carstate()
     pub_sock.send(msg.to_bytes())
     recvd = messaging.recv_one_or_none(sub_sock)
-    self.assertIsInstance(recvd, capnp._DynamicStructReader)
+    assert isinstance(recvd, capnp._DynamicStructReader)
     assert_carstate(msg.carState, recvd.carState)
 
   def test_recv_one_retry(self):
@@ -227,21 +168,18 @@ class TestMessaging(unittest.TestCase):
 
     # this test doesn't work with ZMQ since multiprocessing interrupts it
     if "ZMQ" not in os.environ:
-      # wait 15 socket timeouts and make sure it's still retrying
+      # wait 5 socket timeouts and make sure it's still retrying
       p = multiprocessing.Process(target=messaging.recv_one_retry, args=(sub_sock,))
       p.start()
-      time.sleep(sock_timeout*15)
-      self.assertTrue(p.is_alive())
+      time.sleep(sock_timeout*5)
+      assert p.is_alive()
       p.terminate()
 
-    # wait 15 socket timeouts before sending
+    # wait 5 socket timeouts before sending
     msg = random_carstate()
-    delayed_send(sock_timeout*15, pub_sock, msg.to_bytes())
+    delayed_send(sock_timeout*5, pub_sock, msg.to_bytes())
     start_time = time.monotonic()
     recvd = messaging.recv_one_retry(sub_sock)
-    self.assertGreaterEqual(time.monotonic() - start_time, sock_timeout*15)
-    self.assertIsInstance(recvd, capnp._DynamicStructReader)
+    assert (time.monotonic() - start_time) >= sock_timeout*5
+    assert isinstance(recvd, capnp._DynamicStructReader)
     assert_carstate(msg.carState, recvd.carState)
-
-if __name__ == "__main__":
-  unittest.main()

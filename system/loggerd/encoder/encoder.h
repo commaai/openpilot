@@ -1,5 +1,13 @@
 #pragma once
 
+// has to be in this order
+#ifdef __linux__
+#include "third_party/linux/include/v4l2-controls.h"
+#include <linux/videodev2.h>
+#else
+#define V4L2_BUF_FLAG_KEYFRAME 8
+#endif
+
 #include <cassert>
 #include <cstdint>
 #include <memory>
@@ -9,10 +17,7 @@
 #include "cereal/messaging/messaging.h"
 #include "msgq/visionipc/visionipc.h"
 #include "common/queue.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "system/loggerd/loggerd.h"
-
-#define V4L2_BUF_FLAG_KEYFRAME 8
 
 class VideoEncoder {
 public:
@@ -22,7 +27,7 @@ public:
   virtual void encoder_open(const char* path) = 0;
   virtual void encoder_close() = 0;
 
-  void publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
+  void publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);
 
 protected:
   void publish_thumbnail(uint32_t frame_id, uint64_t timestamp_eof, kj::ArrayPtr<capnp::byte> dat);

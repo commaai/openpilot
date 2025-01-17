@@ -1,4 +1,5 @@
 import os
+import posixpath
 import socket
 from urllib.parse import urlparse
 
@@ -7,11 +8,15 @@ from openpilot.tools.lib.url_file import URLFile
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 
-def internal_source_available():
+def internal_source_available(url=DATA_ENDPOINT):
+  if os.path.isdir(url):
+    return True
+
   try:
-    hostname = urlparse(DATA_ENDPOINT).hostname
-    port = urlparse(DATA_ENDPOINT).port or 80
+    hostname = urlparse(url).hostname
+    port = urlparse(url).port or 80
     with socket.socket(socket.AF_INET,socket.SOCK_STREAM) as s:
+      s.settimeout(0.5)
       s.connect((hostname, port))
     return True
   except (socket.gaierror, ConnectionRefusedError):
@@ -21,7 +26,7 @@ def internal_source_available():
 
 def resolve_name(fn):
   if fn.startswith("cd:/"):
-    return fn.replace("cd:/", DATA_ENDPOINT)
+    return posixpath.join(DATA_ENDPOINT, fn[4:])
   return fn
 
 

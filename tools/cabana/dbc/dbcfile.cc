@@ -9,10 +9,6 @@ DBCFile::DBCFile(const QString &dbc_file_name) {
   if (file.open(QIODevice::ReadOnly)) {
     name_ = QFileInfo(dbc_file_name).baseName();
     filename = dbc_file_name;
-    // Remove auto save file extension
-    if (dbc_file_name.endsWith(AUTO_SAVE_EXTENSION)) {
-      filename.chop(AUTO_SAVE_EXTENSION.length());
-    }
     parse(file.readAll());
   } else {
     throw std::runtime_error("Failed to open file.");
@@ -20,32 +16,17 @@ DBCFile::DBCFile(const QString &dbc_file_name) {
 }
 
 DBCFile::DBCFile(const QString &name, const QString &content) : name_(name), filename("") {
-  // Open from clipboard
   parse(content);
 }
 
 bool DBCFile::save() {
   assert(!filename.isEmpty());
-  if (writeContents(filename)) {
-    cleanupAutoSaveFile();
-    return true;
-  }
-  return false;
+  return writeContents(filename);
 }
 
 bool DBCFile::saveAs(const QString &new_filename) {
   filename = new_filename;
   return save();
-}
-
-bool DBCFile::autoSave() {
-  return !filename.isEmpty() && writeContents(filename + AUTO_SAVE_EXTENSION);
-}
-
-void DBCFile::cleanupAutoSaveFile() {
-  if (!filename.isEmpty()) {
-    QFile::remove(filename + AUTO_SAVE_EXTENSION);
-  }
 }
 
 bool DBCFile::writeContents(const QString &fn) {
@@ -75,7 +56,7 @@ cabana::Msg *DBCFile::msg(const QString &name) {
   return it != msgs.end() ? &(it->second) : nullptr;
 }
 
-cabana::Signal *DBCFile::signal(uint32_t address, const QString name) {
+cabana::Signal *DBCFile::signal(uint32_t address, const QString &name) {
   auto m = msg(address);
   return m ? (cabana::Signal *)m->sig(name) : nullptr;
 }
@@ -164,7 +145,7 @@ void DBCFile::parseCM_BO(const QString &line, const QString &content, const QStr
 }
 
 void DBCFile::parseSG(const QString &line, cabana::Msg *current_msg, int &multiplexor_cnt) {
-  static QRegularExpression sg_regexp(R"(^SG_ (\w+) : (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
+  static QRegularExpression sg_regexp(R"(^SG_ (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
   static QRegularExpression sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9.+\-eE]+),([0-9.+\-eE]+)\) \[([0-9.+\-eE]+)\|([0-9.+\-eE]+)\] \"(.*)\" (.*))");
 
   if (!current_msg)

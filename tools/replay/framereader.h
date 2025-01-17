@@ -4,8 +4,8 @@
 #include <vector>
 
 #include "msgq/visionipc/visionbuf.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "tools/replay/filereader.h"
+#include "tools/replay/util.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>

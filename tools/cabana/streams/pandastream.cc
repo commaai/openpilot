@@ -66,7 +66,6 @@ void PandaStream::streamThread() {
     auto canData = evt.initCan(raw_can_data.size());
     for (uint i = 0; i<raw_can_data.size(); i++) {
       canData[i].setAddress(raw_can_data[i].address);
-      canData[i].setBusTime(raw_can_data[i].busTime);
       canData[i].setDat(kj::arrayPtr((uint8_t*)raw_can_data[i].dat.data(), raw_can_data[i].dat.size()));
       canData[i].setSrc(raw_can_data[i].src);
     }
@@ -77,13 +76,9 @@ void PandaStream::streamThread() {
   }
 }
 
-AbstractOpenStreamWidget *PandaStream::widget(AbstractStream **stream) {
-  return new OpenPandaWidget(stream);
-}
-
 // OpenPandaWidget
 
-OpenPandaWidget::OpenPandaWidget(AbstractStream **stream) : AbstractOpenStreamWidget(stream) {
+OpenPandaWidget::OpenPandaWidget(QWidget *parent) : AbstractOpenStreamWidget(parent) {
   form_layout = new QFormLayout(this);
   if (can && dynamic_cast<PandaStream *>(can) != nullptr) {
     form_layout->addWidget(new QLabel(tr("Already connected to %1.").arg(can->routeName())));
@@ -182,12 +177,11 @@ void OpenPandaWidget::buildConfigForm() {
   }
 }
 
-bool OpenPandaWidget::open() {
+AbstractStream *OpenPandaWidget::open() {
   try {
-    *stream = new PandaStream(qApp, config);
-    return true;
+    return new PandaStream(qApp, config);
   } catch (std::exception &e) {
     QMessageBox::warning(nullptr, tr("Warning"), tr("Failed to connect to panda: '%1'").arg(e.what()));
-    return false;
+    return nullptr;
   }
 }

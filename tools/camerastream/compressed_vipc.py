@@ -6,6 +6,8 @@ import argparse
 import numpy as np
 import multiprocessing
 import time
+import signal
+
 
 import cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -18,8 +20,8 @@ V4L2_BUF_FLAG_KEYFRAME = 8
 
 ENCODE_SOCKETS = {
   VisionStreamType.VISION_STREAM_ROAD: "roadEncodeData",
-  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
   VisionStreamType.VISION_STREAM_DRIVER: "driverEncodeData",
+  VisionStreamType.VISION_STREAM_WIDE_ROAD: "wideRoadEncodeData",
 }
 
 def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
@@ -41,7 +43,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
     codec = av.CodecContext.create("hevc", "r")
 
   os.environ["ZMQ"] = "1"
-  messaging.context = messaging.Context()
+  messaging.reset_context()
   sock = messaging.sub_sock(sock_name, None, addr=addr, conflate=False)
   cnt = 0
   last_idx = -1
@@ -99,26 +101,26 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
       pc_latency = (time.monotonic()-time_q[0])*1000
       time_q = time_q[1:]
       if debug:
-        print("%2d %4d %.3f %.3f roll %6.2f ms latency %6.2f ms + %6.2f ms + %6.2f ms = %6.2f ms"
-              % (len(msgs), evta.idx.encodeId, evt.logMonoTime/1e9, evta.idx.timestampEof/1e6, frame_latency,
-                 process_latency, network_latency, pc_latency, process_latency+network_latency+pc_latency ), len(evta.data), sock_name)
+        print(f"{len(msgs):2d} {evta.idx.encodeId:4d} {evt.logMonoTime/1e9:.3f} {evta.idx.timestampEof/1e6:.3f} \
+            roll {frame_latency:6.2f} ms latency {process_latency:6.2f} ms + {network_latency:6.2f} ms + {pc_latency:6.2f} ms \
+            = {process_latency+network_latency+pc_latency:6.2f} ms", len(evta.data), sock_name)
 
 
 class CompressedVipc:
   def __init__(self, addr, vision_streams, nvidia=False, debug=False):
     print("getting frame sizes")
     os.environ["ZMQ"] = "1"
-    messaging.context = messaging.Context()
+    messaging.reset_context()
     sm = messaging.SubMaster([ENCODE_SOCKETS[s] for s in vision_streams], addr=addr)
     while min(sm.recv_frame.values()) == 0:
       sm.update(100)
     os.environ.pop("ZMQ")
-    messaging.context = messaging.Context()
+    messaging.reset_context()
 
     self.vipc_server = VisionIpcServer("camerad")
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
-      self.vipc_server.create_buffers(vst, 4, False, ed.width, ed.height)
+      self.vipc_server.create_buffers(vst, 4, ed.width, ed.height)
     self.vipc_server.start_listener()
 
     self.procs = []
@@ -147,10 +149,14 @@ if __name__ == "__main__":
 
   vision_streams = [
     VisionStreamType.VISION_STREAM_ROAD,
-    VisionStreamType.VISION_STREAM_WIDE_ROAD,
     VisionStreamType.VISION_STREAM_DRIVER,
+    VisionStreamType.VISION_STREAM_WIDE_ROAD,
   ]
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
   cvipc = CompressedVipc(args.addr, vsts, args.nvidia, debug=(not args.silent))
+
+  # register exit handler
+  signal.signal(signal.SIGINT, lambda sig, frame: cvipc.kill())
+
   cvipc.join()

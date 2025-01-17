@@ -1,7 +1,9 @@
 #include "tools/replay/camera.h"
 
-#include <capnp/dynamic.h>
 #include <cassert>
+#include <algorithm>
+
+#include <capnp/dynamic.h>
 
 #include "third_party/linux/include/msm_media_info.h"
 #include "tools/replay/util.h"
@@ -27,6 +29,13 @@ CameraServer::CameraServer(std::pair<int, int> camera_size[MAX_CAMERAS]) {
 CameraServer::~CameraServer() {
   for (auto &cam : cameras_) {
     if (cam.thread.joinable()) {
+      // Clear the queue
+      std::pair<FrameReader*, const Event *> item;
+      while (cam.queue.try_pop(item)) {
+        --publishing_;
+      }
+
+      // Signal termination and join the thread
       cam.queue.push({});
       cam.thread.join();
     }
@@ -42,7 +51,7 @@ void CameraServer::startVipcServer() {
     if (cam.width > 0 && cam.height > 0) {
       rInfo("camera[%d] frame size %dx%d", cam.type, cam.width, cam.height);
       auto [nv12_width, nv12_height, nv12_buffer_size] = get_nv12_info(cam.width, cam.height);
-      vipc_server_->create_buffers_with_sizes(cam.stream_type, BUFFER_COUNT, false, cam.width, cam.height,
+      vipc_server_->create_buffers_with_sizes(cam.stream_type, BUFFER_COUNT, cam.width, cam.height,
                                               nv12_buffer_size, nv12_width, nv12_width * nv12_height);
       if (!cam.thread.joinable()) {
         cam.thread = std::thread(&CameraServer::cameraThread, this, std::ref(cam));
@@ -60,7 +69,6 @@ void CameraServer::cameraThread(Camera &cam) {
     capnp::FlatArrayMessageReader reader(event->data);
     auto evt = reader.getRoot<cereal::Event>();
     auto eidx = capnp::AnyStruct::Reader(evt).getPointerSection()[0].getAs<cereal::EncodeIndex>();
-    if (eidx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C) continue;
 
     int segment_id = eidx.getSegmentId();
     uint32_t frame_id = eidx.getFrameId();

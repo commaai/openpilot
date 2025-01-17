@@ -39,7 +39,7 @@ public:
     uint8_t chip_id = 0;
     int ret = read_register(address, &chip_id, 1);
     if (ret < 0) {
-      LOGE("Reading chip ID failed: %d", ret);
+      LOGD("Reading chip ID failed: %d", ret);
       return -1;
     }
     for (int i = 0; i < expected_ids.size(); ++i) {

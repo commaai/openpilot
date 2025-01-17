@@ -23,7 +23,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   main_layout->setSpacing(0);
 
   // toolbar
-  QToolBar *toolbar = new QToolBar(tr("Charts"), this);
+  toolbar = new QToolBar(tr("Charts"), this);
   int icon_size = style()->pixelMetric(QStyle::PM_SmallIconSize);
   toolbar->setIconSize({icon_size, icon_size});
 
@@ -34,6 +34,21 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   toolbar->addWidget(title_label = new QLabel());
   title_label->setContentsMargins(0, 0, style()->pixelMetric(QStyle::PM_LayoutHorizontalSpacing), 0);
 
+  auto chart_type_action = toolbar->addAction("");
+  QMenu *chart_type_menu = new QMenu(this);
+  auto types = std::array{tr("Line"), tr("Step"), tr("Scatter")};
+  for (int i = 0; i < types.size(); ++i) {
+    QString type_text = types[i];
+    chart_type_menu->addAction(type_text, this, [=]() {
+      settings.chart_series_type = i;
+      chart_type_action->setText("Type: " + type_text);
+      settingChanged();
+    });
+  }
+  chart_type_action->setText("Type: " + types[settings.chart_series_type]);
+  chart_type_action->setMenu(chart_type_menu);
+  qobject_cast<QToolButton *>(toolbar->widgetForAction(chart_type_action))->setPopupMode(QToolButton::InstantPopup);
+
   QMenu *menu = new QMenu(this);
   for (int i = 0; i < MAX_COLUMN_COUNT; ++i) {
     menu->addAction(tr("%1").arg(i + 1), [=]() { setColumnCount(i + 1); });
@@ -42,13 +57,13 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   columns_action->setMenu(menu);
   qobject_cast<QToolButton*>(toolbar->widgetForAction(columns_action))->setPopupMode(QToolButton::InstantPopup);
 
-  QLabel *stretch_label = new QLabel(this);
-  stretch_label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
-  toolbar->addWidget(stretch_label);
+  QWidget *spacer = new QWidget(this);
+  spacer->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Preferred);
+  toolbar->addWidget(spacer);
 
   range_lb_action = toolbar->addWidget(range_lb = new QLabel(this));
   range_slider = new LogSlider(1000, Qt::Horizontal, this);
-  range_slider->setMaximumWidth(200);
+  range_slider->setFixedWidth(150 * qApp->devicePixelRatio());
   range_slider->setToolTip(tr("Set the chart range"));
   range_slider->setRange(1, settings.max_cached_minutes * 60);
   range_slider->setSingleStep(1);
@@ -93,7 +108,7 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   current_theme = settings.theme;
   column_count = std::clamp(settings.chart_column_count, 1, MAX_COLUMN_COUNT);
   max_chart_range = std::clamp(settings.chart_range, 1, settings.max_cached_minutes * 60);
-  display_range = {0, max_chart_range};
+  display_range = std::make_pair(can->minSeconds(), can->minSeconds() + max_chart_range);
   range_slider->setValue(max_chart_range);
   updateToolBar();
 
@@ -103,6 +118,8 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(dbc(), &DBCManager::DBCFileChanged, this, &ChartsWidget::removeAll);
   QObject::connect(can, &AbstractStream::eventsMerged, this, &ChartsWidget::eventsMerged);
   QObject::connect(can, &AbstractStream::msgsReceived, this, &ChartsWidget::updateState);
+  QObject::connect(can, &AbstractStream::seeking, this, &ChartsWidget::updateState);
+  QObject::connect(can, &AbstractStream::timeRangeChanged, this, &ChartsWidget::timeRangeChanged);
   QObject::connect(range_slider, &QSlider::valueChanged, this, &ChartsWidget::setMaxChartRange);
   QObject::connect(new_plot_btn, &QToolButton::clicked, this, &ChartsWidget::newChart);
   QObject::connect(remove_all_btn, &QToolButton::clicked, this, &ChartsWidget::removeAll);
@@ -114,16 +131,17 @@ ChartsWidget::ChartsWidget(QWidget *parent) : QFrame(parent) {
   QObject::connect(tabbar, &QTabBar::currentChanged, [this](int index) {
     if (index != -1) updateLayout(true);
   });
-  QObject::connect(dock_btn, &QToolButton::clicked, [this]() {
-    emit dock(!docking);
-    docking = !docking;
-    updateToolBar();
-  });
+  QObject::connect(dock_btn, &QToolButton::clicked, this, &ChartsWidget::toggleChartsDocking);
 
+  setIsDocked(true);
   newTab();
+  qApp->installEventFilter(this);
   setWhatsThis(tr(R"(
-    <b>Chart view</b><br />
-    <!-- TODO: add descprition here -->
+    <b>Chart View</b><br />
+    <b>Click</b>: Click to seek to a corresponding time.<br />
+    <b>Drag</b>: Zoom into the chart.<br />
+    <b>Shift + Drag</b>: Scrub through the chart to view values.<br />
+    <b>Right Mouse</b>: Open the context menu.<br />
   )"));
 }
 
@@ -159,16 +177,13 @@ void ChartsWidget::eventsMerged(const MessageEventsMap &new_events) {
   }
 }
 
-void ChartsWidget::setZoom(double min, double max) {
-  zoomed_range = {min, max};
-  is_zoomed = zoomed_range != display_range;
+void ChartsWidget::timeRangeChanged(const std::optional<std::pair<double, double>> &time_range) {
   updateToolBar();
   updateState();
-  emit rangeChanged(min, max, is_zoomed);
 }
 
 void ChartsWidget::zoomReset() {
-  setZoom(display_range.first, display_range.second);
+  can->setTimeRange(std::nullopt);
   zoom_undo_stack->clear();
 }
 
@@ -178,30 +193,31 @@ QRect ChartsWidget::chartVisibleRect(ChartView *chart) {
 }
 
 void ChartsWidget::showValueTip(double sec) {
+  emit showTip(sec);
+  if (sec < 0 && !value_tip_visible_) return;
+
+  value_tip_visible_ = sec >= 0;
   for (auto c : currentCharts()) {
-    sec >= 0 ? c->showTip(sec) : c->hideTip();
+    value_tip_visible_ ? c->showTip(sec) : c->hideTip();
   }
 }
 
 void ChartsWidget::updateState() {
   if (charts.isEmpty()) return;
 
+  const auto &time_range = can->timeRange();
   const double cur_sec = can->currentSec();
-  if (!is_zoomed) {
+  if (!time_range.has_value()) {
     double pos = (cur_sec - display_range.first) / std::max<float>(1.0, max_chart_range);
     if (pos < 0 || pos > 0.8) {
-      display_range.first = std::max(0.0, cur_sec - max_chart_range * 0.1);
+      display_range.first = std::max(can->minSeconds(), cur_sec - max_chart_range * 0.1);
     }
-    double max_sec = std::min(display_range.first + max_chart_range, can->totalSeconds());
-    display_range.first = std::max(0.0, max_sec - max_chart_range);
+    double max_sec = std::min(display_range.first + max_chart_range, can->maxSeconds());
+    display_range.first = std::max(can->minSeconds(), max_sec - max_chart_range);
     display_range.second = display_range.first + max_chart_range;
-  } else if (cur_sec < (zoomed_range.first - 0.1) || cur_sec >= zoomed_range.second) {
-    // loop in zoomed range
-    QTimer::singleShot(0, [ts = zoomed_range.first]() { can->seekTo(ts);});
-    return;
   }
 
-  const auto &range = is_zoomed ? zoomed_range : display_range;
+  const auto &range = time_range ? *time_range : display_range;
   for (auto c : charts) {
     c->updatePlot(cur_sec, range.first, range.second);
   }
@@ -213,19 +229,25 @@ void ChartsWidget::setMaxChartRange(int value) {
   updateState();
 }
 
+void ChartsWidget::setIsDocked(bool docked) {
+  is_docked = docked;
+  dock_btn->setIcon(is_docked ? "arrow-up-right-square" : "arrow-down-left-square");
+  dock_btn->setToolTip(is_docked ? tr("Float the charts window") : tr("Dock the charts window"));
+}
+
 void ChartsWidget::updateToolBar() {
   title_label->setText(tr("Charts: %1").arg(charts.size()));
-  columns_action->setText(tr("Column: %1").arg(column_count));
+  columns_action->setText(tr("Columns: %1").arg(column_count));
   range_lb->setText(utils::formatSeconds(max_chart_range));
+
+  bool is_zoomed = can->timeRange().has_value();
   range_lb_action->setVisible(!is_zoomed);
   range_slider_action->setVisible(!is_zoomed);
   undo_zoom_action->setVisible(is_zoomed);
   redo_zoom_action->setVisible(is_zoomed);
   reset_zoom_action->setVisible(is_zoomed);
-  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(zoomed_range.first, 0, 'f', 2).arg(zoomed_range.second, 0, 'f', 2) : "");
+  reset_zoom_btn->setText(is_zoomed ? tr("%1-%2").arg(can->timeRange()->first, 0, 'f', 2).arg(can->timeRange()->second, 0, 'f', 2) : "");
   remove_all_btn->setEnabled(!charts.isEmpty());
-  dock_btn->setIcon(docking ? "arrow-up-right-square" : "arrow-down-left-square");
-  dock_btn->setToolTip(docking ? tr("Undock charts") : tr("Dock charts"));
 }
 
 void ChartsWidget::settingChanged() {
@@ -237,7 +259,9 @@ void ChartsWidget::settingChanged() {
       c->setTheme(theme);
     }
   }
-  range_slider->setRange(1, settings.max_cached_minutes * 60);
+  if (range_slider->maximum() != settings.max_cached_minutes * 60) {
+    range_slider->setRange(1, settings.max_cached_minutes * 60);
+  }
   for (auto c : charts) {
     c->setFixedHeight(settings.chart_height);
     c->setSeriesType((SeriesType)settings.chart_series_type);
@@ -251,14 +275,15 @@ ChartView *ChartsWidget::findChart(const MessageId &id, const cabana::Signal *si
   return nullptr;
 }
 
-ChartView *ChartsWidget::createChart() {
-  auto chart = new ChartView(is_zoomed ? zoomed_range : display_range, this);
+ChartView *ChartsWidget::createChart(int pos) {
+  auto chart = new ChartView(can->timeRange().value_or(display_range), this);
   chart->setFixedHeight(settings.chart_height);
   chart->setMinimumWidth(CHART_MIN_WIDTH);
   chart->setSizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::Fixed);
   QObject::connect(chart, &ChartView::axisYLabelWidthChanged, align_timer, qOverload<>(&QTimer::start));
-  charts.push_front(chart);
-  currentCharts().push_front(chart);
+  pos = std::clamp(pos, 0, charts.size());
+  charts.insert(pos, chart);
+  currentCharts().insert(pos, chart);
   updateLayout(true);
   updateToolBar();
   return chart;
@@ -277,8 +302,9 @@ void ChartsWidget::showChart(const MessageId &id, const cabana::Signal *sig, boo
 
 void ChartsWidget::splitChart(ChartView *src_chart) {
   if (src_chart->sigs.size() > 1) {
+    int pos = charts.indexOf(src_chart) + 1;
     for (auto it = src_chart->sigs.begin() + 1; it != src_chart->sigs.end(); /**/) {
-      auto c = createChart();
+      auto c = createChart(pos);
       src_chart->chart()->removeSeries(it->series);
 
       // Restore to the original color
@@ -374,12 +400,7 @@ void ChartsWidget::doAutoScroll() {
 }
 
 QSize ChartsWidget::minimumSizeHint() const {
-  return QSize(CHART_MIN_WIDTH, QWidget::minimumSizeHint().height());
-}
-
-void ChartsWidget::resizeEvent(QResizeEvent *event) {
-  QWidget::resizeEvent(event);
-  updateLayout();
+  return QSize(CHART_MIN_WIDTH * 1.5 * qApp->devicePixelRatio(), QWidget::minimumSizeHint().height());
 }
 
 void ChartsWidget::newChart() {
@@ -434,10 +455,29 @@ void ChartsWidget::alignCharts() {
   }
 }
 
-bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
-  if (obj != this && event->type() == QEvent::Close) {
-    emit dock_btn->clicked();
-    return true;
+bool ChartsWidget::eventFilter(QObject *o, QEvent *e) {
+  if (!value_tip_visible_) return false;
+
+  if (e->type() == QEvent::MouseMove) {
+    bool on_tip = qobject_cast<TipLabel *>(o) != nullptr;
+    auto global_pos = static_cast<QMouseEvent *>(e)->globalPos();
+
+    for (const auto &c : charts) {
+      auto local_pos = c->mapFromGlobal(global_pos);
+      if (c->chart()->plotArea().contains(local_pos)) {
+        if (on_tip) {
+          showValueTip(c->secondsAtPoint(local_pos));
+        }
+        return false;
+      }
+    }
+
+    showValueTip(-1);
+  } else if (e->type() == QEvent::Wheel) {
+    if (auto tip = qobject_cast<TipLabel *>(o)) {
+      // Forward the event to the parent widget
+      QCoreApplication::sendEvent(tip->parentWidget(), e);
+    }
   }
   return false;
 }
@@ -445,30 +485,25 @@ bool ChartsWidget::eventFilter(QObject *obj, QEvent *event) {
 bool ChartsWidget::event(QEvent *event) {
   bool back_button = false;
   switch (event->type()) {
-    case QEvent::MouseButtonPress: {
-      QMouseEvent *ev = static_cast<QMouseEvent *>(event);
-      back_button = ev->button() == Qt::BackButton;
+    case QEvent::Resize:
+      updateLayout();
       break;
-    }
-    case QEvent::NativeGesture: {
-      QNativeGestureEvent *ev = static_cast<QNativeGestureEvent *>(event);
-      back_button = (ev->value() == 180);
+    case QEvent::MouseButtonPress:
+      back_button = static_cast<QMouseEvent *>(event)->button() == Qt::BackButton;
       break;
-    }
-    case QEvent::WindowActivate:
+    case QEvent::NativeGesture:
+      back_button = (static_cast<QNativeGestureEvent *>(event)->value() == 180);
+      break;
     case QEvent::WindowDeactivate:
-    case QEvent::FocusIn:
     case QEvent::FocusOut:
-    case QEvent::Leave:
       showValueTip(-1);
-      break;
     default:
       break;
   }
 
   if (back_button) {
     zoom_undo_stack->undo();
-    return true;
+    return true;  // Return true since the event has been handled
   }
   return QFrame::event(event);
 }
@@ -514,20 +549,14 @@ void ChartsContainer::dropEvent(QDropEvent *event) {
 
 void ChartsContainer::paintEvent(QPaintEvent *ev) {
   if (!drop_indictor_pos.isNull() && !childAt(drop_indictor_pos)) {
-    QRect r;
+    QRect r = geometry();
+    r.setHeight(CHART_SPACING);
     if (auto insert_after = getDropAfter(drop_indictor_pos)) {
-      QRect area = insert_after->geometry();
-      r = QRect(area.left(), area.bottom() + 1, area.width(), CHART_SPACING);
-    } else {
-      r = geometry();
-      r.setHeight(CHART_SPACING);
+      r.moveTop(insert_after->geometry().bottom());
     }
 
     QPainter p(this);
-    p.setPen(QPen(palette().highlight(), 2));
-    p.drawLine(r.topLeft() + QPoint(1, 0), r.bottomLeft() + QPoint(1, 0));
-    p.drawLine(r.topLeft() + QPoint(0, r.height() / 2), r.topRight() + QPoint(0, r.height() / 2));
-    p.drawLine(r.topRight(), r.bottomRight());
+    p.fillRect(r, palette().highlight());
   }
 }
 

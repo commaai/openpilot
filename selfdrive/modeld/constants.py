@@ -15,7 +15,7 @@ class ModelConstants:
   # model inputs constants
   MODEL_FREQ = 20
   FEATURE_LEN = 512
-  HISTORY_BUFFER_LEN = 99
+  FULL_HISTORY_BUFFER_LEN = 99
   DESIRE_LEN = 8
   TRAFFIC_CONVENTION_LEN = 2
   LAT_PLANNER_STATE_LEN = 4
@@ -58,6 +58,8 @@ class ModelConstants:
   CONFIDENCE_BUFFER_LEN = 5
   RYG_GREEN = 0.01165
   RYG_YELLOW = 0.06157
+
+  POLY_PATH_DEGREE = 4
 
 # model outputs slices
 class Plan:

@@ -11,6 +11,7 @@
        <curve name="/carState/aEgo" color="#f14cc1"/>
        <curve name="/longitudinalPlan/accels/0" color="#9467bd"/>
        <curve name="/carControl/actuators/accel" color="#17becf"/>
+       <curve name="/carOutput/actuatorsOutput/accel" color="#d62728"/>
       </plot>
      </DockArea>
      <DockArea name="...">

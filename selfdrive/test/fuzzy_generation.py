@@ -16,7 +16,7 @@ class FuzzyGenerator:
 
   def generate_native_type(self, field: str) -> st.SearchStrategy[bool | int | float | str | bytes]:
     value_func = self.native_type_map.get(field)
-    if value_func:
+    if value_func is not None:
       return value_func
     else:
       raise NotImplementedError(f'Invalid type: {field}')

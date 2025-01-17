@@ -50,8 +50,9 @@ private:
 
 #define SPILOG(fn, fmt, ...) do {  \
       fn(fmt, ## __VA_ARGS__);     \
-      fn("  %d / 0x%x / %d / %d", \
-         xfer_count, header.endpoint, header.tx_len, header.max_rx_len); \
+      fn("  %d / 0x%x / %d / %d / tx: %s", \
+         xfer_count, header.endpoint, header.tx_len, header.max_rx_len, \
+         util::hexdump(tx_buf, std::min((int)header.tx_len, 8)).c_str()); \
       } while (0)
 
 PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
@@ -238,6 +239,7 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
         // due to full TX buffers
         nack_count += 1;
         if (nack_count > 3) {
+          SPILOG(LOGD, "NACK sleep %d", nack_count);
           usleep(std::clamp(nack_count*10, 200, 2000));
         }
       }
@@ -256,14 +258,14 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
   if (timeout == 0) {
     timeout = SPI_ACK_TIMEOUT;
   }
-  timeout = std::clamp(timeout, 100U, SPI_ACK_TIMEOUT);
+  timeout = std::clamp(timeout, 20U, SPI_ACK_TIMEOUT);
 
   spi_ioc_transfer transfer = {
     .tx_buf = (uint64_t)tx_buf,
     .rx_buf = (uint64_t)rx_buf,
-    .len = length
+    .len = length,
   };
-  tx_buf[0] = tx;
+  memset(tx_buf, tx, length);
 
   while (true) {
     int ret = lltransfer(transfer);
@@ -275,13 +277,13 @@ int PandaSpiHandle::wait_for_ack(uint8_t ack, uint8_t tx, unsigned int timeout, 
     if (rx_buf[0] == ack) {
       break;
     } else if (rx_buf[0] == SPI_NACK) {
-      SPILOG(LOGD, "SPI: got NACK");
+      SPILOG(LOGD, "SPI: got NACK, waiting for 0x%x", ack);
       return SpiError::NACK;
     }
 
     // handle timeout
     if (millis_since_boot() - start_millis > timeout) {
-      SPILOG(LOGW, "SPI: timed out waiting for ACK");
+      SPILOG(LOGW, "SPI: timed out waiting for ACK, waiting for 0x%x", ack);
       return SpiError::ACK_TIMEOUT;
     }
   }
@@ -352,13 +354,13 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   ret = lltransfer(transfer);
   if (ret < 0) {
     SPILOG(LOGE, "SPI: failed to send header");
-    return ret;
+    goto fail;
   }
 
   // Wait for (N)ACK
   ret = wait_for_ack(SPI_HACK, 0x11, timeout, 1);
   if (ret < 0) {
-    return ret;
+    goto fail;
   }
 
   // Send data
@@ -370,20 +372,20 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   ret = lltransfer(transfer);
   if (ret < 0) {
     SPILOG(LOGE, "SPI: failed to send data");
-    return ret;
+    goto fail;
   }
 
   // Wait for (N)ACK
   ret = wait_for_ack(SPI_DACK, 0x13, timeout, 3);
   if (ret < 0) {
-    return ret;
+    goto fail;
   }
 
   // Read data
   rx_data_len = *(uint16_t *)(rx_buf+1);
   if (rx_data_len >= SPI_BUF_SIZE) {
     SPILOG(LOGE, "SPI: RX data len larger than buf size %d", rx_data_len);
-    return -1;
+    goto fail;
   }
 
   transfer.len = rx_data_len + 1;
@@ -391,11 +393,11 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   ret = lltransfer(transfer);
   if (ret < 0) {
     SPILOG(LOGE, "SPI: failed to read rx data");
-    return ret;
+    goto fail;
   }
   if (!check_checksum(rx_buf, rx_data_len + 4)) {
     SPILOG(LOGE, "SPI: bad checksum");
-    return -1;
+    goto fail;
   }
 
   if (rx_data != NULL) {
@@ -403,5 +405,20 @@ int PandaSpiHandle::spi_transfer(uint8_t endpoint, uint8_t *tx_data, uint16_t tx
   }
 
   return rx_data_len;
+
+fail:
+  // ensure slave is in a consistent state
+  // and ready for the next transfer
+  int nack_cnt = 0;
+  while (nack_cnt < 3) {
+    if (wait_for_ack(SPI_NACK, 0x14, 1, SPI_BUF_SIZE/2) == 0) {
+      nack_cnt += 1;
+    } else {
+      nack_cnt = 0;
+    }
+  }
+
+  if (ret >= 0) ret = -1;
+  return ret;
 }
 #endif
