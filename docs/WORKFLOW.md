@@ -7,6 +7,9 @@ Most development happens on normal Ubuntu workstations, and not in cars or direc
 ## Quick start
 
 ```bash
+# open root directory
+cd openpilot
+
 # get the latest stuff
 git pull
 git lfs pull
@@ -14,6 +17,9 @@ git submodule update --init --recursive
 
 # update dependencies
 tools/ubuntu_setup.sh
+
+# build virtual environment
+source .venv/bin/activate
 
 # build everything
 scons -j$(nproc)
