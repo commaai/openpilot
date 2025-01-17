@@ -45,13 +45,13 @@ def joystickd_thread():
       joystick_axes = [0.0, 0.0]
 
     if CC.longActive:
-      actuators.accel = 4.0 * np.clip(joystick_axes[0], -1, 1)
+      actuators.accel = 4.0 * float(np.clip(joystick_axes[0], -1, 1))
 
     if CC.latActive:
       max_curvature = MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
       max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
 
-      actuators.steer = np.clip(joystick_axes[1], -1, 1)
+      actuators.steer = float(np.clip(joystick_axes[1], -1, 1))
       actuators.steeringAngleDeg, actuators.curvature = actuators.steer * max_angle, actuators.steer * -max_curvature
 
     pm.send('carControl', cc_msg)
