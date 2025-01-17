@@ -326,9 +326,7 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
   pm->send("peripheralState", msg);
 }
 
-void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoofing_started) {
-  static SubMaster sm({"selfdriveState"});
-
+void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool engaged, bool spoofing_started) {
   std::vector<std::string> connected_serials;
   for (Panda *p : pandas) {
     connected_serials.push_back(p->hw_serial());
@@ -364,16 +362,8 @@ void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool spoof
       }
     }
 
-    sm.update(0);
-    const bool engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
     for (const auto &panda : pandas) {
       panda->send_heartbeat(engaged);
-    }
-  }
-
-  if (is_onroad && !engaged) {
-    for (auto &p : pandas) {
-      p->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
   }
 }
@@ -437,9 +427,11 @@ void pandad_run(std::vector<Panda *> &pandas) {
   std::thread send_thread(can_send_thread, pandas, fake_send);
 
   RateKeeper rk("pandad", 100);
+  SubMaster sm({"selfdriveState"});
   PubMaster pm({"can", "pandaStates", "peripheralState"});
   PandaSafety panda_safety(pandas);
   Panda *peripheral_panda = pandas[0];
+  bool engaged = false;
 
   // Main loop: receive CAN data and process states
   while (!do_exit && check_all_connected(pandas)) {
@@ -452,7 +444,9 @@ void pandad_run(std::vector<Panda *> &pandas) {
 
     // Process panda state at 10 Hz
     if (rk.frame() % 10 == 0) {
-      process_panda_state(pandas, &pm, spoofing_started);
+      sm.update(0);
+      engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
+      process_panda_state(pandas, &pm, engaged, spoofing_started);
       panda_safety.configureSafetyMode();
     }
 
@@ -462,6 +456,15 @@ void pandad_run(std::vector<Panda *> &pandas) {
     }
 
     rk.keepTime();
+  }
+
+  const bool is_onroad = Params().getBool("IsOnroad");
+  if (is_onroad && !engaged) {
+    for (auto &p : pandas) {
+      if (p.connected()) {
+        p->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
+      }
+    }
   }
 
   send_thread.join();
