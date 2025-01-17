@@ -458,6 +458,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
     rk.keepTime();
   }
 
+  // Close relay on exit to prevent a fault
   const bool is_onroad = Params().getBool("IsOnroad");
   if (is_onroad && !engaged) {
     for (auto &p : pandas) {
