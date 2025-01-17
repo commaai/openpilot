@@ -125,12 +125,12 @@ class Car:
       self.CP.safetyConfigs = [safety_config]
 
     # Copy user key if available
-    try :
+    try:
       with open("/cache/params/SecOCKey") as f:
         user_key = f.readline().strip()
         if len(user_key) == 32:
           self.params.put("SecOCKey", user_key)
-    except:
+    except Exception:
       pass
 
     if self.CP.secOcRequired and not self.params.get_bool("IsReleaseBranch"):
