@@ -78,9 +78,6 @@ function launch {
     agnos_init
   fi
 
-  # Install user SecOCKey to params
-  cp /cache/params/SecOCKey /data/params/d/SecOCKey || true
-
   # write tmux scrollback to a file
   tmux capture-pane -pq -S-1000 > /tmp/launch_log
 

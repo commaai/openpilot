@@ -124,6 +124,14 @@ class Car:
       safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
+    # Copy user key if available
+    try :
+      with open("/cache/params/SecOCKey") as f:
+        line = f.readline().strip()
+        self.params.put("SecOCKey", line)
+    except:
+      pass
+
     if self.CP.secOcRequired and not self.params.get_bool("IsReleaseBranch"):
       secoc_key = self.params.get("SecOCKey", encoding='utf8')
       if secoc_key is not None:
