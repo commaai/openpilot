@@ -61,8 +61,6 @@ class SimulatorState:
     return math.sqrt(self.velocity.x**2 + self.velocity.y**2 + self.velocity.z**2)
 
   def set_accelerometer(self, prev_velocity: vec3, dt: float) -> vec3:
-    if prev_velocity is None:  # First time
-      prev_velocity = vec3(0, 0, 0)
 
     if dt <= 0:
       print("Warning: Time difference (dt) must be greater than zero. Skipping IMU update.")
@@ -82,8 +80,6 @@ class SimulatorState:
     Calculate a simple gyroscope reading based on the rate of change of bearing (yaw).
     For more advanced scenarios, you could also estimate pitch and roll rates.
     """
-    if prev_bearing is None:  # First time
-      prev_bearing = 0
 
     if dt <= 0:
       print("Warning: Time difference (dt) must be greater than zero. Skipping IMU update.")
