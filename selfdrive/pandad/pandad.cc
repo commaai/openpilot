@@ -462,7 +462,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
   const bool is_onroad = Params().getBool("IsOnroad");
   if (is_onroad && !engaged) {
     for (auto &p : pandas) {
-      if (p.connected()) {
+      if (p->connected()) {
         p->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
       }
     }
