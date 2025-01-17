@@ -433,6 +433,9 @@ function _op() {
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
+    start )         shift 1; op_start "$@" ;;
+    stop )          shift 1; op_stop "$@" ;;
+    restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     * ) op_default "$@" ;;
   esac
