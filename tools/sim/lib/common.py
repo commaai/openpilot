@@ -58,7 +58,43 @@ class SimulatorState:
 
   @property
   def speed(self):
-    return math.sqrt(self.velocity.x ** 2 + self.velocity.y ** 2 + self.velocity.z ** 2)
+    return math.sqrt(self.velocity.x**2 + self.velocity.y**2 + self.velocity.z**2)
+
+  def set_acceleration(self, prev_velocity: vec3, dt: float) -> vec3:
+    if prev_velocity is None:  # First time
+      return
+
+    if dt <= 0:
+      raise ValueError("Time difference (dt) must be greater than zero.")
+
+    # Compute acceleration for each component
+    acc_x = (self.velocity.x - prev_velocity.x) / dt
+    acc_y = (self.velocity.y - prev_velocity.y) / dt
+    acc_z = (self.velocity.z - prev_velocity.z) / dt
+
+    # Return acceleration as a vec3
+    self.imu.accelerometer = vec3(acc_x, acc_y, acc_z)
+
+  def set_gyroscope(self, prev_bearing: float, dt: float) -> vec3:
+    """
+    Calculate a simple gyroscope reading based on the rate of change of bearing (yaw).
+    For more advanced scenarios, you could also estimate pitch and roll rates.
+    """
+    if prev_bearing is None:  # First time
+      return
+
+    if dt <= 0:
+      raise ValueError("Time difference (dt) must be greater than zero.")
+
+    if dt <= 0:
+      raise ValueError("Time difference (dt) must be greater than zero.")
+
+    # Calculate change in bearing (yaw)
+    delta_bearing = self.bearing - prev_bearing
+    yaw_rate = delta_bearing / dt
+
+    # For now, assume no pitch or roll rate 0 car probably not rotating along its axis and not tilting its nose most of the time
+    self.imu.gyroscope = vec3(0, 0, yaw_rate)
 
 
 class World(ABC):

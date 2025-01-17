@@ -81,12 +81,15 @@ class MetaDriveWorld(World):
         self.exit_event.set()
 
   def read_sensors(self, state: SimulatorState):
+    prev_velocity = None
+    prev_bearing = None
+
     while self.vehicle_state_recv.poll(0):
       md_vehicle: metadrive_vehicle_state = self.vehicle_state_recv.recv()
       curr_pos = md_vehicle.position
 
       state.velocity = md_vehicle.velocity
-      state.bearing = md_vehicle.bearing
+      state.bearing = state.imu.bearing = md_vehicle.bearing
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
       state.valid = True
@@ -112,6 +115,12 @@ class MetaDriveWorld(World):
         if after_engaged_check and self.distance_moved == 0:
           self.status_q.put(QueueMessage(QueueMessageType.TERMINATION_INFO, {"vehicle_not_moving" : True}))
           self.exit_event.set()
+
+        state.set_acceleration(prev_velocity, since_last_check)
+        state.set_gyroscope(prev_bearing, since_last_check)
+
+        prev_bearing = state.bearing
+        prev_velocity = state.velocity
 
         self.last_check_timestamp = current_time
         self.distance_moved = 0
