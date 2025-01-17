@@ -127,8 +127,9 @@ class Car:
     # Copy user key if available
     try :
       with open("/cache/params/SecOCKey") as f:
-        line = f.readline().strip()
-        self.params.put("SecOCKey", line)
+        user_key = f.readline().strip()
+        if len(user_key) == 32:
+          self.params.put("SecOCKey", user_key)
     except:
       pass
 
