@@ -294,4 +294,17 @@ std::string check_output(const std::string& command) {
   return result;
 }
 
+bool system_time_valid() {
+  // Default to August 26, 2024
+  tm min_tm = {.tm_year = 2024 - 1900, .tm_mon = 7, .tm_mday = 26};
+  time_t min_date = mktime(&min_tm);
+
+  struct stat st;
+  if (stat("/lib/systemd/systemd", &st) == 0) {
+    min_date = std::max(min_date, st.st_mtime + 86400);  // Add 1 day (86400 seconds)
+  }
+
+  return time(nullptr) > min_date;
+}
+
 }  // namespace util
