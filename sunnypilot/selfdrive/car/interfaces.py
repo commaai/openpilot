@@ -12,6 +12,15 @@ from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
 from opendbc.car.hyundai.values import HyundaiFlags, DBC as HYUNDAI_DBC
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
+import openpilot.system.sentry as sentry
+
+
+def log_fingerprint(CP: structs.CarParams) -> None:
+  if CP.carFingerprint == "MOCK":
+    sentry.capture_fingerprint_mock()
+  else:
+    sentry.capture_fingerprint(CP.carFingerprint, CP.carName)
+
 
 def setup_car_interface_sp(CP: structs.CarParams, params):
   if CP.carName == 'hyundai':
