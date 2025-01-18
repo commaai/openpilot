@@ -65,6 +65,12 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
 
   addItem(device_grid_layout);
 
+  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+    for (auto btn : findChildren<PushButtonSP*>()) {
+      btn->setEnabled(offroad);
+    }
+  });
+
   // offroad mode and power buttons
 
   QHBoxLayout *power_layout = new QHBoxLayout();
