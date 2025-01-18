@@ -24,10 +24,21 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
     {"translateBtn", tr("Language")},
   };
 
+  int row = 0, col = 0;
   for (int i = 0; i < device_btns.size(); i++) {
+    if (device_btns[i].first == "regulatoryBtn" && !Hardware::TICI()) {
+      continue;
+    }
+
     auto *btn = new PushButtonSP(device_btns[i].second, 720, this);
-    device_grid_layout->addWidget(btn, i / 2, i % 2);
+    device_grid_layout->addWidget(btn, row, col);
     buttons[device_btns[i].first] = btn;
+
+    col++;
+    if (col > 1) {
+      col = 0;
+      row++;
+    }
   }
 
   connect(buttons["dcamBtn"], &PushButtonSP::clicked, [this]() {
@@ -48,8 +59,6 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
       const std::string txt = util::read_file("../assets/offroad/fcc.html");
       ConfirmationDialog::rich(QString::fromStdString(txt), this);
     });
-  } else {
-    buttons["regulatoryBtn"]->setEnabled(false);
   }
 
   connect(buttons["translateBtn"], &PushButtonSP::clicked, [=]() {
