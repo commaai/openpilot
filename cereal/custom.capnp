@@ -7,8 +7,8 @@ $Cxx.namespace("cereal");
 # These structs are guaranteed to remain reserved and empty in mainline
 # cereal, so use these if you want custom events in your fork.
 
-# you can rename the struct, but don't change the identifier
-
+# DO rename the structs
+# DON'T change the identifier (e.g. @0x81c2f05a394cf4af)
 
 struct CustomReserved0 @0x81c2f05a394cf4af {
 }
