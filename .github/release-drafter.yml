@@ -1,17 +1,22 @@
+exclude-labels:
+  - 'no-changelog'
 categories:
   - title: '🚀 Features'
     labels:
       - 'feature'
       - 'enhancement'
   - title: '🐛 Bug Fixes'
+    collapse-after: 5
     labels:
       - 'fix'
       - 'bugfix'
       - 'bug'
   - title: '🧰 Maintenance'
+    collapse-after: 5
     label: 'chore'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
+sort-by: title
 replacers:
   - search: '/[Ss][Uu][Nn][Nn][Yy][Pp][Ii][Ll][Oo][Tt]/g'
     replace: 'sunnypilot'
@@ -37,7 +42,3 @@ template: |
   ## Changes
 
   $CHANGES
-
-  ## Contributors
-
-  Thanks to $CONTRIBUTORS for your contributions to this release!
