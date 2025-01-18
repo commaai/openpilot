@@ -117,7 +117,6 @@ PairingPopup::PairingPopup(QWidget *parent) : DialogBase(parent) {
 }
 
 int PairingPopup::exec() {
-  auto network_type = (*uiState()->sm)["deviceState"].getDeviceState().getNetworkType();
   if (!util::system_time_valid()) {
     ConfirmationDialog::alert(tr("Please connect to Wi-Fi to complete initial pairing"), parentWidget());
     return QDialog::Rejected;
