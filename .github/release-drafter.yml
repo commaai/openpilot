@@ -1,0 +1,43 @@
+categories:
+  - title: '🚀 Features'
+    labels:
+      - 'feature'
+      - 'enhancement'
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'fix'
+      - 'bugfix'
+      - 'bug'
+  - title: '🧰 Maintenance'
+    label: 'chore'
+change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-title-escapes: '\<*_&'
+replacers:
+  - search: '/[Ss][Uu][Nn][Nn][Yy][Pp][Ii][Ll][Oo][Tt]/g'
+    replace: 'sunnypilot'
+  - search: '/\b[Ss][Pp]\b/g'
+    replace: 'SP'
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
+name-template: 'v$RESOLVED_VERSION 🚀'
+tag-template: 'v$RESOLVED_VERSION'
+version-template: "0.$MAJOR.$MINOR.$PATCH" # The day OP becomes v1, we need to bump this
+tag-prefix: "v0." # The day OP becomes v1, we need to bump this 
+prerelease-identifier: "staging"
+template: |
+  ## Changes
+
+  $CHANGES
+
+  ## Contributors
+
+  Thanks to $CONTRIBUTORS for your contributions to this release!
