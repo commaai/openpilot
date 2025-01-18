@@ -2556,7 +2556,6 @@ struct Event {
 
     # *********** Custom: reserved for forks ***********
 
-
     # DO change the name of the field
     # DON'T change anything after the "@"
     customReservedRawData0 @124 :Data;
