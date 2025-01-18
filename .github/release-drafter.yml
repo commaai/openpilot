@@ -16,7 +16,6 @@ categories:
     label: 'chore'
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
-sort-by: title
 replacers:
   - search: '/[Ss][Uu][Nn][Nn][Yy][Pp][Ii][Ll][Oo][Tt]/g'
     replace: 'sunnypilot'
@@ -36,7 +35,7 @@ version-resolver:
 name-template: 'v$RESOLVED_VERSION 🚀'
 tag-template: 'v$RESOLVED_VERSION'
 version-template: "0.$MAJOR.$MINOR.$PATCH" # The day OP becomes v1, we need to bump this
-tag-prefix: "v0." # The day OP becomes v1, we need to bump this 
+tag-prefix: "v0." # The day OP becomes v1, we need to bump this
 prerelease-identifier: "staging"
 template: |
   ## Changes
