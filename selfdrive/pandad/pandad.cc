@@ -99,18 +99,17 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
 
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(msg.get()));
     cereal::Event::Reader event = cmsg.getRoot<cereal::Event>();
-    (void)event;
 
     // Don't send if older than 1 second
-//    if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
-//      for (const auto& panda : pandas) {
-////        LOGT("sending sendcan to panda: %s", (panda->hw_serial()).c_str());
-////        panda->can_send(event.getSendcan());
-////        LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
-//      }
-//    } else {
-//      LOGE("sendcan too old to send: %" PRIu64 ", %" PRIu64, nanos_since_boot(), event.getLogMonoTime());
-//    }
+    if ((nanos_since_boot() - event.getLogMonoTime() < 1e9) && !fake_send) {
+      for (const auto& panda : pandas) {
+        LOGT("sending sendcan to panda: %s", (panda->hw_serial()).c_str());
+        panda->can_send(event.getSendcan());
+        LOGT("sendcan sent to panda: %s", (panda->hw_serial()).c_str());
+      }
+    } else {
+      LOGE("sendcan too old to send: %" PRIu64 ", %" PRIu64, nanos_since_boot(), event.getLogMonoTime());
+    }
   }
 }
 
@@ -427,12 +426,6 @@ void pandad_run(std::vector<Panda *> &pandas) {
   // Start the CAN send thread
   std::thread send_thread(can_send_thread, pandas, fake_send);
 
-  while (!do_exit) {
-    util::sleep_for(100);
-  }
-  send_thread.join();
-  exit(0);
-
   RateKeeper rk("pandad", 100);
   SubMaster sm({"selfdriveState"});
   PubMaster pm({"can", "pandaStates", "peripheralState"});
@@ -482,10 +475,10 @@ void pandad_main_thread(std::vector<std::string> serials) {
   if (serials.size() == 0) {
     serials = Panda::list();
 
-//    if (serials.size() == 0) {
-//      LOGW("no pandas found, exiting");
-//      return;
-//    }
+    if (serials.size() == 0) {
+      LOGW("no pandas found, exiting");
+      return;
+    }
   }
 
   std::string serials_str;

@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <iostream>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
@@ -130,7 +129,6 @@ private:
     power_failure = (sig == SIGPWR);
 #endif
     signal = sig;
-    std::cout << "!!!!!!!!!!! Caught signal " << sig << " !!!!!!!!!!!" << std::flush;
     do_exit = true;
   }
   inline static std::atomic<bool> do_exit = false;
