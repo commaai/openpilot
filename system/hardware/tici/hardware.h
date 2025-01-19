@@ -41,21 +41,8 @@ public:
   static int get_current() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/curr1_input").c_str()); }
 
   static std::string get_serial() {
-    static std::string serial("");
-    if (serial.empty()) {
-      std::ifstream stream("/proc/cmdline");
-      std::string cmdline;
-      std::getline(stream, cmdline);
-
-      auto start = cmdline.find("serialno=");
-      if (start == std::string::npos) {
-        serial = "cccccc";
-      } else {
-        auto end = cmdline.find(" ", start + 9);
-        serial = cmdline.substr(start + 9, end - start - 9);
-      }
-    }
-    return serial;
+    static auto serial = util::strip(util::check_output(R"(grep -oP 'androidboot.serialno=\K\S+' /proc/cmdline)"));
+    return serial.empty() ? "cccccc" : serial;
   }
 
   static void reboot() { std::system("sudo reboot"); }
