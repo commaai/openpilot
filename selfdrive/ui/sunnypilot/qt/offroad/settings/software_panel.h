@@ -53,7 +53,7 @@ private:
     const QString final_message = QString("%1%2").arg(!message.isEmpty() ? message + "\n" : QString(), warning_message);
     const QString final_buttonText = !confirmButtonText.isEmpty() ? confirmButtonText : QString(tr("Continue") + " %1").arg(show_metered_warning ? tr("on Metered") : "");
 
-    return ConfirmationDialog::confirm(final_message, final_buttonText, parent);
+    return ConfirmationDialog(final_message, final_buttonText, tr("Cancel"), true, parent).exec();
   }
 
   bool is_metered{};

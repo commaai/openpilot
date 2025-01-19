@@ -189,11 +189,16 @@ void SoftwarePanelSP::updateLabels() {
  * @brief Shows dialog prompting user to reset calibration after model download
  */
 void SoftwarePanelSP::showResetParamsDialog() {
-  const auto confirmMsg = tr("Model download has started in the background.") + "\n" +
-                          tr("We STRONGLY suggest you to reset calibration. Would you like to do that now?");
+  const auto confirmMsg = QString("%1<br><br><b>%2</b><br><br><b>%3</b>")
+                          .arg(tr("Model download has started in the background."))
+                          .arg(tr("We STRONGLY suggest you to reset calibration."))
+                          .arg(tr("Would you like to do that now?"));
   const auto button_text = tr("Reset Calibration");
 
-  if (showConfirmationDialog(confirmMsg, button_text, false)) {
+  QString content("<body><h2 style=\"text-align: center;\">" + tr("Driving Model Selector") + "</h2><br>"
+                  "<p style=\"text-align: center; margin: 0 128px; font-size: 50px;\">" + confirmMsg + "</p></body>");
+
+  if (showConfirmationDialog(content, button_text, false)) {
     params.remove("CalibrationParams");
     params.remove("LiveTorqueParameters");
   }

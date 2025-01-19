@@ -1090,10 +1090,6 @@ Esto puede tardar un minuto.</translation>
         <translation type="unfinished">SELECCIONAR</translation>
     </message>
     <message>
-        <source>We STRONGLY suggest you to reset calibration. Would you like to do that now?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reset Calibration</source>
         <translation type="unfinished">Formatear Calibración</translation>
     </message>
@@ -1176,6 +1172,22 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Default</source>
         <translation>Por Defecto</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Cancelar</translation>
+    </message>
+    <message>
+        <source>Driving Model Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>We STRONGLY suggest you to reset calibration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Would you like to do that now?</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

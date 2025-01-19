@@ -1084,10 +1084,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>We STRONGLY suggest you to reset calibration. Would you like to do that now?</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Reset Calibration</source>
         <translation type="unfinished">Kalibrasyonu sıfırla</translation>
     </message>
@@ -1169,6 +1165,22 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Driving Model Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>We STRONGLY suggest you to reset calibration.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Would you like to do that now?</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
