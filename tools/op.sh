@@ -340,6 +340,7 @@ function op_switch() {
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
+    op_clear_taps
     op_run_command sudo systemctl start comma $@
   fi
 }
@@ -347,6 +348,7 @@ function op_start() {
 function op_stop() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
+    op_clear_taps
     op_run_command sudo systemctl stop comma $@
   fi
 }
@@ -354,8 +356,13 @@ function op_stop() {
 function op_restart() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
+    op_clear_taps
     op_run_command sudo systemctl restart comma $@
   fi
+}
+
+function op_clear_taps() {
+  op_run_command 'echo "894000.i2c" | sudo tee /sys/bus/platform/drivers/i2c_geni/unbind > /dev/null && echo "894000.i2c" | sudo tee /sys/bus/platform/drivers/i2c_geni/bind > /dev/null'
 }
 
 function op_default() {
