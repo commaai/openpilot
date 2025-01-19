@@ -84,7 +84,19 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
   }
 }
 
-struct CustomReserved2 @0xf35cc4560bbf6ec2 {
+struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
+  dec @0 :DynamicExperimentalControl;
+
+  struct DynamicExperimentalControl {
+    state @0 :DynamicExperimentalControlState;
+    enabled @1 :Bool;
+    active @2 :Bool;
+
+    enum DynamicExperimentalControlState {
+      acc @0;
+      blended @1;
+    }
+  }
 }
 
 struct CustomReserved3 @0xda96579883444c35 {

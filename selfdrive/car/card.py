@@ -122,6 +122,9 @@ class Car:
     MadsParams().set_alternative_experience(self.CP)
     MadsParams().set_car_specific_params(self.CP)
 
+    # Dynamic Experimental Control
+    self.dynamic_experimental_control = self.params.get_bool("DynamicExperimentalControl")
+
     openpilot_enabled_toggle = self.params.get_bool("OpenpilotEnabledToggle")
 
     controller_available = self.CI.CC is not None and openpilot_enabled_toggle and not self.CP.dashcamOnly
@@ -204,7 +207,7 @@ class Car:
     self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
     if self.sm['carControl'].enabled and not self.CC_prev.enabled:
       # Use CarState w/ buttons from the step selfdrived enables on
-      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode)
+      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode, self.dynamic_experimental_control)
 
     # TODO: mirror the carState.cruiseState struct?
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
@@ -278,6 +281,10 @@ class Car:
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+
+      # sunnypilot
+      self.dynamic_experimental_control = self.params.get_bool("DynamicExperimentalControl")
+
       time.sleep(0.1)
 
   def card_thread(self):

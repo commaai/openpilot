@@ -18,7 +18,7 @@ UIStateSP::UIStateSP(QObject *parent) : UIState(parent) {
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
     "wideRoadCameraState", "managerState", "selfdriveState", "longitudinalPlan",
-    "modelManagerSP", "selfdriveStateSP",
+    "modelManagerSP", "selfdriveStateSP", "longitudinalPlanSP",
   });
 
   // update timer

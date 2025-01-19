@@ -2641,7 +2641,7 @@ struct Event {
     # DON'T change which struct it points to
     selfdriveStateSP @107 :Custom.SelfdriveStateSP;
     modelManagerSP @108 :Custom.ModelManagerSP;
-    customReserved2 @109 :Custom.CustomReserved2;
+    longitudinalPlanSP @109 :Custom.LongitudinalPlanSP;
     customReserved3 @110 :Custom.CustomReserved3;
     customReserved4 @111 :Custom.CustomReserved4;
     customReserved5 @112 :Custom.CustomReserved5;

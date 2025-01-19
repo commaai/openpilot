@@ -57,16 +57,16 @@ class TestVCruiseHelper:
     for _ in range(2):
       self.v_cruise_helper.update_v_cruise(car.CarState(cruiseState={"available": False}), enabled=False, is_metric=False)
 
-  def enable(self, v_ego, experimental_mode):
+  def enable(self, v_ego, experimental_mode, dynamic_experimental_control):
     # Simulates user pressing set with a current speed
-    self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego), experimental_mode)
+    self.v_cruise_helper.initialize_v_cruise(car.CarState(vEgo=v_ego), experimental_mode, dynamic_experimental_control)
 
   def test_adjust_speed(self):
     """
     Asserts speed changes on falling edges of buttons.
     """
 
-    self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+    self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False, False)
 
     for btn in (ButtonType.accelCruise, ButtonType.decelCruise):
       for pressed in (True, False):
@@ -90,7 +90,7 @@ class TestVCruiseHelper:
       CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=pressed)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=enabled, is_metric=False)
       if pressed:
-        self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+        self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False, False)
 
       # Expected diff on enabling. Speed should not change on falling edge of pressed
       assert not pressed == self.v_cruise_helper.v_cruise_kph == self.v_cruise_helper.v_cruise_kph_last
@@ -100,7 +100,7 @@ class TestVCruiseHelper:
     Asserts we don't increment set speed if user presses resume/accel to exit cruise standstill.
     """
 
-    self.enable(0, False)
+    self.enable(0, False, False)
 
     for standstill in (True, False):
       for pressed in (True, False):
@@ -120,7 +120,7 @@ class TestVCruiseHelper:
 
     for v_ego in np.linspace(0, 100, 101):
       self.reset_cruise_speed_state()
-      self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False)
+      self.enable(V_CRUISE_INITIAL * CV.KPH_TO_MS, False, False)
 
       # first decrement speed, then perform gas pressed logic
       expected_v_cruise_kph = self.v_cruise_helper.v_cruise_kph - IMPERIAL_INCREMENT
@@ -142,10 +142,11 @@ class TestVCruiseHelper:
     """
 
     for experimental_mode in (True, False):
-      for v_ego in np.linspace(0, 100, 101):
-        self.reset_cruise_speed_state()
-        assert not self.v_cruise_helper.v_cruise_initialized
+      for dynamic_experimental_control in (True, False):
+        for v_ego in np.linspace(0, 100, 101):
+          self.reset_cruise_speed_state()
+          assert not self.v_cruise_helper.v_cruise_initialized
 
-        self.enable(float(v_ego), experimental_mode)
-        assert V_CRUISE_INITIAL <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX
-        assert self.v_cruise_helper.v_cruise_initialized
+          self.enable(float(v_ego), experimental_mode, dynamic_experimental_control)
+          assert V_CRUISE_INITIAL <= self.v_cruise_helper.v_cruise_kph <= V_CRUISE_MAX
+          assert self.v_cruise_helper.v_cruise_initialized

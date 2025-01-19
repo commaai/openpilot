@@ -41,6 +41,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/img_experimental_white.svg",
     },
     {
+      "DynamicExperimentalControl",
+      tr("Enable Dynamic Experimental Control"),
+      tr("Enable toggle to allow the model to determine when to use sunnypilot ACC or sunnypilot End to End Longitudinal."),
+      "../assets/offroad/icon_blank.png",
+    },
+    {
       "DisengageOnAccelerator",
       tr("Disengage on Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
