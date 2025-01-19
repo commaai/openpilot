@@ -458,7 +458,7 @@
     </message>
     <message>
         <source>Please connect to Wi-Fi to complete initial pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Por favor conecte ao Wi-Fi para completar o pareamento inicial</translation>
     </message>
 </context>
 <context>
