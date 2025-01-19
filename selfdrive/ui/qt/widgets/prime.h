@@ -33,6 +33,7 @@ class PairingPopup : public DialogBase {
 
 public:
   explicit PairingPopup(QWidget* parent);
+  int exec() override;
 };
 
 
