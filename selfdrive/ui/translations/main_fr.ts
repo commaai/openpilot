@@ -456,6 +456,10 @@
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>Ajoutez connect.comma.ai à votre écran d&apos;accueil pour l&apos;utiliser comme une application</translation>
     </message>
+    <message>
+        <source>Please connect to Wi-Fi to complete initial pairing</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ParamControl</name>

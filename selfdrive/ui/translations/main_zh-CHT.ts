@@ -455,6 +455,10 @@
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>將 connect.comma.ai 加入您的主螢幕，以便像手機 App 一樣使用它</translation>
     </message>
+    <message>
+        <source>Please connect to Wi-Fi to complete initial pairing</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ParamControl</name>

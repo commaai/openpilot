@@ -454,6 +454,10 @@
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
         <translation>「connect.comma.ai」をホーム画面に追加して、アプリのように使うことができます。</translation>
     </message>
+    <message>
+        <source>Please connect to Wi-Fi to complete initial pairing</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>ParamControl</name>
