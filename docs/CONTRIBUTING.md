@@ -69,6 +69,6 @@ A good pull request has all of the following:
 ### A guide for forks
 
 In order for your fork's data to be eligible for the training set:
-* **Your cereal messaging structs must be [compatible](cereal#custom-forks)**
-* **The defintions of all the stock messaging structs must not change**: This includes everything from selfdriveState.enabled to carState.steeringAngleDeg.
+* **Your cereal messaging structs must be [compatible](../cereal#custom-forks)**
+* **The defintions of all the stock messaging structs must not change**: Do not change how any of the fields are set, including everything from `selfdriveState.enabled` to `carState.steeringAngleDeg`. Instead, create your own structs and set them however you'd like.
 * **Do not include cars that are not supported upstream in upstream platforms**: Instead, create new opendbc platforms for cars that you'd like to support outside of upstream, even if it's just a trim-level difference.
