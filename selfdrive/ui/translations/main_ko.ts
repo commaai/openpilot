@@ -152,7 +152,7 @@
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>캘리브레이션 초기화</translation>
+        <translation>캘리브레이션</translation>
     </message>
     <message>
         <source>RESET</source>
@@ -164,7 +164,7 @@
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>트레이닝 가이드 다시보기</translation>
+        <translation>트레이닝 가이드</translation>
     </message>
     <message>
         <source>REVIEW</source>
@@ -256,7 +256,7 @@
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>장치를 comma connect (connect.comma.ai)에서 페어링하고 comma prime 무료 이용권을 사용하세요.</translation>
+        <translation>장치를 comma connect (connect.comma.ai)에서 동기화하고 comma prime 무료 이용권을 사용하세요.</translation>
     </message>
     <message>
         <source>Pair Device</source>
@@ -457,7 +457,7 @@
     </message>
     <message>
         <source>Please connect to Wi-Fi to complete initial pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>초기 동기화를 완료하려면 Wi-Fi에 연결하세요.</translation>
     </message>
 </context>
 <context>
@@ -721,11 +721,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>장치를 comma connect (connect.comma.ai)에서 페어링하고 comma prime 무료 이용권을 사용하세요.</translation>
+        <translation>장치를 comma connect (connect.comma.ai)에서 동기화하고 comma prime 무료 이용권을 사용하세요.</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation>장치 페어링</translation>
+        <translation>장치 동기화</translation>
     </message>
 </context>
 <context>
