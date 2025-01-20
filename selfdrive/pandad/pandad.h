@@ -12,6 +12,7 @@ class PandaSafety {
 public:
   PandaSafety(const std::vector<Panda *> &pandas) : pandas_(pandas) {}
   void configureSafetyMode();
+  bool getOffroadMode();
 
 private:
   void updateMultiplexingMode();

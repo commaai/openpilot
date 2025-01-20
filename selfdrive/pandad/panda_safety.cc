@@ -81,3 +81,8 @@ void PandaSafety::setSafetyMode(const std::string &params_string) {
     pandas_[i]->set_safety_model(safety_model, safety_param);
   }
 }
+
+bool PandaSafety::getOffroadMode() {
+  auto offroad_mode = params_.getBool("OffroadMode");
+  return offroad_mode;
+}

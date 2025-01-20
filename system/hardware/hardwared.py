@@ -310,6 +310,12 @@ def hardware_thread(end_event, hw_queue) -> None:
     # ensure device is fully booted
     startup_conditions["device_booted"] = startup_conditions.get("device_booted", False) or HARDWARE.booted()
 
+    # user-forced status
+    offroad_mode = params.get_bool("OffroadMode")
+    startup_conditions["not_always_offroad"] = not offroad_mode
+    onroad_conditions["not_always_offroad"] = not offroad_mode
+    set_offroad_alert("OffroadMode_Status", offroad_mode)
+
     # if the temperature enters the danger zone, go offroad to cool down
     onroad_conditions["device_temp_good"] = thermal_status < ThermalStatus.danger
     extra_text = f"{offroad_comp_temp:.1f}C"
@@ -392,7 +398,7 @@ def hardware_thread(end_event, hw_queue) -> None:
       cloudlog.warning(f"shutting device down, offroad since {off_ts}")
       params.put_bool("DoShutdown", True)
 
-    msg.deviceState.started = started_ts is not None
+    msg.deviceState.started = started_ts is not None and not offroad_mode
     msg.deviceState.startedMonoTime = int(1e9*(started_ts or 0))
 
     last_ping = params.get("LastAthenaPingTime")
