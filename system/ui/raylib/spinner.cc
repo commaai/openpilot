@@ -12,7 +12,7 @@ constexpr int kTextureSize = 360;
 constexpr int kFontSize = 80;
 
 int main(int argc, char *argv[]) {
-  initApp("spinner", 30);
+  App app("spinner", 30);
 
   // Turn off input buffering for std::cin
   std::cin.sync_with_stdio(false);
@@ -55,14 +55,12 @@ int main(int argc, char *argv[]) {
         bar.width *= progress / 100.0f;
         DrawRectangleRounded(bar, 0.5f, 10, RAYLIB_RAYWHITE);
       } else {
-        Vector2 textSize = MeasureTextEx(getFont(), userInput.c_str(), kFontSize, 1.0);
-        DrawTextEx(getFont(), userInput.c_str(), {center.x - textSize.x / 2, yPos}, kFontSize, 1.0, RAYLIB_WHITE);
+        Vector2 textSize = MeasureTextEx(app.getFont(), userInput.c_str(), kFontSize, 1.0);
+        DrawTextEx(app.getFont(), userInput.c_str(), {center.x - textSize.x / 2, yPos}, kFontSize, 1.0, RAYLIB_WHITE);
       }
     }
 
     EndDrawing();
   }
-
-  CloseWindow();
   return 0;
 }
