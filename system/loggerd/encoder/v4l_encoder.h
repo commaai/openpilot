@@ -1,5 +1,8 @@
 #pragma once
 
+#include <array>
+#include <mutex>
+
 #include "common/queue.h"
 #include "system/loggerd/encoder/encoder.h"
 
@@ -20,7 +23,8 @@ private:
   int segment_num = -1;
   int counter = 0;
 
-  SafeQueue<VisionIpcBufExtra> extras;
+  std::mutex buffer_extras_mutex;
+  std::array<VisionIpcBufExtra, BUF_OUT_COUNT> buffer_extras = {};
 
   static void dequeue_handler(V4LEncoder *e);
   std::thread dequeue_handler_thread;

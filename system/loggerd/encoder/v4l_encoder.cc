@@ -129,7 +129,11 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         // save header
         header = kj::heapArray<capnp::byte>(buf, bytesused);
       } else {
-        VisionIpcBufExtra extra = e->extras.pop();
+        VisionIpcBufExtra extra = {};
+        {
+          std::lock_guard<std::mutex> lock(e->buffer_extras_mutex);
+          extra = e->buffer_extras[index];
+        }
         assert(extra.timestamp_eof/1000 == ts); // stay in sync
         frame_id = extra.frame_id;
         ++idx;
@@ -290,8 +294,11 @@ int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   // reserve buffer
   int buffer_in = free_buf_in.pop();
 
-  // push buffer
-  extras.push(*extra);
+  {
+    std::lock_guard<std::mutex> lock(buffer_extras_mutex);
+    buffer_extras[buffer_in] = *extra;
+  }
+
   //buf->sync(VISIONBUF_SYNC_TO_DEVICE);
   queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
 
@@ -308,7 +315,6 @@ void V4LEncoder::encoder_close() {
     checked_ioctl(fd, VIDIOC_ENCODER_CMD, &encoder_cmd);
     // join waits for V4L2_QCOM_BUF_FLAG_EOS
     dequeue_handler_thread.join();
-    assert(extras.empty());
   }
   this->is_open = false;
 }
