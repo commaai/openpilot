@@ -635,7 +635,7 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>Developer</source>
-        <translation>Programador</translation>
+        <translation>Desarrollador</translation>
     </message>
 </context>
 <context>
