@@ -10,6 +10,40 @@ $Cxx.namespace("cereal");
 # DO rename the structs
 # DON'T change the identifier (e.g. @0x81c2f05a394cf4af)
 
+struct OnroadEventSP {
+  name @0 :EventName;
+
+  # event types
+  enable @1 :Bool;
+  noEntry @2 :Bool;
+  warning @3 :Bool;   # alerts presented only when  enabled or soft disabling
+  userDisable @4 :Bool;
+  softDisable @5 :Bool;
+  immediateDisable @6 :Bool;
+  preEnable @7 :Bool;
+  permanent @8 :Bool; # alerts presented regardless of openpilot state
+  overrideLateral @10 :Bool;
+  overrideLongitudinal @9 :Bool;
+
+  enum EventName {
+    lkasEnable @0;
+    lkasDisable @1;
+    manualSteeringRequired @2;
+    manualLongitudinalRequired @3;
+    silentLkasEnable @4;
+    silentLkasDisable @5;
+    silentBrakeHold @6;
+    silentWrongGear @7;
+    silentReverseGear @8;
+    silentDoorOpen @9;
+    silentSeatbeltNotLatched @10;
+    silentParkBrake @11;
+    controlsMismatchLateral @12;
+    hyundaiRadarTracksConfirmed @13;
+    experimentalModeSwitched @14;
+  }
+}
+
 struct SelfdriveStateSP @0x81c2f05a394cf4af {
   mads @0 :ModularAssistiveDrivingSystem;
 

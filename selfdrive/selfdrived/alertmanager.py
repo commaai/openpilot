@@ -6,7 +6,8 @@ from dataclasses import dataclass
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.selfdrived.events import Alert, EmptyAlert
+from openpilot.selfdrive.selfdrived.events import Alert
+from openpilot.sunnypilot.selfdrive.selfdrived.events_base import EmptyAlert
 
 
 with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")) as f:
