@@ -24,7 +24,7 @@ THE SOFTWARE.
 Last updated: July 29, 2024
 """
 
-from cereal import messaging, car, log, custom
+from cereal import car, log, custom
 
 from opendbc.car.hyundai.values import HyundaiFlags
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
@@ -48,7 +48,6 @@ class ModularAssistiveDrivingSystem:
     self.enabled = False
     self.active = False
     self.available = False
-    self.mismatch_counter = 0
     self.allow_always = False
     self.selfdrive = selfdrive
     self.selfdrive.enabled_prev = False
@@ -70,20 +69,7 @@ class ModularAssistiveDrivingSystem:
     self.main_enabled_toggle = self.mads_params.read_param("MadsMainCruiseAllowed")
     self.unified_engagement_mode = self.mads_params.read_param("MadsUnifiedEngagementMode")
 
-  def update_controls_mismatch(self, sm: messaging.SubMaster):
-    heartbeat_engaged = self.active if self.pause_lateral_on_brake_toggle else self.enabled
-
-    if not heartbeat_engaged:
-      self.mismatch_counter = 0
-
-    if heartbeat_engaged and any(not ps.controlsAllowedLat for ps in sm['pandaStates']
-                                 if ps.safetyModel not in IGNORED_SAFETY_MODES):
-      self.mismatch_counter += 1
-
-    if self.mismatch_counter >= 200:
-      self.events.add(EventName.controlsMismatchLateral)
-
-  def update_events(self, CS: car.CarState, sm: messaging.SubMaster):
+  def update_events(self, CS: car.CarState):
     def update_unified_engagement_mode():
       uem_blocked = self.enabled or (self.selfdrive.enabled and self.selfdrive.enabled_prev)
       if (self.unified_engagement_mode and uem_blocked) or not self.unified_engagement_mode:
@@ -161,13 +147,11 @@ class ModularAssistiveDrivingSystem:
     if not any(be.type in SET_SPEED_BUTTONS for be in CS.buttonEvents):
       self.events.remove(EventName.wrongCarMode)
 
-    self.update_controls_mismatch(sm)
-
-  def update(self, CS: car.CarState, sm: messaging.SubMaster):
+  def update(self, CS: car.CarState):
     if not self.enabled_toggle:
       return
 
-    self.update_events(CS, sm)
+    self.update_events(CS)
 
     if not self.selfdrive.CP.passive and self.selfdrive.initialized:
       self.enabled, self.active = self.state_machine.update(self.events)

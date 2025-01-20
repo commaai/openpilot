@@ -489,7 +489,7 @@ class SelfdriveD(CruiseHelper):
     if not self.CP.passive and self.initialized:
       self.enabled, self.active = self.state_machine.update(self.events)
     if not self.CP.notCar:
-      self.mads.update(CS, self.sm)
+      self.mads.update(CS)
     self.update_alerts(CS)
 
     self.publish_selfdriveState(CS)

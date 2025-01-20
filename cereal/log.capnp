@@ -665,7 +665,6 @@ struct PandaState @0xa7649e2575e4591e {
 
   # safety stuff
   controlsAllowed @3 :Bool;
-  controlsAllowedLat @5 :Bool;
   safetyRxInvalid @19 :UInt32;
   safetyTxBlocked @24 :UInt32;
   safetyModel @14 :Car.CarParams.SafetyModel;
@@ -773,6 +772,7 @@ struct PandaState @0xa7649e2575e4591e {
   }
 
   gasInterceptorDetectedDEPRECATED @4 :Bool;
+  startedSignalDetectedDEPRECATED @5 :Bool;
   hasGpsDEPRECATED @6 :Bool;
   gmlanSendErrsDEPRECATED @9 :UInt32;
   fanSpeedRpmDEPRECATED @11 :UInt16;
