@@ -137,7 +137,7 @@ class TestOnroad:
             pass
 
   if __name__ == "__main__":
-  create_disk_load()
+    create_disk_load()
 
   @classmethod
   def setup_class(cls):
