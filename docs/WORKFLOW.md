@@ -15,6 +15,9 @@ git submodule update --init --recursive
 # update dependencies
 tools/ubuntu_setup.sh
 
+# activate a shell with the Python dependencies installed
+source .venv/bin/activate
+
 # build everything
 scons -j$(nproc)
 
