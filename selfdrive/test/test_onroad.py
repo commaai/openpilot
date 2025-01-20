@@ -116,6 +116,29 @@ def cputime_total(ct):
 @pytest.mark.tici
 class TestOnroad:
 
+  def create_disk_load(file_path="temp_file.txt", file_size_mb=50000):
+
+    for _ in range:
+      while 0 <= TEST_DURATION:
+        file_size_bytes = file_size_mb * 1024 * 1024
+        data = os.urandom(file_size_bytes)
+        #Create File and Writes/Reads its contents
+        try:
+          with open(file_path, "wb") as f:
+            f.write(data)
+          with open(file_path, "rb") as f:
+            f.read()
+        #Remove File afterwards
+        finally:
+          try:
+            os.remove(file_path)
+          except FileNotFoundError:
+            # Ignore if the file doesn't exist
+            pass
+
+  if __name__ == "__main__":
+  create_disk_load()
+
   @classmethod
   def setup_class(cls):
     if "DEBUG" in os.environ:
