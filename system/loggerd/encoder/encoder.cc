@@ -33,7 +33,7 @@ void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBuf
   edata.setSegmentId(idx);
   edata.setFlags(flags);
   edata.setLen(dat.size());
-  edat.setData(dat);
+  edat.adoptData(msg.getOrphanage().referenceExternalData(dat));
   edat.setWidth(out_width);
   edat.setHeight(out_height);
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
