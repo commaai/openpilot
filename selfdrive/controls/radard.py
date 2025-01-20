@@ -21,7 +21,7 @@ SPEED, ACCEL = 0, 1     # Kalman filter states enum
 # stationary qualification parameters
 V_EGO_STATIONARY = 4.   # no stationary object flag below this speed
 
-RADAR_TO_CENTER = 2.7   # (deprecated) RADAR is ~ 2.7m ahead from center of car
+RADAR_TO_CENTER = 2.19   # (deprecated) RADAR is ~ 2.7m ahead from center of car
 RADAR_TO_CAMERA = 1.52  # RADAR is ~ 1.5m ahead from center of mesh frame
 
 
@@ -163,7 +163,7 @@ def get_RadarState_from_vision(lead_msg: capnp._DynamicStructReader, v_ego: floa
 def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capnp._DynamicStructReader,
              model_v_ego: float, low_speed_override: bool = True) -> dict[str, Any]:
   # Determine leads, this is where the essential logic happens
-  if len(tracks) > 0 and ready and lead_msg.prob > .5:
+  if len(tracks) > 0 and ready and lead_msg.prob > .65:
     track = match_vision_to_track(v_ego, lead_msg, tracks)
   else:
     track = None
@@ -171,7 +171,7 @@ def get_lead(v_ego: float, ready: bool, tracks: dict[int, Track], lead_msg: capn
   lead_dict = {'status': False}
   if track is not None:
     lead_dict = track.get_RadarState(lead_msg.prob)
-  elif (track is None) and ready and (lead_msg.prob > .5):
+  elif (track is None) and ready and (lead_msg.prob > .65):
     lead_dict = get_RadarState_from_vision(lead_msg, v_ego, model_v_ego)
 
   if low_speed_override:
