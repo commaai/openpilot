@@ -14,21 +14,21 @@ int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, 
   return sizeof(struct cdm_dmi_cmd);
 }
 
-int write_cont(uint8_t *dst, uint32_t reg, const std::vector<uint32_t> &vals) {
+int write_cont(uint8_t *dst, uint32_t reg, const uint32_t *values, size_t value_count) {
   struct cdm_regcontinuous_cmd *cmd = (struct cdm_regcontinuous_cmd*)dst;
   cmd->cmd = CAM_CDM_CMD_REG_CONT;
-  cmd->count = vals.size();
+  cmd->count = value_count;
   cmd->offset = reg;
   cmd->reserved0 = 0;
   cmd->reserved1 = 0;
 
   uint32_t *vd = (uint32_t*)(dst + sizeof(struct cdm_regcontinuous_cmd));
-  for (int i = 0; i < vals.size(); i++) {
-    *vd = vals[i];
+  for (int i = 0; i < value_count; i++) {
+    *vd = values[i];
     vd++;
   }
 
-  return sizeof(struct cdm_regcontinuous_cmd) + vals.size()*sizeof(uint32_t);
+  return sizeof(struct cdm_regcontinuous_cmd) + value_count * sizeof(uint32_t);
 }
 
 int write_random(uint8_t *dst, const std::vector<uint32_t> &vals) {

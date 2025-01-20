@@ -7,8 +7,18 @@
 #include <memory>
 
 // our helpers
+int write_cont(uint8_t *dst, uint32_t reg, const uint32_t *values, size_t value_count);
+
+template <std::size_t N>
+int write_cont(uint8_t *dst, uint32_t reg, const uint32_t (&values)[N]) {
+  return write_cont(dst, reg, values, N);
+}
+
+inline int write_cont(uint8_t *dst, uint32_t reg, const std::vector<uint32_t> &values) {
+  return write_cont(dst, reg, values.data(), values.size());
+}
+
 int write_random(uint8_t *dst, const std::vector<uint32_t> &vals);
-int write_cont(uint8_t *dst, uint32_t reg, const std::vector<uint32_t> &vals);
 int write_dmi(uint8_t *dst, uint64_t *addr, uint32_t length, uint32_t dmi_addr, uint8_t sel);
 
 // from drivers/media/platform/msm/camera/cam_cdm/cam_cdm_util.{c,h}
