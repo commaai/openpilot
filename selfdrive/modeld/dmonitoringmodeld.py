@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-## TODO this is hack
 if TICI:
-  GPU_BACKEND = 'QCOM'
+  from tinygrad.tensor import Tensor
+  from tinygrad.dtype import dtypes
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+  os.environ['QCOM'] = '1'
 else:
-  GPU_BACKEND = 'GPU'
-os.environ[GPU_BACKEND] = '1'
+  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
 import gc
 import math
 import time
@@ -20,22 +21,20 @@ from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.params import Params
 from openpilot.common.realtime import set_realtime_priority
-from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext #, cl_from_visionbuf
+from openpilot.common.transformations.model import dmonitoringmodel_intrinsics, DM_INPUT_SIZE
+from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
+from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
-#from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-from tinygrad.tensor import Tensor
-#from tinygrad.dtype import dtypes
 
+MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
 CALIB_LEN = 3
-MODEL_WIDTH = 1440
-MODEL_HEIGHT = 960
 FEATURE_LEN = 512
 OUTPUT_SIZE = 84 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
+MODEL_PATH = Path(__file__).parent / 'models/dmonitoring_model.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
 class DriverStateResult(ctypes.Structure):
@@ -70,26 +69,36 @@ class ModelState:
 
   def __init__(self, cl_ctx):
     assert ctypes.sizeof(DMonitoringModelResult) == OUTPUT_SIZE * ctypes.sizeof(ctypes.c_float)
-    self.numpy_inputs = {'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
-                         'input_img': np.zeros((1,MODEL_HEIGHT * MODEL_WIDTH), dtype=np.uint8)}
-    self.img = None
 
+    self.frame = MonitoringModelFrame(cl_ctx)
+    self.numpy_inputs = {
+      'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
+    }
 
-    with open(MODEL_PKL_PATH, "rb") as f:
-      self.model_run = pickle.load(f)
+    if TICI:
+      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+      with open(MODEL_PKL_PATH, "rb") as f:
+        self.model_run = pickle.load(f)
+    else:
+      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
-  def run(self, buf:VisionBuf, calib:np.ndarray) -> tuple[np.ndarray, float]:
+  def run(self, buf:VisionBuf, calib:np.ndarray, transform:np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
-    # TODO use opencl buffer directly to make tensor
-    v_offset = buf.height - MODEL_HEIGHT
-    h_offset = (buf.width - MODEL_WIDTH) // 2
-    buf_data = buf.data.reshape(-1, buf.stride)
-    self.numpy_inputs['input_img'][:] = buf_data[v_offset:v_offset+MODEL_HEIGHT, h_offset:h_offset+MODEL_WIDTH].reshape((1, -1))
 
-    tensor_inputs = {k: Tensor(v) for k,v in self.numpy_inputs.items()}
-    output = self.model_run(**tensor_inputs)['outputs'].numpy().flatten()
+    input_img_cl = self.frame.prepare(buf, transform.flatten())
+    if TICI:
+      # The imgs tensors are backed by opencl memory, only need init once
+      if 'input_img' not in self.tensor_inputs:
+        self.tensor_inputs['input_img'] = qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, MODEL_WIDTH*MODEL_HEIGHT), dtype=dtypes.uint8)
+    else:
+      self.numpy_inputs['input_img'] = self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT))
+
+    if TICI:
+      output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    else:
+      output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1
@@ -133,7 +142,6 @@ def main():
   cl_context = CLContext()
   model = ModelState(cl_context)
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
-  Params().put_bool("DmModelInitialized", True)
 
   cloudlog.warning("connecting to driver stream")
   vipc_client = VisionIpcClient("camerad", VisionStreamType.VISION_STREAM_DRIVER, True, cl_context)
@@ -146,18 +154,23 @@ def main():
   pm = PubMaster(["driverStateV2"])
 
   calib = np.zeros(CALIB_LEN, dtype=np.float32)
+  model_transform = None
 
   while True:
     buf = vipc_client.recv()
     if buf is None:
       continue
 
+    if model_transform is None:
+      cam = _os_fisheye if buf.width == _os_fisheye.width else _ar_ox_fisheye
+      model_transform = np.linalg.inv(np.dot(dmonitoringmodel_intrinsics, np.linalg.inv(cam.intrinsics))).astype(np.float32)
+
     sm.update(0)
     if sm.updated["liveCalibration"]:
       calib[:] = np.array(sm["liveCalibration"].rpyCalib)
 
     t1 = time.perf_counter()
-    model_output, gpu_execution_time = model.run(buf, calib)
+    model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
 
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))

@@ -17,7 +17,7 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.common.retry import retry
-from openpilot.common.time import system_time_valid
+from openpilot.common.time_helpers import system_time_valid
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.qcomgpsd.modemdiag import ModemDiag, DIAG_LOG_F, setup_logs, send_recv
@@ -273,7 +273,7 @@ def main() -> NoReturn:
 
     (pending_msgs, log_outer_length), inner_log_packet = unpack_from('<BH', payload), payload[calcsize('<BH'):]
     if pending_msgs > 0:
-      cloudlog.debug("have %d pending messages" % pending_msgs)
+      cloudlog.debug(f"have {pending_msgs} pending messages")
     assert log_outer_length == len(inner_log_packet)
 
     (log_inner_length, log_type, log_time), log_payload = unpack_from('<HHQ', inner_log_packet), inner_log_packet[calcsize('<HHQ'):]
@@ -283,7 +283,7 @@ def main() -> NoReturn:
       continue
 
     if DEBUG:
-      print("%.4f: got log: %x len %d" % (time.time(), log_type, len(log_payload)))
+      print(f"{time.time():.4f}: got log: {log_type} len {len(log_payload)}")
 
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
       msg = messaging.new_message('qcomGnss', valid=True)

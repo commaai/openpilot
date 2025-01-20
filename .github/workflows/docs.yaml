@@ -18,9 +18,10 @@ concurrency:
 jobs:
   docs:
     name: build docs
-    runs-on: ubuntu-latest
-    timeout-minutes: 1
+    runs-on: ubuntu-24.04
     steps:
+    - uses: commaai/timeout@v1
+
     - uses: actions/checkout@v4
       with:
         submodules: true

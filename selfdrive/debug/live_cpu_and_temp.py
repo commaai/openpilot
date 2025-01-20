@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+import numpy as np
 import capnp
 from collections import defaultdict
 
 from cereal.messaging import SubMaster
-from openpilot.common.numpy_fast import mean
 
 def cputime_total(ct):
   return ct.user + ct.nice + ct.system + ct.idle + ct.iowait + ct.irq + ct.softirq
@@ -49,7 +49,7 @@ if __name__ == "__main__":
 
     if sm.updated['deviceState']:
       t = sm['deviceState']
-      last_temp = mean(t.cpuTempC)
+      last_temp = np.mean(t.cpuTempC)
       last_mem = t.memoryUsagePercent
 
     if sm.updated['procLog']:
@@ -72,7 +72,7 @@ if __name__ == "__main__":
       total_times = total_times_new[:]
       busy_times = busy_times_new[:]
 
-      print(f"CPU {100.0 * mean(cores):.2f}% - RAM: {last_mem:.2f}% - Temp {last_temp:.2f}C")
+      print(f"CPU {100.0 * np.mean(cores):.2f}% - RAM: {last_mem:.2f}% - Temp {last_temp:.2f}C")
 
       if args.cpu and prev_proclog is not None and prev_proclog_t is not None:
         procs: dict[str, float] = defaultdict(float)

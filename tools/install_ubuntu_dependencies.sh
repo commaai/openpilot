@@ -23,7 +23,6 @@ function install_ubuntu_common_requirements() {
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
     clang \
-    cppcheck \
     build-essential \
     gcc-arm-none-eabi \
     liblzma-dev \
@@ -101,7 +100,7 @@ if [ -f "/etc/os-release" ]; then
       install_ubuntu_focal_requirements
       ;;
     *)
-      echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 20.04."
+      echo "$ID $VERSION_ID is unsupported. This setup script is written for Ubuntu 24.04."
       read -p "Would you like to attempt installation anyway? " -n 1 -r
       echo ""
       if [[ ! $REPLY =~ ^[Yy]$ ]]; then

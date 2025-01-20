@@ -4,9 +4,9 @@
 
 openpilot is developed and tested on **Ubuntu 24.04**, which is the primary development target aside from the [supported embedded hardware](https://github.com/commaai/openpilot#running-on-a-dedicated-device-in-a-car).
 
-Running natively on any other system is not recommended and will require modifications. On Windows you can use WSL, and on macOS or incompatible Linux systems, it is recommended to use the dev containers.
+Most of openpilot should work natively on macOS. On Windows you can use WSL for a nearly native Ubuntu experience. Running natively on any other system is not currently recommended and will likely require modifications.
 
-## Native setup on Ubuntu 24.04
+## Native setup on Ubuntu 24.04 and macOS
 
 **1. Clone openpilot**
 
@@ -26,7 +26,7 @@ git clone --recurse-submodules https://github.com/commaai/openpilot.git
 
 ``` bash
 cd openpilot
-tools/ubuntu_setup.sh
+tools/op.sh setup
 ```
 
 **3. Git LFS**
@@ -47,16 +47,6 @@ source .venv/bin/activate
 ``` bash
 scons -u -j$(nproc)
 ```
-
-## Dev Container on any Linux or macOS
-
-openpilot supports [Dev Containers](https://containers.dev/). Dev containers provide customizable and consistent development environment wrapped inside a container. This means you can develop in a designated environment matching our primary development target, regardless of your local setup.
-
-Dev containers are supported in [multiple editors and IDEs](https://containers.dev/supporting), including Visual Studio Code. Use the following [guide](https://code.visualstudio.com/docs/devcontainers/containers) to start using them with VSCode.
-
-#### X11 forwarding on macOS
-
-GUI apps like `ui` or `cabana` can also run inside the container by leveraging X11 forwarding. To make use of it on macOS, additional configuration steps must be taken. Follow [these](https://gist.github.com/sorny/969fe55d85c9b0035b0109a31cbcb088) steps to setup X11 forwarding on macOS.
 
 ## WSL on Windows
 

@@ -77,6 +77,7 @@ public:
   void enable_deepsleep();
   void send_heartbeat(bool engaged);
   void set_can_speed_kbps(uint16_t bus, uint16_t speed);
+  void set_can_fd_auto(uint16_t bus, bool enabled);
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);
   void set_canfd_non_iso(uint16_t bus, bool non_iso);
   void can_send(const capnp::List<cereal::CanData>::Reader &can_data_list);

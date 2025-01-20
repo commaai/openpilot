@@ -191,6 +191,7 @@ void MainWindow::createDockWidgets() {
   video_splitter->handle(1)->setEnabled(!can->liveStreaming());
   video_dock->setWidget(video_splitter);
   QObject::connect(charts_widget, &ChartsWidget::toggleChartsDocking, this, &MainWindow::toggleChartsDocking);
+  QObject::connect(charts_widget, &ChartsWidget::showTip, video_widget, &VideoWidget::showThumbnail);
 }
 
 void MainWindow::createStatusBar() {
@@ -558,7 +559,9 @@ void MainWindow::closeEvent(QCloseEvent *event) {
   if (can && !can->liveStreaming()) {
     settings.video_splitter_state = video_splitter->saveState();
   }
-  settings.message_header_state = messages_widget->saveHeaderState();
+  if (messages_widget) {
+    settings.message_header_state = messages_widget->saveHeaderState();
+  }
 
   QWidget::closeEvent(event);
 }

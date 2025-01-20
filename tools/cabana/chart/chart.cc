@@ -842,6 +842,8 @@ void ChartView::setSeriesType(SeriesType type) {
     }
     updateSeriesPoints();
     updateTitle();
+
+    menu->actions()[(int)type]->setChecked(true);
   }
 }
 

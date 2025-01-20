@@ -16,9 +16,9 @@ def waste(core):
   j = 0
   while 1:
     if (i % 100) == 0:
-      setproctitle("%3d: %8d" % (core, i))
+      setproctitle(f"{core:3d}: {i:8d}")
       lt = time.monotonic()
-      print("%3d: %8d %f  %.2f" % (core, i, lt-st, j))
+      print(f"{core:3d}: {i:8d} {lt-st:f}  {j:.2f}")
       st = lt
     i += 1
     j = np.sum(np.matmul(m1, m2))

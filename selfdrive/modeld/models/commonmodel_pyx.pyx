@@ -8,14 +8,18 @@ from libc.stdint cimport uintptr_t
 
 from msgq.visionipc.visionipc cimport cl_mem
 from msgq.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
-from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context
-from .commonmodel cimport mat3, ModelFrame as cppModelFrame
+from .commonmodel cimport CL_DEVICE_TYPE_DEFAULT, cl_get_device_id, cl_create_context, cl_release_context
+from .commonmodel cimport mat3, ModelFrame as cppModelFrame, DrivingModelFrame as cppDrivingModelFrame, MonitoringModelFrame as cppMonitoringModelFrame
 
 
 cdef class CLContext(BaseCLContext):
   def __cinit__(self):
     self.device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT)
     self.context = cl_create_context(self.device_id)
+
+  def __dealloc__(self):
+    if self.context:
+      cl_release_context(self.context)
 
 cdef class CLMem:
   @staticmethod
@@ -31,11 +35,10 @@ cdef class CLMem:
 def cl_from_visionbuf(VisionBuf buf):
   return CLMem.create(<void*>&buf.buf.buf_cl)
 
+
 cdef class ModelFrame:
   cdef cppModelFrame * frame
-
-  def __cinit__(self, CLContext context):
-    self.frame = new cppModelFrame(context.device_id, context.context)
+  cdef int buf_size
 
   def __dealloc__(self):
     del self.frame
@@ -49,5 +52,23 @@ cdef class ModelFrame:
 
   def buffer_from_cl(self, CLMem in_frames):
     cdef unsigned char * data2
-    data2 = self.frame.buffer_from_cl(in_frames.mem)
-    return np.asarray(<cnp.uint8_t[:self.frame.buf_size]> data2)
+    data2 = self.frame.buffer_from_cl(in_frames.mem, self.buf_size)
+    return np.asarray(<cnp.uint8_t[:self.buf_size]> data2)
+
+
+cdef class DrivingModelFrame(ModelFrame):
+  cdef cppDrivingModelFrame * _frame
+
+  def __cinit__(self, CLContext context):
+    self._frame = new cppDrivingModelFrame(context.device_id, context.context)
+    self.frame = <cppModelFrame*>(self._frame)
+    self.buf_size = self._frame.buf_size
+
+cdef class MonitoringModelFrame(ModelFrame):
+  cdef cppMonitoringModelFrame * _frame
+
+  def __cinit__(self, CLContext context):
+    self._frame = new cppMonitoringModelFrame(context.device_id, context.context)
+    self.frame = <cppModelFrame*>(self._frame)
+    self.buf_size = self._frame.buf_size
+

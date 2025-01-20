@@ -8,6 +8,10 @@ strict: true
 docs_dir: docs
 site_dir: docs_site/
 
+hooks:
+  - docs/hooks/glossary.py
+extra_css:
+  - css/tooltip.css
 theme:
   name: readthedocs
   navigation_depth: 3

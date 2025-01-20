@@ -39,6 +39,12 @@ public:
   Qt::ItemFlags flags(const QModelIndex &index) const override {
     return (index.column() == column_count - 1) ? Qt::ItemIsEnabled : Qt::ItemIsEnabled | Qt::ItemIsSelectable;
   }
+  const std::vector<std::array<uint32_t, 8>> &getBitFlipChanges(size_t msg_size);
+
+  struct BitFlipTracker {
+    std::optional<std::pair<double, double>> time_range;
+    std::vector<std::array<uint32_t, 8>> flip_counts;
+  } bit_flip_tracker;
 
   struct Item {
     QColor bg_color = QColor(102, 86, 169, 255);
@@ -49,7 +55,7 @@ public:
     bool valid = false;
   };
   std::vector<Item> items;
-
+  bool heatmap_live_mode = true;
   MessageId msg_id;
   int row_count = 0;
   const int column_count = 9;
@@ -63,8 +69,13 @@ public:
   void setMessage(const MessageId &message_id);
   void highlight(const cabana::Signal *sig);
   QSet<const cabana::Signal*> getOverlappingSignals() const;
-  inline void updateState() { model->updateState(); }
+  void updateState() { model->updateState(); }
+  void paintEvent(QPaintEvent *event) override {
+    is_message_active = can->isMessageActive(model->msg_id);
+    QTableView::paintEvent(event);
+  }
   QSize minimumSizeHint() const override;
+  void setHeatmapLiveMode(bool live) { model->heatmap_live_mode = live; updateState(); }
 
 signals:
   void signalClicked(const cabana::Signal *sig);
@@ -86,6 +97,7 @@ private:
   QModelIndex anchor_index;
   BinaryViewModel *model;
   BinaryItemDelegate *delegate;
+  bool is_message_active = false;
   const cabana::Signal *resize_sig = nullptr;
   const cabana::Signal *hovered_sig = nullptr;
   friend class BinaryItemDelegate;

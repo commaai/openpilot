@@ -1,11 +1,54 @@
+import os
 from abc import abstractmethod, ABC
-from collections import namedtuple
+from dataclasses import dataclass, fields
 
 from cereal import log
 
-ThermalConfig = namedtuple('ThermalConfig', ['cpu', 'gpu', 'mem', 'bat', 'pmic'])
 NetworkType = log.DeviceState.NetworkType
 
+@dataclass
+class ThermalZone:
+  # a zone from /sys/class/thermal/thermal_zone*
+  name: str             # a.k.a type
+  scale: float = 1000.  # scale to get degrees in C
+  zone_number = -1
+
+  def read(self) -> float:
+    if self.zone_number < 0:
+      for n in os.listdir("/sys/devices/virtual/thermal"):
+        if not n.startswith("thermal_zone"):
+          continue
+        with open(os.path.join("/sys/devices/virtual/thermal", n, "type")) as f:
+          if f.read().strip() == self.name:
+            self.zone_number = int(n.removeprefix("thermal_zone"))
+            break
+
+    try:
+      with open(f"/sys/devices/virtual/thermal/thermal_zone{self.zone_number}/temp") as f:
+        return int(f.read()) / self.scale
+    except FileNotFoundError:
+      return 0
+
+@dataclass
+class ThermalConfig:
+  cpu: list[ThermalZone] | None = None
+  gpu: list[ThermalZone] | None = None
+  pmic: list[ThermalZone] | None = None
+  memory: ThermalZone | None = None
+  intake: ThermalZone | None = None
+  exhaust: ThermalZone | None = None
+  case: ThermalZone | None = None
+
+  def get_msg(self):
+    ret = {}
+    for f in fields(ThermalConfig):
+      v = getattr(self, f.name)
+      if v is not None:
+        if isinstance(v, list):
+          ret[f.name + "TempC"] = [x.read() for x in v]
+        else:
+          ret[f.name + "TempC"] = v.read()
+    return ret
 
 class HardwareBase(ABC):
   @staticmethod
@@ -84,9 +127,8 @@ class HardwareBase(ABC):
   def shutdown(self):
     pass
 
-  @abstractmethod
   def get_thermal_config(self):
-    pass
+    return ThermalConfig()
 
   @abstractmethod
   def set_screen_brightness(self, percentage):
@@ -105,9 +147,6 @@ class HardwareBase(ABC):
     pass
 
   def get_modem_version(self):
-    return None
-
-  def get_modem_nv(self):
     return None
 
   @abstractmethod

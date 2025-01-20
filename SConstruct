@@ -49,10 +49,6 @@ AddOption('--ccflags',
           default='',
           help='pass arbitrary flags over the command line')
 
-AddOption('--snpe',
-          action='store_true',
-          help='use SNPE on PC')
-
 AddOption('--external-sconscript',
           action='store',
           metavar='FILE',
@@ -349,7 +345,7 @@ Export('common', 'gpucommon')
 env_swaglog = env.Clone()
 env_swaglog['CXXFLAGS'].append('-DSWAGLOG="\\"common/swaglog.h\\""')
 SConscript(['msgq_repo/SConscript'], exports={'env': env_swaglog})
-SConscript(['opendbc/can/SConscript'], exports={'env': env_swaglog})
+SConscript(['opendbc_repo/SConscript'], exports={'env': env_swaglog})
 
 SConscript(['cereal/SConscript'])
 
@@ -366,6 +362,7 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
+  'system/ui/SConscript',
   'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',

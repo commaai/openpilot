@@ -47,7 +47,7 @@ private:
 };
 
 std::string sha256(const std::string &str);
-void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &should_exit);
+void precise_nano_sleep(int64_t nanoseconds, std::atomic<bool> &interrupt_requested);
 std::string decompressBZ2(const std::string &in, std::atomic<bool> *abort = nullptr);
 std::string decompressBZ2(const std::byte *in, size_t in_size, std::atomic<bool> *abort = nullptr);
 std::string decompressZST(const std::string &in, std::atomic<bool> *abort = nullptr);

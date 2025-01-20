@@ -25,7 +25,7 @@ while True:
     if c.src % 0x80 == 0 and c.address < 0x800 and c.address not in (0x7df, 0x7e0, 0x7e8):
       msgs[c.address] = len(c.dat)
 
-  fingerprint = ', '.join("%d: %d" % v for v in sorted(msgs.items()))
+  fingerprint = ', '.join(f"{v[0]}: {v[1]}" for v in sorted(msgs.items()))
 
   print(f"number of messages {len(msgs)}:")
   print(f"fingerprint {fingerprint}")

@@ -1,16 +1,16 @@
 FROM ubuntu:24.04
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot && \
+    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot python3-tk python3-dev && \
     rm -rf /var/lib/apt/lists/*
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
-ENV LANG en_US.UTF-8
-ENV LANGUAGE en_US:en
-ENV LC_ALL en_US.UTF-8
+ENV LANG=en_US.UTF-8
+ENV LANGUAGE=en_US:en
+ENV LC_ALL=en_US.UTF-8
 
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
 RUN /tmp/tools/install_ubuntu_dependencies.sh && \
@@ -55,9 +55,9 @@ RUN mkdir -p /tmp/opencl-driver-intel && \
     cd / && \
     rm -rf /tmp/opencl-driver-intel
 
-ENV NVIDIA_VISIBLE_DEVICES all
-ENV NVIDIA_DRIVER_CAPABILITIES graphics,utility,compute
-ENV QTWEBENGINE_DISABLE_SANDBOX 1
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
+ENV QTWEBENGINE_DISABLE_SANDBOX=1
 
 RUN dbus-uuidgen > /etc/machine-id
 
@@ -68,17 +68,14 @@ RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 USER $USER
 
-COPY --chown=$USER pyproject.toml uv.lock /tmp/
-COPY --chown=$USER tools/install_python_dependencies.sh /tmp/tools/
+COPY --chown=$USER pyproject.toml uv.lock /home/$USER
+COPY --chown=$USER tools/install_python_dependencies.sh /home/$USER/tools/
 
 ENV VIRTUAL_ENV=/home/$USER/.venv
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-RUN cd /tmp && \
+RUN cd /home/$USER && \
     tools/install_python_dependencies.sh && \
-    mkdir -p $VIRTUAL_ENV && \
-    cp -r /tmp/.venv/* $VIRTUAL_ENV && \
-    rm -rf /tmp/* && \
-    rm -rf /home/$USER/.cache
+    rm -rf tools/ pyproject.toml uv.lock .cache
 
 USER root
 RUN sudo git config --global --add safe.directory /tmp/openpilot

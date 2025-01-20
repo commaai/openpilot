@@ -82,7 +82,7 @@ class URLFile:
 
     self._length = self.get_length_online()
     if not self._force_download and self._length != -1:
-      with atomic_write_in_dir(file_length_path, mode="w") as file_length:
+      with atomic_write_in_dir(file_length_path, mode="w", overwrite=True) as file_length:
         file_length.write(str(self._length))
     return self._length
 
@@ -105,7 +105,7 @@ class URLFile:
       #  If we don't have a file, download it
       if not os.path.exists(full_path):
         data = self.read_aux(ll=CHUNK_SIZE)
-        with atomic_write_in_dir(full_path, mode="wb") as new_cached_file:
+        with atomic_write_in_dir(full_path, mode="wb", overwrite=True) as new_cached_file:
           new_cached_file.write(data)
       else:
         with open(full_path, "rb") as cached_file:

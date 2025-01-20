@@ -58,7 +58,7 @@ If streaming to PlotJuggler from a replay on your PC, simply run: `./juggle.py -
 
 For a quick demo, go through the installation step and run this command:
 
-`./juggle.py --demo --layout=layouts/demo.xml`
+`./juggle.py --demo --layout=layouts/tuning.xml`
 
 ## Layouts
 
