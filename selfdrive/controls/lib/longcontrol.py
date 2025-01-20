@@ -1,5 +1,5 @@
+import numpy as np
 from cereal import car
-from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
 from openpilot.common.pid import PIDController
@@ -84,5 +84,5 @@ class LongControl:
       output_accel = self.pid.update(error, speed=CS.vEgo,
                                      feedforward=a_target)
 
-    self.last_output_accel = clip(output_accel, accel_limits[0], accel_limits[1])
+    self.last_output_accel = np.clip(output_accel, accel_limits[0], accel_limits[1])
     return self.last_output_accel

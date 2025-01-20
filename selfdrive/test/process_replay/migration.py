@@ -1,7 +1,8 @@
 from collections import defaultdict
 from collections.abc import Callable
-import functools
 import capnp
+import functools
+import traceback
 
 from cereal import messaging, car, log
 from opendbc.car.fingerprints import MIGRATION
@@ -107,7 +108,8 @@ def migrate_longitudinalPlan(msgs):
     if msg.which() != 'longitudinalPlan':
       continue
     new_msg = msg.as_builder()
-    new_msg.longitudinalPlan.aTarget, new_msg.longitudinalPlan.shouldStop = get_accel_from_plan(msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels)
+    a_target, should_stop = get_accel_from_plan(msg.longitudinalPlan.speeds, msg.longitudinalPlan.accels)
+    new_msg.longitudinalPlan.aTarget, new_msg.longitudinalPlan.shouldStop = float(a_target), bool(should_stop)
     ops.append((index, new_msg.as_reader()))
   return ops, [], []
 
@@ -424,13 +426,19 @@ def migrate_sensorEvents(msgs):
 def migrate_onroadEvents(msgs):
   ops = []
   for index, msg in msgs:
+    onroadEvents = []
+    for event in msg.onroadEventsDEPRECATED:
+      try:
+        if not str(event.name).endswith('DEPRECATED'):
+          # dict converts name enum into string representation
+          onroadEvents.append(log.OnroadEvent(**event.to_dict()))
+      except RuntimeError:  # Member was null
+        traceback.print_exc()
+
     new_msg = messaging.new_message('onroadEvents', len(msg.onroadEventsDEPRECATED))
     new_msg.valid = msg.valid
     new_msg.logMonoTime = msg.logMonoTime
-
-    # dict converts name enum into string representation
-    new_msg.onroadEvents = [log.OnroadEvent(**event.to_dict()) for event in msg.onroadEventsDEPRECATED if
-                            not str(event.name).endswith('DEPRECATED')]
+    new_msg.onroadEvents = onroadEvents
     ops.append((index, new_msg.as_reader()))
 
   return ops, [], []
@@ -441,10 +449,16 @@ def migrate_driverMonitoringState(msgs):
   ops = []
   for index, msg in msgs:
     msg = msg.as_builder()
-    # dict converts name enum into string representation
-    msg.driverMonitoringState.events = [log.OnroadEvent(**event.to_dict()) for event in
-                                        msg.driverMonitoringState.eventsDEPRECATED if
-                                        not str(event.name).endswith('DEPRECATED')]
+    events = []
+    for event in msg.driverMonitoringState.eventsDEPRECATED:
+      try:
+        if not str(event.name).endswith('DEPRECATED'):
+          # dict converts name enum into string representation
+          events.append(log.OnroadEvent(**event.to_dict()))
+      except RuntimeError:  # Member was null
+        traceback.print_exc()
+
+    msg.driverMonitoringState.events = events
     ops.append((index, msg.as_reader()))
 
   return ops, [], []

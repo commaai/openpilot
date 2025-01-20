@@ -72,6 +72,7 @@ class Car:
     self.can_rcv_cum_timeout_counter = 0
 
     self.CC_prev = car.CarControl.new_message()
+    self.CS_prev = car.CarState.new_message()
     self.initialized_prev = False
 
     self.last_actuators_output = structs.CarControl.Actuators()
@@ -124,6 +125,15 @@ class Car:
       self.CP.safetyConfigs = [safety_config]
 
     if self.CP.secOcRequired and not self.params.get_bool("IsReleaseBranch"):
+      # Copy user key if available
+      try:
+        with open("/cache/params/SecOCKey") as f:
+          user_key = f.readline().strip()
+          if len(user_key) == 32:
+            self.params.put("SecOCKey", user_key)
+      except Exception:
+        pass
+
       secoc_key = self.params.get("SecOCKey", encoding='utf8')
       if secoc_key is not None:
         saved_secoc_key = bytes.fromhex(secoc_key.strip())
@@ -180,8 +190,12 @@ class Car:
     if can_rcv_valid and REPLAY:
       self.can_log_mono_time = messaging.log_from_bytes(can_strs[0]).logMonoTime
 
-    # TODO: mirror the carState.cruiseState struct?
     self.v_cruise_helper.update_v_cruise(CS, self.sm['carControl'].enabled, self.is_metric)
+    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
+      # Use CarState w/ buttons from the step selfdrived enables on
+      self.v_cruise_helper.initialize_v_cruise(self.CS_prev, self.experimental_mode)
+
+    # TODO: mirror the carState.cruiseState struct?
     CS.vCruise = float(self.v_cruise_helper.v_cruise_kph)
     CS.vCruiseCluster = float(self.v_cruise_helper.v_cruise_cluster_kph)
 
@@ -238,9 +252,6 @@ class Car:
   def step(self):
     CS, RD = self.state_update()
 
-    if self.sm['carControl'].enabled and not self.CC_prev.enabled:
-      self.v_cruise_helper.initialize_v_cruise(CS, self.experimental_mode)
-
     self.state_publish(CS, RD)
 
     initialized = (not any(e.name == EventName.selfdriveInitializing for e in self.sm['onroadEvents']) and
@@ -249,6 +260,7 @@ class Car:
       self.controls_update(CS, self.sm['carControl'])
 
     self.initialized_prev = initialized
+    self.CS_prev = CS
 
   def params_thread(self, evt):
     while not evt.is_set():

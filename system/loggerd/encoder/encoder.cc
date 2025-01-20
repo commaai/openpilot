@@ -14,12 +14,12 @@ VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in
   pm.reset(new PubMaster(pubs));
 }
 
-void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
+void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
                                      unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat) {
   // broadcast packet
   MessageBuilder msg;
   auto event = msg.initEvent(true);
-  auto edat = (event.*(e->encoder_info.init_encode_data_func))();
+  auto edat = (event.*(encoder_info.init_encode_data_func))();
   auto edata = edat.initIdx();
   struct timespec ts;
   timespec_get(&ts, TIME_UTC);
@@ -27,8 +27,8 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   edata.setFrameId(extra.frame_id);
   edata.setTimestampSof(extra.timestamp_sof);
   edata.setTimestampEof(extra.timestamp_eof);
-  edata.setType(e->encoder_info.encode_type);
-  edata.setEncodeId(e->cnt++);
+  edata.setType(encoder_info.encode_type);
+  edata.setEncodeId(cnt++);
   edata.setSegmentNum(segment_num);
   edata.setSegmentId(idx);
   edata.setFlags(flags);
@@ -39,21 +39,21 @@ void VideoEncoder::publisher_publish(VideoEncoder *e, int segment_num, uint32_t 
   if (flags & V4L2_BUF_FLAG_KEYFRAME) edat.setHeader(header);
 
   uint32_t bytes_size = capnp::computeSerializedSizeInWords(msg) * sizeof(capnp::word);
-  if (e->msg_cache.size() < bytes_size) {
-    e->msg_cache.resize(bytes_size);
+  if (msg_cache.size() < bytes_size) {
+    msg_cache.resize(bytes_size);
   }
-  kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(e->msg_cache.data(), bytes_size));
+  kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(msg_cache.data(), bytes_size));
   capnp::writeMessage(output_stream, msg);
-  e->pm->send(e->encoder_info.publish_name, e->msg_cache.data(), bytes_size);
+  pm->send(encoder_info.publish_name, msg_cache.data(), bytes_size);
 
   // Publish keyframe thumbnail
-  if ((flags & V4L2_BUF_FLAG_KEYFRAME) && e->encoder_info.thumbnail_name != NULL) {
+  if ((flags & V4L2_BUF_FLAG_KEYFRAME) && encoder_info.thumbnail_name != NULL) {
     MessageBuilder tm;
     auto thumbnail = tm.initEvent().initThumbnail();
     thumbnail.setFrameId(extra.frame_id);
     thumbnail.setTimestampEof(extra.timestamp_eof);
     thumbnail.setThumbnail(dat);
     thumbnail.setEncoding(cereal::Thumbnail::Encoding::KEYFRAME);
-    pm->send(e->encoder_info.thumbnail_name, tm);
+    pm->send(encoder_info.thumbnail_name, tm);
   }
 }

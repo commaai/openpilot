@@ -121,7 +121,7 @@ class Plant:
     ss.selfdriveState.personality = self.personality
     control.controlsState.forceDecel = self.force_decel
     car_state.carState.vEgo = float(self.speed)
-    car_state.carState.standstill = self.speed < 0.01
+    car_state.carState.standstill = bool(self.speed < 0.01)
     car_state.carState.vCruise = float(v_cruise * 3.6)
     car_control.carControl.orientationNED = [0., float(pitch), 0.]
 

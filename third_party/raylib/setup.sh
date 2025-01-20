@@ -39,3 +39,8 @@ cd src
 
 make -j$(nproc) PLATFORM=$RAYLIB_PLATFORM
 sudo make install RAYLIB_INSTALL_PATH=$INSTALL_DIR RAYLIB_H_INSTALL_PATH=$INSTALL_H_DIR
+
+# this commit needs to be in line with raylib
+set -x
+RAYGUI_COMMIT="76b36b597edb70ffaf96f046076adc20d67e7827"
+wget -O $INSTALL_H_DIR/raygui.h https://raw.githubusercontent.com/raysan5/raygui/$RAYGUI_COMMIT/src/raygui.h
