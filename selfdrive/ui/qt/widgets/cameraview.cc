@@ -79,7 +79,9 @@ CameraWidget::~CameraWidget() {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
+#ifndef QCOM2
     glDeleteTextures(2, textures);
+#endif
   }
   doneCurrent();
 }
