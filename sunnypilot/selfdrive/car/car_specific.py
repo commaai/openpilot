@@ -5,12 +5,12 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-from cereal import custom
+from cereal import log
 from opendbc.car import structs
 
-from openpilot.sunnypilot.selfdrive.selfdrived.events import EventsSP
+from openpilot.selfdrive.selfdrived.events import Events
 
-EventNameSP = custom.OnroadEventSP.EventName
+EventName = log.OnroadEvent.EventName
 
 
 class CarSpecificEventsSP:
@@ -26,9 +26,9 @@ class CarSpecificEventsSP:
     self.hyundai_radar_tracks_confirmed = self.params.get_bool("HyundaiRadarTracksConfirmed")
 
   def update(self):
-    events = EventsSP()
+    events = Events()
     if self.CP.carName == 'hyundai':
       if self.hyundai_radar_tracks and not self.hyundai_radar_tracks_confirmed:
-        events.add(EventNameSP.hyundaiRadarTracksConfirmed)
+        events.add(EventName.hyundaiRadarTracksConfirmed)
 
     return events

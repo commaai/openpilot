@@ -5,12 +5,12 @@ This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
 
-from cereal import car, custom
+from cereal import car, log
 from opendbc.car import structs
 from openpilot.common.params import Params
 
 ButtonType = car.CarState.ButtonEvent.Type
-EventNameSP = custom.OnroadEventSP.EventName
+EventName = log.OnroadEvent.EventName
 
 DISTANCE_LONG_PRESS = 50
 
@@ -46,5 +46,5 @@ class CruiseHelper:
     if self.button_frame_counts[ButtonType.gapAdjustCruise] >= DISTANCE_LONG_PRESS and not self.experimental_mode_switched:
       self._experimental_mode = not experimental_mode
       self.params.put_bool_nonblocking("ExperimentalMode", self._experimental_mode)
-      events.add(EventNameSP.experimentalModeSwitched)
+      events.add(EventName.experimentalModeSwitched)
       self.experimental_mode_switched = True
