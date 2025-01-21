@@ -9,13 +9,14 @@ public:
   void showEvent(QShowEvent *event) override;
 
 private:
+  void initDevToggles();
+
   Params params;
   ParamControl* joystickToggle;
   ParamControl* longManeuverToggle;
   ParamControl* alphaLongToggle;
 
-  bool is_release;
-  bool offroad;
+  bool offroad = false;
 
 private slots:
   void updateToggles(bool _offroad);

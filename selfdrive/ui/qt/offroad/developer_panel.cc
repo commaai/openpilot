@@ -1,15 +1,19 @@
-#include <QDebug>
-
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   // SSH keys
   addItem(new SshToggle());
   addItem(new SshControl());
 
+  bool is_release = params.getBool("IsReleaseBranch");
+  if (!is_release) {
+    initDevToggles();
+  }
+}
+
+void DeveloperPanel::initDevToggles() {
   joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("LongitudinalManeuverMode", false);
@@ -31,17 +35,13 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(alphaLongToggle);
   alphaLongToggle->setConfirmation(true, false);
 
-  // Joystick and longitudinal maneuvers should be hidden on release branches
-  is_release = params.getBool("IsReleaseBranch");
-
   // Toggles should be not available to change in onroad state
   QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
 void DeveloperPanel::updateToggles(bool _offroad) {
-  for (auto btn : findChildren<ParamControl *>()) {
-    btn->setVisible(!is_release);
-    btn->setEnabled(_offroad);
+  for (auto toggle : {joystickToggle, longManeuverToggle, alphaLongToggle}) {
+    toggle->setEnabled(_offroad);
   }
 
   // longManeuverToggle should not be toggleable if the car don't have longitudinal control
@@ -64,7 +64,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     }
 
     // if is a release branch or if the car already have long control the alphaLongToggle should not be visible
-    if (is_release || CP.getOpenpilotLongitudinalControl()) {
+    if (CP.getOpenpilotLongitudinalControl()) {
       params.remove("ExperimentalLongitudinalEnabled");
       alphaLongToggle->setVisible(false);
     }
