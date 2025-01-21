@@ -619,7 +619,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Network</source>
-        <translation>ネットワーク</translation>
+        <translation>ネット</translation>
     </message>
     <message>
         <source>Toggles</source>
@@ -627,7 +627,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Software</source>
-        <translation>ソフトウェア</translation>
+        <translation>ソフト</translation>
     </message>
     <message>
         <source>Developer</source>
