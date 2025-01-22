@@ -5,7 +5,6 @@ import usb1
 import time
 import signal
 import subprocess
-from typing import NoReturn
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from openpilot.common.basedir import BASEDIR
@@ -62,7 +61,7 @@ def flash_panda(panda_serial: str) -> Panda:
   return panda
 
 
-def main() -> NoReturn:
+def main() -> None:
   # signal pandad to close the relay and exit
   def signal_handler(signum, frame):
     cloudlog.info(f"Caught signal {signum}, exiting")
