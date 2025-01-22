@@ -97,7 +97,7 @@ public:
   void setPrimeType(PrimeState::Type type);
   WifiManager* wifi = nullptr;
 
-private:
+protected:
   QStackedLayout* main_layout = nullptr;
   QWidget* wifiScreen = nullptr;
   AdvancedNetworking* an = nullptr;
