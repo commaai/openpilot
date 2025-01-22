@@ -19,10 +19,8 @@ add_executable(mavlink-bridge
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/car.capnp.c++
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/legacy.capnp.c++
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/custom.capnp.c++
-    #  autopilot_interface.cpp
-    #  serial_port.cpp
-    #  udp_port.cpp
 )
+
 
 # Specify your app's executable name and a list of linked libraries
 target_link_libraries(mavlink-bridge
@@ -38,5 +36,24 @@ target_include_directories(mavlink-bridge
     PUBLIC
     ${gz-msgs10_INCLUDE_DIRS}
     $ENV{OPENPILOT_DIR}
-    #$ENV{OPENPILOT_DIR}/mavlink_repo
+)
+
+add_executable(gzimgpub
+    gz-image-publisher.cpp
+    $ENV{OPENPILOT_DIR}/cereal/gen/cpp/log.capnp.c++
+    $ENV{OPENPILOT_DIR}/cereal/gen/cpp/car.capnp.c++
+    $ENV{OPENPILOT_DIR}/cereal/gen/cpp/legacy.capnp.c++
+    $ENV{OPENPILOT_DIR}/cereal/gen/cpp/custom.capnp.c++
+)
+target_link_libraries(gzimgpub
+    gz-msgs10
+    gz-transport13
+    capnp
+    kj
+    pthread
+)
+target_include_directories(gzimgpub
+    PUBLIC
+    ${gz-msgs10_INCLUDE_DIRS}
+    $ENV{OPENPILOT_DIR}
 )
