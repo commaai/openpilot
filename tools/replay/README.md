@@ -7,6 +7,8 @@
 Before starting a replay, you need to authenticate with your comma account using `auth.py`. This will allow you to access your routes from the server.
 
 ```bash
+cd ~/openpilot && source .venv/bin/activate
+
 # Authenticate to access routes from your comma account:
 python3 tools/lib/auth.py
 ```
