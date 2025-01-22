@@ -91,9 +91,6 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   while (!do_exit && check_all_connected(pandas)) {
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
-      if (errno == EINTR) {
-        do_exit = true;
-      }
       continue;
     }
 
