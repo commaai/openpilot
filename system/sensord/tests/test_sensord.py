@@ -9,6 +9,7 @@ from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.manager.process_config import managed_processes
 
 BMX = {
@@ -35,6 +36,11 @@ SENSOR_CONFIGURATIONS = (
   (BMX | LSM_C),
   (MMC| LSM_C),
 )
+if HARDWARE.get_device_type() == "mici":
+  SENSOR_CONFIGURATIONS = (
+    LSM,
+    LSM_C,
+  )
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
