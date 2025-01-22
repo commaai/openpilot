@@ -5,7 +5,7 @@ import threading
 
 import cereal.messaging as messaging
 
-from cereal import car, log
+from cereal import car, log, custom
 
 from panda import ALTERNATIVE_EXPERIENCE
 
@@ -21,6 +21,7 @@ from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
 from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import MockCarState
+from openpilot.selfdrive.car.helpers import convert_to_capnp
 
 from openpilot.sunnypilot.mads.mads import MadsParams
 from openpilot.sunnypilot.selfdrive.car import interfaces
@@ -66,11 +67,13 @@ class Car:
   CI: CarInterfaceBase
   RI: RadarInterfaceBase
   CP: car.CarParams
+  CP_SP: structs.CarParamsSP
+  CP_SP_capnp: custom.CarParamsSP
 
   def __init__(self, CI=None, RI=None) -> None:
     self.can_sock = messaging.sub_sock('can', timeout=20)
     self.sm = messaging.SubMaster(['pandaStates', 'carControl', 'onroadEvents'])
-    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'liveTracks'])
+    self.pm = messaging.PubMaster(['sendcan', 'carState', 'carParams', 'carOutput', 'liveTracks'] + ['carParamsSP'])
 
     self.can_rcv_cum_timeout_counter = 0
 
@@ -102,14 +105,15 @@ class Car:
           cached_params = _cached_params
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
-      interfaces.setup_car_interface_sp(self.CI.CP, self.params)
-      self.RI = get_radar_interface(self.CI.CP)
+      interfaces.setup_car_interface_sp(self.CI.CP, self.CI.CP_SP, self.params)
+      self.RI = get_radar_interface(self.CI.CP, self.CI.CP_SP)
       self.CP = self.CI.CP
+      self.CP_SP = self.CI.CP_SP
 
       # continue onto next fingerprinting step in pandad
       self.params.put_bool("FirmwareQueryDone", True)
     else:
-      self.CI, self.CP = CI, CI.CP
+      self.CI, self.CP, self.CP_SP = CI, CI.CP, CI.CP_SP
       self.RI = RI
 
     # set alternative experiences from parameters
@@ -120,7 +124,7 @@ class Car:
 
     # mads
     MadsParams().set_alternative_experience(self.CP)
-    MadsParams().set_car_specific_params(self.CP)
+    MadsParams().set_car_specific_params(self.CP, self.CP_SP)
 
     # Dynamic Experimental Control
     self.dynamic_experimental_control = self.params.get_bool("DynamicExperimentalControl")
@@ -166,6 +170,14 @@ class Car:
     self.params.put("CarParams", cp_bytes)
     self.params.put_nonblocking("CarParamsCache", cp_bytes)
     self.params.put_nonblocking("CarParamsPersistent", cp_bytes)
+
+    # Write CarParamsSP for controls
+    # convert to pycapnp representation for caching and logging
+    self.CP_SP_capnp = convert_to_capnp(self.CP_SP)
+    cp_sp_bytes = self.CP_SP_capnp.to_bytes()
+    self.params.put("CarParamsSP", cp_sp_bytes)
+    self.params.put_nonblocking("CarParamsSPCache", cp_sp_bytes)
+    self.params.put_nonblocking("CarParamsSPPersistent", cp_sp_bytes)
 
     self.mock_carstate = MockCarState()
     self.v_cruise_helper = VCruiseHelper(self.CP)
@@ -245,14 +257,21 @@ class Car:
       tracks_msg.liveTracks = RD
       self.pm.send('liveTracks', tracks_msg)
 
+    # carParamsSP - logged every 50 seconds (> 1 per segment)
+    if self.sm.frame % int(50. / DT_CTRL) == 0:
+      cp_sp_send = messaging.new_message('carParamsSP')
+      cp_sp_send.valid = True
+      cp_sp_send.carParamsSP = self.CP_SP_capnp
+      self.pm.send('carParamsSP', cp_sp_send)
+
   def controls_update(self, CS: car.CarState, CC: car.CarControl):
     """control update loop, driven by carControl"""
 
     if not self.initialized_prev:
       # Initialize CarInterface, once controls are ready
       # TODO: this can make us miss at least a few cycles when doing an ECU knockout
-      self.CI.init(self.CP, *self.can_callbacks)
-      interfaces.initialize_car_interface_sp(self.CP, self.params, *self.can_callbacks)
+      self.CI.init(self.CP, self.CP_SP, *self.can_callbacks)
+      interfaces.initialize_car_interface_sp(self.CP, self.CP_SP, self.params, *self.can_callbacks)
       # signal pandad to switch to car safety mode
       self.params.put_bool_nonblocking("ControlsReady", True)
 

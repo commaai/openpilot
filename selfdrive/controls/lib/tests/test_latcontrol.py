@@ -19,7 +19,8 @@ class TestLatControl:
   def test_saturation(self, car_name, controller):
     CarInterface, CarController, CarState, RadarInterface = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
-    CI = CarInterface(CP, CarController, CarState)
+    CP_SP = CarInterface.get_non_essential_params_sp(CP, car_name)
+    CI = CarInterface(CP, CP_SP, CarController, CarState)
     VM = VehicleModel(CP)
 
     controller = controller(CP.as_reader(), CI)

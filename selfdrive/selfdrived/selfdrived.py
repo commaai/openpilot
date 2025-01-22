@@ -5,7 +5,7 @@ import threading
 
 import cereal.messaging as messaging
 
-from cereal import car, log
+from cereal import car, log, custom
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from panda import ALTERNATIVE_EXPERIENCE
 
@@ -47,7 +47,7 @@ IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
 class SelfdriveD(CruiseHelper):
-  def __init__(self, CP=None):
+  def __init__(self, CP=None, CP_SP=None):
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
@@ -60,11 +60,18 @@ class SelfdriveD(CruiseHelper):
     else:
       self.CP = CP
 
+    if CP_SP is None:
+      cloudlog.info("selfdrived is waiting for CarParamsSP")
+      self.CP_SP = messaging.log_from_bytes(self.params.get("CarParamsSP", block=True), custom.CarParamsSP)
+      cloudlog.info("selfdrived got CarParamsSP")
+    else:
+      self.CP_SP = CP_SP
+
     self.car_events = CarSpecificEvents(self.CP)
     self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
 
     # Setup sockets
-    self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
+    self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'] + ['selfdriveStateSP', 'onroadEventsSP'])
 
     self.gps_location_service = get_gps_location_service(self.params)
     self.gps_packets = [self.gps_location_service]
@@ -140,8 +147,6 @@ class SelfdriveD(CruiseHelper):
     self.events_sp_prev = []
 
     self.mads = ModularAssistiveDrivingSystem(self)
-    sock_services = list(self.pm.sock.keys()) + ['selfdriveStateSP', 'onroadEventsSP']
-    self.pm = messaging.PubMaster(sock_services)
 
     self.car_events_sp = CarSpecificEventsSP(self.CP, self.params)
 

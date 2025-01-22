@@ -79,6 +79,7 @@ _services: dict[str, tuple] = {
   "selfdriveStateSP": (True, 100., 10),
   "longitudinalPlanSP": (True, 20., 10),
   "onroadEventsSP": (True, 1., 1),
+  "carParamsSP": (True, 0.02, 1),
 
   # debug
   "uiDebug": (True, 0., 1),

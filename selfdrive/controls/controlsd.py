@@ -2,7 +2,7 @@
 import math
 from typing import SupportsFloat
 
-from cereal import car, log
+from cereal import car, log, custom
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
@@ -34,11 +34,16 @@ class Controls:
     self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
     cloudlog.info("controlsd got CarParams")
 
-    self.CI = get_car_interface(self.CP)
+    cloudlog.info("controlsd is waiting for CarParamsSP")
+    self.CP_SP = messaging.log_from_bytes(self.params.get("CarParamsSP", block=True), custom.CarParamsSP)
+    cloudlog.info("controlsd got CarParamsSP")
+
+    self.CI = get_car_interface(self.CP, self.CP_SP)
 
     self.sm = messaging.SubMaster(['liveParameters', 'liveTorqueParameters', 'modelV2', 'selfdriveState',
                                    'liveCalibration', 'livePose', 'longitudinalPlan', 'carState', 'carOutput',
-                                   'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
+                                   'driverMonitoringState', 'onroadEvents', 'driverAssistance'] + ['selfdriveStateSP'],
+                                  poll='selfdriveState')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
     self.steer_limited = False
@@ -56,9 +61,6 @@ class Controls:
       self.LaC = LatControlPID(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'torque':
       self.LaC = LatControlTorque(self.CP, self.CI)
-
-    data_services = list(self.sm.data.keys()) + ['selfdriveStateSP']
-    self.sm = messaging.SubMaster(data_services, poll='selfdriveState')
 
   def update(self):
     self.sm.update(15)

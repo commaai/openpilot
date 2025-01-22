@@ -2569,7 +2569,7 @@ struct Event {
     modelManagerSP @108 :Custom.ModelManagerSP;
     longitudinalPlanSP @109 :Custom.LongitudinalPlanSP;
     onroadEventsSP @110 :List(Custom.OnroadEventSP);
-    customReserved4 @111 :Custom.CustomReserved4;
+    carParamsSP @111 :Custom.CarParamsSP;
     customReserved5 @112 :Custom.CustomReserved5;
     customReserved6 @113 :Custom.CustomReserved6;
     customReserved7 @114 :Custom.CustomReserved7;

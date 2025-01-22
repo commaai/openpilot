@@ -22,20 +22,21 @@ def log_fingerprint(CP: structs.CarParams) -> None:
     sentry.capture_fingerprint(CP.carFingerprint, CP.carName)
 
 
-def setup_car_interface_sp(CP: structs.CarParams, params):
+def setup_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params):
   if CP.carName == 'hyundai':
     if CP.flags & HyundaiFlags.MANDO_RADAR and CP.radarUnavailable:
       # Having this automatic without a toggle causes a weird process replay diff because
       # somehow it sees fewer logs than intended
       if params.get_bool("HyundaiRadarTracksToggle"):
-        CP.sunnypilotFlags |= HyundaiFlagsSP.ENABLE_RADAR_TRACKS.value
+        CP_SP.flags |= HyundaiFlagsSP.ENABLE_RADAR_TRACKS.value
         if params.get_bool("HyundaiRadarTracks"):
           CP.radarUnavailable = False
 
 
-def initialize_car_interface_sp(CP: structs.CarParams, params, can_recv: CanRecvCallable, can_send: CanSendCallable):
+def initialize_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params, can_recv: CanRecvCallable,
+                                can_send: CanSendCallable):
   if CP.carName == 'hyundai':
-    if CP.sunnypilotFlags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
+    if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       can_recv()
       _, fingerprint = can_fingerprint(can_recv)
       radar_unavailable = RADAR_START_ADDR not in fingerprint[1] or Bus.radar not in HYUNDAI_DBC[CP.carFingerprint]

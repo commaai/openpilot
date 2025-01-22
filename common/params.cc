@@ -202,6 +202,9 @@ std::unordered_map<std::string, uint32_t> keys = {
 
     // --- sunnypilot params --- //
     {"ApiCache_DriveStats", PERSISTENT},
+    {"CarParamsSP", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
+    {"CarParamsSPCache", CLEAR_ON_MANAGER_START},
+    {"CarParamsSPPersistent", PERSISTENT},
     {"EnableGithubRunner", PERSISTENT | BACKUP},
     {"ModelRunnerTypeCache", CLEAR_ON_ONROAD_TRANSITION},
     {"OffroadMode", CLEAR_ON_MANAGER_START},
