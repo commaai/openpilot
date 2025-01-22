@@ -97,7 +97,7 @@ void CameraState::set_exposure_rect() {
   };
   int h_ref = 1208;
   /*
-    exposure target intrinics is
+    exposure target intrinsics is
     [
       [F, 0, 0.5*ae_xywh[2]]
       [0, F, 0.5*H-ae_xywh[1]]
