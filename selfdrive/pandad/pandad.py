@@ -73,10 +73,10 @@ def main() -> NoReturn:
       process.send_signal(signal.SIGINT)
 
   process = None
+  do_exit = False
   signal.signal(signal.SIGINT, signal_handler)
 
   count = 0
-  do_exit = False
   first_run = True
   params = Params()
   no_internal_panda_count = 0
