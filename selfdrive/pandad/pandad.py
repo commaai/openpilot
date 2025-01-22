@@ -5,7 +5,6 @@ import usb1
 import time
 import signal
 import subprocess
-import sys
 from typing import NoReturn
 
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
