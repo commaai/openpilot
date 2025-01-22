@@ -60,7 +60,7 @@ def or_(*fns):
 def and_(*fns):
   return lambda *args: operator.and_(*(fn(*args) for fn in fns))
 
-procs = [
+procs123456789 = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
@@ -92,7 +92,7 @@ procs = [
   PythonProcess("deleter", "system.loggerd.deleter", always_run),
   PythonProcess("dmonitoringd", "selfdrive.monitoring.dmonitoringd", driverview, enabled=(WEBCAM or not PC)),
   PythonProcess("qcomgpsd", "system.qcomgpsd.qcomgpsd", qcomgps, enabled=TICI),
-  PythonProcess("pandad", "selfdrive.pandad.pandad", always_run),
+  PythonProcess("manage_pandad", "selfdrive.pandad.pandad", always_run),
   PythonProcess("paramsd", "selfdrive.locationd.paramsd", only_onroad),
   NativeProcess("ubloxd", "system/ubloxd", ["./ubloxd"], ublox, enabled=TICI),
   PythonProcess("pigeond", "system.ubloxd.pigeond", ublox, enabled=TICI),
@@ -112,4 +112,4 @@ procs = [
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 ]
 
-managed_processes = {p.name: p for p in procs}
+managed_processes = {p.name: p for p in procs123456789}
