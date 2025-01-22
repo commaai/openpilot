@@ -1,0 +1,162 @@
+name: Nightly Branch Reset and PR Squash
+
+env:
+  DEFAULT_SOURCE_BRANCH: "master-new"
+  DEFAULT_TARGET_BRANCH: "nightly"
+  PR_LABEL: "dev-c3"
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_branch:
+        description: 'Source branch to reset from'
+        required: true
+        default: 'master-new'
+        type: string
+      target_branch:
+        description: 'Target branch to reset and squash into'
+        required: true
+        default: 'master-dev-c3-new'
+        type: string
+#  schedule:
+#     - cron: '0 0 * * *'  # Run at midnight UTC for nightly
+
+jobs:
+  reset-and-squash:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for all branches
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install PyGithub
+
+      - name: Check branches exist
+        run: |
+          # Check if source branch exists
+          if ! git ls-remote --heads origin ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }} | grep -q "${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}"; then
+            echo "Source branch ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }} does not exist!"
+            exit 1
+          fi
+          
+          # Make sure we have the latest source branch
+          git fetch origin ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}
+          
+          # Check if target branch exists
+          if ! git ls-remote --heads origin ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} | grep -q "${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}"; then
+            echo "Target branch ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} does not exist, creating it from ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}"
+            git checkout -b ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} origin/${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}
+            git push origin ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}
+          else
+            # Fetch target branch if it exists
+            git fetch origin ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}
+          fi
+
+      - name: Reset target branch
+        run: |
+          echo "Resetting ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} to match ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}"
+          # Delete if exists and recreate pointing to source
+          git branch -D ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} || true
+          git branch ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} origin/${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}
+
+      - name: Get PRs to squash
+        id: get-prs
+        run: |
+          # Use GitHub API to get PRs with specific label, ordered by creation date
+          PR_LIST=$(gh api graphql -f query='
+            query($label:String!) {
+              search(query: $label, type:ISSUE, first:100) {
+                nodes {
+                  ... on PullRequest {
+                    number
+                    headRefName
+                    title
+                    createdAt
+                    commits(last: 1) {
+                      nodes {
+                        commit {
+                          statusCheckRollup {
+                            state
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }' -F label="is:pr is:open label:${PR_LABEL} sort:created-asc")
+          
+          echo "PR_LIST=${PR_LIST}" >> $GITHUB_OUTPUT
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Process PRs
+        run: |
+          python3 ${{ github.workspace }}/release/ci/squash_and_merge_prs.py \
+            --pr-data '${{ steps.get-prs.outputs.PR_LIST }}' \
+            --target-branch ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} \
+            --squash-script-path '${{ github.workspace }}/release/ci/squash_and_merge.py'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push changes if there are diffs
+        id: push-changes  # Add an id so we can reference this step
+        run: |
+          TARGET_BRANCH="${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}"
+
+          # Fetch the latest from remote
+          git fetch origin $TARGET_BRANCH
+
+          # Check for diffs between local and remote
+          if git diff $TARGET_BRANCH origin/$TARGET_BRANCH --quiet; then
+            echo "No changes to push - local and remote branches are identical"
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # If we get here, there are diffs, so push
+          if ! git push origin $TARGET_BRANCH --force; then
+            echo "Failed to push changes to $TARGET_BRANCH"
+            exit 1
+          fi
+
+          echo "Branch $TARGET_BRANCH has been reset and updated with squashed PRs"
+          echo "has_changes=true" >> $GITHUB_OUTPUT
+
+      - name: Trigger and wait for selfdrive tests
+        if: steps.push-changes.outputs.has_changes == 'true'
+        run: |
+          echo "Triggering selfdrive tests..."
+          gh workflow run selfdrive_tests.yaml --ref "${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}"
+
+          echo "Sleeping for 120s to give plenty of time for the action to start and then we wait"
+          sleep 120
+
+          echo "Getting latest run ID..."
+          RUN_ID=$(gh run list --workflow=selfdrive_tests.yaml --branch="${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}" --limit=1 --json databaseId --jq '.[0].databaseId')
+
+          echo "Watching run ID: $RUN_ID"
+          gh run watch "$RUN_ID"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Trigger prebuilt workflow
+        if: success() && steps.push-changes.outputs.has_changes == 'true'
+        run: |
+          gh workflow run sunnypilot-build-prebuilt.yaml --ref "${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
