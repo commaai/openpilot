@@ -67,20 +67,21 @@ def main() -> NoReturn:
   # signal pandad to close the relay and exit
   def signal_handler(signum, frame):
     cloudlog.info(f"Caught signal {signum}, exiting")
-    if process is not None and process.poll() is None:
-      process.terminate()
-      process.wait()
-    sys.exit(1)
+    nonlocal do_exit
+    do_exit = True
+    if process is not None:
+      process.send_signal(signal.SIGINT)
 
   process = None
-  signal.signal(signal.SIGTERM, signal_handler)
+  signal.signal(signal.SIGINT, signal_handler)
 
   count = 0
+  do_exit = False
   first_run = True
   params = Params()
   no_internal_panda_count = 0
 
-  while True:
+  while not do_exit:
     try:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
