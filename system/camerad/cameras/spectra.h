@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sys/mman.h>
 #include <functional>
 #include <memory>
 #include <optional>
@@ -72,10 +73,21 @@ public:
 
 class SpectraBuf {
 public:
+  SpectraBuf() = default;
+
+  ~SpectraBuf() {
+    if (video_fd >= 0 && ptr) {
+      munmap(ptr, mmap_size);
+      release(video_fd, handle);
+    }
+  }
+
   void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0, int count=1) {
+    video_fd = m->video0_fd;
     size = s;
     alignment = a;
-    void *p = alloc_w_mmu_hdl(m->video0_fd, ALIGNED_SIZE(size, alignment)*count, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
+    mmap_size = aligned_size() * count;
+    void *p = alloc_w_mmu_hdl(video_fd, mmap_size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
     ptr = (unsigned char*)p;
     assert(ptr != NULL);
   };
@@ -84,8 +96,9 @@ public:
     return ALIGNED_SIZE(size, alignment);
   };
 
-  unsigned char *ptr;
-  int size, alignment, handle;
+  int video_fd = -1;
+  unsigned char *ptr = nullptr;
+  int size = 0, alignment = 0, handle = 0, mmap_size = 0;
 };
 
 class SpectraCamera {
