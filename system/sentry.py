@@ -116,12 +116,8 @@ def get_properties() -> tuple[str, str, str]:
 
 def init(project: SentryProject) -> bool:
   build_metadata = get_build_metadata()
-  # forks like to mess with this, so double check
-  # comma_remote = build_metadata.openpilot.comma_remote and "commaai" in build_metadata.openpilot.git_origin
-  # if not comma_remote or not is_registered_device() or PC:
-  #   return False
 
-  env = "release" if build_metadata.tested_channel else "master"
+  env = build_metadata.channel_type
   dongle_id, git_username, sunnylink_dongle_id = get_properties()
 
   integrations = []
