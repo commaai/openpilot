@@ -1,0 +1,25 @@
+name: Update CARS.md
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # 12am PST (8am UTC)
+  workflow_dispatch:
+
+jobs:
+  update-cars:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Car Docs
+        run: |
+          pip install -e .
+          scons -c && scons -j$(nproc)
+          python -m pip install jinja2==3.1.4 natsort==8.4.0
+          python opendbc/car/docs.py
+      - uses: stefanzweifel/git-auto-commit-action@8621497c8c39c72f3e2a999a26b4ca1b5058a842
+        with:
+          commit_message: 'docs: Scheduled auto-update CARS.md'
+          file_pattern: 'docs/CARS.md'
+          

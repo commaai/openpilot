@@ -3,13 +3,13 @@ import pytest
 import time
 import subprocess
 
-from cereal import car
+from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import set_params_enabled
 
-EventName = car.CarEvent.EventName
+EventName = log.OnroadEvent.EventName
 
 
 @pytest.mark.tici
@@ -20,7 +20,7 @@ def test_time_to_onroad():
   proc = subprocess.Popen(["python", manager_path])
 
   start_time = time.monotonic()
-  sm = messaging.SubMaster(['controlsState', 'deviceState', 'onroadEvents'])
+  sm = messaging.SubMaster(['selfdriveState', 'deviceState', 'onroadEvents'])
   try:
     # wait for onroad. timeout assumes panda is up to date
     with Timeout(10, "timed out waiting to go onroad"):
@@ -34,12 +34,12 @@ def test_time_to_onroad():
         while True:
           sm.update(100)
 
-          if sm.seen['onroadEvents'] and not any(EventName.controlsInitializing == e.name for e in sm['onroadEvents']):
+          if sm.seen['onroadEvents'] and not any(EventName.selfdriveInitializing == e.name for e in sm['onroadEvents']):
             initialized = True
 
           if initialized:
             sm.update(100)
-            assert sm['controlsState'].engageable, f"events: {sm['onroadEvents']}"
+            assert sm['selfdriveState'].engageable, f"events: {sm['onroadEvents']}"
             break
     finally:
       print(f"onroad events: {sm['onroadEvents']}")
@@ -50,8 +50,7 @@ def test_time_to_onroad():
     while (time.monotonic() - st) < 10.:
       sm.update(100)
       assert sm.all_alive(), sm.alive
-      assert sm['controlsState'].engageable, f"events: {sm['onroadEvents']}"
-      assert sm['controlsState'].cumLagMs < 10.
+      assert sm['selfdriveState'].engageable, f"events: {sm['onroadEvents']}"
   finally:
     proc.terminate()
     if proc.wait(20) is None:

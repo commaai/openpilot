@@ -12,7 +12,7 @@ class PandaTestPackUnpack(unittest.TestCase):
     for _ in range(10000):
       address = random.randint(1, (1 << 29) - 1)
       data = bytes([random.getrandbits(8) for _ in range(DLC_TO_LEN[random.randrange(0, len(DLC_TO_LEN))])])
-      to_pack.append((address, 0, data, 0))
+      to_pack.append((address, data, 0))
 
     packed = pack_can_buffer(to_pack)
     unpacked = []

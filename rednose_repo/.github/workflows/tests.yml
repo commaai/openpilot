@@ -1,0 +1,34 @@
+name: tests
+
+on: [push, pull_request]
+
+env:
+  REGISTRY: ghcr.io/commaai
+  BUILD: docker buildx build --pull --load --cache-to type=inline --cache-from $REGISTRY/rednose:latest -t rednose -f Dockerfile .
+  RUN: docker run rednose bash -c
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build docker image
+      run: eval ${{ env.BUILD }}
+    - name: Static analysis
+      run: ${{ env.RUN }} "git init && git add -A && pre-commit run --all"
+    - name: Unit Tests
+      run: ${{ env.RUN }} "pytest"
+
+  docker_push:
+    name: docker push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/rednose'
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build Docker image
+      run: eval ${{ env.BUILD }}
+    - name: Push to dockerhub
+      run: |
+        docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+        docker tag rednose ${{ env.REGISTRY }}/rednose:latest
+        docker push ${{ env.REGISTRY }}/rednose:latest

@@ -1,70 +1,12 @@
-const SteeringLimits TESLA_STEERING_LIMITS = {
-  .angle_deg_to_can = 10,
-  .angle_rate_up_lookup = {
-    {0., 5., 15.},
-    {10., 1.6, .3}
-  },
-  .angle_rate_down_lookup = {
-    {0., 5., 15.},
-    {10., 7.0, .8}
-  },
-};
+#pragma once
 
-const LongitudinalLimits TESLA_LONG_LIMITS = {
-  .max_accel = 425,       // 2. m/s^2
-  .min_accel = 287,       // -3.52 m/s^2  // TODO: limit to -3.48
-  .inactive_accel = 375,  // 0. m/s^2
-};
+#include "safety_declarations.h"
 
+static bool tesla_longitudinal = false;
+static bool tesla_powertrain = false;  // Are we the second panda intercepting the powertrain bus?
+static bool tesla_raven = false;
 
-const int TESLA_FLAG_POWERTRAIN = 1;
-const int TESLA_FLAG_LONGITUDINAL_CONTROL = 2;
-const int TESLA_FLAG_RAVEN = 4;
-
-const CanMsg TESLA_TX_MSGS[] = {
-  {0x488, 0, 4},  // DAS_steeringControl
-  {0x45, 0, 8},   // STW_ACTN_RQ
-  {0x45, 2, 8},   // STW_ACTN_RQ
-  {0x2b9, 0, 8},  // DAS_control
-};
-
-const CanMsg TESLA_PT_TX_MSGS[] = {
-  {0x2bf, 0, 8},  // DAS_control
-};
-
-RxCheck tesla_rx_checks[] = {
-  {.msg = {{0x2b9, 2, 8, .frequency = 25U}, { 0 }, { 0 }}},   // DAS_control
-  {.msg = {{0x370, 0, 8, .frequency = 25U}, { 0 }, { 0 }}},   // EPAS_sysStatus
-  {.msg = {{0x108, 0, 8, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque1
-  {.msg = {{0x118, 0, 6, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque2
-  {.msg = {{0x20a, 0, 8, .frequency = 50U}, { 0 }, { 0 }}},   // BrakeMessage
-  {.msg = {{0x368, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state
-  {.msg = {{0x318, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // GTW_carState
-};
-
-RxCheck tesla_raven_rx_checks[] = {
-  {.msg = {{0x2b9, 2, 8, .frequency = 25U}, { 0 }, { 0 }}},   // DAS_control
-  {.msg = {{0x131, 2, 8, .frequency = 100U}, { 0 }, { 0 }}},  // EPAS3P_sysStatus
-  {.msg = {{0x108, 0, 8, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque1
-  {.msg = {{0x118, 0, 6, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque2
-  {.msg = {{0x20a, 0, 8, .frequency = 50U}, { 0 }, { 0 }}},   // BrakeMessage
-  {.msg = {{0x368, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state
-  {.msg = {{0x318, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // GTW_carState
-};
-
-RxCheck tesla_pt_rx_checks[] = {
-  {.msg = {{0x106, 0, 8, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque1
-  {.msg = {{0x116, 0, 6, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque2
-  {.msg = {{0x1f8, 0, 8, .frequency = 50U}, { 0 }, { 0 }}},   // BrakeMessage
-  {.msg = {{0x2bf, 2, 8, .frequency = 25U}, { 0 }, { 0 }}},   // DAS_control
-  {.msg = {{0x256, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state
-};
-
-bool tesla_longitudinal = false;
-bool tesla_powertrain = false;  // Are we the second panda intercepting the powertrain bus?
-bool tesla_raven = false;
-
-bool tesla_stock_aeb = false;
+static bool tesla_stock_aeb = false;
 
 static void tesla_rx_hook(const CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
@@ -129,6 +71,24 @@ static void tesla_rx_hook(const CANPacket_t *to_push) {
 
 
 static bool tesla_tx_hook(const CANPacket_t *to_send) {
+  const SteeringLimits TESLA_STEERING_LIMITS = {
+    .angle_deg_to_can = 10,
+    .angle_rate_up_lookup = {
+      {0., 5., 15.},
+      {10., 1.6, .3}
+    },
+    .angle_rate_down_lookup = {
+      {0., 5., 15.},
+      {10., 7.0, .8}
+    },
+  };
+
+  const LongitudinalLimits TESLA_LONG_LIMITS = {
+    .max_accel = 425,       // 2. m/s^2
+    .min_accel = 287,       // -3.52 m/s^2  // TODO: limit to -3.48
+    .inactive_accel = 375,  // 0. m/s^2
+  };
+
   bool tx = true;
   int addr = GET_ADDR(to_send);
   bool violation = false;
@@ -216,6 +176,21 @@ static int tesla_fwd_hook(int bus_num, int addr) {
 }
 
 static safety_config tesla_init(uint16_t param) {
+  const int TESLA_FLAG_POWERTRAIN = 1;
+  const int TESLA_FLAG_LONGITUDINAL_CONTROL = 2;
+  const int TESLA_FLAG_RAVEN = 4;
+
+  static const CanMsg TESLA_TX_MSGS[] = {
+    {0x488, 0, 4},  // DAS_steeringControl
+    {0x45, 0, 8},   // STW_ACTN_RQ
+    {0x45, 2, 8},   // STW_ACTN_RQ
+    {0x2b9, 0, 8},  // DAS_control
+  };
+
+  static const CanMsg TESLA_PT_TX_MSGS[] = {
+    {0x2bf, 0, 8},  // DAS_control
+  };
+
   tesla_powertrain = GET_FLAG(param, TESLA_FLAG_POWERTRAIN);
   tesla_longitudinal = GET_FLAG(param, TESLA_FLAG_LONGITUDINAL_CONTROL);
   tesla_raven = GET_FLAG(param, TESLA_FLAG_RAVEN);
@@ -224,10 +199,38 @@ static safety_config tesla_init(uint16_t param) {
 
   safety_config ret;
   if (tesla_powertrain) {
+    static RxCheck tesla_pt_rx_checks[] = {
+      {.msg = {{0x106, 0, 8, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque1
+      {.msg = {{0x116, 0, 6, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque2
+      {.msg = {{0x1f8, 0, 8, .frequency = 50U}, { 0 }, { 0 }}},   // BrakeMessage
+      {.msg = {{0x2bf, 2, 8, .frequency = 25U}, { 0 }, { 0 }}},   // DAS_control
+      {.msg = {{0x256, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state
+    };
+
     ret = BUILD_SAFETY_CFG(tesla_pt_rx_checks, TESLA_PT_TX_MSGS);
   } else if (tesla_raven) {
+    static RxCheck tesla_raven_rx_checks[] = {
+      {.msg = {{0x2b9, 2, 8, .frequency = 25U}, { 0 }, { 0 }}},   // DAS_control
+      {.msg = {{0x131, 2, 8, .frequency = 100U}, { 0 }, { 0 }}},  // EPAS3P_sysStatus
+      {.msg = {{0x108, 0, 8, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque1
+      {.msg = {{0x118, 0, 6, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque2
+      {.msg = {{0x20a, 0, 8, .frequency = 50U}, { 0 }, { 0 }}},   // BrakeMessage
+      {.msg = {{0x368, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state
+      {.msg = {{0x318, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // GTW_carState
+    };
+
     ret = BUILD_SAFETY_CFG(tesla_raven_rx_checks, TESLA_TX_MSGS);
   } else {
+    static RxCheck tesla_rx_checks[] = {
+      {.msg = {{0x2b9, 2, 8, .frequency = 25U}, { 0 }, { 0 }}},   // DAS_control
+      {.msg = {{0x370, 0, 8, .frequency = 25U}, { 0 }, { 0 }}},   // EPAS_sysStatus
+      {.msg = {{0x108, 0, 8, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque1
+      {.msg = {{0x118, 0, 6, .frequency = 100U}, { 0 }, { 0 }}},  // DI_torque2
+      {.msg = {{0x20a, 0, 8, .frequency = 50U}, { 0 }, { 0 }}},   // BrakeMessage
+      {.msg = {{0x368, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // DI_state
+      {.msg = {{0x318, 0, 8, .frequency = 10U}, { 0 }, { 0 }}},   // GTW_carState
+    };
+
     ret = BUILD_SAFETY_CFG(tesla_rx_checks, TESLA_TX_MSGS);
   }
   return ret;

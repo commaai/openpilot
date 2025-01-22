@@ -19,7 +19,7 @@ class TestLogmessaged:
     self.error_sock = messaging.sub_sock("logMessage", timeout=1000, conflate=False)
 
     # ensure sockets are connected
-    time.sleep(1)
+    time.sleep(0.5)
     messaging.drain_sock(self.sock)
     messaging.drain_sock(self.error_sock)
 
@@ -35,7 +35,7 @@ class TestLogmessaged:
     msgs = [f"abc {i}" for i in range(10)]
     for m in msgs:
       cloudlog.error(m)
-    time.sleep(3)
+    time.sleep(0.5)
     m = messaging.drain_sock(self.sock)
     assert len(m) == len(msgs)
     assert len(self._get_log_files()) >= 1
@@ -45,7 +45,7 @@ class TestLogmessaged:
     msg = "a"*3*1024*1024
     for _ in range(n):
       cloudlog.info(msg)
-    time.sleep(3)
+    time.sleep(0.5)
 
     msgs = messaging.drain_sock(self.sock)
     assert len(msgs) == 0

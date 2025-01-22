@@ -9,7 +9,7 @@ extern uint32_t enter_bootloader_mode;
 typedef void (*bootloader_fcn)(void);
 typedef bootloader_fcn *bootloader_fcn_ptr;
 
-void jump_to_bootloader(void) {
+static void jump_to_bootloader(void) {
   // do enter bootloader
   enter_bootloader_mode = 0;
 

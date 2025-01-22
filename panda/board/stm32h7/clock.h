@@ -17,13 +17,55 @@ APB4 per: 60MHz
 PCLK1: 60MHz (for USART2,3,4,5,7,8)
 */
 
+typedef enum {
+  PACKAGE_UNKNOWN = 0,
+  PACKAGE_WITH_SMPS = 1,
+  PACKAGE_WITHOUT_SMPS = 2,
+} PackageSMPSType;
+
+// TODO: find a better way to distinguish between H725 (using SMPS) and H723 (lacking SMPS)
+// The package will do for now, since we have only used TFBGA100 for H723
+static PackageSMPSType get_package_smps_type(void) {
+  PackageSMPSType ret;
+  RCC->APB4ENR |= RCC_APB4ENR_SYSCFGEN; // make sure SYSCFG clock is enabled. does seem to read fine without too though
+
+  switch(SYSCFG->PKGR & 0xFU) {
+    case 0b0001U: // TFBGA100 Legacy
+    case 0b0011U: // TFBGA100
+      ret = PACKAGE_WITHOUT_SMPS;
+      break;
+    case 0b0101U: // LQFP144 Legacy
+    case 0b0111U: // LQFP144 Industrial
+    case 0b1000U: // UFBGA169
+      ret = PACKAGE_WITH_SMPS;
+      break;
+    default:
+      ret = PACKAGE_UNKNOWN;
+  }
+  return ret;
+}
+
 void clock_init(void) {
-  // Set power mode to direct SMPS power supply(depends on the board layout)
-#ifndef STM32H723
-  register_set(&(PWR->CR3), PWR_CR3_SMPSEN, 0xFU); // powered only by SMPS
-#else
-  register_set(&(PWR->CR3), PWR_CR3_LDOEN, 0xFU);
-#endif
+  /*
+    WARNING: PWR->CR3's lower byte can only be written once
+    * subsequent writes will silently fail
+    * only cleared with a full power-on-reset, not soft reset or reset pin
+    * some H7 have a bootrom with a DFU routine that writes (and locks) CR3
+    * if the CR3 config doesn't match the HW, the core will deadlock and require immediately going into DFU from a cold boot
+
+    In a normal bootup, the bootstub will be the first to write this. The app section calls clock_init again, but the CR3 write will silently fail. This is fine for most cases, but caution should be taken that the bootstub and app always write the same config.
+  */
+
+  // Set power mode to direct SMPS power supply (depends on the board layout)
+  PackageSMPSType package_smps = get_package_smps_type();
+  if (package_smps == PACKAGE_WITHOUT_SMPS) {
+    register_set(&(PWR->CR3), PWR_CR3_LDOEN, 0xFU); // no SMPS, so powered by LDO
+  } else if (package_smps == PACKAGE_WITH_SMPS) {
+    register_set(&(PWR->CR3), PWR_CR3_SMPSEN, 0xFU); // powered only by SMPS
+  } else {
+    while(true); // unknown package, let's hang here
+  }
+
   // Set VOS level (VOS3 to 170Mhz, VOS2 to 300Mhz, VOS1 to 400Mhz, VOS0 to 550Mhz)
   register_set(&(PWR->D3CR), PWR_D3CR_VOS_1 | PWR_D3CR_VOS_0, 0xC000U); //VOS1, needed for 80Mhz CAN FD
   while ((PWR->CSR1 & PWR_CSR1_ACTVOSRDY) == 0U);

@@ -1,0 +1,540 @@
+name: Benchmarks
+env:
+  # TODO: this rescheduling makes gpt2, mixtral and llama unjitted slower
+  # TODO: very slow for llama 70B and resnet training 6 GPU
+  RUN_PROCESS_REPLAY: "1"
+  ASSERT_PROCESS_REPLAY: "0"
+  PYTHONPATH: .
+  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+on:
+  push:
+    branches:
+      - master
+      - update_benchmark
+      - update_benchmark_staging
+  workflow_dispatch:
+    inputs:
+      run_process_replay:
+        description: "Run process replay tests"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  testmacbenchmark:
+    name: Mac Benchmark
+    runs-on: [self-hosted, macOS]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    if: github.repository_owner == 'tinygrad'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Symlink models and datasets
+      run: |
+        mkdir -p weights
+        ln -s ~/tinygrad/extra/disassemblers/applegpu extra/disassemblers/applegpu
+        ln -s ~/tinygrad/weights/sd-v1-4.ckpt weights/sd-v1-4.ckpt
+        ln -s ~/tinygrad/weights/bpe_simple_vocab_16e6.txt.gz weights/bpe_simple_vocab_16e6.txt.gz
+        ln -s ~/tinygrad/weights/LLaMA weights/LLaMA
+        ln -s ~/tinygrad/extra/datasets/cifar-10-python.tar.gz extra/datasets/cifar-10-python.tar.gz
+    - name: setup staging db
+      if: github.ref == 'refs/heads/update_benchmark_staging'
+      run: |
+        echo "CACHEDB=/tmp/staging.db" >> $GITHUB_ENV
+        rm -f /tmp/staging.db /tmp/staging.db-shm /tmp/staging.db-wal
+    - name: reset process replay
+      run: python3.11 test/external/process_replay/reset.py
+    - name: Run Stable Diffusion
+      run: JIT=1 python3.11 examples/stable_diffusion.py --fp16 --seed 0 --noshow --timing | tee sd.txt
+    - name: Run Stable Diffusion without fp16
+      run: JIT=1 python3.11 examples/stable_diffusion.py --seed 0 --noshow --timing | tee sd_no_fp16.txt
+    - name: Run Stable Diffusion v2
+      run: JIT=1 python3.11 examples/sdv2.py --fp16 --seed 0 --noshow --timing | tee sdv2.txt
+    - name: Run SDXL
+      run: JIT=1 python3.11 examples/sdxl.py --seed 0 --noshow --timing | tee sdxl.txt
+    - name: Run model inference benchmark
+      run: METAL=1 python3.11 test/external/external_model_benchmark.py
+    - name: Test speed vs torch
+      run: BIG=2 MPS=1 python3.11 test/test_speed_v_torch.py | tee torch_speed.txt
+    - name: Test tensor cores
+      run: METAL=1 python3.11 test/test_linearizer.py TestLinearizer.test_tensor_cores TestLinearizer.test_tensor_cores_padded
+    - name: Test AMX tensor cores
+      run: DEBUG=2 CLANG=1 AMX=1 python3.11 test/test_linearizer.py TestLinearizer.test_tensor_cores TestLinearizer.test_tensor_cores_padded
+    - name: Run Tensor Core GEMM (float)
+      run: DEBUG=2 python3.11 extra/gemm/simple_matmul.py | tee matmul.txt
+    - name: Run Tensor Core GEMM (half)
+      run: DEBUG=2 HALF=1 python3.11 extra/gemm/simple_matmul.py | tee matmul_half.txt
+    - name: Run Tensor Core GEMM (bfloat16)
+      run: DEBUG=2 BFLOAT16=1 python3.11 extra/gemm/simple_matmul.py | tee matmul_bfloat16.txt
+    - name: Fuzz Padded Tensor Core GEMM
+      run: METAL=1 M_START=6 M_STOP=10 M_STEP=1 N_START=6 N_STOP=10 N_STEP=1 K_START=6 K_STOP=24 K_STEP=1 TC_OPT=2 DEBUG=2 python3.11 ./extra/gemm/fuzz_matmul.py
+    - name: Run LLaMA
+      run: |
+        JIT=0 python3.11 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_unjitted.txt
+        JIT=1 python3.11 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_jitted.txt
+    - name: Run LLaMA with BEAM
+      run: JITBEAM=2 IGNORE_BEAM_CACHE=1 python3.11 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_beam.txt
+    - name: Run quantized LLaMA
+      run: |
+        python3.11 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing --quantize int8 | tee llama_int8.txt
+        python3.11 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing --quantize nf4 | tee llama_nf4.txt
+    - name: Run LLaMA 7B on 4 (virtual) GPUs
+      run: python3.11 examples/llama.py --gen 1 --size 7B --shard 4 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_four_gpu.txt
+    - name: Run GPT2
+      run: |
+        JIT=0 python3.11 examples/gpt2.py --prompt "Hello." --count 10 --temperature 0 --timing | tee gpt2_unjitted.txt
+        JIT=1 python3.11 examples/gpt2.py --prompt "Hello." --count 10 --temperature 0 --timing | tee gpt2_jitted.txt
+    - name: Run GPT2 w HALF
+      run: HALF=1 python3.11 examples/gpt2.py --count 10 --temperature 0 --timing | tee gpt2_half.txt
+    - name: Run GPT2 w HALF/BEAM
+      run: HALF=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 CAST_BEFORE_VIEW=0 python3.11 examples/gpt2.py --count 10 --temperature 0 --timing | tee gpt2_half_beam.txt
+    - name: Train MNIST
+      run: time PYTHONPATH=. TARGET_EVAL_ACC_PCT=96.0 python3.11 examples/beautiful_mnist.py | tee beautiful_mnist.txt
+    - name: Run 10 CIFAR training steps
+      run: JIT=1 STEPS=10 python3.11 examples/hlb_cifar10.py | tee train_cifar.txt
+    - name: Run 10 CIFAR training steps w HALF
+      run: JIT=2 STEPS=10 DEFAULT_FLOAT=HALF python3.11 examples/hlb_cifar10.py | tee train_cifar_half.txt
+    #- name: Run 10 CIFAR training steps w BF16
+    #  run: STEPS=10 DEFAULT_FLOAT=BFLOAT16 python3.11 examples/hlb_cifar10.py | tee train_cifar_bf16.txt
+    - name: Run 10 CIFAR training steps w winograd
+      run: JIT=1 WINO=1 STEPS=10 python3.11 examples/hlb_cifar10.py | tee train_cifar_wino.txt
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Speed (Mac)
+        path: |
+          onnx_inference_speed.csv
+          torch_speed.txt
+          llama_unjitted.txt
+          llama_jitted.txt
+          llama_beam.txt
+          llama_int8.txt
+          llama_nf4.txt
+          llama_four_gpu.txt
+          gpt2_unjitted.txt
+          gpt2_jitted.txt
+          gpt2_half.txt
+          gpt2_half_beam.txt
+          matmul.txt
+          matmul_half.txt
+          matmul_bfloat16.txt
+          sd.txt
+          sd_no_fp16.txt
+          sdv2.txt
+          sdxl.txt
+          beautiful_mnist.txt
+          train_cifar.txt
+          train_cifar_half.txt
+          train_cifar_bf16.txt
+          train_cifar_wino.txt
+    - name: Run process replay tests
+      run: cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3.11 process_replay.py
+
+  testnvidiabenchmark:
+    name: tinybox green Benchmark
+    runs-on: [self-hosted, Linux, tinyboxgreen]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    if: github.repository_owner == 'tinygrad'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Print nvidia-smi
+      run: nvidia-smi
+    - name: Symlink models and datasets
+      run: |
+        mkdir -p weights
+        ln -s ~/tinygrad/weights/LLaMA weights/LLaMA
+        ln -s /raid/weights/mixtral-8x7b-32kseqlen weights/mixtral-8x7b-32kseqlen
+        ln -s /raid/weights/LLaMA-2 weights/LLaMA-2
+        ln -s /raid/weights/LLaMA-3 weights/LLaMA-3
+        mkdir -p extra/datasets
+        ln -s /raid/datasets/imagenet extra/datasets/imagenet
+    - name: setup staging db
+      if: github.ref == 'refs/heads/update_benchmark_staging'
+      run: |
+        echo "CACHEDB=/tmp/staging.db" >> $GITHUB_ENV
+        rm -f /tmp/staging.db /tmp/staging.db-shm /tmp/staging.db-wal
+    - name: reset process replay
+      run: test/external/process_replay/reset.py
+    - name: Run model inference benchmark
+      run: NV=1 RUN_PROCESS_REPLAY=0 NOCLANG=1 python3 test/external/external_model_benchmark.py
+    - name: Test speed vs torch
+      run: NV=1 RUN_PROCESS_REPLAY=0 HALF=1 BIG=2 TORCHCUDA=1 python3 test/test_speed_v_torch.py | tee torch_speed.txt
+    - name: Test speed vs theoretical
+      run: NV=1 IGNORE_BEAM_CACHE=1 BEAM_DEBUG=1 DEBUG=1 python -m pytest -rA test/external/speed_v_theoretical.py --durations=20
+    - name: Test tensor cores
+      run: |
+        NV=1 python3 test/test_linearizer.py TestLinearizer.test_tensor_cores TestLinearizer.test_tensor_cores_padded
+        PTX=1 NV=1 python3 test/test_linearizer.py TestLinearizer.test_tensor_cores TestLinearizer.test_tensor_cores_padded
+    - name: Run Tensor Core GEMM (CUDA)
+      run: |
+        CUDA=1 HALF=1 DEBUG=2 python3 extra/gemm/simple_matmul.py | tee matmul.txt
+        CUDA=1 BFLOAT16=1 DEBUG=2 python3 extra/gemm/simple_matmul.py | tee matmul_bfloat16.txt
+    - name: Run Tensor Core GEMM (PTX)
+      run: NV=1 PTX=1 HALF=1 DEBUG=2 python3 extra/gemm/simple_matmul.py | tee matmul_ptx.txt
+    - name: Run Tensor Core GEMM (NV)
+      run: NV=1 HALF=1 DEBUG=2 python3 extra/gemm/simple_matmul.py | tee matmul_nv.txt
+    - name: Test NV=1
+      run: DEBUG=2 NV=1 python -m pytest -rA test/test_tiny.py
+    - name: Test CUDA=1
+      run: DEBUG=2 CUDA=1 python -m pytest -rA test/test_tiny.py
+    - name: Run Stable Diffusion
+      run: NV=1 python3 examples/stable_diffusion.py --fp16 --seed 0 --noshow --timing | tee sd.txt
+    - name: Run SDXL
+      run: NV=1 RUN_PROCESS_REPLAY=0 python3 examples/sdxl.py --seed 0 --noshow --timing | tee sdxl.txt
+    - name: Run LLaMA
+      run: |
+        NV=1 JIT=0 python3 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_unjitted.txt
+        NV=1 JIT=1 python3 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_jitted.txt
+    - name: Run LLaMA with BEAM
+      run: NV=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 python3 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_beam.txt
+    # - name: Run LLaMA 7B on 4 GPUs
+    #   run: NV=1 RUN_PROCESS_REPLAY=0 python3 examples/llama.py --gen 1 --size 7B --shard 4 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_four_gpu.txt
+    # - name: Run LLaMA 7B on 6 GPUs
+    #   run: NV=1 RUN_PROCESS_REPLAY=0 python3 examples/llama.py --gen 1 --size 7B --shard 6 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_six_gpu.txt
+    - name: Run LLaMA-3 8B BEAM
+      run: NV=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 python3 examples/llama3.py --size 8B --model weights/LLaMA-3/8B-SF-DPO/ --benchmark --temperature 0 | tee llama3_beam.txt
+    - name: Run LLaMA-3 8B on 4 GPUs
+      run: NV=1 RUN_PROCESS_REPLAY=0 python3 examples/llama3.py --size 8B --shard 4 --model weights/LLaMA-3/8B-SF-DPO/ --benchmark --temperature 0 | tee llama3_four_gpu.txt
+    - name: Run LLaMA-3 8B on 6 GPUs
+      run: NV=1 RUN_PROCESS_REPLAY=0 python3 examples/llama3.py --size 8B --shard 6 --model weights/LLaMA-3/8B-SF-DPO/ --benchmark --temperature 0 | tee llama3_six_gpu.txt
+    - name: Run LLaMA-2 70B
+      run: NV=1 RUN_PROCESS_REPLAY=0 MAX_CONTEXT=256 python3 examples/llama.py --gen 2 --size 70B --shard 6 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_2_70B.txt
+    - name: Run Mixtral 8x7B
+      run: time NV=1 RUN_PROCESS_REPLAY=0 python3 examples/mixtral.py --temperature 0 --count 10 --timing | tee mixtral.txt
+    - name: Run GPT2
+      run: |
+        NV=1 JIT=0 python3 examples/gpt2.py --prompt "Hello." --count 10 --temperature 0 --timing | tee gpt2_unjitted.txt
+        NV=1 JIT=1 python3 examples/gpt2.py --prompt "Hello." --count 10 --temperature 0 --timing | tee gpt2_jitted.txt
+    - name: Run GPT2 w HALF
+      run: NV=1 HALF=1 python3 examples/gpt2.py --count 10 --temperature 0 --timing | tee gpt2_half.txt
+    - name: Run GPT2 w HALF/BEAM
+      run: NV=1 HALF=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 CAST_BEFORE_VIEW=0 python3 examples/gpt2.py --count 10 --temperature 0 --timing | tee gpt2_half_beam.txt
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Speed (NVIDIA)
+        path: |
+          onnx_inference_speed.csv
+          torch_speed.txt
+          matmul.txt
+          matmul_bfloat16.txt
+          matmul_ptx.txt
+          matmul_nv.txt
+          sd.txt
+          sdxl.txt
+          llama_unjitted.txt
+          llama_jitted.txt
+          llama_beam.txt
+          llama3_beam.txt
+          llama3_four_gpu.txt
+          llama3_six_gpu.txt
+          llama_2_70B.txt
+          mixtral.txt
+          gpt2_unjitted.txt
+          gpt2_jitted.txt
+          gpt2_half.txt
+          gpt2_half_beam.txt
+    - name: Run process replay tests
+      run: cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3 process_replay.py
+
+  testmorenvidiabenchmark:
+    name: tinybox green Training Benchmark
+    runs-on: [self-hosted, Linux, tinyboxgreen]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    if: github.repository_owner == 'tinygrad'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Symlink models and datasets
+      run: |
+        mkdir -p weights
+        ln -s ~/tinygrad/weights/bpe_simple_vocab_16e6.txt.gz weights/bpe_simple_vocab_16e6.txt.gz
+        ln -s ~/tinygrad/weights/LLaMA weights/LLaMA
+        ln -s ~/tinygrad/extra/datasets/cifar-10-python.tar.gz extra/datasets/cifar-10-python.tar.gz
+        ln -s /raid/weights/mixtral-8x7b-32kseqlen weights/mixtral-8x7b-32kseqlen
+        ln -s /raid/weights/LLaMA-2 weights/LLaMA-2
+        mkdir -p extra/datasets
+        ln -s /raid/datasets/imagenet extra/datasets/imagenet
+    - name: setup staging db
+      if: github.ref == 'refs/heads/update_benchmark_staging'
+      run: |
+        echo "CACHEDB=/tmp/staging.db" >> $GITHUB_ENV
+        rm -f /tmp/staging.db /tmp/staging.db-shm /tmp/staging.db-wal
+    - name: reset process replay
+      run: test/external/process_replay/reset.py
+    - name: Fuzz Padded Tensor Core GEMM (NV)
+      run: NV=1 M_START=12 M_STOP=20 M_STEP=1 N_START=6 N_STOP=10 N_STEP=1 K_START=28 K_STOP=36 K_STEP=1 HALF=1 TC_OPT=2 python3 ./extra/gemm/fuzz_matmul.py
+    - name: Fuzz Padded Tensor Core GEMM (PTX)
+      run: NV=1 PTX=1 M_START=12 M_STOP=20 M_STEP=1 N_START=6 N_STOP=10 N_STEP=1 K_START=28 K_STOP=36 K_STEP=1 HALF=1 TC_OPT=2 python3 ./extra/gemm/fuzz_matmul.py
+    - name: Train MNIST
+      run: time PYTHONPATH=. NV=1 TARGET_EVAL_ACC_PCT=96.0 python3 examples/beautiful_mnist.py | tee beautiful_mnist.txt
+    - name: Run 10 CIFAR training steps
+      run: NV=1 STEPS=10 python3 examples/hlb_cifar10.py | tee train_cifar.txt
+    - name: Run 10 CIFAR training steps w HALF
+      run: NV=1 STEPS=10 DEFAULT_FLOAT=HALF python3 examples/hlb_cifar10.py | tee train_cifar_half.txt
+    - name: Run 10 CIFAR training steps w BF16
+      run: NV=1 STEPS=10 DEFAULT_FLOAT=BFLOAT16 python3 examples/hlb_cifar10.py | tee train_cifar_bf16.txt
+    - name: Run 10 CIFAR training steps w winograd
+      run: NV=1 RUN_PROCESS_REPLAY=0 WINO=1 STEPS=10 DEFAULT_FLOAT=HALF python3 examples/hlb_cifar10.py | tee train_cifar_wino.txt
+    - name: Run full CIFAR training w 1 GPU
+      run: time NV=1 DEFAULT_FLOAT=HALF LATEWINO=1 STEPS=1000 TARGET_EVAL_ACC_PCT=93.2 python3 examples/hlb_cifar10.py | tee train_cifar_one_gpu.txt
+    - name: Run full CIFAR training steps w 6 GPUS
+      run: time RUN_PROCESS_REPLAY=0 NV=1 DEFAULT_FLOAT=HALF STEPS=350 BS=1536 GPUS=6 TARGET_EVAL_ACC_PCT=93.2 python3 examples/hlb_cifar10.py | tee train_cifar_six_gpu.txt
+    - name: Run MLPerf resnet eval on training data
+      run: time NV=1 MODEL=resnet python3 examples/mlperf/model_eval.py
+    - name: Run 10 MLPerf ResNet50 training steps (1 gpu)
+      run: NV=1 DEFAULT_FLOAT=HALF BENCHMARK=10 BS=256 GPUS=1 MODEL=resnet python3 examples/mlperf/model_train.py | tee train_resnet_one_gpu.txt
+    - name: Run 10 MLPerf ResNet50 training steps (6 gpu)
+      run: NV=1 RUN_PROCESS_REPLAY=0 DEFAULT_FLOAT=HALF BENCHMARK=10 BS=1536 GPUS=6 MODEL=resnet python3 examples/mlperf/model_train.py | tee train_resnet.txt
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Speed (NVIDIA Training)
+        path: |
+          beautiful_mnist.txt
+          train_cifar.txt
+          train_cifar_half.txt
+          train_cifar_bf16.txt
+          train_cifar_wino.txt
+          train_cifar_one_gpu.txt
+          train_resnet.txt
+          train_resnet_one_gpu.txt
+          train_cifar_six_gpu.txt
+    - name: Run process replay tests
+      run: cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3 process_replay.py
+
+  testamdbenchmark:
+    name: tinybox red Benchmark
+    runs-on: [self-hosted, Linux, tinybox]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    if: github.repository_owner == 'tinygrad'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Symlink models and datasets
+      run: |
+        mkdir -p weights
+        ln -s ~/tinygrad/weights/bpe_simple_vocab_16e6.txt.gz weights/bpe_simple_vocab_16e6.txt.gz
+        ln -s ~/tinygrad/weights/LLaMA weights/LLaMA
+        ln -s ~/tinygrad/extra/datasets/cifar-10-python.tar.gz extra/datasets/cifar-10-python.tar.gz
+        ln -s /raid/weights/mixtral-8x7b-32kseqlen weights/mixtral-8x7b-32kseqlen
+        ln -s /raid/weights/LLaMA-2 weights/LLaMA-2
+        ln -s /raid/weights/LLaMA-3 weights/LLaMA-3
+        mkdir -p extra/datasets
+        ln -s /raid/datasets/imagenet extra/datasets/imagenet
+    - name: setup staging db
+      if: github.ref == 'refs/heads/update_benchmark_staging'
+      run: |
+        echo "CACHEDB=/tmp/staging.db" >> $GITHUB_ENV
+        rm -f /tmp/staging.db /tmp/staging.db-shm /tmp/staging.db-wal
+    - name: reset process replay
+      run: test/external/process_replay/reset.py
+    - name: setup perflevel
+      run: |
+        examples/mlperf/training_submission_v4.1/tinycorp/benchmarks/bert/implementations/tinybox_red/setup.sh
+        rocm-smi
+    - name: Show off tinybox
+      run: /opt/rocm/bin/rocm-bandwidth-test
+    # TODO: unstable on AMD
+    #- name: Run model inference benchmark
+    #  run: LD_PRELOAD="/opt/rocm/lib/libhsa-runtime64.so" HSA=1 NOCLANG=1 python3 test/external/external_model_benchmark.py
+    # TODO: unstable on AMD
+    #- name: Test speed vs torch
+    #  run: |
+    #    python3 -c "import torch; print(torch.__version__)"
+    #    LD_PRELOAD="/opt/rocm/lib/libhsa-runtime64.so" HSA=1 BIG=2 TORCHCUDA=1 python3 test/test_speed_v_torch.py | tee torch_speed.txt
+    - name: Test speed vs theoretical
+      run: AMD=1 IGNORE_BEAM_CACHE=1 BEAM_DEBUG=1 DEBUG=1 python -m pytest -rA test/external/speed_v_theoretical.py --durations=20
+    - name: Test tensor cores
+      run: AMD=1 python3 test/test_linearizer.py TestLinearizer.test_tensor_cores TestLinearizer.test_tensor_cores_padded
+    - name: Run Tensor Core GEMM (AMD)
+      run: AMD=1 HALF=1 DEBUG=2 python3 extra/gemm/simple_matmul.py | tee matmul_amd.txt
+    - name: Test AMD=1
+      run: DEBUG=2 AMD=1 python -m pytest -rA test/test_tiny.py
+    - name: Test HIP=1
+      run: DEBUG=2 HIP=1 python -m pytest -rA test/test_tiny.py
+    # TODO: AMD compiler bug causes this to fail
+    #- name: Fuzz Padded Tensor Core GEMM
+    #  run: HSA=1 M_START=12 M_STOP=20 M_STEP=1 N_START=12 N_STOP=20 N_STEP=1 K_START=28 K_STOP=36 K_STEP=1 HALF=1 TC_OPT=2 DEBUG=2 python3 ./extra/gemm/fuzz_matmul.py
+    - name: Run Stable Diffusion
+      run: AMD=1 python3 examples/stable_diffusion.py --fp16 --seed 0 --noshow --timing | tee sd.txt
+    - name: Run SDXL
+      run: AMD=1 python3 examples/sdxl.py --seed 0 --noshow --timing | tee sdxl.txt
+    - name: Run LLaMA 7B
+      run: |
+        AMD=1 JIT=0 python3 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_unjitted.txt
+        AMD=1 JIT=1 python3 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_jitted.txt
+    - name: Run LLaMA 7B with BEAM
+      run: AMD=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 python3 examples/llama.py --gen 1 --prompt "Hello." --count 10 --temperature 0 --timing | tee llama_beam.txt
+    # - name: Run LLaMA 7B on 4 GPUs
+    #   run: AMD=1 RUN_PROCESS_REPLAY=0 python3 examples/llama.py --gen 1 --size 7B --shard 4 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_four_gpu.txt
+    # - name: Run LLaMA 7B on 6 GPUs
+    #   run: AMD=1 RUN_PROCESS_REPLAY=0 python3 examples/llama.py --gen 1 --size 7B --shard 6 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_six_gpu.txt
+    - name: Run LLaMA-3 8B BEAM
+      run: AMD=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 python3 examples/llama3.py --size 8B --model weights/LLaMA-3/8B-SF-DPO/ --benchmark --temperature 0 | tee llama3_beam.txt
+    - name: Run LLaMA-3 8B on 4 GPUs
+      run: AMD=1 RUN_PROCESS_REPLAY=0 python3 examples/llama3.py --size 8B --shard 4 --model weights/LLaMA-3/8B-SF-DPO/ --benchmark --temperature 0 | tee llama3_four_gpu.txt
+    - name: Run LLaMA-3 8B on 6 GPUs
+      run: AMD=1 RUN_PROCESS_REPLAY=0 python3 examples/llama3.py --size 8B --shard 6 --model weights/LLaMA-3/8B-SF-DPO/ --benchmark --temperature 0 | tee llama3_six_gpu.txt
+    - name: Run LLaMA-2 70B
+      run: AMD=1 RUN_PROCESS_REPLAY=0 python3 examples/llama.py --gen 2 --size 70B --shard 6 --prompt "Hello." --count 10 --temperature 0  --timing | tee llama_2_70B.txt
+    - name: Run Mixtral 8x7B
+      run: time AMD=1 python3 examples/mixtral.py --temperature 0 --count 10 --timing | tee mixtral.txt
+    - name: Run GPT2
+      run: |
+        AMD=1 JIT=0 python3 examples/gpt2.py --prompt "Hello." --count 10 --temperature 0 --timing | tee gpt2_unjitted.txt
+        AMD=1 JIT=1 python3 examples/gpt2.py --prompt "Hello." --count 10 --temperature 0 --timing | tee gpt2_jitted.txt
+    - name: Run GPT2 w HALF
+      run: AMD=1 HALF=1 python3 examples/gpt2.py --count 10 --temperature 0 --timing | tee gpt2_half.txt
+    - name: Run GPT2 w HALF/BEAM
+      run: AMD=1 HALF=1 JITBEAM=2 IGNORE_BEAM_CACHE=1 CAST_BEFORE_VIEW=0 python3 examples/gpt2.py --count 10 --temperature 0 --timing | tee gpt2_half_beam.txt
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Speed (AMD)
+        path: |
+          onnx_inference_speed.csv
+          torch_speed.txt
+          llama_unjitted.txt
+          llama_jitted.txt
+          llama_beam.txt
+          llama3_beam.txt
+          llama3_four_gpu.txt
+          llama3_six_gpu.txt
+          llama_2_70B.txt
+          gpt2_unjitted.txt
+          gpt2_jitted.txt
+          gpt2_half.txt
+          gpt2_half_beam.txt
+          matmul.txt
+          matmul_amd.txt
+          sd.txt
+          sdxl.txt
+          mixtral.txt
+    - name: Run process replay tests
+      run: cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3 process_replay.py
+
+  testmoreamdbenchmark:
+    name: tinybox red Training Benchmark
+    runs-on: [self-hosted, Linux, tinybox]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    if: github.repository_owner == 'tinygrad'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: Symlink models and datasets
+      run: |
+        mkdir -p weights
+        ln -s ~/tinygrad/weights/bpe_simple_vocab_16e6.txt.gz weights/bpe_simple_vocab_16e6.txt.gz
+        ln -s ~/tinygrad/weights/LLaMA weights/LLaMA
+        ln -s ~/tinygrad/extra/datasets/cifar-10-python.tar.gz extra/datasets/cifar-10-python.tar.gz
+        ln -s /raid/weights/mixtral-8x7b-32kseqlen weights/mixtral-8x7b-32kseqlen
+        ln -s /raid/weights/LLaMA-2 weights/LLaMA-2
+        mkdir -p extra/datasets
+        ln -s /raid/datasets/imagenet extra/datasets/imagenet
+    - name: setup staging db
+      if: github.ref == 'refs/heads/update_benchmark_staging'
+      run: |
+        echo "CACHEDB=/tmp/staging.db" >> $GITHUB_ENV
+        rm -f /tmp/staging.db /tmp/staging.db-shm /tmp/staging.db-wal
+    - name: reset process replay
+      run: test/external/process_replay/reset.py
+    - name: setup perflevel
+      run: |
+        examples/mlperf/training_submission_v4.1/tinycorp/benchmarks/bert/implementations/tinybox_red/setup.sh
+        rocm-smi
+    - name: Train MNIST
+      run: time PYTHONPATH=. AMD=1 TARGET_EVAL_ACC_PCT=96.0 python3 examples/beautiful_mnist.py | tee beautiful_mnist.txt
+    - name: Run 10 CIFAR training steps
+      run: AMD=1 STEPS=10 python3 examples/hlb_cifar10.py | tee train_cifar.txt
+    - name: Run 10 CIFAR training steps w HALF
+      run: AMD=1 STEPS=10 DEFAULT_FLOAT=HALF python3 examples/hlb_cifar10.py | tee train_cifar_half.txt
+    - name: Run 10 CIFAR training steps w BF16
+      run: AMD=1 STEPS=10 DEFAULT_FLOAT=BFLOAT16 python3 examples/hlb_cifar10.py | tee train_cifar_bf16.txt
+    - name: Run 10 CIFAR training steps w winograd
+      run: AMD=1 WINO=1 STEPS=10 DEFAULT_FLOAT=HALF python3 examples/hlb_cifar10.py | tee train_cifar_wino.txt
+    - name: Run full CIFAR training w 1 GPU
+      run: time AMD=1 DEFAULT_FLOAT=HALF LATEWINO=1 STEPS=1000 TARGET_EVAL_ACC_PCT=93.2 python3 examples/hlb_cifar10.py | tee train_cifar_one_gpu.txt
+    - name: Run full CIFAR training steps w 6 GPUS
+      run: time AMD=1 DEFAULT_FLOAT=HALF STEPS=350 BS=1536 GPUS=6 TARGET_EVAL_ACC_PCT=93.2 python3 examples/hlb_cifar10.py | tee train_cifar_six_gpu.txt
+    - name: Run MLPerf resnet eval
+      run: time AMD=1 MODEL=resnet python3 examples/mlperf/model_eval.py
+    - name: Run 10 MLPerf ResNet50 training steps (1 gpu)
+      run: AMD=1 DEFAULT_FLOAT=HALF BENCHMARK=10 BS=256 GPUS=1 MODEL=resnet python3 examples/mlperf/model_train.py | tee train_resnet_one_gpu.txt
+    - name: Run 10 MLPerf ResNet50 training steps (6 gpu)
+      run: AMD=1 RUN_PROCESS_REPLAY=0 DEFAULT_FLOAT=HALF BENCHMARK=10 BS=1536 GPUS=6 MODEL=resnet python3 examples/mlperf/model_train.py | tee train_resnet.txt
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Speed (AMD Training)
+        path: |
+          beautiful_mnist.txt
+          train_cifar.txt
+          train_cifar_half.txt
+          train_cifar_bf16.txt
+          train_cifar_wino.txt
+          train_cifar_one_gpu.txt
+          train_resnet.txt
+          train_resnet_one_gpu.txt
+          train_cifar_six_gpu.txt
+    - name: Run process replay tests
+      run: cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3 process_replay.py
+
+  testqualcommbenchmark:
+    name: comma Benchmark
+    runs-on: [self-hosted, Linux, comma]
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash -o pipefail {0}
+    if: github.repository_owner == 'tinygrad'
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+    - name: setup staging db
+      if: github.ref == 'refs/heads/update_benchmark_staging'
+      run: |
+        echo "CACHEDB=/tmp/staging.db" >> $GITHUB_ENV
+        rm -f /tmp/staging.db /tmp/staging.db-shm /tmp/staging.db-wal
+    - name: reset process replay
+      run: test/external/process_replay/reset.py
+    - name: validate openpilot 0.9.7
+      run: PYTHONPATH=. FLOAT16=0 IMAGE=2 QCOM=1 taskset -c 4-7 python3 test/external/external_benchmark_openpilot.py https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/supercombo.onnx | tee openpilot_image_0_9_7.txt
+    - name: benchmark openpilot 0.9.4
+      run: PYTHONPATH=. QCOM=1 taskset -c 4-7 python3 test/external/external_benchmark_openpilot.py https://github.com/commaai/openpilot/raw/v0.9.4/selfdrive/modeld/models/supercombo.onnx | tee openpilot_0_9_4.txt
+    - name: benchmark openpilot 0.9.7
+      run: PYTHONPATH=. QCOM=1 taskset -c 4-7 python3 test/external/external_benchmark_openpilot.py https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/supercombo.onnx | tee openpilot_0_9_7.txt
+    - name: benchmark openpilot w IMAGE=2 0.9.4
+      run: PYTHONPATH=. NOLOCALS=1 FLOAT16=1 IMAGE=2 QCOM=1 taskset -c 4-7 python3 test/external/external_benchmark_openpilot.py https://github.com/commaai/openpilot/raw/v0.9.4/selfdrive/modeld/models/supercombo.onnx | tee openpilot_image_0_9_4.txt
+    - name: benchmark openpilot w IMAGE=2 0.9.7
+      run: PYTHONPATH=. NOLOCALS=1 FLOAT16=1 IMAGE=2 QCOM=1 taskset -c 4-7 python3 test/external/external_benchmark_openpilot.py https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/supercombo.onnx | tee openpilot_image_0_9_7.txt
+    - name: openpilot compile3 0.9.7
+      run: PYTHONPATH="." QCOM=1 taskset -c 4-7 python3 examples/openpilot/compile3.py https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/supercombo.onnx
+    - name: openpilot compile3 0.9.7+ tomb raider
+      run: PYTHONPATH="." QCOM=1 taskset -c 4-7 python3 examples/openpilot/compile3.py https://github.com/commaai/openpilot/raw/e8bea2c78ffa92685ece511e9b554122aaf1a79d/selfdrive/modeld/models/supercombo.onnx
+    - name: openpilot dmonitoring compile3 0.9.7
+      run: PYTHONPATH="." QCOM=1 taskset -c 4-7 python3 examples/openpilot/compile3.py https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/dmonitoring_model.onnx
+    - name: Run process replay tests
+      run: cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3 process_replay.py
+    - uses: actions/upload-artifact@v4
+      with:
+        name: Speed (comma)
+        path: |
+          openpilot_compile_0_9_4.txt
+          openpilot_compile_0_9_7.txt
+          openpilot_0_9_4.txt
+          openpilot_0_9_7.txt
+          openpilot_image_0_9_4.txt
+          openpilot_image_0_9_7.txt

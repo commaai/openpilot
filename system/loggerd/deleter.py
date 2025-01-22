@@ -23,6 +23,7 @@ def has_preserve_xattr(d: str) -> bool:
 
 
 def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
+  # skip deleting most recent N preserved segments (and their prior segment)
   preserved = []
   for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
     if n == PRESERVE_COUNT:
@@ -37,22 +38,20 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
     except ValueError:
       continue
 
-    # preserve segment and its prior
-    preserved.append(d)
-    preserved.append(f"{date_str}--{seg_num - 1}")
+    # preserve segment and two prior
+    for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
+      preserved.append(f"{date_str}--{_seg_num}")
 
   return preserved
 
 
-def deleter_thread(exit_event):
+def deleter_thread(exit_event: threading.Event):
   while not exit_event.is_set():
     out_of_bytes = get_available_bytes(default=MIN_BYTES + 1) < MIN_BYTES
     out_of_percent = get_available_percent(default=MIN_PERCENT + 1) < MIN_PERCENT
 
     if out_of_percent or out_of_bytes:
       dirs = listdir_by_creation(Paths.log_root())
-
-      # skip deleting most recent N preserved segments (and their prior segment)
       preserved_dirs = get_preserved_segments(dirs)
 
       # remove the earliest directory we can
@@ -64,10 +63,7 @@ def deleter_thread(exit_event):
 
         try:
           cloudlog.info(f"deleting {delete_path}")
-          if os.path.isfile(delete_path):
-            os.remove(delete_path)
-          else:
-            shutil.rmtree(delete_path)
+          shutil.rmtree(delete_path)
           break
         except OSError:
           cloudlog.exception(f"issue deleting {delete_path}")

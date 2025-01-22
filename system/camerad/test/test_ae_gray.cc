@@ -34,11 +34,11 @@ TEST_CASE("camera.test_set_exposure_target") {
   uint8_t * fb_y = new uint8_t[W*H];
   vb.y = fb_y;
   cb.cur_yuv_buf = &vb;
-  cb.rgb_width = W;
-  cb.rgb_height = H;
+  cb.out_img_width = W;
+  cb.out_img_height = H;
   Rect rect = {0, 0, W-1, H-1};
 
-  printf("AE test patterns %dx%d\n", cb.rgb_width, cb.rgb_height);
+  printf("AE test patterns %dx%d\n", cb.out_img_width, cb.out_img_height);
 
   // mix of 5 tones
   uint8_t l[5] = {0, 24, 48, 96, 235}; // 235 is yuv max

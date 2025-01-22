@@ -1,0 +1,40 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _bosch_2018.dbc";
+CM_ "IMPORT _bosch_adas_2018.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+
+BO_ 401 GEARBOX: 8 PCM
+ SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] "" EON
+ SG_ BOH : 45|6@0+ (1,0) [0|63] "" XXX
+ SG_ GEAR2 : 31|8@0+ (1,0) [0|1] "" XXX
+ SG_ GEAR : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ ZEROS_BOH : 47|2@0+ (1,0) [0|3] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 432 STANDSTILL: 7 VSA
+ SG_ WHEELS_MOVING : 12|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_1 : 11|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_2 : 9|1@0+ (1,0) [0|1] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
+
+BO_ 446 BRAKE_MODULE: 3 VSA
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 1302 ODOMETER: 8 XXX
+ SG_ ODOMETER : 7|24@0+ (1,0) [0|16777215] "km" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+CM_ SG_ 479 RELATED_TO_GAS "bits 7, 3, and 1 set to 1 when gas not applied";
+CM_ SG_ 479 GAS_BRAKE "Signed value, negative when braking and positive when applying gas";
+
+VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P" ;
+VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
+VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
+VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
+VAL_ 806 CMBS_BUTTON 3 "pressed" 0 "released" ;

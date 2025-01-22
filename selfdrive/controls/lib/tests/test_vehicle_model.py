@@ -2,10 +2,9 @@ import pytest
 import math
 
 import numpy as np
-from control import StateSpace
 
-from openpilot.selfdrive.car.honda.interface import CarInterface
-from openpilot.selfdrive.car.honda.values import CAR
+from opendbc.car.honda.interface import CarInterface
+from opendbc.car.honda.values import CAR
 from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
 
 
@@ -47,8 +46,12 @@ class TestVehicleModel:
         A, B = create_dyn_state_matrices(u, self.VM)
 
         # Convert to discrete time system
-        ss = StateSpace(A, B, np.eye(2), np.zeros((2, 2)))
-        ss = ss.sample(0.01)
+        dt = 0.01
+        top = np.hstack((A, B))
+        full = np.vstack((top, np.zeros_like(top))) * dt
+        Md = sum([np.linalg.matrix_power(full, k) / math.factorial(k) for k in range(25)])
+        Ad = Md[:A.shape[0], :A.shape[1]]
+        Bd = Md[:A.shape[0], A.shape[1]:]
 
         for sa in np.linspace(math.radians(-20), math.radians(20), num=11):
           inp = np.array([[sa], [roll]])
@@ -56,7 +59,7 @@ class TestVehicleModel:
           # Simulate for 1 second
           x1 = np.zeros((2, 1))
           for _ in range(100):
-            x1 = ss.A @ x1 + ss.B @ inp
+            x1 = Ad @ x1 + Bd @ inp
 
           # Compute steady state solution directly
           x2 = dyn_ss_sol(sa, u, roll, self.VM)

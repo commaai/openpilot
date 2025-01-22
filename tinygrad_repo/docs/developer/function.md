@@ -1,0 +1,33 @@
+::: tinygrad.function
+    options:
+        members: [
+            "Contiguous",
+            "ContiguousBackward",
+            "Cast",
+            "Neg",
+            "Reciprocal",
+            "Sin",
+            "Relu",
+            "Log",
+            "Exp",
+            "Sqrt",
+            "Sigmoid",
+            "Sign",
+            "Less",
+            "Eq",
+            "Xor",
+            "Add",
+            "Sub",
+            "Mul",
+            "Div",
+            "Where",
+            "Sum",
+            "Max",
+            "Expand",
+            "Reshape",
+            "Permute",
+            "Pad",
+            "Shrink",
+            "Flip",
+        ]
+        show_source: false

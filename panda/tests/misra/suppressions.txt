@@ -19,9 +19,3 @@ unusedFunction:*/interrupt_handlers*.h
 # cppcheck from 2.5 -> 2.13. they are listed here to separate the update from
 # fixing the violations and all are intended to be removed soon after
 misra-c2012-2.5   # unused macros. a few legit, rest aren't common between F4/H7 builds. should we do this in the unusedFunction pass?
-misra-c2012-8.7
-misra-c2012-8.4
-misra-c2012-21.15
-
-# FIXME: violations are in ST's F4 headers
-misra-c2012-12.2

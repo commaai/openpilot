@@ -16,8 +16,8 @@ import argparse
 from typing import NamedTuple
 from subprocess import check_output, CalledProcessError
 
+from opendbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 from panda.python import Panda
-from panda.python.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 
 class ConfigValues(NamedTuple):
   default_config: bytes

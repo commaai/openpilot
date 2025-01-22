@@ -1,4 +1,4 @@
-void uart_rx_ring(uart_ring *q){
+static void uart_rx_ring(uart_ring *q){
   // Do not read out directly if DMA enabled
   ENTER_CRITICAL();
 
@@ -52,7 +52,7 @@ void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
 // This read after reading ISR clears all error interrupts. We don't want compiler warnings, nor optimizations
 #define UART_READ_RDR(uart) volatile uint8_t t = (uart)->RDR; UNUSED(t);
 
-void uart_interrupt_handler(uart_ring *q) {
+static void uart_interrupt_handler(uart_ring *q) {
   ENTER_CRITICAL();
 
   // Read UART status. This is also the first step necessary in clearing most interrupts
@@ -88,7 +88,7 @@ void uart_interrupt_handler(uart_ring *q) {
   EXIT_CRITICAL();
 }
 
-void UART7_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_som_debug); }
+static void UART7_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_som_debug); }
 
 void uart_init(uart_ring *q, int baud) {
   if (q->uart == UART7) {

@@ -77,11 +77,11 @@ class ELMCarSimulator():
         self.panda.can_recv()  # Toss whatever was already there
 
         while not self.__stop:
-            for address, ts, data, src in self.panda.can_recv():
+            for address, data, src in self.panda.can_recv():
                 if self.__on and src == 0 and len(data) == 8 and data[0] >= 2:
                     if not self.__silent:
                         print("Processing CAN message", src, hex(address), binascii.hexlify(data))
-                    self.__can_process_msg(data[1], data[2], address, ts, data, src)
+                    self.__can_process_msg(data[1], data[2], address, data, src)
                 elif not self.__silent:
                     print("Rejecting CAN message", src, hex(address), binascii.hexlify(data))
 
@@ -120,7 +120,7 @@ class ELMCarSimulator():
             return True
         return False
 
-    def __can_process_msg(self, mode, pid, address, ts, data, src):
+    def __can_process_msg(self, mode, pid, address, data, src):
         if not self.__silent:
             print("CAN MSG", binascii.hexlify(data[1:1 + data[0]]),
                   "Addr:", hex(address), "Mode:", hex(mode)[2:].zfill(2),

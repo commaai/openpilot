@@ -15,8 +15,8 @@ ExitHandler do_exit;
 
 struct LoggerdState {
   LoggerState logger;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
+  std::atomic<double> last_camera_seen_tms{0.0};
+  std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
   int max_waiting = 0;
   double last_rotate_tms = 0.;      // last rotate time in ms
 };

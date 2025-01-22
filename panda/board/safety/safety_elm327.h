@@ -1,6 +1,11 @@
-const int GM_CAMERA_DIAG_ADDR = 0x24B;
+#pragma once
+
+#include "safety_declarations.h"
+#include "safety_defaults.h"
 
 static bool elm327_tx_hook(const CANPacket_t *to_send) {
+  const int GM_CAMERA_DIAG_ADDR = 0x24B;
+
   bool tx = true;
   int addr = GET_ADDR(to_send);
   int len = GET_LEN(to_send);

@@ -12,7 +12,7 @@ ffi = FFI()
 
 ffi.cdef("""
 typedef struct {
-  unsigned char reserved : 1;
+  unsigned char fd : 1;
   unsigned char bus : 3;
   unsigned char data_len_code : 4;
   unsigned char rejected : 1;

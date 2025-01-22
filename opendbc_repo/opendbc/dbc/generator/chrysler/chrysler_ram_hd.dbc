@@ -1,0 +1,17 @@
+CM_ "IMPORT _stellantis_common_ram_hd_generated.dbc";
+
+BO_ 545 EPS_3: 8 XXX
+ SG_ DASM_FAULT : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ Activation_Status : 48|3@1+ (1,0) [0|1] "" XXX
+ SG_ Driver_Override : 35|1@0+ (1,0) [0|1] "" XXX
+ SG_ Hands_on_Wheel : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 630 LKAS_COMMAND: 8 XXX
+ SG_ STEERING_TORQUE : 10|11@0+ (1,-1024) [0|1] "" XXX
+ SG_ LKAS_CONTROL_BIT : 24|3@1+ (1,0) [0|1] "" XXX
+ SG_ DASM_FAULT : 51|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 55|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 63|8@0+ (1,0) [0|255] "" XXX
+

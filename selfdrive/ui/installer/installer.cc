@@ -1,4 +1,3 @@
-#include <time.h>
 #include <unistd.h>
 
 #include <cstdlib>
@@ -11,6 +10,7 @@
 #include <QTimer>
 #include <QVBoxLayout>
 
+#include "common/util.h"
 #include "selfdrive/ui/installer/installer.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -35,14 +35,6 @@ const QString CACHE_PATH = "/data/openpilot.cache";
 
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
-
-bool time_valid() {
-  time_t rawtime;
-  time(&rawtime);
-
-  struct tm * sys_time = gmtime(&rawtime);
-  return (1900 + sys_time->tm_year) >= 2020;
-}
 
 void run(const char* cmd) {
   int err = std::system(cmd);
@@ -103,7 +95,7 @@ void Installer::updateProgress(int percent) {
 
 void Installer::doInstall() {
   // wait for valid time
-  while (!time_valid()) {
+  while (!util::system_time_valid()) {
     usleep(500 * 1000);
     qDebug() << "Waiting for valid time";
   }
@@ -180,10 +172,12 @@ void Installer::cloneFinished(int exitCode, QProcess::ExitStatus exitStatus) {
 #ifdef INTERNAL
   run("mkdir -p /data/params/d/");
 
+  // https://github.com/commaci2.keys
+  const std::string ssh_keys = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMX2kU8eBZyEWmbq0tjMPxksWWVuIV/5l64GabcYbdpI";
   std::map<std::string, std::string> params = {
     {"SshEnabled", "1"},
     {"RecordFrontLock", "1"},
-    {"GithubSshKeys", SSH_KEYS},
+    {"GithubSshKeys", ssh_keys},
   };
   for (const auto& [key, value] : params) {
     std::ofstream param;

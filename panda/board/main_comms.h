@@ -4,7 +4,7 @@ extern int _app_start[0xc000]; // Only first 3 sectors of size 0x4000 are used
 void set_safety_mode(uint16_t mode, uint16_t param);
 bool is_car_safety_mode(uint16_t mode);
 
-int get_health_pkt(void *dat) {
+static int get_health_pkt(void *dat) {
   COMPILE_TIME_ASSERT(sizeof(struct health_t) <= USBPACKET_MAX_SIZE);
   struct health_t * health = (struct health_t*)dat;
 
@@ -117,7 +117,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         can_health[req->param1].brs_enabled = bus_config[req->param1].brs_enabled;
         can_health[req->param1].canfd_non_iso = bus_config[req->param1].canfd_non_iso;
         resp_len = sizeof(can_health[req->param1]);
-        (void)memcpy(resp, &can_health[req->param1], resp_len);
+        (void)memcpy(resp, (uint8_t*)(&can_health[req->param1]), resp_len);
       }
       break;
     // **** 0xc3: fetch MCU UID
@@ -316,6 +316,10 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     // **** 0xe7: set power save state
     case 0xe7:
       set_power_save_state(req->param1);
+      break;
+    // **** 0xe8: set can-fd auto swithing mode
+    case 0xe8:
+      bus_config[req->param1].canfd_auto = req->param2 > 0U;
       break;
     // **** 0xf1: Clear CAN ring buffer.
     case 0xf1:

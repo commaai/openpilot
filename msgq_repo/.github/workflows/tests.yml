@@ -1,0 +1,61 @@
+name: tests
+
+on: [push, pull_request]
+
+env:
+  DOCKER_REGISTRY: ghcr.io/commaai
+  RUN: docker run -e PYTHONWARNINGS=error --shm-size 1G --name msgq msgq /bin/sh -c
+  RUN_NAMED: docker run -e PYTHONWARNINGS=error --shm-size 1G --rm msgq /bin/sh -c
+  CI_RUN: docker run -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID --rm msgqci /bin/bash -c
+  BUILD: docker buildx build --pull --load --cache-to type=inline --cache-from $DOCKER_REGISTRY/msgq:latest -t msgq -f Dockerfile .
+  PYTHONWARNINGS: error
+
+jobs:
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Push to dockerhub
+      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/msgq'
+      run: |
+        docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+        docker tag msgq $DOCKER_REGISTRY/msgq:latest
+        docker push $DOCKER_REGISTRY/msgq:latest
+
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        flags: ['', '--asan', '--ubsan']
+        backend: ['MSGQ', 'ZMQ']
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: C++ tests
+      run: |
+        $RUN "export ${{ matrix.backend }}=1 && \
+              scons ${{ matrix.flags }} -j$(nproc) && \
+              msgq/test_runner && \
+              msgq/visionipc/test_runner"
+    - name: python tests
+      run: $RUN_NAMED "${{ matrix.backend }}=1 coverage run -m pytest"
+    - name: Upload coverage
+      run: |
+        docker commit msgq msgqci
+        $CI_RUN "cd /project/msgq && bash <(curl -s https://codecov.io/bash) -v -F unit_tests_${{ matrix.backend }}"
+
+  static_analysis:
+    name: static analysis
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build docker image
+      run: eval "$BUILD"
+    - name: Static analysis
+      # TODO: a package pre-commit installs has a warning, remove the unset once that's fixed
+      run: $RUN "git init && git add -A && unset PYTHONWARNINGS && pre-commit run --all"

@@ -1,10 +1,11 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
 
-libs = ['m', 'pthread', common, 'jpeg', 'OpenCL', 'yuv', messaging, visionipc, gpucommon, 'atomic']
+libs = ['pthread', common, 'jpeg', 'OpenCL', messaging, visionipc, gpucommon]
 
-camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/camera_util.cc',
-                         'sensors/ar0231.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc'])
-env.Program('camerad', ['main.cc', camera_obj], LIBS=libs)
+if arch != "Darwin":
+  camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/spectra.cc',
+                           'cameras/cdm.cc', 'sensors/ar0231.cc', 'sensors/ox03c10.cc', 'sensors/os04c10.cc'])
+  env.Program('camerad', ['main.cc', camera_obj], LIBS=libs)
 
 if GetOption("extras") and arch == "x86_64":
   env.Program('test/test_ae_gray', ['test/test_ae_gray.cc', camera_obj], LIBS=libs)

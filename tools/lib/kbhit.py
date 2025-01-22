@@ -1,16 +1,16 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import sys
 import termios
 import atexit
 from select import select
 
-STDIN_FD = sys.stdin.fileno()
 
 class KBHit:
   def __init__(self) -> None:
     ''' Creates a KBHit object that you can call to do various keyboard things.
     '''
 
+    self.stdin_fd = sys.stdin.fileno()
     self.set_kbhit_terminal()
 
   def set_kbhit_terminal(self) -> None:
@@ -18,12 +18,12 @@ class KBHit:
     '''
 
     # Save the terminal settings
-    self.old_term = termios.tcgetattr(STDIN_FD)
+    self.old_term = termios.tcgetattr(self.stdin_fd)
     self.new_term = self.old_term.copy()
 
     # New terminal setting unbuffered
     self.new_term[3] &= ~(termios.ICANON | termios.ECHO)
-    termios.tcsetattr(STDIN_FD, termios.TCSAFLUSH, self.new_term)
+    termios.tcsetattr(self.stdin_fd, termios.TCSAFLUSH, self.new_term)
 
     # Support normal-terminal reset at exit
     atexit.register(self.set_normal_term)
@@ -32,7 +32,7 @@ class KBHit:
     ''' Resets to normal terminal. On Windows this is a no-op.
     '''
 
-    termios.tcsetattr(STDIN_FD, termios.TCSAFLUSH, self.old_term)
+    termios.tcsetattr(self.stdin_fd, termios.TCSAFLUSH, self.old_term)
 
   @staticmethod
   def getch() -> str:

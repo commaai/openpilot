@@ -1,3 +1,5 @@
+#pragma once
+
 void unused_init_bootloader(void) {
 }
 
@@ -23,4 +25,8 @@ void unused_set_bootkick(BootState state) {
 
 bool unused_read_som_gpio(void) {
   return false;
+}
+
+void unused_set_amp_enabled(bool enabled) {
+  UNUSED(enabled);
 }

@@ -44,12 +44,27 @@ setup(
   platforms='any',
   license='MIT',
   install_requires=[
-    'libusb1 == 2.0.1',
-    'hexdump >= 3.3',
-    'pycryptodome >= 3.9.8',
-    'tqdm >= 4.14.0',
-    'requests'
+    'libusb1',
   ],
+  extras_require = {
+    'dev': [
+      "scons",
+      "pycryptodome >= 3.9.8",
+      "cffi",
+      "flaky",
+      "pytest",
+      "pytest-mock",
+      "pytest-xdist",
+      "pytest-timeout",
+      "pytest-randomly",
+      "parameterized",
+      "pre-commit",
+      "numpy",
+      "ruff",
+      "spidev",
+      "setuptools", # for setup.py
+    ],
+  },
   ext_modules=[],
   description="Code powering the comma.ai panda",
   long_description='See https://github.com/commaai/panda',

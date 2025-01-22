@@ -74,11 +74,11 @@ def can_loopback(sender):
         raise Exception("Amount of received CAN messages (" + str(len(content)) + ") does not equal 1. Bus: " + str(bus) +" OBD: " + str(obd))
 
       # Check content
-      if content[0][0] != addr or content[0][2] != string:
+      if content[0][0] != addr or content[0][1] != string:
         raise Exception("Received CAN message content or address does not match")
 
       # Check bus
-      if content[0][3] != bus:
+      if content[0][2] != bus:
         raise Exception("Received CAN message bus does not match")
 
 #################################################################

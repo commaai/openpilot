@@ -86,7 +86,7 @@ def canfd_test(p_send, p_recv):
         data = bytearray(random.getrandbits(8) for _ in range(DLC_TO_LEN[dlc]))
         if len(data) >= 2:
           data[0] = calculate_checksum(data[1:] + bytes(str(address), encoding="utf-8"))
-        to_send.append([address, 0, data, bus])
+        to_send.append([address, data, bus])
         sent_msgs[bus].add((address, bytes(data)))
 
     p_send.can_send_many(to_send, timeout=0)
@@ -95,7 +95,7 @@ def canfd_test(p_send, p_recv):
     while (time.monotonic() - start_time < 1) and any(len(x) > 0 for x in sent_msgs.values()):
       incoming = p_recv.can_recv()
       for msg in incoming:
-        address, _, data, bus = msg
+        address, data, bus = msg
         if len(data) >= 2:
           assert calculate_checksum(data[1:] + bytes(str(address), encoding="utf-8")) == data[0]
         k = (address, bytes(data))

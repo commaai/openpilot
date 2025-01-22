@@ -1,3 +1,4 @@
+#if defined(ENABLE_SPI) || defined(BOOTSTUB)
 void llspi_miso_dma(uint8_t *addr, int len) {
   // disable DMA
   DMA2_Stream3->CR &= ~DMA_SxCR_EN;
@@ -29,9 +30,8 @@ void llspi_mosi_dma(uint8_t *addr, int len) {
   DMA2_Stream2->CR |= DMA_SxCR_EN;
   register_set_bits(&(SPI1->CR2), SPI_CR2_RXDMAEN);
 }
-
 // SPI MOSI DMA FINISHED
-void DMA2_Stream2_IRQ_Handler(void) {
+static void DMA2_Stream2_IRQ_Handler(void) {
   // Clear interrupt flag
   ENTER_CRITICAL();
   DMA2->LIFCR = DMA_LIFCR_CTCIF2;
@@ -42,7 +42,7 @@ void DMA2_Stream2_IRQ_Handler(void) {
 }
 
 // SPI MISO DMA FINISHED
-void DMA2_Stream3_IRQ_Handler(void) {
+static void DMA2_Stream3_IRQ_Handler(void) {
   // Clear interrupt flag
   DMA2->LIFCR = DMA_LIFCR_CTCIF3;
 
@@ -88,3 +88,4 @@ void llspi_init(void) {
   NVIC_EnableIRQ(DMA2_Stream2_IRQn);
   NVIC_EnableIRQ(DMA2_Stream3_IRQn);
 }
+#endif

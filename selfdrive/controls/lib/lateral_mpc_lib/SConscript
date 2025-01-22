@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'opendbc_python')
+Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'opendbc_python', 'np_version')
 
 gen = "c_generated_code"
 
@@ -88,3 +88,4 @@ lenv2.Command(libacados_ocp_solver_c,
   f' {acados_ocp_solver_pyx.get_labspath()}')
 lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c])
 lenv2.Depends(lib_cython, lib_solver)
+lenv2.Depends(libacados_ocp_solver_c, np_version)

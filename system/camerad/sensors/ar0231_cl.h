@@ -1,9 +1,10 @@
 #if SENSOR_ID == 1
 
+#define VIGNETTE_PROFILE_8DT0MM
+
 #define BIT_DEPTH 12
 #define PV_MAX 4096
 #define BLACK_LVL 168
-#define VIGNETTE_RSZ 1.0f
 
 float4 normalize_pv(int4 parsed, float vignette_factor) {
   float4 pv = (convert_float4(parsed) - BLACK_LVL) / (PV_MAX - BLACK_LVL);

@@ -11,6 +11,6 @@ if __name__ == "__main__":
   while True:
     incoming = p.can_recv()
     for message in incoming:
-      address, notused, data, bus = message
+      address, data, bus = message
       if b'test' in data:
         p.can_send(address, data[::-1], bus)

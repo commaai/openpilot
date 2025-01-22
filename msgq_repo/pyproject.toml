@@ -7,7 +7,11 @@ lint.flake8-implicit-str-concat.allow-multiline=false
 line-length = 160
 target-version="py311"
 
-[mypy.tool]
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"unittest".msg = "Use pytest"
+
+[tool.mypy]
 # third-party packages
 ignore_missing_imports=true
 
@@ -19,3 +23,10 @@ warn_unused_ignores=true
 # restrict dynamic typing
 warn_return_any=true
 check_untyped_defs=true
+
+[tool.pytest.ini_options]
+addopts = "--durations=10"
+testpaths = [
+  "msgq/tests",
+  "msgq/visionipc/tests",
+]

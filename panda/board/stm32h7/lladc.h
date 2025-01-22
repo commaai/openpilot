@@ -14,7 +14,7 @@ void adc_init(void) {
   while(!(ADC1->ISR & ADC_ISR_ADRDY));
 }
 
-uint16_t adc_get_raw(uint8_t channel) {
+static uint16_t adc_get_raw(uint8_t channel) {
   uint16_t res = 0U;
   ADC1->SQR1 &= ~(ADC_SQR1_L);
   ADC1->SQR1 = (uint32_t)channel << 6U;

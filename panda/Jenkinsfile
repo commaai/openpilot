@@ -4,7 +4,7 @@ def docker_run(String step_label, int timeout_mins, String cmd) {
           --env PYTHONWARNINGS=error \
           --volume /dev/bus/usb:/dev/bus/usb \
           --volume /var/run/dbus:/var/run/dbus \
-          --workdir /tmp/openpilot/panda \
+          --workdir /tmp/pythonpath/panda \
           --net host \
           ${env.DOCKER_IMAGE_TAG} \
           bash -c 'scons -j8 && ${cmd}'", \
@@ -73,56 +73,57 @@ pipeline {
   }
 
   stages {
-    stage('panda tests') {
-      parallel {
-        stage('test dos') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+    stage ('Acquire resource locks') {
+      options {
+        lock(resource: "pandas")
+      }
+      stages {
+        stage('Build Docker Image') {
           steps {
-            phone_steps("panda-dos", [
-              ["build", "scons -j4"],
-              ["flash", "cd tests/ && ./reflash_internal_panda.py"],
-              ["flash jungle", "cd board/jungle && ./flash.py"],
-              ["test", "cd tests/hitl && HW_TYPES=6 pytest -n0 --durations=0 [2-9]*.py -k 'not test_send_recv'"],
-            ])
+            timeout(time: 20, unit: 'MINUTES') {
+              script {
+                sh 'git archive -v -o panda.tar.gz --format=tar.gz HEAD'
+                dockerImage = docker.build("${env.DOCKER_IMAGE_TAG}")
+              }
+            }
+          }
+        }
+        stage('jungle tests') {
+          steps {
+            script {
+              retry (3) {
+                docker_run("reset hardware", 3, "python3 ./tests/hitl/reset_jungles.py")
+              }
+            }
           }
         }
 
-        stage('test tres') {
-          agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
-          steps {
-            phone_steps("panda-tres", [
-              ["build", "scons -j4"],
-              ["flash", "cd tests/ && ./reflash_internal_panda.py"],
-              ["flash jungle", "cd board/jungle && ./flash.py"],
-              ["test", "cd tests/hitl && HW_TYPES=9 pytest -n0 --durations=0 2*.py [5-9]*.py"],
-            ])
-          }
-        }
+        stage('parallel tests') {
+          parallel {
+            stage('test tres') {
+              agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
+              steps {
+                phone_steps("panda-tres", [
+                  ["build", "scons -j4"],
+                  ["flash", "cd tests/ && ./reflash_internal_panda.py"],
+                  ["flash jungle", "cd board/jungle && ./flash.py --all"],
+                  ["test", "cd tests/hitl && HW_TYPES=9 pytest -n0 --durations=0 2*.py [5-9]*.py"],
+                ])
+              }
+            }
 
-        stage ('Acquire resource locks') {
-          options {
-            lock(resource: "pandas")
-          }
-          stages {
-            stage('Build Docker Image') {
+            stage('test dos') {
+              agent { docker { image 'ghcr.io/commaai/alpine-ssh'; args '--user=root' } }
               steps {
-                timeout(time: 20, unit: 'MINUTES') {
-                  script {
-                    sh 'git archive -v -o panda.tar.gz --format=tar.gz HEAD'
-                    dockerImage = docker.build("${env.DOCKER_IMAGE_TAG}")
-                  }
-                }
+                phone_steps("panda-dos", [
+                  ["build", "scons -j4"],
+                  ["flash", "cd tests/ && ./reflash_internal_panda.py"],
+                  ["flash jungle", "cd board/jungle && ./flash.py --all"],
+                  ["test", "cd tests/hitl && HW_TYPES=6 pytest -n0 --durations=0 [2-9]*.py -k 'not test_send_recv'"],
+                ])
               }
             }
-            stage('jungle tests') {
-              steps {
-                script {
-                  retry (3) {
-                    docker_run("reset hardware", 3, "python ./tests/hitl/reset_jungles.py")
-                  }
-                }
-              }
-            }
+
             stage('bootkick tests') {
               steps {
                 script {

@@ -1,54 +1,25 @@
-typedef struct {
-  volatile uint32_t w_ptr;
-  volatile uint32_t r_ptr;
-  uint32_t fifo_size;
-  CANPacket_t *elems;
-} can_ring;
-
-typedef struct {
-  uint8_t bus_lookup;
-  uint8_t can_num_lookup;
-  int8_t forwarding_bus;
-  uint32_t can_speed;
-  uint32_t can_data_speed;
-  bool canfd_enabled;
-  bool brs_enabled;
-  bool canfd_non_iso;
-} bus_config_t;
+#include "can_common_declarations.h"
 
 uint32_t safety_tx_blocked = 0;
 uint32_t safety_rx_invalid = 0;
 uint32_t tx_buffer_overflow = 0;
 uint32_t rx_buffer_overflow = 0;
 
-can_health_t can_health[] = {{0}, {0}, {0}};
-
-extern int can_live;
-extern int pending_can_live;
-
-// must reinit after changing these
-extern int can_silent;
-extern bool can_loopback;
+can_health_t can_health[CAN_HEALTH_ARRAY_SIZE] = {{0}, {0}, {0}};
 
 // Ignition detected from CAN meessages
 bool ignition_can = false;
 uint32_t ignition_can_cnt = 0U;
-
-#define ALL_CAN_SILENT 0xFF
-#define ALL_CAN_LIVE 0
 
 int can_live = 0;
 int pending_can_live = 0;
 int can_silent = ALL_CAN_SILENT;
 bool can_loopback = false;
 
-// ******************* functions prototypes *********************
-bool can_init(uint8_t can_number);
-void process_can(uint8_t can_number);
-
 // ********************* instantiate queues *********************
 #define can_buffer(x, size) \
-  CANPacket_t elems_##x[size]; \
+  static CANPacket_t elems_##x[size]; \
+  extern can_ring can_##x; \
   can_ring can_##x = { .w_ptr = 0, .r_ptr = 0, .fifo_size = (size), .elems = (CANPacket_t *)&(elems_##x) };
 
 #define CAN_RX_BUFFER_SIZE 4096U
@@ -68,11 +39,7 @@ can_buffer(tx3_q, CAN_TX_BUFFER_SIZE)
 
 // FIXME:
 // cppcheck-suppress misra-c2012-9.3
-can_ring *can_queues[] = {&can_tx1_q, &can_tx2_q, &can_tx3_q};
-
-// helpers
-#define WORD_TO_BYTE_ARRAY(dst8, src32) 0[dst8] = ((src32) & 0xFFU); 1[dst8] = (((src32) >> 8U) & 0xFFU); 2[dst8] = (((src32) >> 16U) & 0xFFU); 3[dst8] = (((src32) >> 24U) & 0xFFU)
-#define BYTE_ARRAY_TO_WORD(dst32, src8) ((dst32) = 0[src8] | (1[src8] << 8U) | (2[src8] << 16U) | (3[src8] << 24U))
+can_ring *can_queues[CAN_QUEUES_ARRAY_SIZE] = {&can_tx1_q, &can_tx2_q, &can_tx3_q};
 
 // ********************* interrupt safe queue *********************
 bool can_pop(can_ring *q, CANPacket_t *elem) {
@@ -163,16 +130,12 @@ void can_clear(can_ring *q) {
 
 // Helpers
 // Panda:       Bus 0=CAN1   Bus 1=CAN2   Bus 2=CAN3
-bus_config_t bus_config[] = {
-  { .bus_lookup = 0U, .can_num_lookup = 0U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
-  { .bus_lookup = 1U, .can_num_lookup = 1U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
-  { .bus_lookup = 2U, .can_num_lookup = 2U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
-  { .bus_lookup = 0xFFU, .can_num_lookup = 0xFFU, .forwarding_bus = -1, .can_speed = 333U, .can_data_speed = 333U, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+bus_config_t bus_config[BUS_CONFIG_ARRAY_SIZE] = {
+  { .bus_lookup = 0U, .can_num_lookup = 0U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 1U, .can_num_lookup = 1U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 2U, .can_num_lookup = 2U, .forwarding_bus = -1, .can_speed = 5000U, .can_data_speed = 20000U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
+  { .bus_lookup = 0xFFU, .can_num_lookup = 0xFFU, .forwarding_bus = -1, .can_speed = 333U, .can_data_speed = 333U, .canfd_auto = false, .canfd_enabled = false, .brs_enabled = false, .canfd_non_iso = false },
 };
-
-#define CANIF_FROM_CAN_NUM(num) (cans[num])
-#define BUS_NUM_FROM_CAN_NUM(num) (bus_config[num].bus_lookup)
-#define CAN_NUM_FROM_BUS_NUM(num) (bus_config[num].can_num_lookup)
 
 void can_init_all(void) {
   for (uint8_t i=0U; i < PANDA_CAN_CNT; i++) {
@@ -191,16 +154,18 @@ void can_set_orientation(bool flipped) {
   bus_config[2].can_num_lookup = flipped ? 0U : 2U;
 }
 
+#ifdef PANDA_JUNGLE
 void can_set_forwarding(uint8_t from, uint8_t to) {
   bus_config[from].forwarding_bus = to;
 }
+#endif
 
 void ignition_can_hook(CANPacket_t *to_push) {
   int bus = GET_BUS(to_push);
   if (bus == 0) {
     int addr = GET_ADDR(to_push);
     int len = GET_LEN(to_push);
-    
+
     // GM exception
     if ((addr == 0x1F1) && (len == 8)) {
       // SystemPowerMode (2=Run, 3=Crank Request)

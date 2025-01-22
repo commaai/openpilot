@@ -1,3 +1,7 @@
+#pragma once
+
+#include "safety_declarations.h"
+
 #define SUBARU_STEERING_LIMITS_GENERATOR(steer_max, rate_up, rate_down)               \
   {                                                                                   \
     .max_steer = (steer_max),                                                         \
@@ -16,21 +20,6 @@
     .has_steer_req_tolerance = true,                                                  \
   }
 
-
-const SteeringLimits SUBARU_STEERING_LIMITS      = SUBARU_STEERING_LIMITS_GENERATOR(2047, 50, 70);
-const SteeringLimits SUBARU_GEN2_STEERING_LIMITS = SUBARU_STEERING_LIMITS_GENERATOR(1000, 40, 40);
-
-
-const LongitudinalLimits SUBARU_LONG_LIMITS = {
-  .min_gas = 808,       // appears to be engine braking
-  .max_gas = 3400,      // approx  2 m/s^2 when maxing cruise_rpm and cruise_throttle
-  .inactive_gas = 1818, // this is zero acceleration
-  .max_brake = 600,     // approx -3.5 m/s^2
-
-  .min_transmission_rpm = 0,
-  .max_transmission_rpm = 3600,
-};
-
 #define MSG_SUBARU_Brake_Status          0x13c
 #define MSG_SUBARU_CruiseControl         0x240
 #define MSG_SUBARU_Throttle              0x40
@@ -38,7 +27,6 @@ const LongitudinalLimits SUBARU_LONG_LIMITS = {
 #define MSG_SUBARU_Wheel_Speeds          0x13a
 
 #define MSG_SUBARU_ES_LKAS               0x122
-#define MSG_SUBARU_ES_LKAS_ANGLE         0x124
 #define MSG_SUBARU_ES_Brake              0x220
 #define MSG_SUBARU_ES_Distance           0x221
 #define MSG_SUBARU_ES_Status             0x222
@@ -80,40 +68,8 @@ const LongitudinalLimits SUBARU_LONG_LIMITS = {
   {.msg = {{MSG_SUBARU_Brake_Status,    alt_bus,         8, .check_checksum = true, .max_counter = 15U, .frequency = 50U}, { 0 }, { 0 }}}, \
   {.msg = {{MSG_SUBARU_CruiseControl,   alt_bus,         8, .check_checksum = true, .max_counter = 15U, .frequency = 20U}, { 0 }, { 0 }}}, \
 
-const CanMsg SUBARU_TX_MSGS[] = {
-  SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
-};
-
-const CanMsg SUBARU_LONG_TX_MSGS[] = {
-  SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
-  SUBARU_COMMON_LONG_TX_MSGS(SUBARU_MAIN_BUS)
-};
-
-const CanMsg SUBARU_GEN2_TX_MSGS[] = {
-  SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
-};
-
-const CanMsg SUBARU_GEN2_LONG_TX_MSGS[] = {
-  SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
-  SUBARU_COMMON_LONG_TX_MSGS(SUBARU_ALT_BUS)
-  SUBARU_GEN2_LONG_ADDITIONAL_TX_MSGS()
-};
-
-RxCheck subaru_rx_checks[] = {
-  SUBARU_COMMON_RX_CHECKS(SUBARU_MAIN_BUS)
-};
-
-RxCheck subaru_gen2_rx_checks[] = {
-  SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
-};
-
-
-const uint16_t SUBARU_PARAM_GEN2 = 1;
-const uint16_t SUBARU_PARAM_LONGITUDINAL = 2;
-
-bool subaru_gen2 = false;
-bool subaru_longitudinal = false;
-
+static bool subaru_gen2 = false;
+static bool subaru_longitudinal = false;
 
 static uint32_t subaru_get_checksum(const CANPacket_t *to_push) {
   return (uint8_t)GET_BYTE(to_push, 0);
@@ -180,6 +136,19 @@ static void subaru_rx_hook(const CANPacket_t *to_push) {
 }
 
 static bool subaru_tx_hook(const CANPacket_t *to_send) {
+  const SteeringLimits SUBARU_STEERING_LIMITS      = SUBARU_STEERING_LIMITS_GENERATOR(2047, 50, 70);
+  const SteeringLimits SUBARU_GEN2_STEERING_LIMITS = SUBARU_STEERING_LIMITS_GENERATOR(1000, 40, 40);
+
+  const LongitudinalLimits SUBARU_LONG_LIMITS = {
+    .min_gas = 808,       // appears to be engine braking
+    .max_gas = 3400,      // approx  2 m/s^2 when maxing cruise_rpm and cruise_throttle
+    .inactive_gas = 1818, // this is zero acceleration
+    .max_brake = 600,     // approx -3.5 m/s^2
+
+    .min_transmission_rpm = 0,
+    .max_transmission_rpm = 3600,
+  };
+
   bool tx = true;
   int addr = GET_ADDR(to_send);
   bool violation = false;
@@ -266,9 +235,39 @@ static int subaru_fwd_hook(int bus_num, int addr) {
 }
 
 static safety_config subaru_init(uint16_t param) {
+  static const CanMsg SUBARU_TX_MSGS[] = {
+    SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
+  };
+
+  static const CanMsg SUBARU_LONG_TX_MSGS[] = {
+    SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_COMMON_LONG_TX_MSGS(SUBARU_MAIN_BUS)
+  };
+
+  static const CanMsg SUBARU_GEN2_TX_MSGS[] = {
+    SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
+  };
+
+  static const CanMsg SUBARU_GEN2_LONG_TX_MSGS[] = {
+    SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_COMMON_LONG_TX_MSGS(SUBARU_ALT_BUS)
+    SUBARU_GEN2_LONG_ADDITIONAL_TX_MSGS()
+  };
+
+  static RxCheck subaru_rx_checks[] = {
+    SUBARU_COMMON_RX_CHECKS(SUBARU_MAIN_BUS)
+  };
+
+  static RxCheck subaru_gen2_rx_checks[] = {
+    SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
+  };
+
+  const uint16_t SUBARU_PARAM_GEN2 = 1;
+
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
 
 #ifdef ALLOW_DEBUG
+  const uint16_t SUBARU_PARAM_LONGITUDINAL = 2;
   subaru_longitudinal = GET_FLAG(param, SUBARU_PARAM_LONGITUDINAL);
 #endif
 
