@@ -80,6 +80,7 @@ _services: dict[str, tuple] = {
   "longitudinalPlanSP": (True, 20., 10),
   "onroadEventsSP": (True, 1., 1),
   "carParamsSP": (True, 0.02, 1),
+  "carControlSP": (True, 100., 10),
 
   # debug
   "uiDebug": (True, 0., 1),

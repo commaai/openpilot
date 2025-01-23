@@ -44,3 +44,16 @@ def convert_to_capnp(struct: structs.CarParamsSP) -> capnp.lib.capnp._DynamicStr
     raise ValueError(f"Unsupported struct type: {type(struct)}")
 
   return struct_capnp
+
+
+def convert_carControlSP(struct: capnp.lib.capnp._DynamicStructReader) -> structs.CarControlSP:
+  # TODO: recursively handle any car struct as needed
+  def remove_deprecated(s: dict) -> dict:
+    return {k: v for k, v in s.items() if not k.endswith('DEPRECATED')}
+
+  struct_dict = struct.to_dict()
+  struct_dataclass = structs.CarControlSP(**remove_deprecated({k: v for k, v in struct_dict.items() if not isinstance(k, dict)}))
+
+  struct_dataclass.mads = structs.ModularAssistiveDrivingSystem(**remove_deprecated(struct_dict.get('mads', {})))
+
+  return struct_dataclass

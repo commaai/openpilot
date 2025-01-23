@@ -31,7 +31,7 @@ from openpilot.common.realtime import DT_CTRL
 
 from openpilot.sunnypilot.selfdrive.selfdrived.events import EventsSP
 
-State = custom.SelfdriveStateSP.ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState
+State = custom.ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState
 EventName = log.OnroadEvent.EventName
 EventNameSP = custom.OnroadEventSP.EventName
 

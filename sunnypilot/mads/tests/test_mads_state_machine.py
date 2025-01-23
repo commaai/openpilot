@@ -33,7 +33,7 @@ from openpilot.sunnypilot.mads.state import StateMachine, SOFT_DISABLE_TIME, GEA
 from openpilot.selfdrive.selfdrived.events import ET, NormalPermanentAlert
 from openpilot.sunnypilot.selfdrive.selfdrived.events import EVENTS_SP
 
-State = custom.SelfdriveStateSP.ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState
+State = custom.ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState
 EventNameSP = custom.OnroadEventSP.EventName
 
 # The event types that maintain the current state

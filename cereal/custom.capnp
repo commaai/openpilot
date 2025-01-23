@@ -10,23 +10,23 @@ $Cxx.namespace("cereal");
 # DO rename the structs
 # DON'T change the identifier (e.g. @0x81c2f05a394cf4af)
 
+struct ModularAssistiveDrivingSystem {
+  state @0 :ModularAssistiveDrivingSystemState;
+  enabled @1 :Bool;
+  active @2 :Bool;
+  available @3 :Bool;
+
+  enum ModularAssistiveDrivingSystemState {
+    disabled @0;
+    paused @1;
+    enabled @2;
+    softDisabling @3;
+    overriding @4;
+  }
+}
+
 struct SelfdriveStateSP @0x81c2f05a394cf4af {
   mads @0 :ModularAssistiveDrivingSystem;
-
-  struct ModularAssistiveDrivingSystem {
-    state @0 :ModularAssistiveDrivingSystemState;
-    enabled @1 :Bool;
-    active @2 :Bool;
-    available @3 :Bool;
-
-    enum ModularAssistiveDrivingSystemState {
-      disabled @0;
-      paused @1;
-      enabled @2;
-      softDisabling @3;
-      overriding @4;
-    }
-  }
 }
 
 struct ModelManagerSP @0xaedffd8f31e7b55d {
@@ -137,7 +137,8 @@ struct CarParamsSP @0x80ae746ee2596b11 {
   flags @0 :UInt32;  # flags for car specific quirks in sunnypilot
 }
 
-struct CustomReserved5 @0xa5cd762cd951a455 {
+struct CarControlSP @0xa5cd762cd951a455 {
+  mads @0 :ModularAssistiveDrivingSystem;
 }
 
 struct CustomReserved6 @0xf98d843bfd7004a3 {

@@ -75,8 +75,8 @@ void UIState::updateStatus() {
     auto state = ss.getState();
     auto state_mads = mads.getState();
     if (state == cereal::SelfdriveState::OpenpilotState::PRE_ENABLED || state == cereal::SelfdriveState::OpenpilotState::OVERRIDING ||
-        state_mads == cereal::SelfdriveStateSP::ModularAssistiveDrivingSystem::ModularAssistiveDrivingSystemState::PAUSED ||
-        state_mads == cereal::SelfdriveStateSP::ModularAssistiveDrivingSystem::ModularAssistiveDrivingSystemState::OVERRIDING) {
+        state_mads == cereal::ModularAssistiveDrivingSystem::ModularAssistiveDrivingSystemState::PAUSED ||
+        state_mads == cereal::ModularAssistiveDrivingSystem::ModularAssistiveDrivingSystemState::OVERRIDING) {
       status = STATUS_OVERRIDE;
     } else {
       if (mads.getAvailable()) {

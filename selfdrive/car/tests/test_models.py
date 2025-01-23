@@ -205,10 +205,11 @@ class TestCarModelBase(unittest.TestCase):
     can_invalid_cnt = 0
     can_valid = False
     CC = structs.CarControl().as_reader()
+    CC_SP = structs.CarControlSP()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
-      self.CI.apply(CC, msg.logMonoTime)
+      self.CI.apply(CC, CC_SP, msg.logMonoTime)
 
       if CS.canValid:
         can_valid = True
@@ -277,13 +278,13 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
-    def test_car_controller(car_control):
+    def test_car_controller(car_control, car_control_sp):
       now_nanos = 0
       msgs_sent = 0
       CI = self.CarInterface(self.CP, self.CP_SP, self.CarController, self.CarState)
       for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
         CI.update([])
-        _, sendcan = CI.apply(car_control, now_nanos)
+        _, sendcan = CI.apply(car_control, car_control_sp, now_nanos)
 
         now_nanos += DT_CTRL * 1e9
         msgs_sent += len(sendcan)
@@ -296,17 +297,18 @@ class TestCarModelBase(unittest.TestCase):
 
     # Make sure we can send all messages while inactive
     CC = structs.CarControl()
-    test_car_controller(CC.as_reader())
+    CC_SP = structs.CarControlSP()
+    test_car_controller(CC.as_reader(), CC_SP)
 
     # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
     self.safety.set_cruise_engaged_prev(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
-    test_car_controller(CC.as_reader())
+    test_car_controller(CC.as_reader(), CC_SP)
 
     # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
     self.safety.set_controls_allowed(True)
     CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
-    test_car_controller(CC.as_reader())
+    test_car_controller(CC.as_reader(), CC_SP)
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
