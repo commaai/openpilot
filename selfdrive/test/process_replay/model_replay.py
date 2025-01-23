@@ -33,8 +33,8 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.03, 0.025),
-  ("driverStateV2", 0.02, 0.015),
+  ("modelV2", 0.01, 0.025),
+  ("driverStateV2", 0.02, 0.005),
 ]
 
 def get_log_fn(test_route, ref="master"):
@@ -182,6 +182,9 @@ def model_replay(lr, frs):
     timings_ok = not errors and timings_ok
     rows.append([s, np.max(ts), instant_max, np.mean(ts), avg_max, "\n".join(errors) or "✅"])
 
+  print("------------------------------------------------")
+  print("----------------- Model Timing -----------------")
+  print("------------------------------------------------")
   print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
   assert timings_ok
 
