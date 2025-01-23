@@ -185,7 +185,7 @@ def model_replay(lr, frs):
   print("------------------------------------------------")
   print("----------------- Model Timing -----------------")
   print("------------------------------------------------")
-  print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".3f"))
+  print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
   assert timings_ok
 
   return msgs
