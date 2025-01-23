@@ -24,7 +24,7 @@
     </message>
     <message>
         <source>Enable Tethering</source>
-        <translation>テザリング起動</translation>
+        <translation>テザリング有効</translation>
     </message>
     <message>
         <source>Tethering Password</source>
@@ -44,7 +44,7 @@
     </message>
     <message>
         <source>Enable Roaming</source>
-        <translation>ローミング起動</translation>
+        <translation>ローミング有効</translation>
     </message>
     <message>
         <source>APN Setting</source>
@@ -110,7 +110,7 @@
     </message>
     <message>
         <source>Decline, uninstall %1</source>
-        <translation>不同意(%1をアンインストール)</translation>
+        <translation>同意しない(%1をアンインストール)</translation>
     </message>
 </context>
 <context>
@@ -121,7 +121,7 @@
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation>アクセル制御機動モード</translation>
+        <translation>アクセル制御マニューバー</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
