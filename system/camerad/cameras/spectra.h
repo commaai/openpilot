@@ -127,6 +127,7 @@ public:
   void configICP();
   void configCSIPHY();
   void linkDevices();
+  void destroySyncObjectAt(int index);
 
   // *** state ***
 
