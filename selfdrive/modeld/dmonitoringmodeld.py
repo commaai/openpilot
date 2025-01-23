@@ -139,6 +139,9 @@ def main():
   setproctitle(PROCESS_NAME)
   set_realtime_priority(1)
 
+  sentry.set_tag("daemon", PROCESS_NAME)
+  cloudlog.bind(daemon=PROCESS_NAME)
+
   cl_context = CLContext()
   model = ModelState(cl_context)
   cloudlog.warning("models loaded, dmonitoringmodeld starting")
@@ -177,4 +180,10 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
+  except Exception:
+    sentry.capture_exception()
+    raise
