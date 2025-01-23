@@ -30,6 +30,12 @@ API_TOKEN = os.getenv("GITHUB_COMMENTS_TOKEN","")
 MODEL_REPLAY_BUCKET="model_replay_master"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
+EXEC_TIMINGS = [
+  # model, instant max, average max
+  ("modelV2", 0.03, 0.025),
+  ("driverStateV2", 0.02, 0.015),
+]
+
 
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"
@@ -156,7 +162,15 @@ def model_replay(lr, frs):
     del frs['roadCameraState'].frames
     del frs['wideRoadCameraState'].frames
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
-  return modeld_msgs + dmonitoringmodeld_msgs
+
+  msgs = modeld_msgs + dmonitoringmodeld_msgs
+
+  for (s, instant_max, avg_max) in EXEC_TIMINGS:
+    ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
+    assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
+    assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
+
+  return msgs
 
 
 def get_frames():
