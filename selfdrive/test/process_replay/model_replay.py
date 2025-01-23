@@ -167,6 +167,8 @@ def model_replay(lr, frs):
 
   for (s, instant_max, avg_max) in EXEC_TIMINGS:
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
+    # TODO some init can happen in first iteration
+    ts = ts[1:]
     assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
     assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
 
