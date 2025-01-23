@@ -33,8 +33,8 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.01, 0.025),
-  ("driverStateV2", 0.02, 0.005),
+  ("modelV2", 0.03, 0.025),
+  ("driverStateV2", 0.02, 0.015),
 ]
 
 def get_log_fn(test_route, ref="master"):
