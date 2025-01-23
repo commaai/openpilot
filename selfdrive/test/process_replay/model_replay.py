@@ -8,6 +8,7 @@ from itertools import zip_longest
 
 import matplotlib.pyplot as plt
 import numpy as np
+from tabulate import tabulate
 
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
@@ -164,12 +165,25 @@ def model_replay(lr, frs):
 
   msgs = modeld_msgs + dmonitoringmodeld_msgs
 
+  header = ['model', 'max instant', 'max instant allowed', 'average', 'max average allowed', 'test result']
+  rows = []
+  timings_ok = True
   for (s, instant_max, avg_max) in EXEC_TIMINGS:
     ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
     # TODO some init can happen in first iteration
     ts = ts[1:]
-    assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
-    assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
+
+    errors = []
+    if np.max(ts) > instant_max:
+      errors.append("❌ FAILED MAX TIMING CHECK ❌")
+    if np.mean(ts) > avg_max:
+      errors.append("❌ FAILED AVG TIMING CHECK ❌")
+
+    timings_ok = not errors and timings_ok
+    rows.append([s, np.max(ts), instant_max, np.mean(ts), avg_max, "\n".join(errors) or "✅"])
+
+  print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".2f"))
+  assert timings_ok
 
   return msgs
 
