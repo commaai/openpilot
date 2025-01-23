@@ -127,7 +127,7 @@ void CameraState::update_exposure_score(float desired_ev, int exp_t, int exp_g_i
 
 void CameraState::set_camera_exposure(float grey_frac) {
   if (!camera.enabled) return;
-  std::vector<float> target_grey_minimums = {0.1, 0.1, 0.125}; // wide, road, driver
+  std::vector<double> target_grey_minimums = {0.1, 0.1, 0.125}; // wide, road, driver
 
   const float dt = 0.05;
 
