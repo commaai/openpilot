@@ -36,7 +36,6 @@ EXEC_TIMINGS = [
   ("driverStateV2", 0.02, 0.015),
 ]
 
-
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"
 
