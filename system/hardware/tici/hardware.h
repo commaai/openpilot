@@ -61,20 +61,11 @@ public:
   static void reboot() { std::system("sudo reboot"); }
   static void poweroff() { std::system("sudo poweroff"); }
   static void set_brightness(int percent) {
-    std::string max = util::read_file("/sys/class/backlight/panel0-backlight/max_brightness");
-
-    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-    if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (std::stof(max)/100.)) << "\n";
-      brightness_control.close();
-    }
+    float max = std::stof(util::read_file("/sys/class/backlight/panel0-backlight/max_brightness"));
+    std::ofstream("/sys/class/backlight/panel0-backlight/brightness") << int(percent * (max / 100.0f)) << "\n";
   }
   static void set_display_power(bool on) {
-    std::ofstream bl_power_control("/sys/class/backlight/panel0-backlight/bl_power");
-    if (bl_power_control.is_open()) {
-      bl_power_control << (on ? "0" : "4") << "\n";
-      bl_power_control.close();
-    }
+    std::ofstream("/sys/class/backlight/panel0-backlight/bl_power") << (on ? "0" : "4") << "\n";
   }
 
   static void set_ir_power(int percent) {
@@ -85,18 +76,8 @@ public:
     }
 
     int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255);
-
-    std::ofstream torch_brightness("/sys/class/leds/led:torch_2/brightness");
-    if (torch_brightness.is_open()) {
-      torch_brightness << value << "\n";
-      torch_brightness.close();
-    }
-
-    std::ofstream switch_brightness("/sys/class/leds/led:switch_2/brightness");
-    if (switch_brightness.is_open()) {
-      switch_brightness << value << "\n";
-      switch_brightness.close();
-    }
+    std::ofstream("/sys/class/leds/led:torch_2/brightness") << value << "\n";
+    std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
   }
 
   static std::map<std::string, std::string> get_init_logs() {
