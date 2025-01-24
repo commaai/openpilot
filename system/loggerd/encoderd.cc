@@ -53,7 +53,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
   std::unique_ptr<JpegEncoder> jpeg_encoder;
 
-  int cur_seg = 0;
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
       util::sleep_for(5);
@@ -78,6 +77,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
     }
 
     bool lagging = false;
+    uint32_t frame_cnt = 0;
     while (!do_exit) {
       VisionIpcBufExtra extra;
       VisionBuf* buf = vipc_client.recv(&extra);
@@ -98,16 +98,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       }
       if (do_exit) break;
 
-      // do rotation if required
-      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
-      if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
-        for (auto &e : encoders) {
-          e->encoder_close();
-          e->encoder_open(NULL);
-        }
-        ++cur_seg;
-      }
-
       // encode a frame
       for (int i = 0; i < encoders.size(); ++i) {
         int out_id = encoders[i]->encode_frame(buf, &extra);
@@ -119,6 +109,15 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       if (jpeg_encoder && (extra.frame_id % 1200 == 100)) {
         jpeg_encoder->pushThumbnail(buf, extra);
+      }
+
+      // do rotation if required
+      const int frames_per_seg = SEGMENT_LENGTH * MAIN_FPS;
+      if ((++frame_cnt % frames_per_seg) == 0) {
+        for (auto &e : encoders) {
+          e->encoder_close();
+          e->encoder_open(NULL);
+        }
       }
     }
   }
