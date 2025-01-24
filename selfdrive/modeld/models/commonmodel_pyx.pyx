@@ -4,7 +4,7 @@
 import numpy as np
 cimport numpy as cnp
 from libc.string cimport memcpy
-from libc.stdint cimport uintptr_t
+from libc.stdint cimport uintptr_t, uint8_t
 
 from msgq.visionipc.visionipc cimport cl_mem
 from msgq.visionipc.visionipc_pyx cimport VisionBuf, CLContext as BaseCLContext
@@ -59,8 +59,8 @@ cdef class ModelFrame:
 cdef class DrivingModelFrame(ModelFrame):
   cdef cppDrivingModelFrame * _frame
 
-  def __cinit__(self, CLContext context):
-    self._frame = new cppDrivingModelFrame(context.device_id, context.context)
+  def __cinit__(self, CLContext context, int buffer_length=2):
+    self._frame = new cppDrivingModelFrame(context.device_id, context.context, buffer_length)
     self.frame = <cppModelFrame*>(self._frame)
     self.buf_size = self._frame.buf_size
 

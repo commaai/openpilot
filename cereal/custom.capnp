@@ -81,6 +81,7 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
     generation @5 :UInt32;
     environment @6 :Text;
     runner @7 :Runner;
+    is20hz @8 :Bool;
   }
 }
 

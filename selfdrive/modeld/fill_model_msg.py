@@ -2,11 +2,31 @@ import os
 import capnp
 import numpy as np
 from cereal import log
-from openpilot.selfdrive.modeld.constants import ModelConstants, Plan, Meta
+from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
+from openpilot.selfdrive.controls.lib.drive_helpers import MIN_SPEED
 
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
 ConfidenceClass = log.ModelDataV2.ConfidenceClass
+
+
+def curv_from_psis(psi_target, psi_rate, vego, delay):
+  vego = np.clip(vego, MIN_SPEED, np.inf)
+  curv_from_psi = psi_target / (vego * delay)  # epsilon to prevent divide-by-zero
+  return 2 * curv_from_psi - psi_rate / vego
+
+
+def get_curvature_from_plan(plan, vego, delay):
+  psi_target = np.interp(delay, ModelConstants.T_IDXS, plan[:, Plan.T_FROM_CURRENT_EULER][:, 2])
+  psi_rate = plan[:, Plan.ORIENTATION_RATE][0, 2]
+  return curv_from_psis(psi_target, psi_rate, vego, delay)
+
+
+def get_curvature_from_output(output, vego, delay):
+  if desired_curv := output.get('desired_curvature'):  # If the model outputs the desired curvature, use that directly
+    return float(desired_curv[0, 0])
+
+  return float(get_curvature_from_plan(output['plan'][0], vego, delay))
 
 
 class PublishState:
@@ -59,11 +79,13 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
                    net_output_data: dict[str, np.ndarray], v_ego: float, delay: float,
                    publish_state: PublishState, vipc_frame_id: int, vipc_frame_id_extra: int,
                    frame_id: int, frame_drop: float, timestamp_eof: int, model_execution_time: float,
-                   valid: bool) -> None:
+                   valid: bool, model_meta) -> None:
   frame_age = frame_id - vipc_frame_id if frame_id > vipc_frame_id else 0
   frame_drop_perc = frame_drop * 100
   extended_msg.valid = valid
   base_msg.valid = valid
+
+  desired_curvature = float(get_curvature_from_output(net_output_data, v_ego, delay))
 
   driving_model_data = base_msg.drivingModelData
 
@@ -73,7 +95,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   driving_model_data.modelExecutionTime = model_execution_time
 
   action = driving_model_data.action
-  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
+  action.desiredCurvature = desired_curvature
 
   modelV2 = extended_msg.modelV2
   modelV2.frameId = vipc_frame_id
@@ -108,7 +130,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
 
   # lateral planning
   action = modelV2.action
-  action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
+  action.desiredCurvature = desired_curvature
 
   # times at X_IDXS according to model plan
   PLAN_T_IDXS = [np.nan] * ModelConstants.IDX_N
@@ -159,23 +181,25 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   meta = modelV2.meta
   meta.desireState = net_output_data['desire_state'][0].reshape(-1).tolist()
   meta.desirePrediction = net_output_data['desire_pred'][0].reshape(-1).tolist()
-  meta.engagedProb = net_output_data['meta'][0,Meta.ENGAGED].item()
+  meta.engagedProb = net_output_data['meta'][0,model_meta.ENGAGED].item()
   meta.init('disengagePredictions')
   disengage_predictions = meta.disengagePredictions
   disengage_predictions.t = ModelConstants.META_T_IDXS
-  disengage_predictions.brakeDisengageProbs = net_output_data['meta'][0,Meta.BRAKE_DISENGAGE].tolist()
-  disengage_predictions.gasDisengageProbs = net_output_data['meta'][0,Meta.GAS_DISENGAGE].tolist()
-  disengage_predictions.steerOverrideProbs = net_output_data['meta'][0,Meta.STEER_OVERRIDE].tolist()
-  disengage_predictions.brake3MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_3].tolist()
-  disengage_predictions.brake4MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_4].tolist()
-  disengage_predictions.brake5MetersPerSecondSquaredProbs = net_output_data['meta'][0,Meta.HARD_BRAKE_5].tolist()
-  #disengage_predictions.gasPressProbs = net_output_data['meta'][0,Meta.GAS_PRESS].tolist()
-  #disengage_predictions.brakePressProbs = net_output_data['meta'][0,Meta.BRAKE_PRESS].tolist()
+  disengage_predictions.brakeDisengageProbs = net_output_data['meta'][0,model_meta.BRAKE_DISENGAGE].tolist()
+  disengage_predictions.gasDisengageProbs = net_output_data['meta'][0,model_meta.GAS_DISENGAGE].tolist()
+  disengage_predictions.steerOverrideProbs = net_output_data['meta'][0,model_meta.STEER_OVERRIDE].tolist()
+  disengage_predictions.brake3MetersPerSecondSquaredProbs = net_output_data['meta'][0,model_meta.HARD_BRAKE_3].tolist()
+  disengage_predictions.brake4MetersPerSecondSquaredProbs = net_output_data['meta'][0,model_meta.HARD_BRAKE_4].tolist()
+  disengage_predictions.brake5MetersPerSecondSquaredProbs = net_output_data['meta'][0,model_meta.HARD_BRAKE_5].tolist()
+
+  if hasattr(model_meta, 'GAS_PRESS') and hasattr(model_meta, 'BRAKE_PRESS'):
+    disengage_predictions.gasPressProbs = net_output_data['meta'][0,model_meta.GAS_PRESS].tolist()
+    disengage_predictions.brakePressProbs = net_output_data['meta'][0,model_meta.BRAKE_PRESS].tolist()
 
   publish_state.prev_brake_5ms2_probs[:-1] = publish_state.prev_brake_5ms2_probs[1:]
-  publish_state.prev_brake_5ms2_probs[-1] = net_output_data['meta'][0,Meta.HARD_BRAKE_5][0]
+  publish_state.prev_brake_5ms2_probs[-1] = net_output_data['meta'][0,model_meta.HARD_BRAKE_5][0]
   publish_state.prev_brake_3ms2_probs[:-1] = publish_state.prev_brake_3ms2_probs[1:]
-  publish_state.prev_brake_3ms2_probs[-1] = net_output_data['meta'][0,Meta.HARD_BRAKE_3][0]
+  publish_state.prev_brake_3ms2_probs[-1] = net_output_data['meta'][0,model_meta.HARD_BRAKE_3][0]
   hard_brake_predicted = (publish_state.prev_brake_5ms2_probs > ModelConstants.FCW_THRESHOLDS_5MS2).all() and \
     (publish_state.prev_brake_3ms2_probs > ModelConstants.FCW_THRESHOLDS_3MS2).all()
   meta.hardBrakePredicted = hard_brake_predicted.item()
@@ -183,9 +207,9 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   # confidence
   if vipc_frame_id % (2*ModelConstants.MODEL_FREQ) == 0:
     # any disengage prob
-    brake_disengage_probs = net_output_data['meta'][0,Meta.BRAKE_DISENGAGE]
-    gas_disengage_probs = net_output_data['meta'][0,Meta.GAS_DISENGAGE]
-    steer_override_probs = net_output_data['meta'][0,Meta.STEER_OVERRIDE]
+    brake_disengage_probs = net_output_data['meta'][0,model_meta.BRAKE_DISENGAGE]
+    gas_disengage_probs = net_output_data['meta'][0,model_meta.GAS_DISENGAGE]
+    steer_override_probs = net_output_data['meta'][0,model_meta.STEER_OVERRIDE]
     any_disengage_probs = 1-((1-brake_disengage_probs)*(1-gas_disengage_probs)*(1-steer_override_probs))
     # independent disengage prob for each 2s slice
     ind_disengage_probs = np.r_[any_disengage_probs[0], np.diff(any_disengage_probs) / (1 - any_disengage_probs[:-1])]
