@@ -337,6 +337,27 @@ function op_switch() {
   git submodule foreach git clean -df
 }
 
+function op_start() {
+  if [[ -f "/AGNOS" ]]; then
+    op_before_cmd
+    op_run_command sudo systemctl start comma $@
+  fi
+}
+
+function op_stop() {
+  if [[ -f "/AGNOS" ]]; then
+    op_before_cmd
+    op_run_command sudo systemctl stop comma $@
+  fi
+}
+
+function op_restart() {
+  if [[ -f "/AGNOS" ]]; then
+    op_before_cmd
+    op_run_command sudo systemctl restart comma $@
+  fi
+}
+
 function op_default() {
   echo "An openpilot helper"
   echo ""
@@ -359,6 +380,9 @@ function op_default() {
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
   echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
+  echo -e "  ${BOLD}start${NC}        Starts openpilot"
+  echo -e "  ${BOLD}stop${NC}         Stops openpilot"
+  echo -e "  ${BOLD}restart${NC}      Restarts openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
@@ -415,6 +439,9 @@ function _op() {
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
+    start )         shift 1; op_start "$@" ;;
+    stop )          shift 1; op_stop "$@" ;;
+    restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     * ) op_default "$@" ;;
   esac
