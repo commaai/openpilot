@@ -51,8 +51,6 @@ def setup_settings_software(click, pm: PubMaster):
   time.sleep(UI_DELAY)
 
 def setup_settings_developer(click, pm: PubMaster):
-  DATA['carParams'].carParams.experimentalLongitudinalAvailable = True
-
   setup_settings_device(click, pm)
   click(278, 960)
   time.sleep(UI_DELAY)
