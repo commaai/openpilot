@@ -51,7 +51,7 @@ def setup_settings_software(click, pm: PubMaster):
   time.sleep(UI_DELAY)
 
 def setup_settings_developer(click, pm: PubMaster):
-  CP = car.CarParams.new_message()
+  CP = car.CarParams
   CP.experimentalLongitudinalAvailable = True
   Params().put("CarParamsPersistent", CP.to_bytes())
 
