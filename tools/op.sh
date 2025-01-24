@@ -268,6 +268,11 @@ function op_venv() {
   esac
 }
 
+function op_adb() {
+  op_before_cmd
+  op_run_command tools/adb_shell.sh
+}
+
 function op_check() {
   VERBOSE=1
   op_before_cmd
@@ -443,6 +448,7 @@ function _op() {
     stop )          shift 1; op_stop "$@" ;;
     restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
+    adb )           shift 1; op_adb "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
