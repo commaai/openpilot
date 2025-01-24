@@ -40,7 +40,7 @@ In order to use ADB on your device, you'll need to enable it in the device's set
     * `adb connect` over WiFi
 
 Here's an example command for connecting to your device using its tethered connection:<br />
-`ssh comma@192.168.43.1`
+`adb connect 192.168.43.1:5555`
 
 For doing development work on device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
 
