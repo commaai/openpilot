@@ -124,22 +124,6 @@
         <translation>Modo Longitudinal Maneuver</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="vanished">Controle Longitudinal openpilot (Embrionário)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="vanished">AVISO: o controle longitudinal openpilot está em estado embrionário para este carro e desativará a Frenagem Automática de Emergência (AEB).</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="vanished">Neste carro, o openpilot tem como padrão o ACC embutido do carro em vez do controle longitudinal do openpilot. Habilite isso para alternar para o controle longitudinal openpilot. Recomenda-se ativar o modo Experimental ao ativar o embrionário controle longitudinal openpilot.</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="vanished">O controle longitudinal openpilot poderá vir em uma atualização futura.</translation>
-    </message>
-    <message>
         <source>Enable ADB</source>
         <translation type="unfinished"></translation>
     </message>
