@@ -139,6 +139,10 @@
         <source>openpilot longitudinal control may come in a future update.</source>
         <translation>El control longitudinal de openpilot podrá llegar en futuras actualizaciones.</translation>
     </message>
+    <message>
+        <source>Enable ADB</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>

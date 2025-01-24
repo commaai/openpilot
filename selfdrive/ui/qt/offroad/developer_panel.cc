@@ -6,16 +6,16 @@
 #include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
-  // SSH keys
-  addItem(new SshToggle());
-  addItem(new SshControl());
-
-  adbToggle = new ParamControl("AdbEnabled", tr("Android Debug Bridge"), tr("Enable ADB"), "");
+  adbToggle = new ParamControl("AdbEnabled", tr("Enable ADB"), "", "");
   QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("AdbEnabled", state);
     adbToggle->refresh();
   });
   addItem(adbToggle);
+
+  // SSH keys
+  addItem(new SshToggle());
+  addItem(new SshControl());
 
   joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
