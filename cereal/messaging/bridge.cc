@@ -6,12 +6,12 @@
 
 ExitHandler do_exit;
 
-static std::vector<std::string> get_services(std::string whitelist_str, bool zmq_to_msgq) {
+static std::vector<std::string> get_services(const std::string &whitelist_str, bool zmq_to_msgq) {
   std::vector<std::string> service_list;
   for (const auto& it : services) {
     std::string name = it.second.name;
     bool in_whitelist = whitelist_str.find(name) != std::string::npos;
-    if (name == "plusFrame" || name == "uiLayoutState" || (zmq_to_msgq && !in_whitelist)) {
+    if (zmq_to_msgq && !in_whitelist) {
       continue;
     }
     service_list.push_back(name);
