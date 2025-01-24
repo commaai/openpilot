@@ -31,7 +31,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
       .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
       .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
               "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
-    "../assets/offroad/icon_speed_limit.png"
+    ""
   );
   experimentalLongitudinalToggle->setConfirmation(true, false);
   QObject::connect(experimentalLongitudinalToggle, &ParamControl::toggleFlipped, [=]() {
