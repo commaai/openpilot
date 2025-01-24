@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QProcess>
 
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
