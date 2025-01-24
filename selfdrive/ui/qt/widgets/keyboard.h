@@ -29,9 +29,11 @@ public:
 
 private:
   QStackedLayout* main_layout;
+  int shift_state = 0;
 
 private slots:
   void handleButton(QAbstractButton* m_button);
+  void handleCapsPress();
 
 signals:
   void emitKey(const QString &s);
