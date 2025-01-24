@@ -123,6 +123,22 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished">ระบบควบคุมการเร่ง/เบรคโดย openpilot (Alpha)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished">คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในสถานะ alpha และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished">โดยปกติสำหรับรถคันนี้ openpilot จะควบคุมการเร่ง/เบรคด้วยระบบ ACC จากโรงงาน แทนการควยคุมโดย openpilot เปิดสวิตซ์นี้เพื่อให้ openpilot ควบคุมการเร่ง/เบรค แนะนำให้เปิดโหมดทดลองเมื่อต้องการให้ openpilot ควบคุมการเร่ง/เบรค ซึ่งอยู่ในสถานะ alpha</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished">ระบบควบคุมการเร่ง/เบรคโดย openpilot อาจมาในการอัปเดตในอนาคต</translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -379,9 +395,11 @@
         <translation>กำลังดาวน์โหลดอัปเดทสำหรับระบบปฏิบัติการอยู่เบื้องหลัง คุณจะได้รับการแจ้งเตือนเมื่อระบบพร้อมสำหรับการติดตั้ง</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation>ไม่สามารถลงทะเบียนอุปกรณ์ได้ อุปกรณ์จะไม่สามารถเชื่อมต่อหรืออัปโหลดไปยังเซิร์ฟเวอร์ของ comma.ai ได้และจะไม่ได้รับการสนับสนุนจาก comma.ai ถ้านี่คืออุปกรณ์อย่างเป็นทางการ กรุณาติดต่อ </message>
-        <message>
-            <source>NVMe drive not mounted.</source>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>ไม่สามารถลงทะเบียนอุปกรณ์ได้ อุปกรณ์จะไม่สามารถเชื่อมต่อหรืออัปโหลดไปยังเซิร์ฟเวอร์ของ comma.ai ได้และจะไม่ได้รับการสนับสนุนจาก comma.ai ถ้านี่คืออุปกรณ์อย่างเป็นทางการ กรุณาติดต่อ https://comma.ai/support</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
         <translation>ไม่ได้ติดตั้งไดร์ฟ NVMe</translation>
     </message>
     <message>
@@ -442,9 +460,11 @@
         <translation>จับคู่อุปกรณ์ของคุณกับบัญชี comma ของคุณ</translation>
     </message>
     <message>
-        <source>Go to <translation>ไปที่ </message>
-        <message>
-            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>ไปที่ https://connect.comma.ai ด้วยโทรศัพท์ของคุณ</translation>
+    </message>
+    <message>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>กดที่ &quot;add new device&quot; และสแกนคิวอาร์โค้ดทางด้านขวา</translation>
     </message>
     <message>
@@ -478,8 +498,8 @@
         <translation>สมัครสมาชิก comma prime ได้ที่ connect.comma.ai</translation>
     </message>
     <message>
-        <source>PRIME </source>
-        <translation>คุณสมบัติของ </translation>
+        <source>PRIME FEATURES:</source>
+        <translation>คุณสมบัติของ PRIME:</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -986,8 +1006,8 @@ This may take up to a minute.</source>
         <translation>โหมดทดลอง</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
-        <translation>โดยปกติ openpilot จะขับใน&lt;b&gt;โหมดชิล&lt;/b&gt; เปิดโหมดทดลองเพื่อใช้&lt;b&gt;ความสามารถในขั้นพัฒนา&lt;/b&gt; ซึ่งยังไม่พร้อมสำหรับโหมดชิล </translation>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>โดยปกติ openpilot จะขับใน&lt;b&gt;โหมดชิล&lt;/b&gt; เปิดโหมดทดลองเพื่อใช้&lt;b&gt;ความสามารถในขั้นพัฒนา&lt;/b&gt; ซึ่งยังไม่พร้อมสำหรับโหมดชิล ความสามารถในขั้นพัฒนามีดังนี้:</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
@@ -1048,18 +1068,6 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">ระบบควบคุมการเร่ง/เบรคโดย openpilot (Alpha)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในสถานะ alpha และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">โดยปกติสำหรับรถคันนี้ openpilot จะควบคุมการเร่ง/เบรคด้วยระบบ ACC จากโรงงาน แทนการควยคุมโดย openpilot เปิดสวิตซ์นี้เพื่อให้ openpilot ควบคุมการเร่ง/เบรค แนะนำให้เปิดโหมดทดลองเมื่อต้องการให้ openpilot ควบคุมการเร่ง/เบรค ซึ่งอยู่ในสถานะ alpha</translation>
     </message>
 </context>
 <context>

@@ -123,6 +123,22 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation>Mode manœuvre longitudinale</translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>Contrôle longitudinal openpilot (Alpha)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>ATTENTION : le contrôle longitudinal openpilot est en alpha pour cette voiture et désactivera le freinage d&apos;urgence automatique (AEB).</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>Sur cette voiture, openpilot utilise par défaut le régulateur de vitesse adaptatif intégré à la voiture plutôt que le contrôle longitudinal d&apos;openpilot. Activez ceci pour passer au contrôle longitudinal openpilot. Il est recommandé d&apos;activer le mode expérimental lors de l&apos;activation du contrôle longitudinal openpilot alpha.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>Le contrôle longitudinal openpilot pourrait être disponible dans une future mise à jour.</translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -380,9 +396,11 @@
         <translation>Une mise à jour du système d&apos;exploitation de votre appareil est en cours de téléchargement en arrière-plan. Vous serez invité à effectuer la mise à jour lorsqu&apos;elle sera prête à être installée.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation>L&apos;appareil n&apos;a pas réussi à s&apos;enregistrer. Il ne se connectera pas aux serveurs de comma.ai, n&apos;enverra rien et ne recevra aucune assistance de comma.ai. S&apos;il s&apos;agit d&apos;un appareil officiel, visitez </message>
-        <message>
-            <source>NVMe drive not mounted.</source>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>L&apos;appareil n&apos;a pas réussi à s&apos;enregistrer. Il ne se connectera pas aux serveurs de comma.ai, n&apos;enverra rien et ne recevra aucune assistance de comma.ai. S&apos;il s&apos;agit d&apos;un appareil officiel, visitez https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
         <translation>Le disque NVMe n&apos;est pas monté.</translation>
     </message>
     <message>
@@ -443,9 +461,11 @@
         <translation>Associez votre appareil à votre compte comma</translation>
     </message>
     <message>
-        <source>Go to <translation>Allez sur </message>
-        <message>
-            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>Allez sur https://connect.comma.ai sur votre téléphone</translation>
+    </message>
+    <message>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>Cliquez sur &quot;ajouter un nouvel appareil&quot; et scannez le code QR à droite</translation>
     </message>
     <message>
@@ -479,8 +499,8 @@
         <translation>Devenez membre comma prime sur connect.comma.ai</translation>
     </message>
     <message>
-        <source>PRIME </source>
-        <translation>FONCTIONNALITÉS </translation>
+        <source>PRIME FEATURES:</source>
+        <translation>FONCTIONNALITÉS PRIME :</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -1006,7 +1026,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Personnalité de conduite</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
         <translation>Par défaut, openpilot conduit en &lt;b&gt;mode détente&lt;/b&gt;. Le mode expérimental permet d&apos;activer des &lt;b&gt;fonctionnalités alpha&lt;/b&gt; qui ne sont pas prêtes pour le mode détente. Les fonctionnalités expérimentales sont listées ci-dessous :</translation>
     </message>
     <message>
@@ -1052,18 +1072,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>Activer la surveillance conducteur lorsque openpilot n&apos;est pas actif.</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">Contrôle longitudinal openpilot (Alpha)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">ATTENTION : le contrôle longitudinal openpilot est en alpha pour cette voiture et désactivera le freinage d&apos;urgence automatique (AEB).</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">Sur cette voiture, openpilot utilise par défaut le régulateur de vitesse adaptatif intégré à la voiture plutôt que le contrôle longitudinal d&apos;openpilot. Activez ceci pour passer au contrôle longitudinal openpilot. Il est recommandé d&apos;activer le mode expérimental lors de l&apos;activation du contrôle longitudinal openpilot alpha.</translation>
     </message>
 </context>
 <context>

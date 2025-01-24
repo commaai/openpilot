@@ -123,6 +123,22 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -375,7 +391,8 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation type="unfinished"></translation>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
@@ -443,9 +460,11 @@
         <translation>Verbinde dein Gerät mit deinem comma Konto</translation>
     </message>
     <message>
-        <source>Go to <translation>Gehe zu </message>
-        <message>
-            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>Gehe zu https://connect.comma.ai auf deinem Handy</translation>
+    </message>
+    <message>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>Klicke auf &quot;neues Gerät hinzufügen&quot; und scanne den QR code rechts</translation>
     </message>
     <message>
@@ -479,8 +498,8 @@
         <translation>Werde Comma Prime Mitglied auf connect.comma.ai</translation>
     </message>
     <message>
-        <source>PRIME </source>
-        <translation>PRIME </translation>
+        <source>PRIME FEATURES:</source>
+        <translation>PRIME FUNKTIONEN:</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -991,8 +1010,8 @@ This may take up to a minute.</source>
         <translation>Bei Gasbetätigung ausschalten</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
-        <translation>Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die </translation>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>Openpilot fährt standardmäßig im &lt;b&gt;entspannten Modus&lt;/b&gt;. Der Experimentelle Modus aktiviert&lt;b&gt;Alpha-level Funktionen&lt;/b&gt;, die noch nicht für den entspannten Modus bereit sind. Die experimentellen Funktionen sind die Folgenden:</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
@@ -1052,18 +1071,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

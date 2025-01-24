@@ -123,6 +123,22 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation>وضع المناورة الطولية</translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>التحكم الطولي openpilot (ألفا)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>تحذير: التحكم الطولي في openpilot في المرحلة ألفا لهذه السيارة، وسيقوم بتعطيل مكابح الطوارئ الآلية (AEB).</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>في هذه السيارة يعمل openpilot افتراضياً بالشكل المدمج في التحكم التكيفي في السرعة بدلاً من التحكم الطولي. قم بتمكين هذا الخيار من أجل الانتقال إلى التحكم الطولي. يوصى بتمكين الوضع التجريبي عند استخدام وضع التحكم الطولي ألفا من openpilot.</translation>
+    </message>
+    <message>
+        <source>openpilot longitudinal control may come in a future update.</source>
+        <translation>قد يتم الحصول على التحكم الطولي في openpilot في عمليات التحديث المستقبلية.</translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -384,9 +400,11 @@
         <translation>يتم تنزيل تحديث لنظام تشغيل جهازك في الخلفية. سيطلَب منك التحديث عندما يصبح جاهزاً للتثبيت.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation>فشل تسجيل الجهاز. لن يقوم بالاتصال أو تحميل خوادم comma.ai، ولا تلقي الدعم من comma.ai. إذا كان هذا الجهاز نظامياً فيرجى زيارة الموقع </message>
-        <message>
-            <source>NVMe drive not mounted.</source>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
+        <translation>فشل تسجيل الجهاز. لن يقوم بالاتصال أو تحميل خوادم comma.ai، ولا تلقي الدعم من comma.ai. إذا كان هذا الجهاز نظامياً فيرجى زيارة الموقع https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>NVMe drive not mounted.</source>
         <translation>محرك NVMe غير مثبَّت.</translation>
     </message>
     <message>
@@ -447,9 +465,11 @@
         <translation>اقرن جهازك مع حسابك على comma</translation>
     </message>
     <message>
-        <source>Go to <translation>انتقل إلى </message>
-        <message>
-            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to https://connect.comma.ai on your phone</source>
+        <translation>انتقل إلى https://connect.comma.ai على جوالك</translation>
+    </message>
+    <message>
+        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>انقر &quot;،إضافة جهاز جديد&quot;، وامسح رمز الاستجابة السريعة (QR) على اليمين</translation>
     </message>
     <message>
@@ -483,8 +503,8 @@
         <translation>كن عضوًا في comma prime على connect.comma.ai</translation>
     </message>
     <message>
-        <source>PRIME </source>
-        <translation>الميزات </translation>
+        <source>PRIME FEATURES:</source>
+        <translation>الميزات الأساسية:</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -1022,8 +1042,8 @@ This may take up to a minute.</source>
         <translation>شخصية القيادة</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
-        <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية الراحة&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع </translation>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>يتم وضع openpilot بشكل قياسي في &lt;b&gt;وضعية الراحة&lt;/b&gt;. يمكن الوضع التجريبي &lt;b&gt;ميزات المستوى ألفا&lt;/b&gt; التي لا تكون جاهزة في وضع الراحة:</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
@@ -1068,18 +1088,6 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>تمكين مراقبة السائق حتى عندما لا يكون نظام OpenPilot مُفعّلاً.</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">التحكم الطولي openpilot (ألفا)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">تحذير: التحكم الطولي في openpilot في المرحلة ألفا لهذه السيارة، وسيقوم بتعطيل مكابح الطوارئ الآلية (AEB).</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">في هذه السيارة يعمل openpilot افتراضياً بالشكل المدمج في التحكم التكيفي في السرعة بدلاً من التحكم الطولي. قم بتمكين هذا الخيار من أجل الانتقال إلى التحكم الطولي. يوصى بتمكين الوضع التجريبي عند استخدام وضع التحكم الطولي ألفا من openpilot.</translation>
     </message>
 </context>
 <context>
