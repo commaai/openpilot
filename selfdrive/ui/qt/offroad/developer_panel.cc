@@ -10,6 +10,13 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(new SshToggle());
   addItem(new SshControl());
 
+  adbToggle = new ParamControl("AdbEnabled", tr("Android Debug Bridge"), tr("Enable ADB"), "");
+  QObject::connect(adbToggle, &ParamControl::toggleFlipped, [=](bool state) {
+    params.putBool("AdbEnabled", state);
+    adbToggle->refresh();
+  });
+  addItem(adbToggle);
+
   joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("LongitudinalManeuverMode", false);
