@@ -123,22 +123,6 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation>アクセル制御マニューバー</translation>
     </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation>openpilotアクセル制御(Alpha)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>この車ではopenpilotのアクセル制御はアルファ版であり、自動緊急ブレーキ(AEB)が無効化されます。</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation>この車では、openpilotは車両内蔵のACC(アダプティブクルーズコントロール)をデフォルトとして使用し、openpilotのアクセル制御は無効化されています。アクセル制御をopenpilotに切り替えるにはこの設定を有効にしてください。また同時にExperimentalモードを推奨します。</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>openpilotのアクセル制御は、将来のアップデートで利用できる可能性があります。</translation>
-    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -391,11 +375,9 @@
         <translation>オペレーティングシステムがバックグラウンドでダウンロードされています。インストールの準備が整うと更新を促されます。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりデータをアップロードしたりできません。またcomma.aiのサポートも受けられません。公式デバイスである場合は https://comma.ai/support に問い合わせて下さい。</translation>
-    </message>
-    <message>
-        <source>NVMe drive not mounted.</source>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation>登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりデータをアップロードしたりできません。またcomma.aiのサポートも受けられません。公式デバイスである場合は </message>
+        <message>
+            <source>NVMe drive not mounted.</source>
         <translation>SSDドライブ(NVMe)がマウントされていません。</translation>
     </message>
     <message>
@@ -460,11 +442,9 @@
         <translation>デバイスとcommaアカウントを連携して下さい</translation>
     </message>
     <message>
-        <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>スマートフォンで https://connect.comma.ai にアクセスしてください</translation>
-    </message>
-    <message>
-        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to <translation>スマートフォンで </message>
+        <message>
+            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>「add new device」を押して右側のQRコードをスキャンしてください</translation>
     </message>
     <message>
@@ -498,7 +478,7 @@
         <translation>connect.comma.ai からプライム会員に登録できます</translation>
     </message>
     <message>
-        <source>PRIME FEATURES:</source>
+        <source>PRIME </source>
         <translation>特典:</translation>
     </message>
     <message>
@@ -1006,7 +986,7 @@ This may take up to a minute.</source>
         <translation>Experimentalモード</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
         <translation>openpilotは標準ではゆっくりとくつろげる運転を提供します。このExperimental(実験)モードを有効にすると、以下のアグレッシブな開発中の機能を利用する事ができます。</translation>
     </message>
     <message>
@@ -1068,6 +1048,18 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>openpilotが作動していない場合でも運転者モニタリングを有効にする。</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished">openpilotアクセル制御(Alpha)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished">この車ではopenpilotのアクセル制御はアルファ版であり、自動緊急ブレーキ(AEB)が無効化されます。</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished">この車では、openpilotは車両内蔵のACC(アダプティブクルーズコントロール)をデフォルトとして使用し、openpilotのアクセル制御は無効化されています。アクセル制御をopenpilotに切り替えるにはこの設定を有効にしてください。また同時にExperimentalモードを推奨します。</translation>
     </message>
 </context>
 <context>

@@ -123,22 +123,6 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">openpilot 縱向控制 (Alpha 版)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">警告：此車輛的 openpilot 縱向控制功能目前處於 Alpha 版本，使用此功能將會停用自動緊急煞車（AEB）功能。</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">在這輛車上，openpilot 預設使用車輛內建的主動巡航控制（ACC），而非 openpilot 的縱向控制。啟用此項功能可切換至 openpilot 的縱向控制。當啟用 openpilot 縱向控制 Alpha 版本時，建議同時啟用實驗性模式（Experimental mode）。</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished">openpilot 縱向控制可能會在未來的更新中提供。</translation>
-    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -391,11 +375,9 @@
         <translation>一個有關操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>裝置註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方裝置，請訪問 https://comma.ai/support 。</translation>
-    </message>
-    <message>
-        <source>NVMe drive not mounted.</source>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation>裝置註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方裝置，請訪問 </message>
+        <message>
+            <source>NVMe drive not mounted.</source>
         <translation>NVMe 固態硬碟未被掛載。</translation>
     </message>
     <message>
@@ -460,11 +442,9 @@
         <translation>將裝置與您的 comma 帳號配對</translation>
     </message>
     <message>
-        <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>用手機連至 https://connect.comma.ai</translation>
-    </message>
-    <message>
-        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to <translation>用手機連至 </message>
+        <message>
+            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>點選 &quot;add new device&quot; 後掃描右邊的二維碼</translation>
     </message>
     <message>
@@ -498,7 +478,7 @@
         <translation>成為 connect.comma.ai 的高級會員</translation>
     </message>
     <message>
-        <source>PRIME FEATURES:</source>
+        <source>PRIME </source>
         <translation>高級會員特點：</translation>
     </message>
     <message>
@@ -1006,7 +986,7 @@ This may take up to a minute.</source>
         <translation>實驗模式</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
         <translation>openpilot 預設以 &lt;b&gt;輕鬆模式&lt;/b&gt; 駕駛。    實驗模式啟用了尚未準備好進入輕鬆模式的 &lt;b&gt;alpha 級功能&lt;/b&gt;。實驗功能如下：</translation>
     </message>
     <message>
@@ -1068,6 +1048,18 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>即使在openpilot未激活時也啟用駕駛監控。</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished">openpilot 縱向控制 (Alpha 版)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished">警告：此車輛的 openpilot 縱向控制功能目前處於 Alpha 版本，使用此功能將會停用自動緊急煞車（AEB）功能。</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished">在這輛車上，openpilot 預設使用車輛內建的主動巡航控制（ACC），而非 openpilot 的縱向控制。啟用此項功能可切換至 openpilot 的縱向控制。當啟用 openpilot 縱向控制 Alpha 版本時，建議同時啟用實驗性模式（Experimental mode）。</translation>
     </message>
 </context>
 <context>

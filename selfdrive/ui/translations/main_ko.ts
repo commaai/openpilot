@@ -123,22 +123,6 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation>롱컨 기동 모드</translation>
     </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">openpilot 가감속 제어 (알파)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">경고: openpilot 가감속 제어 알파 기능으로 차량의 자동긴급제동(AEB)을 비활성화합니다.</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">이 차량은 openpilot 가감속 제어 대신 기본적으로 차량의 ACC로 가감속을 제어합니다. openpilot의 가감속 제어로 전환하려면 이 기능을 활성화하세요. openpilot 가감속 제어 알파를 활성화하는 경우 실험 모드 활성화를 권장합니다.</translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished">openpilot 가감속 제어는 향후 업데이트에서 지원될 수 있습니다.</translation>
-    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -391,11 +375,9 @@
         <translation>백그라운드에서 운영 체제에 대한 업데이트가 다운로드되고 있습니다. 설치가 준비되면 업데이트 메시지가 표시됩니다.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>장치를 등록하지 못했습니다. comma.ai 서버에 연결하거나 데이터를 업로드하지 않으며 comma.ai에서 지원을 받지 않습니다. 공식 장치인 경우 https://comma.ai/support 에 방문하여 문의하세요.</translation>
-    </message>
-    <message>
-        <source>NVMe drive not mounted.</source>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation>장치를 등록하지 못했습니다. comma.ai 서버에 연결하거나 데이터를 업로드하지 않으며 comma.ai에서 지원을 받지 않습니다. 공식 장치인 경우 </message>
+        <message>
+            <source>NVMe drive not mounted.</source>
         <translation>NVMe 드라이브가 마운트되지 않았습니다.</translation>
     </message>
     <message>
@@ -460,8 +442,7 @@
         <translation>장치를 comma 계정에 동기화합니다</translation>
     </message>
     <message>
-        <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>https://connect.comma.ai에 접속하세요</translation>
+        <source>Go to <translation>https://connect.comma.ai에 접속하세요</translation>
     </message>
     <message>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
@@ -498,8 +479,8 @@
         <translation>connect.comma.ai에 접속하여 comma prime 회원으로 등록하세요</translation>
     </message>
     <message>
-        <source>PRIME FEATURES:</source>
-        <translation>PRIME 기능:</translation>
+        <source>PRIME </source>
+        <translation>PRIME </translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -1006,8 +987,8 @@ This may take up to a minute.</source>
         <translation>실험 모드</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation>openpilot은 기본적으로 &lt;b&gt;안정 모드&lt;/b&gt;로 주행합니다. 실험 모드는 안정화되지 않은 &lt;b&gt;알파 수준의 기능&lt;/b&gt;을 활성화합니다. 실험 모드의 기능은 아래와 같습니다:</translation>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
+        <translation>openpilot은 기본적으로 &lt;b&gt;안정 모드&lt;/b&gt;로 주행합니다. 실험 모드는 안정화되지 않은 &lt;b&gt;알파 수준의 기능&lt;/b&gt;을 활성화합니다. 실험 모드의 기능은 아래와 </translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
@@ -1068,6 +1049,18 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>Openpilot이 활성화되지 않은 경우에도 드라이버 모니터링을 활성화합니다.</translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished">openpilot 가감속 제어 (알파)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished">경고: openpilot 가감속 제어 알파 기능으로 차량의 자동긴급제동(AEB)을 비활성화합니다.</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished">이 차량은 openpilot 가감속 제어 대신 기본적으로 차량의 ACC로 가감속을 제어합니다. openpilot의 가감속 제어로 전환하려면 이 기능을 활성화하세요. openpilot 가감속 제어 알파를 활성화하는 경우 실험 모드 활성화를 권장합니다.</translation>
     </message>
 </context>
 <context>

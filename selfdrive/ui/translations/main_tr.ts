@@ -123,22 +123,6 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -394,8 +378,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit <translation type="unfinished"></translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
@@ -459,11 +442,9 @@
         <translation>comma.ai hesabınız ile cihazı eşleştirin</translation>
     </message>
     <message>
-        <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>Telefonuzdan https://connect.comma.ai sitesine gidin</translation>
-    </message>
-    <message>
-        <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
+        <source>Go to <translation>Telefonuzdan </message>
+        <message>
+            <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
         <translation>Yeni cihaz eklemek için sağdaki QR kodunu okutun</translation>
     </message>
     <message>
@@ -497,8 +478,8 @@
         <translation>connect.comma.ai üzerinden comma prime üyesi olun</translation>
     </message>
     <message>
-        <source>PRIME FEATURES:</source>
-        <translation>PRIME ABONELİĞİNİN ÖZELLİKLERİ:</translation>
+        <source>PRIME </source>
+        <translation>PRIME ABONELİĞİNİN </translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -1020,7 +1001,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed </source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1065,6 +1046,18 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
