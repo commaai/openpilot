@@ -271,7 +271,6 @@ def main():
 
   filter_initialized = False
   critcal_services = ["accelerometer", "gyroscope", "cameraOdometry"]
-  observation_timing_invalid = defaultdict(int)
   observation_input_invalid = defaultdict(int)
 
   input_invalid_limit = {s: INPUT_INVALID_LIMIT * (SERVICE_LIST[s].frequency / 20.) for s in critcal_services}
