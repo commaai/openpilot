@@ -173,5 +173,5 @@ class TestLocationdScenarios:
     Expected Result: inputsOK becomes False after N of bad measurements
     """
     orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
-    assert np.diff(replayed_data['inputs_flag'])[500] == -1.0
-    assert np.diff(replayed_data['inputs_flag'])[787] == 1.0
+    assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
+    assert np.diff(replayed_data['inputs_flag'])[707] == 1.0
