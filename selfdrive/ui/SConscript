@@ -36,6 +36,7 @@ qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/body.cc",
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
+qt_env.Command(assets, [assets_src], f"rcc $SOURCES -o $TARGET")
 qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
 asset_obj = qt_env.Object("assets", assets)
 
