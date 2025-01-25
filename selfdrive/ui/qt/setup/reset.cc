@@ -57,7 +57,7 @@ Reset::Reset(ResetMode mode, QWidget *parent) : QWidget(parent) {
 
   main_layout->addSpacing(60);
 
-  body = new QLabel(tr("Press confirm to erase all content and settings. Press cancel to resume boot."));
+  body = new QLabel(tr("System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot."));
   body->setWordWrap(true);
   body->setStyleSheet("font-size: 80px; font-weight: light;");
   main_layout->addWidget(body, 1, Qt::AlignTop | Qt::AlignLeft);
