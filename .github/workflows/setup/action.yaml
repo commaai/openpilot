@@ -33,8 +33,8 @@ runs:
       if: steps.cache-apt.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        sudo DEBIAN_FRONTEND=noninteractive apt-get update 
-        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        sudo apt-get update 
+        sudo apt-get install -y --no-install-recommends \
           ${{ steps.apt-packages.outputs.packages }}
 
     - uses: astral-sh/setup-uv@v4
