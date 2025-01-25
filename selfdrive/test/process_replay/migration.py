@@ -381,7 +381,7 @@ def migrate_carParams(msgs):
     CP = msg.as_builder()
     CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
     for car_fw in CP.carParams.carFw:
-      car_fw.brand = CP.carParams.carName
+      car_fw.brand = CP.carParams.brand
     ops.append((index, CP.as_reader()))
   return ops, [], []
 

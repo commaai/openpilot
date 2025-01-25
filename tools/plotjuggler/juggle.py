@@ -85,7 +85,7 @@ def juggle_route(route_or_segment_name, can, layout, dbc=None):
   if dbc is None:
     for cp in [m for m in all_data if m.which() == 'carParams']:
       try:
-        DBC = __import__(f"opendbc.car.{cp.carParams.carName}.values", fromlist=['DBC']).DBC
+        DBC = __import__(f"opendbc.car.{cp.carParams.brand}.values", fromlist=['DBC']).DBC
         fingerprint = cp.carParams.carFingerprint
         dbc = DBC[MIGRATION.get(fingerprint, fingerprint)]['pt']
       except Exception:
