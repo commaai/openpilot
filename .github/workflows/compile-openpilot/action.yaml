@@ -6,13 +6,15 @@ runs:
     - shell: bash
       name: Build openpilot with all flags
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-        ${{ env.RUN }} "release/check-dirty.sh"
+        source .venv/bin/activate
+        scons -j$(nproc)
+        release/check-dirty.sh
     - shell: bash
       name: Cleanup scons cache and rebuild
       run: |
-          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --cache-populate"
+        source .venv/bin/activate
+        rm -rf .ci_cache/scons_cache/* && \
+        scons -j$(nproc) --cache-populate
     - name: Save scons cache
       uses: actions/cache/save@v4
       if: github.ref == 'refs/heads/master'
