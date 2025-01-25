@@ -123,6 +123,18 @@
         <source>Longitudinal Maneuver Mode</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished">openpilot纵向控制（Alpha 版）</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished">警告：此车辆的 openpilot 纵向控制功能目前处于Alpha版本，使用此功能将会停用自动紧急制动（AEB）功能。</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished">在这辆车上，openpilot 默认使用车辆内建的主动巡航控制（ACC），而非 openpilot 的纵向控制。启用此项功能可切换至 openpilot 的纵向控制。当启用 openpilot 纵向控制 Alpha 版本时，建议同时启用实验性模式（Experimental mode）。</translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
@@ -1052,18 +1064,6 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>即使在openpilot未激活时也启用驾驶员监控。</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">openpilot纵向控制（Alpha 版）</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">警告：此车辆的 openpilot 纵向控制功能目前处于Alpha版本，使用此功能将会停用自动紧急制动（AEB）功能。</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">在这辆车上，openpilot 默认使用车辆内建的主动巡航控制（ACC），而非 openpilot 的纵向控制。启用此项功能可切换至 openpilot 的纵向控制。当启用 openpilot 纵向控制 Alpha 版本时，建议同时启用实验性模式（Experimental mode）。</translation>
     </message>
 </context>
 <context>
