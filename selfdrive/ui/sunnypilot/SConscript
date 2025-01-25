@@ -23,6 +23,7 @@ qt_src = [
   "sunnypilot/qt/offroad/settings/sunnylink_panel.cc",
   "sunnypilot/qt/offroad/settings/sunnypilot_panel.cc",
   "sunnypilot/qt/offroad/settings/trips_panel.cc",
+  "sunnypilot/qt/offroad/settings/vehicle_panel.cc",
   "sunnypilot/qt/onroad/annotated_camera.cc",
   "sunnypilot/qt/onroad/buttons.cc",
   "sunnypilot/qt/onroad/hud.cc",

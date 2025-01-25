@@ -60,7 +60,7 @@ def setup_settings_software(click, pm: PubMaster, scroll=None):
 
 def setup_settings_developer(click, pm: PubMaster, scroll=None):
   setup_settings_device(click, pm)
-  scroll(-100, 278, 962)
+  scroll(-400, 278, 962)
   click(278, 970)
   time.sleep(UI_DELAY)
 
@@ -215,6 +215,12 @@ def setup_settings_trips(click, pm: PubMaster, scroll=None):
   click(278, 962)
   time.sleep(UI_DELAY)
 
+def setup_settings_vehicle(click, pm: PubMaster, scroll=None):
+  setup_settings_device(click, pm)
+  scroll(-400, 278, 862)
+  click(278, 862)
+  time.sleep(UI_DELAY)
+
 CASES = {
   "homescreen": setup_homescreen,
   "prime": setup_homescreen,
@@ -247,6 +253,7 @@ CASES.update({
   "settings_sunnypilot": setup_settings_sunnypilot,
   "settings_sunnypilot_mads": setup_settings_sunnypilot_mads,
   "settings_trips": setup_settings_trips,
+  "settings_vehicle": setup_settings_vehicle,
 })
 
 TEST_DIR = pathlib.Path(__file__).parent
