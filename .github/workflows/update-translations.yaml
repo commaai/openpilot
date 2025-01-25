@@ -3,18 +3,26 @@ on:
   push:
     branches:
       - master
-      paths:
-        - 'selfdrive/ui/**'
+    paths:
+      - 'selfdrive/ui/**'
   workflow_dispatch:
+
+env:
+  BASE_IMAGE: openpilot-base
+  BUILD: selfdrive/test/docker_build.sh base
+  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
+      - uses: ./.github/workflows/setup-with-retry
       - name: Update translations
-        id: update
-        run: ./selfdrive/ui/update_translations.py
-
+        run: |
+          ${{ env.RUN }} "python3 selfdrive/ui/update_translations.py"
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "[GHA]Update translations"
+          commit_message: "[GHA] Update translations"
