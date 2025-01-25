@@ -97,7 +97,7 @@ jobs:
       with:
         path: .ci_cache/scons_cache
     - name: Building openpilot
-      run: . source .venv/bin/activate && scons -j$(nproc)
+      run: . .venv/bin/activate && scons -j$(nproc)
 
   static_analysis:
     name: static analysis
@@ -110,7 +110,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/c
+    - uses: ./.github/workflows/setup
     - name: Static analysis
       timeout-minutes: 1
       run: scripts/lint/lint.sh
