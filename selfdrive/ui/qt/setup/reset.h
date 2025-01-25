@@ -5,6 +5,7 @@
 enum ResetMode {
   USER_RESET, // user initiated a factory reset from openpilot
   RECOVER,    // userdata is corrupt for some reason, give a chance to recover
+  FORMAT,     // finish up an ABL factory reset
 };
 
 class Reset : public QWidget {
