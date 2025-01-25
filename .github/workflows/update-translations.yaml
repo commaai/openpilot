@@ -1,0 +1,20 @@
+name: "update translations"
+on:
+  push:
+    branches:
+      - master
+      paths:
+        - 'selfdrive/ui/**'
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Update translations
+        id: update
+        run: ./selfdrive/ui/update_translations.py
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "[GHA]Update translations"
