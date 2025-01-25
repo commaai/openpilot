@@ -32,7 +32,9 @@ static void checked_ioctl(int fd, unsigned long request, void *argp) {
   }
 }
 
-static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
+void V4LEncoder::dequeue_buffer(v4l2_buf_type buf_type, uint32_t *index, uint32_t *bytesused, uint32_t *flags, struct timeval *timestamp) {
+  std::lock_guard lock(mutex);
+
   v4l2_plane plane = {0};
   v4l2_buffer v4l_buf = {
     .type = buf_type,
@@ -49,7 +51,9 @@ static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=N
   assert(v4l_buf.m.planes[0].data_offset == 0);
 }
 
-static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
+void V4LEncoder::queue_buffer(v4l2_buf_type buf_type, uint32_t index, VisionBuf *buf, struct timeval timestamp) {
+  std::lock_guard lock(mutex);
+
   v4l2_plane plane = {
     .length = (unsigned int)buf->len,
     .m = { .userptr = (unsigned long)buf->addr, },
@@ -117,7 +121,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
     if (pfd.revents & POLLIN) {
       unsigned int bytesused, flags, index;
       struct timeval timestamp;
-      dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
+      e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, &index, &bytesused, &flags, &timestamp);
       e->buf_out[index].sync(VISIONBUF_SYNC_FROM_DEVICE);
       uint8_t *buf = (uint8_t*)e->buf_out[index].addr;
       int64_t ts = timestamp.tv_sec * 1000000 + timestamp.tv_usec;
@@ -142,12 +146,12 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
       }
 
       // requeue the buffer
-      queue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
+      e->queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, index, &e->buf_out[index]);
     }
 
     if (pfd.revents & POLLOUT) {
       unsigned int index;
-      dequeue_buffer(e->fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
+      e->dequeue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, &index);
       e->free_buf_in.push(index);
     }
   }
@@ -267,7 +271,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   // queue up output buffers
   for (unsigned int i = 0; i < BUF_OUT_COUNT; i++) {
     buf_out[i].allocate(fmt_out.fmt.pix_mp.plane_fmt[0].sizeimage);
-    queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
+    queue_buffer(V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE, i, &buf_out[i]);
   }
   // queue up input buffers
   for (unsigned int i = 0; i < BUF_IN_COUNT; i++) {
@@ -293,7 +297,7 @@ int V4LEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
   // push buffer
   extras.push(*extra);
   //buf->sync(VISIONBUF_SYNC_TO_DEVICE);
-  queue_buffer(fd, V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
+  queue_buffer(V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE, buffer_in, buf, timestamp);
 
   return this->counter++;
 }

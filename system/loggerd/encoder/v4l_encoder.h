@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mutex>
+
 #include "common/queue.h"
 #include "system/loggerd/encoder/encoder.h"
 
@@ -14,6 +16,10 @@ public:
   void encoder_open(const char* path);
   void encoder_close();
 private:
+  void queue_buffer(v4l2_buf_type buf_type, uint32_t index, VisionBuf *buf, struct timeval timestamp={});
+  void dequeue_buffer(v4l2_buf_type buf_type, uint32_t *index = nullptr, uint32_t *bytesused = nullptr,
+                     uint32_t *flags = nullptr, struct timeval *timestamp = nullptr);
+  std::mutex mutex;
   int fd;
 
   bool is_open = false;
