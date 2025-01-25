@@ -118,7 +118,7 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster):
   setup_onroad_wide(click, pm)
 
 def setup_body(click, pm: PubMaster):
-  DATA['carParams'].carParams.carName = "BODY"
+  DATA['carParams'].carParams.brand = "body"
   DATA['carParams'].carParams.notCar = True
   DATA['carState'].carState.charging = True
   DATA['carState'].carState.fuelGauge = 50.0
