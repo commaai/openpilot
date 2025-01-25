@@ -362,11 +362,11 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
-      if not (self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
+      if not (self.CP.brand == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
 
-      if self.CP.carName == "honda":
+      if self.CP.brand == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
 
@@ -421,7 +421,7 @@ class TestCarModelBase(unittest.TestCase):
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
         # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
         # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
-        if self.CP.carName == "honda" and not (self.CP.flags & HondaFlags.BOSCH):
+        if self.CP.brand == "honda" and not (self.CP.flags & HondaFlags.BOSCH):
           # only the rising edges are expected to match
           if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
             checks['controlsAllowed'] += not self.safety.get_controls_allowed()
@@ -443,7 +443,7 @@ class TestCarModelBase(unittest.TestCase):
         if button_enable and not mismatch:
           self.safety.set_controls_allowed(False)
 
-      if self.CP.carName == "honda":
+      if self.CP.brand == "honda":
         checks['mainOn'] += CS.cruiseState.available != self.safety.get_acc_main_on()
 
       CS_prev = CS
