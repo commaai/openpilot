@@ -8,7 +8,7 @@
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   adbToggle = new ParamControl("AdbEnabled", tr("Enable ADB"),
-            "ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.", "");
+            tr("ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info."), "");
   addItem(adbToggle);
 
   // SSH keys
