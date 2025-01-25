@@ -135,10 +135,6 @@
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation>Neste carro, o openpilot tem como padrão o ACC embutido do carro em vez do controle longitudinal do openpilot. Habilite isso para alternar para o controle longitudinal openpilot. Recomenda-se ativar o modo Experimental ao ativar o embrionário controle longitudinal openpilot.</translation>
     </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>O controle longitudinal openpilot poderá vir em uma atualização futura.</translation>
-    </message>
 </context>
 <context>
     <name>DevicePanel</name>

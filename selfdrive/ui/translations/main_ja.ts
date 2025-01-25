@@ -135,10 +135,6 @@
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
         <translation>この車では、openpilotは車両内蔵のACC(アダプティブクルーズコントロール)をデフォルトとして使用し、openpilotのアクセル制御は無効化されています。アクセル制御をopenpilotに切り替えるにはこの設定を有効にしてください。また同時にExperimentalモードを推奨します。</translation>
     </message>
-    <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>openpilotのアクセル制御は、将来のアップデートで利用できる可能性があります。</translation>
-    </message>
 </context>
 <context>
     <name>DevicePanel</name>
