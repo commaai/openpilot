@@ -19,13 +19,7 @@ concurrency:
 
 env:
   PYTHONWARNINGS: error
-  BASE_IMAGE: openpilot-base
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
-
-  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: selfdrive/test/docker_build.sh base
-
-  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
 
@@ -36,7 +30,7 @@ jobs:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || 'ubuntu-24.04' }}
     env:
-      STRIPPED_DIR: /tmp/releasepilot
+      STRIPPED_DIR: .ci_cache/releasepilot
     steps:
     - uses: actions/checkout@v4
       with:
@@ -59,12 +53,14 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "python3 system/manager/build.py"
+        .venv/bin/activate
+        python3 system/manager/build.py 
     - name: Run tests
       timeout-minutes: 1
       run: |
         cd $STRIPPED_DIR
-        ${{ env.RUN }} "release/check-dirty.sh"
+        .venv/bin/activate
+        release/check-dirty.sh
 
   build:
     runs-on:
@@ -74,11 +70,6 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Setup docker push
-      if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/openpilot'
-      run: |
-        echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
-        $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: 30
@@ -104,7 +95,7 @@ jobs:
     - name: Getting scons cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: /tmp/scons_cache
+        path: .ci_cache/scons_cache
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
@@ -122,7 +113,7 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Static analysis
       timeout-minutes: 1
-      run: ${{ env.RUN }} "scripts/lint/lint.sh"
+      run: scripts/lint/lint.sh
 
   unit_tests:
     name: unit tests
@@ -135,15 +126,18 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+      run: |
+        .venv/bin/activate
+        scons -j$(nproc)
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+        .venv/bin/activate
+        $PYTEST --collect-only -m 'not slow' &> /dev/null && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        chmod -R 777 /tmp/comma_download_cache"
+                        chmod -R 777 .ci_cache/comma_download_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -169,14 +163,16 @@ jobs:
         key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_processes.py') }}
     - name: Build openpilot
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+        .venv/bin/activate
+        scons -j$(nproc)
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache && \
+        .venv/bin/activate
+        coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        chmod -R 777 .ci_cache/comma_download_cache && \
                         coverage combine && \
-                        coverage xml"
+                        coverage xml
     - name: Print diff
       id: print-diff
       if: always()
@@ -190,13 +186,15 @@ jobs:
     - name: Upload reference logs
       if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
       run: |
-        ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
+        .venv/bin/activate
+        unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only
     - name: Run regen
       if: false
       timeout-minutes: 4
       run: |
-        ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
+        .venv/bin/activate
+        ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
+                        chmod -R 777 .ci_cache/comma_download_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -225,12 +223,15 @@ jobs:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
     - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
+      run: |
+        .venv/bin/activate
+        scons -j$(nproc)
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
+        .venv/bin/activate
+        MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
+                        chmod -R 777 .ci_cache/comma_download_cache
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
@@ -255,7 +256,8 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Get base car info
         run: |
-          ${{ env.RUN }} "scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
+          .venv/bin/activate
+          scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path .ci_cache/openpilot_cache/base_car_docs
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
@@ -266,8 +268,9 @@ jobs:
         id: save_diff
         run: |
           cd current
-          ${{ env.RUN }} "scons -j$(nproc)"
-          output=$(${{ env.RUN }} "python3 selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
+          .venv/bin/activate
+          scons -j$(nproc)
+          output=$(python3 selfdrive/debug/print_docs_diff.py --path .ci_cache/openpilot_cache/base_car_docs)
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
@@ -309,13 +312,15 @@ jobs:
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
+        .venv/bin/activate
+        scons -j$(nproc)
     - name: Driving test
       timeout-minutes: 1
       run: |
-        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
+        .venv/bin/activate
+        source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
+                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
@@ -335,14 +340,17 @@ jobs:
           path: .ci_cache/comma_download_cache
           key: ui_screenshots_test_${{ hashFiles('selfdrive/ui/tests/test_ui/run.py') }}
       - name: Build openpilot
-        run: ${{ env.RUN }} "scons -j$(nproc)"
+        run: 
+          .venv/bin/activate
+          scons -j$(nproc)
       - name: Create Test Report
         timeout-minutes: ${{ ((steps.frames-cache.outputs.cache-hit == 'true') && 1 || 3) }}
         run: >
-            ${{ env.RUN }} "PYTHONWARNINGS=ignore &&
+            .venv/bin/activate
+            PYTHONWARNINGS=ignore &&
                             source selfdrive/test/setup_xvfb.sh &&
-                            CACHE_ROOT=/tmp/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
-                            chmod -R 777 /tmp/comma_download_cache"
+                            CACHE_ROOT=.ci_cache/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
+                            chmod -R 777 .ci_cache/comma_download_cache
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
