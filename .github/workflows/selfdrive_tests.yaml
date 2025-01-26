@@ -113,7 +113,9 @@ jobs:
     - uses: ./.github/workflows/setup
     - name: Static analysis
       timeout-minutes: 1
-      run: scripts/lint/lint.sh
+      run: |
+        source .venv/bin/activate
+        scripts/lint/lint.sh
 
   unit_tests:
     name: unit tests
