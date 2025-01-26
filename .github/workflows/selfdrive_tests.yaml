@@ -342,7 +342,7 @@ jobs:
           path: .ci_cache/comma_download_cache
           key: ui_screenshots_test_${{ hashFiles('selfdrive/ui/tests/test_ui/run.py') }}
       - name: Build openpilot
-        run: 
+        run: |
           source .venv/bin/activate
           scons -j$(nproc)
       - name: Create Test Report
