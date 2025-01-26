@@ -37,6 +37,26 @@ runs:
         sudo apt-get install -y --no-install-recommends \
           ${{ steps.apt-packages.outputs.packages }}
 
+    - name: Install OpenCL dependencies
+      shell: bash
+      run: |
+        mkdir -p /tmp/opencl-driver-intel
+        cd /tmp/opencl-driver-intel
+        wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz
+        wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz
+
+        sudo mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel
+        sudo tar -zxvf oclcpuexp-2024.17.3.0.09_rel.tar.gz -C /opt/intel/oclcpuexp_2024.17.3.0.09_rel
+        sudo mkdir -p /etc/OpenCL/vendors
+        echo '/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so' | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
+
+        sudo tar -zxvf oneapi-tbb-2021.12.0-lin.tgz -C /opt/intel
+        sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
+        sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
+
+        echo '/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64' | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
+        sudo ldconfig
+
     - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
