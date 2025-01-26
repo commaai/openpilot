@@ -37,22 +37,45 @@ runs:
         sudo apt-get install -y --no-install-recommends \
           ${{ steps.apt-packages.outputs.packages }}
 
-    - name: Install OpenCL dependencies
+
+    - name: OpenCL driver
       shell: bash
       run: |
-        # Install Xvfb and dependencies
-        sudo apt-get update
-        sudo apt-get install -y xvfb mesa-utils libgl1-mesa-dri libxkbcommon-x11-0 
-        sudo apt-get install -y dbus-x11 network-manager
+        sudo apt-get install -y wget tar dbus
 
-        # Start Xvfb with larger screen and 24-bit color
-        Xvfb :99 -screen 0 1280x720x24 -ac +extension GLX +render -noreset &
-        echo "DISPLAY=:99" >> $GITHUB_ENV
+        # Download packages
+        mkdir -p /tmp/opencl-driver-intel
+        cd /tmp/opencl-driver-intel
+        wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz
+        wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz
 
-        # Configure environment variables
-        echo "LIBGL_ALWAYS_SOFTWARE=1" >> $GITHUB_ENV
-        echo "MESA_GL_VERSION_OVERRIDE=3.3" >> $GITHUB_ENV
-        echo "QT_QPA_PLATFORM=offscreen" >> $GITHUB_ENV
+        # Install OpenCL driver
+        sudo mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel
+        sudo tar -zxvf oclcpuexp-2024.17.3.0.09_rel.tar.gz -C /opt/intel/oclcpuexp_2024.17.3.0.09_rel
+
+        # Configure OpenCL
+        sudo mkdir -p /etc/OpenCL/vendors
+        echo '/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so' | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
+
+        # Install TBB
+        sudo tar -zxvf oneapi-tbb-2021.12.0-lin.tgz -C /opt/intel
+
+        # Create library symlinks
+        TBB_LIB_DIR="/opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8"
+        OCL_DIR="/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64"
+
+        sudo ln -s ${TBB_LIB_DIR}/libtbb.so ${OCL_DIR}/
+        sudo ln -s ${TBB_LIB_DIR}/libtbbmalloc.so ${OCL_DIR}/
+        sudo ln -s ${TBB_LIB_DIR}/libtbb.so.12 ${OCL_DIR}/
+        sudo ln -s ${TBB_LIB_DIR}/libtbbmalloc.so.2 ${OCL_DIR}/
+
+        # Configure linker
+        sudo mkdir -p /etc/ld.so.conf.d
+        echo '/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64' | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
+        sudo ldconfig
+
+        # Cleanup
+        sudo rm -rf /tmp/opencl-driver-intel
 
     - uses: astral-sh/setup-uv@v4
       with:
