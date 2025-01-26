@@ -23,8 +23,10 @@ class Scenario(Enum):
   BASE = 'base'
   GYRO_OFF = 'gyro_off'
   GYRO_SPIKE_MIDWAY = 'gyro_spike_midway'
+  GYRO_CONSISTENT_SPIKES = 'gyro_consistent_spikes'
   ACCEL_OFF = 'accel_off'
   ACCEL_SPIKE_MIDWAY = 'accel_spike_midway'
+  ACCEL_CONSISTENT_SPIKES = 'accel_consistent_spikes'
   SENSOR_TIMING_SPIKE_MIDWAY = 'timing_spikes'
   SENSOR_TIMING_CONSISTENT_SPIKES = 'timing_consistent_spikes'
 
@@ -63,18 +65,20 @@ def run_scenarios(scenario, logs):
   elif scenario == Scenario.GYRO_OFF:
     logs = sorted([x for x in logs if x.which() != 'gyroscope'], key=lambda x: x.logMonoTime)
 
-  elif scenario == Scenario.GYRO_SPIKE_MIDWAY:
+  elif scenario == Scenario.GYRO_SPIKE_MIDWAY or scenario == Scenario.GYRO_CONSISTENT_SPIKES:
     def gyro_spike(msg):
       msg.gyroscope.gyroUncalibrated.v[0] += 3.0
-    logs = modify_logs_midway(logs, 'gyroscope', 1, gyro_spike)
+    count = 1 if scenario == Scenario.GYRO_SPIKE_MIDWAY else CONSISTENT_SPIKES_COUNT
+    logs = modify_logs_midway(logs, 'gyroscope', count, gyro_spike)
 
   elif scenario == Scenario.ACCEL_OFF:
     logs = sorted([x for x in logs if x.which() != 'accelerometer'], key=lambda x: x.logMonoTime)
 
-  elif scenario == Scenario.ACCEL_SPIKE_MIDWAY:
+  elif scenario == Scenario.ACCEL_SPIKE_MIDWAY or scenario == Scenario.ACCEL_CONSISTENT_SPIKES:
     def acc_spike(msg):
-      msg.accelerometer.acceleration.v[0] += 10.0
-    logs = modify_logs_midway(logs, 'accelerometer', 1, acc_spike)
+      msg.accelerometer.acceleration.v[0] += 100.0
+    count = 1 if scenario == Scenario.ACCEL_SPIKE_MIDWAY else CONSISTENT_SPIKES_COUNT
+    logs = modify_logs_midway(logs, 'accelerometer', count, acc_spike)
 
   elif scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY or scenario == Scenario.SENSOR_TIMING_CONSISTENT_SPIKES:
     def timing_spike(msg):
@@ -121,7 +125,7 @@ class TestLocationdScenarios:
     assert np.allclose(replayed_data['roll'], 0.0)
     assert np.all(replayed_data['sensors_flag'] == 0.0)
 
-  def test_gyro_spikes(self):
+  def test_gyro_spike(self):
     """
     Test: a gyroscope spike in the middle of the segment
     Expected Result:
@@ -132,8 +136,17 @@ class TestLocationdScenarios:
     orig_data, replayed_data = run_scenarios(Scenario.GYRO_SPIKE_MIDWAY, self.logs)
     assert np.allclose(orig_data['yaw_rate'], replayed_data['yaw_rate'], atol=np.radians(0.35))
     assert np.allclose(orig_data['roll'], replayed_data['roll'], atol=np.radians(0.55))
-    assert np.diff(replayed_data['inputs_flag'])[499] == -1.0
-    assert np.diff(replayed_data['inputs_flag'])[704] == 1.0
+    assert np.all(replayed_data['inputs_flag'] == orig_data['inputs_flag'])
+    assert np.all(replayed_data['sensors_flag'] == orig_data['sensors_flag'])
+
+  def test_consistent_gyro_spikes(self):
+    """
+    Test: consistent timing spikes for N gyroscope messages in the middle of the segment
+    Expected Result: inputsOK becomes False after N of bad measurements
+    """
+    orig_data, replayed_data = run_scenarios(Scenario.GYRO_CONSISTENT_SPIKES, self.logs)
+    assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
+    assert np.diff(replayed_data['inputs_flag'])[708] == 1.0
 
   def test_accel_off(self):
     """
@@ -148,7 +161,7 @@ class TestLocationdScenarios:
     assert np.allclose(replayed_data['roll'], 0.0)
     assert np.all(replayed_data['sensors_flag'] == 0.0)
 
-  def test_accel_spikes(self):
+  def test_accel_spike(self):
     """
     ToDo:
     Test: an accelerometer spike in the middle of the segment
@@ -173,5 +186,5 @@ class TestLocationdScenarios:
     Expected Result: inputsOK becomes False after N of bad measurements
     """
     orig_data, replayed_data = run_scenarios(Scenario.SENSOR_TIMING_CONSISTENT_SPIKES, self.logs)
-    assert np.diff(replayed_data['inputs_flag'])[500] == -1.0
-    assert np.diff(replayed_data['inputs_flag'])[787] == 1.0
+    assert np.diff(replayed_data['inputs_flag'])[501] == -1.0
+    assert np.diff(replayed_data['inputs_flag'])[707] == 1.0

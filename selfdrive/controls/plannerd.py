@@ -14,7 +14,7 @@ def main():
   cloudlog.info("plannerd is waiting for CarParams")
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
-  cloudlog.info("plannerd got CarParams: %s", CP.carName)
+  cloudlog.info("plannerd got CarParams: %s", CP.brand)
 
   ldw = LaneDepartureWarning()
   longitudinal_planner = LongitudinalPlanner(CP)
