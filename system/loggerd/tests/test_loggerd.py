@@ -184,11 +184,11 @@ class TestLoggerd:
       diff = logged ^ expected_files
       assert len(diff) == 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}"
 
-  def test_bootlog(self):
+def test_bootlog(self):
     # generate bootlog with fake launch log
     launch_log = ''.join(str(random.choice(string.printable)) for _ in range(100))
     with open("/tmp/launch_log", "w") as f:
-      f.write(launch_log)
+        f.write(launch_log)
 
     bootlog_path = self._gen_bootlog()
     lr = list(LogReader(str(bootlog_path)))
@@ -208,12 +208,16 @@ class TestLoggerd:
     assert boot.launchLog == launch_log
 
     for fn in ["console-ramoops", "pmsg-ramoops-0"]:
-      path = Path(os.path.join("/sys/fs/pstore/", fn))
-      if path.is_file():
-        with open(path, "rb") as f:
-          expected_val = f.read()
-        bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
-        assert expected_val == bootlog_val
+        path = Path(os.path.join("/sys/fs/pstore/", fn))
+        try:
+            file_exists = path.is_file()
+        except PermissionError:
+            file_exists = False
+        if file_exists:
+            with open(path, "rb") as f:
+                expected_val = f.read()
+            bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
+            assert expected_val == bootlog_val
 
     # next one should increment by one
     bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
