@@ -13,6 +13,7 @@ runs:
     - shell: bash
       run: |
         git lfs pull
+        chmod +x .github/workflows/setup/a.sh
         sudo .github/workflows/setup/a.sh
 
     - uses: astral-sh/setup-uv@v4
