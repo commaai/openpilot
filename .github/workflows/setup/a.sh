@@ -26,25 +26,32 @@ sudo rm -rf /var/lib/apt/lists/* /tmp/*
 # Remove unnecessary GCC components
 sudo rm -rf /usr/lib/gcc/arm-none-eabi/*/{arm,thumb/nofp,thumb/v6*,thumb/v8*,thumb/v7*}
 
-# OpenCL dependencies
+# OpenCL dependencies - Fixed version
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
+    ocl-icd-opencl-dev \  # Added critical package
     alien unzip tar curl xz-utils dbus \
     gcc-arm-none-eabi tmux vim libx11-6 wget
 
-# Intel OpenCL driver setup
+# Intel OpenCL driver setup - Fixed directory creation
 mkdir -p /tmp/opencl-driver-intel
 pushd /tmp/opencl-driver-intel
+
 wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz
 wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tbb-2021.12.0-lin.tgz
 
 sudo mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel
 sudo tar -zxvf oclcpuexp-2024.17.3.0.09_rel.tar.gz -C /opt/intel/oclcpuexp_2024.17.3.0.09_rel
+
+# Create vendors directory explicitly
+sudo mkdir -p /etc/OpenCL/vendors  # Critical fix
 echo "/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so" | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
 
+# Remainder of TBB setup
 sudo tar -zxvf oneapi-tbb-2021.12.0-lin.tgz -C /opt/intel
-sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb* /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/
+sudo ln -sv /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb* /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/
 
+# Final configuration
 echo "/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64" | sudo tee /etc/ld.so.conf.d/libintelopenclexp.conf
 sudo ldconfig
 popd
