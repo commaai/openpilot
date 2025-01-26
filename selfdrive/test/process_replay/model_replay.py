@@ -8,6 +8,7 @@ from itertools import zip_longest
 
 import matplotlib.pyplot as plt
 import numpy as np
+from tabulate import tabulate
 
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
@@ -30,6 +31,11 @@ API_TOKEN = os.getenv("GITHUB_COMMENTS_TOKEN","")
 MODEL_REPLAY_BUCKET="model_replay_master"
 GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
+EXEC_TIMINGS = [
+  # model, instant max, average max
+  ("modelV2", 0.03, 0.025),
+  ("driverStateV2", 0.02, 0.015),
+]
 
 def get_log_fn(test_route, ref="master"):
   return f"{test_route}_model_tici_{ref}.zst"
@@ -156,7 +162,33 @@ def model_replay(lr, frs):
     del frs['roadCameraState'].frames
     del frs['wideRoadCameraState'].frames
   dmonitoringmodeld_msgs = replay_process(dmonitoringmodeld, dmodeld_logs, frs)
-  return modeld_msgs + dmonitoringmodeld_msgs
+
+  msgs = modeld_msgs + dmonitoringmodeld_msgs
+
+  header = ['model', 'max instant', 'max instant allowed', 'average', 'max average allowed', 'test result']
+  rows = []
+  timings_ok = True
+  for (s, instant_max, avg_max) in EXEC_TIMINGS:
+    ts = [getattr(m, s).modelExecutionTime for m in msgs if m.which() == s]
+    # TODO some init can happen in first iteration
+    ts = ts[1:]
+
+    errors = []
+    if np.max(ts) > instant_max:
+      errors.append("❌ FAILED MAX TIMING CHECK ❌")
+    if np.mean(ts) > avg_max:
+      errors.append("❌ FAILED AVG TIMING CHECK ❌")
+
+    timings_ok = not errors and timings_ok
+    rows.append([s, np.max(ts), instant_max, np.mean(ts), avg_max, "\n".join(errors) or "✅"])
+
+  print("------------------------------------------------")
+  print("----------------- Model Timing -----------------")
+  print("------------------------------------------------")
+  print(tabulate(rows, header, tablefmt="simple_grid", stralign="center", numalign="center", floatfmt=".4f"))
+  assert timings_ok
+
+  return msgs
 
 
 def get_frames():

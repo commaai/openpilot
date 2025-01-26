@@ -56,7 +56,7 @@ class ModularAssistiveDrivingSystem:
     self.events = self.selfdrive.events
     self.events_sp = self.selfdrive.events_sp
 
-    if self.selfdrive.CP.carName == "hyundai":
+    if self.selfdrive.CP.brand == "hyundai":
       if (self.selfdrive.CP_SP.flags & HyundaiFlagsSP.HAS_LFA_BUTTON) or \
             (self.selfdrive.CP.flags & HyundaiFlags.CANFD):
         self.allow_always = True

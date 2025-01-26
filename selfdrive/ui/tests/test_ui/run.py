@@ -9,7 +9,7 @@ import pyautogui
 import pickle
 import time
 
-from cereal import log
+from cereal import car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal.messaging import PubMaster, log_from_bytes, sub_sock
 from openpilot.common.basedir import BASEDIR
@@ -59,6 +59,10 @@ def setup_settings_software(click, pm: PubMaster, scroll=None):
   time.sleep(UI_DELAY)
 
 def setup_settings_developer(click, pm: PubMaster, scroll=None):
+  CP = car.CarParams()
+  CP.experimentalLongitudinalAvailable = True
+  Params().put("CarParamsPersistent", CP.to_bytes())
+
   setup_settings_device(click, pm)
   scroll(-400, 278, 962)
   click(278, 970)
@@ -123,7 +127,7 @@ def setup_onroad_wide_sidebar(click, pm: PubMaster, scroll=None):
   setup_onroad_wide(click, pm)
 
 def setup_body(click, pm: PubMaster, scroll=None):
-  DATA['carParams'].carParams.carName = "BODY"
+  DATA['carParams'].carParams.brand = "body"
   DATA['carParams'].carParams.notCar = True
   DATA['carState'].carState.charging = True
   DATA['carState'].carState.fuelGauge = 50.0
@@ -131,9 +135,9 @@ def setup_body(click, pm: PubMaster, scroll=None):
 
 def setup_keyboard(click, pm: PubMaster, scroll=None):
   setup_settings_device(click, pm)
-  scroll(-100, 278, 962)
+  scroll(-400, 278, 962)
   click(278, 970)
-  click(1930, 228)
+  click(1930, 390)
 
 def setup_keyboard_uppercase(click, pm: PubMaster, scroll=None):
   setup_keyboard(click, pm, scroll)

@@ -29,6 +29,22 @@ Here's an example command for connecting to your device using its tethered conne
 
 For doing development work on device, it's recommended to use [SSH agent forwarding](https://docs.github.com/en/developers/overview/using-ssh-agent-forwarding).
 
+
+## ADB
+
+In order to use ADB on your device, you'll need to enable it in the device's settings.
+
+* Enable ADB in your device's settings
+* Connect to your device
+    * `adb shell` over USB
+    * `adb connect` over WiFi
+    * Here's an example command for connecting to your device using its tethered connection: `adb connect 192.168.43.1:5555`
+
+> [!NOTE]
+> The default port for ADB is 5555 on the comma 3/3X.
+
+For more info on ADB, see the [Android Debug Bridge (ADB) documentation](https://developer.android.com/tools/adb).
+
 ### Notes
 
 The public keys are only fetched from your GitHub account once. In order to update your device's authorized keys, you'll need to re-enter your GitHub username.

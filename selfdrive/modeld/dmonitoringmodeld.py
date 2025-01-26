@@ -26,6 +26,7 @@ from openpilot.common.transformations.model import dmonitoringmodel_intrinsics, 
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
+from openpilot.system import sentry
 
 MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
 CALIB_LEN = 3
@@ -36,6 +37,7 @@ PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 MODEL_PATH = Path(__file__).parent / 'models/dmonitoring_model.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
+
 
 class DriverStateResult(ctypes.Structure):
   _fields_ = [
@@ -55,6 +57,7 @@ class DriverStateResult(ctypes.Structure):
     ("ready_prob", ctypes.c_float*4),
     ("not_ready_prob", ctypes.c_float*2)]
 
+
 class DMonitoringModelResult(ctypes.Structure):
   _fields_ = [
     ("driver_state_lhd", DriverStateResult),
@@ -62,6 +65,7 @@ class DMonitoringModelResult(ctypes.Structure):
     ("poor_vision_prob", ctypes.c_float),
     ("wheel_on_right_prob", ctypes.c_float),
     ("features", ctypes.c_float*FEATURE_LEN)]
+
 
 class ModelState:
   inputs: dict[str, np.ndarray]
@@ -82,7 +86,7 @@ class ModelState:
     else:
       self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
-  def run(self, buf:VisionBuf, calib:np.ndarray, transform:np.ndarray) -> tuple[np.ndarray, float]:
+  def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
 
     t1 = time.perf_counter()
@@ -119,6 +123,7 @@ def fill_driver_state(msg, ds_result: DriverStateResult):
   msg.readyProb = [float(sigmoid(x)) for x in ds_result.ready_prob]
   msg.notReadyProb = [float(sigmoid(x)) for x in ds_result.not_ready_prob]
 
+
 def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts: int, execution_time: float, gpu_execution_time: float):
   model_result = ctypes.cast(model_output.ctypes.data, ctypes.POINTER(DMonitoringModelResult)).contents
   msg = messaging.new_message('driverStateV2', valid=True)
@@ -138,6 +143,9 @@ def main():
   gc.disable()
   setproctitle(PROCESS_NAME)
   set_realtime_priority(1)
+
+  sentry.set_tag("daemon", PROCESS_NAME)
+  cloudlog.bind(daemon=PROCESS_NAME)
 
   cl_context = CLContext()
   model = ModelState(cl_context)
@@ -177,4 +185,10 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
+  except Exception:
+    sentry.capture_exception()
+    raise

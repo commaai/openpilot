@@ -258,6 +258,10 @@ int SpectraCamera::clear_req_queue() {
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   // LOGD("flushed all req: %d", ret);
+
+  for (int i = 0; i < MAX_IFE_BUFS; ++i) {
+    destroySyncObjectAt(i);
+  }
   return ret;
 }
 
@@ -689,16 +693,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       buf.queue(i);
     }
 
-    // destroy old output fence
-    for (auto so : {sync_objs, sync_objs_bps_out}) {
-      if (so[i] == 0) continue;
-      struct cam_sync_info sync_destroy = {0};
-      sync_destroy.sync_obj = so[i];
-      ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
-      if (ret != 0) {
-        LOGE("failed to destroy sync object: %d %d", ret, sync_destroy.sync_obj);
-      }
-    }
+    destroySyncObjectAt(i);
   }
 
   // create output fences
@@ -734,6 +729,23 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   // submit request to IFE and BPS
   config_ife(i, request_id);
   config_bps(i, request_id);
+}
+
+void SpectraCamera::destroySyncObjectAt(int index) {
+  auto destroy_sync_obj = [](int cam_sync_fd, int32_t &sync_obj) {
+    if (sync_obj == 0) return;
+
+    struct cam_sync_info sync_destroy = {.sync_obj = sync_obj};
+    int ret = do_sync_control(cam_sync_fd, CAM_SYNC_DESTROY, &sync_destroy, sizeof(sync_destroy));
+    if (ret != 0) {
+      LOGE("Failed to destroy sync object: %d, sync_obj: %d", ret, sync_destroy.sync_obj);
+    }
+
+    sync_obj = 0;  // Reset the sync object to 0
+  };
+
+  destroy_sync_obj(m->cam_sync_fd, sync_objs[index]);
+  destroy_sync_obj(m->cam_sync_fd, sync_objs_bps_out[index]);
 }
 
 void SpectraCamera::camera_map_bufs() {

@@ -8,6 +8,7 @@
 #include <QWidget>
 
 #include "selfdrive/ui/ui.h"
+#include "selfdrive/ui/qt/offroad/driverview.h"
 
 #ifdef SUNNYPILOT
 #include "selfdrive/ui/sunnypilot/qt/widgets/controls.h"
@@ -40,6 +41,7 @@ signals:
 
 public slots:
   void offroadTransition(bool offroad);
+  void showDriverView(bool show);
   void showSidebar(bool show);
 
 protected:
@@ -50,6 +52,7 @@ protected:
   OffroadHome *home;
   OnroadWindow *onroad;
   BodyWindow *body;
+  DriverViewWindow *driver_view;
   QStackedLayout *slayout;
 
 protected slots:

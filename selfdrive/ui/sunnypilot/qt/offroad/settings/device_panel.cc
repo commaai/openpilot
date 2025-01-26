@@ -8,7 +8,6 @@
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/device_panel.h"
 
 #include "common/watchdog.h"
-#include "selfdrive/ui/qt/offroad/driverview.h"
 #include "selfdrive/ui/qt/qt_window.h"
 
 DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
@@ -41,12 +40,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
     }
   }
 
-  connect(buttons["dcamBtn"], &PushButtonSP::clicked, [this]() {
-    buttons["dcamBtn"]->setEnabled(false);
-    DriverViewDialog driver_view(this);
-    driver_view.exec();
-    buttons["dcamBtn"]->setEnabled(true);
-  });
+  connect(buttons["dcamBtn"], &PushButtonSP::clicked, [=]() { emit showDriverView(); });
 
   connect(buttons["retrainingBtn"], &PushButtonSP::clicked, [=]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {

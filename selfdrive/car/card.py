@@ -199,7 +199,7 @@ class Car:
 
     # Update carState from CAN
     CS = self.CI.update(can_list)
-    if self.CP.carName == 'mock':
+    if self.CP.brand == 'mock':
       CS = self.mock_carstate.update(CS)
 
     # Update radar tracks from CAN

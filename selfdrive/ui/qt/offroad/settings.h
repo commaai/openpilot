@@ -40,6 +40,7 @@ protected:
 signals:
   void closeSettings();
   void reviewTrainingGuide();
+  void showDriverView();
   void expandToggleDescription(const QString &param);
 
 protected:
@@ -56,6 +57,7 @@ public:
 
 signals:
   void reviewTrainingGuide();
+  void showDriverView();
 
 protected slots:
   void poweroff();
