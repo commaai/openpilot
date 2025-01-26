@@ -8,6 +8,7 @@ import uuid
 import socket
 import logging
 import traceback
+import numpy as np
 from threading import local
 from collections import OrderedDict
 from contextlib import contextmanager
@@ -15,6 +16,8 @@ from contextlib import contextmanager
 LOG_TIMESTAMPS = "LOG_TIMESTAMPS" in os.environ
 
 def json_handler(obj):
+  if isinstance(obj, np.bool_):
+    return bool(obj)
   # if isinstance(obj, (datetime.date, datetime.time)):
   #   return obj.isoformat()
   return repr(obj)

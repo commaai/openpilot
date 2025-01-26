@@ -49,7 +49,7 @@ class MadsParams:
         CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISENGAGE_LATERAL_ON_BRAKE
 
   def set_car_specific_params(self, CP, CP_SP):
-    if CP.carName == "hyundai":
+    if CP.brand == "hyundai":
       # TODO-SP: This should be separated from MADS module for future implementations
       #          Use "HyundaiLongitudinalMainCruiseToggleable" param
       hyundai_cruise_main_toggleable = True
@@ -59,5 +59,5 @@ class MadsParams:
 
     # MADS is currently not supported in Tesla due to lack of consistent states to engage controls
     # TODO-SP: To enable MADS for Tesla, identify consistent signals for MADS toggling
-    if CP.carName == "tesla":
+    if CP.brand == "tesla":
       self.params.remove("Mads")

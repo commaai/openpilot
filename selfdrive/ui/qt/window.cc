@@ -23,6 +23,9 @@ MainWindow::MainWindow(QWidget *parent, HomeWindow *hw, SettingsWindow *sw) :
     onboardingWindow->showTrainingGuide();
     main_layout->setCurrentWidget(onboardingWindow);
   });
+  QObject::connect(settingsWindow, &SettingsWindow::showDriverView, [=] {
+    homeWindow->showDriverView(true);
+  });
 
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);

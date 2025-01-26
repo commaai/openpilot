@@ -24,12 +24,14 @@ MIN_STD_SANITY_CHECK = 1e-5  # m or rad
 MAX_FILTER_REWIND_TIME = 0.8  # s
 MAX_SENSOR_TIME_DIFF = 0.1  # s
 YAWRATE_CROSS_ERR_CHECK_FACTOR = 30
-INPUT_INVALID_THRESHOLD = 0.5  # 0 bad inputs ignored
-TIMING_INVALID_THRESHOLD = 2.5  # 2 bad timings ignored
-INPUT_INVALID_DECAY = 0.9993  # ~10 secs to resume after exceeding allowed bad inputs by one (at 100hz)
-TIMING_INVALID_DECAY = 0.9990  # ~2 secs to resume after exceeding allowed bad timings by one (at 100hz)
+INPUT_INVALID_LIMIT = 2.0 # 1 (camodo) / 9 (sensor) bad input[s] ignored
+INPUT_INVALID_RECOVERY = 10.0 # ~10 secs to resume after exceeding allowed bad inputs by one
 POSENET_STD_INITIAL_VALUE = 10.0
 POSENET_STD_HIST_HALF = 20
+
+
+def calculate_invalid_input_decay(invalid_limit, recovery_time, frequency):
+  return (1 - 1 / (2 * invalid_limit)) ** (1 / (recovery_time * frequency))
 
 
 def init_xyz_measurement(measurement: capnp._DynamicStructBuilder, values: np.ndarray, stds: np.ndarray, valid: bool):
@@ -269,11 +271,11 @@ def main():
 
   filter_initialized = False
   critcal_services = ["accelerometer", "gyroscope", "cameraOdometry"]
-  observation_timing_invalid = defaultdict(int)
   observation_input_invalid = defaultdict(int)
 
-  input_invalid_decay = {s: INPUT_INVALID_DECAY ** (100. / SERVICE_LIST[s].frequency) for s in critcal_services}
-  timing_invalid_decay = {s: TIMING_INVALID_DECAY ** (100. / SERVICE_LIST[s].frequency) for s in critcal_services}
+  input_invalid_limit = {s: round(INPUT_INVALID_LIMIT * (SERVICE_LIST[s].frequency / 20.)) for s in critcal_services}
+  input_invalid_threshold = {s: input_invalid_limit[s] - 0.5 for s in critcal_services}
+  input_invalid_decay = {s: calculate_invalid_input_decay(input_invalid_limit[s], INPUT_INVALID_RECOVERY, SERVICE_LIST[s].frequency) for s in critcal_services}
 
   initial_pose = params.get("LocationFilterInitialState")
   if initial_pose is not None:
@@ -306,19 +308,20 @@ def main():
             continue
 
           if res == HandleLogResult.TIMING_INVALID:
-            observation_timing_invalid[which] += 1
+            print(f"Observation {which} ignored due to failed timing check")
+            observation_input_invalid[which] += 1
+            print(observation_input_invalid[which])
           elif res == HandleLogResult.INPUT_INVALID:
+            print(f"Observation {which} ignored due to failed sanity check")
             observation_input_invalid[which] += 1
           else:
             observation_input_invalid[which] *= input_invalid_decay[which]
-            observation_timing_invalid[which] *= timing_invalid_decay[which]
     else:
       filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
     if sm.updated["cameraOdometry"]:
-      critical_service_inputs_valid = all(observation_input_invalid[s] < INPUT_INVALID_THRESHOLD for s in critcal_services)
-      critical_service_timing_valid = all(observation_timing_invalid[s] < TIMING_INVALID_THRESHOLD for s in critcal_services)
-      inputs_valid = sm.all_valid() and critical_service_inputs_valid and critical_service_timing_valid
+      critical_service_inputs_valid = all(observation_input_invalid[s] < input_invalid_threshold[s] for s in critcal_services)
+      inputs_valid = sm.all_valid() and critical_service_inputs_valid
       sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)

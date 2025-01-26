@@ -27,7 +27,7 @@ class CarSpecificEventsSP:
 
   def update(self):
     events = EventsSP()
-    if self.CP.carName == 'hyundai':
+    if self.CP.brand == 'hyundai':
       if self.hyundai_radar_tracks and not self.hyundai_radar_tracks_confirmed:
         events.add(EventNameSP.hyundaiRadarTracksConfirmed)
 

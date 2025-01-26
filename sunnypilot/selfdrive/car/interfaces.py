@@ -19,11 +19,11 @@ def log_fingerprint(CP: structs.CarParams) -> None:
   if CP.carFingerprint == "MOCK":
     sentry.capture_fingerprint_mock()
   else:
-    sentry.capture_fingerprint(CP.carFingerprint, CP.carName)
+    sentry.capture_fingerprint(CP.carFingerprint, CP.brand)
 
 
 def setup_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params):
-  if CP.carName == 'hyundai':
+  if CP.brand == 'hyundai':
     if CP.flags & HyundaiFlags.MANDO_RADAR and CP.radarUnavailable:
       # Having this automatic without a toggle causes a weird process replay diff because
       # somehow it sees fewer logs than intended
@@ -35,7 +35,7 @@ def setup_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, pa
 
 def initialize_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params, can_recv: CanRecvCallable,
                                 can_send: CanSendCallable):
-  if CP.carName == 'hyundai':
+  if CP.brand == 'hyundai':
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       can_recv()
       _, fingerprint = can_fingerprint(can_recv)

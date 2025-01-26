@@ -1,3 +1,5 @@
+#pragma once
+
 #include "cdm.h"
 
 #include "system/camerad/cameras/tici.h"
