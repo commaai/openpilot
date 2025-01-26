@@ -40,7 +40,7 @@ wget https://github.com/oneapi-src/oneTBB/releases/download/v2021.12.0/oneapi-tb
 
 sudo mkdir -p /opt/intel/oclcpuexp_2024.17.3.0.09_rel
 sudo tar -zxvf oclcpuexp-2024.17.3.0.09_rel.tar.gz -C /opt/intel/oclcpuexp_2024.17.3.0.09_rel
-echo "/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so" | sudo tee /etc/OpenCL/vendors/intel_expcpu.icd
+echo "/opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so"
 
 sudo tar -zxvf oneapi-tbb-2021.12.0-lin.tgz -C /opt/intel
 sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb* /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/
