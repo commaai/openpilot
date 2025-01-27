@@ -38,3 +38,4 @@ qtbase5-dev-tools
 qtchooser
 qttools5-dev-tools
 x11-xserver-utils
+
