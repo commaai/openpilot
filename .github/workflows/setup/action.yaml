@@ -1,10 +1,10 @@
-name: 'openpilot env setup'
+name: "openpilot env setup"
 
 inputs:
   is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    description: "A mock param that asserts that we use the setup-with-retry instead of this action directly"
     required: false
-    default: 'false'
+    default: "false"
 
 runs:
   using: "composite"
@@ -51,8 +51,9 @@ runs:
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
+    # install dependencies
     - name: Read APT packages list
+      if: github.ref == 'refs/heads/master' && contains(github.event.commits.*.modified, '.github/workflows/setup/apt-packages.txt')
       id: apt-packages
       shell: bash
       run: |
@@ -60,6 +61,7 @@ runs:
         echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
 
     - name: Cache APT packages
+      if: github.ref == 'refs/heads/master' && contains(github.event.commits.*.modified, '.github/workflows/setup/apt-packages.txt')
       id: cache-apt
       uses: awalsh128/cache-apt-pkgs-action@v1.4.0
       with:
@@ -68,7 +70,7 @@ runs:
         debug: true
 
     - name: Install APT Dependencies
-      if: steps.cache-apt.outputs.cache-hit != 'true'
+      if: steps.cache-apt.outputs.cache-hit != 'true' || contains(github.event.commits.*.modified, '.github/workflows/setup/apt-packages.txt')
       shell: bash
       run: |
         sudo apt-get update
