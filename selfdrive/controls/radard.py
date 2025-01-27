@@ -13,7 +13,7 @@ from openpilot.common.simple_kalman import KF1D
 
 
 # Default lead acceleration decay set to 50% at 1s
-_LEAD_ACCEL_TAU = 1.5
+_LEAD_ACCEL_TAU = 1.4
 
 # radar tracks
 SPEED, ACCEL = 0, 1     # Kalman filter states enum
