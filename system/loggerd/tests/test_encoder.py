@@ -1,283 +1,150 @@
-import numpy as np
+import math
 import os
-import re
+import pytest
 import random
-import string
+import shutil
 import subprocess
 import time
-from collections import defaultdict
 from pathlib import Path
-import pytest
 
-import cereal.messaging as messaging
-from cereal import log
-from cereal.services import SERVICE_LIST
-from openpilot.common.basedir import BASEDIR
+from parameterized import parameterized
+from tqdm import trange
+
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
-from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.xattr_cache import getxattr
-from openpilot.system.loggerd.deleter import PRESERVE_ATTR_NAME, PRESERVE_ATTR_VALUE
+from openpilot.system.hardware import TICI
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.system.version import get_version
-from openpilot.tools.lib.helpers import RE
 from openpilot.tools.lib.logreader import LogReader
-from msgq.visionipc import VisionIpcServer, VisionStreamType
-from openpilot.common.transformations.camera import DEVICE_CAMERAS
+from openpilot.system.hardware.hw import Paths
 
-SentinelType = log.Sentinel.SentinelType
+SEGMENT_LENGTH = 2
+FULL_SIZE = 2507572
+CAMERAS = [
+  ("fcamera.hevc", 20, FULL_SIZE, "roadEncodeIdx"),
+  ("dcamera.hevc", 20, FULL_SIZE, "driverEncodeIdx"),
+  ("ecamera.hevc", 20, FULL_SIZE, "wideRoadEncodeIdx"),
+  ("qcamera.ts", 20, 130000, None),
+]
 
-CEREAL_SERVICES = [f for f in log.Event.schema.union_fields if f in SERVICE_LIST
-                   and SERVICE_LIST[f].should_log and "encode" not in f.lower()]
+# we check frame count, so we don't have to be too strict on size
+FILE_SIZE_TOLERANCE = 0.7
 
 
-class TestLoggerd:
-  def _get_latest_log_dir(self):
-    log_dirs = sorted(Path(Paths.log_root()).iterdir(), key=lambda f: f.stat().st_mtime)
-    return log_dirs[-1]
+@pytest.mark.tici # TODO: all of loggerd should work on PC
+class TestEncoder:
 
-  def _get_log_dir(self, x):
-    for l in x.splitlines():
-      for p in l.split(' '):
-        path = Path(p.strip())
-        if path.is_dir():
-          return path
-    return None
-
-  def _get_log_fn(self, x):
-    for l in x.splitlines():
-      for p in l.split(' '):
-        path = Path(p.strip())
-        if path.is_file():
-          return path
-    return None
-
-  def _gen_bootlog(self):
-    with Timeout(5):
-      out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"), encoding='utf-8')
-
-    log_fn = self._get_log_fn(out)
-
-    # check existence
-    assert log_fn is not None
-
-    return log_fn
-
-  def _check_init_data(self, msgs):
-    msg = msgs[0]
-    assert msg.which() == 'initData'
-
-  def _check_sentinel(self, msgs, route):
-    start_type = SentinelType.startOfRoute if route else SentinelType.startOfSegment
-    assert msgs[1].sentinel.type == start_type
-
-    end_type = SentinelType.endOfRoute if route else SentinelType.endOfSegment
-    assert msgs[-1].sentinel.type == end_type
-
-  def _publish_random_messages(self, services: list[str]) -> dict[str, list]:
-    pm = messaging.PubMaster(services)
-
-    managed_processes["loggerd"].start()
-    for s in services:
-      assert pm.wait_for_readers_to_update(s, timeout=5)
-
-    sent_msgs = defaultdict(list)
-    for _ in range(random.randint(2, 10) * 100):
-      for s in services:
-        try:
-          m = messaging.new_message(s)
-        except Exception:
-          m = messaging.new_message(s, random.randint(2, 10))
-        pm.send(s, m)
-        sent_msgs[s].append(m)
-
-    for s in services:
-      assert pm.wait_for_readers_to_update(s, timeout=5)
-    managed_processes["loggerd"].stop()
-
-    return sent_msgs
-
-  def test_init_data_values(self):
-    os.environ["CLEAN"] = random.choice(["0", "1"])
-
-    dongle  = ''.join(random.choice(string.printable) for n in range(random.randint(1, 100)))
-    fake_params = [
-      # param, initData field, value
-      ("DongleId", "dongleId", dongle),
-      ("GitCommit", "gitCommit", "commit"),
-      ("GitCommitDate", "gitCommitDate", "date"),
-      ("GitBranch", "gitBranch", "branch"),
-      ("GitRemote", "gitRemote", "remote"),
-    ]
-    params = Params()
-    for k, _, v in fake_params:
-      params.put(k, v)
-    params.put("AccessToken", "abc")
-
-    lr = list(LogReader(str(self._gen_bootlog())))
-    initData = lr[0].initData
-
-    assert initData.dirty != bool(os.environ["CLEAN"])
-    assert initData.version == get_version()
-
-    if os.path.isfile("/proc/cmdline"):
-      with open("/proc/cmdline") as f:
-        assert list(initData.kernelArgs) == f.read().strip().split(" ")
-
-      with open("/proc/version") as f:
-        assert initData.kernelVersion == f.read()
-
-    # check params
-    logged_params = {entry.key: entry.value for entry in initData.params.entries}
-    expected_params = {k for k, _, __ in fake_params} | {'AccessToken', 'BootCount'}
-    assert set(logged_params.keys()) == expected_params, set(logged_params.keys()) ^ expected_params
-    assert logged_params['AccessToken'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['AccessToken'])}"
-    for param_key, initData_key, v in fake_params:
-      assert getattr(initData, initData_key) == v
-      assert logged_params[param_key].decode() == v
-
-  @pytest.mark.skip("FIXME: encoderd sometimes crashes in CI when running with pytest-xdist")
-  def test_rotation(self):
+  def setup_method(self):
+    self._clear_logs()
     os.environ["LOGGERD_TEST"] = "1"
-    Params().put("RecordFront", "1")
+    os.environ["LOGGERD_SEGMENT_LENGTH"] = str(SEGMENT_LENGTH)
 
-    d = DEVICE_CAMERAS[("tici", "ar0231")]
-    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
-    streams = [(VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048*2346, 2048, 2048*1216), "roadCameraState"),
-               (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048*2346, 2048, 2048*1216), "driverCameraState"),
-               (VisionStreamType.VISION_STREAM_WIDE_ROAD, (d.ecam.width, d.ecam.height, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
+  def teardown_method(self):
+    self._clear_logs()
 
-    pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
-    vipc_server = VisionIpcServer("camerad")
-    for stream_type, frame_spec, _ in streams:
-      vipc_server.create_buffers_with_sizes(stream_type, 40, *(frame_spec))
-    vipc_server.start_listener()
+  def _clear_logs(self):
+    if os.path.exists(Paths.log_root()):
+      shutil.rmtree(Paths.log_root())
 
-    num_segs = random.randint(2, 5)
-    length = random.randint(1, 3)
-    os.environ["LOGGERD_SEGMENT_LENGTH"] = str(length)
-    managed_processes["loggerd"].start()
-    managed_processes["encoderd"].start()
-    assert pm.wait_for_readers_to_update("roadCameraState", timeout=5)
+  def _get_latest_segment_path(self):
+    last_route = sorted(Path(Paths.log_root()).iterdir())[-1]
+    return os.path.join(Paths.log_root(), last_route)
 
-    fps = 20.0
-    for n in range(1, int(num_segs*length*fps)+1):
-      for stream_type, frame_spec, state in streams:
-        dat = np.empty(frame_spec[2], dtype=np.uint8)
-        vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, n/fps, n/fps)
+  # TODO: this should run faster than real time
+  @parameterized.expand([(True, ), (False, )])
+  def test_log_rotation(self, record_front):
+    Params().put_bool("RecordFront", record_front)
 
-        camera_state = messaging.new_message(state)
-        frame = getattr(camera_state, state)
-        frame.frameId = n
-        pm.send(state, camera_state)
+    managed_processes['sensord'].start()
+    managed_processes['loggerd'].start()
+    managed_processes['encoderd'].start()
 
-      for _, _, state in streams:
-        assert pm.wait_for_readers_to_update(state, timeout=5, dt=0.001)
+    time.sleep(1.0)
+    managed_processes['camerad'].start()
 
-    managed_processes["loggerd"].stop()
-    managed_processes["encoderd"].stop()
+    num_segments = int(os.getenv("SEGMENTS", random.randint(2, 8)))
 
-    route_path = str(self._get_latest_log_dir()).rsplit("--", 1)[0]
-    for n in range(num_segs):
-      p = Path(f"{route_path}--{n}")
-      logged = {f.name for f in p.iterdir() if f.is_file()}
-      diff = logged ^ expected_files
-      assert len(diff) == 0, f"didn't get all expected files. run={_} seg={n} {route_path=}, {diff=}\n{logged=} {expected_files=}"
+    # wait for loggerd to make the dir for first segment
+    route_prefix_path = None
+    with Timeout(int(SEGMENT_LENGTH*3)):
+      while route_prefix_path is None:
+        try:
+          route_prefix_path = self._get_latest_segment_path().rsplit("--", 1)[0]
+        except Exception:
+          time.sleep(0.1)
 
-  def test_bootlog(self):
-    # generate bootlog with fake launch log
-    launch_log = ''.join(str(random.choice(string.printable)) for _ in range(100))
-    with open("/tmp/launch_log", "w") as f:
-      f.write(launch_log)
+    def check_seg(i):
+      # check each camera file size
+      counts = []
+      first_frames = []
+      for camera, fps, size, encode_idx_name in CAMERAS:
+        if not record_front and "dcamera" in camera:
+          continue
 
-    bootlog_path = self._gen_bootlog()
-    lr = list(LogReader(str(bootlog_path)))
+        file_path = f"{route_prefix_path}--{i}/{camera}"
 
-    # check length
-    assert len(lr) == 2  # boot + initData
+        # check file exists
+        assert os.path.exists(file_path), f"segment #{i}: '{file_path}' missing"
 
-    self._check_init_data(lr)
+        # TODO: this ffprobe call is really slow
+        # check frame count
+        cmd = f"ffprobe -v error -select_streams v:0 -count_packets -show_entries stream=nb_read_packets -of csv=p=0 {file_path}"
+        if TICI:
+          cmd = "LD_LIBRARY_PATH=/usr/local/lib " + cmd
 
-    # check msgs
-    bootlog_msgs = [m for m in lr if m.which() == 'boot']
-    assert len(bootlog_msgs) == 1
+        expected_frames = fps * SEGMENT_LENGTH
+        probe = subprocess.check_output(cmd, shell=True, encoding='utf8')
+        frame_count = int(probe.split('\n')[0].strip())
+        counts.append(frame_count)
 
-    # sanity check values
-    boot = bootlog_msgs.pop().boot
-    assert abs(boot.wallTimeNanos - time.time_ns()) < 5*1e9 # within 5s
-    assert boot.launchLog == launch_log
+        assert frame_count == expected_frames, \
+                         f"segment #{i}: {camera} failed frame count check: expected {expected_frames}, got {frame_count}"
 
-    for fn in ["console-ramoops", "pmsg-ramoops-0"]:
-      path = Path(os.path.join("/sys/fs/pstore/", fn))
-      if path.is_file():
-        with open(path, "rb") as f:
-          expected_val = f.read()
-        bootlog_val = [e.value for e in boot.pstore.entries if e.key == fn][0]
-        assert expected_val == bootlog_val
+        # sanity check file size
+        file_size = os.path.getsize(file_path)
+        assert math.isclose(file_size, size, rel_tol=FILE_SIZE_TOLERANCE), \
+                        f"{file_path} size {file_size} isn't close to target size {size}"
 
-    # next one should increment by one
-    bl1 = re.match(RE.LOG_ID_V2, bootlog_path.name)
-    bl2 = re.match(RE.LOG_ID_V2, self._gen_bootlog().name)
-    assert bl1.group('uid') != bl2.group('uid')
-    assert int(bl1.group('count')) == 0 and int(bl2.group('count')) == 1
+        # Check encodeIdx
+        if encode_idx_name is not None:
+          rlog_path = f"{route_prefix_path}--{i}/rlog"
+          msgs = [m for m in LogReader(rlog_path) if m.which() == encode_idx_name]
+          encode_msgs = [getattr(m, encode_idx_name) for m in msgs]
 
-  def test_qlog(self):
-    qlog_services = [s for s in CEREAL_SERVICES if SERVICE_LIST[s].decimation is not None]
-    no_qlog_services = [s for s in CEREAL_SERVICES if SERVICE_LIST[s].decimation is None]
+          valid = [m.valid for m in msgs]
+          segment_idxs = [m.segmentId for m in encode_msgs]
+          encode_idxs = [m.encodeId for m in encode_msgs]
+          frame_idxs = [m.frameId for m in encode_msgs]
 
-    services = random.sample(qlog_services, random.randint(2, min(10, len(qlog_services)))) + \
-               random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
-    sent_msgs = self._publish_random_messages(services)
+          # Check frame count
+          assert frame_count == len(segment_idxs)
+          assert frame_count == len(encode_idxs)
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
-    lr = list(LogReader(qlog_path))
+          # Check for duplicates or skips
+          assert 0 == segment_idxs[0]
+          assert len(set(segment_idxs)) == len(segment_idxs)
 
-    # check initData and sentinel
-    self._check_init_data(lr)
-    self._check_sentinel(lr, True)
+          assert all(valid)
 
-    recv_msgs = defaultdict(list)
-    for m in lr:
-      recv_msgs[m.which()].append(m)
+          assert expected_frames * i == encode_idxs[0]
+          first_frames.append(frame_idxs[0])
+          assert len(set(encode_idxs)) == len(encode_idxs)
 
-    for s, msgs in sent_msgs.items():
-      recv_cnt = len(recv_msgs[s])
+      assert 1 == len(set(first_frames))
 
-      if s in no_qlog_services:
-        # check services with no specific decimation aren't in qlog
-        assert recv_cnt == 0, f"got {recv_cnt} {s} msgs in qlog"
-      else:
-        # check logged message count matches decimation
-        expected_cnt = (len(msgs) - 1) // SERVICE_LIST[s].decimation + 1
-        assert recv_cnt == expected_cnt, f"expected {expected_cnt} msgs for {s}, got {recv_cnt}"
+      if TICI:
+        expected_frames = fps * SEGMENT_LENGTH
+        assert min(counts) == expected_frames
+      shutil.rmtree(f"{route_prefix_path}--{i}")
 
-  def test_rlog(self):
-    services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
-    sent_msgs = self._publish_random_messages(services)
-
-    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
-
-    # check initData and sentinel
-    self._check_init_data(lr)
-    self._check_sentinel(lr, True)
-
-    # check all messages were logged and in order
-    lr = lr[2:-1] # slice off initData and both sentinels
-    for m in lr:
-      sent = sent_msgs[m.which()].pop(0)
-      sent.clear_write_flag()
-      assert sent.to_bytes() == m.as_builder().to_bytes()
-
-  def test_preserving_flagged_segments(self):
-    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userFlag"}
-    self._publish_random_messages(services)
-
-    segment_dir = self._get_latest_log_dir()
-    assert getxattr(segment_dir, PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
-
-  def test_not_preserving_unflagged_segments(self):
-    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userFlag"}
-    self._publish_random_messages(services)
-
-    segment_dir = self._get_latest_log_dir()
-    assert getxattr(segment_dir, PRESERVE_ATTR_NAME) is None
+    try:
+      for i in trange(num_segments):
+        # poll for next segment
+        with Timeout(int(SEGMENT_LENGTH*10), error_msg=f"timed out waiting for segment {i}"):
+          while Path(f"{route_prefix_path}--{i+1}") not in Path(Paths.log_root()).iterdir():
+            time.sleep(0.1)
+        check_seg(i)
+    finally:
+      managed_processes['loggerd'].stop()
+      managed_processes['encoderd'].stop()
+      managed_processes['camerad'].stop()
+      managed_processes['sensord'].stop()
