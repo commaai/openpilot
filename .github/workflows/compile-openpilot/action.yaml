@@ -14,6 +14,7 @@ runs:
       run: |
           source .venv/bin/activate
           rm -rf /tmp/scons_cache/* && \
+          rm -rf .ci/scons_cache/* && \
           scons -j$(nproc) --cache-populate
     - name: Save scons cache
       uses: actions/cache/save@v4
