@@ -53,7 +53,6 @@ runs:
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
     # install dependencies
     - name: Read APT packages list
-      if: github.ref == 'refs/heads/master' && contains(github.event.commits.*.modified, '.github/workflows/setup/apt-packages.txt')
       id: apt-packages
       shell: bash
       run: |
