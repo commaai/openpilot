@@ -60,7 +60,6 @@ runs:
         echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
 
     - name: Cache APT packages
-      if: github.ref == 'refs/heads/master'
       id: cache-apt
       uses: awalsh128/cache-apt-pkgs-action@v1.4.0
       with:
