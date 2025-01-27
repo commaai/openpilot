@@ -14,7 +14,7 @@ runs:
       run: |
         git lfs pull
 
-    - name: Read APT packages list
+    - name: Read APT packages list 
       id: apt-packages
       shell: bash
       run: |
