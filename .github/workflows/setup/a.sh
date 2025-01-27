@@ -9,7 +9,7 @@ export DEBIAN_FRONTEND=noninteractive
 sudo apt-get update
 sudo apt-get install -y --no-install-recommends \
     sudo tzdata locales ssh pulseaudio xvfb \
-    x11-xserver-utils gnome-screenshot python3-tk python3-dev
+    x11-xserver-utils gnome-screenshot python3-tk python3-dev xauth dbus
 
 # Locale configuration
 sudo sed -i 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
