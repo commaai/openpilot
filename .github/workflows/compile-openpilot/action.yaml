@@ -20,5 +20,5 @@ runs:
       uses: actions/cache/save@v4
       if: github.ref == 'refs/heads/master'
       with:
-        path: .ci_cache/scons_cache
+        path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
