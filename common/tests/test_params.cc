@@ -4,7 +4,7 @@
 #include "common/util.h"
 
 TEST_CASE("params_nonblocking_put") {
-  char tmp_path[] = "/tmp/asyncWriter_XXXXXX";
+  char tmp_path[] = "/asyncWriter_XXXXXX";
   const std::string param_path = mkdtemp(tmp_path);
   auto param_names = {"CarParams", "IsMetric"};
   {
