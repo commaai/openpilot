@@ -1113,11 +1113,11 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Setup Wi-Fi</source>
-        <translation>Wi-Fiセットアップ</translation>
+        <translation>Wi-Fi設定</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>ドライブデータをアップロードしてopenpilotの改善に役立てるためにWi-Fi接続してください</translation>
+        <translation>走行データをアップロードしてopenpilotの改善に役立てるためにWi-Fi接続してください</translation>
     </message>
     <message>
         <source>Open Settings</source>
