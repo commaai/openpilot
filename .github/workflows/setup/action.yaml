@@ -1,56 +1,46 @@
-name: 'openpilot env setup'
+name: "openpilot env setup"
 
-inputs:
-  is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
-    required: false
-    default: 'false'
+env:
+  UV_SYSTEM_PYTHON: 1
+
+permissions:
+  contents: read
+  actions: write
 
 runs:
   using: "composite"
   steps:
-    # assert that this action is retried using the setup-with-retry
     - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
       run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
+        git lfs pull
 
-    - shell: bash
-      name: No retries!
-      run: |
-        if [ "${{ github.run_attempt }}" -gt 1 ]; then
-          echo -e "\033[0;31m##################################################"
-          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
-          echo -e "\033[0;31m##################################################\033[0m"
-          exit 1
-        fi
-
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
-      run: git lfs pull
-
-    # build cache
-    - id: date
+    - name: Read APT packages list
+      id: apt-packages
       shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
+      run: |
+        PACKAGES=$(tr '\n' ' ' <.github/workflows/setup/apt-packages.txt)
+        echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
+
+    - name: Cache APT packages
+      id: cache-apt
+      uses: awalsh128/cache-apt-pkgs-action@v1.4.0
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
+        packages: ${{ steps.apt-packages.outputs.packages }}
+        version: 1.0
+        debug: true
+
+    - name: Install APT Dependencies
+      if: steps.cache-apt.outputs.cache-hit != 'true'
       shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
       run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
+        sudo apt-get update 
+        sudo apt-get install -y --no-install-recommends \
+          ${{ steps.apt-packages.outputs.packages }}
+
+    - uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
+
     - shell: bash
-      run: eval ${{ env.BUILD }}
+      run: uv sync --frozen --all-extras
