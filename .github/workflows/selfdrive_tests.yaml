@@ -127,12 +127,6 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup
-    - name: caching frames
-      id: frames-cache
-      uses: actions/cache@v4
-      with:
-        path: .ci_cache/comma_download_cache
-        key: ui_screenshots_test_${{ hashFiles('selfdrive/ui/tests/test_ui/run.py') }}
     - name: Build openpilot
       run: |
         source .venv/bin/activate
@@ -144,8 +138,7 @@ jobs:
         $PYTEST --collect-only -m 'not slow' &> /dev/null && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        chmod -R 777 .ci_cache/comma_download_cache
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
