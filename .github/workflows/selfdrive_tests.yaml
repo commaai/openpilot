@@ -171,7 +171,7 @@ jobs:
       run: |
         source .venv/bin/activate
         coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache && \
+                        chmod -R 777 .ci_cache/comma_download_cache && \
                         coverage combine && \
                         coverage xml
     - name: Print diff
@@ -195,7 +195,7 @@ jobs:
       run: |
         source .venv/bin/activate
         ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                        chmod -R 777 /tmp/comma_download_cache
+                        chmod -R 777 .ci_cache/comma_download_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -232,7 +232,7 @@ jobs:
       run: |
         source .venv/bin/activate
         MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
-                        chmod -R 777 /tmp/comma_download_cache
+        chmod -R 777 .ci_cache/comma_download_cache
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
@@ -258,7 +258,7 @@ jobs:
       - name: Get base car info
         run: |
           source .venv/bin/activate
-          scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs
+          scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path .ci_cache/openpilot_cache/base_car_docs
           sudo chown -R $USER:$USER ${{ github.workspace }}
       - uses: actions/checkout@v4
         with:
@@ -271,7 +271,7 @@ jobs:
           cd current
           scons -j$(nproc)
           source .venv/bin/activate
-          output=$(python3 selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs)
+          output=$(python3 selfdrive/debug/print_docs_diff.py --path .ci_cache/openpilot_cache/base_car_docs)
           output="${output//$'\n'/'%0A'}"
           echo "::set-output name=diff::$output"
       - name: Find comment
@@ -320,8 +320,8 @@ jobs:
       run: |
         source .venv/bin/activate
         source selfdrive/test/setup_xvfb.sh && \
-                        source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py
+        source selfdrive/test/setup_vsound.sh && \
+        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py
 
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
@@ -349,9 +349,9 @@ jobs:
         run: |
             source .venv/bin/activate
             PYTHONWARNINGS=ignore &&
-                            source selfdrive/test/setup_xvfb.sh &&
-                            CACHE_ROOT=/tmp/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
-                            chmod -R 777 /tmp/comma_download_cache
+            source selfdrive/test/setup_xvfb.sh &&              
+            CACHE_ROOT=.ci_cache/comma_download_cache python3 selfdrive/ui/tests/test_ui/run.py &&
+            chmod -R 777 .ci_cache/comma_download_cache
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         with:
