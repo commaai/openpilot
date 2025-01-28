@@ -73,8 +73,6 @@ runs:
       with:
         path: /var/cache/apt/archives
         key: apt-packages-${{ runner.os }}-${{ hashFiles('packages.txt') }}
-        restore-keys: |
-          apt-packages-${{ runner.os }}-
     - name: List downloaded .deb files
       shell: bash
       run: ls -l /var/cache/apt/archives
