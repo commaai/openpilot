@@ -57,14 +57,6 @@ runs:
         sudo mkdir -p /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives
-    - name: Cache APT packages
-      uses: actions/cache@v3
-      with:
-        path: /var/cache/apt/archives
-        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.run_id }}-${{ github.run_attempt }}
-        restore-keys: |
-          Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-
-          Linux-apt-${{ runner.os }}-
     - name: Read packages from packages.txt
       id: read-packages
       shell: bash
