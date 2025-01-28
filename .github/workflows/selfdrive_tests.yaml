@@ -137,7 +137,7 @@ jobs:
         $PYTEST --collect-only -m 'not slow' &> /dev/null && \
         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
         ./selfdrive/ui/tests/create_test_translations.sh && \
-        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
