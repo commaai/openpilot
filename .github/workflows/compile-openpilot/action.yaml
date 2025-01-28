@@ -27,4 +27,4 @@ runs:
       # if: github.ref == 'refs/heads/master'
       with:
         path: /var/cache/apt/archives
-        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.sha }}
+        key: Linux-apt-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
