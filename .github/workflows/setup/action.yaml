@@ -50,23 +50,33 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    # install dependencies
-    - name: Read APT packages list
-      id: apt-packages
-      shell: bash
-      run: |
-        PACKAGES=$(tr '\n' ' ' <.github/workflows/setup/apt-packages.txt)
-        echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
 
-    - name: Cache APT packages
-      # if: github.ref == 'refs/heads/master'
-      id: cache-apt
-      uses: awalsh128/cache-apt-pkgs-action@v1.4.0
+    - name: Set up APT cache
+      run: |
+        sudo mkdir -p /path/to/x/cache
+        sudo chmod 777 /path/to/x/cache
+    - name: Download packages
+      run: |
+        sudo apt-get update
+        sudo apt-get install --download-only $(cat .github/workflows/setup/apt-packages.txt | xargs)
+        sudo mv /var/cache/apt/archives/*.deb /path/to/x/cache/
+    - name: Install downloaded packages
+      run: |
+        cd /path/to/x/cache
+        sudo dpkg -i *.deb
+        sudo apt-get install -f
+    - name: Cache packages
+      uses: actions/cache@v2
       with:
-        packages: ${{ steps.apt-packages.outputs.packages }}
-        version: 1.0
-        debug: true
+        path: /path/to/x/cache
+        key: ${{ runner.os }}-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-
+          ${{ github.sha }}
+    - name: Clean up
+      run: |
+        sudo apt-get clean
+        sudo rm -rf /path/to/x/cache/*
 
     - uses: astral-sh/setup-uv@v4
       with:
