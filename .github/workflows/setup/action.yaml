@@ -52,6 +52,7 @@ runs:
           scons-${{ runner.arch }}
     - name: Set up APT cache directory
       id: apt-cache
+      shell : bash
       run: |
         # sudo mkdir -p /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives
