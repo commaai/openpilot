@@ -63,6 +63,7 @@ runs:
         PACKAGES=$(cat .github/workflows/setup/apt-packages.txt | tr '\n' ' ')
         echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
     - name: Install packages and cache .deb files
+      if: steps.apt-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
         sudo apt-get update
@@ -80,7 +81,6 @@ runs:
         sudo chmod -R 777 /var/cache/apt/archives
 
     - name: Install downloaded packages
-      if: steps.apt-cache.outputs.cache-hit != 'true'
       shell : bash
       run: |
         cd /var/cache/apt/archives
