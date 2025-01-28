@@ -73,7 +73,7 @@ runs:
   
     - name: Debug Cache Key
       shell: bash
-      run: echo "Cache key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}"
+      run: echo "Cache key ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}"
 
     - name: Cache packages
       uses: actions/cache@v2
