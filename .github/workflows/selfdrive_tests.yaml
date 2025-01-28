@@ -138,7 +138,7 @@ jobs:
         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
         ./selfdrive/ui/tests/create_test_translations.sh && \
         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-        chmod -R 777 /tmp/comma_download_cache
+        chmod -R 777 .ci_cache/comma_download_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -171,9 +171,9 @@ jobs:
       run: |
         source .venv/bin/activate
         coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 .ci_cache/comma_download_cache && \
-                        coverage combine && \
-                        coverage xml
+        chmod -R 777 .ci_cache/comma_download_cache && \
+        coverage combine && \
+        coverage xml
     - name: Print diff
       id: print-diff
       if: always()
@@ -195,7 +195,7 @@ jobs:
       run: |
         source .venv/bin/activate
         ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
-                        chmod -R 777 .ci_cache/comma_download_cache
+        chmod -R 777 .ci_cache/comma_download_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
@@ -345,7 +345,7 @@ jobs:
           source .venv/bin/activate
           scons -j$(nproc)
       - name: Create Test Report
-        timeout-minutes: ${{ ((steps.frames-cache.outputs.cache-hit == 'true') && 1.2 || 3) }}
+        timeout-minutes: ${{ ((steps.frames-cache.outputs.cache-hit == 'true') && 2 || 3) }}
         run: |
             source .venv/bin/activate
             PYTHONWARNINGS=ignore &&
