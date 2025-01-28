@@ -56,3 +56,12 @@ runs:
         mkdir -p ${{ inputs.path }}
         sudo chmod -R 777 ${{ inputs.path }}
         sudo chown -R $USER ${{ inputs.path }}
+
+    - name: Cache APT packages
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.sha }}
+        restore-keys: |
+          Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-
+          Linux-apt-${{ runner.os }}-
