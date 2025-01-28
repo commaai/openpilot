@@ -67,12 +67,11 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --download-only $PACKAGES
-    - name: Cache APT packages
-      uses: actions/cache@v3
-      id: apt-cache
+    - uses: actions/cache@v2
+      id: cache-apt
       with:
-        path: /var/cache/apt/archives
-        key: hello
+        path: /var/lib/apt/lists/*
+        key: ${{ runner.os }}-apt
     - name: List downloaded .deb files
       shell: bash
       run: ls -l /var/cache/apt/archives
