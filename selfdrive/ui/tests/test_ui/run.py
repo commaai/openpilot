@@ -127,7 +127,7 @@ def setup_body(click, pm: PubMaster):
 def setup_keyboard(click, pm: PubMaster):
   setup_settings_device(click, pm)
   click(250, 965)
-  click(1930, 228)
+  click(1930, 420)
 
 def setup_keyboard_uppercase(click, pm: PubMaster):
   setup_keyboard(click, pm)
