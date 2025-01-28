@@ -80,13 +80,11 @@ runs:
           ${{ runner.os }}-apt-
 
     - name: Verify apt-cache contents
+      shell: bash
       run: |
         echo "Contents of apt-cache:"
         ls -lh ~/apt-cache
         echo "Total size: $(du -sh ~/apt-cache)"
-
-    - name: Show cache key hash
-      run: echo "Package file hash: ${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}"
           
     - name: Clean up
       shell: bash
