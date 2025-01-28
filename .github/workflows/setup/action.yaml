@@ -70,6 +70,10 @@ runs:
       run: |
         sudo dpkg -i ~/apt-cache/*.deb
         sudo apt-get install -f
+  
+    - name: Debug Cache Key
+      shell: bash
+      run: echo "Cache key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}"
 
     - name: Cache packages
       uses: actions/cache@v2
