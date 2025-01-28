@@ -77,6 +77,12 @@ runs:
       shell: bash
       run: ls -l /var/cache/apt/archives
 
+    - name: Install downloaded packages
+      run: |
+        cd /var/cache/apt/archives
+        sudo dpkg -i *.deb
+        sudo apt-get install -f
+          
     - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
