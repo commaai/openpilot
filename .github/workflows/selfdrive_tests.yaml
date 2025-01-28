@@ -135,10 +135,10 @@ jobs:
       run: |
         source .venv/bin/activate
         $PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
-                        ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        chmod -R 777 /tmp/comma_download_cache
+        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+        ./selfdrive/ui/tests/create_test_translations.sh && \
+        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
+        chmod -R 777 /tmp/comma_download_cache
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
