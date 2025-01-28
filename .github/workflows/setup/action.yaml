@@ -78,6 +78,7 @@ runs:
       run: ls -l /var/cache/apt/archives
 
     - name: Install downloaded packages
+      shell : bash
       run: |
         cd /var/cache/apt/archives
         sudo dpkg -i *.deb
