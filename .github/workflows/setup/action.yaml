@@ -51,16 +51,18 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
 
-    - name: Set up APT cache
-      shell: bash
-      run: |
-        sudo mkdir -p /path/to/x/cache
-        sudo chmod 777 /path/to/x/cache
+
+      - name: Set up APT cache
+        shell: bash
+        run: |
+          sudo mkdir -p /path/to/x/cache
+          sudo chmod 777 /path/to/x/cache
+
     - name: Download packages
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install --download-only $(cat .github/workflows/setup/apt-packages.txt | xargs)
+        sudo apt-get install --download-only $(cat packages.txt | xargs)
         sudo mv /var/cache/apt/archives/*.deb /path/to/x/cache/
     - name: Install downloaded packages
       shell: bash
@@ -73,9 +75,9 @@ runs:
       with:
         path: /path/to/x/cache
         key: ${{ runner.os }}-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-
-          ${{ github.sha }}
+        restore-keys: ${{ runner.os }}-
+      env:
+        CACHE_COMMIT_DATE: 2025-01-28-08:51
     - name: Clean up
       shell: bash
       run: |
