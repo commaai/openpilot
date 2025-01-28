@@ -30,6 +30,12 @@ runs:
     - shell: bash
       run: git lfs pull
 
+    - id: normalize-file-permissions
+      shell: bash
+      name: Normalize file permissions to ensure a consistent docker build cache
+      run: |
+        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
+        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
     # build cache
     - id: date
       shell: bash
@@ -45,12 +51,6 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
-      run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
     # install dependencies
     - name: Read APT packages list
       id: apt-packages
@@ -60,7 +60,7 @@ runs:
         echo "packages=${PACKAGES}" >> $GITHUB_OUTPUT
 
     - name: Cache APT packages
-      if: github.ref == 'refs/heads/master'
+      # if: github.ref == 'refs/heads/master'
       id: cache-apt
       uses: awalsh128/cache-apt-pkgs-action@v1.4.0
       with:
