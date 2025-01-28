@@ -50,13 +50,13 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    - name: Set up APT cache directory
-      id: apt-cache
-      shell : bash
-      run: |
-        sudo mkdir -p /var/cache/apt/archives/partial
-        sudo chmod -R 777 /var/cache/apt/archives/partial
-        sudo chmod -R 777 /var/cache/apt/archives
+    - name: Restore APT packages cache
+      uses: actions/cache/restore@v4
+      with:
+        path: /var/cache/apt/archives
+        restore-keys: |
+          Linux-apt-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          Linux-apt-${{ runner.arch }}
     - name: Read packages from packages.txt
       id: read-packages
       shell: bash
