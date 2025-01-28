@@ -55,34 +55,35 @@ runs:
     - name: Set up APT cache
       shell: bash
       run: |
-        sudo mkdir -p /path/to/x/cache
-        sudo chmod 777 /path/to/x/cache
-
+        mkdir -p ~/apt-cache
+        
     - name: Download packages
       shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install --download-only $(cat .github/workflows/setup/apt-packages.txt | xargs)
-        sudo mv /var/cache/apt/archives/*.deb /path/to/x/cache/
+        sudo mv /var/cache/apt/archives/*.deb ~/apt-cache/
+        sudo chown -R $USER:$USER ~/apt-cache  # Ensures runner owns the files
+
     - name: Install downloaded packages
       shell: bash
       run: |
-        cd /path/to/x/cache
-        sudo dpkg -i *.deb
+        sudo dpkg -i ~/apt-cache/*.deb
         sudo apt-get install -f
+
     - name: Cache packages
       uses: actions/cache@v2
       with:
-        path: /path/to/x/cache
-        key: ${{ runner.os }}-${{ github.sha }}
-        restore-keys: ${{ runner.os }}-
-      env:
-        CACHE_COMMIT_DATE: 2025-01-28-08:51
+        path: ~/apt-cache
+        key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-
+
     - name: Clean up
       shell: bash
       run: |
         sudo apt-get clean
-        sudo rm -rf /path/to/x/cache/*
+        rm -rf ~/apt-cache/*
 
     - uses: astral-sh/setup-uv@v4
       with:
