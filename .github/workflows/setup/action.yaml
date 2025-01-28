@@ -80,12 +80,15 @@ runs:
         sudo chmod -R 777 /var/cache/apt/archives
 
     - name: Install downloaded packages
+      if: steps.apt-cache.outputs.cache-hit != 'true'
       shell : bash
       run: |
         cd /var/cache/apt/archives
         sudo dpkg -i *.deb
         sudo apt-get install -f
-        sudo rm -rf /var/cache/apt/archives/partial
+
+    - shell : bash
+      run :  sudo rm -rf /var/cache/apt/archives/partial
 
      # Save APT cache
     - name: Save APT packages cache
