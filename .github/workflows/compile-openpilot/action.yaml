@@ -22,6 +22,14 @@ runs:
         path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
 
+    - name: Set up APT cache directory
+      id: apt-cache
+      shell : bash
+      run: |
+        sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives
+
     - name: Cache APT packages
       uses: actions/cache/save@v4
       # if: github.ref == 'refs/heads/master'
