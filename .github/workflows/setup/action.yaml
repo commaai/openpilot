@@ -86,6 +86,7 @@ runs:
         cd /var/cache/apt/archives
         sudo dpkg -i *.deb
         sudo apt-get install -f
+        sudo rm -rf /var/cache/apt/archives/partial
           
     - uses: astral-sh/setup-uv@v4
       with:
