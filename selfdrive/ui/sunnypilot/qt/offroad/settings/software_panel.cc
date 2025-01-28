@@ -10,6 +10,8 @@
 #include <algorithm>
 #include <QJsonDocument>
 
+#include "common/model.h"
+
 /**
  * @brief Constructs the software panel with model bundle selection functionality
  * @param parent Parent widget
@@ -105,7 +107,7 @@ QString SoftwarePanelSP::GetActiveModelName() {
     return QString::fromStdString(model_manager.getActiveBundle().getDisplayName());
   }
 
-  return "";
+  return DEFAULT_MODEL;
 }
 
 void SoftwarePanelSP::updateModelManagerState() {
