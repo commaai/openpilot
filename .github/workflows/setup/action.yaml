@@ -51,10 +51,14 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
 
-    - name: Set up APT cache directory
-      shell: bash
-      run: |
-        sudo chmod -R 777 /var/cache/apt/archives
+    - name: Cache APT packages
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.sha }}
+        restore-keys: |
+          Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-
+          Linux-apt-${{ runner.os }}-
     - name: Read packages from packages.txt
       id: read-packages
       shell: bash
