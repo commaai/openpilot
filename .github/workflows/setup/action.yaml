@@ -50,7 +50,11 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-
+    - name: Set up APT cache directory
+      id: apt-cache
+      run: |
+        # sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives
     - name: Cache APT packages
       uses: actions/cache@v3
       with:
