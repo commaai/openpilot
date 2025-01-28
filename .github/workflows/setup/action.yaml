@@ -54,7 +54,8 @@ runs:
       id: apt-cache
       shell : bash
       run: |
-        # sudo mkdir -p /var/cache/apt/archives/partial
+        sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives
     - name: Cache APT packages
       uses: actions/cache@v3
