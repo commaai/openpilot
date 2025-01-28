@@ -54,9 +54,8 @@ runs:
       uses: actions/cache/restore@v4
       with:
         path: /var/cache/apt/archives
-        restore-keys: |
-          Linux-apt-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          Linux-apt-${{ runner.arch }}
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
+
     - name: Read packages from packages.txt
       id: read-packages
       shell: bash
@@ -79,7 +78,14 @@ runs:
         sudo dpkg -i *.deb
         sudo apt-get install -f
         sudo rm -rf /var/cache/apt/archives/partial
-          
+
+     # Save APT cache
+    - name: Save APT packages cache
+      uses: actions/cache/save@v4
+      with:
+        path: /var/cache/apt/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.sha }}
+
     - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
