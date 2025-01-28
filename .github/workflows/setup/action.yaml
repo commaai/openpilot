@@ -52,11 +52,11 @@ runs:
           scons-${{ runner.arch }}
 
 
-      - name: Set up APT cache
-        shell: bash
-        run: |
-          sudo mkdir -p /path/to/x/cache
-          sudo chmod 777 /path/to/x/cache
+    - name: Set up APT cache
+      shell: bash
+      run: |
+        sudo mkdir -p /path/to/x/cache
+        sudo chmod 777 /path/to/x/cache
 
     - name: Download packages
       shell: bash
