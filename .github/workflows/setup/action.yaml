@@ -52,15 +52,18 @@ runs:
           scons-${{ runner.arch }}
 
     - name: Set up APT cache
+      shell: bash
       run: |
         sudo mkdir -p /path/to/x/cache
         sudo chmod 777 /path/to/x/cache
     - name: Download packages
+      shell: bash
       run: |
         sudo apt-get update
         sudo apt-get install --download-only $(cat .github/workflows/setup/apt-packages.txt | xargs)
         sudo mv /var/cache/apt/archives/*.deb /path/to/x/cache/
     - name: Install downloaded packages
+      shell: bash
       run: |
         cd /path/to/x/cache
         sudo dpkg -i *.deb
@@ -74,6 +77,7 @@ runs:
           ${{ runner.os }}-
           ${{ github.sha }}
     - name: Clean up
+      shell: bash
       run: |
         sudo apt-get clean
         sudo rm -rf /path/to/x/cache/*
