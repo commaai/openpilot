@@ -22,10 +22,3 @@ runs:
         path: .ci_cache/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
     - id: scons-cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: /tmp/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.run_id }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
