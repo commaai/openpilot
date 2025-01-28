@@ -62,7 +62,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install --download-only $(cat packages.txt | xargs)
+        sudo apt-get install --download-only $(cat .github/workflows/setup/apt-packages.txt | xargs)
         sudo mv /var/cache/apt/archives/*.deb /path/to/x/cache/
     - name: Install downloaded packages
       shell: bash
