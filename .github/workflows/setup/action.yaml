@@ -57,6 +57,13 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
+
+
+    - name: Configure APT to use workspace cache
+      shell: bash
+      run: |
+        mkdir -p ~/apt-cache/archives/partial
+        echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
     - name: Restore APT packages cache
       uses: actions/cache/restore@v4
       with:
