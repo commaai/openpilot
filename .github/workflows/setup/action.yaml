@@ -54,7 +54,6 @@ runs:
     - name: Set up APT cache directory
       shell: bash
       run: |
-        sudo mkdir -p /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives
     - name: Read packages from packages.txt
       id: read-packages
