@@ -67,10 +67,11 @@ runs:
       run: |
         mkdir -p ~/apt-cache/archives/partial
         echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
+
     - name: Restore APT packages cache
       uses: actions/cache/restore@v4
       with:
-        path: /var/cache/apt/archives
+        path: ~/apt-cache/archives  # Changed to user directory
         key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
 
     - name: Read packages from packages.txt
@@ -85,25 +86,25 @@ runs:
       run: |
         sudo apt-get update
         sudo apt-get install -y --download-only $PACKAGES
+        
     - name: List downloaded .deb files
       shell: bash
       run: ls -l /var/cache/apt/archives
 
     - name: Install downloaded packages
-      shell : bash
+      shell: bash
       run: |
-        cd /var/cache/apt/archives
+        cd ~/apt-cache/archives  # Changed to user directory
         sudo dpkg -i *.deb
         sudo apt-get install -f
 
     - shell : bash
       run :  sudo rm -rf /var/cache/apt/archives/partial
 
-     # Save APT cache
     - name: Save APT packages cache
       uses: actions/cache/save@v4
       with:
-        path: /var/cache/apt/archives
+        path: ~/apt-cache/archives  # Changed to user directory
         key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.sha }}
 
     - uses: astral-sh/setup-uv@v4
