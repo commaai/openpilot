@@ -9,64 +9,102 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # Assert that this action is retried using the setup-with-retry
+    # assert that this action is retried using the setup-with-retry
     - shell: bash
       if: ${{ inputs.is_retried == 'false' }}
       run: |
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
 
-    # Ensure LFS files are pulled
+    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
+    - name: Set up APT cache directory
+      id: apt-cache
+      shell : bash
+      run: |
+        sudo mkdir -p /var/cache/apt/archives
+        sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives
+        sudo rm -rf /var/cache/apt/archives/partial
+        sudo rm -rf /var/cache/apt/archives
 
-    # Normalize file permissions for consistent Docker caching
-    - name: Normalize file permissions
+    - id: normalize-file-permissions
       shell: bash
+      name: Normalize file permissions to ensure a consistent docker build cache
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    # build cache
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - shell: bash
+      run: echo "$CACHE_COMMIT_DATE"
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
 
-    # Configure APT to use workspace cache directory
-    - name: Configure APT cache
+
+    - name: Configure APT to use workspace cache
       shell: bash
       run: |
-        APT_CACHE_DIR="${{ github.workspace }}/apt-cache"
-        sudo mkdir -p "${APT_CACHE_DIR}/archives/partial"
-        sudo chmod -R 777 "${APT_CACHE_DIR}"
-        echo "Dir::Cache::archives \"${APT_CACHE_DIR}/archives\";" | sudo tee /etc/apt/apt.conf.d/90-github-cache
+        mkdir -p ~/apt-cache/archives/partial
+        echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
 
-    # Restore APT package cache
-    - name: Restore APT packages
+    - name: Restore APT packages cache
       uses: actions/cache/restore@v4
       with:
-        path: ${{ github.workspace }}/apt-cache/archives
+        path: ~/apt-cache/archives  # Changed to user directory
         key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
-        restore-keys: |
-          Linux-apt-${{ runner.os }}-
 
-    # Read package list
-    - name: Read packages
+    - name: Read packages from packages.txt
+      id: read-packages
       shell: bash
       run: |
         PACKAGES=$(cat .github/workflows/setup/apt-packages.txt | tr '\n' ' ')
         echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
 
-    # Install packages using APT (will use cache if available)
-    - name: Install APT packages
+    - name: Install packages and cache .deb files
+      if: steps.apt-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
-        sudo apt-get update -qq
-        sudo apt-get install -y --no-install-recommends $PACKAGES
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends --download-only $PACKAGES
 
-    # Save updated APT package cache
-    - name: Save APT cache
+    # - name: Install downloaded packages
+    #   shell: bash
+    #   run: |
+    #     cd ~/apt-cache/archives
+    #     sudo dpkg -i *.deb
+    #     sudo apt-get install -f
+
+    - name: Install packages from cache
+      shell: bash
+      run: |
+        sudo apt-get install -y --no-install-recommends ~/apt-cache/archives/*.deb
+
+    - shell: bash
+      run: |
+        # Remove partial directory and fix ownership
+        sudo rm -rf ~/apt-cache/archives/partial
+        sudo chown -R $USER:$USER ~/apt-cache/archives
+
+    - shell : bash
+      run :  sudo rm -rf /var/cache/apt/archives/partial
+
+    - name: Save APT packages cache
       uses: actions/cache/save@v4
       with:
-        path: ${{ github.workspace }}/apt-cache/archives
+        path: ~/apt-cache/archives
         key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
 
-    # Python dependency management
     - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
