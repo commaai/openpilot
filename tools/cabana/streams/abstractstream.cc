@@ -226,7 +226,7 @@ std::pair<CanEventIter, CanEventIter> AbstractStream::eventsInRange(const Messag
   if (!time_range) return {events.begin(), events.end()};
 
   auto first = std::lower_bound(events.begin(), events.end(), can->toMonoTime(time_range->first), CompareCanEvent());
-  auto last = std::upper_bound(events.begin(), events.end(), can->toMonoTime(time_range->second), CompareCanEvent());
+  auto last = std::upper_bound(first, events.end(), can->toMonoTime(time_range->second), CompareCanEvent());
   return {first, last};
 }
 
