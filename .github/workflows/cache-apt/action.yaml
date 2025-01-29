@@ -28,7 +28,7 @@ runs:
         sudo apt-get install -y --no-install-recommends $PACKAGES
 
     - name: Save APT packages cache
-      # if: github.ref == 'refs/heads/master'
+      if: github.ref == 'refs/heads/master'
       uses: actions/cache/save@v4
       with:
         path: ~/apt-cache/archives
