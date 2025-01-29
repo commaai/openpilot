@@ -89,7 +89,7 @@ runs:
         
     - name: List downloaded .deb files
       shell: bash
-      run: ls -l /var/cache/apt/archives
+      run: ls -l ~/apt-cache/archives
 
     - name: Install downloaded packages
       shell: bash
