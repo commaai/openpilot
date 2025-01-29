@@ -78,17 +78,17 @@ runs:
     #     sudo apt-get update
     #     sudo apt-get install -y --no-install-recommends $PACKAGES
 
-    # - name: Install downloaded packages
-    #   shell: bash
-    #   run: |
-    #     cd ~/apt-cache/archives
-    #     sudo dpkg -i *.deb
-    #     sudo apt-get install -f
-
-    - name: Install packages from cache
+    - name: Install downloaded packages
       shell: bash
       run: |
-        sudo apt-get install -y --no-install-recommends $PACKAGES
+        cd ~/apt-cache/archives
+        sudo dpkg -i *.deb
+        sudo apt-get install -f
+
+    # - name: Install packages from cache
+    #   shell: bash
+    #   run: |
+    #     sudo apt-get install -y --no-install-recommends $PACKAGES
 
     - shell: bash
       run: |
