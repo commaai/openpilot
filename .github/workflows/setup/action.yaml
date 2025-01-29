@@ -94,9 +94,15 @@ runs:
     - name: Install downloaded packages
       shell: bash
       run: |
-        cd ~/apt-cache/archives  # Changed to user directory
+        cd ~/apt-cache/archives
         sudo dpkg -i *.deb
         sudo apt-get install -f
+
+    - shell: bash
+      run: |
+        # Remove partial directory and fix ownership
+        sudo rm -rf ~/apt-cache/archives/partial
+        sudo chown -R $USER:$USER ~/apt-cache/archives
 
     - shell : bash
       run :  sudo rm -rf /var/cache/apt/archives/partial
@@ -104,8 +110,8 @@ runs:
     - name: Save APT packages cache
       uses: actions/cache/save@v4
       with:
-        path: ~/apt-cache/archives  # Changed to user directory
-        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}-${{ github.sha }}
+        path: ~/apt-cache/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
 
     - uses: astral-sh/setup-uv@v4
       with:
