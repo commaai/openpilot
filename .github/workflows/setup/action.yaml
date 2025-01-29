@@ -16,6 +16,16 @@ runs:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
+    - name: Set up APT cache directory
+      id: apt-cache
+      shell: bash
+      run: |
+        sudo mkdir -p /var/cache/apt/archives
+        sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives
+        sudo rm -rf /var/cache/apt/archives/partial
+        sudo rm -rf /var/cache/apt/archivesa
     - id: normalize-file-permissions
       shell: bash
       name: Normalize file permissions to ensure a consistent docker build cache
@@ -36,7 +46,47 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    - uses: ./.github/workflows/cache-apt
+    - name: Configure APT to use workspace cache
+      shell: bash
+      run: |
+        mkdir -p ~/apt-cache/archives/partial
+        echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
+    - name: Restore APT packages cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/apt-cache/archives # Changed to user directory
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
+    - name: Read packages from packages.txt
+      id: read-packages
+      shell: bash
+      run: |
+        PACKAGES=$(cat .github/workflows/setup/apt-packages.txt | tr '\n' ' ')
+        echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
+    - name: Install packages and cache .deb files
+      if: steps.apt-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends $PACKAGES
+
+    - name: Install downloaded packages
+      shell: bash
+      run: |
+        cd ~/apt-cache/archives
+        sudo dpkg -i *.deb
+        sudo apt-get install -f
+    - shell: bash
+      run: |
+        # Remove partial directory and fix ownership
+        sudo rm -rf ~/apt-cache/archives/partial
+        sudo chown -R $USER:$USER ~/apt-cache/archives
+    - shell: bash
+      run: sudo rm -rf /var/cache/apt/archives/partial
+    - name: Save APT packages cache
+      uses: actions/cache/save@v4
+      with:
+        path: ~/apt-cache/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
     - uses: astral-sh/setup-uv@v4
       with:
         enable-cache: true
