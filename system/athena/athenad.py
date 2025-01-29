@@ -509,7 +509,7 @@ def getGithubUsername() -> str:
 
 @dispatcher.add_method
 def getFirehoseMode() -> bool:
-  return Params().get_bool("FirehoseMode")
+  return Params().get_bool("FirehoseMode") or False
 
 @dispatcher.add_method
 def getSimInfo():
