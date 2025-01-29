@@ -1,0 +1,35 @@
+name: 'cache apt'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Configure APT to use workspace cache
+      shell: bash
+      run: |
+        mkdir -p ~/apt-cache/archives/partial
+        echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
+
+    - name: Restore APT packages cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/apt-cache/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
+
+    - name: Read packages from packages.txt
+      id: read-packages
+      shell: bash
+      run: |
+        echo "PACKAGES=$(tr '\n' ' ' < .github/workflows/setup/apt-packages.txt)" >> $GITHUB_ENV
+
+    - name: Install missing packages
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends $PACKAGES
+
+    - name: Save APT packages cache
+      if: github.ref == 'refs/heads/master'
+      uses: actions/cache/save@v4
+      with:
+        path: ~/apt-cache/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
