@@ -69,7 +69,7 @@ runs:
       shell: bash
       run: |
         sudo apt-get update
-        sudo apt-get install -y --no-install-recommends .github/workflows/setup/apt-packages.txt
+        sudo apt-get install -y --no-install-recommends ".github/workflows/setup/apt-packages.txt"
 
     - name: Install downloaded packages
       shell: bash
