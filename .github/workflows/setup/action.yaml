@@ -19,16 +19,16 @@ runs:
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
-    # - name: Set up APT cache directory
-    #   id: apt-cache
-    #   shell : bash
-    #   run: |
-    #     sudo mkdir -p /var/cache/apt/archives
-    #     sudo mkdir -p /var/cache/apt/archives/partial
-    #     sudo chmod -R 777 /var/cache/apt/archives/partial
-    #     sudo chmod -R 777 /var/cache/apt/archives
-    #     sudo rm -rf /var/cache/apt/archives/partial
-    #     sudo rm -rf /var/cache/apt/archives
+    - name: Set up APT cache directory
+      id: apt-cache
+      shell : bash
+      run: |
+        sudo mkdir -p /var/cache/apt/archives
+        sudo mkdir -p /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives/partial
+        sudo chmod -R 777 /var/cache/apt/archives
+        sudo rm -rf /var/cache/apt/archives/partial
+        sudo rm -rf /var/cache/apt/archives
 
     - id: normalize-file-permissions
       shell: bash
@@ -51,6 +51,7 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
 
+
     - name: Configure APT to use workspace cache
       shell: bash
       run: |
@@ -70,12 +71,12 @@ runs:
         PACKAGES=$(cat .github/workflows/setup/apt-packages.txt | tr '\n' ' ')
         echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
 
-    # - name: Install packages and cache .deb files
-    #   if: steps.apt-cache.outputs.cache-hit != 'true'
-    #   shell: bash
-    #   run: |
-    #     sudo apt-get update
-    #     sudo apt-get install -y --no-install-recommends --download-only $PACKAGES
+    - name: Install packages and cache .deb files
+      if: steps.apt-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends --download-only $PACKAGES
 
     - name: Install downloaded packages
       shell: bash
@@ -83,6 +84,11 @@ runs:
         cd ~/apt-cache/archives
         sudo dpkg -i *.deb
         sudo apt-get install -f
+
+    # - name: Install packages from cache
+    #   shell: bash
+    #   run: |
+    #     sudo apt-get install -y --no-install-recommends $PACKAGES
 
     - shell: bash
       run: |
