@@ -64,18 +64,18 @@ runs:
         path: ~/apt-cache/archives  # Changed to user directory
         key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
 
-    - name: Read packages from packages.txt
-      id: read-packages
-      shell: bash
-      run: |
-        PACKAGES=$(cat .github/workflows/setup/apt-packages.txt | tr '\n' ' ')
-        echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
-    - name: Install packages and cache .deb files
-      if: steps.apt-cache.outputs.cache-hit != 'true'
-      shell: bash
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y --download-only $PACKAGES
+    # - name: Read packages from packages.txt
+    #   id: read-packages
+    #   shell: bash
+    #   run: |
+    #     PACKAGES=$(cat .github/workflows/setup/apt-packages.txt | tr '\n' ' ')
+    #     echo "PACKAGES=$PACKAGES" >> $GITHUB_ENV
+    # - name: Install packages and cache .deb files
+    #   if: steps.apt-cache.outputs.cache-hit != 'true'
+    #   shell: bash
+    #   run: |
+    #     sudo apt-get update
+    #     sudo apt-get install -y --download-only $PACKAGES
         
     - name: List downloaded .deb files
       shell: bash
