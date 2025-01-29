@@ -37,6 +37,8 @@ runs:
         sudo mkdir -p /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives/partial
         sudo chmod -R 777 /var/cache/apt/archives
+        sudo rm -rf /var/cache/apt/archives/partial
+        sudo rm -rf /var/cache/apt/archives
 
     - id: normalize-file-permissions
       shell: bash
