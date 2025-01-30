@@ -1,11 +1,9 @@
-name: 'openpilot env setup'
-
+name: "openpilot env setup"
 inputs:
   is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    description: "A mock param that asserts that we use the setup-with-retry instead of this action directly"
     required: false
-    default: 'false'
-
+    default: "false"
 runs:
   using: "composite"
   steps:
@@ -15,42 +13,66 @@ runs:
       run: |
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
-
-    - shell: bash
-      name: No retries!
-      run: |
-        if [ "${{ github.run_attempt }}" -gt 1 ]; then
-          echo -e "\033[0;31m##################################################"
-          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
-          echo -e "\033[0;31m##################################################\033[0m"
-          exit 1
-        fi
-
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
-      run: git lfs pull
-
+      run: |
+        start=$(date +%s)
+        git lfs pull
+        end=$(date +%s)
+        echo "Execution time: $((end - start)) seconds"
     # build cache
     - id: date
       shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
+      run: |
+        echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+        echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: .ci_cache/scons_cache
+        path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
+
+    - name: Configure APT to use workspace cache
       shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
       run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
+        mkdir -p ~/apt-cache/archives/partial
+        echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
+    - name: Restore APT packages cache
+      id: apt-cache
+      uses: actions/cache/restore@v4
+      with:
+        path: ~/apt-cache/archives # Changed to user directory
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
+    - name: Install packages and cache .deb files
+      if: steps.apt-cache.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        start=$(date +%s)
+        sudo apt-get update
+        xargs -a .github/workflows/setup/apt-packages.txt sudo apt-get install -y --no-install-recommends
+        end=$(date +%s)
+        echo "Execution time: $((end - start)) seconds"
+
+    - name: Install downloaded packages
+      shell: bash
+      run: |
+        start=$(date +%s)
+        cd ~/apt-cache/archives
+        sudo dpkg -i *.deb || sudo apt-get install -f -y
+        end=$(date +%s)
+        echo "Execution time: $((end - start)) seconds"
+
+    - name: Install python packages
+      uses: astral-sh/setup-uv@v4
+      with:
+        enable-cache: true
+        cache-dependency-glob: "uv.lock"
     - shell: bash
-      run: eval ${{ env.BUILD }}
+      run: |
+        start=$(date +%s)
+        uv sync --frozen --all-extras
+        end=$(date +%s)
+        echo "Execution time: $((end - start)) seconds"
