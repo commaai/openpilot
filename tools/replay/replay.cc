@@ -109,6 +109,7 @@ void Replay::seekTo(double seconds, bool relative) {
   interruptStream([&]() {
     current_segment_.store(target_segment);
     cur_mono_time_ = route_start_ts_ + target_time * 1e9;
+    cur_which_ = cereal::Event::Which::INIT_DATA;
     seeking_to_.store(target_time, std::memory_order_relaxed);
     return false;
   });
@@ -250,7 +251,6 @@ void Replay::publishFrame(const Event *e) {
 
 void Replay::streamThread() {
   stream_thread_id = pthread_self();
-  cereal::Event::Which cur_which = cereal::Event::Which::INIT_DATA;
   std::unique_lock lk(stream_lock_);
 
   while (true) {
@@ -259,7 +259,7 @@ void Replay::streamThread() {
 
     event_data_ = seg_mgr_->getEventData();
     const auto &events = event_data_->events;
-    auto first = std::upper_bound(events.cbegin(), events.cend(), Event(cur_which, cur_mono_time_, {}));
+    auto first = std::upper_bound(events.cbegin(), events.cend(), Event(cur_which_, cur_mono_time_, {}));
     if (first == events.cend()) {
       rInfo("waiting for events...");
       events_ready_ = false;
@@ -273,9 +273,7 @@ void Replay::streamThread() {
       camera_server_->waitForSent();
     }
 
-    if (it != events.cend()) {
-      cur_which = it->which;
-    } else if (!hasFlag(REPLAY_FLAG_NO_LOOP)) {
+    if (it == events.cend() && !hasFlag(REPLAY_FLAG_NO_LOOP)) {
       int last_segment = seg_mgr_->route_.segments().rbegin()->first;
       if (event_data_->isSegmentLoaded(last_segment)) {
         rInfo("reaches the end of route, restart from beginning");
@@ -302,10 +300,12 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
       seg_mgr_->setCurrentSegment(segment);
     }
 
+    cur_mono_time_ = evt.mono_time;
+    cur_which_ = evt.which;
+
     // Skip events if socket is not present
     if (!sockets_[evt.which]) continue;
 
-    cur_mono_time_ = evt.mono_time;
     const uint64_t current_nanos = nanos_since_boot();
     const int64_t time_diff = (evt.mono_time - evt_start_ts) / speed_ - (current_nanos - loop_start_ts);
 
