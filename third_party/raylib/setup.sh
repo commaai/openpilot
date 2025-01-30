@@ -37,8 +37,12 @@ git clean -xdff .
 
 cd src
 
-make -j$(nproc) PLATFORM=$RAYLIB_PLATFORM
-sudo make install RAYLIB_INSTALL_PATH=$INSTALL_DIR RAYLIB_H_INSTALL_PATH=$INSTALL_H_DIR
+make -j$(nproc) PLATFORM=$RAYLIB_PLATFORM RAYLIB_RELEASE_PATH=$INSTALL_DIR
+
+cp raylib.h $INSTALL_H_DIR/raylib.h
+cp raymath.h $INSTALL_H_DIR/raymath.h
+cp rlgl.h $INSTALL_H_DIR/rlgl.h
+echo "raylib development files installed/updated in $INSTALL_H_DIR"
 
 # this commit needs to be in line with raylib
 set -x
