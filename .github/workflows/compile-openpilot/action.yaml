@@ -1,4 +1,4 @@
-name: 'compile openpilot'
+name: "compile openpilot"
 
 runs:
   using: "composite"
@@ -6,16 +6,30 @@ runs:
     - shell: bash
       name: Build openpilot with all flags
       run: |
-        ${{ env.RUN }} "scons -j$(nproc)"
-        ${{ env.RUN }} "release/check-dirty.sh"
+        source .venv/bin/activate
+        scons -j$(nproc)
+        release/check-dirty.sh
     - shell: bash
       name: Cleanup scons cache and rebuild
       run: |
-          ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
-                          scons -j$(nproc) --cache-populate"
+        source .venv/bin/activate
+        rm -rf /tmp/scons_cache/* && \
+        scons -j$(nproc) --cache-populate
     - name: Save scons cache
       uses: actions/cache/save@v4
       if: github.ref == 'refs/heads/master'
       with:
-        path: .ci_cache/scons_cache
+        path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+
+    - shell: bash
+      run: |
+        # Remove partial directory and fix ownership
+        sudo rm -rf ~/apt-cache/archives/partial
+        sudo chown -R $USER:$USER ~/apt-cache/archives
+
+    - name: Save APT packages cache
+      uses: actions/cache/save@v4
+      with:
+        path: ~/apt-cache/archives
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
