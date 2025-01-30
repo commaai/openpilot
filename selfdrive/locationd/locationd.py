@@ -92,7 +92,7 @@ class LocationEstimator:
   def _finite_check(self, t: float, new_x: np.ndarray, new_P: np.ndarray):
     all_finite = np.isfinite(new_x).all() and np.isfinite(new_P).all()
     if not all_finite:
-      cloudlog.warning("Non-finite values detected, kalman reset")
+      cloudlog.error("Non-finite values detected, kalman reset")
       self.reset(t)
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
@@ -314,7 +314,7 @@ def main():
           elif res == HandleLogResult.INPUT_INVALID:
             cloudlog.warning(f"Observation {which} ignored due to failed sanity check")
             observation_input_invalid[which] += 1
-          else:
+          elif res == HandleLogResult.SUCCESS:
             observation_input_invalid[which] *= input_invalid_decay[which]
     else:
       filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
