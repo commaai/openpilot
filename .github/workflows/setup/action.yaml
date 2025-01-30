@@ -9,13 +9,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    # assert that this action is retried using the setup-with-retry
+    # 1) Enforce that this step must be called only from the "setup-with-retry" action
     - shell: bash
       if: ${{ inputs.is_retried == 'false' }}
       run: |
         echo "You should not run this action directly. Use setup-with-retry instead"
         exit 1
 
+    # 2) Disallow retries (if the job is re-run automatically, fail)
     - shell: bash
       name: No retries!
       run: |
@@ -26,16 +27,54 @@ runs:
           exit 1
         fi
 
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
+    # 3) Pull any Git LFS objects (after checkout)
     - shell: bash
+      name: Pull LFS objects
       run: git lfs pull
 
-    # build cache
+    # 4) (Optional) Restore your APT cache
+    - name: Restore apt cache
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt
+        key: ${{ runner.os }}-apt
+
+    # 5) Install apt dependencies
+    - shell: bash
+      name: Install apt dependencies
+      run: |
+        sudo apt-get update -qq
+        sudo apt-get install -y --no-install-recommends \
+          build-essential \
+          python3-dev \
+          python3-pip \
+          git \
+          libffi-dev \
+          # ... add any other needed system packages here ...
+
+    # 6) (Optional) Restore your pip cache
+    - name: Restore pip cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+    # 7) Install Python requirements
+    - shell: bash
+      name: Install python requirements
+      run: |
+        python3 -m pip install --upgrade pip wheel
+        python3 -m pip install -r requirements.txt
+
+    # 8) Capture commit date for caching (used in SCons cache key)
     - id: date
       shell: bash
       run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
+
+    # 9) Restore or update your SCons cache
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
@@ -44,13 +83,17 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
+
+    # 10) Normalize file permissions (previously used for Docker caching consistency)
     - id: normalize-file-permissions
       shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
+      name: Normalize file permissions
       run: |
         find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
         find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
+
+    # 11) (Optional) Run your SCons build or other setup commands directly on the runner
     - shell: bash
-      run: eval ${{ env.BUILD }}
+      name: SCons build
+      run: |
+        scons  # or whatever build command you need
