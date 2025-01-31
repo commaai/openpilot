@@ -334,20 +334,20 @@ def getVersion() -> dict[str, str]:
   }
 
 
-def scan_dir(path: str, prefix: str) -> list[str]:
+def scan_dir(path: str, prefix: str, base: str) -> list[str]:
   files = []
   # only walk directories that match the prefix
   # (glob and friends traverse entire dir tree)
   with os.scandir(path) as i:
     for e in i:
-      rel_path = os.path.relpath(e.path, Paths.log_root())
+      rel_path = os.path.relpath(e.path, base)
       if e.is_dir(follow_symlinks=False):
         # add trailing slash
         rel_path = os.path.join(rel_path, '')
         # if prefix is a partial dir name, current dir will start with prefix
         # if prefix is a partial file name, prefix with start with dir name
         if rel_path.startswith(prefix) or prefix.startswith(rel_path):
-          files.extend(scan_dir(e.path, prefix))
+          files.extend(scan_dir(e.path, prefix, base))
       else:
         if rel_path.startswith(prefix):
           files.append(rel_path)
@@ -355,7 +355,9 @@ def scan_dir(path: str, prefix: str) -> list[str]:
 
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> list[str]:
-  return scan_dir(Paths.log_root(), prefix)
+  internal_files = scan_dir(Paths.log_root(), prefix, Paths.log_root())
+  external_files = scan_dir(Paths.log_root_external(), prefix, Paths.log_root_external())
+  return sorted(set(internal_files + external_files))
 
 
 @dispatcher.add_method
@@ -381,7 +383,12 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       continue
 
     path = os.path.join(Paths.log_root(), file.fn)
-    if not os.path.exists(path) and not os.path.exists(strip_zst_extension(path)):
+    path_external = os.path.join(Paths.log_root_external(), file.fn)
+    if os.path.exists(local_path) or os.path.exists(strip_zst_extension(local_path)):
+      path = local_path
+    elif os.path.exists(external_path) or os.path.exists(strip_zst_extension(external_path)):
+      path = external_path
+    else:
       failed.append(file.fn)
       continue
 
