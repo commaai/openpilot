@@ -1,10 +1,6 @@
-#include <QDebug>
-#include <QProcess>
-
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
-#include "common/util.h"
 
 DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   adbToggle = new ParamControl("AdbEnabled", tr("Enable ADB"),
@@ -89,6 +85,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     longManeuverToggle->setEnabled(false);
     experimentalLongitudinalToggle->setVisible(false);
   }
+  experimentalLongitudinalToggle->refresh();
 
   offroad = _offroad;
 }
