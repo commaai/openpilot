@@ -11,8 +11,6 @@ from openpilot.system.loggerd.xattr_cache import getxattr
 
 MIN_BYTES = 5 * 1024 * 1024 * 1024
 MIN_PERCENT = 10
-MIN_BYTES_EXTERNAL = 5 * 1024 * 1024 * 1024
-MIN_PERCENT_EXTERNAL = 10
 
 DELETE_LAST = ['boot', 'crash']
 
@@ -65,8 +63,8 @@ def deleter_thread(exit_event: threading.Event):
           continue
 
         if Path(Paths.log_root_external()).is_mount():
-          out_of_bytes_external = get_available_bytes(default=MIN_BYTES + 1, path_type="external") < MIN_BYTES_EXTERNAL
-          out_of_percent_external = get_available_percent(default=MIN_PERCENT + 1, path_type="external") < MIN_PERCENT_EXTERNAL
+          out_of_bytes_external = get_available_bytes(default=MIN_BYTES + 1, path_type="external") < MIN_BYTES
+          out_of_percent_external = get_available_percent(default=MIN_PERCENT + 1, path_type="external") < MIN_PERCENT
 
           if out_of_percent_external or out_of_bytes_external:
             dirs_external = listdir_by_creation(Paths.log_root_external())
