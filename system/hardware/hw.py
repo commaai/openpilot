@@ -22,7 +22,7 @@ class Paths:
 
   @staticmethod
   def log_root_external() -> str:
-    return '/mnt/data_external/realdata/'
+    return '/mnt/external_data/realdata/'
 
   @staticmethod
   def swaglog_root() -> str:
