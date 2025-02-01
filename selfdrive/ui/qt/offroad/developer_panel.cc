@@ -3,6 +3,7 @@
 
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/widgets/ssh_keys.h"
+#include "selfdrive/ui/qt/widgets/external_storage.h"
 #include "selfdrive/ui/qt/widgets/controls.h"
 #include "common/util.h"
 
@@ -14,6 +15,8 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   // SSH keys
   addItem(new SshToggle());
   addItem(new SshControl());
+
+  addItem(new ExternalStorageControl());
 
   joystickToggle = new ParamControl("JoystickDebugMode", tr("Joystick Debug Mode"), "", "");
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
