@@ -35,8 +35,12 @@ sunnypilot_panel_qt_src = [
   "sunnypilot/qt/offroad/settings/sunnypilot/mads_settings.cc",
 ]
 
+vehicle_panel_qt_src = [
+  "sunnypilot/qt/offroad/settings/vehicle/platform_selector.cc",
+]
+
 sp_widgets_src = widgets_src
-sp_qt_src = qt_src + sunnypilot_panel_qt_src
+sp_qt_src = qt_src + sunnypilot_panel_qt_src + vehicle_panel_qt_src
 sp_qt_util = qt_util
 
 Export('sp_widgets_src', 'sp_qt_src', "sp_qt_util")

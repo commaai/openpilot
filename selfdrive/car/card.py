@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import time
 import threading
@@ -104,7 +105,9 @@ class Car:
         with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
           cached_params = _cached_params
 
-      self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
+      fixed_fingerprint = json.loads(self.params.get("CarPlatformBundle", encoding='utf-8') or "{}").get("platform", None)
+
+      self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params, fixed_fingerprint)
       interfaces.setup_car_interface_sp(self.CI.CP, self.CI.CP_SP, self.params)
       self.RI = get_radar_interface(self.CI.CP, self.CI.CP_SP)
       self.CP = self.CI.CP
