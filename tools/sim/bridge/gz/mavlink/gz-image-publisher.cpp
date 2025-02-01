@@ -119,9 +119,24 @@ void GZImagePublisher::send_image(int client_socket_fd) {
   cereal::Thumbnail::Builder thumb = message.initRoot<cereal::Thumbnail>();
   thumb.setFrameId(0);
   thumb.setTimestampEof(0);
-  kj::ArrayPtr<const uint8_t> data(
-      (const unsigned char *)this->last_frame.data().data(),
-      this->last_frame.data().size());
+  size_t height = this->last_frame.height();
+  size_t width = this->last_frame.width();
+  size_t half_height = height / 2;
+  size_t half_width = width / 2;
+  size_t new_size = half_height * half_width * 3;
+  uint8_t output_data[new_size];
+  std::string frame_data = this->last_frame.data();
+  size_t index = 0;
+  for (size_t row = 0; row < height; row += 2) {
+    for (size_t column = 0; column < width; column += 2) {
+      for (char rgb = 0; rgb < 3; rgb++) {
+        size_t pixel = row * width + column;
+        output_data[index] = frame_data[pixel * 3 + rgb];
+        index++;
+      }
+    }
+  }
+  kj::ArrayPtr<uint8_t> data(output_data, new_size);
   thumb.setThumbnail(data);
   thumb.setEncoding(cereal::Thumbnail::Encoding::UNKNOWN);
   if (isFileDescriptiorValid(client_socket_fd)) {
