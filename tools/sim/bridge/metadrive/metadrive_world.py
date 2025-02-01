@@ -37,6 +37,16 @@ class MetaDriveWorld(World):
     self.last_check_timestamp = 0
     self.distance_moved = 0
 
+    self.initial_velocity = np.array(x=3.250601291656494, y=10.504247665405273, z=0)
+    self.initial_position = np.array(217.0621795654297, 82.05776977539062)
+    self.initial_bearing = 72.51176834106445
+    self.initial_steering_angle = 7.866117000579834
+
+    self.vehicle_last_pos = self.initial_position.copy()
+    self.velocity = self.initial_velocity.copy()
+    self.bearing = self.initial_bearing
+    self.steering_angle = self.initial_steering_angle
+
     self.metadrive_process = multiprocessing.Process(name="metadrive process", target=
                               functools.partial(metadrive_process, dual_camera, config,
                                                 self.camera_array, self.wide_camera_array, self.image_lock,
