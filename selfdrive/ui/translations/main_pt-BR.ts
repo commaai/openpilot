@@ -137,11 +137,11 @@
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilitar ADB</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>ADB (Android Debug Bridge) permite conectar ao seu dispositivo por meio do USB ou através da rede. Veja https://docs.comma.ai/how-to/connect-to-comma para maiores informações.</translation>
     </message>
 </context>
 <context>
@@ -1079,11 +1079,11 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>FIREHOSE Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo FIREHOSE</translation>
     </message>
     <message>
         <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation type="unfinished"></translation>
+        <translation>Habilite o &lt;b&gt;Modo FIREHOSE&lt;/b&gt; para obter seus dados de direção no conjunto de treinamento.&lt;br&gt;&lt;br&gt;Siga estas etapas para preparar seu dispositivo:&lt;br&gt;  1. Leve seu dispositivo para dentro e conecte-o a um bom adaptador USB-C&lt;br&gt;  2. Conecte-se ao Wi-Fi&lt;br&gt;  3. Habilite este toggle&lt;br&gt;  4. Deixe-o conectado por pelo menos 30 minutos.&lt;br&gt;&lt;br&gt;Este botão desativa após reiniciar o dispositivo. Repita uma vez por semana para obter a máxima eficácia.</translation>
     </message>
 </context>
 <context>
