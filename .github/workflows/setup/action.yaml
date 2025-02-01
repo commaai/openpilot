@@ -23,6 +23,7 @@ runs:
           echo -e "\033[0;31m##################################################\033[0m"
           exit 1
         fi
+
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: |
@@ -36,6 +37,7 @@ runs:
       run: |
         echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
         echo "$CACHE_COMMIT_DATE"
+
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
@@ -50,23 +52,35 @@ runs:
       run: |
         mkdir -p ~/apt-cache/archives/partial
         echo 'Dir::Cache::archives "'"$HOME"'/apt-cache/archives";' | sudo tee /etc/apt/apt.conf.d/90-github-cache
+
     - name: Restore APT packages cache
       id: apt-cache
       uses: actions/cache/restore@v4
       with:
         path: ~/apt-cache/archives # Changed to user directory
-        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
-    - name: Install packages and cache .deb files
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('tools/install_ubuntu_dependencies.sh') }}
+
+    - name: Install system packages on cache miss
       if: steps.apt-cache.outputs.cache-hit != 'true'
       shell: bash
       run: |
+        export DEBIAN_FRONTEND=noninteractive
         start=$(date +%s)
-        sudo apt-get update
-        xargs -a .github/workflows/setup/apt-packages.txt sudo apt-get install -y --no-install-recommends
+        sudo ./tools/install_ubuntu_dependencies.sh
         end=$(date +%s)
         echo "Execution time: $((end - start)) seconds"
+        start=$(date +%s)
+        sudo apt-get -y --no-install-recommends install \
+          alien \
+          gnome-screenshot \
+          pulseaudio \
+          python3-tk \
+          x11-xserver-utils
+        end=$(date +%s)
+        echo "✅ Packages installed in $((end - start)) seconds"
 
-    - name: Install downloaded packages
+    - name: Install downloaded packages on cache hit
+      if: steps.apt-cache.outputs.cache-hit == 'true'
       shell: bash
       run: |
         start=$(date +%s)

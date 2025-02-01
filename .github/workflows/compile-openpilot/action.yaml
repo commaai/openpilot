@@ -29,8 +29,7 @@ runs:
         sudo chown -R $USER:$USER ~/apt-cache/archives
 
     - name: Save APT packages cache
-      if: github.ref == 'refs/heads/master'
       uses: actions/cache/save@v4
       with:
         path: ~/apt-cache/archives
-        key: Linux-apt-${{ runner.os }}-${{ hashFiles('.github/workflows/setup/apt-packages.txt') }}
+        key: Linux-apt-${{ runner.os }}-${{ hashFiles('tools/install_ubuntu_dependencies.sh') }}
