@@ -680,6 +680,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     // SOF has come in, wait until readout is complete
     struct cam_sync_wait sync_wait = {0};
     sync_wait.sync_obj = sync_objs[i];
+    // TODO: write a test to stress test w/ a low timeout and check camera frame ids match
     sync_wait.timeout_ms = 100;
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
