@@ -111,7 +111,7 @@ class ModularAssistiveDrivingSystem:
           transition_paused_state()
 
       if not (self.pause_lateral_on_brake_toggle and CS.brakePressed) and \
-         not self.events.contains_in_list(GEARS_ALLOW_PAUSED_SILENT):
+         not self.events_sp.contains_in_list(GEARS_ALLOW_PAUSED_SILENT):
         if self.state_machine.state == State.paused:
           self.events_sp.add(EventNameSP.silentLkasEnable)
 
@@ -160,7 +160,7 @@ class ModularAssistiveDrivingSystem:
     self.update_events(CS)
 
     if not self.selfdrive.CP.passive and self.selfdrive.initialized:
-      self.enabled, self.active = self.state_machine.update(self.events, self.events_sp)
+      self.enabled, self.active = self.state_machine.update()
 
     # Copy of previous SelfdriveD states for MADS events handling
     self.selfdrive.enabled_prev = self.selfdrive.enabled

@@ -25,11 +25,9 @@ Last updated: July 29, 2024
 """
 
 from cereal import log, custom
-from openpilot.selfdrive.selfdrived.events import ET, Events
+from openpilot.selfdrive.selfdrived.events import ET
 from openpilot.selfdrive.selfdrived.state import SOFT_DISABLE_TIME
 from openpilot.common.realtime import DT_CTRL
-
-from openpilot.sunnypilot.selfdrive.selfdrived.events import EventsSP
 
 State = custom.ModularAssistiveDrivingSystem.ModularAssistiveDrivingSystemState
 EventName = log.OnroadEvent.EventName
@@ -41,19 +39,17 @@ ENABLED_STATES = (State.paused, *ACTIVE_STATES)
 GEARS_ALLOW_PAUSED_SILENT = [EventNameSP.silentWrongGear, EventNameSP.silentReverseGear, EventNameSP.silentBrakeHold,
                              EventNameSP.silentDoorOpen, EventNameSP.silentSeatbeltNotLatched, EventNameSP.silentParkBrake]
 GEARS_ALLOW_PAUSED = [EventName.wrongGear, EventName.reverseGear, EventName.brakeHold,
-                      EventName.doorOpen, EventName.seatbeltNotLatched, EventName.parkBrake,
-                      *GEARS_ALLOW_PAUSED_SILENT]
+                      EventName.doorOpen, EventName.seatbeltNotLatched, EventName.parkBrake]
 
 
 class StateMachine:
   def __init__(self, mads):
     self.selfdrive = mads.selfdrive
     self.ss_state_machine = mads.selfdrive.state_machine
+    self._events = mads.selfdrive.events
+    self._events_sp = mads.selfdrive.events_sp
 
     self.state = State.disabled
-
-    self._events = Events()
-    self._events_sp = EventsSP()
 
   def add_current_alert_types(self, alert_type):
     if not self.selfdrive.enabled:
@@ -62,22 +58,19 @@ class StateMachine:
   def check_contains(self, event_type: str) -> bool:
     return bool(self._events.contains(event_type) or self._events_sp.contains(event_type))
 
-  def check_contains_in_list(self, events_list: list[int]) -> bool:
-    return bool(self._events.contains_in_list(events_list) or self._events_sp.contains_in_list(events_list))
+  def check_contains_in_list(self) -> bool:
+    return bool(self._events.contains_in_list(GEARS_ALLOW_PAUSED) or self._events_sp.contains_in_list(GEARS_ALLOW_PAUSED_SILENT))
 
-  def update(self, events: Events, events_sp: EventsSP):
+  def update(self):
     # soft disable timer and current alert types are from the state machine of openpilot
     # decrement the soft disable timer at every step, as it's reset on
     # entrance in SOFT_DISABLING state
-
-    self._events = events
-    self._events_sp = events_sp
 
     # ENABLED, SOFT DISABLING, PAUSED, OVERRIDING
     if self.state != State.disabled:
       # user and immediate disable always have priority in a non-disabled state
       if self.check_contains(ET.USER_DISABLE):
-        if events_sp.has(EventNameSP.silentLkasDisable) or events_sp.has(EventNameSP.silentBrakeHold):
+        if self._events_sp.has(EventNameSP.silentLkasDisable) or self._events_sp.has(EventNameSP.silentBrakeHold):
           self.state = State.paused
         else:
           self.state = State.disabled
@@ -141,7 +134,7 @@ class StateMachine:
     elif self.state == State.disabled:
       if self.check_contains(ET.ENABLE):
         if self.check_contains(ET.NO_ENTRY):
-          if self.check_contains_in_list(GEARS_ALLOW_PAUSED):
+          if self.check_contains_in_list():
             self.state = State.paused
           self.add_current_alert_types(ET.NO_ENTRY)
 
