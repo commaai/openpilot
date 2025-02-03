@@ -157,7 +157,7 @@ class LongitudinalPlanner:
       v_cruise = 0.0
     # clip limits, cannot init MPC outside of bounds
     accel_limits_turns[0] = min(accel_limits_turns[0], self.a_desired + 0.05)
-    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.08)
+    accel_limits_turns[1] = max(accel_limits_turns[1], self.a_desired - 0.05)
 
     self.mpc.set_weights(prev_accel_constraint, personality=sm['selfdriveState'].personality)
     self.mpc.set_accel_limits(accel_limits_turns[0], accel_limits_turns[1])
