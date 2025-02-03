@@ -131,11 +131,9 @@ class StreamSession:
 
     assert len(cameras) == config.n_expected_camera_tracks, "Incoming stream has misconfigured number of video tracks"
     for cam in cameras:
-      track = LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack()
-      builder.add_video_stream(cam, track)
+      builder.add_video_stream(cam, LiveStreamVideoStreamTrack(cam) if not debug_mode else VideoStreamTrack())
     if config.expected_audio_track:
-      track = AudioInputStreamTrack() if not debug_mode else AudioStreamTrack()
-      builder.add_audio_stream(track)
+      builder.add_audio_stream(AudioInputStreamTrack() if not debug_mode else AudioStreamTrack())
     if config.incoming_audio_track:
       self.audio_output_cls = AudioOutputSpeaker if not debug_mode else MediaBlackhole
       builder.offer_to_receive_audio_stream()
