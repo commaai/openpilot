@@ -26,7 +26,7 @@ def main():
     print("deserializing")
     thumbnail = log_capnp.Thumbnail.from_bytes_packed(data)
     flat = np.frombuffer(thumbnail.thumbnail, dtype=np.uint8)
-    pixels = flat.reshape(540, 960, 3)
+    pixels = flat.reshape(720, 1280, 3)
 
     plt.imshow(pixels)
     plt.show()

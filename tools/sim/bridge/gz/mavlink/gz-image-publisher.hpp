@@ -1,3 +1,5 @@
+#include <CL/cl.h>
+#include <cstdint>
 #include <fcntl.h>
 #include <gz/msgs.hh>
 #include <gz/transport.hh>
@@ -17,16 +19,13 @@ bool isFileDescriptiorValid(int client_socket_fd) {
 
 struct BridgeConfig {
   uint16_t port = 4069;
+  std::pair<uint16_t, uint16_t> image_size = std::make_pair(720, 1280);
 };
 
 class GZImagePublisher {
 public:
   explicit GZImagePublisher(const BridgeConfig config = {});
-  ~GZImagePublisher() {
-    if (isFileDescriptiorValid(log_file_fd_)) {
-      close(log_file_fd_);
-    }
-  };
+  ~GZImagePublisher();
   void run();
 
 private:
@@ -40,6 +39,15 @@ private:
   BridgeConfig config_;
   PIDController pid_controller_yaw_;
   std::thread tcp_server_thread_;
+  std::string last_nv12_frame;
   gz::transport::Node node_;
+  cl_platform_id platform;
+  cl_device_id device_id;
+  cl_context context;
+  cl_command_queue command_queue;
+  cl_mem cl_input;
+  cl_mem cl_output;
+  cl_program program;
+  cl_kernel kernel;
 //  Autopilot_Interface autopilot_interface_;
 };

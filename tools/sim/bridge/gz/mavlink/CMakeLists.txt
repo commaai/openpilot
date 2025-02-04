@@ -8,6 +8,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 add_definitions("-Wall -Wextra -Werror")
 
 # Finds MAVSDK when installed system wide.
+find_package(OpenCL REQUIRED)
 find_package(gz-msgs10 REQUIRED)
 find_package(gz-transport13 REQUIRED)
 find_package(MAVSDK REQUIRED)
@@ -20,8 +21,6 @@ add_executable(mavlink-bridge
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/legacy.capnp.c++
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/custom.capnp.c++
 )
-
-
 # Specify your app's executable name and a list of linked libraries
 target_link_libraries(mavlink-bridge
     MAVSDK::mavsdk
@@ -31,7 +30,6 @@ target_link_libraries(mavlink-bridge
     kj
     pthread
 )
-
 target_include_directories(mavlink-bridge
     PUBLIC
     ${gz-msgs10_INCLUDE_DIRS}
@@ -45,7 +43,9 @@ add_executable(gzimgpub
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/legacy.capnp.c++
     $ENV{OPENPILOT_DIR}/cereal/gen/cpp/custom.capnp.c++
 )
+target_compile_definitions(gzimgpub PRIVATE CL_TARGET_OPENCL_VERSION=300)
 target_link_libraries(gzimgpub
+    OpenCL::OpenCL
     gz-msgs10
     gz-transport13
     capnp
@@ -57,3 +57,6 @@ target_include_directories(gzimgpub
     ${gz-msgs10_INCLUDE_DIRS}
     $ENV{OPENPILOT_DIR}
 )
+set_target_properties(gzimgpub PROPERTIES C_STANDARD 11
+                                                 C_STANDARD_REQUIRED ON
+                                                 C_EXTENSIONS OFF)

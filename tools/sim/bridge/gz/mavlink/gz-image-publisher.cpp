@@ -4,7 +4,10 @@
 // coordinates.
 //
 
+#include <CL/cl.h>
+#include <CL/cl_ext.h>
 #include <asm-generic/socket.h>
+#include <assert.h>
 #include <cerrno>
 #include <chrono>
 #include <cmath>
@@ -29,8 +32,96 @@ using std::chrono::milliseconds;
 using std::chrono::seconds;
 using std::this_thread::sleep_for;
 
+void resize_image(const unsigned char *src, unsigned char *dst, int width,
+                  int height, int dst_width, int dst_height) {
+
+  float x_ratio = (float)width / dst_width;
+  float y_ratio = (float)height / dst_height;
+
+  for (int y = 0; y < dst_height; y++) {
+    for (int x = 0; x < dst_width; x++) {
+      int src_x = int(x * x_ratio);
+      int src_y = int(y * y_ratio);
+      size_t dst_pixel = y * dst_width + x;
+      size_t src_pixel = src_y * width + src_x;
+      for (int c = 0; c < 3; c++) {
+        dst[dst_pixel * 3 + c] = src[src_pixel * 3 + c];
+      }
+    }
+  }
+}
+
 GZImagePublisher::GZImagePublisher(const BridgeConfig config)
-    : config_(config), pid_controller_yaw_(4, 0.3, 1.5) {}
+    : config_(config), pid_controller_yaw_(4, 0.3, 1.5),
+      last_nv12_frame(
+          config_.image_size.first * config_.image_size.second * 3 / 2, ' ') {
+  cl_int CL_err = CL_SUCCESS;
+  cl_uint numPlatforms = 0;
+  cl_platform_id platform;
+  cl_device_id device_id;
+  CL_err = clGetPlatformIDs(1, &platform, &numPlatforms);
+  assert(CL_err == CL_SUCCESS);
+  this->platform = platform;
+
+  CL_err = clGetDeviceIDs(platform, CL_DEVICE_TYPE_ALL, 1, &device_id, NULL);
+  assert(CL_err == CL_SUCCESS);
+  this->device_id = device_id;
+
+  this->context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &CL_err);
+  assert(CL_err == CL_SUCCESS);
+
+  this->command_queue =
+      clCreateCommandQueueWithProperties(this->context, device_id, 0, &CL_err);
+  assert(CL_err == CL_SUCCESS);
+
+  size_t height = this->config_.image_size.first;
+  size_t width = this->config_.image_size.second;
+  size_t input_size = height * width * 3;
+  size_t output_size = input_size / 2;
+  this->cl_input =
+      clCreateBuffer(this->context, CL_MEM_READ_ONLY | CL_MEM_HOST_WRITE_ONLY,
+                     input_size, NULL, &CL_err);
+  assert(CL_err == CL_SUCCESS);
+  this->cl_output = clCreateBuffer(this->context, CL_MEM_WRITE_ONLY,
+                                   output_size, NULL, &CL_err);
+  assert(CL_err == CL_SUCCESS);
+
+  int fd = open("rgb_to_nv12.cl", O_RDONLY);
+  assert(fd >= 0);
+  size_t size = lseek(fd, 0, SEEK_END);
+  lseek(fd, 0, SEEK_SET);
+  unsigned char *program_source = new unsigned char[size];
+  read(fd, program_source, size);
+  close(fd);
+  this->program = clCreateProgramWithSource(
+      this->context, 1, (const char **)&program_source, &size, nullptr);
+
+  char cl_arg[1024];
+  sprintf(cl_arg,
+          " -DHEIGHT=%ld -DWIDTH=%ld -DRGB_STRIDE=%ld -DUV_WIDTH=%ld "
+          "-DUV_HEIGHT=%ld -DRGB_SIZE=%ld -DCL_DEBUG ",
+          height, width, width * 3, width / 2, height / 2, height * width);
+
+  clBuildProgram(this->program, 1, &device_id, cl_arg, nullptr, nullptr);
+  this->kernel = clCreateKernel(this->program, "rgb_to_nv12", &CL_err);
+  assert(CL_err == CL_SUCCESS);
+
+  clSetKernelArg(this->kernel, 0, sizeof(cl_mem), &this->cl_input);
+  clSetKernelArg(this->kernel, 1, sizeof(cl_mem), &this->cl_output);
+  delete[] program_source;
+}
+
+GZImagePublisher::~GZImagePublisher() {
+  clReleaseKernel(this->kernel);
+  clReleaseProgram(this->program);
+  clReleaseMemObject(this->cl_input);
+  clReleaseMemObject(this->cl_output);
+  clReleaseCommandQueue(this->command_queue);
+  clReleaseContext(this->context);
+  if (isFileDescriptiorValid(log_file_fd_)) {
+    close(log_file_fd_);
+  }
+}
 
 bool GZImagePublisher::sub_camera(const std::string topic) {
   return this->node_.Subscribe(
@@ -40,6 +131,32 @@ bool GZImagePublisher::sub_camera(const std::string topic) {
 
 void GZImagePublisher::on_image(const gz::msgs::Image &_msg) {
   this->last_frame = gz::msgs::Image(_msg);
+  std::string resized_frame(this->last_nv12_frame.size() * 2, ' ');
+  resize_image((const unsigned char *)this->last_frame.data().data(),
+               (unsigned char *)resized_frame.data(), this->last_frame.width(),
+               this->last_frame.height(), this->config_.image_size.second,
+               this->config_.image_size.first);
+  clEnqueueWriteBuffer(this->command_queue, this->cl_input, CL_TRUE, 0,
+                       resized_frame.size(), (void *)resized_frame.data(), 0,
+                       nullptr, nullptr);
+  size_t global_work_size[2] = {
+      static_cast<size_t>(this->config_.image_size.second / 4),
+      static_cast<size_t>(this->config_.image_size.first / 4),
+  };
+  clSetKernelArg(this->kernel, 0, sizeof(cl_mem), &this->cl_input);
+  clSetKernelArg(this->kernel, 1, sizeof(cl_mem), &this->cl_output);
+  clFinish(this->command_queue);
+  cl_event event;
+  cl_int CL_err =
+      clEnqueueNDRangeKernel(this->command_queue, this->kernel, 2, 0,
+                             global_work_size, NULL, 0, NULL, &event);
+  assert(CL_err == CL_SUCCESS);
+  clWaitForEvents(1, &event);
+  assert(clReleaseEvent(event) == CL_SUCCESS);
+  clEnqueueReadBuffer(this->command_queue, this->cl_output, CL_TRUE, 0,
+                      this->last_nv12_frame.size(),
+                      (void *)this->last_nv12_frame.data(), 0, nullptr,
+                      nullptr);
 }
 
 void GZImagePublisher::run() {
@@ -119,24 +236,8 @@ void GZImagePublisher::send_image(int client_socket_fd) {
   cereal::Thumbnail::Builder thumb = message.initRoot<cereal::Thumbnail>();
   thumb.setFrameId(0);
   thumb.setTimestampEof(0);
-  size_t height = this->last_frame.height();
-  size_t width = this->last_frame.width();
-  size_t half_height = height / 2;
-  size_t half_width = width / 2;
-  size_t new_size = half_height * half_width * 3;
-  uint8_t output_data[new_size];
-  std::string frame_data = this->last_frame.data();
-  size_t index = 0;
-  for (size_t row = 0; row < height; row += 2) {
-    for (size_t column = 0; column < width; column += 2) {
-      for (char rgb = 0; rgb < 3; rgb++) {
-        size_t pixel = row * width + column;
-        output_data[index] = frame_data[pixel * 3 + rgb];
-        index++;
-      }
-    }
-  }
-  kj::ArrayPtr<uint8_t> data(output_data, new_size);
+  kj::ArrayPtr<uint8_t> data((unsigned char *)this->last_nv12_frame.data(),
+                             this->last_nv12_frame.size());
   thumb.setThumbnail(data);
   thumb.setEncoding(cereal::Thumbnail::Encoding::UNKNOWN);
   if (isFileDescriptiorValid(client_socket_fd)) {
