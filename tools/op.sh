@@ -245,7 +245,7 @@ function op_setup() {
 
 function op_auth() {
   op_before_cmd
-  op_run_command python tools/lib/auth.py
+  op_run_command tools/lib/auth.py
 }
 
 function op_activate_venv() {
