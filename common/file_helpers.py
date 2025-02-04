@@ -47,7 +47,7 @@ def get_upload_stream(filepath: str, compress: bool) -> io.BufferedReader | io.B
   # Compress the file on the fly and return a BytesIO stream
   stream = io.BytesIO()
   compressor = zstd.ZstdCompressor(level=LOG_COMPRESSION_LEVEL)
-  with  open(filepath, "rb") as f:
+  with open(filepath, "rb") as f:
     compressor.copy_stream(f, stream)
   stream.seek(0)
   return stream
