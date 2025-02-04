@@ -243,6 +243,11 @@ function op_setup() {
   op_check
 }
 
+function op_auth() {
+  op_before_cmd
+  op_run_command tools/lib/auth.py
+}
+
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
@@ -374,6 +379,7 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
+  echo -e "  ${BOLD}auth${NC}         Authenticate yourself for API use"
   echo -e "  ${BOLD}check${NC}        Check the development environment (git, os, python) to start using openpilot"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
   echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
@@ -427,6 +433,7 @@ function _op() {
 
   # parse Commands
   case $1 in
+    auth )          shift 1; op_auth "$@" ;;
     venv )          shift 1; op_venv "$@" ;;
     check )         shift 1; op_check "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
