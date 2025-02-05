@@ -16,11 +16,11 @@ from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
-from openpilot.common.swaglog import cloudlog
-from openpilot.tools.lib.logreader.comma_car_segments import get_url as get_comma_segments_url
-from openpilot.tools.lib.logreader.openpilotci import get_url
-from openpilot.tools.lib.logreader.filereader import FileReader, file_exists, internal_source_available
-from openpilot.tools.lib.logreader.route import Route, SegmentRange
+# from openpilot.common.swaglog import cloudlog
+from openpilot_logging.comma_car_segments import get_url as get_comma_segments_url
+from openpilot_logging.openpilotci import get_url
+from openpilot_logging.filereader import FileReader, file_exists, internal_source_available
+from openpilot_logging.route import Route, SegmentRange
 
 LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]
@@ -116,7 +116,8 @@ def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interact
       if input(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
     else:
-      cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, falling back to qlogs for those segments...")
+      # cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, falling back to qlogs for those segments...")
+      pass
 
     return [rlog if valid_file(rlog) else (qlog if valid_file(qlog) else None)
             for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]

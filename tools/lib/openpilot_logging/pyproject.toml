@@ -12,14 +12,15 @@ urls = { "homepage" = "https://github.com/commaai/openpilot" }
 # setuptools includes distutils which is needed by Cython and pre-commit.
 # distutils was removed in python3.12 from the standard library.
 dependencies = [
-  "scons",
-  "numpy",
-  "Cython",
-  "crcmod",
+#  "scons",
+#  "numpy",
+#  "Cython",
+#  "crcmod",
   "tqdm",
   "pycapnp",
   "setuptools",
-  "pycryptodome",
+  "zstandard",
+#  "pycryptodome",
 ]
 
 [project.optional-dependencies]
