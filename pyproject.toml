@@ -111,6 +111,7 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "raylib @ https://github.com/commaai/raylib-python-cffi/releases/download/wheel/raylib-5.5.0.2-cp312-cp312-linux_x86_64.whl ; (platform_machine == 'x86_64')",
 ]
 
 tools = [
