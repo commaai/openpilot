@@ -48,9 +48,9 @@ MIN_LAG_VEL = 15.0
 
 class LagEstimator(ParameterEstimator):
   def __init__(self, CP):
-    self.hist_len = int(MIN_HIST_LEN_SEC / DT_CTRL)
-    self.min_hist_len = int(MIN_HIST_LEN_SEC / DT_CTRL)
-    self.initial_lag = CP.steerActuatorDelay
+    self.hist_len = int(MIN_HIST_LEN_SEC / DT_MDL)
+    self.min_hist_len = int(MIN_HIST_LEN_SEC / DT_MDL)
+    self.initial_lag = -CP.steerActuatorDelay
     self.current_lag = self.initial_lag
 
     self.lat_active = False
@@ -94,9 +94,10 @@ class LagEstimator(ParameterEstimator):
     if len(self.points['curvature']) >= self.min_hist_len and self.v_ego > MIN_LAG_VEL:
       _, curvature = zip(*self.points['curvature'])
       _, desired_curvature = zip(*self.points['desired_curvature'])
-      delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, DT_CTRL)
+      delay_curvature, _ = self.actuator_delay(desired_curvature, curvature, DT_MDL)
 
-      steer_actuation_delay = (self.current_lag + delay_curvature) / 2.
+      print(delay_curvature)
+      steer_actuation_delay = float((self.current_lag + delay_curvature) / 2.)
 
     self.current_lag = steer_actuation_delay
 
@@ -309,11 +310,14 @@ class TorqueEstimator(ParameterEstimator):
 def main(demo=False):
   config_realtime_process([0, 1, 2, 3], 5)
 
-  pm = messaging.PubMaster(['liveTorqueParameters'])
-  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveCalibration', 'livePose'], poll='livePose')
+  pm = messaging.PubMaster(['liveTorqueParameters', 'liveActuatorDelay'])
+  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'controlsState', 'liveCalibration', 'livePose'], poll='livePose')
 
   params = Params()
-  estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
+  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
+  estimator = TorqueEstimator(CP)
+
+  lag_estimator = LagEstimator(CP)
 
   while True:
     sm.update()
@@ -322,10 +326,12 @@ def main(demo=False):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
+          lag_estimator.handle_log(t, which, sm[which])
 
     # 4Hz driven by livePose
     if sm.frame % 5 == 0:
-      pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
+      pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks(['carControl', 'carOutput', 'carState', 'liveCalibration', 'livePose'])))
+      pm.send('liveActuatorDelay', lag_estimator.get_msg(valid=sm.all_checks(['carControl', 'carState', 'controlsState']), with_points=False))
 
     # Cache points every 60 seconds while onroad
     if sm.frame % 240 == 0:
