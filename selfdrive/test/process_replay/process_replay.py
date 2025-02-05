@@ -559,8 +559,8 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="torqued",
-    pubs=["livePose", "liveCalibration", "carState", "carControl", "carOutput"],
-    subs=["liveTorqueParameters"],
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "carOutput", "controlsState"],
+    subs=["liveTorqueParameters", "liveActuatorDelay"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
