@@ -50,7 +50,7 @@ class LagEstimator(ParameterEstimator):
   def __init__(self, CP):
     self.hist_len = int(MAX_HIST_LEN_SEC / DT_MDL)
     self.min_hist_len = int(MIN_HIST_LEN_SEC / DT_MDL)
-    self.initial_lag = -CP.steerActuatorDelay
+    self.initial_lag = CP.steerActuatorDelay
     self.current_lag = self.initial_lag
 
     self.lat_active = False
@@ -59,7 +59,7 @@ class LagEstimator(ParameterEstimator):
     self.points = defaultdict(lambda: deque(maxlen=self.hist_len))
 
   def correlation_lags(self, sig_len, dt):
-    return np.arange(-sig_len + 1, 1) * dt
+    return np.arange(0, sig_len) * dt
 
   def actuator_delay(self, expected_sig, actual_sig, dt, max_lag=MAX_SANE_LAG):
     assert len(expected_sig) == len(actual_sig)
@@ -68,8 +68,8 @@ class LagEstimator(ParameterEstimator):
 
     # only consider negative time shifts within the max_lag
     n_frames_max_delay = int(max_lag / dt)
-    correlations = correlations[len(expected_sig) - n_frames_max_delay:len(expected_sig)]
-    lags = lags[len(expected_sig) - n_frames_max_delay:len(expected_sig)]
+    correlations = correlations[len(expected_sig) - 1: len(expected_sig) - 1 + n_frames_max_delay]
+    lags = lags[:n_frames_max_delay]
 
     max_corr_index = np.argmax(correlations)
 
@@ -94,7 +94,7 @@ class LagEstimator(ParameterEstimator):
     if len(self.points['curvature']) >= self.min_hist_len and self.v_ego > MIN_LAG_VEL:
       _, curvature = zip(*self.points['curvature'])
       _, desired_curvature = zip(*self.points['desired_curvature'])
-      delay_curvature, _ = self.actuator_delay(desired_curvature, curvature, DT_MDL)
+      delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, DT_MDL)
 
       steer_actuation_delay = float((self.current_lag + delay_curvature) / 2.)
 
