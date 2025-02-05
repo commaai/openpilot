@@ -1,6 +1,6 @@
 [project]
-name = "oplog"
-version = "1.0.0"
+name = "openpilot-logging"
+version = "0.1.0"
 description = "Tools to read openpilot logs"
 license = { file = "LICENSE" }
 authors = [{ name = "Vehicle Researcher", email = "user@comma.ai" }]
@@ -18,7 +18,6 @@ dependencies = [
   "crcmod",
   "tqdm",
   "pycapnp",
-  "pandacan@git+https://github.com/commaai/panda.git@master",
   "setuptools",
   "pycryptodome",
 ]
@@ -50,7 +49,7 @@ markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
 ]
 testpaths = [
-  "oplog"
+  "openpilot-logging"
 ]
 
 [tool.codespell]
