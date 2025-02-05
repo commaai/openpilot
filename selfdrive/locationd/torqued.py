@@ -48,7 +48,7 @@ MIN_LAG_VEL = 15.0
 
 class LagEstimator(ParameterEstimator):
   def __init__(self, CP):
-    self.hist_len = int(MIN_HIST_LEN_SEC / DT_MDL)
+    self.hist_len = int(MAX_HIST_LEN_SEC / DT_MDL)
     self.min_hist_len = int(MIN_HIST_LEN_SEC / DT_MDL)
     self.initial_lag = -CP.steerActuatorDelay
     self.current_lag = self.initial_lag
