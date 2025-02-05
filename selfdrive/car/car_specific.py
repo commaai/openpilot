@@ -45,9 +45,6 @@ class CarSpecificEvents:
     if self.CP.brand in ('body', 'mock'):
       events = Events()
 
-    elif self.CP.brand in ('subaru', 'mazda', 'tesla'):
-      events = self.create_common_events(CS, CS_prev)
-
     elif self.CP.brand == 'ford':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.manumatic])
 
@@ -160,7 +157,7 @@ class CarSpecificEvents:
         events.add(EventName.belowSteerSpeed)
 
     else:
-      raise ValueError(f"Unsupported car: {self.CP.brand}")
+      events = self.create_common_events(CS, CS_prev)
 
     return events
 
