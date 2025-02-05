@@ -44,7 +44,7 @@ def slope2rot(slope):
 MAX_SANE_LAG = 3.0
 MIN_HIST_LEN_SEC = 20
 MAX_HIST_LEN_SEC = 120
-
+MIN_LAG_VEL = 15.0
 
 class LagEstimator(ParameterEstimator):
   def __init__(self, CP):
@@ -55,6 +55,7 @@ class LagEstimator(ParameterEstimator):
 
     self.lat_active = False
     self.steering_pressed = False
+    self.v_ego = 0.0
     self.points = defaultdict(lambda: deque(maxlen=self.hist_len))
 
   def correlation_lags(self, sig_len, dt):
@@ -77,19 +78,20 @@ class LagEstimator(ParameterEstimator):
 
   def handle_log(self, t, which, msg) -> None:
     if which == "carControl":
-      self.lat_active = msg.carControl.latActive
+      self.lat_active = msg.latActive
     elif which == "carState":
-      self.steering_pressed = msg.carState.steeringPressed
+      self.steering_pressed = msg.steeringPressed
+      self.v_ego = msg.vEgo
     elif which == "controlsState":
-      curvature = msg.controlsState.curvature
-      desired_curvature = msg.controlsState.desiredCurvature
-      if self.lat_active and not self.steering_pressed:
+      curvature = msg.curvature
+      desired_curvature = msg.desiredCurvature
+      if self.lat_active and not self.steering_pressed and self.v_ego > MIN_LAG_VEL:
         self.points['curvature'].append((t, curvature))
         self.points['desired_curvature'].append((t, desired_curvature))
 
   def get_msg(self, valid: bool, with_points: bool):
     steer_actuation_delay = self.initial_lag
-    if len(self.points['curvature']) >= self.min_hist_len:
+    if len(self.points['curvature']) >= self.min_hist_len and self.v_ego > MIN_LAG_VEL:
       _, curvature = zip(*self.points['curvature'])
       _, desired_curvature = zip(*self.points['desired_curvature'])
       delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, DT_CTRL)
