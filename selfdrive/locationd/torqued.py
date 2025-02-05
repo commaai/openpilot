@@ -96,7 +96,6 @@ class LagEstimator(ParameterEstimator):
       _, desired_curvature = zip(*self.points['desired_curvature'])
       delay_curvature, _ = self.actuator_delay(desired_curvature, curvature, DT_MDL)
 
-      print(delay_curvature)
       steer_actuation_delay = float((self.current_lag + delay_curvature) / 2.)
 
     self.current_lag = steer_actuation_delay
