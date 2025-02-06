@@ -263,10 +263,6 @@ void CameraState::run() {
       framed.setImage(get_raw_frame_image(&camera.buf));
     }
 
-    // Process camera registers and set camera exposure
-    if (camera.is_raw) {
-      camera.sensor->processRegisters((uint8_t *)camera.buf.cur_camera_buf->addr, framed);
-    }
     set_camera_exposure(set_exposure_target(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
