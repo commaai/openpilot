@@ -234,14 +234,14 @@ void SpectraMaster::init() {
 
 // *** SpectraCamera ***
 
-SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config, bool raw)
+SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out)
   : m(master),
     enabled(config.enabled),
     cc(config),
-    is_raw(raw) {
+    output_type(out) {
   mm.init(m->video0_fd);
 
-  ife_buf_depth = is_raw ? 4 : VIPC_BUFFER_COUNT;
+  ife_buf_depth = (out != ISP_IFE_PROCESSED) ? 4 : VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
@@ -257,7 +257,7 @@ int SpectraCamera::clear_req_queue() {
   req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
-  // LOGD("flushed all req: %d", ret);
+  LOGD("flushed all req: %d", ret);
 
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
@@ -279,7 +279,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
   uv_offset = stride*y_height;
   yuv_size = uv_offset + stride*uv_height;
-  if (!is_raw) {
+  if (output_type != ISP_RAW_OUTPUT) {
     uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
     yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
   }
@@ -288,7 +288,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   open = true;
   configISP();
-  //configICP();  // needs the new AGNOS kernel
+  if (output_type == ISP_BPS_PROCESSED) configICP();
   configCSIPHY();
   linkDevices();
 
@@ -454,15 +454,6 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void SpectraCamera::config_bps(int idx, int request_id) {
-  /*
-    Handles per-frame BPS config.
-    * BPS = Bayer Processing Segment
-  */
-  (void)idx;
-  (void)request_id;
-}
-
 void add_patch(void *ptr, int n, int32_t dst_hdl, uint32_t dst_offset, int32_t src_hdl, uint32_t src_offset) {
   struct cam_patch_desc *p = (struct cam_patch_desc *)((unsigned char*)ptr + sizeof(struct cam_patch_desc)*n);
   p->dst_buf_hdl = dst_hdl;
@@ -470,6 +461,16 @@ void add_patch(void *ptr, int n, int32_t dst_hdl, uint32_t dst_offset, int32_t s
   p->dst_offset = dst_offset;
   p->src_offset = src_offset;
 };
+
+void SpectraCamera::config_bps(int idx, int request_id) {
+  /*
+    Handles per-frame BPS config.
+    * BPS = Bayer Processing Segment
+  */
+
+  (void)idx;
+  (void)request_id;
+}
 
 void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   /*
@@ -509,6 +510,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     buf_desc[0].offset = ife_cmd.aligned_size()*idx;
 
     // stream of IFE register writes
+    bool is_raw = output_type != ISP_IFE_PROCESSED;
     if (!is_raw) {
       if (init) {
         buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, sensor.get(), patches, cc.camera_num);
@@ -597,8 +599,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-
-    if (is_raw) {
+    if (output_type != ISP_IFE_PROCESSED) {
       io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
       io_cfg[0].planes[0] = (struct cam_plane_cfg){
         .width = sensor->frame_width,
@@ -679,6 +680,8 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   if (sync_objs[i]) {
     // SOF has come in, wait until readout is complete
     struct cam_sync_wait sync_wait = {0};
+
+    // wait for ife
     sync_wait.sync_obj = sync_objs[i];
     // TODO: write a test to stress test w/ a low timeout and check camera frame ids match
     sync_wait.timeout_ms = 100;
@@ -687,6 +690,18 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       clear_req_queue();
       LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
     }
+
+    if (ret == 0 && output_type == ISP_BPS_PROCESSED) {
+      // wait for bps
+      sync_wait.sync_obj = sync_objs_bps_out[i];
+      sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
+      ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+      if (ret != 0) {
+        clear_req_queue();
+        LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
+      }
+    }
+
     buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
     buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
     if (dp && ret == 0) {
@@ -728,7 +743,7 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
 
   // submit request to IFE and BPS
   config_ife(i, request_id);
-  config_bps(i, request_id);
+  if (output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
 }
 
 void SpectraCamera::destroySyncObjectAt(int index) {
@@ -751,7 +766,7 @@ void SpectraCamera::destroySyncObjectAt(int index) {
 void SpectraCamera::camera_map_bufs() {
   int ret;
   for (int i = 0; i < ife_buf_depth; i++) {
-    // configure ISP to put the image in place
+    // map our VisionIPC bufs into ISP memory
     struct cam_mem_mgr_map_cmd mem_mgr_map_cmd = {0};
     mem_mgr_map_cmd.flags = CAM_MEM_FLAG_HW_READ_WRITE;
     mem_mgr_map_cmd.mmu_hdls[0] = m->device_iommu;
@@ -761,14 +776,16 @@ void SpectraCamera::camera_map_bufs() {
       mem_mgr_map_cmd.mmu_hdls[1] = m->icp_device_iommu;
     }
 
-    if (is_raw) {
+    if (output_type != ISP_IFE_PROCESSED) {
       // RAW bayer images
       mem_mgr_map_cmd.fd = buf.camera_bufs_raw[i].fd;
       ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
       assert(ret == 0);
       LOGD("map buf req: (fd: %d) 0x%x %d", buf.camera_bufs_raw[i].fd, mem_mgr_map_cmd.out.buf_handle, ret);
       buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
-    } else {
+    }
+
+    if (output_type != ISP_RAW_OUTPUT) {
       // final processed images
       VisionBuf *vb = buf.vipc_server->get_buffer(buf.stream_type, i);
       mem_mgr_map_cmd.fd = vb->fd;
@@ -865,7 +882,7 @@ void SpectraCamera::configISP() {
     },
   };
 
-  if (is_raw) {
+  if (output_type != ISP_IFE_PROCESSED) {
     in_port_info.line_start = 0;
     in_port_info.line_stop = sensor->frame_height + sensor->extra_height - 1;
     in_port_info.height = sensor->frame_height + sensor->extra_height;
@@ -890,7 +907,7 @@ void SpectraCamera::configISP() {
   ife_cmd.init(m, 67984, 0x20,
                CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
                m->device_iommu, m->cdm_iommu, ife_buf_depth);
-  if (!is_raw) {
+  if (output_type == ISP_IFE_PROCESSED) {
     assert(sensor->gamma_lut_rgb.size() == 64);
     ife_gamma_lut.init(m, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20,
                        CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE,
@@ -1028,9 +1045,15 @@ void SpectraCamera::linkDevices() {
 
   ret = device_control(csiphy_fd, CAM_START_DEV, session_handle, csiphy_dev_handle);
   LOGD("start csiphy: %d", ret);
+  assert(ret == 0);
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
   assert(ret == 0);
+  if (output_type == ISP_BPS_PROCESSED) {
+    ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
+    LOGD("start icp: %d", ret);
+    assert(ret == 0);
+  }
 }
 
 void SpectraCamera::camera_close() {
@@ -1041,8 +1064,13 @@ void SpectraCamera::camera_close() {
     // LOGD("stop sensor: %d", ret);
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
+    if (output_type == ISP_BPS_PROCESSED) {
+      ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
+      LOGD("stop icp: %d", ret);
+    }
     ret = device_control(csiphy_fd, CAM_STOP_DEV, session_handle, csiphy_dev_handle);
     LOGD("stop csiphy: %d", ret);
+
     // link control stop
     LOG("-- Stop link control");
     struct cam_req_mgr_link_control req_mgr_link_control = {0};
@@ -1069,11 +1097,20 @@ void SpectraCamera::camera_close() {
     }
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
+    if (output_type == ISP_BPS_PROCESSED) {
+      ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
+      LOGD("release icp: %d", ret);
+    }
     ret = device_control(csiphy_fd, CAM_RELEASE_DEV, session_handle, csiphy_dev_handle);
     LOGD("release csiphy: %d", ret);
 
     for (int i = 0; i < ife_buf_depth; i++) {
-      release(m->video0_fd, is_raw ? buf_handle_raw[i] : buf_handle_yuv[i]);
+      if (buf_handle_raw[i]) {
+        release(m->video0_fd, buf_handle_raw[i]);
+      }
+      if (buf_handle_yuv[i]) {
+        release(m->video0_fd, buf_handle_yuv[i]);
+      }
     }
     LOGD("released buffers");
   }

@@ -55,7 +55,7 @@ public:
 
   float fl_pix = 0;
 
-  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.stream_type == VISION_STREAM_ROAD) {};
+  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.stream_type == VISION_STREAM_ROAD ? ISP_RAW_OUTPUT : ISP_IFE_PROCESSED) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
@@ -263,10 +263,6 @@ void CameraState::run() {
       framed.setImage(get_raw_frame_image(&camera.buf));
     }
 
-    // Process camera registers and set camera exposure
-    if (camera.is_raw) {
-      camera.sensor->processRegisters((uint8_t *)camera.buf.cur_camera_buf->addr, framed);
-    }
     set_camera_exposure(set_exposure_target(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
