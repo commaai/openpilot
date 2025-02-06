@@ -1,4 +1,4 @@
-from openpilot.tools.lib.openpilotcontainers import OpenpilotCIContainer
+from openpilot_logging.openpilotcontainers import OpenpilotCIContainer
 
 def get_url(*args, **kwargs):
   return OpenpilotCIContainer.get_url(*args, **kwargs)

@@ -3,7 +3,7 @@ import posixpath
 import socket
 from urllib.parse import urlparse
 
-from openpilot.tools.lib.url_file import URLFile
+from openpilot_logging.url_file import URLFile
 
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 

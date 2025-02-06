@@ -16,6 +16,7 @@ dependencies = [
 #  "numpy",
 #  "Cython",
 #  "crcmod",
+  "requests",
   "tqdm",
   "pycapnp",
   "setuptools",

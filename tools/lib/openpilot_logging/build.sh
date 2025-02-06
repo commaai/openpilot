@@ -6,7 +6,7 @@ source .venv/bin/activate
 uv sync
 
 rm -rf cereal/
-cp -avr ../../../cereal .
+cp -vrL ../../../cereal .
 
 
 # quick test

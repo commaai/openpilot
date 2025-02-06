@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from openpilot.tools.lib.azure_container import AzureContainer
+from openpilot_logging.azure_container import AzureContainer
 
 OpenpilotCIContainer = AzureContainer("commadataci", "openpilotci")
 DataCIContainer = AzureContainer("commadataci", "commadataci")
