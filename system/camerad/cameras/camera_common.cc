@@ -64,7 +64,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
 
   const SensorInfo *sensor = cam->sensor.get();
 
-  is_raw = cam->is_raw;
+  is_raw = cam->output_type == ISP_RAW_OUTPUT;
   frame_metadata = std::make_unique<FrameMetadata[]>(frame_buf_count);
 
   // RAW frames from ISP
@@ -111,7 +111,7 @@ bool CameraBuf::acquire(int expo_time) {
 
   cur_frame_data = frame_metadata[cur_buf_idx];
   cur_camera_buf = &camera_bufs_raw[cur_buf_idx];
-  if (is_raw) {
+  if (is_raw && false) {
     cur_yuv_buf = vipc_server->get_buffer(stream_type);
 
     double start_time = millis_since_boot();
