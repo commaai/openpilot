@@ -982,12 +982,14 @@ void SpectraCamera::camera_map_bufs() {
       buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
     }
 
-    // final processed images
-    VisionBuf *vb = buf.vipc_server->get_buffer(buf.stream_type, i);
-    mem_mgr_map_cmd.fd = vb->fd;
-    ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
-    LOGD("map buf req: (fd: %d) 0x%x %d", vb->fd, mem_mgr_map_cmd.out.buf_handle, ret);
-    buf_handle_yuv[i] = mem_mgr_map_cmd.out.buf_handle;
+    if (output_type != ISP_RAW_OUTPUT) {
+      // final processed images
+      VisionBuf *vb = buf.vipc_server->get_buffer(buf.stream_type, i);
+      mem_mgr_map_cmd.fd = vb->fd;
+      ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
+      LOGD("map buf req: (fd: %d) 0x%x %d", vb->fd, mem_mgr_map_cmd.out.buf_handle, ret);
+      buf_handle_yuv[i] = mem_mgr_map_cmd.out.buf_handle;
+    }
   }
 }
 
