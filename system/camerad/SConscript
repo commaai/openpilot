@@ -1,7 +1,5 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
 
-env['CPPPATH'].append("includes/")
-
 libs = ['pthread', common, 'jpeg', 'OpenCL', messaging, visionipc, gpucommon]
 
 if arch != "Darwin":

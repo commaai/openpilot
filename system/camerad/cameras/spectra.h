@@ -185,7 +185,6 @@ public:
 
   SpectraOutputType output_type;
 
-
   CameraBuf buf;
   MemoryManager mm;
   SpectraMaster *m;
