@@ -23,7 +23,7 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
-from openpilot.common.file_helpers import LOG_COMPRESSION_LEVEL
+from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.tools.lib.logreader import LogReader
 
 """

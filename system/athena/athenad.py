@@ -14,6 +14,7 @@ import sys
 import tempfile
 import threading
 import time
+import zstandard as zstd
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial
@@ -30,10 +31,11 @@ import cereal.messaging as messaging
 from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.api import Api
-from openpilot.common.file_helpers import CallbackReader, get_upload_stream
+from openpilot.common.file_helpers import CallbackReader
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
@@ -292,13 +294,16 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
     path = strip_zst_extension(path)
     compress = True
 
-  with get_upload_stream(path, compress) as stream:
-    stream.seek(0, os.SEEK_END)
-    content_length = stream.tell()
-    stream.seek(0)
+  with open(path, "rb") as f:
+    content = f.read()
+    if compress:
+      cloudlog.event("athena.upload_handler.compress", fn=path, fn_orig=upload_item.path)
+      content = zstd.compress(content, LOG_COMPRESSION_LEVEL)
+
+  with io.BytesIO(content) as data:
     return requests.put(upload_item.url,
-                        data=CallbackReader(stream, callback, content_length) if callback else stream,
-                        headers={**upload_item.headers, 'Content-Length': str(content_length)},
+                        data=CallbackReader(data, callback, len(content)) if callback else data,
+                        headers={**upload_item.headers, 'Content-Length': str(len(content))},
                         timeout=30)
 
 
