@@ -1,5 +1,5 @@
 [project]
-name = "openpilot-logging"
+name = "optools"
 version = "0.1.1"
 description = "Tools to read openpilot logs"
 license = { file = "LICENSE" }
@@ -51,7 +51,7 @@ markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
 ]
 testpaths = [
-  "openpilot-logging"
+  "optools"
 ]
 
 [tool.codespell]
