@@ -18,8 +18,6 @@ from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.values import Platform
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.selfdrived.events import ET
-from openpilot.selfdrive.selfdrived.selfdrived import SelfdriveD
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -388,8 +386,6 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
-    # selfdrived = SelfdriveD(CP=self.CP)
-    # selfdrived.initialized = True
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -434,8 +430,6 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        # selfdrived.update_events(CS)
-        # selfdrived.CS_prev = CS
         # button_enable = False and (selfdrived.events.contains(ET.ENABLE) and
         #                  EventName.pedalPressed not in selfdrived.events.names)
         # TODO: this won't work because some brands impose differing rising/falling edge enabling logic (see GM's logic below)
