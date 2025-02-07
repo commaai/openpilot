@@ -337,16 +337,7 @@ class TestCarModelBase(unittest.TestCase):
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
 
-      # can = messaging.new_message('can', 1)
-      # can.can = [log.CanData(address=address, dat=dat, src=bus)]
-      # ret = can_capnp_to_list((can.to_bytes(),))
-
       can = [(int(time.monotonic() * 1e9), [CanData(address=address, dat=dat, src=bus)])]
-      
-      # print((can, ret))
-      # print(can2)
-      # print()
-
       CS = self.CI.update(can)
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
