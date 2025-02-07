@@ -32,6 +32,7 @@ from panda.tests.libpanda import libpanda_py
 EventName = log.OnroadEvent.EventName
 PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
+ButtonType = car.CarState.ButtonEvent.Type
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -387,8 +388,8 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
-    selfdrived = SelfdriveD(CP=self.CP)
-    selfdrived.initialized = True
+    # selfdrived = SelfdriveD(CP=self.CP)
+    # selfdrived.initialized = True
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -433,10 +434,14 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for enable events on rising edge of controls allowed
-        selfdrived.update_events(CS)
-        selfdrived.CS_prev = CS
-        button_enable = (selfdrived.events.contains(ET.ENABLE) and
-                         EventName.pedalPressed not in selfdrived.events.names)
+        # selfdrived.update_events(CS)
+        # selfdrived.CS_prev = CS
+        # button_enable = False and (selfdrived.events.contains(ET.ENABLE) and
+        #                  EventName.pedalPressed not in selfdrived.events.names)
+        # TODO: this won't work because some brands impose differing rising/falling edge enabling logic (see GM's logic below)
+        # TODO: move the button logic from car_specific to opendbc generically
+        button_enable = any((not b.pressed and b.type == ButtonType.decelCruise) or
+                            (b.pressed and b.type == ButtonType.accelCruise) for b in CS.buttonEvents)
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()
