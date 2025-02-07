@@ -314,7 +314,6 @@ class TestCarModelBase(unittest.TestCase):
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
     """
-    return
 
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
@@ -415,7 +414,7 @@ class TestCarModelBase(unittest.TestCase):
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
       checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
 
-      if self.CP.pcmCruise:  # TODO: check buttonEnable in here as well now that the ports check pcmCruise
+      if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
         # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
         # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
