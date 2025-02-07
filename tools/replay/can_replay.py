@@ -94,7 +94,6 @@ def load_route(route_or_segment_name):
   CP = lr.first("carParams")
   print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
   t = time.perf_counter()
-  # CAN_MSGS = sr.run_across_segments(24, process)
 
   msgs = [m.as_builder().to_bytes() for m in lr if m.which() == 'can']
   CAN_MSGS = [m[1] for m in can_capnp_to_list(msgs)]
