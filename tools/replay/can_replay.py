@@ -87,8 +87,7 @@ def load_route(route_or_segment_name):
   CP = lr.first("carParams")
   print(f"carFingerprint: '{CP.carFingerprint}'")
   mbytes = [m.as_builder().to_bytes() for m in lr if m.which() == 'can']
-  msgs = [m[1] for m in can_capnp_to_list(mbytes)]
-  return msgs
+  return [m[1] for m in can_capnp_to_list(mbytes)]
 
 
 if __name__ == "__main__":
