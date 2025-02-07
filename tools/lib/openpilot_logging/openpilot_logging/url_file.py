@@ -7,8 +7,8 @@ from urllib3 import PoolManager, Retry
 from urllib3.response import BaseHTTPResponse
 from urllib3.util import Timeout
 
-from openpilot.common.file_helpers import atomic_write_in_dir
-from openpilot.system.hardware.hw import Paths
+from openpilot_logging.file_helpers import atomic_write_in_dir
+from openpilot_logging.hw import Paths
 #  Cache chunk size
 K = 1000
 CHUNK_SIZE = 1000 * K
