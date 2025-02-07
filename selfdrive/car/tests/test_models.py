@@ -431,7 +431,7 @@ class TestCarModelBase(unittest.TestCase):
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
         # Check for user button enable on rising edge of controls allowed
-        button_enable = CS.buttonEnable
+        button_enable = CS.buttonEnable and (not CS.brakePressed or CS.standstill)
 
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
