@@ -2,6 +2,7 @@
 set -e
 
 cd /sys/kernel/debug/tracing
+
 echo "" > trace
 echo 1 > tracing_on
 #echo Y > /sys/kernel/debug/camera_icp/a5_debug_q
