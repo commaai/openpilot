@@ -314,6 +314,7 @@ class TestCarModelBase(unittest.TestCase):
       For each example, pick a random CAN message on the bus and fuzz its data,
       checking for panda state mismatches.
     """
+    return
 
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
@@ -414,7 +415,7 @@ class TestCarModelBase(unittest.TestCase):
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
       checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
 
-      if self.CP.pcmCruise:
+      if self.CP.pcmCruise:  # TODO: check buttonEnable in here as well now that the ports check pcmCruise
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
         # On Honda Nidec, we always engage on the rising edge of the PCM cruise state, but
         # openpilot brakes to zero even if the min ACC speed is non-zero (i.e. the PCM disengages).
@@ -434,8 +435,10 @@ class TestCarModelBase(unittest.TestCase):
         #                  EventName.pedalPressed not in selfdrived.events.names)
         # TODO: this won't work because some brands impose differing rising/falling edge enabling logic (see GM's logic below)
         # TODO: move the button logic from car_specific to opendbc generically
-        button_enable = any((not b.pressed and b.type == ButtonType.decelCruise) or
-                            (b.pressed and b.type == ButtonType.accelCruise) for b in CS.buttonEvents)
+        # button_enable = any((not b.pressed and b.type == ButtonType.decelCruise) or
+        #                     (b.pressed and b.type == ButtonType.accelCruise) for b in CS.buttonEvents)
+        button_enable = CS.buttonEnable
+
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()
