@@ -44,18 +44,21 @@ def slope2rot(slope):
 MAX_SANE_LAG = 3.0
 MIN_HIST_LEN_SEC = 20
 MAX_HIST_LEN_SEC = 120
+MOVING_AVERAGE_WINDOW = 20
 MIN_LAG_VEL = 15.0
 
 class LagEstimator(ParameterEstimator):
-  def __init__(self, CP):
-    self.hist_len = int(MAX_HIST_LEN_SEC / DT_MDL)
-    self.min_hist_len = int(MIN_HIST_LEN_SEC / DT_MDL)
+  def __init__(self, CP, dt):
+    self.dt = dt
+    self.hist_len = int(MAX_HIST_LEN_SEC / self.dt)
+    self.min_hist_len = int(MIN_HIST_LEN_SEC / self.dt)
     self.initial_lag = CP.steerActuatorDelay
     self.current_lag = self.initial_lag
 
     self.lat_active = False
     self.steering_pressed = False
     self.v_ego = 0.0
+    self.lags = deque(maxlen=int(MOVING_AVERAGE_WINDOW / 0.25))
     self.points = defaultdict(lambda: deque(maxlen=self.hist_len))
 
   def correlation_lags(self, sig_len, dt):
@@ -90,15 +93,16 @@ class LagEstimator(ParameterEstimator):
         self.points['desired_curvature'].append((t, desired_curvature))
 
   def get_msg(self, valid: bool, with_points: bool):
-    steer_actuation_delay = self.initial_lag
     if len(self.points['curvature']) >= self.min_hist_len and self.v_ego > MIN_LAG_VEL:
       _, curvature = zip(*self.points['curvature'])
       _, desired_curvature = zip(*self.points['desired_curvature'])
-      delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, DT_MDL)
+      delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, self.dt)
 
-      steer_actuation_delay = float((self.current_lag + delay_curvature) / 2.)
-
-    self.current_lag = steer_actuation_delay
+      self.lags.append(delay_curvature)
+      steer_actuation_delay = float(np.mean(self.lags))
+    else:
+      steer_actuation_delay = self.initial_lag
+      self.lags.append(self.initial_lag)
 
     msg = messaging.new_message('liveActuatorDelay')
     msg.valid = valid
@@ -106,6 +110,9 @@ class LagEstimator(ParameterEstimator):
     liveActuatorDelay = msg.liveActuatorDelay
     liveActuatorDelay.steerActuatorDelay = steer_actuation_delay
     liveActuatorDelay.totalPoints = len(self.points['curvature'])
+
+    if with_points:
+      liveActuatorDelay.points = [[c, dc] for ((_, c), (_, dc)) in zip(self.points['curvature'], self.points['desired_curvature'])]
 
     return msg
 
@@ -316,7 +323,7 @@ def main(demo=False):
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   estimator = TorqueEstimator(CP)
 
-  lag_estimator = LagEstimator(CP)
+  lag_estimator = LagEstimator(CP, DT_MDL)
 
   while True:
     sm.update()
@@ -330,7 +337,7 @@ def main(demo=False):
     # 4Hz driven by livePose
     if sm.frame % 5 == 0:
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks(['carControl', 'carOutput', 'carState', 'liveCalibration', 'livePose'])))
-      pm.send('liveActuatorDelay', lag_estimator.get_msg(valid=sm.all_checks(['carControl', 'carState', 'controlsState']), with_points=False))
+      pm.send('liveActuatorDelay', lag_estimator.get_msg(valid=sm.all_checks(['carControl', 'carState', 'controlsState']), with_points=True))
 
     # Cache points every 60 seconds while onroad
     if sm.frame % 240 == 0:

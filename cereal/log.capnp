@@ -2266,6 +2266,7 @@ struct LiveTorqueParametersData {
 struct LiveDelayData {
   steerActuatorDelay @0 :Float32;
   totalPoints @1 :Int32;
+  points @2 :List(List(Float32));
 }
 
 struct LiveMapDataDEPRECATED {
