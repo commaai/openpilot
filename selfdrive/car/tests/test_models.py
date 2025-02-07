@@ -430,13 +430,7 @@ class TestCarModelBase(unittest.TestCase):
         if not self.CP.notCar:
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
-        # Check for enable events on rising edge of controls allowed
-        # button_enable = False and (selfdrived.events.contains(ET.ENABLE) and
-        #                  EventName.pedalPressed not in selfdrived.events.names)
-        # TODO: this won't work because some brands impose differing rising/falling edge enabling logic (see GM's logic below)
-        # TODO: move the button logic from car_specific to opendbc generically
-        # button_enable = any((not b.pressed and b.type == ButtonType.decelCruise) or
-        #                     (b.pressed and b.type == ButtonType.accelCruise) for b in CS.buttonEvents)
+        # Check for user button enable on rising edge of controls allowed
         button_enable = CS.buttonEnable
 
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
