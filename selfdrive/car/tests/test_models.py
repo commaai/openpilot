@@ -11,13 +11,13 @@ from parameterized import parameterized_class
 
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
+from opendbc.can import can_capnp_to_list
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.fingerprints import all_known_cars, MIGRATION
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.values import Platform
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source_zst, openpilotci_source, internal_source, \
