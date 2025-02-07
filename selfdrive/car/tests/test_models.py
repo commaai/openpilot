@@ -27,10 +27,10 @@ from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
+ButtonType = car.CarState.ButtonEvent.Type
 EventName = log.OnroadEvent.EventName
 PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
-ButtonType = car.CarState.ButtonEvent.Type
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
