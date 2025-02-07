@@ -11,7 +11,6 @@ from parameterized import parameterized_class
 
 from cereal import messaging, log, car
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.fingerprints import all_known_cars, MIGRATION
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
@@ -170,8 +169,6 @@ class TestCarModelBase(unittest.TestCase):
   def setUp(self):
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
-
-    Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
