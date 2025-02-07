@@ -12,6 +12,14 @@ from openpilot.tools.plotjuggler.juggle import DEMO_ROUTE
 N_RUNS = 10
 
 
+def can_capnp_to_list_py(can_list):
+  return [
+    (can.logMonoTime, [(msg.address, msg.dat, msg.src) for msg in can.can])
+    for can in can_list
+  ]
+
+
+
 class CarModelTestCase(TestCarModelBase):
   test_route = CarTestRoute(DEMO_ROUTE, None)
 
@@ -25,10 +33,12 @@ if __name__ == '__main__':
   CC = car.CarControl.new_message()
   ets = []
   for _ in tqdm(range(N_RUNS)):
-    msgs = [m.as_builder().to_bytes() for m in tm.can_msgs]
+    # msgs = [m.as_builder().to_bytes() for m in tm.can_msgs]
+    msgs = [m for m in tm.can_msgs]
     start_t = time.process_time_ns()
     for msg in msgs:
-      can_list = can_capnp_to_list([msg])
+      # can_list = can_capnp_to_list([msg])
+      can_list = can_capnp_to_list_py([msg])
       for cp in tm.CI.can_parsers.values():
         if cp is not None:
           cp.update_strings(can_list)
