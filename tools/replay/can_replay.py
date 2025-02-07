@@ -8,7 +8,7 @@ import threading
 os.environ['FILEREADER_CACHE'] = '1'
 
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
-from openpilot.selfdrive.pandad import can_capnp_to_can_list
+from openpilot.selfdrive.pandad import can_capnp_to_can_list, can_capnp_to_list
 from openpilot.tools.lib.logreader import LogReader
 from panda import PandaJungle
 
@@ -81,14 +81,25 @@ def connect():
     time.sleep(1)
 
 def process(lr):
-  return [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+  # ret = [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
+  msgs = [m.as_builder().to_bytes() for m in lr if m.which() == 'can']
+  ret2 = [m[1] for m in can_capnp_to_list(msgs)]
+  # ret2 = [can_capnp_to_list([m.as_builder().to_bytes()])[0][1] for m in lr if m.which() == 'can']
+  # assert ret == ret2
+  return ret2
 
 def load_route(route_or_segment_name):
   print("Loading log...")
-  sr = LogReader(route_or_segment_name)
-  CP = sr.first("carParams")
+  lr = LogReader(route_or_segment_name)
+  CP = lr.first("carParams")
   print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
-  CAN_MSGS = sr.run_across_segments(24, process)
+  t = time.perf_counter()
+  # CAN_MSGS = sr.run_across_segments(24, process)
+
+  msgs = [m.as_builder().to_bytes() for m in lr if m.which() == 'can']
+  CAN_MSGS = [m[1] for m in can_capnp_to_list(msgs)]
+
+  print(time.perf_counter() - t)
   print("Finished loading...")
   return CAN_MSGS
 
