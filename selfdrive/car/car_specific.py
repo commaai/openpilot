@@ -65,9 +65,6 @@ class CarSpecificEvents:
     elif self.CP.brand == 'honda':
       events = self.create_common_events(CS, CS_prev, pcm_enable=False)
 
-      if CS.buttonEnable:
-        events.add(EventName.buttonEnable)
-
       if self.CP.pcmCruise and CS.vEgo < self.CP.minEnableSpeed:
         events.add(EventName.belowEngageSpeed)
 
@@ -110,9 +107,6 @@ class CarSpecificEvents:
       #   if any(b.type == ButtonType.accelCruise and b.pressed for b in CS.buttonEvents):
       #     events.add(EventName.buttonEnable)
 
-      if CS.buttonEnable:
-        events.add(EventName.buttonEnable)
-
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
       if CS.vEgo < self.CP.minEnableSpeed and not (CS.standstill and CS.brake >= 20 and
@@ -127,9 +121,6 @@ class CarSpecificEvents:
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
                                          pcm_enable=self.CP.pcmCruise,
                                          enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
-
-      if CS.buttonEnable:
-        events.add(EventName.buttonEnable)
 
       # Low speed steer alert hysteresis logic
       if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -156,9 +147,6 @@ class CarSpecificEvents:
       self.cruise_buttons.append(any(ev.type in HYUNDAI_ENABLE_BUTTONS for ev in CS.buttonEvents))
       events = self.create_common_events(CS, CS_prev, extra_gears=(GearShifter.sport, GearShifter.manumatic),
                                          pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons), allow_button_cancel=False)
-
-      if CS.buttonEnable:
-        events.add(EventName.buttonEnable)
 
       # low speed steer alert hysteresis logic (only for cars with steer cut off above 10 m/s)
       if CS.vEgo < (self.CP.minSteerSpeed + 2.) and self.CP.minSteerSpeed > 10.:
@@ -218,13 +206,11 @@ class CarSpecificEvents:
       events.add(EventName.invalidLkasSetting)
     if CS.lowSpeedAlert:
       events.add(EventName.belowSteerSpeed)
+    if CS.buttonEnable:
+      events.add(EventName.buttonEnable)
 
-    # Handle button presses
+    # Handle cancel button presses
     for b in CS.buttonEvents:
-      break
-      # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        events.add(EventName.buttonEnable)
       # Disable on rising and falling edge of cancel for both stock and OP long
       # TODO: only check the cancel button with openpilot longitudinal on all brands to match panda safety
       if b.type == ButtonType.cancel and (allow_button_cancel or not self.CP.pcmCruise):
