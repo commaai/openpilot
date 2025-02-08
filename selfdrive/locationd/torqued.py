@@ -50,19 +50,19 @@ MOVING_CORR_WINDOW = 30
 OVERLAP_FACTOR = 0.25
 
 class LagEstimator(ParameterEstimator):
-  def __init__(self, CP, dt):
+  def __init__(self, CP, dt, min_hist_len_sec, max_hist_len_sec, max_lag_hist_len_sec, moving_corr_window, overlap_factor):
     self.dt = dt
-    self.min_hist_len = int(MIN_HIST_LEN_SEC / self.dt)
-    self.window_len = int(MOVING_CORR_WINDOW / self.dt)
+    self.min_hist_len = int(min_hist_len_sec / self.dt)
+    self.window_len = int(moving_corr_window / self.dt)
     self.initial_lag = CP.steerActuatorDelay
     self.current_lag = self.initial_lag
 
     self.lat_active = False
     self.steering_pressed = False
     self.v_ego = 0.0
-    self.lags = deque(maxlen= int(MAX_LAG_HIST_LEN_SEC / (MOVING_CORR_WINDOW * OVERLAP_FACTOR)))
-    self.curvature = deque(maxlen=int(MAX_HIST_LEN_SEC / self.dt))
-    self.desired_curvature = deque(maxlen=int(MAX_HIST_LEN_SEC / self.dt))
+    self.lags = deque(maxlen= int(max_lag_hist_len_sec / (moving_corr_window * overlap_factor)))
+    self.curvature = deque(maxlen=int(max_hist_len_sec / self.dt))
+    self.desired_curvature = deque(maxlen=int(max_hist_len_sec / self.dt))
     self.frame = 0
 
   def correlation_lags(self, sig_len, dt):
@@ -103,10 +103,13 @@ class LagEstimator(ParameterEstimator):
         _, curvature = zip(*self.curvature)
         _, desired_curvature = zip(*self.desired_curvature)
         delay_curvature, _ = self.actuator_delay(curvature[-self.window_len:], desired_curvature[-self.window_len:], self.dt)
-
         if delay_curvature != 0.0:
           self.lags.append(delay_curvature)
-      steer_actuation_delay = float(np.mean(self.lags))
+      # FIXME: this is fragile and ugly, refactor this
+      if len(self.lags) > 0:
+        steer_actuation_delay = float(np.mean(self.lags))
+      else:
+        steer_actuation_delay = self.initial_lag
     else:
       steer_actuation_delay = self.initial_lag
 
@@ -329,7 +332,7 @@ def main(demo=False):
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   estimator = TorqueEstimator(CP)
 
-  lag_estimator = LagEstimator(CP, DT_MDL)
+  lag_estimator = LagEstimator(CP, DT_MDL, MIN_HIST_LEN_SEC, MAX_HIST_LEN_SEC, MAX_LAG_HIST_LEN_SEC, MOVING_CORR_WINDOW, OVERLAP_FACTOR)
 
   while True:
     sm.update()
