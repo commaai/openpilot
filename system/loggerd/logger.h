@@ -9,33 +9,10 @@
 #include "system/hardware/hw.h"
 #include "system/loggerd/zstd_writer.h"
 
-
 // 2 is ideal for real-time logging to Zstd files, providing a good balance between speed and compression ratio.
 constexpr int LOG_COMPRESSION_LEVEL = 2;
 
-class RawFile {
- public:
-  RawFile(const std::string &path) {
-    file = util::safe_fopen(path.c_str(), "wb");
-    assert(file != nullptr);
-  }
-  ~RawFile() {
-    util::safe_fflush(file);
-    int err = fclose(file);
-    assert(err == 0);
-  }
-  inline void write(void* data, size_t size) {
-    int written = util::safe_fwrite(data, 1, size, file);
-    assert(written == size);
-  }
-  inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
-
- private:
-  FILE* file = nullptr;
-};
-
 typedef cereal::Sentinel::SentinelType SentinelType;
-
 
 class LoggerState {
 public:
