@@ -558,21 +558,12 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       0x00800066,
     });
 
-    // YUV color xform
-    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x3468, {
-      0x00680208,
-      0x00000108,
-      0x00400000,
-      0x03ff0000,
-      0x01c01ed8,
-      0x00001f68,
-      0x02000000,
-      0x03ff0000,
-      0x1fb81e88,
-      0x000001c0,
-      0x02000000,
-      0x03ff0000,
-    });
+    // YUV
+    std::vector<uint32_t> patches;
+    cdm_len += build_common_ife_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches, false);
+
+    // TODO: handle patches
+    assert(patches.size() == 0);
 
     pa->length = cdm_len - 1;
 
