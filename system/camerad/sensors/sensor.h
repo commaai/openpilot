@@ -81,6 +81,10 @@ public:
   std::vector<uint32_t> linearization_lut;     // length 36
   std::vector<uint32_t> linearization_pts;     // length 4
   std::vector<uint32_t> vignetting_lut;        // length 221
+
+  const int num() const {
+    return static_cast<int>(image_sensor);
+  };
 };
 
 class AR0231 : public SensorInfo {
