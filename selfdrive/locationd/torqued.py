@@ -5,7 +5,7 @@ from collections import deque, defaultdict
 import cereal.messaging as messaging
 from cereal import car, log
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, DT_MDL, DT_CTRL
+from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -39,91 +39,6 @@ def slope2rot(slope):
   sin = np.sqrt(slope ** 2 / (slope ** 2 + 1))
   cos = np.sqrt(1 / (slope ** 2 + 1))
   return np.array([[cos, -sin], [sin, cos]])
-
-
-MIN_LAG_VEL = 15.0
-MAX_SANE_LAG = 3.0
-MIN_HIST_LEN_SEC = 30
-MAX_HIST_LEN_SEC = 120
-MAX_LAG_HIST_LEN_SEC = 300
-MOVING_CORR_WINDOW = 30
-OVERLAP_FACTOR = 0.25
-
-class LagEstimator(ParameterEstimator):
-  def __init__(self, CP, dt, min_hist_len_sec, max_lag_hist_len_sec, moving_corr_window, overlap_factor):
-    self.dt = dt
-    self.min_hist_len = int(min_hist_len_sec / self.dt)
-    self.window_len = int(moving_corr_window / self.dt)
-    self.initial_lag = CP.steerActuatorDelay
-    self.current_lag = self.initial_lag
-
-    self.lat_active = False
-    self.steering_pressed = False
-    self.v_ego = 0.0
-    self.lags = deque(maxlen= int(max_lag_hist_len_sec / (moving_corr_window * overlap_factor)))
-    self.curvature = deque(maxlen=int(moving_corr_window / self.dt))
-    self.desired_curvature = deque(maxlen=int(moving_corr_window / self.dt))
-    self.frame = 0
-
-  def correlation_lags(self, sig_len, dt):
-    return np.arange(0, sig_len) * dt
-
-  def actuator_delay(self, expected_sig, actual_sig, dt, max_lag=MAX_SANE_LAG):
-    assert len(expected_sig) == len(actual_sig)
-    correlations = np.correlate(expected_sig, actual_sig, mode='full')
-    lags = self.correlation_lags(len(expected_sig), dt)
-
-    # only consider negative time shifts within the max_lag
-    n_frames_max_delay = int(max_lag / dt)
-    correlations = correlations[len(expected_sig) - 1: len(expected_sig) - 1 + n_frames_max_delay]
-    lags = lags[:n_frames_max_delay]
-
-    max_corr_index = np.argmax(correlations)
-
-    lag, corr = lags[max_corr_index], correlations[max_corr_index]
-    return lag, corr
-
-  def handle_log(self, t, which, msg) -> None:
-    if which == "carControl":
-      self.lat_active = msg.latActive
-    elif which == "carState":
-      self.steering_pressed = msg.steeringPressed
-      self.v_ego = msg.vEgo
-    elif which == "controlsState":
-      curvature = msg.curvature
-      desired_curvature = msg.desiredCurvature
-      if self.lat_active and not self.steering_pressed:
-        self.curvature.append((t, curvature))
-        self.desired_curvature.append((t, desired_curvature))
-    self.frame += 1
-
-  def get_msg(self, valid: bool, with_points: bool):
-    if len(self.curvature) >= self.min_hist_len:
-      if self.frame % int(self.window_len * OVERLAP_FACTOR) == 0:
-        _, curvature = zip(*self.curvature)
-        _, desired_curvature = zip(*self.desired_curvature)
-        delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, self.dt)
-        if delay_curvature != 0.0:
-          self.lags.append(delay_curvature)
-      # FIXME: this is fragile and ugly, refactor this
-      if len(self.lags) > 0:
-        steer_actuation_delay = float(np.mean(self.lags))
-      else:
-        steer_actuation_delay = self.initial_lag
-    else:
-      steer_actuation_delay = self.initial_lag
-
-    msg = messaging.new_message('liveActuatorDelay')
-    msg.valid = valid
-
-    liveActuatorDelay = msg.liveActuatorDelay
-    liveActuatorDelay.steerActuatorDelay = steer_actuation_delay
-    liveActuatorDelay.totalPoints = len(self.curvature)
-
-    if with_points:
-      liveActuatorDelay.points = [[c, dc] for ((_, c), (_, dc)) in zip(self.curvature, self.desired_curvature)]
-
-    return msg
 
 
 class TorqueBuckets(PointBuckets):
@@ -325,14 +240,11 @@ class TorqueEstimator(ParameterEstimator):
 def main(demo=False):
   config_realtime_process([0, 1, 2, 3], 5)
 
-  pm = messaging.PubMaster(['liveTorqueParameters', 'liveActuatorDelay'])
-  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'controlsState', 'liveCalibration', 'livePose'], poll='livePose')
+  pm = messaging.PubMaster(['liveTorqueParameters'])
+  sm = messaging.SubMaster(['carControl', 'carOutput', 'carState', 'liveCalibration', 'livePose'], poll='livePose')
 
   params = Params()
-  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
-  estimator = TorqueEstimator(CP)
-
-  lag_estimator = LagEstimator(CP, DT_MDL, MIN_HIST_LEN_SEC, MAX_LAG_HIST_LEN_SEC, MOVING_CORR_WINDOW, OVERLAP_FACTOR)
+  estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
 
   while True:
     sm.update()
@@ -341,12 +253,10 @@ def main(demo=False):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
-          lag_estimator.handle_log(t, which, sm[which])
 
     # 4Hz driven by livePose
     if sm.frame % 5 == 0:
-      pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks(['carControl', 'carOutput', 'carState', 'liveCalibration', 'livePose'])))
-      pm.send('liveActuatorDelay', lag_estimator.get_msg(valid=sm.all_checks(['carControl', 'carState', 'controlsState']), with_points=True))
+      pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
 
     # Cache points every 60 seconds while onroad
     if sm.frame % 240 == 0:
