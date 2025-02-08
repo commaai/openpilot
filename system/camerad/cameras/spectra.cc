@@ -546,7 +546,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     int cdm_len = 0;
 
-    // debayer params
+    // white balance
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2868, {
       0x06900400,
       0x000006a6,
@@ -558,7 +558,6 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       0x00800066,
     });
 
-    // YUV
     std::vector<uint32_t> patches;
     cdm_len += build_common_ife_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches, false);
 
