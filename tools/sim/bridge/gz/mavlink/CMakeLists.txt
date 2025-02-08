@@ -51,6 +51,7 @@ target_link_libraries(gzimgpub
     capnp
     kj
     pthread
+    z
 )
 target_include_directories(gzimgpub
     PUBLIC

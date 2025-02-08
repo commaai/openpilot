@@ -8,6 +8,8 @@
 #include <CL/cl_ext.h>
 #include <asm-generic/socket.h>
 #include <assert.h>
+#include <capnp/serialize-packed.h>
+#include <capnp/serialize.h>
 #include <cerrno>
 #include <chrono>
 #include <cmath>
@@ -17,6 +19,8 @@
 #include <fcntl.h>
 #include <future>
 #include <iostream>
+#include <kj/common.h>
+#include <kj/io.h>
 #include <memory>
 #include <signal.h>
 #include <sstream>
@@ -27,6 +31,9 @@
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>
+#include <zlib.h>
+
+#define ZLCHUNK 16384
 
 using std::chrono::milliseconds;
 using std::chrono::seconds;
@@ -49,6 +56,50 @@ void resize_image(const unsigned char *src, unsigned char *dst, int width,
       }
     }
   }
+}
+
+int deflate(const kj::ArrayPtr<kj::byte> input, int output_fd) {
+  int ret, flush;
+  unsigned read, input_offset = 0, remaining;
+  size_t total_output = 0;
+  z_stream strm;
+  unsigned char out[ZLCHUNK];
+
+  strm.zalloc = Z_NULL;
+  strm.zfree = Z_NULL;
+  strm.opaque = Z_NULL;
+
+  ret = deflateInit(&strm, Z_DEFAULT_COMPRESSION);
+  if (ret != Z_OK) {
+    return ret;
+  }
+  do {
+    remaining = input.size() - input_offset;
+    strm.avail_in = remaining > ZLCHUNK ? ZLCHUNK : remaining;
+    strm.next_in = (unsigned char *)input.begin() + input_offset;
+    input_offset += strm.avail_in;
+    flush = input_offset == input.size() ? Z_FINISH : Z_NO_FLUSH;
+
+    do {
+      strm.avail_out = ZLCHUNK;
+      strm.next_out = out;
+      ret = deflate(&strm, flush);
+      read = ZLCHUNK - strm.avail_out;
+      if (read > 0) {
+        if (write(output_fd, out, read) != read) {
+          (void)deflateEnd(&strm);
+          return Z_ERRNO;
+        }
+      }
+      total_output += read;
+    } while (strm.avail_out == 0);
+    assert(strm.avail_in == 0);
+  } while (flush != Z_FINISH);
+  assert(ret == Z_STREAM_END);
+  printf("Compressed: %zu -> %zu\n", input.size(), total_output);
+
+  (void)deflateEnd(&strm);
+  return Z_OK;
 }
 
 GZImagePublisher::GZImagePublisher(const BridgeConfig config)
@@ -215,13 +266,13 @@ void GZImagePublisher::run_tcp_server(const uint16_t port) {
       continue;
     }
     std::thread client_thread([this, client_socket_fd, buf]() {
-      try {
-        if (buf[0] == 0x00) {
-          this->send_image(client_socket_fd);
-        }
-      } catch (...) {
-        std::cerr << "Failed to send image" << std::endl;
+      //      try {
+      if (buf[0] == 0x00) {
+        this->send_image(client_socket_fd);
       }
+      //      } catch (...) {
+      //        std::cerr << "Failed to send image" << std::endl;
+      //      }
       if (isFileDescriptiorValid(client_socket_fd)) {
         shutdown(client_socket_fd, SHUT_RDWR);
         close(client_socket_fd);
@@ -240,8 +291,12 @@ void GZImagePublisher::send_image(int client_socket_fd) {
                              this->last_nv12_frame.size());
   thumb.setThumbnail(data);
   thumb.setEncoding(cereal::Thumbnail::Encoding::UNKNOWN);
+  const size_t msg_size =
+      capnp::computeSerializedSizeInWords(message) * sizeof(capnp::word);
+  kj::VectorOutputStream output_stream(msg_size * 3);
+  capnp::writePackedMessage(output_stream, message);
   if (isFileDescriptiorValid(client_socket_fd)) {
-    writePackedMessageToFd(client_socket_fd, message);
+    assert(deflate(output_stream.getArray(), client_socket_fd) == Z_OK);
   }
 }
 
