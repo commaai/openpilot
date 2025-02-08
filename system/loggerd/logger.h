@@ -36,4 +36,3 @@ protected:
 kj::Array<capnp::word> logger_build_init_data();
 std::string logger_get_identifier(std::string key);
 std::string zstd_decompress(const std::string &in);
-

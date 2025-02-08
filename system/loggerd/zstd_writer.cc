@@ -14,6 +14,7 @@ ZstdFileWriter::ZstdFileWriter(const std::string& filename, int compression_leve
   size_t initResult = ZSTD_initCStream(cstream_, compression_level);
   assert(!ZSTD_isError(initResult));
 
+  input_cache_.reserve(ZSTD_CStreamInSize());
   output_buffer_.resize(ZSTD_CStreamOutSize());
 
   file_ = util::safe_fopen(filename.c_str(), "wb");
@@ -33,7 +34,18 @@ ZstdFileWriter::~ZstdFileWriter() {
 
 // Compresses and writes data to file
 void ZstdFileWriter::write(void* data, size_t size) {
-  ZSTD_inBuffer input = {data, size, 0};
+   // Add data to the input cache
+  input_cache_.insert(input_cache_.end(), (uint8_t*)data, (uint8_t*)data + size);
+
+  // If the cache is full, compress and write to the file
+  if (input_cache_.size() >= ZSTD_CStreamInSize()) {
+    flushCache();
+  }
+}
+
+// Compress and flush the input cache to the file
+void ZstdFileWriter::flushCache() {
+  ZSTD_inBuffer input = {input_cache_.data(), input_cache_.size(), 0};
   while (input.pos < input.size) {
     ZSTD_outBuffer output = {output_buffer_.data(), output_buffer_.size(), 0};
     size_t remaining = ZSTD_compressStream(cstream_, &output, &input);
@@ -41,10 +53,18 @@ void ZstdFileWriter::write(void* data, size_t size) {
     size_t written = util::safe_fwrite(output_buffer_.data(), 1, output.pos, file_);
     assert(written == output.pos);
   }
+
+  // Clear the cache after compression
+  input_cache_.clear();
 }
 
 // Finalizes compression and writes remaining data
 void ZstdFileWriter::finishCompression() {
+  // Flush any remaining data in the cache before finishing
+  if (!input_cache_.empty()) {
+    flushCache();
+  }
+
   ZSTD_outBuffer output = {output_buffer_.data(), output_buffer_.size(), 0};
   size_t remaining;
   do {
