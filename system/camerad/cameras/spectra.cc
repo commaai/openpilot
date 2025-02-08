@@ -453,12 +453,14 @@ int SpectraCamera::sensors_init() {
   return ret;
 }
 
-void add_patch(void *ptr, int n, int32_t dst_hdl, uint32_t dst_offset, int32_t src_hdl, uint32_t src_offset) {
-  struct cam_patch_desc *p = (struct cam_patch_desc *)((unsigned char*)ptr + sizeof(struct cam_patch_desc)*n);
+void add_patch(struct cam_packet *pkt, int32_t dst_hdl, uint32_t dst_offset, int32_t src_hdl, uint32_t src_offset) {
+  void *ptr = (char*)&pkt->payload + pkt->patch_offset;
+  struct cam_patch_desc *p = (struct cam_patch_desc *)((unsigned char*)ptr + sizeof(struct cam_patch_desc)*pkt->num_patches);
   p->dst_buf_hdl = dst_hdl;
   p->src_buf_hdl = src_hdl;
   p->dst_offset = dst_offset;
   p->src_offset = src_offset;
+  pkt->num_patches++;
 };
 
 void SpectraCamera::config_bps(int idx, int request_id) {
@@ -653,37 +655,23 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
   // *** patches ***
   {
-    pkt->num_patches = 8;
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
-    for (int i = 0; i < pkt->num_patches; i++) {
-      struct cam_patch_desc *patch = (struct cam_patch_desc *)((char*)&pkt->payload + pkt->patch_offset + sizeof(cam_patch_desc)*i);
-      patch->dst_buf_hdl = bps_cmd.handle;
-      // TODO: clean this up with offsetof
-      patch->dst_offset = buf_desc[0].offset + (uint32_t[]){0x0, 0x10, 0x14, 0xa8, 0xb0, 0xc8, 0xac, 0xa0}[i];
 
-      patch->src_offset = 0;
-      if (i == 0) {
-        // input frame
-        patch->src_buf_hdl = buf_handle_raw[idx];
-      } else if ((i == 1) || (i == 2)) {
-        // output frame
-        patch->src_buf_hdl = buf_handle_yuv[idx];
-        patch->src_offset = (i == 1) ? 0 : io_cfg[1].offsets[1];
-      } else if (i == 3) {
-        patch->src_buf_hdl = bps_iq.handle;
-      } else if (i == 4) {
-        // cdm
-        patch->src_buf_hdl = bps_cmd.handle;
-        patch->src_offset = sizeof(bps_tmp);
-      } else if (i == 5) {
-        patch->src_buf_hdl = bps_cdm_program_array.handle;
-      } else if (i == 6) {
-        patch->src_buf_hdl = bps_striping.handle;
-      } else if (i == 7) {
-        patch->src_buf_hdl = bps_cdm_striping_bl.handle;
-      }
-    }
+    // input frame
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[0].ptr[0]), buf_handle_raw[idx], 0);
+
+    // output frame
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[0]), buf_handle_yuv[idx], 0);
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[1].ptr[1]), buf_handle_yuv[idx], io_cfg[1].offsets[1]);
+
+    // rest of buffers
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, settings_addr), bps_iq.handle, 0);
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, cdm_addr2), bps_cmd.handle, sizeof(bps_tmp));
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + 0xc8, bps_cdm_program_array.handle, 0);
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, striping_addr), bps_striping.handle, 0);
+    add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, cdm_addr), bps_cdm_striping_bl.handle, 0);
   }
+  pkt->num_patches = 8;
 
   int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
   assert(ret == 0);
@@ -867,21 +855,18 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     // order here corresponds to the one in build_initial_config
     assert(patches.size() == 6 || patches.size() == 0);
 
-    pkt->num_patches = patches.size();
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
-    if (pkt->num_patches > 0) {
-      void *p = (char*)&pkt->payload + pkt->patch_offset;
-
+    if (patches.size() > 0) {
       // linearization LUT
-      add_patch(p, 0, ife_cmd.handle, patches[0], ife_linearization_lut.handle, 0);
+      add_patch(pkt.get(), ife_cmd.handle, patches[0], ife_linearization_lut.handle, 0);
 
       // vignetting correction LUTs
-      add_patch(p, 1, ife_cmd.handle, patches[1], ife_vignetting_lut.handle, 0);
-      add_patch(p, 2, ife_cmd.handle, patches[2], ife_vignetting_lut.handle, ife_vignetting_lut.size);
+      add_patch(pkt.get(), ife_cmd.handle, patches[1], ife_vignetting_lut.handle, 0);
+      add_patch(pkt.get(), ife_cmd.handle, patches[2], ife_vignetting_lut.handle, ife_vignetting_lut.size);
 
       // gamma LUTs
       for (int i = 0; i < 3; i++) {
-        add_patch(p, i+3, ife_cmd.handle, patches[i+3], ife_gamma_lut.handle, ife_gamma_lut.size*i);
+        add_patch(pkt.get(), ife_cmd.handle, patches[i+3], ife_gamma_lut.handle, ife_gamma_lut.size*i);
       }
     }
   }
