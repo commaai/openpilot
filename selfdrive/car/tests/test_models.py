@@ -10,15 +10,15 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
-from cereal import log, car
-from openpilot.common.basedir import BASEDIR
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.fingerprints import all_known_cars, MIGRATION
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
-from opendbc.car.values import Platform
+from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
+from opendbc.car.values import Platform
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -28,9 +28,6 @@ from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
-ButtonType = car.CarState.ButtonEvent.Type
-EventName = log.OnroadEvent.EventName
-PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
