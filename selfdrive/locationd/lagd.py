@@ -59,7 +59,7 @@ class LagEstimator(ParameterEstimator):
     elif which == "controlsState":
       curvature = msg.curvature
       desired_curvature = msg.desiredCurvature
-      if self.lat_active and not self.steering_pressed:
+      if self.lat_active and not self.steering_pressed and self.v_ego > MIN_LAG_VEL:
         self.curvature.append((t, curvature))
         self.desired_curvature.append((t, desired_curvature))
     self.frame += 1
@@ -114,7 +114,7 @@ def main():
     if sm.frame % 25 == 0:
       msg = estimator.get_msg(sm.all_checks(), with_points=True)
       alert_msg = messaging.new_message('alertDebug')
-      alert_msg.alertDebug.alertText1 = f"Lag estimateb (fixed: {CP.steerActuatorDelay:.2f} s)"
+      alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
       alert_msg.alertDebug.alertText2 = f"{msg.liveActuatorDelay.steerActuatorDelay:.2f} s"
 
       pm.send('liveActuatorDelay', msg)
