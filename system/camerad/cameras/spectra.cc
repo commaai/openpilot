@@ -500,22 +500,21 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     uint64_t handle;
   } bps_tmp;
 
+  typedef struct {
+    uint32_t a;
+    uint32_t n;
+    unsigned base : 32;
+    unsigned unused : 12;
+    unsigned length : 20;
+    uint32_t p;
+    uint32_t u;
+    uint32_t h;
+    uint32_t b;
+  } cdm_tmp;
+
   // *** cmd buf ***
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
   {
-
-    typedef struct {
-      uint32_t a;
-      uint32_t n;
-      unsigned base : 32;
-      unsigned unused : 12;
-      unsigned length : 20;
-      uint32_t p;
-      uint32_t u;
-      uint32_t h;
-      uint32_t b;
-    } cdm;
-
     pkt->num_cmd_buf = 2;
     pkt->kmd_cmd_buf_index = -1;
     pkt->kmd_cmd_buf_offset = 0;
@@ -525,7 +524,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     buf_desc[0].type = CAM_CMD_BUF_FW;
     buf_desc[0].offset = bps_cmd.aligned_size()*idx;
 
-    buf_desc[0].length = sizeof(bps_tmp) + sizeof(cdm);
+    buf_desc[0].length = sizeof(bps_tmp) + sizeof(cdm_tmp);
     buf_desc[0].size = buf_desc[0].length;
 
     // rest gets patched in
@@ -535,7 +534,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     fp->cdm_size = bps_cdm_striping_bl.size;   // this comes from the striping lib create call
     fp->req_id = 0; // why always 0?
 
-    cdm *pa = (cdm *)((unsigned char *)fp + sizeof(bps_tmp));
+    cdm_tmp *pa = (cdm_tmp *)((unsigned char *)fp + sizeof(bps_tmp));
     pa->a = 0;
     pa->n = 1;
     pa->p = 20;  // GENERIC
@@ -554,7 +553,6 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       0x00000000,
       0x00000000,
     });
-    assert(cdm_len == 24);
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2878, {
       0x00000080,
       0x00800066,
@@ -671,7 +669,6 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, striping_addr), bps_striping.handle, 0);
     add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, cdm_addr), bps_cdm_striping_bl.handle, 0);
   }
-  pkt->num_patches = 8;
 
   int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
   assert(ret == 0);
