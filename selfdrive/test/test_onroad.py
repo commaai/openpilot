@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import zstandard as zstd
 from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
@@ -23,7 +22,6 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.tools.lib.logreader import LogReader
 
 """
@@ -102,8 +100,8 @@ TIMINGS = {
 }
 
 LOGS_SIZE_RATE = {
-  "qlog": 0.0083,
-  "rlog": 0.135,
+  "qlog.zst": 0.0083,
+  "rlog.zst": 0.135,
   "qcamera.ts": 0.03828,
 }
 LOGS_SIZE_RATE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2740))
@@ -119,10 +117,10 @@ class TestOnroad:
   @classmethod
   def setup_class(cls):
     if "DEBUG" in os.environ:
-      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(Paths.log_root()).iterdir())
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       print(segs[-3])
-      cls.lr = list(LogReader(os.path.join(segs[-3], "rlog")))
+      cls.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
       return
 
     # setup env
@@ -173,18 +171,15 @@ class TestOnroad:
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
 
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog")))
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog.zst")))
     cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
     for f in cls.log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
-      if f.name in ("qlog", "rlog"):
-        with open(f, 'rb') as ff:
-          cls.log_sizes[f] = len(zstd.compress(ff.read(), LOG_COMPRESSION_LEVEL)) / 1e6
 
     cls.msgs = defaultdict(list)
     for m in cls.lr:
