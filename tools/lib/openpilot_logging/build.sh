@@ -19,9 +19,10 @@ cp -rL ../../../cereal/*.capnp openpilot_logging/cereal/
 cp -rL ../../../cereal/include/*.capnp openpilot_logging/cereal/include/
 
 # quick test
-python openpilot_logging/logreader.py 1d3dc3e03047b0c7/000000dd--455f14369d/0/q > /dev/null
+#python openpilot_logging/logreader.py 1d3dc3e03047b0c7/000000dd--455f14369d/0/q > /dev/null
 
 rm -rf dist/
 python -c "import setuptools; setuptools.setup()" sdist
 
-#twine upload dist/* --verbose
+#pip install dist/openpilot_logging-0.1.4.tar.gz
+twine upload dist/* --verbose
