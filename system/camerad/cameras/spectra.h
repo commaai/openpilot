@@ -9,7 +9,7 @@
 #include "media/cam_req_mgr.h"
 
 #include "common/util.h"
-#include "system/camerad/cameras/tici.h"
+#include "system/camerad/cameras/hw.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 

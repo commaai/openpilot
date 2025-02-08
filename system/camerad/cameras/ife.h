@@ -2,11 +2,11 @@
 
 #include "cdm.h"
 
-#include "system/camerad/cameras/tici.h"
+#include "system/camerad/cameras/hw.h"
 #include "system/camerad/sensors/sensor.h"
 
 
-int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches, int camera_num) {
+int build_update(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
   uint8_t *start = dst;
 
   // init sequence
@@ -39,7 +39,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
 
   // module config/enables (e.g. enable debayer, white balance, etc.)
   dst += write_cont(dst, 0x40, {
-    0x00000c06 | ((uint32_t)(camera_num == 1) << 8),
+    0x00000c06 | ((uint32_t)(cam.vignetting_correction) << 8),
   });
   dst += write_cont(dst, 0x44, {
     0x00000000,
@@ -73,11 +73,11 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
 }
 
 
-int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches, int camera_num) {
+int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
   uint8_t *start = dst;
 
   // start with the every frame config
-  dst += build_update(dst, s, patches, camera_num);
+  dst += build_update(dst, cam, s, patches);
 
   uint64_t addr;
 

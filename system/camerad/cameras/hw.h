@@ -16,6 +16,7 @@ struct CameraConfig {
   cereal::FrameData::Builder (cereal::Event::Builder::*init_camera_state)();
   bool enabled;
   uint32_t phy;
+  bool vignetting_correction;
 };
 
 // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
@@ -28,6 +29,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .init_camera_state = &cereal::Event::Builder::initWideRoadCameraState,
   .enabled = !getenv("DISABLE_WIDE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
+  .vignetting_correction = false,
 };
 
 const CameraConfig ROAD_CAMERA_CONFIG = {
@@ -38,6 +40,7 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .init_camera_state = &cereal::Event::Builder::initRoadCameraState,
   .enabled = !getenv("DISABLE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
+  .vignetting_correction = true,
 };
 
 const CameraConfig DRIVER_CAMERA_CONFIG = {
@@ -48,4 +51,5 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .init_camera_state = &cereal::Event::Builder::initDriverCameraState,
   .enabled = !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
+  .vignetting_correction = false,
 };
