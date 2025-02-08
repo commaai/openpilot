@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import zstandard as zstd
 from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
