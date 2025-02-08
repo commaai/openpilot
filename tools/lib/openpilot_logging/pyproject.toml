@@ -1,6 +1,6 @@
 [project]
 name = "openpilot-logging"
-version = "0.1.1"
+version = "0.1.3"
 description = "Tools to read openpilot logs"
 license = { file = "LICENSE" }
 authors = [{ name = "Vehicle Researcher", email = "user@comma.ai" }]
@@ -23,6 +23,9 @@ dependencies = [
   "zstandard",
 #  "pycryptodome",
 ]
+
+[tool.setuptools.package-data]
+openpilot_logging = ["cereal/*.capnp"]
 
 [project.optional-dependencies]
 testing = [
