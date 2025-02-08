@@ -10,16 +10,13 @@ from openpilot.selfdrive.locationd.helpers import ParameterEstimator
 
 MIN_LAG_VEL = 15.0
 MAX_SANE_LAG = 3.0
-MIN_HIST_LEN_SEC = 60
-MAX_LAG_HIST_LEN_SEC = 300
+MAX_LAG_HIST_LEN_SEC = 120
 MOVING_CORR_WINDOW = 60
-OVERLAP_FACTOR = 0.25
 
 
 class LagEstimator(ParameterEstimator):
-  def __init__(self, CP, dt, min_hist_len_sec, max_lag_hist_len_sec, moving_corr_window, overlap_factor):
+  def __init__(self, CP, dt, pub_dt, max_lag_hist_len_sec, moving_corr_window):
     self.dt = dt
-    self.min_hist_len = int(min_hist_len_sec / self.dt)
     self.window_len = int(moving_corr_window / self.dt)
     self.initial_lag = CP.steerActuatorDelay
     self.current_lag = self.initial_lag
@@ -27,7 +24,7 @@ class LagEstimator(ParameterEstimator):
     self.lat_active = False
     self.steering_pressed = False
     self.v_ego = 0.0
-    self.lags = deque(maxlen= int(max_lag_hist_len_sec / (moving_corr_window * overlap_factor)))
+    self.lags = deque(maxlen= int(max_lag_hist_len_sec / pub_dt))
     self.curvature = deque(maxlen=int(moving_corr_window / self.dt))
     self.desired_curvature = deque(maxlen=int(moving_corr_window / self.dt))
     self.frame = 0
@@ -62,16 +59,15 @@ class LagEstimator(ParameterEstimator):
       if self.lat_active and not self.steering_pressed and self.v_ego > MIN_LAG_VEL:
         self.curvature.append((t, curvature))
         self.desired_curvature.append((t, desired_curvature))
-    self.frame += 1
+      self.frame += 1
 
   def get_msg(self, valid: bool, with_points: bool):
-    if len(self.curvature) >= self.min_hist_len:
-      if self.frame % int(self.window_len * OVERLAP_FACTOR) == 0:
-        _, curvature = zip(*self.curvature)
-        _, desired_curvature = zip(*self.desired_curvature)
-        delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, self.dt)
-        if delay_curvature != 0.0:
-          self.lags.append(delay_curvature)
+    if len(self.curvature) >= self.window_len:
+      _, curvature = zip(*self.curvature)
+      _, desired_curvature = zip(*self.desired_curvature)
+      delay_curvature, _ = self.actuator_delay(curvature, desired_curvature, self.dt)
+      if delay_curvature != 0.0:
+        self.lags.append(delay_curvature)
       # FIXME: this is fragile and ugly, refactor this
       if len(self.lags) > 0:
         steer_actuation_delay = float(np.mean(self.lags))
@@ -101,7 +97,7 @@ def main():
 
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
-  estimator = LagEstimator(CP, DT_CTRL, MIN_HIST_LEN_SEC, MAX_LAG_HIST_LEN_SEC, MOVING_CORR_WINDOW, OVERLAP_FACTOR)
+  estimator = LagEstimator(CP, DT_CTRL, DT_CTRL * 25, MAX_LAG_HIST_LEN_SEC, MOVING_CORR_WINDOW)
 
   while True:
     sm.update()
