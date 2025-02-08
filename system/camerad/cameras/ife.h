@@ -110,15 +110,6 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
   // TODO: this is DMI64 in the dump, does that matter?
   dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0xc24, 9);
   patches.push_back(addr - (uint64_t)start);
-  /* TODO
-  cdm_dmi_cmd_t 248
-    .length = 287
-    .reserved = 33
-    .cmd = 11
-    .addr = 0
-    .DMIAddr = 3108
-    .DMISel = 9
-  */
 
   // vignetting correction
   dst += write_cont(dst, 0x6bc, {
@@ -175,7 +166,7 @@ int build_initial_config(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t
     0x03ff0000,
   });
 
-  // TODO: remove this
+  // output size/scaling
   dst += write_cont(dst, 0xa3c, {
     0x00000003,
     ((s->frame_width - 1) << 16) | (s->frame_width - 1),
