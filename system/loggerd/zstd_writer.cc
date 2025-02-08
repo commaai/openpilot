@@ -24,7 +24,8 @@ ZstdFileWriter::ZstdFileWriter(const std::string& filename, int compression_leve
 
 // Destructor: Finalizes compression and closes file
 ZstdFileWriter::~ZstdFileWriter() {
-  finishCompression();
+  flushCache(true);
+  util::safe_fflush(file_);
 
   int err = fclose(file_);
   assert(err == 0);
@@ -34,7 +35,7 @@ ZstdFileWriter::~ZstdFileWriter() {
 
 // Compresses and writes data to file
 void ZstdFileWriter::write(void* data, size_t size) {
-   // Add data to the input cache
+  // Add data to the input cache
   input_cache_.insert(input_cache_.end(), (uint8_t*)data, (uint8_t*)data + size);
 
   // If the cache is full, compress and write to the file
@@ -48,6 +49,7 @@ void ZstdFileWriter::flushCache(bool last_chunk) {
   ZSTD_inBuffer input = {input_cache_.data(), input_cache_.size(), 0};
   ZSTD_EndDirective mode = !last_chunk ? ZSTD_e_continue : ZSTD_e_end;
   int finished = 0;
+
   do {
     ZSTD_outBuffer output = {output_buffer_.data(), output_buffer_.size(), 0};
     size_t remaining = ZSTD_compressStream2(cstream_, &output, &input, mode);
@@ -60,10 +62,4 @@ void ZstdFileWriter::flushCache(bool last_chunk) {
   } while (!finished);
 
   input_cache_.clear();  // Clear cache after compression
-}
-
-// Finalizes compression and writes remaining data
-void ZstdFileWriter::finishCompression() {
-  flushCache(true);
-  util::safe_fflush(file_);
 }

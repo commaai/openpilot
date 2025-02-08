@@ -15,7 +15,6 @@ public:
 
 private:
   void flushCache(bool last_chunk);
-  void finishCompression();
 
   size_t input_cache_capacity_ = 0;
   std::vector<char> input_cache_;
