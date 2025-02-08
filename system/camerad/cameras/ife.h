@@ -9,6 +9,7 @@
 int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patches, int camera_num) {
   uint8_t *start = dst;
 
+  // init sequence
   dst += write_random(dst, {
     0x2c, 0xffffffff,
     0x30, 0xffffffff,
@@ -17,6 +18,7 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x3c, 0xffffffff,
   });
 
+  // demux cfg
   dst += write_cont(dst, 0x560, {
     0x00000001,
     0x04440444,
@@ -35,36 +37,29 @@ int build_update(uint8_t *dst, const SensorInfo *s, std::vector<uint32_t> &patch
     0x00000000,
   });
 
+  // module config/enables (e.g. enable debayer, white balance, etc.)
   dst += write_cont(dst, 0x40, {
     0x00000c06 | ((uint32_t)(camera_num == 1) << 8),
   });
-
-  dst += write_cont(dst, 0x48, {
-    (1 << 3) | (1 << 1),
-  });
-
-  dst += write_cont(dst, 0x4c, {
-    0x00000019,
-  });
-
-  dst += write_cont(dst, 0xe0c, {
-    0x00000e00,
-  });
-
-  dst += write_cont(dst, 0xe2c, {
-    0x00000e00,
-  });
-
   dst += write_cont(dst, 0x44, {
     0x00000000,
   });
-
-  dst += write_cont(dst, 0xaac, {
+  dst += write_cont(dst, 0x48, {
+    (1 << 3) | (1 << 1),
+  });
+  dst += write_cont(dst, 0x4c, {
+    0x00000019,
+  });
+  dst += write_cont(dst, 0xf00, {
     0x00000000,
   });
 
-  dst += write_cont(dst, 0xf00, {
-    0x00000000,
+  // cropping
+  dst += write_cont(dst, 0xe0c, {
+    0x00000e00,
+  });
+  dst += write_cont(dst, 0xe2c, {
+    0x00000e00,
   });
 
   // black level scale + offset
