@@ -138,7 +138,7 @@ class TestAthenadMethods:
     route = '2021-03-29--13-32-47'
     segments = [0, 1, 2, 3, 11]
 
-    filenames = ['qlog', 'qcamera.ts', 'rlog', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
+    filenames = ['qlog.zst', 'qcamera.ts', 'rlog.zst', 'fcamera.hevc', 'ecamera.hevc', 'dcamera.hevc']
     files = [f'{route}--{s}/{f}' for s in segments for f in filenames]
     for file in files:
       self._create_file(file)

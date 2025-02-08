@@ -159,7 +159,7 @@ if __name__ == '__main__':
     lr = LogReader(args.route)
   else:
     segs = [seg for seg in os.listdir(Paths.log_root()) if args.route in seg]
-    lr = LogReader([os.path.join(Paths.log_root(), seg, 'rlog') for seg in segs])
+    lr = LogReader([os.path.join(Paths.log_root(), seg, 'rlog.zst') for seg in segs])
 
   CP = lr.first('carParams')
   ID = lr.first('initData')
