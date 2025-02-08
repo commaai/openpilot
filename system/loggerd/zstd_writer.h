@@ -14,9 +14,10 @@ public:
   inline void write(kj::ArrayPtr<capnp::byte> array) { write(array.begin(), array.size()); }
 
 private:
-  void flushCache();
+  void flushCache(bool last_chunk);
   void finishCompression();
 
+  size_t input_cache_capacity_ = 0;
   std::vector<char> input_cache_;
   std::vector<char> output_buffer_;
   ZSTD_CStream *cstream_;
