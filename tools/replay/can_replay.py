@@ -8,7 +8,7 @@ import threading
 os.environ['FILEREADER_CACHE'] = '1'
 
 from openpilot.common.realtime import config_realtime_process, Ratekeeper, DT_CTRL
-from openpilot.selfdrive.pandad import can_capnp_to_can_list
+from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.tools.lib.logreader import LogReader
 from panda import PandaJungle
 
@@ -80,17 +80,15 @@ def connect():
 
     time.sleep(1)
 
-def process(lr):
-  return [can_capnp_to_can_list(m.can) for m in lr if m.which() == 'can']
 
 def load_route(route_or_segment_name):
   print("Loading log...")
-  sr = LogReader(route_or_segment_name)
-  CP = sr.first("carParams")
-  print(f"carFingerprint (for hardcoding fingerprint): '{CP.carFingerprint}'")
-  CAN_MSGS = sr.run_across_segments(24, process)
-  print("Finished loading...")
-  return CAN_MSGS
+  lr = LogReader(route_or_segment_name)
+  CP = lr.first("carParams")
+  print(f"carFingerprint: '{CP.carFingerprint}'")
+  mbytes = [m.as_builder().to_bytes() for m in lr if m.which() == 'can']
+  return [m[1] for m in can_capnp_to_list(mbytes)]
+
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Replay CAN messages from a route to all connected pandas and jungles in a loop.",

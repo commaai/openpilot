@@ -6,12 +6,6 @@ from libcpp.string cimport string
 from libcpp cimport bool
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
-cdef extern from "panda.h":
-  cdef struct can_frame:
-    long address
-    string dat
-    long src
-
 cdef extern from "opendbc/can/common.h":
   cdef struct CanFrame:
     long src
@@ -23,12 +17,12 @@ cdef extern from "opendbc/can/common.h":
     vector[CanFrame] frames
 
 cdef extern from "can_list_to_can_capnp.cc":
-  void can_list_to_can_capnp_cpp(const vector[can_frame] &can_list, string &out, bool sendcan, bool valid)
+  void can_list_to_can_capnp_cpp(const vector[CanFrame] &can_list, string &out, bool sendcan, bool valid)
   void can_capnp_to_can_list_cpp(const vector[string] &strings, vector[CanData] &can_data, bool sendcan)
 
 def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
-  cdef can_frame *f
-  cdef vector[can_frame] can_list
+  cdef CanFrame *f
+  cdef vector[CanFrame] can_list
 
   can_list.reserve(len(can_msgs))
   for can_msg in can_msgs:

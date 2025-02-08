@@ -16,6 +16,7 @@ import argparse
 from typing import NamedTuple
 from subprocess import check_output, CalledProcessError
 
+from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
 from panda.python import Panda
 
@@ -78,6 +79,9 @@ if __name__ == "__main__":
   parser.add_argument('--bus', type=int, default=0, help='can bus to use (default: 0)')
   args = parser.parse_args()
 
+  if args.debug:
+    carlog.setLevel('DEBUG')
+
   try:
     check_output(["pidof", "pandad"])
     print("pandad is running, please kill openpilot before running this script! (aborted)")
@@ -93,7 +97,7 @@ if __name__ == "__main__":
 
   panda = Panda()
   panda.set_safety_mode(Panda.SAFETY_ELM327)
-  uds_client = UdsClient(panda, 0x7D0, bus=args.bus, debug=args.debug)
+  uds_client = UdsClient(panda, 0x7D0, bus=args.bus)
 
   print("\n[START DIAGNOSTIC SESSION]")
   session_type : SESSION_TYPE = 0x07 # type: ignore

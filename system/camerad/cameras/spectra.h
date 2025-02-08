@@ -29,6 +29,12 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 #define OpcodesIFEInitialConfig  0x0
 #define OpcodesIFEUpdate         0x1
 
+typedef enum {
+  ISP_RAW_OUTPUT,   // raw frame from sensor
+  ISP_IFE_PROCESSED,  // fully processed image through the IFE
+  ISP_BPS_PROCESSED,  // fully processed image through the BPS
+} SpectraOutputType;
+
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
 int device_control(int fd, int op_code, int session_handle, int dev_handle);
@@ -103,7 +109,7 @@ public:
 
 class SpectraCamera {
 public:
-  SpectraCamera(SpectraMaster *master, const CameraConfig &config, bool raw);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out);
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
@@ -177,7 +183,7 @@ public:
   uint64_t idx_offset = 0;
   bool skipped = true;
 
-  bool is_raw;
+  SpectraOutputType output_type;
 
   CameraBuf buf;
   MemoryManager mm;

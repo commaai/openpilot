@@ -15,7 +15,7 @@ private:
   ParamControl* longManeuverToggle;
   ParamControl* experimentalLongitudinalToggle;
   bool is_release;
-  bool offroad;
+  bool offroad = false;
 
 private slots:
   void updateToggles(bool _offroad);

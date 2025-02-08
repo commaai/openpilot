@@ -2,6 +2,7 @@
 import sys
 import argparse
 from subprocess import check_output, CalledProcessError
+from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DTC_REPORT_TYPE, DTC_STATUS_MASK_TYPE, get_dtc_num_as_str, get_dtc_status_names
 from panda import Panda
 
@@ -10,6 +11,9 @@ parser.add_argument("addr", type=lambda x: int(x,0))
 parser.add_argument("--bus", type=int, default=0)
 parser.add_argument('--debug', action='store_true')
 args = parser.parse_args()
+
+if args.debug:
+  carlog.setLevel('DEBUG')
 
 try:
   check_output(["pidof", "pandad"])
@@ -21,7 +25,7 @@ except CalledProcessError as e:
 
 panda = Panda()
 panda.set_safety_mode(Panda.SAFETY_ELM327)
-uds_client = UdsClient(panda, args.addr, bus=args.bus, debug=args.debug)
+uds_client = UdsClient(panda, args.addr, bus=args.bus)
 print("extended diagnostic session ...")
 uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)
 print("read diagnostic codes ...")
