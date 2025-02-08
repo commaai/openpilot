@@ -9,8 +9,7 @@
 #include "system/hardware/hw.h"
 #include "system/loggerd/zstd_writer.h"
 
-// 2 is ideal for real-time logging to Zstd files, providing a good balance between speed and compression ratio.
-constexpr int LOG_COMPRESSION_LEVEL = 2;
+constexpr int LOG_COMPRESSION_LEVEL = 10;
 
 typedef cereal::Sentinel::SentinelType SentinelType;
 
