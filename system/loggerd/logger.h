@@ -7,6 +7,11 @@
 #include "cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
+#include "system/loggerd/zstd_writer.h"
+
+
+// 2 is ideal for real-time logging to Zstd files, providing a good balance between speed and compression ratio.
+constexpr int LOG_COMPRESSION_LEVEL = 2;
 
 class RawFile {
  public:
@@ -48,8 +53,10 @@ protected:
   int part = -1, exit_signal = 0;
   std::string route_path, route_name, segment_path, lock_file;
   kj::Array<capnp::word> init_data;
-  std::unique_ptr<RawFile> rlog, qlog;
+  std::unique_ptr<ZstdFileWriter> rlog, qlog;
 };
 
 kj::Array<capnp::word> logger_build_init_data();
 std::string logger_get_identifier(std::string key);
+std::string zstd_decompress(const std::string &in);
+
