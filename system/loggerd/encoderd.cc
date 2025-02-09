@@ -52,9 +52,6 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
   std::unique_ptr<JpegEncoder> jpeg_encoder;
-  if (cam_info.stream_type == VISION_STREAM_ROAD) {
-    jpeg_encoder = std::make_unique<JpegEncoder>(482, 302);
-  }
 
   int cur_seg = 0;
   while (!do_exit) {
@@ -72,6 +69,11 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       for (const auto &encoder_info : cam_info.encoder_infos) {
         auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
         e->encoder_open(nullptr);
+      }
+
+      // Only one thumbnail can be generated per camera stream
+      if (auto thumbnail_name = cam_info.encoder_infos[0].thumbnail_name) {
+        jpeg_encoder = std::make_unique<JpegEncoder>(thumbnail_name, buf_info.width / 4, buf_info.height / 4);
       }
     }
 

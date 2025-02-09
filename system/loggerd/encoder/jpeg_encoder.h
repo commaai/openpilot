@@ -12,7 +12,7 @@
 
 class JpegEncoder {
 public:
-  JpegEncoder(int width, int height);
+  JpegEncoder(const std::string &pusblish_name, int width, int height);
   ~JpegEncoder();
   void pushThumbnail(VisionBuf *buf, const VisionIpcBufExtra &extra);
 
@@ -22,6 +22,7 @@ private:
 
   int thumbnail_width;
   int thumbnail_height;
+  std::string publish_name;
   std::vector<uint8_t> yuv_buffer;
   std::unique_ptr<PubMaster> pm;
 

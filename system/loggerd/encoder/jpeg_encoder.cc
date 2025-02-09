@@ -3,9 +3,10 @@
 #include <cassert>
 #include <cstring>
 
-JpegEncoder::JpegEncoder(int width, int height) : thumbnail_width(width), thumbnail_height(height) {
+JpegEncoder::JpegEncoder(const std::string &pusblish_name, int width, int height)
+    : publish_name(pusblish_name), thumbnail_width(width), thumbnail_height(height) {
   yuv_buffer.resize((thumbnail_width * ((thumbnail_height + 15) & ~15) * 3) / 2);
-  pm = std::make_unique<PubMaster>(std::vector{"thumbnail"});
+  pm = std::make_unique<PubMaster>(std::vector{pusblish_name.c_str()});
 }
 
 JpegEncoder::~JpegEncoder() {
@@ -23,7 +24,7 @@ void JpegEncoder::pushThumbnail(VisionBuf *buf, const VisionIpcBufExtra &extra) 
   thumbnaild.setTimestampEof(extra.timestamp_eof);
   thumbnaild.setThumbnail({out_buffer, out_size});
 
-  pm->send("thumbnail", msg);
+  pm->send(publish_name.c_str(), msg);
 }
 
 void JpegEncoder::generateThumbnail(const uint8_t *y_addr, const uint8_t *uv_addr, int width, int height, int stride) {
