@@ -1,6 +1,7 @@
 #include <cassert>
 
 #include "system/loggerd/loggerd.h"
+#include "system/loggerd/encoder/jpeg_encoder.h"
 
 #ifdef QCOM2
 #include "system/loggerd/encoder/v4l_encoder.h"
@@ -49,6 +50,11 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
   std::vector<std::unique_ptr<Encoder>> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
+
+  std::unique_ptr<JpegEncoder> jpeg_encoder;
+  if (cam_info.stream_type == VISION_STREAM_ROAD) {
+    jpeg_encoder = std::make_unique<JpegEncoder>(482, 302);
+  }
 
   int cur_seg = 0;
   while (!do_exit) {
@@ -107,6 +113,10 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
         }
+      }
+
+      if (jpeg_encoder && (extra.frame_id % 100 == 3)) {
+        jpeg_encoder->pushThumbnail(buf, extra);
       }
     }
   }
