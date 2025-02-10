@@ -117,7 +117,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         }
       }
 
-      if (jpeg_encoder && (extra.frame_id % 100 == 3)) {
+      if (jpeg_encoder && (extra.frame_id % 1200 == 100)) {
         jpeg_encoder->pushThumbnail(buf, extra);
       }
     }
