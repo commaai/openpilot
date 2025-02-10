@@ -65,7 +65,7 @@ def run_scenarios(scenario, logs):
   elif scenario == Scenario.GYRO_OFF:
     logs = sorted([x for x in logs if x.which() != 'gyroscope'], key=lambda x: x.logMonoTime)
 
-  elif scenario == Scenario.GYRO_SPIKE_MIDWAY or scenario == Scenario.GYRO_CONSISTENT_SPIKES:
+  elif scenario in (Scenario.GYRO_SPIKE_MIDWAY, Scenario.GYRO_CONSISTENT_SPIKES):
     def gyro_spike(msg):
       msg.gyroscope.gyroUncalibrated.v[0] += 3.0
     count = 1 if scenario == Scenario.GYRO_SPIKE_MIDWAY else CONSISTENT_SPIKES_COUNT
@@ -74,13 +74,13 @@ def run_scenarios(scenario, logs):
   elif scenario == Scenario.ACCEL_OFF:
     logs = sorted([x for x in logs if x.which() != 'accelerometer'], key=lambda x: x.logMonoTime)
 
-  elif scenario == Scenario.ACCEL_SPIKE_MIDWAY or scenario == Scenario.ACCEL_CONSISTENT_SPIKES:
+  elif scenario in (Scenario.ACCEL_SPIKE_MIDWAY, Scenario.ACCEL_CONSISTENT_SPIKES):
     def acc_spike(msg):
       msg.accelerometer.acceleration.v[0] += 100.0
     count = 1 if scenario == Scenario.ACCEL_SPIKE_MIDWAY else CONSISTENT_SPIKES_COUNT
     logs = modify_logs_midway(logs, 'accelerometer', count, acc_spike)
 
-  elif scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY or scenario == Scenario.SENSOR_TIMING_CONSISTENT_SPIKES:
+  elif scenario in (Scenario.SENSOR_TIMING_SPIKE_MIDWAY, Scenario.SENSOR_TIMING_CONSISTENT_SPIKES):
     def timing_spike(msg):
       msg.accelerometer.timestamp -= int(0.150 * 1e9)
     count = 1 if scenario == Scenario.SENSOR_TIMING_SPIKE_MIDWAY else CONSISTENT_SPIKES_COUNT

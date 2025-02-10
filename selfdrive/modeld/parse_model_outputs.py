@@ -10,7 +10,7 @@ def sigmoid(x):
 
 def softmax(x, axis=-1):
   x -= np.max(x, axis=axis, keepdims=True)
-  if x.dtype == np.float32 or x.dtype == np.float64:
+  if x.dtype in (np.float32, np.float64):
     safe_exp(x, out=x)
   else:
     x = safe_exp(x)

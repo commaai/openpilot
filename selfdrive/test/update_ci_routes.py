@@ -76,9 +76,7 @@ if __name__ == "__main__":
     to_sync.extend([rt.route for rt in test_car_models_routes])
     to_sync.extend([s[1].rsplit('--', 1)[0] for s in replay_segments])
 
-  for r in tqdm(to_sync):
-    if not sync_to_ci_public(r):
-      failed_routes.append(r)
+  failed_routes.append(r for r in tqdm(to_sync) if not sync_to_ci_public(r))
 
   if len(failed_routes):
     print("failed routes:", failed_routes)

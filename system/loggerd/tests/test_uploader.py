@@ -18,8 +18,8 @@ class FakeLogHandler(logging.Handler):
     self.reset()
 
   def reset(self):
-    self.upload_order = list()
-    self.upload_ignored = list()
+    self.upload_order = []
+    self.upload_ignored = []
 
   def emit(self, record):
     try:
@@ -51,10 +51,10 @@ class TestUploader(UploaderTestCase):
     self.up_thread.join()
 
   def gen_files(self, lock=False, xattr: bytes = None, boot=True) -> list[Path]:
-    f_paths = []
-    for t in ["qlog", "rlog", "dcamera.hevc", "fcamera.hevc"]:
-      f_paths.append(self.make_file_with_data(self.seg_dir, t, 1, lock=lock, upload_xattr=xattr))
-
+    f_paths = [
+      self.make_file_with_data(self.seg_dir, t, 1, lock=lock, upload_xattr=xattr)
+      for t in ("qlog", "rlog", "dcamera.hevc", "fcamera.hevc")
+    ]
     if boot:
       f_paths.append(self.make_file_with_data("boot", f"{self.seg_dir}", 1, lock=lock, upload_xattr=xattr))
     return f_paths

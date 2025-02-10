@@ -26,8 +26,7 @@ if __name__ == "__main__":
     start = time.monotonic()
     while time.monotonic() - start < TIME:
       msgs = messaging.drain_sock(sock, wait_for_one=True)
-      for m in msgs:
-        t.append(m.modelV2.modelExecutionTime)
+      t.extend(msg.modelV2.modelExecutionTime for msg in msgs)
 
     execution_times.append(np.array(t[10:]) * 1000)
     managed_processes['modeld'].stop()

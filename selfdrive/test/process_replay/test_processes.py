@@ -179,10 +179,8 @@ if __name__ == "__main__":
   with concurrent.futures.ProcessPoolExecutor(max_workers=args.jobs) as pool:
     if not args.upload_only:
       download_segments = [seg for car, seg in segments if car in tested_cars]
-      log_data: dict[str, LogReader] = {}
       p1 = pool.map(get_log_data, download_segments)
-      for segment, lr in tqdm(p1, desc="Getting Logs", total=len(download_segments)):
-        log_data[segment] = lr
+      log_data: dict[str, LogReader] = dict(tqdm(p1, desc="Getting Logs", total=len(download_segments)))
 
     pool_args: Any = []
     for car_brand, segment in segments:

@@ -254,7 +254,7 @@ def webrtcd_thread(host: str, port: int, debug: bool):
 
   app = web.Application()
 
-  app['streams'] = dict()
+  app['streams'] = {}
   app['debug'] = debug
   app.on_shutdown.append(on_shutdown)
   app.router.add_post("/stream", get_stream)

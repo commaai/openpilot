@@ -180,7 +180,7 @@ class TestSensord:
   def test_logmonottime_timestamp_diff(self):
     # ensure diff between the message logMonotime and sample timestamp is small
 
-    tdiffs = list()
+    tdiffs = []
     for etype in self.events:
       for measurement in self.events[etype]:
         m = getattr(measurement, measurement.which())
@@ -202,7 +202,7 @@ class TestSensord:
     assert avg_diff < 4, f"Avg packet diff: {avg_diff:.1f}ms"
 
   def test_sensor_values(self):
-    sensor_values = dict()
+    sensor_values = {}
     for etype in self.events:
       for measurement in self.events[etype]:
         m = getattr(measurement, measurement.which())

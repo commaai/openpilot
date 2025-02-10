@@ -79,7 +79,7 @@ class TestModeld:
       modeld should only run on consecutive road frames
     """
     frame_id = -1
-    road_frames = list()
+    road_frames = []
     for n in range(1, 50):
       if (random.random() < 0.1) and n > 3:
         cams = random.choice([(), ('wideRoadCameraState', )])

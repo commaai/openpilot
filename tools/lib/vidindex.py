@@ -269,7 +269,7 @@ def hevc_index(hevc_file_name: str, allow_corrupt: bool=False) -> tuple[list, in
     raise VideoFileInvalid("first byte must be 0x00")
 
   prefix_dat = b""
-  frame_types = list()
+  frame_types = []
 
   i = 1 # skip past first byte 0x00
   try:

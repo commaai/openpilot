@@ -35,10 +35,10 @@ class TestBoarddSpi:
 
     total_recv_count = 0
     total_sent_count = 0
-    sent_msgs = {bus: list() for bus in range(3)}
+    sent_msgs = {bus: [] for bus in range(3)}
 
     st = time.monotonic()
-    ts = {s: list() for s in socks.keys()}
+    ts = {s: [] for s in socks.keys()}
     for _ in range(int(os.getenv("TEST_TIME", "20"))):
       # send some CAN messages
       if not JUNGLE_SPAM:

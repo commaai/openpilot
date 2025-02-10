@@ -24,7 +24,7 @@ def has_preserve_xattr(d: str) -> bool:
 
 def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
   # skip deleting most recent N preserved segments (and their prior segment)
-  preserved = []
+  preserved: list[str] = []
   for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
     if n == PRESERVE_COUNT:
       break
@@ -39,8 +39,7 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
       continue
 
     # preserve segment and two prior
-    for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
-      preserved.append(f"{date_str}--{_seg_num}")
+    preserved.extend(f"{date_str}--{_seg_num}" for _seg_num in range(max(0, seg_num - 2), seg_num + 1))
 
   return preserved
 

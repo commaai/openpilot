@@ -2,6 +2,8 @@ import copy
 import json
 import os
 import random
+from collections.abc import Callable
+from typing import Any
 from PIL import Image, ImageDraw, ImageFont
 
 from cereal import log, car
@@ -17,10 +19,9 @@ AlertSize = log.SelfdriveState.AlertSize
 OFFROAD_ALERTS_PATH = os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")
 
 # TODO: add callback alerts
-ALERTS = []
+ALERTS: list[Alert | Callable[[Any, Any, SubMaster, bool, int, Any], Alert]] = []
 for event_types in EVENTS.values():
-  for alert in event_types.values():
-    ALERTS.append(alert)
+  ALERTS.extend(alert for alert in event_types.values())
 
 
 class TestAlerts:

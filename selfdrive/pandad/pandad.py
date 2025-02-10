@@ -116,9 +116,7 @@ def main() -> None:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas: list[Panda] = []
-      for serial in panda_serials:
-        pandas.append(flash_panda(serial))
+      pandas: list[Panda] = [flash_panda(serial) for serial in panda_serials]
 
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]

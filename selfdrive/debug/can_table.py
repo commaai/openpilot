@@ -12,9 +12,9 @@ def can_table(dat):
     r += [hex(b)]
     rows.append(r)
 
-  df = pd.DataFrame(data=rows)
-  df.columns = [str(n) for n in range(7, -1, -1)] + [' ']
-  table = df.to_markdown(tablefmt='grid')
+  dataframe = pd.DataFrame(data=rows)
+  dataframe.columns = [str(n) for n in range(7, -1, -1)] + [' ']
+  table = dataframe.to_markdown(tablefmt='grid')
   return table
 
 

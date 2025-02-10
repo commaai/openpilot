@@ -24,7 +24,7 @@ class TestUpdated:
     self.basedir = os.path.join(org_dir, "openpilot")
     self.git_remote_dir = os.path.join(org_dir, "openpilot_remote")
     self.staging_dir = os.path.join(org_dir, "safe_staging")
-    for d in [org_dir, self.basedir, self.git_remote_dir, self.staging_dir]:
+    for d in (org_dir, self.basedir, self.git_remote_dir, self.staging_dir):
       os.mkdir(d)
 
     self.neos_version = os.path.join(org_dir, "neos_version")
@@ -125,10 +125,8 @@ class TestUpdated:
     for root, dirs, files in os.walk(self.git_remote_dir):
       if ".git" in root:
         continue
-      for d in dirs:
-        all_dirs.append(os.path.join(root, d))
-      for f in files:
-        all_files.append(os.path.join(root, f))
+      all_dirs.extend(os.path.join(root, d) for d in dirs)
+      all_files.extend(os.path.join(root, f) for f in files)
 
     # make a new dir and some new files
     new_dir = os.path.join(self.git_remote_dir, "this_is_a_new_dir")

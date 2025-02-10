@@ -49,7 +49,7 @@ def apply_tooltip(_term_key, _definition, pattern, html):
   )
 
 def tooltip_html(vocabulary, html):
-  for _category, terms in vocabulary.items():
+  for terms in vocabulary.values():
     for term_key, definition in terms.items():
       if definition.get("description"):
         pattern = rf"(?<!\w){re.escape(term_key.replace('_', ' ').title())}(?![^<]*<\/a>)(?!\([^)]*\))"

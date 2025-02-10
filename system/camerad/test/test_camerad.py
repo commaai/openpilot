@@ -78,7 +78,7 @@ class TestCamerad:
     laggy_frames = {k: get_desc(k, v) for k, v in diffs.items() if v > LAG_FRAME_TOLERANCE[self.sensor_type]}
 
     def in_tol(diff):
-      return 50 - LAG_FRAME_TOLERANCE[self.sensor_type] < diff and diff < 50 + LAG_FRAME_TOLERANCE[self.sensor_type]
+      return 50 - LAG_FRAME_TOLERANCE[self.sensor_type] < diff < 50 + LAG_FRAME_TOLERANCE[self.sensor_type]
     if len(laggy_frames) != 0 and all( in_tol(laggy_frames[lf][0]) for lf in laggy_frames):
       print("TODO: handle camera out of sync")
     else:

@@ -2,7 +2,6 @@
 import os
 from openpilot.system.hardware import TICI
 
-#
 if TICI:
   from tinygrad.tensor import Tensor
   from tinygrad.dtype import dtypes

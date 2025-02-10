@@ -10,10 +10,8 @@ if __name__ == "__main__":
     gle = sm['gpsLocationExternal']
 
     try:
-      cnos = []
-      for m in ug.measurementReport.measurements:
-        cnos.append(m.cno)
-      print(f"Sats: {ug.measurementReport.numMeas}   Accuracy: {gle.horizontalAccuracy:.2f} m   cnos", sorted(cnos))
+      cnos = sorted(m.cno for m in ug.measurementReport.measurements)
+      print(f"Sats: {ug.measurementReport.numMeas}   Accuracy: {gle.horizontalAccuracy:.2f} m   cnos", cnos)
     except Exception:
       pass
     sm.update()

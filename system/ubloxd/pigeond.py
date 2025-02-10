@@ -132,7 +132,7 @@ class TTYPigeon:
       self.send(b"\xB5\x62\x09\x14\x00\x00\x1D\x60")
       # 1: failed to restore, 2: could restore, 3: no backup
       status = self.wait_for_backup_restore_status()
-      if status == 1 or status == 3:
+      if status in {1, 3}:
         return True
     return False
 

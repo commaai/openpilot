@@ -27,7 +27,7 @@ class DummyFrameReader(BaseFrameReader):
   def get(self, idx, count=1, pix_fmt="yuv420p"):
     if pix_fmt == "rgb24":
       shape = (self.h, self.w, 3)
-    elif pix_fmt == "nv12" or pix_fmt == "yuv420p":
+    elif pix_fmt in {"nv12", "yuv420p"}:
       shape = (int((self.h * self.w) * 3 / 2),)
     else:
       raise NotImplementedError

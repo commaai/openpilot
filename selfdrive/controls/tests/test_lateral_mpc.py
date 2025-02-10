@@ -47,27 +47,19 @@ class TestLateralMpc:
     self._assert_null(np.array([sol]))
 
   def test_y_symmetry(self):
-    sol = []
-    for y_init in [-0.5, 0.5]:
-      sol.append(run_mpc(y_init=y_init))
+    sol = [run_mpc(y_init=y_init) for y_init in (-0.5, 0.5)]
     self._assert_simmetry(np.array(sol))
 
   def test_poly_symmetry(self):
-    sol = []
-    for poly_shift in [-1., 1.]:
-      sol.append(run_mpc(poly_shift=poly_shift))
+    sol = [run_mpc(poly_shift=poly_shift) for poly_shift in (-1., 1.)]
     self._assert_simmetry(np.array(sol))
 
   def test_curvature_symmetry(self):
-    sol = []
-    for curvature_init in [-0.1, 0.1]:
-      sol.append(run_mpc(curvature_init=curvature_init))
+    sol = [run_mpc(curvature_init=curvature_init) for curvature_init in (-0.1, 0.1)]
     self._assert_simmetry(np.array(sol))
 
   def test_psi_symmetry(self):
-    sol = []
-    for psi_init in [-0.1, 0.1]:
-      sol.append(run_mpc(psi_init=psi_init))
+    sol = [run_mpc(psi_init=psi_init) for psi_init in (-0.1, 0.1)]
     self._assert_simmetry(np.array(sol))
 
   def test_no_overshoot(self):
