@@ -1,4 +1,5 @@
 from struct import unpack_from, calcsize
+from types import MappingProxyType
 
 LOG_GNSS_POSITION_REPORT = 0x1476
 LOG_GNSS_GPS_MEASUREMENT_REPORT = 0x1477
@@ -290,32 +291,40 @@ def name_to_camelcase(nam):
       i += 1
   return ''.join(ret)
 
+# MappingProxyType is used to make this dictionary read-only.
+TYPES = MappingProxyType({
+    "double": "d",
+    "float": "f",
+    "int8": "b",
+    "int8_t": "b",
+    "uint8": "B",
+    "uint8_t": "B",
+    "int16": "h",
+    "int16_t": "h",
+    "uint16": "H",
+    "uint16_t": "H",
+    "int32": "i",
+    "int32_t": "i",
+    "uint32": "I",
+    "uint32_t": "I",
+    "uint64": "Q",
+    "uint64_t": "Q",
+  })
+
 def parse_struct(ss):
   st = "<"
   nams = []
-  for l in ss.strip().split("\n"):
-    if len(l.strip()) == 0:
+  for typ_nam in ss.strip().split("\n"):
+    if not typ_nam.strip():
       continue
-    typ, nam = l.split(";")[0].split()
+    typ, nam = typ_nam.split(";")[0].split()
     #print(typ, nam)
-    if typ == "float" or '_Flt' in nam:
+    if letter := TYPES.get(typ):
+      st += letter
+    elif '_Flt' in nam:
       st += "f"
-    elif typ == "double" or '_Dbl' in nam:
+    elif '_Dbl' in nam:
       st += "d"
-    elif typ in ["uint8", "uint8_t"]:
-      st += "B"
-    elif typ in ["int8", "int8_t"]:
-      st += "b"
-    elif typ in ["uint32", "uint32_t"]:
-      st += "I"
-    elif typ in ["int32", "int32_t"]:
-      st += "i"
-    elif typ in ["uint16", "uint16_t"]:
-      st += "H"
-    elif typ in ["int16", "int16_t"]:
-      st += "h"
-    elif typ in ["uint64", "uint64_t"]:
-      st += "Q"
     else:
       raise RuntimeError(f"unknown type {typ}")
     if '[' in nam:
