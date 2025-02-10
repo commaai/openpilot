@@ -346,8 +346,9 @@ class LongitudinalMpc:
     lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
     self.params[:,0] = ACCEL_MIN
-    # negative accel constraint causes problems because negative speed is not allowed
-    self.params[:,1] = max(0.0, self.max_a)
+
+    # negative accel constraint cannot conflict with positive speed constraint
+    self.params[:,1] = max(-v_ego/T_IDXS[-1], self.max_a)
 
     # Update in ACC mode or ACC/e2e blend
     if self.mode == 'acc':
