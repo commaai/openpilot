@@ -45,6 +45,7 @@ function install_ubuntu_common_requirements() {
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \
+    libjpeg-dev \
     libqt5charts5-dev \
     libncurses5-dev \
     libssl-dev \
