@@ -56,9 +56,13 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
 
 def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
   lr = list(lr)
+
+  needed_inputs = {input_type for migration in migration_funcs for input_type in migration.inputs}
   grouped = defaultdict(list)
   for i, msg in enumerate(lr):
-    grouped[msg.which()].append(i)
+    which = msg.which()
+    if which in needed_inputs:
+      grouped[which].append(i)
 
   replace_ops, add_ops, del_ops = [], [], []
   for migration in migration_funcs:
