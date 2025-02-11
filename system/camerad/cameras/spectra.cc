@@ -549,8 +549,8 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     // white balance
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2868, {
-      0x06900400,
-      0x000006a6,
+      0x04000400,
+      0x00000400,
       0x00000000,
       0x00000000,
     });
