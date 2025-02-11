@@ -3,6 +3,7 @@ import gc
 import os
 import time
 from collections import deque
+from typing import Any
 
 from setproctitle import getproctitle
 
@@ -27,14 +28,26 @@ class Priority:
   CTRL_HIGH = 53
 
 
+try:
+  os_sched_setscheduler = os.sched_setscheduler  # type: ignore
+  os_sched_setaffinity = os.sched_setaffinity  # type: ignore
+except AttributeError:
+  # Provide stubs that do nothing if these functions don't exist
+  def os_sched_setscheduler(pid: int, policy: int, param: Any) -> None:
+    pass
+
+  def os_sched_setaffinity(pid: int, cpus: list[int]) -> None:
+    pass
+
+
 def set_realtime_priority(level: int) -> None:
   if not PC:
-    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))
+    os_sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))
 
 
 def set_core_affinity(cores: list[int]) -> None:
   if not PC:
-    os.sched_setaffinity(0, cores)
+    os_sched_setaffinity(0, cores)
 
 
 def config_realtime_process(cores: int | list[int], priority: int) -> None:
