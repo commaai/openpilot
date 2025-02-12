@@ -311,7 +311,7 @@ class TestOnroad:
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
   def test_gpu_usage(self):
-  self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
+    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
   @pytest.mark.skip("TODO: enable once timings are fixed")
   def test_camera_frame_timings(self, subtests):
