@@ -2,14 +2,12 @@ import pytest
 import json
 import os
 import re
-import shutil
-import tempfile
 import xml.etree.ElementTree as ET
 import string
 import requests
 from parameterized import parameterized_class
 
-from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE, update_translations
+from openpilot.selfdrive.ui.update_translations import TRANSLATIONS_DIR, LANGUAGES_FILE
 
 with open(LANGUAGES_FILE) as f:
   translation_files = json.load(f)
