@@ -47,6 +47,23 @@ int build_common_ife_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo 
     dst += write_cont(dst, 0x2e68, ccm_bps);
   }
 
+  // linearization
+  if (ife) {
+    dst += write_cont(dst, 0x4e0, s->linearization_pts);
+    dst += write_cont(dst, 0x4f0, s->linearization_pts);
+    dst += write_cont(dst, 0x500, s->linearization_pts);
+    dst += write_cont(dst, 0x510, s->linearization_pts);
+  } else {
+    std::vector<uint32_t> lpts_bps;
+    for (int i = 0; i < 4; i++) {
+      lpts_bps.push_back(((s->linearization_pts[i] & 0xffff) << 16) | (s->linearization_pts[i] >> 16));
+    }
+    dst += write_cont(dst, 0x1868, lpts_bps);
+    dst += write_cont(dst, 0x1878, lpts_bps);
+    dst += write_cont(dst, 0x1888, lpts_bps);
+    dst += write_cont(dst, 0x1898, lpts_bps);
+  }
+
   return dst - start;
 }
 
@@ -147,10 +164,6 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   dst += write_cont(dst, 0x4dc, {
     0x00000000,
   });
-  dst += write_cont(dst, 0x4e0, s->linearization_pts);
-  dst += write_cont(dst, 0x4f0, s->linearization_pts);
-  dst += write_cont(dst, 0x500, s->linearization_pts);
-  dst += write_cont(dst, 0x510, s->linearization_pts);
   // TODO: this is DMI64 in the dump, does that matter?
   dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0xc24, 9);
   patches.push_back(addr - (uint64_t)start);
