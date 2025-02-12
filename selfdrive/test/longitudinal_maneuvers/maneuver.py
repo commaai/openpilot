@@ -71,7 +71,6 @@ class Maneuver:
         valid = False
 
     if self.ensure_slowdown and log['speed'] > 5.5:
-      print(log['speed'])
       print('LongitudinalPlanner not slowing down!')
       valid = False
 
