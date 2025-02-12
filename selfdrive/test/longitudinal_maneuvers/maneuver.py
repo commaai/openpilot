@@ -66,7 +66,7 @@ class Maneuver:
         print("Crashed!!!!")
         valid = False
 
-      if self.ensure_start and log['v_rel'] > 0 and log['speeds'][-1] <= 0.1:
+      if self.ensure_start and log['v_rel'] > 0 and log['acceleration'] < 1e-3:
         print('LongitudinalPlanner not starting!')
         valid = False
 
