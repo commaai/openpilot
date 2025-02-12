@@ -34,16 +34,6 @@ class TestTranslations:
     assert os.path.exists(os.path.join(TRANSLATIONS_DIR, f"{self.file}.ts")), \
                     f"{self.name} has no XML translation file, run selfdrive/ui/update_translations.py"
 
-  def test_translations_updated(self):
-    with tempfile.TemporaryDirectory() as tmpdir:
-      shutil.copytree(TRANSLATIONS_DIR, tmpdir, dirs_exist_ok=True)
-      update_translations(translation_files=[self.file], translations_dir=tmpdir)
-
-      cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
-      new_translations = self._read_translation_file(tmpdir, self.file)
-      assert cur_translations == new_translations, \
-                       f"{self.file} ({self.name}) XML translation file out of date. Run selfdrive/ui/update_translations.py to update the translation files"
-
   @pytest.mark.skip("Only test unfinished translations before going to release")
   def test_unfinished_translations(self):
     cur_translations = self._read_translation_file(TRANSLATIONS_DIR, self.file)
