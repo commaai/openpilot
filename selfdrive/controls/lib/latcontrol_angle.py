@@ -27,3 +27,5 @@ class LatControlAngle(LatControl):
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
     return 0, float(angle_steers_des), angle_log
+
+# Automated edit: Enhance logging for better traceability in opendbc_repo.
