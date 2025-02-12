@@ -27,11 +27,6 @@ class Priority:
   CTRL_HIGH = 53
 
 
-def set_realtime_priority(level: int) -> None:
-  if not PC:
-    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(level))
-
-
 def set_core_affinity(cores: list[int]) -> None:
   if not PC:
     os.sched_setaffinity(0, cores)
@@ -39,7 +34,8 @@ def set_core_affinity(cores: list[int]) -> None:
 
 def config_realtime_process(cores: int | list[int], priority: int) -> None:
   gc.disable()
-  set_realtime_priority(priority)
+  if not PC:
+    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
   c = cores if isinstance(cores, list) else [cores, ]
   set_core_affinity(c)
 
