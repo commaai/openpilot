@@ -281,7 +281,7 @@ def migrate_pandaStates(msgs):
   assert CP is not None, "carParams message not found"
   fingerprint = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
   if fingerprint in safety_param_migration:
-    safety_param = safety_param_migration[fingerprint]
+    safety_param = safety_param_migration[fingerprint].value
   elif len(CP.safetyConfigs):
     safety_param = CP.safetyConfigs[0].safetyParam
     if CP.safetyConfigs[0].safetyParamDEPRECATED != 0:
