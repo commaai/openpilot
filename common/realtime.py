@@ -5,7 +5,7 @@ import time
 
 from setproctitle import getproctitle
 
-from openpilot.common.moving_average import MovingAverage
+from openpilot.common.util import MovingAverage
 from openpilot.system.hardware import PC
 
 
