@@ -1,6 +1,7 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
 import gc
 import os
+import sys
 import time
 from collections import deque
 
@@ -29,15 +30,24 @@ class Priority:
 
 def set_core_affinity(cores: list[int]) -> None:
   if not PC:
-    os.sched_setaffinity(0, cores)
+    if sys.platform == 'linux':
+      os.sched_setaffinity(0, cores)
+    else:
+      pass
 
 
 def config_realtime_process(cores: int | list[int], priority: int) -> None:
   gc.disable()
   if not PC:
-    os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
+    if sys.platform == 'linux':
+      os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
+    else:
+      pass
   c = cores if isinstance(cores, list) else [cores, ]
-  set_core_affinity(c)
+  if sys.platform == 'linux':
+    set_core_affinity(c)
+  else:
+    pass
 
 
 class Ratekeeper:
