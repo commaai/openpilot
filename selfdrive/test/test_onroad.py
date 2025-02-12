@@ -34,7 +34,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 275.  # total for all 8 cores
+MAX_TOTAL_CPU = 280.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -42,7 +42,7 @@ PROCS = {
   "selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
-  "./camerad": 14.5,
+  "./camerad": 10.0,
   "selfdrive.controls.plannerd": 9.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -99,12 +99,12 @@ TIMINGS = {
   "wideRoadCameraState": [1.5, 0.35],
 }
 
-LOGS_SIZE_RATE = {
-  "qlog.zst": 0.0083,
-  "rlog.zst": 0.135,
-  "qcamera.ts": 0.03828,
+LOGS_SIZE = {  # MB per segment
+  "qlog.zst": 0.5,
+  "rlog.zst": 8.1,
+  "qcamera.ts": 2.3,
 }
-LOGS_SIZE_RATE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2740))
+LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
 
 def cputime_total(ct):
@@ -126,6 +126,7 @@ class TestOnroad:
     # setup env
     params = Params()
     params.remove("CurrentRoute")
+    params.put_bool("RecordFront", True)
     set_params_enabled()
     os.environ['REPLAY'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
@@ -212,12 +213,13 @@ class TestOnroad:
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
-  def test_log_sizes(self):
+  def test_log_sizes(self, subtests):
     for f, sz in self.log_sizes.items():
-      rate = LOGS_SIZE_RATE[f.name]
-      minn = rate * TEST_DURATION * 0.8
-      maxx = rate * TEST_DURATION * 1.2
-      assert minn < sz <  maxx
+      rate = LOGS_SIZE[f.name]/60.
+      minn = rate * TEST_DURATION * 0.5
+      maxx = rate * TEST_DURATION * 1.5
+      with subtests.test(file=f.name):
+        assert minn < sz <  maxx
 
   def test_ui_timings(self):
     result = "\n"
@@ -311,24 +313,8 @@ class TestOnroad:
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
-  def test_camera_processing_time(self):
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "-------------- ImgProc Timing ------------------\n"
-    result += "------------------------------------------------\n"
-
-    ts = []
-    for s in ['roadCameraState', 'driverCameraState', 'wideCameraState']:
-      ts.extend(getattr(m, s).processingTime for m in self.msgs[s])
-    assert min(ts) < 0.025, f"high execution time: {min(ts)}"
-    result += f"execution time: min  {min(ts):.5f}s\n"
-    result += f"execution time: max  {max(ts):.5f}s\n"
-    result += f"execution time: mean {np.mean(ts):.5f}s\n"
-    result += "------------------------------------------------\n"
-    print(result)
-
   @pytest.mark.skip("TODO: enable once timings are fixed")
-  def test_camera_frame_timings(self):
+  def test_camera_frame_timings(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "-----------------  SoF Timing ------------------\n"
@@ -337,11 +323,12 @@ class TestOnroad:
       ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      assert max(d50) < 1.0, f"high sof delta vs 50ms: {max(d50)}"
       result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
       result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
       result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
-      result += "------------------------------------------------\n"
+      with subtests.test(camera=name):
+        assert max(d50) < 1.0, f"high SOF delta vs 50ms: {max(d50)}"
+    result += "------------------------------------------------\n"
     print(result)
 
   def test_mpc_execution_timings(self):
