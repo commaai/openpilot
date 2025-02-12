@@ -6,6 +6,7 @@ from enum import IntEnum
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE
+from opendbc.safety import Safety
 from panda import Panda
 from datetime import date
 
@@ -38,7 +39,7 @@ if __name__ == "__main__":
     carlog.setLevel('DEBUG')
 
   panda = Panda()
-  panda.set_safety_mode(Panda.SAFETY_ELM327)
+  panda.set_safety_mode(Safety.SAFETY_ELM327)
   bus = 1 if panda.has_obd() else 0
   uds_client = UdsClient(panda, MQB_EPS_CAN_ADDR, MQB_EPS_CAN_ADDR + RX_OFFSET, bus, timeout=0.2)
 
