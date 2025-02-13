@@ -27,6 +27,7 @@ REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
+INIT_CARPARAMS = car.CarParams()
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -45,17 +46,13 @@ class SelfdriveD:
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
-    build_metadata = get_build_metadata()
+    self.build_metadata = get_build_metadata()
 
+    self.CP = None
     if CP is None:
       cloudlog.info("selfdrived is waiting for CarParams")
-      self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
-      cloudlog.info("selfdrived got CarParams")
     else:
-      self.CP = CP
-
-    self.car_events = CarSpecificEvents(self.CP)
-    self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
+      self.initialize_car_params(CP)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -86,14 +83,6 @@ class SelfdriveD:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
-    car_recognized = self.CP.brand != 'mock'
-
-    # cleanup old params
-    if not self.CP.experimentalLongitudinalAvailable:
-      self.params.remove("ExperimentalLongitudinalEnabled")
-    if not self.CP.openpilotLongitudinalControl:
-      self.params.remove("ExperimentalMode")
-
     self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
@@ -115,8 +104,29 @@ class SelfdriveD:
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+    self.startup_event = None
+
+  def initialize_car_params(self, CP):
+    self.CP = CP
+    self.car_events = CarSpecificEvents(self.CP)
+    self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
+
+    # cleanup old params
+    if not self.CP.experimentalLongitudinalAvailable:
+      self.params.remove("ExperimentalLongitudinalEnabled")
+    if not self.CP.openpilotLongitudinalControl:
+      self.params.remove("ExperimentalMode")
+
+    # cleanup old params
+    if not self.CP.experimentalLongitudinalAvailable:
+      self.params.remove("ExperimentalLongitudinalEnabled")
+    if not self.CP.openpilotLongitudinalControl:
+      self.params.remove("ExperimentalMode")
+
+    car_recognized = self.CP.brand != 'mock'
+
     # Determine startup event
-    self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
+    self.startup_event = EventName.startup if self.build_metadata.openpilot.comma_remote and self.build_metadata.tested_channel else EventName.startupMaster
     if not car_recognized:
       self.startup_event = EventName.startupNoCar
     elif car_recognized and self.CP.passive:
@@ -135,6 +145,7 @@ class SelfdriveD:
 
     self.events.clear()
 
+    # TODO: it's fine to show startup alert here right? remove self.startup_event = None for these 2
     if self.sm['controlsState'].lateralControlState.which() == 'debugState':
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
@@ -370,7 +381,7 @@ class SelfdriveD:
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > 6.
-      if all_valid or timed_out or (SIMULATION and not REPLAY):
+      if (all_valid or timed_out or (SIMULATION and not REPLAY)) and self.CP is not None:
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
           self.sm.ignore_alive.append('roadCameraState')
@@ -416,7 +427,8 @@ class SelfdriveD:
       clear_event_types.add(ET.NO_ENTRY)
 
     pers = LONGITUDINAL_PERSONALITY_MAP[self.personality]
-    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
+    CP = self.CP or INIT_CARPARAMS
+    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [CP, CS, self.sm, self.is_metric,
                                                                                 self.state_machine.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event_types)
@@ -454,7 +466,7 @@ class SelfdriveD:
   def step(self):
     CS = self.data_sample()
     self.update_events(CS)
-    if not self.CP.passive and self.initialized:
+    if self.initialized and not self.CP.passive:
       self.enabled, self.active = self.state_machine.update(self.events)
     self.update_alerts(CS)
 
@@ -473,6 +485,13 @@ class SelfdriveD:
       self.is_metric = self.params.get_bool("IsMetric")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
       self.personality = self.read_personality_param()
+
+      if self.CP is None:
+        CP = self.params.get("CarParams")
+        if CP is not None:
+          self.initialize_car_params(messaging.log_from_bytes(CP, car.CarParams))
+          cloudlog.info("selfdrived got CarParams")
+
       time.sleep(0.1)
 
   def run(self):
