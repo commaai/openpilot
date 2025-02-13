@@ -38,8 +38,7 @@ def config_realtime_process(cores: int | list[int], priority: int) -> None:
   if sys.platform == 'linux' and not PC:
     os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
   c = cores if isinstance(cores, list) else [cores, ]
-  if not PC:
-    set_core_affinity(c)
+  set_core_affinity(c)
 
 
 class Ratekeeper:
