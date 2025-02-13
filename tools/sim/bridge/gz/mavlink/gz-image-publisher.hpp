@@ -19,7 +19,7 @@ bool isFileDescriptiorValid(int client_socket_fd) {
 
 struct BridgeConfig {
   uint16_t port = 4069;
-  std::pair<uint16_t, uint16_t> image_size = std::make_pair(720, 1280);
+  std::pair<uint16_t, uint16_t> image_size = std::make_pair(360, 640);
 };
 
 class GZImagePublisher {

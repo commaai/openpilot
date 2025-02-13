@@ -41,7 +41,7 @@ def main():
         print("deserializing")
         data = zlib.decompress(data)
         thumbnail = log_capnp.Thumbnail.from_bytes_packed(data)
-        rgb = nv12_to_rgb(thumbnail.thumbnail, (1280, 720))
+        rgb = nv12_to_rgb(thumbnail.thumbnail, (640, 360))
 
         plt.imshow(rgb)
         plt.show()
