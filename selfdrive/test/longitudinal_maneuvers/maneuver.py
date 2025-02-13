@@ -81,3 +81,5 @@ class Maneuver:
 
     print("maneuver end", valid)
     return valid, np.array(logs)
+
+# Automated edit: [Edited] Add docstring to improve documentation
