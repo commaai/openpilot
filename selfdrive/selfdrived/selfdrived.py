@@ -477,16 +477,15 @@ class SelfdriveD:
 
   def params_thread(self, evt):
     while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.personality = self.read_personality_param()
-
-      if not self.CP_initialized:
+      if self.CP_initialized:
+        self.is_metric = self.params.get_bool("IsMetric")
+        self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+        self.personality = self.read_personality_param()
+      else:
         CP = self.params.get("CarParams")
         if CP is not None:
           self.initialize_car_params(messaging.log_from_bytes(CP, car.CarParams))
           cloudlog.info("selfdrived got CarParams")
-      else:
-        self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
 
       time.sleep(0.1)
 
