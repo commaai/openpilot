@@ -2267,6 +2267,7 @@ struct LiveDelayData {
   steerActuatorDelay @0 :Float32;
   totalPoints @1 :Int32;
   points @2 :List(List(Float32));
+  isEstimated @3 :Bool;
 }
 
 struct LiveMapDataDEPRECATED {

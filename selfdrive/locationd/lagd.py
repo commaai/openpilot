@@ -71,10 +71,13 @@ class LagEstimator(ParameterEstimator):
       # FIXME: this is fragile and ugly, refactor this
       if len(self.lags) > 0:
         steer_actuation_delay = float(np.mean(self.lags))
+        is_estimated = True
       else:
         steer_actuation_delay = self.initial_lag
+        is_estimated = False
     else:
       steer_actuation_delay = self.initial_lag
+      is_estimated = False
 
     msg = messaging.new_message('liveActuatorDelay')
     msg.valid = valid
@@ -82,6 +85,7 @@ class LagEstimator(ParameterEstimator):
     liveActuatorDelay = msg.liveActuatorDelay
     liveActuatorDelay.steerActuatorDelay = steer_actuation_delay
     liveActuatorDelay.totalPoints = len(self.curvature)
+    liveActuatorDelay.isEstimated = is_estimated
 
     if with_points:
       liveActuatorDelay.points = [[c, dc] for ((_, c), (_, dc)) in zip(self.curvature, self.desired_curvature)]
