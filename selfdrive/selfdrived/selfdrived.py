@@ -27,7 +27,6 @@ REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
-INIT_CARPARAMS = car.CarParams()
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -48,7 +47,8 @@ class SelfdriveD:
     # Ensure the current branch is cached, otherwise the first cycle lags
     self.build_metadata = get_build_metadata()
 
-    self.CP = None
+    self.CP = car.CarParams()
+    self.CP_initialized = False
     if CP is None:
       cloudlog.info("selfdrived is waiting for CarParams")
     else:
@@ -139,6 +139,8 @@ class SelfdriveD:
       set_offroad_alert("Offroad_CarUnrecognized", True)
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
+
+    self.CP_initialized = True
 
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
@@ -381,7 +383,7 @@ class SelfdriveD:
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
       timed_out = self.sm.frame * DT_CTRL > 6.
-      if (all_valid or timed_out or (SIMULATION and not REPLAY)) and self.CP is not None:
+      if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
         if VisionStreamType.VISION_STREAM_ROAD not in available_streams:
           self.sm.ignore_alive.append('roadCameraState')
@@ -427,8 +429,7 @@ class SelfdriveD:
       clear_event_types.add(ET.NO_ENTRY)
 
     pers = LONGITUDINAL_PERSONALITY_MAP[self.personality]
-    CP = self.CP or INIT_CARPARAMS
-    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [CP, CS, self.sm, self.is_metric,
+    alerts = self.events.create_alerts(self.state_machine.current_alert_types, [self.CP, CS, self.sm, self.is_metric,
                                                                                 self.state_machine.soft_disable_timer, pers])
     self.AM.add_many(self.sm.frame, alerts)
     self.AM.process_alerts(self.sm.frame, clear_event_types)
@@ -466,7 +467,7 @@ class SelfdriveD:
   def step(self):
     CS = self.data_sample()
     self.update_events(CS)
-    if self.initialized and not self.CP.passive:
+    if not self.CP.passive and self.initialized:
       self.enabled, self.active = self.state_machine.update(self.events)
     self.update_alerts(CS)
 
@@ -486,7 +487,7 @@ class SelfdriveD:
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
       self.personality = self.read_personality_param()
 
-      if self.CP is None:
+      if not self.CP_initialized:
         CP = self.params.get("CarParams")
         if CP is not None:
           self.initialize_car_params(messaging.log_from_bytes(CP, car.CarParams))
