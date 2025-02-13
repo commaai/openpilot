@@ -181,8 +181,12 @@ void Device::updateWakefulness(const UIState &s) {
   } else if (interactive_timeout > 0 && --interactive_timeout == 0) {
     emit interactiveTimeout();
   }
-
-  setAwake(s.scene.ignition || interactive_timeout > 0);
+  auto params = Params();
+  if (params.getBool("FirehoseMode")) {
+    setAwake(true);
+  } else {
+    setAwake(s.scene.ignition || interactive_timeout > 0);
+  }
 }
 
 UIState *uiState() {
