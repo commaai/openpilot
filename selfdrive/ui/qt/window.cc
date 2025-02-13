@@ -26,6 +26,12 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
 
   bodyWindow = new BodyWindow(this);
   main_layout->addWidget(bodyWindow);
+  QObject::connect(bodyWindow, &BodyWindow::bodyClicked, [=]() {
+    auto params = Params();
+    if (params.getBool("FirehoseMode")) {
+      main_layout->setCurrentWidget(homeWindow);
+    }
+  });
 
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
