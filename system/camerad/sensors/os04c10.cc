@@ -76,6 +76,11 @@ OS04C10::OS04C10() {
   }
   prepare_gamma_lut();
   linearization_lut = {
+  0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,
+  0,0,0,0,0,0,0,0,0,
+  /*
     0x02000000, 0x02000000, 0x02000000, 0x02000000,
     0x020007ff, 0x020007ff, 0x020007ff, 0x020007ff,
     0x02000bff, 0x02000bff, 0x02000bff, 0x02000bff,
@@ -85,6 +90,7 @@ OS04C10::OS04C10() {
     0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
     0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
     0x00003fff, 0x00003fff, 0x00003fff, 0x00003fff,
+  */
   };
   linearization_pts = {0x07ff0bff, 0x17ff1bff, 0x23ff3fff, 0x3fff3fff};
   vignetting_lut = {

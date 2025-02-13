@@ -166,6 +166,7 @@ public:
   SpectraBuf ife_linearization_lut;
   SpectraBuf ife_vignetting_lut;
 
+  SpectraBuf bps_linearization_lut;
   SpectraBuf bps_cmd;
   SpectraBuf bps_cdm_buffer;
   SpectraBuf bps_cdm_program_array;

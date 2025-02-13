@@ -5,6 +5,16 @@
 #include "system/camerad/cameras/hw.h"
 #include "system/camerad/sensors/sensor.h"
 
+int build_bps_init(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
+  uint8_t *start = dst;
+
+  uint64_t addr;
+
+  dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
+  patches.push_back(addr - (uint64_t)start);
+
+  return dst - start;
+}
 int build_common_ife_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches, bool ife) {
   uint8_t *start = dst;
 
@@ -56,7 +66,8 @@ int build_common_ife_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   } else {
     std::vector<uint32_t> lpts_bps;
     for (int i = 0; i < 4; i++) {
-      lpts_bps.push_back(((s->linearization_pts[i] & 0xffff) << 16) | (s->linearization_pts[i] >> 16));
+      // lpts_bps.push_back(((s->linearization_pts[i] & 0xffff) << 16) | (s->linearization_pts[i] >> 16));
+      lpts_bps.push_back(s->linearization_pts[i]);
     }
     dst += write_cont(dst, 0x1868, lpts_bps);
     dst += write_cont(dst, 0x1878, lpts_bps);
