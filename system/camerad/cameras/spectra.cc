@@ -550,17 +550,18 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     if (bps_lin_reg.size() == 0) {
       for (int i = 0; i < 4; i++) {
-        bps_lin_reg.push_back(((s->linearization_pts[i] & 0xffff) << 0x10) | (s->linearization_pts[i] >> 0x10));
+        bps_lin_reg.push_back(((sensor->linearization_pts[i] & 0xffff) << 0x10) | (sensor->linearization_pts[i] >> 0x10));
       }
     }
 
     if (bps_ccm_reg.size() == 0) {
       for (int i = 0; i < 3; i++) {
-        bps_ccm_reg.push_back(s->color_correct_matrix[i] | (s->color_correct_matrix[i+3] << 0x10));
-        bps_ccm_reg.push_back(s->color_correct_matrix[i+6]);
+        bps_ccm_reg.push_back(sensor->color_correct_matrix[i] | (sensor->color_correct_matrix[i+3] << 0x10));
+        bps_ccm_reg.push_back(sensor->color_correct_matrix[i+6]);
       }
     }
 
+    uint64_t addr;
     // white balance
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2868, {
       0x04000400,
@@ -573,8 +574,18 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       0x00000080,
       0x00800066,
     });
+    // linearization, EN=0
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1868, bps_lin_reg);
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1878, bps_lin_reg);
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1888, bps_lin_reg);
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1898, bps_lin_reg);
+    /*
+    cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
+    patches.push_back(addr - (uint64_t)((unsigned char *)bps_cdm_program_array.ptr + cdm_len));
+    */
+    // color correction
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2e68, bps_ccm_reg);
 
-    cdm_len += build_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches);
     cdm_len += build_common_ife_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches, false);
 
     pa->length = cdm_len - 1;

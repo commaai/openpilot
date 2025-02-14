@@ -5,24 +5,6 @@
 #include "system/camerad/cameras/hw.h"
 #include "system/camerad/sensors/sensor.h"
 
-int build_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
-  uint8_t *start = dst;
-
-  uint64_t addr;
-
-  // linearization
-  dst += write_cont(dst, 0x1868, bps_lin_reg);
-  dst += write_cont(dst, 0x1878, bps_lin_reg);
-  dst += write_cont(dst, 0x1888, bps_lin_reg);
-  dst += write_cont(dst, 0x1898, bps_lin_reg);
-  dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
-  patches.push_back(addr - (uint64_t)start);
-
-  // color correction
-  dst += write_cont(dst, 0x2e68, bps_ccm_reg);
-
-  return dst - start;
-}
 int build_common_ife_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches, bool ife) {
   uint8_t *start = dst;
 
