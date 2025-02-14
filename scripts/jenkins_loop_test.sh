@@ -127,7 +127,7 @@ function _looper() {
     case $1 in
       -n | --n ) shift 1; RUNS="$1"; shift 1 ;;
       -b | --b | --branch | -branch ) shift 1; BRANCH="$1"; shift 1 ;;
-      -h | --h | --help | -help | * ) usage; exit 0 ;;
+      * ) usage; exit 0 ;;
     esac
   done
 
