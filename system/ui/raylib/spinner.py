@@ -1,5 +1,4 @@
 import pyray as rl
-import math
 import os
 import select
 import sys
@@ -26,10 +25,9 @@ def load_texture_resized(file_name, size):
   return texture
 
 def check_input_non_blocking():
-    """Check if there's input available on stdin without blocking."""
-    if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
-        return sys.stdin.readline()  # Read and strip newlines
-    return ""
+  if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
+    return sys.stdin.readline().strip()
+  return ""
 
 def main():
   gui_app.init_window("Spinner", fps=30)
@@ -41,6 +39,9 @@ def main():
   # Initial values
   rotation = 0.0
   user_input = ""
+  center = rl.Vector2(gui_app.width / 2.0, gui_app.height / 2.0)
+  spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
+  comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
   while not rl.window_should_close():
     rl.begin_drawing()
@@ -48,9 +49,6 @@ def main():
 
     # Update rotation
     rotation = (rotation + ROTATION_RATE) % 360.0
-    center = rl.Vector2(rl.get_screen_width() / 2.0, rl.get_screen_height() / 2.0)
-    spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
-    comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
     # Draw rotating spinner and static comma logo
     rl.draw_texture_pro(spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
@@ -73,7 +71,7 @@ def main():
         bar.width *= progress / 100.0
         rl.draw_rectangle_rounded(bar, 0.5, 10, rl.WHITE)
       else:
-        text_size = rl.measure_text_ex(rl.get_font_default(), user_input, FONT_SIZE, 1.0)
+        text_size = rl.measure_text_ex(gui_app.font(), user_input, FONT_SIZE, 1.0)
         rl.draw_text_ex(gui_app.font(), user_input,
                         rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
 

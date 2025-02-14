@@ -1,6 +1,7 @@
 import sys
 import pyray as rl
 
+from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.raylib.gui.button import gui_button
 from openpilot.system.ui.raylib.gui.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.raylib.gui.application import gui_app
@@ -11,9 +12,8 @@ FONT_SIZE = 60
 LINE_HEIGHT = 64
 BUTTON_SIZE = rl.Vector2(310, 160)
 
-DEMO_TEXT = "This is a sample text that will be wrapped and scrolled if necessary. " \
-            "The text is long enough to demonstrate scrolling and word wrapping. " \
-            "Feel free to add more content here to test how scrolling works within this text area. " * 6
+DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
+            The text is long enough to demonstrate scrolling and word wrapping.""" * 20
 
 def wrap_text(text, font_size, max_width):
   lines = []
@@ -36,12 +36,11 @@ def wrap_text(text, font_size, max_width):
 def main():
   gui_app.init_window("Text", fps=20)
 
-  text_content = len(sys.argv) > 1 and sys.argv[1] or DEMO_TEXT
+  text_content = sys.argv[1] if len(sys.argv) > 1 else DEMO_TEXT
 
   textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2 - BUTTON_SIZE.y - SPACING)
   wrapped_lines = wrap_text(text_content, FONT_SIZE, textarea_rect.width - 20)
   content_rect = rl.Rectangle(0, 0, textarea_rect.width - 20, len(wrapped_lines) * LINE_HEIGHT)
-
   scroll_panel = GuiScrollPanel(textarea_rect, content_rect, show_vertical_scroll_bar=True)
 
   while not rl.window_should_close():
@@ -58,7 +57,7 @@ def main():
 
     button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
     if gui_button(button_bounds, "Reboot"):
-      pass
+      HARDWARE.reboot()
 
     rl.end_drawing()
 
