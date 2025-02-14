@@ -193,11 +193,11 @@ void SpectraMaster::init() {
   // looks like there's only one of these
   isp_fd = open_v4l_by_name_and_index("cam-isp");
   assert(isp_fd >= 0);
-  LOGD("opened isp");
+  LOGD("opened isp %d", (int)isp_fd);
 
   icp_fd = open_v4l_by_name_and_index("cam-icp");
   assert(icp_fd >= 0);
-  LOGD("opened icp");
+  LOGD("opened icp %d", (int)icp_fd);
 
   // query ISP for MMU handles
   LOG("-- Query for MMU handles");
@@ -258,9 +258,20 @@ int SpectraCamera::clear_req_queue() {
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   LOGD("flushed all req: %d", ret);
 
+  if (icp_dev_handle) {
+    struct cam_flush_dev_cmd cmd = {
+      .session_handle = session_handle,
+      .dev_handle = icp_dev_handle,
+      .flush_type = CAM_FLUSH_TYPE_ALL,
+    };
+    int err = do_cam_control(m->icp_fd, CAM_FLUSH_REQ, &cmd, sizeof(cmd));
+    assert(err == 0);
+  }
+
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
   }
+
   return ret;
 }
 
@@ -620,7 +631,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     io_cfg[0].color_pattern = 0x5;
     io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);
     io_cfg[0].resource_type = CAM_ICP_BPS_INPUT_IMAGE;
-    io_cfg[0].fence = sync_objs[idx];
+    io_cfg[0].fence = sync_objs_ife[idx];
     io_cfg[0].direction = CAM_BUF_INPUT;
     io_cfg[0].subsample_pattern = 0x1;
     io_cfg[0].framedrop_pattern = 0x1;
@@ -646,7 +657,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     io_cfg[1].format = CAM_FORMAT_NV12;  // TODO: why is this 21 in the dump? should be 12
     io_cfg[1].color_space = CAM_COLOR_SPACE_BT601_FULL;
     io_cfg[1].resource_type = CAM_ICP_BPS_OUTPUT_IMAGE_FULL;
-    io_cfg[1].fence = sync_objs_bps_out[idx];
+    io_cfg[1].fence = sync_objs_bps[idx];
     io_cfg[1].direction = CAM_BUF_OUTPUT;
     io_cfg[1].subsample_pattern = 0x1;
     io_cfg[1].framedrop_pattern = 0x1;
@@ -815,7 +826,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       io_cfg[0].color_pattern = 0x5;
       io_cfg[0].bpp = (sensor->mipi_format == CAM_FORMAT_MIPI_RAW_10 ? 0xa : 0xc);
       io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_RDI_0;
-      io_cfg[0].fence = sync_objs[idx];
+      io_cfg[0].fence = sync_objs_ife[idx];
       io_cfg[0].direction = CAM_BUF_OUTPUT;
       io_cfg[0].subsample_pattern = 0x1;
       io_cfg[0].framedrop_pattern = 0x1;
@@ -840,7 +851,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
       io_cfg[0].color_pattern = 0x0;
       io_cfg[0].bpp = 0;
       io_cfg[0].resource_type = CAM_ISP_IFE_OUT_RES_FULL;
-      io_cfg[0].fence = sync_objs[idx];
+      io_cfg[0].fence = sync_objs_ife[idx];
       io_cfg[0].direction = CAM_BUF_OUTPUT;
       io_cfg[0].subsample_pattern = 0x1;
       io_cfg[0].framedrop_pattern = 0x1;
@@ -877,35 +888,44 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   int ret;
   uint64_t request_id = request_ids[i];
 
-  if (sync_objs[i]) {
-    // SOF has come in, wait until readout is complete
+  // Before queuing up a new frame, wait for the
+  // previous one in this slot (index) to come in.
+  if (sync_objs_ife[i]) {
+    // TODO: write a test to stress test w/ a low timeout and check camera frame ids match
+
     struct cam_sync_wait sync_wait = {0};
 
-    // wait for ife
-    sync_wait.sync_obj = sync_objs[i];
-    // TODO: write a test to stress test w/ a low timeout and check camera frame ids match
+    // *** Wait for IFE ***
+    // in RAW_OUTPUT mode, this is just the frame readout from the sensor
+    // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
+    sync_wait.sync_obj = sync_objs_ife[i];
     sync_wait.timeout_ms = 100;
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
-      clear_req_queue();
-      LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
+      LOGE("failed to wait for IFE sync: %d %d", ret, sync_wait.sync_obj);
     }
 
-    if (ret == 0 && output_type == ISP_BPS_PROCESSED) {
-      // wait for bps
-      sync_wait.sync_obj = sync_objs_bps_out[i];
-      sync_wait.timeout_ms = 50; // max dt tolerance, typical should be 23
+    // *** Wait for BPS ***
+    if (ret == 0 && sync_objs_bps[i]) {
+      sync_wait.sync_obj = sync_objs_bps[i];
+      sync_wait.timeout_ms = 50; // typically 7ms
       ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
       if (ret != 0) {
-        clear_req_queue();
-        LOGE("failed to wait for sync: %d %d", ret, sync_wait.sync_obj);
+        LOGE("failed to wait for BPS sync: %d %d", ret, sync_wait.sync_obj);
       }
     }
 
-    buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
+    // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
     buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
+    buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
+
+    // all good, hand off frame
     if (dp && ret == 0) {
       buf.queue(i);
+    }
+
+    if (ret != 0) {
+      clear_req_queue();
     }
 
     destroySyncObjectAt(i);
@@ -918,14 +938,14 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   }
-  sync_objs[i] = sync_create.sync_obj;
+  sync_objs_ife[i] = sync_create.sync_obj;
 
   if (icp_dev_handle > 0) {
     ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
     if (ret != 0) {
       LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
     }
-    sync_objs_bps_out[i] = sync_create.sync_obj;
+    sync_objs_bps[i] = sync_create.sync_obj;
   }
 
   // schedule request with camera request manager
@@ -959,8 +979,8 @@ void SpectraCamera::destroySyncObjectAt(int index) {
     sync_obj = 0;  // Reset the sync object to 0
   };
 
-  destroy_sync_obj(m->cam_sync_fd, sync_objs[index]);
-  destroy_sync_obj(m->cam_sync_fd, sync_objs_bps_out[index]);
+  destroy_sync_obj(m->cam_sync_fd, sync_objs_ife[index]);
+  destroy_sync_obj(m->cam_sync_fd, sync_objs_bps[index]);
 }
 
 void SpectraCamera::camera_map_bufs() {
@@ -1251,6 +1271,7 @@ void SpectraCamera::linkDevices() {
   req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
+  assert(ret == 0);
   link_handle = req_mgr_link_info.link_hdl;
   LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
 
@@ -1310,10 +1331,6 @@ void SpectraCamera::camera_close() {
 
     // release devices
     LOGD("-- Release devices");
-    if (icp_dev_handle > 0) {
-      ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
-      LOGD("release icp: %d", ret);
-    }
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
     if (output_type == ISP_BPS_PROCESSED) {
@@ -1351,7 +1368,9 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t real_id = event_data->u.frame_msg.request_id;
 
   if (real_id != 0) { // next ready
-    if (real_id == 1) {idx_offset = main_id;}
+    if (real_id == 1) {
+      idx_offset = main_id;
+    }
     int buf_idx = (real_id - 1) % ife_buf_depth;
 
     // check for skipped frames
