@@ -1,6 +1,6 @@
 Import('env', 'arch', 'messaging', 'common', 'gpucommon', 'visionipc')
 
-libs = ['pthread', common, 'jpeg', 'OpenCL', messaging, visionipc, gpucommon]
+libs = ['pthread', common, 'OpenCL', messaging, visionipc, gpucommon]
 
 if arch != "Darwin":
   camera_obj = env.Object(['cameras/camera_qcom2.cc', 'cameras/camera_common.cc', 'cameras/spectra.cc',

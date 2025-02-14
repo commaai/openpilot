@@ -18,6 +18,7 @@ from subprocess import check_output, CalledProcessError
 
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DATA_IDENTIFIER_TYPE
+from opendbc.safety import Safety
 from panda.python import Panda
 
 class ConfigValues(NamedTuple):
@@ -96,7 +97,7 @@ if __name__ == "__main__":
     sys.exit(0)
 
   panda = Panda()
-  panda.set_safety_mode(Panda.SAFETY_ELM327)
+  panda.set_safety_mode(Safety.SAFETY_ELM327)
   uds_client = UdsClient(panda, 0x7D0, bus=args.bus)
 
   print("\n[START DIAGNOSTIC SESSION]")

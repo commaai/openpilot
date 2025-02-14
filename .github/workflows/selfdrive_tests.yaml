@@ -315,7 +315,7 @@ jobs:
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
-                        CI=1 pytest tools/sim/tests/test_metadrive_bridge.py"
+                        CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
 
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml

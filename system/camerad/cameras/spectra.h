@@ -178,8 +178,8 @@ public:
 
   int buf_handle_yuv[MAX_IFE_BUFS] = {};
   int buf_handle_raw[MAX_IFE_BUFS] = {};
-  int sync_objs[MAX_IFE_BUFS] = {};
-  int sync_objs_bps_out[MAX_IFE_BUFS] = {};
+  int sync_objs_ife[MAX_IFE_BUFS] = {};
+  int sync_objs_bps[MAX_IFE_BUFS] = {};
   uint64_t request_ids[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_last = 0;

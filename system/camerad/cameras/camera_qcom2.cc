@@ -231,9 +231,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 void CameraState::run() {
   util::set_thread_name(camera.cc.publish_name);
 
-  std::vector<const char*> pubs = {camera.cc.publish_name};
-  if (camera.cc.stream_type == VISION_STREAM_ROAD) pubs.push_back("thumbnail");
-  PubMaster pm(pubs);
+  PubMaster pm(std::vector{camera.cc.publish_name});
 
   for (uint32_t cnt = 0; !do_exit; ++cnt) {
     // Acquire the buffer; continue if acquisition fails
@@ -267,9 +265,6 @@ void CameraState::run() {
 
     // Send the message
     pm.send(camera.cc.publish_name, msg);
-    if (camera.cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
-      publish_thumbnail(&pm, &camera.buf);  // this takes 10ms???
-    }
   }
 }
 
