@@ -79,7 +79,11 @@ int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t p
     .dev_handle = dev_handle,
     .packet_handle = packet_handle,
   };
-  return do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
+  int ret = do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
+  if (ret != 0) {
+    printf("device control failed: ret=%d, fd=%d, dev handle %x\n", ret, fd, dev_handle);
+  }
+  return ret;
 }
 
 int device_control(int fd, int op_code, int session_handle, int dev_handle) {
@@ -193,11 +197,11 @@ void SpectraMaster::init() {
   // looks like there's only one of these
   isp_fd = open_v4l_by_name_and_index("cam-isp");
   assert(isp_fd >= 0);
-  LOGD("opened isp");
+  LOGD("opened isp %d", (int)isp_fd);
 
   icp_fd = open_v4l_by_name_and_index("cam-icp");
   assert(icp_fd >= 0);
-  LOGD("opened icp");
+  LOGD("opened icp %d", (int)icp_fd);
 
   // query ISP for MMU handles
   LOG("-- Query for MMU handles");
@@ -258,9 +262,20 @@ int SpectraCamera::clear_req_queue() {
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   LOGD("flushed all req: %d", ret);
 
+  if (icp_dev_handle) {
+    struct cam_flush_dev_cmd cmd = {
+      .session_handle = session_handle,
+      .dev_handle = icp_dev_handle,
+      .flush_type = CAM_FLUSH_TYPE_ALL,
+    };
+    int err = do_cam_control(m->icp_fd, CAM_FLUSH_REQ, &cmd, sizeof(cmd));
+    assert(err == 0);
+  }
+
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
   }
+
   return ret;
 }
 
@@ -533,7 +548,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     memset(fp, 0, buf_desc[0].length);
     fp->handle = (uint64_t)icp_dev_handle;
     fp->cdm_size = bps_cdm_striping_bl.size;   // this comes from the striping lib create call
-    fp->req_id = 0; // why always 0?
+    fp->req_id = request_id; // why always 0?
 
     cdm_tmp *pa = (cdm_tmp *)((unsigned char *)fp + sizeof(bps_tmp));
     pa->a = 0;
@@ -672,6 +687,15 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   }
 
   int ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
+  printf("bps req_id %d %d\n", request_id, ret);
+  if (ret != 0) printf("request_id %d\n", request_id);
+  if (ret != 0) {
+    printf("TRYING AGAIN **********\n");
+    for (int jj = 0; jj < 5; jj++) {
+      ret = device_config(m->icp_fd, session_handle, icp_dev_handle, cam_packet_handle);
+      printf("GOT %d**********\n", ret);
+    }
+  }
   assert(ret == 0);
 }
 
@@ -891,14 +915,17 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
     sync_wait.timeout_ms = 100;
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
-      LOGE("failed to wait for BSP sync: %d %d", ret, sync_wait.sync_obj);
+      LOGE("failed to wait for IFE sync: %d %d", ret, sync_wait.sync_obj);
     }
 
     // *** Wait for BPS ***
     if (ret == 0 && sync_objs_bps[i]) {
+      double st = millis_since_boot();
       sync_wait.sync_obj = sync_objs_bps[i];
       sync_wait.timeout_ms = 50; // typically 7ms
+      sync_wait.timeout_ms = 1; // typically 7ms
       ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+      printf("%.2fms\n", millis_since_boot() - st);
       if (ret != 0) {
         LOGE("failed to wait for BPS sync: %d %d", ret, sync_wait.sync_obj);
       }
@@ -1259,7 +1286,10 @@ void SpectraCamera::linkDevices() {
   req_mgr_link_info.num_devices = 2;
   req_mgr_link_info.dev_hdls[0] = isp_dev_handle;
   req_mgr_link_info.dev_hdls[1] = sensor_dev_handle;
+  //req_mgr_link_info.num_devices = 3;
+  //req_mgr_link_info.dev_hdls[2] = icp_dev_handle;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_LINK, &req_mgr_link_info, sizeof(req_mgr_link_info));
+  assert(ret == 0);
   link_handle = req_mgr_link_info.link_hdl;
   LOGD("link: %d session: 0x%X isp: 0x%X sensors: 0x%X link: 0x%X", ret, session_handle, isp_dev_handle, sensor_dev_handle, link_handle);
 
@@ -1319,10 +1349,6 @@ void SpectraCamera::camera_close() {
 
     // release devices
     LOGD("-- Release devices");
-    if (icp_dev_handle > 0) {
-      ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
-      LOGD("release icp: %d", ret);
-    }
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
     if (output_type == ISP_BPS_PROCESSED) {
@@ -1360,7 +1386,9 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t real_id = event_data->u.frame_msg.request_id;
 
   if (real_id != 0) { // next ready
-    if (real_id == 1) {idx_offset = main_id;}
+    if (real_id == 1) {
+      idx_offset = main_id;
+    }
     int buf_idx = (real_id - 1) % ife_buf_depth;
 
     // check for skipped frames
