@@ -35,7 +35,7 @@ function loop() {
       git -C $TEMP_DIR commit --quiet -m "testing"
       git -C $TEMP_DIR push --quiet -f origin $JENKINS_BRANCH
       rm -rf $TEMP_DIR
-      FIRST_RUN=1
+      FIRST_BUILD=1
       echo ''
       echo 'waiting on Jenkins...'
       echo ''
@@ -55,9 +55,9 @@ function loop() {
 
     # No running builds found
     if [[ ${#TEST_BUILDS[@]} -eq 0 ]]; then
-      FIRST_RUN=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
-      LAST_RUN=$((FIRST_RUN+N-1))
-      TEST_BUILDS=( $(seq $FIRST_RUN $LAST_RUN) )
+      FIRST_BUILD=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
+      LAST_BUILD=$((FIRST_BUILD+N-1))
+      TEST_BUILDS=( $(seq $FIRST_BUILD $LAST_BUILD) )
 
       # Start N new builds
       for i in ${TEST_BUILDS[@]};
@@ -66,6 +66,7 @@ function loop() {
         curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
         sleep 5
       done
+      echo ""
     fi
 
     # Wait for all builds to end
