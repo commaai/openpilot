@@ -5,13 +5,21 @@
 #include "system/camerad/cameras/hw.h"
 #include "system/camerad/sensors/sensor.h"
 
-int build_bps_init(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
+int build_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
   uint8_t *start = dst;
 
   uint64_t addr;
 
+  // linearization
+  dst += write_cont(dst, 0x1868, bps_lin_reg);
+  dst += write_cont(dst, 0x1878, bps_lin_reg);
+  dst += write_cont(dst, 0x1888, bps_lin_reg);
+  dst += write_cont(dst, 0x1898, bps_lin_reg);
   dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
   patches.push_back(addr - (uint64_t)start);
+
+  // color correction
+  dst += write_cont(dst, 0x2e68, bps_ccm_reg);
 
   return dst - start;
 }
@@ -44,36 +52,6 @@ int build_common_ife_bps(uint8_t *dst, const CameraConfig cam, const SensorInfo 
     0x02000000,
     0x03ff0000,
   });
-
-  // color correction
-  if (ife) {
-    dst += write_cont(dst, 0x760, s->color_correct_matrix);
-  } else {
-    std::vector<uint32_t> ccm_bps;
-    for (int i = 0; i < 3; i++) {
-      ccm_bps.push_back(s->color_correct_matrix[i] | (s->color_correct_matrix[i+3] << 16));
-      ccm_bps.push_back(s->color_correct_matrix[i+6]);
-    }
-    dst += write_cont(dst, 0x2e68, ccm_bps);
-  }
-
-  // linearization
-  if (ife) {
-    dst += write_cont(dst, 0x4e0, s->linearization_pts);
-    dst += write_cont(dst, 0x4f0, s->linearization_pts);
-    dst += write_cont(dst, 0x500, s->linearization_pts);
-    dst += write_cont(dst, 0x510, s->linearization_pts);
-  } else {
-    std::vector<uint32_t> lpts_bps;
-    for (int i = 0; i < 4; i++) {
-      // lpts_bps.push_back(((s->linearization_pts[i] & 0xffff) << 16) | (s->linearization_pts[i] >> 16));
-      lpts_bps.push_back(s->linearization_pts[i]);
-    }
-    dst += write_cont(dst, 0x1868, lpts_bps);
-    dst += write_cont(dst, 0x1878, lpts_bps);
-    dst += write_cont(dst, 0x1888, lpts_bps);
-    dst += write_cont(dst, 0x1898, lpts_bps);
-  }
 
   return dst - start;
 }
@@ -175,6 +153,10 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   dst += write_cont(dst, 0x4dc, {
     0x00000000,
   });
+  dst += write_cont(dst, 0x4e0, s->linearization_pts);
+  dst += write_cont(dst, 0x4f0, s->linearization_pts);
+  dst += write_cont(dst, 0x500, s->linearization_pts);
+  dst += write_cont(dst, 0x510, s->linearization_pts);
   // TODO: this is DMI64 in the dump, does that matter?
   dst += write_dmi(dst, &addr, s->linearization_lut.size()*sizeof(uint32_t), 0xc24, 9);
   patches.push_back(addr - (uint64_t)start);
@@ -203,6 +185,9 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
     0x00008000,
     0x08000066,
   });
+
+  // color correction
+  dst += write_cont(dst, 0x760, s->color_correct_matrix);
 
   // gamma
   dst += write_cont(dst, 0x798, {

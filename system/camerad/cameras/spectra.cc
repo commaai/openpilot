@@ -548,6 +548,19 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     int cdm_len = 0;
 
+    if (bps_lin_reg.size() == 0) {
+      for (int i = 0; i < 4; i++) {
+        bps_lin_reg.push_back(((s->linearization_pts[i] & 0xffff) << 0x10) | (s->linearization_pts[i] >> 0x10));
+      }
+    }
+
+    if (bps_ccm_reg.size() == 0) {
+      for (int i = 0; i < 3; i++) {
+        bps_ccm_reg.push_back(s->color_correct_matrix[i] | (s->color_correct_matrix[i+3] << 0x10));
+        bps_ccm_reg.push_back(s->color_correct_matrix[i+6]);
+      }
+    }
+
     // white balance
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2868, {
       0x04000400,
@@ -555,16 +568,14 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       0x00000000,
       0x00000000,
     });
+    // debayer
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2878, {
       0x00000080,
       0x00800066,
     });
 
-    //if (init) {
-    cdm_len += build_bps_init((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches);
-    //} else {
+    cdm_len += build_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches);
     cdm_len += build_common_ife_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches, false);
-    //}
 
     pa->length = cdm_len - 1;
 
@@ -1198,10 +1209,13 @@ void SpectraCamera::configICP() {
                            CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
                            m->icp_device_iommu);
 
+  // LUTs
+  /*
   bps_linearization_lut.init(m, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20,
               CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
               m->icp_device_iommu);
   memcpy(bps_linearization_lut.ptr, sensor->linearization_lut.data(), bps_linearization_lut.size);
+  */
 }
 
 void SpectraCamera::configCSIPHY() {

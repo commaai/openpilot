@@ -166,13 +166,15 @@ public:
   SpectraBuf ife_linearization_lut;
   SpectraBuf ife_vignetting_lut;
 
-  SpectraBuf bps_linearization_lut;
   SpectraBuf bps_cmd;
   SpectraBuf bps_cdm_buffer;
   SpectraBuf bps_cdm_program_array;
   SpectraBuf bps_cdm_striping_bl;
   SpectraBuf bps_iq;
   SpectraBuf bps_striping;
+  SpectraBuf bps_linearization_lut;
+  std::vector<uint32_t> bps_lin_reg;
+  std::vector<uint32_t> bps_ccm_reg;
 
   int buf_handle_yuv[MAX_IFE_BUFS] = {};
   int buf_handle_raw[MAX_IFE_BUFS] = {};
