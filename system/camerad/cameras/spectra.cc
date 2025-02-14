@@ -561,7 +561,6 @@ void SpectraCamera::config_bps(int idx, int request_id) {
       }
     }
 
-    uint64_t addr;
     // white balance
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2868, {
       0x04000400,
@@ -580,8 +579,10 @@ void SpectraCamera::config_bps(int idx, int request_id) {
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1888, bps_lin_reg);
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1898, bps_lin_reg);
     /*
+    uint8_t *start = (unsigned char *)bps_cdm_program_array.ptr + cdm_len;
+    uint64_t addr;
     cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
-    patches.push_back(addr - (uint64_t)((unsigned char *)bps_cdm_program_array.ptr + cdm_len));
+    patches.push_back(addr - (uint64_t)start);
     */
     // color correction
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2e68, bps_ccm_reg);
