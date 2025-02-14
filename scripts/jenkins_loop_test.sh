@@ -71,7 +71,7 @@ function loop() {
 
     # Wait for all builds to end
     while true; do
-      sleep 10
+      sleep 30
 
       count=0
       for i in ${TEST_BUILDS[@]};
