@@ -31,7 +31,7 @@ CPU usage budget
   should not exceed MAX_TOTAL_CPU
 """
 
-TEST_DURATION = 10
+TEST_DURATION = 25
 LOG_OFFSET = 8
 
 MAX_TOTAL_CPU = 280.  # total for all 8 cores
@@ -114,13 +114,13 @@ def cputime_total(ct):
 @pytest.mark.tici
 class TestOnroad:
 
-  #@classmethod
-  def setup_method(self):
+  @classmethod
+  def setup_class(cls):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       print(segs[-3])
-      self.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
+      cls.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
       return
 
     # setup env
@@ -137,7 +137,7 @@ class TestOnroad:
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
-      self.manager_st = time.monotonic()
+      cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
@@ -146,7 +146,7 @@ class TestOnroad:
           sm.update(1000)
 
       route = None
-      self.segments = []
+      cls.segments = []
       with Timeout(300, "timed out waiting for logs"):
         while route is None:
           route = params.get("CurrentRoute", encoding="utf-8")
@@ -155,36 +155,36 @@ class TestOnroad:
         # test car params caching
         params.put("CarParamsCache", car.CarParams().to_bytes())
 
-        while len(self.segments) < 1:
+        while len(cls.segments) < 1:
           segs = set()
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
-          self.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
+          cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(0.01)
 
       time.sleep(TEST_DURATION)
 
     finally:
-      self.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
 
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
           proc.kill()
 
-    self.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in self.segments]
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
 
-    self.lr = list(LogReader(os.path.join(str(self.segments[0]), "rlog.zst")))
-    self.log_path = self.segments[0]
+    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog.zst")))
+    cls.log_path = cls.segments[0]
 
-    self.log_sizes = {}
-    for f in self.log_path.iterdir():
+    cls.log_sizes = {}
+    for f in cls.log_path.iterdir():
       assert f.is_file()
-      self.log_sizes[f] = f.stat().st_size / 1e6
+      cls.log_sizes[f] = f.stat().st_size / 1e6
 
-    self.msgs = defaultdict(list)
-    for m in self.lr:
-      self.msgs[m.which()].append(m)
+    cls.msgs = defaultdict(list)
+    for m in cls.lr:
+      cls.msgs[m.which()].append(m)
 
 
   def test_service_frequencies(self, subtests):
