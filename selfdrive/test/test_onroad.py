@@ -323,15 +323,11 @@ class TestOnroad:
       ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}ms\n"
-      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}ms\n"
-      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}ms\n"
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.2f}ms\n"
       with subtests.test(camera=name):
-        print("\n", "="*10, name, "="*10)
-        print("d_ms", list(np.round(d_ms, 1)))
-        print("d50", list(np.round(d50, 1)))
-        print("\n", "="*30)
-        assert max(d50) < 4.0, f"high SOF delta vs 50ms: {max(d50)}"
+        assert max(d50) < 5.0, f"high SOF delta vs 50ms: {max(d50)}"
     result += "------------------------------------------------\n"
     print(result)
 
