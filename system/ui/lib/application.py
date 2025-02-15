@@ -8,7 +8,7 @@ DEFAULT_TEXT_SIZE = 60
 DEFAULT_FPS = 60
 FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
-class FontSize(IntEnum):
+class FontWeight(IntEnum):
   NORMAL = 0
   BOLD = 1
   EXTRA_BOLD = 2
@@ -21,7 +21,7 @@ class FontSize(IntEnum):
 
 class GuiApplication:
   def __init__(self, width: int, height: int):
-    self._fonts: dict[FontSize, rl.Font] = {}
+    self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
 
@@ -41,8 +41,8 @@ class GuiApplication:
 
     rl.close_window()
 
-  def font(self, font_size: FontSize=FontSize.NORMAL):
-    return self._fonts[font_size]
+  def font(self, font_wight: FontWeight=FontWeight.NORMAL):
+    return self._fonts[font_wight]
 
   @property
   def width(self):
@@ -69,7 +69,7 @@ class GuiApplication:
       rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       self._fonts[index] = font
 
-    rl.gui_set_font(self._fonts[FontSize.NORMAL])
+    rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
