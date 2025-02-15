@@ -108,7 +108,7 @@ if __name__ == "__main__":
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
-  parser.add_argument("--migrate", action="store_true", help="Perform log migration")
+  parser.add_argument("--no-migration", action="store_true", help="Do not perform log migration")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
   parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
@@ -135,4 +135,4 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-    juggle_route(route_or_segment_name, args.can, args.layout, args.dbc, args.migrate)
+    juggle_route(route_or_segment_name, args.can, args.layout, args.dbc, not args.no_migration)
