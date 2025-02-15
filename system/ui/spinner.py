@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import pyray as rl
 import os
 import select
