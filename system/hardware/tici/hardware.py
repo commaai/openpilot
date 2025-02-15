@@ -390,7 +390,7 @@ class Tici(HardwareBase):
     # camerad core
     camera_irqs = ("a5", "cci", "cpas_camnoc", "cpas-cdm", "csid", "ife", "csid-lite", "ife-lite")
     for n in camera_irqs:
-      affine_irq(5, n)
+      affine_irq(6, n)
 
   def get_gpu_usage_percent(self):
     try:
