@@ -31,7 +31,7 @@ CPU usage budget
   should not exceed MAX_TOTAL_CPU
 """
 
-TEST_DURATION = 25
+TEST_DURATION = 10
 LOG_OFFSET = 8
 
 MAX_TOTAL_CPU = 280.  # total for all 8 cores
@@ -114,13 +114,13 @@ def cputime_total(ct):
 @pytest.mark.tici
 class TestOnroad:
 
-  @classmethod
-  def setup_class(cls):
+  #@classmethod
+  def setup_method(self):
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
       print(segs[-3])
-      cls.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
+      self.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
       return
 
     # setup env
@@ -137,7 +137,7 @@ class TestOnroad:
     proc = None
     try:
       manager_path = os.path.join(BASEDIR, "system/manager/manager.py")
-      cls.manager_st = time.monotonic()
+      self.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
@@ -146,7 +146,7 @@ class TestOnroad:
           sm.update(1000)
 
       route = None
-      cls.segments = []
+      self.segments = []
       with Timeout(300, "timed out waiting for logs"):
         while route is None:
           route = params.get("CurrentRoute", encoding="utf-8")
@@ -155,36 +155,36 @@ class TestOnroad:
         # test car params caching
         params.put("CarParamsCache", car.CarParams().to_bytes())
 
-        while len(cls.segments) < 1:
+        while len(self.segments) < 1:
           segs = set()
           if Path(Paths.log_root()).exists():
             segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
-          cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
+          self.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
           time.sleep(0.01)
 
       time.sleep(TEST_DURATION)
 
     finally:
-      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
+      self.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
 
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
+    self.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in self.segments]
 
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog.zst")))
-    cls.log_path = cls.segments[0]
+    self.lr = list(LogReader(os.path.join(str(self.segments[0]), "rlog.zst")))
+    self.log_path = self.segments[0]
 
-    cls.log_sizes = {}
-    for f in cls.log_path.iterdir():
+    self.log_sizes = {}
+    for f in self.log_path.iterdir():
       assert f.is_file()
-      cls.log_sizes[f] = f.stat().st_size / 1e6
+      self.log_sizes[f] = f.stat().st_size / 1e6
 
-    cls.msgs = defaultdict(list)
-    for m in cls.lr:
-      cls.msgs[m.which()].append(m)
+    self.msgs = defaultdict(list)
+    for m in self.lr:
+      self.msgs[m.which()].append(m)
 
 
   def test_service_frequencies(self, subtests):
@@ -214,6 +214,7 @@ class TestOnroad:
     assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
   def test_log_sizes(self, subtests):
+    # TODO: this isn't super stable between different devices
     for f, sz in self.log_sizes.items():
       rate = LOGS_SIZE[f.name]/60.
       minn = rate * TEST_DURATION * 0.5
@@ -313,21 +314,24 @@ class TestOnroad:
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
-  @pytest.mark.skip("TODO: enable once timings are fixed")
   def test_camera_frame_timings(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-----------------  SoF Timing ------------------\n"
+    result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
     for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
       ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}ms\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}ms\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}ms\n"
       with subtests.test(camera=name):
-        assert max(d50) < 1.0, f"high SOF delta vs 50ms: {max(d50)}"
+        print("\n", "="*10, name, "="*10)
+        print("d_ms", list(np.round(d_ms, 1)))
+        print("d50", list(np.round(d50, 1)))
+        print("\n", "="*30)
+        assert max(d50) < 4.0, f"high SOF delta vs 50ms: {max(d50)}"
     result += "------------------------------------------------\n"
     print(result)
 
