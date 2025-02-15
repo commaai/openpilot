@@ -34,7 +34,7 @@ def wrap_text(text, font_size, max_width):
 
 
 def main():
-  gui_app.init_window("Text", fps=20)
+  gui_app.init_window("Text")
 
   text_content = sys.argv[1] if len(sys.argv) > 1 else DEMO_TEXT
 

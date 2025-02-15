@@ -30,7 +30,7 @@ def check_input_non_blocking():
   return ""
 
 def main():
-  gui_app.init_window("Spinner", fps=30)
+  gui_app.init_window("Spinner")
 
   # Load textures
   comma_texture = load_texture_resized(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_comma.png"), TEXTURE_SIZE)
