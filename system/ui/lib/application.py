@@ -1,3 +1,4 @@
+import atexit
 import os
 import pyray as rl
 from enum import IntEnum
@@ -25,6 +26,8 @@ class GuiApplication:
     self._height = height
 
   def init_window(self, title: str, fps: int=DEFAULT_FPS):
+    atexit.register(self.close)  # Automatically call close() on exit
+
     rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT)
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)

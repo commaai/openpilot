@@ -83,7 +83,6 @@ def main():
   # Clean up
   rl.unload_texture(comma_texture)
   rl.unload_texture(spinner_texture)
-  gui_app.close()
 
 
 if __name__ == "__main__":

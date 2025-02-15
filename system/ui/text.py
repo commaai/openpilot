@@ -61,8 +61,6 @@ def main():
 
     rl.end_drawing()
 
-  gui_app.close()
-
 
 if __name__ == "__main__":
   main()
