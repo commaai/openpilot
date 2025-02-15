@@ -13,6 +13,7 @@ from functools import partial
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.logreader import LogReader, ReadMode, save_log
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -81,7 +82,6 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
 
   all_data = sr.run_across_segments(24, partial(process, can))
   if should_migrate:
-    from openpilot.selfdrive.test.process_replay.migration import migrate_all
     all_data = migrate_all(all_data)
 
   # Infer DBC name from logs
