@@ -9,12 +9,12 @@ DEFAULT_FPS = 60
 FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
 class FontWeight(IntEnum):
-  NORMAL = 0
+  BLACK = 0
   BOLD = 1
   EXTRA_BOLD = 2
   EXTRA_LIGHT = 3
   MEDIUM = 4
-  REGULAR = 5
+  NORMAL = 5
   SEMI_BOLD= 6
   THIN = 7
 
