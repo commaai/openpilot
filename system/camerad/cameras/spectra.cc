@@ -482,7 +482,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   */
 
   int size = sizeof(struct cam_packet) + sizeof(struct cam_cmd_buf_desc)*2 + sizeof(struct cam_buf_io_cfg)*2;
-  size += sizeof(struct cam_patch_desc)*8;
+  size += sizeof(struct cam_patch_desc)*9;
 
   uint32_t cam_packet_handle = 0;
   auto pkt = mm.alloc<struct cam_packet>(size, &cam_packet_handle);
@@ -525,6 +525,7 @@ void SpectraCamera::config_bps(int idx, int request_id) {
   } cdm_tmp;
 
   // *** cmd buf ***
+  std::vector<uint32_t> patches;
   struct cam_cmd_buf_desc *buf_desc = (struct cam_cmd_buf_desc *)&pkt->payload;
   {
     pkt->num_cmd_buf = 2;
@@ -558,33 +559,46 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
     int cdm_len = 0;
 
-    // debayer params
+    if (bps_lin_reg.size() == 0) {
+      for (int i = 0; i < 4; i++) {
+        bps_lin_reg.push_back(((sensor->linearization_pts[i] & 0xffff) << 0x10) | (sensor->linearization_pts[i] >> 0x10));
+      }
+    }
+
+    if (bps_ccm_reg.size() == 0) {
+      for (int i = 0; i < 3; i++) {
+        bps_ccm_reg.push_back(sensor->color_correct_matrix[i] | (sensor->color_correct_matrix[i+3] << 0x10));
+        bps_ccm_reg.push_back(sensor->color_correct_matrix[i+6]);
+      }
+    }
+
+    // white balance
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2868, {
-      0x06900400,
-      0x000006a6,
+      0x04000400,
+      0x00000400,
       0x00000000,
       0x00000000,
     });
+    // debayer
     cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2878, {
       0x00000080,
       0x00800066,
     });
+    // linearization, EN=0
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1868, bps_lin_reg);
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1878, bps_lin_reg);
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1888, bps_lin_reg);
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x1898, bps_lin_reg);
+    /*
+    uint8_t *start = (unsigned char *)bps_cdm_program_array.ptr + cdm_len;
+    uint64_t addr;
+    cdm_len += write_dmi((unsigned char *)bps_cdm_program_array.ptr + cdm_len, &addr, sensor->linearization_lut.size()*sizeof(uint32_t), 0x1808, 1);
+    patches.push_back(addr - (uint64_t)start);
+    */
+    // color correction
+    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x2e68, bps_ccm_reg);
 
-    // YUV color xform
-    cdm_len += write_cont((unsigned char *)bps_cdm_program_array.ptr + cdm_len, 0x3468, {
-      0x00680208,
-      0x00000108,
-      0x00400000,
-      0x03ff0000,
-      0x01c01ed8,
-      0x00001f68,
-      0x02000000,
-      0x03ff0000,
-      0x1fb81e88,
-      0x000001c0,
-      0x02000000,
-      0x03ff0000,
-    });
+    cdm_len += build_common_ife_bps((unsigned char *)bps_cdm_program_array.ptr + cdm_len, cc, sensor.get(), patches, false);
 
     pa->length = cdm_len - 1;
 
@@ -665,7 +679,12 @@ void SpectraCamera::config_bps(int idx, int request_id) {
 
   // *** patches ***
   {
+    assert(patches.size() == 0 | patches.size() == 1);
     pkt->patch_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf + sizeof(struct cam_buf_io_cfg)*pkt->num_io_configs;
+
+    if (patches.size() > 0) {
+      add_patch(pkt.get(), bps_cmd.handle, patches[0], bps_linearization_lut.handle, 0);
+    }
 
     // input frame
     add_patch(pkt.get(), bps_cmd.handle, buf_desc[0].offset + offsetof(bps_tmp, frames[0].ptr[0]), buf_handle_raw[idx], 0);
@@ -1221,6 +1240,14 @@ void SpectraCamera::configICP() {
   bps_cdm_striping_bl.init(m, 0xa100, 0x20,
                            CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
                            m->icp_device_iommu);
+
+  // LUTs
+  /*
+  bps_linearization_lut.init(m, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20,
+              CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE | CAM_MEM_FLAG_HW_SHARED_ACCESS,
+              m->icp_device_iommu);
+  memcpy(bps_linearization_lut.ptr, sensor->linearization_lut.data(), bps_linearization_lut.size);
+  */
 }
 
 void SpectraCamera::configCSIPHY() {
