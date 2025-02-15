@@ -21,6 +21,9 @@ def load_texture_resized(file_name, size):
   image = rl.load_image(file_name.encode('utf-8'))
   rl.image_resize(image, size, size)
   texture = rl.load_texture_from_image(image)
+   # Set texture filtering to smooth the result
+  rl.set_texture_filter(texture, rl.TEXTURE_FILTER_BILINEAR)
+
   rl.unload_image(image)
   return texture
 
