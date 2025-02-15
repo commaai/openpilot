@@ -18,16 +18,6 @@ FONT_SIZE = 80
 def clamp(value, min_value, max_value):
   return max(min(value, max_value), min_value)
 
-def load_texture_resized(file_name, size):
-  image = rl.load_image(file_name.encode('utf-8'))
-  rl.image_resize(image, size, size)
-  texture = rl.load_texture_from_image(image)
-   # Set texture filtering to smooth the result
-  rl.set_texture_filter(texture, rl.TEXTURE_FILTER_BILINEAR)
-
-  rl.unload_image(image)
-  return texture
-
 def check_input_non_blocking():
   if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
     return sys.stdin.readline().strip()
@@ -37,8 +27,8 @@ def main():
   gui_app.init_window("Spinner")
 
   # Load textures
-  comma_texture = load_texture_resized(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_comma.png"), TEXTURE_SIZE)
-  spinner_texture = load_texture_resized(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE)
+  comma_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_comma.png"), TEXTURE_SIZE, TEXTURE_SIZE)
+  spinner_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE, TEXTURE_SIZE)
 
   # Initial values
   rotation = 0.0
@@ -80,10 +70,6 @@ def main():
                         rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
 
     rl.end_drawing()
-
-  # Clean up
-  rl.unload_texture(comma_texture)
-  rl.unload_texture(spinner_texture)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ class GuiApplication:
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
+    self._textures: list[rl.Texture] = []
 
   def init_window(self, title: str, fps: int=DEFAULT_FPS):
     atexit.register(self.close)  # Automatically call close() on exit
@@ -35,7 +36,23 @@ class GuiApplication:
     self._set_styles()
     self._load_fonts()
 
+  def load_texture_from_image(self, file_name: str, width: int, height: int):
+    """Load and resize a texture, storing it for later automatic unloading."""
+    image = rl.load_image(file_name)
+    rl.image_resize(image, width, height)
+    texture = rl.load_texture_from_image(image)
+    # Set texture filtering to smooth the result
+    rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
+    rl.unload_image(image)
+
+    self._textures.append(texture)
+    return texture
+
   def close(self):
+    for texture in self._textures:
+      rl.unload_texture(texture)
+
     for font in self._fonts.values():
       rl.unload_font(font)
 
