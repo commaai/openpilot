@@ -214,6 +214,7 @@ class TestOnroad:
     assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
   def test_log_sizes(self, subtests):
+    # TODO: this isn't super stable between different devices
     for f, sz in self.log_sizes.items():
       rate = LOGS_SIZE[f.name]/60.
       minn = rate * TEST_DURATION * 0.5
@@ -313,21 +314,20 @@ class TestOnroad:
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
-  @pytest.mark.skip("TODO: enable once timings are fixed")
   def test_camera_frame_timings(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-----------------  SoF Timing ------------------\n"
+    result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
     for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
       ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.2f}ms\n"
       with subtests.test(camera=name):
-        assert max(d50) < 1.0, f"high SOF delta vs 50ms: {max(d50)}"
+        assert max(d50) < 5.0, f"high SOF delta vs 50ms: {max(d50)}"
     result += "------------------------------------------------\n"
     print(result)
 
