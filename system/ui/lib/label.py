@@ -1,5 +1,5 @@
 import pyray as rl
-from openpilot.system.ui.raylib.gui.utils import GuiStyleContext
+from openpilot.system.ui.lib.utils import GuiStyleContext
 
 def gui_label(rect, text, font_size):
   styles = [

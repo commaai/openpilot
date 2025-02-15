@@ -1,6 +1,6 @@
 
 import pyray as rl
-from openpilot.system.ui.raylib.gui.utils import GuiStyleContext
+from openpilot.system.ui.lib.utils import GuiStyleContext
 
 BUTTON_DEFAULT_BG_COLOR = rl.Color(51, 51, 51, 255)
 

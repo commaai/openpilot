@@ -2,9 +2,9 @@ import sys
 import pyray as rl
 
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.raylib.gui.button import gui_button
-from openpilot.system.ui.raylib.gui.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.raylib.gui.application import gui_app
+from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.application import gui_app
 
 MARGIN = 50
 SPACING = 50

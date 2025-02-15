@@ -4,7 +4,7 @@ import select
 import sys
 
 from openpilot.common.basedir import BASEDIR
-from openpilot.system.ui.raylib.gui.application import gui_app
+from openpilot.system.ui.lib.application import gui_app
 
 # Constants
 PROGRESS_BAR_WIDTH = 1000
