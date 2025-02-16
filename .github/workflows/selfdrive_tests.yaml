@@ -108,12 +108,23 @@ jobs:
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
-  static_analysis_mac:
-    name: darwin static analysis
+  static_analysis_macos:
+    name: macos static analysis
     runs-on:
-      -
-  static_analysis:
-    name: static analysis
+      - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
+    env:
+      PYTHONWARNINGS: default
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry
+    - name: Static analysis macos
+      timeout-minutes: 1
+      run: ${{ env.RUN }} "scripts/lint/lint.sh"
+
+  static_analysis_linux:
+    name: linux static analysis
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || 'ubuntu-24.04' }}
@@ -124,7 +135,7 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
-    - name: Static analysis
+    - name: Static analysis linux
       timeout-minutes: 1
       run: ${{ env.RUN }} "scripts/lint/lint.sh"
 
