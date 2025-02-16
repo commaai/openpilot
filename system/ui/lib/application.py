@@ -69,7 +69,7 @@ class GuiApplication:
       yield
 
       if DEBUG_FPS:
-        rl.draw_text(f"FPS: {rl.get_fps()}", 10, 10, 20, rl.RED)
+        rl.draw_fps(10, 10)
 
       rl.end_drawing()
 
