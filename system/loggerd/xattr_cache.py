@@ -1,4 +1,5 @@
 import errno
+
 import xattr
 
 _cached_attributes: dict[tuple, bytes | None] = {}
