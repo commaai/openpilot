@@ -1,7 +1,5 @@
-import os
 import pyray as rl
 
-DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
 
 class GuiStyleContext:
   def __init__(self, styles: list[tuple[int, int, int]]):
@@ -18,15 +16,3 @@ class GuiStyleContext:
   def __exit__(self, exc_type, exc_value, traceback):
     for control, prop, prev_value in self.prev_styles:
       rl.gui_set_style(control, prop, prev_value)
-
-
-class DrawingContext:
-  def __enter__(self):
-    rl.begin_drawing()
-    rl.clear_background(rl.BLACK)
-    return self
-
-  def __exit__(self, exc_type, exc_value, traceback):
-    if DEBUG_FPS:
-      rl.draw_text(f"FPS: {rl.get_fps()}", 10, 10, 20, rl.RED)
-    rl.end_drawing()

@@ -8,7 +8,6 @@ from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.label import gui_label
-from openpilot.system.ui.lib.utils import DrawingContext
 
 NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"
@@ -111,10 +110,9 @@ def main():
   if mode == ResetMode.FORMAT:
     reset.start_reset()
 
-  while not rl.window_should_close():
-    with DrawingContext():
-      if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
-        break
+  for _ in gui_app.render():
+    if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
+      break
 
 
 if __name__ == "__main__":

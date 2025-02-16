@@ -8,6 +8,9 @@ DEFAULT_TEXT_SIZE = 60
 DEFAULT_FPS = 60
 FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
+DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
+
+
 class FontWeight(IntEnum):
   BLACK = 0
   BOLD = 1
@@ -57,6 +60,18 @@ class GuiApplication:
       rl.unload_font(font)
 
     rl.close_window()
+
+  def render(self):
+    while not rl.window_should_close():
+      rl.begin_drawing()
+      rl.clear_background(rl.BLACK)
+
+      yield
+
+      if DEBUG_FPS:
+        rl.draw_text(f"FPS: {rl.get_fps()}", 10, 10, 20, rl.RED)
+
+      rl.end_drawing()
 
   def font(self, font_wight: FontWeight=FontWeight.NORMAL):
     return self._fonts[font_wight]

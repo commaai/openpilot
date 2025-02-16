@@ -6,7 +6,6 @@ import sys
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.utils import DrawingContext
 
 # Constants
 PROGRESS_BAR_WIDTH = 1000
@@ -41,39 +40,34 @@ def main():
   spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
   comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
-  while not rl.window_should_close():
-    with DrawingContext():
-      # Update rotation
-      rotation = (rotation + ROTATION_RATE) % 360.0
+  for _ in gui_app.render():
+    # Update rotation
+    rotation = (rotation + ROTATION_RATE) % 360.0
 
-      # Draw rotating spinner and static comma logo
-      rl.draw_texture_pro(
-        spinner_texture,
-        rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
-        rl.Rectangle(center.x, center.y, TEXTURE_SIZE, TEXTURE_SIZE),
-        spinner_origin,
-        rotation,
-        rl.WHITE,
-      )
-      rl.draw_texture_v(comma_texture, comma_position, rl.WHITE)
+    # Draw rotating spinner and static comma logo
+    rl.draw_texture_pro(spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
+                        rl.Rectangle(center.x, center.y, TEXTURE_SIZE, TEXTURE_SIZE),
+                        spinner_origin, rotation, rl.WHITE)
+    rl.draw_texture_v(comma_texture, comma_position, rl.WHITE)
 
-      # Read user input
-      if input_str := check_input_non_blocking():
-        user_input = input_str
+    # Read user input
+    if input_str := check_input_non_blocking():
+      user_input = input_str
 
-      # Display progress bar or text based on user input
-      if user_input:
-        y_pos = rl.get_screen_height() - MARGIN - PROGRESS_BAR_HEIGHT
-        if user_input.isdigit():
-          progress = clamp(int(user_input), 0, 100)
-          bar = rl.Rectangle(center.x - PROGRESS_BAR_WIDTH / 2.0, y_pos, PROGRESS_BAR_WIDTH, PROGRESS_BAR_HEIGHT)
-          rl.draw_rectangle_rounded(bar, 0.5, 10, rl.GRAY)
+    # Display progress bar or text based on user input
+    if user_input:
+      y_pos = rl.get_screen_height() - MARGIN - PROGRESS_BAR_HEIGHT
+      if user_input.isdigit():
+        progress = clamp(int(user_input), 0, 100)
+        bar = rl.Rectangle(center.x - PROGRESS_BAR_WIDTH / 2.0, y_pos, PROGRESS_BAR_WIDTH, PROGRESS_BAR_HEIGHT)
+        rl.draw_rectangle_rounded(bar, 0.5, 10, rl.GRAY)
 
-          bar.width *= progress / 100.0
-          rl.draw_rectangle_rounded(bar, 0.5, 10, rl.WHITE)
-        else:
-          text_size = rl.measure_text_ex(gui_app.font(), user_input, FONT_SIZE, 1.0)
-          rl.draw_text_ex(gui_app.font(), user_input, rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
+        bar.width *= progress / 100.0
+        rl.draw_rectangle_rounded(bar, 0.5, 10, rl.WHITE)
+      else:
+        text_size = rl.measure_text_ex(gui_app.font(), user_input, FONT_SIZE, 1.0)
+        rl.draw_text_ex(gui_app.font(), user_input,
+                        rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
 
 
 if __name__ == "__main__":
