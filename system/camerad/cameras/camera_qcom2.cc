@@ -55,7 +55,7 @@ public:
 
   float fl_pix = 0;
 
-  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, true /*config.stream_type == VISION_STREAM_ROAD*/) {};
+  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.stream_type == VISION_STREAM_DRIVER ? ISP_BPS_PROCESSED : ISP_IFE_PROCESSED) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
@@ -231,9 +231,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 void CameraState::run() {
   util::set_thread_name(camera.cc.publish_name);
 
-  std::vector<const char*> pubs = {camera.cc.publish_name};
-  if (camera.cc.stream_type == VISION_STREAM_ROAD) pubs.push_back("thumbnail");
-  PubMaster pm(pubs);
+  PubMaster pm(std::vector{camera.cc.publish_name});
 
   for (uint32_t cnt = 0; !do_exit; ++cnt) {
     // Acquire the buffer; continue if acquisition fails
@@ -263,17 +261,10 @@ void CameraState::run() {
       framed.setImage(get_raw_frame_image(&camera.buf));
     }
 
-    // Process camera registers and set camera exposure
-    if (camera.is_raw) {
-      camera.sensor->processRegisters((uint8_t *)camera.buf.cur_camera_buf->addr, framed);
-    }
     set_camera_exposure(set_exposure_target(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
     // Send the message
     pm.send(camera.cc.publish_name, msg);
-    if (camera.cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 3) {
-      publish_thumbnail(&pm, &camera.buf);  // this takes 10ms???
-    }
   }
 }
 
@@ -292,7 +283,7 @@ void camerad_thread() {
 
   // *** per-cam init ***
   std::vector<std::unique_ptr<CameraState>> cams;
-  for (const auto &config : {WIDE_ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG, ROAD_CAMERA_CONFIG}) {
+  for (const auto &config : {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG}) {
     auto cam = std::make_unique<CameraState>(&m, config);
     cam->init(&v, device_id, ctx);
     cams.emplace_back(std::move(cam));

@@ -1,3 +1,4 @@
+import time
 import capnp
 import copy
 import os
@@ -10,17 +11,15 @@ import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized_class
 
-from cereal import messaging, log, car
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
-from opendbc.car.fingerprints import all_known_cars, MIGRATION
+from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
+from opendbc.car.fingerprints import all_known_cars, MIGRATION
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
-from opendbc.car.values import Platform
+from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from openpilot.selfdrive.selfdrived.events import ET
-from openpilot.selfdrive.selfdrived.selfdrived import SelfdriveD
+from opendbc.car.values import Platform
+from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -30,8 +29,6 @@ from openpilot.tools.lib.route import SegmentName
 
 from panda.tests.libpanda import libpanda_py
 
-EventName = log.OnroadEvent.EventName
-PandaType = log.PandaState.PandaType
 SafetyModel = car.CarParams.SafetyModel
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
@@ -173,8 +170,6 @@ class TestCarModelBase(unittest.TestCase):
   def setUp(self):
     self.CI = self.CarInterface(self.CP.copy(), copy.deepcopy(self.CP_SP), self.CarController, self.CarState)
     assert self.CI
-
-    Params().put_bool("OpenpilotEnabledToggle", self.openpilot_enabled)
 
     # TODO: check safetyModel is in release panda build
     self.safety = libpanda_py.libpanda
@@ -344,10 +339,8 @@ class TestCarModelBase(unittest.TestCase):
       to_send = libpanda_py.make_CANPacket(address, bus, dat)
       self.safety.safety_rx_hook(to_send)
 
-      can = messaging.new_message('can', 1)
-      can.can = [log.CanData(address=address, dat=dat, src=bus)]
-
-      CS = self.CI.update(can_capnp_to_list((can.to_bytes(),)))
+      can = [(int(time.monotonic() * 1e9), [CanData(address=address, dat=dat, src=bus)])]
+      CS = self.CI.update(can)
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
@@ -392,8 +385,6 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
-    selfdrived = SelfdriveD(CP=self.CP, CP_SP=self.CP_SP)
-    selfdrived.initialized = True
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -437,11 +428,8 @@ class TestCarModelBase(unittest.TestCase):
         if not self.CP.notCar:
           checks['cruiseState'] += CS.cruiseState.enabled != self.safety.get_cruise_engaged_prev()
       else:
-        # Check for enable events on rising edge of controls allowed
-        selfdrived.update_events(CS)
-        selfdrived.CS_prev = CS
-        button_enable = (selfdrived.events.contains(ET.ENABLE) and
-                         EventName.pedalPressed not in selfdrived.events.names)
+        # Check for user button enable on rising edge of controls allowed
+        button_enable = CS.buttonEnable and (not CS.brakePressed or CS.standstill)
         mismatch = button_enable != (self.safety.get_controls_allowed() and not controls_allowed_prev)
         checks['controlsAllowed'] += mismatch
         controls_allowed_prev = self.safety.get_controls_allowed()

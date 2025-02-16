@@ -13,6 +13,7 @@ from functools import partial
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.logreader import LogReader, ReadMode, save_log
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
 juggle_dir = os.path.dirname(os.path.realpath(__file__))
 
@@ -76,10 +77,12 @@ def process(can, lr):
   return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
 
 
-def juggle_route(route_or_segment_name, can, layout, dbc=None):
+def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
   sr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
 
   all_data = sr.run_across_segments(24, partial(process, can))
+  if should_migrate:
+    all_data = migrate_all(all_data)
 
   # Infer DBC name from logs
   if dbc is None:
@@ -105,6 +108,7 @@ if __name__ == "__main__":
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("--can", action="store_true", help="Parse CAN data")
   parser.add_argument("--stream", action="store_true", help="Start PlotJuggler in streaming mode")
+  parser.add_argument("--no-migration", action="store_true", help="Do not perform log migration")
   parser.add_argument("--layout", nargs='?', help="Run PlotJuggler with a pre-defined layout")
   parser.add_argument("--install", action="store_true", help="Install or update PlotJuggler + plugins")
   parser.add_argument("--dbc", help="Set the DBC name to load for parsing CAN data. If not set, the DBC will be automatically inferred from the logs.")
@@ -131,4 +135,4 @@ if __name__ == "__main__":
     start_juggler(layout=args.layout)
   else:
     route_or_segment_name = DEMO_ROUTE if args.demo else args.route_or_segment_name.strip()
-    juggle_route(route_or_segment_name, args.can, args.layout, args.dbc)
+    juggle_route(route_or_segment_name, args.can, args.layout, args.dbc, not args.no_migration)

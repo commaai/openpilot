@@ -33,7 +33,7 @@ GITHUB = GithubUtils(API_TOKEN, DATA_TOKEN)
 
 EXEC_TIMINGS = [
   # model, instant max, average max
-  ("modelV2", 0.03, 0.025),
+  ("modelV2", 0.035, 0.025),
   ("driverStateV2", 0.02, 0.015),
 ]
 
@@ -57,21 +57,24 @@ def get_event(logs, event):
 def zl(array, fill):
   return zip_longest(array, [], fillvalue=fill)
 
+def get_idx_if_non_empty(l, idx=None):
+  return l if idx is None else (l[idx] if len(l) > 0 else None)
+
 def generate_report(proposed, master, tmp, commit):
   ModelV2_Plots = zl([
-                     (lambda x: x.velocity.x[0], "velocity.x"),
-                     (lambda x: x.action.desiredCurvature, "desiredCurvature"),
-                     (lambda x: x.leadsV3[0].x[0], "leadsV3.x"),
-                     (lambda x: x.laneLines[1].y[0], "laneLines.y"),
-                     #(lambda x: x.meta.disengagePredictions.gasPressProbs[1], "gasPressProbs")
+                     (lambda x: get_idx_if_non_empty(x.velocity.x, 0), "velocity.x"),
+                     (lambda x: get_idx_if_non_empty(x.action.desiredCurvature), "desiredCurvature"),
+                     (lambda x: get_idx_if_non_empty(x.leadsV3[0].x, 0), "leadsV3.x"),
+                     (lambda x: get_idx_if_non_empty(x.laneLines[1].y, 0), "laneLines.y"),
+                     (lambda x: get_idx_if_non_empty(x.meta.disengagePredictions.gasPressProbs, 1), "gasPressProbs")
                     ], "modelV2")
   DriverStateV2_Plots = zl([
-                     (lambda x: x.wheelOnRightProb, "wheelOnRightProb"),
-                     (lambda x: x.leftDriverData.faceProb, "leftDriverData.faceProb"),
-                     (lambda x: x.leftDriverData.faceOrientation[0], "leftDriverData.faceOrientation0"),
-                     (lambda x: x.leftDriverData.leftBlinkProb, "leftDriverData.leftBlinkProb"),
-                     (lambda x: x.leftDriverData.notReadyProb[0], "leftDriverData.notReadyProb0"),
-                     (lambda x: x.rightDriverData.faceProb, "rightDriverData.faceProb"),
+                     (lambda x: get_idx_if_non_empty(x.wheelOnRightProb), "wheelOnRightProb"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.faceProb), "leftDriverData.faceProb"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.faceOrientation, 0), "leftDriverData.faceOrientation0"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.leftBlinkProb), "leftDriverData.leftBlinkProb"),
+                     (lambda x: get_idx_if_non_empty(x.leftDriverData.notReadyProb, 0), "leftDriverData.notReadyProb0"),
+                     (lambda x: get_idx_if_non_empty(x.rightDriverData.faceProb), "rightDriverData.faceProb"),
                     ], "driverStateV2")
 
   return [plot(map(v[0], get_event(proposed, event)), \

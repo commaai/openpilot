@@ -6,7 +6,6 @@ SegmentManager::~SegmentManager() {
   {
     std::unique_lock lock(mutex_);
     exit_ = true;
-    onSegmentMergedCallback_ = nullptr;
   }
   cv_.notify_one();
   if (thread_.joinable()) thread_.join();
@@ -37,6 +36,8 @@ bool SegmentManager::load() {
 void SegmentManager::setCurrentSegment(int seg_num) {
   {
     std::unique_lock lock(mutex_);
+    if (cur_seg_num_ == seg_num) return;
+
     cur_seg_num_ = seg_num;
     needs_update_ = true;
   }
@@ -58,14 +59,14 @@ void SegmentManager::manageSegmentCache() {
     auto end = std::next(begin, std::min<int>(segment_cache_limit_, std::distance(begin, segments_.end())));
     begin = std::prev(end, std::min<int>(segment_cache_limit_, std::distance(segments_.begin(), end)));
 
+    lock.unlock();
+
     loadSegmentsInRange(begin, cur, end);
     bool merged = mergeSegments(begin, end);
 
     // Free segments outside the current range
     std::for_each(segments_.begin(), begin, [](auto &segment) { segment.second.reset(); });
     std::for_each(end, segments_.end(), [](auto &segment) { segment.second.reset(); });
-
-    lock.unlock();
 
     if (merged && onSegmentMergedCallback_) {
       onSegmentMergedCallback_();  // Notify listener that segments have been merged
@@ -118,7 +119,11 @@ void SegmentManager::loadSegmentsInRange(SegmentMap::iterator begin, SegmentMap:
       if (!segment_ptr) {
         segment_ptr = std::make_shared<Segment>(
             it->first, route_.at(it->first), flags_, filters_,
-            [this](int seg_num, bool success) { setCurrentSegment(cur_seg_num_); });
+            [this](int seg_num, bool success) {
+              std::unique_lock lock(mutex_);
+              needs_update_ = true;
+              cv_.notify_one();
+            });
       }
 
       if (segment_ptr->getState() == Segment::LoadState::Loading) {

@@ -1,1 +1,1 @@
-#define DEFAULT_MODEL "Notre Dame (Default)"
+#define DEFAULT_MODEL "Not Too Shabby (Default)"

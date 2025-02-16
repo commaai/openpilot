@@ -1,23 +1,22 @@
-Version 0.9.9 (2025-03-30)
+Version 0.9.8 (2025-02-27)
 ========================
+* New driving model
+  * Model now gates applying positive acceleration in Chill mode
+* New driving monitoring model
+  * Reduced false positives related to passengers
+* Image processing pipeline moved to the ISP
+  * More GPU time for bigger driving models
+  * Power draw reduced 0.5W, which means your device runs cooler
+* Added toggle to enable driver monitoring even when openpilot is not engaged
+* FIREHOSE mode
+  * Allows you to maximize your training data uploads to improve the models
+* Enable openpilot longitudinal control for Ford Q3 vehicles
+* New Toyota TSS2 longitudinal tune
 * Coming soon
   * Rivian support
   * F-150 & Mach-E support
   * Tesla Model 3 support
 
-Version 0.9.8 (2025-01-30)
-========================
-* New driving monitoring model
-  * Reduced false positives related to passengers
-* Image processing pipeline moved to the ISP
-  * More GPU time for driving models
-  * Power draw reduced 0.5W, which means your device runs cooler
-* Added toggle to enable driver monitoring even when openpilot is not engaged
-* Enable openpilot longitudinal control for Ford Q3 vehicles
-* New Toyota TSS2 longitudinal tune
-* Coming soon
-  * New driving model with gas gating
-  * Training data upload mode
 
 Version 0.9.7 (2024-06-13)
 ========================

@@ -1,8 +1,7 @@
 #include "cereal/messaging/messaging.h"
-#include "selfdrive/pandad/panda.h"
 #include "opendbc/can/common.h"
 
-void can_list_to_can_capnp_cpp(const std::vector<can_frame> &can_list, std::string &out, bool sendcan, bool valid) {
+void can_list_to_can_capnp_cpp(const std::vector<CanFrame> &can_list, std::string &out, bool sendcan, bool valid) {
   MessageBuilder msg;
   auto event = msg.initEvent(valid);
 

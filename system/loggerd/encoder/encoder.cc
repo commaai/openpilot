@@ -6,12 +6,7 @@ VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in
   out_width = encoder_info.frame_width > 0 ? encoder_info.frame_width : in_width;
   out_height = encoder_info.frame_height > 0 ? encoder_info.frame_height : in_height;
 
-
-  std::vector pubs = {encoder_info.publish_name};
-  if (encoder_info.thumbnail_name != NULL) {
-    pubs.push_back(encoder_info.thumbnail_name);
-  }
-  pm.reset(new PubMaster(pubs));
+  pm.reset(new PubMaster(std::vector{encoder_info.publish_name}));
 }
 
 void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
@@ -45,15 +40,4 @@ void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBuf
   kj::ArrayOutputStream output_stream(kj::ArrayPtr<capnp::byte>(msg_cache.data(), bytes_size));
   capnp::writeMessage(output_stream, msg);
   pm->send(encoder_info.publish_name, msg_cache.data(), bytes_size);
-
-  // Publish keyframe thumbnail
-  if ((flags & V4L2_BUF_FLAG_KEYFRAME) && encoder_info.thumbnail_name != NULL) {
-    MessageBuilder tm;
-    auto thumbnail = tm.initEvent().initThumbnail();
-    thumbnail.setFrameId(extra.frame_id);
-    thumbnail.setTimestampEof(extra.timestamp_eof);
-    thumbnail.setThumbnail(dat);
-    thumbnail.setEncoding(cereal::Thumbnail::Encoding::KEYFRAME);
-    pm->send(encoder_info.thumbnail_name, tm);
-  }
 }
