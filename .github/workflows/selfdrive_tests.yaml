@@ -108,6 +108,10 @@ jobs:
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
+  static_analysis_mac:
+    name: darwin static analysis
+    runs-on:
+      -
   static_analysis:
     name: static analysis
     runs-on:
