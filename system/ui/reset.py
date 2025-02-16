@@ -110,12 +110,9 @@ def main():
   if mode == ResetMode.FORMAT:
     reset.start_reset()
 
-  while not rl.window_should_close():
-    rl.begin_drawing()
-    rl.clear_background(rl.BLACK)
+  for _ in gui_app.render():
     if not reset.render(rl.Rectangle(45, 200, gui_app.width - 90, gui_app.height - 245)):
       break
-    rl.end_drawing()
 
 
 if __name__ == "__main__":

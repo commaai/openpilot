@@ -1,5 +1,6 @@
 import pyray as rl
 
+
 class GuiStyleContext:
   def __init__(self, styles: list[tuple[int, int, int]]):
     """styles is a list of tuples (control, prop, new_value)"""
