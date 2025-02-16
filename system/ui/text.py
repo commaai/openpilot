@@ -14,7 +14,7 @@ LINE_HEIGHT = 64
 BUTTON_SIZE = rl.Vector2(310, 160)
 
 DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
-            The text is long enough to demonstrate scrolling and word wrapping.""" * 20
+            The text is long enough to demonstrate scrolling and word wrapping.""" * 30
 
 def wrap_text(text, font_size, max_width):
   lines = []
@@ -53,6 +53,8 @@ def main():
     rl.begin_scissor_mode(int(textarea_rect.x), int(textarea_rect.y), int(textarea_rect.width), int(textarea_rect.height))
     for i, line in enumerate(wrapped_lines):
       position = rl.Vector2(textarea_rect.x + scroll.x, textarea_rect.y + scroll.y + i * LINE_HEIGHT)
+      if position.y + LINE_HEIGHT < textarea_rect.y or position.y > textarea_rect.y + textarea_rect.height:
+        continue
       rl.draw_text_ex(gui_app.font(), line.strip(), position, FONT_SIZE, 0, rl.WHITE)
     rl.end_scissor_mode()
 
