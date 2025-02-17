@@ -10,11 +10,11 @@ def get_name_and_shape(value_info:onnx.ValueInfoProto) -> tuple[str, tuple[int,.
   name = value_info.name
   return name, shape
 
-def get_metadata_value_by_name(model:onnx.ModelProto, name:str) -> str | None:
+def get_metadata_value_by_name(model:onnx.ModelProto, name:str) -> str:
   for prop in model.metadata_props:
     if prop.key == name:
       return prop.value
-  return None
+  return ''
 
 if __name__ == "__main__":
   model_path = pathlib.Path(sys.argv[1])
