@@ -10,16 +10,17 @@ def get_name_and_shape(value_info:onnx.ValueInfoProto) -> tuple[str, tuple[int,.
   name = value_info.name
   return name, shape
 
-def get_metadata_value_by_name(model:onnx.ModelProto, name:str) -> str:
+def get_metadata_value_by_name(model:onnx.ModelProto, name:str) -> str | None:
   for prop in model.metadata_props:
     if prop.key == name:
       return prop.value
-  return ''
+  return None
 
 if __name__ == "__main__":
   model_path = pathlib.Path(sys.argv[1])
   model = onnx.load(str(model_path))
   output_slices = get_metadata_value_by_name(model, 'output_slices')
+  assert output_slices is not None, 'output_slices not found in metadata'
 
   metadata = {
     'policy_model': get_metadata_value_by_name(model, 'policy_model'),
