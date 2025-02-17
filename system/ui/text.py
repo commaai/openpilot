@@ -42,10 +42,10 @@ def main():
   textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2 - BUTTON_SIZE.y - SPACING)
   wrapped_lines = wrap_text(text_content, FONT_SIZE, textarea_rect.width - 20)
   content_rect = rl.Rectangle(0, 0, textarea_rect.width - 20, len(wrapped_lines) * LINE_HEIGHT)
-  scroll_panel = GuiScrollPanel(textarea_rect, content_rect, show_vertical_scroll_bar=True)
+  scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)
 
   for _ in gui_app.render():
-    scroll = scroll_panel.handle_scroll()
+    scroll = scroll_panel.handle_scroll(textarea_rect, content_rect)
 
     rl.begin_scissor_mode(int(textarea_rect.x), int(textarea_rect.y), int(textarea_rect.width), int(textarea_rect.height))
     for i, line in enumerate(wrapped_lines):
