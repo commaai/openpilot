@@ -6,7 +6,7 @@ import threading
 from enum import IntEnum
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label
 
 NVME = "/dev/nvme0n1"
@@ -73,7 +73,8 @@ class Reset:
           return False
 
       if self.reset_state != ResetState.FAILED:
-        if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height), "Confirm", rl.Color(70, 91, 234, 255)):
+        if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height),
+                       "Confirm", button_style=ButtonStyle.PRIMARY):
           self.confirm()
 
     return True
