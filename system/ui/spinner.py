@@ -10,7 +10,7 @@ from openpilot.system.ui.lib.application import gui_app
 # Constants
 PROGRESS_BAR_WIDTH = 1000
 PROGRESS_BAR_HEIGHT = 20
-ROTATION_RATE = 12.0
+ROTATION_TIME_SECONDS = 1.0  # Time for one full circle
 MARGIN = 200
 TEXTURE_SIZE = 360
 FONT_SIZE = 80
@@ -41,8 +41,10 @@ def main():
   comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
   for _ in gui_app.render():
-    # Update rotation
-    rotation = (rotation + ROTATION_RATE) % 360.0
+    fps = rl.get_fps()
+    if fps > 0:
+      degrees_per_frame = 360.0 / (ROTATION_TIME_SECONDS * fps)
+      rotation = (rotation + degrees_per_frame) % 360.0
 
     # Draw rotating spinner and static comma logo
     rl.draw_texture_pro(spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
