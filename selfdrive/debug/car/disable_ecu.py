@@ -11,5 +11,5 @@ if __name__ == "__main__":
   time.sleep(1)
 
   # honda bosch radar disable
-  disabled = disable_ecu(*can_callbacks, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03', timeout=0.5, debug=False)
+  disabled = disable_ecu(*can_callbacks, bus=1, addr=0x18DAB0F1, com_cont_req=b'\x28\x83\x03', timeout=0.5)
   print(f"disabled: {disabled}")

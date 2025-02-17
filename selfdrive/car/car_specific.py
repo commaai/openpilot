@@ -45,9 +45,6 @@ class CarSpecificEvents:
     if self.CP.brand in ('body', 'mock'):
       events = Events()
 
-    elif self.CP.brand in ('subaru', 'mazda'):
-      events = self.create_common_events(CS, CS_prev)
-
     elif self.CP.brand == 'ford':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.manumatic])
 
@@ -102,13 +99,9 @@ class CarSpecificEvents:
             events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'gm':
-      # The ECM allows enabling on falling edge of set, but only rising edge of resume
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport, GearShifter.low,
                                                                    GearShifter.eco, GearShifter.manumatic],
-                                         pcm_enable=self.CP.pcmCruise, enable_buttons=(ButtonType.decelCruise,))
-      if not self.CP.pcmCruise:
-        if any(b.type == ButtonType.accelCruise and b.pressed for b in CS.buttonEvents):
-          events.add(EventName.buttonEnable)
+                                         pcm_enable=self.CP.pcmCruise)
 
       # Enabling at a standstill with brake is allowed
       # TODO: verify 17 Volt can enable for the first time at a stop and allow for all GMs
@@ -122,8 +115,7 @@ class CarSpecificEvents:
 
     elif self.CP.brand == 'volkswagen':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
-                                         pcm_enable=self.CP.pcmCruise,
-                                         enable_buttons=(ButtonType.setCruise, ButtonType.resumeCruise))
+                                         pcm_enable=self.CP.pcmCruise)
 
       # Low speed steer alert hysteresis logic
       if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.vEgo < (self.CP.minSteerSpeed + 1.):
@@ -160,12 +152,12 @@ class CarSpecificEvents:
         events.add(EventName.belowSteerSpeed)
 
     else:
-      raise ValueError(f"Unsupported car: {self.CP.brand}")
+      events = self.create_common_events(CS, CS_prev)
 
     return events
 
   def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
-                           allow_enable=True, allow_button_cancel=True, enable_buttons=(ButtonType.accelCruise, ButtonType.decelCruise)):
+                           allow_enable=True, allow_button_cancel=True):
     events = Events()
 
     if CS.doorOpen:
@@ -209,12 +201,11 @@ class CarSpecificEvents:
       events.add(EventName.invalidLkasSetting)
     if CS.lowSpeedAlert:
       events.add(EventName.belowSteerSpeed)
+    if CS.buttonEnable:
+      events.add(EventName.buttonEnable)
 
-    # Handle button presses
+    # Handle cancel button presses
     for b in CS.buttonEvents:
-      # Enable OP long on falling edge of enable buttons (defaults to accelCruise and decelCruise, overridable per-port)
-      if not self.CP.pcmCruise and (b.type in enable_buttons and not b.pressed):
-        events.add(EventName.buttonEnable)
       # Disable on rising and falling edge of cancel for both stock and OP long
       # TODO: only check the cancel button with openpilot longitudinal on all brands to match panda safety
       if b.type == ButtonType.cancel and (allow_button_cancel or not self.CP.pcmCruise):

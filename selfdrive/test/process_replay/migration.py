@@ -6,15 +6,15 @@ import traceback
 
 from cereal import messaging, car, log
 from opendbc.car.fingerprints import MIGRATION
-from opendbc.car.toyota.values import EPS_SCALE
-from opendbc.car.ford.values import CAR as FORD, FordFlags
+from opendbc.car.toyota.values import EPS_SCALE, ToyotaSafetyFlags
+from opendbc.car.ford.values import CAR as FORD, FordFlags, FordSafetyFlags
+from opendbc.car.hyundai.values import HyundaiSafetyFlags
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.controls.lib.longitudinal_planner import get_accel_from_plan
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.logreader import LogIterable
-from panda import Panda
 
 MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
@@ -269,19 +269,19 @@ def migrate_carOutput(msgs):
 def migrate_pandaStates(msgs):
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
-    "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | Panda.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | Panda.FLAG_TOYOTA_ALT_BRAKE,
-    "KIA_EV6": Panda.FLAG_HYUNDAI_EV_GAS | Panda.FLAG_HYUNDAI_CANFD_HDA2,
+    "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | ToyotaSafetyFlags.FLAG_TOYOTA_STOCK_LONGITUDINAL,
+    "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | ToyotaSafetyFlags.FLAG_TOYOTA_ALT_BRAKE,
+    "KIA_EV6": HyundaiSafetyFlags.FLAG_HYUNDAI_EV_GAS | HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_HDA2,
   }
   # TODO: get new Ford route
-  safety_param_migration |= {car: Panda.FLAG_FORD_LONG_CONTROL for car in (set(FORD) - FORD.with_flags(FordFlags.CANFD))}
+  safety_param_migration |= {car: FordSafetyFlags.FLAG_FORD_LONG_CONTROL for car in (set(FORD) - FORD.with_flags(FordFlags.CANFD))}
 
   # Migrate safety param base on carParams
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)
   assert CP is not None, "carParams message not found"
   fingerprint = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
   if fingerprint in safety_param_migration:
-    safety_param = safety_param_migration[fingerprint]
+    safety_param = safety_param_migration[fingerprint].value
   elif len(CP.safetyConfigs):
     safety_param = CP.safetyConfigs[0].safetyParam
     if CP.safetyConfigs[0].safetyParamDEPRECATED != 0:

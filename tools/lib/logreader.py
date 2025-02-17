@@ -38,6 +38,14 @@ def save_log(dest, log_msgs, compress=True):
   with open(dest, "wb") as f:
     f.write(dat)
 
+def decompress_stream(data: bytes):
+  dctx = zstd.ZstdDecompressor()
+  decompressed_data = b""
+
+  with dctx.stream_reader(data) as reader:
+    decompressed_data = reader.read()
+
+  return decompressed_data
 
 class _LogFileReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
@@ -58,7 +66,7 @@ class _LogFileReader:
       dat = bz2.decompress(dat)
     elif ext == ".zst" or dat.startswith(b'\x28\xB5\x2F\xFD'):
       # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
-      dat = zstd.decompress(dat)
+      dat = decompress_stream(dat)
 
     ents = capnp_log.Event.read_multiple_bytes(dat)
 

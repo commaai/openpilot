@@ -142,7 +142,7 @@ class TestLoggerd:
     Params().put("RecordFront", "1")
 
     d = DEVICE_CAMERAS[("tici", "ar0231")]
-    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
+    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048*2346, 2048, 2048*1216), "roadCameraState"),
                (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048*2346, 2048, 2048*1216), "driverCameraState"),
                (VisionStreamType.VISION_STREAM_WIDE_ROAD, (d.ecam.width, d.ecam.height, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
@@ -229,7 +229,7 @@ class TestLoggerd:
                random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
     sent_msgs = self._publish_random_messages(services)
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
+    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.zst")
     lr = list(LogReader(qlog_path))
 
     # check initData and sentinel
@@ -255,7 +255,7 @@ class TestLoggerd:
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
     sent_msgs = self._publish_random_messages(services)
 
-    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
+    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.zst")))
 
     # check initData and sentinel
     self._check_init_data(lr)

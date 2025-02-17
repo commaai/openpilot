@@ -12,6 +12,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.params import Params
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
@@ -78,20 +79,20 @@ class LocationEstimator:
     # sensor time and log time should be close
     sensor_time_invalid = abs(sensor_time - t) > MAX_SENSOR_TIME_DIFF
     if sensor_time_invalid:
-      print("Sensor reading ignored, sensor timestamp more than 100ms off from log time")
+      cloudlog.warning("Sensor reading ignored, sensor timestamp more than 100ms off from log time")
     return not sensor_time_invalid
 
   def _validate_timestamp(self, t: float):
     kf_t = self.kf.t
     invalid = not np.isnan(kf_t) and (kf_t - t) > MAX_FILTER_REWIND_TIME
     if invalid:
-      print("Observation timestamp is older than the max rewind threshold of the filter")
+      cloudlog.warning("Observation timestamp is older than the max rewind threshold of the filter")
     return not invalid
 
   def _finite_check(self, t: float, new_x: np.ndarray, new_P: np.ndarray):
     all_finite = np.isfinite(new_x).all() and np.isfinite(new_P).all()
     if not all_finite:
-      print("Non-finite values detected, kalman reset")
+      cloudlog.error("Non-finite values detected, kalman reset")
       self.reset(t)
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
@@ -308,13 +309,12 @@ def main():
             continue
 
           if res == HandleLogResult.TIMING_INVALID:
-            print(f"Observation {which} ignored due to failed timing check")
+            cloudlog.warning(f"Observation {which} ignored due to failed timing check")
             observation_input_invalid[which] += 1
-            print(observation_input_invalid[which])
           elif res == HandleLogResult.INPUT_INVALID:
-            print(f"Observation {which} ignored due to failed sanity check")
+            cloudlog.warning(f"Observation {which} ignored due to failed sanity check")
             observation_input_invalid[which] += 1
-          else:
+          elif res == HandleLogResult.SUCCESS:
             observation_input_invalid[which] *= input_invalid_decay[which]
     else:
       filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
