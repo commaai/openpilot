@@ -10,7 +10,7 @@ def get_name_and_shape(value_info:onnx.ValueInfoProto) -> tuple[str, tuple[int,.
   name = value_info.name
   return name, shape
 
-def get_metadata_value_by_name(model, name):
+def get_metadata_value_by_name(model:onnx.ModelProto, name:str) -> str | None:
   for prop in model.metadata_props:
     if prop.key == name:
       return prop.value
