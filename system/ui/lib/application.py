@@ -1,14 +1,21 @@
 import atexit
 import os
+import time
 import pyray as rl
 from enum import IntEnum
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.swaglog import cloudlog
 
-DEFAULT_TEXT_SIZE = 60
 DEFAULT_FPS = 60
-FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
+FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
+FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
+FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
 DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
+STRICT_MODE = os.getenv("STRICT_MODE") == '1'
+
+DEFAULT_TEXT_SIZE = 60
+FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
 
 class FontWeight(IntEnum):
@@ -18,7 +25,7 @@ class FontWeight(IntEnum):
   EXTRA_LIGHT = 3
   MEDIUM = 4
   NORMAL = 5
-  SEMI_BOLD= 6
+  SEMI_BOLD = 6
   THIN = 7
 
 
@@ -28,6 +35,8 @@ class GuiApplication:
     self._width = width
     self._height = height
     self._textures: list[rl.Texture] = []
+    self._target_fps: int = DEFAULT_FPS
+    self._last_fps_log_time: float = time.monotonic()
 
   def init_window(self, title: str, fps: int=DEFAULT_FPS):
     atexit.register(self.close)  # Automatically call close() on exit
@@ -36,6 +45,7 @@ class GuiApplication:
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
 
+    self._target_fps = fps
     self._set_styles()
     self._load_fonts()
 
@@ -72,6 +82,7 @@ class GuiApplication:
         rl.draw_fps(10, 10)
 
       rl.end_drawing()
+      self._monitor_fps()
 
   def font(self, font_wight: FontWeight=FontWeight.NORMAL):
     return self._fonts[font_wight]
@@ -110,6 +121,21 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(rl.Color(200, 200, 200, 255)))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.Color(30, 30, 30, 255)))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+
+  def _monitor_fps(self):
+    fps = rl.get_fps()
+
+    # Log FPS drop below threshold at regular intervals
+    if fps < self._target_fps * FPS_DROP_THRESHOLD:
+      current_time = time.monotonic()
+      if current_time - self._last_fps_log_time >= FPS_LOG_INTERVAL:
+        cloudlog.warning(f"FPS dropped below {self._target_fps}: {fps}")
+        self._last_fps_log_time = current_time
+
+    # Strict mode: terminate UI if FPS drops too much
+    if STRICT_MODE and fps < self._target_fps * FPS_CRITICAL_THRESHOLD:
+      cloudlog.error(f"FPS dropped critically below {fps}. Shutting down UI.")
+      os._exit(1)
 
 
 gui_app = GuiApplication(2160, 1080)
