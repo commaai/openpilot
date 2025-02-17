@@ -24,7 +24,7 @@ if __name__ == "__main__":
   metadata = {
     'policy_model': get_metadata_value_by_name(model, 'policy_model'),
     'vision_model':  get_metadata_value_by_name(model, 'vision_model'),
-    'output_slices': pickle.loads(codecs.decode(output_slices.encode(), "base64")), 
+    'output_slices': pickle.loads(codecs.decode(output_slices.encode(), "base64")),
     'input_shapes': dict([get_name_and_shape(x) for x in model.graph.input]),
     'output_shapes': dict([get_name_and_shape(x) for x in model.graph.output])
   }
