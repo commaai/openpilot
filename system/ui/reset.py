@@ -7,7 +7,7 @@ from enum import IntEnum
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
-from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.label import gui_label, gui_text_box
 
 NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"
@@ -51,13 +51,11 @@ class Reset:
     threading.Timer(0.1, self.do_reset).start()
 
   def render(self, rect: rl.Rectangle):
-    rl.gui_set_font(gui_app.font(FontWeight.BOLD))
-    label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, rect.height)
-    gui_label(label_rect, "System Reset", 90)
-    rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
+    label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
+    gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
 
-    label_rect.y += 150
-    gui_label(label_rect, self.get_body_text(), 80)
+    text_rect = rl.Rectangle(rect.x + 140, rect.y + 140, rect.width - 280, rect.height - 90 - 100)
+    gui_text_box(text_rect, self.get_body_text(), 90)
 
     button_height = 160
     button_spacing = 50
