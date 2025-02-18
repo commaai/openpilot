@@ -19,7 +19,7 @@ def flatten_type_dict(d, sep="/", prefix=None):
 def get_message_dict(message, typ):
   valid = message.valid
   message = message._get(typ)
-  if not hasattr(message, 'to_dict'):
+  if not hasattr(message, 'to_dict') or typ in ('qcomGnss', 'ubloxGnss'):
     # TODO: support these
     #print("skipping", typ)
     return
@@ -30,7 +30,7 @@ def get_message_dict(message, typ):
   return msg_dict
 
 
-def append_dict(path, t, d, values, arrays=False):
+def append_dict(path, t, d, values):
   if path not in values:
     group = {}
     group["t"] = []
@@ -40,14 +40,9 @@ def append_dict(path, t, d, values, arrays=False):
   else:
     group = values[path]
 
-  if arrays:
-    group["t"] += t.tolist()
-    for k, v in d.items():
-      group[k] += v.tolist()
-  else:
-    group["t"].append(t)
-    for k, v in d.items():
-      group[k].append(v)
+  group["t"].append(t)
+  for k, v in d.items():
+    group[k].append(v)
 
 
 def potentially_ragged_array(arr, dtype=None, **kwargs):

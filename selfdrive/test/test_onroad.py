@@ -23,6 +23,7 @@ from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 """
 CPU usage budget
@@ -119,8 +120,8 @@ class TestOnroad:
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      print(segs[-3])
-      cls.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.zst")))
+      cls.ts = msgs_to_time_series(cls.lr)
       return
 
     # setup env
@@ -174,7 +175,8 @@ class TestOnroad:
 
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
 
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog.zst")))
+    cls.lr = cls.lrs[0]
+    cls.ts = msgs_to_time_series(cls.lr)
     cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
@@ -185,7 +187,6 @@ class TestOnroad:
     cls.msgs = defaultdict(list)
     for m in cls.lr:
       cls.msgs[m.which()].append(m)
-
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():
@@ -200,7 +201,7 @@ class TestOnroad:
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
 
   def test_manager_starting_time(self):
-    st = self.msgs['managerState'][0].logMonoTime / 1e9
+    st = self.ts['managerState']['t'][0]
     assert (st - self.manager_st) < 10, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
@@ -228,7 +229,7 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    ts = [m.uiDebug.drawTimeMillis for m in self.msgs['uiDebug']]
+    ts = self.ts['uiDebug']['drawTimeMillis']
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
@@ -315,12 +316,13 @@ class TestOnroad:
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
   def test_camera_frame_timings(self, subtests):
+    # test timing within a single camera
     result = "\n"
     result += "------------------------------------------------\n"
     result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
     for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
-      ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
+      ts = self.ts[name]['timestampSof']
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
       result += f"{name} sof delta vs 50ms: min  {min(d50):.2f}ms\n"
@@ -402,12 +404,7 @@ class TestOnroad:
 
   @release_only
   def test_startup(self):
-    startup_alert = None
-    for msg in self.lrs[0]:
-      # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
-      if msg.which() == "selfdriveState":
-        startup_alert = msg.selfdriveState.alertText1
-        break
+    startup_alert = self.ts['selfdriveState']['alertText1'][0]
     expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"
 
