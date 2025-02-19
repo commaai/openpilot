@@ -1390,8 +1390,6 @@ void SpectraCamera::camera_close() {
 void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   if (!enabled) return;
 
-  uint64_t timestamp = event_data->u.frame_msg.timestamp;
-
   // ID from the qcom camera request manager
   uint64_t request_id = event_data->u.frame_msg.request_id;
 
@@ -1404,14 +1402,14 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     }
     int buf_idx = (request_id - 1) % ife_buf_depth;
 
-    // check for skipped frames
-    if (frame_id_raw > frame_id_raw_last + 1 && !skipped) {
+    // check for skipped_last frames
+    if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
       LOGE("camera %d realign", cc.camera_num);
       clear_req_queue();
       enqueue_req_multi(request_id + 1, ife_buf_depth - 1, 0);
-      skipped = true;
+      skipped_last = true;
     } else if (frame_id_raw == frame_id_raw_last + 1) {
-      skipped = false;
+      skipped_last = false;
     }
 
     // check for dropped requests
@@ -1427,7 +1425,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     auto &meta_data = buf.frame_metadata[buf_idx];
     meta_data.frame_id = frame_id_raw - frame_id_offset;
     meta_data.request_id = request_id;
-    meta_data.timestamp_sof = timestamp; // this is timestamped in the kernel's SOF IRQ callback
+    meta_data.timestamp_sof = event_data->u.frame_msg.timestamp; // this is timestamped in the kernel's SOF IRQ callback
 
     // wait for this frame's EOF, then queue up the next one
     enqueue_req_multi(request_id + ife_buf_depth, 1, 1);
@@ -1437,7 +1435,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
       clear_req_queue();
       enqueue_req_multi(request_id_last + 1, ife_buf_depth, 0);
       frame_id_raw_last = frame_id_raw;
-      skipped = true;
+      skipped_last = true;
     }
   }
 }

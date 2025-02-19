@@ -184,7 +184,7 @@ public:
   uint64_t request_id_last = 0;
   uint64_t frame_id_raw_last = 0;
   uint64_t frame_id_offset = 0;
-  bool skipped = true;
+  bool skipped_last = true;
 
   SpectraOutputType output_type;
 
