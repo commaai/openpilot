@@ -60,6 +60,8 @@ class ModelState:
     self.frames = {'input_imgs': DrivingModelFrame(context), 'big_input_imgs': DrivingModelFrame(context)}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
+    self.last_feat_age = 0
+
     # img buffers are managed in openCL transform code
     self.numpy_inputs = {
       'desire': np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float32),
@@ -125,8 +127,12 @@ class ModelState:
 
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
-    self.numpy_inputs['features_buffer'][0,:-1] = self.numpy_inputs['features_buffer'][0,1:]
-    self.numpy_inputs['features_buffer'][0,-1] = outputs['hidden_state'][0, :]
+    if self.last_feat_age == 4:
+      print("rotating features")
+      self.numpy_inputs['features_buffer'][0,:-1] = self.numpy_inputs['features_buffer'][0,1:]
+      self.numpy_inputs['features_buffer'][0,-1] = outputs['hidden_state'][0, :]
+      self.last_feat_age = 0
+    self.last_feat_age += 1
 
 
     # TODO model only uses last value now
@@ -277,6 +283,7 @@ def main(demo=False):
       }
 
     mt1 = time.perf_counter()
+    print("running main at", meta_main.frame_id)
     model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
     mt2 = time.perf_counter()
     model_execution_time = mt2 - mt1
