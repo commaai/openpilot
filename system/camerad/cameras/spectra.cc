@@ -1430,7 +1430,7 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t time
   if (first_frame_synced) return true;
 
   // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{raw_id, timestamp, (int64_t)raw_id + 1};
+  camera_sync_data[camera_id] = SyncData{raw_id, timestamp, raw_id + 1};
 
   // Ensure all cameras are up
   bool all_cams_up = true;
