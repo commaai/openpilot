@@ -318,8 +318,6 @@ function op_sim() {
 }
 
 function op_switch() {
-  op_before_cmd
-
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
     REMOTE="$1"
