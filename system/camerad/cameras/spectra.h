@@ -182,8 +182,8 @@ public:
   int sync_objs_bps[MAX_IFE_BUFS] = {};
   uint64_t request_ids[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
-  uint64_t frame_id_last = 0;
-  uint64_t idx_offset = 0;
+  uint64_t frame_id_raw_last = 0;
+  uint64_t frame_id_offset = 0;
   bool skipped = true;
 
   SpectraOutputType output_type;
