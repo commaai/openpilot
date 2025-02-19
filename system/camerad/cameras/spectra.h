@@ -88,11 +88,17 @@ public:
     }
   }
 
-  void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0, int count=1) {
+  void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = 0, int mmu_hdl2 = 0, int count = 1) {
     video_fd = m->video0_fd;
     size = s;
     alignment = a;
     mmap_size = aligned_size() * count;
+
+    uint32_t flags = CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE;
+    if (shared_access) {
+      flags |= CAM_MEM_FLAG_HW_SHARED_ACCESS;
+    }
+
     void *p = alloc_w_mmu_hdl(video_fd, mmap_size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
     ptr = (unsigned char*)p;
     assert(ptr != NULL);
