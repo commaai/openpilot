@@ -13,11 +13,11 @@ from parameterized import parameterized_class
 from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
-from opendbc.car.fingerprints import all_known_cars, MIGRATION
+from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
-from opendbc.car.values import Platform
+from opendbc.car.values import Platform, PLATFORMS
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
@@ -44,9 +44,9 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   if not len(INTERNAL_SEG_LIST):
     routes_by_car = defaultdict(set)
     for r in routes:
-      routes_by_car[r.car_model].add(r)
+      routes_by_car[str(r.car_model)].add(r)
 
-    for i, c in enumerate(sorted(all_known_cars())):
+    for i, c in enumerate(sorted(PLATFORMS)):
       if i % NUM_JOBS == JOB_ID:
         test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
 
