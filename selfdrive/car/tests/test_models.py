@@ -44,7 +44,7 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
   if not len(INTERNAL_SEG_LIST):
     routes_by_car = defaultdict(set)
     for r in routes:
-      routes_by_car[r.car_model].add(r)
+      routes_by_car[str(r.car_model)].add(r)
 
     for i, c in enumerate(sorted(PLATFORMS)):
       if i % NUM_JOBS == JOB_ID:
