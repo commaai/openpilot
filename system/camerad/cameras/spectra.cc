@@ -1431,8 +1431,14 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t main_id, uint64_t tim
   // Store the frame data for this camera
   camera_sync_data[camera_id] = SyncData{main_id, timestamp, offset};
 
-  // Check if we have data from all three cameras
-  if (camera_sync_data.size() == 3) {
+  // Count enabled cameras
+  int enabled_camera_count = 0;
+  for (const auto& config : ALL_CAMERA_CONFIGS) {
+    if (config.enabled) enabled_camera_count++;
+  }
+
+  // Check if we have data from all enabled cameras
+  if (camera_sync_data.size() == enabled_camera_count) {
     const int64_t threshold = 2 * 1e6;  // 2 milliseconds
     uint64_t reference_timestamp = camera_sync_data.begin()->second.timestamp;
 
