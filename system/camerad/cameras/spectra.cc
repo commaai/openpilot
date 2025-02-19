@@ -1,5 +1,6 @@
 #include "cdm.h"
 
+#include <algorithm>
 #include <stdint.h>
 #include <cassert>
 #include <sys/ioctl.h>
@@ -1439,12 +1440,14 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t main_id, uint64_t tim
 
   // Check if we have data from all enabled cameras
   if (camera_sync_data.size() == enabled_camera_count) {
-    const int64_t threshold = 2 * 1e6;  // 2 milliseconds
+    const uint64_t threshold = 2 * 1e6;  // 2 milliseconds
     uint64_t reference_timestamp = camera_sync_data.begin()->second.timestamp;
 
     // Compare sof timestamps
     for (const auto &[_, sync_data] : camera_sync_data) {
-      if (std::abs((int64_t)reference_timestamp - (int64_t)sync_data.timestamp) > threshold) {
+      uint64_t diff = std::max(reference_timestamp, sync_data.timestamp) -
+                      std::min(reference_timestamp, sync_data.timestamp);
+      if (diff > threshold) {
         return false;
       }
     }
