@@ -25,12 +25,14 @@ function loop() {
     # Try to find previous builds
     ALL_BUILDS=( $(curl -s $API_ROUTE/api/json | jq .builds.[].number 2> /dev/null || :) )
 
-    # No builds. Create branch
-    if [[ ${#ALL_BUILDS[@]} -eq 0 ]]; then
+    # Jenkins branches get deactivated after some time
+    BUILDABLE=$(curl -s $API_ROUTE/api/json | jq '.buildable')
+
+    if [[ ${#ALL_BUILDS[@]} -eq 0 || $BUILDABLE != "true" ]]; then
       TEMP_DIR=$(mktemp -d)
       GIT_LFS_SKIP_SMUDGE=1 git clone --quiet -b $BRANCH --depth=1 --no-tags git@github.com:commaai/openpilot $TEMP_DIR
       git -C $TEMP_DIR checkout --quiet -b $JENKINS_BRANCH
-      echo "TESTING" >> $TEMP_DIR/testing_jenkins
+      echo "TESTING: $(date)" >> $TEMP_DIR/testing_jenkins
       git -C $TEMP_DIR add testing_jenkins
       git -C $TEMP_DIR commit --quiet -m "testing"
       git -C $TEMP_DIR push --quiet -f origin $JENKINS_BRANCH

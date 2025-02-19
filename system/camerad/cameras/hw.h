@@ -53,3 +53,5 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
 };
+
+const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};

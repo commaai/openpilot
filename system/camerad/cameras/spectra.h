@@ -3,6 +3,7 @@
 #include <sys/mman.h>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <utility>
 
@@ -189,7 +190,7 @@ public:
   uint64_t request_ids[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_raw_last = 0;
-  uint64_t frame_id_offset = 0;
+  int64_t frame_id_offset = 0;
   bool skipped_last = true;
 
   SpectraOutputType output_type;
@@ -197,4 +198,15 @@ public:
   CameraBuf buf;
   MemoryManager mm;
   SpectraMaster *m;
+
+private:
+  static bool syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp);
+  struct SyncData {
+    uint64_t raw_id;
+    uint64_t timestamp;
+    uint64_t frame_id_offset = 0;
+  };
+  inline static std::map<int, SyncData> camera_sync_data;
+  inline static bool first_frame_synced = false;
+  inline static std::mutex frame_sync_mutex;
 };

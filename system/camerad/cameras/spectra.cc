@@ -1,5 +1,6 @@
 #include "cdm.h"
 
+#include <algorithm>
 #include <stdint.h>
 #include <cassert>
 #include <sys/ioctl.h>
@@ -1377,9 +1378,6 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;
 
   if (request_id != 0) { // next ready
-    if (request_id == 1) {
-      frame_id_offset = frame_id_raw;
-    }
     int buf_idx = (request_id - 1) % ife_buf_depth;
 
     // check for skipped_last frames
@@ -1402,13 +1400,19 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     frame_id_raw_last = frame_id_raw;
     request_id_last = request_id;
 
-    auto &meta_data = buf.frame_metadata[buf_idx];
-    meta_data.frame_id = frame_id_raw - frame_id_offset;
-    meta_data.request_id = request_id;
-    meta_data.timestamp_sof = event_data->u.frame_msg.timestamp; // this is timestamped in the kernel's SOF IRQ callback
+    uint64_t timestamp = event_data->u.frame_msg.timestamp;  // this is timestamped in the kernel's SOF IRQ callback
+    if (syncFirstFrame(cc.camera_num, frame_id_raw, timestamp)) {
+      auto &meta_data = buf.frame_metadata[buf_idx];
+      meta_data.frame_id = frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset;
+      meta_data.request_id = request_id;
+      meta_data.timestamp_sof = timestamp;
 
-    // wait for this frame's EOF, then queue up the next one
-    enqueue_req_multi(request_id + ife_buf_depth, 1, 1);
+      // wait for this frame's EOF, then queue up the next one
+      enqueue_req_multi(request_id + ife_buf_depth, 1, true);
+    } else {
+      // Frames not yet synced
+      enqueue_req_multi(request_id + ife_buf_depth, 1, false);
+    }
   } else { // not ready
     if (frame_id_raw > frame_id_raw_last + 10) {
       LOGE("camera %d reset after half second of no response", cc.camera_num);
@@ -1418,4 +1422,47 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
       skipped_last = true;
     }
   }
+}
+
+bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp) {
+  std::lock_guard lk(frame_sync_mutex);
+
+  if (first_frame_synced) return true;
+
+  // Store the frame data for this camera
+  camera_sync_data[camera_id] = SyncData{raw_id, timestamp, raw_id + 1};
+
+  // Ensure all cameras are up
+  bool all_cams_up = true;
+  for (const auto& config : ALL_CAMERA_CONFIGS) {
+    if (camera_sync_data.find(config.camera_num) == camera_sync_data.end()) {
+      all_cams_up = false;
+    }
+  }
+
+  // Wait until the timestamps line up
+  bool all_cams_synced = true;
+  uint64_t reference_timestamp = camera_sync_data.begin()->second.timestamp;
+  for (const auto &[_, sync_data] : camera_sync_data) {
+    uint64_t diff = std::max(reference_timestamp, sync_data.timestamp) -
+                    std::min(reference_timestamp, sync_data.timestamp);
+    if (diff > 2*1e6) {  // within 2ms
+      all_cams_synced = false;
+    }
+  }
+
+  if (all_cams_up && all_cams_synced) {
+    first_frame_synced = true;
+    for (auto &[cam, sync_data] : camera_sync_data) {
+      LOGW("camera %d synced on frame_id_offset %ld timestamp %lu", cam, camera_sync_data[cam].frame_id_offset, camera_sync_data[cam].timestamp);
+    }
+  }
+
+  // Timeout in case the timestamps never line up
+  if (raw_id > 40) {
+    LOGE("camera first frame sync timed out");
+    first_frame_synced = true;
+  }
+
+  return false;
 }
