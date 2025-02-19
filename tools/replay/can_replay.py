@@ -97,7 +97,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   if args.route_or_segment_name is None:
-    args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/1:3"
+    args.route_or_segment_name = "77611a1fac303767/2020-03-24--09-50-38/2:4"
 
   CAN_MSGS = load_route(args.route_or_segment_name)
 

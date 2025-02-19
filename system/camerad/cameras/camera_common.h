@@ -21,11 +21,9 @@ typedef struct FrameMetadata {
 
 class SpectraCamera;
 class CameraState;
-class ImgProc;
 
 class CameraBuf {
 private:
-  ImgProc *imgproc = nullptr;
   int cur_buf_idx;
   SafeQueue<int> safe_queue;
   int frame_buf_count;
