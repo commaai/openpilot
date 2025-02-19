@@ -189,7 +189,7 @@ public:
   uint64_t request_ids[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_raw_last = 0;
-  uint64_t frame_id_offset = 0;
+  int64_t frame_id_offset = 0;
   bool skipped_last = true;
 
   SpectraOutputType output_type;
@@ -199,11 +199,11 @@ public:
   SpectraMaster *m;
 
 private:
-  static bool syncFirstFrame(int camera_id, uint64_t frame_id, uint64_t timestamp, int64_t *offset);
+  static bool syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp, int64_t *id_offset);
   struct SyncData {
-    uint64_t main_id;
+    uint64_t raw_id;
     uint64_t timestamp;
-    int64_t *idx_offset;
+    int64_t *id_offset;
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;

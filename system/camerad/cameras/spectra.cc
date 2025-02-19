@@ -1403,13 +1403,14 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     frame_id_raw_last = frame_id_raw;
     request_id_last = request_id;
 
+    uint64_t timestamp = event_data->u.frame_msg.timestamp;  // this is timestamped in the kernel's SOF IRQ callback
     if (syncFirstFrame(cc.camera_num, frame_id_raw, timestamp, &frame_id_offset)) {
       auto &meta_data = buf.frame_metadata[buf_idx];
       meta_data.frame_id = frame_id_raw - frame_id_offset;
       meta_data.request_id = request_id;
-      meta_data.timestamp_sof = timestamp; // this is timestamped in the kernel's SOF IRQ callback
+      meta_data.timestamp_sof = timestamp;
 
-      // Dispatch the request
+      // wait for this frame's EOF, then queue up the next one
       enqueue_req_multi(request_id + ife_buf_depth, 1, true);
     } else {
       // Frames not yet synced
@@ -1426,11 +1427,11 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   }
 }
 
-bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t main_id, uint64_t timestamp, int64_t *offset) {
+bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp, int64_t *id_offset) {
   if (first_frame_synced) return true;
 
   // Store the frame data for this camera
-  camera_sync_data[camera_id] = SyncData{main_id, timestamp, offset};
+  camera_sync_data[camera_id] = SyncData{raw_id, timestamp, id_offset};
 
   // Count enabled cameras
   int enabled_camera_count = 0;
@@ -1454,7 +1455,7 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t main_id, uint64_t tim
 
     // Adjust offsets to ensure all cameras start pushing frames from frame_id 0 in the next cycle
     for (auto &[_, sync_data] : camera_sync_data) {
-      *(sync_data.idx_offset) = sync_data.main_id + 1;
+      *(sync_data.id_offset) = sync_data.raw_id + 1;
     }
     first_frame_synced = true;  // Mark as synced
   }
