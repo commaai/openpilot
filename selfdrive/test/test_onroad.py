@@ -337,34 +337,30 @@ class TestOnroad:
     cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
     encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
     for cams in (cam_states, encode_cams):
-      # TODO: driverEncodeIdx has an issue that needs to be fixed
-      if 'driverEncodeIdx' in cams:
-        continue
+      with subtests.test(cams=cams):
+        # sanity checks within a single cam
+        for cam in cams:
+          with subtests.test(test="frame_skips", camera=cam):
+            assert set(np.diff(self.ts[cam]['frameId'])) == {1, }, "Frame ID skips"
 
-      # sanity checks within a single cam
-      for cam in cams:
-        with subtests.test(test="frame_skips", camera=cam):
-          print(self.ts[cam]['frameId'])
-          assert set(np.diff(self.ts[cam]['frameId'])) == {1, }, "Frame ID skips"
+            # EOF > SOF
+            eof_sof_diff = self.ts[cam]['timestampEof'] - self.ts[cam]['timestampSof']
+            assert np.all(eof_sof_diff > 0)
+            assert np.all(eof_sof_diff < 50*1e6)
 
-          # EOF > SOF
-          eof_sof_diff = self.ts[cam]['timestampEof'] - self.ts[cam]['timestampSof']
-          assert np.all(eof_sof_diff > 0)
-          assert np.all(eof_sof_diff < 50*1e6)
+        # camerad guarantees that all cams start on the same frame ID
+        first_fid = {c: min(self.ts[c]['frameId']) for c in cams}
+        assert len(set(first_fid.values())) == 1, "Cameras don't start on same frame ID"
 
-      # camerad guarantees that all cams start on the same frame ID
-      first_fid = {c: min(self.ts[c]['frameId']) for c in cams}
-      assert len(set(first_fid.values())) == 1, "Cameras don't start on same frame ID"
+        # we don't do a full segment rotation, so these might not match exactly
+        last_fid = {c: max(self.ts[c]['frameId']) for c in cams}
+        assert max(last_fid.values()) - min(last_fid.values()) < 10
 
-      # we don't do a full segment rotation, so these might not match exactly
-      last_fid = {c: max(self.ts[c]['frameId']) for c in cams}
-      assert max(last_fid.values()) - min(last_fid.values()) < 10
-
-      start, end = min(first_fid.values()), min(last_fid.values())
-      for i in range(end-start):
-        ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams}
-        diff = (max(ts.values()) - min(ts.values()))
-        assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+        start, end = min(first_fid.values()), min(last_fid.values())
+        for i in range(end-start):
+          ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams}
+          diff = (max(ts.values()) - min(ts.values()))
+          assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
 
   def test_mpc_execution_timings(self):
     result = "\n"
