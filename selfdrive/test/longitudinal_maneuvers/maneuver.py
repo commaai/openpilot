@@ -1,5 +1,6 @@
 import numpy as np
 from openpilot.selfdrive.test.longitudinal_maneuvers.plant import Plant
+from openpilot.selfdrive.modeld.constants import ModelConstants
 
 
 class Maneuver:
@@ -15,6 +16,7 @@ class Maneuver:
     self.prob_throttle_values = kwargs.get("prob_throttle_values", [1.0 for i in range(len(self.breakpoints))])
     self.cruise_values = kwargs.get("cruise_values", [50.0 for i in range(len(self.breakpoints))])
     self.pitch_values = kwargs.get("pitch_values", [0.0 for i in range(len(self.breakpoints))])
+    self.accel_values = kwargs.get("accel_values", [0.0 for i in range(len(self.breakpoints))])
 
     self.only_lead2 = kwargs.get("only_lead2", False)
     self.only_radar = kwargs.get("only_radar", False)
@@ -49,7 +51,8 @@ class Maneuver:
       cruise = np.interp(plant.current_time, self.breakpoints, self.cruise_values)
       pitch = np.interp(plant.current_time, self.breakpoints, self.pitch_values)
       prob_throttle = np.interp(plant.current_time, self.breakpoints, self.prob_throttle_values)
-      log = plant.step(speed_lead, prob_lead, cruise, pitch, prob_throttle)
+      accel_plan = np.interp(plant.current_time + np.array(ModelConstants.T_IDXS), self.breakpoints, np.array(self.accel_values))
+      log = plant.step(speed_lead, prob_lead, cruise, pitch, prob_throttle, accel_plan)
 
       d_rel = log['distance_lead'] - log['distance'] if self.lead_relevancy else 200.
       v_rel = speed_lead - log['speed'] if self.lead_relevancy else 0.
