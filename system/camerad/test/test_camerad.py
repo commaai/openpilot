@@ -11,9 +11,11 @@ from openpilot.system.manager.process_config import managed_processes
 
 TEST_TIMESPAN = 10
 LAG_FRAME_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 0.5,  # ARs use synced pulses for frame starts
-                       log.FrameData.ImageSensor.ox03c10: 1.1} # OXs react to out-of-sync at next frame
+                       log.FrameData.ImageSensor.ox03c10: 1.1, # OXs react to out-of-sync at next frame
+                       log.FrameData.ImageSensor.os04c10: 1.1}
 FRAME_DELTA_TOLERANCE = {log.FrameData.ImageSensor.ar0231: 1.0,
-                       log.FrameData.ImageSensor.ox03c10: 1.0}
+                         log.FrameData.ImageSensor.ox03c10: 1.0,
+                         log.FrameData.ImageSensor.os04c10: 1.0}
 
 CAMERAS = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
 
