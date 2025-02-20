@@ -9,11 +9,11 @@ import os
 import capnp
 import time
 
-from typing import Optional, List, Union, Dict, Deque
-from collections import deque
+from typing import Optional, List, Union, Dict
 
 from cereal import log
 from cereal.services import SERVICE_LIST
+from openpilot.common.util import MovingAverage
 
 NO_TRAVERSAL_LIMIT = 2**64-1
 
@@ -108,10 +108,8 @@ class FrequencyTracker:
 
     self.min_freq = min_freq * 0.8
     self.max_freq = max_freq * 1.2
-    self.recv_dts: Deque[float] = deque(maxlen=int(10 * freq))
-    self.recv_dts_sum = 0.0
-    self.recent_recv_dts: Deque[float] = deque(maxlen=int(freq))
-    self.recent_recv_dts_sum = 0.0
+    self.avg_dt = MovingAverage(int(10 * freq))
+    self.recent_avg_dt = MovingAverage(int(freq))
     self.prev_time = 0.0
 
   def record_recv_time(self, cur_time: float) -> None:
@@ -119,28 +117,21 @@ class FrequencyTracker:
     if self.prev_time > 1e-5:
       dt = cur_time - self.prev_time
 
-      if len(self.recv_dts) == self.recv_dts.maxlen:
-        self.recv_dts_sum -= self.recv_dts[0]
-      self.recv_dts.append(dt)
-      self.recv_dts_sum += dt
-
-      if len(self.recent_recv_dts) == self.recent_recv_dts.maxlen:
-        self.recent_recv_dts_sum -= self.recent_recv_dts[0]
-      self.recent_recv_dts.append(dt)
-      self.recent_recv_dts_sum += dt
+      self.avg_dt.add_value(dt)
+      self.recent_avg_dt.add_value(dt)
 
     self.prev_time = cur_time
 
   @property
   def valid(self) -> bool:
-    if not self.recv_dts:
+    if self.avg_dt.count == 0:
       return False
 
-    avg_freq = len(self.recv_dts) / self.recv_dts_sum
+    avg_freq = 1.0 / self.avg_dt.get_average()
     if self.min_freq <= avg_freq <= self.max_freq:
       return True
 
-    avg_freq_recent = len(self.recent_recv_dts) / self.recent_recv_dts_sum
+    avg_freq_recent = 1.0 / self.recent_avg_dt.get_average()
     return self.min_freq <= avg_freq_recent <= self.max_freq
 
 

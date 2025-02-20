@@ -2,10 +2,10 @@
 import gc
 import os
 import time
-from collections import deque
 
 from setproctitle import getproctitle
 
+from openpilot.common.util import MovingAverage
 from openpilot.system.hardware import PC
 
 
@@ -48,9 +48,11 @@ class Ratekeeper:
     self._frame = 0
     self._remaining = 0.0
     self._process_name = getproctitle()
-    self._dts = deque([self._interval], maxlen=100)
     self._last_monitor_time = -1.
     self._next_frame_time = -1.
+
+    self.avg_dt = MovingAverage(100)
+    self.avg_dt.add_value(self._interval)
 
   @property
   def frame(self) -> int:
@@ -62,9 +64,8 @@ class Ratekeeper:
 
   @property
   def lagging(self) -> bool:
-    avg_dt = sum(self._dts) / len(self._dts)
     expected_dt = self._interval * (1 / 0.9)
-    return avg_dt > expected_dt
+    return self.avg_dt.get_average() > expected_dt
 
   # Maintain loop rate by calling this at the end of each loop
   def keep_time(self) -> bool:
@@ -81,7 +82,7 @@ class Ratekeeper:
 
     prev = self._last_monitor_time
     self._last_monitor_time = time.monotonic()
-    self._dts.append(self._last_monitor_time - prev)
+    self.avg_dt.add_value(self._last_monitor_time - prev)
 
     lagged = False
     remaining = self._next_frame_time - time.monotonic()
