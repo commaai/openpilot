@@ -141,7 +141,7 @@
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation>ADB (Android Debug Bridge) يسمح بالاتصال بجهازك عبر USB أو عبر الشبكة. راجع https://docs.comma.ai/how-to/connect-to-comma لمزيد من المعلومات.</translation>
+        <translation>أداة ADB (Android Debug Bridge) تسمح بالاتصال بجهازك عبر USB أو عبر الشبكة. راجع هذا الرابط: https://docs.comma.ai/how-to/connect-to-comma لمزيد من المعلومات.</translation>
     </message>
 </context>
 <context>
