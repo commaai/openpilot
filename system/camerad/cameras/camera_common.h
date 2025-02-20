@@ -43,7 +43,7 @@ public:
   CameraBuf() = default;
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
-  bool acquire(int expo_time);
+  bool acquire();
   void queue(size_t buf_idx);
 };
 
