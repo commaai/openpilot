@@ -214,12 +214,6 @@ void CameraState::set_camera_exposure(float grey_frac) {
   float gain = analog_gain_frac * get_gain_factor();
   cur_ev[camera.buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
 
-  // Processing a frame takes right about 50ms, so we need to wait a few ms
-  // so we don't send i2c commands around the frame start.
-  int ms = (nanos_since_boot() - camera.buf.cur_frame_data.timestamp_sof) / 1000000;
-  if (ms < 60) {
-    util::sleep_for(60 - ms);
-  }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera.cc.camera_num, 1e-9 * nanos_since_boot(), 1e-9 * camera.buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - camera.buf.cur_frame_data.timestamp_sof));
 
   auto exp_reg_array = sensor->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
