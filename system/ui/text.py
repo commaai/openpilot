@@ -3,7 +3,7 @@ import sys
 import pyray as rl
 
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
 
@@ -56,7 +56,7 @@ def main():
     rl.end_scissor_mode()
 
     button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
-    if gui_button(button_bounds, "Reboot"):
+    if gui_button(button_bounds, "Reboot", button_style=ButtonStyle.TRANSPARENT):
       HARDWARE.reboot()
 
 
