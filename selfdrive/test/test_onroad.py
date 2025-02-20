@@ -32,7 +32,7 @@ CPU usage budget
   should not exceed MAX_TOTAL_CPU
 """
 
-TEST_DURATION = 10
+TEST_DURATION = 25
 LOG_OFFSET = 8
 
 MAX_TOTAL_CPU = 280.  # total for all 8 cores
