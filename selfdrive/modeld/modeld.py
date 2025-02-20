@@ -132,13 +132,13 @@ class ModelState:
 
     self.full_features_buffer[0,:-1] = self.full_features_buffer[0,1:]
     self.full_features_buffer[0,-1] = outputs['hidden_state'][0, :]
-    self.numpy_inputs['features_buffer'][:] = self.full_features_buffer[0, -ModelConstants.TEMPORAL_SKIP+1-(ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT-1)*ModelConstants.TEMPORAL_SKIP-1:-ModelConstants.TEMPORAL_SKIP+1:ModelConstants.TEMPORAL_SKIP]
+    self.numpy_inputs['features_buffer'][:] = self.full_features_buffer[0, -ModelConstants.TEMPORAL_SKIP-(ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT-1)*ModelConstants.TEMPORAL_SKIP-1:-ModelConstants.TEMPORAL_SKIP:ModelConstants.TEMPORAL_SKIP]
 
 
     # TODO model only uses last value now
     self.full_prev_desired_curv[0,:-1] = self.full_prev_desired_curv[0,1:]
     self.full_prev_desired_curv[0,-1,:] = outputs['desired_curvature'][0, :]
-    self.numpy_inputs['prev_desired_curv'][:] = self.full_prev_desired_curv[0, -ModelConstants.TEMPORAL_SKIP+1-ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT*ModelConstants.TEMPORAL_SKIP-1:    -ModelConstants.TEMPORAL_SKIP+1:ModelConstants.TEMPORAL_SKIP]
+    self.numpy_inputs['prev_desired_curv'][:] = self.full_prev_desired_curv[0, -ModelConstants.TEMPORAL_SKIP-ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT*ModelConstants.TEMPORAL_SKIP-1:    -ModelConstants.TEMPORAL_SKIP:ModelConstants.TEMPORAL_SKIP]
     return outputs
 
 
