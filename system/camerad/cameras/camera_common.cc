@@ -76,17 +76,17 @@ kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b) {
   return kj::mv(frame_image);
 }
 
-float calculate_exposure_value(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip) {
-  int lum_med;
+float calculate_exposure_value(const CameraBuf *b, const Rect &ae_xywh, int x_skip, int y_skip) {
   uint32_t lum_binning[256] = {0};
   const uint8_t *pix_ptr = b->cur_yuv_buf->y;
-  const int bottom = ae_xywh.y + ae_xywh.h;
-  const int right = ae_xywh.x + ae_xywh.w;
+  const int stride = b->out_img_width;
+  const int max_y = ae_xywh.y + ae_xywh.h;
+  const int max_x = ae_xywh.x + ae_xywh.w;
   unsigned int lum_total = 0;
 
-  for (int y = ae_xywh.y; y < bottom; y += y_skip) {
-    const uint8_t *row_ptr = &pix_ptr[y * b->out_img_width];
-    for (int x = ae_xywh.x; x < right; x += x_skip) {
+  for (int y = ae_xywh.y; y < max_y; y += y_skip) {
+    const uint8_t *row_ptr = &pix_ptr[y * stride];
+    for (int x = ae_xywh.x; x < max_x; x += x_skip) {
       uint8_t lum = row_ptr[x];
       lum_binning[lum]++;
       lum_total++;
@@ -95,6 +95,7 @@ float calculate_exposure_value(const CameraBuf *b, Rect ae_xywh, int x_skip, int
 
   // Find mean lumimance value
   unsigned int lum_cur = 0;
+  int lum_med;
   for (lum_med = 255; lum_med >= 0; lum_med--) {
     lum_cur += lum_binning[lum_med];
 
