@@ -137,11 +137,11 @@
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>تمكين ADB</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>أداة ADB (Android Debug Bridge) تسمح بالاتصال بجهازك عبر USB أو عبر الشبكة. راجع هذا الرابط: https://docs.comma.ai/how-to/connect-to-comma لمزيد من المعلومات.</translation>
     </message>
 </context>
 <context>
@@ -1095,11 +1095,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>FIREHOSE Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>الوضع FIREHOSE</translation>
     </message>
     <message>
         <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation type="unfinished"></translation>
+        <translation>قم بتمكين &lt;b&gt;وضع FIREHOSE&lt;/b&gt; للحصول على بيانات القيادة الخاصة بك في مجموعة التدريب.&lt;br&gt;&lt;br&gt;اتبع الخطوات التالية لتجهيز جهازك:&lt;br&gt; 1. أحضر جهازك إلى الداخل وقم بتوصيله بمحول USB-C جيد&lt;br&gt; 2. اتصل بشبكة Wi-Fi&lt;br&gt; 3. قم بتمكين هذا التبديل&lt;br&gt; 4. اتركه متصلاً لمدة 30 دقيقة على الأقل&lt;br&gt;&lt;br&gt;يتم إيقاف تشغيل هذا التبديل بمجرد إعادة تشغيل جهازك. كرر ذلك مرة واحدة في الأسبوع لتحقيق أقصى قدر من الفعالية.</translation>
     </message>
 </context>
 <context>
