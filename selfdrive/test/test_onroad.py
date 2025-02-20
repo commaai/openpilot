@@ -337,10 +337,6 @@ class TestOnroad:
     cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
     encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
     for cams in (cam_states, encode_cams):
-      # TODO: driverEncodeIdx has an issue that needs to be fixed
-      if 'driverEncodeIdx' in cams:
-        continue
-
       # sanity checks within a single cam
       for cam in cams:
         with subtests.test(test="frame_skips", camera=cam):
