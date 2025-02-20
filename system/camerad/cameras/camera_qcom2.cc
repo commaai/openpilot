@@ -247,7 +247,7 @@ void CameraState::sendState() {
     framed.setImage(get_raw_frame_image(&camera.buf));
   }
 
-  set_camera_exposure(set_exposure_target(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+  set_camera_exposure(calculate_exposure_value(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
 
   // Send the message
   pm->send(camera.cc.publish_name, msg);
