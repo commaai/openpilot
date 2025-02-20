@@ -1431,7 +1431,9 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t time
   camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1};
 
   // Ensure all cameras are up
-  bool all_cams_up = camera_sync_data.size() == std::size(ALL_CAMERA_CONFIGS);
+  int enabled_camera_count = std::count_if(std::begin(ALL_CAMERA_CONFIGS), std::end(ALL_CAMERA_CONFIGS),
+                                           [](const auto &config) { return config.enabled; });
+  bool all_cams_up = camera_sync_data.size() == enabled_camera_count;
 
   // Wait until the timestamps line up
   bool all_cams_synced = true;
