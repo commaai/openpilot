@@ -259,7 +259,7 @@ int SpectraCamera::clear_req_queue() {
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
   LOGD("flushed all req: %d", ret);
 
-  if (icp_dev_handle) {
+  if (icp_dev_handle > 0) {
     struct cam_flush_dev_cmd cmd = {
       .session_handle = session_handle,
       .dev_handle = icp_dev_handle,
