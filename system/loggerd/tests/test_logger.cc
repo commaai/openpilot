@@ -9,12 +9,13 @@ void verify_segment(const std::string &route_path, int segment, int max_segment,
   SentinelType end_sentinel = segment == max_segment - 1 ? SentinelType::END_OF_ROUTE : SentinelType::END_OF_SEGMENT;
 
   REQUIRE(!util::file_exists(segment_path + "/rlog.lock"));
-  for (const char *fn : {"/rlog", "/qlog"}) {
+  for (const char *fn : {"/rlog.zst", "/qlog.zst"}) {
     const std::string log_file = segment_path + fn;
     std::string log = util::read_file(log_file);
     REQUIRE(!log.empty());
+    std::string decompressed_log = zstd_decompress(log);
     int event_cnt = 0, i = 0;
-    kj::ArrayPtr<const capnp::word> words((capnp::word *)log.data(), log.size() / sizeof(capnp::word));
+    kj::ArrayPtr<const capnp::word> words((capnp::word *)decompressed_log.data(), decompressed_log.size() / sizeof(capnp::word));
     while (words.size() > 0) {
       try {
         capnp::FlatArrayMessageReader reader(words);

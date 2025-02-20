@@ -3,13 +3,14 @@
 #include <sys/mman.h>
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <utility>
 
 #include "media/cam_req_mgr.h"
 
 #include "common/util.h"
-#include "system/camerad/cameras/tici.h"
+#include "system/camerad/cameras/hw.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
 
@@ -28,6 +29,12 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 #define CSLDeviceTypeBPS         (0x10 << 24)
 #define OpcodesIFEInitialConfig  0x0
 #define OpcodesIFEUpdate         0x1
+
+typedef enum {
+  ISP_RAW_OUTPUT,   // raw frame from sensor
+  ISP_IFE_PROCESSED,  // fully processed image through the IFE
+  ISP_BPS_PROCESSED,  // fully processed image through the BPS
+} SpectraOutputType;
 
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
@@ -82,11 +89,17 @@ public:
     }
   }
 
-  void init(SpectraMaster *m, int s, int a, int flags, int mmu_hdl = 0, int mmu_hdl2 = 0, int count=1) {
+  void init(SpectraMaster *m, int s, int a, bool shared_access, int mmu_hdl = 0, int mmu_hdl2 = 0, int count = 1) {
     video_fd = m->video0_fd;
     size = s;
     alignment = a;
     mmap_size = aligned_size() * count;
+
+    uint32_t flags = CAM_MEM_FLAG_HW_READ_WRITE | CAM_MEM_FLAG_KMD_ACCESS | CAM_MEM_FLAG_UMD_ACCESS | CAM_MEM_FLAG_CMD_BUF_TYPE;
+    if (shared_access) {
+      flags |= CAM_MEM_FLAG_HW_SHARED_ACCESS;
+    }
+
     void *p = alloc_w_mmu_hdl(video_fd, mmap_size, (uint32_t*)&handle, alignment, flags, mmu_hdl, mmu_hdl2);
     ptr = (unsigned char*)p;
     assert(ptr != NULL);
@@ -103,7 +116,7 @@ public:
 
 class SpectraCamera {
 public:
-  SpectraCamera(SpectraMaster *master, const CameraConfig &config, bool raw);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out);
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
@@ -166,20 +179,32 @@ public:
   SpectraBuf bps_cdm_striping_bl;
   SpectraBuf bps_iq;
   SpectraBuf bps_striping;
+  SpectraBuf bps_linearization_lut;
+  std::vector<uint32_t> bps_lin_reg;
+  std::vector<uint32_t> bps_ccm_reg;
 
   int buf_handle_yuv[MAX_IFE_BUFS] = {};
   int buf_handle_raw[MAX_IFE_BUFS] = {};
-  int sync_objs[MAX_IFE_BUFS] = {};
-  int sync_objs_bps_out[MAX_IFE_BUFS] = {};
+  int sync_objs_ife[MAX_IFE_BUFS] = {};
+  int sync_objs_bps[MAX_IFE_BUFS] = {};
   uint64_t request_ids[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
-  uint64_t frame_id_last = 0;
-  uint64_t idx_offset = 0;
-  bool skipped = true;
+  uint64_t frame_id_raw_last = 0;
+  int64_t frame_id_offset = 0;
+  bool skipped_last = true;
 
-  bool is_raw;
+  SpectraOutputType output_type;
 
   CameraBuf buf;
   MemoryManager mm;
   SpectraMaster *m;
+
+private:
+  static bool syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp);
+  struct SyncData {
+    uint64_t timestamp;
+    uint64_t frame_id_offset = 0;
+  };
+  inline static std::map<int, SyncData> camera_sync_data;
+  inline static bool first_frame_synced = false;
 };

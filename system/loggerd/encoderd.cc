@@ -1,6 +1,7 @@
 #include <cassert>
 
 #include "system/loggerd/loggerd.h"
+#include "system/loggerd/encoder/jpeg_encoder.h"
 
 #ifdef QCOM2
 #include "system/loggerd/encoder/v4l_encoder.h"
@@ -50,6 +51,8 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
   std::vector<std::unique_ptr<Encoder>> encoders;
   VisionIpcClient vipc_client = VisionIpcClient("camerad", cam_info.stream_type, false);
 
+  std::unique_ptr<JpegEncoder> jpeg_encoder;
+
   int cur_seg = 0;
   while (!do_exit) {
     if (!vipc_client.connect(false)) {
@@ -66,6 +69,11 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       for (const auto &encoder_info : cam_info.encoder_infos) {
         auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
         e->encoder_open(nullptr);
+      }
+
+      // Only one thumbnail can be generated per camera stream
+      if (auto thumbnail_name = cam_info.encoder_infos[0].thumbnail_name) {
+        jpeg_encoder = std::make_unique<JpegEncoder>(thumbnail_name, buf_info.width / 4, buf_info.height / 4);
       }
     }
 
@@ -107,6 +115,10 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
         if (out_id == -1) {
           LOGE("Failed to encode frame. frame_id: %d", extra.frame_id);
         }
+      }
+
+      if (jpeg_encoder && (extra.frame_id % 1200 == 100)) {
+        jpeg_encoder->pushThumbnail(buf, extra);
       }
     }
   }

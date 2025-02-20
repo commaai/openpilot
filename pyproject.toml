@@ -111,6 +111,7 @@ dev = [
   "tabulate",
   "types-requests",
   "types-tabulate",
+  "raylib",
 ]
 
 tools = [

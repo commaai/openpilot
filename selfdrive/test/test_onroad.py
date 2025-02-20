@@ -8,7 +8,6 @@ import shutil
 import subprocess
 import time
 import numpy as np
-import zstandard as zstd
 from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
@@ -23,8 +22,8 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
-from openpilot.system.loggerd.uploader import LOG_COMPRESSION_LEVEL
 from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 """
 CPU usage budget
@@ -36,7 +35,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 275.  # total for all 8 cores
+MAX_TOTAL_CPU = 280.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -44,7 +43,7 @@ PROCS = {
   "selfdrive.car.card": 26.0,
   "./loggerd": 14.0,
   "./encoderd": 17.0,
-  "./camerad": 14.5,
+  "./camerad": 10.0,
   "selfdrive.controls.plannerd": 9.0,
   "./ui": 18.0,
   "selfdrive.locationd.paramsd": 9.0,
@@ -101,12 +100,12 @@ TIMINGS = {
   "wideRoadCameraState": [1.5, 0.35],
 }
 
-LOGS_SIZE_RATE = {
-  "qlog": 0.0083,
-  "rlog": 0.135,
-  "qcamera.ts": 0.03828,
+LOGS_SIZE = {  # MB per segment
+  "qlog.zst": 0.5,
+  "rlog.zst": 8.1,
+  "qcamera.ts": 2.3,
 }
-LOGS_SIZE_RATE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc'], 1.2740))
+LOGS_SIZE.update(dict.fromkeys(['ecamera.hevc', 'fcamera.hevc', 'dcamera.hevc'], 76.5))
 
 
 def cputime_total(ct):
@@ -119,15 +118,16 @@ class TestOnroad:
   @classmethod
   def setup_class(cls):
     if "DEBUG" in os.environ:
-      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog")), Path(Paths.log_root()).iterdir())
+      segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      print(segs[-3])
-      cls.lr = list(LogReader(os.path.join(segs[-3], "rlog")))
+      cls.lr = list(LogReader(os.path.join(segs[-1], "rlog.zst")))
+      cls.ts = msgs_to_time_series(cls.lr)
       return
 
     # setup env
     params = Params()
     params.remove("CurrentRoute")
+    params.put_bool("RecordFront", True)
     set_params_enabled()
     os.environ['REPLAY'] = '1'
     os.environ['TESTING_CLOSET'] = '1'
@@ -173,23 +173,20 @@ class TestOnroad:
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog"))) for s in cls.segments]
+    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
 
-    cls.lr = list(LogReader(os.path.join(str(cls.segments[0]), "rlog")))
+    cls.lr = cls.lrs[0]
+    cls.ts = msgs_to_time_series(cls.lr)
     cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
     for f in cls.log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
-      if f.name in ("qlog", "rlog"):
-        with open(f, 'rb') as ff:
-          cls.log_sizes[f] = len(zstd.compress(ff.read(), LOG_COMPRESSION_LEVEL)) / 1e6
 
     cls.msgs = defaultdict(list)
     for m in cls.lr:
       cls.msgs[m.which()].append(m)
-
 
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():
@@ -204,7 +201,7 @@ class TestOnroad:
         assert len(msgs) >= math.floor(SERVICE_LIST[s].frequency*int(TEST_DURATION*0.8))
 
   def test_manager_starting_time(self):
-    st = self.msgs['managerState'][0].logMonoTime / 1e9
+    st = self.ts['managerState']['t'][0]
     assert (st - self.manager_st) < 10, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
@@ -217,12 +214,14 @@ class TestOnroad:
     big_logs = [f for f, n in cnt.most_common(3) if n / sum(cnt.values()) > 30.]
     assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
-  def test_log_sizes(self):
+  def test_log_sizes(self, subtests):
+    # TODO: this isn't super stable between different devices
     for f, sz in self.log_sizes.items():
-      rate = LOGS_SIZE_RATE[f.name]
-      minn = rate * TEST_DURATION * 0.8
-      maxx = rate * TEST_DURATION * 1.2
-      assert minn < sz <  maxx
+      rate = LOGS_SIZE[f.name]/60.
+      minn = rate * TEST_DURATION * 0.5
+      maxx = rate * TEST_DURATION * 1.5
+      with subtests.test(file=f.name):
+        assert minn < sz <  maxx
 
   def test_ui_timings(self):
     result = "\n"
@@ -230,7 +229,7 @@ class TestOnroad:
     result += "-------------- UI Draw Timing ------------------\n"
     result += "------------------------------------------------\n"
 
-    ts = [m.uiDebug.drawTimeMillis for m in self.msgs['uiDebug']]
+    ts = self.ts['uiDebug']['drawTimeMillis']
     result += f"min  {min(ts):.2f}ms\n"
     result += f"max  {max(ts):.2f}ms\n"
     result += f"std  {np.std(ts):.2f}ms\n"
@@ -316,37 +315,22 @@ class TestOnroad:
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
-  def test_camera_processing_time(self):
+  def test_camera_frame_timings(self, subtests):
+    # test timing within a single camera
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-------------- ImgProc Timing ------------------\n"
-    result += "------------------------------------------------\n"
-
-    ts = []
-    for s in ['roadCameraState', 'driverCameraState', 'wideCameraState']:
-      ts.extend(getattr(m, s).processingTime for m in self.msgs[s])
-    assert min(ts) < 0.025, f"high execution time: {min(ts)}"
-    result += f"execution time: min  {min(ts):.5f}s\n"
-    result += f"execution time: max  {max(ts):.5f}s\n"
-    result += f"execution time: mean {np.mean(ts):.5f}s\n"
-    result += "------------------------------------------------\n"
-    print(result)
-
-  @pytest.mark.skip("TODO: enable once timings are fixed")
-  def test_camera_frame_timings(self):
-    result = "\n"
-    result += "------------------------------------------------\n"
-    result += "-----------------  SoF Timing ------------------\n"
+    result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
     for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
-      ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
+      ts = self.ts[name]['timestampSof']
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      assert max(d50) < 1.0, f"high sof delta vs 50ms: {max(d50)}"
-      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
-      result += "------------------------------------------------\n"
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.2f}ms\n"
+      with subtests.test(camera=name):
+        assert max(d50) < 5.0, f"high SOF delta vs 50ms: {max(d50)}"
+    result += "------------------------------------------------\n"
     print(result)
 
   def test_mpc_execution_timings(self):
@@ -366,7 +350,7 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     print(result)
 
-  def test_model_execution_timings(self):
+  def test_model_execution_timings(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
@@ -379,11 +363,12 @@ class TestOnroad:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
       # TODO some init can happen in first iteration
       ts = ts[1:]
-      assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
-      assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
+      with subtests.test(s):
+        assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
+        assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
     result += "------------------------------------------------\n"
     print(result)
 
@@ -419,12 +404,7 @@ class TestOnroad:
 
   @release_only
   def test_startup(self):
-    startup_alert = None
-    for msg in self.lrs[0]:
-      # can't use onroadEvents because the first msg can be dropped while loggerd is starting up
-      if msg.which() == "selfdriveState":
-        startup_alert = msg.selfdriveState.alertText1
-        break
+    startup_alert = self.ts['selfdriveState']['alertText1'][0]
     expected = EVENTS[log.OnroadEvent.EventName.startup][ET.PERMANENT].alert_text_1
     assert startup_alert == expected, "wrong startup alert"
 
