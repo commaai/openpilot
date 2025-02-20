@@ -200,7 +200,7 @@ public:
   SpectraMaster *m;
 
 private:
-  static bool syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp);
+  static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp);
   struct SyncData {
     uint64_t timestamp;
     uint64_t frame_id_offset = 0;
