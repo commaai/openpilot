@@ -91,10 +91,10 @@ class BaseLagEstimator:
     if with_points:
       liveActuatorDelay.points = [p for p in zip(self.curvature, self.desired_curvature)]
 
-    return steer_actuation_delay, steer_correlation, okay_count, is_estimated
+    return msg
 
 
-class LagEstimator(ParameterEstimator):
+class LagEstimator(BaseLagEstimator):
   def correlation_lags(self, sig_len, dt):
     return np.arange(0, sig_len) * dt
 
