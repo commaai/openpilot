@@ -238,6 +238,11 @@ node {
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
+        deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
+          step("build", "cd system/manager && ./build.py"),
+          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
+          step("test exposure", "pytest system/camerad/test/test_exposure.py"),
+        ])
       },
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
