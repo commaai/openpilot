@@ -418,7 +418,7 @@ class Tici(HardwareBase):
 
     # move these off the default core
     affine_irq(1, "msm_drm")   # display
-    affine_irq(6, "msm_vidc")  # encoders
+    affine_irq(1, "msm_vidc")  # encoders
     affine_irq(1, "i2c_geni")  # sensors
 
     # *** GPU config ***
