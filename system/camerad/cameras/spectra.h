@@ -202,11 +202,9 @@ public:
 private:
   static bool syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp);
   struct SyncData {
-    uint64_t raw_id;
     uint64_t timestamp;
     uint64_t frame_id_offset = 0;
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;
-  inline static std::mutex frame_sync_mutex;
 };
