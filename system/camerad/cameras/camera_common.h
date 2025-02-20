@@ -49,5 +49,5 @@ public:
 
 void camerad_thread();
 kj::Array<uint8_t> get_raw_frame_image(const CameraBuf *b);
-float set_exposure_target(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip);
+float calculate_exposure_value(const CameraBuf *b, Rect ae_xywh, int x_skip, int y_skip);
 int open_v4l_by_name_and_index(const char name[], int index = 0, int flags = O_RDWR | O_NONBLOCK);
