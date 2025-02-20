@@ -32,7 +32,7 @@ CPU usage budget
   should not exceed MAX_TOTAL_CPU
 """
 
-TEST_DURATION = 25
+TEST_DURATION = 10
 LOG_OFFSET = 8
 
 MAX_TOTAL_CPU = 280.  # total for all 8 cores
@@ -334,17 +334,13 @@ class TestOnroad:
     print(result)
 
   def test_camera_sync(self, subtests):
+    self.setup_class()
     cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
     encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
     for cams in (cam_states, encode_cams):
-      # TODO: driverEncodeIdx has an issue that needs to be fixed
-      if 'driverEncodeIdx' in cams:
-        continue
-
       # sanity checks within a single cam
       for cam in cams:
         with subtests.test(test="frame_skips", camera=cam):
-          print(self.ts[cam]['frameId'])
           assert set(np.diff(self.ts[cam]['frameId'])) == {1, }, "Frame ID skips"
 
           # EOF > SOF

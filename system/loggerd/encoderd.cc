@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     int ret;
     ret = util::set_realtime_priority(52);
     assert(ret == 0);
-    ret = util::set_core_affinity({3});
+    ret = util::set_core_affinity({6});
     assert(ret == 0);
   }
   if (argc > 1) {
