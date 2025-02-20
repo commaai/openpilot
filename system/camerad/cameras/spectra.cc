@@ -1401,7 +1401,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     request_id_last = request_id;
 
     uint64_t timestamp = event_data->u.frame_msg.timestamp;  // this is timestamped in the kernel's SOF IRQ callback
-    if (syncFirstFrame(cc.camera_num, frame_id_raw, timestamp)) {
+    if (syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
       auto &meta_data = buf.frame_metadata[buf_idx];
       meta_data.frame_id = frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset;
       meta_data.request_id = request_id;
@@ -1409,9 +1409,11 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
 
       // wait for this frame's EOF, then queue up the next one
       enqueue_req_multi(request_id + ife_buf_depth, 1, true);
+      //LOGW("camerad %d synced req %d fid %d, publishing ts %.2f cereal_frame_id %d", cc.camera_num, (int)request_id, (int)frame_id_raw, (double)(timestamp)*1e-6, meta_data.frame_id);
     } else {
       // Frames not yet synced
       enqueue_req_multi(request_id + ife_buf_depth, 1, false);
+      //LOGW("camerad %d not synced req %d fid %d", cc.camera_num, (int)request_id, (int)frame_id_raw);
     }
   } else { // not ready
     if (frame_id_raw > frame_id_raw_last + 10) {
@@ -1424,8 +1426,13 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   }
 }
 
-bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t timestamp) {
+bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp) {
   if (first_frame_synced) return true;
+
+  // OX and OS cameras require a few frames for the FSIN to sync up
+  if (request_id < 3) {
+    return false;
+  }
 
   // Store the frame data for this camera
   camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1};
@@ -1440,7 +1447,7 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t raw_id, uint64_t time
   for (const auto &[_, sync_data] : camera_sync_data) {
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
-    if (diff > 2*1e6) {  // within 2ms
+    if (diff > 0.5*1e6) {  // within 0.5ms
       all_cams_synced = false;
     }
   }
