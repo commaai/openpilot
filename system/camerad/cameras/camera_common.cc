@@ -98,7 +98,7 @@ float calculate_exposure_value(const CameraBuf *b, Rect ae_xywh, int x_skip, int
   unsigned int lum_total = 0;
   for (int y = ae_xywh.y; y < ae_xywh.y + ae_xywh.h; y += y_skip) {
     for (int x = ae_xywh.x; x < ae_xywh.x + ae_xywh.w; x += x_skip) {
-      uint8_t lum = pix_ptr[(y * b->out_img_width) + x];
+      uint8_t lum = pix_ptr[(y * b->cur_yuv_buf->stride) + x];
       lum_binning[lum]++;
       lum_total += 1;
     }
