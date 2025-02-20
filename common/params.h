@@ -39,9 +39,9 @@ public:
   void clearAll(ParamKeyType type);
 
   // helpers for reading values
-  std::string get(const std::string &key, bool block = false);
-  inline bool getBool(const std::string &key, bool block = false) {
-    return get(key, block) == "1";
+  std::string get(const std::string &key);
+  inline bool getBool(const std::string &key) {
+    return get(key) == "1";
   }
   std::map<std::string, std::string> readAll();
 

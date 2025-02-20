@@ -1,5 +1,6 @@
 # distutils: language = c++
 # cython: language_level = 3
+import time
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -15,8 +16,8 @@ cdef extern from "common/params.h":
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
-    string get(string, bool) nogil
-    bool getBool(string, bool) nogil
+    string get(string) nogil
+    bool getBool(string) nogil
     int remove(string) nogil
     int put(string, string) nogil
     void putNonBlocking(string, string) nogil
@@ -63,24 +64,22 @@ cdef class Params:
     cdef string k = self.check_key(key)
     cdef string val
     with nogil:
-      val = self.p.get(k, block)
+      val = self.p.get(k)
+
+    # If blocking is enabled, loop until a non-empty value is retrieved
+    while block and val == b"":
+      time.sleep(0.1)
+      with nogil:
+        val = self.p.get(k)
 
     if val == b"":
-      if block:
-        # If we got no value while running in blocked mode
-        # it means we got an interrupt while waiting
-        raise KeyboardInterrupt
-      else:
-        return None
-
+      return None
     return val if encoding is None else val.decode(encoding)
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
-    cdef bool r
-    with nogil:
-      r = self.p.getBool(k, block)
-    return r
+    val = self.get(k, block)
+    return True if val == b"1" else False
 
   def put(self, key, dat):
     """
