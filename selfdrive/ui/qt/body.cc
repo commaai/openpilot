@@ -81,6 +81,10 @@ BodyWindow::BodyWindow(QWidget *parent) : fuel_filter(1.0, 5., 1. / UI_FREQ), QW
   QObject::connect(uiState(), &UIState::uiUpdate, this, &BodyWindow::updateState);
 }
 
+void BodyWindow::mousePressEvent(QMouseEvent *event) {
+    emit bodyClicked();
+}
+
 void BodyWindow::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   p.setRenderHint(QPainter::Antialiasing);

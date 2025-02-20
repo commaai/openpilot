@@ -3,6 +3,8 @@
 #include <QStackedLayout>
 #include <QWidget>
 
+#include "common/params.h"
+#include "selfdrive/ui/qt/body.h"
 #include "selfdrive/ui/qt/home.h"
 #include "selfdrive/ui/qt/offroad/onboarding.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
@@ -20,6 +22,7 @@ private:
 
   QStackedLayout *main_layout;
   HomeWindow *homeWindow;
+  BodyWindow *bodyWindow;
   SettingsWindow *settingsWindow;
   OnboardingWindow *onboardingWindow;
 };
