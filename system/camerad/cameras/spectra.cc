@@ -241,7 +241,7 @@ SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config, 
     output_type(out) {
   mm.init(m->video0_fd);
 
-  ife_buf_depth = (out != ISP_IFE_PROCESSED) ? 4 : VIPC_BUFFER_COUNT;
+  ife_buf_depth = (out == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
