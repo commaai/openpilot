@@ -1,5 +1,5 @@
 import numpy as np
-from cereal import car
+from openpilot_logging.cereal import car
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N
 from openpilot.common.pid import PIDController

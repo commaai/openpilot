@@ -2,7 +2,7 @@
 import math
 import numpy as np
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.filter_simple import FirstOrderFilter
