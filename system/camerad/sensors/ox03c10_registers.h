@@ -31,6 +31,7 @@ const struct i2c_random_wr_payload init_array_ox03c10[] = {
   // delay launch group 2
   {0x3208, 0xa2},*/
 
+  // **NOTE**: if this is changed, readout_time_ns must be updated in the Sensor config
   // PLL setup
   {0x0301, 0xc8}, // pll1_divs, pll1_predivp, pll1_divpix
   {0x0303, 0x01}, // pll1_prediv
@@ -63,21 +64,8 @@ const struct i2c_random_wr_payload init_array_ox03c10[] = {
   {0x3007, 0x01}, // io_pad_sel
   {0x3008, 0x80}, // io_pad_sel
 
-  // FSIN first frame
-  /*
-  {0x3009, 0x2},
-  {0x3015, 0x2},
-  {0x3822, 0x20},
-  {0x3823, 0x58},
-
-  {0x3826, 0x0}, {0x3827, 0x8},
-  {0x3881, 0x4},
-
-  {0x3882, 0x8}, {0x3883, 0x0D},
-  {0x3836, 0x1F}, {0x3837, 0x40},
-  */
-
-  // FSIN with external pulses
+  // FSIN (frame sync) with external pulses
+  {0x3822, 0x33},  // wait for pulse before first frame
   {0x3009, 0x2},
   {0x3015, 0x2},
   {0x383E, 0x80},
@@ -86,7 +74,7 @@ const struct i2c_random_wr_payload init_array_ox03c10[] = {
   {0x3836, 0x1F}, {0x3837, 0x40},
 
   {0x3892, 0x44},
-  {0x3823, 0x48},
+  {0x3823, 0x41},
 
   {0x3012, 0x41}, // SC_PHY_CTRL = 4 lane MIPI
   {0x3020, 0x05}, // SC_CTRL_20

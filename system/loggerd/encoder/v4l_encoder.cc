@@ -133,7 +133,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
         assert(extra.timestamp_eof/1000 == ts); // stay in sync
         frame_id = extra.frame_id;
         ++idx;
-        e->publisher_publish(e, e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
+        e->publisher_publish(e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
       }
 
       if (env_debug_encoder) {
@@ -155,7 +155,7 @@ void V4LEncoder::dequeue_handler(V4LEncoder *e) {
 
 V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height)
     : VideoEncoder(encoder_info, in_width, in_height) {
-  fd = open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK);
+  fd = HANDLE_EINTR(open("/dev/v4l/by-path/platform-aa00000.qcom_vidc-video-index1", O_RDWR|O_NONBLOCK));
   assert(fd >= 0);
 
   struct v4l2_capability cap;

@@ -2,6 +2,7 @@
 import struct
 import time
 
+from opendbc.safety import Safety
 from panda import Panda
 
 if __name__ == "__main__":
@@ -15,7 +16,7 @@ if __name__ == "__main__":
   t2 = time.time()
   print("100 requests took %.2f ms" % ((t2 - t1) * 1000))
 
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(Safety.SAFETY_ALLOUTPUT)
 
   a = 0
   while True:

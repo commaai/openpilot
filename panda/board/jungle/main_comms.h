@@ -226,7 +226,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xf4: Set CAN transceiver enable pin
     case 0xf4:
-      current_board->enable_can_transciever(req->param1, req->param2 > 0U);
+      current_board->enable_can_transceiver(req->param1, req->param2 > 0U);
       break;
     // **** 0xf5: Set CAN silent mode
     case 0xf5:
