@@ -1,0 +1,5 @@
+This is where we scope out adding accelerators to tinygrad
+
+ane -- Apple Neural Engine, in the M1 + newer iPhones
+tpu -- Google's TPU, available for rent in Google Cloud
+
