@@ -7,11 +7,11 @@ CONTROL_N = 17
 CAR_ROTATION_RADIUS = 0.0
 # This is a turn radius smaller than most cars can achieve
 MAX_CURVATURE = 0.2
+MAX_VEL_ERR = 5.0  # m/s
 
 # EU guidelines
 MAX_LATERAL_JERK = 5.0  # m/s^3
 MAX_LATERAL_ACCEL = 3.0  # m/s^2
-MAX_VEL_ERR = 5.0  # m/s
 
 
 def clip_curvature(v_ego, prev_curvature, new_curvature):
