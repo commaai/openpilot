@@ -38,6 +38,7 @@ from openpilot.system.loggerd.xattr_cache import getxattr, setxattr
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.version import get_build_metadata
 from openpilot.system.hardware.hw import Paths
+from openpilot.system.athena.network_status import NetworkStatus
 
 
 ATHENA_HOST = os.getenv('ATHENA_HOST', 'wss://athena.comma.ai')
@@ -52,7 +53,6 @@ RETRY_DELAY = 10  # seconds
 MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
-DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -101,6 +101,7 @@ log_recv_queue: Queue[str] = queue.Queue()
 cancelled_uploads: set[str] = set()
 
 cur_upload_items: dict[int, UploadItem | None] = {}
+network_status = NetworkStatus()
 
 
 def strip_zst_extension(fn: str) -> str:
@@ -155,8 +156,11 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
 
   for thread in threads:
     thread.start()
+
   try:
     while not end_event.wait(0.1):
+      network_status.update()
+
       if exit_event is not None and exit_event.is_set():
         end_event.set()
   except (KeyboardInterrupt, SystemExit):
@@ -210,14 +214,13 @@ def retry_upload(tid: int, end_event: threading.Event, increase_count: bool = Tr
         break
 
 
-def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
+def cb(item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
   # Abort transfer if connection changed to metered after starting upload
   # or if athenad is shutting down to re-connect the websocket
   if not item.allow_cellular:
-    if (time.monotonic() - sm.recv_time['deviceState']) > DEVICE_STATE_UPDATE_INTERVAL:
-      sm.update(0)
-      if sm['deviceState'].networkMetered:
-        raise AbortTransferException
+    metered = network_status.get_status()[0]
+    if metered:
+      raise AbortTransferException
 
   if end_event.is_set():
     raise AbortTransferException
@@ -226,7 +229,6 @@ def cb(sm, item, tid, end_event: threading.Event, sz: int, cur: int) -> None:
 
 
 def upload_handler(end_event: threading.Event) -> None:
-  sm = messaging.SubMaster(['deviceState'])
   tid = threading.get_ident()
 
   while not end_event.is_set():
@@ -246,9 +248,7 @@ def upload_handler(end_event: threading.Event) -> None:
         continue
 
       # Check if uploading over metered connection is allowed
-      sm.update(0)
-      metered = sm['deviceState'].networkMetered
-      network_type = sm['deviceState'].networkType.raw
+      metered, network_type = network_status.get_status()
       if metered and (not item.allow_cellular):
         retry_upload(tid, end_event, False)
         continue
@@ -262,7 +262,7 @@ def upload_handler(end_event: threading.Event) -> None:
 
         cloudlog.event("athena.upload_handler.upload_start", fn=fn, sz=sz, network_type=network_type, metered=metered, retry_count=item.retry_count)
 
-        with _do_upload(item, partial(cb, sm, item, tid, end_event)) as response:
+        with _do_upload(item, partial(cb, item, tid, end_event)) as response:
           if response.status_code not in (200, 201, 401, 403, 412):
             cloudlog.event("athena.upload_handler.retry", status_code=response.status_code, fn=fn, sz=sz, network_type=network_type, metered=metered)
             retry_upload(tid, end_event)
