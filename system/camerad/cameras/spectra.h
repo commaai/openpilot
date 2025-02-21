@@ -3,7 +3,6 @@
 #include <sys/mman.h>
 #include <functional>
 #include <memory>
-#include <mutex>
 #include <queue>
 #include <optional>
 #include <utility>
@@ -59,7 +58,6 @@ private:
   void *alloc_buf(int len, uint32_t *handle);
   void free(void *ptr);
 
-  std::mutex lock;
   std::map<void *, uint32_t> handle_lookup;
   std::map<void *, int> size_lookup;
   std::map<int, std::queue<void *> > cached_allocations;

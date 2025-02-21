@@ -137,26 +137,23 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
 // *** MemoryManager ***
 
 void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
-  lock.lock();
   void *ptr;
-  if (!cached_allocations[size].empty()) {
-    ptr = cached_allocations[size].front();
-    cached_allocations[size].pop();
+  auto &cache = cached_allocations[size];
+  if (!cache.empty()) {
+    ptr = cache.front();
+    cache.pop();
     *handle = handle_lookup[ptr];
   } else {
     ptr = alloc_w_mmu_hdl(video0_fd, size, handle);
     handle_lookup[ptr] = *handle;
     size_lookup[ptr] = size;
   }
-  lock.unlock();
   memset(ptr, 0, size);
   return ptr;
 }
 
 void MemoryManager::free(void *ptr) {
-  lock.lock();
   cached_allocations[size_lookup[ptr]].push(ptr);
-  lock.unlock();
 }
 
 MemoryManager::~MemoryManager() {
