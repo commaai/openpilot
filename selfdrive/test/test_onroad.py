@@ -348,9 +348,14 @@ class TestOnroad:
             assert np.all(eof_sof_diff > 0)
             assert np.all(eof_sof_diff < 50*1e6)
 
-        # camerad guarantees that all cams start on the same frame ID
         first_fid = {c: min(self.ts[c]['frameId']) for c in cams}
-        assert len(set(first_fid.values())) == 1, "Cameras don't start on same frame ID"
+        if cam.endswith('CameraState'):
+          # camerad guarantees that all cams start on frame ID 0
+          # (note loggerd also needs to start up fast enough to catch it)
+          assert set(first_fid.values()) == {0, }, "Cameras don't start on frame ID 0"
+        else:
+          # encoder guarantees all cams start on the same frame ID
+          assert len(set(first_fid.values())) == 1, "Cameras don't start on same frame ID"
 
         # we don't do a full segment rotation, so these might not match exactly
         last_fid = {c: max(self.ts[c]['frameId']) for c in cams}
