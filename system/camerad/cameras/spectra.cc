@@ -310,10 +310,9 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 }
 
 void SpectraCamera::enqueue_req_multi(uint64_t start, int n, bool dp) {
-  for (uint64_t i = start; i < start + n; ++i) {
-    uint64_t idx = (i - 1) % ife_buf_depth;
-    request_ids[idx] = i;
-    enqueue_buffer(idx, dp);
+  for (uint64_t request_id = start; request_id < start + n; ++request_id) {
+    uint64_t idx = (request_id - 1) % ife_buf_depth;
+    enqueue_buffer(idx, request_id, dp);
   }
 }
 
@@ -904,10 +903,8 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   assert(ret == 0);
 }
 
-void SpectraCamera::enqueue_buffer(int i, bool dp) {
+void SpectraCamera::enqueue_buffer(int i, uint64_t request_id, bool dp) {
   int ret;
-  uint64_t request_id = request_ids[i];
-
   // Before queuing up a new frame, wait for the
   // previous one in this slot (index) to come in.
   if (sync_objs_ife[i]) {
