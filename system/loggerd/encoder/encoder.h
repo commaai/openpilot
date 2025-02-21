@@ -24,7 +24,7 @@ public:
   VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   virtual ~VideoEncoder() {}
   virtual int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) = 0;
-  virtual void encoder_open(const char* path) = 0;
+  virtual void encoder_open() = 0;
   virtual void encoder_close() = 0;
 
   void publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra, unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat);

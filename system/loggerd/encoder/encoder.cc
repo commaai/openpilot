@@ -11,7 +11,6 @@ VideoEncoder::VideoEncoder(const EncoderInfo &encoder_info, int in_width, int in
 
 void VideoEncoder::publisher_publish(int segment_num, uint32_t idx, VisionIpcBufExtra &extra,
                                      unsigned int flags, kj::ArrayPtr<capnp::byte> header, kj::ArrayPtr<capnp::byte> dat) {
-  // broadcast packet
   MessageBuilder msg;
   auto event = msg.initEvent(true);
   auto edat = (event.*(encoder_info.init_encode_data_func))();
