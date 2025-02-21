@@ -1403,7 +1403,6 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
 
         // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
         uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
-        uint64_t timestamp_end_of_isp = nanos_since_boot();
 
         // Update buffer and frame data
         buf.cur_buf_idx = buf_idx;
@@ -1412,8 +1411,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
           .request_id = (uint32_t)request_id,
           .timestamp_sof = timestamp,
           .timestamp_eof = timestamp_eof,
-          .timestamp_end_of_isp = timestamp_end_of_isp,
-          .processing_time = float((timestamp_end_of_isp - timestamp_eof) * 1e-9)
+          .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
         };
         return true;
       }
