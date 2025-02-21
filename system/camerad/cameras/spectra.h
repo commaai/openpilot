@@ -4,6 +4,7 @@
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <queue>
 #include <optional>
 #include <utility>
 
@@ -120,15 +121,15 @@ public:
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
-  void handle_camera_event(const cam_req_mgr_message *event_data);
+  bool handle_camera_event(const cam_req_mgr_message *event_data);
   void camera_close();
   void camera_map_bufs();
   void config_bps(int idx, int request_id);
   void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
-  void enqueue_buffer(int i, bool dp);
-  void enqueue_req_multi(uint64_t start, int n, bool dp);
+  bool enqueue_buffer(int i, uint64_t request_id);
+  void enqueue_req_multi(uint64_t start, int n);
 
   int sensors_init();
   void sensors_start();

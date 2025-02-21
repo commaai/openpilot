@@ -221,7 +221,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
 }
 
 void CameraState::sendState() {
-  if (!camera.buf.acquire()) return;
+  camera.buf.sendFrameToVipc();
 
   MessageBuilder msg;
   auto framed = (msg.initEvent().*camera.cc.init_camera_state)();
@@ -306,8 +306,9 @@ void camerad_thread() {
 
         for (auto &cam : cams) {
           if (event_data->session_hdl == cam->camera.session_handle) {
-            cam->camera.handle_camera_event(event_data);
-            cam->sendState();
+            if (cam->camera.handle_camera_event(event_data)) {
+              cam->sendState();
+            }
             break;
           }
         }
