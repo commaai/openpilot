@@ -24,6 +24,15 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     homeWindow->showDriverView(true);
   });
 
+  bodyWindow = new BodyWindow(this);
+  main_layout->addWidget(bodyWindow);
+  QObject::connect(bodyWindow, &BodyWindow::bodyClicked, [=]() {
+    auto params = Params();
+    if (params.getBool("FirehoseMode")) {
+      main_layout->setCurrentWidget(homeWindow);
+    }
+  });
+
   onboardingWindow = new OnboardingWindow(this);
   main_layout->addWidget(onboardingWindow);
   QObject::connect(onboardingWindow, &OnboardingWindow::onboardingDone, [=]() {
@@ -39,8 +48,11 @@ MainWindow::MainWindow(QWidget *parent) : QWidget(parent) {
     }
   });
   QObject::connect(device(), &Device::interactiveTimeout, [=]() {
+    auto params = Params();
     if (main_layout->currentWidget() == settingsWindow) {
       closeSettings();
+    } else if (main_layout->currentWidget() != bodyWindow && params.getBool("FirehoseMode")) {
+      main_layout->setCurrentWidget(bodyWindow);
     }
   });
 

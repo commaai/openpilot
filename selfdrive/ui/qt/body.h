@@ -31,7 +31,10 @@ private:
   QMovie *awake, *sleep;
   RecordButton *btn;
   void paintEvent(QPaintEvent*) override;
-
+protected:
+  void mousePressEvent(QMouseEvent *event) override;
+signals:
+  void bodyClicked();
 private slots:
   void updateState(const UIState &s);
   void offroadTransition(bool onroad);
