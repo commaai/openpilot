@@ -44,6 +44,8 @@ public:
   float analog_gain_frac = 0;
 
   float cur_ev[3] = {};
+  int current_ev_index = 0;
+  uint32_t frame_count = 0;
   float best_ev_score = 0;
   int new_exp_g = 0;
   int new_exp_t = 0;
@@ -141,7 +143,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // TODO: Lower latency to 2 frames, by using the histogram outputted by the sensor we can do AE before the debayering is complete
 
   const auto &sensor = camera.sensor;
-  const float cur_ev_ = cur_ev[camera.buf.cur_frame_data.frame_id % 3] * sensor->ev_scale;
+  current_ev_index = frame_count % std::size(cur_ev);
+  const float cur_ev_ = cur_ev[current_ev_index] * sensor->ev_scale;
 
   // Scale target grey between min and 0.4 depending on lighting conditions
   float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + sensor->target_grey_factor*cur_ev_) / log2(6000.0), target_grey_minimums[camera.cc.camera_num], 0.4);
@@ -212,7 +215,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
   dc_gain_enabled = enable_dc_gain;
 
   float gain = analog_gain_frac * get_gain_factor();
-  cur_ev[camera.buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
+  cur_ev[current_ev_index] = exposure_time * gain;
 
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera.cc.camera_num, 1e-9 * nanos_since_boot(), 1e-9 * camera.buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - camera.buf.cur_frame_data.timestamp_sof));
 
@@ -237,13 +240,13 @@ void CameraState::sendState() {
   framed.setTargetGreyFraction(target_grey_fraction);
   framed.setProcessingTime(meta.processing_time);
 
-  const float ev = cur_ev[meta.frame_id % 3];
+  const float ev = cur_ev[current_ev_index];
   const float perc = util::map_val(ev, camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f);
   framed.setExposureValPercent(perc);
   framed.setSensor(camera.sensor->image_sensor);
 
   // Log raw frames for road camera
-  if (env_log_raw_frames && camera.cc.stream_type == VISION_STREAM_ROAD && meta.frame_id % 100 == 5) {  // no overlap with qlog decimation
+  if (env_log_raw_frames && camera.cc.stream_type == VISION_STREAM_ROAD && frame_count % 100 == 5) {  // no overlap with qlog decimation
     framed.setImage(get_raw_frame_image(&camera.buf));
   }
 
@@ -251,6 +254,7 @@ void CameraState::sendState() {
 
   // Send the message
   pm->send(camera.cc.publish_name, msg);
+  ++frame_count;
 }
 
 void camerad_thread() {
