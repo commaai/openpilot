@@ -4,10 +4,14 @@ cereal_dir = Dir('.')
 gen_dir = Dir('gen')
 
 # Build cereal
-schema_files = ['log.capnp', 'car.capnp', 'legacy.capnp', 'custom.capnp']
-env.Command([f'gen/cpp/{s}.c++' for s in schema_files] + [f'gen/cpp/{s}.h' for s in schema_files],
-            schema_files,
-            f"capnpc --src-prefix={cereal_dir.path} $SOURCES -o c++:{gen_dir.path}/cpp/")
+schema_files = ['log.capnp', 'legacy.capnp', 'custom.capnp']
+external_schema_files = ['car.capnp']
+env.Command([f'gen/cpp/{s}.c++' for s in schema_files + external_schema_files] + [f'gen/cpp/{s}.h' for s in schema_files + external_schema_files],
+            schema_files + [f'../../opendbc_repo/opendbc/car/{s}' for s in external_schema_files],
+#             f"capnpc --src-prefix={cereal_dir.path} $SOURCES -o c++:{gen_dir.path}/cpp/")
+            f"capnpc --src-prefix={cereal_dir.path} -I openpilot_logging/cereal/ -I opendbc_repo/opendbc/car $SOURCES -o c++:{gen_dir.path}/cpp/")
+
+env.Append(CCFLAGS=["-I", "openpilot_logging/cereal/gen/cpp"])
 
 cereal = env.Library('cereal', [f'gen/cpp/{s}.c++' for s in schema_files])
 
