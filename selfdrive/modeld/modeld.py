@@ -113,7 +113,7 @@ class ModelState:
           self.tensor_inputs[key] = qcom_tensor_from_opencl_address(imgs_cl[key].mem_address, self.input_shapes[key], dtype=dtypes.uint8)
     else:
       for key in imgs_cl:
-        self.numpy_inputs[key] = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.input_shapes[key]).astype(dtype=np.float32)
+        self.numpy_inputs[key] = 0*self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.input_shapes[key]).astype(dtype=np.float32)
         self.tensor_inputs[key] = Tensor(self.numpy_inputs[key], dtype=dtypes.uint8)
 
 
