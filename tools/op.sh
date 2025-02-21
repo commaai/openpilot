@@ -285,7 +285,7 @@ function op_build() {
   cd "$CDIR"
   if [[ -f "/AGNOS" ]]; then
     # needed on AGNOS to not run out of memory
-    op_run_command scons system/manager/build.py
+    op_run_command system/manager/build.py
   else
     # scons is fine on PC
     op_run_command scons $@
