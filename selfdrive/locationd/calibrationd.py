@@ -11,8 +11,8 @@ import capnp
 import numpy as np
 from typing import NoReturn
 
-from cereal import log
-import cereal.messaging as messaging
+from openpilot_logging.cereal import log
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process

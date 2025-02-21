@@ -15,7 +15,7 @@ import zstandard as zstd
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 
-from cereal import log as capnp_log
+from openpilot_logging.cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url

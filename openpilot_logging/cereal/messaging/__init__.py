@@ -12,8 +12,8 @@ import time
 from typing import Optional, List, Union, Dict, Deque
 from collections import deque
 
-from cereal import log
-from cereal.services import SERVICE_LIST
+from openpilot_logging.cereal import log
+from openpilot_logging.cereal.services import SERVICE_LIST
 
 NO_TRAVERSAL_LIMIT = 2**64-1
 

@@ -1,7 +1,7 @@
 import os
 import operator
 
-from cereal import car
+from openpilot_logging.cereal import car
 from openpilot.common.params import Params
 from openpilot.system.hardware import PC, TICI
 from openpilot.system.manager.process import PythonProcess, NativeProcess, DaemonProcess

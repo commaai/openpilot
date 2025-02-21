@@ -23,7 +23,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
-from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotci_source_zst, openpilotci_source, internal_source, \
+from openpilot_logging.logreader import LogReader, LogsUnavailable, openpilotci_source_zst, openpilotci_source, internal_source, \
                                           internal_source_zst, comma_api_source, auto_source
 from openpilot.tools.lib.route import SegmentName
 
