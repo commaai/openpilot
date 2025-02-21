@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import time
 import argparse
-import cereal.messaging as messaging
-from cereal import car
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal import car
 from opendbc.car.carlog import carlog
 from opendbc.car.fw_versions import get_fw_versions, match_fw_to_car
 from opendbc.car.vin import get_vin

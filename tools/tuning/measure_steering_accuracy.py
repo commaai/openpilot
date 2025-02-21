@@ -7,8 +7,8 @@ import argparse
 import signal
 from collections import defaultdict
 
-import cereal.messaging as messaging
-from openpilot.tools.lib.logreader import LogReader
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.logreader import LogReader
 
 def sigint_handler(signal, frame):
   exit(0)

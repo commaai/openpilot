@@ -9,7 +9,7 @@ import time
 import signal
 
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 
 V4L2_BUF_FLAG_KEYFRAME = 8

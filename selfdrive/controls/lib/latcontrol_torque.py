@@ -1,7 +1,7 @@
 import math
 import numpy as np
 
-from cereal import log
+from openpilot_logging.cereal import log
 from opendbc.car.interfaces import LatControlInputs
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController

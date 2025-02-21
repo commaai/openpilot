@@ -4,9 +4,9 @@ import time
 import numpy as np
 from collections import namedtuple, defaultdict
 
-import cereal.messaging as messaging
-from cereal import log
-from cereal.services import SERVICE_LIST
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal import log
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.common.gpio import get_irqs_for_action
 from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import HARDWARE

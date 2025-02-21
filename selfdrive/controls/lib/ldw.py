@@ -1,4 +1,4 @@
-from cereal import log
+from openpilot_logging.cereal import log
 from openpilot.common.realtime import DT_CTRL
 from openpilot.common.conversions import Conversions as CV
 

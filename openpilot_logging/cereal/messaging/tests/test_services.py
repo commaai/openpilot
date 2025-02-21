@@ -3,8 +3,8 @@ import tempfile
 from typing import Dict
 from parameterized import parameterized
 
-import cereal.services as services
-from cereal.services import SERVICE_LIST
+import openpilot_logging.cereal.services as services
+from openpilot_logging.cereal.services import SERVICE_LIST
 
 
 class TestServices:

@@ -3,7 +3,7 @@ import argparse
 
 from opendbc.car import uds
 from openpilot.tools.lib.live_logreader import live_logreader
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot_logging.logreader import LogReader, ReadMode
 
 
 def main(route: str | None, addrs: list[int]):

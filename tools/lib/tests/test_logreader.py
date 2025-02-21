@@ -9,8 +9,8 @@ import requests
 
 from parameterized import parameterized
 
-from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+from openpilot_logging.cereal import log as capnp_log
+from openpilot_logging.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
@@ -26,13 +26,13 @@ def noop(segment: LogIterable):
 
 @contextlib.contextmanager
 def setup_source_scenario(mocker, is_internal=False):
-  internal_source_mock = mocker.patch("openpilot.tools.lib.logreader.internal_source")
+  internal_source_mock = mocker.patch("openpilot_logging.logreader.internal_source")
   internal_source_mock.__name__ = internal_source_mock._mock_name
 
-  openpilotci_source_mock = mocker.patch("openpilot.tools.lib.logreader.openpilotci_source")
+  openpilotci_source_mock = mocker.patch("openpilot_logging.logreader.openpilotci_source")
   openpilotci_source_mock.__name__ = openpilotci_source_mock._mock_name
 
-  comma_api_source_mock = mocker.patch("openpilot.tools.lib.logreader.comma_api_source")
+  comma_api_source_mock = mocker.patch("openpilot_logging.logreader.comma_api_source")
   comma_api_source_mock.__name__ = comma_api_source_mock._mock_name
 
   if is_internal:
@@ -90,7 +90,7 @@ class TestLogReader:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_direct_parsing(self, mocker, cache_enabled):
-    file_exists_mock = mocker.patch("openpilot.tools.lib.logreader.file_exists")
+    file_exists_mock = mocker.patch("openpilot_logging.logreader.file_exists")
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
@@ -160,7 +160,7 @@ class TestLogReader:
 
   @pytest.mark.slow
   def test_multiple_iterations(self, mocker):
-    init_mock = mocker.patch("openpilot.tools.lib.logreader._LogFileReader")
+    init_mock = mocker.patch("openpilot_logging.logreader._LogFileReader")
     lr = LogReader(f"{TEST_ROUTE}/0/q")
     qlog_len1 = len(list(lr))
     qlog_len2 = len(list(lr))

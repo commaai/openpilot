@@ -6,7 +6,7 @@ import datetime
 from collections.abc import MutableSequence
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 
 if __name__ == "__main__":

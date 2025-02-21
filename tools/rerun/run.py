@@ -8,9 +8,9 @@ import rerun.blueprint as rrb
 from functools import partial
 from collections import defaultdict
 
-from cereal.services import SERVICE_LIST
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.tools.rerun.camera_reader import probe_packet_info, CameraReader, CameraConfig, CameraType
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 from openpilot.tools.lib.route import Route, SegmentRange
 
 

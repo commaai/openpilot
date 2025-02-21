@@ -1,5 +1,5 @@
 import traceback
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 from opendbc.can.packer import CANPacker
 from opendbc.can.parser import CANParser

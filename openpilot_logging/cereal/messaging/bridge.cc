@@ -1,7 +1,7 @@
 #include <cassert>
 
-#include "cereal/messaging/msgq_to_zmq.h"
-#include "cereal/services.h"
+#include "openpilot_logging/cereal/messaging/msgq_to_zmq.h"
+#include "openpilot_logging/cereal/services.h"
 #include "common/util.h"
 
 ExitHandler do_exit;

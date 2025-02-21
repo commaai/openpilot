@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from sklearn import linear_model
 from opendbc.car.toyota.values import STEER_THRESHOLD
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 
 MIN_SAMPLES = 30 * 100
 

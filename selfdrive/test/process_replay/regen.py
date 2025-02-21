@@ -14,7 +14,7 @@ from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FR
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
-from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
+from openpilot_logging.logreader import LogReader, LogIterable, save_log
 
 
 class DummyFrameReader(BaseFrameReader):

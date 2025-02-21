@@ -4,7 +4,7 @@ import binascii
 import time
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 
 def can_printer(bus, max_msg, addr, ascii_decode):

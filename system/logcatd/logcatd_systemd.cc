@@ -7,7 +7,7 @@
 
 #include "third_party/json11/json11.hpp"
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/timing.h"
 #include "common/util.h"
 

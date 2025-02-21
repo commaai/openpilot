@@ -3,7 +3,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 
 struct CPUTime {
   int id;

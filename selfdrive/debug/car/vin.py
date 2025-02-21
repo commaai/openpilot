@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import time
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from opendbc.car.carlog import carlog
 from opendbc.car.vin import get_vin
 from openpilot.selfdrive.car.card import can_comm_callbacks

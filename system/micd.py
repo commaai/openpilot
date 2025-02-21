@@ -2,7 +2,7 @@
 import numpy as np
 from functools import cache
 
-from cereal import messaging
+from openpilot_logging.cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog

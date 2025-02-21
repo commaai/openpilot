@@ -4,7 +4,7 @@
 #include <memory>
 #include <string>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "system/hardware/hw.h"
 #include "system/loggerd/zstd_writer.h"

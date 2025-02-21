@@ -16,7 +16,7 @@ A depends on longitudinal speed, u [m/s], and vehicle parameters CP
 import numpy as np
 from numpy.linalg import solve
 
-from cereal import car
+from openpilot_logging.cereal import car
 
 ACCELERATION_DUE_TO_GRAVITY = 9.8
 

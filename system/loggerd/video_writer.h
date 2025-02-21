@@ -7,7 +7,7 @@ extern "C" {
 #include <libavcodec/avcodec.h>
 }
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 
 class VideoWriter {
 public:

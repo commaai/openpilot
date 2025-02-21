@@ -3,7 +3,7 @@ import argparse
 import os
 from tqdm import tqdm
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()

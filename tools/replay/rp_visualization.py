@@ -4,7 +4,7 @@ import os
 import sys
 import numpy as np
 import rerun as rr
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.replay.lib.rp_helpers import (UP, rerunColorPalette,
                                          get_blank_lid_overlay,

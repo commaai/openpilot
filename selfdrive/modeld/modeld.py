@@ -13,11 +13,11 @@ else:
 import time
 import pickle
 import numpy as np
-import cereal.messaging as messaging
-from cereal import car, log
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal import car, log
 from pathlib import Path
 from setproctitle import setproctitle
-from cereal.messaging import PubMaster, SubMaster
+from openpilot_logging.cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.swaglog import cloudlog

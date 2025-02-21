@@ -1,6 +1,6 @@
 import random
 
-from cereal import log
+from openpilot_logging.cereal import log
 from openpilot.system.hardware.base import HardwareBase
 
 NetworkType = log.DeviceState.NetworkType

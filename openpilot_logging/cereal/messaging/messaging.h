@@ -8,7 +8,7 @@
 
 #include <capnp/serialize.h>
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/log.capnp.h"
 #include "common/timing.h"
 #include "msgq/ipc.h"
 

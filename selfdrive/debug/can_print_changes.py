@@ -4,9 +4,9 @@ import binascii
 import time
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.selfdrive.debug.can_table import can_table
-from openpilot.tools.lib.logreader import LogIterable, LogReader
+from openpilot_logging.logreader import LogIterable, LogReader
 
 RED = '\033[91m'
 CLEAR = '\033[0m'

@@ -4,7 +4,7 @@ import subprocess
 import time
 from typing import NoReturn
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.time_helpers import min_date, system_time_valid
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params

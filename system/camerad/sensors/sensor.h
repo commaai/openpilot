@@ -9,7 +9,7 @@
 #include "media/cam_isp.h"
 #include "media/cam_sensor.h"
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/log.capnp.h"
 #include "system/camerad/sensors/ar0231_registers.h"
 #include "system/camerad/sensors/ox03c10_registers.h"
 #include "system/camerad/sensors/os04c10_registers.h"

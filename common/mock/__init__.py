@@ -6,8 +6,8 @@ example in common/tests/test_mock.py
 
 import functools
 import threading
-from cereal.messaging import PubMaster
-from cereal.services import SERVICE_LIST
+from openpilot_logging.cereal.messaging import PubMaster
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.common.mock.generators import generate_livePose
 from openpilot.common.realtime import Ratekeeper
 

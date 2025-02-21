@@ -2,7 +2,7 @@
 
 #include <capnp/dynamic.h>
 #include <csignal>
-#include "cereal/services.h"
+#include "openpilot_logging/cereal/services.h"
 #include "common/params.h"
 #include "tools/replay/util.h"
 

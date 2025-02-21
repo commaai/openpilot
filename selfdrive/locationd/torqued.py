@@ -2,8 +2,8 @@
 import numpy as np
 from collections import deque, defaultdict
 
-import cereal.messaging as messaging
-from cereal import car, log
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal import car, log
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter

@@ -3,7 +3,7 @@ import pytest
 import signal
 import time
 
-from cereal import car
+from openpilot_logging.cereal import car
 from openpilot.common.params import Params
 import openpilot.system.manager.manager as manager
 from openpilot.system.manager.process import ensure_running

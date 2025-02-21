@@ -1,7 +1,7 @@
 import numpy as np
 import random
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from opendbc.car.car_helpers import get_demo_car_params
 from openpilot.common.params import Params

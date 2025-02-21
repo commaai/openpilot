@@ -8,7 +8,7 @@
 #include <QColor>
 #include <QFuture>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/mat.h"
 #include "common/params.h"
 #include "common/util.h"

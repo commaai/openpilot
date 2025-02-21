@@ -2,8 +2,8 @@ import random
 import time
 from typing import Sized, cast
 
-import cereal.messaging as messaging
-from cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal.messaging.tests.test_messaging import events, random_sock, random_socks, \
                                                   random_bytes, random_carstate, assert_carstate, \
                                                   zmq_sleep
 

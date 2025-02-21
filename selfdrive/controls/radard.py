@@ -5,7 +5,7 @@ from collections import deque
 from typing import Any
 
 import capnp
-from cereal import messaging, log, car
+from openpilot_logging.cereal import messaging, log, car
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog

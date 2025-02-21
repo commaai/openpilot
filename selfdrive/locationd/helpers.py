@@ -1,7 +1,7 @@
 import numpy as np
 from typing import Any
 
-from cereal import log
+from openpilot_logging.cereal import log
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 
 

@@ -3,7 +3,7 @@
 import math
 import numpy as np
 
-from cereal import messaging, car
+from openpilot_logging.cereal import messaging, car
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog

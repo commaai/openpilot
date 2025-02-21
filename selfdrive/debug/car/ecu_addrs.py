@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import time
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from opendbc.car.carlog import carlog
 from opendbc.car.ecu_addrs import get_all_ecu_addrs
 from openpilot.common.params import Params

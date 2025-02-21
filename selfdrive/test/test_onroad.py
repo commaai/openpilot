@@ -12,9 +12,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
 
-from cereal import car, log
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+from openpilot_logging.cereal import car, log
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
@@ -22,7 +22,7 @@ from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 """

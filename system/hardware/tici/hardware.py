@@ -8,7 +8,7 @@ from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
 
-from cereal import log
+from openpilot_logging.cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
 from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist

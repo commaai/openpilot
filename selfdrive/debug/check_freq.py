@@ -5,7 +5,7 @@ import time
 from collections import defaultdict, deque
 from collections.abc import MutableSequence
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 
 if __name__ == "__main__":

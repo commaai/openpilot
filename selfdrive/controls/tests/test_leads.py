@@ -1,4 +1,4 @@
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 from opendbc.car.toyota.values import CAR as TOYOTA
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
