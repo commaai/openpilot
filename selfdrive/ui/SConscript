@@ -33,32 +33,11 @@ qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/body.cc",
           "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc", "qt/onroad/model.cc",
           "qt/onroad/buttons.cc", "qt/onroad/alerts.cc", "qt/onroad/driver_monitoring.cc", "qt/onroad/hud.cc"]
 
-# build translation files
-with open(File("translations/languages.json").abspath) as f:
-  languages = json.loads(f.read())
-translation_sources = [f"#selfdrive/ui/translations/{l}.ts" for l in languages.values()]
-translation_targets = [src.replace(".ts", ".qm") for src in translation_sources]
-lrelease_bin = 'third_party/qt5/larch64/bin/lrelease' if arch == 'larch64' else 'lrelease'
-
-lupdate = qt_env.Command(translation_sources + ["translations/alerts_generated.h"], qt_src + widgets_src, "selfdrive/ui/update_translations.py")
-lrelease = qt_env.Command(translation_targets, translation_sources, f"{lrelease_bin} $SOURCES")
-qt_env.Depends(lrelease, lupdate)
-qt_env.NoClean(translation_sources)
-qt_env.Precious(translation_sources)
-qt_env.NoCache(lupdate)
-
-# create qrc file for compiled translations to include with assets
-translations_assets_src = "#selfdrive/assets/translations_assets.qrc"
-with open(File(translations_assets_src).abspath, 'w') as f:
-  f.write('<!DOCTYPE RCC><RCC version="1.0">\n<qresource>\n')
-  f.write('\n'.join([f'<file alias="{l}">../ui/translations/{l}.qm</file>' for l in languages.values()]))
-  f.write('\n</qresource>\n</RCC>')
-
 # build assets
 assets = "#selfdrive/assets/assets.cc"
 assets_src = "#selfdrive/assets/assets.qrc"
-qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o $TARGET")
-qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
+qt_env.Command(assets, [assets_src], f"rcc $SOURCES -o $TARGET")
+qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, "#selfdrive/assets/assets.o"]))
 asset_obj = qt_env.Object("assets", assets)
 
 # build main UI
