@@ -3,8 +3,8 @@ import pytest
 import time
 import subprocess
 
-from cereal import log
-import cereal.messaging as messaging
+from openpilot_logging.cereal import log
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.timeout import Timeout
 from openpilot.selfdrive.test.helpers import set_params_enabled

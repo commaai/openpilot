@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.monitoring.helpers import DriverMonitoring

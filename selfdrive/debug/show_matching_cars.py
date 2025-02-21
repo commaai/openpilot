@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 from opendbc.car.fingerprints import eliminate_incompatible_cars, all_legacy_fingerprint_cars
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 
 # rav4 2019 and corolla tss2

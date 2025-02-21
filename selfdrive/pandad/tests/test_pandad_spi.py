@@ -4,8 +4,8 @@ import numpy as np
 import pytest
 import random
 
-import cereal.messaging as messaging
-from cereal.services import SERVICE_LIST
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.system.hardware import HARDWARE
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.pandad.tests.test_pandad_loopback import setup_pandad, send_random_can_messages

@@ -6,8 +6,8 @@ from collections import Counter
 from pprint import pprint
 from typing import cast
 
-from cereal.services import SERVICE_LIST
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot_logging.cereal.services import SERVICE_LIST
+from openpilot_logging.logreader import LogReader, ReadMode
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
 import jinja2
 import os
 
-from cereal import car
+from openpilot_logging.cereal import car
 from openpilot.common.basedir import BASEDIR
 from opendbc.car.interfaces import get_interface_attr
 

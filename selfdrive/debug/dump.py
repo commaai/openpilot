@@ -4,8 +4,8 @@ import argparse
 import json
 import codecs
 
-from cereal import log
-from cereal.services import SERVICE_LIST
+from openpilot_logging.cereal import log
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.tools.lib.live_logreader import raw_live_logreader
 
 

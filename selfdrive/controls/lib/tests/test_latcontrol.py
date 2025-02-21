@@ -1,6 +1,6 @@
 from parameterized import parameterized
 
-from cereal import car, log
+from openpilot_logging.cereal import car, log
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.honda.values import CAR as HONDA
 from opendbc.car.toyota.values import CAR as TOYOTA

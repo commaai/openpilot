@@ -16,8 +16,8 @@ import numpy as np
 from pathlib import Path
 from setproctitle import setproctitle
 
-from cereal import messaging
-from cereal.messaging import PubMaster, SubMaster
+from openpilot_logging.cereal import messaging
+from openpilot_logging.cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.realtime import config_realtime_process

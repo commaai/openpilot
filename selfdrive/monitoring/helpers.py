@@ -1,8 +1,8 @@
 from math import atan2
 import numpy as np
 
-from cereal import car, log
-import cereal.messaging as messaging
+from openpilot_logging.cereal import car, log
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.selfdrive.selfdrived.events import Events
 from openpilot.common.realtime import DT_DMON
 from openpilot.common.filter_simple import FirstOrderFilter

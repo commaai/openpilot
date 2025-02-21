@@ -2,7 +2,7 @@
 import argparse
 import pandas as pd
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
 
 def can_table(dat):

@@ -48,13 +48,13 @@ Then, check in the new logs using git-lfs. Make sure to also update the `ref_com
 
 ## API
 
-Process replay test suite exposes programmatic APIs for simultaneously running processes or groups of processes on provided logs. 
+Process replay test suite exposes programmatic APIs for simultaneously running processes or groups of processes on provided logs.
 
 ```py
 def replay_process_with_name(name: Union[str, Iterable[str]], lr: LogIterable, *args, **kwargs) -> List[capnp._DynamicStructReader]:
 
 def replay_process(
-  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: LogIterable, frs: Optional[Dict[str, Any]] = None, 
+  cfg: Union[ProcessConfig, Iterable[ProcessConfig]], lr: LogIterable, frs: Optional[Dict[str, Any]] = None,
   fingerprint: Optional[str] = None, return_all_logs: bool = False, custom_params: Optional[Dict[str, Any]] = None, disable_progress: bool = False
 ) -> List[capnp._DynamicStructReader]:
 ```
@@ -62,7 +62,7 @@ def replay_process(
 Example usage:
 ```py
 from openpilot.selfdrive.test.process_replay import replay_process_with_name
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 
 lr = LogReader(...)
 
@@ -73,14 +73,14 @@ output_logs = replay_process_with_name('locationd', lr)
 output_logs = replay_process_with_name(['ubloxd', 'locationd'], lr)
 ```
 
-Supported processes: 
+Supported processes:
 * controlsd
 * radard
 * plannerd
 * calibrationd
 * dmonitoringd
 * locationd
-* paramsd 
+* paramsd
 * ubloxd
 * torqued
 * modeld

@@ -2,8 +2,8 @@
 import math
 from typing import SupportsFloat
 
-from cereal import car, log
-import cereal.messaging as messaging
+from openpilot_logging.cereal import car, log
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper

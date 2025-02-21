@@ -1,4 +1,4 @@
-from cereal import car
+from openpilot_logging.cereal import car
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState, long_control_state_trans
 
 

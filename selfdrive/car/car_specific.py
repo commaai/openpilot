@@ -1,6 +1,6 @@
 from collections import deque
-from cereal import car, log
-import cereal.messaging as messaging
+from openpilot_logging.cereal import car, log
+import openpilot_logging.cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import MAX_CTRL_SPEED
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams

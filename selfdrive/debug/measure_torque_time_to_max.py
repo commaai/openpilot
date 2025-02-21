@@ -7,8 +7,8 @@ import struct
 from collections import deque
 from statistics import mean
 
-from cereal import log
-import cereal.messaging as messaging
+from openpilot_logging.cereal import log
+import openpilot_logging.cereal.messaging as messaging
 
 if __name__ == "__main__":
 

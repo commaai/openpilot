@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser()

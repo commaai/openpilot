@@ -2,7 +2,7 @@ import pytest
 import itertools
 from parameterized import parameterized_class
 
-from cereal import log
+from openpilot_logging.cereal import log
 
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import desired_follow_distance, get_T_FOLLOW
 from openpilot.selfdrive.test.longitudinal_maneuvers.maneuver import Maneuver

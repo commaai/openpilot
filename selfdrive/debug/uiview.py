@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import time
 
-from cereal import car, log, messaging
+from openpilot_logging.cereal import car, log, messaging
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.system.hardware import HARDWARE

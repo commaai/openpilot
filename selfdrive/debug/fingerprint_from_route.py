@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import sys
-from openpilot.tools.lib.logreader import LogReader, ReadMode
+from openpilot_logging.logreader import LogReader, ReadMode
 
 
 def get_fingerprint(lr):

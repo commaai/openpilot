@@ -6,7 +6,7 @@ import numbers
 import dictdiffer
 from collections import Counter
 
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 
 EPSILON = sys.float_info.epsilon
 

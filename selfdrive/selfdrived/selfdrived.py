@@ -3,9 +3,9 @@ import os
 import time
 import threading
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 
-from cereal import car, log
+from openpilot_logging.cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 

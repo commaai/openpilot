@@ -959,7 +959,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
 if __name__ == '__main__':
   # print all alerts by type and priority
-  from cereal.services import SERVICE_LIST
+  from openpilot_logging.cereal.services import SERVICE_LIST
   from collections import defaultdict
 
   event_names = {v: k for k, v in EventName.schema.enumerants.items()}

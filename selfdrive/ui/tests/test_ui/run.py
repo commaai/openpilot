@@ -9,9 +9,9 @@ import pyautogui
 import pickle
 import time
 
-from cereal import car, log
+from openpilot_logging.cereal import car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
-from cereal.messaging import PubMaster, log_from_bytes, sub_sock
+from openpilot_logging.cereal.messaging import PubMaster, log_from_bytes, sub_sock
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
@@ -19,7 +19,7 @@ from openpilot.common.transformations.camera import CameraConfig, DEVICE_CAMERAS
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_controlsState, migrate_carState
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.cache import DEFAULT_CACHE_DIR

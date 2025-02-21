@@ -7,8 +7,8 @@ import numpy as np
 from enum import Enum
 from collections import defaultdict
 
-from cereal import log, messaging
-from cereal.services import SERVICE_LIST
+from openpilot_logging.cereal import log, messaging
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.common.transformations.orientation import rot_from_euler
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.params import Params

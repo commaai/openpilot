@@ -16,7 +16,7 @@ from openpilot.tools.lib.openpilotci import get_url
 from openpilot.selfdrive.test.process_replay.compare_logs import compare_logs, format_diff
 from openpilot.selfdrive.test.process_replay.process_replay import get_process_config, replay_process
 from openpilot.tools.lib.framereader import FrameReader, NumpyFrameReader
-from openpilot.tools.lib.logreader import LogReader, save_log
+from openpilot_logging.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
