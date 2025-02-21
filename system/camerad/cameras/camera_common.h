@@ -4,7 +4,6 @@
 
 #include "cereal/messaging/messaging.h"
 #include "msgq/visionipc/visionipc_server.h"
-#include "common/queue.h"
 #include "common/util.h"
 
 
@@ -24,8 +23,6 @@ class CameraState;
 
 class CameraBuf {
 private:
-  int cur_buf_idx;
-  SafeQueue<int> safe_queue;
   int frame_buf_count;
   bool is_raw;
 
@@ -33,18 +30,17 @@ public:
   VisionIpcServer *vipc_server;
   VisionStreamType stream_type;
 
+  int cur_buf_idx;
   FrameMetadata cur_frame_data;
   VisionBuf *cur_yuv_buf;
   VisionBuf *cur_camera_buf;
   std::unique_ptr<VisionBuf[]> camera_bufs_raw;
-  std::unique_ptr<FrameMetadata[]> frame_metadata;
   int out_img_width, out_img_height;
 
   CameraBuf() = default;
   ~CameraBuf();
   void init(cl_device_id device_id, cl_context context, SpectraCamera *cam, VisionIpcServer * v, int frame_cnt, VisionStreamType type);
-  bool acquire();
-  void queue(size_t buf_idx);
+  void sendFrameToVipc();
 };
 
 void camerad_thread();
