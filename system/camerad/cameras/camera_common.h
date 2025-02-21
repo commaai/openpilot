@@ -24,7 +24,6 @@ class CameraState;
 class CameraBuf {
 private:
   int frame_buf_count;
-  bool is_raw;
 
 public:
   VisionIpcServer *vipc_server;
