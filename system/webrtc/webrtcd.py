@@ -19,7 +19,7 @@ if TYPE_CHECKING:
   from aiortc.rtcdatachannel import RTCDataChannel
 
 from openpilot.system.webrtc.schema import generate_field
-from cereal import messaging, log
+from openpilot_logging.cereal import messaging, log
 
 
 class CerealOutgoingMessageProxy:

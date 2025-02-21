@@ -9,7 +9,7 @@ from datetime import datetime, UTC
 from typing import NoReturn
 
 from openpilot.common.params import Params
-from cereal.messaging import SubMaster
+from openpilot_logging.cereal.messaging import SubMaster
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE

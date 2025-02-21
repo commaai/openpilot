@@ -7,7 +7,7 @@ import cv2
 import numpy as np
 import pygame
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.common.numpy_fast import clip
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.transformations.camera import DEVICE_CAMERAS

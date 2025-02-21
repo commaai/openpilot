@@ -9,9 +9,9 @@ import time
 import tty
 from collections import defaultdict
 
-import cereal.messaging as messaging
+import openpilot_logging.cereal.messaging as messaging
 from openpilot.tools.lib.framereader import FrameReader
-from openpilot.tools.lib.logreader import LogReader
+from openpilot_logging.logreader import LogReader
 from openpilot.tools.lib.openpilotci import get_url
 
 IGNORE = ['initData', 'sentinel']

@@ -1,6 +1,6 @@
 # Utilities for sanitizing routes of only essential data for testing car ports and doing validation.
 
-from openpilot.tools.lib.logreader import LogIterable, LogMessage
+from openpilot_logging.logreader import LogIterable, LogMessage
 
 
 def sanitize_vin(vin: str):

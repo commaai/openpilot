@@ -3,9 +3,9 @@ import time
 import numpy as np
 from collections import defaultdict
 
-import cereal.messaging as messaging
-from cereal import log
-from cereal.services import SERVICE_LIST
+import openpilot_logging.cereal.messaging as messaging
+from openpilot_logging.cereal import log
+from openpilot_logging.cereal.services import SERVICE_LIST
 from openpilot.common.retry import retry
 from openpilot.system.manager.process_config import managed_processes
 

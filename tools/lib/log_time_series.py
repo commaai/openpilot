@@ -78,7 +78,7 @@ def msgs_to_time_series(msgs):
 
 if __name__ == "__main__":
   import sys
-  from openpilot.tools.lib.logreader import LogReader
+  from openpilot_logging.logreader import LogReader
   m = msgs_to_time_series(LogReader(sys.argv[1]))
   print(m['driverCameraState']['t'])
   print(np.diff(m['driverCameraState']['timestampSof']))
