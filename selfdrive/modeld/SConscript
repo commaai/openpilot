@@ -42,7 +42,7 @@ pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abs
 if arch == 'larch64':
   device_string = 'QCOM=1'
 else:
-  device_string = 'LLVM=1 IMAGE=0'
+  device_string = 'LLVM=1 LLVMOPT=1 BEAM=3 IMAGE=0'
 
 for model_name in ['supercombo', 'dmonitoring_model']:
   fn = File(f"models/{model_name}").abspath
