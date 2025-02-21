@@ -26,7 +26,7 @@ function loop() {
     ALL_BUILDS=( $(curl -s $API_ROUTE/api/json | jq .builds.[].number 2> /dev/null || :) )
 
     # Jenkins branches get deactivated after some time
-    BUILDABLE=$(curl -s $API_ROUTE/api/json | jq '.buildable')
+    BUILDABLE=$(curl -s $API_ROUTE/api/json | jq -e '.buildable' 2> /dev/null || echo "false")
 
     if [[ ${#ALL_BUILDS[@]} -eq 0 || $BUILDABLE != "true" ]]; then
       TEMP_DIR=$(mktemp -d)
