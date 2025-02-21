@@ -935,12 +935,11 @@ void SpectraCamera::enqueue_buffer(int i, bool dp) {
       }
     }
 
-    // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
-    buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
-    buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
-
     // all good, hand off frame
     if (dp && ret == 0) {
+      // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
+      buf.frame_metadata[i].timestamp_eof = buf.frame_metadata[i].timestamp_sof + sensor->readout_time_ns;
+      buf.frame_metadata[i].timestamp_end_of_isp = (uint64_t)nanos_since_boot();
       buf.queue(i);
     }
 
@@ -1378,8 +1377,6 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;
 
   if (request_id != 0) { // next ready
-    int buf_idx = (request_id - 1) % ife_buf_depth;
-
     // check for skipped_last frames
     if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
       LOGE("camera %d realign", cc.camera_num);
@@ -1402,6 +1399,7 @@ void SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
 
     uint64_t timestamp = event_data->u.frame_msg.timestamp;  // this is timestamped in the kernel's SOF IRQ callback
     if (syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
+      int buf_idx = (request_id - 1) % ife_buf_depth;
       auto &meta_data = buf.frame_metadata[buf_idx];
       meta_data.frame_id = frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset;
       meta_data.request_id = request_id;
