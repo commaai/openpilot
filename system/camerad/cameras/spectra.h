@@ -76,6 +76,7 @@ public:
   int device_iommu = -1;
   int cdm_iommu = -1;
   int icp_device_iommu = -1;
+  MemoryManager mem_mgr;
 };
 
 class SpectraBuf {
@@ -196,7 +197,6 @@ public:
   SpectraOutputType output_type;
 
   CameraBuf buf;
-  MemoryManager mm;
   SpectraMaster *m;
 
 private:
