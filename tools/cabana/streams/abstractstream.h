@@ -14,7 +14,7 @@
 #include <QColor>
 #include <QDateTime>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "tools/cabana/dbc/dbcmanager.h"
 #include "tools/cabana/utils/util.h"
 #include "tools/replay/util.h"

@@ -7,7 +7,7 @@
 #include <string>
 #include <string_view>
 #include <vector>
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 
 enum CameraType {
   RoadCam = 0,

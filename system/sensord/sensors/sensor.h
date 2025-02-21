@@ -1,6 +1,6 @@
 #pragma once
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 
 class Sensor {
 public:

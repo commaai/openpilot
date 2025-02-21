@@ -3,7 +3,7 @@
 #include <algorithm>
 #include <array>
 
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/log.capnp.h"
 
 Timeline::~Timeline() {
   should_exit_.store(true);

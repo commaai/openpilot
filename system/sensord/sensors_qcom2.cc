@@ -7,8 +7,8 @@
 #include <poll.h>
 #include <linux/gpio.h>
 
-#include "cereal/services.h"
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/services.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/i2c.h"
 #include "common/ratekeeper.h"
 #include "common/swaglog.h"

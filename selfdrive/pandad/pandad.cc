@@ -9,8 +9,8 @@
 #include <thread>
 #include <utility>
 
-#include "cereal/gen/cpp/car.capnp.h"
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/gen/cpp/car.capnp.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/ratekeeper.h"
 #include "common/swaglog.h"
 #include "common/timing.h"

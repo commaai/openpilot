@@ -9,8 +9,8 @@
 #include <string>
 #include <vector>
 
-#include "cereal/gen/cpp/car.capnp.h"
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/car.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
 #include "panda/board/can.h"
 #include "selfdrive/pandad/panda_comms.h"

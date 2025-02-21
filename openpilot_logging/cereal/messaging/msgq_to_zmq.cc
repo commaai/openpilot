@@ -1,4 +1,4 @@
-#include "cereal/messaging/msgq_to_zmq.h"
+#include "openpilot_logging/cereal/messaging/msgq_to_zmq.h"
 
 #include <cassert>
 

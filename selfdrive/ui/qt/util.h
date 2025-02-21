@@ -10,7 +10,7 @@
 #include <QSurfaceFormat>
 #include <QWidget>
 
-#include "cereal/gen/cpp/car.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/car.capnp.h"
 #include "common/params.h"
 
 QString getVersion();

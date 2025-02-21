@@ -2,7 +2,7 @@
 
 #include <memory>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "msgq/visionipc/visionipc_server.h"
 #include "common/queue.h"
 #include "common/util.h"

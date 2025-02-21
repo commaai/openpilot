@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <utility>
 
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "system/ubloxd/generated/gps.h"
 #include "system/ubloxd/generated/glonass.h"

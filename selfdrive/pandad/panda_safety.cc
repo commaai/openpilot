@@ -1,5 +1,5 @@
 #include "selfdrive/pandad/pandad.h"
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 
 void PandaSafety::configureSafetyMode() {

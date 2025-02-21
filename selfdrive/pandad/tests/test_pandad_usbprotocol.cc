@@ -2,7 +2,7 @@
 #define CATCH_CONFIG_ENABLE_BENCHMARKING
 
 #include "catch2/catch.hpp"
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "common/util.h"
 #include "selfdrive/pandad/panda.h"
 

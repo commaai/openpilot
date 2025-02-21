@@ -1,4 +1,4 @@
-#include "cereal/messaging/messaging.h"
+#include "openpilot_logging/cereal/messaging/messaging.h"
 #include "opendbc/can/common.h"
 
 void can_list_to_can_capnp_cpp(const std::vector<CanFrame> &can_list, std::string &out, bool sendcan, bool valid) {

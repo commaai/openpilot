@@ -1,7 +1,7 @@
 #pragma once
 
 #include "common/util.h"
-#include "cereal/gen/cpp/log.capnp.h"
+#include "openpilot_logging/cereal/gen/cpp/log.capnp.h"
 #include "msgq/visionipc/visionipc_server.h"
 
 #include "media/cam_isp_ife.h"
