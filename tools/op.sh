@@ -283,7 +283,13 @@ function op_build() {
   CDIR=$(pwd)
   op_before_cmd
   cd "$CDIR"
-  op_run_command scons $@
+  if [[ -f "/AGNOS" ]]; then
+    # needed on AGNOS to not run out of memory
+    op_run_command scons system/manager/build.py
+  else
+    # scons is fine on PC
+    op_run_command scons $@
+  fi
 }
 
 function op_juggle() {
