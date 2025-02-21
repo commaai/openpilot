@@ -208,7 +208,6 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
           step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
-          //["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
