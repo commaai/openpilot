@@ -1400,14 +1400,18 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
       // wait for this frame's EOF, then queue up the next one
       if (enqueue_buffer(buf_idx, request_id + ife_buf_depth)) {
         // Frame is ready
+
+        // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
+        uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
+
+        // Update buffer and frame data
         buf.cur_buf_idx = buf_idx;
         buf.cur_frame_data = {
           .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
           .request_id = (uint32_t)request_id,
           .timestamp_sof = timestamp,
-          // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
-          .timestamp_eof = timestamp + sensor->readout_time_ns,
-          .timestamp_end_of_isp = (uint64_t)nanos_since_boot(),
+          .timestamp_eof = timestamp_eof,
+          .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
         };
         return true;
       }
