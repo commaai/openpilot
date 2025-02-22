@@ -39,8 +39,8 @@ inline void convert_uv(__global uchar * out_yuv, int uvi,
   if(uvi >= RGB_SIZE  + RGB_SIZE / 2)
     printf("UV overflow, %d >= %d\n", uvi, RGB_SIZE  + RGB_SIZE / 2);
 #endif
-  out_yuv[uvi] = RGB_TO_U(ar, ag, ab);
-  out_yuv[uvi+1] = RGB_TO_V(ar, ag, ab);
+  out_yuv[uvi] = RGB_TO_V(ar, ag, ab);
+  out_yuv[uvi+1] = RGB_TO_U(ar, ag, ab);
 }
 
 inline void convert_2_uvs(__global uchar * out_yuv, int uvi,
@@ -53,10 +53,10 @@ inline void convert_2_uvs(__global uchar * out_yuv, int uvi,
   const short ag2 = AVERAGE(rgbs1.s7, rgbs3.s2, rgbs2.s7, rgbs4.s2);
   const short ar2 = AVERAGE(rgbs3.s0, rgbs3.s3, rgbs4.s0, rgbs4.s3);
   uchar4 uv = (uchar4)(
-    RGB_TO_U(ar1, ag1, ab1),
     RGB_TO_V(ar1, ag1, ab1),
-    RGB_TO_U(ar2, ag2, ab2),
-    RGB_TO_V(ar2, ag2, ab2)
+    RGB_TO_U(ar1, ag1, ab1),
+    RGB_TO_V(ar2, ag2, ab2),
+    RGB_TO_U(ar2, ag2, ab2)
   );
 #ifdef CL_DEBUG1
   if(uvi > RGB_SIZE  + RGB_SIZE / 2 - 4)
