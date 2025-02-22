@@ -2,6 +2,7 @@
 import argparse
 import time
 import cereal.messaging as messaging
+from opendbc.car.carlog import carlog
 from opendbc.car.ecu_addrs import get_all_ecu_addrs
 from openpilot.common.params import Params
 from openpilot.selfdrive.car.card import can_comm_callbacks, obd_callback
@@ -14,6 +15,9 @@ if __name__ == "__main__":
   parser.add_argument('--no-obd', action='store_true')
   parser.add_argument('--timeout', type=float, default=1.0)
   args = parser.parse_args()
+
+  if args.debug:
+    carlog.setLevel('DEBUG')
 
   logcan = messaging.sub_sock('can')
   sendcan = messaging.pub_sock('sendcan')
@@ -29,7 +33,7 @@ if __name__ == "__main__":
   obd_callback(params)(not args.no_obd)
 
   print("Getting ECU addresses ...")
-  ecu_addrs = get_all_ecu_addrs(*can_callbacks, args.bus, args.timeout, debug=args.debug)
+  ecu_addrs = get_all_ecu_addrs(*can_callbacks, args.bus, args.timeout)
 
   print()
   print("Found ECUs on rx addresses:")

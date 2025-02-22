@@ -5,6 +5,7 @@
 #include "common/params.h"
 #include "common/swaglog.h"
 #include "system/loggerd/logger.h"
+#include "system/loggerd/zstd_writer.h"
 
 
 static kj::Array<capnp::word> build_boot_log() {
@@ -50,14 +51,14 @@ static kj::Array<capnp::word> build_boot_log() {
 
 int main(int argc, char** argv) {
   const std::string id = logger_get_identifier("BootCount");
-  const std::string path = Path::log_root() + "/boot/" + id;
+  const std::string path = Path::log_root() + "/boot/" + id + ".zst";
   LOGW("bootlog to %s", path.c_str());
 
   // Open bootlog
   bool r = util::create_directories(Path::log_root() + "/boot/", 0775);
   assert(r);
 
-  RawFile file(path.c_str());
+  ZstdFileWriter file(path, LOG_COMPRESSION_LEVEL);
   // Write initdata
   file.write(logger_build_init_data().asBytes());
   // Write bootlog

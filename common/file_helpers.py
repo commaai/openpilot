@@ -1,6 +1,10 @@
+import io
 import os
 import tempfile
 import contextlib
+import zstandard as zstd
+
+LOG_COMPRESSION_LEVEL = 10 # little benefit up to level 15. level ~17 is a small step change
 
 
 class CallbackReader:
@@ -35,3 +39,20 @@ def atomic_write_in_dir(path: str, mode: str = 'w', buffering: int = -1, encodin
     yield tmp_file
     tmp_file_name = tmp_file.name
   os.replace(tmp_file_name, path)
+
+
+def get_upload_stream(filepath: str, should_compress: bool) -> tuple[io.BufferedIOBase, int]:
+  if not should_compress:
+    file_size = os.path.getsize(filepath)
+    file_stream = open(filepath, "rb")
+    return file_stream, file_size
+
+  # Compress the file on the fly
+  compressed_stream = io.BytesIO()
+  compressor = zstd.ZstdCompressor(level=LOG_COMPRESSION_LEVEL)
+
+  with open(filepath, "rb") as f:
+    compressor.copy_stream(f, compressed_stream)
+    compressed_size = compressed_stream.tell()
+    compressed_stream.seek(0)
+    return compressed_stream, compressed_size

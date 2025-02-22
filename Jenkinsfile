@@ -103,7 +103,7 @@ def deviceStage(String stageName, String deviceType, List extra_env, def steps) 
             def diffPaths = args.diffPaths ?: []
             def cmdTimeout = args.timeout ?: 9999
 
-            if (branch != "master" && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
+            if (branch != "master" && !branch.contains("__jenkins_loop_") && diffPaths && !hasPathChanged(gitDiff, diffPaths)) {
               println "Skipping ${name}: no changes in ${diffPaths}."
               return
             } else {
@@ -170,7 +170,7 @@ node {
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
-  if (env.BRANCH_NAME != 'master') {
+  if (env.BRANCH_NAME != 'master' && !env.BRANCH_NAME.contains('__jenkins_loop_')) {
     properties([
         disableConcurrentBuilds(abortPrevious: true)
     ])
@@ -208,7 +208,6 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
           step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
-          //["time to onroad", "pytest selfdrive/test/test_time_to_onroad.py"],
         ])
       },
       'HW + Unit Tests': {
@@ -227,13 +226,22 @@ node {
           step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
         ])
       },
-      'camerad': {
+      'camerad AR0231': {
         deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
+      },
+      'camerad OX03C10': {
         deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+          step("build", "cd system/manager && ./build.py"),
+          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
+          step("test exposure", "pytest system/camerad/test/test_exposure.py"),
+        ])
+      },
+      'camerad OS04C10': {
+        deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),

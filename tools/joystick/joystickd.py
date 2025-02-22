@@ -62,6 +62,11 @@ def joystickd_thread():
     cs_msg.valid = True
     controlsState = cs_msg.controlsState
     controlsState.lateralControlState.init('debugState')
+
+    lp = sm['liveParameters']
+    steer_angle_without_offset = math.radians(sm['carState'].steeringAngleDeg - lp.angleOffsetDeg)
+    controlsState.curvature = -VM.calc_curvature(steer_angle_without_offset, sm['carState'].vEgo, lp.roll)
+
     pm.send('controlsState', cs_msg)
 
     rk.keep_time()
