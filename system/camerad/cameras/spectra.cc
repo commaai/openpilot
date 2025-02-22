@@ -273,6 +273,29 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
+int SpectraCamera::cancelStalledRequests(uint64_t request_id) {
+  struct cam_req_mgr_flush_info flush_info = {
+      .session_hdl = session_handle,
+      .link_hdl = link_handle,
+      .flush_type = CAM_REQ_MGR_FLUSH_TYPE_CANCEL_REQ,
+      .req_id = (int64_t)request_id,
+  };
+  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &flush_info, sizeof(flush_info));
+  LOGD("flushed all req: %d", ret);
+
+  if (icp_dev_handle > 0) {
+    struct cam_flush_dev_cmd cmd = {
+        .session_handle = session_handle,
+        .dev_handle = icp_dev_handle,
+        .flush_type = CAM_FLUSH_TYPE_REQ,
+        .req_id = (int64_t)request_id,
+    };
+    int err = do_cam_control(m->icp_fd, CAM_FLUSH_REQ, &cmd, sizeof(cmd));
+    assert(err == 0);
+  }
+  return ret;
+}
+
 void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   if (!openSensor()) {
     return;
@@ -938,7 +961,7 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
     }
 
     if (ret != 0) {
-      clear_req_queue();
+      cancelStalledRequests(request_id - ife_buf_depth);
     }
 
     destroySyncObjectAt(i);

@@ -198,6 +198,7 @@ public:
   SpectraMaster *m;
 
 private:
+  int cancelStalledRequests(uint64_t request_id);
   static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp);
   struct SyncData {
     uint64_t timestamp;
