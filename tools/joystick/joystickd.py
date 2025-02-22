@@ -63,7 +63,7 @@ def joystickd_thread():
     controlsState = cs_msg.controlsState
     controlsState.lateralControlState.init('debugState')
 
-    lp = self.sm['liveParameters']
+    lp = sm['liveParameters']
     steer_angle_without_offset = math.radians(sm['carState'].steeringAngleDeg - lp.angleOffsetDeg)
     controlsState.curvature = -VM.calc_curvature(steer_angle_without_offset, sm['carState'].vEgo, lp.roll)
 
