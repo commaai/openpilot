@@ -25,7 +25,7 @@ jobs:
         with:
           author: Vehicle Researcher <user@comma.ai>
           commit-message: "Update translations"
-          title: "[bot]Update translations"
+          title: "[bot] Update translations"
           body: "Automatic PR from repo-maintenance -> update_translations"
           branch: "update-translations"
           base: "master"
