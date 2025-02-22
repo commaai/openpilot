@@ -31,7 +31,7 @@ export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
 export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 0"
+export PYTEST_ADDOPTS="-n0 -s"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
