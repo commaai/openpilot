@@ -4,7 +4,7 @@ import argparse
 from subprocess import check_output, CalledProcessError
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, MessageTimeoutError, SESSION_TYPE, DTC_GROUP_TYPE
-from opendbc.safety import Safety
+from opendbc.car.structs import CarParams
 from panda import Panda
 
 parser = argparse.ArgumentParser(description="clear DTC status")
@@ -25,7 +25,7 @@ except CalledProcessError as e:
     raise e
 
 panda = Panda()
-panda.set_safety_mode(Safety.SAFETY_ELM327)
+panda.set_safety_mode(CarParams.SafetyModel.elm327)
 uds_client = UdsClient(panda, args.addr, bus=args.bus)
 print("extended diagnostic session ...")
 try:
