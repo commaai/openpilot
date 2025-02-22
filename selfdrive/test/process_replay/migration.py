@@ -271,7 +271,7 @@ def migrate_pandaStates(msgs):
   safety_param_migration = {
     "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | ToyotaSafetyFlags.STOCK_LONGITUDINAL,
     "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | ToyotaSafetyFlags.ALT_BRAKE,
-    "KIA_EV6": HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CANFD_HDA2,
+    "KIA_EV6": HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CANFD_LKA_STEERING,
   }
   # TODO: get new Ford route
   safety_param_migration |= {car: FordSafetyFlags.LONG_CONTROL for car in (set(FORD) - FORD.with_flags(FordFlags.CANFD))}
