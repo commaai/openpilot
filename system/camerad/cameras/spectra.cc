@@ -19,112 +19,9 @@
 #include "system/camerad/cameras/ife.h"
 #include "system/camerad/cameras/spectra.h"
 #include "system/camerad/cameras/bps_blobs.h"
+#include "system/camerad/cameras/utils.h"
 #include "third_party/linux/include/msm_media_info.h"
 
-
-// ************** low level camera helpers ****************
-
-int do_cam_control(int fd, int op_code, void *handle, int size) {
-  struct cam_control camcontrol = {0};
-  camcontrol.op_code = op_code;
-  camcontrol.handle = (uint64_t)handle;
-  if (size == 0) {
-    camcontrol.size = 8;
-    camcontrol.handle_type = CAM_HANDLE_MEM_HANDLE;
-  } else {
-    camcontrol.size = size;
-    camcontrol.handle_type = CAM_HANDLE_USER_POINTER;
-  }
-
-  int ret = HANDLE_EINTR(ioctl(fd, VIDIOC_CAM_CONTROL, &camcontrol));
-  if (ret == -1) {
-    LOGE("VIDIOC_CAM_CONTROL error: op_code %d - errno %d", op_code, errno);
-  }
-  return ret;
-}
-
-int do_sync_control(int fd, uint32_t id, void *handle, uint32_t size) {
-  struct cam_private_ioctl_arg arg = {
-    .id = id,
-    .size = size,
-    .ioctl_ptr = (uint64_t)handle,
-  };
-  int ret = HANDLE_EINTR(ioctl(fd, CAM_PRIVATE_IOCTL_CMD, &arg));
-
-  int32_t ioctl_result = static_cast<int32_t>(arg.result);
-  if (ret < 0) {
-    LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
-    return ret;
-  }
-  if (ioctl_result != 0) {
-    LOGE("CAM_SYNC error: id %u - errno %d - ret %d - ioctl_result %d", id, errno, ret, ioctl_result);
-    return ioctl_result;
-  }
-  return ret;
-}
-
-std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources) {
-  struct cam_acquire_dev_cmd cmd = {
-    .session_handle = session_handle,
-    .handle_type = CAM_HANDLE_USER_POINTER,
-    .num_resources = (uint32_t)(data ? num_resources : 0),
-    .resource_hdl = (uint64_t)data,
-  };
-  int err = do_cam_control(fd, CAM_ACQUIRE_DEV, &cmd, sizeof(cmd));
-  return err == 0 ? std::make_optional(cmd.dev_handle) : std::nullopt;
-}
-
-int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle) {
-  struct cam_config_dev_cmd cmd = {
-    .session_handle = session_handle,
-    .dev_handle = dev_handle,
-    .packet_handle = packet_handle,
-  };
-  return do_cam_control(fd, CAM_CONFIG_DEV, &cmd, sizeof(cmd));
-}
-
-int device_control(int fd, int op_code, int session_handle, int dev_handle) {
-  // start stop and release are all the same
-  struct cam_start_stop_dev_cmd cmd { .session_handle = session_handle, .dev_handle = dev_handle };
-  return do_cam_control(fd, op_code, &cmd, sizeof(cmd));
-}
-
-void *alloc_w_mmu_hdl(int video0_fd, int len, uint32_t *handle, int align, int flags, int mmu_hdl, int mmu_hdl2) {
-  struct cam_mem_mgr_alloc_cmd mem_mgr_alloc_cmd = {0};
-  mem_mgr_alloc_cmd.len = len;
-  mem_mgr_alloc_cmd.align = align;
-  mem_mgr_alloc_cmd.flags = flags;
-  mem_mgr_alloc_cmd.num_hdl = 0;
-  if (mmu_hdl != 0) {
-    mem_mgr_alloc_cmd.mmu_hdls[0] = mmu_hdl;
-    mem_mgr_alloc_cmd.num_hdl++;
-  }
-  if (mmu_hdl2 != 0) {
-    mem_mgr_alloc_cmd.mmu_hdls[1] = mmu_hdl2;
-    mem_mgr_alloc_cmd.num_hdl++;
-  }
-
-  do_cam_control(video0_fd, CAM_REQ_MGR_ALLOC_BUF, &mem_mgr_alloc_cmd, sizeof(mem_mgr_alloc_cmd));
-  *handle = mem_mgr_alloc_cmd.out.buf_handle;
-
-  void *ptr = NULL;
-  if (mem_mgr_alloc_cmd.out.fd > 0) {
-    ptr = mmap(NULL, len, PROT_READ | PROT_WRITE, MAP_SHARED, mem_mgr_alloc_cmd.out.fd, 0);
-    assert(ptr != MAP_FAILED);
-  }
-
-  // LOGD("allocated: %x %d %llx mapped %p", mem_mgr_alloc_cmd.out.buf_handle, mem_mgr_alloc_cmd.out.fd, mem_mgr_alloc_cmd.out.vaddr, ptr);
-
-  return ptr;
-}
-
-void release(int video0_fd, uint32_t handle) {
-  struct cam_mem_mgr_release_cmd mem_mgr_release_cmd = {0};
-  mem_mgr_release_cmd.buf_handle = handle;
-
-  int ret = do_cam_control(video0_fd, CAM_REQ_MGR_RELEASE_BUF, &mem_mgr_release_cmd, sizeof(mem_mgr_release_cmd));
-  assert(ret == 0);
-}
 
 static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   cam_cmd_unconditional_wait *unconditional_wait = (cam_cmd_unconditional_wait *)((char *)power + (sizeof(struct cam_cmd_power) + (power->count - 1) * sizeof(struct cam_power_settings)));
@@ -133,48 +30,6 @@ static cam_cmd_power *power_set_wait(cam_cmd_power *power, int16_t delay_ms) {
   unconditional_wait->op_code = CAMERA_SENSOR_WAIT_OP_SW_UCND;
   return (struct cam_cmd_power *)(unconditional_wait + 1);
 }
-
-// *** MemoryManager ***
-
-void *MemoryManager::alloc_buf(int size, uint32_t *handle) {
-  void *ptr;
-  auto &cache = cached_allocations[size];
-  if (!cache.empty()) {
-    ptr = cache.front();
-    cache.pop();
-    *handle = handle_lookup[ptr];
-  } else {
-    ptr = alloc_w_mmu_hdl(video0_fd, size, handle);
-    handle_lookup[ptr] = *handle;
-    size_lookup[ptr] = size;
-  }
-  memset(ptr, 0, size);
-  return ptr;
-}
-
-void MemoryManager::free(void *ptr) {
-  cached_allocations[size_lookup[ptr]].push(ptr);
-}
-
-MemoryManager::~MemoryManager() {
-  for (auto& x : cached_allocations) {
-    while (!x.second.empty()) {
-      void *ptr = x.second.front();
-      x.second.pop();
-      LOGD("freeing cached allocation %p with size %d", ptr, size_lookup[ptr]);
-      munmap(ptr, size_lookup[ptr]);
-
-      // release fd
-      close(handle_lookup[ptr] >> 16);
-      release(video0_fd, handle_lookup[ptr]);
-
-      handle_lookup.erase(ptr);
-      size_lookup.erase(ptr);
-    }
-  }
-}
-
-// *** SpectraMaster ***
 
 void SpectraMaster::init() {
   LOG("-- Opening devices");
@@ -1139,18 +994,18 @@ void SpectraCamera::configISP() {
   LOGD("acquire isp dev");
 
   // allocate IFE memory, then configure it
-  ife_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
+  ife_cmd.init(m->video0_fd, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
   if (output_type == ISP_IFE_PROCESSED) {
     assert(sensor->gamma_lut_rgb.size() == 64);
-    ife_gamma_lut.init(m, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
+    ife_gamma_lut.init(m->video0_fd, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
     for (int i = 0; i < 3; i++) {
       memcpy(ife_gamma_lut.ptr + ife_gamma_lut.size*i, sensor->gamma_lut_rgb.data(), ife_gamma_lut.size);
     }
     assert(sensor->linearization_lut.size() == 36);
-    ife_linearization_lut.init(m, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu);
+    ife_linearization_lut.init(m->video0_fd, sensor->linearization_lut.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu);
     memcpy(ife_linearization_lut.ptr, sensor->linearization_lut.data(), ife_linearization_lut.size);
     assert(sensor->vignetting_lut.size() == 221);
-    ife_vignetting_lut.init(m, sensor->vignetting_lut.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu, 2);
+    ife_vignetting_lut.init(m->video0_fd, sensor->vignetting_lut.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu, 2);
     for (int i = 0; i < 2; i++) {
       memcpy(ife_vignetting_lut.ptr + ife_vignetting_lut.size*i, sensor->vignetting_lut.data(), ife_vignetting_lut.size);
     }
@@ -1200,24 +1055,24 @@ void SpectraCamera::configICP() {
   release(m->video0_fd, cfg_handle);
 
   // BPS has a lot of buffers to init
-  bps_cmd.init(m, 464, 0x20, true, m->icp_device_iommu, 0, ife_buf_depth);
+  bps_cmd.init(m->video0_fd, 464, 0x20, true, m->icp_device_iommu, 0, ife_buf_depth);
 
   // BPSIQSettings struct
   uint32_t settings_size = sizeof(bps_settings[0]) / sizeof(bps_settings[0][0]);
-  bps_iq.init(m, settings_size, 0x20, true, m->icp_device_iommu);
+  bps_iq.init(m->video0_fd, settings_size, 0x20, true, m->icp_device_iommu);
   memcpy(bps_iq.ptr, bps_settings[sensor->num()], settings_size);
 
   // for cdm register writes, just make it bigger than you need
-  bps_cdm_program_array.init(m, 0x1000, 0x20, true, m->icp_device_iommu);
+  bps_cdm_program_array.init(m->video0_fd, 0x1000, 0x20, true, m->icp_device_iommu);
 
   // striping lib output
   uint32_t striping_size = sizeof(bps_striping_output[0]) / sizeof(bps_striping_output[0][0]);
-  bps_striping.init(m, striping_size, 0x20, true, m->icp_device_iommu);
+  bps_striping.init(m->video0_fd, striping_size, 0x20, true, m->icp_device_iommu);
   memcpy(bps_striping.ptr, bps_striping_output[sensor->num()], striping_size);
 
   // used internally by the BPS, we just allocate it.
   // size comes from the BPSStripingLib
-  bps_cdm_striping_bl.init(m, 0xa100, 0x20, true, m->icp_device_iommu);
+  bps_cdm_striping_bl.init(m->video0_fd, 0xa100, 0x20, true, m->icp_device_iommu);
 
   // LUTs
   /*
