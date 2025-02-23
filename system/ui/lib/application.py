@@ -5,6 +5,7 @@ import pyray as rl
 from enum import IntEnum
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import TICI
 
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -41,11 +42,14 @@ class GuiApplication:
   def init_window(self, title: str, fps: int=DEFAULT_FPS):
     atexit.register(self.close)  # Automatically call close() on exit
 
-    rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
+    rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT | rl.ConfigFlags.FLAG_WINDOW_UNDECORATED)
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
 
+    self._width = rl.get_screen_width()
+    self._height = rl.get_screen_height()
     self._target_fps = fps
+
     self._set_styles()
     self._load_fonts()
 
@@ -138,4 +142,11 @@ class GuiApplication:
       os._exit(1)
 
 
-gui_app = GuiApplication(2160, 1080)
+def _init_gui_app():
+  if TICI:
+    return GuiApplication(2160, 1080)
+  else:
+    return GuiApplication(0, 0)
+
+
+gui_app = _init_gui_app()
