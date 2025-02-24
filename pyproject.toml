@@ -42,7 +42,7 @@ dependencies = [
 
   # modeld
   "onnx >= 1.14.0",
-  "onnxruntime >=1.16.3",
+  "llvmlite",
 
   # logging
   "pyzmq",
@@ -56,8 +56,6 @@ dependencies = [
   # acados deps
   "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
   "future-fstrings",
-
-  "llvmlite",
 
   # joystickd
   "inputs",
