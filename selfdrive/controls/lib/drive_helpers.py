@@ -30,7 +30,7 @@ def clip_curvature(v_ego, prev_curvature, new_curvature, roll):
   new_curvature, was_clipped_max_curv = clamp(clipped_curv, -MAX_CURVATURE, MAX_CURVATURE)
   was_clipped = was_clipped_iso or was_clipped_max_curv
   max_curvature_rate = MAX_LATERAL_JERK / (v_ego ** 2)  # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
-  # Dont flag curv_rate clips, not important for experience
+  # Don't flag curv_rate clips, not important for experience
   safe_desired_curvature, _ = clamp(new_curvature,
                                    prev_curvature - max_curvature_rate * DT_CTRL,
                                    prev_curvature + max_curvature_rate * DT_CTRL)
