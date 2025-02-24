@@ -186,7 +186,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
         // TODO: more stuff here? we don't know
         .timeperframe = {
           .numerator = 1,
-          .denominator = 20
+          .denominator = (unsigned int)encoder_info.fps
         }
       }
     }
