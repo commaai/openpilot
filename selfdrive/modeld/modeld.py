@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-
-#
-if TICI or True:
-  from tinygrad.tensor import Tensor
-  from tinygrad.dtype import dtypes
+from tinygrad.tensor import Tensor
+from tinygrad.dtype import dtypes
+if TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-  os.environ['LLVM'] = '1'
+  os.environ['QCOM'] = '1'
 else:
-  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
+  os.environ['LLVM'] = '1'
 import time
 import pickle
 import numpy as np
@@ -78,12 +76,9 @@ class ModelState:
     self.output = np.zeros(net_output_size, dtype=np.float32)
     self.parser = Parser()
 
-    #if TICI:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
-    #else:
-    #  self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
 
   def slice_outputs(self, model_outputs: np.ndarray) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in self.output_slices.items()}
@@ -120,10 +115,7 @@ class ModelState:
     if prepare_only:
       return None
 
-    if True or TICI:
-      self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
-    else:
-      self.output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
+    self.output = self.model_run(**self.tensor_inputs).numpy().flatten()
 
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
