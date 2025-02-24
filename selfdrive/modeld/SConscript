@@ -41,6 +41,8 @@ lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_file
 pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
 if arch == 'larch64':
   device_string = 'QCOM=1'
+elif arch == 'Darwin':
+  device_string = 'CLANG=1 IMAGE=0'
 else:
   device_string = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0'
 
