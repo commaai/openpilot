@@ -34,6 +34,7 @@ source_segments = [
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.VOLKSWAGEN_GOLF
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.MAZDA_CX9_2021
   ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.FORD_BRONCO_SPORT_MK1
+  ("RIVIAN", "bc095dc92e101734|000000db--ee9fe46e57--1"),      # RIVIAN.RIVIAN_R1_GEN1
 
   # Enable when port is tested and dashcamOnly is no longer set
   #("VOLKSWAGEN2", "3cfdec54aa035f3f|2022-07-19--23-45-10--2"),  # VOLKSWAGEN.VOLKSWAGEN_PASSAT_NMS
@@ -57,6 +58,7 @@ segments = [
   ("VOLKSWAGEN", "regenED976DEB757|2024-08-30--03-18-02--0"),
   ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
   ("FORD", "regen756F8230C21|2024-11-07--00-08-24--0"),
+  ("RIVIAN", "bc095dc92e101734|000000db--ee9fe46e57--1"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
