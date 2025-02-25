@@ -363,7 +363,7 @@ class TestOnroad:
         start, end = min(first_fid), min(last_fid)
         all_ts = [[getattr(m, m.which()).timestampSof for m in self.msgs[c]] for c in cams]
         for i in range(end-start):
-          ts = [x[i]/1e6 for x in all_ts]
+          ts = [round(x[i]/1e6, 1) for x in all_ts]
           diff = max(ts) - min(ts)
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
 
