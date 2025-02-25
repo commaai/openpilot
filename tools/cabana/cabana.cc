@@ -4,7 +4,6 @@
 #include "selfdrive/ui/qt/util.h"
 #include "tools/cabana/mainwin.h"
 #include "tools/cabana/streams/devicestream.h"
-#include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/streams/socketcanstream.h"
 
@@ -27,8 +26,6 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"dcam", "load driver camera"});
   cmd_parser.addOption({"msgq", "read can messages from the msgq"});
-  cmd_parser.addOption({"panda", "read can messages from panda"});
-  cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
   if (SocketCanStream::available()) {
     cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
   }
@@ -44,13 +41,6 @@ int main(int argc, char *argv[]) {
     stream = new DeviceStream(&app);
   } else if (cmd_parser.isSet("zmq")) {
     stream = new DeviceStream(&app, cmd_parser.value("zmq"));
-  } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
-    try {
-      stream = new PandaStream(&app, {.serial = cmd_parser.value("panda-serial")});
-    } catch (std::exception &e) {
-      qWarning() << e.what();
-      return 0;
-    }
   } else if (SocketCanStream::available() && cmd_parser.isSet("socketcan")) {
     stream = new SocketCanStream(&app, {.device = cmd_parser.value("socketcan")});
   } else {

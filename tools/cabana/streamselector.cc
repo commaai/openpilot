@@ -3,10 +3,10 @@
 #include <QFileDialog>
 #include <QLabel>
 #include <QPushButton>
+#include <QVBoxLayout>
 
 #include "streams/socketcanstream.h"
 #include "tools/cabana/streams/devicestream.h"
-#include "tools/cabana/streams/pandastream.h"
 #include "tools/cabana/streams/replaystream.h"
 #include "tools/cabana/streams/socketcanstream.h"
 
@@ -34,7 +34,6 @@ StreamSelector::StreamSelector(QWidget *parent) : QDialog(parent) {
   layout->addWidget(btn_box);
 
   addStreamWidget(new OpenReplayWidget, tr("&Replay"));
-  addStreamWidget(new OpenPandaWidget, tr("&Panda"));
   if (SocketCanStream::available()) {
     addStreamWidget(new OpenSocketCanWidget, tr("&SocketCAN"));
   }
