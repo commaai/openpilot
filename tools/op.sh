@@ -243,6 +243,11 @@ function op_setup() {
   op_check
 }
 
+function op_auth() {
+  op_before_cmd
+  op_run_command tools/lib/auth.py
+}
+
 function op_activate_venv() {
   # bash 3.2 can't handle this without the 'set +e'
   set +e
@@ -268,6 +273,11 @@ function op_venv() {
   esac
 }
 
+function op_adb() {
+  op_before_cmd
+  op_run_command tools/adb_shell.sh
+}
+
 function op_check() {
   VERBOSE=1
   op_before_cmd
@@ -278,7 +288,13 @@ function op_build() {
   CDIR=$(pwd)
   op_before_cmd
   cd "$CDIR"
-  op_run_command scons $@
+  if [[ -f "/AGNOS" ]]; then
+    # needed on AGNOS to not run out of memory
+    op_run_command system/manager/build.py
+  else
+    # scons is fine on PC
+    op_run_command scons $@
+  fi
 }
 
 function op_juggle() {
@@ -313,8 +329,6 @@ function op_sim() {
 }
 
 function op_switch() {
-  op_before_cmd
-
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
     REMOTE="$1"
@@ -340,7 +354,7 @@ function op_switch() {
 function op_start() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
-    op_run_command sudo systemctl start comma $@
+    op_run_command sudo systemctl restart comma $@
   fi
 }
 
@@ -348,13 +362,6 @@ function op_stop() {
   if [[ -f "/AGNOS" ]]; then
     op_before_cmd
     op_run_command sudo systemctl stop comma $@
-  fi
-}
-
-function op_restart() {
-  if [[ -f "/AGNOS" ]]; then
-    op_before_cmd
-    op_run_command sudo systemctl restart comma $@
   fi
 }
 
@@ -374,20 +381,21 @@ function op_default() {
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
+  echo -e "  ${BOLD}auth${NC}         Authenticate yourself for API use"
   echo -e "  ${BOLD}check${NC}        Check the development environment (git, os, python) to start using openpilot"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
   echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
   echo -e "  ${BOLD}install${NC}      Install the 'op' tool system wide"
   echo -e "  ${BOLD}switch${NC}       Switch to a different git branch with a clean slate (nukes any changes)"
-  echo -e "  ${BOLD}start${NC}        Starts openpilot"
+  echo -e "  ${BOLD}start${NC}        Starts (or restarts) openpilot"
   echo -e "  ${BOLD}stop${NC}         Stops openpilot"
-  echo -e "  ${BOLD}restart${NC}      Restarts openpilot"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Tooling]:${NC}"
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
@@ -427,6 +435,7 @@ function _op() {
 
   # parse Commands
   case $1 in
+    auth )          shift 1; op_auth "$@" ;;
     venv )          shift 1; op_venv "$@" ;;
     check )         shift 1; op_check "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
@@ -443,6 +452,7 @@ function _op() {
     stop )          shift 1; op_stop "$@" ;;
     restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
+    adb )           shift 1; op_adb "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
