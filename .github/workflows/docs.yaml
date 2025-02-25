@@ -1,0 +1,65 @@
+name: docs
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
+concurrency:
+  group: docs-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+jobs:
+  docs:
+    name: build docs
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: commaai/timeout@v1
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    # Build
+    - name: Build docs
+      run: |
+        # TODO: can we install just the "docs" dependency group without the normal deps?
+        pip install mkdocs
+        mkdocs build
+
+    # Push to docs.comma.ai
+    - uses: actions/checkout@v4
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      with:
+        path: openpilot-docs
+        ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
+        repository: commaai/openpilot-docs
+    - name: Push
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: |
+        set -x
+
+        source release/identity.sh
+
+        cd openpilot-docs
+        git checkout --orphan tmp
+        git rm -rf .
+
+        # copy over docs
+        cp -r ../docs_site/ docs/
+
+        # GitHub pages config
+        touch docs/.nojekyll
+        echo -n docs.comma.ai > docs/CNAME
+
+        git add -f .
+        git commit -m "build docs"
+
+        # docs live in different repo to not bloat openpilot's full clone size
+        git push -f origin tmp:gh-pages
