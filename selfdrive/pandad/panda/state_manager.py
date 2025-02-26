@@ -2,8 +2,6 @@ import os
 from cereal import car, log
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.common.swaglog import cloudlog
-from panda import Panda
 
 SPOOFING_STARTED = os.getenv("STARTED") == "1"
 
@@ -12,12 +10,13 @@ LEC_ERROR_CODE = {
   "Bit1Error": 4, "Bit0Error": 5, "CRCError": 6, "NoChange": 7,
 }
 class PandaStateManager:
-  def __init__(self, pandas, serials, lock):
+  def __init__(self, pandas, lock):
     self.pandas = pandas
-    self.serials = set(serials)
-    self.hw_types = [int.from_bytes(p.get_type(), 'big') for p in pandas]
     self.params = Params()
     self.lock = lock
+
+    with self.lock:
+      self.hw_types = [int.from_bytes(p.get_type(), 'big') for p in pandas]
 
   def _fill_state(self, ps, hw_type, health):
     ps.voltage = health.get('voltage', 0)
@@ -73,7 +72,7 @@ class PandaStateManager:
     cs.irq2CallRate = can_health.get('irq2_call_rate', 0)
     cs.canCoreResetCnt = can_health.get('can_core_reset_count', 0)
 
-  def process(self, engaged, pm):
+  def process(self, engaged, pm)-> bool:
     ignition = False
     is_comma_three_red = (
       len(self.pandas) == 2 and
@@ -122,7 +121,5 @@ class PandaStateManager:
           p.set_power_save(not ignition)
         p.send_heartbeat(engaged)
 
-    if not ignition and set(Panda.list()) != self.serials:
-      cloudlog.warning("Reconnecting to new panda")
-
     pm.send("pandaStates", msg)
+    return ignition
