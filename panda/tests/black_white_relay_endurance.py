@@ -10,6 +10,7 @@ import time
 import random
 import argparse
 
+from opendbc.car.structs import CarParams
 from panda import Panda
 
 def get_test_string():
@@ -48,8 +49,8 @@ def run_test(sleep_duration):
     raise Exception("Connect white/grey and black panda to run this test!")
 
   # disable safety modes
-  black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
-  other_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  black_panda.set_safety_mode(CarParams.SafetyModel.allOutput)
+  other_panda.set_safety_mode(CarParams.SafetyModel.allOutput)
 
   # test health packet
   print("black panda health", black_panda.health())
@@ -69,9 +70,9 @@ def run_test(sleep_duration):
 
     if (time.time() - temp_start_time) > 3600 * 6:
       # Toggle relay
-      black_panda.set_safety_mode(Panda.SAFETY_SILENT)
+      black_panda.set_safety_mode(CarParams.SafetyModel.silent)
       time.sleep(1)
-      black_panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+      black_panda.set_safety_mode(CarParams.SafetyModel.allOutput)
       time.sleep(1)
       temp_start_time = time.time()
 
@@ -126,11 +127,11 @@ def test_buses(black_panda, other_panda, direction, test_array, sleep_duration):
 
     loop_buses = []
     for loop in cans_loop:
-      if (loop[0] != at) or (loop[2] != st):
+      if (loop[0] != at) or (loop[1] != st):
         content_errors += 1
 
-      print("  Loop on bus", str(loop[3]))
-      loop_buses.append(loop[3])
+      print("  Loop on bus", str(loop[2]))
+      loop_buses.append(loop[2])
     if len(cans_loop) == 0:
       print("  No loop")
       assert os.getenv("NOASSERT")

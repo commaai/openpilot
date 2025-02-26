@@ -1,10 +1,10 @@
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 libs = [common, messaging, visionipc,
-        'z', 'avformat', 'avcodec', 'swscale',
-        'avutil', 'yuv', 'OpenCL', 'pthread']
+        'avformat', 'avcodec', 'avutil',
+        'yuv', 'OpenCL', 'pthread', 'zstd']
 
-src = ['logger.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc']
+src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch != "larch64":
   src += ['encoder/ffmpeg_encoder.cc']
 
@@ -19,8 +19,8 @@ logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
 env.Program('loggerd', ['loggerd.cc'], LIBS=libs)
-env.Program('encoderd', ['encoderd.cc'], LIBS=libs)
+env.Program('encoderd', ['encoderd.cc'], LIBS=libs + ["jpeg"])
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('extras'):
-  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc'], LIBS=libs + ['curl', 'crypto'])
+  env.Program('tests/test_logger', ['tests/test_runner.cc', 'tests/test_logger.cc', 'tests/test_zstd_writer.cc'], LIBS=libs + ['curl', 'crypto'])

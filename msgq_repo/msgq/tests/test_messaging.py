@@ -1,10 +1,7 @@
-#!/usr/bin/env python3
 import os
 import random
-import threading
 import time
 import string
-import unittest
 import msgq
 
 
@@ -18,20 +15,9 @@ def zmq_sleep(t=1):
   if "ZMQ" in os.environ:
     time.sleep(t)
 
-def zmq_expected_failure(func):
-  if "ZMQ" in os.environ:
-    return unittest.expectedFailure(func)
-  else:
-    return func
+class TestPubSubSockets:
 
-def delayed_send(delay, sock, dat):
-  def send_func():
-    sock.send(dat)
-  threading.Timer(delay, send_func).start()
-
-class TestPubSubSockets(unittest.TestCase):
-
-  def setUp(self):
+  def setup_method(self):
     # ZMQ pub socket takes too long to die
     # sleep to prevent multiple publishers error between tests
     zmq_sleep()
@@ -46,7 +32,7 @@ class TestPubSubSockets(unittest.TestCase):
       msg = random_bytes()
       pub_sock.send(msg)
       recvd = sub_sock.receive()
-      self.assertEqual(msg, recvd)
+      assert msg == recvd
 
   def test_conflate(self):
     sock = random_sock()
@@ -65,10 +51,10 @@ class TestPubSubSockets(unittest.TestCase):
         time.sleep(0.1)
         recvd_msgs = msgq.drain_sock_raw(sub_sock)
         if conflate:
-          self.assertEqual(len(recvd_msgs), 1)
+          assert len(recvd_msgs) == 1
         else:
           # TODO: compare actual data
-          self.assertEqual(len(recvd_msgs), len(sent_msgs))
+          assert len(recvd_msgs) == len(sent_msgs)
 
   def test_receive_timeout(self):
     sock = random_sock()
@@ -79,9 +65,5 @@ class TestPubSubSockets(unittest.TestCase):
 
       start_time = time.monotonic()
       recvd = sub_sock.receive()
-      self.assertLess(time.monotonic() - start_time, 0.2)
+      assert (time.monotonic() - start_time) < 0.2
       assert recvd is None
-
-
-if __name__ == "__main__":
-  unittest.main()

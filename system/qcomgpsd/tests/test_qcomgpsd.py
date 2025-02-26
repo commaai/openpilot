@@ -16,6 +16,7 @@ GOOD_SIGNAL = bool(int(os.getenv("GOOD_SIGNAL", '0')))
 class TestRawgpsd:
   @classmethod
   def setup_class(cls):
+    os.environ['GPS_COLD_START'] = '1'
     os.system("sudo systemctl start systemd-resolved")
     os.system("sudo systemctl restart ModemManager lte")
     wait_for_modem()
@@ -27,7 +28,6 @@ class TestRawgpsd:
     os.system("sudo systemctl restart ModemManager lte")
 
   def setup_method(self):
-    at_cmd("AT+QGPSDEL=0")
     self.sm = messaging.SubMaster(['qcomGnss', 'gpsLocation', 'gnssMeasurements'])
 
   def teardown_method(self):
@@ -85,7 +85,7 @@ class TestRawgpsd:
     if should_be_loaded:
       assert valid_duration == "10080"  # should be max time
       injected_time = datetime.datetime.strptime(injected_time_str.replace("\"", ""), "%Y/%m/%d,%H:%M:%S")
-      assert abs((datetime.datetime.utcnow() - injected_time).total_seconds()) < 60*60*12
+      assert abs((datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - injected_time).total_seconds()) < 60*60*12
     else:
       valid_duration, injected_time_str = out.split(",", 1)
       injected_time_str = injected_time_str.replace('\"', '').replace('\'', '')

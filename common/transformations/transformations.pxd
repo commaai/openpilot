@@ -24,15 +24,15 @@ cdef extern from "orientation.hpp":
 
     double operator()(int, int)
 
-  Quaternion euler2quat(Vector3)
-  Vector3 quat2euler(Quaternion)
-  Matrix3 quat2rot(Quaternion)
-  Quaternion rot2quat(Matrix3)
-  Vector3 rot2euler(Matrix3)
-  Matrix3 euler2rot(Vector3)
+  Quaternion euler2quat(const Vector3 &)
+  Vector3 quat2euler(const Quaternion &)
+  Matrix3 quat2rot(const Quaternion &)
+  Quaternion rot2quat(const Matrix3 &)
+  Vector3 rot2euler(const Matrix3 &)
+  Matrix3 euler2rot(const Vector3 &)
   Matrix3 rot_matrix(double, double, double)
-  Vector3 ecef_euler_from_ned(ECEF, Vector3)
-  Vector3 ned_euler_from_ecef(ECEF, Vector3)
+  Vector3 ecef_euler_from_ned(const ECEF &, const Vector3 &)
+  Vector3 ned_euler_from_ecef(const ECEF &, const Vector3 &)
 
 
 cdef extern from "coordinates.cc":
@@ -52,21 +52,21 @@ cdef extern from "coordinates.cc":
     double alt
     bool radians
 
-  ECEF geodetic2ecef(Geodetic)
-  Geodetic ecef2geodetic(ECEF)
+  ECEF geodetic2ecef(const Geodetic &)
+  Geodetic ecef2geodetic(const ECEF &)
 
   cdef cppclass LocalCoord_c "LocalCoord":
     Matrix3 ned2ecef_matrix
     Matrix3 ecef2ned_matrix
 
-    LocalCoord_c(Geodetic, ECEF)
-    LocalCoord_c(Geodetic)
-    LocalCoord_c(ECEF)
+    LocalCoord_c(const Geodetic &, const ECEF &)
+    LocalCoord_c(const Geodetic &)
+    LocalCoord_c(const ECEF &)
 
-    NED ecef2ned(ECEF)
-    ECEF ned2ecef(NED)
-    NED geodetic2ned(Geodetic)
-    Geodetic ned2geodetic(NED)
+    NED ecef2ned(const ECEF &)
+    ECEF ned2ecef(const NED &)
+    NED geodetic2ned(const Geodetic &)
+    Geodetic ned2geodetic(const NED &)
 
 cdef extern from "coordinates.hpp":
   pass

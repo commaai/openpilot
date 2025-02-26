@@ -1,0 +1,33 @@
+# ROCK-Kernel-Driver 0b579de9622f5c93021dcb7927d13926313740a2
+# non fatal "crash"
+
+[  127.418045] ------------[ cut here ]------------
+[  127.418046] User pages unexpectedly invalid
+[  127.418056] WARNING: CPU: 16 PID: 260 at drivers/gpu/drm/amd/amdgpu/amdgpu_amdkfd_gpuvm.c:3000 amdgpu_amdkfd_restore_userptr_worker+0x4d9/0x500 [amdgpu]
+[  127.418235] Modules linked in: rfcomm cmac algif_hash algif_skcipher af_alg bnep nls_iso8859_1 iwlmvm mac80211 intel_rapl_msr intel_rapl_common edac_mce_amd snd_hda_codec_realtek snd_hda_codec_generic snd_hda_codec_hdmi kvm_amd binfmt_misc snd_hda_intel snd_intel_dspcfg kvm libarc4 snd_intel_sdw_acpi snd_hda_codec btusb iwlwifi btrtl snd_hda_core btbcm btintel irqbypass btmtk snd_hwdep crct10dif_pclmul snd_pcm polyval_clmulni bluetooth snd_seq_midi snd_seq_midi_event snd_rawmidi snd_seq polyval_generic cfg80211 ghash_clmulni_intel eeepc_wmi snd_seq_device snd_timer aesni_intel asus_wmi ecdh_generic snd platform_profile crypto_simd ledtrig_audio cryptd ecc ccp soundcore sparse_keymap rapl k10temp wmi_bmof mac_hid sch_fq_codel msr parport_pc ppdev lp parport ramoops pstore_blk efi_pstore reed_solomon pstore_zone ip_tables x_tables autofs4 amdgpu hid_generic usbhid hid i2c_algo_bit drm_ttm_helper ttm video iommu_v2 drm_buddy gpu_sched drm_display_helper drm_kms_helper syscopyarea
+[  127.418276]  sysfillrect sysimgblt fb_sys_fops drm nvme nvme_core cec r8169 ahci crc32_pclmul rc_core i2c_piix4 xhci_pci libahci nvme_common xhci_pci_renesas realtek wmi
+[  127.418284] CPU: 16 PID: 260 Comm: kworker/16:1 Tainted: G        W          6.0.0 #4
+[  127.418286] Hardware name: System manufacturer System Product Name/TUF GAMING X570-PLUS (WI-FI), BIOS 3603 03/20/2021
+[  127.418287] Workqueue: events amdgpu_amdkfd_restore_userptr_worker [amdgpu]
+[  127.418455] RIP: 0010:amdgpu_amdkfd_restore_userptr_worker+0x4d9/0x500 [amdgpu]
+[  127.418601] Code: ff e8 2b 8a 96 d1 e9 66 fe ff ff 48 c7 c7 40 4f f5 c0 e8 56 7b 8a d1 0f 0b e9 2e ff ff ff 48 c7 c7 d8 d0 ed c0 e8 43 7b 8a d1 <0f> 0b e9 0a fe ff ff 4c 89 ef e8 f8 89 96 d1 e9 cb fd ff ff e8 ce
+[  127.418603] RSP: 0018:ffffb36740a83dc8 EFLAGS: 00010282
+[  127.418604] RAX: 0000000000000000 RBX: ffff9d159ee9df30 RCX: 0000000000000027
+[  127.418605] RDX: 0000000000000027 RSI: ffffb36740a83c88 RDI: ffff9d242a220568
+[  127.418606] RBP: ffffb36740a83e58 R08: ffff9d242a220560 R09: 0000000000000001
+[  127.418607] R10: 0000000000000001 R11: 0000000000000020 R12: ffff9d159ee9df98
+[  127.418607] R13: ffff9d159ee9df70 R14: ffff9d159ee9dee0 R15: ffff9d159ee9dee0
+[  127.418608] FS:  0000000000000000(0000) GS:ffff9d242a200000(0000) knlGS:0000000000000000
+[  127.418609] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[  127.418610] CR2: 00007fd5d4715000 CR3: 0000000120ffe000 CR4: 0000000000750ee0
+[  127.418611] PKRU: 55555554
+[  127.418611] Call Trace:
+[  127.418612]  <TASK>
+[  127.418613]  process_one_work+0x21f/0x3f0
+[  127.418615]  worker_thread+0x4a/0x3c0
+[  127.418617]  ? process_one_work+0x3f0/0x3f0
+[  127.418618]  kthread+0xf0/0x120
+[  127.418619]  ? kthread_complete_and_exit+0x20/0x20
+[  127.418620]  ret_from_fork+0x22/0x30
+[  127.418622]  </TASK>
+[  127.418623] ---[ end trace 0000000000000000 ]---

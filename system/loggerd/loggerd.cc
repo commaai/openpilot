@@ -15,8 +15,8 @@ ExitHandler do_exit;
 
 struct LoggerdState {
   LoggerState logger;
-  std::atomic<double> last_camera_seen_tms;
-  std::atomic<int> ready_to_rotate;  // count of encoders ready to rotate
+  std::atomic<double> last_camera_seen_tms{0.0};
+  std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
   int max_waiting = 0;
   double last_rotate_tms = 0.;      // last rotate time in ms
 };
@@ -270,7 +270,7 @@ void loggerd_thread() {
 
         rotate_if_needed(&s);
 
-        if ((++msg_count % 1000) == 0) {
+        if ((++msg_count % 10000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
           LOGD("%" PRIu64 " messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
         }

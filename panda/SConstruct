@@ -16,6 +16,10 @@ AddOption('--compile_db',
           action='store_true',
           help='build clang compilation database')
 
+AddOption('--mutation',
+          action='store_true',
+          help='generate mutation-ready code')
+
 env = Environment(
   COMPILATIONDB_USE_ABSPATH=True,
   tools=["default", "compilation_db"],

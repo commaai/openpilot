@@ -204,14 +204,17 @@ def gen_code(folder, name, f_sym, dt_sym, x_sym, obs_eqs, dim_x, dim_err, eskf_p
 
   # merge code blocks
   header += "}"
-  code = "\n".join([pre_code, code, open(os.path.join(TEMPLATE_DIR, "ekf_c.c"), encoding='utf-8').read(), post_code])
+  with open(os.path.join(TEMPLATE_DIR, "ekf_c.c"), encoding='utf-8') as f:
+    code = "\n".join([pre_code, code, f.read(), post_code])
 
   # write to file
   if not os.path.exists(folder):
     os.mkdir(folder)
 
-  open(os.path.join(folder, f"{name}.h"), 'w', encoding='utf-8').write(header)  # header is used for ffi import
-  open(os.path.join(folder, f"{name}.cpp"), 'w', encoding='utf-8').write(code)
+  with open(os.path.join(folder, f"{name}.h"), 'w', encoding='utf-8') as f:
+    f.write(header)  # header is used for ffi import
+  with open(os.path.join(folder, f"{name}.cpp"), 'w', encoding='utf-8') as f:
+    f.write(code)
 
 
 class EKF_sym():

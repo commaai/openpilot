@@ -1,3 +1,10 @@
+// from the linker script
+#ifdef STM32H7
+  #define APP_START_ADDRESS 0x8020000U
+#elif defined(STM32F4)
+  #define APP_START_ADDRESS 0x8004000U
+#endif
+
 // flasher state variables
 uint32_t *prog_ptr = NULL;
 bool unlocked = false;

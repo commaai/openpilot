@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import argparse
 
+from opendbc.car import uds
 from openpilot.tools.lib.live_logreader import live_logreader
 from openpilot.tools.lib.logreader import LogReader, ReadMode
-from panda.python import uds
 
 
 def main(route: str | None, addrs: list[int]):
@@ -36,7 +36,7 @@ def main(route: str | None, addrs: list[int]):
           if msg.logMonoTime != prev_mono_time:
             print()
             prev_mono_time = msg.logMonoTime
-          print(f"{msg.which():>7}: rxaddr={can.address}, bus={can.src}, {round((msg.logMonoTime - start_mono_time) * 1e-6, 2)} ms, " +
+          print(f"{msg.which():>7}: rxaddr={can.address}, bus={str(can.src) + ',':<4} {round((msg.logMonoTime - start_mono_time) * 1e-6)} ms, " +
                 f"0x{can.dat.hex()}, {can.dat}, {len(can.dat)=}")
 
 

@@ -55,10 +55,6 @@ cdef class VisionBuf:
   def uv_offset(self):
     return self.buf.uv_offset
 
-  @property
-  def rgb(self):
-    return self.buf.rgb
-
 
 cdef class VisionIpcServer:
   cdef cppVisionIpcServer * server
@@ -66,11 +62,11 @@ cdef class VisionIpcServer:
   def __init__(self, string name):
     self.server = new cppVisionIpcServer(name, NULL, NULL)
 
-  def create_buffers(self, VisionStreamType tp, size_t num_buffers, bool rgb, size_t width, size_t height):
-    self.server.create_buffers(tp, num_buffers, rgb, width, height)
+  def create_buffers(self, VisionStreamType tp, size_t num_buffers, size_t width, size_t height):
+    self.server.create_buffers(tp, num_buffers, width, height)
 
-  def create_buffers_with_sizes(self, VisionStreamType tp, size_t num_buffers, bool rgb, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset):
-    self.server.create_buffers_with_sizes(tp, num_buffers, rgb, width, height, size, stride, uv_offset)
+  def create_buffers_with_sizes(self, VisionStreamType tp, size_t num_buffers, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset):
+    self.server.create_buffers_with_sizes(tp, num_buffers, width, height, size, stride, uv_offset)
 
   def send(self, VisionStreamType tp, const unsigned char[:] data, uint32_t frame_id=0, uint64_t timestamp_sof=0, uint64_t timestamp_eof=0):
     cdef cppVisionBuf * buf = self.server.get_buffer(tp)
@@ -122,10 +118,6 @@ cdef class VisionIpcClient:
   @property
   def uv_offset(self):
     return self.client.buffers[0].uv_offset if self.client.num_buffers else None
-
-  @property
-  def rgb(self):
-    return self.client.buffers[0].rgb if self.client.num_buffers else None
 
   @property
   def buffer_len(self):

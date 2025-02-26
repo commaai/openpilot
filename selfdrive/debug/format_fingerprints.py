@@ -4,7 +4,7 @@ import os
 
 from cereal import car
 from openpilot.common.basedir import BASEDIR
-from openpilot.selfdrive.car.interfaces import get_interface_attr
+from opendbc.car.interfaces import get_interface_attr
 
 Ecu = car.CarParams.Ecu
 
@@ -18,12 +18,12 @@ FINGERPRINTS_PY_TEMPLATE = jinja2.Template("""
 # ruff: noqa: E501
 {% endif %}
 {% if FW_VERSIONS[brand] %}
-from cereal import car
+from opendbc.car.structs import CarParams
 {% endif %}
-from openpilot.selfdrive.car.{{brand}}.values import CAR
+from opendbc.car.{{brand}}.values import CAR
 {% if FW_VERSIONS[brand] %}
 
-Ecu = car.CarParams.Ecu
+Ecu = CarParams.Ecu
 {% endif %}
 {% if comments +%}
 {{ comments | join() }}
@@ -66,7 +66,7 @@ FW_VERSIONS{% if not FW_VERSIONS[brand] %}: dict[str, dict[tuple, list[bytes]]]{
 def format_brand_fw_versions(brand, extra_fw_versions: None | dict[str, dict[tuple, list[bytes]]] = None):
   extra_fw_versions = extra_fw_versions or {}
 
-  fingerprints_file = os.path.join(BASEDIR, f"selfdrive/car/{brand}/fingerprints.py")
+  fingerprints_file = os.path.join(BASEDIR, f"opendbc/car/{brand}/fingerprints.py")
   with open(fingerprints_file) as f:
     comments = [line for line in f.readlines() if line.startswith("#") and "noqa" not in line]
 
