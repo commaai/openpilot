@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import argparse
 import matplotlib.pyplot as plt
 from typing import NamedTuple
@@ -17,13 +18,11 @@ class Event(NamedTuple):
   roll: float
 
 
-if __name__ == '__main__':
-  lr = LogReader('8279cfddf735a11e/00000003--c599397377/7:/q', sort_by_time=True)
-
-  # if qlog:
-  MIN_LAT_ACTIVE = RLOG_MIN_LAT_ACTIVE // QLOG_DECIMATION
-  MIN_STEERING_UNPRESSED = RLOG_MIN_STEERING_UNPRESSED // QLOG_DECIMATION
-  MIN_REQUESTING_MAX = RLOG_MIN_REQUESTING_MAX // QLOG_DECIMATION
+def find_events(lr: LogReader, qlog=False) -> list[Event]:
+  if qlog:
+    MIN_LAT_ACTIVE = RLOG_MIN_LAT_ACTIVE // QLOG_DECIMATION
+    MIN_STEERING_UNPRESSED = RLOG_MIN_STEERING_UNPRESSED // QLOG_DECIMATION
+    MIN_REQUESTING_MAX = RLOG_MIN_REQUESTING_MAX // QLOG_DECIMATION
 
   events = []
 
@@ -85,12 +84,33 @@ if __name__ == '__main__':
     # print('end of valid segment', (msg.logMonoTime - start_ts) * 1e-9, current_lateral_accel, curvature, v_ego, roll)
     # valid_segment = False
 
+  return events
+
+
+if __name__ == '__main__':
+  parser = argparse.ArgumentParser(description="Find max lateral acceleration events",
+                                   formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+
+  parser.add_argument("route")
+  args = parser.parse_args()
+
+  lr = LogReader(args.route, sort_by_time=True)
+  qlog = args.route.endswith('/q')
+  if qlog:
+    print('WARNING: Treating route as qlog!')
+
+  events = find_events(lr, qlog=qlog)
+
   print()
   print(f'Found {len(events)} events')
   print('\n'.join(map(str, events)))
 
+  CP = lr.first('carParams')
+
   plt.ion()
   plt.clf()
+  plt.suptitle(f'{CP.carFingerprint} - Max lateral acceleration events')
+  plt.title(args.route)
   plt.scatter([ev.speed for ev in events], [ev.lateral_accel for ev in events], label='max lateral accel events')
   plt.plot([0, 35], [3, 3], c='r', label='ISO 11270 - 3 m/s^2')
   plt.plot([0, 35], [-3, -3], c='r', label='ISO 11270 - 3 m/s^2')
@@ -98,4 +118,4 @@ if __name__ == '__main__':
   plt.ylim(-5, 5)
   plt.xlabel('speed (m/s)')
   plt.ylabel('lateral acceleration (m/s^2)')
-  plt.show()
+  plt.show(block=True)
