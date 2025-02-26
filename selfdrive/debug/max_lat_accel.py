@@ -27,7 +27,7 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
 
   events = []
 
-  start_ts = None
+  start_ts = 0
 
   # state tracking
   steering_unpressed = 0  # frames
@@ -35,13 +35,13 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
   lat_active = 0  # frames
 
   # current state
-  curvature = None
-  v_ego = None
-  roll = None
+  curvature = 0
+  v_ego = 0
+  roll = 0
 
   for msg in lr:
     if msg.which() == 'carControl':
-      if start_ts is None:
+      if start_ts == 0:
         start_ts = msg.logMonoTime
 
       lat_active = lat_active + 1 if msg.carControl.latActive else 0
@@ -105,8 +105,8 @@ if __name__ == '__main__':
 
   plt.plot([0, 35], [perc_left_accel, perc_left_accel], c='g', linestyle='--', label='90th percentile left lateral accel')
   plt.plot([0, 35], [perc_right_accel, perc_right_accel], c='#ff7f0e', linestyle='--', label='90th percentile right lateral accel')
-  plt.text(0.4, perc_left_accel + 0.4, f'{perc_left_accel:.2f} m/s^2', verticalalignment='center', fontsize=12)
-  plt.text(0.4, perc_right_accel - 0.4, f'{perc_right_accel:.2f} m/s^2', verticalalignment='center', fontsize=12)
+  plt.text(0.4, float(perc_left_accel + 0.4), f'{perc_left_accel:.2f} m/s^2', verticalalignment='center', fontsize=12)
+  plt.text(0.4, float(perc_right_accel - 0.4), f'{perc_right_accel:.2f} m/s^2', verticalalignment='center', fontsize=12)
 
   plt.xlim(0, 35)
   plt.ylim(-5, 5)
