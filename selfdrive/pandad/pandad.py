@@ -4,13 +4,14 @@ import os
 import usb1
 import time
 import signal
-import subprocess
-
+import threading
+# import subprocess
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
-from openpilot.common.basedir import BASEDIR
+# from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.pandad.panda.runner import PandaRunner
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -63,14 +64,13 @@ def flash_panda(panda_serial: str) -> Panda:
 
 def main() -> None:
   # signal pandad to close the relay and exit
+  evt = threading.Event()
   def signal_handler(signum, frame):
     cloudlog.info(f"Caught signal {signum}, exiting")
     nonlocal do_exit
     do_exit = True
-    if process is not None:
-      process.send_signal(signal.SIGINT)
+    evt.set()
 
-  process = None
   do_exit = False
   signal.signal(signal.SIGINT, signal_handler)
 
@@ -169,11 +169,9 @@ def main() -> None:
 
     first_run = False
 
-    # run pandad with all connected serials as arguments
     os.environ['MANAGER_DAEMON'] = 'pandad'
-    process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
-    process.wait()
-
+    runner = PandaRunner(panda_serials, pandas)
+    runner.run(evt)
 
 if __name__ == "__main__":
   main()
