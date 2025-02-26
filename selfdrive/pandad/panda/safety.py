@@ -58,26 +58,22 @@ class PandaSafetyManager:
 
     if not self.params.get_bool("ControlsReady"):
       return b""
-    return self.params.get("CarParams", encoding='utf-8') or b""
+    return self.params.get("CarParams") or b""
 
   def set_safety_mode(self, params_bytes: bytes):
     # Parse CarParams from bytes
-    try:
-      car_params = car.CarParams.from_bytes(params_bytes)
-    except capnp.lib.capnp.KjException as e:
-      cloudlog.error(f"Failed to parse CarParams: {e}")
-      return
-
-    safety_configs = car_params.safetyConfigs
+    with car.CarParams.from_bytes(params_bytes) as car_params:
+      safety_configs = car_params.safetyConfigs
     # alternative_experience = car_params.alternativeExperience
 
     with self.lock:
       for i, panda in enumerate(self.pandas):
         # Default to SILENT if no config for this panda
         safety_model = car.CarParams.SafetyModel.silent
+
         safety_param = 0
         if i < len(safety_configs):
-          safety_model = safety_configs[i].safetyModel
+          safety_model = car.CarParams.SafetyModel.schema.enumerants[safety_configs[i].safetyModel]
           safety_param = safety_configs[i].safetyParam
 
         # panda.set_alternative_experience(alternative_experience)
