@@ -36,6 +36,9 @@ class PandaRunner:
           with self.lock:
             for p in self.pandas:
               p.can_send_many(cans)
+        elif age >= 1:
+          cloudlog.error(f"Dropping stale sendcan message, age: {age:.2f}s")
+
 
   def _can_recv(self, evt):
     while not evt.is_set():
@@ -76,7 +79,7 @@ class PandaRunner:
               cloudlog.warning("Reconnecting to new panda")
               evt.set()
 
-          self.safety_mgr.configure_safety_mode();
+          self.safety_mgr.configure_safety_mode()
 
         # Send out peripheralState at 2Hz
         if not rk.frame % 10:
