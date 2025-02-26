@@ -1,4 +1,5 @@
 import os
+import threading
 import time
 import cereal.messaging as messaging
 from openpilot.common.swaglog import cloudlog
@@ -11,13 +12,47 @@ MIN_IR_POWER = 0.0
 CUTOFF_IL = 400
 SATURATE_IL = 1000
 
-def get_voltage():
-  with open("/sys/class/hwmon/hwmon1/in1_input") as f:
-    return int(f.read())
 
-def get_current():
-  with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
-    return int(f.read())
+class HardwareReader:
+  def __init__(self):
+    self.voltage = 0
+    self.current = 0
+    self.running = True
+    self.lock = threading.Lock()  # To protect shared voltage/current values
+    self.thread = threading.Thread(target=self._read_loop, daemon=True)
+    self.thread.start()
+
+  def _read_voltage(self):
+    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
+      return int(f.read())
+
+  def _read_current(self):
+    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
+      return int(f.read())
+
+  def _read_loop(self):
+    while self.running:
+      start = time.monotonic()
+      try:
+        new_voltage = self._read_voltage()
+        new_current = self._read_current()
+        with self.lock:
+          self.voltage = new_voltage
+          self.current = new_current
+        elapsed = (time.monotonic() - start) * 1000
+        if elapsed > 50:
+          cloudlog.warning(f"hwmon read took {elapsed:.2f}ms")
+      except Exception as e:
+        cloudlog.error(f"Hardware read error: {e}")
+      time.sleep(0.5)  # 500ms update rate
+
+  def get_values(self):
+    with self.lock:
+      return self.voltage, self.current
+
+  def stop(self):
+    self.running = False
+    self.thread.join()
 
 
 class PeripheralManager:
@@ -28,6 +63,7 @@ class PeripheralManager:
     self.prev_ir = 999
     self.filter = FirstOrderFilter(0, 30.0, 0.05)
     self.lock = lock
+    self.hw_reader = HardwareReader()
 
   def process(self, sm):
     if sm.updated["deviceState"] and not NO_FAN_CONTROL:
@@ -40,7 +76,6 @@ class PeripheralManager:
     ir = None
     if sm.updated["driverCameraState"]:
       state = sm["driverCameraState"]
-      print(state)
       lines = self.filter.update(state.integLines)
       self.last_camera_t = sm.logMonoTime['driverCameraState']
       if lines <= CUTOFF_IL:
@@ -62,11 +97,7 @@ class PeripheralManager:
     msg = messaging.new_message('peripheralState')
     ps = msg.peripheralState
 
-    start = time.monotonic()
-    ps.voltage = get_voltage()
-    ps.current = get_current()
-    if (time.monotonic() - start) * 1000 > 50:
-      cloudlog.warning(f"hwmon read took {(time.monotonic() - start) * 1000:.2f}ms")
+    ps.voltage, ps.current = self.hw_reader.get_values()
 
     if not (ps.voltage or ps.current):
       with self.lock:
@@ -78,3 +109,6 @@ class PeripheralManager:
       ps.fanSpeedRpm = self.panda.get_fan_rpm()
 
     pm.send("peripheralState", msg)
+
+  def cleanup(self):
+    self.hw_reader.stop()
