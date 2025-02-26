@@ -2226,7 +2226,6 @@ struct LiveParametersData {
   gyroBias @1 :Float32;
   angleOffsetDeg @2 :Float32;
   angleOffsetAverageDeg @3 :Float32;
-  angleOffsetValid @17 :Bool;
   stiffnessFactor @4 :Float32;
   steerRatio @5 :Float32;
   sensorValid @6 :Bool;
@@ -2238,6 +2237,8 @@ struct LiveParametersData {
   steerRatioStd @13 :Float32;
   roll @14 :Float32;
   debugFilterState @16 :FilterState;
+
+  angleOffsetValid @17 :Bool;
 
   yawRateDEPRECATED @7 :Float32;
   filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
