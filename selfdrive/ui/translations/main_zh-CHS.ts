@@ -306,6 +306,27 @@
     </message>
 </context>
 <context>
+    <name>FirehosePanel</name>
+    <message>
+        <source>🔥 Firehose Mode 🔥</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot learns to drive by watching humans, like you, drive.
+
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, so Experimental mode will get better!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable the toggle&lt;br&gt;  4. Leave it connected until the progress bar completes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>HudRenderer</name>
     <message>
         <source>km/h</source>
@@ -636,6 +657,10 @@ This may take up to a minute.</source>
     <message>
         <source>Developer</source>
         <translation>开发人员</translation>
+    </message>
+    <message>
+        <source>Firehose</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1075,11 +1100,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>FIREHOSE Mode</source>
-        <translation>FIREHOSE 模式</translation>
+        <translation type="vanished">FIREHOSE 模式</translation>
     </message>
     <message>
         <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation>启用 &lt;b&gt;FIREHOSE 模式&lt;/b&gt; 以将您的驾驶数据纳入训练集。&lt;br&gt;&lt;br&gt;按照以下步骤准备您的设备：&lt;br&gt;  1. 将设备带入室内并连接到良好的 USB-C 适配器&lt;br&gt;  2. 连接到 Wi-Fi&lt;br&gt;  3. 启用此开关&lt;br&gt;  4. 保持连接至少 30 分钟&lt;br&gt;&lt;br&gt;此开关在您重新启动设备后会关闭。每周重复一次以达到最佳效果。</translation>
+        <translation type="vanished">启用 &lt;b&gt;FIREHOSE 模式&lt;/b&gt; 以将您的驾驶数据纳入训练集。&lt;br&gt;&lt;br&gt;按照以下步骤准备您的设备：&lt;br&gt;  1. 将设备带入室内并连接到良好的 USB-C 适配器&lt;br&gt;  2. 连接到 Wi-Fi&lt;br&gt;  3. 启用此开关&lt;br&gt;  4. 保持连接至少 30 分钟&lt;br&gt;&lt;br&gt;此开关在您重新启动设备后会关闭。每周重复一次以达到最佳效果。</translation>
     </message>
 </context>
 <context>
