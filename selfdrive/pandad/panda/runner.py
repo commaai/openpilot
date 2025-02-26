@@ -2,9 +2,11 @@ import os
 import threading
 import time
 from itertools import chain
+from panda import Panda
 from cereal.messaging import SubMaster, PubMaster
 import cereal.messaging as messaging
 from openpilot.common.realtime import Ratekeeper
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.pandad.panda.state_manager import PandaStateManager
 from openpilot.selfdrive.pandad.panda.peripheral import PeripheralManager
 from openpilot.selfdrive.pandad.panda.safety import PandaSafetyManager
@@ -14,10 +16,11 @@ FAKE_SEND = os.getenv("FAKESEND") == "1"
 class PandaRunner:
   def __init__(self, serials, pandas):
     self.pandas = pandas
+    self.serials = set(serials)
     self.sm = SubMaster(["selfdriveState", "deviceState", "driverCameraState"])
     self.pm = PubMaster(["can", "pandaStates", "peripheralState"])
     self.lock = threading.Lock()
-    self.state_mgr = PandaStateManager(pandas, serials, self.lock)
+    self.state_mgr = PandaStateManager(pandas, self.lock)
     self.periph_mgr = PeripheralManager(pandas, self.lock)
     self.safety_mgr = PandaSafetyManager(pandas, self.lock)
 
@@ -42,11 +45,9 @@ class PandaRunner:
       if cans:
         msg = messaging.new_message('can', len(cans))
         msg.valid = True
-        for i, (addr, dat, src) in enumerate(cans):
+        for i, can_info in enumerate(cans):
           can = msg.can[i]
-          can.address = addr
-          can.dat = dat
-          can.src = src
+          can.address, can.dat, can.src = can_info
         self.pm.send("can", msg)
 
   def run(self, evt):
@@ -58,23 +59,33 @@ class PandaRunner:
       t.start()
 
     rk = Ratekeeper(20)
-    while not evt.is_set():
-      self.sm.update(0)
-      engaged = self.sm.all_checks() and self.sm["selfdriveState"].enabled
+    try:
+      while not evt.is_set():
+        self.sm.update(0)
+        engaged = self.sm.all_checks() and self.sm["selfdriveState"].enabled
 
-      self.periph_mgr.process(self.sm)
+        self.periph_mgr.process(self.sm)
 
-      # Process panda state at 10 Hz
-      if not rk.frame % 2:
-        self.state_mgr.process(engaged, self.pm)
-        self.safety_mgr.configure_safety_mode();
+        # Process panda state at 10 Hz
+        if not rk.frame % 2:
+          ignition = self.state_mgr.process(engaged, self.pm)
+          if not ignition:
+            with self.lock:
+              current_serials = set(Panda.list())
+            if current_serials != self.serials:
+              cloudlog.warning("Reconnecting to new panda")
+              evt.set()
 
-      # Send out peripheralState at 2Hz
-      if not rk.frame % 10:
-        self.periph_mgr.send_state(self.pm)
+          self.safety_mgr.configure_safety_mode();
 
-      rk.keep_time()
+        # Send out peripheralState at 2Hz
+        if not rk.frame % 10:
+          self.periph_mgr.send_state(self.pm)
 
-    evt.set()
-    for t in threads:
-      t.join()
+        rk.keep_time()
+    except Exception as e:
+      cloudlog.error(f"Exception in main loop: {e}")
+    finally:
+      evt.set()
+      for t in threads:
+        t.join()

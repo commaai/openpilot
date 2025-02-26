@@ -33,16 +33,18 @@ class PandaSafetyManager:
     # Initialize to ELM327 without OBD multiplexing for initial fingerprinting
     if not self.initialized:
       self.prev_obd_multiplexing = False
-      for panda in self.pandas:
-        panda.set_safety_mode(car.CarParams.SafetyModel.elm327, 1)
+      with self.lock:
+        for panda in self.pandas:
+          panda.set_safety_mode(car.CarParams.SafetyModel.elm327, 1)
       self.initialized = True
 
     # Switch between multiplexing modes based on OBD multiplexing request
     obd_multiplexing_requested = self.params.get_bool("ObdMultiplexingEnabled")
     if obd_multiplexing_requested != self.prev_obd_multiplexing:
-      for i, panda in enumerate(self.pandas):
-        safety_param = 1 if i > 0 or not obd_multiplexing_requested else 0
-        panda.set_safety_mode(car.CarParams.SafetyModel.elm327, safety_param)
+      with self.lock:
+        for i, panda in enumerate(self.pandas):
+          safety_param = 1 if i > 0 or not obd_multiplexing_requested else 0
+          panda.set_safety_mode(car.CarParams.SafetyModel.elm327, safety_param)
       self.prev_obd_multiplexing = obd_multiplexing_requested
       self.params.put_bool("ObdMultiplexingChanged", True)
 
@@ -69,13 +71,14 @@ class PandaSafetyManager:
     safety_configs = car_params.safetyConfigs
     # alternative_experience = car_params.alternativeExperience
 
-    for i, panda in enumerate(self.pandas):
-      # Default to SILENT if no config for this panda
-      safety_model = car.CarParams.SafetyModel.silent
-      safety_param = 0
-      if i < len(safety_configs):
-        safety_model = safety_configs[i].safetyModel
-        safety_param = safety_configs[i].safetyParam
+    with self.lock:
+      for i, panda in enumerate(self.pandas):
+        # Default to SILENT if no config for this panda
+        safety_model = car.CarParams.SafetyModel.silent
+        safety_param = 0
+        if i < len(safety_configs):
+          safety_model = safety_configs[i].safetyModel
+          safety_param = safety_configs[i].safetyParam
 
-      # panda.set_alternative_experience(alternative_experience)
-      panda.set_safety_mode(safety_model, safety_param)
+        # panda.set_alternative_experience(alternative_experience)
+        panda.set_safety_mode(safety_model, safety_param)
