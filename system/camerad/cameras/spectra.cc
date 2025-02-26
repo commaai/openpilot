@@ -1396,31 +1396,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
 
     int buf_idx = (request_id - 1) % ife_buf_depth;
     uint64_t timestamp = event_data->u.frame_msg.timestamp;  // this is timestamped in the kernel's SOF IRQ callback
-    if (syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
-      // wait for this frame's EOF, then queue up the next one
-      if (enqueue_buffer(buf_idx, request_id + ife_buf_depth)) {
-        // Frame is ready
-
-        // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
-        uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
-
-        // Update buffer and frame data
-        buf.cur_buf_idx = buf_idx;
-        buf.cur_frame_data = {
-          .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
-          .request_id = (uint32_t)request_id,
-          .timestamp_sof = timestamp,
-          .timestamp_eof = timestamp_eof,
-          .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
-        };
-        return true;
-      }
-      // LOGW("camerad %d synced req %d fid %d, publishing ts %.2f cereal_frame_id %d", cc.camera_num, (int)request_id, (int)frame_id_raw, (double)(timestamp)*1e-6, meta_data.frame_id);
-    } else {
-      // Frames not yet synced
-      enqueue_req_multi(request_id + ife_buf_depth, 1);
-      // LOGW("camerad %d not synced req %d fid %d", cc.camera_num, (int)request_id, (int)frame_id_raw);
-    }
+    return processFrame(request_id, buf_idx, frame_id_raw, timestamp);
   } else { // not ready
     if (frame_id_raw > frame_id_raw_last + 10) {
       LOGE("camera %d reset after half second of no response", cc.camera_num);
@@ -1432,6 +1408,31 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   }
 
   return false;
+}
+
+bool SpectraCamera::processFrame(uint64_t request_id, int buf_idx, uint64_t frame_id_raw, uint64_t timestamp) {
+  // wait for this frame's EOF, then queue up the next one
+  if (!enqueue_buffer(buf_idx, request_id + ife_buf_depth)) {
+    return false;
+  }
+
+  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
+    return false;
+  }
+
+  // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
+  uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
+
+  // Update buffer and frame data
+  buf.cur_buf_idx = buf_idx;
+  buf.cur_frame_data = {
+      .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
+      .request_id = (uint32_t)request_id,
+      .timestamp_sof = timestamp,
+      .timestamp_eof = timestamp_eof,
+      .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)};
+
+  return true;
 }
 
 bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp) {
