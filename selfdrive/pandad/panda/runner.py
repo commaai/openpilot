@@ -86,6 +86,7 @@ class PandaRunner:
     except Exception as e:
       cloudlog.error(f"Exception in main loop: {e}")
     finally:
+      self.periph_mgr.cleanup()
       evt.set()
       for t in threads:
         t.join()
