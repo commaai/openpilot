@@ -2226,6 +2226,7 @@ struct LiveParametersData {
   gyroBias @1 :Float32;
   angleOffsetDeg @2 :Float32;
   angleOffsetAverageDeg @3 :Float32;
+  angleOffsetValid @17 :Bool;
   stiffnessFactor @4 :Float32;
   steerRatio @5 :Float32;
   sensorValid @6 :Bool;
@@ -2564,7 +2565,7 @@ struct Event {
 
     # DO change the name of the field and struct
     # DON'T change the ID (e.g. @107)
-    # DON'T change which struct it points to 
+    # DON'T change which struct it points to
     customReserved0 @107 :Custom.CustomReserved0;
     customReserved1 @108 :Custom.CustomReserved1;
     customReserved2 @109 :Custom.CustomReserved2;
