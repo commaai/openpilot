@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import argparse
+import numpy as np
 import matplotlib.pyplot as plt
 from typing import NamedTuple
 from openpilot.tools.lib.logreader import LogReader
@@ -7,7 +8,7 @@ from openpilot.selfdrive.locationd.models.pose_kf import EARTH_G
 
 RLOG_MIN_LAT_ACTIVE = 50
 RLOG_MIN_STEERING_UNPRESSED = 50
-RLOG_MIN_REQUESTING_MAX = 50
+RLOG_MIN_REQUESTING_MAX = 25  # sample many times after reaching max torque
 
 QLOG_DECIMATION = 10
 
@@ -61,9 +62,7 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
 
     if lat_active > min_lat_active and steering_unpressed > min_steering_unpressed and requesting_max > min_requesting_max:
       # TODO: record max lat accel at the end of the event, need to use the past lat accel as overriding can happen before we detect it
-      steering_unpressed = 0
       requesting_max = 0
-      lat_active = 0
 
       current_lateral_accel = curvature * v_ego ** 2 - roll * EARTH_G
       events.append(Event(current_lateral_accel, v_ego, roll, round((msg.logMonoTime - start_ts) * 1e-9, 2)))
@@ -90,6 +89,9 @@ if __name__ == '__main__':
   print()
   print(f'Found {len(events)} events')
 
+  perc_left_accel = -np.percentile([-ev.lateral_accel for ev in events if ev.lateral_accel < 0], 90)
+  perc_right_accel = np.percentile([ev.lateral_accel for ev in events if ev.lateral_accel > 0], 90)
+
   CP = lr.first('carParams')
 
   plt.ion()
@@ -97,10 +99,18 @@ if __name__ == '__main__':
   plt.suptitle(f'{CP.carFingerprint} - Max lateral acceleration events')
   plt.title(args.route)
   plt.scatter([ev.speed for ev in events], [ev.lateral_accel for ev in events], label='max lateral accel events')
+
   plt.plot([0, 35], [3, 3], c='r', label='ISO 11270 - 3 m/s^2')
-  plt.plot([0, 35], [-3, -3], c='r', label='ISO 11270 - 3 m/s^2')
+  plt.plot([0, 35], [-3, -3], c='r')
+
+  plt.plot([0, 35], [perc_left_accel, perc_left_accel], c='g', linestyle='--', label='90th percentile left lateral accel')
+  plt.plot([0, 35], [perc_right_accel, perc_right_accel], c='#ff7f0e', linestyle='--', label='90th percentile right lateral accel')
+  plt.text(0.4, perc_left_accel + 0.4, f'{perc_left_accel:.2f} m/s^2', verticalalignment='center', fontsize=12)
+  plt.text(0.4, perc_right_accel - 0.4, f'{perc_right_accel:.2f} m/s^2', verticalalignment='center', fontsize=12)
+
   plt.xlim(0, 35)
   plt.ylim(-5, 5)
   plt.xlabel('speed (m/s)')
   plt.ylabel('lateral acceleration (m/s^2)')
+  plt.legend()
   plt.show(block=True)
