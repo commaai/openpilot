@@ -1426,11 +1426,12 @@ bool SpectraCamera::processFrame(uint64_t request_id, int buf_idx, uint64_t fram
   // Update buffer and frame data
   buf.cur_buf_idx = buf_idx;
   buf.cur_frame_data = {
-      .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
-      .request_id = (uint32_t)request_id,
-      .timestamp_sof = timestamp,
-      .timestamp_eof = timestamp_eof,
-      .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)};
+    .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
+    .request_id = (uint32_t)request_id,
+    .timestamp_sof = timestamp,
+    .timestamp_eof = timestamp_eof,
+    .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
+  };
 
   return true;
 }
