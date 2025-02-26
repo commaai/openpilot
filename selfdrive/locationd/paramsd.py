@@ -218,8 +218,6 @@ def main():
       total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
       roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
 
-      print("stat:", avg_offset_valid, angle_offset)
-
       msg = messaging.new_message('liveParameters')
 
       liveParameters = msg.liveParameters
