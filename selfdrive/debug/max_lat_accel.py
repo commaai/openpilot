@@ -7,7 +7,7 @@ from openpilot.selfdrive.locationd.models.pose_kf import EARTH_G
 
 RLOG_MIN_LAT_ACTIVE = 50
 RLOG_MIN_STEERING_UNPRESSED = 50
-RLOG_MIN_REQUESTING_MAX = 80
+RLOG_MIN_REQUESTING_MAX = 50
 
 QLOG_DECIMATION = 10
 
@@ -16,28 +16,24 @@ class Event(NamedTuple):
   lateral_accel: float
   speed: float
   roll: float
+  timestamp: float  # relative to start of route (s)
 
 
-def find_events(lr: LogReader, qlog=False) -> list[Event]:
-  if qlog:
-    MIN_LAT_ACTIVE = RLOG_MIN_LAT_ACTIVE // QLOG_DECIMATION
-    MIN_STEERING_UNPRESSED = RLOG_MIN_STEERING_UNPRESSED // QLOG_DECIMATION
-    MIN_REQUESTING_MAX = RLOG_MIN_REQUESTING_MAX // QLOG_DECIMATION
+def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
+  min_lat_active = RLOG_MIN_LAT_ACTIVE // QLOG_DECIMATION if qlog else RLOG_MIN_LAT_ACTIVE
+  min_steering_unpressed = RLOG_MIN_STEERING_UNPRESSED // QLOG_DECIMATION if qlog else RLOG_MIN_STEERING_UNPRESSED
+  min_requesting_max = RLOG_MIN_REQUESTING_MAX // QLOG_DECIMATION if qlog else RLOG_MIN_REQUESTING_MAX
 
   events = []
 
   start_ts = None
-  platform = None
-  route = None
 
   # state tracking
   steering_unpressed = 0  # frames
   requesting_max = 0  # frames
   lat_active = 0  # frames
-  valid_segment = False
 
   # current state
-  current_lateral_accel = None
   curvature = None
   v_ego = None
   roll = None
@@ -63,26 +59,15 @@ def find_events(lr: LogReader, qlog=False) -> list[Event]:
     elif msg.which() == 'liveParameters':
       roll = msg.liveParameters.roll
 
-    # if msg.which() == 'carControl':
-    if lat_active > MIN_LAT_ACTIVE and steering_unpressed > MIN_STEERING_UNPRESSED and requesting_max > MIN_REQUESTING_MAX:
-      lat_active = 0
+    if lat_active > min_lat_active and steering_unpressed > min_steering_unpressed and requesting_max > min_requesting_max:
+      # TODO: record max lat accel at the end of the event, need to use the past lat accel as overriding can happen before we detect it
       steering_unpressed = 0
       requesting_max = 0
+      lat_active = 0
 
       current_lateral_accel = curvature * v_ego ** 2 - roll * EARTH_G
-      events.append(Event(current_lateral_accel, v_ego, roll))
-      print('valid segment', (msg.logMonoTime - start_ts) * 1e-9, current_lateral_accel, curvature, v_ego, roll)
-
-      valid_segment = True
-      # current_lateral_accel = curvature * v_ego ** 2 - roll * EARTH_G
-      # print('Max torque found:', steering_unpressed, requesting_max, lat_active)
-      # print('state', current_lateral_accel, curvature, v_ego, roll)
-
-    # else:
-    #   if valid_segment:
-    # current_lateral_accel = curvature * v_ego ** 2 - roll * EARTH_G
-    # print('end of valid segment', (msg.logMonoTime - start_ts) * 1e-9, current_lateral_accel, curvature, v_ego, roll)
-    # valid_segment = False
+      events.append(Event(current_lateral_accel, v_ego, roll, round((msg.logMonoTime - start_ts) * 1e-9, 2)))
+      print(events[-1])
 
   return events
 
@@ -99,11 +84,11 @@ if __name__ == '__main__':
   if qlog:
     print('WARNING: Treating route as qlog!')
 
+  print('Finding events...')
   events = find_events(lr, qlog=qlog)
 
   print()
   print(f'Found {len(events)} events')
-  print('\n'.join(map(str, events)))
 
   CP = lr.first('carParams')
 
