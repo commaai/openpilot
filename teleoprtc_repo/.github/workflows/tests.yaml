@@ -1,0 +1,36 @@
+name: tests
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", "3.12"]
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install aiortc dependencies
+      run: |
+        sudo apt update
+        sudo apt install libavdevice-dev libavfilter-dev libopus-dev libvpx-dev libsrtp2-dev pkg-config
+    - name: Install package
+      run: pip install -e .[dev]
+    - name: Unit Tests
+      run: pytest
+  static_analysis:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Install pre-commit
+      run: pip install pre-commit
+    - name: Static analysis
+      run: |
+        pre-commit run --all
