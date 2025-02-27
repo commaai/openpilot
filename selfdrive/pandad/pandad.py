@@ -5,10 +5,9 @@ import usb1
 import time
 import signal
 import threading
-# import subprocess
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
-# from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.common.realtime import config_realtime_process
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.pandad.panda.runner import PandaRunner
@@ -153,6 +152,10 @@ def main() -> None:
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
           panda.reset(reconnect=True)
 
+      first_run = False
+      runner = PandaRunner(panda_serials, pandas)
+      runner.run(evt)
+
       for p in pandas:
         p.close()
     # TODO: wrap all panda exceptions in a base panda exception
@@ -167,11 +170,6 @@ def main() -> None:
       cloudlog.exception("pandad.uncaught_exception")
       continue
 
-    first_run = False
-
-    os.environ['MANAGER_DAEMON'] = 'pandad'
-    runner = PandaRunner(panda_serials, pandas)
-    runner.run(evt)
-
 if __name__ == "__main__":
+  config_realtime_process([3], 54)
   main()
