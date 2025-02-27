@@ -47,7 +47,9 @@ void HudRenderer::draw(QPainter &p, const QRect &surface_rect) {
   p.fillRect(0, 0, surface_rect.width(), UI_HEADER_HEIGHT, bg);
 
 
-  drawSetSpeed(p, surface_rect);
+  if (set_speed != -1) {
+    drawSetSpeed(p, surface_rect);
+  }
   drawCurrentSpeed(p, surface_rect);
 
   p.restore();
