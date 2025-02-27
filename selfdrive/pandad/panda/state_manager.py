@@ -1,7 +1,7 @@
 import os
 from cereal import car, log
 import cereal.messaging as messaging
-from openpilot.common.params import Params
+from panda.python import PANDA_BUS_CNT
 
 SPOOFING_STARTED = os.getenv("STARTED") == "1"
 
@@ -13,7 +13,6 @@ LEC_ERROR_CODE = {
 class PandaStateManager:
   def __init__(self, pandas, hw_types, lock):
     self.pandas = pandas
-    self.params = Params()
     self.lock = lock
     self.hw_types = hw_types
 
@@ -26,12 +25,12 @@ class PandaStateManager:
   def process(self, engaged, pm) -> bool:
     msg = messaging.new_message('pandaStates', len(self.pandas))
     msg.valid = True
-    pss = msg.pandaStates
+    panda_states = msg.pandaStates
     ignition = False
 
-    for i, p in enumerate(self.pandas):
+    for i, panda in enumerate(self.pandas):
       with self.lock:
-        health = p.health() or {}
+        health = panda.health() or {}
 
       if SPOOFING_STARTED:
         health['ignition_line'] = 1
@@ -39,34 +38,35 @@ class PandaStateManager:
         health['ignition_line'] = 0
 
       ignition |= bool(health['ignition_line']) or bool(health['ignition_can'])
-      ps = pss[i]
+      ps = panda_states[i]
       self._fill_state(ps, self.hw_types[i], health)
 
-      for j, cs in enumerate((ps.init('canState0'), ps.init('canState1'), ps.init('canState2'))):
+      # Fill can state
+      for j in range(PANDA_BUS_CNT):
         with self.lock:
-          can_health = p.can_health(j)
-        self._fill_can_state(cs, can_health)
+          can_health = panda.can_health(j)
+        can_state = ps.init(f'canState{j}')
+        self._fill_can_state(can_state, can_health)
 
-      fault_bits = int(health['faults'])
-      fault_count = bin(fault_bits).count('1')
-      faults = ps.init('faults', fault_count)
-      idx = 0
-      for f in range(log.PandaState.FaultType.relayMalfunction,
-                     log.PandaState.FaultType.heartbeatLoopWatchdog + 1):
-        if fault_bits & (1 << f):
-          faults[idx] = f
-          idx += 1
+      # Set faults
+      fault_bits = int(health.get('faults', 0))
+      faults_list = [f for f in range(log.PandaState.FaultType.relayMalfunction,
+                                      log.PandaState.FaultType.heartbeatLoopWatchdog + 1)
+                    if fault_bits & (1 << f)]
+      faults = ps.init('faults', len(faults_list))
+      for idx, fault in enumerate(faults_list):
+        faults[idx] = fault
 
     with self.lock:
-      for p, ps in zip(self.pandas, pss):
+      for panda, ps in zip(self.pandas, panda_states):
         if ps.safetyModel == car.CarParams.SafetyModel.silent or (
             not ignition and ps.safetyModel != car.CarParams.SafetyModel.noOutput):
-          p.set_safety_mode(car.CarParams.SafetyModel.noOutput)
+          panda.set_safety_mode(car.CarParams.SafetyModel.noOutput)
 
         if ps.powerSaveEnabled != (not ignition):
-          p.set_power_save(not ignition)
+          panda.set_power_save(not ignition)
 
-        p.send_heartbeat(engaged)
+        panda.send_heartbeat(engaged)
 
     pm.send("pandaStates", msg)
     return ignition

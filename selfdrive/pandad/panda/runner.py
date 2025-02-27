@@ -21,6 +21,7 @@ class PandaRunner:
     self.pandas = pandas
     self.serials = set(serials)
     self.hw_types = [int.from_bytes(p.get_type(), 'big') for p in pandas]
+
     for panda in self.pandas:
       if os.getenv("BOARDD_LOOPBACK"):
         panda.set_can_loopback(True)
@@ -38,17 +39,21 @@ class PandaRunner:
   def _can_send(self, evt):
     sock = messaging.sub_sock('sendcan', timeout=100)
     while not evt.is_set():
-      data = sock.receive()
-      if data:
-        msg = messaging.log_from_bytes(data)
-        cans = [(c.address, c.dat, c.src) for c in msg.sendcan]
-        age = (time.monotonic_ns() - msg.logMonoTime) / 1e9
-        if age < 1 and not FAKE_SEND:
-          with self.lock:
-            for p in self.pandas:
-              p.can_send_many(cans)
-        elif age >= 1:
-          cloudlog.error(f"Dropping stale sendcan message, age: {age:.2f}s")
+      try:
+        data = sock.receive()
+        if data:
+          msg = messaging.log_from_bytes(data)
+          cans = [(c.address, c.dat, c.src) for c in msg.sendcan]
+          age = (time.monotonic_ns() - msg.logMonoTime) / 1e9
+          if age < 1 and not FAKE_SEND:
+            with self.lock:
+              for p in self.pandas:
+                p.can_send_many(cans)
+          elif age >= 1:
+            cloudlog.error(f"Dropping stale sendcan message, age: {age:.2f}s")
+
+      except Exception as e:
+        cloudlog.error(f"Exception in sendcan thread: {e}")
 
   def _can_recv(self):
     with self.lock:
@@ -63,8 +68,8 @@ class PandaRunner:
       self.pm.send("can", msg)
 
   def run(self, evt):
-    thread = threading.Thread(target=self._can_send, args=(evt,))
-    thread.start()
+    send_thread = threading.Thread(target=self._can_send, args=(evt,))
+    send_thread.start()
 
     rk = Ratekeeper(100, print_delay_threshold=None)
     engaged = False
@@ -88,6 +93,7 @@ class PandaRunner:
             if current_serials != self.serials:
               cloudlog.warning("Reconnecting to new panda")
               evt.set()
+              break
 
           self.safety_mgr.configure_safety_mode()
 
@@ -101,7 +107,7 @@ class PandaRunner:
     finally:
       evt.set()
       self.periph_mgr.cleanup()
-      thread.join()
+      send_thread.join()
 
       # Close relay on exit to prevent a fault
       is_onroad = Params().get_bool("IsOnroad")
