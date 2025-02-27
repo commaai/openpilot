@@ -40,37 +40,35 @@ class PandaRunner:
           cloudlog.error(f"Dropping stale sendcan message, age: {age:.2f}s")
 
 
-  def _can_recv(self, evt):
-    while not evt.is_set():
-      with self.lock:
-        cans = list(chain.from_iterable(p.can_recv() for p in self.pandas))
+  def _can_recv(self):
+    with self.lock:
+      cans = list(chain.from_iterable(p.can_recv() for p in self.pandas))
 
-      if cans:
-        msg = messaging.new_message('can', len(cans))
-        msg.valid = True
-        for i, can_info in enumerate(cans):
-          can = msg.can[i]
-          can.address, can.dat, can.src = can_info
-        self.pm.send("can", msg)
+    if cans:
+      msg = messaging.new_message('can', len(cans))
+      msg.valid = True
+      for i, can_info in enumerate(cans):
+        can = msg.can[i]
+        can.address, can.dat, can.src = can_info
+      self.pm.send("can", msg)
 
   def run(self, evt):
-    threads = [
-      threading.Thread(target=self._can_send, args=(evt,)),
-      threading.Thread(target=self._can_recv, args=(evt,)),
-    ]
-    for t in threads:
-      t.start()
+    thread = threading.Thread(target=self._can_send, args=(evt,))
+    thread.start()
 
-    rk = Ratekeeper(20)
+    rk = Ratekeeper(100, print_delay_threshold=None)
+    engaged = False
+
     try:
       while not evt.is_set():
-        self.sm.update(0)
-        engaged = self.sm.all_checks() and self.sm["selfdriveState"].enabled
-
-        self.periph_mgr.process(self.sm)
+        # Process peripheral state at 20 Hz
+        if not rk.frame % 5 == 0:
+          self.sm.update(0)
+          engaged = self.sm.all_checks() and self.sm["selfdriveState"].enabled
+          self.periph_mgr.process(self.sm)
 
         # Process panda state at 10 Hz
-        if not rk.frame % 2:
+        if not rk.frame % 10:
           ignition = self.state_mgr.process(engaged, self.pm)
           if not ignition:
             with self.lock:
@@ -82,14 +80,13 @@ class PandaRunner:
           self.safety_mgr.configure_safety_mode()
 
         # Send out peripheralState at 2Hz
-        if not rk.frame % 10:
+        if not rk.frame % 50:
           self.periph_mgr.send_state(self.pm)
 
         rk.keep_time()
     except Exception as e:
       cloudlog.error(f"Exception in main loop: {e}")
     finally:
-      self.periph_mgr.cleanup()
       evt.set()
-      for t in threads:
-        t.join()
+      self.periph_mgr.cleanup()
+      thread.join()
