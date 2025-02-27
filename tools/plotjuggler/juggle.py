@@ -81,9 +81,7 @@ def process(can, lr):
 def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
   lr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
 
-  all_data = list(lr)
-  if not can:
-    all_data = [d for d in all_data if d.which() not in ('can', 'sendcan')]
+  all_data = lr.run_across_segments(24, partial(process, can))
   if should_migrate:
     all_data = migrate_all(all_data)
 
