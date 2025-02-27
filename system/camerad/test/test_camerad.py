@@ -2,12 +2,9 @@ import os
 import time
 import pytest
 import numpy as np
-from collections import defaultdict
 
 import cereal.messaging as messaging
-from cereal import log
 from cereal.services import SERVICE_LIST
-from openpilot.common.retry import retry
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -59,7 +56,7 @@ class TestCamerad:
     n = range(len(logs['roadCameraState']['t'][:-10]))
 
     frame_ids = {i: [logs[cam]['frameId'][i] for cam in CAMERAS] for i in n}
-    assert all([len(set(v)) == 1 for v in frame_ids.values()]), "frame IDs not aligned"
+    assert all(len(set(v)) == 1 for v in frame_ids.values()), "frame IDs not aligned"
 
     frame_times = {i: [logs[cam]['timestampSof'][i] for cam in CAMERAS] for i in n}
     diffs = {i: (max(ts) - min(ts))/1e6 for i, ts in frame_times.items()}
@@ -70,4 +67,4 @@ class TestCamerad:
   @pytest.mark.skip("TODO: enable this")
   def test_stress_test(self, logs):
     os.environ['SPECTRA_STRESS_TEST'] = '1'
-    logs = run_and_log(["camerad", ], CAMERAS, 5)
+    run_and_log(["camerad", ], CAMERAS, 5)
