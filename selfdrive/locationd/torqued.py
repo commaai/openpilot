@@ -4,11 +4,11 @@ from collections import deque, defaultdict
 
 import cereal.messaging as messaging
 from cereal import car, log
+from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_MDL
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.locationd.helpers import PointBuckets, ParameterEstimator, PoseCalibrator, Pose
 
 HISTORY = 5  # secs
