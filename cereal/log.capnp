@@ -2239,6 +2239,8 @@ struct LiveParametersData {
   debugFilterState @16 :FilterState;
 
   angleOffsetValid @17 :Bool;
+  steerRatioValid @18 :Bool;
+  stiffnessFactorValid @19 :Bool;
 
   yawRateDEPRECATED @7 :Float32;
   filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
