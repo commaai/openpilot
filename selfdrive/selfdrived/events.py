@@ -306,8 +306,7 @@ def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
     stiffness_factor = sm['liveParameters'].stiffnessFactor
     title = "Abnormal tire stiffness"
     text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.f})"
-
-  return NormalPermanentAlert(title, text),
+  return NormalPermanentAlert(title, text)
 
 
 def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
