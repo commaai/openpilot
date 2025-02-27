@@ -55,7 +55,7 @@ def get_plotjuggler_version():
   return tuple(map(int, version.split(".")))
 
 
-def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
+def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, platform=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
   env["PATH"] = f"{INSTALL_DIR}:{os.getenv('PATH', '')}"
@@ -68,7 +68,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   if layout is not None:
     extra_args += f" -l {layout}"
   if route_or_segment_name is not None:
-    extra_args += f" --window_title \"{route_or_segment_name}\""
+    extra_args += f" --window_title \"{route_or_segment_name}{f' ({platform})' if platform is not None else ''}\""
 
   cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
@@ -88,9 +88,11 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
     all_data = migrate_all(all_data)
 
   # Infer DBC name from logs
+  platform = None
   if dbc is None:
     try:
       CP = lr.first('carParams')
+      platform = CP.carFingerprint
       DBC = __import__(f"opendbc.car.{CP.brand}.values", fromlist=['DBC']).DBC
       dbc = DBC[MIGRATION.get(CP.carFingerprint, CP.carFingerprint)]['pt']
     except Exception:
@@ -99,7 +101,7 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    start_juggler(tmp.name, dbc, layout, route_or_segment_name)
+    start_juggler(tmp.name, dbc, layout, route_or_segment_name, platform)
 
 
 if __name__ == "__main__":
