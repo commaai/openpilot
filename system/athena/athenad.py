@@ -448,6 +448,10 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
   params.put("AthenadRecentlyViewedRoutes", ",".join(routes[-10:]))
   return {"success": 1}
 
+@dispatcher.add_method
+def setFirehoseProgress(progress: int) -> dict[str, int | str]:
+  Params().put("FirehoseProgress", str(int(progress)))
+  return {"success": 1}
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
   try:
