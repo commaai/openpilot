@@ -3,7 +3,6 @@
 import os
 import usb1
 import time
-import signal
 import threading
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
 from openpilot.common.params import Params
@@ -66,21 +65,13 @@ def main() -> None:
 
   # signal pandad to close the relay and exit
   evt = threading.Event()
-  def signal_handler(signum, frame):
-    cloudlog.info(f"Caught signal {signum}, exiting")
-    nonlocal do_exit
-    do_exit = True
-    evt.set()
-
-  do_exit = False
-  signal.signal(signal.SIGINT, signal_handler)
-
   count = 0
   first_run = True
   params = Params()
   no_internal_panda_count = 0
+  pandas: list[Panda] = []
 
-  while not do_exit:
+  while True:
     try:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
@@ -117,9 +108,7 @@ def main() -> None:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas: list[Panda] = []
-      for serial in panda_serials:
-        pandas.append(flash_panda(serial))
+      pandas = [flash_panda(serial) for serial in panda_serials]
 
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]
@@ -161,6 +150,10 @@ def main() -> None:
       for p in pandas:
         p.close()
     # TODO: wrap all panda exceptions in a base panda exception
+    except KeyboardInterrupt:
+      cloudlog.info("Caught Ctrl+C, exiting")
+      evt.set()
+      break
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
@@ -171,6 +164,13 @@ def main() -> None:
     except Exception:
       cloudlog.exception("pandad.uncaught_exception")
       continue
+    finally:
+      for p in pandas:
+        try:
+          p.close()
+        except Exception:
+          cloudlog.exception("Error closing panda connection")
+      pandas = []
 
 if __name__ == "__main__":
   main()
