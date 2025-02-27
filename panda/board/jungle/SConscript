@@ -1,0 +1,18 @@
+import os
+import copy
+
+Import('build_project', 'base_project_f4', 'base_project_h7')
+
+build_projects = {
+  "panda_jungle": base_project_f4,
+  "panda_jungle_h7": base_project_h7,
+}
+
+for project_name, project in build_projects.items():
+  flags = [
+    "-DPANDA_JUNGLE",
+  ]
+  if os.getenv("FINAL_PROVISIONING"):
+    flags += ["-DFINAL_PROVISIONING"]
+
+  build_project(project_name, project, flags)
