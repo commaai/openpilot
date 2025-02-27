@@ -1,11 +1,12 @@
 import time
 from flaky import flaky
 
+from opendbc.car.structs import CarParams
 from panda import Panda
 from panda.tests.hitl.helpers import time_many_sends
 
 def test_can_loopback(p):
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   p.set_can_loopback(True)
 
   for bus in (0, 1, 2):
@@ -18,24 +19,24 @@ def test_can_loopback(p):
     # confirm receive both on loopback and send receipt
     time.sleep(0.05)
     r = p.can_recv()
-    sr = [x for x in r if x[3] == 0x80 | bus]
-    lb = [x for x in r if x[3] == bus]
+    sr = [x for x in r if x[2] == 0x80 | bus]
+    lb = [x for x in r if x[2] == bus]
     assert len(sr) == 1
     assert len(lb) == 1
 
     # confirm data is correct
     assert 0x1aa == sr[0][0] == lb[0][0]
-    assert b"message" == sr[0][2] == lb[0][2]
+    assert b"message" == sr[0][1] == lb[0][1]
 
 def test_reliability(p):
   MSG_COUNT = 100
 
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   p.set_can_loopback(True)
   p.set_can_speed_kbps(0, 1000)
 
   addrs = list(range(100, 100 + MSG_COUNT))
-  ts = [(j, 0, b"\xaa" * 8, 0) for j in addrs]
+  ts = [(j, b"\xaa" * 8, 0) for j in addrs]
 
   for _ in range(100):
     st = time.monotonic()
@@ -46,8 +47,8 @@ def test_reliability(p):
     while len(r) < 200 and (time.monotonic() - st) < 0.5:
       r.extend(p.can_recv())
 
-    sent_echo = [x for x in r if x[3] == 0x80]
-    loopback_resp = [x for x in r if x[3] == 0]
+    sent_echo = [x for x in r if x[2] == 0x80]
+    loopback_resp = [x for x in r if x[2] == 0]
 
     assert sorted([x[0] for x in loopback_resp]) == addrs
     assert sorted([x[0] for x in sent_echo]) == addrs
@@ -60,7 +61,7 @@ def test_reliability(p):
 @flaky(max_runs=6, min_passes=1)
 def test_throughput(p):
   # enable output mode
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
 
   # enable CAN loopback mode
   p.set_can_loopback(True)

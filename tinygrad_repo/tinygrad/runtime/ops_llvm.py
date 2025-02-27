@@ -1,68 +1,58 @@
-import time, ctypes
-from typing import ClassVar
-from tinygrad.ops import Compiled
-from tinygrad.helpers import getenv, DEBUG, diskcache
-from ctypes import CFUNCTYPE
-from tinygrad.codegen.kernel import LinearizerOptions
-from tinygrad.renderer.llvmir import uops_to_llvm_ir
-from tinygrad.runtime.lib import RawMallocBuffer
+import ctypes, platform
+from tinygrad.device import Compiled, Compiler, MallocAllocator, CPUProgram
+from tinygrad.helpers import OSX, getenv, capstone_flatdump, DEBUG
+from tinygrad.renderer.llvmir import LLVMRenderer
+import tinygrad.runtime.autogen.llvm as llvm
+from tinygrad.runtime.support.elf import jit_loader
 
-import llvmlite.binding as llvm  # type: ignore
+def cerr(): return ctypes.pointer(ctypes.pointer(ctypes.c_char()))
 
-LLVMOPT = bool(getenv("LLVMOPT"))
+def expect(x, err, ret=None):
+  if x: raise RuntimeError(llvm.string_cast(err.contents) if not isinstance(err, str) else err)
+  return ret
 
-class LLVM:
-  target_machine: ClassVar[llvm.targets.TargetMachine] = None
-  engine: ClassVar[llvm.executionengine.ExecutionEngine] = None
-  optimizer: ClassVar[llvm.passmanagers.ModulePassManager] = None
+class LLVMCompiler(Compiler):
+  def __init__(self, host_arch:str):
+    for component in ['Target', 'TargetInfo', 'TargetMC', 'AsmParser', 'AsmPrinter']: getattr(llvm, f'LLVMInitialize{host_arch}{component}')()
 
-  def __init__(self):
-    if LLVM.engine is not None: return
-    llvm.initialize()
-    llvm.initialize_native_target()
-    llvm.initialize_native_asmprinter()
-    llvm.initialize_native_asmparser()
-    target = llvm.Target.from_triple(llvm.get_process_triple())
-    LLVM.optimizer = llvm.create_module_pass_manager()
-    LLVM.target_machine = target.create_target_machine(opt=2)  # this opt actually can change things. ex: opt=3 means no FMA, opt=2 means FMA
-    LLVM.target_machine.add_analysis_passes(LLVM.optimizer)
+    triple = {'AArch64': b'aarch64', 'X86': b'x86_64'}[host_arch] + b'-none-unknown-elf'
+    target = expect(llvm.LLVMGetTargetFromTriple(triple, ctypes.pointer(tgt:=llvm.LLVMTargetRef()), err:=cerr()), err, tgt)
+    # +reserve-x18 here does the same thing as -ffixed-x18 in ops_cpu.py, see comments there for why it's needed on arm osx
+    cpu, feats = ctypes.string_at(llvm.LLVMGetHostCPUName()), (b'+reserve-x18,' if OSX else b'') + ctypes.string_at(llvm.LLVMGetHostCPUFeatures())
+    if DEBUG >= 2: print(f"LLVM init for {cpu!r} with {feats!r}")
+    self.target_machine = llvm.LLVMCreateTargetMachine(target, triple, cpu, feats,
+                                                       llvm.LLVMCodeGenLevelDefault, llvm.LLVMRelocPIC, llvm.LLVMCodeModelDefault)
 
-    # TODO: this makes compile times so much faster
-    if LLVMOPT:
-      llvm.set_option(str(), '-force-vector-interleave=4')  # this makes sum the same speed as torch, it also doubles the (slow) conv speed
-      if DEBUG >= 4: llvm.set_option(str(), '--debug-only=loop-vectorize')
-      #llvm.set_option(str(), '--debug')
+    self.pbo = llvm.LLVMCreatePassBuilderOptions()
+    if (opt:=bool(getenv("LLVMOPT", "1"))):
+      self.passes = b'default<O2>'
+      llvm.LLVMPassBuilderOptionsSetLoopUnrolling(self.pbo, True)
+      llvm.LLVMPassBuilderOptionsSetLoopVectorization(self.pbo, True)
+      llvm.LLVMPassBuilderOptionsSetSLPVectorization(self.pbo, True)
+      llvm.LLVMPassBuilderOptionsSetVerifyEach(self.pbo, True)
+    else:
+      self.passes = b'default<O0>'
 
-      # does this do anything?
-      builder = llvm.create_pass_manager_builder()
-      builder.opt_level = 3
-      builder.size_level = 0
-      builder.loop_vectorize = True
-      builder.slp_vectorize = True
-      builder.populate(LLVM.optimizer)
+    super().__init__(f"compile_llvm_jit{'_opt' if opt else ''}")
 
-    LLVM.target_machine.set_asm_verbosity(True)
-    backing_mod = llvm.parse_assembly(str())
-    backing_mod.triple = llvm.get_process_triple()
-    LLVM.engine = llvm.create_mcjit_compiler(backing_mod, LLVM.target_machine)
+  def __del__(self): llvm.LLVMDisposePassBuilderOptions(self.pbo)
 
-@diskcache
-def compile_llvm(prg, llvmopt=LLVMOPT) -> bytes:
-  mod = llvm.parse_assembly(prg)
-  mod.verify()
-  LLVM().optimizer.run(mod)
-  if DEBUG >= 5: print(LLVM.target_machine.emit_assembly(mod))
-  return LLVM.target_machine.emit_object(mod)
+  def compile(self, src:str) -> bytes:
+    src_buf = llvm.LLVMCreateMemoryBufferWithMemoryRangeCopy(ctypes.create_string_buffer(src_bytes:=src.encode()), len(src_bytes), b'src')
+    mod = expect(llvm.LLVMParseIRInContext(llvm.LLVMGetGlobalContext(), src_buf, ctypes.pointer(m:=llvm.LLVMModuleRef()), err:=cerr()), err, m)
+    expect(llvm.LLVMVerifyModule(mod, llvm.LLVMReturnStatusAction, err:=cerr()), err)
+    expect(llvm.LLVMRunPasses(mod, self.passes, self.target_machine, self.pbo), 'failed to run passes')
+    if DEBUG >= 7: print(ctypes.string_at(llvm.LLVMPrintModuleToString(mod)).decode())
+    obj_buf = expect(llvm.LLVMTargetMachineEmitToMemoryBuffer(self.target_machine, mod, llvm.LLVMObjectFile, err:=cerr(),
+                                                              ctypes.pointer(buf:=llvm.LLVMMemoryBufferRef())), err, buf)
+    llvm.LLVMDisposeModule(mod)
+    obj = ctypes.string_at(llvm.LLVMGetBufferStart(obj_buf), llvm.LLVMGetBufferSize(obj_buf))
+    llvm.LLVMDisposeMemoryBuffer(obj_buf)
+    return jit_loader(obj)
 
-class LLVMProgram:
-  def __init__(self, name:str, lib:bytes):
-    LLVM().engine.add_object_file(llvm.object_file.ObjectFileRef.from_data(lib))
-    self.fxn = LLVM.engine.get_function_address(name)
+  def disassemble(self, lib:bytes): capstone_flatdump(lib)
 
-  def __call__(self, *bufs, wait=False):
-    cfunc = CFUNCTYPE(ctypes.c_int, *[ctypes.c_void_p for _ in bufs])(self.fxn)
-    if wait: st = time.perf_counter()
-    cfunc(*[x._buf if not isinstance(x, int) else x for x in bufs])
-    if wait: return time.perf_counter()-st
-
-LLVMBuffer = Compiled(RawMallocBuffer, LinearizerOptions(supports_float4=False, has_local=False, has_shared=False), uops_to_llvm_ir, compile_llvm, LLVMProgram)
+class LLVMDevice(Compiled):
+  def __init__(self, device:str):
+    compiler = LLVMCompiler({'arm64': 'AArch64', 'aarch64': 'AArch64', 'x86_64': 'X86', 'AMD64': 'X86'}[platform.machine()])
+    super().__init__(device, MallocAllocator, LLVMRenderer(), compiler, CPUProgram)

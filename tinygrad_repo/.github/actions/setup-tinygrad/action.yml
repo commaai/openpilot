@@ -1,0 +1,222 @@
+name: Setup Python & Install
+description: Sets up Python and installs project dependencies.
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
+  key:
+    description: 'Key for the python cache'
+    required: false
+    default: ''  # if you don't set a key, it doesn't cache
+  deps:
+    description: 'Extra dependency groups (comma separated)'
+    required: false
+    default: ''
+  pydeps:
+    description: 'Extra Python dependency groups (space separated)'
+    required: false
+    default: ''
+  opencl:
+    description: "Install OpenCL?"
+    required: false
+    default: 'false'
+  amd:
+    description: "Install AMD?"
+    required: false
+    default: 'false'
+  cuda:
+    description: "Install CUDA?"
+    required: false
+    default: 'false'
+  webgpu:
+    description: "Install webgpu?"
+    required: false
+    default: 'false'
+  llvm:
+    description: "Install LLVM?"
+    required: false
+    default: 'false'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    # **** Caching packages ****
+    # TODO: key should include input.deps, but it can't since it can't contain commas
+
+    - name: Cache Python packages (Linux)
+      if: inputs.key != '' && runner.os == 'Linux'
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.Python3_ROOT_DIR }}/lib/python${{ inputs.python-version }}/site-packages
+        key: python-package-${{ inputs.key }}-${{ hashFiles('**/setup.py') }}
+    - name: Cache Python packages (macOS)
+      if: inputs.key != '' && runner.os == 'macOS'
+      uses: actions/cache@v4
+      with:
+        path: /Users/runner/Library/Python/${{ inputs.python-version }}/lib/python/site-packages
+        key: osx-python-package-${{ inputs.key }}-${{ hashFiles('**/setup.py') }}
+    - name: Cache Python packages (Windows)
+      if: inputs.key != '' && runner.os == 'Windows'
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.Python3_ROOT_DIR }}\Lib\site-packages
+        key: windows-python-package-${{ inputs.key }}-${{ hashFiles('**/setup.py') }}
+
+    # **** Caching downloads ****
+
+    - name: Cache downloads (Linux)
+      if: inputs.key != '' && runner.os == 'Linux'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/tinygrad/downloads/
+        key: downloads-cache-${{ inputs.key }}-${{ env.DOWNLOAD_CACHE_VERSION }}
+    - name: Cache downloads (macOS)
+      if: inputs.key != '' && runner.os == 'macOS'
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Caches/tinygrad/downloads/
+        key: osx-downloads-cache-${{ inputs.key }}-${{ env.DOWNLOAD_CACHE_VERSION }}
+
+    # **** Python deps ****
+
+    - name: Install dependencies (with extra)
+      if: inputs.deps != ''
+      shell: bash
+      run: pip install ${{ (runner.os == 'macOS' && '--user') || (runner.os != 'macOS' && '') }} -e ".[${{ inputs.deps }}]" ${{ inputs.pydeps }} --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/Triton-Nightly/pypi/simple/
+    - name: Install dependencies (without extra)
+      if: inputs.deps == ''
+      shell: bash
+      run: pip install ${{ (runner.os == 'macOS' && '--user') || (runner.os != 'macOS' && '') }} -e . ${{ inputs.pydeps }}
+
+    # **** OpenCL ****
+
+    - name: Install OpenCL
+      if: inputs.opencl == 'true'
+      shell: bash
+      run: |
+        echo 'Acquire::http::Pipeline-Depth "5";' | sudo tee -a /etc/apt/apt.conf.d/99parallel
+        echo "deb [ allow-insecure=yes ] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+        sudo apt update || true
+        sudo apt install --allow-unauthenticated -y --no-install-recommends opencl-headers \
+          intel-oneapi-runtime-openmp=2023.2.1-16 intel-oneapi-runtime-compilers-common=2023.2.1-16 intel-oneapi-runtime-compilers=2023.2.1-16 \
+          intel-oneapi-runtime-dpcpp-sycl-opencl-cpu=2023.2.1-16 intel-oneapi-runtime-tbb-common=2021.10.0-49541 \
+          intel-oneapi-runtime-tbb=2021.10.0-49541 intel-oneapi-runtime-opencl=2023.2.1-16
+
+    # **** AMD ****
+
+    - name: Install AMD (Linux)
+      if: inputs.amd == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        echo 'Acquire::http::Pipeline-Depth "5";' | sudo tee -a /etc/apt/apt.conf.d/99parallel
+        wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | gpg --dearmor | sudo tee /etc/apt/keyrings/rocm.gpg > /dev/null
+        sudo tee /etc/apt/sources.list.d/rocm.list <<'EOF'
+        deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/6.1.2 jammy main
+        EOF
+        echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+        sudo apt update || true
+        sudo apt install --no-install-recommends --allow-unauthenticated -y hsa-rocr comgr hsa-rocr-dev liburing-dev libc6-dev
+        curl -s https://api.github.com/repos/Qazalin/remu/releases/latest | \
+        jq -r '.assets[] | select(.name == "libremu.so").browser_download_url' | \
+        sudo xargs curl -L -o /usr/local/lib/libremu.so
+        sudo tee --append /etc/ld.so.conf.d/rocm.conf <<'EOF'
+          /opt/rocm/lib
+          /opt/rocm/lib64
+        EOF
+        sudo ldconfig
+    - name: Install AMD comgr+remu (macOS)
+      if: inputs.amd == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        sudo mkdir -p /usr/local/lib
+        curl -s -H "Authorization: token $GH_TOKEN" curl -s https://api.github.com/repos/nimlgen/amdcomgr_dylib/releases/latest | \
+          jq -r '.assets[] | select(.name == "libamd_comgr.dylib").browser_download_url' | \
+          sudo xargs curl -L -o /usr/local/lib/libamd_comgr.dylib
+        curl -s -H "Authorization: token $GH_TOKEN" curl -s https://api.github.com/repos/Qazalin/remu/releases/latest | \
+          jq -r '.assets[] | select(.name == "libremu.dylib").browser_download_url' | \
+          sudo xargs curl -L -o /usr/local/lib/libremu.dylib
+
+    # **** CUDA ****
+
+    - name: Install cuda packages (Linux)
+      if: inputs.cuda == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        echo 'Acquire::http::Pipeline-Depth "5";' | sudo tee -a /etc/apt/apt.conf.d/99parallel
+        sudo apt update -y || true
+        sudo apt install -y --no-install-recommends git g++ cmake ninja-build llvm-15-dev zlib1g-dev libglew-dev \
+          flex bison libfl-dev libboost-thread-dev libboost-filesystem-dev nvidia-cuda-toolkit-gcc libzstd-dev
+    - name: Install gpuocelot dependencies (MacOS)
+      if: inputs.cuda == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew update
+        brew install cmake ninja llvm@15 zlib glew flex bison boost zstd ncurses
+    - name: Cache gpuocelot
+      if: inputs.cuda == 'true'
+      id: cache-build
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-gpuocelot-build
+      with:
+        path: ${{ github.workspace }}/gpuocelot/ocelot
+        key: ${{ runner.os }}-gpuocelot-b16039dc940dc6bc4ea0a98380495769ff35ed99-rebuild-0
+    - name: Clone/compile gpuocelot
+      if: inputs.cuda == 'true' && steps.cache-build.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        git clone --recurse-submodules https://github.com/gpuocelot/gpuocelot.git ${{ github.workspace }}/gpuocelot
+        cd ${{ github.workspace }}/gpuocelot/ocelot
+        git checkout b16039dc940dc6bc4ea0a98380495769ff35ed99
+        mkdir build
+        cd build
+        cmake .. -Wno-dev -G Ninja -DOCELOT_BUILD_TOOLS=OFF -DCMAKE_BUILD_ALWAYS=0 -DBUILD_TESTS_CUDA=OFF
+        ninja
+    - name: Install gpuocelot
+      if: inputs.cuda == 'true'
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/gpuocelot/ocelot/build
+        sudo cp libgpuocelot.${{ runner.os == 'macOS' && 'dylib' || 'so' }} /usr/${{ runner.os == 'macOS' && 'local/' || ''}}lib/
+
+    # **** WebGPU ****
+
+    - name: Install WebGPU dawn (Linux)
+      if: inputs.webgpu == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo curl -L https://github.com/wpmed92/pydawn/releases/download/v0.1.6/libwebgpu_dawn.so -o /usr/local/lib/libwebgpu_dawn.so
+    - name: Install dependencies for software-based vulkan
+      if: inputs.webgpu == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt update -y || true
+        sudo apt install -y libegl1-mesa libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers
+
+    - name: Install WebGPU dawn (macOS)
+      if: inputs.webgpu == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        sudo mkdir -p /usr/local/lib
+        sudo curl -L https://github.com/wpmed92/pydawn/releases/download/v0.1.6/libwebgpu_dawn.dylib -o /usr/local/lib/libwebgpu_dawn.dylib
+
+    # **** LLVM ****
+
+    - name: Install LLVM (Linux)
+      if: inputs.llvm == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        echo 'Acquire::http::Pipeline-Depth "5";' | sudo tee -a /etc/apt/apt.conf.d/99parallel
+        sudo apt update -y || true
+        sudo apt install -y --no-install-recommends llvm-dev
+
+    - name: Install LLVM (macOS)
+      if: inputs.llvm == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew install llvm

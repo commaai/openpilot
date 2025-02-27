@@ -1,0 +1,98 @@
+name: Check Line Counts
+on:
+  pull_request_target:
+
+# Cancel the workflow in progress in newer build is about to start.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  checkbranch:
+    name: Check PR Branch status
+    runs-on: ubuntu-latest
+    outputs:
+      branchstat: ${{ steps.brstat.outputs.stat}}
+    steps:
+      - name: Check code from PR branch 
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Check whether branch is up-to-date
+        id: brstat
+        run: |
+          git remote add tinygrad https://github.com/tinygrad/tinygrad
+          git fetch tinygrad master
+          echo "${{ github.event.pull_request.head.sha }}"
+          git rev-list --left-right --count  tinygrad/master...${{ github.event.pull_request.head.sha }} | awk '{print "Behind "$1" - Ahead "$2""}'
+          count=$(git rev-list --left-right --count  tinygrad/master...${{ github.event.pull_request.head.sha }} | awk '{print $1}')
+          if [ $count -gt 0 ]
+          then
+            echo "Current branch is behind tinygrad master branch!"
+            echo "stat=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "stat=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  szdiff:
+    name: Core Library Line Difference
+    permissions:
+      contents: read
+      pull-requests: write
+    runs-on: ubuntu-latest
+    needs: checkbranch
+    if: needs.checkbranch.outputs.branchstat == 'false'
+    steps:
+      - name: Checkout code from PR branch
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          path: pr
+        # the base default to tinygrad master and cannot be other fork branch for security purpose
+      - name: Checkout code from tinygrad master
+        uses: actions/checkout@v4
+        with:
+          path: base
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+      - name: Count Line Diff
+        run: |
+          pip install tabulate
+          BASE="$GITHUB_WORKSPACE/base"
+          PR="$GITHUB_WORKSPACE/pr"
+          cp "$BASE/sz.py" .
+          echo "loc_content<<EOF" >> "$GITHUB_ENV"
+          python sz.py "$BASE" "$PR" >> "$GITHUB_ENV"
+          echo "EOF" >> "$GITHUB_ENV"
+      - name: Comment Code Line Diff
+        continue-on-error: false
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ignore_empty: true
+          skip_unchanged: true
+          recreate: true
+          message: ${{ env.loc_content }}
+
+  rebase:
+    name: Core Library Line Difference
+    permissions:
+      pull-requests: write
+    runs-on: ubuntu-latest
+    needs: checkbranch
+    if: needs.checkbranch.outputs.branchstat == 'true'
+    steps:
+      - name: Comment Rebase
+        continue-on-error: false
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          skip_unchanged: true
+          recreate: true
+          message: |
+            This branch currently is behind tinygrad/master. The line count difference bot is disabled.

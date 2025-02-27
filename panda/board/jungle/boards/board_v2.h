@@ -110,8 +110,8 @@ void board_v2_set_harness_orientation(uint8_t orientation) {
   }
 }
 
-void board_v2_enable_can_transciever(uint8_t transciever, bool enabled) {
-  switch (transciever) {
+void board_v2_enable_can_transceiver(uint8_t transceiver, bool enabled) {
+  switch (transceiver) {
     case 1U:
       set_gpio_output(GPIOG, 11, !enabled);
       break;
@@ -125,7 +125,7 @@ void board_v2_enable_can_transciever(uint8_t transciever, bool enabled) {
       set_gpio_output(GPIOB, 4, !enabled);
       break;
     default:
-      print("Invalid CAN transciever ("); puth(transciever); print("): enabling failed\n");
+      print("Invalid CAN transceiver ("); puth(transceiver); print("): enabling failed\n");
       break;
   }
 }
@@ -139,8 +139,8 @@ void board_v2_enable_header_pin(uint8_t pin_num, bool enabled) {
 }
 
 void board_v2_set_can_mode(uint8_t mode) {
-  board_v2_enable_can_transciever(2U, false);
-  board_v2_enable_can_transciever(4U, false);
+  board_v2_enable_can_transceiver(2U, false);
+  board_v2_enable_can_transceiver(4U, false);
   switch (mode) {
     case CAN_MODE_NORMAL:
       // B12,B13: disable normal mode
@@ -157,7 +157,7 @@ void board_v2_set_can_mode(uint8_t mode) {
       set_gpio_pullup(GPIOB, 6, PULL_NONE);
       set_gpio_alternate(GPIOB, 6, GPIO_AF9_FDCAN2);
       can_mode = CAN_MODE_NORMAL;
-      board_v2_enable_can_transciever(2U, true);
+      board_v2_enable_can_transceiver(2U, true);
       break;
     case CAN_MODE_OBD_CAN2:
       // B5,B6: disable normal mode
@@ -173,7 +173,7 @@ void board_v2_set_can_mode(uint8_t mode) {
       set_gpio_pullup(GPIOB, 13, PULL_NONE);
       set_gpio_alternate(GPIOB, 13, GPIO_AF9_FDCAN2);
       can_mode = CAN_MODE_OBD_CAN2;
-      board_v2_enable_can_transciever(4U, true);
+      board_v2_enable_can_transceiver(4U, true);
       break;
     default:
       break;
@@ -260,9 +260,9 @@ void board_v2_init(void) {
   // Normal CAN mode
   board_v2_set_can_mode(CAN_MODE_NORMAL);
 
-  // Enable CAN transcievers
+  // Enable CAN transceivers
   for(uint8_t i = 1; i <= 4; i++) {
-    board_v2_enable_can_transciever(i, true);
+    board_v2_enable_can_transceiver(i, true);
   }
 
   // Set to no harness orientation
@@ -321,7 +321,7 @@ board board_v2 = {
   .set_individual_ignition = &board_v2_set_individual_ignition,
   .set_harness_orientation = &board_v2_set_harness_orientation,
   .set_can_mode = &board_v2_set_can_mode,
-  .enable_can_transciever = &board_v2_enable_can_transciever,
+  .enable_can_transceiver = &board_v2_enable_can_transceiver,
   .enable_header_pin = &board_v2_enable_header_pin,
   .get_channel_power = &board_v2_get_channel_power,
   .get_sbu_mV = &board_v2_get_sbu_mV,

@@ -1,14 +1,4 @@
-typedef struct interrupt {
-  IRQn_Type irq_type;
-  void (*handler)(void);
-  uint32_t call_counter;
-  uint32_t call_rate;
-  uint32_t max_call_rate;   // Call rate is defined as the amount of calls each second
-  uint32_t call_rate_fault;
-} interrupt;
-
-void interrupt_timer_init(void);
-uint32_t microsecond_timer_get(void);
+#include "interrupts_declarations.h"
 
 void unused_interrupt_handler(void) {
   // Something is wrong if this handler is called!
@@ -18,23 +8,15 @@ void unused_interrupt_handler(void) {
 
 interrupt interrupts[NUM_INTERRUPTS];
 
-#define REGISTER_INTERRUPT(irq_num, func_ptr, call_rate_max, rate_fault) \
-  interrupts[irq_num].irq_type = (irq_num); \
-  interrupts[irq_num].handler = (func_ptr);  \
-  interrupts[irq_num].call_counter = 0U;   \
-  interrupts[irq_num].call_rate = 0U;   \
-  interrupts[irq_num].max_call_rate = (call_rate_max); \
-  interrupts[irq_num].call_rate_fault = (rate_fault);
+static bool check_interrupt_rate = false;
 
-bool check_interrupt_rate = false;
-
-uint8_t interrupt_depth = 0U;
-uint32_t last_time = 0U;
-uint32_t idle_time = 0U;
-uint32_t busy_time = 0U;
+static uint32_t idle_time = 0U;
+static uint32_t busy_time = 0U;
 float interrupt_load = 0.0f;
 
 void handle_interrupt(IRQn_Type irq_type){
+  static uint8_t interrupt_depth = 0U;
+  static uint32_t last_time = 0U;
   ENTER_CRITICAL();
   if (interrupt_depth == 0U) {
     uint32_t time = microsecond_timer_get();

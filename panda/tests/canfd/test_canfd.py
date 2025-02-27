@@ -3,6 +3,7 @@ import os
 import time
 import random
 from collections import defaultdict
+from opendbc.car.structs import CarParams
 from panda import Panda, calculate_checksum, DLC_TO_LEN
 from panda import PandaJungle
 from panda.tests.hitl.helpers import time_many_sends
@@ -44,14 +45,14 @@ def panda_init(serial, enable_canfd=False, enable_non_iso=False):
       p.set_can_data_speed_kbps(bus, 2000)
     if enable_non_iso:
       p.set_canfd_non_iso(bus, True)
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   return p
 
 def test_canfd_throughput(p, p_recv=None):
   two_pandas = p_recv is not None
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   if two_pandas:
-    p_recv.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+    p_recv.set_safety_mode(CarParams.SafetyModel.allOutput)
   # enable output mode
   else:
     p.set_can_loopback(True)
@@ -86,7 +87,7 @@ def canfd_test(p_send, p_recv):
         data = bytearray(random.getrandbits(8) for _ in range(DLC_TO_LEN[dlc]))
         if len(data) >= 2:
           data[0] = calculate_checksum(data[1:] + bytes(str(address), encoding="utf-8"))
-        to_send.append([address, 0, data, bus])
+        to_send.append([address, data, bus])
         sent_msgs[bus].add((address, bytes(data)))
 
     p_send.can_send_many(to_send, timeout=0)
@@ -95,7 +96,7 @@ def canfd_test(p_send, p_recv):
     while (time.monotonic() - start_time < 1) and any(len(x) > 0 for x in sent_msgs.values()):
       incoming = p_recv.can_recv()
       for msg in incoming:
-        address, _, data, bus = msg
+        address, data, bus = msg
         if len(data) >= 2:
           assert calculate_checksum(data[1:] + bytes(str(address), encoding="utf-8")) == data[0]
         k = (address, bytes(data))

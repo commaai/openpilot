@@ -33,6 +33,7 @@ class PairingPopup : public DialogBase {
 
 public:
   explicit PairingPopup(QWidget* parent);
+  int exec() override;
 };
 
 
@@ -66,8 +67,4 @@ signals:
 private:
   PairingPopup *popup;
   QStackedWidget *mainLayout;
-  PrimeUserWidget *primeUser;
-
-private slots:
-  void replyFinished(const QString &response, bool success);
 };
