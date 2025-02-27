@@ -306,8 +306,7 @@ def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
     stiffness_factor = sm['liveParameters'].stiffnessFactor
     title = "Abnormal tire stiffness"
     text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.f})"
-  return NormalPermanentAlert(title, text)
-
+  return NoEntryAlert(alert_text_1=title, alert_text_2=text)
 
 def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   cpu = max(sm['deviceState'].cpuTempC, default=0.)
@@ -621,7 +620,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # This alert is thrown when any of these values exceed a sanity check. This can be caused by
   # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
   EventName.paramsdTemporaryError: {
-    ET.NO_ENTRY: NoEntryAlert("paramsd Temporary Error"),
+    ET.NO_ENTRY: paramsd_invalid_alert,
     ET.SOFT_DISABLE: soft_disable_alert("paramsd Temporary Error"),
   },
 
