@@ -81,7 +81,7 @@ class ModelState:
       policy_output_size = policy_metadata['output_shapes']['outputs'][1]
 
     # img buffers are managed in openCL transform code
-    self.vision_inputs = {}
+    self.vision_inputs: dict[str, Tensor] = {}
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
     self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
