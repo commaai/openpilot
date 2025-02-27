@@ -5,7 +5,7 @@ import numpy as np
 
 from opendbc.car.honda.interface import CarInterface
 from opendbc.car.honda.values import CAR
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
+from opendbc.car.vehicle_model import VehicleModel, dyn_ss_sol, create_dyn_state_matrices
 
 
 class TestVehicleModel:
