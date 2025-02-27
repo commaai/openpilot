@@ -19,6 +19,7 @@ from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from opendbc.car.values import Platform, PLATFORMS
 from opendbc.safety.tests.libsafety import libsafety_py
+from opendbc.safety.tests.safety_replay.helpers import package_can_msg, init_segment
 from openpilot.common.basedir import BASEDIR
 from openpilot.selfdrive.pandad import can_capnp_to_list
 from openpilot.selfdrive.test.helpers import read_segment_list
@@ -79,7 +80,8 @@ class TestCarModelBase(unittest.TestCase):
     cls.car_safety_mode_frame = None
     cls.fingerprint = gen_empty_fingerprint()
     experimental_long = False
-    for msg in lr:
+    cls.msgs = list(lr)
+    for msg in cls.msgs:
       if msg.which() == "can":
         can_msgs.append(msg)
         if len(can_msgs) <= FRAME_FINGERPRINT:
@@ -361,6 +363,33 @@ class TestCarModelBase(unittest.TestCase):
       if self.CP.brand == "honda":
         if self.safety.get_acc_main_on() != prev_panda_acc_main_on:
           self.assertEqual(CS.cruiseState.available, self.safety.get_acc_main_on())
+
+  def test_panda_safety_tx(self):
+    """
+      Assert that panda safety can send all messages, need to re-generate the messages using carcontroller
+    """
+
+    # for idx, can in enumerate(self.can_msgs):
+    #   CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
+
+    init_segment(self.safety, self.msgs, self.CP.safetyConfigs[0].safetyModel, self.CP.safetyConfigs[0].safetyParam)
+
+    for msg in self.msgs:
+      msg.which()
+      if msg.which() == 'can':
+        to_push = can_capnp_to_list([msg.as_builder().to_bytes()])
+        self.CI.update(to_push)
+        for canmsg in filter(lambda m: m.src < 128, msg.can):
+          to_send = libsafety_py.make_CANPacket(canmsg.address, canmsg.src % 4, canmsg.dat)
+          self.assertTrue(self.safety.safety_rx_hook(to_send))
+
+      elif msg.which() == 'carControl':
+        self.last_actuators_output, can_sends = self.CI.apply(msg.carControl, msg.logMonoTime)
+        print(can_sends)
+        for can_send in can_sends:
+          self.safety.set_controls_allowed(True)
+          to_send = libsafety_py.make_CANPacket(can_send[0], can_send[2] % 4, can_send[1])
+          self.assertTrue(self.safety.safety_tx_hook(to_send), (can_send[0], can_send[1], can_send[2]))
 
   def test_panda_safety_carstate(self):
     """
