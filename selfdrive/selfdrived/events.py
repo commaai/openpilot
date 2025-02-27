@@ -305,7 +305,7 @@ def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
   elif not sm['liveParameters'].stiffnessFactorValid:
     stiffness_factor = sm['liveParameters'].stiffnessFactor
     title = "Abnormal tire stiffness"
-    text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.f})""
+    text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.f})"
 
   return NormalPermanentAlert(title, text),
 

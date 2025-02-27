@@ -229,9 +229,9 @@ def main():
       liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
       liveParameters.roll = float(roll)
       liveParameters.angleOffsetAverageDeg = float(angle_offset_average)
-      liveParameters.angleOffsetAverageValid = avg_offset_valid
+      liveParameters.angleOffsetAverageValid = bool(avg_offset_valid)
       liveParameters.angleOffsetDeg = float(angle_offset)
-      liveParameters.angleOffsetValid = total_offset_valid
+      liveParameters.angleOffsetValid = bool(total_offset_valid)
       liveParameters.valid = all((
         liveParameters.angleOffsetAverageValid,
         liveParameters.angleOffsetValid ,
