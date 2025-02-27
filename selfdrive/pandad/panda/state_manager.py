@@ -79,6 +79,7 @@ class PandaStateManager:
 
   def process(self, engaged, pm) -> bool:
     msg = messaging.new_message('pandaStates', len(self.pandas))
+    msg.valid = True
     pss = msg.pandaStates
     ignition = False
 
@@ -100,7 +101,7 @@ class PandaStateManager:
           can_health = p.can_health(j)
         self._fill_can_state(cs, can_health)
 
-      fault_bits = health.get('faults', 0)
+      fault_bits = int(health['faults'])
       fault_count = bin(fault_bits).count('1')
       faults = ps.init('faults', fault_count)
       idx = 0

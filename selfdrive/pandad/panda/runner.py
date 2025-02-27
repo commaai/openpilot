@@ -75,13 +75,13 @@ class PandaRunner:
         self._can_recv()
 
         # Process peripheral state at 20 Hz
-        if not rk.frame % 5 == 0:
+        if rk.frame % 5 == 0:
           self.sm.update(0)
           engaged = self.sm.all_checks() and self.sm["selfdriveState"].enabled
           self.periph_mgr.process(self.sm)
 
         # Process panda state at 10 Hz
-        if not rk.frame % 10:
+        if rk.frame % 10 == 0:
           ignition = self.state_mgr.process(engaged, self.pm)
           if not ignition:
             with self.lock:
@@ -93,7 +93,7 @@ class PandaRunner:
           self.safety_mgr.configure_safety_mode()
 
         # Send out peripheralState at 2Hz
-        if not rk.frame % 50:
+        if rk.frame % 50 == 0:
           self.periph_mgr.send_state(self.pm)
 
         rk.keep_time()
