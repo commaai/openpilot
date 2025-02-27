@@ -4,6 +4,7 @@ import time
 import cereal.messaging as messaging
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.system.hardware import HARDWARE
 
 NO_FAN_CONTROL = os.getenv("NO_FAN_CONTROL") == "1"
 
@@ -11,6 +12,20 @@ MAX_IR_POWER = 0.5
 MIN_IR_POWER = 0.0
 CUTOFF_IL = 400
 SATURATE_IL = 1000
+
+
+def set_ir_power(percent: int):
+  if HARDWARE.get_device_type() in ("tici", "tizi"):
+    return
+
+  clamped_percent = max(0, min(percent, 100))
+  value = int((clamped_percent / 100) * 255)  # Linear mapping from 0-100 to 0-255
+
+  # Write the value to the LED brightness files
+  with open("/sys/class/leds/led:torch_2/brightness", "w") as f:
+      f.write(f"{value}\n")
+  with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
+      f.write(f"{value}\n")
 
 
 class HardwareReader:
@@ -56,13 +71,15 @@ class HardwareReader:
 
 
 class PeripheralManager:
-  def __init__(self, pandas, lock):
-    self.panda = pandas[0]
+  def __init__(self, panda, hw_type, lock):
+    self.panda = panda
     self.last_camera_t = 0
     self.prev_fan = 999
-    self.prev_ir = 999
+    self.prev_ir_pwr = 999
+    self.ir_pwr = 0
     self.filter = FirstOrderFilter(0, 30.0, 0.05)
     self.lock = lock
+    self.hw_type = hw_type
     self.hw_reader = HardwareReader()
 
   def process(self, sm):
@@ -73,30 +90,32 @@ class PeripheralManager:
           self.panda.set_fan_power(fan)
         self.prev_fan = fan
 
-    ir = None
     if sm.updated["driverCameraState"]:
       state = sm["driverCameraState"]
       lines = self.filter.update(state.integLines)
       self.last_camera_t = sm.logMonoTime['driverCameraState']
       if lines <= CUTOFF_IL:
-        ir = 100.0 * MIN_IR_POWER
+        self.ir_pwr = 100.0 * MIN_IR_POWER
       elif lines > SATURATE_IL:
-        ir = 100.0 * MAX_IR_POWER
+        self.ir_pwr = 100.0 * MAX_IR_POWER
       else:
         slope = (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)
-        ir = 100.0 * (MIN_IR_POWER + slope * (lines - CUTOFF_IL))
+        self.ir_pwr = 100.0 * (MIN_IR_POWER + slope * (lines - CUTOFF_IL))
 
     if time.monotonic_ns() - self.last_camera_t > 1e9:
-      ir = 0
-    if ir and (ir != self.prev_ir or sm.frame % 100 == 0 or ir >= 50):
+      self.ir_pwr = 0
+
+    if self.ir_pwr != self.prev_ir_pwr or sm.frame % 100 == 0 or self.ir_pwr >= 50:
       with self.lock:
-        self.panda.set_ir_power(ir)
-      self.prev_ir = ir
+        self.panda.set_ir_power(self.ir_pwr)
+        set_ir_power(self.ir_pwr)
+      self.prev_ir_pwr = self.ir_pwr
 
   def send_state(self, pm):
     msg = messaging.new_message('peripheralState')
+    msg.valid = True
     ps = msg.peripheralState
-
+    ps.pandaType = self.hw_type
     ps.voltage, ps.current = self.hw_reader.get_values()
 
     if not (ps.voltage or ps.current):

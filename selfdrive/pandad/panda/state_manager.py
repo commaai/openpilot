@@ -11,19 +11,17 @@ LEC_ERROR_CODE = {
 }
 
 class PandaStateManager:
-  def __init__(self, pandas, lock):
+  def __init__(self, pandas, hw_types, lock):
     self.pandas = pandas
     self.params = Params()
     self.lock = lock
+    self.hw_types = hw_types
 
     self.is_comma_three_red = (
       len(pandas) == 2 and
       self.hw_types[0] == log.PandaState.PandaType.dos and
       self.hw_types[1] == log.PandaState.PandaType.redPanda
     )
-
-    with self.lock:
-      self.hw_types = [int.from_bytes(p.get_type(), 'big') for p in pandas]
 
   def _fill_state(self, ps, hw_type, health):
     ps.voltage = health['voltage']

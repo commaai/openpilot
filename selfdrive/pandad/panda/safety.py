@@ -64,7 +64,7 @@ class PandaSafetyManager:
     # Parse CarParams from bytes
     with car.CarParams.from_bytes(params_bytes) as car_params:
       safety_configs = car_params.safetyConfigs
-    # alternative_experience = car_params.alternativeExperience
+      alternative_experience = car_params.alternativeExperience
 
     with self.lock:
       for i, panda in enumerate(self.pandas):
@@ -76,5 +76,5 @@ class PandaSafetyManager:
           safety_model = car.CarParams.SafetyModel.schema.enumerants[safety_configs[i].safetyModel]
           safety_param = safety_configs[i].safetyParam
 
-        # panda.set_alternative_experience(alternative_experience)
+        panda._handle.controlWrite(Panda.REQUEST_OUT, 0xdf, alternative_experience, 0, b'')
         panda.set_safety_mode(safety_model, safety_param)
