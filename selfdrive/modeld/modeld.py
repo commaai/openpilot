@@ -57,13 +57,17 @@ class ModelState:
     self.frames = {'input_imgs': DrivingModelFrame(context), 'big_input_imgs': DrivingModelFrame(context)}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
 
+    self.full_features_buffer = np.zeros((1, ModelConstants.FULL_HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32)
+    self.full_desire = np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float32)
+    self.full_prev_desired_curv = np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32)
+
     # img buffers are managed in openCL transform code
     self.numpy_inputs = {
-      'desire': np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN+1), ModelConstants.DESIRE_LEN), dtype=np.float32),
+      'desire': np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT+1), ModelConstants.DESIRE_LEN), dtype=np.float32),
       'traffic_convention': np.zeros((1, ModelConstants.TRAFFIC_CONVENTION_LEN), dtype=np.float32),
       'lateral_control_params': np.zeros((1, ModelConstants.LATERAL_CONTROL_PARAMS_LEN), dtype=np.float32),
-      'prev_desired_curv': np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
-      'features_buffer': np.zeros((1, ModelConstants.FULL_HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
+      'prev_desired_curv': np.zeros((1, (ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT+1), ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
+      'features_buffer': np.zeros((1, ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT,  ModelConstants.FEATURE_LEN), dtype=np.float32),
     }
 
     with open(METADATA_PATH, 'rb') as f:
@@ -92,8 +96,9 @@ class ModelState:
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
 
-    self.numpy_inputs['desire'][0,:-1] = self.numpy_inputs['desire'][0,1:]
-    self.numpy_inputs['desire'][0,-1] = new_desire
+    self.full_desire[0,:-1] = self.full_desire[0,1:]
+    self.full_desire[0,-1] = new_desire
+    self.numpy_inputs['desire'][:] = self.full_desire[0, -1-ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT*ModelConstants.TEMPORAL_SKIP::ModelConstants.TEMPORAL_SKIP]
 
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.numpy_inputs['lateral_control_params'][:] = inputs['lateral_control_params']
@@ -118,13 +123,15 @@ class ModelState:
 
     outputs = self.parser.parse_outputs(self.slice_outputs(self.output))
 
-    self.numpy_inputs['features_buffer'][0,:-1] = self.numpy_inputs['features_buffer'][0,1:]
-    self.numpy_inputs['features_buffer'][0,-1] = outputs['hidden_state'][0, :]
+    self.full_features_buffer[0,:-1] = self.full_features_buffer[0,1:]
+    self.full_features_buffer[0,-1] = outputs['hidden_state'][0, :]
+    self.numpy_inputs['features_buffer'][:] = self.full_features_buffer[0, -ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT*ModelConstants.TEMPORAL_SKIP::ModelConstants.TEMPORAL_SKIP]
 
 
     # TODO model only uses last value now
-    self.numpy_inputs['prev_desired_curv'][0,:-1] = self.numpy_inputs['prev_desired_curv'][0,1:]
-    self.numpy_inputs['prev_desired_curv'][0,-1,:] = outputs['desired_curvature'][0, :]
+    self.full_prev_desired_curv[0,:-1] = self.full_prev_desired_curv[0,1:]
+    self.full_prev_desired_curv[0,-1,:] = outputs['desired_curvature'][0, :]
+    self.numpy_inputs['prev_desired_curv'][:] = self.full_prev_desired_curv[0, -ModelConstants.TEMPORAL_SKIP-ModelConstants.FULL_HISTORY_BUFFER_LEN_INPUT*ModelConstants.TEMPORAL_SKIP::ModelConstants.TEMPORAL_SKIP]
     return outputs
 
 
