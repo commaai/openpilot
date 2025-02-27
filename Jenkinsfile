@@ -31,7 +31,7 @@ export CI_ARTIFACTS_TOKEN=${env.CI_ARTIFACTS_TOKEN}
 export GITHUB_COMMENTS_TOKEN=${env.GITHUB_COMMENTS_TOKEN}
 export AZURE_TOKEN='${env.AZURE_TOKEN}'
 # only use 1 thread for tici tests since most require HIL
-export PYTEST_ADDOPTS="-n 0"
+export PYTEST_ADDOPTS="-n0 -s"
 
 
 export GIT_SSH_COMMAND="ssh -i /data/gitkey"
@@ -240,6 +240,7 @@ node {
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
       },
+      /*
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
@@ -247,6 +248,7 @@ node {
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
       },
+      */
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),

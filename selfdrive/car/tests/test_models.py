@@ -126,7 +126,7 @@ class TestCarModelBase(unittest.TestCase):
       try:
         source = partial(auto_source, sources=[internal_source, internal_source_zst] if len(INTERNAL_SEG_LIST) else \
                                               [openpilotci_source_zst, openpilotci_source, comma_api_source])
-        lr = LogReader(segment_range, source=source)
+        lr = LogReader(segment_range, source=source, sort_by_time=True)
         return cls.get_testing_data_from_logreader(lr)
       except (LogsUnavailable, AssertionError):
         pass

@@ -12,11 +12,9 @@ Version 0.9.8 (2025-02-27)
   * Allows you to maximize your training data uploads to improve the models
 * Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune
-* Coming soon
-  * Rivian support
-  * F-150 & Mach-E support
-  * Tesla Model 3 support
-
+* Rivian R1S and R1T support thanks to lukasloetkolben!
+* Tesla Model 3 and Y support thanks to lukasloetkolben!
+* Ford F-150, F-150 Hybrid, Mach-E, and Ranger support
 
 Version 0.9.7 (2024-06-13)
 ========================
