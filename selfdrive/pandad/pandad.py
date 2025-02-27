@@ -62,6 +62,8 @@ def flash_panda(panda_serial: str) -> Panda:
 
 
 def main() -> None:
+  config_realtime_process(3, 54)
+
   # signal pandad to close the relay and exit
   evt = threading.Event()
   def signal_handler(signum, frame):
@@ -171,5 +173,4 @@ def main() -> None:
       continue
 
 if __name__ == "__main__":
-  config_realtime_process([3], 54)
   main()

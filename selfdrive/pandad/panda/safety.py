@@ -76,5 +76,6 @@ class PandaSafetyManager:
           safety_model = car.CarParams.SafetyModel.schema.enumerants[safety_configs[i].safetyModel]
           safety_param = safety_configs[i].safetyParam
 
+        cloudlog.warning(f"Panda {i}: setting safety model: {safety_model}, param: {safety_param}, alternative experience: {alternative_experience}")
         panda._handle.controlWrite(Panda.REQUEST_OUT, 0xdf, alternative_experience, 0, b'')
         panda.set_safety_mode(safety_model, safety_param)
