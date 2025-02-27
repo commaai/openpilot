@@ -217,8 +217,6 @@ def main():
       avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, OFFSET_MAX, OFFSET_LOWERED_MAX)
       total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
       roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
-      stiffness_factor_valid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
-      steer_ratio_valid = min_sr <= liveParameters.steerRatio <= max_sr
 
       msg = messaging.new_message('liveParameters')
 
@@ -226,20 +224,21 @@ def main():
       liveParameters.posenetValid = True
       liveParameters.sensorValid = sensors_valid
       liveParameters.steerRatio = float(x[States.STEER_RATIO].item())
-      liveParameters.steerRatioValid = steer_ratio_valid
+      liveParameters.steerRatioValid = min_sr <= liveParameters.steerRatio <= max_sr
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS].item())
-      liveParameters.stiffnessFactorValid = stiffness_factor_valid
+      liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
       liveParameters.roll = float(roll)
       liveParameters.angleOffsetAverageDeg = float(angle_offset_average)
+      liveParameters.angleOffsetAverageValid = avg_offset_valid
       liveParameters.angleOffsetDeg = float(angle_offset)
       liveParameters.angleOffsetValid = total_offset_valid
       liveParameters.valid = all((
-        avg_offset_valid,
-        total_offset_valid,
+        liveParameters.angleOffsetAverageValid,
+        liveParameters.angleOffsetValid ,
         roll_valid,
         roll_std < ROLL_STD_MAX,
-        stiffness_factor_valid,
-        steer_ratio_valid,
+        liveParameters.stiffnessFactorValid,
+        liveParameters.steerRatioValid,
       ))
       liveParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())
