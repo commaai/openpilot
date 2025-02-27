@@ -23,6 +23,54 @@ class PandaStateManager:
       self.hw_types[1] == log.PandaState.PandaType.redPanda
     )
 
+  def process(self, engaged, pm) -> bool:
+    msg = messaging.new_message('pandaStates', len(self.pandas))
+    msg.valid = True
+    pss = msg.pandaStates
+    ignition = False
+
+    for i, p in enumerate(self.pandas):
+      with self.lock:
+        health = p.health() or {}
+
+      if SPOOFING_STARTED:
+        health['ignition_line'] = 1
+      elif self.is_comma_three_red and self.hw_types[i] == log.PandaState.PandaType.dos:
+        health['ignition_line'] = 0
+
+      ignition |= bool(health['ignition_line']) or bool(health['ignition_can'])
+      ps = pss[i]
+      self._fill_state(ps, self.hw_types[i], health)
+
+      for j, cs in enumerate((ps.init('canState0'), ps.init('canState1'), ps.init('canState2'))):
+        with self.lock:
+          can_health = p.can_health(j)
+        self._fill_can_state(cs, can_health)
+
+      fault_bits = int(health['faults'])
+      fault_count = bin(fault_bits).count('1')
+      faults = ps.init('faults', fault_count)
+      idx = 0
+      for f in range(log.PandaState.FaultType.relayMalfunction,
+                     log.PandaState.FaultType.heartbeatLoopWatchdog + 1):
+        if fault_bits & (1 << f):
+          faults[idx] = f
+          idx += 1
+
+    with self.lock:
+      for p, ps in zip(self.pandas, pss):
+        if ps.safetyModel == car.CarParams.SafetyModel.silent or (
+            not ignition and ps.safetyModel != car.CarParams.SafetyModel.noOutput):
+          p.set_safety_mode(car.CarParams.SafetyModel.noOutput)
+
+        if ps.powerSaveEnabled != (not ignition):
+          p.set_power_save(not ignition)
+
+        p.send_heartbeat(engaged)
+
+    pm.send("pandaStates", msg)
+    return ignition
+
   def _fill_state(self, ps, hw_type, health):
     ps.voltage = health['voltage']
     ps.current = health['current']
@@ -76,50 +124,3 @@ class PandaStateManager:
     cs.irq1CallRate = can_health['irq1_call_rate']
     cs.irq2CallRate = can_health['irq2_call_rate']
     cs.canCoreResetCnt = can_health['can_core_reset_count']
-
-  def process(self, engaged, pm) -> bool:
-    msg = messaging.new_message('pandaStates', len(self.pandas))
-    msg.valid = True
-    pss = msg.pandaStates
-    ignition = False
-
-    for i, p in enumerate(self.pandas):
-      with self.lock:
-        health = p.health() or {}
-
-      if SPOOFING_STARTED:
-        health['ignition_line'] = 1
-      elif self.is_comma_three_red and self.hw_types[i] == log.PandaState.PandaType.dos:
-        health['ignition_line'] = 0
-
-      ignition |= bool(health['ignition_line']) or bool(health['ignition_can'])
-      ps = pss[i]
-      self._fill_state(ps, self.hw_types[i], health)
-
-      for j, cs in enumerate((ps.init('canState0'), ps.init('canState1'), ps.init('canState2'))):
-        with self.lock:
-          can_health = p.can_health(j)
-        self._fill_can_state(cs, can_health)
-
-      fault_bits = int(health['faults'])
-      fault_count = bin(fault_bits).count('1')
-      faults = ps.init('faults', fault_count)
-      idx = 0
-      for f in range(log.PandaState.FaultType.relayMalfunction,
-                     log.PandaState.FaultType.heartbeatLoopWatchdog + 1):
-        if fault_bits & (1 << f):
-          faults[idx] = f
-          idx += 1
-
-    with self.lock:
-      for p, ps in zip(self.pandas, pss):
-        if ps.safetyModel == car.CarParams.SafetyModel.silent or (
-            not ignition and ps.safetyModel != car.CarParams.SafetyModel.noOutput):
-          p.set_safety_mode(car.CarParams.SafetyModel.noOutput)
-
-        if ps.powerSaveEnabled != (not ignition):
-          p.set_power_save(not ignition)
-        p.send_heartbeat(engaged)
-
-    pm.send("pandaStates", msg)
-    return ignition

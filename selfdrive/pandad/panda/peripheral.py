@@ -108,7 +108,8 @@ class PeripheralManager:
     if self.ir_pwr != self.prev_ir_pwr or sm.frame % 100 == 0 or self.ir_pwr >= 50:
       with self.lock:
         self.panda.set_ir_power(self.ir_pwr)
-        set_ir_power(self.ir_pwr)
+
+      set_ir_power(self.ir_pwr)
       self.prev_ir_pwr = self.ir_pwr
 
   def send_state(self, pm):

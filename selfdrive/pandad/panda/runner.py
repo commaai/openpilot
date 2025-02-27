@@ -50,7 +50,6 @@ class PandaRunner:
         elif age >= 1:
           cloudlog.error(f"Dropping stale sendcan message, age: {age:.2f}s")
 
-
   def _can_recv(self):
     with self.lock:
       cans = list(chain.from_iterable(p.can_recv() for p in self.pandas))
