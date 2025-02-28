@@ -956,15 +956,17 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
   ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  } else {
+    sync_objs_ife[i] = sync_create.sync_obj;
   }
-  sync_objs_ife[i] = sync_create.sync_obj;
 
   if (icp_dev_handle > 0) {
     ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
     if (ret != 0) {
       LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+    } else {
+      sync_objs_bps[i] = sync_create.sync_obj;
     }
-    sync_objs_bps[i] = sync_create.sync_obj;
   }
 
   // schedule request with camera request manager
