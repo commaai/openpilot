@@ -406,9 +406,8 @@ class TestCarModelBase(unittest.TestCase):
 
       if vehicle_speed_seen:
         v_ego_raw = CS.vEgoRaw / self.CP.wheelSpeedFactor
-        print(v_ego_raw, self.safety.get_vehicle_speed_max(), self.safety.get_vehicle_speed_min())
-        checks['vEgoRaw'] += v_ego_raw > (self.safety.get_vehicle_speed_max() + 0.001) or v_ego_raw < (self.safety.get_vehicle_speed_min() - 0.001)
-        print(checks['vEgoRaw'])
+        checks['vEgoRaw'] += (v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
+                              v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
