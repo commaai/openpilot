@@ -167,7 +167,7 @@ class TorqueEstimator(ParameterEstimator):
       self.raw_points["lat_active"].append(msg.latActive)
     elif which == "carOutput":
       self.raw_points["carOutput_t"].append(t + self.lag)
-      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.steer)
+      self.raw_points["steer_torque"].append(-msg.actuatorsOutput.torque)
     elif which == "carState":
       self.raw_points["carState_t"].append(t + self.lag)
       # TODO: check if high aEgo affects resulting lateral accel
