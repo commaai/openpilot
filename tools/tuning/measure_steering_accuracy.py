@@ -47,9 +47,9 @@ class SteeringAccuracyTool:
 
     v_ego = sm['carState'].vEgo
     active = sm['controlsState'].active
-    steer = sm['carOutput'].actuatorsOutput.steer
+    steer = sm['carOutput'].actuatorsOutput.torque
     standstill = sm['carState'].standstill
-    steer_limited = abs(sm['carControl'].actuators.steer - sm['carControl'].actuatorsOutput.steer) > 1e-2
+    steer_limited = abs(sm['carControl'].actuators.torque - sm['carControl'].actuatorsOutput.torque) > 1e-2
     overriding = sm['carState'].steeringPressed
     changing_lanes = sm['modelV2'].meta.laneChangeState != 0
     model_points = sm['modelV2'].position.y
