@@ -72,7 +72,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   progress_bar->setFixedHeight(40);
   
   // Progress text
-  progress_text = new QLabel("0%");
+  progress_text = new QLabel(tr("0%"));
   progress_text->setStyleSheet("font-size: 40px; font-weight: bold; color: white;");
   
   progress_layout->addWidget(progress_text);

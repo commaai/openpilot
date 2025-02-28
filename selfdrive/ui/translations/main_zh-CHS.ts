@@ -325,6 +325,10 @@
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>0%</source>
+        <translation type="unfinished">5G {0%?}</translation>
+    </message>
 </context>
 <context>
     <name>HudRenderer</name>
