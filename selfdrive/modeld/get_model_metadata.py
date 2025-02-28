@@ -24,8 +24,7 @@ if __name__ == "__main__":
   assert output_slices is not None, 'output_slices not found in metadata'
 
   metadata = {
-    'policy_model': get_metadata_value_by_name(model, 'policy_model'),
-    'vision_model':  get_metadata_value_by_name(model, 'vision_model'),
+    'model_checkpoint': get_metadata_value_by_name(model, 'model_checkpoint'),
     'output_slices': pickle.loads(codecs.decode(output_slices.encode(), "base64")),
     'input_shapes': dict([get_name_and_shape(x) for x in model.graph.input]),
     'output_shapes': dict([get_name_and_shape(x) for x in model.graph.output])
