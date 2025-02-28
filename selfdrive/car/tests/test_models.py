@@ -28,6 +28,7 @@ from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotc
 from openpilot.tools.lib.route import SegmentName
 
 SafetyModel = car.CarParams.SafetyModel
+SteerControlType = structs.CarParams.SteerControlType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -182,7 +183,7 @@ class TestCarModelBase(unittest.TestCase):
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
 
-    if self.CP.steerControlType != structs.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType != SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
@@ -319,7 +320,7 @@ class TestCarModelBase(unittest.TestCase):
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
-    vehicle_speed_seen = self.CP.steerControlType == structs.CarParams.SteerControlType.angle and not self.CP.notCar
+    vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
 
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
@@ -393,7 +394,7 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
-    vehicle_speed_seen = self.CP.steerControlType == structs.CarParams.SteerControlType.angle and not self.CP.notCar
+    vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
