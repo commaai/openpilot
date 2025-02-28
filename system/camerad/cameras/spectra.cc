@@ -908,15 +908,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
 }
 
 void SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
-  // Ensure the sync object at index i is destroyed before enqueue_buffer.
-  // To avoid issues with request drops, destroy it here as a safeguard.
-  // Once the clearing logic is stable, replace this with an assert to confirm
-  // proper destruction before enqueue_buffer.
-  if (sync_objs_ife[i] != 0) {
-    LOGE("Sync object at index %d is not destroyed before enqueue_buffer", i);
-    destroySyncObjectAt(i);
-  }
-  // assert(sync_objs_ife[i] == 0);
+  assert(sync_objs_ife[i] == 0);
 
   // create output fences
   struct cam_sync_info sync_create = {0};
@@ -952,54 +944,40 @@ void SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
 
   // submit request to IFE and BPS
   config_ife(i, request_id);
-  if (output_type == ISP_BPS_PROCESSED) {
-    config_bps(i, request_id);
-  }
+  if (output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
 }
 
 bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
-  assert(sync_objs_ife[buf_idx]);
+  if (!sync_objs_ife[buf_idx]) return false;
 
   // Wait for the previous one in this slot (index) to come in.
   // in RAW_OUTPUT mode, this is just the frame readout from the sensor
   // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
+  auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
+    struct cam_sync_wait sync_wait = {
+        .sync_obj = sync_obj,
+        .timeout_ms = stress_test(sync_type) ? 1 : timeout_ms,
+    };
+    int ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    if (ret != 0) LOGE("Failed to wait for %s: %d %d", sync_type, ret, sync_obj);
+    return ret == 0;
+  };
 
   // *** Wait for IFE ***
-  struct cam_sync_wait sync_wait= {};
-  sync_wait.sync_obj = sync_objs_ife[buf_idx];
-  sync_wait.timeout_ms = 100;
-  if (stress_test("IFE sync")) {
-    sync_wait.timeout_ms = 1;
-  }
-  int ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-  if (ret != 0) {
-    LOGE("failed to wait for IFE sync: %d %d", ret, sync_wait.sync_obj);
+  bool success = waitForSync(sync_objs_ife[buf_idx], 100, "IFE sync");
+  // *** Wait for BPS *** (typically 7ms)
+  if (success && sync_objs_bps[buf_idx]) {
+    success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
   }
 
-  // *** Wait for BPS ***
-  if (ret == 0 && sync_objs_bps[buf_idx]) {
-    sync_wait.sync_obj = sync_objs_bps[buf_idx];
-    sync_wait.timeout_ms = 50; // typically 7ms
-    if (stress_test("BPS sync")) {
-      sync_wait.timeout_ms = 1;
-    }
-    ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    if (ret != 0) {
-      LOGE("failed to wait for BPS sync: %d %d", ret, sync_wait.sync_obj);
-    }
-  }
-
-  if (ret != 0) {
-    // need to start over on sync failures,
-    // otherwise future frames will tear
+  if (success) {
+    destroySyncObjectAt(buf_idx);
+    enqueue_buffer(buf_idx, request_id + ife_buf_depth);
+  } else {
+    // Reset queue on sync failure to prevent frame tearing
     clearAndRequeue(request_id + 1);
-    return false;
   }
-
-  destroySyncObjectAt(buf_idx);
-
-  enqueue_buffer(buf_idx, request_id + ife_buf_depth);
-  return true;
+  return success;
 }
 
 void SpectraCamera::destroySyncObjectAt(int index) {
@@ -1398,22 +1376,19 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   // this is timestamped in the kernel's SOF IRQ callback
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
 
-  //LOGD("handle cam %d, request id %lu -> %lu, frame id raw %lu", cc.camera_num, request_id_last, request_id, frame_id_raw);
-
   if (request_id != 0) { // next ready
     // check for skipped_last frames
     if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
       LOGE("camera %d realign", cc.camera_num);
       clearAndRequeue(request_id + 1);
-      return false;
     } else if (frame_id_raw == frame_id_raw_last + 1) {
       skipped_last = false;
     }
 
     // check for dropped requests
-    if (request_id > request_id_last + 1) {
+    if (!skipped_last && request_id > request_id_last + 1) {
       LOGE("camera %d dropped requests %ld %ld", cc.camera_num, request_id, request_id_last);
-      enqueue_req_multi(request_id_last + 1 + ife_buf_depth, request_id - (request_id_last + 1));
+      clearAndRequeue(request_id_last + 1);
     }
 
     frame_id_raw_last = frame_id_raw;
