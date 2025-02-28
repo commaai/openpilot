@@ -1376,34 +1376,33 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   // this is timestamped in the kernel's SOF IRQ callback
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
 
-  if (request_id != 0) { // next ready
-    // check for skipped_last frames
-    if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
-      LOGE("camera %d realign", cc.camera_num);
-      clearAndRequeue(request_id + 1);
-    } else if (frame_id_raw == frame_id_raw_last + 1) {
-      skipped_last = false;
-    }
-
-    // check for dropped requests
-    if (!skipped_last && request_id > request_id_last + 1) {
-      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, request_id, request_id_last);
-      clearAndRequeue(request_id_last + 1);
-    }
-
-    frame_id_raw_last = frame_id_raw;
-    request_id_last = request_id;
-
-    return processFrame(request_id, frame_id_raw, timestamp);
-  } else { // not ready
+  if (request_id == 0) {  // not ready
     if (frame_id_raw > frame_id_raw_last + 10) {
       LOGE("camera %d reset after half second of no response", cc.camera_num);
       clearAndRequeue(request_id_last + 1);
       frame_id_raw_last = frame_id_raw;
     }
+    return false;
   }
 
-  return false;
+  // check for skipped_last frames
+  if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
+    LOGE("camera %d realign", cc.camera_num);
+    clearAndRequeue(request_id + 1);
+  } else if (frame_id_raw == frame_id_raw_last + 1) {
+    skipped_last = false;
+  }
+
+  // check for dropped requests
+  if (!skipped_last && request_id > request_id_last + 1) {
+    LOGE("camera %d dropped requests %ld %ld", cc.camera_num, request_id, request_id_last);
+    clearAndRequeue(request_id_last + 1);
+  }
+
+  frame_id_raw_last = frame_id_raw;
+  request_id_last = request_id;
+
+  return processFrame(request_id, frame_id_raw, timestamp);
 }
 
 bool SpectraCamera::processFrame(uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
