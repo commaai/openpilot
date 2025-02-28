@@ -319,6 +319,8 @@ class TestCarModelBase(unittest.TestCase):
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
+    vehicle_speed_seen = self.CP.steerControlType == structs.CarParams.SteerControlType.angle and not self.CP.notCar
+
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
@@ -327,6 +329,8 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_brake = self.safety.get_brake_pressed_prev()
       prev_panda_regen_braking = self.safety.get_regen_braking_prev()
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+      prev_panda_vehicle_speed_min = self.safety.get_vehicle_speed_min()
+      prev_panda_vehicle_speed_max = self.safety.get_vehicle_speed_max()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
@@ -353,6 +357,16 @@ class TestCarModelBase(unittest.TestCase):
 
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
+
+      # check vehicle speed if angle control car or available
+      if self.safety.get_vehicle_speed_min() > 0 or self.safety.get_vehicle_speed_max() > 0:
+        vehicle_speed_seen = True
+
+      if vehicle_speed_seen and (self.safety.get_vehicle_speed_min() != prev_panda_vehicle_speed_min or
+                                 self.safety.get_vehicle_speed_max() != prev_panda_vehicle_speed_max):
+        v_ego_raw = CS.vEgoRaw / self.CP.wheelSpeedFactor
+        self.assertFalse(v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
+                         v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
 
       if not (self.CP.brand == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
