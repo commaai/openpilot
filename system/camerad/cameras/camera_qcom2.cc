@@ -12,13 +12,6 @@
 #include <string>
 #include <vector>
 
-#ifdef QCOM2
-#include "CL/cl_ext_qcom.h"
-#else
-#define CL_PRIORITY_HINT_HIGH_QCOM NULL
-#define CL_CONTEXT_PRIORITY_HINT_QCOM NULL
-#endif
-
 #include "media/cam_sensor_cmn_header.h"
 
 #include "common/clutil.h"
@@ -253,13 +246,8 @@ void CameraState::sendState() {
   pm->send(camera.cc.publish_name, msg);
 }
 
-void camerad_thread() {
+void camerad_thread(cl_device_id device_id, cl_context ctx) {
   // TODO: centralize enabled handling
-
-  cl_device_id device_id = cl_get_device_id(CL_DEVICE_TYPE_DEFAULT);
-  const cl_context_properties props[] = {CL_CONTEXT_PRIORITY_HINT_QCOM, CL_PRIORITY_HINT_HIGH_QCOM, 0};
-  cl_context ctx = CL_CHECK_ERR(clCreateContext(props, 1, &device_id, NULL, NULL, &err));
-
   VisionIpcServer v("camerad", device_id, ctx);
 
   // *** initial ISP init ***
