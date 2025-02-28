@@ -64,7 +64,30 @@ class TestCamerad:
     laggy_frames = {k: v for k, v in diffs.items() if v > 1.1}
     assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
 
-  @pytest.mark.skip("TODO: enable this")
-  def test_stress_test(self, logs):
+  def test_stress_test(self):
     os.environ['SPECTRA_STRESS_TEST'] = '1'
-    run_and_log(["camerad", ], CAMERAS, 5)
+    logs = run_and_log(["camerad", ], CAMERAS, 12)
+    ts = msgs_to_time_series(logs)
+
+    for c in CAMERAS:
+      assert c in ts
+      assert len(ts[c]['t']) > 20
+
+      # not a valid request id
+      assert 0 not in ts[c]['requestId']
+
+      # we should see jumps
+      assert np.max(np.diff(ts[c]['frameId'])) > 1
+      assert np.max(np.diff(ts[c]['requestId'])) > 1
+
+      # should monotonically increase
+      assert np.all(np.diff(ts[c]['frameId']) >= 1)
+      assert np.all(np.diff(ts[c]['requestId']) >= 1)
+
+      # EOF > SOF
+      assert np.all((ts[c]['timestampEof'] - ts[c]['timestampSof']) > 0)
+
+      # logMonoTime > SOF
+      assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 0.01)
+      # TODO: make this work
+      #assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) < 0.25)
