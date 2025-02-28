@@ -27,6 +27,7 @@ bool SocketCanStream::connect() {
   // These are expected and can be ignored, we don't need the advanced features of libsocketcan
   QString errorString;
   device.reset(QCanBus::instance()->createDevice("socketcan", config.device, &errorString));
+  device->setConfigurationParameter(QCanBusDevice::CanFdKey, true);
 
   if (!device) {
     qDebug() << "Failed to create SocketCAN device" << errorString;
