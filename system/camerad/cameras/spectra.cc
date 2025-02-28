@@ -274,12 +274,6 @@ int SpectraCamera::clear_req_queue() {
   return ret;
 }
 
-void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
-  clear_req_queue();
-  enqueue_req_multi(from_request_id, ife_buf_depth);
-  skipped_last = true;
-}
-
 void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx) {
   if (!openSensor()) {
     return;
@@ -947,39 +941,6 @@ void SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
   if (output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
 }
 
-bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
-  if (!sync_objs_ife[buf_idx]) return false;
-
-  // Wait for the previous one in this slot (index) to come in.
-  // in RAW_OUTPUT mode, this is just the frame readout from the sensor
-  // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
-  auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
-    struct cam_sync_wait sync_wait = {
-        .sync_obj = sync_obj,
-        .timeout_ms = stress_test(sync_type) ? 1 : timeout_ms,
-    };
-    int ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    if (ret != 0) LOGE("Failed to wait for %s: %d %d", sync_type, ret, sync_obj);
-    return ret == 0;
-  };
-
-  // *** Wait for IFE ***
-  bool success = waitForSync(sync_objs_ife[buf_idx], 100, "IFE sync");
-  // *** Wait for BPS *** (typically 7ms)
-  if (success && sync_objs_bps[buf_idx]) {
-    success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
-  }
-
-  if (success) {
-    destroySyncObjectAt(buf_idx);
-    enqueue_buffer(buf_idx, request_id + ife_buf_depth);
-  } else {
-    // Reset queue on sync failure to prevent frame tearing
-    clearAndRequeue(request_id + 1);
-  }
-  return success;
-}
-
 void SpectraCamera::destroySyncObjectAt(int index) {
   auto destroy_sync_obj = [](int cam_sync_fd, int32_t &sync_obj) {
     if (sync_obj == 0) return;
@@ -1405,6 +1366,46 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   return processFrame(request_id, frame_id_raw, timestamp);
 }
 
+void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
+  clear_req_queue();
+  enqueue_req_multi(from_request_id, ife_buf_depth);
+  skipped_last = true;
+}
+
+bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
+  if (!sync_objs_ife[buf_idx]) return false;
+
+  // Wait for the previous one in this slot (index) to come in.
+  // in RAW_OUTPUT mode, this is just the frame readout from the sensor
+  // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
+  auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
+    struct cam_sync_wait sync_wait = {};
+    sync_wait.sync_obj = sync_obj;
+    sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
+    int ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
+    if (ret != 0) {
+      LOGE("Failed to wait for %s: %d %d", sync_type, ret, sync_obj);
+    }
+    return ret == 0;
+  };
+
+  // *** Wait for IFE ***
+  bool success = waitForSync(sync_objs_ife[buf_idx], 100, "IFE sync");
+  // *** Wait for BPS *** (typically 7ms)
+  if (success && sync_objs_bps[buf_idx]) {
+    success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
+  }
+
+  if (success) {
+    destroySyncObjectAt(buf_idx);
+    enqueue_buffer(buf_idx, request_id + ife_buf_depth);
+  } else {
+    // Reset queue on sync failure to prevent frame tearing
+    clearAndRequeue(request_id + 1);
+  }
+  return success;
+}
+
 bool SpectraCamera::processFrame(uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
   int buf_idx = (request_id - 1) % ife_buf_depth;
 
@@ -1423,11 +1424,11 @@ bool SpectraCamera::processFrame(uint64_t request_id, uint64_t frame_id_raw, uin
   // Update buffer and frame data
   buf.cur_buf_idx = buf_idx;
   buf.cur_frame_data = {
-      .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
-      .request_id = (uint32_t)request_id,
-      .timestamp_sof = timestamp,
-      .timestamp_eof = timestamp_eof,
-      .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)};
+    .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
+    .request_id = (uint32_t)request_id,
+    .timestamp_sof = timestamp,
+    .timestamp_eof = timestamp_eof,
+    .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)};
   return true;
 }
 
