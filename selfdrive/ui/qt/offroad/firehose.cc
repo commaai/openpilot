@@ -28,7 +28,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->setSpacing(20);
 
   // Top description
-  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models, so Experimental mode will get better!"));
+  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models with better Experimental Mode."));
   description->setStyleSheet("font-size: 45px; padding-bottom: 20px;");
   description->setWordWrap(true);
   content_layout->addWidget(description);
@@ -40,28 +40,20 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   line->setStyleSheet("background-color: #444444; margin-top: 5px; margin-bottom: 5px;");
   content_layout->addWidget(line);
 
-  // Enable firehose toggle - using ParamControl with no description
-  enable_firehose = new ParamControl(
-    "FirehoseMode",
-    tr("Start Firehose Mode"), 
-    "", // No description for the toggle
-    ""  // No icon
-  );
-  
-  // Connect to toggle state changes
+  enable_firehose = new ParamControl("FirehoseMode", tr("Enable Firehose Mode"), "", "");
   QObject::connect(enable_firehose, &ParamControl::toggleFlipped, [=](bool state) {
     updateFirehoseState(state);
   });
   
   content_layout->addWidget(enable_firehose);
 
-  // Create progress bar container (always visible)
+  // Create progress bar container
   progress_container = new QFrame();
+  progress_container->hide();
   QHBoxLayout *progress_layout = new QHBoxLayout(progress_container);
   progress_layout->setContentsMargins(10, 0, 10, 10);
   progress_layout->setSpacing(20);
   
-  // Progress bar
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
   progress_bar->setValue(0);
@@ -83,7 +75,6 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   progress_text = new QLabel("0%");
   progress_text->setStyleSheet("font-size: 40px; font-weight: bold; color: white;");
   
-  progress_layout->addWidget(progress_bar, 1);
   progress_layout->addWidget(progress_text);
   
   content_layout->addWidget(progress_container);
@@ -98,10 +89,10 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   // Detailed instructions at the bottom
   detailed_instructions = new QLabel(tr(
     "Follow these steps to get your device ready:<br>"
-    "  1. Bring your device inside and connect to a good USB-C adapter<br>"
-    "  2. Connect to Wi-Fi<br>"
-    "  3. Enable the toggle<br>"
-    "  4. Leave it connected until complete<br>"
+    "\t1. Bring your device inside and connect to a good USB-C adapter<br>"
+    "\t2. Connect to Wi-Fi<br>"
+    "\t3. Enable the toggle<br>"
+    "\t4. Leave it connected for at least 30 minutes<br>"
     "<br>"
     "The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness."
     "<br><br><b>FAQ</b><br>"
@@ -112,29 +103,13 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   detailed_instructions->setWordWrap(true);
   content_layout->addWidget(detailed_instructions);
 
-  // Add content to main layout
   layout->addWidget(content, 1);
 
-  // Connect to UI state changes
   QObject::connect(uiState(), &UIState::offroadTransition, this, &FirehosePanel::updateToggles);
-  
-  // Initialize state based on params
-  bool firehose_enabled = params.getBool("FirehoseMode");
-  updateFirehoseState(firehose_enabled);
 }
 
 void FirehosePanel::updateFirehoseState(bool enabled) {
-  // Update progress bar with current value
-  if (enabled) {
-    // For demonstration purposes, set a random progress value
-    int progress = 35; // Replace with actual progress calculation
-    progress_bar->setValue(progress);
-    progress_text->setText(QString("%1%").arg(progress));
-  } else {
-    // Reset progress when disabled
-    progress_bar->setValue(0);
-    progress_text->setText("0%");
-  }
+  // TODO: implement progress
 }
 
 void FirehosePanel::showEvent(QShowEvent *event) {

@@ -312,17 +312,17 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Enable Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
-Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, so Experimental mode will get better!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Start Firehose Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable the toggle&lt;br&gt;  4. Leave it connected until the progress bar completes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;</source>
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1097,14 +1097,6 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>openpilotが作動していない場合でも運転者モニタリングを有効にする。</translation>
-    </message>
-    <message>
-        <source>FIREHOSE Mode</source>
-        <translation type="vanished">FIREHOSEモード</translation>
-    </message>
-    <message>
-        <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation type="vanished">&lt;b&gt;FIREHOSEモード&lt;/b&gt;を有効にすると、あなたの運転が公式のトレーニングデータに追加されます。&lt;br&gt;&lt;br&gt;次の手順でデバイスを準備してください:&lt;br&gt;  1. デバイスを屋内に持ち込み、適切なUSB-Cアダプターに接続する&lt;br&gt;  2. Wi-Fiに接続する&lt;br&gt;  3. このスイッチを有効にする&lt;br&gt;  4. 少なくとも30分間接続したままにする&lt;br&gt;&lt;br&gt;このスイッチはデバイスを再起動すると無効になります。効果を最大化するためには毎週実行するのが望ましいです。</translation>
     </message>
 </context>
 <context>
