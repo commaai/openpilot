@@ -376,9 +376,11 @@ class TestCarModelBase(unittest.TestCase):
         to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
-    controls_allowed_prev = False
+    error = 0
+    controls_allowed_prev = self.CP.steerControlType == structs.CarParams.SteerControlType.angle
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
+    vehicle_speed_seen = False
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -398,6 +400,21 @@ class TestCarModelBase(unittest.TestCase):
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+
+      # some safety modes do not use vehicle speed
+      # TODO: enforce if angle control car only
+      if self.safety.get_vehicle_speed_last() > 0:
+        vehicle_speed_seen = True
+
+      if vehicle_speed_seen:
+        # print(CS.vEgoRaw, self.safety.get_vehicle_speed(), abs(CS.vEgoRaw - self.safety.get_vehicle_speed()))
+        print(CS.vEgoRaw, self.safety.get_vehicle_speed_max(), self.safety.get_vehicle_speed_min())
+        # checks['vEgoRaw'] += abs(CS.vEgoRaw - self.safety.get_vehicle_speed()) > 0.01
+        # checks['vEgoRaw'] += (CS.vEgoRaw - self.safety.get_vehicle_speed_max()) > 0.01  # or CS.vEgoRaw - self.safety.get_vehicle_speed_min() > 0.01
+        checks['vEgoRaw'] += CS.vEgoRaw > (self.safety.get_vehicle_speed_max() + 0.001) or CS.vEgoRaw < (self.safety.get_vehicle_speed_min() - 0.001)
+        print(checks['vEgoRaw'])
+        # error = max(abs(CS.vEgoRaw - self.safety.get_vehicle_speed()), error)
+        # print('error', error)
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed
