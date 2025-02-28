@@ -108,3 +108,8 @@ class Parser:
       self.parse_binary_crossentropy(k, outs)
     self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
     return outs
+
+  def parse_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    outs = self.parse_vision_outputs(outs)
+    outs = self.parse_policy_outputs(outs)
+    return outs
