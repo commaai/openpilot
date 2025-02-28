@@ -316,10 +316,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
@@ -328,6 +324,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>0%</source>
         <translation type="unfinished">5G {0%?}</translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes, expected.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

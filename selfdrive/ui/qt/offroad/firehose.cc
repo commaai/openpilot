@@ -41,10 +41,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->addWidget(line);
 
   enable_firehose = new ParamControl("FirehoseMode", tr("Enable Firehose Mode"), "", "");
-  QObject::connect(enable_firehose, &ParamControl::toggleFlipped, [=](bool state) {
-    updateFirehoseState(state);
-  });
-  
+
   content_layout->addWidget(enable_firehose);
 
   // Create progress bar container
@@ -53,7 +50,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   QHBoxLayout *progress_layout = new QHBoxLayout(progress_container);
   progress_layout->setContentsMargins(10, 0, 10, 10);
   progress_layout->setSpacing(20);
-  
+
   progress_bar = new QProgressBar();
   progress_bar->setRange(0, 100);
   progress_bar->setValue(0);
@@ -70,22 +67,22 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     }
   )");
   progress_bar->setFixedHeight(40);
-  
+
   // Progress text
   progress_text = new QLabel(tr("0%"));
   progress_text->setStyleSheet("font-size: 40px; font-weight: bold; color: white;");
-  
+
   progress_layout->addWidget(progress_text);
-  
+
   content_layout->addWidget(progress_container);
-  
+
   // Add a separator before detailed instructions
   QFrame *line2 = new QFrame();
   line2->setFrameShape(QFrame::HLine);
   line2->setFrameShadow(QFrame::Sunken);
   line2->setStyleSheet("background-color: #444444; margin-top: 10px; margin-bottom: 10px;");
   content_layout->addWidget(line2);
-  
+
   // Detailed instructions at the bottom
   detailed_instructions = new QLabel(tr(
     "Follow these steps to get your device ready:<br>"
@@ -98,27 +95,12 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     "<br><br><b>FAQ</b><br>"
     "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br>"
     "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br>"
+    "<i>Do I need to be on Wi-Fi?</i> Yes.<br>"
+    "<i>Do I need to bring the device inside?</i> No, you can enable once you're parked, however your uploads will be limited by your car's battery.<br>"
   ));
   detailed_instructions->setStyleSheet("font-size: 40px; padding: 20px; color: #E4E4E4;");
   detailed_instructions->setWordWrap(true);
   content_layout->addWidget(detailed_instructions);
 
   layout->addWidget(content, 1);
-
-  QObject::connect(uiState(), &UIState::offroadTransition, this, &FirehosePanel::updateToggles);
-}
-
-void FirehosePanel::updateFirehoseState(bool enabled) {
-  // TODO: implement progress
-}
-
-void FirehosePanel::showEvent(QShowEvent *event) {
-  updateToggles(offroad);
-}
-
-void FirehosePanel::updateToggles(bool _offroad) {
-  // Update UI elements based on offroad status
-  enable_firehose->setEnabled(_offroad);
-  
-  offroad = _offroad;
 }

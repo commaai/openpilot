@@ -14,23 +14,15 @@ class FirehosePanel : public QWidget {
   Q_OBJECT
 public:
   explicit FirehosePanel(SettingsWindow *parent);
-  void showEvent(QShowEvent *event) override;
 
 private:
-  Params params;
-  bool offroad = false;
   QVBoxLayout *layout;
   
-  // UI elements we need to reference
   ParamControl *enable_firehose;
   QFrame *progress_container;
   QProgressBar *progress_bar;
   QLabel *progress_text;
   QLabel *detailed_instructions;
   
-  // Methods
   void updateFirehoseState(bool enabled);
-
-private slots:
-  void updateToggles(bool _offroad);
 };
