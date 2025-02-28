@@ -917,6 +917,9 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
     // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
     sync_wait.sync_obj = sync_objs_ife[i];
     sync_wait.timeout_ms = 100;
+    if (stress_test("IFE sync")) {
+      sync_wait.timeout_ms = 1;
+    }
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
       LOGE("failed to wait for IFE sync: %d %d", ret, sync_wait.sync_obj);
@@ -926,6 +929,9 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
     if (ret == 0 && sync_objs_bps[i]) {
       sync_wait.sync_obj = sync_objs_bps[i];
       sync_wait.timeout_ms = 50; // typically 7ms
+      if (stress_test("BPS sync")) {
+        sync_wait.timeout_ms = 1;
+      }
       ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
       if (ret != 0) {
         LOGE("failed to wait for BPS sync: %d %d", ret, sync_wait.sync_obj);
@@ -950,15 +956,17 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
   ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  } else {
+    sync_objs_ife[i] = sync_create.sync_obj;
   }
-  sync_objs_ife[i] = sync_create.sync_obj;
 
   if (icp_dev_handle > 0) {
     ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
     if (ret != 0) {
       LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+    } else {
+      sync_objs_bps[i] = sync_create.sync_obj;
     }
-    sync_objs_bps[i] = sync_create.sync_obj;
   }
 
   // schedule request with camera request manager
@@ -1365,6 +1373,11 @@ void SpectraCamera::camera_close() {
 
 // Processes camera events and returns true if the frame is ready for further processing
 bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
+  if (stress_test("skipping handling camera event")) {
+    LOGW("skipping event");
+    return false;
+  }
+
   if (!enabled) return false;
 
   // ID from the qcom camera request manager

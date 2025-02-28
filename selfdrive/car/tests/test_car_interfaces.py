@@ -80,6 +80,8 @@ class TestCarInterfaces:
 
     CC = car.CarControl.new_message(**cc_msg)
     CC.enabled = True
+    CC.latActive = True
+    CC.longActive = True
     CC = CC.as_reader()
     for _ in range(10):
       car_interface.update([])
