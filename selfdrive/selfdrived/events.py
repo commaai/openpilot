@@ -293,7 +293,6 @@ def calibration_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
 
 
 def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  title, text = "paramsd Temporary Error", ""
   if not sm['liveParameters'].angleOffsetValid:
     angle_offset_deg = sm['liveParameters'].angleOffsetDeg
     title = "Steering misalignment detected"
@@ -305,7 +304,10 @@ def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
   elif not sm['liveParameters'].stiffnessFactorValid:
     stiffness_factor = sm['liveParameters'].stiffnessFactor
     title = "Abnormal tire stiffness"
-    text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.f})"
+    text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.1f})"
+  else:
+    return NoEntryAlert("paramsd Temporary Error")
+
   return NoEntryAlert(alert_text_1=title, alert_text_2=text)
 
 def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
