@@ -10,6 +10,7 @@
 #include "media/cam_req_mgr.h"
 
 #include "common/util.h"
+#include "common/swaglog.h"
 #include "system/camerad/cameras/hw.h"
 #include "system/camerad/cameras/camera_common.h"
 #include "system/camerad/sensors/sensor.h"
@@ -205,4 +206,14 @@ private:
   };
   inline static std::map<int, SyncData> camera_sync_data;
   inline static bool first_frame_synced = false;
+
+  // a mode for stressing edge cases: realignment, sync failures, etc.
+  inline bool stress_test(const char* log, float prob=0.01) {
+    static bool enable = getenv("SPECTRA_STRESS_TEST") != nullptr;
+    bool triggered = enable && ((static_cast<double>(rand()) / RAND_MAX) < prob);
+    if (triggered) {
+      LOGE("stress test: %s", log);
+    }
+    return triggered;
+  }
 };

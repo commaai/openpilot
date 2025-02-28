@@ -18,7 +18,6 @@ typedef struct FrameMetadata {
 } FrameMetadata;
 
 class SpectraCamera;
-class CameraState;
 
 class CameraBuf {
 private:
