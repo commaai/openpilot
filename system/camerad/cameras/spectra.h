@@ -128,7 +128,7 @@ public:
   void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
-  bool enqueue_buffer(int i, uint64_t request_id);
+  void enqueue_buffer(int i, uint64_t request_id);
   void enqueue_req_multi(uint64_t start, int n);
 
   int sensors_init();
@@ -199,6 +199,9 @@ public:
   SpectraMaster *m;
 
 private:
+  void clearAndRequeue(uint64_t from_request_id);
+  bool waitForFrameReady(int buf_idx, uint64_t request_id);
+  bool processFrame(uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
   static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp);
   struct SyncData {
     uint64_t timestamp;
