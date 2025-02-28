@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   if (SocketCanStream::available()) {
     cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
   }
-  cmd_parser.addOption({"zmq", "the ip address on which to receive ZMQ messages", "ip address "});
+  cmd_parser.addOption({"zmq", "read can messages from zmq at the specified ip-address", "ip-address"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
