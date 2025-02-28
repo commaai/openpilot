@@ -2238,10 +2238,10 @@ struct LiveParametersData {
   roll @14 :Float32;
   debugFilterState @16 :FilterState;
 
-  angleOffsetValid @17 :Bool;
-  angleOffsetAverageValid @18 :Bool;
-  steerRatioValid @19 :Bool;
-  stiffnessFactorValid @20 :Bool;
+  angleOffsetValid @17 :Bool = true;
+  angleOffsetAverageValid @18 :Bool = true;
+  steerRatioValid @19 :Bool = true;
+  stiffnessFactorValid @20 :Bool = true;
 
   yawRateDEPRECATED @7 :Float32;
   filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
