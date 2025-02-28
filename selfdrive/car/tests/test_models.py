@@ -377,7 +377,7 @@ class TestCarModelBase(unittest.TestCase):
         self.safety.safety_rx_hook(to_send)
 
     error = 0
-    controls_allowed_prev = self.CP.steerControlType == structs.CarParams.SteerControlType.angle
+    controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
     vehicle_speed_seen = self.CP.steerControlType == structs.CarParams.SteerControlType.angle
