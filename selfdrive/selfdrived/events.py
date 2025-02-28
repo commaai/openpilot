@@ -293,7 +293,7 @@ def calibration_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
 
 
 def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  title, text = "paramsd Permanent Error", ""
+  title, text = "paramsd Temporary Error", ""
   if not sm['liveParameters'].angleOffsetValid:
     angle_offset_deg = sm['liveParameters'].angleOffsetDeg
     title = "Steering misalignment detected"

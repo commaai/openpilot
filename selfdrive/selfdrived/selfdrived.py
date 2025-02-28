@@ -305,11 +305,7 @@ class SelfdriveD:
       if not self.sm['livePose'].inputsOK:
         self.events.add(EventName.locationdTemporaryError)
       if not self.sm['liveParameters'].valid and not TESTING_CLOSET and (not SIMULATION or REPLAY):
-        if not self.sm['liveParameters'].angleOffsetValid:
-          # TODO add alert with appropriate explanation of misalignment
-          pass
-        else:
-          self.events.add(EventName.paramsdTemporaryError)
+        self.events.add(EventName.paramsdTemporaryError)
 
     # conservative HW alert. if the data or frequency are off, locationd will throw an error
     if any((self.sm.frame - self.sm.recv_frame[s])*DT_CTRL > 10. for s in self.sensor_packets):
