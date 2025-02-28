@@ -297,7 +297,7 @@ def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.Sub
   if not sm['liveParameters'].angleOffsetValid:
     angle_offset_deg = sm['liveParameters'].angleOffsetDeg
     title = "Steering misalignment detected"
-    text = f"Angle offset too high. (Offset: {angle_offset_deg:.1f}°)"
+    text = f"Angle offset too high (Offset: {angle_offset_deg:.1f}°)"
   elif not sm['liveParameters'].steerRatioValid:
     steer_ratio = sm['liveParameters'].steerRatio
     title = "Steer ratio mismatch"
