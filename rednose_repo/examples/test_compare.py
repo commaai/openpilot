@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
+import pytest
 import os
 import sys
 import sympy as sp
 import numpy as np
-import unittest
 
 if __name__ == '__main__':  # generating sympy code
   from rednose.helpers.ekf_sym import gen_code
@@ -83,7 +83,7 @@ class CompareFilter:
     return R
 
 
-class TestCompare(unittest.TestCase):
+class TestCompare:
   def test_compare(self):
     np.random.seed(0)
 
@@ -115,9 +115,9 @@ class TestCompare(unittest.TestCase):
       kf.filter_py.predict_and_update_batch(t, ObservationKind.POSITION, z, R)
       kf.filter_pyx.predict_and_update_batch(t, ObservationKind.POSITION, z, R)
 
-      self.assertAlmostEqual(kf.filter_py.get_filter_time(), kf.filter_pyx.get_filter_time())
-      self.assertTrue(np.allclose(kf.filter_py.state(), kf.filter_pyx.state()))
-      self.assertTrue(np.allclose(kf.filter_py.covs(), kf.filter_pyx.covs()))
+      assert kf.filter_py.get_filter_time() == pytest.approx(kf.filter_pyx.get_filter_time())
+      assert np.allclose(kf.filter_py.state(), kf.filter_pyx.state())
+      assert np.allclose(kf.filter_py.covs(), kf.filter_pyx.covs())
 
 
 if __name__ == "__main__":

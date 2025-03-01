@@ -1,11 +1,6 @@
-# What is cereal? [![cereal tests](https://github.com/commaai/cereal/workflows/tests/badge.svg?event=push)](https://github.com/commaai/cereal/actions) [![codecov](https://codecov.io/gh/commaai/cereal/branch/master/graph/badge.svg)](https://codecov.io/gh/commaai/cereal)
+# What is cereal?
 
-cereal is both a messaging spec for robotics systems as well as generic high performance IPC pub sub messaging with a single publisher and multiple subscribers.
-
-Imagine this use case:
-* A sensor process reads gyro measurements directly from an IMU and publishes a `sensorEvents` packet
-* A calibration process subscribes to the `sensorEvents` packet to use the IMU
-* A localization process subscribes to the `sensorEvents` packet to use the IMU also
+cereal is the messaging system for openpilot. It uses [msgq](https://github.com/commaai/msgq) as a pub/sub backend, and [Cap'n proto](https://capnproto.org/capnp-tool.html) for serialization of the structs.
 
 
 ## Messaging Spec
@@ -32,11 +27,51 @@ Forks of [openpilot](https://github.com/commaai/openpilot) might want to add thi
 spec, however this could conflict with future changes made in mainline cereal/openpilot. Rebasing against mainline openpilot
 then means breaking backwards-compatibility with all old logs of your fork. So we added reserved events in
 [custom.capnp](custom.capnp) that we will leave empty in mainline cereal/openpilot. **If you only modify those, you can ensure your
-fork will remain backwards-compatible with all versions of mainline cereal/openpilot and your fork.**
+fork will remain backwards-compatible with all versions of mainline openpilot and your fork.**
 
-## Pub Sub Backends
+An example of compatible changes:
+```diff
+diff --git a/cereal/custom.capnp b/cereal/custom.capnp
+index 3348e859e..3365c7b98 100644
+--- a/cereal/custom.capnp
++++ b/cereal/custom.capnp
+@@ -10,7 +10,11 @@ $Cxx.namespace("cereal");
+ # DO rename the structs
+ # DON'T change the identifier (e.g. @0x81c2f05a394cf4af)
 
-cereal supports two backends, one based on [zmq](https://zeromq.org/) and another called [msgq](messaging/msgq.cc), a custom pub sub based on shared memory that doesn't require the bytes to pass through the kernel.
+-struct CustomReserved0 @0x81c2f05a394cf4af {
++struct SteeringInfo @0x81c2f05a394cf4af {
++  active @0 :Bool;
++  steeringAngleDeg @1 :Float32;
++  steeringRateDeg @2 :Float32;
++  steeringAccelDeg @3 :Float32;
+ }
+
+ struct CustomReserved1 @0xaedffd8f31e7b55d {
+diff --git a/cereal/log.capnp b/cereal/log.capnp
+index 1209f3fd9..b189f58b6 100644
+--- a/cereal/log.capnp
++++ b/cereal/log.capnp
+@@ -2558,14 +2558,14 @@ struct Event {
+
+     # DO change the name of the field
+     # DON'T change anything after the "@"
+-    customReservedRawData0 @124 :Data;
++    rawCanData @124 :Data;
+     customReservedRawData1 @125 :Data;
+     customReservedRawData2 @126 :Data;
+
+     # DO change the name of the field and struct
+     # DON'T change the ID (e.g. @107)
+     # DON'T change which struct it points to
+-    customReserved0 @107 :Custom.CustomReserved0;
++    steeringInfo @107 :Custom.SteeringInfo;
+     customReserved1 @108 :Custom.CustomReserved1;
+     customReserved2 @109 :Custom.CustomReserved2;
+     customReserved3 @110 :Custom.CustomReserved3;
+```
+
+---
 
 Example
 ---

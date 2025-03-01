@@ -37,7 +37,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 
-  pm = std::make_unique<PubMaster, const std::initializer_list<const char *>>({"userFlag"});
+  pm = std::make_unique<PubMaster>(std::vector<const char*>{"userFlag"});
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
@@ -74,9 +74,11 @@ void Sidebar::updateState(const UIState &s) {
 
   auto &sm = *(s.sm);
 
+  networking = networking ? networking : window()->findChild<Networking *>("");
+  bool tethering_on = networking && networking->wifi->tethering_on;
   auto deviceState = sm["deviceState"].getDeviceState();
-  setProperty("netType", network_type[deviceState.getNetworkType()]);
-  int strength = (int)deviceState.getNetworkStrength();
+  setProperty("netType", tethering_on ? "Hotspot": network_type[deviceState.getNetworkType()]);
+  int strength = tethering_on ? 4 : (int)deviceState.getNetworkStrength();
   setProperty("netStrength", strength > 0 ? strength + 1 : 0);
 
   ItemStatus connectStatus;
@@ -102,8 +104,6 @@ void Sidebar::updateState(const UIState &s) {
   ItemStatus pandaStatus = {{tr("VEHICLE"), tr("ONLINE")}, good_color};
   if (s.scene.pandaType == cereal::PandaState::PandaType::UNKNOWN) {
     pandaStatus = {{tr("NO"), tr("PANDA")}, danger_color};
-  } else if (s.scene.started && !sm["liveLocationKalman"].getLiveLocationKalman().getGpsOK()) {
-    pandaStatus = {{tr("GPS"), tr("SEARCH")}, warning_color};
   }
   setProperty("pandaStatus", QVariant::fromValue(pandaStatus));
 }
@@ -133,8 +133,8 @@ void Sidebar::paintEvent(QPaintEvent *event) {
 
   p.setFont(InterFont(35));
   p.setPen(QColor(0xff, 0xff, 0xff));
-  const QRect r = QRect(50, 247, 100, 50);
-  p.drawText(r, Qt::AlignCenter, net_type);
+  const QRect r = QRect(58, 247, width() - 100, 50);
+  p.drawText(r, Qt::AlignLeft | Qt::AlignVCenter, net_type);
 
   // metrics
   drawMetric(p, temp_status.first, temp_status.second, 338);

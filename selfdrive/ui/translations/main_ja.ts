@@ -24,11 +24,11 @@
     </message>
     <message>
         <source>Enable Tethering</source>
-        <translation>ﾃｻﾞﾘﾝｸﾞを有効化</translation>
+        <translation>テザリング有効</translation>
     </message>
     <message>
         <source>Tethering Password</source>
-        <translation>ﾃｻﾞﾘﾝｸﾞﾊﾟｽﾜｰﾄﾞ</translation>
+        <translation>テザリングパスワード</translation>
     </message>
     <message>
         <source>EDIT</source>
@@ -40,23 +40,23 @@
     </message>
     <message>
         <source>IP Address</source>
-        <translation>IP アドレス</translation>
+        <translation>IPアドレス</translation>
     </message>
     <message>
         <source>Enable Roaming</source>
-        <translation>ﾛｰﾐﾝｸﾞを有効化</translation>
+        <translation>ローミング有効</translation>
     </message>
     <message>
         <source>APN Setting</source>
-        <translation>APN 設定</translation>
+        <translation>APN設定</translation>
     </message>
     <message>
         <source>Enter APN</source>
-        <translation>APN を入力</translation>
+        <translation>APNを入力</translation>
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
-        <translation>自動で設定するには、空白のままにしてください。</translation>
+        <translation>自動で設定するには空白のままにしてください</translation>
     </message>
     <message>
         <source>Cellular Metered</source>
@@ -64,50 +64,27 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered connection</source>
-        <translation>大量のデータのアップロードを防止します。</translation>
+        <translation>大量のデータのアップロードを防止する</translation>
     </message>
     <message>
         <source>Hidden Network</source>
-        <translation type="unfinished"></translation>
+        <translation>ネットワーク非表示</translation>
     </message>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished">接続</translation>
+        <translation>接続</translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished">SSID を入力</translation>
+        <translation>SSIDを入力</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">パスワードを入力</translation>
+        <translation>パスワードを入力</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">ﾈｯﾄﾜｰｸ名：%1</translation>
-    </message>
-</context>
-<context>
-    <name>AnnotatedCameraWidget</name>
-    <message>
-        <source>km/h</source>
-        <translation>km/h</translation>
-    </message>
-    <message>
-        <source>mph</source>
-        <translation>mph</translation>
-    </message>
-    <message>
-        <source>MAX</source>
-        <translation>最高速度</translation>
-    </message>
-    <message>
-        <source>SPEED</source>
-        <translation>速度</translation>
-    </message>
-    <message>
-        <source>LIMIT</source>
-        <translation>制限速度</translation>
+        <translation>[%1]</translation>
     </message>
 </context>
 <context>
@@ -125,7 +102,7 @@
     <name>DeclinePage</name>
     <message>
         <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>openpilot をご利用される前に、利用規約に同意する必要があります。</translation>
+        <translation>openpilotを使用するためには利用規約に同意する必要があります</translation>
     </message>
     <message>
         <source>Back</source>
@@ -133,45 +110,49 @@
     </message>
     <message>
         <source>Decline, uninstall %1</source>
-        <translation>拒否して %1 をｱﾝｲﾝｽﾄｰﾙ</translation>
+        <translation>同意しない(%1をアンインストール)</translation>
     </message>
 </context>
 <context>
-    <name>DestinationWidget</name>
+    <name>DeveloperPanel</name>
     <message>
-        <source>Home</source>
-        <translation type="unfinished"></translation>
+        <source>Joystick Debug Mode</source>
+        <translation>ジョイスティックデバッグモード</translation>
     </message>
     <message>
-        <source>Work</source>
-        <translation type="unfinished"></translation>
+        <source>Longitudinal Maneuver Mode</source>
+        <translation>アクセル制御マニューバー</translation>
     </message>
     <message>
-        <source>No destination set</source>
-        <translation type="unfinished"></translation>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation>openpilotアクセル制御(Alpha)</translation>
     </message>
     <message>
-        <source>No %1 location set</source>
-        <translation type="unfinished"></translation>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>この車ではopenpilotのアクセル制御はアルファ版であり、自動緊急ブレーキ(AEB)が無効化されます。</translation>
     </message>
     <message>
-        <source>home</source>
-        <translation type="unfinished"></translation>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation>この車では、openpilotは車両内蔵のACC(アダプティブクルーズコントロール)をデフォルトとして使用し、openpilotのアクセル制御は無効化されています。アクセル制御をopenpilotに切り替えるにはこの設定を有効にしてください。また同時にExperimentalモードを推奨します。</translation>
     </message>
     <message>
-        <source>work</source>
-        <translation type="unfinished"></translation>
+        <source>Enable ADB</source>
+        <translation>ADBを有効にする</translation>
+    </message>
+    <message>
+        <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
+        <translation>ADB（Android Debug Bridge）により、USBまたはネットワーク経由でデバイスに接続できます。詳細は、https://docs.comma.ai/how-to/connect-to-comma を参照してください。</translation>
     </message>
 </context>
 <context>
     <name>DevicePanel</name>
     <message>
         <source>Dongle ID</source>
-        <translation>ドングル番号 (Dongle ID)</translation>
+        <translation>ドングルID</translation>
     </message>
     <message>
         <source>N/A</source>
-        <translation>N/A</translation>
+        <translation>該当なし</translation>
     </message>
     <message>
         <source>Serial</source>
@@ -187,47 +168,47 @@
     </message>
     <message>
         <source>Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)</source>
-        <translation>車内カメラをプレビューして、ドライバー監視システムの視界を確認ができます。(車両の電源を切る必要があります)</translation>
+        <translation>車内カメラでドライバー監視システムのカメラ画像を確認できます。(車両のパワーOFF時の機能です)</translation>
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>ｷｬﾘﾌﾞﾚｰｼｮﾝをﾘｾｯﾄ</translation>
+        <translation>キャリブレーションリセット</translation>
     </message>
     <message>
         <source>RESET</source>
-        <translation>ﾘｾｯﾄ</translation>
+        <translation>リセット</translation>
     </message>
     <message>
         <source>Are you sure you want to reset calibration?</source>
-        <translation>ｷｬﾘﾌﾞﾚｰｼｮﾝをリセットしてもよろしいですか？</translation>
+        <translation>キャリブレーションをリセットしますか？</translation>
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>使い方の確認</translation>
+        <translation>トレーニングガイドを見る</translation>
     </message>
     <message>
         <source>REVIEW</source>
-        <translation>見る</translation>
+        <translation>確認</translation>
     </message>
     <message>
         <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>openpilot の特徴を見る</translation>
+        <translation>openpilotのルール、機能、および制限を確認してください</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
-        <translation>使い方の確認をしますか？</translation>
+        <translation>トレーニングガイドを始めてもよろしいですか？</translation>
     </message>
     <message>
         <source>Regulatory</source>
-        <translation>認証情報</translation>
+        <translation>規約</translation>
     </message>
     <message>
         <source>VIEW</source>
-        <translation>見る</translation>
+        <translation>確認</translation>
     </message>
     <message>
         <source>Change Language</source>
-        <translation>言語を変更</translation>
+        <translation>多言語対応</translation>
     </message>
     <message>
         <source>CHANGE</source>
@@ -243,11 +224,11 @@
     </message>
     <message>
         <source>Power Off</source>
-        <translation>電源を切る</translation>
+        <translation>パワーオフ</translation>
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilotの本体は、左右4°以内、上5°、下9°以内の角度で取付ける必要があります。継続してキャリブレーションを続けているので、手動でリセットを行う必要はほぼありません。</translation>
+        <translation>openpilotの本体は左右4°以内、上5°下9°以内の角度で取付ける必要があります。常にキャリブレーションされておりリセットはほとんど必要ありません。</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -275,15 +256,15 @@
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>openpilot をキャンセルして再起動ができます</translation>
+        <translation>再起動するには車を一旦停止してください</translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
-        <translation>シャットダウンしてもよろしいですか？</translation>
+        <translation>パワーオフしてもよろしいですか？</translation>
     </message>
     <message>
         <source>Disengage to Power Off</source>
-        <translation>openpilot をキャンセルしてシャットダウンができます</translation>
+        <translation>パワーオフするには車を一旦停止してください</translation>
     </message>
     <message>
         <source>Reset</source>
@@ -291,37 +272,77 @@
     </message>
     <message>
         <source>Review</source>
-        <translation>確認</translation>
+        <translation>見る</translation>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>デバイスを comma connect (connect.comma.ai)でペアリングし、comma primeの特典を申請してください。</translation>
+        <translation>デバイスをcommaコネクト(connect.comma.ai)でペアリングしてcommaプライムの特典を受け取ってください。</translation>
     </message>
     <message>
         <source>Pair Device</source>
-        <translation type="unfinished"></translation>
+        <translation>デバイスのペアリング</translation>
     </message>
     <message>
         <source>PAIR</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
     <message>
         <source>camera starting</source>
-        <translation>ｶﾒﾗを起動しています</translation>
+        <translation>カメラ起動中</translation>
     </message>
 </context>
 <context>
     <name>ExperimentalModeButton</name>
     <message>
         <source>EXPERIMENTAL MODE ON</source>
-        <translation>実験モード</translation>
+        <translation>EXPERIMENTALモード</translation>
     </message>
     <message>
         <source>CHILL MODE ON</source>
-        <translation>チルモード</translation>
+        <translation>CHILLモード</translation>
+    </message>
+</context>
+<context>
+    <name>FirehosePanel</name>
+    <message>
+        <source>🔥 Firehose Mode 🔥</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot learns to drive by watching humans, like you, drive.
+
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0%</source>
+        <translation type="unfinished">5G {0%?}</translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>HudRenderer</name>
+    <message>
+        <source>km/h</source>
+        <translation>km/h</translation>
+    </message>
+    <message>
+        <source>mph</source>
+        <translation>mph</translation>
+    </message>
+    <message>
+        <source>MAX</source>
+        <translation>最大速度</translation>
     </message>
 </context>
 <context>
@@ -333,7 +354,7 @@
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>
         <translation>
-            <numerusform>%n文字以上でお願いします！</numerusform>
+            <numerusform>%n文字以上にして下さい！</numerusform>
         </translation>
     </message>
 </context>
@@ -341,48 +362,7 @@
     <name>Installer</name>
     <message>
         <source>Installing...</source>
-        <translation>インストールしています...</translation>
-    </message>
-</context>
-<context>
-    <name>MapETA</name>
-    <message>
-        <source>eta</source>
-        <translation>到着予定時間</translation>
-    </message>
-    <message>
-        <source>min</source>
-        <translation>分</translation>
-    </message>
-    <message>
-        <source>hr</source>
-        <translation>時間</translation>
-    </message>
-</context>
-<context>
-    <name>MapSettings</name>
-    <message>
-        <source>NAVIGATION</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Manage at connect.comma.ai</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>MapWindow</name>
-    <message>
-        <source>Map Loading</source>
-        <translation>マップを読み込んでいます</translation>
-    </message>
-    <message>
-        <source>Waiting for GPS</source>
-        <translation>GPS信号を探しています</translation>
-    </message>
-    <message>
-        <source>Waiting for route</source>
-        <translation type="unfinished"></translation>
+        <translation>インストール中...</translation>
     </message>
 </context>
 <context>
@@ -408,63 +388,60 @@
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation>ﾈｯﾄﾜｰｸ名：%1</translation>
+        <translation>[%1]</translation>
     </message>
     <message>
         <source>Wrong password</source>
-        <translation>ﾊﾟｽﾜｰﾄﾞが間違っています</translation>
+        <translation>パスワードが違います</translation>
     </message>
 </context>
 <context>
     <name>OffroadAlert</name>
     <message>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>インターネットへ接続してアップデートを確認してください。未接続のままではopenpilotを使用できなくなります。あと[%1]</translation>
     </message>
     <message>
         <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>インターネットに接続してアップデートを確認してください。接続するまでopenpilotは使用できません。</translation>
     </message>
     <message>
         <source>Unable to download updates
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>更新をダウンロードできませんでした
+%1</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>スナップショットを撮影中です。完了するまでシステムは起動しません。</translation>
     </message>
     <message>
         <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
-        <translation type="unfinished"></translation>
+        <translation>オペレーティングシステムがバックグラウンドでダウンロードされています。インストールの準備が整うと更新を促されます。</translation>
     </message>
     <message>
         <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <translation>登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりデータをアップロードしたりできません。またcomma.aiのサポートも受けられません。公式デバイスである場合は https://comma.ai/support に問い合わせて下さい。</translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
-        <translation type="unfinished"></translation>
+        <translation>SSDドライブ(NVMe)がマウントされていません。</translation>
     </message>
     <message>
         <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation type="unfinished"></translation>
+        <translation>非サポートのSSDドライブ(NVMe)が検出されました。このドライブを使用するとデバイスが多大な電力を消費し過熱する可能性があります。</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>openpilot was unable to identify your car. Check integrity of cables and ensure all connections are secure, particularly that the comma power is fully inserted in the OBD-II port of the vehicle. Need help? Join discord.comma.ai.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotが車両を識別できませんでした。車が未対応またはECUが認識されていない可能性があります。該当車両のファームウェアバージョンを追加するためにプルリクエストしてください。サポートが必要な場合は discord.comma.ai に参加することができます。</translation>
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotがデバイスの取り付け位置にずれを検出しました。デバイスの固定とマウントがフロントガラスにしっかりと取り付けられていることを確認してください。</translation>
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>デバイスの温度が高すぎるためシステム起動前の冷却中です。現在のデバイス内部温度: %1</translation>
     </message>
 </context>
 <context>
@@ -486,42 +463,46 @@
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Waiting for controls to start</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotは使用できません</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Controls Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>直ちに車の運転に戻って下さい</translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation type="unfinished"></translation>
+        <translation>デバイスを再起動してください</translation>
+    </message>
+    <message>
+        <source>Waiting to start</source>
+        <translation>始動を待機しています</translation>
+    </message>
+    <message>
+        <source>System Unresponsive</source>
+        <translation>システムが応答しません</translation>
     </message>
 </context>
 <context>
     <name>PairingPopup</name>
     <message>
         <source>Pair your device to your comma account</source>
-        <translation>デバイスと comma アカウントを連携する</translation>
+        <translation>デバイスとcommaアカウントを連携して下さい</translation>
     </message>
     <message>
         <source>Go to https://connect.comma.ai on your phone</source>
-        <translation>スマートフォンで「https://connect.comma.ai」にアクセスしてください。</translation>
+        <translation>スマートフォンで https://connect.comma.ai にアクセスしてください</translation>
     </message>
     <message>
         <source>Click &quot;add new device&quot; and scan the QR code on the right</source>
-        <translation>「新しいデバイスを追加」を押し、右側のQRコードをスキャンしてください。</translation>
+        <translation>「add new device」を押して右側のQRコードをスキャンしてください</translation>
     </message>
     <message>
         <source>Bookmark connect.comma.ai to your home screen to use it like an app</source>
-        <translation>「connect.comma.ai」をホーム画面に追加して、アプリのように使うことができます。</translation>
+        <translation>connect.comma.aiのサイトをホーム画面に追加して、アプリのように使うことができます。</translation>
+    </message>
+    <message>
+        <source>Please connect to Wi-Fi to complete initial pairing</source>
+        <translation>最初にペアリングするため、Wi-Fiに接続してください</translation>
     </message>
 </context>
 <context>
@@ -532,22 +513,22 @@
     </message>
     <message>
         <source>Enable</source>
-        <translation>を有効化</translation>
+        <translation>有効にする</translation>
     </message>
 </context>
 <context>
     <name>PrimeAdWidget</name>
     <message>
         <source>Upgrade Now</source>
-        <translation>今すぐｱｯﾌﾟｸﾞﾚｰﾄ</translation>
+        <translation>今すぐアップグレード</translation>
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai でﾌﾟﾗｲﾑ会員に登録できます</translation>
+        <translation>connect.comma.ai からプライム会員に登録できます</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
-        <translation>特典：</translation>
+        <translation>特典:</translation>
     </message>
     <message>
         <source>Remote access</source>
@@ -555,26 +536,26 @@
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Turn-by-turn navigation</source>
-        <translation type="unfinished"></translation>
+        <translation>24時間365日のLTE接続</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>1年間分のドライブストレージ</translation>
+    </message>
+    <message>
+        <source>Remote snapshots</source>
+        <translation>リモートスナップショット</translation>
     </message>
 </context>
 <context>
     <name>PrimeUserWidget</name>
     <message>
         <source>✓ SUBSCRIBED</source>
-        <translation>✓ 入会しました</translation>
+        <translation>✓ 有効です</translation>
     </message>
     <message>
         <source>comma prime</source>
-        <translation>comma prime</translation>
+        <translation>commaプライム</translation>
     </message>
 </context>
 <context>
@@ -594,40 +575,24 @@
     <message numerus="yes">
         <source>%n minute(s) ago</source>
         <translation>
-            <numerusform>%n 分前</numerusform>
+            <numerusform>%n分前</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s) ago</source>
         <translation>
-            <numerusform>%n 時間前</numerusform>
+            <numerusform>%n時間前</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s) ago</source>
         <translation>
-            <numerusform>%n 日前</numerusform>
+            <numerusform>%n日前</numerusform>
         </translation>
     </message>
     <message>
-        <source>km</source>
-        <translation>ｷﾛﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>m</source>
-        <translation>ﾒｰﾄﾙ</translation>
-    </message>
-    <message>
-        <source>mi</source>
-        <translation>ﾏｲﾙ</translation>
-    </message>
-    <message>
-        <source>ft</source>
-        <translation>ﾌｨｰﾄ</translation>
-    </message>
-    <message>
         <source>now</source>
-        <translation type="unfinished"></translation>
+        <translation>たった今</translation>
     </message>
 </context>
 <context>
@@ -658,16 +623,17 @@
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Dataパーティションをマウントできません。パーティションが破損している可能性があります。デバイスを消去してリセットしますので確認を押して下さい。</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation type="unfinished"></translation>
+        <translation>デバイスをリセットしています…
+この処理には最大で1分ほどかかる場合があります。</translation>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>システムリセットの準備が整いました。すべてのデータと設定を消去するには「確認」を押してください。「キャンセル」を押すとブートを再開します。</translation>
     </message>
 </context>
 <context>
@@ -682,26 +648,34 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Network</source>
-        <translation>ﾈｯﾄﾜｰｸ</translation>
+        <translation>ネット</translation>
     </message>
     <message>
         <source>Toggles</source>
-        <translation>機能設定</translation>
+        <translation>機能</translation>
     </message>
     <message>
         <source>Software</source>
-        <translation>ｿﾌﾄｳｪｱ</translation>
+        <translation>ソフト</translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation>開発</translation>
+    </message>
+    <message>
+        <source>Firehose</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
     <name>Setup</name>
     <message>
         <source>WARNING: Low Voltage</source>
-        <translation>警告：低電圧</translation>
+        <translation>警告：電圧低下</translation>
     </message>
     <message>
         <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>自己責任で実行を継続するか、ハーネスから電源を供給してください。</translation>
+        <translation>ハーネスを使って車でデバイスに電源を供給するか、自己責任でこのまま継続して下さい。</translation>
     </message>
     <message>
         <source>Power off</source>
@@ -717,11 +691,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>道路に向かう前に、インストールを完了して使い方を確認しましょう。</translation>
+        <translation>出発する前に、インストールを完了させて少し詳細を確認しましょう。</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fi に接続</translation>
+        <translation>Wi-Fiに接続</translation>
     </message>
     <message>
         <source>Back</source>
@@ -729,7 +703,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Continue without Wi-Fi</source>
-        <translation>Wi-Fi に接続せずに続行</translation>
+        <translation>Wi-Fiに接続せずに続行</translation>
     </message>
     <message>
         <source>Waiting for internet</source>
@@ -737,7 +711,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enter URL</source>
-        <translation>URL を入力</translation>
+        <translation>URLの入力</translation>
     </message>
     <message>
         <source>for Custom Software</source>
@@ -749,11 +723,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Download Failed</source>
-        <translation>ダウンロード失敗</translation>
+        <translation>ダウンロードに失敗しました</translation>
     </message>
     <message>
         <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>入力された URL を確認し、デバイスがインターネットに接続されていることを確認してください。</translation>
+        <translation>入力されたURLが正しいかどうか、インターネットに正常に接続できているかを確認してください。</translation>
     </message>
     <message>
         <source>Reboot device</source>
@@ -761,15 +735,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Start over</source>
-        <translation>最初からやり直す</translation>
+        <translation>やり直す</translation>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>このURLはカスタムソフトウェアではありません。</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>何かの問題が発生しました。デバイスを再起動してください。</translation>
     </message>
     <message>
         <source>Select a language</source>
@@ -777,30 +751,30 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Choose Software to Install</source>
-        <translation type="unfinished"></translation>
+        <translation>インストールするソフトウェアを選択してください。</translation>
     </message>
     <message>
         <source>openpilot</source>
-        <translation type="unfinished">openpilot</translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <source>Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>カスタムソフトウェア</translation>
     </message>
 </context>
 <context>
     <name>SetupWidget</name>
     <message>
         <source>Finish Setup</source>
-        <translation>セットアップ完了</translation>
+        <translation>セットアップの完了</translation>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>デバイスを comma connect (connect.comma.ai)でペアリングし、comma primeの特典を申請してください。</translation>
+        <translation>デバイスをcommaコネクト(connect.comma.ai)でペアリングしてcommaプライムの特典を受け取ってください。</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation>デバイスをペアリング</translation>
+        <translation>デバイスのペアリング</translation>
     </message>
 </context>
 <context>
@@ -850,14 +824,6 @@ This may take up to a minute.</source>
         <translation>PANDA</translation>
     </message>
     <message>
-        <source>GPS</source>
-        <translation>GPS</translation>
-    </message>
-    <message>
-        <source>SEARCH</source>
-        <translation>検索</translation>
-    </message>
-    <message>
         <source>--</source>
         <translation>--</translation>
     </message>
@@ -890,7 +856,7 @@ This may take up to a minute.</source>
     <name>SoftwarePanel</name>
     <message>
         <source>Updates are only downloaded while the car is off.</source>
-        <translation>車の電源がオフの間のみ、アップデートのダウンロードが行われます。</translation>
+        <translation>車の電源がオフの間のみアップデートがダウンロードできます。</translation>
     </message>
     <message>
         <source>Current Version</source>
@@ -942,23 +908,23 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>failed to check for update</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートの確認に失敗しました。</translation>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation type="unfinished"></translation>
+        <translation>最新の状態です。最終確認日時：%1</translation>
     </message>
     <message>
         <source>DOWNLOAD</source>
-        <translation type="unfinished"></translation>
+        <translation>ダウンロード</translation>
     </message>
     <message>
         <source>update available</source>
-        <translation type="unfinished"></translation>
+        <translation>アップデートが利用可能です</translation>
     </message>
     <message>
         <source>never</source>
-        <translation type="unfinished"></translation>
+        <translation>無効</translation>
     </message>
 </context>
 <context>
@@ -989,7 +955,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; has no keys on GitHub</source>
-        <translation>ユーザー名 “%1” は GitHub に鍵がありません</translation>
+        <translation>ユーザー名“%1”は GitHub に公開鍵がありません</translation>
     </message>
     <message>
         <source>Request timed out</source>
@@ -997,14 +963,14 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Username &apos;%1&apos; doesn&apos;t exist on GitHub</source>
-        <translation>ユーザー名 &apos;%1&apos; は GitHub に存在しません</translation>
+        <translation>ユーザー名”%1”は GitHub に存在しません</translation>
     </message>
 </context>
 <context>
     <name>SshToggle</name>
     <message>
         <source>Enable SSH</source>
-        <translation>SSH を有効化</translation>
+        <translation>SSHの有効化</translation>
     </message>
 </context>
 <context>
@@ -1034,19 +1000,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>openpilotによるアダプティブクルーズコントロールとレーンキーピングドライバーアシストを利用します。この機能を利用する際は、常に前方への注意が必要です。この設定を変更すると、車の電源が切れた時に反映されます。</translation>
+        <translation>openpilotによるアダプティブクルーズコントロールとレーンキープアシストを利用します。この機能を利用する際は常に前方への注意が必要です。この設定を変更は車の電源が必要です。</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
-        <translation>車線逸脱警報機能を有効化</translation>
+        <translation>車線逸脱警報機能の有効化</translation>
     </message>
     <message>
         <source>Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h).</source>
-        <translation>時速31マイル（50km）を超えるスピードで走行中、ウインカーを作動させずに検出された車線ライン上に車両が触れた場合、手動で車線内に戻るように警告を行います。</translation>
+        <translation>時速31マイル（50km）以上のスピードで走行中、ウインカーを作動させずに検出したレーン上に車両が触れた場合、手動で車線内に戻るように警告を行います。</translation>
     </message>
     <message>
         <source>Use Metric System</source>
-        <translation>メートル法を使用</translation>
+        <translation>メートル法の使用</translation>
     </message>
     <message>
         <source>Display speed in km/h instead of mph.</source>
@@ -1062,35 +1028,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Disengage on Accelerator Pedal</source>
-        <translation>ｱｸｾﾙを踏むと openpilot を中断</translation>
+        <translation>アクセルを踏むと運転サポートを中断</translation>
     </message>
     <message>
         <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
         <translation>この機能を有効化すると、openpilotを利用中にアクセルを踏むとopenpilotによる運転サポートを中断します。</translation>
     </message>
     <message>
-        <source>Show ETA in 24h Format</source>
-        <translation>24時間表示</translation>
-    </message>
-    <message>
-        <source>Use 24h format instead of am/pm</source>
-        <translation>AM/PM の代わりに24時間形式を使用します</translation>
-    </message>
-    <message>
-        <source>Show Map on Left Side of UI</source>
-        <translation>ﾃﾞｨｽﾌﾟﾚｲの左側にﾏｯﾌﾟを表示</translation>
-    </message>
-    <message>
-        <source>Show map on left side when in split screen view.</source>
-        <translation>分割画面表示の場合、ディスプレイの左側にマップを表示します。</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
-        <translation>実験モード</translation>
+        <translation>Experimentalモード</translation>
     </message>
     <message>
         <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation>openpilotは標準ではゆっくりとくつろげる運転を提供します。この実験モードを有効にすると、以下のくつろげる段階ではない開発中の機能を利用する事ができます。</translation>
+        <translation>openpilotは標準ではゆっくりとくつろげる運転を提供します。このExperimental(実験)モードを有効にすると、以下のアグレッシブな開発中の機能を利用する事ができます。</translation>
     </message>
     <message>
         <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
@@ -1102,67 +1052,55 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>この車のACCがアクセル制御を行うため実験モードを利用することができません。</translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>車両の標準ACC（アダプティブ・クルーズ・コントロール）がアクセル制御に使用されているため、現在Experimentalモードは利用できません。</translation>
     </message>
     <message>
         <source>Aggressive</source>
-        <translation type="unfinished"></translation>
+        <translation>アグレッシブ</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished"></translation>
+        <translation>標準</translation>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation type="unfinished"></translation>
+        <translation>リラックス</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation>運転傾向</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <translation>End-to-Endアクセル制御</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotのアクセル制御は将来のアップデートで利用できる可能性があります。</translation>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotのアルファ版アクセル制御は、Experimentalモードと共に非リリースのブランチでテストすることができます。</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotのアクセル制御機能(アルファ)を有効にして、Experimentalモードを許可してください。</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation type="unfinished"></translation>
+        <translation>標準モードが推奨されます。アグレッシブモードではopenpilotは先行車に近づいて追従し、アクセルとブレーキがより強気になります。リラックスモードではopenpilotは先行車から距離を取って走行します。サポートされている車両ではステアリングホイールの距離ボタンでこれらのモードを切り替えることができます。</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>運転時の画面効果として、低速時にカーブをより良く表示するために道路用の広角カメラに切り替わります。またExperimentalモードのロゴが右上隅に表示されます。</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>運転者の常時モニタリング</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotが作動していない場合でも運転者モニタリングを有効にする。</translation>
     </message>
 </context>
 <context>
@@ -1173,11 +1111,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>ｵﾍﾟﾚｰﾃｨﾝｸﾞｼｽﾃﾑのアップデートが必要です。Wi-Fi に接続してアップデートする事をお勧めします。ダウンロードサイズは約 1GB です。</translation>
+        <translation>OSのアップデートが必要です。Wi-Fiに接続してアップデートする事をお勧めします。ダウンロードサイズは約1GBです。</translation>
     </message>
     <message>
         <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fi に接続</translation>
+        <translation>Wi-Fiに接続</translation>
     </message>
     <message>
         <source>Install</source>
@@ -1203,23 +1141,15 @@ This may take up to a minute.</source>
 <context>
     <name>WiFiPromptWidget</name>
     <message>
-        <source>Setup Wi-Fi</source>
+        <source>Open</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
+        <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Settings</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Ready to upload</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
+        <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1239,7 +1169,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Forget Wi-Fi Network &quot;%1&quot;?</source>
-        <translation>Wi-Fiﾈｯﾄﾜｰｸ%1を削除してもよろしいですか？</translation>
+        <translation>Wi-Fiネットワーク%1を削除してもよろしいですか？</translation>
     </message>
     <message>
         <source>Forget</source>

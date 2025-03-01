@@ -192,8 +192,8 @@ gps_measurement_report_sv = """
   int16_t latency;                            // Age of the measurement in msecs (+ve meas Meas precedes ref time)
   uint8_t predetect_interval;                 // Pre-Detection (Coherent) Interval (msecs)
   uint16_t postdetections;                    // Num Post-Detections (uints of PreInts
-  uint32_t unfiltered_measurement_integral;   // Range of 0 thru (WEEK_MSECS-1) [msecs]
-  float unfiltered_measurement_fraction;      // Range of 0 thru 0.99999 [msecs]
+  uint32_t unfiltered_measurement_integral;   // Range of 0 through (WEEK_MSECS-1) [msecs]
+  float unfiltered_measurement_fraction;      // Range of 0 through 0.99999 [msecs]
   float unfiltered_time_uncertainty;          // Time uncertainty (msec)
   float unfiltered_speed;                     // Speed estimate (meters/sec)
   float unfiltered_speed_uncertainty;         // Speed uncertainty estimate (meters/sec)
@@ -322,7 +322,7 @@ def parse_struct(ss):
       cnt = int(nam.split("[")[1].split("]")[0])
       st += st[-1]*(cnt-1)
       for i in range(cnt):
-        nams.append("%s[%d]" % (nam.split("[")[0], i))
+        nams.append(f'{nam.split("[")[0]}[{i}]')
     else:
       nams.append(nam)
   return st, nams
