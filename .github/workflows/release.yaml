@@ -51,4 +51,4 @@ jobs:
     - name: Push master-ci
       run: |
         unset TARGET_DIR
-        BRANCH=master-ci release/build_devel.sh
+        BRANCH=__nightly release/build_devel.sh

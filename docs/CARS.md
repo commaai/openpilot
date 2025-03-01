@@ -312,7 +312,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 |Volkswagen|Touran 2016-23|Adaptive Cruise Control (ACC) & Lane Assist|openpilot available[<sup>1,13</sup>](#footnotes)|0 mph|0 mph|[![star](assets/icon-star-full.svg)](##)|[![star](assets/icon-star-full.svg)](##)|<details><summary>Parts</summary><sub>- 1 USB-C coupler<br>- 1 VW J533 connector<br>- 1 comma 3X<br>- 1 comma power v2<br>- 1 harness box<br>- 1 long OBD-C cable<br>- 1 mount<br>- 1 right angle OBD-C cable (1.5 ft)<br><a href="https://comma.ai/shop/comma-3x.html?make=Volkswagen&model=Touran 2016-23">Buy Here</a></sub></details>||
 
 ### Footnotes
-<sup>1</sup>openpilot Longitudinal Control (Alpha) is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `master-ci`. <br />
+<sup>1</sup>openpilot Longitudinal Control (Alpha) is available behind a toggle; the toggle is only available in non-release branches such as `devel` or `nightly-dev`. <br />
 <sup>2</sup>By default, this car will use the stock Adaptive Cruise Control (ACC) for longitudinal control. If the Driver Support Unit (DSU) is disconnected, openpilot ACC will replace stock ACC. <b><i>NOTE: disconnecting the DSU disables Automatic Emergency Braking (AEB).</i></b> <br />
 <sup>3</sup>Refers only to the Focus Mk4 (C519) available in Europe/China/Taiwan/Australasia, not the Focus Mk3 (C346) in North and South America/Southeast Asia. <br />
 <sup>4</sup>2019 Honda Civic 1.6L Diesel Sedan does not have ALC below 12mph. <br />
