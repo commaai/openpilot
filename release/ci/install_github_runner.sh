@@ -67,8 +67,6 @@ trap remount_ro EXIT
 
 setup_runner_user() {
     sudo useradd --comment 'GitHub Runner' --create-home --home-dir ${BASE_DIR} ${RUNNER_USER} --shell /bin/bash -G ${USER_GROUPS} || sudo usermod -aG ${USER_GROUPS} ${RUNNER_USER}
-    export BASE_DIR
-    sudo -u ${RUNNER_USER} bash -c "truncate -s 0 '${BASE_DIR}/.bash_logout'"
 }
 
 create_sudoers_entry() {
@@ -77,8 +75,8 @@ create_sudoers_entry() {
 
 set_directory_permissions() {
     sudo chown -R ${RUNNER_USER}:comma "$BASE_DIR"
-    sudo chmod g+rwx "$BASE_DIR"
-    sudo chmod g+s "$BASE_DIR"
+    sudo chmod -R g+rwx "$BASE_DIR"
+    sudo find "$BASE_DIR" -type d -exec chmod g+s {} +
 }
 
 setup_directories() {
@@ -86,30 +84,42 @@ setup_directories() {
     sudo mkdir -p "$RUNNER_DIR" "$BUILDS_DIR" "$LOGS_DIR" "$CACHE_DIR" "$OPENPILOT_DIR"
     mkdir -p "/data/openpilot"
     sudo chown -R comma:comma "/data/openpilot"
+    sync
+}
+
+wipe_bash_logout() {
+  export BASE_DIR
+  sudo -u ${RUNNER_USER} bash -c "touch ${BASE_DIR}/.bash_logout"
+  sudo -u ${RUNNER_USER} bash -c "truncate -s 0 '${BASE_DIR}/.bash_logout'"
 }
 
 # System configuration functions (depends on basic utility functions)
 setup_system_configs() {
     echo "Setting up system configurations..."
+    remount_rw
     setup_runner_user
     create_sudoers_entry
+    remount_ro
     set_directory_permissions
+    wipe_bash_logout
 }
 
 # Runner setup functions
 install_runner() {
     echo "Downloading and setting up runner..."
     cd "$RUNNER_DIR"
-    curl -o actions-runner-linux-arm64-2.321.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.321.0/actions-runner-linux-arm64-2.321.0.tar.gz
-    tar xzf ./actions-runner-linux-arm64-2.321.0.tar.gz
-    rm ./actions-runner-linux-arm64-2.321.0.tar.gz
-    chmod +x ./config.sh
+    curl -o actions-runner-linux-arm64-2.322.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-arm64-2.322.0.tar.gz
+    sudo -u ${RUNNER_USER} tar -xzf ./actions-runner-linux-arm64-2.322.0.tar.gz
+    sudo rm ./actions-runner-linux-arm64-2.322.0.tar.gz
+    sudo chmod +x ./config.sh
 }
 
 configure_runner() {
+    remount_rw
     echo "Configuring runner..."
     cd "$RUNNER_DIR"
     sudo -u ${RUNNER_USER} ./config.sh --url "$REPO_URL" --token "$GITHUB_TOKEN" --name $(hostname) --runnergroup "tici-tizi" --labels "tici" --work "$BUILDS_DIR" --unattended
+    remount_ro
 }
 
 create_service_template() {
@@ -139,6 +149,7 @@ EOL
 }
 
 install_service() {
+    remount_rw
     echo "Installing systemd service..."
     cd "$RUNNER_DIR"
     sudo ./svc.sh install $RUNNER_USER
@@ -152,6 +163,7 @@ install_service() {
         fi
         sudo systemctl disable "${service_name}"
     fi
+    remount_ro
 }
 
 check_restore_prerequisites() {
@@ -203,23 +215,20 @@ check_restore_prerequisites() {
 perform_restore() {
     echo "Starting runner restoration..."
     setup_directories
-    remount_rw
     setup_system_configs
     install_service
-    remount_ro
     echo "Runner restoration completed successfully"
 }
 
 perform_install() {
     echo "Starting fresh installation..."
     setup_directories
-    install_runner
-    create_service_template
-    remount_rw
     setup_system_configs
+    install_runner
+    set_directory_permissions
+    create_service_template
     configure_runner
     install_service
-    remount_ro
     echo "Installation completed successfully"
 }
 
