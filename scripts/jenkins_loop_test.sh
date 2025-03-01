@@ -13,6 +13,8 @@ RUNS="20"
 COOKIE_JAR=/tmp/cookies
 CRUMB=$(curl -s --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer/api/xml?xpath=concat(//crumbRequestField,":",//crumb)')
 
+FIRST_LOOP=1
+
 function loop() {
   JENKINS_BRANCH="__jenkins_loop_${BRANCH}"
   API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$JENKINS_BRANCH"
@@ -20,17 +22,12 @@ function loop() {
   for run in $(seq 1 $((RUNS / 2))); do
 
     N=2
-    TEST_BUILDS=()
 
-    # Try to find previous builds
-    ALL_BUILDS=( $(curl -s $API_ROUTE/api/json | jq .builds.[].number 2> /dev/null || :) )
-
-    # No builds. Create branch
-    if [[ ${#ALL_BUILDS[@]} -eq 0 ]]; then
+    if [[ $FIRST_LOOP ]]; then
       TEMP_DIR=$(mktemp -d)
       GIT_LFS_SKIP_SMUDGE=1 git clone --quiet -b $BRANCH --depth=1 --no-tags git@github.com:commaai/openpilot $TEMP_DIR
       git -C $TEMP_DIR checkout --quiet -b $JENKINS_BRANCH
-      echo "TESTING" >> $TEMP_DIR/testing_jenkins
+      echo "TESTING: $(date)" >> $TEMP_DIR/testing_jenkins
       git -C $TEMP_DIR add testing_jenkins
       git -C $TEMP_DIR commit --quiet -m "testing"
       git -C $TEMP_DIR push --quiet -f origin $JENKINS_BRANCH
@@ -40,34 +37,21 @@ function loop() {
       echo 'waiting on Jenkins...'
       echo ''
       sleep 90
-    else
-      # Found some builds. Wait for them to end if they are still running
-      for i in ${ALL_BUILDS[@]}; do
-        running=$(curl -s $API_ROUTE/$i/api/json/ | jq .inProgress)
-        if [[ $running == "false" ]]; then
-          continue
-        fi
-        TEST_BUILDS=( ${ALL_BUILDS[@]} )
-        N=${#TEST_BUILDS[@]}
-        break
-      done
+      FIRST_LOOP=""
     fi
 
-    # No running builds found
-    if [[ ${#TEST_BUILDS[@]} -eq 0 ]]; then
-      FIRST_BUILD=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
-      LAST_BUILD=$((FIRST_BUILD+N-1))
-      TEST_BUILDS=( $(seq $FIRST_BUILD $LAST_BUILD) )
+    FIRST_BUILD=$(curl -s $API_ROUTE/api/json | jq .nextBuildNumber)
+    LAST_BUILD=$((FIRST_BUILD+N-1))
+    TEST_BUILDS=( $(seq $FIRST_BUILD $LAST_BUILD) )
 
-      # Start N new builds
-      for i in ${TEST_BUILDS[@]};
-      do
-        echo "Starting build $i"
-        curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
-        sleep 5
-      done
-      echo ""
-    fi
+    # Start N new builds
+    for i in ${TEST_BUILDS[@]};
+    do
+      echo "Starting build $i"
+      curl -s --output /dev/null --cookie $COOKIE_JAR -H "$CRUMB" -X POST $API_ROUTE/build?delay=0sec
+      sleep 5
+    done
+    echo ""
 
     # Wait for all builds to end
     while true; do

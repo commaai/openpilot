@@ -137,11 +137,11 @@
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>تمكين ADB</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>أداة ADB (Android Debug Bridge) تسمح بالاتصال بجهازك عبر USB أو عبر الشبكة. راجع هذا الرابط: https://docs.comma.ai/how-to/connect-to-comma لمزيد من المعلومات.</translation>
     </message>
 </context>
 <context>
@@ -303,6 +303,31 @@
     <message>
         <source>CHILL MODE ON</source>
         <translation>تشغيل وضع الراحة</translation>
+    </message>
+</context>
+<context>
+    <name>FirehosePanel</name>
+    <message>
+        <source>🔥 Firehose Mode 🔥</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot learns to drive by watching humans, like you, drive.
+
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0%</source>
+        <translation type="unfinished">5G {0%?}</translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -656,6 +681,10 @@ This may take up to a minute.</source>
     <message>
         <source>Developer</source>
         <translation>المطور</translation>
+    </message>
+    <message>
+        <source>Firehose</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1093,14 +1122,6 @@ This may take up to a minute.</source>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>تمكين مراقبة السائق حتى عندما لا يكون نظام OpenPilot مُفعّلاً.</translation>
     </message>
-    <message>
-        <source>FIREHOSE Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1140,24 +1161,16 @@ This may take up to a minute.</source>
 <context>
     <name>WiFiPromptWidget</name>
     <message>
-        <source>Setup Wi-Fi</source>
-        <translation>إعداد شبكة الواي فاي</translation>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>الاتصال بشبكة الواي فاي لتحميل بيانات القيادة والمساهمة في تحسين openpilot</translation>
+        <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Settings</source>
-        <translation>فتح الإعدادات</translation>
-    </message>
-    <message>
-        <source>Ready to upload</source>
-        <translation>جاهز للتحميل</translation>
-    </message>
-    <message>
-        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
-        <translation>سيتم سحب بيانات التدريب دورياً عندما يكون جهازك متصل بشبكة واي فاي</translation>
+        <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

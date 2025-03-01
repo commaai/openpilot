@@ -1,4 +1,4 @@
-from collections import namedtuple
+#!/usr/bin/env python3
 import capnp
 import pathlib
 import shutil
@@ -8,6 +8,7 @@ import pywinctl
 import pyautogui
 import pickle
 import time
+from collections import namedtuple
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -42,13 +43,16 @@ def setup_settings_device(click, pm: PubMaster):
 
 def setup_settings_toggles(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 650)
+  click(278, 600)
   time.sleep(UI_DELAY)
 
 def setup_settings_software(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(278, 800)
+  click(278, 720)
   time.sleep(UI_DELAY)
+
+def setup_settings_firehose(click, pm: PubMaster):
+  click(278, 836)
 
 def setup_settings_developer(click, pm: PubMaster):
   CP = car.CarParams()
@@ -56,7 +60,7 @@ def setup_settings_developer(click, pm: PubMaster):
   Params().put("CarParamsPersistent", CP.to_bytes())
 
   setup_settings_device(click, pm)
-  click(278, 960)
+  click(278, 970)
   time.sleep(UI_DELAY)
 
 def setup_onroad(click, pm: PubMaster):
@@ -191,6 +195,7 @@ CASES = {
   "settings_device": setup_settings_device,
   "settings_toggles": setup_settings_toggles,
   "settings_software": setup_settings_software,
+  "settings_firehose": setup_settings_firehose,
   "settings_developer": setup_settings_developer,
   "onroad": setup_onroad,
   "onroad_disengaged": setup_onroad_disengaged,

@@ -273,6 +273,11 @@ function op_venv() {
   esac
 }
 
+function op_adb() {
+  op_before_cmd
+  op_run_command tools/adb_shell.sh
+}
+
 function op_check() {
   VERBOSE=1
   op_before_cmd
@@ -283,7 +288,13 @@ function op_build() {
   CDIR=$(pwd)
   op_before_cmd
   cd "$CDIR"
-  op_run_command scons $@
+  if [[ -f "/AGNOS" ]]; then
+    # needed on AGNOS to not run out of memory
+    op_run_command system/manager/build.py
+  else
+    # scons is fine on PC
+    op_run_command scons $@
+  fi
 }
 
 function op_juggle() {
@@ -318,8 +329,6 @@ function op_sim() {
 }
 
 function op_switch() {
-  op_before_cmd
-
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
     REMOTE="$1"
@@ -386,6 +395,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
@@ -442,6 +452,7 @@ function _op() {
     stop )          shift 1; op_stop "$@" ;;
     restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
+    adb )           shift 1; op_adb "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
