@@ -6,7 +6,7 @@ from openpilot.tools.lib.live_logreader import live_logreader
 from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 
-def main(route: str | None, addrs: list[int], rxoffset: int):
+def main(route: str | None, addrs: list[int], rxoffset: int | None):
   """
   TODO:
   - highlight TX vs RX clearly
