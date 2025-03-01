@@ -1148,7 +1148,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
-        <translation>Openpilotの運転モデルを改善するために、大容量の学習データをアップロードして下さい。</translation>
+        <translation>openpilotの運転モデルを改善するために、大容量の学習データをアップロードして下さい。</translation>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
