@@ -1,3 +1,7 @@
+Version 0.9.9 (2025-04-XX)
+========================
+* Tesla Model 3 and Y support thanks to lukasloetkolben!
+
 Version 0.9.8 (2025-02-28)
 ========================
 * New driving model
