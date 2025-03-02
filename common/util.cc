@@ -86,13 +86,13 @@ std::string read_file(const std::string& fn) {
       // return either good() or has reached end-of-file (e.g. /sys/power/wakeup_count)
       if (f.good() || f.eof()) {
         result.resize(f.gcount());
-        return util::strip(result);
+        return result;
       }
     }
     // fallback for files created on read, e.g. procfs
     std::stringstream buffer;
     buffer << f.rdbuf();
-    return util::strip(buffer.str());
+    return buffer.str();
   }
   return std::string();
 }
