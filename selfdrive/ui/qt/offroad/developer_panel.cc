@@ -41,7 +41,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(experimentalLongitudinalToggle);
 
   bridgeToggle = new ParamControl("BridgeEnabled", tr("Enable Bridge"),
-            tr("The bridge process allows you to read openpilot messages from a different PC over the network, such as running cabana on the car live."), "");
+            tr("The bridge process allows you to read openpilot messages from a different PC over the network, such as running cabana on your development PC and connecting to the car."), "");
   addItem(bridgeToggle);
 
   // Joystick and longitudinal maneuvers should be hidden on release branches

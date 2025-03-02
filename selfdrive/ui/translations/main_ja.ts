@@ -148,7 +148,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Bridge allows you to read openpilot messages from a different PC over the network, such as your development PC.</source>
+        <source>The bridge process allows you to read openpilot messages from a different PC over the network, such as running cabana on your development PC and connecting to the car.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
