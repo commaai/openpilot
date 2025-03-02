@@ -119,7 +119,6 @@ class TestOnroad:
     if "DEBUG" in os.environ:
       segs = filter(lambda x: os.path.exists(os.path.join(x, "rlog.zst")), Path(Paths.log_root()).iterdir())
       segs = sorted(segs, key=lambda x: x.stat().st_mtime)
-      print(segs[-3])
       cls.lr = list(LogReader(os.path.join(segs[-3], "rlog.zst")))
       return
 
@@ -186,7 +185,6 @@ class TestOnroad:
     for m in cls.lr:
       cls.msgs[m.which()].append(m)
 
-
   def test_service_frequencies(self, subtests):
     for s, msgs in self.msgs.items():
       if s in ('initData', 'sentinel'):
@@ -214,6 +212,7 @@ class TestOnroad:
     assert len(big_logs) == 0, f"Log spam: {big_logs}"
 
   def test_log_sizes(self, subtests):
+    # TODO: this isn't super stable between different devices
     for f, sz in self.log_sizes.items():
       rate = LOGS_SIZE[f.name]/60.
       minn = rate * TEST_DURATION * 0.5
@@ -313,23 +312,60 @@ class TestOnroad:
   def test_gpu_usage(self):
     assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
-  @pytest.mark.skip("TODO: enable once timings are fixed")
   def test_camera_frame_timings(self, subtests):
+    # test timing within a single camera
     result = "\n"
     result += "------------------------------------------------\n"
-    result += "-----------------  SoF Timing ------------------\n"
+    result += "-----------------  SOF Timing ------------------\n"
     result += "------------------------------------------------\n"
     for name in ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']:
       ts = [getattr(m, m.which()).timestampSof for m in self.lr if name in m.which()]
       d_ms = np.diff(ts) / 1e6
       d50 = np.abs(d_ms-50)
-      result += f"{name} sof delta vs 50ms: min  {min(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: max  {max(d50):.5f}s\n"
-      result += f"{name} sof delta vs 50ms: mean {d50.mean():.5f}s\n"
+      result += f"{name} sof delta vs 50ms: min  {min(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: max  {max(d50):.2f}ms\n"
+      result += f"{name} sof delta vs 50ms: mean {d50.mean():.2f}ms\n"
       with subtests.test(camera=name):
-        assert max(d50) < 1.0, f"high SOF delta vs 50ms: {max(d50)}"
+        assert max(d50) < 5.0, f"high SOF delta vs 50ms: {max(d50)}"
     result += "------------------------------------------------\n"
     print(result)
+
+  def test_camera_sync(self, subtests):
+    cam_states = ['roadCameraState', 'wideRoadCameraState', 'driverCameraState']
+    encode_cams = ['roadEncodeIdx', 'wideRoadEncodeIdx', 'driverEncodeIdx']
+    for cams in (cam_states, encode_cams):
+      with subtests.test(cams=cams):
+        # sanity checks within a single cam
+        for cam in cams:
+          with subtests.test(test="frame_skips", camera=cam):
+            cam_log = [getattr(x, x.which()) for x in self.msgs[cam]]
+            assert set(np.diff([x.frameId for x in cam_log])) == {1, }, "Frame ID skips"
+
+            # EOF > SOF
+            eof_sof_diff = np.array([x.timestampEof - x.timestampSof for x in cam_log])
+            assert np.all(eof_sof_diff > 0)
+            assert np.all(eof_sof_diff < 50*1e6)
+
+        fid = {c: [getattr(m, m.which()).frameId for m in self.msgs[c]] for c in cams}
+        first_fid = [min(x) for x in fid.values()]
+        if cam.endswith('CameraState'):
+          # camerad guarantees that all cams start on frame ID 0
+          # (note loggerd also needs to start up fast enough to catch it)
+          assert set(first_fid) == {0, }, "Cameras don't start on frame ID 0"
+        else:
+          # encoder guarantees all cams start on the same frame ID
+          assert len(set(first_fid)) == 1, "Cameras don't start on same frame ID"
+
+        # we don't do a full segment rotation, so these might not match exactly
+        last_fid = [max(x) for x in fid.values()]
+        assert max(last_fid) - min(last_fid) < 10
+
+        start, end = min(first_fid), min(last_fid)
+        all_ts = [[getattr(m, m.which()).timestampSof for m in self.msgs[c]] for c in cams]
+        for i in range(end-start):
+          ts = [round(x[i]/1e6, 1) for x in all_ts]
+          diff = max(ts) - min(ts)
+          assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
 
   def test_mpc_execution_timings(self):
     result = "\n"
@@ -348,7 +384,7 @@ class TestOnroad:
     result += "------------------------------------------------\n"
     print(result)
 
-  def test_model_execution_timings(self):
+  def test_model_execution_timings(self, subtests):
     result = "\n"
     result += "------------------------------------------------\n"
     result += "----------------- Model Timing -----------------\n"
@@ -361,11 +397,12 @@ class TestOnroad:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]
       # TODO some init can happen in first iteration
       ts = ts[1:]
-      assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
-      assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
       result += f"'{s}' execution time: min  {min(ts):.5f}s\n"
       result += f"'{s}' execution time: max {max(ts):.5f}s\n"
       result += f"'{s}' execution time: mean {np.mean(ts):.5f}s\n"
+      with subtests.test(s):
+        assert max(ts) < instant_max, f"high '{s}' execution time: {max(ts)}"
+        assert np.mean(ts) < avg_max, f"high avg '{s}' execution time: {np.mean(ts)}"
     result += "------------------------------------------------\n"
     print(result)
 

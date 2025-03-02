@@ -47,7 +47,7 @@ FfmpegEncoder::~FfmpegEncoder() {
   av_frame_free(&frame);
 }
 
-void FfmpegEncoder::encoder_open(const char* path) {
+void FfmpegEncoder::encoder_open() {
   auto codec_id = encoder_info.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
                       ? AV_CODEC_ID_H264
                       : AV_CODEC_ID_FFVHUFF;

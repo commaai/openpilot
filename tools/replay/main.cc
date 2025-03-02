@@ -11,10 +11,10 @@
 #include "tools/replay/util.h"
 
 const std::string helpText =
-R"(Usage: replay [options]
+R"(Usage: replay [options] [route]
 Options:
-  -a, --allow        Whitelist of services to send
-  -b, --block        Blacklist of services to send
+  -a, --allow        Whitelist of services to send (comma-separated)
+  -b, --block        Blacklist of services to send (comma-separated)
   -c, --cache        Cache <n> segments in memory. Default is 5
   -s, --start        Start from <seconds>
   -x, --playback     Playback <speed>

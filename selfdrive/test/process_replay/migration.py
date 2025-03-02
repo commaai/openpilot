@@ -269,12 +269,12 @@ def migrate_carOutput(msgs):
 def migrate_pandaStates(msgs):
   # TODO: safety param migration should be handled automatically
   safety_param_migration = {
-    "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | ToyotaSafetyFlags.FLAG_TOYOTA_STOCK_LONGITUDINAL,
-    "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | ToyotaSafetyFlags.FLAG_TOYOTA_ALT_BRAKE,
-    "KIA_EV6": HyundaiSafetyFlags.FLAG_HYUNDAI_EV_GAS | HyundaiSafetyFlags.FLAG_HYUNDAI_CANFD_HDA2,
+    "TOYOTA_PRIUS": EPS_SCALE["TOYOTA_PRIUS"] | ToyotaSafetyFlags.STOCK_LONGITUDINAL,
+    "TOYOTA_RAV4": EPS_SCALE["TOYOTA_RAV4"] | ToyotaSafetyFlags.ALT_BRAKE,
+    "KIA_EV6": HyundaiSafetyFlags.EV_GAS | HyundaiSafetyFlags.CANFD_LKA_STEERING,
   }
   # TODO: get new Ford route
-  safety_param_migration |= {car: FordSafetyFlags.FLAG_FORD_LONG_CONTROL for car in (set(FORD) - FORD.with_flags(FordFlags.CANFD))}
+  safety_param_migration |= {car: FordSafetyFlags.LONG_CONTROL for car in (set(FORD) - FORD.with_flags(FordFlags.CANFD))}
 
   # Migrate safety param base on carParams
   CP = next((m.carParams for _, m in msgs if m.which() == 'carParams'), None)

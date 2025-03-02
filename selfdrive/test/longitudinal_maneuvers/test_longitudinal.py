@@ -150,10 +150,7 @@ def create_maneuvers(kwargs):
       enabled=False,
       **kwargs,
     ),
-  ]
-  if not kwargs['e2e']:
-    # allow_throttle won't trigger with e2e
-    maneuvers.append(Maneuver(
+    Maneuver(
       "slow to 5m/s with allow_throttle = False and pitch = +0.1",
       duration=30.,
       initial_speed=20.,
@@ -164,7 +161,7 @@ def create_maneuvers(kwargs):
       breakpoints=[0.0, 2., 2.01],
       ensure_slowdown=True,
       **kwargs,
-    ))
+    )]
   if not kwargs['force_decel']:
     # controls relies on planner commanding to move for stock-ACC resume spamming
     maneuvers.append(Maneuver(
