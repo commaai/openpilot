@@ -92,7 +92,7 @@ std::string read_file(const std::string& fn) {
     // fallback for files created on read, e.g. procfs
     std::stringstream buffer;
     buffer << f.rdbuf();
-    return buffer.str();
+    return util::strip(buffer.str());
   }
   return std::string();
 }
