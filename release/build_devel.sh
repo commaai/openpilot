@@ -55,8 +55,8 @@ GIT_COMMIT_DATE=$(git --git-dir=$SOURCE_DIR/.git show --no-patch --format='%ct %
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
 VERSION=$(cat $SOURCE_DIR/common/version.h | awk -F\" '{print $2}')
 
-echo "$GIT_HASH" > git_src_commit
-echo "$GIT_COMMIT_DATE" > git_src_commit_date
+echo -n "$GIT_HASH" > git_src_commit
+echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .

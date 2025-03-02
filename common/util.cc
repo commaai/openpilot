@@ -86,7 +86,7 @@ std::string read_file(const std::string& fn) {
       // return either good() or has reached end-of-file (e.g. /sys/power/wakeup_count)
       if (f.good() || f.eof()) {
         result.resize(f.gcount());
-        return result;
+        return util::strip(result);
       }
     }
     // fallback for files created on read, e.g. procfs
@@ -257,7 +257,6 @@ bool ends_with(const std::string& s, const std::string& suffix) {
 
 std::string strip(const std::string &str) {
   auto should_trim = [](unsigned char ch) {
-    // trim whitespace or a null character
     return std::isspace(ch) || ch == '\0';
   };
 
