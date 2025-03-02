@@ -143,6 +143,14 @@
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
         <translation>أداة ADB (Android Debug Bridge) تسمح بالاتصال بجهازك عبر USB أو عبر الشبكة. راجع هذا الرابط: https://docs.comma.ai/how-to/connect-to-comma لمزيد من المعلومات.</translation>
     </message>
+    <message>
+        <source>Enable Bridge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Bridge allows you to read openpilot messages from a different PC over the network, such as your development PC.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DevicePanel</name>
