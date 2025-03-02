@@ -24,4 +24,4 @@ multilanguage:
 
 autonomy:
   - changed-files:
-    - any-glob-to-all-files: "{selfdrive/modeld/models/**,selfdrive/test/process_replay/model_replay_ref_commit}"
+    - any-glob-to-all-files: "{selfdrive/modeld/models/**,selfdrive/test/process_replay/model_replay_ref_commit,sunnypilot/modeld*/models/**}"

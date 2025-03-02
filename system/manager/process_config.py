@@ -76,9 +76,13 @@ def is_snpe_model(started, params, CP: car.CarParams) -> bool:
   """Check if the active model runner is SNPE."""
   return bool(get_active_model_runner(params, not started) == custom.ModelManagerSP.Runner.snpe)
 
+def is_tinygrad_model(started, params, CP: car.CarParams) -> bool:
+  """Check if the active model runner is SNPE."""
+  return bool(get_active_model_runner(params, not started) == custom.ModelManagerSP.Runner.tinygrad)
+
 def is_stock_model(started, params, CP: car.CarParams) -> bool:
   """Check if the active model runner is stock."""
-  return not is_snpe_model(started, params, CP)
+  return bool(get_active_model_runner(params, not started) == custom.ModelManagerSP.Runner.stock)
 
 def or_(*fns):
   return lambda *args: operator.or_(*(fn(*args) for fn in fns))
@@ -146,6 +150,7 @@ procs = [
 procs += [
   PythonProcess("models_manager", "sunnypilot.models.manager", only_offroad),
   NativeProcess("modeld_snpe", "sunnypilot/modeld", ["./modeld"], and_(only_onroad, is_snpe_model)),
+  NativeProcess("modeld_tinygrad", "sunnypilot/modeld_v2", ["./modeld"], and_(only_onroad, is_tinygrad_model)),
 ]
 
 if os.path.exists("./github_runner.sh"):

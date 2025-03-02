@@ -56,7 +56,7 @@ tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "
 
 # Get model metadata
 fn = File("models/supercombo").abspath
-cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+cmd = f'python3 {Dir("#sunnypilot/modeld").abspath}/get_model_metadata.py {fn}.onnx'
 lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
 
 if arch == "larch64":

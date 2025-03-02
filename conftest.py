@@ -19,6 +19,7 @@ collect_ignore = [
 collect_ignore_glob = [
   "selfdrive/debug/*.py",
   "selfdrive/modeld/*.py",
+  "sunnypilot/modeld*/*.py",
 ]
 
 

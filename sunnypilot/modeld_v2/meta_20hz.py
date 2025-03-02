@@ -1,4 +1,4 @@
-from openpilot.selfdrive.modeld.constants import Meta
+from openpilot.sunnypilot.modeld_v2.constants import Meta
 
 
 class Meta20hz(Meta):

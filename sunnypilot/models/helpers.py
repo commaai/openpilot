@@ -60,7 +60,7 @@ def get_active_model_runner(params: Params = None, force_check=False) -> custom.
     if isinstance(cached_runner_type, str) and cached_runner_type.isdigit():
       return int(cached_runner_type)
 
-  runner_type = custom.ModelManagerSP.Runner.tinygrad
+  runner_type = custom.ModelManagerSP.Runner.stock
 
   if active_bundle := get_active_bundle(params):
     runner_type = active_bundle.runner.raw
