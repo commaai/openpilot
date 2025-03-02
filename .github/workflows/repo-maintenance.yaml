@@ -19,7 +19,7 @@ jobs:
       - uses: ./.github/workflows/setup-with-retry
       - name: Update translations
         run: |
-          ${{ env.RUN }} "python3 selfdrive/ui/update_translations.py"
+          ${{ env.RUN }} "python3 selfdrive/ui/update_translations.py --vanish"
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
         with:
@@ -31,6 +31,7 @@ jobs:
           base: "master"
           delete-branch: true
           labels: bot
+
   package_updates:
     name: package_updates
     runs-on: ubuntu-latest
