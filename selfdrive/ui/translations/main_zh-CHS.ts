@@ -309,25 +309,27 @@
     <name>FirehosePanel</name>
     <message>
         <source>🔥 Firehose Mode 🔥</source>
-        <translation type="unfinished"></translation>
+        <translation>🔥 训练数据上传模式 🔥</translation>
     </message>
     <message>
         <source>Enable Firehose Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>启用训练数据上传模式</translation>
     </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 通过观察人类（像你一样的驾驶）来学习驾驶。
+
+训练数据上传模式可让你最大化上传训练数据，以改进 openpilot 的驾驶模型。更多数据意味着更大的模型，并带来更优秀的实验模式。</translation>
     </message>
     <message>
         <source>0%</source>
-        <translation type="unfinished">5G {0%?}</translation>
+        <translation>0%</translation>
     </message>
     <message>
         <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>按照以下步骤准备您的设备：&lt;br&gt;	1. 将设备带到室内并连接到良好的 USB-C 充电器&lt;br&gt;	2. 连接 Wi-Fi&lt;br&gt;	3. 启用开关&lt;br&gt;	4. 保持连接至少 30 分钟&lt;br&gt;&lt;br&gt;开关会在设备重新启动后自动关闭。请至少每周重复一次，以获得最佳效果。&lt;br&gt;&lt;br&gt;&lt;b&gt;常见问题&lt;/b&gt;&lt;br&gt;&lt;i&gt;驾驶方式或地点重要吗？&lt;/i&gt; 不，按照平常的方式驾驶即可。&lt;br&gt;&lt;i&gt;什么是良好的 USB-C 充电器？&lt;/i&gt; 任何快速手机或笔记本电脑充电器都可以。&lt;br&gt;&lt;i&gt;我需要连接 Wi-Fi 吗？&lt;/i&gt; 是的。&lt;br&gt;&lt;i&gt;我需要把设备带到室内吗？&lt;/i&gt; 不，您可以在停车后启用，但您的上传速度将受限于车辆的电池。&lt;br&gt;</translation>
     </message>
 </context>
 <context>
@@ -664,7 +666,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Firehose</source>
-        <translation type="unfinished"></translation>
+        <translation>训练上传</translation>
     </message>
 </context>
 <context>
@@ -1142,15 +1144,15 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>开启</translation>
     </message>
     <message>
         <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
-        <translation type="unfinished"></translation>
+        <translation>最大化您的训练数据上传，以改善 openpilot 的驾驶模型。</translation>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; 训练数据上传模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>
