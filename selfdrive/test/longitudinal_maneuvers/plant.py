@@ -30,8 +30,8 @@ class Plant:
 
     self.distance = 0.
     self.speed = speed
+    self.should_stop = False
     self.acceleration = 0.0
-    self.speeds = []
 
     # lead car
     self.lead_relevancy = lead_relevancy
@@ -134,9 +134,9 @@ class Plant:
           'liveParameters': lp.liveParameters,
           'modelV2': model.modelV2}
     self.planner.update(sm)
-    self.speed = self.planner.v_desired_filter.x
-    self.acceleration = self.planner.a_desired
-    self.speeds = self.planner.v_desired_trajectory.tolist()
+    self.acceleration = self.planner.output_a_target
+    self.speed = self.speed + self.acceleration * self.ts
+    self.should_stop = self.planner.output_should_stop
     fcw = self.planner.fcw
     self.distance_lead = self.distance_lead + v_lead * self.ts
 
@@ -168,7 +168,7 @@ class Plant:
       "distance": self.distance,
       "speed": self.speed,
       "acceleration": self.acceleration,
-      "speeds": self.speeds,
+      "should_stop": self.should_stop,
       "distance_lead": self.distance_lead,
       "fcw": fcw,
     }

@@ -97,7 +97,7 @@ unsafe_checkout() {( set -e
   git fetch --no-tags --no-recurse-submodules -j8 --verbose --depth 1 origin $GIT_COMMIT
   git checkout --force --no-recurse-submodules $GIT_COMMIT
   git reset --hard $GIT_COMMIT
-  git clean -df
+  git clean -dff
   git submodule sync
   git submodule foreach --recursive "git reset --hard && git clean -df"
   git submodule update --init --recursive
