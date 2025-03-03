@@ -50,6 +50,10 @@ kj::Array<capnp::word> logger_build_init_data() {
   init.setPassive(false);
   init.setDongleId(params_map["DongleId"]);
 
+  // for prebuilt branches
+  init.setGitSrcCommit(util::read_file("../../git_src_commit"));
+  init.setGitSrcCommitDate(util::read_file("../../git_src_commit_date"));
+
   auto lparams = init.initParams().initEntries(params_map.size());
   int j = 0;
   for (auto& [key, value] : params_map) {

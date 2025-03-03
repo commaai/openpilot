@@ -37,7 +37,6 @@ const bool env_ctrl_exp_from_params = getenv("CTRL_EXP_FROM_PARAMS") != nullptr;
 class CameraState {
 public:
   SpectraCamera camera;
-  std::thread thread;
   int exposure_time = 5;
   bool dc_gain_enabled = false;
   int dc_gain_weight = 0;
@@ -54,6 +53,7 @@ public:
   float target_grey_fraction = 0.3;
 
   float fl_pix = 0;
+  std::unique_ptr<PubMaster> pm;
 
   CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.stream_type == VISION_STREAM_DRIVER ? ISP_BPS_PROCESSED : ISP_IFE_PROCESSED) {};
   ~CameraState();
@@ -61,7 +61,7 @@ public:
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
   void set_camera_exposure(float grey_frac);
   void set_exposure_rect();
-  void run();
+  void sendState();
 
   float get_gain_factor() const {
     return (1 + dc_gain_weight * (camera.sensor->dc_gain_factor-1) / camera.sensor->dc_gain_max_weight);
@@ -80,12 +80,10 @@ void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ct
   gain_idx = camera.sensor->analog_gain_rec_idx;
   cur_ev[0] = cur_ev[1] = cur_ev[2] = get_gain_factor() * camera.sensor->sensor_analog_gains[gain_idx] * exposure_time;
 
-  thread = std::thread(&CameraState::run, this);
+  pm = std::make_unique<PubMaster>(std::vector{camera.cc.publish_name});
 }
 
-CameraState::~CameraState() {
-  if (thread.joinable()) thread.join();
-}
+CameraState::~CameraState() {}
 
 void CameraState::set_exposure_rect() {
   // set areas for each camera, shouldn't be changed
@@ -216,56 +214,43 @@ void CameraState::set_camera_exposure(float grey_frac) {
   float gain = analog_gain_frac * get_gain_factor();
   cur_ev[camera.buf.cur_frame_data.frame_id % 3] = exposure_time * gain;
 
-  // Processing a frame takes right about 50ms, so we need to wait a few ms
-  // so we don't send i2c commands around the frame start.
-  int ms = (nanos_since_boot() - camera.buf.cur_frame_data.timestamp_sof) / 1000000;
-  if (ms < 60) {
-    util::sleep_for(60 - ms);
-  }
   // LOGE("ae - camera %d, cur_t %.5f, sof %.5f, dt %.5f", camera.cc.camera_num, 1e-9 * nanos_since_boot(), 1e-9 * camera.buf.cur_frame_data.timestamp_sof, 1e-9 * (nanos_since_boot() - camera.buf.cur_frame_data.timestamp_sof));
 
   auto exp_reg_array = sensor->getExposureRegisters(exposure_time, new_exp_g, dc_gain_enabled);
   camera.sensors_i2c(exp_reg_array.data(), exp_reg_array.size(), CAM_SENSOR_PACKET_OPCODE_SENSOR_CONFIG, camera.sensor->data_word);
 }
 
-void CameraState::run() {
-  util::set_thread_name(camera.cc.publish_name);
+void CameraState::sendState() {
+  camera.buf.sendFrameToVipc();
 
-  PubMaster pm(std::vector{camera.cc.publish_name});
+  MessageBuilder msg;
+  auto framed = (msg.initEvent().*camera.cc.init_camera_state)();
+  const FrameMetadata &meta = camera.buf.cur_frame_data;
+  framed.setFrameId(meta.frame_id);
+  framed.setRequestId(meta.request_id);
+  framed.setTimestampEof(meta.timestamp_eof);
+  framed.setTimestampSof(meta.timestamp_sof);
+  framed.setIntegLines(exposure_time);
+  framed.setGain(analog_gain_frac * get_gain_factor());
+  framed.setHighConversionGain(dc_gain_enabled);
+  framed.setMeasuredGreyFraction(measured_grey_fraction);
+  framed.setTargetGreyFraction(target_grey_fraction);
+  framed.setProcessingTime(meta.processing_time);
 
-  for (uint32_t cnt = 0; !do_exit; ++cnt) {
-    // Acquire the buffer; continue if acquisition fails
-    if (!camera.buf.acquire(exposure_time)) continue;
+  const float ev = cur_ev[meta.frame_id % 3];
+  const float perc = util::map_val(ev, camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f);
+  framed.setExposureValPercent(perc);
+  framed.setSensor(camera.sensor->image_sensor);
 
-    MessageBuilder msg;
-    auto framed = (msg.initEvent().*camera.cc.init_camera_state)();
-    const FrameMetadata &meta = camera.buf.cur_frame_data;
-    framed.setFrameId(meta.frame_id);
-    framed.setRequestId(meta.request_id);
-    framed.setTimestampEof(meta.timestamp_eof);
-    framed.setTimestampSof(meta.timestamp_sof);
-    framed.setIntegLines(exposure_time);
-    framed.setGain(analog_gain_frac * get_gain_factor());
-    framed.setHighConversionGain(dc_gain_enabled);
-    framed.setMeasuredGreyFraction(measured_grey_fraction);
-    framed.setTargetGreyFraction(target_grey_fraction);
-    framed.setProcessingTime(meta.processing_time);
-
-    const float ev = cur_ev[meta.frame_id % 3];
-    const float perc = util::map_val(ev, camera.sensor->min_ev, camera.sensor->max_ev, 0.0f, 100.0f);
-    framed.setExposureValPercent(perc);
-    framed.setSensor(camera.sensor->image_sensor);
-
-    // Log raw frames for road camera
-    if (env_log_raw_frames && camera.cc.stream_type == VISION_STREAM_ROAD && cnt % 100 == 5) {  // no overlap with qlog decimation
-      framed.setImage(get_raw_frame_image(&camera.buf));
-    }
-
-    set_camera_exposure(set_exposure_target(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
-
-    // Send the message
-    pm.send(camera.cc.publish_name, msg);
+  // Log raw frames for road camera
+  if (env_log_raw_frames && camera.cc.stream_type == VISION_STREAM_ROAD && meta.frame_id % 100 == 5) {  // no overlap with qlog decimation
+    framed.setImage(get_raw_frame_image(&camera.buf));
   }
+
+  set_camera_exposure(calculate_exposure_value(&camera.buf, ae_xywh, 2, camera.cc.stream_type != VISION_STREAM_DRIVER ? 2 : 4));
+
+  // Send the message
+  pm->send(camera.cc.publish_name, msg);
 }
 
 void camerad_thread() {
@@ -321,7 +306,9 @@ void camerad_thread() {
 
         for (auto &cam : cams) {
           if (event_data->session_hdl == cam->camera.session_handle) {
-            cam->camera.handle_camera_event(event_data);
+            if (cam->camera.handle_camera_event(event_data)) {
+              cam->sendState();
+            }
             break;
           }
         }

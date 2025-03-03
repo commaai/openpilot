@@ -151,6 +151,10 @@ struct InitData {
   gitBranch @11 :Text;
   gitRemote @13 :Text;
 
+  # this is source commit for prebuilt branches
+  gitSrcCommit @23 :Text;
+  gitSrcCommitDate @24 :Text;
+
   androidProperties @16 :Map(Text, Text);
 
   pandaInfo @8 :PandaInfo;
@@ -2237,6 +2241,11 @@ struct LiveParametersData {
   steerRatioStd @13 :Float32;
   roll @14 :Float32;
   debugFilterState @16 :FilterState;
+
+  angleOffsetValid @17 :Bool = true;
+  angleOffsetAverageValid @18 :Bool = true;
+  steerRatioValid @19 :Bool = true;
+  stiffnessFactorValid @20 :Bool = true;
 
   yawRateDEPRECATED @7 :Float32;
   filterStateDEPRECATED @15 :LiveLocationKalman.Measurement;
