@@ -3,6 +3,7 @@ import numpy as np
 import time
 import wave
 
+# trigger
 
 from cereal import car, messaging
 from openpilot.common.basedir import BASEDIR
