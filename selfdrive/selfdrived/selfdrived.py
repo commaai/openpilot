@@ -26,6 +26,7 @@ from openpilot.system.version import get_build_metadata
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
+IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -258,7 +259,7 @@ class SelfdriveD:
       if not_running != self.not_running_prev:
         cloudlog.event("process_not_running", not_running=not_running, error=True)
       self.not_running_prev = not_running
-    if self.sm.recv_frame['managerState'] and not_running:
+    if self.sm.recv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
     else:
       if not SIMULATION and not self.rk.lagging:
