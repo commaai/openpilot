@@ -52,7 +52,7 @@ def setup_settings_software(click, pm: PubMaster):
   time.sleep(UI_DELAY)
 
 def setup_settings_firehose(click, pm: PubMaster):
-  click(278, 836)
+  click(1780, 730)
 
 def setup_settings_developer(click, pm: PubMaster):
   CP = car.CarParams()
