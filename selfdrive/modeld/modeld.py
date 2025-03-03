@@ -114,7 +114,7 @@ class ModelState:
 
     self.full_desire[0,:-1] = self.full_desire[0,1:]
     self.full_desire[0,-1] = new_desire
-    self.numpy_inputs['desire'][:] = self.full_desire[self.temporal_idxs]
+    self.numpy_inputs['desire'][:] = self.full_desire[0, self.temporal_idxs]
 
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.numpy_inputs['lateral_control_params'][:] = inputs['lateral_control_params']
@@ -139,7 +139,7 @@ class ModelState:
 
     self.full_features_buffer[0,:-1] = self.full_features_buffer[0,1:]
     self.full_features_buffer[0,-1] = vision_outputs_dict['hidden_state'][0, :]
-    self.numpy_inputs['features_buffer'][:] = self.full_features_buffer[self.temporal_idxs]
+    self.numpy_inputs['features_buffer'][:] = self.full_features_buffer[0, self.temporal_idxs]
 
     self.policy_output = self.policy_run(**self.policy_inputs).numpy().flatten()
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
@@ -147,7 +147,7 @@ class ModelState:
     # TODO model only uses last value now
     self.full_prev_desired_curv[0,:-1] = self.full_prev_desired_curv[0,1:]
     self.full_prev_desired_curv[0,-1,:] = policy_outputs_dict['desired_curvature'][0, :]
-    self.numpy_inputs['prev_desired_curv'][:] = self.full_prev_desired_curv[self.temporal_idxs]
+    self.numpy_inputs['prev_desired_curv'][:] = self.full_prev_desired_curv[0, self.temporal_idxs]
 
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
     if SEND_RAW_PRED:
