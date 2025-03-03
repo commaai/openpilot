@@ -134,6 +134,14 @@ class Tici(HardwareBase):
   def get_serial(self):
     return self.get_cmdline()['androidboot.serialno']
 
+  def get_voltage(self):
+    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
+      return int(f.read())
+
+  def get_current(self):
+    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
+      return int(f.read())
+
   def get_network_type(self):
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
