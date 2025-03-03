@@ -23,9 +23,9 @@ def set_ir_power(percent: int):
 
   # Write the value to the LED brightness files
   with open("/sys/class/leds/led:torch_2/brightness", "w") as f:
-      f.write(f"{value}\n")
+    f.write(f"{value}\n")
   with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
-      f.write(f"{value}\n")
+    f.write(f"{value}\n")
 
 
 class HardwareReader:
@@ -37,20 +37,12 @@ class HardwareReader:
     self.thread = threading.Thread(target=self._read_loop, daemon=True)
     self.thread.start()
 
-  def _read_voltage(self):
-    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
-      return int(f.read())
-
-  def _read_current(self):
-    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
-      return int(f.read())
-
   def _read_loop(self):
     while self.running:
       start = time.monotonic()
       try:
-        new_voltage = self._read_voltage()
-        new_current = self._read_current()
+        new_voltage = HARDWARE.get_voltage()
+        new_current = HARDWARE.get_current()
         with self.lock:
           self.voltage = new_voltage
           self.current = new_current
