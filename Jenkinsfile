@@ -238,7 +238,6 @@ node {
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
       },
-      /*
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
@@ -246,7 +245,6 @@ node {
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
       },
-      */
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
