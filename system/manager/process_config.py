@@ -22,7 +22,7 @@ def logging(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and run
 
 def bridge_enabled(started: bool, params: Params, CP: car.CarParams) -> bool:
-  return started and params.get_bool("IsBridgeEnabled")
+  return started and params.get_bool("BridgeEnabled")
 
 def ublox_available() -> bool:
   return os.path.exists('/dev/ttyHS0') and not os.path.exists('/persist/comma/use-quectel-gps')
