@@ -1,3 +1,7 @@
+Version 0.9.9 (2025-04-XX)
+========================
+* Tesla Model 3 and Y support thanks to lukasloetkolben!
+
 Version 0.9.8 (2025-02-28)
 ========================
 * New driving model
@@ -8,6 +12,7 @@ Version 0.9.8 (2025-02-28)
   * More GPU time for bigger driving models
   * Power draw reduced 0.5W, which means your device runs cooler
 * Added toggle to enable driver monitoring even when openpilot is not engaged
+* Localizer rewritten to remove GPS dependency at runtime
 * Firehose Mode for maximizing your training data uploads
 * Enable openpilot longitudinal control for Ford Q3 vehicles
 * New Toyota TSS2 longitudinal tune

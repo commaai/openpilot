@@ -75,7 +75,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, pl
 
 
 def process(can, lr):
-  return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
+  return [d for d in lr if can or d.which() not in ['can', 'sendcan'] and not d.which().startswith('customReserved')]
 
 
 def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):

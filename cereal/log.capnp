@@ -151,6 +151,10 @@ struct InitData {
   gitBranch @11 :Text;
   gitRemote @13 :Text;
 
+  # this is source commit for prebuilt branches
+  gitSrcCommit @23 :Text;
+  gitSrcCommitDate @24 :Text;
+
   androidProperties @16 :Map(Text, Text);
 
   pandaInfo @8 :PandaInfo;
