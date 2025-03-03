@@ -68,7 +68,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
 
       for (const auto &encoder_info : cam_info.encoder_infos) {
         auto &e = encoders.emplace_back(new Encoder(encoder_info, buf_info.width, buf_info.height));
-        e->encoder_open(nullptr);
+        e->encoder_open();
       }
 
       // Only one thumbnail can be generated per camera stream
@@ -103,7 +103,7 @@ void encoder_thread(EncoderdState *s, const LogCameraInfo &cam_info) {
       if (cur_seg >= 0 && extra.frame_id >= ((cur_seg + 1) * frames_per_seg) + s->start_frame_id) {
         for (auto &e : encoders) {
           e->encoder_close();
-          e->encoder_open(NULL);
+          e->encoder_open();
         }
         ++cur_seg;
       }

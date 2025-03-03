@@ -95,7 +95,7 @@ class SimulatedCar:
       'controlsAllowed': True,
       'safetyModel': 'hondaBosch',
       'alternativeExperience': self.sm["carParams"].alternativeExperience,
-      'safetyParam': HondaSafetyFlags.FLAG_HONDA_RADARLESS.value | HondaSafetyFlags.FLAG_HONDA_BOSCH_LONG.value,
+      'safetyParam': HondaSafetyFlags.RADARLESS.value | HondaSafetyFlags.BOSCH_LONG.value,
     }
     self.pm.send('pandaStates', dat)
 

@@ -42,7 +42,7 @@ dependencies = [
 
   # modeld
   "onnx >= 1.14.0",
-  "onnxruntime >=1.16.3",
+  "llvmlite",
 
   # logging
   "pyzmq",
