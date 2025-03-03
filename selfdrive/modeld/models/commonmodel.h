@@ -64,7 +64,7 @@ protected:
 
 class DrivingModelFrame : public ModelFrame {
 public:
-  DrivingModelFrame(cl_device_id device_id, cl_context context, int temporal_skip);
+  DrivingModelFrame(cl_device_id device_id, cl_context context, int _temporal_skip);
   ~DrivingModelFrame();
   cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
 
@@ -78,6 +78,7 @@ private:
   LoadYUVState loadyuv;
   cl_mem img_buffer_20hz_cl, last_img_cl, input_frames_cl;
   cl_buffer_region region;
+  int temporal_skip;
 };
 
 class MonitoringModelFrame : public ModelFrame {

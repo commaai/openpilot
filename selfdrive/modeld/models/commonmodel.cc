@@ -5,8 +5,9 @@
 
 #include "common/clutil.h"
 
-DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context, int temporal_skip) : ModelFrame(device_id, context) {
+DrivingModelFrame::DrivingModelFrame(cl_device_id device_id, cl_context context, int _temporal_skip) : ModelFrame(device_id, context) {
   input_frames = std::make_unique<uint8_t[]>(buf_size);
+  temporal_skip = _temporal_skip;
   input_frames_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, buf_size, NULL, &err));
   img_buffer_20hz_cl = CL_CHECK_ERR(clCreateBuffer(context, CL_MEM_READ_WRITE, (temporal_skip+1)*frame_size_bytes, NULL, &err));
   region.origin = temporal_skip * frame_size_bytes;
