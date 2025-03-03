@@ -1332,8 +1332,10 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
 
   // ID from the qcom camera request manager
   uint64_t request_id = event_data->u.frame_msg.request_id;
+
   // raw as opposed to our re-indexed frame ID
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;
+
   // this is timestamped in the kernel's SOF IRQ callback
   uint64_t timestamp = event_data->u.frame_msg.timestamp;
 
@@ -1375,9 +1377,9 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
   if (!sync_objs_ife[buf_idx]) return false;
 
-  // Wait for the previous one in this slot (index) to come in.
-  // in RAW_OUTPUT mode, this is just the frame readout from the sensor
-  // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
+  // wait for frame from ISP
+  // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
+  // - in IFE_PROCESSED mode, this time is both frame readout and image processing (~1ms)
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
@@ -1389,10 +1391,9 @@ bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
     return ret == 0;
   };
 
-  // *** Wait for IFE ***
   bool success = waitForSync(sync_objs_ife[buf_idx], 100, "IFE sync");
-  // *** Wait for BPS *** (typically 7ms)
   if (success && sync_objs_bps[buf_idx]) {
+    // BPS is typically 7ms
     success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
   }
 
@@ -1428,7 +1429,8 @@ bool SpectraCamera::processFrame(uint64_t request_id, uint64_t frame_id_raw, uin
     .request_id = (uint32_t)request_id,
     .timestamp_sof = timestamp,
     .timestamp_eof = timestamp_eof,
-    .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)};
+    .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
+  };
   return true;
 }
 
