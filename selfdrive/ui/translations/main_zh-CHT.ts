@@ -309,11 +309,11 @@
     <name>FirehosePanel</name>
     <message>
         <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 資料傳輸模式 🔥</translation>
+        <translation>🔥 訓練資料上傳模式 🔥</translation>
     </message>
     <message>
         <source>Enable Firehose Mode</source>
-        <translation>啟用資料傳輸模式</translation>
+        <translation>啟用訓練資料上傳模式</translation>
     </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
@@ -321,7 +321,7 @@
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
         <translation>openpilot 透過觀察人類（像你一樣的駕駛）來學習駕駛。
 
-資料傳輸模式可讓你最大化上傳訓練數據，以改進 openpilot 的駕駛模型。更多數據意味著更大的模型，並帶來更優秀的實驗模式。</translation>
+訓練資料上傳模式可讓你最大化上傳訓練數據，以改進 openpilot 的駕駛模型。更多數據意味著更大的模型，並帶來更優秀的實驗模式。</translation>
     </message>
     <message>
         <source>0%</source>
@@ -666,7 +666,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Firehose</source>
-        <translation>資料傳輸</translation>
+        <translation>訓練上傳</translation>
     </message>
 </context>
 <context>
@@ -1152,7 +1152,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; 資料傳輸模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; 訓練資料上傳模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>
