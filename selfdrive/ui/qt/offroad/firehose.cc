@@ -40,9 +40,9 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   line->setStyleSheet("background-color: #444444; margin-top: 5px; margin-bottom: 5px;");
   content_layout->addWidget(line);
 
-  enable_firehose = new ParamControl("FirehoseMode", tr("Enable Firehose Mode"), "", "");
-
-  content_layout->addWidget(enable_firehose);
+  QLabel *toggle_label = new QLabel(tr("Firehose Mode: ACTIVE"));
+  toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: white;");
+  content_layout->addWidget(toggle_label);
 
   // Create progress bar container
   progress_container = new QFrame();
@@ -92,11 +92,12 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     "\t4. Leave it connected for at least 30 minutes<br>"
     "<br>"
     "The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness."
-    "<br><br><b>FAQ</b><br>"
+    "<br><br><b>Frequently Asked Questions</b><br>"
     "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br>"
     "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br>"
     "<i>Do I need to be on Wi-Fi?</i> Yes.<br>"
     "<i>Do I need to bring the device inside?</i> No, you can enable once you're parked, however your uploads will be limited by your car's battery.<br>"
+    "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training.<br>"
   ));
   detailed_instructions->setStyleSheet("font-size: 40px; padding: 20px; color: #E4E4E4;");
   detailed_instructions->setWordWrap(true);
