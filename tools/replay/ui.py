@@ -154,7 +154,7 @@ def ui_thread(addr):
     # TODO gas is deprecated
     plot_arr[-1, name_to_arr_idx['computer_gas']] = clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake
-    plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.steer * ANGLE_SCALE
+    plot_arr[-1, name_to_arr_idx['steer_torque']] = sm['carControl'].actuators.torque * ANGLE_SCALE
     # TODO brake is deprecated
     plot_arr[-1, name_to_arr_idx['computer_brake']] = clip(-sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['v_ego']] = sm['carState'].vEgo
