@@ -48,7 +48,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->addWidget(toggle_label);
 
   // Add contribution label
-  contribution_label = new QLabel("0 minutes");
+  contribution_label = new QLabel();
   contribution_label->setStyleSheet("font-size: 52px; margin-top: 10px; margin-bottom: 10px;");
   contribution_label->setWordWrap(true);
   contribution_label->hide();
