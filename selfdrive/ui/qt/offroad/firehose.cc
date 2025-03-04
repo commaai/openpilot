@@ -30,7 +30,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->setSpacing(20);
 
   // Top description
-  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models with better Experimental Mode."));
+  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models, which means better Experimental Mode."));
   description->setStyleSheet("font-size: 45px; padding-bottom: 20px;");
   description->setWordWrap(true);
   content_layout->addWidget(description);
@@ -47,8 +47,8 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->addWidget(toggle_label);
 
   // Add contribution label
-  contribution_label = new QLabel();
-  contribution_label->setStyleSheet("font-size: 40px; color: #3498db; margin-top: 10px; margin-bottom: 10px;");
+  contribution_label = new QLabel("0 minutes");
+  contribution_label->setStyleSheet("font-size: 40px; margin-top: 10px; margin-bottom: 10px;");
   contribution_label->setWordWrap(true);
   content_layout->addWidget(contribution_label);
 
@@ -93,21 +93,16 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
 
   // Detailed instructions at the bottom
   detailed_instructions = new QLabel(tr(
-    "Follow these steps to get your device ready:<br>"
-    "\t1. Bring your device inside and connect to a good USB-C adapter<br>"
-    "\t2. Connect to Wi-Fi<br>"
-    "\t3. Enable the toggle<br>"
-    "\t4. Leave it connected for at least 30 minutes<br>"
+    "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.<br>"
     "<br>"
-    "The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness."
-    "<br><br><b>Frequently Asked Questions</b><br>"
-    "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br>"
-    "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br>"
-    "<i>Do I need to be on Wi-Fi?</i> Yes.<br>"
-    "<i>Do I need to bring the device inside?</i> No, you can enable once you're parked, however your uploads will be limited by your car's battery.<br>"
-    "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training.<br>"
+    "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.<br>"
+    "<br>"
+    "<br><br><b>Frequently Asked Questions</b><br><br>"
+    "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br><br>"
+    "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br><br>"
+    "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training."
   ));
-  detailed_instructions->setStyleSheet("font-size: 40px; padding: 20px; color: #E4E4E4;");
+  detailed_instructions->setStyleSheet("font-size: 40px; color: #E4E4E4;");
   detailed_instructions->setWordWrap(true);
   content_layout->addWidget(detailed_instructions);
 
@@ -116,13 +111,13 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   // Set up the API request for firehose stats
   const QString dongle_id = QString::fromStdString(Params().get("DongleId"));
   firehose_stats = new RequestRepeater(this, CommaApi::BASE_URL + "/v1/devices/" + dongle_id + "/firehose_stats",
-                                       "ApiCache_FirehoseStats", 60, true);
+                                       "ApiCache_FirehoseStats", 30, true);
   QObject::connect(firehose_stats, &RequestRepeater::requestDone, [=](const QString &response, bool success) {
     if (success) {
       QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
       QJsonObject json = doc.object();
       int count = json["firehose"].toInt();
-      contribution_label->setText(tr("You have contributed %1 segments to the training dataset so far.").arg(count));
+      contribution_label->setText(tr("%1 %2 of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "minute" : "minutes"));
       contribution_label->show();
     }
   });

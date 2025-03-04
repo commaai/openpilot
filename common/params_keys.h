@@ -8,6 +8,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"AdbEnabled", PERSISTENT},
     {"AlwaysOnDM", PERSISTENT},
     {"ApiCache_Device", PERSISTENT},
+    {"ApiCache_FirehoseStats", PERSISTENT},
     {"AssistNowToken", PERSISTENT},
     {"AthenadPid", PERSISTENT},
     {"AthenadUploadQueue", PERSISTENT},
