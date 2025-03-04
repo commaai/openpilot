@@ -92,9 +92,13 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
       CP = lr.first('carParams')
       platform = CP.carFingerprint
       DBC = __import__(f"opendbc.car.{CP.brand}.values", fromlist=['DBC']).DBC
-      dbc = DBC[MIGRATION.get(CP.carFingerprint, CP.carFingerprint)]['pt']
+      dbc_dict = DBC[MIGRATION.get(CP.carFingerprint, CP.carFingerprint)]
+      if 'pt' in dbc_dict:
+        dbc = dbc_dict['pt']
+      else:
+        dbc = dbc_dict['party']
     except Exception:
-      cloudlog.error("Failed to get DBC name from logs!")
+      cloudlog.exception("Failed to get DBC name from logs!")
 
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
