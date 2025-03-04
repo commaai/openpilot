@@ -12,7 +12,6 @@ from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKE
                                                                    check_openpilot_enabled, check_most_messages_valid, get_custom_params_from_lr
 from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
-from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
 from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
 from openpilot.tools.lib.openpilotci import get_url
