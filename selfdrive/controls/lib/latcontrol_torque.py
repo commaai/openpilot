@@ -37,7 +37,7 @@ class LatControlTorque(LatControl):
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
 
-  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose):
+  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose, curvature_limited):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -87,7 +87,7 @@ class LatControlTorque(LatControl):
       pid_log.output = float(-output_torque)
       pid_log.actualLateralAccel = float(actual_lateral_accel)
       pid_log.desiredLateralAccel = float(desired_lateral_accel)
-      pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_controls))
+      pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_controls, curvature_limited))
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log

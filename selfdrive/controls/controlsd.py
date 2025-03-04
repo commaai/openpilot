@@ -109,11 +109,11 @@ class Controls:
     actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget, long_plan.shouldStop, pid_accel_limits))
 
     # Steering PID loop and lateral MPC
-    self.desired_curvature = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature)
-    actuators.curvature = float(self.desired_curvature)
+    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature, lp.roll)
+    actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                        self.steer_limited_by_controls, self.desired_curvature,
-                                                       self.calibrated_pose)  # TODO what if not available
+                                                       self.calibrated_pose, curvature_limited)  # TODO what if not available
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
     # Ensure no NaNs/Infs
@@ -180,7 +180,7 @@ class Controls:
 
     cs.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     cs.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
-    cs.desiredCurvature = float(self.desired_curvature)
+    cs.desiredCurvature = self.desired_curvature
     cs.longControlState = self.LoC.long_control_state
     cs.upAccelCmd = float(self.LoC.pid.p)
     cs.uiAccelCmd = float(self.LoC.pid.i)
