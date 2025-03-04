@@ -10,6 +10,8 @@
 #include <QScrollArea>
 #include <QStackedLayout>
 #include <QProgressBar>
+#include <QJsonDocument>
+#include <QJsonObject>
 
 FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent) {
   layout = new QVBoxLayout(this);
@@ -43,6 +45,12 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   QLabel *toggle_label = new QLabel(tr("Firehose Mode: ACTIVE"));
   toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: white;");
   content_layout->addWidget(toggle_label);
+
+  // Add contribution label
+  contribution_label = new QLabel();
+  contribution_label->setStyleSheet("font-size: 40px; color: #3498db; margin-top: 10px; margin-bottom: 10px;");
+  contribution_label->setWordWrap(true);
+  content_layout->addWidget(contribution_label);
 
   // Create progress bar container
   progress_container = new QFrame();
@@ -104,4 +112,18 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->addWidget(detailed_instructions);
 
   layout->addWidget(content, 1);
+
+  // Set up the API request for firehose stats
+  const QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+  firehose_stats = new RequestRepeater(this, CommaApi::BASE_URL + "/v1/devices/" + dongle_id + "/firehose_stats",
+                                       "ApiCache_FirehoseStats", 60, true);
+  QObject::connect(firehose_stats, &RequestRepeater::requestDone, [=](const QString &response, bool success) {
+    if (success) {
+      QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+      QJsonObject json = doc.object();
+      int count = json["firehose"].toInt();
+      contribution_label->setText(tr("You have contributed %1 segments to the training dataset so far.").arg(count));
+      contribution_label->show();
+    }
+  });
 }

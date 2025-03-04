@@ -5,6 +5,7 @@
 #include <QProgressBar>
 #include <QLabel>
 #include "selfdrive/ui/qt/widgets/controls.h"
+#include "selfdrive/ui/qt/request_repeater.h"
 #include "common/params.h"
 
 // Forward declarations
@@ -23,6 +24,7 @@ private:
   QProgressBar *progress_bar;
   QLabel *progress_text;
   QLabel *detailed_instructions;
+  QLabel *contribution_label;
   
-  void updateFirehoseState(bool enabled);
+  RequestRepeater *firehose_stats;
 };
