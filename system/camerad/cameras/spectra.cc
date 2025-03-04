@@ -249,13 +249,6 @@ SpectraCamera::~SpectraCamera() {
 }
 
 int SpectraCamera::clear_req_queue() {
-  struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
-  req_mgr_flush_request.session_hdl = session_handle;
-  req_mgr_flush_request.link_hdl = link_handle;
-  req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
-  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
-  LOGD("flushed all req: %d", ret);
-
   if (icp_dev_handle > 0) {
     struct cam_flush_dev_cmd cmd = {
       .session_handle = session_handle,
@@ -264,7 +257,15 @@ int SpectraCamera::clear_req_queue() {
     };
     int err = do_cam_control(m->icp_fd, CAM_FLUSH_REQ, &cmd, sizeof(cmd));
     assert(err == 0);
+    LOGD("flushed bps: %d", err);
   }
+
+  struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+  req_mgr_flush_request.session_hdl = session_handle;
+  req_mgr_flush_request.link_hdl = link_handle;
+  req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+  LOGD("flushed all req: %d", ret);
 
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
@@ -917,6 +918,9 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
     // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
     sync_wait.sync_obj = sync_objs_ife[i];
     sync_wait.timeout_ms = 100;
+    if (stress_test("IFE sync")) {
+      sync_wait.timeout_ms = 1;
+    }
     ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
     if (ret != 0) {
       LOGE("failed to wait for IFE sync: %d %d", ret, sync_wait.sync_obj);
@@ -926,22 +930,24 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
     if (ret == 0 && sync_objs_bps[i]) {
       sync_wait.sync_obj = sync_objs_bps[i];
       sync_wait.timeout_ms = 50; // typically 7ms
+      if (stress_test("BPS sync")) {
+        sync_wait.timeout_ms = 1;
+      }
       ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
       if (ret != 0) {
         LOGE("failed to wait for BPS sync: %d %d", ret, sync_wait.sync_obj);
       }
     }
 
-    // all good, hand off frame
     if (ret == 0) {
+      // all good, hand off frame
       frame_ready = true;
-    }
-
-    if (ret != 0) {
+      destroySyncObjectAt(i);
+    } else {
+      // need to start over on sync failures,
+      // otherwise future frames will tear
       clear_req_queue();
     }
-
-    destroySyncObjectAt(i);
   }
 
   // create output fences
@@ -950,15 +956,17 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
   ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+  } else {
+    sync_objs_ife[i] = sync_create.sync_obj;
   }
-  sync_objs_ife[i] = sync_create.sync_obj;
 
   if (icp_dev_handle > 0) {
     ret = do_cam_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
     if (ret != 0) {
       LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
+    } else {
+      sync_objs_bps[i] = sync_create.sync_obj;
     }
-    sync_objs_bps[i] = sync_create.sync_obj;
   }
 
   // schedule request with camera request manager
@@ -1365,13 +1373,18 @@ void SpectraCamera::camera_close() {
 
 // Processes camera events and returns true if the frame is ready for further processing
 bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
-  if (!enabled) return false;
+  if (stress_test("skipping handling camera event")) {
+    LOGW("skipping event");
+    return false;
+  }
 
   // ID from the qcom camera request manager
   uint64_t request_id = event_data->u.frame_msg.request_id;
 
   // raw as opposed to our re-indexed frame ID
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;
+
+  //LOGD("handle cam %d, request id %lu -> %lu, frame id raw %lu", cc.camera_num, request_id_last, request_id, frame_id_raw);
 
   if (request_id != 0) { // next ready
     // check for skipped_last frames

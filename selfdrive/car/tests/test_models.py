@@ -28,6 +28,7 @@ from openpilot.tools.lib.logreader import LogReader, LogsUnavailable, openpilotc
 from openpilot.tools.lib.route import SegmentName
 
 SafetyModel = car.CarParams.SafetyModel
+SteerControlType = structs.CarParams.SteerControlType
 
 NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
 JOB_ID = int(os.environ.get("JOB_ID", "0"))
@@ -182,7 +183,7 @@ class TestCarModelBase(unittest.TestCase):
     # make sure car params are within a valid range
     self.assertGreater(self.CP.mass, 1)
 
-    if self.CP.steerControlType != structs.CarParams.SteerControlType.angle:
+    if self.CP.steerControlType != SteerControlType.angle:
       tuning = self.CP.lateralTuning.which()
       if tuning == 'pid':
         self.assertTrue(len(self.CP.lateralTuning.pid.kpV))
@@ -319,6 +320,8 @@ class TestCarModelBase(unittest.TestCase):
     msg_strategy = st.binary(min_size=size, max_size=size)
     msgs = data.draw(st.lists(msg_strategy, min_size=20))
 
+    vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
+
     for dat in msgs:
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
@@ -327,6 +330,8 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_brake = self.safety.get_brake_pressed_prev()
       prev_panda_regen_braking = self.safety.get_regen_braking_prev()
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
+      prev_panda_vehicle_speed_min = self.safety.get_vehicle_speed_min()
+      prev_panda_vehicle_speed_max = self.safety.get_vehicle_speed_max()
       prev_panda_cruise_engaged = self.safety.get_cruise_engaged_prev()
       prev_panda_acc_main_on = self.safety.get_acc_main_on()
 
@@ -354,6 +359,16 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
+      # check vehicle speed if angle control car or available
+      if self.safety.get_vehicle_speed_min() > 0 or self.safety.get_vehicle_speed_max() > 0:
+        vehicle_speed_seen = True
+
+      if vehicle_speed_seen and (self.safety.get_vehicle_speed_min() != prev_panda_vehicle_speed_min or
+                                 self.safety.get_vehicle_speed_max() != prev_panda_vehicle_speed_max):
+        v_ego_raw = CS.vEgoRaw / self.CP.wheelSpeedFactor
+        self.assertFalse(v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
+                         v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
+
       if not (self.CP.brand == "honda" and not (self.CP.flags & HondaFlags.BOSCH)):
         if self.safety.get_cruise_engaged_prev() != prev_panda_cruise_engaged:
           self.assertEqual(CS.cruiseState.enabled, self.safety.get_cruise_engaged_prev())
@@ -379,6 +394,7 @@ class TestCarModelBase(unittest.TestCase):
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
     checks = defaultdict(int)
+    vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
     for idx, can in enumerate(self.can_msgs):
       CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
       for msg in filter(lambda m: m.src in range(64), can.can):
@@ -398,6 +414,15 @@ class TestCarModelBase(unittest.TestCase):
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
       checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+
+      # check vehicle speed if angle control car or available
+      if self.safety.get_vehicle_speed_min() > 0 or self.safety.get_vehicle_speed_max() > 0:
+        vehicle_speed_seen = True
+
+      if vehicle_speed_seen:
+        v_ego_raw = CS.vEgoRaw / self.CP.wheelSpeedFactor
+        checks['vEgoRaw'] += (v_ego_raw > (self.safety.get_vehicle_speed_max() + 1e-3) or
+                              v_ego_raw < (self.safety.get_vehicle_speed_min() - 1e-3))
 
       # TODO: remove this exception once this mismatch is resolved
       brake_pressed = CS.brakePressed

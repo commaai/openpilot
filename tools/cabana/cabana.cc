@@ -26,13 +26,13 @@ int main(int argc, char *argv[]) {
   cmd_parser.addOption({"qcam", "load qcamera"});
   cmd_parser.addOption({"ecam", "load wide road camera"});
   cmd_parser.addOption({"dcam", "load driver camera"});
-  cmd_parser.addOption({"stream", "read can messages from live streaming"});
+  cmd_parser.addOption({"msgq", "read can messages from the msgq"});
   cmd_parser.addOption({"panda", "read can messages from panda"});
   cmd_parser.addOption({"panda-serial", "read can messages from panda with given serial", "panda-serial"});
   if (SocketCanStream::available()) {
     cmd_parser.addOption({"socketcan", "read can messages from given SocketCAN device", "socketcan"});
   }
-  cmd_parser.addOption({"zmq", "the ip address on which to receive zmq messages", "zmq"});
+  cmd_parser.addOption({"zmq", "read can messages from zmq at the specified ip-address", "ip-address"});
   cmd_parser.addOption({"data_dir", "local directory with routes", "data_dir"});
   cmd_parser.addOption({"no-vipc", "do not output video"});
   cmd_parser.addOption({"dbc", "dbc file to open", "dbc"});
@@ -40,7 +40,9 @@ int main(int argc, char *argv[]) {
 
   AbstractStream *stream = nullptr;
 
-  if (cmd_parser.isSet("stream")) {
+  if (cmd_parser.isSet("msgq")) {
+    stream = new DeviceStream(&app);
+  } else if (cmd_parser.isSet("zmq")) {
     stream = new DeviceStream(&app, cmd_parser.value("zmq"));
   } else if (cmd_parser.isSet("panda") || cmd_parser.isSet("panda-serial")) {
     try {
