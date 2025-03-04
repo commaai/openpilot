@@ -17,17 +17,17 @@ class LatControl(ABC):
     self.steer_max = 1.0
 
   @abstractmethod
-  def update(self, active, CS, VM, params, steer_limited, desired_curvature, calibrated_pose, curvature_limited):
+  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose, curvature_limited):
     pass
 
   def reset(self):
     self.sat_count = 0.
 
-  def _check_saturation(self, saturated, CS, steer_limited, curvature_limited):
+  def _check_saturation(self, saturated, CS, steer_limited_by_controls, curvature_limited):
     # Saturated if control output is not being limited by car torque/angle rate limits and:
     # torque: requesting max torque
     # angle: current angle differs from desired angle and car controls aren't rate limiting us
-    if (saturated or curvature_limited) and CS.vEgo > self.sat_check_min_speed and not steer_limited and not CS.steeringPressed:
+    if (saturated or curvature_limited) and CS.vEgo > self.sat_check_min_speed and not steer_limited_by_controls and not CS.steeringPressed:
       self.sat_count += self.sat_count_rate
     else:
       self.sat_count -= self.sat_count_rate
