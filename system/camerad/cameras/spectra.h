@@ -128,8 +128,7 @@ public:
   void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
-  void enqueue_buffer(int i, uint64_t request_id);
-  void enqueue_req_multi(uint64_t start, int n);
+  void enqueue_frame(uint64_t request_id);
 
   int sensors_init();
   void sensors_start();

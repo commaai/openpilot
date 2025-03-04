@@ -304,14 +304,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, ife_buf_depth, cc.stream_type);
   camera_map_bufs();
-  enqueue_req_multi(1, ife_buf_depth);
-}
-
-void SpectraCamera::enqueue_req_multi(uint64_t start, int n) {
-  for (uint64_t request_id = start; request_id < start + n; ++request_id) {
-    uint64_t idx = request_id % ife_buf_depth;
-    enqueue_buffer(idx, request_id);
-  }
+  clearAndRequeue(1);
 }
 
 void SpectraCamera::sensors_start() {
@@ -901,7 +894,8 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   assert(ret == 0);
 }
 
-void SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
+void SpectraCamera::enqueue_frame(uint64_t request_id) {
+  int i = request_id % ife_buf_depth;
   assert(sync_objs_ife[i] == 0);
 
   // create output fences
@@ -1358,12 +1352,13 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   }
 
   destroySyncObjectAt(buf_idx);
-  enqueue_buffer(buf_idx, request_id + ife_buf_depth);
+  enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
   return processFrame(buf_idx, request_id, frame_id_raw, timestamp);
 }
 
 bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
-  if (request_id == 0) {  // not ready
+  // check if the request ID is even valid
+  if (request_id == 0) {
     if (frame_id_raw > frame_id_raw_last + 10) {
       LOGE("camera %d reset after half second of no response", cc.camera_num);
       clearAndRequeue(request_id_last + 1);
@@ -1389,8 +1384,11 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 }
 
 void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
+  // clear everything, then queue up a fresh set of frames
   clear_req_queue();
-  enqueue_req_multi(from_request_id, ife_buf_depth);
+  for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
+    enqueue_frame(id);
+  }
   skipped_last = true;
 }
 
