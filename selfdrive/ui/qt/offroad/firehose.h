@@ -2,11 +2,8 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
-#include <QProgressBar>
 #include <QLabel>
-#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/request_repeater.h"
-#include "common/params.h"
 
 // Forward declarations
 class SettingsWindow;
@@ -19,7 +16,6 @@ public:
 private:
   QVBoxLayout *layout;
 
-  ParamControl *enable_firehose;
   QLabel *detailed_instructions;
   QLabel *contribution_label;
   QLabel *toggle_label;
