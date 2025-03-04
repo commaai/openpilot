@@ -91,8 +91,8 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
   if dbc is None:
     try:
       CP = lr.first('carParams')
-      platform = CP.carFingerprint
-      dbc = generate_dbc_dict()[CP.carFingerprint]
+      platform = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
+      dbc = generate_dbc_dict()[platform]
     except Exception:
       cloudlog.exception("Failed to get DBC name from logs!")
 
