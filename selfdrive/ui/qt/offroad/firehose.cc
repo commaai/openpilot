@@ -12,6 +12,7 @@
 #include <QProgressBar>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QTimer>
 
 FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent) {
   layout = new QVBoxLayout(this);
@@ -42,7 +43,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   line->setStyleSheet("background-color: #444444; margin-top: 5px; margin-bottom: 5px;");
   content_layout->addWidget(line);
 
-  QLabel *toggle_label = new QLabel(tr("Firehose Mode: ACTIVE"));
+  toggle_label = new QLabel(tr("Firehose Mode: ACTIVE"));
   toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: white;");
   content_layout->addWidget(toggle_label);
 
@@ -50,39 +51,8 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   contribution_label = new QLabel("0 minutes");
   contribution_label->setStyleSheet("font-size: 40px; margin-top: 10px; margin-bottom: 10px;");
   contribution_label->setWordWrap(true);
+  contribution_label->hide();
   content_layout->addWidget(contribution_label);
-
-  // Create progress bar container
-  progress_container = new QFrame();
-  progress_container->hide();
-  QHBoxLayout *progress_layout = new QHBoxLayout(progress_container);
-  progress_layout->setContentsMargins(10, 0, 10, 10);
-  progress_layout->setSpacing(20);
-
-  progress_bar = new QProgressBar();
-  progress_bar->setRange(0, 100);
-  progress_bar->setValue(0);
-  progress_bar->setTextVisible(false);
-  progress_bar->setStyleSheet(R"(
-    QProgressBar {
-      background-color: #444444;
-      border-radius: 10px;
-      height: 20px;
-    }
-    QProgressBar::chunk {
-      background-color: #3498db;
-      border-radius: 10px;
-    }
-  )");
-  progress_bar->setFixedHeight(40);
-
-  // Progress text
-  progress_text = new QLabel(tr("0%"));
-  progress_text->setStyleSheet("font-size: 40px; font-weight: bold; color: white;");
-
-  progress_layout->addWidget(progress_text);
-
-  content_layout->addWidget(progress_container);
 
   // Add a separator before detailed instructions
   QFrame *line2 = new QFrame();
@@ -117,8 +87,25 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
       QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
       QJsonObject json = doc.object();
       int count = json["firehose"].toInt();
-      contribution_label->setText(tr("%1 %2 of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "minute" : "minutes"));
+      contribution_label->setText(tr("<b>%1 %2</b> of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "minute" : "minutes"));
       contribution_label->show();
     }
   });
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FirehosePanel::refresh);
+}
+
+void FirehosePanel::refresh() {
+  auto deviceState = (*uiState()->sm)["deviceState"].getDeviceState();
+  auto networkType = deviceState.getNetworkType();
+  bool networkMetered = deviceState.getNetworkMetered();
+
+  bool is_active = !networkMetered && (networkType != cereal::DeviceState::NetworkType::NONE);
+  if (is_active) {
+    toggle_label->setText(tr("ACTIVE"));
+    toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: #2ecc71;");
+  } else {
+    toggle_label->setText(tr("INACTIVE: connect to unmetered network"));
+    toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: #e74c3c;");
+  }
 }

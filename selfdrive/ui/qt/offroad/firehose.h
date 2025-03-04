@@ -18,13 +18,14 @@ public:
 
 private:
   QVBoxLayout *layout;
-  
+
   ParamControl *enable_firehose;
-  QFrame *progress_container;
-  QProgressBar *progress_bar;
-  QLabel *progress_text;
   QLabel *detailed_instructions;
   QLabel *contribution_label;
-  
+  QLabel *toggle_label;
+
   RequestRepeater *firehose_stats;
+
+private slots:
+  void refresh();
 };
