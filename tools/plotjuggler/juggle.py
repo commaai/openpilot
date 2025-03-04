@@ -13,6 +13,7 @@ from functools import partial
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
+from openpilot.tools.cabana.dbc.generate_dbc_json import generate_dbc_dict
 from openpilot.tools.lib.logreader import LogReader, ReadMode, save_log
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
@@ -90,11 +91,10 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
   if dbc is None:
     try:
       CP = lr.first('carParams')
-      platform = CP.carFingerprint
-      DBC = __import__(f"opendbc.car.{CP.brand}.values", fromlist=['DBC']).DBC
-      dbc = DBC[MIGRATION.get(CP.carFingerprint, CP.carFingerprint)]['pt']
+      platform = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
+      dbc = generate_dbc_dict()[platform]
     except Exception:
-      cloudlog.error("Failed to get DBC name from logs!")
+      cloudlog.exception("Failed to get DBC name from logs!")
 
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
