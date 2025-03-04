@@ -24,9 +24,7 @@ class LatControl(ABC):
     self.sat_count = 0.
 
   def _check_saturation(self, saturated, CS, steer_limited_by_controls, curvature_limited):
-    # Saturated if control output is not being limited by car torque/angle rate limits and:
-    # torque: requesting max torque
-    # angle: current angle differs from desired angle and car controls aren't rate limiting us
+    # Saturated only if control output is not being limited by car torque/angle rate limits
     if (saturated or curvature_limited) and CS.vEgo > self.sat_check_min_speed and not steer_limited_by_controls and not CS.steeringPressed:
       self.sat_count += self.sat_count_rate
     else:
