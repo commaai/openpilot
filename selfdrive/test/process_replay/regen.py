@@ -55,45 +55,28 @@ def regen_segment(
 
 
 def setup_data_readers(
-    route: str, sidx: int, use_route_meta: bool,
-    needs_driver_cam: bool = True, needs_road_cam: bool = True, dummy_driver_cam: bool = False
+    route: str, sidx: int, needs_driver_cam: bool = True, needs_road_cam: bool = True, dummy_driver_cam: bool = False
 ) -> tuple[LogReader, dict[str, Any]]:
-  if use_route_meta:
-    r = Route(route)
-    lr = LogReader(r.log_paths()[sidx])
-    frs = {}
-    if needs_road_cam and len(r.camera_paths()) > sidx and r.camera_paths()[sidx] is not None:
-      frs['roadCameraState'] = FrameReader(r.camera_paths()[sidx])
-    if needs_road_cam and  len(r.ecamera_paths()) > sidx and r.ecamera_paths()[sidx] is not None:
-      frs['wideRoadCameraState'] = FrameReader(r.ecamera_paths()[sidx])
-    if needs_driver_cam:
-      if dummy_driver_cam:
-        frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
-      elif len(r.dcamera_paths()) > sidx and r.dcamera_paths()[sidx] is not None:
-        device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
-        assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
-        frs['driverCameraState'] = FrameReader(r.dcamera_paths()[sidx])
-  else:
-    lr = LogReader(f"{route}/{sidx}/r")
-    frs = {}
-    if needs_road_cam:
-      frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
-      if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
-        frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
-    if needs_driver_cam:
-      if dummy_driver_cam:
-        frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
-      else:
-        device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
-        assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
-        frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
+  lr = LogReader(f"{route}/{sidx}/r")
+  frs = {}
+  if needs_road_cam:
+    frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
+    if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
+      frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
+  if needs_driver_cam:
+    if dummy_driver_cam:
+      frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
+    else:
+      device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
+      assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
+      frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
 
   return lr, frs
 
 
 def regen_and_save(
   route: str, sidx: int, processes: str | Iterable[str] = "all", outdir: str = FAKEDATA,
-  upload: bool = False, use_route_meta: bool = False, disable_tqdm: bool = False, dummy_driver_cam: bool = False
+  upload: bool = False, disable_tqdm: bool = False, dummy_driver_cam: bool = False
 ) -> str:
   if not isinstance(processes, str) and not hasattr(processes, "__iter__"):
     raise ValueError("whitelist_proc must be a string or iterable")
