@@ -15,7 +15,7 @@ from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
 from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
-
+from openpilot.tools.lib.openpilotci import get_url
 
 class DummyFrameReader(BaseFrameReader):
   def __init__(self, w: int, h: int, frame_count: int, pix_val: int):
@@ -60,16 +60,16 @@ def setup_data_readers(
   lr = LogReader(f"{route}/{sidx}/r")
   frs = {}
   if needs_road_cam:
-    frs['roadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/fcamera.hevc")
+    frs['roadCameraState'] = FrameReader(get_url(route, str(sidx), "fcamera.hevc"))
     if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
-      frs['wideRoadCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/ecamera.hevc")
+      frs['wideRoadCameraState'] = FrameReader(get_url(route, str(sidx), "ecamera.hevc"))
   if needs_driver_cam:
     if dummy_driver_cam:
       frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
     else:
       device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
       assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."
-      frs['driverCameraState'] = FrameReader(f"cd:/{route.replace('|', '/')}/{sidx}/dcamera.hevc")
+      frs['driverCameraState'] = FrameReader(get_url(route, str(sidx), "dcamera.hevc"))
 
   return lr, frs
 
@@ -93,7 +93,7 @@ def regen_and_save(
     replayed_processes = CONFIGS
 
   all_vision_pubs = {pub for cfg in replayed_processes for pub in cfg.vision_pubs}
-  lr, frs = setup_data_readers(route, sidx, use_route_meta,
+  lr, frs = setup_data_readers(route, sidx,
                                needs_driver_cam="driverCameraState" in all_vision_pubs,
                                needs_road_cam="roadCameraState" in all_vision_pubs or "wideRoadCameraState" in all_vision_pubs,
                                dummy_driver_cam=dummy_driver_cam)
