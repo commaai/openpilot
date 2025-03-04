@@ -49,7 +49,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
 
   // Add contribution label
   contribution_label = new QLabel("0 minutes");
-  contribution_label->setStyleSheet("font-size: 40px; margin-top: 10px; margin-bottom: 10px;");
+  contribution_label->setStyleSheet("font-size: 52px; margin-top: 10px; margin-bottom: 10px;");
   contribution_label->setWordWrap(true);
   contribution_label->hide();
   content_layout->addWidget(contribution_label);
@@ -66,8 +66,8 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.<br>"
     "<br>"
     "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.<br>"
-    "<br>"
-    "<br><br><b>Frequently Asked Questions</b><br><br>"
+    "<br><br>"
+    "<b>Frequently Asked Questions</b><br><br>"
     "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br><br>"
     "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br><br>"
     "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training."
@@ -87,7 +87,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
       QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
       QJsonObject json = doc.object();
       int count = json["firehose"].toInt();
-      contribution_label->setText(tr("<b>%1 %2</b> of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "minute" : "minutes"));
+      contribution_label->setText(tr("<b>%1 %2</b> of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "segment" : "segments"));
       contribution_label->show();
     }
   });
@@ -105,7 +105,7 @@ void FirehosePanel::refresh() {
     toggle_label->setText(tr("ACTIVE"));
     toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: #2ecc71;");
   } else {
-    toggle_label->setText(tr("INACTIVE: connect to unmetered network"));
-    toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: #e74c3c;");
+    toggle_label->setText(tr("<span stylesheet='font-size: 60px; font-weight: bold; color: #e74c3c;'>INACTIVE</span>: connect to unmetered network"));
+    toggle_label->setStyleSheet("font-size: 60px;");
   }
 }
