@@ -23,18 +23,18 @@ def clamp(val, min_val, max_val):
 def clip_curvature(v_ego, prev_curvature, new_curvature, roll):
   # This function respects ISO lateral acceleration and jerk limits + a max curvature
   v_ego = max(v_ego, MIN_SPEED)
+  max_curvature_rate = MAX_LATERAL_JERK / (v_ego ** 2)  # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
+  new_curvature = np.clip(new_curvature,
+                          prev_curvature - max_curvature_rate * DT_CTRL,
+                          prev_curvature + max_curvature_rate * DT_CTRL)
+
   roll_compensation = roll * ACCELERATION_DUE_TO_GRAVITY
   max_lat_accel = MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
   min_lat_accel = -MAX_LATERAL_ACCEL_NO_ROLL + roll_compensation
   new_curvature, limited_accel = clamp(new_curvature, min_lat_accel / v_ego ** 2, max_lat_accel / v_ego ** 2)
 
   new_curvature, limited_max_curv = clamp(new_curvature, -MAX_CURVATURE, MAX_CURVATURE)
-
-  max_curvature_rate = MAX_LATERAL_JERK / (v_ego ** 2)  # inexact calculation, check https://github.com/commaai/openpilot/pull/24755
-  safe_desired_curvature = np.clip(new_curvature,
-                                   prev_curvature - max_curvature_rate * DT_CTRL,
-                                   prev_curvature + max_curvature_rate * DT_CTRL)
-  return float(safe_desired_curvature), limited_accel or limited_max_curv
+  return float(new_curvature), limited_accel or limited_max_curv
 
 
 def get_speed_error(modelV2: log.ModelDataV2, v_ego: float) -> float:
