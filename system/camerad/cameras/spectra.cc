@@ -309,7 +309,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
 void SpectraCamera::enqueue_req_multi(uint64_t start, int n) {
   for (uint64_t request_id = start; request_id < start + n; ++request_id) {
-    uint64_t idx = (request_id - 1) % ife_buf_depth;
+    uint64_t idx = request_id % ife_buf_depth;
     enqueue_buffer(idx, request_id);
   }
 }
@@ -1323,14 +1323,17 @@ void SpectraCamera::camera_close() {
   LOGD("destroyed session %d: %d", cc.camera_num, ret);
 }
 
-// Processes camera events and returns true if the frame is ready for further processing
 bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
+  /*
+    Handles camera SOF event. Returns true if the frame is valid for publishing.
+  */
+
   if (stress_test("skipping handling camera event")) {
     LOGW("skipping event");
     return false;
   }
 
-  uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the qcom camera request manager
+  uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
 
@@ -1346,7 +1349,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   request_id_last = request_id;
 
   // Process buffer
-  int buf_idx = (request_id - 1) % ife_buf_depth;
+  int buf_idx = request_id % ife_buf_depth;
   if (!waitForFrameReady(buf_idx, request_id)) {
     // Reset queue on sync failure to prevent frame tearing
     LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, frame_id_raw);
@@ -1393,9 +1396,7 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 
 bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
   assert(sync_objs_ife[buf_idx]);
-  // wait for frame from ISP
-  // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
-  // - in IFE_PROCESSED mode, this time is both frame readout and image processing (~1ms)
+
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
@@ -1407,6 +1408,9 @@ bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
     return ret == 0;
   };
 
+  // wait for frame from IFE
+  // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
+  // - in IFE_PROCESSED mode, this time is both frame readout and image processing (~1ms)
   bool success = waitForSync(sync_objs_ife[buf_idx], 100, "IFE sync");
   if (success && sync_objs_bps[buf_idx]) {
     // BPS is typically 7ms
