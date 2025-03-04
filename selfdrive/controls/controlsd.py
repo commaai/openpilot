@@ -111,7 +111,7 @@ class Controls:
     # Steering PID loop and lateral MPC
     self.desired_curvature, was_clipped = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature, lp.roll)
     self.steer_limited = self.steer_limited or was_clipped
-    actuators.curvature = float(self.desired_curvature)
+    actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                        self.steer_limited, self.desired_curvature,
                                                        self.calibrated_pose)  # TODO what if not available
@@ -181,7 +181,7 @@ class Controls:
 
     cs.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     cs.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
-    cs.desiredCurvature = float(self.desired_curvature)
+    cs.desiredCurvature = self.desired_curvature
     cs.longControlState = self.LoC.long_control_state
     cs.upAccelCmd = float(self.LoC.pid.p)
     cs.uiAccelCmd = float(self.LoC.pid.i)
