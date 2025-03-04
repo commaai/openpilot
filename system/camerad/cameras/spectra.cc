@@ -1330,15 +1330,36 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     return false;
   }
 
-  // ID from the qcom camera request manager
-  uint64_t request_id = event_data->u.frame_msg.request_id;
+  uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the qcom camera request manager
+  uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
+  uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
 
-  // raw as opposed to our re-indexed frame ID
-  uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;
+  if (!validateEvent(request_id, frame_id_raw)) {
+    return false;
+  }
 
-  // this is timestamped in the kernel's SOF IRQ callback
-  uint64_t timestamp = event_data->u.frame_msg.timestamp;
+  // Update tracking variables
+  if (frame_id_raw == frame_id_raw_last + 1) {
+    skipped_last = false;
+  }
+  frame_id_raw_last = frame_id_raw;
+  request_id_last = request_id;
 
+  // Process buffer
+  int buf_idx = (request_id - 1) % ife_buf_depth;
+  if (!waitForFrameReady(buf_idx, request_id)) {
+    // Reset queue on sync failure to prevent frame tearing
+    LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, frame_id_raw);
+    clearAndRequeue(request_id + 1);
+    return false;
+  }
+
+  destroySyncObjectAt(buf_idx);
+  enqueue_buffer(buf_idx, request_id + ife_buf_depth);
+  return processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+}
+
+bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
   if (request_id == 0) {  // not ready
     if (frame_id_raw > frame_id_raw_last + 10) {
       LOGE("camera %d reset after half second of no response", cc.camera_num);
@@ -1348,24 +1369,20 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     return false;
   }
 
-  // check for skipped_last frames
+  // check for skipped last frames
   if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
     LOGE("camera %d realign", cc.camera_num);
     clearAndRequeue(request_id + 1);
-  } else if (frame_id_raw == frame_id_raw_last + 1) {
-    skipped_last = false;
+    return false;
   }
 
   // check for dropped requests
-  if (!skipped_last && request_id > request_id_last + 1) {
+  if (request_id > request_id_last + 1 && !skipped_last) {
     LOGE("camera %d dropped requests %ld %ld", cc.camera_num, request_id, request_id_last);
     clearAndRequeue(request_id_last + 1);
+    return false;
   }
-
-  frame_id_raw_last = frame_id_raw;
-  request_id_last = request_id;
-
-  return processFrame(request_id, frame_id_raw, timestamp);
+  return true;
 }
 
 void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
@@ -1375,8 +1392,7 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 }
 
 bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
-  if (!sync_objs_ife[buf_idx]) return false;
-
+  assert(sync_objs_ife[buf_idx]);
   // wait for frame from ISP
   // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
   // - in IFE_PROCESSED mode, this time is both frame readout and image processing (~1ms)
@@ -1396,25 +1412,10 @@ bool SpectraCamera::waitForFrameReady(int buf_idx, uint64_t request_id) {
     // BPS is typically 7ms
     success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
   }
-
-  if (success) {
-    destroySyncObjectAt(buf_idx);
-    enqueue_buffer(buf_idx, request_id + ife_buf_depth);
-  } else {
-    // Reset queue on sync failure to prevent frame tearing
-    clearAndRequeue(request_id + 1);
-  }
   return success;
 }
 
-bool SpectraCamera::processFrame(uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
-  int buf_idx = (request_id - 1) % ife_buf_depth;
-
-  // Wait for the frame to be ready
-  if (!waitForFrameReady(buf_idx, request_id)) {
-    return false;
-  }
-
+bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
   if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
     return false;
   }
