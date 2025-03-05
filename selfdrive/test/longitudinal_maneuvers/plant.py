@@ -57,7 +57,7 @@ class Plant:
   def current_time(self):
     return float(self.rk.frame) / self.rate
 
-  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50., pitch=0.0, prob_throttle=1.0):
+  def step(self, v_lead=0.0, prob_lead=1.0, v_cruise=50., pitch=0.0, prob_throttle=1.0, accel_plan=np.zeros_like(ModelConstants.T_IDXS)):
     # ******** publish a fake model going straight and fake calibration ********
     # note that this is worst case for MPC, since model will delay long mpc by one time step
     radar = messaging.new_message('radarState')
@@ -101,18 +101,24 @@ class Plant:
       radar.radarState.leadOne = lead
     radar.radarState.leadTwo = lead
 
-    # Simulate model predicting slightly faster speed
-    # this is to ensure lead policy is effective when model
-    # does not predict slowdown in e2e mode
+
+    v_int = np.zeros_like(accel_plan)
+    v_int[1:] = np.cumsum(0.5 * (accel_plan[1:] + accel_plan[:-1]) * np.diff(ModelConstants.T_IDXS))
+    v = np.clip(self.speed* np.ones_like(ModelConstants.T_IDXS) + v_int, 0.0, 100)
+
+    x_int = np.zeros_like(v)
+    x_int[1:] = np.cumsum(0.5 * (v[1:] + v[:-1]) * np.diff(ModelConstants.T_IDXS))
+    x = x_int + 1e-1
+
     position = log.XYZTData.new_message()
-    position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
+    #position.x = [float(x) for x in (self.speed + 0.5) * np.array(ModelConstants.T_IDXS)]
+    position.x = [float(x) for x in x]
     model.modelV2.position = position
     velocity = log.XYZTData.new_message()
-    velocity.x = [float(x) for x in (self.speed + 0.5) * np.ones_like(ModelConstants.T_IDXS)]
-    velocity.x[0] = float(self.speed) # always start at current speed
+    velocity.x = [float(x) for x in v]
     model.modelV2.velocity = velocity
     acceleration = log.XYZTData.new_message()
-    acceleration.x = [float(x) for x in np.zeros_like(ModelConstants.T_IDXS)]
+    acceleration.x = [float(x) for x in accel_plan]
     model.modelV2.acceleration = acceleration
     model.modelV2.meta.disengagePredictions.gasPressProbs = [float(prob_throttle) for _ in range(6)]
 

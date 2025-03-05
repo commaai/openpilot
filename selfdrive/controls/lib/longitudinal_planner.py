@@ -113,7 +113,7 @@ class LongitudinalPlanner:
     else:
       accel_coast = ACCEL_MAX
 
-    v_ego = sm['carState'].vEgo
+    v_ego = sm['modelV2'].velocity.x[0]
     v_cruise_kph = min(sm['carState'].vCruise, V_CRUISE_MAX)
     v_cruise = v_cruise_kph * CV.KPH_TO_MS
     v_cruise_initialized = sm['carState'].vCruise != V_CRUISE_UNSET
