@@ -140,11 +140,13 @@ class TestOnroad:
       cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 
-      # everything is up once we get a carState
       sm = messaging.SubMaster(['carState'])
       with Timeout(30, "controls didn't start"):
         while sm.recv_frame['carState'] < 0:
           sm.update(1000)
+
+      # give a sec for everything to get setup
+      time.sleep(2)
 
       route = params.get("CurrentRoute", encoding="utf-8")
       assert route is not None
