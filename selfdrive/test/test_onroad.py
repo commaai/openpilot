@@ -359,13 +359,14 @@ class TestOnroad:
         cam_frames = {fid: (sof, eof) for fid, sof, eof in zip(
           self.ts[cam]['frameId'],
           self.ts[cam]['timestampSof'],
-          self.ts[cam]['timestampEof']
+          self.ts[cam]['timestampEof'],
+          strict=True,
         )}
         for i, fid in enumerate(self.ts[enc]['frameId']):
           cam_sof, cam_eof = cam_frames[fid]
           enc_sof, enc_eof = self.ts[enc]['timestampSof'][i], self.ts[enc]['timestampEof'][i]
-          assert abs(enc_sof - cam_sof) < 1000, f"SOF mismatch: frameId={fid}, diff={(enc_sof-cam_sof)/1e6:.2f}ms"
-          assert abs(enc_eof - cam_eof) < 1000, f"EOF mismatch: frameId={fid}, diff={(enc_eof-cam_eof)/1e6:.2f}ms"
+          assert enc_sof == cam_sof, f"SOF mismatch: frameId={fid}, enc_sof={enc_sof}, cam_sof={cam_sof}"
+          assert enc_eof == cam_eof, f"EOF mismatch: frameId={fid}, enc_eof={enc_eof}, cam_eof={cam_eof}"
 
   def test_mpc_execution_timings(self):
     result = "\n"
