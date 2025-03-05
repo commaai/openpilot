@@ -146,7 +146,7 @@ class TestOnroad:
           sm.update(1000)
 
       # give a sec for everything to get setup
-      time.sleep(2)
+      time.sleep(5)
 
       route = params.get("CurrentRoute", encoding="utf-8")
       assert route is not None
