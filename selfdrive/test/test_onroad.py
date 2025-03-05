@@ -151,7 +151,7 @@ class TestOnroad:
       route = params.get("CurrentRoute", encoding="utf-8")
       assert route is not None
 
-      segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
+      segs = list(Path(Paths.log_root()).glob(f"{route}--*"))
       assert len(segs) == 1
 
       time.sleep(TEST_DURATION)
