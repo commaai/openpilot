@@ -19,8 +19,8 @@ from openpilot.tools.lib.framereader import FrameReader, NumpyFrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
-TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
-SEGMENT = 6
+TEST_ROUTE = "8494c69d3c710e81/000001d4--2648a9a404"
+SEGMENT = 4
 MAX_FRAMES = 100 if PC else 400
 
 NO_MODEL = "NO_MODEL" in os.environ
