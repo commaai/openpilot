@@ -142,11 +142,8 @@ class TestOnroad:
 
       sm = messaging.SubMaster(['carState'])
       with Timeout(30, "controls didn't start"):
-        while sm.recv_frame['carState'] < 0:
+        while not sm.seen['carState']:
           sm.update(1000)
-
-      # give a sec for everything to get setup
-      time.sleep(5)
 
       route = params.get("CurrentRoute", encoding="utf-8")
       assert route is not None
