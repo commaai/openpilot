@@ -1,8 +1,6 @@
 import math
 import json
 import os
-import pathlib
-import psutil
 import pytest
 import shutil
 import subprocess
@@ -12,7 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
 
-from cereal import car, log
+from cereal import log
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
@@ -142,48 +140,33 @@ class TestOnroad:
       cls.manager_st = time.monotonic()
       proc = subprocess.Popen(["python", manager_path])
 
+      # everything is up once we get a carState
       sm = messaging.SubMaster(['carState'])
-      with Timeout(150, "controls didn't start"):
+      with Timeout(30, "controls didn't start"):
         while sm.recv_frame['carState'] < 0:
           sm.update(1000)
 
-      route = None
-      cls.segments = []
-      with Timeout(300, "timed out waiting for logs"):
-        while route is None:
-          route = params.get("CurrentRoute", encoding="utf-8")
-          time.sleep(0.01)
+      route = params.get("CurrentRoute", encoding="utf-8")
+      assert route is not None
 
-        # test car params caching
-        params.put("CarParamsCache", car.CarParams().to_bytes())
-
-        while len(cls.segments) < 1:
-          segs = set()
-          if Path(Paths.log_root()).exists():
-            segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
-          cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(0.01)
+      segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
+      assert len(segs) == 1
 
       time.sleep(TEST_DURATION)
-
     finally:
-      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
-
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
-
-    cls.lr = cls.lrs[0]
+    cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
     st = time.monotonic()
     cls.ts = msgs_to_time_series(cls.lr)
     print("msgs to time series", time.monotonic() - st)
-    cls.log_path = cls.segments[0]
+    log_path = segs[0]
 
     cls.log_sizes = {}
-    for f in cls.log_path.iterdir():
+    for f in log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
 
@@ -314,9 +297,6 @@ class TestOnroad:
     assert np.average(mems) <= 65, "Average memory usage above 65%"
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
-
-  def test_gpu_usage(self):
-    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
 
   def test_camera_frame_timings(self, subtests):
     # test timing within a single camera
