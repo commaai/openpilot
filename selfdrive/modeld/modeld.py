@@ -114,7 +114,7 @@ class ModelState:
 
     self.full_desire[0,:-1] = self.full_desire[0,1:]
     self.full_desire[0,-1] = new_desire
-    self.numpy_inputs['desire'][:] = self.full_desire.reshape((1,ModelConstants.INPUT_HISTORY_BUFFER_LEN,ModelConstants.TEMPORAL_SKIP,-1)).max(axis=2)
+    self.numpy_inputs['desire'][:] = self.full_desire[0, self.temporal_idxs]
 
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
     self.numpy_inputs['lateral_control_params'][:] = inputs['lateral_control_params']
