@@ -64,20 +64,21 @@ protected:
 
 class DrivingModelFrame : public ModelFrame {
 public:
-  DrivingModelFrame(cl_device_id device_id, cl_context context);
+  DrivingModelFrame(cl_device_id device_id, cl_context context, int _temporal_skip);
   ~DrivingModelFrame();
   cl_mem* prepare(cl_mem yuv_cl, int frame_width, int frame_height, int frame_stride, int frame_uv_offset, const mat3& projection);
 
   const int MODEL_WIDTH = 512;
   const int MODEL_HEIGHT = 256;
   const int MODEL_FRAME_SIZE = MODEL_WIDTH * MODEL_HEIGHT * 3 / 2;
-  const int buf_size = MODEL_FRAME_SIZE * 2;
+  const int buf_size = MODEL_FRAME_SIZE * 2; // 2 frames are temporal_skip frames apart
   const size_t frame_size_bytes = MODEL_FRAME_SIZE * sizeof(uint8_t);
 
 private:
   LoadYUVState loadyuv;
   cl_mem img_buffer_20hz_cl, last_img_cl, input_frames_cl;
   cl_buffer_region region;
+  int temporal_skip;
 };
 
 class MonitoringModelFrame : public ModelFrame {
