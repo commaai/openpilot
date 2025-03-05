@@ -166,25 +166,30 @@ cdef class SubSocket:
   cdef bool is_owner
 
   def __cinit__(self):
-    self.socket = cppSubSocket.create()
-    self.is_owner = True
+    with nogil:
+      self.socket = cppSubSocket.create()
 
+    self.is_owner = True
     if self.socket == NULL:
       raise IpcError
 
   def __dealloc__(self):
     if self.is_owner:
-      del self.socket
+      with nogil:
+        del self.socket
 
   cdef setPtr(self, cppSubSocket * ptr):
     if self.is_owner:
-      del self.socket
+      with nogil:
+        del self.socket
 
     self.is_owner = False
     self.socket = ptr
 
   def connect(self, Context context, string endpoint, string address=b"127.0.0.1", bool conflate=False):
-    r = self.socket.connect(context.context, endpoint, address, conflate)
+    cdef int r
+    with nogil:
+      r = self.socket.connect(context.context, endpoint, address, conflate)
 
     if r != 0:
       if errno.errno == errno.EADDRINUSE:
@@ -193,22 +198,21 @@ cdef class SubSocket:
         raise IpcError(endpoint)
 
   def setTimeout(self, int timeout):
-    self.socket.setTimeout(timeout)
+    with nogil:
+      self.socket.setTimeout(timeout)
 
   def receive(self, bool non_blocking=False):
-    msg = self.socket.receive(non_blocking)
+    cdef cppMessage *msg
+    with nogil:
+      msg = self.socket.receive(non_blocking)
 
     if msg == NULL:
-      # If a blocking read returns no message check errno if SIGINT was caught in the C++ code
-      if errno.errno == errno.EINTR:
-        print("SIGINT received, exiting")
-        sys.exit(1)
-
       return None
     else:
       sz = msg.getSize()
       m = msg.getData()[:sz]
-      del msg
+      with nogil:
+        del msg
 
       return m
 

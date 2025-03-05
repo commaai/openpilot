@@ -6,7 +6,7 @@ import threading
 from flaky import flaky
 from collections import defaultdict
 
-from panda import Panda
+from opendbc.car.structs import CarParams
 from panda.tests.hitl.conftest import PandaGroup
 from panda.tests.hitl.helpers import time_many_sends, get_random_can_messages, clear_can_buffers
 
@@ -27,7 +27,7 @@ def test_send_recv(p, panda_jungle):
         print(f"two pandas bus {bus}, 100 messages at speed {speed:4d}, comp speed is {comp_kbps:7.2f}, {saturation_pct:6.2f}%")
 
   # Run tests in both directions
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   test(p, panda_jungle)
   test(panda_jungle, p)
 
@@ -84,7 +84,7 @@ def test_latency(p, panda_jungle):
               .format(bus, num_messages, speed, average_latency, average_comp_kbps, average_saturation_pct))
 
   # Run tests in both directions
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   test(p, panda_jungle)
   test(panda_jungle, p)
 
@@ -118,20 +118,20 @@ def test_gen2_loopback(p, panda_jungle):
       assert len(content) == 1
 
       # Check content
-      assert content[0][0] == addr and content[0][2] == string
+      assert content[0][0] == addr and content[0][1] == string
 
       # Check bus
-      assert content[0][3] == bus
+      assert content[0][2] == bus
 
       print("Bus:", bus, "address:", addr, "OBD:", obd, "OK")
 
   # Run tests in both directions
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   test(p, panda_jungle)
   test(panda_jungle, p)
 
   # Test extended frame address with ELM327 mode
-  p.set_safety_mode(Panda.SAFETY_ELM327)
+  p.set_safety_mode(CarParams.SafetyModel.elm327)
   test(p, panda_jungle, 0x18DB33F1)
   test(panda_jungle, p, 0x18DB33F1)
 
@@ -148,12 +148,12 @@ def test_bulk_write(p, panda_jungle):
     msg = b"\xaa" * 8
     packet = []
     # start with many messages on a single bus (higher contention for single TX ring buffer)
-    packet += [[0xaa, None, msg, 0]] * NUM_MESSAGES_PER_BUS
+    packet += [[0xaa, msg, 0]] * NUM_MESSAGES_PER_BUS
     # end with many messages on multiple buses
-    packet += [[0xaa, None, msg, 0], [0xaa, None, msg, 1], [0xaa, None, msg, 2]] * NUM_MESSAGES_PER_BUS
+    packet += [[0xaa, msg, 0], [0xaa, msg, 1], [0xaa, msg, 2]] * NUM_MESSAGES_PER_BUS
 
     # Disable timeout
-    panda.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+    panda.set_safety_mode(CarParams.SafetyModel.allOutput)
     panda.can_send_many(packet, timeout=0)
     print(f"Done sending {4 * NUM_MESSAGES_PER_BUS} messages!", time.monotonic())
     print(panda.health())
@@ -175,25 +175,25 @@ def test_bulk_write(p, panda_jungle):
     raise Exception("Did not receive all messages!")
 
 def test_message_integrity(p):
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
   p.set_can_loopback(True)
   for i in range(250):
     sent_msgs = defaultdict(set)
     for _ in range(random.randrange(10)):
       to_send = get_random_can_messages(random.randrange(100))
       for m in to_send:
-        sent_msgs[m[3]].add((m[0], m[2]))
+        sent_msgs[m[2]].add((m[0], m[1]))
       p.can_send_many(to_send, timeout=0)
 
     start_time = time.monotonic()
     while time.monotonic() - start_time < 2 and any(len(sent_msgs[bus]) for bus in range(3)):
       recvd = p.can_recv()
       for msg in recvd:
-        if msg[3] >= 128:
-          k = (msg[0], bytes(msg[2]))
-          bus = msg[3]-128
+        if msg[2] >= 128:
+          k = (msg[0], bytes(msg[1]))
+          bus = msg[2]-128
           assert k in sent_msgs[bus], f"message {k} was never sent on bus {bus}"
-          sent_msgs[msg[3]-128].discard(k)
+          sent_msgs[msg[2]-128].discard(k)
 
     # if a set isn't empty, messages got dropped
     for bus in range(3):

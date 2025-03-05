@@ -7,10 +7,19 @@
 
 #include "msgq/impl_zmq.h"
 
+static size_t fnv1a_hash(const std::string &str) {
+    const size_t fnv_prime = 0x100000001b3;
+    size_t hash_value = 0xcbf29ce484222325;
+    for (char c : str) {
+        hash_value ^= (unsigned char)c;
+        hash_value *= fnv_prime;
+    }
+    return hash_value;
+}
+
 //FIXME: This is a hack to get the port number from the socket name, might have collisions
 static int get_port(std::string endpoint) {
-    std::hash<std::string> hasher;
-    size_t hash_value = hasher(endpoint);
+    size_t hash_value = fnv1a_hash(endpoint);
     int start_port = 8023;
     int max_port = 65535;
     int port = start_port + (hash_value % (max_port - start_port));

@@ -26,9 +26,6 @@ int main() {
   while (!do_exit) {
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
-      if (errno == EINTR) {
-        do_exit = true;
-      }
       continue;
     }
 

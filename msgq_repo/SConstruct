@@ -61,6 +61,7 @@ env = Environment(
     "-Werror",
     "-Wshadow",
     "-Wno-vla-cxx-extension",
+    "-Wno-unknown-warning-option",
   ] + ccflags,
   LDFLAGS=ldflags,
   LINKFLAGS=ldflags,

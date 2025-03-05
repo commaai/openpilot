@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>tinygrad viz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <script src="assets/d3js.org/d3.v7.min.js" charset="utf-8"></script>
+  <script src="assets/dagrejs.github.io/project/dagre/latest/dagre.min.js"></script>
+  <script src="lib/graph.js"></script>
+  <link rel="stylesheet" href="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/default.min.css">
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/python.min.js"></script>
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/cpp.min.js"></script>
+  <link rel="stylesheet" href="assets/unpkg.com/@highlightjs/cdn-assets@11.10.0/styles/tokyo-night-dark.min.css" />
+  <style>
+  * {
+    box-sizing: border-box;
+    margin-block-start: initial;
+    margin-block-end: initial;
+  }
+  button {
+    outline: none;
+  }
+  html, body {
+    color: #f0f0f5;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+    font-size: 14px;
+    overflow: hidden;
+    background-color: #08090e;
+  }
+  a {
+    color: #4a90e2;
+  }
+  ul {
+    padding: 0;
+    opacity: 0.6;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  ul.active {
+    opacity: 1;
+  }
+  ul.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  svg {
+    width: 100%;
+    height: 100%;
+  }
+  svg * {
+    cursor: default;
+    user-select: none;
+  }
+  rect {
+    stroke: #4a4b57;
+    stroke-width: 1.4px;
+    rx: 8px;
+    ry: 8px;
+  }
+  .label :is(text, p) {
+    color: #08090e;
+    font-weight: 350;
+  }
+  .edgePath {
+    stroke: #4a4b57;
+    fill: none;
+    stroke-width: 1.4px;
+  }
+  .main-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  .container {
+    background-color: #0f1018;
+  }
+  .container > * + *, .rewrite-container > * + * {
+    margin-top: 12px;
+  }
+  .graph {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  .kernel-list-parent {
+    position: relative;
+    width: 15%;
+    padding: 50px 20px 20px 20px;
+    border-right: 1px solid #4a4b56;
+    z-index: 2;
+  }
+  .kernel-list {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .kernel-list > ul > * + * {
+    margin-top: 4px;
+  }
+  .metadata {
+    position: relative;
+    width: 20%;
+    padding: 20px;
+    background-color: #0f1018;
+    border-left: 1px solid #4a4b56;
+    z-index: 2;
+    margin-left: auto;
+    height: 100%;
+    overflow-y: auto;
+  }
+  .resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 3;
+    background-color: transparent;
+  }
+  #kernel-resize-handle {
+    right: 0;
+  }
+  #metadata-resize-handle {
+    margin-top: 0;
+    left: 0;
+  }
+  .floating-container {
+    position: fixed;
+    top: 10px;
+    left: 20px;
+    z-index: 4;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+  }
+  .nav-btn {
+    background-color: #1a1b26;
+    border: 1px solid #4a4b56;
+    color: #f0f0f5;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    font-weight: bold;
+  }
+  .collapse-btn {
+    width: 32px;
+    padding: 6px;
+  }
+  .btn {
+    height: 32px;
+    background-color: #1a1b26;
+    border: 1px solid #4a4b56;
+    color: #f0f0f5;
+    border-radius: 8px;
+    cursor: pointer;
+    transition-duration: .5s;
+  }
+  .btn:hover {
+    background-color: #2a2b36;
+    border-color: #5a5b66;
+    color: #ffffff;
+  }
+  .collapsed .kernel-list, .collapsed .metadata {
+    width: 0;
+    padding: 0;
+    overflow: hidden;
+  }
+  .rewrite-list {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .rewrite-list > * + * {
+    margin-left: 4px;
+  }
+  .wrap {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  .code-block.hljs {
+    overflow-y: auto;
+    max-height: 30vh;
+    border-radius: 8px;
+    padding: 8px;
+  }
+  .progress-message {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 2%;
+    color: #ffd230;
+    display: none;
+  }
+  #zoom-to-fit-btn {
+    position: absolute;
+    left: 50%;
+    bottom: 5%;
+    display: none;
+  }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="floating-container">
+      <button class="btn collapse-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <a class="btn nav-btn" href="/profiler">Profiler</a>
+    </div>
+    <div class="container kernel-list-parent"><div class="container kernel-list"></div></div>
+    <div class="graph">
+      <div class="progress-message">Rendering new layout...</div>
+      <svg id="graph-svg" preserveAspectRatio="xMidYMid meet">
+        <g id="render">
+          <g id="edges"></g>
+          <g id="nodes"></g>
+        </g>
+      </svg>
+      <button class="btn" id="zoom-to-fit-btn">Zoom to fit</button>
+    </div>
+    <div class="container metadata"></div>
+  </div>
+  <script>
+  // **** hljs extra definitions for UOps and float4
+  hljs.registerLanguage("python", (hljs) => ({
+    ...hljs.getLanguage("python"),
+    case_insensitive: false,
+    contains: [
+      { begin: 'dtypes\\.[a-zA-Z_][a-zA-Z0-9_-]*(\\.[a-zA-Z_][a-zA-Z0-9_-]*)*' + '(?=[.\\s\\n[:,(])', className: "type" },
+      { begin: 'dtypes\\.[a-zA-Z_][a-zA-Z0-9_-].vec*' + '(?=[.\\s\\n[:,(])', className: "type" },
+      { begin: '[a-zA-Z_][a-zA-Z0-9_-]*\\.[a-zA-Z_][a-zA-Z0-9_-]*' + '(?=[.\\s\\n[:,()])',  className: "operator" },
+      { begin: '[A-Z][a-zA-Z0-9_]*(?=\\()', className: "section", ignoreEnd: true },
+      ...hljs.getLanguage("python").contains,
+    ]
+  }));
+  hljs.registerLanguage("cpp", (hljs) => ({
+    ...hljs.getLanguage('cpp'),
+    contains: [{ begin: '\\b(?:float|half)[0-9]+\\b', className: 'type' }, ...hljs.getLanguage('cpp').contains]
+  }));
+
+  // **** extra helpers
+  const toPath = ([fp, lineno]) => `${fp.replaceAll("\\", "/").split("/").pop()}:${lineno}`;
+  const vsCodeOpener = (parts) => Object.assign(document.createElement("a"), { textContent: parts[parts.length-1]+"\n\n",
+      href: "vscode://file"+parts.join("/"), style: "font-family: monospace; margin: 4px 0;" });
+  const highlightedCodeBlock = (code, lang, wrap) => {
+    const pre = Object.assign(document.createElement("pre"), {className: wrap ? "wrap" : ""});
+    // NOTE: since code is in textContent, we don't need DOMPurify
+    const codeEl = Object.assign(document.createElement("code"), { className: `language-${lang} code-block`, textContent: code});
+    pre.appendChild(codeEl);
+    hljs.highlightElement(codeEl);
+    return pre;
+  };
+  const coloredToHTML = (str) => {
+    const colors = ['gray','red','green','yellow','blue','magenta','cyan','white'];
+    return str.replace(/\u001b\[(\d+)m(.*?)\u001b\[0m/g, (_, code, st) => {
+      return `<span style="${`color: color-mix(in srgb, ${colors[(parseInt(code)-30+60)%60]} 60%, white)`}">${st}</span>`;
+    })
+  }
+
+  // **** base graph svg
+  const svg = d3.select("#graph-svg");
+  const inner = svg.select("g");
+  const zoom = d3.zoom().scaleExtent([0.05, 2]).on("zoom", ({ transform }) => {
+    inner.attr("transform", transform);
+  });
+  svg.call(zoom);
+  // zoom to fit into view
+  const observer = new IntersectionObserver((e) => {
+    const { width, height } = render.getBBox();
+    if (width*height === 0) return;
+    const btn = document.getElementById("zoom-to-fit-btn");
+    btn.style.display = e[0].isIntersecting ? "none" : "block";
+  });
+  observer.observe(document.getElementById("render"));
+  document.getElementById("zoom-to-fit-btn").addEventListener("click", () => svg.call(zoom.transform, d3.zoomIdentity));
+
+  // **** main loop
+  var ret = [];
+  var cache = {};
+  var kernels = null;
+  var currentUOp = 0;
+  var currentKernel = -1;
+  var currentRewrite = 0;
+  var expandKernel = true;
+  const evtSources = [];
+  async function main() {
+    const mainContainer = document.querySelector('.main-container');
+    // ***** LHS kernels list
+    if (kernels == null) {
+      kernels = await (await fetch("/kernels")).json();
+      currentKernel = -1;
+    }
+    const kernelListParent = document.querySelector(".container.kernel-list-parent");
+    const kernelList = document.querySelector(".container.kernel-list");
+    kernelList.innerHTML = "";
+    kernels.forEach(([key, items], i) => {
+      const kernelUl = Object.assign(document.createElement("ul"), { key: `kernel-${i}`, className: i === currentKernel ? "active" : "",
+        style: "overflow-x: auto; cursor: initial;" });
+      if (i === currentKernel) {
+        requestAnimationFrame(() => kernelUl.scrollIntoView({ behavior: "auto", block: "nearest" }));
+      }
+      const p = Object.assign(document.createElement("p"), { id: `kernel-${key}`, innerHTML: coloredToHTML(key), style: "cursor: pointer;"});
+      kernelUl.appendChild(p)
+      items.forEach((u, j) => {
+        const rwUl = Object.assign(document.createElement("ul"), {
+          innerText: u.name ? `${u.name} - ${u.match_count}` : `${toPath(u.loc)} - ${u.match_count}`, key: `uop-rewrite-${j}`,
+          className: (j === currentUOp && i == currentKernel) ? "active" : "" })
+        if (j === currentUOp) {
+          requestAnimationFrame(() => rwUl.scrollIntoView({ behavior: "auto", block: "nearest" }));
+        }
+        rwUl.style.display = i === currentKernel && expandKernel ? "block" : "none";
+        rwUl.onclick = (e) => {
+          e.stopPropagation();
+          currentUOp = j;
+          currentKernel = i;
+          currentRewrite = 0;
+          main();
+        }
+        kernelUl.appendChild(rwUl)
+      })
+      p.onclick = () => {
+        if (i === currentKernel) {
+          expandKernel = !expandKernel;
+          main();
+          return;
+        }
+        currentKernel = i;
+        currentUOp = 0;
+        currentRewrite = 0;
+        expandKernel = true;
+        main();
+      }
+      kernelList.appendChild(kernelUl);
+    });
+    // ***** UOp graph
+    if (currentKernel == -1) return;
+    const kernel = kernels[currentKernel][1][currentUOp];
+    const cacheKey = `kernel=${currentKernel}&idx=${currentUOp}`;
+    // close any pending event sources
+    let activeSrc = null;
+    for (const e of evtSources) {
+      if (e.url.split("?")[1] !== cacheKey) e.close();
+      else if (e.readyState === EventSource.OPEN) activeSrc = e;
+    }
+    if (cacheKey in cache) {
+      ret = cache[cacheKey];
+    }
+    // if we don't have a complete cache yet we start streaming this kernel
+    if (!(cacheKey in cache) || (cache[cacheKey].length !== kernel.match_count+1 && activeSrc == null)) {
+      ret = [];
+      cache[cacheKey] = ret;
+      const eventSource = new EventSource(`/kernels?kernel=${currentKernel}&idx=${currentUOp}`);
+      evtSources.push(eventSource);
+      eventSource.onmessage = (e) => {
+        if (e.data === "END") return eventSource.close();
+        const chunk = JSON.parse(e.data);
+        ret.push(chunk);
+        // if it's the first one render this new rgaph
+        if (ret.length === 1) return main();
+        // otherwise just enable the graph selector
+        const gUl = document.getElementById(`rewrite-${ret.length-1}`);
+        if (gUl != null) gUl.classList.remove("disabled");
+      };
+    }
+    if (ret.length === 0) return;
+    renderGraph(ret[currentRewrite].graph, ret[currentRewrite].changed_nodes || []);
+    // ***** RHS metadata
+    const metadata = document.querySelector(".container.metadata");
+    metadata.innerHTML = "";
+    metadata.appendChild(vsCodeOpener(kernel.loc.join(":").split("/")));
+    metadata.appendChild(highlightedCodeBlock(kernel.code_line, "python", true));
+    // ** code blocks
+    let code = ret[currentRewrite].uop;
+    let lang = "python"
+    if (kernel.kernel_code != null) {
+      code = kernel.kernel_code;
+      lang = "cpp";
+    }
+    const codeBlock = highlightedCodeBlock(code, lang, false);
+    metadata.appendChild(codeBlock);
+    // ** rewrite list
+    if (kernel.match_count >= 1) {
+      const rewriteList = Object.assign(document.createElement("div"), { className: "rewrite-list" })
+      metadata.appendChild(rewriteList);
+      for (let i=0; i<=kernel.match_count; i++) {
+        const gUl = Object.assign(document.createElement("ul"), { innerText: i, id: `rewrite-${i}` });
+        rewriteList.appendChild(gUl);
+        if (i > ret.length-1) gUl.classList.add("disabled");
+        if (i === currentRewrite) {
+          gUl.classList.add("active");
+          if (i !== 0) {
+            const diff = ret[i].diff;
+            const [loc, pattern] = ret[i].upat;
+            const parts = loc.join(":").split("/");
+            const div = Object.assign(document.createElement("div"), { className: "rewrite-container" });
+            const link = vsCodeOpener(parts);
+            div.appendChild(link);
+            const pre = highlightedCodeBlock(pattern, "python", true);
+            div.appendChild(pre);
+            metadata.appendChild(div);
+            const diffHtml = diff.map((line) => {
+              const color = line.startsWith("+") ? "#3aa56d" : line.startsWith("-") ? "#d14b4b" : "#f0f0f5";
+              return `<span style="color: ${color};">${line}</span>`;
+            }).join("<br>");
+            metadata.appendChild(Object.assign(document.createElement("pre"), { innerHTML: `<code>${diffHtml}</code>`, className: "wrap" }));
+          }
+        }
+        gUl.addEventListener("click", () => {
+          currentRewrite = i;
+          main();
+        });
+      }
+    } else {
+      metadata.appendChild(Object.assign(document.createElement("p"), { textContent: `No rewrites in ${toPath(kernel.loc)}.` }));
+    }
+    // ***** collapse/expand
+    let isCollapsed = false;
+    const collapseBtn = document.querySelector(".collapse-btn");
+    collapseBtn.addEventListener("click", () => {
+      isCollapsed = !isCollapsed;
+      mainContainer.classList.toggle("collapsed", isCollapsed);
+      kernelListParent.style.display = isCollapsed ? "none" : "block";
+      metadata.style.display = isCollapsed ? "none" : "block";
+      collapseBtn.style.transform = isCollapsed ? "rotate(180deg)" : "rotate(0deg)";
+    });
+    // ***** resizer
+    function createResizer(element, width, type) {
+      const { minWidth, maxWidth } = width;
+      const handle = Object.assign(document.createElement("div"), { id: `${type}-resize-handle`, className: "resize-handle" });
+      element.appendChild(handle);
+
+      const resize = (e) => {
+        const change = e.clientX - element.dataset.startX;
+        const adjustedChange = type === "kernel" ? change : -change;
+        const newWidth = ((Number(element.dataset.startWidth) + adjustedChange) / Number(element.dataset.containerWidth)) * 100;
+        if (newWidth >= minWidth && newWidth <= maxWidth) {
+          element.style.width = `${newWidth}%`;
+        }
+      };
+
+      handle.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        element.dataset.startX = e.clientX;
+        element.dataset.containerWidth = mainContainer.getBoundingClientRect().width;
+        element.dataset.startWidth = element.getBoundingClientRect().width;
+
+        document.documentElement.addEventListener("mousemove", resize, false);
+        document.documentElement.addEventListener("mouseup", () => {
+          document.documentElement.removeEventListener("mousemove", resize, false);
+          element.style.userSelect = "initial";
+        }, { once: true });
+      });
+    }
+    createResizer(kernelListParent, { minWidth: 15, maxWidth: 50 }, "kernel"); // left resizer
+    createResizer(metadata, { minWidth: 20, maxWidth: 50 }, "metadata"); // right resizer
+  }
+
+  // **** keyboard shortcuts
+  document.addEventListener("keydown", async function(event) {
+    // up and down change the UOp or kernel from the list
+    if (!expandKernel) {
+      if (event.key == "ArrowUp") {
+        event.preventDefault()
+        currentUOp = 0;
+        currentRewrite = 0;
+        currentKernel = Math.max(0, currentKernel-1)
+       return main()
+      }
+      if (event.key == "ArrowDown") {
+        event.preventDefault()
+        currentUOp = 0;
+        currentRewrite = 0;
+        currentKernel = Math.min(kernels.length-1, currentKernel+1);
+       return main()
+      }
+    }
+    if (event.key == "Enter") {
+      event.preventDefault()
+      if (currentKernel === -1) {
+        currentKernel = 0;
+        expandKernel = true;
+      }
+      else {
+        expandKernel = !expandKernel;
+      }
+      currentUOp = 0;
+      currentRewrite = 0;
+      main();
+    }
+    if (event.key == "ArrowUp") {
+      event.preventDefault()
+      currentRewrite = 0;
+      currentUOp = Math.max(0, currentUOp-1)
+      main()
+    }
+    if (event.key == "ArrowDown") {
+      event.preventDefault()
+      currentRewrite = 0;
+      const totalUOps = kernels[currentKernel][1].length-1;
+      currentUOp = Math.min(totalUOps, currentUOp+1)
+      main()
+    }
+    // left and right go through rewrites in a single UOp
+    if (event.key == "ArrowLeft") {
+      event.preventDefault()
+      currentRewrite = Math.max(0, currentRewrite-1)
+      main()
+    }
+    if (event.key == "ArrowRight") {
+      event.preventDefault()
+      const totalRewrites = ret.length-1;
+      currentRewrite = Math.min(totalRewrites, currentRewrite+1)
+      main()
+    }
+  })
+  main()
+  </script>
+  </body>
+</html>

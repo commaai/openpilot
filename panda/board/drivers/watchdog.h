@@ -3,7 +3,7 @@ typedef enum {
   WATCHDOG_500_MS = 4000U,
 } WatchdogTimeout;
 
-void watchdog_feed(void) {
+static void watchdog_feed(void) {
   IND_WDG->KR = 0xAAAAU;
 }
 

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cstdlib>
+#include <cassert>
 #include <fstream>
 #include <map>
 #include <string>
+#include <algorithm>  // for std::clamp
 
 #include "common/params.h"
 #include "common/util.h"
@@ -21,11 +23,18 @@ public:
 
   static std::string get_name() {
     std::string model = util::read_file("/sys/firmware/devicetree/base/model");
-    return model.substr(std::string("comma ").size());
+    return util::strip(model.substr(std::string("comma ").size()));
   }
 
   static cereal::InitData::DeviceType get_device_type() {
-    return (get_name() == "tizi") ? cereal::InitData::DeviceType::TIZI : (get_name() == "mici" ? cereal::InitData::DeviceType::MICI : cereal::InitData::DeviceType::TICI);
+    static const std::map<std::string, cereal::InitData::DeviceType> device_map = {
+      {"tici", cereal::InitData::DeviceType::TICI},
+      {"tizi", cereal::InitData::DeviceType::TIZI},
+      {"mici", cereal::InitData::DeviceType::MICI}
+    };
+    auto it = device_map.find(get_name());
+    assert(it != device_map.end());
+    return it->second;
   }
 
   static int get_voltage() { return std::atoi(util::read_file("/sys/class/hwmon/hwmon1/in1_input").c_str()); }
@@ -52,20 +61,24 @@ public:
   static void reboot() { std::system("sudo reboot"); }
   static void poweroff() { std::system("sudo poweroff"); }
   static void set_brightness(int percent) {
-    std::string max = util::read_file("/sys/class/backlight/panel0-backlight/max_brightness");
-
-    std::ofstream brightness_control("/sys/class/backlight/panel0-backlight/brightness");
-    if (brightness_control.is_open()) {
-      brightness_control << (int)(percent * (std::stof(max)/100.)) << "\n";
-      brightness_control.close();
-    }
+    float max = std::stof(util::read_file("/sys/class/backlight/panel0-backlight/max_brightness"));
+    std::ofstream("/sys/class/backlight/panel0-backlight/brightness") << int(percent * (max / 100.0f)) << "\n";
   }
   static void set_display_power(bool on) {
-    std::ofstream bl_power_control("/sys/class/backlight/panel0-backlight/bl_power");
-    if (bl_power_control.is_open()) {
-      bl_power_control << (on ? "0" : "4") << "\n";
-      bl_power_control.close();
+    std::ofstream("/sys/class/backlight/panel0-backlight/bl_power") << (on ? "0" : "4") << "\n";
+  }
+
+  static void set_ir_power(int percent) {
+    auto device = get_device_type();
+    if (device == cereal::InitData::DeviceType::TICI ||
+        device == cereal::InitData::DeviceType::TIZI) {
+      return;
     }
+
+    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255);
+    std::ofstream("/sys/class/leds/led:switch_2/brightness") << 0 << "\n";
+    std::ofstream("/sys/class/leds/led:torch_2/brightness") << value << "\n";
+    std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
   }
 
   static std::map<std::string, std::string> get_init_logs() {
