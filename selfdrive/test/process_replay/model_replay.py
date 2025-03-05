@@ -143,7 +143,8 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
 
 def model_replay(lr, frs):
   # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl"})
+  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"},
+                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl"})
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx", "carParams"})
 
   if not SEND_EXTRA_INPUTS:
