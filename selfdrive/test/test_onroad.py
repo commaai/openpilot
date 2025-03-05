@@ -349,6 +349,24 @@ class TestOnroad:
           diff = (max(ts.values()) - min(ts.values()))
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
 
+  def test_camera_encoder_matches(self, subtests):
+    # sanity check that the frame metadata is consistent with the encoded frames
+    pairs = [('roadCameraState', 'roadEncodeIdx'),
+             ('wideRoadCameraState', 'wideRoadEncodeIdx'),
+             ('driverCameraState', 'driverEncodeIdx')]
+    for cam, enc in pairs:
+      with subtests.test(camera=cam, encoder=enc):
+        cam_frames = {fid: (sof, eof) for fid, sof, eof in zip(
+          self.ts[cam]['frameId'],
+          self.ts[cam]['timestampSof'],
+          self.ts[cam]['timestampEof']
+        )}
+        for i, fid in enumerate(self.ts[enc]['frameId']):
+          cam_sof, cam_eof = cam_frames[fid]
+          enc_sof, enc_eof = self.ts[enc]['timestampSof'][i], self.ts[enc]['timestampEof'][i]
+          assert abs(enc_sof - cam_sof) < 1000, f"SOF mismatch: frameId={fid}, diff={(enc_sof-cam_sof)/1e6:.2f}ms"
+          assert abs(enc_eof - cam_eof) < 1000, f"EOF mismatch: frameId={fid}, diff={(enc_eof-cam_eof)/1e6:.2f}ms"
+
   def test_mpc_execution_timings(self):
     result = "\n"
     result += "------------------------------------------------\n"
