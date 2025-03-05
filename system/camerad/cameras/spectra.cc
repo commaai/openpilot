@@ -249,14 +249,6 @@ SpectraCamera::~SpectraCamera() {
 }
 
 int SpectraCamera::clear_req_queue() {
-  // for "realtime" devices
-  struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
-  req_mgr_flush_request.session_hdl = session_handle;
-  req_mgr_flush_request.link_hdl = link_handle;
-  req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
-  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
-  LOGD("flushed all req: %d", ret);
-
   // for "non-realtime" BPS
   if (icp_dev_handle > 0) {
     struct cam_flush_dev_cmd cmd = {
@@ -268,6 +260,14 @@ int SpectraCamera::clear_req_queue() {
     assert(err == 0);
     LOGD("flushed bps: %d", err);
   }
+
+  // for "realtime" devices
+  struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
+  req_mgr_flush_request.session_hdl = session_handle;
+  req_mgr_flush_request.link_hdl = link_handle;
+  req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
+  int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
+  LOGD("flushed all req: %d", ret);
 
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
@@ -1324,15 +1324,12 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     Handles camera SOF event. Returns true if the frame is valid for publishing.
   */
 
-  if (stress_test("skipping handling camera event")) {
-    LOGW("skipping event");
-    return false;
-  }
-
   uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
   //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+
+  if (stress_test("skipping SOF event")) return false;
 
   if (!validateEvent(request_id, frame_id_raw)) {
     return false;
@@ -1408,11 +1405,7 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
     sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
-    int ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    if (ret != 0) {
-      LOGE("Failed to wait for %s: %d %d", sync_type, ret, sync_obj);
-    }
-    return ret == 0;
+    return do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait)) == 0;
   };
 
   // wait for frame from IFE

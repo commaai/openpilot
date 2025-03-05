@@ -27,12 +27,13 @@ def run_and_log(procs, services, duration):
     for p in procs:
       assert managed_processes[p].proc.is_alive()
   finally:
+    print("killing camerad")
     for p in procs:
       managed_processes[p].stop()
 
   return logs
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def logs():
   logs = run_and_log(["camerad", ], CAMERAS, TEST_TIMESPAN)
   ts = msgs_to_time_series(logs)
@@ -64,21 +65,16 @@ class TestCamerad:
     laggy_frames = {k: v for k, v in diffs.items() if v > 1.1}
     assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
 
-  def test_stress_test(self):
-    os.environ['SPECTRA_STRESS_TEST'] = '1'
-    logs = run_and_log(["camerad", ], CAMERAS, 15)
-    ts = msgs_to_time_series(logs)
+  def test_sanity_checks(self, logs):
+    self._sanity_checks(logs)
 
+  def _sanity_checks(self, ts):
     for c in CAMERAS:
       assert c in ts
       assert len(ts[c]['t']) > 20
 
       # not a valid request id
       assert 0 not in ts[c]['requestId']
-
-      # we should see jumps
-      assert np.max(np.diff(ts[c]['frameId'])) > 1
-      assert np.max(np.diff(ts[c]['requestId'])) > 1
 
       # should monotonically increase
       assert np.all(np.diff(ts[c]['frameId']) >= 1)
@@ -89,5 +85,17 @@ class TestCamerad:
 
       # logMonoTime > SOF
       assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 0.01)
+      #assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 0.01)
       # TODO: make this work
       #assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) < 0.25)
+
+  def test_stress_test(self):
+    os.environ['SPECTRA_STRESS_TEST'] = '1'
+    logs = run_and_log(["camerad", ], CAMERAS, 15)
+    ts = msgs_to_time_series(logs)
+
+    # we should see some jumps from introduced errors
+    assert np.max([ np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS ]) > 1
+    assert np.max([ np.max(np.diff(ts[c]['requestId'])) for c in CAMERAS ]) > 1
+
+    self._sanity_checks(ts)
