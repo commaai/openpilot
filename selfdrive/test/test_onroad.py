@@ -113,6 +113,7 @@ def cputime_total(ct):
 
 
 @pytest.mark.tici
+@pytest.mark.skip_tici_setup
 class TestOnroad:
 
   @classmethod
@@ -176,7 +177,9 @@ class TestOnroad:
     cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
 
     cls.lr = cls.lrs[0]
+    st = time.monotonic()
     cls.ts = msgs_to_time_series(cls.lr)
+    print("msgs to time series", time.monotonic() - st)
     cls.log_path = cls.segments[0]
 
     cls.log_sizes = {}
