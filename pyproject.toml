@@ -143,6 +143,7 @@ asyncio_default_fixture_loop_scope = "function"
 markers = [
   "slow: tests that take awhile to run and can be skipped with -m 'not slow'",
   "tici: tests that are only meant to run on the C3/C3X",
+  "skip_tici_setup: mark test to skip tici setup fixture"
 ]
 testpaths = [
   "common",
