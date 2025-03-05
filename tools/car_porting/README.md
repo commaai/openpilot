@@ -65,6 +65,12 @@ To use these notebooks, install Jupyter within your [openpilot virtual environme
 uv pip install jupyter ipykernel
 ```
 
+Launching:
+
+```bash
+jupyter notebook
+```
+
 ### [examples/subaru_steer_temp_fault.ipynb](/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
 
 An example of searching through a database of segments for a specific condition, and plotting the results.
