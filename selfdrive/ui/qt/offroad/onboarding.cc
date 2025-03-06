@@ -4,7 +4,6 @@
 
 #include <QLabel>
 #include <QPainter>
-#include <QScrollBar>
 #include <QTransform>
 #include <QVBoxLayout>
 
@@ -12,7 +11,6 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
-#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -101,13 +99,11 @@ void TermsPage::showEvent(QShowEvent *event) {
   QLabel *text = new QLabel(this);
   text->setTextFormat(Qt::RichText);
   text->setWordWrap(true);
-  text->setText(QString::fromStdString(util::read_file("../assets/offroad/tc.html")));
+  text->setText(tr("View the Terms & Conditions at <a href='https://comma.ai/terms' style='color: #465BEA;'>https://comma.ai/terms</a>"));
   text->setStyleSheet("font-size:50px; font-weight: 200; color: #C9C9C9; background-color:#1B1B1B; padding:50px 50px;");
-  ScrollView *scroll = new ScrollView(text, this);
-
-  main_layout->addSpacing(30);
-  main_layout->addWidget(scroll);
-  main_layout->addSpacing(50);
+  text->setOpenExternalLinks(true);
+  main_layout->addWidget(text);
+  main_layout->addStretch();
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->setMargin(0);
@@ -118,8 +114,7 @@ void TermsPage::showEvent(QShowEvent *event) {
   buttons->addWidget(decline_btn);
   QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
 
-  accept_btn = new QPushButton(tr("Scroll to accept"));
-  accept_btn->setEnabled(false);
+  accept_btn = new QPushButton(tr("Agree"));
   accept_btn->setStyleSheet(R"(
     QPushButton {
       background-color: #465BEA;
@@ -127,23 +122,9 @@ void TermsPage::showEvent(QShowEvent *event) {
     QPushButton:pressed {
       background-color: #3049F4;
     }
-    QPushButton:disabled {
-      background-color: #4F4F4F;
-    }
   )");
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
-  QScrollBar *scroll_bar = scroll->verticalScrollBar();
-  connect(scroll_bar, &QScrollBar::valueChanged, this, [this, scroll_bar](int value) {
-    if (value == scroll_bar->maximum()) {
-      enableAccept();
-    }
-  });
-}
-
-void TermsPage::enableAccept() {
-  accept_btn->setText(tr("Agree"));
-  accept_btn->setEnabled(true);
 }
 
 void DeclinePage::showEvent(QShowEvent *event) {
