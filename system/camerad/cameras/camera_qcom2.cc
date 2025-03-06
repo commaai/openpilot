@@ -55,7 +55,7 @@ public:
   float fl_pix = 0;
   std::unique_ptr<PubMaster> pm;
 
-  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.stream_type == VISION_STREAM_DRIVER ? ISP_BPS_PROCESSED : ISP_IFE_PROCESSED) {};
+  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);

@@ -22,7 +22,6 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 // For use with the Titan 170 ISP in the SDM845
 // https://github.com/commaai/agnos-kernel-sdm845
 
-
 // CSLDeviceType/CSLPacketOpcodesIFE from camx
 // cam_packet_header.op_code = (device << 24) | (opcode);
 #define CSLDeviceTypeImageSensor (0x01 << 24)
@@ -30,12 +29,6 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 #define CSLDeviceTypeBPS         (0x10 << 24)
 #define OpcodesIFEInitialConfig  0x0
 #define OpcodesIFEUpdate         0x1
-
-typedef enum {
-  ISP_RAW_OUTPUT,   // raw frame from sensor
-  ISP_IFE_PROCESSED,  // fully processed image through the IFE
-  ISP_BPS_PROCESSED,  // fully processed image through the BPS
-} SpectraOutputType;
 
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
@@ -117,7 +110,7 @@ public:
 
 class SpectraCamera {
 public:
-  SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config);
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
@@ -191,8 +184,6 @@ public:
   uint64_t frame_id_raw_last = 0;
   int invalid_request_count = 0;
   bool skip_expected = true;
-
-  SpectraOutputType output_type;
 
   CameraBuf buf;
   SpectraMaster *m;
