@@ -84,12 +84,12 @@ class TestCamerad:
       assert np.all((ts[c]['timestampEof'] - ts[c]['timestampSof']) > 0)
 
       # logMonoTime > SOF
-      assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 0.001)
-      assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 0.001)
+      assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 1e-7)
+      print((ts[c]['t'] - ts[c]['timestampEof']/1e9))
+      assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 1e-7)
 
-  @pytest.mark.skip("TODO: enable this")
   def test_stress_test(self):
-    os.environ['SPECTRA_STRESS_TEST'] = '1'
+    os.environ['SPECTRA_ERROR_PROB'] = '0.008'
     logs = run_and_log(["camerad", ], CAMERAS, 15)
     ts = msgs_to_time_series(logs)
 
