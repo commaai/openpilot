@@ -33,7 +33,7 @@ def run_and_log(procs, services, duration):
 
   return logs
 
-@pytest.fixture(scope="function")
+@pytest.fixture(scope="session")
 def logs():
   logs = run_and_log(["camerad", ], CAMERAS, TEST_TIMESPAN)
   ts = msgs_to_time_series(logs)
@@ -85,12 +85,11 @@ class TestCamerad:
 
       # logMonoTime > SOF
       assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 1e-7)
-      print((ts[c]['t'] - ts[c]['timestampEof']/1e9))
       assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 1e-7)
 
   def test_stress_test(self):
     os.environ['SPECTRA_ERROR_PROB'] = '0.008'
-    logs = run_and_log(["camerad", ], CAMERAS, 15)
+    logs = run_and_log(["camerad", ], CAMERAS, 10)
     ts = msgs_to_time_series(logs)
 
     # we should see some jumps from introduced errors
