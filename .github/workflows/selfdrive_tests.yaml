@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - master
+  schedule:
+    - cron: '0 6 * * *'
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -28,6 +30,9 @@ env:
   RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
+
+  # scheduled gets higher
+  MAX_EXAMPLES: 100 #if contains(github.event_name, 'schedule') else 1
 
 jobs:
   build_release:
@@ -140,7 +145,7 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+                        MAX_EXAMPLES=${{ env.MAX_EXAMPLES }} $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
@@ -229,7 +234,7 @@ jobs:
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "MAX_EXAMPLES=${{ env.MAX_EXAMPLES }} $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
