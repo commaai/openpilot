@@ -211,9 +211,9 @@ private:
   inline static bool first_frame_synced = false;
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
-  inline bool stress_test(const char* log, float prob=0.02) {
-    static bool enable = getenv("SPECTRA_STRESS_TEST") != nullptr;
-    bool triggered = enable && ((static_cast<double>(rand()) / RAND_MAX) < prob);
+  inline bool stress_test(const char* log) {
+    static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));;
+    bool triggered = (prob > 0) && ((static_cast<double>(rand()) / RAND_MAX) < prob);
     if (triggered) {
       LOGE("stress test (cam %d): %s", cc.camera_num, log);
     }
