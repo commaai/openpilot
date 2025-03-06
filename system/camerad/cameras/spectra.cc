@@ -233,12 +233,11 @@ void SpectraMaster::init() {
 
 // *** SpectraCamera ***
 
-SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out)
+SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
     enabled(config.enabled),
-    cc(config),
-    output_type(out) {
-  ife_buf_depth = (out == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
+    cc(config) {
+  ife_buf_depth = (cc.output_type == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
@@ -290,7 +289,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
   uv_offset = stride*y_height;
   yuv_size = uv_offset + stride*uv_height;
-  if (output_type != ISP_RAW_OUTPUT) {
+  if (cc.output_type != ISP_RAW_OUTPUT) {
     uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
     yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
   }
@@ -299,7 +298,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   open = true;
   configISP();
-  if (output_type == ISP_BPS_PROCESSED) configICP();
+  if (cc.output_type == ISP_BPS_PROCESSED) configICP();
   configCSIPHY();
   linkDevices();
 
@@ -736,7 +735,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     buf_desc[0].offset = ife_cmd.aligned_size()*idx;
 
     // stream of IFE register writes
-    bool is_raw = output_type != ISP_IFE_PROCESSED;
+    bool is_raw = cc.output_type != ISP_IFE_PROCESSED;
     if (!is_raw) {
       if (init) {
         buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, cc, sensor.get(), patches);
@@ -825,7 +824,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    if (output_type != ISP_IFE_PROCESSED) {
+    if (cc.output_type != ISP_IFE_PROCESSED) {
       io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
       io_cfg[0].planes[0] = (struct cam_plane_cfg){
         .width = sensor->frame_width,
@@ -934,7 +933,7 @@ void SpectraCamera::enqueue_frame(uint64_t request_id) {
 
   // submit request to IFE and BPS
   config_ife(i, request_id);
-  if (output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
+  if (cc.output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
 }
 
 void SpectraCamera::destroySyncObjectAt(int index) {
@@ -967,7 +966,7 @@ void SpectraCamera::camera_map_bufs() {
       mem_mgr_map_cmd.mmu_hdls[1] = m->icp_device_iommu;
     }
 
-    if (output_type != ISP_IFE_PROCESSED) {
+    if (cc.output_type != ISP_IFE_PROCESSED) {
       // RAW bayer images
       mem_mgr_map_cmd.fd = buf.camera_bufs_raw[i].fd;
       ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
@@ -976,7 +975,7 @@ void SpectraCamera::camera_map_bufs() {
       buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
     }
 
-    if (output_type != ISP_RAW_OUTPUT) {
+    if (cc.output_type != ISP_RAW_OUTPUT) {
       // final processed images
       VisionBuf *vb = buf.vipc_server->get_buffer(buf.stream_type, i);
       mem_mgr_map_cmd.fd = vb->fd;
@@ -1073,7 +1072,7 @@ void SpectraCamera::configISP() {
     },
   };
 
-  if (output_type != ISP_IFE_PROCESSED) {
+  if (cc.output_type != ISP_IFE_PROCESSED) {
     in_port_info.line_start = 0;
     in_port_info.line_stop = sensor->frame_height + sensor->extra_height - 1;
     in_port_info.height = sensor->frame_height + sensor->extra_height;
@@ -1096,7 +1095,7 @@ void SpectraCamera::configISP() {
 
   // allocate IFE memory, then configure it
   ife_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
-  if (output_type == ISP_IFE_PROCESSED) {
+  if (cc.output_type == ISP_IFE_PROCESSED) {
     assert(sensor->gamma_lut_rgb.size() == 64);
     ife_gamma_lut.init(m, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
     for (int i = 0; i < 3; i++) {
@@ -1248,7 +1247,7 @@ void SpectraCamera::linkDevices() {
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
   assert(ret == 0);
-  if (output_type == ISP_BPS_PROCESSED) {
+  if (cc.output_type == ISP_BPS_PROCESSED) {
     ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
     LOGD("start icp: %d", ret);
     assert(ret == 0);
@@ -1263,7 +1262,7 @@ void SpectraCamera::camera_close() {
     // LOGD("stop sensor: %d", ret);
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
-    if (output_type == ISP_BPS_PROCESSED) {
+    if (cc.output_type == ISP_BPS_PROCESSED) {
       ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
       LOGD("stop icp: %d", ret);
     }
@@ -1292,7 +1291,7 @@ void SpectraCamera::camera_close() {
     LOGD("-- Release devices");
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
-    if (output_type == ISP_BPS_PROCESSED) {
+    if (cc.output_type == ISP_BPS_PROCESSED) {
       ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
       LOGD("release icp: %d", ret);
     }
