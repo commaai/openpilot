@@ -128,8 +128,7 @@ public:
   void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
-  bool enqueue_buffer(int i, uint64_t request_id);
-  void enqueue_req_multi(uint64_t start, int n);
+  void enqueue_frame(uint64_t request_id);
 
   int sensors_init();
   void sensors_start();
@@ -190,8 +189,8 @@ public:
   int sync_objs_bps[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_raw_last = 0;
-  int64_t frame_id_offset = 0;
-  bool skipped_last = true;
+  int invalid_request_count = 0;
+  bool skip_expected = true;
 
   SpectraOutputType output_type;
 
@@ -199,6 +198,10 @@ public:
   SpectraMaster *m;
 
 private:
+  void clearAndRequeue(uint64_t from_request_id);
+  bool validateEvent(uint64_t request_id, uint64_t frame_id_raw);
+  bool waitForFrameReady(uint64_t request_id);
+  bool processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
   static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp);
   struct SyncData {
     uint64_t timestamp;
@@ -208,11 +211,11 @@ private:
   inline static bool first_frame_synced = false;
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
-  inline bool stress_test(const char* log, float prob=0.01) {
+  inline bool stress_test(const char* log, float prob=0.02) {
     static bool enable = getenv("SPECTRA_STRESS_TEST") != nullptr;
     bool triggered = enable && ((static_cast<double>(rand()) / RAND_MAX) < prob);
     if (triggered) {
-      LOGE("stress test: %s", log);
+      LOGE("stress test (cam %d): %s", cc.camera_num, log);
     }
     return triggered;
   }
