@@ -27,12 +27,13 @@ def run_and_log(procs, services, duration):
     for p in procs:
       assert managed_processes[p].proc.is_alive()
   finally:
+    print("killing camerad")
     for p in procs:
       managed_processes[p].stop()
 
   return logs
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="function")
 def logs():
   logs = run_and_log(["camerad", ], CAMERAS, TEST_TIMESPAN)
   ts = msgs_to_time_series(logs)
