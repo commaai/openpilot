@@ -6,7 +6,6 @@ While the roll calibration is a real value that can be estimated, here we assume
 and the image input into the neural network is not corrected for roll.
 '''
 
-import gc
 import os
 import capnp
 import numpy as np
@@ -16,7 +15,7 @@ from cereal import log
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
-from openpilot.common.realtime import set_realtime_priority
+from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
 from openpilot.common.swaglog import cloudlog
 
@@ -256,8 +255,7 @@ class Calibrator:
 
 
 def main() -> NoReturn:
-  gc.disable()
-  set_realtime_priority(1)
+  config_realtime_process([0, 1, 2, 3], 5)
 
   pm = messaging.PubMaster(['liveCalibration'])
   sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll='cameraOdometry')

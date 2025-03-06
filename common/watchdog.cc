@@ -2,8 +2,9 @@
 
 #include "common/watchdog.h"
 #include "common/util.h"
+#include "system/hardware/hw.h"
 
-const std::string watchdog_fn_prefix = "/dev/shm/wd_";  // + <pid>
+const std::string watchdog_fn_prefix = Path::shm_path() + "/wd_";  // + <pid>
 
 bool watchdog_kick(uint64_t ts) {
   static std::string fn = watchdog_fn_prefix + std::to_string(getpid());

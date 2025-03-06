@@ -1,19 +1,8 @@
+#include "llusb_declarations.h"
+
 USB_OTG_GlobalTypeDef *USBx = USB_OTG_FS;
 
-#define USBx_HOST       ((USB_OTG_HostTypeDef *)((uint32_t)USBx + USB_OTG_HOST_BASE))
-#define USBx_DEVICE     ((USB_OTG_DeviceTypeDef *)((uint32_t)USBx + USB_OTG_DEVICE_BASE))
-#define USBx_INEP(i)    ((USB_OTG_INEndpointTypeDef *)((uint32_t)USBx + USB_OTG_IN_ENDPOINT_BASE + ((i) * USB_OTG_EP_REG_SIZE)))
-#define USBx_OUTEP(i)   ((USB_OTG_OUTEndpointTypeDef *)((uint32_t)USBx + USB_OTG_OUT_ENDPOINT_BASE + ((i) * USB_OTG_EP_REG_SIZE)))
-#define USBx_DFIFO(i)   *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_FIFO_BASE + ((i) * USB_OTG_FIFO_SIZE))
-#define USBx_PCGCCTL    *(__IO uint32_t *)((uint32_t)USBx + USB_OTG_PCGCCTL_BASE)
-
-#define USBD_FS_TRDT_VALUE 5UL
-#define USB_OTG_SPEED_FULL 3UL
-
-
-void usb_irqhandler(void);
-
-void OTG_FS_IRQ_Handler(void) {
+static void OTG_FS_IRQ_Handler(void) {
   NVIC_DisableIRQ(OTG_FS_IRQn);
   //__disable_irq();
   usb_irqhandler();

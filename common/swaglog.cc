@@ -26,6 +26,9 @@ public:
     zmq_setsockopt(sock, ZMQ_LINGER, &timeout, sizeof(timeout));
     zmq_connect(sock, Path::swaglog_ipc().c_str());
 
+    // workaround for https://github.com/dropbox/json11/issues/38
+    setlocale(LC_NUMERIC, "C");
+
     print_level = CLOUDLOG_WARNING;
     if (const char* print_lvl = getenv("LOGPRINT")) {
       if (strcmp(print_lvl, "debug") == 0) {
