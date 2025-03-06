@@ -11,8 +11,9 @@ public:
   V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   ~V4LEncoder();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
-  void encoder_open(const char* path);
+  void encoder_open();
   void encoder_close();
+
 private:
   int fd;
 

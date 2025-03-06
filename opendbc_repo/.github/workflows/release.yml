@@ -1,0 +1,34 @@
+name: Publish to PyPI
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  pypi-publish:
+    name: Upload release to PyPI
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/opendbc
+    permissions:
+      id-token: write  # trusted publishing
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build distribution
+        run: |
+          ./test.sh
+          source .venv/bin/activate
+          uv pip install build
+          python -m build
+
+      - name: Publish to Test PyPI
+        if: github.event_name == 'workflow_dispatch'
+        uses: pypa/gh-action-pypi-publish@v1.12.4
+        with:
+          repository-url: https://test.pypi.org/legacy/
+
+      - name: Publish to Production PyPI
+        if: github.event_name == 'release'
+        uses: pypa/gh-action-pypi-publish@v1.12.4

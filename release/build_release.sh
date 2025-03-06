@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 set -e
 set -x
 
@@ -50,8 +50,13 @@ git commit -a -m "openpilot v$VERSION release"
 export PYTHONPATH="$BUILD_DIR"
 scons -j$(nproc) --minimal
 
-# release panda fw
-CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+if [ -z "$PANDA_DEBUG_BUILD" ]; then
+  # release panda fw
+  CERT=/data/pandaextra/certs/release RELEASE=1 scons -j$(nproc) panda/
+else
+  # build with ALLOW_DEBUG=1 to enable features like experimental longitudinal
+  scons -j$(nproc) panda/
+fi
 
 # Ensure no submodules in release
 if test "$(git submodule--helper list | wc -l)" -gt "0"; then
@@ -69,7 +74,8 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm selfdrive/modeld/models/supercombo.onnx
+rm selfdrive/modeld/models/driving_vision.onnx
+rm selfdrive/modeld/models/driving_policy.onnx
 
 find third_party/ -name '*x86*' -exec rm -r {} +
 find third_party/ -name '*Darwin*' -exec rm -r {} +
@@ -92,7 +98,7 @@ cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
 RELEASE=1 pytest -n0 -s selfdrive/test/test_onroad.py
 #system/manager/test/test_manager.py
-#pytest selfdrive/car/tests/test_car_interfaces.py
+pytest selfdrive/car/tests/test_car_interfaces.py
 rm -rf $TEST_FILES
 
 if [ ! -z "$RELEASE_BRANCH" ]; then

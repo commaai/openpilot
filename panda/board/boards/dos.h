@@ -1,8 +1,12 @@
+#pragma once
+
+#include "board_declarations.h"
+
 // /////////////////////// //
 // Dos (STM32F4) + Harness //
 // /////////////////////// //
 
-void dos_enable_can_transceiver(uint8_t transceiver, bool enabled) {
+static void dos_enable_can_transceiver(uint8_t transceiver, bool enabled) {
   switch (transceiver){
     case 1U:
       set_gpio_output(GPIOC, 1, !enabled);
@@ -22,7 +26,7 @@ void dos_enable_can_transceiver(uint8_t transceiver, bool enabled) {
   }
 }
 
-void dos_enable_can_transceivers(bool enabled) {
+static void dos_enable_can_transceivers(bool enabled) {
   for(uint8_t i=1U; i<=4U; i++){
     // Leave main CAN always on for CAN-based ignition detection
     if((harness.status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
@@ -33,7 +37,7 @@ void dos_enable_can_transceivers(bool enabled) {
   }
 }
 
-void dos_set_led(uint8_t color, bool enabled) {
+static void dos_set_led(uint8_t color, bool enabled) {
   switch (color){
     case LED_RED:
       set_gpio_output(GPIOC, 9, !enabled);
@@ -49,11 +53,11 @@ void dos_set_led(uint8_t color, bool enabled) {
   }
 }
 
-void dos_set_bootkick(BootState state) {
+static void dos_set_bootkick(BootState state) {
   set_gpio_output(GPIOC, 4, state != BOOT_BOOTKICK);
 }
 
-void dos_set_can_mode(uint8_t mode) {
+static void dos_set_can_mode(uint8_t mode) {
   dos_enable_can_transceiver(2U, false);
   dos_enable_can_transceiver(4U, false);
   switch (mode) {
@@ -85,28 +89,28 @@ void dos_set_can_mode(uint8_t mode) {
   }
 }
 
-bool dos_check_ignition(void){
+static bool dos_check_ignition(void){
   // ignition is checked through harness
   return harness_check_ignition();
 }
 
-void dos_set_ir_power(uint8_t percentage){
+static void dos_set_ir_power(uint8_t percentage){
   pwm_set(TIM4, 2, percentage);
 }
 
-void dos_set_fan_enabled(bool enabled){
+static void dos_set_fan_enabled(bool enabled){
   set_gpio_output(GPIOA, 1, enabled);
 }
 
-void dos_set_siren(bool enabled){
+static void dos_set_siren(bool enabled){
   set_gpio_output(GPIOC, 12, enabled);
 }
 
-bool dos_read_som_gpio (void){
+static bool dos_read_som_gpio (void){
   return (get_gpio_input(GPIOC, 2) != 0);
 }
 
-void dos_init(void) {
+static void dos_init(void) {
   common_init_gpio();
 
   // A8,A15: normal CAN3 mode
@@ -166,7 +170,7 @@ void dos_init(void) {
   clock_source_init();
 }
 
-harness_configuration dos_harness_config = {
+static harness_configuration dos_harness_config = {
   .has_harness = true,
   .GPIO_SBU1 = GPIOC,
   .GPIO_SBU2 = GPIOC,
@@ -190,6 +194,7 @@ board board_dos = {
 #endif
   .has_canfd = false,
   .fan_max_rpm = 6500U,
+  .fan_max_pwm = 100U,
   .avdd_mV = 3300U,
   .fan_stall_recovery = true,
   .fan_enable_cooldown_time = 3U,
@@ -206,5 +211,6 @@ board board_dos = {
   .set_ir_power = dos_set_ir_power,
   .set_siren = dos_set_siren,
   .set_bootkick = dos_set_bootkick,
-  .read_som_gpio = dos_read_som_gpio
+  .read_som_gpio = dos_read_som_gpio,
+  .set_amp_enabled = unused_set_amp_enabled
 };

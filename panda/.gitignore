@@ -11,6 +11,7 @@ a.out
 *~
 .#*
 dist/
+build/
 pandacan.egg-info/
 obj/
 examples/output.csv
@@ -28,3 +29,7 @@ nosetests.xml
 *.gcno
 tests/safety/coverage-out
 tests/safety/coverage.info
+
+*.profraw
+*.profdata
+mull.yml

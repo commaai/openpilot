@@ -100,11 +100,14 @@ class PandaDFU:
   def st_serial_to_dfu_serial(st: str, mcu_type: McuType = McuType.F4):
     if st is None or st == "none":
       return None
-    uid_base = struct.unpack("H" * 6, bytes.fromhex(st))
-    if mcu_type == McuType.H7:
-      return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4], uid_base[3])).upper().decode("utf-8")
-    else:
-      return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4] + 0xA, uid_base[3])).upper().decode("utf-8")
+    try:
+      uid_base = struct.unpack("H" * 6, bytes.fromhex(st))
+      if mcu_type == McuType.H7:
+        return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4], uid_base[3])).upper().decode("utf-8")
+      else:
+        return binascii.hexlify(struct.pack("!HHH", uid_base[1] + uid_base[5], uid_base[0] + uid_base[4] + 0xA, uid_base[3])).upper().decode("utf-8")
+    except struct.error:
+      return None
 
   def get_mcu_type(self) -> McuType:
     return self._mcu_type
