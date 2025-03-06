@@ -43,6 +43,9 @@ OS04C10::OS04C10() {
   frame_data_type = 0x2c;
   mclk_frequency = 24000000; // Hz
 
+  // TODO: this was set from logs. actually calculate it out
+  readout_time_ns = 11000000;
+
   ev_scale = 150.0;
   dc_gain_factor = 1;
   dc_gain_min_weight = 1;  // always on is fine
