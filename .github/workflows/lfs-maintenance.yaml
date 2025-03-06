@@ -23,7 +23,7 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     # Skip if PR is in draft mode
-    if: github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false)
+    if: github.event_name != 'pull_request' || (github.event_name == 'pull_request' && github.event.pull_request.draft == false) || !github.event.pull_request.head.repo.fork
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
