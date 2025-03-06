@@ -30,8 +30,6 @@ from openpilot.tools.lib.route import SegmentName
 SafetyModel = car.CarParams.SafetyModel
 SteerControlType = structs.CarParams.SteerControlType
 
-NUM_JOBS = int(os.environ.get("NUM_JOBS", "1"))
-JOB_ID = int(os.environ.get("JOB_ID", "0"))
 INTERNAL_SEG_LIST = os.environ.get("INTERNAL_SEG_LIST", "")
 INTERNAL_SEG_CNT = int(os.environ.get("INTERNAL_SEG_CNT", "0"))
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "300"))
@@ -46,9 +44,8 @@ def get_test_cases() -> list[tuple[str, CarTestRoute | None]]:
     for r in routes:
       routes_by_car[str(r.car_model)].add(r)
 
-    for i, c in enumerate(sorted(PLATFORMS)):
-      if i % NUM_JOBS == JOB_ID:
-        test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
+    for c in sorted(PLATFORMS):
+      test_cases.extend(sorted((c, r) for r in routes_by_car.get(c, (None,))))
 
   else:
     segment_list = read_segment_list(os.path.join(BASEDIR, INTERNAL_SEG_LIST))
