@@ -32,7 +32,7 @@ env:
   PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
 
   # scheduled gets higher
-  MAX_EXAMPLES: 20 #if contains(github.event_name, 'schedule') else 1
+  MAX_EXAMPLES: 50 #if contains(github.event_name, 'schedule') else 1
 
 jobs:
   build_release:
