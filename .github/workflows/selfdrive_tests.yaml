@@ -229,7 +229,7 @@ jobs:
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST --splits 4 --group ${{ matrix.job }} selfdrive/car/tests/test_models.py && \
+        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST --splits 4 --group $((${{ matrix.job }} + 1)) selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
