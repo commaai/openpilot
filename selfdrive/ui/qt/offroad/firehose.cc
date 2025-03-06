@@ -10,6 +10,9 @@
 #include <QScrollArea>
 #include <QStackedLayout>
 #include <QProgressBar>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QTimer>
 
 FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent) {
   layout = new QVBoxLayout(this);
@@ -28,7 +31,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->setSpacing(20);
 
   // Top description
-  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models with better Experimental Mode."));
+  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models, which means better Experimental Mode."));
   description->setStyleSheet("font-size: 45px; padding-bottom: 20px;");
   description->setWordWrap(true);
   content_layout->addWidget(description);
@@ -40,41 +43,16 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   line->setStyleSheet("background-color: #444444; margin-top: 5px; margin-bottom: 5px;");
   content_layout->addWidget(line);
 
-  enable_firehose = new ParamControl("FirehoseMode", tr("Enable Firehose Mode"), "", "");
+  toggle_label = new QLabel(tr("Firehose Mode: ACTIVE"));
+  toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: white;");
+  content_layout->addWidget(toggle_label);
 
-  content_layout->addWidget(enable_firehose);
-
-  // Create progress bar container
-  progress_container = new QFrame();
-  progress_container->hide();
-  QHBoxLayout *progress_layout = new QHBoxLayout(progress_container);
-  progress_layout->setContentsMargins(10, 0, 10, 10);
-  progress_layout->setSpacing(20);
-
-  progress_bar = new QProgressBar();
-  progress_bar->setRange(0, 100);
-  progress_bar->setValue(0);
-  progress_bar->setTextVisible(false);
-  progress_bar->setStyleSheet(R"(
-    QProgressBar {
-      background-color: #444444;
-      border-radius: 10px;
-      height: 20px;
-    }
-    QProgressBar::chunk {
-      background-color: #3498db;
-      border-radius: 10px;
-    }
-  )");
-  progress_bar->setFixedHeight(40);
-
-  // Progress text
-  progress_text = new QLabel(tr("0%"));
-  progress_text->setStyleSheet("font-size: 40px; font-weight: bold; color: white;");
-
-  progress_layout->addWidget(progress_text);
-
-  content_layout->addWidget(progress_container);
+  // Add contribution label
+  contribution_label = new QLabel();
+  contribution_label->setStyleSheet("font-size: 52px; margin-top: 10px; margin-bottom: 10px;");
+  contribution_label->setWordWrap(true);
+  contribution_label->hide();
+  content_layout->addWidget(contribution_label);
 
   // Add a separator before detailed instructions
   QFrame *line2 = new QFrame();
@@ -85,22 +63,49 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
 
   // Detailed instructions at the bottom
   detailed_instructions = new QLabel(tr(
-    "Follow these steps to get your device ready:<br>"
-    "\t1. Bring your device inside and connect to a good USB-C adapter<br>"
-    "\t2. Connect to Wi-Fi<br>"
-    "\t3. Enable the toggle<br>"
-    "\t4. Leave it connected for at least 30 minutes<br>"
+    "For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.<br>"
     "<br>"
-    "The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness."
-    "<br><br><b>FAQ</b><br>"
-    "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br>"
-    "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br>"
-    "<i>Do I need to be on Wi-Fi?</i> Yes.<br>"
-    "<i>Do I need to bring the device inside?</i> No, you can enable once you're parked, however your uploads will be limited by your car's battery.<br>"
+    "Firehose Mode can also work while you're driving if connected to a hotspot or unlimited SIM card.<br>"
+    "<br><br>"
+    "<b>Frequently Asked Questions</b><br><br>"
+    "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br><br>"
+    "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br><br>"
+    "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training."
   ));
-  detailed_instructions->setStyleSheet("font-size: 40px; padding: 20px; color: #E4E4E4;");
+  detailed_instructions->setStyleSheet("font-size: 40px; color: #E4E4E4;");
   detailed_instructions->setWordWrap(true);
   content_layout->addWidget(detailed_instructions);
 
   layout->addWidget(content, 1);
+
+  // Set up the API request for firehose stats
+  const QString dongle_id = QString::fromStdString(Params().get("DongleId"));
+  firehose_stats = new RequestRepeater(this, CommaApi::BASE_URL + "/v1/devices/" + dongle_id + "/firehose_stats",
+                                       "ApiCache_FirehoseStats", 30, true);
+  QObject::connect(firehose_stats, &RequestRepeater::requestDone, [=](const QString &response, bool success) {
+    if (success) {
+      QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
+      QJsonObject json = doc.object();
+      int count = json["firehose"].toInt();
+      contribution_label->setText(tr("<b>%1 %2</b> of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "segment" : "segments"));
+      contribution_label->show();
+    }
+  });
+
+  QObject::connect(uiState(), &UIState::uiUpdate, this, &FirehosePanel::refresh);
+}
+
+void FirehosePanel::refresh() {
+  auto deviceState = (*uiState()->sm)["deviceState"].getDeviceState();
+  auto networkType = deviceState.getNetworkType();
+  bool networkMetered = deviceState.getNetworkMetered();
+
+  bool is_active = !networkMetered && (networkType != cereal::DeviceState::NetworkType::NONE);
+  if (is_active) {
+    toggle_label->setText(tr("ACTIVE"));
+    toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: #2ecc71;");
+  } else {
+    toggle_label->setText(tr("<span stylesheet='font-size: 60px; font-weight: bold; color: #e74c3c;'>INACTIVE</span>: connect to unmetered network"));
+    toggle_label->setStyleSheet("font-size: 60px;");
+  }
 }

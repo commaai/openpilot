@@ -57,7 +57,21 @@ Traceback (most recent call last):
 AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'gasPressed': 116}
 ```
 
-### [tools/car_porting/examples/subaru_steer_temp_fault.ipynb](/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
+## Jupyter notebooks
+
+To use these notebooks, install Jupyter within your [openpilot virtual environment](/tools/README.md).
+
+```bash
+uv pip install jupyter ipykernel
+```
+
+Launching:
+
+```bash
+jupyter notebook
+```
+
+### [examples/subaru_steer_temp_fault.ipynb](/tools/car_porting/examples/subaru_steer_temp_fault.ipynb)
 
 An example of searching through a database of segments for a specific condition, and plotting the results.
 
@@ -65,7 +79,7 @@ An example of searching through a database of segments for a specific condition,
 
 *a plot of the steer_warning vs steering angle, where we can see it is clearly caused by a large steering angle change*
 
-### [tools/car_porting/examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipynb)
+### [examples/subaru_long_accel.ipynb](/tools/car_porting/examples/subaru_long_accel.ipynb)
 
 An example of plotting the response of an actuator when it is active.
 
@@ -73,7 +87,7 @@ An example of plotting the response of an actuator when it is active.
 
 *a plot of the brake_pressure vs acceleration, where we can see it is a fairly linear response.*
 
-### [tools/car_porting/examples/ford_vin_fingerprint.ipynb](/tools/car_porting/examples/ford_vin_fingerprint.ipynb)
+### [examples/ford_vin_fingerprint.ipynb](/tools/car_porting/examples/ford_vin_fingerprint.ipynb)
 
 In this example, we use the public comma car segments database to check if vin fingerprinting is feasible for ford.
 
@@ -93,4 +107,23 @@ vin: 1FM5K8GC7NGXXXXXX real platform: FORD EXPLORER 6TH GEN              determi
 vin: 5LM5J7XC8MGXXXXXX real platform: FORD EXPLORER 6TH GEN              determined platform: mock                              correct: False
 vin: 3FTTW8E31PRXXXXXX real platform: FORD MAVERICK 1ST GEN              determined platform: mock                              correct: False
 vin: 3FTTW8E99NRXXXXXX real platform: FORD MAVERICK 1ST GEN              determined platform: mock                              correct: False
+```
+
+### [examples/find_segments_with_message.ipynb](/tools/car_porting/examples/find_segments_with_message.ipynb)
+
+Searches for segments where a set of given CAN message IDs are present. In the example, we search for all messages
+used for CAN-based ignition detection.
+
+```
+Match found: 46b21f1c5f7aa885/2024-01-23--15-19-34/20/s    JEEP GRAND CHEROKEE V6 2018            ['VW CAN Ign']
+Match found: a63a23c3e628f288/2023-11-05--18-36-20/8/s     JEEP GRAND CHEROKEE V6 2018            ['VW CAN Ign']
+Match found: ce31b7a998781ba8/2024-01-19--07-05-29/23/s    JEEP GRAND CHEROKEE 2019               ['VW CAN Ign']
+Match found: e1dfba62a4e33f7b/2023-12-25--19-31-00/4/s     JEEP GRAND CHEROKEE 2019               ['VW CAN Ign']
+Match found: e1dfba62a4e33f7b/2024-01-10--14-33-57/2/s     JEEP GRAND CHEROKEE 2019               ['VW CAN Ign']
+Match found: ae679616266f4096/2023-12-05--15-43-46/4/s     RAM HD 5TH GEN                         ['Tesla 3/Y CAN Ign']
+Match found: ae679616266f4096/2023-11-18--17-49-42/3/s     RAM HD 5TH GEN                         ['Tesla 3/Y CAN Ign']
+Match found: ae679616266f4096/2024-01-03--21-57-09/25/s    RAM HD 5TH GEN                         ['Tesla 3/Y CAN Ign']
+Match found: 6dae2984cc53cd7f/2023-12-10--11-53-15/17/s    FORD BRONCO SPORT 1ST GEN              ['Rivian CAN Ign']
+Match found: 6dae2984cc53cd7f/2023-12-03--17-31-17/29/s    FORD BRONCO SPORT 1ST GEN              ['Rivian CAN Ign']
+Match found: 6dae2984cc53cd7f/2023-11-27--23-29-07/1/s     FORD BRONCO SPORT 1ST GEN              ['Rivian CAN Ign']
 ```
