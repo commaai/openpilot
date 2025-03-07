@@ -67,7 +67,7 @@ class ParamsLearner:
         roll_std = np.radians(10.0)
       self.roll = np.clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
 
-      yaw_rate_valid = msg.angularVelocityDevice.valid and self.calibrator.calib_valid
+      yaw_rate_valid = msg.angularVelocityDevice.valid
       yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
       yaw_rate_valid = yaw_rate_valid and abs(self.yaw_rate) < 1  # rad/s
 
