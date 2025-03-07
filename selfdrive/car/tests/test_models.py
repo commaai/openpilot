@@ -404,6 +404,7 @@ class TestCarModelBase(unittest.TestCase):
       HYUNDAI.KIA_OPTIMA_G4_FL,  # real relay malfunction
       SUBARU.SUBARU_IMPREZA,  # real relay malfunction
       HYUNDAI.HYUNDAI_ELANTRA_GT_I30,  # real relay malfunction
+      TOYOTA.TOYOTA_CAMRY,  # no alternative experience in logs
     ):
       self.skipTest("Skipping for known failures/bad routes")
 
