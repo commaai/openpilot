@@ -1360,7 +1360,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
   // check if the request ID is even valid. this happens after queued
   // requests are cleared. unclear if it happens any other time.
   if (request_id == 0) {
-    if (invalid_request_count++ > 10) {
+    if (invalid_request_count++ > ife_buf_depth+2) {
       LOGE("camera %d reset after half second of invalid requests", cc.camera_num);
       clearAndRequeue(request_id_last + 1);
       invalid_request_count = 0;
