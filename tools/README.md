@@ -35,14 +35,20 @@ tools/op.sh setup
 git lfs pull
 ```
 
-**4. Activate a python shell**
+**4. Install python dependencies**
+
+``` bash
+tools/install_python_dependencies.sh
+```
+
+**5. Activate a python shell**
 
 Activate a shell with the Python dependencies installed:
 ``` bash
 source .venv/bin/activate
 ```
 
-**5. Build openpilot**
+**6. Build openpilot**
 
 ``` bash
 scons -u -j$(nproc)
