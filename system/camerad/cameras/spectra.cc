@@ -233,12 +233,11 @@ void SpectraMaster::init() {
 
 // *** SpectraCamera ***
 
-SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out)
+SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
     enabled(config.enabled),
-    cc(config),
-    output_type(out) {
-  ife_buf_depth = (out == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
+    cc(config) {
+  ife_buf_depth = (cc.output_type == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
@@ -249,6 +248,7 @@ SpectraCamera::~SpectraCamera() {
 }
 
 int SpectraCamera::clear_req_queue() {
+  // for "non-realtime" BPS
   if (icp_dev_handle > 0) {
     struct cam_flush_dev_cmd cmd = {
       .session_handle = session_handle,
@@ -260,6 +260,7 @@ int SpectraCamera::clear_req_queue() {
     LOGD("flushed bps: %d", err);
   }
 
+  // for "realtime" devices
   struct cam_req_mgr_flush_info req_mgr_flush_request = {0};
   req_mgr_flush_request.session_hdl = session_handle;
   req_mgr_flush_request.link_hdl = link_handle;
@@ -288,7 +289,7 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
   uv_height = VENUS_UV_SCANLINES(COLOR_FMT_NV12, sensor->frame_height);
   uv_offset = stride*y_height;
   yuv_size = uv_offset + stride*uv_height;
-  if (output_type != ISP_RAW_OUTPUT) {
+  if (cc.output_type != ISP_RAW_OUTPUT) {
     uv_offset = ALIGNED_SIZE(uv_offset, 0x1000);
     yuv_size = uv_offset + ALIGNED_SIZE(stride*uv_height, 0x1000);
   }
@@ -297,21 +298,14 @@ void SpectraCamera::camera_open(VisionIpcServer *v, cl_device_id device_id, cl_c
 
   open = true;
   configISP();
-  if (output_type == ISP_BPS_PROCESSED) configICP();
+  if (cc.output_type == ISP_BPS_PROCESSED) configICP();
   configCSIPHY();
   linkDevices();
 
   LOGD("camera init %d", cc.camera_num);
   buf.init(device_id, ctx, this, v, ife_buf_depth, cc.stream_type);
   camera_map_bufs();
-  enqueue_req_multi(1, ife_buf_depth);
-}
-
-void SpectraCamera::enqueue_req_multi(uint64_t start, int n) {
-  for (uint64_t request_id = start; request_id < start + n; ++request_id) {
-    uint64_t idx = (request_id - 1) % ife_buf_depth;
-    enqueue_buffer(idx, request_id);
-  }
+  clearAndRequeue(1);
 }
 
 void SpectraCamera::sensors_start() {
@@ -741,7 +735,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     buf_desc[0].offset = ife_cmd.aligned_size()*idx;
 
     // stream of IFE register writes
-    bool is_raw = output_type != ISP_IFE_PROCESSED;
+    bool is_raw = cc.output_type != ISP_IFE_PROCESSED;
     if (!is_raw) {
       if (init) {
         buf_desc[0].length = build_initial_config((unsigned char*)ife_cmd.ptr + buf_desc[0].offset, cc, sensor.get(), patches);
@@ -830,7 +824,7 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
     pkt->io_configs_offset = sizeof(struct cam_cmd_buf_desc)*pkt->num_cmd_buf;
 
     struct cam_buf_io_cfg *io_cfg = (struct cam_buf_io_cfg *)((char*)&pkt->payload + pkt->io_configs_offset);
-    if (output_type != ISP_IFE_PROCESSED) {
+    if (cc.output_type != ISP_IFE_PROCESSED) {
       io_cfg[0].mem_handle[0] = buf_handle_raw[idx];
       io_cfg[0].planes[0] = (struct cam_plane_cfg){
         .width = sensor->frame_width,
@@ -901,59 +895,14 @@ void SpectraCamera::config_ife(int idx, int request_id, bool init) {
   assert(ret == 0);
 }
 
-// Enqueue buffer for the given index and return true if the frame is ready
-bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
-  int ret;
-  bool frame_ready = false;
-
-  // Before queuing up a new frame, wait for the
-  // previous one in this slot (index) to come in.
-  if (sync_objs_ife[i]) {
-    // TODO: write a test to stress test w/ a low timeout and check camera frame ids match
-
-    struct cam_sync_wait sync_wait = {0};
-
-    // *** Wait for IFE ***
-    // in RAW_OUTPUT mode, this is just the frame readout from the sensor
-    // in IFE_PROCESSED mode, this is both frame readout and image processing (~1ms)
-    sync_wait.sync_obj = sync_objs_ife[i];
-    sync_wait.timeout_ms = 100;
-    if (stress_test("IFE sync")) {
-      sync_wait.timeout_ms = 1;
-    }
-    ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-    if (ret != 0) {
-      LOGE("failed to wait for IFE sync: %d %d", ret, sync_wait.sync_obj);
-    }
-
-    // *** Wait for BPS ***
-    if (ret == 0 && sync_objs_bps[i]) {
-      sync_wait.sync_obj = sync_objs_bps[i];
-      sync_wait.timeout_ms = 50; // typically 7ms
-      if (stress_test("BPS sync")) {
-        sync_wait.timeout_ms = 1;
-      }
-      ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait));
-      if (ret != 0) {
-        LOGE("failed to wait for BPS sync: %d %d", ret, sync_wait.sync_obj);
-      }
-    }
-
-    if (ret == 0) {
-      // all good, hand off frame
-      frame_ready = true;
-      destroySyncObjectAt(i);
-    } else {
-      // need to start over on sync failures,
-      // otherwise future frames will tear
-      clear_req_queue();
-    }
-  }
+void SpectraCamera::enqueue_frame(uint64_t request_id) {
+  int i = request_id % ife_buf_depth;
+  assert(sync_objs_ife[i] == 0);
 
   // create output fences
   struct cam_sync_info sync_create = {0};
   strcpy(sync_create.name, "NodeOutputPortFence");
-  ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
+  int ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_CREATE, &sync_create, sizeof(sync_create));
   if (ret != 0) {
     LOGE("failed to create fence: %d %d", ret, sync_create.sync_obj);
   } else {
@@ -984,9 +933,7 @@ bool SpectraCamera::enqueue_buffer(int i, uint64_t request_id) {
 
   // submit request to IFE and BPS
   config_ife(i, request_id);
-  if (output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
-
-  return frame_ready;
+  if (cc.output_type == ISP_BPS_PROCESSED) config_bps(i, request_id);
 }
 
 void SpectraCamera::destroySyncObjectAt(int index) {
@@ -1019,7 +966,7 @@ void SpectraCamera::camera_map_bufs() {
       mem_mgr_map_cmd.mmu_hdls[1] = m->icp_device_iommu;
     }
 
-    if (output_type != ISP_IFE_PROCESSED) {
+    if (cc.output_type != ISP_IFE_PROCESSED) {
       // RAW bayer images
       mem_mgr_map_cmd.fd = buf.camera_bufs_raw[i].fd;
       ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_MAP_BUF, &mem_mgr_map_cmd, sizeof(mem_mgr_map_cmd));
@@ -1028,7 +975,7 @@ void SpectraCamera::camera_map_bufs() {
       buf_handle_raw[i] = mem_mgr_map_cmd.out.buf_handle;
     }
 
-    if (output_type != ISP_RAW_OUTPUT) {
+    if (cc.output_type != ISP_RAW_OUTPUT) {
       // final processed images
       VisionBuf *vb = buf.vipc_server->get_buffer(buf.stream_type, i);
       mem_mgr_map_cmd.fd = vb->fd;
@@ -1125,7 +1072,7 @@ void SpectraCamera::configISP() {
     },
   };
 
-  if (output_type != ISP_IFE_PROCESSED) {
+  if (cc.output_type != ISP_IFE_PROCESSED) {
     in_port_info.line_start = 0;
     in_port_info.line_stop = sensor->frame_height + sensor->extra_height - 1;
     in_port_info.height = sensor->frame_height + sensor->extra_height;
@@ -1148,7 +1095,7 @@ void SpectraCamera::configISP() {
 
   // allocate IFE memory, then configure it
   ife_cmd.init(m, 67984, 0x20, false, m->device_iommu, m->cdm_iommu, ife_buf_depth);
-  if (output_type == ISP_IFE_PROCESSED) {
+  if (cc.output_type == ISP_IFE_PROCESSED) {
     assert(sensor->gamma_lut_rgb.size() == 64);
     ife_gamma_lut.init(m, sensor->gamma_lut_rgb.size()*sizeof(uint32_t), 0x20, false, m->device_iommu, m->cdm_iommu, 3); // 3 for RGB
     for (int i = 0; i < 3; i++) {
@@ -1300,7 +1247,7 @@ void SpectraCamera::linkDevices() {
   ret = device_control(m->isp_fd, CAM_START_DEV, session_handle, isp_dev_handle);
   LOGD("start isp: %d", ret);
   assert(ret == 0);
-  if (output_type == ISP_BPS_PROCESSED) {
+  if (cc.output_type == ISP_BPS_PROCESSED) {
     ret = device_control(m->icp_fd, CAM_START_DEV, session_handle, icp_dev_handle);
     LOGD("start icp: %d", ret);
     assert(ret == 0);
@@ -1315,7 +1262,7 @@ void SpectraCamera::camera_close() {
     // LOGD("stop sensor: %d", ret);
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
     LOGD("stop isp: %d", ret);
-    if (output_type == ISP_BPS_PROCESSED) {
+    if (cc.output_type == ISP_BPS_PROCESSED) {
       ret = device_control(m->icp_fd, CAM_STOP_DEV, session_handle, icp_dev_handle);
       LOGD("stop icp: %d", ret);
     }
@@ -1344,7 +1291,7 @@ void SpectraCamera::camera_close() {
     LOGD("-- Release devices");
     ret = device_control(m->isp_fd, CAM_RELEASE_DEV, session_handle, isp_dev_handle);
     LOGD("release isp: %d", ret);
-    if (output_type == ISP_BPS_PROCESSED) {
+    if (cc.output_type == ISP_BPS_PROCESSED) {
       ret = device_control(m->icp_fd, CAM_RELEASE_DEV, session_handle, icp_dev_handle);
       LOGD("release icp: %d", ret);
     }
@@ -1371,89 +1318,128 @@ void SpectraCamera::camera_close() {
   LOGD("destroyed session %d: %d", cc.camera_num, ret);
 }
 
-// Processes camera events and returns true if the frame is ready for further processing
 bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
-  if (stress_test("skipping handling camera event")) {
-    LOGW("skipping event");
+  /*
+    Handles camera SOF event. Returns true if the frame is valid for publishing.
+  */
+
+  uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
+  uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
+  uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
+  //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+
+  if (stress_test("skipping SOF event")) return false;
+
+  if (!validateEvent(request_id, frame_id_raw)) {
     return false;
   }
 
-  // ID from the qcom camera request manager
-  uint64_t request_id = event_data->u.frame_msg.request_id;
+  // Update tracking variables
+  if (request_id == request_id_last + 1) {
+    skip_expected = false;
+  }
+  frame_id_raw_last = frame_id_raw;
+  request_id_last = request_id;
 
-  // raw as opposed to our re-indexed frame ID
-  uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;
-
-  //LOGD("handle cam %d, request id %lu -> %lu, frame id raw %lu", cc.camera_num, request_id_last, request_id, frame_id_raw);
-
-  if (request_id != 0) { // next ready
-    // check for skipped_last frames
-    if (frame_id_raw > frame_id_raw_last + 1 && !skipped_last) {
-      LOGE("camera %d realign", cc.camera_num);
-      clear_req_queue();
-      enqueue_req_multi(request_id + 1, ife_buf_depth - 1);
-      skipped_last = true;
-    } else if (frame_id_raw == frame_id_raw_last + 1) {
-      skipped_last = false;
-    }
-
-    // check for dropped requests
-    if (request_id > request_id_last + 1) {
-      LOGE("camera %d dropped requests %ld %ld", cc.camera_num, request_id, request_id_last);
-      enqueue_req_multi(request_id_last + 1 + ife_buf_depth, request_id - (request_id_last + 1));
-    }
-
-    // metas
-    frame_id_raw_last = frame_id_raw;
-    request_id_last = request_id;
-
-    int buf_idx = (request_id - 1) % ife_buf_depth;
-    uint64_t timestamp = event_data->u.frame_msg.timestamp;  // this is timestamped in the kernel's SOF IRQ callback
-    if (syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
-      // wait for this frame's EOF, then queue up the next one
-      if (enqueue_buffer(buf_idx, request_id + ife_buf_depth)) {
-        // Frame is ready
-
-        // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
-        uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
-
-        // Update buffer and frame data
-        buf.cur_buf_idx = buf_idx;
-        buf.cur_frame_data = {
-          .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
-          .request_id = (uint32_t)request_id,
-          .timestamp_sof = timestamp,
-          .timestamp_eof = timestamp_eof,
-          .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
-        };
-        return true;
-      }
-      // LOGW("camerad %d synced req %d fid %d, publishing ts %.2f cereal_frame_id %d", cc.camera_num, (int)request_id, (int)frame_id_raw, (double)(timestamp)*1e-6, meta_data.frame_id);
-    } else {
-      // Frames not yet synced
-      enqueue_req_multi(request_id + ife_buf_depth, 1);
-      // LOGW("camerad %d not synced req %d fid %d", cc.camera_num, (int)request_id, (int)frame_id_raw);
-    }
-  } else { // not ready
-    if (frame_id_raw > frame_id_raw_last + 10) {
-      LOGE("camera %d reset after half second of no response", cc.camera_num);
-      clear_req_queue();
-      enqueue_req_multi(request_id_last + 1, ife_buf_depth);
-      frame_id_raw_last = frame_id_raw;
-      skipped_last = true;
-    }
+  // Wait until frame's fully read out and processed
+  if (!waitForFrameReady(request_id)) {
+    // Reset queue on sync failure to prevent frame tearing
+    LOGE("camera %d sync failure %ld %ld ", cc.camera_num, request_id, frame_id_raw);
+    clearAndRequeue(request_id + 1);
+    return false;
   }
 
-  return false;
+  int buf_idx = request_id % ife_buf_depth;
+  bool ret = processFrame(buf_idx, request_id, frame_id_raw, timestamp);
+  destroySyncObjectAt(buf_idx);
+  enqueue_frame(request_id + ife_buf_depth);  // request next frame for this slot
+  return ret;
+}
+
+bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
+  // check if the request ID is even valid. this happens after queued
+  // requests are cleared. unclear if it happens any other time.
+  if (request_id == 0) {
+    if (invalid_request_count++ > ife_buf_depth+2) {
+      LOGE("camera %d reset after half second of invalid requests", cc.camera_num);
+      clearAndRequeue(request_id_last + 1);
+      invalid_request_count = 0;
+    }
+    return false;
+  }
+  invalid_request_count = 0;
+
+  // check for skips in frame_id or request_id
+  if (!skip_expected) {
+    if (frame_id_raw != frame_id_raw_last + 1) {
+      LOGE("camera %d frame ID skipped, %lu -> %lu", cc.camera_num, frame_id_raw_last, frame_id_raw);
+      clearAndRequeue(request_id + 1);
+      return false;
+    }
+
+    if (request_id != request_id_last + 1) {
+      LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, request_id_last, request_id);
+      clearAndRequeue(request_id_last + 1);
+      return false;
+    }
+  }
+  return true;
+}
+
+void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
+  // clear everything, then queue up a fresh set of frames
+  LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
+  clear_req_queue();
+  for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
+    enqueue_frame(id);
+  }
+  skip_expected = true;
+}
+
+bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
+  int buf_idx = request_id % ife_buf_depth;
+  assert(sync_objs_ife[buf_idx]);
+
+  auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
+    struct cam_sync_wait sync_wait = {};
+    sync_wait.sync_obj = sync_obj;
+    sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
+    return do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait)) == 0;
+  };
+
+  // wait for frame from IFE
+  // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
+  // - in IFE_PROCESSED mode, this time also includes image processing (~1ms)
+  bool success = waitForSync(sync_objs_ife[buf_idx], 100, "IFE sync");
+  if (success && sync_objs_bps[buf_idx]) {
+    // BPS is typically 7ms
+    success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
+  }
+  return success;
+}
+
+bool SpectraCamera::processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp) {
+  if (!syncFirstFrame(cc.camera_num, request_id, frame_id_raw, timestamp)) {
+    return false;
+  }
+
+  // in IFE_PROCESSED mode, we can't know the true EOF, so recover it with sensor readout time
+  uint64_t timestamp_eof = timestamp + sensor->readout_time_ns;
+
+  // Update buffer and frame data
+  buf.cur_buf_idx = buf_idx;
+  buf.cur_frame_data = {
+    .frame_id = (uint32_t)(frame_id_raw - camera_sync_data[cc.camera_num].frame_id_offset),
+    .request_id = (uint32_t)request_id,
+    .timestamp_sof = timestamp,
+    .timestamp_eof = timestamp_eof,
+    .processing_time = float((nanos_since_boot() - timestamp_eof) * 1e-9)
+  };
+  return true;
 }
 
 bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp) {
   if (first_frame_synced) return true;
-
-  // OX and OS cameras require a few frames for the FSIN to sync up
-  if (request_id < 3) {
-    return false;
-  }
 
   // Store the frame data for this camera
   camera_sync_data[camera_id] = SyncData{timestamp, raw_id + 1};
@@ -1468,7 +1454,7 @@ bool SpectraCamera::syncFirstFrame(int camera_id, uint64_t request_id, uint64_t 
   for (const auto &[_, sync_data] : camera_sync_data) {
     uint64_t diff = std::max(timestamp, sync_data.timestamp) -
                     std::min(timestamp, sync_data.timestamp);
-    if (diff > 0.5*1e6) {  // within 0.5ms
+    if (diff > 0.2*1e6) { // milliseconds
       all_cams_synced = false;
     }
   }

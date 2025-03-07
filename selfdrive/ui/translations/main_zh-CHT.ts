@@ -312,24 +312,30 @@
         <translation>🔥 訓練資料上傳模式 🔥</translation>
     </message>
     <message>
-        <source>Enable Firehose Mode</source>
-        <translation>啟用訓練資料上傳模式</translation>
-    </message>
-    <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
-Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
-        <translation>openpilot 透過觀察人類（像你一樣的駕駛）來學習駕駛。
-
-訓練資料上傳模式可讓你最大化上傳訓練數據，以改進 openpilot 的駕駛模型。更多數據意味著更大的模型，並帶來更優秀的實驗模式。</translation>
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>0%</source>
-        <translation>0%</translation>
+        <source>Firehose Mode: ACTIVE</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
-        <translation>按照以下步驟準備您的裝置：&lt;br&gt;	1. 將裝置帶到室內並連接到良好的 USB-C 充電器&lt;br&gt;	2. 連接 Wi-Fi&lt;br&gt;	3. 啟用開關&lt;br&gt;	4. 保持連接至少 30 分鐘&lt;br&gt;&lt;br&gt;開關會在裝置重新啟動後自動關閉。請至少每週重複一次，以獲得最佳效果。&lt;br&gt;&lt;br&gt;&lt;b&gt;常見問題&lt;/b&gt;&lt;br&gt;&lt;i&gt;駕駛方式或地點重要嗎？&lt;/i&gt; 不，按照平常的方式駕駛即可。&lt;br&gt;&lt;i&gt;什麼是良好的 USB-C 充電器？&lt;/i&gt; 任何快速手機或筆記本電腦充電器都可以。&lt;br&gt;&lt;i&gt;我需要連接 Wi-Fi 嗎？&lt;/i&gt; 是的。&lt;br&gt;&lt;i&gt;我需要把裝置帶到室內嗎？&lt;/i&gt; 不，您可以在停車後啟用，但您的上傳速度將受限於車輛的電池。&lt;br&gt;</translation>
+        <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;b&gt;%1 %2&lt;/b&gt; of your driving are in the training dataset so far.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>ACTIVE</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to unmetered network</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -978,20 +984,20 @@ This may take up to a minute.</source>
 <context>
     <name>TermsPage</name>
     <message>
-        <source>Terms &amp; Conditions</source>
-        <translation>條款和條件</translation>
-    </message>
-    <message>
         <source>Decline</source>
         <translation>拒絕</translation>
     </message>
     <message>
-        <source>Scroll to accept</source>
-        <translation>滑動至頁尾接受條款</translation>
-    </message>
-    <message>
         <source>Agree</source>
         <translation>接受</translation>
+    </message>
+    <message>
+        <source>Welcome to openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

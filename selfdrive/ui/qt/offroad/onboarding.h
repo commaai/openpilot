@@ -65,9 +65,6 @@ class TermsPage : public QFrame {
 public:
   explicit TermsPage(QWidget *parent = 0) : QFrame(parent) {}
 
-public slots:
-  void enableAccept();
-
 private:
   void showEvent(QShowEvent *event) override;
 

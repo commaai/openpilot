@@ -64,7 +64,35 @@ class TestCamerad:
     laggy_frames = {k: v for k, v in diffs.items() if v > 1.1}
     assert len(laggy_frames) == 0, f"Frames not synced properly: {laggy_frames=}"
 
-  @pytest.mark.skip("TODO: enable this")
-  def test_stress_test(self, logs):
-    os.environ['SPECTRA_STRESS_TEST'] = '1'
-    run_and_log(["camerad", ], CAMERAS, 5)
+  def test_sanity_checks(self, logs):
+    self._sanity_checks(logs)
+
+  def _sanity_checks(self, ts):
+    for c in CAMERAS:
+      assert c in ts
+      assert len(ts[c]['t']) > 20
+
+      # not a valid request id
+      assert 0 not in ts[c]['requestId']
+
+      # should monotonically increase
+      assert np.all(np.diff(ts[c]['frameId']) >= 1)
+      assert np.all(np.diff(ts[c]['requestId']) >= 1)
+
+      # EOF > SOF
+      assert np.all((ts[c]['timestampEof'] - ts[c]['timestampSof']) > 0)
+
+      # logMonoTime > SOF
+      assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 1e-7)
+      assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 1e-7)
+
+  def test_stress_test(self):
+    os.environ['SPECTRA_ERROR_PROB'] = '0.008'
+    logs = run_and_log(["camerad", ], CAMERAS, 10)
+    ts = msgs_to_time_series(logs)
+
+    # we should see some jumps from introduced errors
+    assert np.max([ np.max(np.diff(ts[c]['frameId'])) for c in CAMERAS ]) > 1
+    assert np.max([ np.max(np.diff(ts[c]['requestId'])) for c in CAMERAS ]) > 1
+
+    self._sanity_checks(ts)
