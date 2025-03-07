@@ -80,14 +80,13 @@ def deleter_thread(exit_event: threading.Event):
                 cloudlog.exception(f"issue deleting {delete_path_external}")
 
           # move directory from internal to external
-          path_internal = os.path.join(Paths.log_root(), delete_dir)
           path_external = os.path.join(Paths.log_root_external(), delete_dir)
           try:
-            cloudlog.info(f"moving {path_internal} to {path_external}")
-            shutil.move(path_internal, path_external)
+            cloudlog.info(f"moving {delete_path} to {path_external}")
+            shutil.move(delete_path, path_external)
             break
           except Exception as e:
-            cloudlog.exception(f"issue moving {path_internal} to {path_external}: {str(e)}")
+            cloudlog.exception(f"issue moving {delete_path} to {path_external}: {str(e)}")
           continue
 
         try:
