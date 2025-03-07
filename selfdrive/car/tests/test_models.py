@@ -422,7 +422,7 @@ class TestCarModelBase(unittest.TestCase):
     #       break
 
     # TODO: we should init on the generated sendcan messages
-    init_segment(self.safety, self.msgs, self.CP.safetyConfigs[0].safetyModel, self.CP.safetyConfigs[0].safetyParam)
+    init_segment(self.safety, self.msgs, self.CP.safetyConfigs[-1].safetyModel, self.CP.safetyConfigs[-1].safetyParam)
 
     print('long', self.CP.openpilotLongitudinalControl)
 
