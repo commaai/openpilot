@@ -982,20 +982,20 @@ This may take up to a minute.</source>
 <context>
     <name>TermsPage</name>
     <message>
-        <source>Terms &amp; Conditions</source>
-        <translation>Şartlar ve Koşullar</translation>
-    </message>
-    <message>
         <source>Decline</source>
         <translation>Reddet</translation>
     </message>
     <message>
-        <source>Scroll to accept</source>
-        <translation>Kabul etmek için kaydırın</translation>
-    </message>
-    <message>
         <source>Agree</source>
         <translation>Kabul et</translation>
+    </message>
+    <message>
+        <source>Welcome to openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

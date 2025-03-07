@@ -988,20 +988,20 @@ Esto puede tardar un minuto.</translation>
 <context>
     <name>TermsPage</name>
     <message>
-        <source>Terms &amp; Conditions</source>
-        <translation>Términos &amp; Condiciones</translation>
-    </message>
-    <message>
         <source>Decline</source>
         <translation>Rechazar</translation>
     </message>
     <message>
-        <source>Scroll to accept</source>
-        <translation>Desliza para aceptar</translation>
-    </message>
-    <message>
         <source>Agree</source>
         <translation>Aceptar</translation>
+    </message>
+    <message>
+        <source>Welcome to openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
