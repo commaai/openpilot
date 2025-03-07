@@ -17,6 +17,8 @@ from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.ford.values import CAR as FORD
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
+from opendbc.car.hyundai.values import CAR as HYUNDAI
+from opendbc.car.subaru.values import CAR as SUBARU
 from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from opendbc.car.values import Platform, PLATFORMS
@@ -268,42 +270,42 @@ class TestCarModelBase(unittest.TestCase):
     self.safety.safety_tick_current_safety_config()
     self.assertFalse(self.safety.safety_config_valid())
 
-  def test_panda_safety_tx_cases(self, data=None):
-    return
-    """Asserts we can tx common messages"""
-    if self.CP.notCar:
-      self.skipTest("Skipping test for notCar")
-
-    def test_car_controller(car_control):
-      now_nanos = 0
-      msgs_sent = 0
-      CI = self.CarInterface(self.CP, self.CarController, self.CarState)
-      for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
-        CI.update([])
-        _, sendcan = CI.apply(car_control, now_nanos)
-
-        now_nanos += DT_CTRL * 1e9
-        msgs_sent += len(sendcan)
-        for addr, dat, bus in sendcan:
-          to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
-          self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
-
-      # Make sure we attempted to send messages
-      self.assertGreater(msgs_sent, 50)
-
-    # Make sure we can send all messages while inactive
-    CC = structs.CarControl()
-    test_car_controller(CC.as_reader())
-
-    # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
-    self.safety.set_cruise_engaged_prev(True)
-    CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
-    test_car_controller(CC.as_reader())
-
-    # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
-    self.safety.set_controls_allowed(True)
-    CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
-    test_car_controller(CC.as_reader())
+  # def test_panda_safety_tx_cases(self, data=None):
+  #   return
+  #   """Asserts we can tx common messages"""
+  #   if self.CP.notCar:
+  #     self.skipTest("Skipping test for notCar")
+  #
+  #   def test_car_controller(car_control):
+  #     now_nanos = 0
+  #     msgs_sent = 0
+  #     CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+  #     for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
+  #       CI.update([])
+  #       _, sendcan = CI.apply(car_control, now_nanos)
+  #
+  #       now_nanos += DT_CTRL * 1e9
+  #       msgs_sent += len(sendcan)
+  #       for addr, dat, bus in sendcan:
+  #         to_send = libsafety_py.make_CANPacket(addr, bus % 4, dat)
+  #         self.assertTrue(self.safety.safety_tx_hook(to_send), (addr, dat, bus))
+  #
+  #     # Make sure we attempted to send messages
+  #     self.assertGreater(msgs_sent, 50)
+  #
+  #   # Make sure we can send all messages while inactive
+  #   CC = structs.CarControl()
+  #   test_car_controller(CC.as_reader())
+  #
+  #   # Test cancel + general messages (controls_allowed=False & cruise_engaged=True)
+  #   self.safety.set_cruise_engaged_prev(True)
+  #   CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(cancel=True))
+  #   test_car_controller(CC.as_reader())
+  #
+  #   # Test resume + general messages (controls_allowed=True & cruise_engaged=True)
+  #   self.safety.set_controls_allowed(True)
+  #   CC = structs.CarControl(cruiseControl=structs.CarControl.CruiseControl(resume=True))
+  #   test_car_controller(CC.as_reader())
 
   # Skip stdout/stderr capture with pytest, causes elevated memory usage
   @pytest.mark.nocapture
@@ -398,6 +400,9 @@ class TestCarModelBase(unittest.TestCase):
       HONDA.HONDA_ACCORD,  # real relay malfunction
       HONDA.ACURA_RDX_3G,  # real relay malfunction
       FORD.FORD_EXPLORER_MK6,  # cameron is sending path offset/angle/etc
+      HYUNDAI.KIA_OPTIMA_G4_FL,  # real relay malfunction
+      SUBARU.SUBARU_IMPREZA,  # real relay malfunction
+      HYUNDAI.HYUNDAI_ELANTRA_GT_I30,  # real relay malfunction
     ):
       self.skipTest("Skipping for known failures/bad routes")
 
