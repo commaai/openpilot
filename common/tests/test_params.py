@@ -106,4 +106,4 @@ class TestParams:
     # sanity checks
     assert len(keys) > 20
     assert len(keys) == len(set(keys))
-    assert b"CarParams" in keys
+    assert "CarParams" in keys
