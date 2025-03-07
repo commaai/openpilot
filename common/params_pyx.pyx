@@ -4,7 +4,7 @@ from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-cdef extern from "common/params.h":
+cdef extern from "common/params.h" nogil:
   cpdef enum ParamKeyType:
     PERSISTENT
     CLEAR_ON_MANAGER_START
@@ -14,16 +14,16 @@ cdef extern from "common/params.h":
     ALL
 
   cdef cppclass c_Params "Params":
-    c_Params(string) except + nogil
-    string get(string, bool) nogil
-    bool getBool(string, bool) nogil
-    int remove(string) nogil
-    int put(string, string) nogil
-    void putNonBlocking(string, string) nogil
-    void putBoolNonBlocking(string, bool) nogil
-    int putBool(string, bool) nogil
-    bool checkKey(string) nogil
-    string getParamPath(string) nogil
+    c_Params(string) except +
+    string get(string, bool)
+    bool getBool(string, bool)
+    int remove(string)
+    int put(string, string)
+    void putNonBlocking(string, string)
+    void putBoolNonBlocking(string, bool)
+    int putBool(string, bool)
+    bool checkKey(string)
+    string getParamPath(string)
     void clearAll(ParamKeyType)
     vector[string] allKeys()
 
@@ -48,16 +48,21 @@ cdef class Params:
     return (type(self), (self.d,))
 
   def __dealloc__(self):
-    del self.p
+    with nogil:
+      del self.p
 
-  def clear_all(self, tx_type=ParamKeyType.ALL):
-    self.p.clearAll(tx_type)
+  def clear_all(self, ParamKeyType key_type=ParamKeyType.ALL):
+    with nogil:
+      self.p.clearAll(key_type)
 
   def check_key(self, key):
-    key = ensure_bytes(key)
-    if not self.p.checkKey(key):
+    cdef string cpp_key = ensure_bytes(key)
+    cdef bool exists
+    with nogil:
+      exists = self.p.checkKey(cpp_key)
+    if not exists:
       raise UnknownKeyName(key)
-    return key
+    return cpp_key
 
   def get(self, key, bool block=False, encoding=None):
     cdef string k = self.check_key(key)
@@ -117,7 +122,13 @@ cdef class Params:
 
   def get_param_path(self, key=""):
     cdef string key_bytes = ensure_bytes(key)
-    return self.p.getParamPath(key_bytes).decode("utf-8")
+    cdef string result
+    with nogil:
+      result = self.p.getParamPath(key_bytes)
+    return result.decode('utf-8')
 
   def all_keys(self):
-    return self.p.allKeys()
+    cdef vector[string] keys
+    with nogil:
+      keys = self.p.allKeys()
+    return [key.decode('utf-8') for key in keys]
