@@ -434,6 +434,7 @@ class TestCarModelBase(unittest.TestCase):
     # FIXME: online there is usually a 1 frame delay from carState to carControl
     #  so messages will be blocked when gas overriding, disabling, etc.
 
+    # TODO: use safety replay
     for idx, msg in enumerate(self.msgs):
       msg.which()
       if msg.which() == 'can':
@@ -453,9 +454,12 @@ class TestCarModelBase(unittest.TestCase):
           continue
 
         last_actuators_output, can_sends = self.CI.apply(msg.carControl, msg.logMonoTime)
-        print('carControl longActive', msg.carControl.longActive)
+        print('carControl latActive', msg.carControl.latActive, 'longActive', msg.carControl.longActive, 'enabled', msg.carControl.enabled,
+              'cancel', msg.carControl.cruiseControl.cancel, 'resume', msg.carControl.cruiseControl.resume)
         print('carOutput torque', last_actuators_output.torque, 'accel', last_actuators_output.accel)
         print('driver torque', CS.steeringTorque, 'gasPressed', CS.gasPressed)
+        print('safety brakePressed', self.safety.get_brake_pressed_prev(), 'gasPressed', self.safety.get_gas_pressed_prev(), 'cruiseEngaged', self.safety.get_cruise_engaged_prev())
+        print('safety controls_allowed', self.safety.get_controls_allowed())
         print()
         print(can_sends)
         for can_send in can_sends:
@@ -464,8 +468,9 @@ class TestCarModelBase(unittest.TestCase):
           to_send = libsafety_py.make_CANPacket(can_send[0], can_send[2] % 4, can_send[1])
           tx = self.safety.safety_tx_hook(to_send)
           if not tx:
-            print('BLOCKED!')
+            print('BLOCKED!', can_send[0])
             blocked[can_send[0]] += 1
+            raise Exception(can_send[0])
             blocked_frame = idx
           # if blocked > 0 and idx != blocked_frame:
           #   print('WOOOOOOOOO')
