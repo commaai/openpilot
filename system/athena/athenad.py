@@ -383,10 +383,10 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       failed.append(file.fn)
       continue
 
-    path = os.path.join(Paths.log_root(), file.fn)
+    path_internal = os.path.join(Paths.log_root(), file.fn)
     path_external = os.path.join(Paths.log_root_external(), file.fn)
-    if os.path.exists(local_path) or os.path.exists(strip_zst_extension(local_path)):
-      path = local_path
+    if os.path.exists(path_internal) or os.path.exists(strip_zst_extension(path_internal)):
+      path = path_internal
     elif os.path.exists(external_path) or os.path.exists(strip_zst_extension(external_path)):
       path = external_path
     else:
