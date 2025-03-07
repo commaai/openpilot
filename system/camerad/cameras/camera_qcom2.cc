@@ -268,7 +268,7 @@ void camerad_thread() {
 
   // *** per-cam init ***
   std::vector<std::unique_ptr<CameraState>> cams;
-  for (const auto &config : {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG}) {
+  for (const auto &config : ALL_CAMERA_CONFIGS) {
     auto cam = std::make_unique<CameraState>(&m, config);
     cam->init(&v, device_id, ctx);
     cams.emplace_back(std::move(cam));
