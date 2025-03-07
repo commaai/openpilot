@@ -984,20 +984,20 @@ This may take up to a minute.</source>
 <context>
     <name>TermsPage</name>
     <message>
-        <source>Terms &amp; Conditions</source>
-        <translation>ข้อตกลงและเงื่อนไข</translation>
-    </message>
-    <message>
         <source>Decline</source>
         <translation>ปฏิเสธ</translation>
     </message>
     <message>
-        <source>Scroll to accept</source>
-        <translation>เลื่อนเพื่อตอบรับข้อตกลง</translation>
-    </message>
-    <message>
         <source>Agree</source>
         <translation>ยอมรับ</translation>
+    </message>
+    <message>
+        <source>Welcome to openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

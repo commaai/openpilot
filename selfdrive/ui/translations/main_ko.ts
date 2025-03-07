@@ -984,20 +984,20 @@ This may take up to a minute.</source>
 <context>
     <name>TermsPage</name>
     <message>
-        <source>Terms &amp; Conditions</source>
-        <translation>이용약관</translation>
-    </message>
-    <message>
         <source>Decline</source>
         <translation>거절</translation>
     </message>
     <message>
-        <source>Scroll to accept</source>
-        <translation>동의하려면 아래로 스크롤하세요</translation>
-    </message>
-    <message>
         <source>Agree</source>
         <translation>동의</translation>
+    </message>
+    <message>
+        <source>Welcome to openpilot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
