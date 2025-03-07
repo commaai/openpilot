@@ -180,6 +180,7 @@ class TestCarModelBase(unittest.TestCase):
     cfg = self.CP.safetyConfigs[-1]
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")
+    self.safety.set_alternative_experience(self.CP.alternativeExperience)
     self.safety.init_tests()
 
   def test_car_params(self):
