@@ -10,21 +10,21 @@ from openpilot.common.realtime import config_realtime_process, Priority, Ratekee
 from openpilot.common.swaglog import cloudlog
 
 from opendbc.car.car_helpers import get_car_interface
+from opendbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl, MIN_LATERAL_CONTROL_SPEED
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, STEER_ANGLE_SATURATION_THRESHOLD
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
-
 
 State = log.SelfdriveState.OpenpilotState
 LaneChangeState = log.LaneChangeState
 LaneChangeDirection = log.LaneChangeDirection
 
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
+
 
 class Controls:
   def __init__(self) -> None:
@@ -40,11 +40,11 @@ class Controls:
                                    'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
-    self.steer_limited = False
+    self.steer_limited_by_controls = False
     self.desired_curvature = 0.0
 
     self.pose_calibrator = PoseCalibrator()
-    self.calibrated_pose: Pose|None = None
+    self.calibrated_pose: Pose | None = None
 
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
@@ -109,12 +109,12 @@ class Controls:
     actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget, long_plan.shouldStop, pid_accel_limits))
 
     # Steering PID loop and lateral MPC
-    self.desired_curvature = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature)
-    actuators.curvature = float(self.desired_curvature)
+    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature, lp.roll)
+    actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
-                                                                            self.steer_limited, self.desired_curvature,
-                                                                            self.calibrated_pose) # TODO what if not available
-    actuators.steer = float(steer)
+                                                       self.steer_limited_by_controls, self.desired_curvature,
+                                                       self.calibrated_pose, curvature_limited)  # TODO what if not available
+    actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
@@ -161,10 +161,10 @@ class Controls:
     if self.sm['selfdriveState'].active:
       CO = self.sm['carOutput']
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-        self.steer_limited = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
-                             STEER_ANGLE_SATURATION_THRESHOLD
+        self.steer_limited_by_controls = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
+                                              STEER_ANGLE_SATURATION_THRESHOLD
       else:
-        self.steer_limited = abs(CC.actuators.steer - CO.actuatorsOutput.steer) > 1e-2
+        self.steer_limited_by_controls = abs(CC.actuators.torque - CO.actuatorsOutput.torque) > 1e-2
 
     # TODO: both controlsState and carControl valids should be set by
     #       sm.all_checks(), but this creates a circular dependency
@@ -180,7 +180,7 @@ class Controls:
 
     cs.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     cs.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
-    cs.desiredCurvature = float(self.desired_curvature)
+    cs.desiredCurvature = self.desired_curvature
     cs.longControlState = self.LoC.long_control_state
     cs.upAccelCmd = float(self.LoC.pid.p)
     cs.uiAccelCmd = float(self.LoC.pid.i)
@@ -211,6 +211,7 @@ class Controls:
       CC, lac_log = self.state_control()
       self.publish(CC, lac_log)
       rk.monitor_time()
+
 
 def main():
   config_realtime_process(4, Priority.CTRL_HIGH)

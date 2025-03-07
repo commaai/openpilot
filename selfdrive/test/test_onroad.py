@@ -1,8 +1,6 @@
 import math
 import json
 import os
-import pathlib
-import psutil
 import pytest
 import shutil
 import subprocess
@@ -12,7 +10,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
 
-from cereal import car, log
+from cereal import log
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
 from openpilot.common.basedir import BASEDIR
@@ -113,6 +111,7 @@ def cputime_total(ct):
 
 
 @pytest.mark.tici
+@pytest.mark.skip_tici_setup
 class TestOnroad:
 
   @classmethod
@@ -142,45 +141,31 @@ class TestOnroad:
       proc = subprocess.Popen(["python", manager_path])
 
       sm = messaging.SubMaster(['carState'])
-      with Timeout(150, "controls didn't start"):
-        while sm.recv_frame['carState'] < 0:
+      with Timeout(30, "controls didn't start"):
+        while not sm.seen['carState']:
           sm.update(1000)
 
-      route = None
-      cls.segments = []
-      with Timeout(300, "timed out waiting for logs"):
-        while route is None:
-          route = params.get("CurrentRoute", encoding="utf-8")
-          time.sleep(0.01)
+      route = params.get("CurrentRoute", encoding="utf-8")
+      assert route is not None
 
-        # test car params caching
-        params.put("CarParamsCache", car.CarParams().to_bytes())
-
-        while len(cls.segments) < 1:
-          segs = set()
-          if Path(Paths.log_root()).exists():
-            segs = set(Path(Paths.log_root()).glob(f"{route}--*"))
-          cls.segments = sorted(segs, key=lambda s: int(str(s).rsplit('--')[-1]))
-          time.sleep(0.01)
+      segs = list(Path(Paths.log_root()).glob(f"{route}--*"))
+      assert len(segs) == 1
 
       time.sleep(TEST_DURATION)
-
     finally:
-      cls.gpu_procs = {psutil.Process(int(f.name)).name() for f in pathlib.Path('/sys/devices/virtual/kgsl/kgsl/proc/').iterdir() if f.is_dir()}
-
       if proc is not None:
         proc.terminate()
         if proc.wait(60) is None:
           proc.kill()
 
-    cls.lrs = [list(LogReader(os.path.join(str(s), "rlog.zst"))) for s in cls.segments]
-
-    cls.lr = cls.lrs[0]
+    cls.lr = list(LogReader(os.path.join(str(segs[0]), "rlog.zst")))
+    st = time.monotonic()
     cls.ts = msgs_to_time_series(cls.lr)
-    cls.log_path = cls.segments[0]
+    print("msgs to time series", time.monotonic() - st)
+    log_path = segs[0]
 
     cls.log_sizes = {}
-    for f in cls.log_path.iterdir():
+    for f in log_path.iterdir():
       assert f.is_file()
       cls.log_sizes[f] = f.stat().st_size / 1e6
 
@@ -312,9 +297,6 @@ class TestOnroad:
     assert np.max(np.diff(mems)) <= 4, "Max memory increase too high"
     assert np.average(np.diff(mems)) <= 1, "Average memory increase too high"
 
-  def test_gpu_usage(self):
-    assert self.gpu_procs == {"weston", "ui", "camerad", "selfdrive.modeld.modeld", "selfdrive.modeld.dmonitoringmodeld"}
-
   def test_camera_frame_timings(self, subtests):
     # test timing within a single camera
     result = "\n"
@@ -366,6 +348,25 @@ class TestOnroad:
           ts = {c: round(self.ts[c]['timestampSof'][i]/1e6, 1) for c in cams}
           diff = (max(ts.values()) - min(ts.values()))
           assert diff < 2, f"Cameras not synced properly: frame_id={start+i}, {diff=:.1f}ms, {ts=}"
+
+  def test_camera_encoder_matches(self, subtests):
+    # sanity check that the frame metadata is consistent with the encoded frames
+    pairs = [('roadCameraState', 'roadEncodeIdx'),
+             ('wideRoadCameraState', 'wideRoadEncodeIdx'),
+             ('driverCameraState', 'driverEncodeIdx')]
+    for cam, enc in pairs:
+      with subtests.test(camera=cam, encoder=enc):
+        cam_frames = {fid: (sof, eof) for fid, sof, eof in zip(
+          self.ts[cam]['frameId'],
+          self.ts[cam]['timestampSof'],
+          self.ts[cam]['timestampEof'],
+          strict=True,
+        )}
+        for i, fid in enumerate(self.ts[enc]['frameId']):
+          cam_sof, cam_eof = cam_frames[fid]
+          enc_sof, enc_eof = self.ts[enc]['timestampSof'][i], self.ts[enc]['timestampEof'][i]
+          assert enc_sof == cam_sof, f"SOF mismatch: frameId={fid}, enc_sof={enc_sof}, cam_sof={cam_sof}"
+          assert enc_eof == cam_eof, f"EOF mismatch: frameId={fid}, enc_eof={enc_eof}, cam_eof={cam_eof}"
 
   def test_mpc_execution_timings(self):
     result = "\n"

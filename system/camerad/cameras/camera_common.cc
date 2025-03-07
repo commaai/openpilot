@@ -15,7 +15,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   const SensorInfo *sensor = cam->sensor.get();
 
   // RAW frames from ISP
-  if (cam->output_type != ISP_IFE_PROCESSED) {
+  if (cam->cc.output_type != ISP_IFE_PROCESSED) {
     camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
 
     const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;

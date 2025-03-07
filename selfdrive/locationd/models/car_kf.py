@@ -5,7 +5,7 @@ from typing import Any
 
 import numpy as np
 
-from openpilot.selfdrive.controls.lib.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
 from openpilot.common.swaglog import cloudlog
 

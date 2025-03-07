@@ -65,8 +65,7 @@ if __name__ == "__main__":
           CP = msg.carParams
           car_fw = [fw for fw in CP.carFw if not fw.logging]
           if len(car_fw) == 0:
-            print("no fw")
-            break
+            print("WARNING: no fw")
 
           live_fingerprint = CP.carFingerprint
           live_fingerprint = MIGRATION.get(live_fingerprint, live_fingerprint)
@@ -98,7 +97,7 @@ if __name__ == "__main__":
           print("New style (exact):", exact_matches)
           print("New style (fuzzy):", fuzzy_matches)
 
-          padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw])
+          padding = max([len(fw.brand or UNKNOWN_BRAND) for fw in car_fw] + [0])
           for version in sorted(car_fw, key=lambda fw: fw.brand):
             subaddr = None if version.subAddress == 0 else hex(version.subAddress)
             print(f"  Brand: {version.brand or UNKNOWN_BRAND:{padding}}, bus: {version.bus} - " +

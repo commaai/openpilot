@@ -358,6 +358,7 @@ def migrate_cameraStates(msgs):
 
     new_msg = messaging.new_message(msg.which())
     new_camera_state = getattr(new_msg, new_msg.which())
+    new_camera_state.sensor = camera_state.sensor
     new_camera_state.frameId = encode_id
     new_camera_state.encodeId = encode_id
     # timestampSof was added later so it might be missing on some old segments

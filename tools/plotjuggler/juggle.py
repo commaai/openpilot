@@ -12,6 +12,8 @@ from functools import partial
 
 from opendbc.car.fingerprints import MIGRATION
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.swaglog import cloudlog
+from openpilot.tools.cabana.dbc.generate_dbc_json import generate_dbc_dict
 from openpilot.tools.lib.logreader import LogReader, ReadMode, save_log
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 
@@ -54,7 +56,7 @@ def get_plotjuggler_version():
   return tuple(map(int, version.split(".")))
 
 
-def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
+def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, platform=None):
   env = os.environ.copy()
   env["BASEDIR"] = BASEDIR
   env["PATH"] = f"{INSTALL_DIR}:{os.getenv('PATH', '')}"
@@ -67,38 +69,37 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None):
   if layout is not None:
     extra_args += f" -l {layout}"
   if route_or_segment_name is not None:
-    extra_args += f" --window_title \"{route_or_segment_name}\""
+    extra_args += f" --window_title \"{route_or_segment_name}{f' ({platform})' if platform is not None else ''}\""
 
   cmd = f'{PLOTJUGGLER_BIN} --buffer_size {MAX_STREAMING_BUFFER_SIZE} --plugin_folders {INSTALL_DIR}{extra_args}'
   subprocess.call(cmd, shell=True, env=env, cwd=juggle_dir)
 
 
 def process(can, lr):
-  return [d for d in lr if can or d.which() not in ['can', 'sendcan']]
+  return [d for d in lr if can or d.which() not in ['can', 'sendcan'] and not d.which().startswith('customReserved')]
 
 
 def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
-  sr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
+  lr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
 
-  all_data = sr.run_across_segments(24, partial(process, can))
+  all_data = lr.run_across_segments(24, partial(process, can))
   if should_migrate:
     all_data = migrate_all(all_data)
 
   # Infer DBC name from logs
+  platform = None
   if dbc is None:
-    for cp in [m for m in all_data if m.which() == 'carParams']:
-      try:
-        DBC = __import__(f"opendbc.car.{cp.carParams.brand}.values", fromlist=['DBC']).DBC
-        fingerprint = cp.carParams.carFingerprint
-        dbc = DBC[MIGRATION.get(fingerprint, fingerprint)]['pt']
-      except Exception:
-        pass
-      break
+    try:
+      CP = lr.first('carParams')
+      platform = MIGRATION.get(CP.carFingerprint, CP.carFingerprint)
+      dbc = generate_dbc_dict()[platform]
+    except Exception:
+      cloudlog.exception("Failed to get DBC name from logs!")
 
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
     del all_data
-    start_juggler(tmp.name, dbc, layout, route_or_segment_name)
+    start_juggler(tmp.name, dbc, layout, route_or_segment_name, platform)
 
 
 if __name__ == "__main__":

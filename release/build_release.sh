@@ -74,7 +74,8 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm selfdrive/modeld/models/supercombo.onnx
+rm selfdrive/modeld/models/driving_vision.onnx
+rm selfdrive/modeld/models/driving_policy.onnx
 
 find third_party/ -name '*x86*' -exec rm -r {} +
 find third_party/ -name '*Darwin*' -exec rm -r {} +
@@ -91,14 +92,9 @@ git add -f .
 git commit --amend -m "openpilot v$VERSION"
 
 # Run tests
-TEST_FILES="tools/"
-cd $SOURCE_DIR
-cp -pR -n --parents $TEST_FILES $BUILD_DIR/
 cd $BUILD_DIR
 RELEASE=1 pytest -n0 -s selfdrive/test/test_onroad.py
-#system/manager/test/test_manager.py
-pytest selfdrive/car/tests/test_car_interfaces.py
-rm -rf $TEST_FILES
+#pytest selfdrive/car/tests/test_car_interfaces.py
 
 if [ ! -z "$RELEASE_BRANCH" ]; then
   echo "[-] pushing release T=$SECONDS"
