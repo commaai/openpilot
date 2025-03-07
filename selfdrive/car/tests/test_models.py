@@ -15,6 +15,7 @@ from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import CAR as TOYOTA
+from opendbc.car.ford.values import CAR as FORD
 from opendbc.car.honda.values import CAR as HONDA, HondaFlags
 from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
@@ -394,6 +395,9 @@ class TestCarModelBase(unittest.TestCase):
       TOYOTA.TOYOTA_SIENNA_4TH_GEN,  # what is going on
       TOYOTA.TOYOTA_AVALON_2019,  # real relay malfunction
       TOYOTA.TOYOTA_RAV4,  # real relay malfunction
+      HONDA.HONDA_ACCORD,  # real relay malfunction
+      HONDA.ACURA_RDX_3G,  # real relay malfunction
+      FORD.FORD_EXPLORER_MK6,  # cameron is sending path offset/angle/etc
     ):
       self.skipTest("Skipping for known failures/bad routes")
 
@@ -410,6 +414,7 @@ class TestCarModelBase(unittest.TestCase):
     #     if i > 20:
     #       break
 
+    # TODO: we should init on the generated sendcan messages
     init_segment(self.safety, self.msgs, self.CP.safetyConfigs[0].safetyModel, self.CP.safetyConfigs[0].safetyParam)
 
     print('long', self.CP.openpilotLongitudinalControl)
