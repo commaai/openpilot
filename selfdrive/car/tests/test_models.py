@@ -387,16 +387,31 @@ class TestCarModelBase(unittest.TestCase):
     # for idx, can in enumerate(self.can_msgs):
     #   CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
 
+    # # TODO: use the CarState to get the vehicle speed to explicitly set
+    # i = 0
+    # for msg in self.msgs:
+    #   if msg.which() == 'can':
+    #     i += 1
+    #     for can in msg.can:
+    #       self.safety.safety_rx_hook(package_can_msg(can))
+    #     if i > 20:
+    #       break
+
     init_segment(self.safety, self.msgs, self.CP.safetyConfigs[0].safetyModel, self.CP.safetyConfigs[0].safetyParam)
 
     seen_can = False
+    t = None
+    CS = None
 
     for msg in self.msgs:
       msg.which()
       if msg.which() == 'can':
+        if t is None:
+          t = msg.logMonoTime
+        self.safety.set_timer((msg.logMonoTime // 1000) % 0xFFFFFFFF)
         seen_can = True
         to_push = can_capnp_to_list([msg.as_builder().to_bytes()])
-        self.CI.update(to_push)
+        CS = self.CI.update(to_push)
         for canmsg in filter(lambda m: m.src < 128, msg.can):
           to_send = libsafety_py.make_CANPacket(canmsg.address, canmsg.src % 4, canmsg.dat)
           self.assertTrue(self.safety.safety_rx_hook(to_send))
@@ -406,12 +421,14 @@ class TestCarModelBase(unittest.TestCase):
         if not seen_can:
           continue
 
-        self.last_actuators_output, can_sends = self.CI.apply(msg.carControl, msg.logMonoTime)
+        last_actuators_output, can_sends = self.CI.apply(msg.carControl, msg.logMonoTime)
+        print('torque', last_actuators_output.torque, 'driver torque', CS.steeringTorque)
+        print()
         print(can_sends)
         for can_send in can_sends:
           self.safety.set_controls_allowed(True)
           to_send = libsafety_py.make_CANPacket(can_send[0], can_send[2] % 4, can_send[1])
-          self.assertTrue(self.safety.safety_tx_hook(to_send), (can_send[0], can_send[1], can_send[2]))
+          self.assertTrue(self.safety.safety_tx_hook(to_send), (f"failed to send at {(msg.logMonoTime - t) / 1e9:.2f}s", can_send[0], can_send[1], can_send[2]))
 
   def test_panda_safety_carstate(self):
     """
