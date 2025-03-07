@@ -447,6 +447,7 @@ class TestCarModelBase(unittest.TestCase):
         print()
         print(can_sends)
         for can_send in can_sends:
+          # TODO: remove set_controls_allowed to test more than actuation limits
           self.safety.set_controls_allowed(True)
           to_send = libsafety_py.make_CANPacket(can_send[0], can_send[2] % 4, can_send[1])
           tx = self.safety.safety_tx_hook(to_send)
@@ -459,6 +460,7 @@ class TestCarModelBase(unittest.TestCase):
           #   raise Exception
           # self.assertTrue(tx, (f"failed to send at {(msg.logMonoTime - t) / 1e9:.2f}s", can_send[0], can_send[1], can_send[2]))
 
+    # TODO: assert no more blocked messages than the number of cancels or overrides
     print('total blocked', blocked)
     assert not any(b > 5 for b in blocked.values()), f"blocked messages: {blocked}"
 
