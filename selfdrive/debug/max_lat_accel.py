@@ -48,7 +48,7 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
 
     elif msg.which() == 'carOutput':
       # if we test with driver torque safety, max torque can be slightly noisy
-      requesting_max = requesting_max + 1 if abs(msg.carOutput.actuatorsOutput.steer) > 0.95 else 0
+      requesting_max = requesting_max + 1 if abs(msg.carOutput.actuatorsOutput.torque) > 0.95 else 0
 
     elif msg.which() == 'carState':
       steering_unpressed = steering_unpressed + 1 if not msg.carState.steeringPressed else 0

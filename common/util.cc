@@ -257,7 +257,6 @@ bool ends_with(const std::string& s, const std::string& suffix) {
 
 std::string strip(const std::string &str) {
   auto should_trim = [](unsigned char ch) {
-    // trim whitespace or a null character
     return std::isspace(ch) || ch == '\0';
   };
 

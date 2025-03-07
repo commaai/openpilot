@@ -19,8 +19,8 @@ from openpilot.tools.lib.framereader import FrameReader, NumpyFrameReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 from openpilot.tools.lib.github_utils import GithubUtils
 
-TEST_ROUTE = "2f4452b03ccb98f0|2022-12-03--13-45-30"
-SEGMENT = 6
+TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
+SEGMENT = 4
 MAX_FRAMES = 100 if PC else 400
 
 NO_MODEL = "NO_MODEL" in os.environ
@@ -66,6 +66,8 @@ def generate_report(proposed, master, tmp, commit):
                      (lambda x: get_idx_if_non_empty(x.action.desiredCurvature), "desiredCurvature"),
                      (lambda x: get_idx_if_non_empty(x.leadsV3[0].x, 0), "leadsV3.x"),
                      (lambda x: get_idx_if_non_empty(x.laneLines[1].y, 0), "laneLines.y"),
+                     (lambda x: get_idx_if_non_empty(x.meta.desireState, 3), "desireState.laneChangeLeft"),
+                     (lambda x: get_idx_if_non_empty(x.meta.desireState, 4), "desireState.laneChangeRight"),
                      (lambda x: get_idx_if_non_empty(x.meta.disengagePredictions.gasPressProbs, 1), "gasPressProbs")
                     ], "modelV2")
   DriverStateV2_Plots = zl([
@@ -143,7 +145,8 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
 
 def model_replay(lr, frs):
   # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"}, {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams"})
+  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"},
+                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl"})
   dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx", "carParams"})
 
   if not SEND_EXTRA_INPUTS:

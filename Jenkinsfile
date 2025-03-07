@@ -166,7 +166,7 @@ node {
   env.GIT_BRANCH = checkout(scm).GIT_BRANCH
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
-  def excludeBranches = ['master-ci', 'devel', 'devel-staging', 'release3', 'release3-staging',
+  def excludeBranches = ['__nightly', 'devel', 'devel-staging', 'release3', 'release3-staging',
                          'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
@@ -183,7 +183,7 @@ node {
       ])
     }
 
-    if (env.BRANCH_NAME == 'master-ci') {
+    if (env.BRANCH_NAME == '__nightly') {
       parallel (
         'nightly': {
           deviceStage("build nightly", "tici-needs-can", [], [
@@ -203,8 +203,6 @@ node {
       // tici tests
       'onroad tests': {
         deviceStage("onroad", "tici-needs-can", ["UNSAFE=1"], [
-          // TODO: ideally, this test runs in master-ci, but it takes 5+m to build it
-          //["build master-ci", "cd $SOURCE_DIR/release && TARGET_DIR=$TEST_DIR $SOURCE_DIR/scripts/retry.sh ./build_devel.sh"],
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
           step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
@@ -240,7 +238,6 @@ node {
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
       },
-      /*
       'camerad OS04C10': {
         deviceStage("OS04C10", "tici-os04c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
@@ -248,7 +245,6 @@ node {
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
         ])
       },
-      */
       'sensord': {
         deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
