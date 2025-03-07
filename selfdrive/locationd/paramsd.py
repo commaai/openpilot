@@ -73,7 +73,7 @@ class ParamsLearner:
 
       if self.active:
         if msg.posenetOK:
-
+          # Note that we update the filter with pre-calibrated yaw rates, this is to bound the yaw rate estimate
           if yaw_rate_valid:
             self.kf.predict_and_observe(t,
                                         ObservationKind.ROAD_FRAME_YAW_RATE,
