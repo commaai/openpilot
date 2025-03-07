@@ -14,20 +14,6 @@ CUTOFF_IL = 400
 SATURATE_IL = 1000
 
 
-def set_ir_power(percent: int):
-  if HARDWARE.get_device_type() in ("tici", "tizi"):
-    return
-
-  clamped_percent = max(0, min(percent, 100))
-  value = int((clamped_percent / 100) * 255)  # Linear mapping from 0-100 to 0-255
-
-  # Write the value to the LED brightness files
-  with open("/sys/class/leds/led:torch_2/brightness", "w") as f:
-    f.write(f"{value}\n")
-  with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
-    f.write(f"{value}\n")
-
-
 class HardwareReader:
   def __init__(self):
     self.voltage = 0
@@ -101,7 +87,7 @@ class PeripheralManager:
       with self.lock:
         self.panda.set_ir_power(self.ir_pwr)
 
-      set_ir_power(self.ir_pwr)
+      HARDWARE.set_ir_power(self.ir_pwr)
       self.prev_ir_pwr = self.ir_pwr
 
   def send_state(self, pm):

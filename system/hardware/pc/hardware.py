@@ -26,6 +26,15 @@ class Pc(HardwareBase):
   def get_serial(self):
     return "cccccccc"
 
+  def get_voltage(self):
+    return 0
+
+  def get_current(self):
+    return 0
+
+  def set_ir_power(self, percent: int):
+    pass
+
   def get_network_info(self):
     return None
 
