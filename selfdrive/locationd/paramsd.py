@@ -59,7 +59,7 @@ class ParamsLearner:
         self.yaw_rate, self.yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
       else:
         # This is done to bound the yaw rate estimate when localizer values are invalid or calibrating
-        self.yaw_rate, self.yaw_rate_std = 0.0, np.radians(10)
+        self.yaw_rate, self.yaw_rate_std = 0.0, np.radians(1)
 
       localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
       localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
