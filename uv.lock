@@ -12,11 +12,11 @@ resolution-markers = [
 
 [[package]]
 name = "aiohappyeyeballs"
-version = "2.4.8"
+version = "2.5.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/de/7c/79a15272e88d2563c9d63599fa59f05778975f35b255bf8f90c8b12b4ada/aiohappyeyeballs-2.4.8.tar.gz", hash = "sha256:19728772cb12263077982d2f55453babd8bec6a052a926cd5c0c42796da8bf62", size = 22337 }
+sdist = { url = "https://files.pythonhosted.org/packages/a2/0c/458958007041f4b4de2d307e6b75d9e7554dad0baf26fe7a48b741aac126/aiohappyeyeballs-2.5.0.tar.gz", hash = "sha256:18fde6204a76deeabc97c48bdd01d5801cfda5d6b9c8bbeb1aaaee9d648ca191", size = 22494 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/52/0e/b187e2bb3eeb2644515109657c4474d65a84e7123de249bf1e8467d04a65/aiohappyeyeballs-2.4.8-py3-none-any.whl", hash = "sha256:6cac4f5dd6e34a9644e69cf9021ef679e4394f54e58a183056d12009e42ea9e3", size = 15005 },
+    { url = "https://files.pythonhosted.org/packages/1b/9a/e4886864ce06e1579bd428208127fbdc0d62049c751e4e9e3b509c0059dc/aiohappyeyeballs-2.5.0-py3-none-any.whl", hash = "sha256:0850b580748c7071db98bffff6d4c94028d0d3035acc20fd721a0ce7e8cac35d", size = 15128 },
 ]
 
 [[package]]
@@ -628,7 +628,7 @@ wheels = [
 
 [[package]]
 name = "gymnasium"
-version = "1.1.0"
+version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cloudpickle" },
@@ -636,9 +636,9 @@ dependencies = [
     { name = "numpy" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/3c/74/db400493fbb86ff6b20ab46e798ac79a366a7db31ece785499e5e5bfd873/gymnasium-1.1.0.tar.gz", hash = "sha256:dedb5c8c83047d3927ef8b841fb4ebadaeaa43ab954e2e3aca7eadcf4226c5f2", size = 827655 }
+sdist = { url = "https://files.pythonhosted.org/packages/90/69/70cd29e9fc4953d013b15981ee71d4c9ef4d8b2183e6ef2fe89756746dce/gymnasium-1.1.1.tar.gz", hash = "sha256:8bd9ea9bdef32c950a444ff36afc785e1d81051ec32d30435058953c20d2456d", size = 829326 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/c1/2a/f931b9b7515c16e5285ecb0e6c2d773266a4f781332f24456e7c0d516c8d/gymnasium-1.1.0-py3-none-any.whl", hash = "sha256:8632bbb860512e565a46cd30fa8325ce8fbdac09b9c4f04171a772d6e95b232b", size = 965463 },
+    { url = "https://files.pythonhosted.org/packages/f9/68/2bdc7b46b5f543dd865575f9d19716866bdb76e50dd33b71ed1a3dd8bb42/gymnasium-1.1.1-py3-none-any.whl", hash = "sha256:9c167ec0a2b388666e37f63b2849cd2552f7f5b71938574c637bb36487eb928a", size = 965410 },
 ]
 
 [[package]]
@@ -701,14 +701,14 @@ wheels = [
 
 [[package]]
 name = "jinja2"
-version = "3.1.5"
+version = "3.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "markupsafe" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/af/92/b3130cbbf5591acf9ade8708c365f3238046ac7cb8ccba6e81abccb0ccff/jinja2-3.1.5.tar.gz", hash = "sha256:8fefff8dc3034e27bb80d67c671eb8a9bc424c0ef4c0826edbff304cceff43bb", size = 244674 }
+sdist = { url = "https://files.pythonhosted.org/packages/df/bf/f7da0350254c0ed7c72f3e33cef02e048281fec7ecec5f032d4aac52226b/jinja2-3.1.6.tar.gz", hash = "sha256:0137fb05990d35f1275a587e9aee6d56da821fc83491a0fb838183be43f66d6d", size = 245115 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/bd/0f/2ba5fbcd631e3e88689309dbe978c5769e883e4b84ebfe7da30b43275c5a/jinja2-3.1.5-py3-none-any.whl", hash = "sha256:aba0f4dc9ed8013c424088f68a5c226f7d6097ed89b246d7749c2ec4175c6adb", size = 134596 },
+    { url = "https://files.pythonhosted.org/packages/62/a1/3d680cbfd5f4b8f15abc1d571870c5fc3e594bb582bc3b64ea099db13e56/jinja2-3.1.6-py3-none-any.whl", hash = "sha256:85ece4451f492d0c13c5dd7c13a64681a86afae63a5f347908daf103ce6d2f67", size = 134899 },
 ]
 
 [[package]]
@@ -4919,14 +4919,14 @@ wheels = [
 
 [[package]]
 name = "types-requests"
-version = "2.32.0.20250301"
+version = "2.32.0.20250306"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "urllib3" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/87/88/365d6b46f1088ddeccbc89c26190c3180088ef6e7c8d162fc619496aab96/types_requests-2.32.0.20250301.tar.gz", hash = "sha256:3d909dc4eaab159c0d964ebe8bfa326a7afb4578d8706408d417e17d61b0c500", size = 22977 }
+sdist = { url = "https://files.pythonhosted.org/packages/09/1a/beaeff79ef9efd186566ba5f0d95b44ae21f6d31e9413bcfbef3489b6ae3/types_requests-2.32.0.20250306.tar.gz", hash = "sha256:0962352694ec5b2f95fda877ee60a159abdf84a0fc6fdace599f20acb41a03d1", size = 23012 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b9/c2/e44564e8995dbc1738c2acacb8009d59c8cb19327da95a1b5c5d9cb68364/types_requests-2.32.0.20250301-py3-none-any.whl", hash = "sha256:0003e0124e2cbefefb88222ff822b48616af40c74df83350f599a650c8de483b", size = 20671 },
+    { url = "https://files.pythonhosted.org/packages/99/26/645d89f56004aa0ba3b96fec27793e3c7e62b40982ee069e52568922b6db/types_requests-2.32.0.20250306-py3-none-any.whl", hash = "sha256:25f2cbb5c8710b2022f8bbee7b2b66f319ef14aeea2f35d80f18c9dbf3b60a0b", size = 20673 },
 ]
 
 [[package]]

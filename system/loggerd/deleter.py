@@ -22,9 +22,9 @@ def has_preserve_xattr(d: str) -> bool:
   return getxattr(os.path.join(Paths.log_root(), d), PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
 
-def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
+def get_preserved_segments(dirs_by_creation: list[str]) -> set[str]:
   # skip deleting most recent N preserved segments (and their prior segment)
-  preserved = []
+  preserved = set()
   for n, d in enumerate(filter(has_preserve_xattr, reversed(dirs_by_creation))):
     if n == PRESERVE_COUNT:
       break
@@ -40,7 +40,7 @@ def get_preserved_segments(dirs_by_creation: list[str]) -> list[str]:
 
     # preserve segment and two prior
     for _seg_num in range(max(0, seg_num - 2), seg_num + 1):
-      preserved.append(f"{date_str}--{_seg_num}")
+      preserved.add(f"{date_str}--{_seg_num}")
 
   return preserved
 

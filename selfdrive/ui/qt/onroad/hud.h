@@ -19,6 +19,7 @@ private:
   float speed = 0;
   float set_speed = 0;
   bool is_cruise_set = false;
+  bool is_cruise_available = true;
   bool is_metric = false;
   bool v_ego_cluster_seen = false;
   int status = STATUS_DISENGAGED;
