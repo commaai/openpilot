@@ -357,7 +357,10 @@ def scan_dir(path: str, prefix: str, base: str) -> list[str]:
 @dispatcher.add_method
 def listDataDirectory(prefix='') -> list[str]:
   internal_files = scan_dir(Paths.log_root(), prefix, Paths.log_root())
-  external_files = scan_dir(Paths.log_root_external(), prefix, Paths.log_root_external())
+  try:
+    external_files = scan_dir(Paths.log_root_external(), prefix, Paths.log_root_external())
+  except FileNotFoundError:
+    external_files = []
   return sorted(set(internal_files + external_files))
 
 
