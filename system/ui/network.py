@@ -24,6 +24,7 @@ class ActionState(IntEnum):
 class WifiManagerUI:
   def __init__(self, wifi_manager):
     self.wifi_manager = wifi_manager
+    self.wifi_manager.need_auth_callback = self._need_auth
     self._selected_network = None
     self.item_height = 160
     self.btn_width = 200
@@ -36,7 +37,6 @@ class WifiManagerUI:
   async def _initialize(self) -> None:
     try:
       await self.wifi_manager.connect()
-      self.wifi_manager.bus.add_message_handler(self._handle_dbus_signal)
     except Exception as e:
       print(f"Initialization error: {e}")
 
@@ -51,9 +51,11 @@ class WifiManagerUI:
       result = self.keyboard.render(rect, 'Enter password', f'for {self._selected_network.ssid}')
       if result == 0:
         return
-      else:
+      elif result == 1:
         self.current_action = ActionState.NONE
         asyncio.create_task(self.connect_to_network(self.keyboard.text))
+      else:
+        self.current_action = ActionState.NONE
 
     content_rect = rl.Rectangle(
       rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * self.item_height
@@ -128,15 +130,8 @@ class WifiManagerUI:
       await self.wifi_manager.connect_to_network(self._selected_network.ssid, password)
     self.current_action = ActionState.NONE
 
-  def _handle_dbus_signal(self, message):
-    if message.message_type != MessageType.SIGNAL:
-      return
-
-    if message.member == 'StateChanged':
-      if len(message.body) >= 2:
-        _, new_state = message.body[0], message.body[1]
-        if new_state == NM_DEVICE_STATE_NEED_AUTH:
-          self.current_action = ActionState.NEED_AUTH
+  def _need_auth(self):
+    self.current_action = ActionState.NEED_AUTH
 
 
 async def main():
