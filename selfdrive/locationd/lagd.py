@@ -11,7 +11,7 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 MIN_LAG_VEL = 20.0
 MAX_SANE_LAG = 3.0
 MIN_ABS_YAW_RATE_DEG = 1
-MOVING_CORR_WINDOW = 55.0
+MOVING_CORR_WINDOW = 300.0
 MIN_OKAY_WINDOW = 20.0
 MIN_NCC = 0.95
 
