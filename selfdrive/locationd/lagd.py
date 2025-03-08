@@ -5,15 +5,25 @@ from collections import deque
 import cereal.messaging as messaging
 from cereal import car
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, DT_CTRL
-from openpilot.selfdrive.locationd.helpers import ParameterEstimator, PoseCalibrator, Pose
+from openpilot.common.realtime import config_realtime_process, DT_CTRL, DT_MDL
+from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
-MIN_LAG_VEL = 15.0
+MIN_LAG_VEL = 20.0
 MAX_SANE_LAG = 3.0
 MIN_ABS_YAW_RATE_DEG = 1
-MAX_LAG_HIST_LEN_SEC = 600
-MOVING_CORR_WINDOW = 300
-MIN_OKAY_WINDOW = 60
+MOVING_CORR_WINDOW = 55.0
+MIN_OKAY_WINDOW = 20.0
+MIN_NCC = 0.95
+
+
+class Samples:
+  def __init__(self, maxlen):
+    self.x = deque(maxlen=maxlen)
+    self.t = deque(maxlen=maxlen)
+
+  def add(self, t, x):
+    self.x.append(x)
+    self.t.append(t)
 
 
 class BaseLagEstimator:
@@ -23,73 +33,76 @@ class BaseLagEstimator:
     self.min_okay_window_len = int(min_okay_window / self.dt)
     self.initial_lag = CP.steerActuatorDelay
 
+    self.t = 0.0
+
     self.calibrator = PoseCalibrator()
 
     lag_limit = int(moving_corr_window / (self.dt * 25))
     self.lags = deque(maxlen=lag_limit)
     self.correlations = deque(maxlen=lag_limit)
-    self.times = deque(maxlen=int(moving_corr_window / self.dt))
-    self.curvature = deque(maxlen=int(moving_corr_window / self.dt))
-    self.desired_curvature = deque(maxlen=int(moving_corr_window / self.dt))
-    self.okay = deque(maxlen=int(moving_corr_window / self.dt))
+
+    self.lat_active = Samples(int(moving_corr_window / DT_CTRL))
+    self.steering_pressed = Samples(int(moving_corr_window / DT_CTRL))
+    self.vego = Samples(int(moving_corr_window / DT_CTRL))
+    self.curvature = Samples(int(moving_corr_window / DT_CTRL))
+    self.desired_curvature = Samples(int(moving_corr_window / DT_CTRL))
+    self.yaw_rate = Samples(int(moving_corr_window / DT_MDL))
 
   def actuator_delay(self, expected_sig, actual_sig, is_okay, dt, max_lag):
     raise NotImplementedError
 
   def handle_log(self, t, which, msg) -> None:
     if which == "carControl":
-      self.lat_active = msg.latActive
+      self.lat_active.add(t, msg.latActive)
     elif which == "carState":
-      self.steering_pressed = msg.steeringPressed
-      self.v_ego = msg.vEgo
+      self.steering_pressed.add(t, msg.steeringPressed)
+      self.vego.add(t, msg.vEgo)
     elif which == "controlsState":
       curvature = msg.curvature
       desired_curvature = msg.desiredCurvature
-      okay = self.lat_active and not self.steering_pressed and self.v_ego > MIN_LAG_VEL and abs(self.yaw_rate) > np.radians(MIN_ABS_YAW_RATE_DEG)
-      self.times.append(t)
-      self.okay.append(okay)
-      self.curvature.append(curvature)
-      self.desired_curvature.append(desired_curvature)
+      self.curvature.add(t, curvature)
+      self.desired_curvature.add(t, desired_curvature)
     elif which == "livePose":
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
-
-      self.yaw_rate = calibrated_pose.angular_velocity.z
+      self.yaw_rate.add(t, calibrated_pose.angular_velocity.z)
     elif which == 'liveCalibration':
       self.calibrator.feed_live_calib(msg)
 
+    self.t = t
+
   def get_msg(self, valid: bool, with_points: bool):
-    okay_count = np.count_nonzero(self.okay)
-    if len(self.curvature) >= self.window_len and okay_count >= self.min_okay_window_len:
-      curvature = np.array(self.curvature)
-      desired_curvature = np.array(self.desired_curvature)
-      okay = np.array(self.okay)
-      try:
-        delay_curvature, correlation = self.actuator_delay(desired_curvature, curvature, okay, self.dt, MAX_SANE_LAG)
-        self.lags.append(delay_curvature)
-        self.correlations.append(correlation)
-      except ValueError:
-        pass
+    if len(self.desired_curvature.x) >= self.window_len:
+      times = np.arange(self.t - self.window_len * self.dt, self.t, self.dt)
+      lat_active = np.interp(times, self.lat_active.t, self.lat_active.x).astype(bool)
+      steering_pressed = np.interp(times, self.steering_pressed.t, self.steering_pressed.x).astype(bool)
+      vego = np.interp(times, self.vego.t, self.vego.x)
+      yaw_rate = np.interp(times, self.yaw_rate.t, self.yaw_rate.x)
+      desired_curvature = np.interp(times, self.desired_curvature.t, self.desired_curvature.x)
+
+      okay = lat_active & ~steering_pressed & (vego > MIN_LAG_VEL) & (np.abs(yaw_rate) > np.radians(MIN_ABS_YAW_RATE_DEG))
+      if np.count_nonzero(okay) >= self.min_okay_window_len:
+        lat_accel_desired = desired_curvature * vego * vego
+        lat_accel_actual_loc = yaw_rate * vego
+
+        delay, correlation = self.actuator_delay(lat_accel_desired, lat_accel_actual_loc, okay, self.dt, MAX_SANE_LAG)
+        if correlation > MIN_NCC:
+          self.lags.append(delay)
 
     if len(self.lags) > 0:
       steer_actuation_delay = np.mean(self.lags)
-      steer_correlation = np.mean(self.correlations)
       is_estimated = True
     else:
       steer_actuation_delay = self.initial_lag
-      steer_correlation = np.nan
       is_estimated = False
 
     msg = messaging.new_message('liveActuatorDelay')
     msg.valid = valid
 
     liveActuatorDelay = msg.liveActuatorDelay
-    liveActuatorDelay.steerActuatorDelay = steer_actuation_delay
-    liveActuatorDelay.totalPoints = len(self.curvature)
+    liveActuatorDelay.steerActuatorDelay = float(steer_actuation_delay)
+    liveActuatorDelay.totalPoints = len(self.curvature.x)
     liveActuatorDelay.isEstimated = is_estimated
-
-    if with_points:
-      liveActuatorDelay.points = [p for p in zip(self.curvature, self.desired_curvature)]
 
     return msg
 
