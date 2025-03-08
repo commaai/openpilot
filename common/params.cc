@@ -5,7 +5,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <csignal>
 #include <unordered_map>
 
 #include "common/params_keys.h"
@@ -15,11 +14,6 @@
 #include "system/hardware/hw.h"
 
 namespace {
-
-volatile sig_atomic_t params_do_exit = 0;
-void params_sig_handler(int signal) {
-  params_do_exit = 1;
-}
 
 int fsync_dir(const std::string &path) {
   int result = -1;
@@ -167,27 +161,8 @@ int Params::remove(const std::string &key) {
   return fsync_dir(getParamPath());
 }
 
-std::string Params::get(const std::string &key, bool block) {
-  if (!block) {
-    return util::read_file(getParamPath(key));
-  } else {
-    // blocking read until successful
-    params_do_exit = 0;
-    void (*prev_handler_sigint)(int) = std::signal(SIGINT, params_sig_handler);
-    void (*prev_handler_sigterm)(int) = std::signal(SIGTERM, params_sig_handler);
-
-    std::string value;
-    while (!params_do_exit) {
-      if (value = util::read_file(getParamPath(key)); !value.empty()) {
-        break;
-      }
-      util::sleep_for(100);  // 0.1 s
-    }
-
-    std::signal(SIGINT, prev_handler_sigint);
-    std::signal(SIGTERM, prev_handler_sigterm);
-    return value;
-  }
+std::string Params::get(const std::string &key) {
+  return util::read_file(getParamPath(key));
 }
 
 std::map<std::string, std::string> Params::readAll() {
