@@ -93,7 +93,7 @@ class BaseLagEstimator:
       steer_actuation_delay = np.mean(self.lags)
       is_estimated = True
     else:
-      steer_actuation_delay = self.initial_lag
+      steer_actuation_delay = self.initial_lag + 0.2
       is_estimated = False
 
     msg = messaging.new_message('liveActuatorDelay')
