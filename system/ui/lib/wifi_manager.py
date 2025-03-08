@@ -56,6 +56,7 @@ class WifiManager:
     self.active_ap_path: str = ''
     self.scan_task: asyncio.Task | None = None
     self.running: bool = True
+    self.need_auth_callback = None
 
   async def connect(self):
     """Connect to the DBus system bus."""
@@ -118,12 +119,8 @@ class WifiManager:
   async def activate_connection(self, ssid: str) -> None:
     connection_path = self.saved_connections.get(ssid)
     if connection_path:
-      print('activate connection:', connection_path)
-      introspection = await self.bus.introspect(NM, NM_PATH)
-      proxy = self.bus.get_proxy_object(NM, NM_PATH, introspection)
-      interface = proxy.get_interface(NM_IFACE)
-
-      await interface.call_activate_connection(connection_path, self.device_path, '/')
+      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+      await nm_iface.call_activate_connection(connection_path, self.device_path, '/')
 
   async def connect_to_network(self, ssid: str, password: str = None, is_hidden: bool = False):
     """Connect to a selected WiFi network."""
@@ -236,6 +233,8 @@ class WifiManager:
     elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
       for network in self.networks:
         network.is_connected = False
+      if new_state == NMDeviceState.NEED_AUTH and self.need_auth_callback:
+        self.need_auth_callback()
 
   def _on_new_connection(self, path: str) -> None:
     """Callback for NewConnection signal."""
