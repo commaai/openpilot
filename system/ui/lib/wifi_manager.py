@@ -57,9 +57,6 @@ class WifiManager:
     self.scan_task: asyncio.Task | None = None
     self.running: bool = True
 
-  def is_saved(self, ssid: str) -> bool:
-    return ssid in self.saved_connections
-
   async def connect(self):
     """Connect to the DBus system bus."""
     try:
@@ -110,7 +107,6 @@ class WifiManager:
     try:
       nm_iface = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
       await nm_iface.call_delete()
-      self.saved_connections.pop(ssid)
       return True
     except DBusError as e:
       cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
@@ -122,7 +118,7 @@ class WifiManager:
   async def activate_connection(self, ssid: str) -> None:
     connection_path = self.saved_connections.get(ssid)
     if connection_path:
-      cloudlog.info('activate connection:', connection_path)
+      print('activate connection:', connection_path)
       introspection = await self.bus.introspect(NM, NM_PATH)
       proxy = self.bus.get_proxy_object(NM, NM_PATH, introspection)
       interface = proxy.get_interface(NM_IFACE)
@@ -132,7 +128,7 @@ class WifiManager:
   async def connect_to_network(self, ssid: str, password: str = None, is_hidden: bool = False):
     """Connect to a selected WiFi network."""
     try:
-      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
+      # settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
       connection = {
         'connection': {
           'type': Variant('s', '802-11-wireless'),
@@ -159,13 +155,23 @@ class WifiManager:
           'psk': Variant('s', password),
         }
 
-      await settings_iface.call_add_connection(connection)
+      # nm_iface = self._get_interface(NM, NM_PATH, NM_IFACE)
+      # await nm_iface.call_add_and_activate_connection(connection, self.device_path, '/')
+      # await settings_iface.call_add_connection(connection)
+      # introspection = await self.bus.introspect(NM, NM_PATH)
+      # nm_proxy = self.bus.get_proxy_object(NM, NM_PATH, introspection)
+      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+      result = await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
+      print(result)
 
       for network in self.networks:
         network.is_connected = True if network.ssid == ssid else False
 
     except DBusError as e:
       cloudlog.error(f"Error connecting to network: {e}")
+
+  def is_saved(self, ssid: str) -> bool:
+    return ssid in self.saved_connections
 
   async def _find_wifi_device(self) -> bool:
     nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
@@ -295,7 +301,6 @@ class WifiManager:
           continue
 
         bssid = properties.get('HwAddress', Variant('s', '')).value
-        print(bssid)
         flags = properties['Flags'].value
         wpa_flags = properties['WpaFlags'].value
         rsn_flags = properties['RsnFlags'].value
