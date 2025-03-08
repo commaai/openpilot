@@ -192,7 +192,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
       float gain = sensor->sensor_analog_gains[g] * get_gain_factor();
 
       // Compute optimal time for given gain
-      int t = std::clamp(int(std::round(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
+      int t = std::clamp(int(std::floor(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
 
       // Only go below recommended gain when absolutely necessary to not overexpose
       if (g < sensor->analog_gain_rec_idx && t > 20 && g < gain_idx) {
