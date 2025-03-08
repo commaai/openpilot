@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
+import threading
 from functools import cache
 
 from cereal import messaging
@@ -48,16 +49,18 @@ class Mic:
 
     self.measurements = np.empty(0)
 
+    self.lock = threading.Lock()
     self.sound_pressure = 0
     self.sound_pressure_weighted = 0
     self.sound_pressure_level_weighted = 0
 
   def update(self):
     msg = messaging.new_message('microphone', valid=True)
-    msg.microphone.soundPressure = float(self.sound_pressure)
-    msg.microphone.soundPressureWeighted = float(self.sound_pressure_weighted)
+    with self.lock:
+      msg.microphone.soundPressure = float(self.sound_pressure)
+      msg.microphone.soundPressureWeighted = float(self.sound_pressure_weighted)
 
-    msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
+      msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
 
     self.pm.send('microphone', msg)
     self.rk.keep_time()
@@ -72,14 +75,15 @@ class Mic:
 
     self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
-    while self.measurements.size >= FFT_SAMPLES:
-      measurements = self.measurements[:FFT_SAMPLES]
+    with self.lock:
+      while self.measurements.size >= FFT_SAMPLES:
+        measurements = self.measurements[:FFT_SAMPLES]
 
-      self.sound_pressure, _ = calculate_spl(measurements)
-      measurements_weighted = apply_a_weighting(measurements)
-      self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
+        self.sound_pressure, _ = calculate_spl(measurements)
+        measurements_weighted = apply_a_weighting(measurements)
+        self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
 
-      self.measurements = self.measurements[FFT_SAMPLES:]
+        self.measurements = self.measurements[FFT_SAMPLES:]
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):
