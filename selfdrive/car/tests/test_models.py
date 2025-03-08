@@ -266,6 +266,9 @@ class TestCarModelBase(unittest.TestCase):
 
   def test_panda_safety_tx_cases(self, data=None):
     """Asserts we can tx common messages"""
+    if self.CP.dashcamOnly:
+      self.skipTest("no need to check panda safety for dashcamOnly")
+
     if self.CP.notCar:
       self.skipTest("Skipping test for notCar")
 
