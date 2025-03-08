@@ -4,6 +4,7 @@ from enum import IntEnum
 from dbus_next.constants import MessageType
 from openpilot.system.ui.lib.wifi_manager import WifiManager, NetworkInfo
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.keyboard import Keyboard
