@@ -4,6 +4,7 @@ from enum import IntEnum
 from dbus_next.constants import MessageType
 from openpilot.system.ui.lib.wifi_manager import WifiManager, NetworkInfo
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.keyboard import Keyboard
@@ -77,7 +78,7 @@ class WifiManagerUI:
   def render_network_item(self, rect, network: NetworkInfo, clicked: bool):
     label_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, self.item_height)
     state_rect = rl.Rectangle(
-      rect.x + rect.width - self.btn_width * 2 - 30, rect.y, self.btn_width, self.item_height
+      rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, self.item_height
     )
 
     gui_label(label_rect, network.ssid, 55)
@@ -99,7 +100,7 @@ class WifiManagerUI:
         self.btn_width,
         80,
       )
-      if rl.gui_button(forget_btn_rect, "Forget") and self.current_action == ActionState.NONE:
+      if gui_button(forget_btn_rect, "Forget") and self.current_action == ActionState.NONE:
         self._selected_network = network
         asyncio.create_task(self.forgot_network())
 

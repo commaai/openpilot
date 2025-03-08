@@ -55,8 +55,8 @@ class Keyboard:
     self._input_text = ""
 
   def render(self, rect, title, sub_title):
-    gui_label((rect.x, rect.y, rect.width, 95), title, 90)
-    gui_label((rect.x, rect.y + 95, rect.width, 60), sub_title, 55, rl.GRAY)
+    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90)
+    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, rl.GRAY)
     if gui_button(rl.Rectangle(rect.x + rect.width - 300, rect.y, 300, 100), "Cancel"):
       return -1
 
