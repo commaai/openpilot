@@ -59,7 +59,6 @@ class Mic:
     with self.lock:
       msg.microphone.soundPressure = float(self.sound_pressure)
       msg.microphone.soundPressureWeighted = float(self.sound_pressure_weighted)
-
       msg.microphone.soundPressureWeightedDb = float(self.sound_pressure_level_weighted)
 
     self.pm.send('microphone', msg)
@@ -75,15 +74,19 @@ class Mic:
 
     self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
-    with self.lock:
-      while self.measurements.size >= FFT_SAMPLES:
-        measurements = self.measurements[:FFT_SAMPLES]
+    while self.measurements.size >= FFT_SAMPLES:
+      measurements = self.measurements[:FFT_SAMPLES]
 
-        self.sound_pressure, _ = calculate_spl(measurements)
-        measurements_weighted = apply_a_weighting(measurements)
-        self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
+      sound_pressure, _ = calculate_spl(measurements)
+      measurements_weighted = apply_a_weighting(measurements)
+      sound_pressure_weighted, sound_pressure_level_weighted = calculate_spl(measurements_weighted)
 
-        self.measurements = self.measurements[FFT_SAMPLES:]
+      with self.lock:
+        self.sound_pressure = sound_pressure
+        self.sound_pressure_weighted = sound_pressure_weighted
+        self.sound_pressure_level_weighted = sound_pressure_level_weighted
+
+      self.measurements = self.measurements[FFT_SAMPLES:]
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):
