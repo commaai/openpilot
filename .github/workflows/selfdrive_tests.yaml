@@ -156,6 +156,7 @@ jobs:
 
   process_replay:
     name: process replay
+    if: github.repository == 'commaai/openpilot'  # disable process_replay for forks
     runs-on:
       - 'ubuntu-24.04'
     steps:
