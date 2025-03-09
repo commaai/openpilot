@@ -39,7 +39,7 @@ def main():
 
   text_content = sys.argv[1] if len(sys.argv) > 1 else DEMO_TEXT
 
-  textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2 - BUTTON_SIZE.y - SPACING)
+  textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2)
   wrapped_lines = wrap_text(text_content, FONT_SIZE, textarea_rect.width - 20)
   content_rect = rl.Rectangle(0, 0, textarea_rect.width - 20, len(wrapped_lines) * LINE_HEIGHT)
   scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)

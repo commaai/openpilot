@@ -56,6 +56,9 @@ class VCruiseHelper:
         if CS.cruiseState.speed == 0:
           self.v_cruise_kph = V_CRUISE_UNSET
           self.v_cruise_cluster_kph = V_CRUISE_UNSET
+        elif CS.cruiseState.speed == -1:
+          self.v_cruise_kph = -1
+          self.v_cruise_cluster_kph = -1
     else:
       self.v_cruise_kph = V_CRUISE_UNSET
       self.v_cruise_cluster_kph = V_CRUISE_UNSET

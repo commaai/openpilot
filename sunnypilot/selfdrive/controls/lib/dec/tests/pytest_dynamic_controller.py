@@ -33,7 +33,7 @@ class MockControlState:
 @pytest.fixture
 def interp(monkeypatch):
   mock_interp = MockInterp()
-  monkeypatch.setattr('openpilot.common.numpy_fast.interp', mock_interp)
+  monkeypatch.setattr('numpy.interp', mock_interp)
   return mock_interp
 
 @pytest.fixture

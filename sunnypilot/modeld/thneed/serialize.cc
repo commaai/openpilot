@@ -6,6 +6,7 @@
 #include "common/clutil.h"
 #include "common/swaglog.h"
 #include "sunnypilot/modeld/thneed/thneed.h"
+#include "sunnypilot/modeld/thneed/clutil_legacy.h"
 using namespace json11;
 
 extern map<cl_program, string> g_program_source;

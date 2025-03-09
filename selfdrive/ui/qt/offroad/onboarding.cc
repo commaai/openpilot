@@ -4,7 +4,6 @@
 
 #include <QLabel>
 #include <QPainter>
-#include <QScrollBar>
 #include <QTransform>
 #include <QVBoxLayout>
 
@@ -12,7 +11,6 @@
 #include "common/params.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/widgets/input.h"
-#include "selfdrive/ui/qt/widgets/scrollview.h"
 
 TrainingGuide::TrainingGuide(QWidget *parent) : QFrame(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
@@ -85,29 +83,25 @@ void TrainingGuide::paintEvent(QPaintEvent *event) {
 }
 
 void TermsPage::showEvent(QShowEvent *event) {
-  // late init, building QML widget takes 200ms
-  if (layout()) {
-    return;
-  }
-
   QVBoxLayout *main_layout = new QVBoxLayout(this);
   main_layout->setContentsMargins(45, 35, 45, 45);
   main_layout->setSpacing(0);
 
-  QLabel *title = new QLabel(tr("Terms & Conditions"));
-  title->setStyleSheet("font-size: 90px; font-weight: 600;");
-  main_layout->addWidget(title);
+  QVBoxLayout *vlayout = new QVBoxLayout();
+  vlayout->setContentsMargins(165, 165, 165, 0);
+  main_layout->addLayout(vlayout);
 
-  QLabel *text = new QLabel(this);
-  text->setTextFormat(Qt::RichText);
-  text->setWordWrap(true);
-  text->setText(QString::fromStdString(util::read_file("../assets/offroad/tc.html")));
-  text->setStyleSheet("font-size:50px; font-weight: 200; color: #C9C9C9; background-color:#1B1B1B; padding:50px 50px;");
-  ScrollView *scroll = new ScrollView(text, this);
+  QLabel *title = new QLabel(tr("Welcome to openpilot"));
+  title->setStyleSheet("font-size: 90px; font-weight: 500;");
+  vlayout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
-  main_layout->addSpacing(30);
-  main_layout->addWidget(scroll);
-  main_layout->addSpacing(50);
+  vlayout->addSpacing(90);
+  QLabel *desc = new QLabel(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at <span style='color: #465BEA;'>https://comma.ai/terms</span> before continuing."));
+  desc->setWordWrap(true);
+  desc->setStyleSheet("font-size: 80px; font-weight: 300;");
+  vlayout->addWidget(desc, 0);
+
+  vlayout->addStretch();
 
   QHBoxLayout* buttons = new QHBoxLayout;
   buttons->setMargin(0);
@@ -118,8 +112,7 @@ void TermsPage::showEvent(QShowEvent *event) {
   buttons->addWidget(decline_btn);
   QObject::connect(decline_btn, &QPushButton::clicked, this, &TermsPage::declinedTerms);
 
-  accept_btn = new QPushButton(tr("Scroll to accept"));
-  accept_btn->setEnabled(false);
+  accept_btn = new QPushButton(tr("Agree"));
   accept_btn->setStyleSheet(R"(
     QPushButton {
       background-color: #465BEA;
@@ -127,23 +120,9 @@ void TermsPage::showEvent(QShowEvent *event) {
     QPushButton:pressed {
       background-color: #3049F4;
     }
-    QPushButton:disabled {
-      background-color: #4F4F4F;
-    }
   )");
   buttons->addWidget(accept_btn);
   QObject::connect(accept_btn, &QPushButton::clicked, this, &TermsPage::acceptedTerms);
-  QScrollBar *scroll_bar = scroll->verticalScrollBar();
-  connect(scroll_bar, &QScrollBar::valueChanged, this, [this, scroll_bar](int value) {
-    if (value == scroll_bar->maximum()) {
-      enableAccept();
-    }
-  });
-}
-
-void TermsPage::enableAccept() {
-  accept_btn->setText(tr("Agree"));
-  accept_btn->setEnabled(true);
 }
 
 void DeclinePage::showEvent(QShowEvent *event) {

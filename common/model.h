@@ -1,1 +1,1 @@
-#define DEFAULT_MODEL "Not Too Shabby (Default)"
+#define DEFAULT_MODEL "Filet o Fish (Default)"

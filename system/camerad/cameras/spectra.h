@@ -22,7 +22,6 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 // For use with the Titan 170 ISP in the SDM845
 // https://github.com/commaai/agnos-kernel-sdm845
 
-
 // CSLDeviceType/CSLPacketOpcodesIFE from camx
 // cam_packet_header.op_code = (device << 24) | (opcode);
 #define CSLDeviceTypeImageSensor (0x01 << 24)
@@ -30,12 +29,6 @@ const int MIPI_SETTLE_CNT = 33;  // Calculated by camera_freqs.py
 #define CSLDeviceTypeBPS         (0x10 << 24)
 #define OpcodesIFEInitialConfig  0x0
 #define OpcodesIFEUpdate         0x1
-
-typedef enum {
-  ISP_RAW_OUTPUT,   // raw frame from sensor
-  ISP_IFE_PROCESSED,  // fully processed image through the IFE
-  ISP_BPS_PROCESSED,  // fully processed image through the BPS
-} SpectraOutputType;
 
 std::optional<int32_t> device_acquire(int fd, int32_t session_handle, void *data, uint32_t num_resources=1);
 int device_config(int fd, int32_t session_handle, int32_t dev_handle, uint64_t packet_handle);
@@ -117,7 +110,7 @@ public:
 
 class SpectraCamera {
 public:
-  SpectraCamera(SpectraMaster *master, const CameraConfig &config, SpectraOutputType out);
+  SpectraCamera(SpectraMaster *master, const CameraConfig &config);
   ~SpectraCamera();
 
   void camera_open(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
@@ -128,8 +121,7 @@ public:
   void config_ife(int idx, int request_id, bool init=false);
 
   int clear_req_queue();
-  bool enqueue_buffer(int i, uint64_t request_id);
-  void enqueue_req_multi(uint64_t start, int n);
+  void enqueue_frame(uint64_t request_id);
 
   int sensors_init();
   void sensors_start();
@@ -190,15 +182,17 @@ public:
   int sync_objs_bps[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
   uint64_t frame_id_raw_last = 0;
-  int64_t frame_id_offset = 0;
-  bool skipped_last = true;
-
-  SpectraOutputType output_type;
+  int invalid_request_count = 0;
+  bool skip_expected = true;
 
   CameraBuf buf;
   SpectraMaster *m;
 
 private:
+  void clearAndRequeue(uint64_t from_request_id);
+  bool validateEvent(uint64_t request_id, uint64_t frame_id_raw);
+  bool waitForFrameReady(uint64_t request_id);
+  bool processFrame(int buf_idx, uint64_t request_id, uint64_t frame_id_raw, uint64_t timestamp);
   static bool syncFirstFrame(int camera_id, uint64_t request_id, uint64_t raw_id, uint64_t timestamp);
   struct SyncData {
     uint64_t timestamp;
@@ -208,11 +202,11 @@ private:
   inline static bool first_frame_synced = false;
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
-  inline bool stress_test(const char* log, float prob=0.01) {
-    static bool enable = getenv("SPECTRA_STRESS_TEST") != nullptr;
-    bool triggered = enable && ((static_cast<double>(rand()) / RAND_MAX) < prob);
+  inline bool stress_test(const char* log) {
+    static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));;
+    bool triggered = (prob > 0) && ((static_cast<double>(rand()) / RAND_MAX) < prob);
     if (triggered) {
-      LOGE("stress test: %s", log);
+      LOGE("stress test (cam %d): %s", cc.camera_num, log);
     }
     return triggered;
   }

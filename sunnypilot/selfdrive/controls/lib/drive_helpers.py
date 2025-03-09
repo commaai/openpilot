@@ -1,4 +1,4 @@
-from openpilot.common.numpy_fast import clip, interp
+from numpy import clip, interp
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, MIN_SPEED, MAX_LATERAL_JERK
 from openpilot.sunnypilot.modeld.constants import ModelConstants

@@ -58,8 +58,8 @@ Mock openpilot components by publishing logged messages.
 
 Options:
   -h, --help             Displays this help.
-  -a, --allow <allow>    whitelist of services to send
-  -b, --block <block>    blacklist of services to send
+  -a, --allow <allow>    whitelist of services to send (comma-separated)
+  -b, --block <block>    blacklist of services to send (comma-separated)
   -c, --cache <n>        cache <n> segments in memory. default is 5
   -s, --start <seconds>  start from <seconds>
   -x <speed>             playback <speed>. between 0.2 - 3

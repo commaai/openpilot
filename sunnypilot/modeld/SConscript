@@ -14,6 +14,7 @@ common_src = [
 ]
 
 thneed_src_common = [
+  "thneed/clutil_legacy.cc",
   "thneed/thneed_common.cc",
   "thneed/serialize.cc",
 ]
