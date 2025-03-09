@@ -32,6 +32,7 @@ void MsgqToZmq::run(const std::vector<std::string> &endpoints, const std::string
     int ret = socket_pair.pub_sock->connect(zmq_context.get(), endpoint);
     if (ret != 0) {
       printf("Failed to create ZMQ publisher for [%s]: %s\n", endpoint.c_str(), zmq_strerror(zmq_errno()));
+      socket_pairs.pop_back();  // Roll back on failure
       return;
     }
   }
