@@ -144,7 +144,11 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enables or disables the github runner service.</source>
+        <source>Hyundai: Enable Radar Tracks</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable this to attempt to enable radar tracks for Hyundai, Kia, and Genesis models equipped with the supported Mando SCC radar. This allows sunnypilot to use radar data for improved lead tracking and overall longitudinal performance.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -152,11 +156,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Hyundai: Enable Radar Tracks</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable this to attempt to enable radar tracks for Hyundai, Kia, and Genesis models equipped with the supported Mando SCC radar. This allows sunnypilot to use radar data for improved lead tracking and overall longitudinal performance.</source>
+        <source>Enables or disables the github runner service.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -314,16 +314,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation type="unfinished">Redémarrer</translation>
-    </message>
-    <message>
         <source>Regulatory</source>
         <translation type="unfinished">Réglementaire</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
@@ -336,6 +332,10 @@
     <message>
         <source>Select a language</source>
         <translation type="unfinished">Choisir une langue</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="unfinished">Redémarrer</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -374,27 +374,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>Trajets</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>Heures</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>DEPUIS TOUJOURS</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>CETTE SEMAINE</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>KM</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>Miles</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -413,6 +413,31 @@
     <message>
         <source>CHILL MODE ON</source>
         <translation>MODE DÉTENTE ACTIVÉ</translation>
+    </message>
+</context>
+<context>
+    <name>FirehosePanel</name>
+    <message>
+        <source>🔥 Firehose Mode 🔥</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot learns to drive by watching humans, like you, drive.
+
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0%</source>
+        <translation type="unfinished">5G {0%?}</translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -458,6 +483,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Note: For vehicles without LFA/LKAS button, disabling this will prevent lateral control engagement.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unified Engagement Mode (UEM)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -486,10 +515,6 @@
 
 Remain Active: ALC will remain active even after the brake pedal is pressed.
 Pause Steering: ALC will be paused after the brake pedal is manually pressed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Note: For vehicles without LFA/LKAS button, disabling this will prevent lateral control engagement.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -663,11 +688,11 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
     <name>ParamControlSP</name>
     <message>
         <source>Enable</source>
-        <translation>Activer</translation>
+        <translation type="unfinished">Activer</translation>
     </message>
     <message>
         <source>Cancel</source>
-        <translation>Annuler</translation>
+        <translation type="unfinished">Annuler</translation>
     </message>
 </context>
 <context>
@@ -685,23 +710,19 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>SEARCHING</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No vehicles found for query: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a vehicle</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enter model year (e.g., 2021) and model name (Toyota Corolla):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Vehicle Selector</source>
+        <source>SEARCHING</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REMOVE</source>
+        <translation type="unfinished">SUPPRIMER</translation>
+    </message>
+    <message>
+        <source>This setting will take effect immediately.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -709,7 +730,7 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting will take effect immediately.</source>
+        <source>Vehicle Selector</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -721,8 +742,12 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation type="unfinished">Annuler</translation>
     </message>
     <message>
-        <source>REMOVE</source>
-        <translation type="unfinished">SUPPRIMER</translation>
+        <source>No vehicles found for query: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a vehicle</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -874,39 +899,39 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <source>Developer</source>
         <translation>Dév.</translation>
     </message>
+    <message>
+        <source>Firehose</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsWindowSP</name>
     <message>
         <source>×</source>
-        <translation>×</translation>
+        <translation type="unfinished">×</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation>Appareil</translation>
+        <translation type="unfinished">Appareil</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>Réseau</translation>
-    </message>
-    <message>
-        <source>Toggles</source>
-        <translation>Options</translation>
-    </message>
-    <message>
-        <source>Software</source>
-        <translation>Logiciel</translation>
-    </message>
-    <message>
-        <source>Developer</source>
-        <translation type="unfinished">Dév.</translation>
-    </message>
-    <message>
-        <source>sunnypilot</source>
-        <translation>sunnypilot</translation>
+        <translation type="unfinished">Réseau</translation>
     </message>
     <message>
         <source>sunnylink</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="unfinished">Options</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="unfinished">Logiciel</translation>
+    </message>
+    <message>
+        <source>sunnypilot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -915,6 +940,14 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     </message>
     <message>
         <source>Vehicle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished">Dév.</translation>
+    </message>
+    <message>
+        <source>Firehose</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1208,31 +1241,15 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
 <context>
     <name>SoftwarePanelSP</name>
     <message>
+        <source>Current Model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>SELECT</source>
         <translation type="unfinished">SÉLECTIONNER</translation>
     </message>
     <message>
-        <source>Reset Calibration</source>
-        <translation type="unfinished">Réinitialiser la calibration</translation>
-    </message>
-    <message>
-        <source>Warning: You are on a metered connection!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation type="unfinished">Continuer</translation>
-    </message>
-    <message>
-        <source>on Metered</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 model [%2] pending...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Current Model</source>
+        <source>No custom model selected!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1252,22 +1269,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 model [%2] download failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a Model</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Fetching models...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Model download has started in the background.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 model [%2] %3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1284,11 +1285,23 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>%1 model [%2] download failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 model [%2] pending...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fetching models...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Use Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No custom model selected!</source>
+        <source>Select a Model</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1296,11 +1309,7 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="unfinished">Annuler</translation>
-    </message>
-    <message>
-        <source>Driving Model Selector</source>
+        <source>Model download has started in the background.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1310,6 +1319,30 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Would you like to do that now?</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="unfinished">Réinitialiser la calibration</translation>
+    </message>
+    <message>
+        <source>Driving Model Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: You are on a metered connection!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation type="unfinished">Continuer</translation>
+    </message>
+    <message>
+        <source>on Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">Annuler</translation>
     </message>
 </context>
 <context>
@@ -1369,11 +1402,11 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>N/A</source>
-        <translation type="unfinished">N/A</translation>
+        <source>🎉Welcome back! We&apos;re excited to see you&apos;ve enabled sunnylink again! 🚀</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>🎉Welcome back! We&apos;re excited to see you&apos;ve enabled sunnylink again! 🚀</source>
+        <source>👋Not going to lie, it&apos;s sad to see you disabled sunnylink 😢, but we&apos;ll be here when you&apos;re ready to come back 🎉.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1381,22 +1414,22 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>👋Not going to lie, it&apos;s sad to see you disabled sunnylink 😢, but we&apos;ll be here when you&apos;re ready to come back 🎉.</source>
-        <translation type="unfinished"></translation>
+        <source>N/A</source>
+        <translation type="unfinished">N/A</translation>
     </message>
 </context>
 <context>
     <name>SunnypilotPanel</name>
-    <message>
-        <source>Customize MADS</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Modular Assistive Driving System (MADS)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable the beloved MADS feature. Disable toggle to revert back to stock openpilot engagement/disengagement.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Customize MADS</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1537,14 +1570,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <source>Enable toggle to allow the model to determine when to use sunnypilot ACC or sunnypilot End to End Longitudinal.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>FIREHOSE Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1584,24 +1609,16 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
 <context>
     <name>WiFiPromptWidget</name>
     <message>
-        <source>Setup Wi-Fi</source>
-        <translation>Configurer Wi-Fi</translation>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>Connectez-vous au Wi-Fi pour publier les données de conduite et aider à améliorer openpilot</translation>
+        <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Settings</source>
-        <translation>Ouvrir les paramètres</translation>
-    </message>
-    <message>
-        <source>Ready to upload</source>
-        <translation>Prêt à uploader</translation>
-    </message>
-    <message>
-        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
-        <translation>Les données d&apos;entraînement seront envoyées périodiquement lorsque votre appareil est connecté au réseau Wi-Fi</translation>
+        <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

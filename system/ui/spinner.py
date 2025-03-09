@@ -10,18 +10,21 @@ from openpilot.system.ui.lib.application import gui_app
 # Constants
 PROGRESS_BAR_WIDTH = 1000
 PROGRESS_BAR_HEIGHT = 20
-ROTATION_RATE = 12.0
+ROTATION_TIME_SECONDS = 1.0  # Time for one full circle
 MARGIN = 200
 TEXTURE_SIZE = 360
 FONT_SIZE = 80
 
+
 def clamp(value, min_value, max_value):
   return max(min(value, max_value), min_value)
+
 
 def check_input_non_blocking():
   if sys.stdin in select.select([sys.stdin], [], [], 0)[0]:
     return sys.stdin.readline().strip()
   return ""
+
 
 def main():
   gui_app.init_window("Spinner")
@@ -37,12 +40,11 @@ def main():
   spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
   comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
-  while not rl.window_should_close():
-    rl.begin_drawing()
-    rl.clear_background(rl.BLACK)
-
-    # Update rotation
-    rotation = (rotation + ROTATION_RATE) % 360.0
+  for _ in gui_app.render():
+    fps = rl.get_fps()
+    if fps > 0:
+      degrees_per_frame = 360.0 / (ROTATION_TIME_SECONDS * fps)
+      rotation = (rotation + degrees_per_frame) % 360.0
 
     # Draw rotating spinner and static comma logo
     rl.draw_texture_pro(spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
@@ -68,8 +70,6 @@ def main():
         text_size = rl.measure_text_ex(gui_app.font(), user_input, FONT_SIZE, 1.0)
         rl.draw_text_ex(gui_app.font(), user_input,
                         rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
-
-    rl.end_drawing()
 
 
 if __name__ == "__main__":

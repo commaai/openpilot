@@ -124,11 +124,23 @@
         <translation>롱컨 기동 모드</translation>
     </message>
     <message>
-        <source>Enables or disables the github runner service.</source>
+        <source>openpilot Longitudinal Control (Alpha)</source>
+        <translation type="unfinished">openpilot 가감속 제어 (알파)</translation>
+    </message>
+    <message>
+        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation type="unfinished">경고: openpilot 가감속 제어 알파 기능으로 차량의 자동긴급제동(AEB)을 비활성화합니다.</translation>
+    </message>
+    <message>
+        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
+        <translation type="unfinished">이 차량은 openpilot 가감속 제어 대신 기본적으로 차량의 ACC로 가감속을 제어합니다. openpilot의 가감속 제어로 전환하려면 이 기능을 활성화하세요. openpilot 가감속 제어 알파를 활성화하는 경우 실험 모드 활성화를 권장합니다.</translation>
+    </message>
+    <message>
+        <source>Enable ADB</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable GitHub runner service</source>
+        <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -140,24 +152,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Enable ADB</source>
+        <source>Enable GitHub runner service</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
+        <source>Enables or disables the github runner service.</source>
         <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">openpilot 가감속 제어 (알파)</translation>
-    </message>
-    <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">경고: openpilot 가감속 제어 알파 기능으로 차량의 자동긴급제동(AEB)을 비활성화합니다.</translation>
-    </message>
-    <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">이 차량은 openpilot 가감속 제어 대신 기본적으로 차량의 ACC로 가감속을 제어합니다. openpilot의 가감속 제어로 전환하려면 이 기능을 활성화하세요. openpilot 가감속 제어 알파를 활성화하는 경우 실험 모드 활성화를 권장합니다.</translation>
     </message>
 </context>
 <context>
@@ -188,7 +188,7 @@
     </message>
     <message>
         <source>Reset Calibration</source>
-        <translation>캘리브레이션 초기화</translation>
+        <translation>캘리브레이션</translation>
     </message>
     <message>
         <source>RESET</source>
@@ -200,7 +200,7 @@
     </message>
     <message>
         <source>Review Training Guide</source>
-        <translation>트레이닝 가이드 다시보기</translation>
+        <translation>트레이닝 가이드</translation>
     </message>
     <message>
         <source>REVIEW</source>
@@ -292,7 +292,7 @@
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>장치를 comma connect (connect.comma.ai)에서 페어링하고 comma prime 무료 이용권을 사용하세요.</translation>
+        <translation>장치를 comma connect (connect.comma.ai)에서 동기화하고 comma prime 무료 이용권을 사용하세요.</translation>
     </message>
     <message>
         <source>Pair Device</source>
@@ -314,16 +314,12 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Language</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation type="unfinished">재부팅</translation>
-    </message>
-    <message>
         <source>Regulatory</source>
         <translation type="unfinished">규제</translation>
+    </message>
+    <message>
+        <source>Language</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
@@ -336,6 +332,10 @@
     <message>
         <source>Select a language</source>
         <translation type="unfinished">언어를 선택하세요</translation>
+    </message>
+    <message>
+        <source>Reboot</source>
+        <translation type="unfinished">재부팅</translation>
     </message>
     <message>
         <source>Power Off</source>
@@ -374,27 +374,27 @@
     <name>DriveStats</name>
     <message>
         <source>Drives</source>
-        <translation>주행</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Hours</source>
-        <translation>시간</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>ALL TIME</source>
-        <translation>전체</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>PAST WEEK</source>
-        <translation>지난 주</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>KM</source>
-        <translation>km</translation>
+        <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Miles</source>
-        <translation>마일</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -413,6 +413,31 @@
     <message>
         <source>CHILL MODE ON</source>
         <translation>안정 모드 사용</translation>
+    </message>
+</context>
+<context>
+    <name>FirehosePanel</name>
+    <message>
+        <source>🔥 Firehose Mode 🔥</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot learns to drive by watching humans, like you, drive.
+
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models with better Experimental Mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>0%</source>
+        <translation type="unfinished">5G {0%?}</translation>
+    </message>
+    <message>
+        <source>Follow these steps to get your device ready:&lt;br&gt;	1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;	2. Connect to Wi-Fi&lt;br&gt;	3. Enable the toggle&lt;br&gt;	4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;The toggle turns off once you restart your device. Repeat at least once a week for maximum effectiveness.&lt;br&gt;&lt;br&gt;&lt;b&gt;FAQ&lt;/b&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;i&gt;Do I need to be on Wi-Fi?&lt;/i&gt; Yes.&lt;br&gt;&lt;i&gt;Do I need to bring the device inside?&lt;/i&gt; No, you can enable once you&apos;re parked, however your uploads will be limited by your car&apos;s battery.&lt;br&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -457,6 +482,10 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>Note: For vehicles without LFA/LKAS button, disabling this will prevent lateral control engagement.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Unified Engagement Mode (UEM)</source>
         <translation type="unfinished"></translation>
     </message>
@@ -485,10 +514,6 @@
 
 Remain Active: ALC will remain active even after the brake pedal is pressed.
 Pause Steering: ALC will be paused after the brake pedal is manually pressed.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Note: For vehicles without LFA/LKAS button, disabling this will prevent lateral control engagement.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -644,7 +669,7 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
     </message>
     <message>
         <source>Please connect to Wi-Fi to complete initial pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>초기 동기화를 완료하려면 Wi-Fi에 연결하세요.</translation>
     </message>
 </context>
 <context>
@@ -661,12 +686,12 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
 <context>
     <name>ParamControlSP</name>
     <message>
-        <source>Cancel</source>
-        <translation>취소</translation>
+        <source>Enable</source>
+        <translation type="unfinished">활성화</translation>
     </message>
     <message>
-        <source>Enable</source>
-        <translation>활성화</translation>
+        <source>Cancel</source>
+        <translation type="unfinished">취소</translation>
     </message>
 </context>
 <context>
@@ -684,23 +709,19 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>SEARCHING</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No vehicles found for query: %1</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a vehicle</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Enter model year (e.g., 2021) and model name (Toyota Corolla):</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Vehicle Selector</source>
+        <source>SEARCHING</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>REMOVE</source>
+        <translation type="unfinished">삭제</translation>
+    </message>
+    <message>
+        <source>This setting will take effect immediately.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -708,7 +729,7 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>This setting will take effect immediately.</source>
+        <source>Vehicle Selector</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -720,8 +741,12 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation type="unfinished">취소</translation>
     </message>
     <message>
-        <source>REMOVE</source>
-        <translation type="unfinished">삭제</translation>
+        <source>No vehicles found for query: %1</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Select a vehicle</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -870,39 +895,39 @@ This may take up to a minute.</source>
         <source>Developer</source>
         <translation>개발자</translation>
     </message>
+    <message>
+        <source>Firehose</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SettingsWindowSP</name>
     <message>
         <source>×</source>
-        <translation>×</translation>
+        <translation type="unfinished">×</translation>
     </message>
     <message>
         <source>Device</source>
-        <translation>장치</translation>
+        <translation type="unfinished">장치</translation>
     </message>
     <message>
         <source>Network</source>
-        <translation>네트워크</translation>
-    </message>
-    <message>
-        <source>Toggles</source>
-        <translation>토글</translation>
-    </message>
-    <message>
-        <source>Software</source>
-        <translation>소프트웨어</translation>
-    </message>
-    <message>
-        <source>Developer</source>
-        <translation>개발자</translation>
-    </message>
-    <message>
-        <source>sunnypilot</source>
-        <translation>sunnypilot</translation>
+        <translation type="unfinished">네트워크</translation>
     </message>
     <message>
         <source>sunnylink</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggles</source>
+        <translation type="unfinished">토글</translation>
+    </message>
+    <message>
+        <source>Software</source>
+        <translation type="unfinished">소프트웨어</translation>
+    </message>
+    <message>
+        <source>sunnypilot</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -911,6 +936,14 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Vehicle</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Developer</source>
+        <translation type="unfinished">개발자</translation>
+    </message>
+    <message>
+        <source>Firehose</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1017,11 +1050,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.</source>
-        <translation>장치를 comma connect (connect.comma.ai)에서 페어링하고 comma prime 무료 이용권을 사용하세요.</translation>
+        <translation>장치를 comma connect (connect.comma.ai)에서 동기화하고 comma prime 무료 이용권을 사용하세요.</translation>
     </message>
     <message>
         <source>Pair device</source>
-        <translation>장치 페어링</translation>
+        <translation>장치 동기화</translation>
     </message>
 </context>
 <context>
@@ -1204,31 +1237,15 @@ This may take up to a minute.</source>
 <context>
     <name>SoftwarePanelSP</name>
     <message>
+        <source>Current Model</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>SELECT</source>
         <translation type="unfinished">선택</translation>
     </message>
     <message>
-        <source>Reset Calibration</source>
-        <translation type="unfinished">캘리브레이션 초기화</translation>
-    </message>
-    <message>
-        <source>Warning: You are on a metered connection!</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation type="unfinished">계속</translation>
-    </message>
-    <message>
-        <source>on Metered</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>%1 model [%2] pending...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Current Model</source>
+        <source>No custom model selected!</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1248,22 +1265,6 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>%1 model [%2] download failed</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a Model</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Fetching models...</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Model download has started in the background.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>%1 model [%2] %3</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1280,11 +1281,23 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
+        <source>%1 model [%2] download failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>%1 model [%2] pending...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fetching models...</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>Use Default</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>No custom model selected!</source>
+        <source>Select a Model</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1292,11 +1305,7 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Cancel</source>
-        <translation type="unfinished">취소</translation>
-    </message>
-    <message>
-        <source>Driving Model Selector</source>
+        <source>Model download has started in the background.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1306,6 +1315,30 @@ This may take up to a minute.</source>
     <message>
         <source>Would you like to do that now?</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset Calibration</source>
+        <translation type="unfinished">캘리브레이션</translation>
+    </message>
+    <message>
+        <source>Driving Model Selector</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Warning: You are on a metered connection!</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation type="unfinished">계속</translation>
+    </message>
+    <message>
+        <source>on Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation type="unfinished">취소</translation>
     </message>
 </context>
 <context>
@@ -1365,11 +1398,11 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>N/A</source>
-        <translation type="unfinished">N/A</translation>
+        <source>🎉Welcome back! We&apos;re excited to see you&apos;ve enabled sunnylink again! 🚀</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>🎉Welcome back! We&apos;re excited to see you&apos;ve enabled sunnylink again! 🚀</source>
+        <source>👋Not going to lie, it&apos;s sad to see you disabled sunnylink 😢, but we&apos;ll be here when you&apos;re ready to come back 🎉.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -1377,22 +1410,22 @@ This may take up to a minute.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>👋Not going to lie, it&apos;s sad to see you disabled sunnylink 😢, but we&apos;ll be here when you&apos;re ready to come back 🎉.</source>
-        <translation type="unfinished"></translation>
+        <source>N/A</source>
+        <translation type="unfinished">N/A</translation>
     </message>
 </context>
 <context>
     <name>SunnypilotPanel</name>
-    <message>
-        <source>Customize MADS</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>Modular Assistive Driving System (MADS)</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Enable the beloved MADS feature. Disable toggle to revert back to stock openpilot engagement/disengagement.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Customize MADS</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1533,14 +1566,6 @@ This may take up to a minute.</source>
         <source>Enable toggle to allow the model to determine when to use sunnypilot ACC or sunnypilot End to End Longitudinal.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>FIREHOSE Mode</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable &lt;b&gt;FIREHOSE Mode&lt;/b&gt; to get your driving data in the training set.&lt;br&gt;&lt;br&gt;Follow these steps to get your device ready:&lt;br&gt;  1. Bring your device inside and connect to a good USB-C adapter&lt;br&gt;  2. Connect to Wi-Fi&lt;br&gt;  3. Enable this toggle&lt;br&gt;  4. Leave it connected for at least 30 minutes&lt;br&gt;&lt;br&gt;This toggle turns off once you restart your device. Repeat once a week for maximum effectiveness.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1580,24 +1605,16 @@ This may take up to a minute.</source>
 <context>
     <name>WiFiPromptWidget</name>
     <message>
-        <source>Setup Wi-Fi</source>
-        <translation>Wi-Fi 설정</translation>
+        <source>Open</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi to upload driving data and help improve openpilot</source>
-        <translation>Wi-Fi에 연결하여 주행 데이터를 업로드하고 openpilot 개선에 기여하세요</translation>
+        <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Open Settings</source>
-        <translation>설정 열기</translation>
-    </message>
-    <message>
-        <source>Ready to upload</source>
-        <translation>업로드 준비 완료</translation>
-    </message>
-    <message>
-        <source>Training data will be pulled periodically while your device is on Wi-Fi</source>
-        <translation>기기가 Wi-Fi에 연결되어 있는 동안 트레이닝 데이터를 주기적으로 전송합니다</translation>
+        <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -20,7 +20,7 @@ cdef extern from "selfdrive/modeld/models/commonmodel.h":
 
   cppclass DrivingModelFrame:
     int buf_size
-    DrivingModelFrame(cl_device_id, cl_context, unsigned char)
+    DrivingModelFrame(cl_device_id, cl_context)
 
   cppclass MonitoringModelFrame:
     int buf_size

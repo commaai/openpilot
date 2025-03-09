@@ -4,10 +4,10 @@ import math
 import numpy as np
 
 from cereal import messaging, car
+from opendbc.car.vehicle_model import VehicleModel
 from openpilot.common.realtime import DT_CTRL, Ratekeeper
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
 MAX_LAT_ACCEL = 2.5
@@ -53,8 +53,8 @@ def joystickd_thread():
       max_curvature = MAX_LAT_ACCEL / max(sm['carState'].vEgo ** 2, 5)
       max_angle = math.degrees(VM.get_steer_from_curvature(max_curvature, sm['carState'].vEgo, sm['liveParameters'].roll))
 
-      actuators.steer = float(np.clip(joystick_axes[1], -1, 1))
-      actuators.steeringAngleDeg, actuators.curvature = actuators.steer * max_angle, actuators.steer * -max_curvature
+      actuators.torque = float(np.clip(joystick_axes[1], -1, 1))
+      actuators.steeringAngleDeg, actuators.curvature = actuators.torque * max_angle, actuators.torque * -max_curvature
 
     pm.send('carControl', cc_msg)
 
@@ -62,6 +62,11 @@ def joystickd_thread():
     cs_msg.valid = True
     controlsState = cs_msg.controlsState
     controlsState.lateralControlState.init('debugState')
+
+    lp = sm['liveParameters']
+    steer_angle_without_offset = math.radians(sm['carState'].steeringAngleDeg - lp.angleOffsetDeg)
+    controlsState.curvature = -VM.calc_curvature(steer_angle_without_offset, sm['carState'].vEgo, lp.roll)
+
     pm.send('controlsState', cs_msg)
 
     rk.keep_time()
