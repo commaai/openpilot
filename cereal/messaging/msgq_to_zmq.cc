@@ -121,7 +121,7 @@ void MsgqToZmq::zmqMonitorThread() {
             registerSockets();
           }
         }
-        cv.notify_one();
+        cv.notify_all();
       }
     }
   }

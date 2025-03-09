@@ -1,4 +1,4 @@
-Import('env', 'common', 'msgq')
+Import('arch', 'env', 'common', 'msgq')
 
 cereal_dir = Dir('.')
 gen_dir = Dir('gen')
@@ -13,8 +13,12 @@ cereal = env.Library('cereal', [f'gen/cpp/{s}.c++' for s in schema_files])
 
 # Build messaging
 services_h = env.Command(['services.h'], ['services.py'], 'python3 ' + cereal_dir.path + '/services.py > $TARGET')
-env.Program('messaging/bridge', ['messaging/bridge.cc', 'messaging/msgq_to_zmq.cc'], LIBS=[msgq, common, 'pthread'])
+bridge_lib = env.Library('bridge', ["messaging/msgq_to_zmq.cc"])
+env.Program('messaging/bridge', ['messaging/bridge.cc'], LIBS=[bridge_lib, msgq, common, 'pthread'])
 
 socketmaster = env.Library('socketmaster', ['messaging/socketmaster.cc'])
 
 Export('cereal', 'socketmaster')
+
+if arch != 'Darwin' and GetOption('extras'):
+  env.Program('messaging/tests/test_bridge', ['messaging/tests/test_bridge.cc'], LIBS=[bridge_lib, msgq, common, 'pthread'])
