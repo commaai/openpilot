@@ -2,9 +2,8 @@
 
 #include <QWidget>
 #include <QVBoxLayout>
-#include <QProgressBar>
 #include <QLabel>
-#include "common/params.h"
+#include "selfdrive/ui/qt/request_repeater.h"
 
 #ifdef SUNNYPILOT
 #include "selfdrive/ui/sunnypilot/ui.h"
@@ -26,12 +25,13 @@ public:
 
 private:
   QVBoxLayout *layout;
-  
-  ParamControl *enable_firehose;
-  QFrame *progress_container;
-  QProgressBar *progress_bar;
-  QLabel *progress_text;
+
   QLabel *detailed_instructions;
-  
-  void updateFirehoseState(bool enabled);
+  QLabel *contribution_label;
+  QLabel *toggle_label;
+
+  RequestRepeater *firehose_stats;
+
+private slots:
+  void refresh();
 };

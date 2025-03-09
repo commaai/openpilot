@@ -19,15 +19,15 @@ cd $TARGET_DIR
 cp -r $SOURCE_DIR/.git $TARGET_DIR
 pre-commit uninstall || true
 
-echo "[-] bringing master-ci and devel in sync T=$SECONDS"
+echo "[-] bringing __nightly and devel in sync T=$SECONDS"
 cd $TARGET_DIR
 
-git fetch --depth 1 origin master-ci
+git fetch --depth 1 origin __nightly
 git fetch --depth 1 origin devel
 
-git checkout -f --track origin/master-ci
-git reset --hard master-ci
-git checkout master-ci
+git checkout -f --track origin/__nightly
+git reset --hard __nightly
+git checkout __nightly
 git reset --hard origin/devel
 git clean -xdff
 git lfs uninstall
@@ -51,8 +51,12 @@ rm -f panda/board/obj/panda.bin.signed
 
 # include source commit hash and build date in commit
 GIT_HASH=$(git --git-dir=$SOURCE_DIR/.git rev-parse HEAD)
+GIT_COMMIT_DATE=$(git --git-dir=$SOURCE_DIR/.git show --no-patch --format='%ct %ci' HEAD)
 DATETIME=$(date '+%Y-%m-%dT%H:%M:%S')
 VERSION=$(cat $SOURCE_DIR/common/version.h | awk -F\" '{print $2}')
+
+echo -n "$GIT_HASH" > git_src_commit
+echo -n "$GIT_COMMIT_DATE" > git_src_commit_date
 
 echo "[-] committing version $VERSION T=$SECONDS"
 git add -f .
@@ -81,7 +85,7 @@ fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
-  git push -f origin master-ci:$BRANCH
+  git push -f origin __nightly:$BRANCH
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"

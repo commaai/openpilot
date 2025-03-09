@@ -31,6 +31,7 @@ from openpilot.sunnypilot.selfdrive.selfdrived.events import EventsSP
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
+IGNORE_PROCESSES = {"loggerd", "encoderd", "statsd"}
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
 
 ThermalStatus = log.DeviceState.ThermalStatus
@@ -283,7 +284,7 @@ class SelfdriveD(CruiseHelper):
       if not_running != self.not_running_prev:
         cloudlog.event("process_not_running", not_running=not_running, error=True)
       self.not_running_prev = not_running
-    if self.sm.recv_frame['managerState'] and not_running:
+    if self.sm.recv_frame['managerState'] and (not_running - IGNORE_PROCESSES):
       self.events.add(EventName.processNotRunning)
     else:
       if not SIMULATION and not self.rk.lagging:
@@ -352,11 +353,11 @@ class SelfdriveD(CruiseHelper):
     if lac.active and not recent_steer_pressed and not self.CP.notCar:
       clipped_speed = max(CS.vEgo, MIN_LATERAL_CONTROL_SPEED)
       actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
-      desired_lateral_accel = controlstate.desiredCurvature * (clipped_speed**2)
+      desired_lateral_accel = self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
       undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
       turning = abs(desired_lateral_accel) > 1.0
-      good_speed = CS.vEgo > 5
-      if undershooting and turning and good_speed and lac.saturated:
+      # TODO: lac.saturated includes speed and other checks, should be pulled out
+      if undershooting and turning and lac.saturated:
         self.events.add(EventName.steerSaturated)
 
     # Check for FCW

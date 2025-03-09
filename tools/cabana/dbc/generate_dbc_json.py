@@ -7,7 +7,7 @@ from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.values import PLATFORMS
 
 
-def generate_dbc_json() -> str:
+def generate_dbc_dict() -> dict[str, str]:
   dbc_map = {}
   for platform in PLATFORMS.values():
     if platform != "MOCK":
@@ -24,7 +24,7 @@ def generate_dbc_json() -> str:
     if MIGRATION[m] in dbc_map:
       dbc_map[m] = dbc_map[MIGRATION[m]]
 
-  return json.dumps(dict(sorted(dbc_map.items())), indent=2)
+  return dbc_map
 
 
 if __name__ == "__main__":
@@ -35,5 +35,5 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   with open(args.out, 'w') as f:
-    f.write(generate_dbc_json())
+    f.write(json.dumps(dict(sorted(generate_dbc_dict().items())), indent=2))
   print(f"Generated and written to {args.out}")
