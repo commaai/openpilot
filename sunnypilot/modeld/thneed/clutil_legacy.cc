@@ -8,6 +8,17 @@
 #include "common/swaglog.h"
 #include "sunnypilot/modeld/thneed/clutil_legacy.h"
 
+void cl_print_build_errors(cl_program program, cl_device_id device) {
+  cl_build_status status;
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_STATUS, sizeof(status), &status, NULL);
+  size_t log_size;
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, 0, NULL, &log_size);
+  std::string log(log_size, '\0');
+  clGetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, log_size, &log[0], NULL);
+
+  LOGE("build failed; status=%d, log: %s", status, log.c_str());
+}
+
 cl_program cl_program_from_binary(cl_context ctx, cl_device_id device_id, const uint8_t* binary, size_t length, const char* args) {
   cl_program prg = CL_CHECK_ERR(clCreateProgramWithBinary(ctx, 1, &device_id, &length, &binary, NULL, &err));
   if (int err = clBuildProgram(prg, 1, &device_id, args, NULL, NULL); err != 0) {
