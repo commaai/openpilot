@@ -186,7 +186,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
         // TODO: more stuff here? we don't know
         .timeperframe = {
           .numerator = 1,
-          .denominator = 20
+          .denominator = (unsigned int)encoder_info.fps
         }
       }
     }
@@ -275,7 +275,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   }
 }
 
-void V4LEncoder::encoder_open(const char* path) {
+void V4LEncoder::encoder_open() {
   dequeue_handler_thread = std::thread(V4LEncoder::dequeue_handler, this);
   this->is_open = true;
   this->counter = 0;

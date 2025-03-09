@@ -132,6 +132,24 @@ def calibration_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   return NormalPermanentAlert("Calibration Invalid", angles)
 
 
+def paramsd_invalid_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  if not sm['liveParameters'].angleOffsetValid:
+    angle_offset_deg = sm['liveParameters'].angleOffsetDeg
+    title = "Steering misalignment detected"
+    text = f"Angle offset too high (Offset: {angle_offset_deg:.1f}°)"
+  elif not sm['liveParameters'].steerRatioValid:
+    steer_ratio = sm['liveParameters'].steerRatio
+    title = "Steer ratio mismatch"
+    text = f"Steering rack geometry may be off (Ratio: {steer_ratio:.1f})"
+  elif not sm['liveParameters'].stiffnessFactorValid:
+    stiffness_factor = sm['liveParameters'].stiffnessFactor
+    title = "Abnormal tire stiffness"
+    text = f"Check tires, pressure, or alignment (Factor: {stiffness_factor:.1f})"
+  else:
+    return NoEntryAlert("paramsd Temporary Error")
+
+  return NoEntryAlert(alert_text_1=title, alert_text_2=text)
+
 def overheat_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   cpu = max(sm['deviceState'].cpuTempC, default=0.)
   gpu = max(sm['deviceState'].gpuTempC, default=0.)
@@ -161,7 +179,7 @@ def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
 def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   gb = sm['carControl'].actuators.accel / 4.
-  steer = sm['carControl'].actuators.steer
+  steer = sm['carControl'].actuators.torque
   vals = f"Gas: {round(gb * 100.)}%, Steer: {round(steer * 100.)}%"
   return NormalPermanentAlert("Joystick Mode", vals)
 
@@ -444,7 +462,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # This alert is thrown when any of these values exceed a sanity check. This can be caused by
   # bad alignment or bad sensor data. If this happens consistently consider creating an issue on GitHub
   EventName.paramsdTemporaryError: {
-    ET.NO_ENTRY: NoEntryAlert("paramsd Temporary Error"),
+    ET.NO_ENTRY: paramsd_invalid_alert,
     ET.SOFT_DISABLE: soft_disable_alert("paramsd Temporary Error"),
   },
 

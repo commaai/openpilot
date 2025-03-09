@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
+from tinygrad.tensor import Tensor
+from tinygrad.dtype import dtypes
 if TICI:
-  from tinygrad.tensor import Tensor
-  from tinygrad.dtype import dtypes
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  from openpilot.selfdrive.modeld.runners.ort_helpers import make_onnx_cpu_runner
+  os.environ['LLVM'] = '1'
 import math
 import time
 import pickle
@@ -34,7 +34,6 @@ OUTPUT_SIZE = 84 + FEATURE_LEN
 
 PROCESS_NAME = "selfdrive.modeld.dmonitoringmodeld"
 SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
-MODEL_PATH = Path(__file__).parent / 'models/dmonitoring_model.onnx'
 MODEL_PKL_PATH = Path(__file__).parent / 'models/dmonitoring_model_tinygrad.pkl'
 
 
@@ -78,12 +77,9 @@ class ModelState:
       'calib': np.zeros((1, CALIB_LEN), dtype=np.float32),
     }
 
-    if TICI:
-      self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
-      with open(MODEL_PKL_PATH, "rb") as f:
-        self.model_run = pickle.load(f)
-    else:
-      self.onnx_cpu_runner = make_onnx_cpu_runner(MODEL_PATH)
+    self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+    with open(MODEL_PKL_PATH, "rb") as f:
+      self.model_run = pickle.load(f)
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
@@ -96,12 +92,10 @@ class ModelState:
       if 'input_img' not in self.tensor_inputs:
         self.tensor_inputs['input_img'] = qcom_tensor_from_opencl_address(input_img_cl.mem_address, (1, MODEL_WIDTH*MODEL_HEIGHT), dtype=dtypes.uint8)
     else:
-      self.numpy_inputs['input_img'] = self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT))
+      self.tensor_inputs['input_img'] = Tensor(self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT)), dtype=dtypes.uint8).realize()
 
-    if TICI:
-      output = self.model_run(**self.tensor_inputs).numpy().flatten()
-    else:
-      output = self.onnx_cpu_runner.run(None, self.numpy_inputs)[0].flatten()
+
+    output = self.model_run(**self.tensor_inputs).numpy().flatten()
 
     t2 = time.perf_counter()
     return output, t2 - t1

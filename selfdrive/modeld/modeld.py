@@ -1,11 +1,19 @@
 #!/usr/bin/env python3
+import os
 from openpilot.system.hardware import TICI
-
-#
+from tinygrad.tensor import Tensor
+from tinygrad.dtype import dtypes
+if TICI:
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+  os.environ['QCOM'] = '1'
+else:
+  os.environ['LLVM'] = '1'
 import time
+import pickle
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
+from pathlib import Path
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
@@ -23,11 +31,14 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import DrivingModelFrame, CLContext
 
-from openpilot.sunnypilot.modeld_v2.meta_helper import load_meta_constants
-from openpilot.sunnypilot.modeld_v2.model_runner import ONNXRunner, TinygradRunner
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
+SEND_RAW_PRED = os.getenv('SEND_RAW_PRED')
 
+VISION_PKL_PATH = Path(__file__).parent / 'models/driving_vision_tinygrad.pkl'
+POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
+VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
+POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
 
 class FrameMeta:
   frame_id: int = 0
@@ -45,35 +56,46 @@ class ModelState:
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, context: CLContext):
-    try:
-      self.model_runner = TinygradRunner() if TICI else ONNXRunner()
-    except Exception as e:
-      cloudlog.exception(f"Failed to initialize model runner: {str(e)}")
-
-    buffer_length = 5 if self.model_runner.is_20hz else 2
-    self.frames = {'input_imgs': DrivingModelFrame(context, buffer_length), 'big_input_imgs': DrivingModelFrame(context, buffer_length)}
+    self.frames = {'input_imgs': DrivingModelFrame(context), 'big_input_imgs': DrivingModelFrame(context)}
     self.prev_desire = np.zeros(ModelConstants.DESIRE_LEN, dtype=np.float32)
-    if self.model_runner.is_20hz:
-      self.full_features_20Hz = np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN, ModelConstants.FEATURE_LEN), dtype=np.float32)
-      self.desire_20Hz = np.zeros((ModelConstants.FULL_HISTORY_BUFFER_LEN + 1, ModelConstants.DESIRE_LEN), dtype=np.float32)
+
+    # policy inputs
+    self.numpy_inputs = {
+      'desire': np.zeros((1, ModelConstants.FULL_HISTORY_BUFFER_LEN, ModelConstants.DESIRE_LEN), dtype=np.float32),
+      'traffic_convention': np.zeros((1, ModelConstants.TRAFFIC_CONVENTION_LEN), dtype=np.float32),
+      'lateral_control_params': np.zeros((1, ModelConstants.LATERAL_CONTROL_PARAMS_LEN), dtype=np.float32),
+      'prev_desired_curv': np.zeros((1, ModelConstants.FULL_HISTORY_BUFFER_LEN, ModelConstants.PREV_DESIRED_CURV_LEN), dtype=np.float32),
+      'features_buffer': np.zeros((1, ModelConstants.FULL_HISTORY_BUFFER_LEN,  ModelConstants.FEATURE_LEN), dtype=np.float32),
+    }
+
+    with open(VISION_METADATA_PATH, 'rb') as f:
+      vision_metadata = pickle.load(f)
+      self.vision_input_shapes =  vision_metadata['input_shapes']
+      self.vision_output_slices = vision_metadata['output_slices']
+      vision_output_size = vision_metadata['output_shapes']['outputs'][1]
+
+    with open(POLICY_METADATA_PATH, 'rb') as f:
+      policy_metadata = pickle.load(f)
+      self.policy_input_shapes =  policy_metadata['input_shapes']
+      self.policy_output_slices = policy_metadata['output_slices']
+      policy_output_size = policy_metadata['output_shapes']['outputs'][1]
 
     # img buffers are managed in openCL transform code
-    self.numpy_inputs = {}
-
-    for key, shape in self.model_runner.input_shapes.items():
-      if key not in self.frames: # Managed by opencl
-        self.numpy_inputs[key] = np.zeros(shape, dtype=np.float32)
-
+    self.vision_inputs: dict[str, Tensor] = {}
+    self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
+    self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
+    self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
     self.parser = Parser()
 
-    if self.model_runner.is_20hz:
-      net_output_size = self.model_runner.model_metadata['output_shapes']['outputs'][1]
-      self.output = np.zeros(net_output_size, dtype=np.float32)
+    with open(VISION_PKL_PATH, "rb") as f:
+      self.vision_run = pickle.load(f)
 
-      num_elements = self.numpy_inputs['features_buffer'].shape[1]
-      step_size = int(-100 / num_elements)
-      self.full_features_20Hz_idxs = np.arange(step_size, step_size * (num_elements + 1), step_size)[::-1]
-      self.desire_reshape_dims = (self.numpy_inputs['desire'].shape[0], self.numpy_inputs['desire'].shape[1], -1, self.numpy_inputs['desire'].shape[2])
+    with open(POLICY_PKL_PATH, "rb") as f:
+      self.policy_run = pickle.load(f)
+
+  def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
+    parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}
+    return parsed_model_outputs
 
   def run(self, buf: VisionBuf, wbuf: VisionBuf, transform: np.ndarray, transform_wide: np.ndarray,
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
@@ -82,54 +104,45 @@ class ModelState:
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
 
-    if self.model_runner.is_20hz:
-      self.desire_20Hz[:-1] = self.desire_20Hz[1:]
-      self.desire_20Hz[-1] = new_desire
-      self.numpy_inputs['desire'][:] = self.desire_20Hz.reshape(self.desire_reshape_dims).max(axis=2)
-    else:
-      length = inputs['desire'].shape[0]
-      self.numpy_inputs['desire'][0, :-1] = self.numpy_inputs['desire'][0, 1:]
-      self.numpy_inputs['desire'][0, -1, :length] = new_desire[:length]
+    self.numpy_inputs['desire'][0,:-1] = self.numpy_inputs['desire'][0,1:]
+    self.numpy_inputs['desire'][0,-1] = new_desire
 
-    for key in self.numpy_inputs:
-      if key in inputs and key not in ['desire']:
-        self.numpy_inputs[key][:] = inputs[key]
-
+    self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
+    self.numpy_inputs['lateral_control_params'][:] = inputs['lateral_control_params']
     imgs_cl = {'input_imgs': self.frames['input_imgs'].prepare(buf, transform.flatten()),
                'big_input_imgs': self.frames['big_input_imgs'].prepare(wbuf, transform_wide.flatten())}
 
-    # Prepare inputs using the model runner
-    self.model_runner.prepare_inputs(imgs_cl, self.numpy_inputs, self.frames)
+    if TICI:
+      # The imgs tensors are backed by opencl memory, only need init once
+      for key in imgs_cl:
+        if key not in self.vision_inputs:
+          self.vision_inputs[key] = qcom_tensor_from_opencl_address(imgs_cl[key].mem_address, self.vision_input_shapes[key], dtype=dtypes.uint8)
+    else:
+      for key in imgs_cl:
+        frame_input = self.frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.vision_input_shapes[key])
+        self.vision_inputs[key] = Tensor(frame_input, dtype=dtypes.uint8).realize()
 
     if prepare_only:
       return None
 
-    # Run model inference
-    self.output = self.model_runner.run_model()
-    outputs = self.parser.parse_outputs(self.model_runner.slice_outputs(self.output))
+    self.vision_output = self.vision_run(**self.vision_inputs).numpy().flatten()
+    vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
-    if self.model_runner.is_20hz:
-      self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]
-      self.full_features_20Hz[-1] = outputs['hidden_state'][0, :]
-      self.numpy_inputs['features_buffer'][:] = self.full_features_20Hz[self.full_features_20Hz_idxs]
-    else:
-      feature_len = outputs['hidden_state'].shape[1]
-      self.numpy_inputs['features_buffer'][0, :-1] = self.numpy_inputs['features_buffer'][0, 1:]
-      self.numpy_inputs['features_buffer'][0, -1, :feature_len] = outputs['hidden_state'][0, :feature_len]
+    self.numpy_inputs['features_buffer'][0,:-1] = self.numpy_inputs['features_buffer'][0,1:]
+    self.numpy_inputs['features_buffer'][0,-1] = vision_outputs_dict['hidden_state'][0, :]
 
-    if "desired_curvature" in outputs:
-      input_name_prev = None
+    self.policy_output = self.policy_run(**self.policy_inputs).numpy().flatten()
+    policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
 
-      if "prev_desired_curvs" in self.numpy_inputs.keys():
-        input_name_prev = 'prev_desired_curvs'
-      elif "prev_desired_curv" in self.numpy_inputs.keys():
-        input_name_prev = 'prev_desired_curv'
+    # TODO model only uses last value now
+    self.numpy_inputs['prev_desired_curv'][0,:-1] = self.numpy_inputs['prev_desired_curv'][0,1:]
+    self.numpy_inputs['prev_desired_curv'][0,-1,:] = policy_outputs_dict['desired_curvature'][0, :]
 
-      if input_name_prev is not None:
-        length = outputs['desired_curvature'][0].size
-        self.numpy_inputs[input_name_prev][0, :-length, 0] = self.numpy_inputs[input_name_prev][0, length:, 0]
-        self.numpy_inputs[input_name_prev][0, -length:, 0] = outputs['desired_curvature'][0]
-    return outputs
+    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
+    if SEND_RAW_PRED:
+      combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy()])
+
+    return combined_outputs_dict
 
 
 def main(demo=False):
@@ -239,6 +252,7 @@ def main(demo=False):
     is_rhd = sm["driverMonitoringState"].isRHD
     frame_id = sm["roadCameraState"].frameId
     v_ego = max(sm["carState"].vEgo, 0.)
+    lateral_control_params = np.array([v_ego, steer_delay], dtype=np.float32)
     if sm.updated["liveCalibration"] and sm.seen['roadCameraState'] and sm.seen['deviceState']:
       device_from_calib_euler = np.array(sm["liveCalibration"].rpyCalib, dtype=np.float32)
       dc = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
@@ -269,10 +283,8 @@ def main(demo=False):
     inputs:dict[str, np.ndarray] = {
       'desire': vec_desire,
       'traffic_convention': traffic_convention,
-    }
-
-    if "lateral_control_params" in model.numpy_inputs.keys():
-      inputs['lateral_control_params'] = np.array([v_ego, steer_delay], dtype=np.float32)
+      'lateral_control_params': lateral_control_params,
+      }
 
     mt1 = time.perf_counter()
     model_output = model.run(buf_main, buf_extra, model_transform_main, model_transform_extra, inputs, prepare_only)
@@ -285,7 +297,7 @@ def main(demo=False):
       posenet_send = messaging.new_message('cameraOdometry')
       fill_model_msg(drivingdata_send, modelv2_send, model_output, v_ego, steer_delay,
                      publish_state, meta_main.frame_id, meta_extra.frame_id, frame_id,
-                     frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen, load_meta_constants())
+                     frame_drop_ratio, meta_main.timestamp_eof, model_execution_time, live_calib_seen)
 
       desire_state = modelv2_send.modelV2.meta.desireState
       l_lane_change_prob = desire_state[log.Desire.laneChangeLeft]

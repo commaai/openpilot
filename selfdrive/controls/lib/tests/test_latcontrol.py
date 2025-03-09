@@ -5,10 +5,10 @@ from opendbc.car.car_helpers import interfaces
 from opendbc.car.honda.values import CAR as HONDA
 from opendbc.car.toyota.values import CAR as TOYOTA
 from opendbc.car.nissan.values import CAR as NISSAN
+from opendbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
-from openpilot.selfdrive.controls.lib.vehicle_model import VehicleModel
 from openpilot.selfdrive.locationd.helpers import Pose
 from openpilot.common.mock.generators import generate_livePose
 

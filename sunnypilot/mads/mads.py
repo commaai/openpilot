@@ -27,7 +27,6 @@ Last updated: July 29, 2024
 from cereal import car, log, custom
 
 from opendbc.car.hyundai.values import HyundaiFlags
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 
 from openpilot.sunnypilot.mads.helpers import MadsParams
 from openpilot.sunnypilot.mads.state import StateMachine, GEARS_ALLOW_PAUSED_SILENT
@@ -57,8 +56,7 @@ class ModularAssistiveDrivingSystem:
     self.events_sp = self.selfdrive.events_sp
 
     if self.selfdrive.CP.brand == "hyundai":
-      if (self.selfdrive.CP_SP.flags & HyundaiFlagsSP.HAS_LFA_BUTTON) or \
-            (self.selfdrive.CP.flags & HyundaiFlags.CANFD):
+      if self.selfdrive.CP.flags & (HyundaiFlags.HAS_LDA_BUTTON | HyundaiFlags.CANFD):
         self.allow_always = True
 
     # read params on init

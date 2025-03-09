@@ -74,7 +74,8 @@ find . -name '*.pyc' -delete
 find . -name 'moc_*' -delete
 find . -name '__pycache__' -delete
 rm -rf .sconsign.dblite Jenkinsfile release/
-rm selfdrive/modeld/models/supercombo.onnx
+rm selfdrive/modeld/models/driving_vision.onnx
+rm selfdrive/modeld/models/driving_policy.onnx
 rm sunnypilot/modeld*/models/supercombo.onnx
 
 find third_party/ -name '*x86*' -exec rm -r {} +

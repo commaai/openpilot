@@ -23,7 +23,7 @@ A supported vehicle is one that just works when you install a comma device. All 
 
 ### Footnotes
 {% for footnote in footnotes %}
-<sup>{{loop.index}}</sup>{{footnote}} <br />
+<sup>{{loop.index}}</sup>{{footnote | replace('</br>', '')}} <br />
 {% endfor %}
 
 ## Community Maintained Cars

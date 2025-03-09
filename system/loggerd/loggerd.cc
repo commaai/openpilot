@@ -270,7 +270,7 @@ void loggerd_thread() {
 
         rotate_if_needed(&s);
 
-        if ((++msg_count % 1000) == 0) {
+        if ((++msg_count % 10000) == 0) {
           double seconds = (millis_since_boot() - start_ts) / 1000.0;
           LOGD("%" PRIu64 " messages, %.2f msg/sec, %.2f KB/sec", msg_count, msg_count / seconds, bytes_count * 0.001 / seconds);
         }
