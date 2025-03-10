@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Networks</key>
+	<array>
+		<string>net</string>
+	</array>
+	<key>Version</key>
+	<string>1.0.9</string>
+	<key>net</key>
+	<dict>
+    <!-- This is a one layer network -->
+		<key>Inputs</key>
+		<array>
+			<string>image</string>
+		</array>
+		<key>Units</key>
+		<array>
+			<string>my_layer</string>
+		</array>
+		<key>Outputs</key>
+		<array>
+			<string>probs@output</string>
+		</array>
+
+		<key>image</key>
+		<dict>
+      <!-- default is 1 -->
+			<key>BatchSize</key>
+			<integer>1</integer>
+
+			<key>InputChannels</key>
+			<integer>1</integer>
+			<key>InputHeight</key>
+			<integer>1</integer>
+			<key>InputWidth</key>
+			<integer>77</integer>
+
+			<key>InputType</key>
+			<string>Float16</string>
+		</dict>
+
+		<key>my_layer</key>
+		<dict>
+			<key>Bottom</key>
+			<string>image</string>
+			<key>Name</key>
+			<string>my_layer</string>
+			<key>OutputType</key>
+			<string>Float16</string>
+			<key>Params</key>
+			<dict>
+				<key>Type</key>
+				<string>Sigmoid</string>
+			</dict>
+			<key>Type</key>
+			<string>Neuron</string>
+		</dict>
+
+		<key>probs@output</key>
+		<dict>
+			<key>Bottom</key>
+			<string>my_layer</string>
+		</dict>
+
+	</dict>
+</dict>
+</plist>
