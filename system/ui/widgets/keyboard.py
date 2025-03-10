@@ -50,7 +50,7 @@ class Keyboard:
     self._clear()
 
   @property
-  def text(self) -> str:
+  def text(self):
     result = rl.ffi.string(self._string_pointer).decode('utf-8')
     self._clear()
     return result
