@@ -69,12 +69,11 @@ class WifiManagerUI:
     self._draw_network_list(rect)
 
   def _draw_network_list(self, rect: rl.Rectangle):
-    content_rect = rl.Rectangle(
-      rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * self.item_height
-    )
+    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * self.item_height)
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
+    clicked = self.scroll_panel.is_click_valid()
+
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-    clicked = offset.y < 10 and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
     for i, network in enumerate(self.wifi_manager.networks):
       y_offset = i * self.item_height + offset.y
       item_rect = rl.Rectangle(rect.x, y_offset, rect.width, self.item_height)
@@ -83,27 +82,19 @@ class WifiManagerUI:
         self._draw_network_item(item_rect, network, clicked)
         if i < len(self.wifi_manager.networks) - 1:
           line_y = int(item_rect.y + item_rect.height - 1)
-          rl.draw_line(
-            int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY
-          )
+          rl.draw_line(int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY)
 
     rl.end_scissor_mode()
 
   def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
     label_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, self.item_height)
-    state_rect = rl.Rectangle(
-      rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, self.item_height
-    )
+    state_rect = rl.Rectangle(rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, self.item_height)
 
     gui_label(label_rect, network.ssid, 55)
 
     if network.is_connected and self.current_action == ActionState.NONE:
       rl.gui_label(state_rect, "Connected")
-    elif (
-      self.current_action == "Connecting"
-      and self._selected_network
-      and self._selected_network.ssid == network.ssid
-    ):
+    elif self.current_action == "Connecting" and self._selected_network and self._selected_network.ssid == network.ssid:
       rl.gui_label(state_rect, "CONNECTING...")
 
     # If the network is saved, show the "Forget" button
@@ -114,7 +105,7 @@ class WifiManagerUI:
         self.btn_width,
         80,
       )
-      if gui_button(forget_btn_rect, "Forget") and self.current_action == ActionState.NONE:
+      if gui_button(forget_btn_rect, "Forget") and self.current_action == ActionState.NONE and clicked:
         self._selected_network = network
         self.current_action = ActionState.SHOW_FORGOT_CONFIRM
 
@@ -131,7 +122,7 @@ class WifiManagerUI:
 
   async def forgot_network(self):
     self.current_action = ActionState.FORGETTING
-    await self.wifi_manager.forgot_connection(self._selected_network.ssid)
+    await self.wifi_manager.forget_connection(self._selected_network.ssid)
     self.current_action = ActionState.NONE
 
   async def connect_to_network(self, password=''):
