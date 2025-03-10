@@ -1,6 +1,6 @@
+import numpy as np
 from abc import abstractmethod, ABC
 
-from openpilot.common.numpy_fast import clip
 from openpilot.common.realtime import DT_CTRL
 
 MIN_LATERAL_CONTROL_SPEED = 0.3  # m/s
@@ -17,16 +17,17 @@ class LatControl(ABC):
     self.steer_max = 1.0
 
   @abstractmethod
-  def update(self, active, CS, VM, params, steer_limited, desired_curvature, llk):
+  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose, curvature_limited):
     pass
 
   def reset(self):
     self.sat_count = 0.
 
-  def _check_saturation(self, saturated, CS, steer_limited):
-    if saturated and CS.vEgo > self.sat_check_min_speed and not steer_limited and not CS.steeringPressed:
+  def _check_saturation(self, saturated, CS, steer_limited_by_controls, curvature_limited):
+    # Saturated only if control output is not being limited by car torque/angle rate limits
+    if (saturated or curvature_limited) and CS.vEgo > self.sat_check_min_speed and not steer_limited_by_controls and not CS.steeringPressed:
       self.sat_count += self.sat_count_rate
     else:
       self.sat_count -= self.sat_count_rate
-    self.sat_count = clip(self.sat_count, 0.0, self.sat_limit)
+    self.sat_count = np.clip(self.sat_count, 0.0, self.sat_limit)
     return self.sat_count > (self.sat_limit - 1e-3)

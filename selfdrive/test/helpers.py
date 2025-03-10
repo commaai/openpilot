@@ -10,7 +10,6 @@ from functools import wraps
 import cereal.messaging as messaging
 from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.system.hardware import PC
 from openpilot.system.version import training_version, terms_version
 
 
@@ -28,14 +27,6 @@ def set_params_enabled():
   msg.liveCalibration.validBlocks = 20
   msg.liveCalibration.rpyCalib = [0.0, 0.0, 0.0]
   params.put("CalibrationParams", msg.to_bytes())
-
-def phone_only(f):
-  @wraps(f)
-  def wrap(self, *args, **kwargs):
-    if PC:
-      pytest.skip("This test is not meant to run on PC")
-    return f(self, *args, **kwargs)
-  return wrap
 
 def release_only(f):
   @wraps(f)

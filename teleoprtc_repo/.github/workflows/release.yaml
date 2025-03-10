@@ -1,0 +1,28 @@
+name: release
+
+on:
+  workflow_dispatch:
+
+jobs:
+  publish_pypi:
+    name: "Publish package on PyPI"
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master' && github.repository == 'commaai/teleoprtc'
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-tags: true
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - name: Bump version and tag
+      run: |
+        git config --global user.name "Vehicle Researcher"
+        git config --global user.email "user@comma.ai"
+
+        bash scripts/bump_tag.sh
+
+        git push --no-verify --force-with-lease --tags origin master
+    - name: Build and publish
+      run: |
+        bash scripts/publish_pypi.sh "${{ secrets.PYPI_PAT }}"

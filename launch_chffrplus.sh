@@ -1,12 +1,8 @@
-#!/usr/bin/bash
-
-if [ -z "$BASEDIR" ]; then
-  BASEDIR="/data/openpilot"
-fi
-
-source "$BASEDIR/launch_env.sh"
+#!/usr/bin/env bash
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+source "$DIR/launch_env.sh"
 
 function agnos_init {
   # TODO: move this to agnos

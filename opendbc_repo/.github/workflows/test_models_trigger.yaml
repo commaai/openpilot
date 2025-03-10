@@ -1,0 +1,60 @@
+name: test models trigger
+
+on:
+  issue_comment:
+    types: [created, edited]
+
+jobs:
+  scan-comments:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.issue.pull_request }}
+    steps:
+    - name: Check for trigger phrase
+      id: check_comment
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const triggerPhrase = "trigger-test-models";
+          const comment = context.payload.comment.body;
+          const commenter = context.payload.comment.user.login;
+
+          const { data: permissions } = await github.rest.repos.getCollaboratorPermissionLevel({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            username: commenter
+          });
+
+          const hasWriteAccess = permissions.permission === 'write' || permissions.permission === 'admin';
+
+          return (hasWriteAccess && comment.includes(triggerPhrase));
+        result-encoding: json
+
+    - name: Checkout openpilot
+      if: steps.check_comment.outputs.result == 'true'
+      uses: actions/checkout@v4
+      with:
+        repository: 'commaai/openpilot'
+        submodules: 'true'
+
+    - name: bump opendbc
+      if: steps.check_comment.outputs.result == 'true'
+      run: |
+        cd opendbc_repo
+        git fetch origin pull/${{ github.event.issue.number }}/head
+        git checkout FETCH_HEAD
+        cd ..
+        git add .
+
+    - name: Create Pull Request
+      if: steps.check_comment.outputs.result == 'true'
+      uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83
+      with:
+        author: Vehicle Researcher <user@comma.ai>
+        token: ${{ secrets.ACTIONS_CREATE_PR_PAT }}
+        commit-message: test models
+        title: '[opendbc] test_models run from ${{ github.event.issue.number }}'
+        branch: test_models_${{ github.event.issue.number }}
+        base: master
+        delete-branch: true
+        body: 'Testing some opendbc changes from https://github.com/commaai/opendbc/pull/${{ github.event.issue.number }}'
+        labels: bot

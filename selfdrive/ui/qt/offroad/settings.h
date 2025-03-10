@@ -42,7 +42,6 @@ class DevicePanel : public ListWidget {
   Q_OBJECT
 public:
   explicit DevicePanel(SettingsWindow *parent);
-  void showEvent(QShowEvent *event) override;
 
 signals:
   void reviewTrainingGuide();
@@ -99,3 +98,6 @@ private:
   Params params;
   ParamWatcher *fs_watch;
 };
+
+// Forward declaration
+class FirehosePanel;

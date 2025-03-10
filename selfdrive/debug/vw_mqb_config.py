@@ -3,9 +3,11 @@
 import argparse
 import struct
 from enum import IntEnum
-from panda import Panda
-from panda.python.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
+from opendbc.car.carlog import carlog
+from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE
+from opendbc.car.structs import CarParams
+from panda import Panda
 from datetime import date
 
 # TODO: extend UDS library to allow custom/vendor-defined data identifiers without ignoring type checks
@@ -33,10 +35,13 @@ if __name__ == "__main__":
   parser.add_argument("action", choices={"show", "enable", "disable"}, help="show or modify current EPS HCA config")
   args = parser.parse_args()
 
+  if args.debug:
+    carlog.setLevel('DEBUG')
+
   panda = Panda()
-  panda.set_safety_mode(Panda.SAFETY_ELM327)
+  panda.set_safety_mode(CarParams.SafetyModel.elm327)
   bus = 1 if panda.has_obd() else 0
-  uds_client = UdsClient(panda, MQB_EPS_CAN_ADDR, MQB_EPS_CAN_ADDR + RX_OFFSET, bus, timeout=0.2, debug=args.debug)
+  uds_client = UdsClient(panda, MQB_EPS_CAN_ADDR, MQB_EPS_CAN_ADDR + RX_OFFSET, bus, timeout=0.2)
 
   try:
     uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)

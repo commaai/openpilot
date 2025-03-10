@@ -16,6 +16,9 @@
 #include "boards/uno.h"
 #include "boards/dos.h"
 
+// Unused functions on F4
+void sound_tick(void) {}
+
 void detect_board_type(void) {
   // SPI lines floating: white (TODO: is this reliable? Not really, we have to enable ESP/GPS to be able to detect this on the UART)
   set_gpio_output(GPIOC, 14, 1);
