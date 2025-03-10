@@ -225,7 +225,7 @@ class WifiManager:
     # print("property changed", interface, changed, invalidated)
     if 'LastScan' in changed:
       asyncio.create_task(self._get_available_networks())
-    elif "ActiveAccessPoint" in changed:
+    elif interface == NM_WIRELESS_IFACE and "ActiveAccessPoint" in changed:
       self.active_ap_path = changed["ActiveAccessPoint"].value
       asyncio.create_task(self._get_available_networks())
 

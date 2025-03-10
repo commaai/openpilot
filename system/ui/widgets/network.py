@@ -11,7 +11,7 @@ from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
 NM_DEVICE_STATE_NEED_AUTH = 60
-
+ITEM_HEIGHT = 160
 
 class ActionState(IntEnum):
   NONE = 0
@@ -28,7 +28,6 @@ class WifiManagerUI:
     self.wifi_manager = wifi_manager
     self.wifi_manager.need_auth_callback = self._need_auth
     self._selected_network = None
-    self.item_height = 160
     self.btn_width = 200
     self.current_action: ActionState = ActionState.NONE
     self.scroll_panel = GuiScrollPanel()
@@ -57,51 +56,49 @@ class WifiManagerUI:
 
     if self.current_action == ActionState.NEED_AUTH:
       result = self.keyboard.render(rect, 'Enter password', f'for {self._selected_network.ssid}')
-      if result == 0:
-        return
-      elif result == 1:
-        self.current_action = ActionState.NONE
+      if result == 1:
         asyncio.create_task(self.connect_to_network(self.keyboard.text))
-      else:
+      elif result == 0:
         self.current_action = ActionState.NONE
       return
 
     self._draw_network_list(rect)
 
   def _draw_network_list(self, rect: rl.Rectangle):
-    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * self.item_height)
+    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * ITEM_HEIGHT)
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
     clicked = self.scroll_panel.is_click_valid()
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self.wifi_manager.networks):
-      y_offset = i * self.item_height + offset.y
-      item_rect = rl.Rectangle(rect.x, y_offset, rect.width, self.item_height)
+      y_offset = rect.y + i * ITEM_HEIGHT + offset.y
+      item_rect = rl.Rectangle(rect.x, y_offset, rect.width, ITEM_HEIGHT)
+      if not rl.check_collision_recs(item_rect, rect):
+        continue
 
-      if rl.check_collision_recs(item_rect, rect):
-        self._draw_network_item(item_rect, network, clicked)
-        if i < len(self.wifi_manager.networks) - 1:
-          line_y = int(item_rect.y + item_rect.height - 1)
-          rl.draw_line(int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY)
+      self._draw_network_item(item_rect, network, clicked)
+      if i < len(self.wifi_manager.networks) - 1:
+        line_y = int(item_rect.y + item_rect.height - 1)
+        rl.draw_line(int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY)
 
     rl.end_scissor_mode()
 
   def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
-    label_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, self.item_height)
-    state_rect = rl.Rectangle(rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, self.item_height)
+    label_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
+    state_rect = rl.Rectangle(rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, ITEM_HEIGHT)
 
     gui_label(label_rect, network.ssid, 55)
 
     if network.is_connected and self.current_action == ActionState.NONE:
       rl.gui_label(state_rect, "Connected")
-    elif self.current_action == "Connecting" and self._selected_network and self._selected_network.ssid == network.ssid:
+    elif self.current_action == ActionState.CONNECTING and self._selected_network and self._selected_network.ssid == network.ssid:
       rl.gui_label(state_rect, "CONNECTING...")
 
     # If the network is saved, show the "Forget" button
     if self.wifi_manager.is_saved(network.ssid):
       forget_btn_rect = rl.Rectangle(
         rect.x + rect.width - self.btn_width,
-        rect.y + (self.item_height - 80) / 2,
+        rect.y + (ITEM_HEIGHT - 80) / 2,
         self.btn_width,
         80,
       )
