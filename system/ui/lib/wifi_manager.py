@@ -8,6 +8,7 @@ import uuid
 from dataclasses import dataclass
 from openpilot.common.swaglog import cloudlog
 
+# NetworkManager constants
 NM = "org.freedesktop.NetworkManager"
 NM_PATH = '/org/freedesktop/NetworkManager'
 NM_IFACE = 'org.freedesktop.NetworkManager'
@@ -152,17 +153,12 @@ class WifiManager:
           'psk': Variant('s', password),
         }
 
-      # nm_iface = self._get_interface(NM, NM_PATH, NM_IFACE)
-      # await nm_iface.call_add_and_activate_connection(connection, self.device_path, '/')
-      # await settings_iface.call_add_connection(connection)
-      # introspection = await self.bus.introspect(NM, NM_PATH)
-      # nm_proxy = self.bus.get_proxy_object(NM, NM_PATH, introspection)
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
-      result = await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
-      print(result)
+      await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
 
-      for network in self.networks:
-        network.is_connected = True if network.ssid == ssid else False
+      # for network in self.networks:
+      #   network.is_connected = True if network.ssid == ssid else False
+      await self._update_connection_status()
 
     except DBusError as e:
       cloudlog.error(f"Error connecting to network: {e}")
