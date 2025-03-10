@@ -26,7 +26,8 @@ class ActionState(IntEnum):
 class WifiManagerUI:
   def __init__(self, wifi_manager):
     self.wifi_manager = wifi_manager
-    self.wifi_manager.need_auth_callback = self._need_auth
+    self.wifi_manager.need_auth_callback = self._on_need_auth
+    self.wifi_manager.activated_callback = self._on_activated
     self._selected_network = None
     self.btn_width = 200
     self.current_action: ActionState = ActionState.NONE
@@ -128,10 +129,13 @@ class WifiManagerUI:
       await self.wifi_manager.activate_connection(self._selected_network.ssid)
     else:
       await self.wifi_manager.connect_to_network(self._selected_network.ssid, password)
-    self.current_action = ActionState.NONE
 
-  def _need_auth(self):
+  def _on_need_auth(self):
     self.current_action = ActionState.NEED_AUTH
+
+  def _on_activated(self):
+    if self.current_action == ActionState.CONNECTING:
+      self.current_action = ActionState.NONE
 
 
 async def main():

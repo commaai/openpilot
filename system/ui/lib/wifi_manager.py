@@ -59,6 +59,7 @@ class WifiManager:
     self.scan_task: asyncio.Task | None = None
     self.running: bool = True
     self.need_auth_callback = None
+    self.activated_callback = None
 
   async def connect(self) -> None:
     """Connect to the DBus system bus."""
@@ -232,6 +233,8 @@ class WifiManager:
   def _on_state_changed(self, new_state: int, old_state: int, reason: int):
     print(f"State changed: {old_state} -> {new_state}, reason: {reason}")
     if new_state == NMDeviceState.ACTIVATED:
+      if self.activated_callback:
+          self.activated_callback()
       asyncio.create_task(self._update_connection_status())
     elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
       for network in self.networks:
@@ -289,10 +292,9 @@ class WifiManager:
 
   async def _get_available_networks(self):
     """Get a list of available networks via NetworkManager."""
-    networks = []
     wifi_iface = self.device_proxy.get_interface(NM_WIRELESS_IFACE)
     access_points = await wifi_iface.get_access_points()
-
+    network_dict = {}
     for ap_path in access_points:
       try:
         props_iface = await self._get_interface(NM, ap_path, NM_PROPERTIES_IFACE)
@@ -303,27 +305,28 @@ class WifiManager:
           continue
 
         bssid = properties.get('HwAddress', Variant('s', '')).value
+        strength = properties['Strength'].value
         flags = properties['Flags'].value
         wpa_flags = properties['WpaFlags'].value
         rsn_flags = properties['RsnFlags'].value
-
-        networks.append(
-          NetworkInfo(
+        existing_network = network_dict.get(ssid)
+        if not existing_network or ((not existing_network.bssid and bssid) or (existing_network.strength < strength)):
+          network_dict[ssid] = NetworkInfo(
             ssid=ssid,
-            strength=properties['Strength'].value,
+            strength=strength,
             security_type=self._get_security_type(flags, wpa_flags, rsn_flags),
             path=ap_path,
             bssid=bssid,
             is_connected=self.active_ap_path == ap_path,
           )
-        )
+
       except DBusError as e:
         cloudlog.error(f"Error fetching networks: {e}")
       except Exception as e:
         cloudlog.error({e})
 
     self.networks = sorted(
-      networks,
+      network_dict.values(),
       key=lambda network: (
         not network.is_connected,
         -network.strength,  # Higher signal strength first
