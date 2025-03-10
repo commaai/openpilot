@@ -33,7 +33,8 @@ class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
   WPA2 = 2
-  UNSUPPORTED = 3
+  WPA3 = 3
+  UNSUPPORTED = 4
 
 
 @dataclass
@@ -53,13 +54,13 @@ class WifiManager:
     self.bus: MessageBus | None = None
     self.device_path: str | None = None
     self.device_proxy = None
-    self.saved_connections: dict[str, str] = dict()
+    self.saved_connections: dict[str, str] = {}
     self.active_ap_path: str = ''
     self.scan_task: asyncio.Task | None = None
     self.running: bool = True
     self.need_auth_callback = None
 
-  async def connect(self):
+  async def connect(self) -> None:
     """Connect to the DBus system bus."""
     try:
       self.bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
@@ -81,27 +82,30 @@ class WifiManager:
     self.running = False
     if self.scan_task:
       self.scan_task.cancel()
-      await self.scan_task
+      try:
+        await self.scan_task
+      except asyncio.CancelledError:
+        pass
     if self.bus:
       await self.bus.disconnect()
 
-  async def request_scan(self):
+  async def request_scan(self) -> None:
     try:
       interface = self.device_proxy.get_interface(NM_WIRELESS_IFACE)
       await interface.call_request_scan({})
     except DBusError as e:
-      cloudlog.warning(f"Scan request failed: {e}")
+      cloudlog.warning(f"Scan request failed: {str(e)}")
 
-  async def get_active_access_point(self):
+  async def get_active_access_point(self) -> str:
     try:
       props_iface = self.device_proxy.get_interface(NM_PROPERTIES_IFACE)
       ap_path = await props_iface.call_get(NM_WIRELESS_IFACE, 'ActiveAccessPoint')
       return ap_path.value
     except DBusError as e:
-      cloudlog.error(f"Error fetching active access point: {e}")
+      cloudlog.error(f"Error fetching active access point: {str(e)}")
       return ''
 
-  async def forgot_connection(self, ssid: str) -> bool:
+  async def forget_connection(self, ssid: str) -> bool:
     path = self.saved_connections.get(ssid)
     if not path:
       return False
@@ -113,17 +117,22 @@ class WifiManager:
     except DBusError as e:
       cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
       return False
-    except Exception as e:
-      cloudlog.error(f"Unexpected error while deleting connection for SSID: {ssid}: {e}")
-      return False
 
-  async def activate_connection(self, ssid: str) -> None:
+  async def activate_connection(self, ssid: str) -> bool:
     connection_path = self.saved_connections.get(ssid)
-    if connection_path:
+    if not connection_path:
+      return False
+    try:
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
       await nm_iface.call_activate_connection(connection_path, self.device_path, '/')
+      return True
+    except DBusError as e:
+      cloudlog.error(f"Failed to activate connection {ssid}: {str(e)}")
+      return False
 
-  async def connect_to_network(self, ssid: str, password: str = None, is_hidden: bool = False):
+  async def connect_to_network(
+    self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False
+  ) -> None:
     """Connect to a selected WiFi network."""
     try:
       # settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
@@ -143,8 +152,8 @@ class WifiManager:
         'ipv6': {'method': Variant('s', 'ignore')},
       }
 
-      # if bssid:
-      #   connection['802-11-wireless']['bssid'] = Variant('ay', bssid.encode('utf-8'))
+      if bssid:
+        connection['802-11-wireless']['bssid'] = Variant('ay', bssid.encode('utf-8'))
 
       if password:
         connection['802-11-wireless-security'] = {
@@ -205,9 +214,7 @@ class WifiManager:
       await self._add_match_rule(rule)
 
     # Set up signal handlers
-    self.device_proxy.get_interface(NM_PROPERTIES_IFACE).on_properties_changed(
-      self._on_properties_changed
-    )
+    self.device_proxy.get_interface(NM_PROPERTIES_IFACE).on_properties_changed(self._on_properties_changed)
     self.device_proxy.get_interface(NM_DEVICE_IFACE).on_state_changed(self._on_state_changed)
 
     settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
@@ -240,7 +247,7 @@ class WifiManager:
   def _on_connection_removed(self, path: str) -> None:
     """Callback for ConnectionRemoved signal."""
     print(f"Connection removed: {path}")
-    for ssid, p in self.saved_connections.items():
+    for ssid, p in list(self.saved_connections.items()):
       if path == p:
         del self.saved_connections[ssid]
         break
@@ -326,51 +333,51 @@ class WifiManager:
 
   async def _get_connection_settings(self, path):
     """Fetch connection settings for a specific connection path."""
-    connection_proxy = await self.bus.introspect(NM, path)
-    connection = self.bus.get_proxy_object(NM, path, connection_proxy)
-    settings = connection.get_interface(NM_CONNECTION_IFACE)
-    return await settings.call_get_settings()
+    try:
+      connection_proxy = await self.bus.introspect(NM, path)
+      connection = self.bus.get_proxy_object(NM, path, connection_proxy)
+      settings = connection.get_interface(NM_CONNECTION_IFACE)
+      return await settings.call_get_settings()
+    except DBusError as e:
+      cloudlog.error(f"Failed to get settings for {path}: {str(e)}")
+      return {}
 
   async def _process_chunk(self, paths_chunk):
     """Process a chunk of connection paths."""
     tasks = [self._get_connection_settings(path) for path in paths_chunk]
-    results = await asyncio.gather(*tasks)
-    return results
+    return await asyncio.gather(*tasks, return_exceptions=True)
 
-  async def _get_saved_connections(self):
-    settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
-    connection_paths = await settings_iface.call_list_connections()
-
-    saved_ssids: dict[str, str] = {}
-    batch_size = 120
-    for i in range(0, len(connection_paths), batch_size):
-      chunk = connection_paths[i : i + batch_size]
-      results = await self._process_chunk(chunk)
-
-      # Loop through the results and filter Wi-Fi connections
-      for path, config in zip(chunk, results, strict=True):
-        if '802-11-wireless' in config:
-          saved_ssids[self._extract_ssid(config)] = path
-
-    return saved_ssids
+  async def _get_saved_connections(self) -> dict[str, str]:
+    try:
+      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
+      connection_paths = await settings_iface.call_list_connections()
+      saved_ssids: dict[str, str] = {}
+      batch_size = 20
+      for i in range(0, len(connection_paths), batch_size):
+        chunk = connection_paths[i : i + batch_size]
+        results = await self._process_chunk(chunk)
+        for path, config in zip(chunk, results, strict=True):
+          if isinstance(config, dict) and '802-11-wireless' in config:
+            if ssid := self._extract_ssid(config):
+              saved_ssids[ssid] = path
+      return saved_ssids
+    except DBusError as e:
+      cloudlog.error(f"Error fetching saved connections: {str(e)}")
+      return {}
 
   async def _get_interface(self, bus_name: str, path: str, name: str):
     introspection = await self.bus.introspect(bus_name, path)
     proxy = self.bus.get_proxy_object(bus_name, path, introspection)
     return proxy.get_interface(name)
 
-  def _get_security_type(self, flags, wpa_flags, rsn_flags):
-    """Helper function to determine the security type of a network."""
-    if flags == 0:
+  def _get_security_type(self, flags: int, wpa_flags: int, rsn_flags: int) -> SecurityType:
+    """Determine the security type based on flags."""
+    if flags == 0 and not (wpa_flags or rsn_flags):
       return SecurityType.OPEN
-    if wpa_flags:
-      return SecurityType.WPA
-    if rsn_flags:
+    if rsn_flags & 0x200:  # SAE (WPA3 Personal)
+      return SecurityType.WPA3
+    if rsn_flags:  # RSN indicates WPA2 or higher
       return SecurityType.WPA2
-    else:
-      return SecurityType.UNSUPPORTED
-
-  async def _get_interface(self, bus_name: str, path: str, name: str):
-    introspection = await self.bus.introspect(bus_name, path)
-    proxy = self.bus.get_proxy_object(bus_name, path, introspection)
-    return proxy.get_interface(name)
+    if wpa_flags:  # WPA flags indicate WPA
+      return SecurityType.WPA
+    return SecurityType.UNSUPPORTED
