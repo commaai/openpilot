@@ -1,0 +1,105 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+jobs:
+  tests:
+    name: ./test.sh
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
+          - os: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
+    steps:
+    - uses: commaai/timeout@v1
+    - uses: actions/checkout@v4
+    - run: ./test.sh
+
+  safety_tests:
+    name: safety
+    runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        flags: ['', '--ubsan']
+    steps:
+    - uses: commaai/timeout@v1
+    - uses: actions/checkout@v4
+    - name: Run safety tests
+      run: ./opendbc/safety/tests/test.sh ${{ matrix.flags }}
+
+  misra_linter:
+    name: MISRA C:2012 Linter
+    runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - name: Set up
+        run: sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi
+      - uses: actions/checkout@v4
+      - name: Restore cached cppcheck
+        uses: actions/cache@v4
+        with:
+          path: opendbc/safety/tests/misra/cppcheck/
+          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+          restore-keys: |
+            cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+            cppcheck-cache-${{ runner.os }}-
+      - name: Run MISRA C:2012 analysis
+        timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 1 || 2) }}
+        run: cd opendbc/safety/tests/misra && ./test_misra.sh
+      - name: Save cppcheck cache
+        uses: actions/cache@v4
+        with:
+          path: opendbc/safety/tests/misra/cppcheck/
+          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+
+  misra_mutation:
+    name: MISRA C:2012 Mutation
+    runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - name: Set up
+        run: sudo apt-get install -y --no-install-recommends gcc-arm-none-eabi libnewlib-arm-none-eabi
+      - uses: actions/checkout@v4
+      - name: Restore cached cppcheck
+        uses: actions/cache@v4
+        with:
+          path: opendbc/safety/tests/misra/cppcheck/
+          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+          restore-keys: |
+            cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+            cppcheck-cache-${{ runner.os }}-
+      - name: MISRA mutation tests
+        timeout-minutes: 1
+        run: |
+          source setup.sh
+          scons -j8
+          cd opendbc/safety/tests/misra
+          ./install.sh  # cppcheck
+          pytest -s -n8 --randomly-seed $RANDOM test_mutation.py
+      - name: Save cppcheck cache
+        uses: actions/cache@v4
+        with:
+          path: opendbc/safety/tests/misra/cppcheck/
+          key: cppcheck-cache-${{ runner.os }}-${{ github.ref }}
+
+  mutation:
+    name: Safety mutation tests
+    runs-on: ${{ github.repository == 'commaai/opendbc' && 'namespace-profile-amd64-8x16' || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need master to get diff
+      - name: Run mutation tests
+        timeout-minutes: 5
+        run: |
+          source setup.sh
+          scons -j8
+          GIT_REF=${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.event.before || 'origin/master' }} cd opendbc/safety/tests && ./mutation.sh
