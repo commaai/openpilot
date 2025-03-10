@@ -54,6 +54,7 @@ def gui_button(
   if button_style != ButtonStyle.TRANSPARENT:
     rl.draw_rectangle_rounded(rect, roundness, 20, bg_color)
   else:
+    rl.draw_rectangle_rounded(rect, roundness, 20, rl.BLACK)
     rl.draw_rectangle_rounded_lines_ex(rect, roundness, 20, 2, rl.WHITE)
 
   font = gui_app.font(font_weight)
