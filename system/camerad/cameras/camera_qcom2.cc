@@ -141,7 +141,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // TODO: Lower latency to 2 frames, by using the histogram outputted by the sensor we can do AE before the debayering is complete
 
   const auto &sensor = camera.sensor;
-  const float cur_ev_ = cur_ev[camera.buf.cur_frame_data.frame_id % 3] * sensor->ev_scale;
+  // Offset idx by one to not get stuck in self loop
+  const float cur_ev_ = cur_ev[(camera.buf.cur_frame_data.frame_id - 1) % 3] * sensor->ev_scale;
 
   // Scale target grey between min and 0.4 depending on lighting conditions
   float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + sensor->target_grey_factor*cur_ev_) / log2(6000.0), target_grey_minimums[camera.cc.camera_num], 0.4);
@@ -192,7 +193,7 @@ void CameraState::set_camera_exposure(float grey_frac) {
       float gain = sensor->sensor_analog_gains[g] * get_gain_factor();
 
       // Compute optimal time for given gain
-      int t = std::clamp(int(std::floor(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
+      int t = std::clamp(int(std::round(desired_ev / gain)), sensor->exposure_time_min, sensor->exposure_time_max);
 
       // Only go below recommended gain when absolutely necessary to not overexpose
       if (g < sensor->analog_gain_rec_idx && t > 20 && g < gain_idx) {
