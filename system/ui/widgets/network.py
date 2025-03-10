@@ -8,6 +8,7 @@ from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 
@@ -19,6 +20,7 @@ class ActionState(IntEnum):
   FORGOT = 3
   FORGETTING = 4
   NEED_AUTH = 5
+  SHOW_FORGOT_CONFIRM = 6
 
 
 class WifiManagerUI:
@@ -40,11 +42,17 @@ class WifiManagerUI:
     except Exception as e:
       print(f"Initialization error: {e}")
 
-  def draw_network_list(self, rect: rl.Rectangle):
+  def render(self, rect: rl.Rectangle):
     if not self.wifi_manager.networks:
-      gui_label(
-        rect, "Scanning Wi-Fi networks...", 40, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-      )
+      gui_label(rect, "Scanning Wi-Fi networks...", 40, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      return
+
+    if self.current_action == ActionState.SHOW_FORGOT_CONFIRM:
+      result = confirm_dialog(rect, f'Forget Wi-Fi Network "{self._selected_network.ssid}"?', 'Forget')
+      if result == 1:
+        asyncio.create_task(self.forgot_network())
+      elif result == 0:
+        self.current_action = ActionState.NONE
       return
 
     if self.current_action == ActionState.NEED_AUTH:
@@ -56,7 +64,11 @@ class WifiManagerUI:
         asyncio.create_task(self.connect_to_network(self.keyboard.text))
       else:
         self.current_action = ActionState.NONE
+      return
 
+    self._draw_network_list(rect)
+
+  def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(
       rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * self.item_height
     )
@@ -68,7 +80,7 @@ class WifiManagerUI:
       item_rect = rl.Rectangle(rect.x, y_offset, rect.width, self.item_height)
 
       if rl.check_collision_recs(item_rect, rect):
-        self.render_network_item(item_rect, network, clicked)
+        self._draw_network_item(item_rect, network, clicked)
         if i < len(self.wifi_manager.networks) - 1:
           line_y = int(item_rect.y + item_rect.height - 1)
           rl.draw_line(
@@ -77,7 +89,7 @@ class WifiManagerUI:
 
     rl.end_scissor_mode()
 
-  def render_network_item(self, rect, network: NetworkInfo, clicked: bool):
+  def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
     label_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, self.item_height)
     state_rect = rl.Rectangle(
       rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, self.item_height
@@ -104,7 +116,7 @@ class WifiManagerUI:
       )
       if gui_button(forget_btn_rect, "Forget") and self.current_action == ActionState.NONE:
         self._selected_network = network
-        asyncio.create_task(self.forgot_network())
+        self.current_action = ActionState.SHOW_FORGOT_CONFIRM
 
     if (
       self.current_action == ActionState.NONE
@@ -144,7 +156,7 @@ async def main():
     rl.begin_drawing()
     rl.clear_background(rl.BLACK)
 
-    wifi_ui.draw_network_list(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
+    wifi_ui.render(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
 
     rl.end_drawing()
     await asyncio.sleep(0.001)
