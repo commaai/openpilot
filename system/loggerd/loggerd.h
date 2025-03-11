@@ -161,7 +161,7 @@ struct LoggerdState {
 class RemoteEncoder {
 public:
   std::unique_ptr<VideoWriter> writer;
-  int encoderd_segment_offset;
+  int encoder_segment_offset;
   int current_segment = -1;
   std::vector<Message *> q;
   int dropped_frames = 0;
@@ -172,11 +172,11 @@ public:
   bool syncSegment(LoggerdState *s, const std::string &name, int encoder_segment_num, int log_segment_num) {
     if (!seen_first_packet) {
       seen_first_packet = true;
-      encoderd_segment_offset = log_segment_num;
-      LOGD("%s: has encoderd offset %d", name.c_str(), encoderd_segment_offset);
+      encoder_segment_offset = log_segment_num;
+      LOGD("%s: has encoderd offset %d", name.c_str(), encoder_segment_offset);
     }
-    int offset_segment_num = encoder_segment_num - encoderd_segment_offset;
-    printf("offset %d encoderd_segment_offset: %d, log_segment_num:%d\n", offset_segment_num, encoderd_segment_offset, log_segment_num);
+    int offset_segment_num = encoder_segment_num - encoder_segment_offset;
+    printf("offset %d encoder_segment_offset: %d, log_segment_num:%d\n", offset_segment_num, encoder_segment_offset, log_segment_num);
     if (offset_segment_num == log_segment_num) {
       // loggerd is now on the segment that matches this packet
 
@@ -202,11 +202,11 @@ public:
              s->ready_to_rotate.load(), s->max_waiting, name.c_str());
       }
     } else {
-      LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d re.encoderd_segment_offset:%d",
-           name.c_str(), encoder_segment_num, log_segment_num, encoderd_segment_offset);
+      LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d re.encoder_segment_offset:%d",
+           name.c_str(), encoder_segment_num, log_segment_num, encoder_segment_offset);
       // free the message, it's useless. this should never happen
       // actually, this can happen if you restart encoderd
-      encoderd_segment_offset = -log_segment_num;
+      encoder_segment_offset = -log_segment_num;
     }
     return false;
   }
