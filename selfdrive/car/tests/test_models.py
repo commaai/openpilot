@@ -14,7 +14,7 @@ from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import FRAME_FINGERPRINT, interfaces
 from opendbc.car.fingerprints import MIGRATION
-from opendbc.car.honda.values import CAR as HONDA, HondaFlags
+from opendbc.car.honda.values import CAR as HONDA, HondaFlags, HONDA_BOSCH, HONDA_BOSCH_RADARLESS
 from opendbc.car.structs import car
 from opendbc.car.tests.routes import non_tested_cars, routes, CarTestRoute
 from opendbc.car.values import Platform, PLATFORMS
@@ -67,7 +67,7 @@ class TestCarModelBase(unittest.TestCase):
   platform: Platform | None = None
   test_route: CarTestRoute | None = None
 
-  can_msgs: list[capnp.lib.capnp._DynamicStructReader]
+  can_msgs: list[tuple[int, list[CanData]]]
   fingerprint: dict[int, dict[int, int]]
   elm_frame: int | None
   car_safety_mode_frame: int | None
@@ -82,7 +82,10 @@ class TestCarModelBase(unittest.TestCase):
     experimental_long = False
     for msg in lr:
       if msg.which() == "can":
-        can_msgs.append(msg)
+        # can_msgs.append((msg.logMonoTime, [CanData(can.address, can.dat, can.src) for can in msg.can]))
+        tup = can_capnp_to_list((msg.as_builder().to_bytes(),))[0]
+        tup = (tup[0], [CanData(*can) for can in tup[1]])
+        can_msgs.append(tup)
         if len(can_msgs) <= FRAME_FINGERPRINT:
           for m in msg.can:
             if m.src < 64:
@@ -151,7 +154,8 @@ class TestCarModelBase(unittest.TestCase):
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
 
-    cls.can_msgs = sorted(can_msgs, key=lambda msg: msg.logMonoTime)
+    # TODO: isn't this already sorted?
+    cls.can_msgs = sorted(can_msgs, key=lambda msg: msg[0])
 
     cls.CarInterface, cls.CarController, cls.CarState, cls.RadarInterface = interfaces[cls.platform]
     cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
@@ -165,6 +169,17 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
+    # if self.CP.flags & HondaFlags.BOSCH_ALT_BRAKE.value:
+    #   raise Exception
+
+    # if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and self.CP.openpilotLongitudinalControl:
+    #   raise Exception
+    #
+    # for msg in self.can_msgs:
+    #   for m in msg.can:
+    #     if self.test_route.car_model in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS):
+    #       assert not (m.src in (0, 1, 2) and m.address == 0x194), (m.src, m.address)
+
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
 
@@ -199,8 +214,8 @@ class TestCarModelBase(unittest.TestCase):
     CC = structs.CarControl().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
-      CS = self.CI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
-      self.CI.apply(CC, msg.logMonoTime)
+      CS = self.CI.update(msg)
+      self.CI.apply(CC, msg[0])
 
       if CS.canValid:
         can_valid = True
@@ -219,7 +234,7 @@ class TestCarModelBase(unittest.TestCase):
     # start parsing CAN messages after we've left ELM mode and can expect CAN traffic
     error_cnt = 0
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
-      rr: structs.RadarData | None = RI.update(can_capnp_to_list((msg.as_builder().to_bytes(),)))
+      rr: structs.RadarData | None = RI.update(msg)
       if rr is not None and i > 50:
         error_cnt += structs.RadarData.Error.canError in rr.errors
     self.assertEqual(error_cnt, 0)
@@ -228,16 +243,16 @@ class TestCarModelBase(unittest.TestCase):
     if self.CP.dashcamOnly:
       self.skipTest("no need to check panda safety for dashcamOnly")
 
-    start_ts = self.can_msgs[0].logMonoTime
+    start_ts = self.can_msgs[0][0]
 
     failed_addrs = Counter()
     for can in self.can_msgs:
       # update panda timer
-      t = (can.logMonoTime - start_ts) / 1e3
+      t = (can[0] - start_ts) / 1e3
       self.safety.set_timer(int(t))
 
       # run all msgs through the safety RX hook
-      for msg in can.can:
+      for msg in can[1]:
         if msg.src >= 64:
           continue
 
@@ -389,8 +404,8 @@ class TestCarModelBase(unittest.TestCase):
 
     # warm up pass, as initial states may be different
     for can in self.can_msgs[:300]:
-      self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), )))
-      for msg in filter(lambda m: m.src in range(64), can.can):
+      self.CI.update(can)
+      for msg in filter(lambda m: m.src in range(64), can[1]):
         to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         self.safety.safety_rx_hook(to_send)
 
@@ -399,8 +414,8 @@ class TestCarModelBase(unittest.TestCase):
     checks = defaultdict(int)
     vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
     for idx, can in enumerate(self.can_msgs):
-      CS = self.CI.update(can_capnp_to_list((can.as_builder().to_bytes(), ))).as_reader()
-      for msg in filter(lambda m: m.src in range(64), can.can):
+      CS = self.CI.update(can).as_reader()
+      for msg in filter(lambda m: m.src in range(64), can[1]):
         to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
         ret = self.safety.safety_rx_hook(to_send)
         self.assertEqual(1, ret, f"safety rx failed ({ret=}): {(msg.address, msg.src % 4)}")
