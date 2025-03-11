@@ -167,17 +167,6 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    # if self.CP.flags & HondaFlags.BOSCH_ALT_BRAKE.value:
-    #   raise Exception
-
-    # if self.CP.carFingerprint in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS) and self.CP.openpilotLongitudinalControl:
-    #   raise Exception
-    #
-    # for msg in self.can_msgs:
-    #   for m in msg.can:
-    #     if self.test_route.car_model in (HONDA_BOSCH - HONDA_BOSCH_RADARLESS):
-    #       assert not (m.src in (0, 1, 2) and m.address == 0x194), (m.src, m.address)
-
     self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
     assert self.CI
 
