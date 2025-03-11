@@ -85,7 +85,7 @@ class TestCarModelBase(unittest.TestCase):
         can = can_capnp_to_list((msg.as_builder().to_bytes(),))[0]
         can_msgs.append((can[0], [CanData(*can) for can in can[1]]))
         if len(can_msgs) <= FRAME_FINGERPRINT:
-          for m in msg.can:
+          for m in can_msgs[-1][1]:
             if m.src < 64:
               cls.fingerprint[m.src][m.address] = len(m.dat)
 
