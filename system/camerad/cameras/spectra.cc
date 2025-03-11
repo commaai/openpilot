@@ -1258,6 +1258,8 @@ void SpectraCamera::camera_close() {
   LOG("-- Stop devices %d", cc.camera_num);
 
   if (enabled) {
+    clear_req_queue();
+
     // ret = device_control(sensor_fd, CAM_STOP_DEV, session_handle, sensor_dev_handle);
     // LOGD("stop sensor: %d", ret);
     int ret = device_control(m->isp_fd, CAM_STOP_DEV, session_handle, isp_dev_handle);
