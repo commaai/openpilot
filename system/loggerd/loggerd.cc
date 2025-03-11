@@ -168,7 +168,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
 
     // TODO: define this behavior, but for now don't leak
     if (re.q.size() > MAIN_FPS*10) {
-      LOGW("%s: dropping frame, queue is too large", name.c_str());
+      LOGE_100("%s: dropping frame, queue is too large", name.c_str());
       delete msg;
     } else {
       // queue up all the new segment messages, they go in after the rotate
