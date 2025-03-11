@@ -154,7 +154,7 @@ def main():
       msg = estimator.get_msg(sm.all_checks(), with_points=True)
       alert_msg = messaging.new_message('alertDebug')
       alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
-      alert_msg.alertDebug.alertText2 = f"{msg.liveActuatorDelay.steerActuatorDelay:.2f} s"
+      alert_msg.alertDebug.alertText2 = f"{msg.liveActuatorDelay.steerActuatorDelay:.2f} s ({msg.liveActuatorDelay.isEstimated})"
 
       pm.send('liveActuatorDelay', msg)
       pm.send('alertDebug', alert_msg)
