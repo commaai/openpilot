@@ -9,17 +9,8 @@
 #include "common/params.h"
 #include "system/loggerd/encoder/encoder.h"
 #include "system/loggerd/loggerd.h"
-#include "system/loggerd/video_writer.h"
 
 ExitHandler do_exit;
-
-struct LoggerdState {
-  LoggerState logger;
-  std::atomic<double> last_camera_seen_tms{0.0};
-  std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
-  int max_waiting = 0;
-  double last_rotate_tms = 0.;      // last rotate time in ms
-};
 
 void logger_rotate(LoggerdState *s) {
   bool ret =s->logger.next();
@@ -52,17 +43,6 @@ void rotate_if_needed(LoggerdState *s) {
     logger_rotate(s);
   }
 }
-
-struct RemoteEncoder {
-  std::unique_ptr<VideoWriter> writer;
-  int encoderd_segment_offset;
-  int current_segment = -1;
-  std::vector<Message *> q;
-  int dropped_frames = 0;
-  bool recording = false;
-  bool marked_ready_to_rotate = false;
-  bool seen_first_packet = false;
-};
 
 size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEncoder &re, const EncoderInfo &encoder_info) {
   auto edata = (event.*(encoder_info.get_encode_data_func))();
@@ -117,72 +97,36 @@ size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEnc
 }
 
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, const EncoderInfo &encoder_info) {
-  int bytes_count = 0;
-
-  // extract the message
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
   auto edata = (event.*(encoder_info.get_encode_data_func))();
   auto idx = edata.getIdx();
 
-  // encoderd can have started long before loggerd
-  if (!re.seen_first_packet) {
-    re.seen_first_packet = true;
-    re.encoderd_segment_offset = idx.getSegmentNum();
-    LOGD("%s: has encoderd offset %d", name.c_str(), re.encoderd_segment_offset);
-  }
-  int offset_segment_num = idx.getSegmentNum() - re.encoderd_segment_offset;
-
-  if (offset_segment_num == s->logger.segment()) {
-    // loggerd is now on the segment that matches this packet
-
-    // if this is a new segment, we close any possible old segments, move to the new, and process any queued packets
-    if (re.current_segment != s->logger.segment()) {
-      if (re.recording) {
-        re.writer.reset();
-        re.recording = false;
+  int bytes_count = 0;
+  // Synchronize segment and process if aligned
+  if (re.syncSegment(s, name, idx.getSegmentNum(), s->logger.segment())) {
+    // Process any queued messages before the current one
+    if (!re.q.empty()) {
+      for (auto qmsg : re.q) {
+        capnp::FlatArrayMessageReader reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
+        bytes_count += write_encode_data(s, reader.getRoot<cereal::Event>(), re, encoder_info);
+        delete qmsg;
       }
-      re.current_segment = s->logger.segment();
-      re.marked_ready_to_rotate = false;
-      // we are in this segment now, process any queued messages before this one
-      if (!re.q.empty()) {
-        for (auto qmsg : re.q) {
-          capnp::FlatArrayMessageReader reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
-          bytes_count += write_encode_data(s, reader.getRoot<cereal::Event>(), re, encoder_info);
-          delete qmsg;
-        }
-        re.q.clear();
-      }
+      re.q.clear();
     }
+
+    // Process the current message
     bytes_count += write_encode_data(s, event, re, encoder_info);
     delete msg;
-  } else if (offset_segment_num > s->logger.segment()) {
-    // encoderd packet has a newer segment, this means encoderd has rolled over
-    if (!re.marked_ready_to_rotate) {
-      re.marked_ready_to_rotate = true;
-      ++s->ready_to_rotate;
-      LOGD("rotate %d -> %d ready %d/%d for %s",
-        s->logger.segment(), offset_segment_num,
-        s->ready_to_rotate.load(), s->max_waiting, name.c_str());
-    }
-
-    // TODO: define this behavior, but for now don't leak
-    if (re.q.size() > MAIN_FPS*10) {
+  } else {
+    if (re.q.size() > MAIN_FPS * 10) {
       LOGE_100("%s: dropping frame, queue is too large", name.c_str());
       delete msg;
     } else {
       // queue up all the new segment messages, they go in after the rotate
       re.q.push_back(msg);
     }
-  } else {
-    LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d re.encoderd_segment_offset:%d",
-      name.c_str(), idx.getSegmentNum(), s->logger.segment(), re.encoderd_segment_offset);
-    // free the message, it's useless. this should never happen
-    // actually, this can happen if you restart encoderd
-    re.encoderd_segment_offset = -s->logger.segment();
-    delete msg;
   }
-
   return bytes_count;
 }
 
