@@ -387,11 +387,11 @@ class TestCarModelBase(unittest.TestCase):
       self.skipTest("no need to check panda safety for dashcamOnly")
 
     # warm up pass, as initial states may be different
-    # for can in self.can_msgs[:300]:
-    #   self.CI.update(can)
-    #   for msg in filter(lambda m: m.src < 64, can[1]):
-    #     to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
-    #     self.safety.safety_rx_hook(to_send)
+    for can in self.can_msgs[:300]:
+      self.CI.update(can)
+      for msg in filter(lambda m: m.src < 64, can[1]):
+        to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
+        self.safety.safety_rx_hook(to_send)
 
     controls_allowed_prev = False
     CS_prev = car.CarState.new_message()
@@ -401,10 +401,9 @@ class TestCarModelBase(unittest.TestCase):
       CS = self.CI.update(can).as_reader()
       for msg in filter(lambda m: m.src < 64, can[1]):
         to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
-        # ret = self.safety.safety_rx_hook(to_send)
-        # self.assertEqual(1, ret, f"safety rx failed ({ret=}): {(msg.address, msg.src % 4)}")
+        ret = self.safety.safety_rx_hook(to_send)
+        self.assertEqual(1, ret, f"safety rx failed ({ret=}): {(msg.address, msg.src % 4)}")
 
-      continue
       # Skip first frame so CS_prev is properly initialized
       if idx == 0:
         CS_prev = CS
