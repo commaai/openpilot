@@ -147,13 +147,10 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.platform}")
 
-    car_fw, can_msgs, experimental_long = cls.get_testing_data()
+    car_fw, cls.can_msgs, experimental_long = cls.get_testing_data()
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
-
-    # TODO: isn't this already sorted?
-    cls.can_msgs = sorted(can_msgs, key=lambda msg: msg[0])
 
     cls.CarInterface, cls.CarController, cls.CarState, cls.RadarInterface = interfaces[cls.platform]
     cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
