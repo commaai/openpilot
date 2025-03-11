@@ -1,5 +1,4 @@
 import time
-import capnp
 import os
 import pytest
 import random
