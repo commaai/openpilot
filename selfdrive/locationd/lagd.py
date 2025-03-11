@@ -2,6 +2,8 @@
 import numpy as np
 from collections import deque
 
+from skimage.registration._masked_phase_cross_correlation import cross_correlate_masked
+
 import cereal.messaging as messaging
 from cereal import car
 from openpilot.common.params import Params
@@ -112,7 +114,6 @@ class LagEstimator(BaseLagEstimator):
     return np.arange(0, sig_len) * dt
 
   def actuator_delay(self, expected_sig, actual_sig, is_okay, dt, max_lag):
-    from skimage.registration._masked_phase_cross_correlation import cross_correlate_masked
     # masked (gated) normalized cross-correlation
     # normalized, can be used for anything, like comparsion
 
