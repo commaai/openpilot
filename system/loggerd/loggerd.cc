@@ -99,12 +99,11 @@ size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEnc
 int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct RemoteEncoder &re, const EncoderInfo &encoder_info) {
   capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
   auto event = cmsg.getRoot<cereal::Event>();
-  auto edata = (event.*(encoder_info.get_encode_data_func))();
-  auto idx = edata.getIdx();
+  auto encoder_idx = (event.*(encoder_info.get_encode_data_func))().getIdx();
 
   int bytes_count = 0;
   // Synchronize segment and process if aligned
-  if (re.syncSegment(s, name, idx.getSegmentNum(), s->logger.segment())) {
+  if (re.syncSegment(s, name, encoder_idx.getSegmentNum(), s->logger.segment())) {
     // Process any queued messages before the current one
     if (!re.q.empty()) {
       for (auto qmsg : re.q) {

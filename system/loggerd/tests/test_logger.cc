@@ -150,6 +150,7 @@ TEST_CASE("RemoteEncoder::syncSegment robustness", "[sync]") {
     REQUIRE(encoder.encoder_segment_offset == 1);               // Adjusted: += (2 - 1) = 1
     REQUIRE(encoder.marked_ready_to_rotate == true);
     REQUIRE(state.ready_to_rotate == 1);
+    REQUIRE(encoder.syncSegment(&state, name, 2, 0) == false);
 
     // Logger advances to 1, encoder at 2
     state.ready_to_rotate = 0;
