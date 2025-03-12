@@ -13,8 +13,8 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 MIN_LAG_VEL = 20.0
 MAX_SANE_LAG = 3.0
 MIN_ABS_YAW_RATE_DEG = 1
-MOVING_CORR_WINDOW = 120.0
-MIN_OKAY_WINDOW = 20.0
+MOVING_CORR_WINDOW = 300.0
+MIN_OKAY_WINDOW = 25.0
 MIN_NCC = 0.95
 
 
@@ -145,7 +145,7 @@ def main():
   while True:
     sm.update()
     if sm.all_checks():
-      for which in sm.services:
+      for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
           estimator.handle_log(t, which, sm[which])
