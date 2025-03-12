@@ -324,10 +324,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <translation>Modo Firehose: ATIVO</translation>
     </message>
     <message>
-        <source>&lt;b&gt;%1 %2&lt;/b&gt; of your driving are in the training dataset so far.</source>
-        <translation>&lt;b&gt;%1 %2&lt;/b&gt; da sua direção já está no conjunto de dados de treinamento até agora.</translation>
-    </message>
-    <message>
         <source>ACTIVE</source>
         <translation>ATIVO</translation>
     </message>
@@ -338,6 +334,13 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message>
         <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
         <translation>Para maior eficácia, leve seu dispositivo para dentro de casa e conecte-o a um bom adaptador USB-C e Wi-Fi semanalmente.&lt;br&gt;&lt;br&gt;O Modo Firehose também pode funcionar enquanto você dirige, se estiver conectado a um hotspot ou a um chip SIM com dados ilimitados.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Perguntas Frequentes&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Importa como ou onde eu dirijo?&lt;/i&gt; Não, basta dirigir normalmente.&lt;br&gt;&lt;br&gt;&lt;i&gt;Todos os meus segmentos são enviados no Modo Firehose?&lt;/i&gt; Não, selecionamos apenas um subconjunto dos seus segmentos.&lt;br&gt;&lt;br&gt;&lt;i&gt;Qual é um bom adaptador USB-C?&lt;/i&gt; Qualquer carregador rápido de telefone ou laptop deve ser suficiente.&lt;br&gt;&lt;br&gt;&lt;i&gt;Importa qual software eu uso?&lt;/i&gt; Sim, apenas o openpilot oficial (e alguns forks específicos) podem ser usados para treinamento.</translation>
+    </message>
+    <message numerus="yes">
+        <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
+        <translation type="unfinished">
+            <numerusform></numerusform>
+            <numerusform></numerusform>
+        </translation>
     </message>
 </context>
 <context>
