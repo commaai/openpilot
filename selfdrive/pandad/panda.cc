@@ -10,6 +10,8 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
+const bool PANDAD_MAXOUT = getenv("PANDAD_MAXOUT") != nullptr;
+
 Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   // try USB first, then SPI
   try {
@@ -26,8 +28,6 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
 
   hw_type = get_hw_type();
   can_reset_communications();
-
-  return;
 }
 
 bool Panda::connected() {
@@ -47,7 +47,7 @@ std::vector<std::string> Panda::list(bool usb_only) {
 
 #ifndef __APPLE__
   if (!usb_only) {
-    for (auto s : PandaSpiHandle::list()) {
+    for (const auto &s : PandaSpiHandle::list()) {
       if (std::find(serials.begin(), serials.end(), s) == serials.end()) {
         serials.push_back(s);
       }
@@ -145,6 +145,10 @@ void Panda::set_can_speed_kbps(uint16_t bus, uint16_t speed) {
   handle->control_write(0xde, bus, (speed * 10));
 }
 
+void Panda::set_can_fd_auto(uint16_t bus, bool enabled) {
+  handle->control_write(0xe8, bus, enabled);
+}
+
 void Panda::set_data_speed_kbps(uint16_t bus, uint16_t speed) {
   handle->control_write(0xf9, bus, (speed * 10));
 }
@@ -169,7 +173,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   int32_t pos = 0;
   uint8_t send_buf[2 * USB_TX_SOFT_LIMIT];
 
-  for (auto cmsg : can_data_list) {
+  for (const auto &cmsg : can_data_list) {
     // check if the message is intended for this panda
     uint8_t bus = cmsg.getSrc();
     if (bus < bus_offset || bus >= (bus_offset + PANDA_BUS_OFFSET)) {
@@ -206,7 +210,7 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
   if (pos > 0) write_func(send_buf, pos);
 }
 
-void Panda::can_send(capnp::List<cereal::CanData>::Reader can_data_list) {
+void Panda::can_send(const capnp::List<cereal::CanData>::Reader &can_data_list) {
   pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
     handle->bulk_write(3, data, size, 5);
   });
@@ -221,7 +225,7 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
     return false;
   }
 
-  if (getenv("PANDAD_MAXOUT") != NULL) {
+  if (PANDAD_MAXOUT) {
     static uint8_t junk[RECV_SIZE];
     handle->bulk_read(0xab, junk, RECV_SIZE - recv);
   }
@@ -259,7 +263,6 @@ bool Panda::unpack_can_buffer(uint8_t *data, uint32_t &size, std::vector<can_fra
     }
 
     can_frame &canData = out_vec.emplace_back();
-    canData.busTime = 0;
     canData.address = header.addr;
     canData.src = header.bus + bus_offset;
     if (header.rejected) {

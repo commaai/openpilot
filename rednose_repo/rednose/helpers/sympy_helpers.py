@@ -55,6 +55,7 @@ def euler2quat(eulers):
 def euler2rot(eulers):
   return quat2rot(euler2quat(eulers))
 
+
 rotations_from_quats = quat2rot
 
 
@@ -64,6 +65,13 @@ def cross(x):
   ret[1, 0], ret[1, 2] = x[2], -x[0]
   ret[2, 0], ret[2, 1] = -x[1], x[0]
   return ret
+
+
+def rot_to_euler(R):
+  gamma = sp.atan2(R[2, 1], R[2, 2])
+  theta = sp.asin(-R[2, 0])
+  psi = sp.atan2(R[1, 0], R[0, 0])
+  return sp.Matrix([gamma, theta, psi])
 
 
 def rot_matrix(roll, pitch, yaw):

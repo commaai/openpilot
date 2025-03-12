@@ -19,7 +19,7 @@ public:
   FfmpegEncoder(const EncoderInfo &encoder_info, int in_width, int in_height);
   ~FfmpegEncoder();
   int encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra);
-  void encoder_open(const char* path);
+  void encoder_open();
   void encoder_close();
 
 private:

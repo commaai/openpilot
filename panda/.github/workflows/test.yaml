@@ -1,0 +1,111 @@
+name: tests
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref != 'refs/heads/master' && github.ref || github.run_id }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  RUN: docker run -v ${{ github.workspace }}:/tmp/pythonpath/panda -w /tmp/pythonpath/panda --rm panda /bin/bash -c
+  BUILD: |
+      export DOCKER_BUILDKIT=1
+      docker build --pull --build-arg BUILDKIT_INLINE_CACHE=1 --cache-from ghcr.io/commaai/panda:latest -t panda -f Dockerfile .
+
+  PYTHONWARNINGS: "error"
+
+jobs:
+  docker_push:
+    name: docker push
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request' && github.repository == 'commaai/panda'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        timeout-minutes: 11
+        run: eval "$BUILD"
+      - name: Login to dockerhub
+        run: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+      - name: Tag image
+        run: docker tag panda ghcr.io/commaai/panda:latest
+      - name: Push image
+        run: docker push ghcr.io/commaai/panda:latest
+
+  build:
+    name: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Test python package installer
+        run: ${{ env.RUN }} "python3 setup.py install"
+      - name: Build panda images and bootstub
+        run: ${{ env.RUN }} "scons -j4"
+      - name: Build panda with SPI support
+        run: ${{ env.RUN }} "ENABLE_SPI=1 scons -j4"
+      - name: Build with UBSan
+        run: ${{ env.RUN }} "scons -j4 --ubsan"
+      - name: Build jungle firmware with FINAL_PROVISIONING support
+        run: ${{ env.RUN }} "FINAL_PROVISIONING=1 scons -j4 board/jungle"
+      - name: Build panda in release mode
+        run: ${{ env.RUN }} "CERT=certs/debug RELEASE=1 scons -j4"
+
+  unit_tests:
+    name: unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Build panda
+        run: $RUN "scons -j4"
+      - name: Test communication protocols
+        run: $RUN "cd tests/usbprotocol && ./test.sh"
+
+  misra_linter:
+    name: MISRA C:2012 Linter
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Build FW
+        run: ${{ env.RUN }} "scons -j$(nproc)"
+      - name: Run MISRA C:2012 analysis
+        timeout-minutes: 2
+        run: ${{ env.RUN }} "cd tests/misra && ./test_misra.sh"
+
+  misra_mutation:
+    name: MISRA C:2012 Mutation
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Build FW
+        run: ${{ env.RUN }} "scons -j$(nproc)"
+      - name: MISRA mutation tests
+        timeout-minutes: 5
+        run: ${{ env.RUN }} "cd tests/misra && pytest -n8 test_mutation.py"
+
+  static_analysis:
+    name: static analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build Docker image
+        run: eval "$BUILD"
+      - name: Run static analysis
+        timeout-minutes: 3
+        run: ${{ env.RUN }} "pre-commit run --all"

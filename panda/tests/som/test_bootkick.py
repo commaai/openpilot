@@ -1,6 +1,7 @@
 import time
 import pytest
 
+from opendbc.car.structs import CarParams
 from panda import Panda, PandaJungle
 
 PANDA_SERIAL = "28002d000451323431333839"
@@ -48,7 +49,7 @@ def setup_state(panda, jungle, state):
     jungle.set_panda_individual_power(OBDC_PORT, 1)
     wait_for_boot(panda, jungle)
     set_som_shutdown_flag(panda)
-    panda.set_safety_mode(Panda.SAFETY_SILENT)
+    panda.set_safety_mode(CarParams.SafetyModel.silent)
     panda.send_heartbeat()
     wait_for_som_shutdown(panda, jungle)
   else:
@@ -82,7 +83,7 @@ def wait_for_full_poweroff(jungle, timeout=30):
 
 def check_som_boot_flag(panda):
   h = panda.health()
-  return h['safety_mode'] == Panda.SAFETY_ELM327 and h['safety_param'] == 30
+  return h['safety_mode'] == CarParams.SafetyModel.elm327 and h['safety_param'] == 30
 
 def set_som_shutdown_flag(panda):
   panda.set_can_data_speed_kbps(0, 1000)

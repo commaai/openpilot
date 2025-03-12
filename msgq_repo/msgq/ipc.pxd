@@ -48,10 +48,10 @@ cdef extern from "msgq/ipc.h":
 
   cdef cppclass SubSocket:
     @staticmethod
-    SubSocket * create()
-    int connect(Context *, string, string, bool)
-    Message * receive(bool)
-    void setTimeout(int)
+    SubSocket * create() nogil
+    int connect(Context *, string, string, bool) nogil
+    Message * receive(bool) nogil
+    void setTimeout(int) nogil
 
   cdef cppclass PubSocket:
     @staticmethod

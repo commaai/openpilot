@@ -6,6 +6,7 @@ import random
 import argparse
 from itertools import permutations
 
+from opendbc.car.structs import CarParams
 from panda import Panda
 
 def get_test_string():
@@ -25,7 +26,7 @@ def run_test_w_pandas(pandas, sleep_duration):
   print("H", h)
 
   for hh in h:
-    hh.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+    hh.set_safety_mode(CarParams.SafetyModel.allOutput)
 
   # test both directions
   for ho in permutations(list(range(len(h))), r=2):
@@ -69,13 +70,13 @@ def run_test_w_pandas(pandas, sleep_duration):
       assert cans_echo[0][0] == at
       assert cans_loop[0][0] == at
 
-      assert cans_echo[0][2] == st
-      assert cans_loop[0][2] == st
+      assert cans_echo[0][1] == st
+      assert cans_loop[0][1] == st
 
-      assert cans_echo[0][3] == 0x80 | bus
-      if cans_loop[0][3] != bus:
-        print("EXPECTED %d GOT %d" % (bus, cans_loop[0][3]))
-      assert cans_loop[0][3] == bus
+      assert cans_echo[0][2] == 0x80 | bus
+      if cans_loop[0][2] != bus:
+        print("EXPECTED %d GOT %d" % (bus, cans_loop[0][2]))
+      assert cans_loop[0][2] == bus
 
       print("CAN pass", bus, ho)
       time.sleep(sleep_duration)
