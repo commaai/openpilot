@@ -24,8 +24,8 @@
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="1.082031" right="269.643117" left="0.000140" bottom="-1.050781"/>
        <limitY/>
-       <curve color="#9467bd" name="/carOutput/actuatorsOutput/steer">
-        <transform alias="/carOutput/actuatorsOutput/steer[Scale/Offset]" name="Scale/Offset">
+       <curve color="#9467bd" name="/carOutput/actuatorsOutput/torque">
+        <transform alias="/carOutput/actuatorsOutput/torque[Scale/Offset]" name="Scale/Offset">
          <options value_scale="-1" time_offset="0" value_offset="0"/>
         </transform>
        </curve>
@@ -114,8 +114,8 @@
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="1.082031" right="269.643117" left="0.000140" bottom="-1.050781"/>
        <limitY/>
-       <curve color="#9467bd" name="/carOutput/actuatorsOutput/steer">
-        <transform alias="/carOutput/actuatorsOutput/steer[Scale/Offset]" name="Scale/Offset">
+       <curve color="#9467bd" name="/carOutput/actuatorsOutput/torque">
+        <transform alias="/carOutput/actuatorsOutput/torque[Scale/Offset]" name="Scale/Offset">
          <options value_scale="-1.0" time_offset="0" value_offset="0"/>
         </transform>
        </curve>

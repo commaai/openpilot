@@ -46,7 +46,6 @@ class ParamsLearner:
     self.yaw_rate_std = 0.0
     self.roll = 0.0
     self.steering_angle = 0.0
-    self.roll_valid = False
 
   def handle_log(self, t, which, msg):
     if which == 'livePose':
@@ -64,8 +63,8 @@ class ParamsLearner:
 
       localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
       localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
-      self.roll_valid = (localizer_roll_std < ROLL_STD_MAX) and (ROLL_MIN < localizer_roll < ROLL_MAX) and msg.sensorsOK
-      if self.roll_valid:
+      roll_valid = (localizer_roll_std < ROLL_STD_MAX) and (ROLL_MIN < localizer_roll < ROLL_MAX) and msg.sensorsOK
+      if roll_valid:
         roll = localizer_roll
         # Experimentally found multiplier of 2 to be best trade-off between stability and accuracy or similar?
         roll_std = 2 * localizer_roll_std
@@ -75,18 +74,12 @@ class ParamsLearner:
         roll_std = np.radians(10.0)
       self.roll = np.clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
 
-      yaw_rate_valid = msg.angularVelocityDevice.valid and self.calibrator.calib_valid
-      yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
-      yaw_rate_valid = yaw_rate_valid and abs(self.yaw_rate) < 1  # rad/s
-
       if self.active:
         if msg.posenetOK:
-
-          if yaw_rate_valid:
-            self.kf.predict_and_observe(t,
-                                        ObservationKind.ROAD_FRAME_YAW_RATE,
-                                        np.array([[-self.yaw_rate]]),
-                                        np.array([np.atleast_2d(self.yaw_rate_std**2)]))
+          self.kf.predict_and_observe(t,
+                                      ObservationKind.ROAD_FRAME_YAW_RATE,
+                                      np.array([[-self.yaw_rate]]),
+                                      np.array([np.atleast_2d(self.yaw_rate_std**2)]))
 
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_ROLL,

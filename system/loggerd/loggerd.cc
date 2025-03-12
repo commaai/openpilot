@@ -165,8 +165,15 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         s->logger.segment(), offset_segment_num,
         s->ready_to_rotate.load(), s->max_waiting, name.c_str());
     }
-    // queue up all the new segment messages, they go in after the rotate
-    re.q.push_back(msg);
+
+    // TODO: define this behavior, but for now don't leak
+    if (re.q.size() > MAIN_FPS*10) {
+      LOGE_100("%s: dropping frame, queue is too large", name.c_str());
+      delete msg;
+    } else {
+      // queue up all the new segment messages, they go in after the rotate
+      re.q.push_back(msg);
+    }
   } else {
     LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d re.encoderd_segment_offset:%d",
       name.c_str(), idx.getSegmentNum(), s->logger.segment(), re.encoderd_segment_offset);

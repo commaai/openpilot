@@ -147,13 +147,13 @@ class LocationEstimator:
       self.car_speed = abs(msg.vEgo)
 
     elif which == "liveCalibration":
+      # Note that we use this message during calibration
       if len(msg.rpyCalib) > 0:
         calib = np.array(msg.rpyCalib)
         if calib.min() < -CALIB_RPY_SANITY_CHECK or calib.max() > CALIB_RPY_SANITY_CHECK:
           return HandleLogResult.INPUT_INVALID
 
         self.device_from_calib = rot_from_euler(calib)
-        self.calibrated = msg.calStatus == log.LiveCalibrationData.Status.calibrated
 
     elif which == "cameraOdometry":
       if not self._validate_timestamp(t):

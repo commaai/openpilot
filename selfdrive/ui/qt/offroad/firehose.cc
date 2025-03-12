@@ -69,6 +69,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     "<br><br>"
     "<b>Frequently Asked Questions</b><br><br>"
     "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br><br>"
+    "<i>Do all of my segments get pulled in Firehose Mode?</i> No, we selectively pull a subset of your segments.<br><br>"
     "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br><br>"
     "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training."
   ));
@@ -87,7 +88,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
       QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
       QJsonObject json = doc.object();
       int count = json["firehose"].toInt();
-      contribution_label->setText(tr("<b>%1 %2</b> of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "segment" : "segments"));
+      contribution_label->setText(tr("<b>%n segment(s)</b> of your driving is in the training dataset so far.", "", count));
       contribution_label->show();
     }
   });
