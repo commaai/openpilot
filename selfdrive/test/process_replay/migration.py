@@ -101,7 +101,8 @@ def migrate_liveParameters(msgs):
   # calibrationValid migration
   ops = []
 
-  calibrated_gen = lambda: (msg.liveCalibration.calStatus == log.LiveCalibrationData.Status.calibrated for _, msg in msgs if msg.which() == 'liveCalibration')
+  def calibrated_gen():
+    return (msg.liveCalibration.calStatus == log.LiveCalibrationData.Status.calibrated for _, msg in msgs if msg.which() == 'liveCalibration')
   needs_migration = all(not msg.liveParameters.calibrationValid for _, msg in msgs if msg.which() == 'liveParameters') and any(calibrated_gen())
   if not needs_migration:
     return [], [], []
