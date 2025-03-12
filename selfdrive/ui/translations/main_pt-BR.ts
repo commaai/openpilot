@@ -338,8 +338,8 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
         <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+            <numerusform>&lt;b&gt;%n segmento&lt;/b&gt; da sua direção está no conjunto de dados de treinamento até agora.</numerusform>
+            <numerusform>&lt;b&gt;%n segmento(s)&lt;/b&gt; da sua direção estão no conjunto de dados de treinamento até agora.</numerusform>
         </translation>
     </message>
 </context>
