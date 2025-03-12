@@ -324,10 +324,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <translation>Modo Firehose: ATIVO</translation>
     </message>
     <message>
-        <source>&lt;b&gt;%1 %2&lt;/b&gt; of your driving are in the training dataset so far.</source>
-        <translation type="vanished">&lt;b&gt;%1 %2&lt;/b&gt; da sua direção já está no conjunto de dados de treinamento até agora.</translation>
-    </message>
-    <message>
         <source>ACTIVE</source>
         <translation>ATIVO</translation>
     </message>

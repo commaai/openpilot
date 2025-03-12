@@ -324,10 +324,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>파이어호스 모드: 활성화</translation>
     </message>
     <message>
-        <source>&lt;b&gt;%1 %2&lt;/b&gt; of your driving are in the training dataset so far.</source>
-        <translation type="vanished">&lt;b&gt;%1 %2&lt;/b&gt; 의 운전이 지금까지의 학습 데이터셋에 포함되어 있습니다.</translation>
-    </message>
-    <message>
         <source>ACTIVE</source>
         <translation>활성화</translation>
     </message>
