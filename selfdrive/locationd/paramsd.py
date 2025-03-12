@@ -234,6 +234,7 @@ def main():
       liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
       liveParameters.angleOffsetAverageValid = bool(avg_offset_valid)
       liveParameters.angleOffsetValid = bool(total_offset_valid)
+      liveParameters.calibrationValid = bool(calib_valid)
       liveParameters.valid = all((
         liveParameters.angleOffsetAverageValid,
         liveParameters.angleOffsetValid ,
