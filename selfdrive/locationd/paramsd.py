@@ -52,7 +52,15 @@ class ParamsLearner:
     if which == 'livePose':
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
-      self.yaw_rate, self.yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
+
+      yaw_rate_valid = msg.angularVelocityDevice.valid
+      yaw_rate_valid = yaw_rate_valid and 0 < self.yaw_rate_std < 10  # rad/s
+      yaw_rate_valid = yaw_rate_valid and abs(self.yaw_rate) < 1  # rad/s
+      if yaw_rate_valid:
+        self.yaw_rate, self.yaw_rate_std = calibrated_pose.angular_velocity.z, calibrated_pose.angular_velocity.z_std
+      else:
+        # This is done to bound the yaw rate estimate when localizer values are invalid or calibrating
+        self.yaw_rate, self.yaw_rate_std = 0.0, np.radians(10.0)
 
       localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
       localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
@@ -239,6 +247,7 @@ def main():
         roll_std < ROLL_STD_MAX,
         liveParameters.stiffnessFactorValid,
         liveParameters.steerRatioValid,
+        liveParameters.calibrator.calib_valid,
       ))
       liveParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())
