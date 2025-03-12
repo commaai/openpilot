@@ -22,6 +22,7 @@ const int QCAM_BITRATE = 256000;
 #define INIT_ENCODE_FUNCTIONS(encode_type)                                \
   .get_encode_data_func = &cereal::Event::Reader::get##encode_type##Data, \
   .set_encode_idx_func = &cereal::Event::Builder::set##encode_type##Idx,  \
+  .get_encode_idx_func = &cereal::Event::Builder::get##encode_type##Idx, \
   .init_encode_data_func = &cereal::Event::Builder::init##encode_type##Data
 
 const bool LOGGERD_TEST = getenv("LOGGERD_TEST");
@@ -43,6 +44,7 @@ public:
                                                          : cereal::EncodeIndex::Type::FULL_H_E_V_C;
   ::cereal::EncodeData::Reader (cereal::Event::Reader::*get_encode_data_func)() const;
   void (cereal::Event::Builder::*set_encode_idx_func)(::cereal::EncodeIndex::Reader);
+  cereal::EncodeIndex::Builder (cereal::Event::Builder::*get_encode_idx_func)();
   cereal::EncodeData::Builder (cereal::Event::Builder::*init_encode_data_func)();
 };
 
