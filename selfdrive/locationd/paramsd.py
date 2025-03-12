@@ -226,13 +226,13 @@ def main():
       liveParameters.posenetValid = True
       liveParameters.sensorValid = sensors_valid
       liveParameters.steerRatio = float(x[States.STEER_RATIO].item())
-      liveParameters.steerRatioValid = min_sr <= liveParameters.steerRatio <= max_sr
       liveParameters.stiffnessFactor = float(x[States.STIFFNESS].item())
-      liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
       liveParameters.roll = float(roll)
       liveParameters.angleOffsetAverageDeg = float(angle_offset_average)
-      liveParameters.angleOffsetAverageValid = bool(avg_offset_valid)
       liveParameters.angleOffsetDeg = float(angle_offset)
+      liveParameters.steerRatioValid = min_sr <= liveParameters.steerRatio <= max_sr
+      liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
+      liveParameters.angleOffsetAverageValid = bool(avg_offset_valid)
       liveParameters.angleOffsetValid = bool(total_offset_valid)
       liveParameters.valid = all((
         liveParameters.angleOffsetAverageValid,
