@@ -100,6 +100,9 @@ class UploadItem:
 
   @classmethod
   def __eq__(cls, other: UploadItem):
+    if not isinstance(other, UploadItem):
+      return NotImplemented
+
     return cls.priority == other.priority
 
 
