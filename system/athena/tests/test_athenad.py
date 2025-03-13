@@ -329,13 +329,13 @@ class TestAthenadMethods:
     item2 = athenad.UploadItem(path=fn2, url=f"{host}/qlog2.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True, priority=0)
     item3 = athenad.UploadItem(path=fn3, url=f"{host}/qlog3.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True, priority=500)
 
-    athenad.upload_queue.put_nowait((item1.priority, item1))
-    athenad.upload_queue.put_nowait((item2.priority, item2))
-    athenad.upload_queue.put_nowait((item3.priority, item3))
+    athenad.upload_queue.put_nowait(item1)
+    athenad.upload_queue.put_nowait(item2)
+    athenad.upload_queue.put_nowait(item3)
 
-    assert athenad.upload_queue.get_nowait()[-1].path == fn2
-    assert athenad.upload_queue.get_nowait()[-1].path == fn3
-    assert athenad.upload_queue.get_nowait()[-1].path == fn1
+    assert athenad.upload_queue.get().path == fn2
+    assert athenad.upload_queue.get().path == fn3
+    assert athenad.upload_queue.get().path == fn1
 
   def test_list_upload_queue(self):
     item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
