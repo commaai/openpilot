@@ -6,9 +6,8 @@
 #include "common/util.h"
 
 int main(int argc, char *argv[]) {
-  int ret = util::set_realtime_priority(53);
-  assert(ret == 0);
-  ret = util::set_core_affinity({6});
+  // doesn't need RT priority since we're using isolcpus
+  int ret = util::set_core_affinity({6});
   assert(ret == 0 || Params().getBool("IsOffroad")); // failure ok while offroad due to offlining cores
 
   camerad_thread();
