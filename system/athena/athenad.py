@@ -16,7 +16,6 @@ import threading
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
-from enum import Enum
 from functools import partial, total_ordering
 from queue import Queue
 from typing import cast
