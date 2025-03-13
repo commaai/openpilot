@@ -16,7 +16,8 @@ import threading
 import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
-from functools import partial
+from enum import Enum
+from functools import partial, total_ordering
 from queue import Queue
 from typing import cast
 from collections.abc import Callable
@@ -61,6 +62,9 @@ UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
+class Priority(Enum):
+  LOW = 0
+  HIGH = 999
 
 @dataclass
 class UploadFile:
@@ -68,13 +72,15 @@ class UploadFile:
   url: str
   headers: dict[str, str]
   allow_cellular: bool
+  priority: Priority = Priority.LOW
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadFile:
-    return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False))
+    return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False), d.get("priority", Priority.LOW))
 
 
 @dataclass
+@total_ordering
 class UploadItem:
   path: str
   url: str
@@ -85,17 +91,22 @@ class UploadItem:
   current: bool = False
   progress: float = 0
   allow_cellular: bool = False
+  priority: Priority = Priority.LOW
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
-               d["progress"], d["allow_cellular"])
+               d["progress"], d["allow_cellular"], d["priority"])
+
+  @classmethod
+  def __lt__(cls, other: UploadItem):
+    return cls.priority < other.priority
 
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[str] = queue.Queue()
-upload_queue: Queue[UploadItem] = queue.Queue()
+upload_queue: Queue[UploadItem] = queue.PriorityQueue()
 low_priority_send_queue: Queue[str] = queue.Queue()
 log_recv_queue: Queue[str] = queue.Queue()
 cancelled_uploads: set[str] = set()
@@ -398,6 +409,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       created_at=int(time.time() * 1000),
       id=None,
       allow_cellular=file.allow_cellular,
+      priority=file.priority
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
     item = replace(item, id=upload_id)
