@@ -324,13 +324,18 @@ class TestAthenadMethods:
   def test_list_upload_queue_priority(self, host: str):
     fn1 = self._create_file('qlog.zst')
     fn2 = self._create_file('qlog2.zst')
-    item1 = athenad.UploadItem(path=fn1, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    fn3 = self._create_file('qlog3.zst')
+    item1 = athenad.UploadItem(path=fn1, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True, priority=1000)
     item2 = athenad.UploadItem(path=fn2, url=f"{host}/qlog2.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True, priority=0)
+    item3 = athenad.UploadItem(path=fn3, url=f"{host}/qlog3.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True, priority=500)
 
     athenad.upload_queue.put_nowait(item1)
     athenad.upload_queue.put_nowait(item2)
+    athenad.upload_queue.put_nowait(item3)
 
-    assert athenad.upload_queue.get_nowait().url == f"{host}/qlog2.zst"
+    assert athenad.upload_queue.get_nowait().path == fn2
+    assert athenad.upload_queue.get_nowait().path == fn3
+    assert athenad.upload_queue.get_nowait().path == fn1
 
   def test_list_upload_queue(self):
     item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
