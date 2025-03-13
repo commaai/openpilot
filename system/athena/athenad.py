@@ -22,6 +22,8 @@ from typing import cast
 from collections.abc import Callable
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.poolmanager import PoolManager
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
@@ -60,6 +62,16 @@ UploadFileDict = dict[str, str | int | float | bool]
 UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
+
+
+class QoSAdapter(HTTPAdapter):
+  def init_poolmanager(self, connections, maxsize, block=False, **kwargs):
+    socket_options = kwargs.get("socket_options", [])
+    # Set the DSCP/TOS value to Lower-effort (LE) for log upload packets
+    socket_options.append((socket.IPPROTO_IP, socket.IP_TOS, 0x01 << 2))
+    kwargs["socket_options"] = socket_options
+    self.poolmanager = PoolManager(num_pools=connections, maxsize=maxsize, block=block, **kwargs)
+    return self.poolmanager
 
 
 @dataclass
@@ -292,13 +304,18 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
     path = strip_zst_extension(path)
     compress = True
 
+  # Set the DSCP/TOS value to Lower-effort (LE) for log upload packets
+  session = requests.Session()
+  session.mount("http://", QoSAdapter())
+  session.mount("https://", QoSAdapter())
+
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = requests.put(upload_item.url,
-                            data=CallbackReader(stream, callback, content_length) if callback else stream,
-                            headers={**upload_item.headers, 'Content-Length': str(content_length)},
-                            timeout=30)
+    response = session.put(upload_item.url,
+                           data=CallbackReader(stream, callback, content_length) if callback else stream,
+                           headers={**upload_item.headers, 'Content-Length': str(content_length)},
+                           timeout=30)
     return response
   finally:
     if stream:
@@ -467,8 +484,8 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
-    # DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
-    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x90)
+    # DSCP of 36/HDD_LINUX_AC_VI (AF42) with the minimum delay flag
+    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 36 << 2)
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
