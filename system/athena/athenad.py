@@ -94,16 +94,8 @@ class UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
                d["progress"], d["allow_cellular"], d["priority"])
 
-  @classmethod
-  def __lt__(cls, other: UploadItem):
-    return cls.priority < other.priority
-
-  @classmethod
-  def __eq__(cls, other):
-    if not isinstance(other, UploadItem):
-      return NotImplemented
-
-    return cls.priority == other.priority
+  def __lt__(self, other: UploadItem):
+    return self.priority < other.priority
 
 
 dispatcher["echo"] = lambda s: s
