@@ -325,7 +325,15 @@ class TestAthenadMethods:
     for i in (100, 500, 0):
       fn = f'qlog_{i}.zst'
       fp = self._create_file(fn)
-      item = athenad.UploadItem(path=fp, url=f"{host}/{fn}", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True, priority=i)
+      item = athenad.UploadItem(
+        path=fp,
+        url=f"{host}/{fn}",
+        headers={},
+        created_at=int(time.time()*1000),
+        id='',
+        allow_cellular=True,
+        priority=i
+      )
       athenad.upload_queue.put_nowait(item)
 
     for i in (0, 100, 500):
