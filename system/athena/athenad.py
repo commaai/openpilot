@@ -17,7 +17,7 @@ import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
-from queue import Queue
+from queue import Queue, PriorityQueue
 from typing import cast
 from collections.abc import Callable
 
@@ -107,11 +107,11 @@ class UploadItem:
 
 
 dispatcher["echo"] = lambda s: s
-recv_queue: Queue[str] = queue.Queue()
-send_queue: Queue[str] = queue.Queue()
-upload_queue: Queue[UploadItem] = queue.PriorityQueue()
-low_priority_send_queue: Queue[str] = queue.Queue()
-log_recv_queue: Queue[str] = queue.Queue()
+recv_queue: Queue[str] = Queue()
+send_queue: Queue[str] = Queue()
+upload_queue: Queue[UploadItem] = PriorityQueue()
+low_priority_send_queue: Queue[str] = Queue()
+log_recv_queue: Queue[str] = Queue()
 cancelled_uploads: set[str] = set()
 
 cur_upload_items: dict[int, UploadItem | None] = {}
