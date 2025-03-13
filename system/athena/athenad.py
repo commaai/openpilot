@@ -98,11 +98,17 @@ class UploadItem:
   def __lt__(self, other: UploadItem):
     return self.priority < other.priority
 
+  def __eq__(self, other):
+    if not isinstance(other, UploadItem):
+      return NotImplemented
+
+    return self.priority == other.priority
+
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
 send_queue: Queue[str] = queue.Queue()
-upload_queue: Queue[UploadItem] = PriorityQueue()
+upload_queue: Queue[UploadItem] = queue.PriorityQueue()
 low_priority_send_queue: Queue[str] = queue.Queue()
 log_recv_queue: Queue[str] = queue.Queue()
 cancelled_uploads: set[str] = set()
