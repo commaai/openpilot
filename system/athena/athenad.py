@@ -53,9 +53,7 @@ MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
-
-HIGH_PRIORITY = 999
-LOW_PRIORITY = 0
+DEFAULT_UPLOAD_PRIORITY = 0
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -70,11 +68,11 @@ class UploadFile:
   url: str
   headers: dict[str, str]
   allow_cellular: bool
-  priority: int = LOW_PRIORITY
+  priority: int = DEFAULT_UPLOAD_PRIORITY
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadFile:
-    return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False), d.get("priority", LOW_PRIORITY))
+    return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False), d.get("priority", DEFAULT_UPLOAD_PRIORITY))
 
 
 @dataclass
@@ -89,7 +87,7 @@ class UploadItem:
   current: bool = False
   progress: float = 0
   allow_cellular: bool = False
-  priority: int = LOW_PRIORITY
+  priority: int = DEFAULT_UPLOAD_PRIORITY
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadItem:
