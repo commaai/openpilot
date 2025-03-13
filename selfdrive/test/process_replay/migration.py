@@ -107,6 +107,7 @@ def migrate_liveParameters(msgs):
   if not needs_migration:
     return [], [], []
 
+  # assume it was already calibrated from the start if the first message is calibrated
   calibrated = next(calibrated_gen(), False)
   for index, msg in msgs:
     if msg.which() == 'liveParameters':
