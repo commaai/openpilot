@@ -336,10 +336,11 @@ class TestAthenadMethods:
         allow_cellular=True,
         priority=i
       )
-      athenad.upload_queue.put_nowait(item)
+      athenad.upload_queue.put_nowait((i, item))
 
     for i in sorted(priorities):
-      assert athenad.upload_queue.get_nowait().priority == i
+      (_, actual) = athenad.upload_queue.get_nowait()
+      assert actual.priority == i
 
   def test_list_upload_queue(self):
     item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
