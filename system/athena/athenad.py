@@ -55,6 +55,9 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 
+HIGH_PRIORITY = 999
+LOW_PRIORITY = 0
+
 NetworkType = log.DeviceState.NetworkType
 
 UploadFileDict = dict[str, str | int | float | bool]
@@ -62,21 +65,17 @@ UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
-class Priority(Enum):
-  LOW = 0
-  HIGH = 999
-
 @dataclass
 class UploadFile:
   fn: str
   url: str
   headers: dict[str, str]
   allow_cellular: bool
-  priority: Priority = Priority.LOW
+  priority: int = LOW_PRIORITY
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadFile:
-    return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False), d.get("priority", Priority.LOW))
+    return cls(d.get("fn", ""), d.get("url", ""), d.get("headers", {}), d.get("allow_cellular", False), d.get("priority", LOW_PRIORITY))
 
 
 @dataclass
@@ -91,7 +90,7 @@ class UploadItem:
   current: bool = False
   progress: float = 0
   allow_cellular: bool = False
-  priority: Priority = Priority.LOW
+  priority: int = LOW_PRIORITY
 
   @classmethod
   def from_dict(cls, d: dict) -> UploadItem:
