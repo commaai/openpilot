@@ -43,7 +43,6 @@ def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: boo
     migrate_onroadEvents,
     migrate_driverMonitoringState,
     migrate_longitudinalPlan,
-    migrate_liveParameters,
   ]
   if manager_states:
     migrations.append(migrate_managerState)
@@ -94,29 +93,6 @@ def migration(inputs: list[str], product: str|None=None):
     wrapper.product = product
     return wrapper
   return decorator
-
-
-@migration(inputs=["liveParameters", "liveCalibration"])
-def migrate_liveParameters(msgs):
-  # calibrationValid migration
-  ops = []
-
-  def calibrated_gen():
-    return (msg.liveCalibration.calStatus == log.LiveCalibrationData.Status.calibrated for _, msg in msgs if msg.which() == 'liveCalibration')
-  needs_migration = all(not msg.liveParameters.calibrationValid for _, msg in msgs if msg.which() == 'liveParameters') and any(calibrated_gen())
-  if not needs_migration:
-    return [], [], []
-
-  # assume it was already calibrated from the start if the first message is calibrated
-  calibrated = next(calibrated_gen(), False)
-  for index, msg in msgs:
-    if msg.which() == 'liveParameters':
-      new_msg = msg.as_builder()
-      new_msg.liveParameters.calibrationValid = calibrated
-      ops.append((index, new_msg.as_reader()))
-    elif msg.which() == 'liveCalibration':
-      calibrated = msg.liveCalibration.calStatus == log.LiveCalibrationData.Status.calibrated
-  return ops, [], []
 
 
 @migration(inputs=["longitudinalPlan", "carParams"])

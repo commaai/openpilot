@@ -218,7 +218,6 @@ def main():
       avg_offset_valid = check_valid_with_hysteresis(avg_offset_valid, angle_offset_average, OFFSET_MAX, OFFSET_LOWERED_MAX)
       total_offset_valid = check_valid_with_hysteresis(total_offset_valid, angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
       roll_valid = check_valid_with_hysteresis(roll_valid, roll, ROLL_MAX, ROLL_LOWERED_MAX)
-      calib_valid = learner.calibrator.calib_valid
 
       msg = messaging.new_message('liveParameters')
 
@@ -234,7 +233,6 @@ def main():
       liveParameters.stiffnessFactorValid = 0.2 <= liveParameters.stiffnessFactor <= 5.0
       liveParameters.angleOffsetAverageValid = bool(avg_offset_valid)
       liveParameters.angleOffsetValid = bool(total_offset_valid)
-      liveParameters.calibrationValid = bool(calib_valid)
       liveParameters.valid = all((
         liveParameters.angleOffsetAverageValid,
         liveParameters.angleOffsetValid ,
@@ -242,7 +240,6 @@ def main():
         roll_std < ROLL_STD_MAX,
         liveParameters.stiffnessFactorValid,
         liveParameters.steerRatioValid,
-        calib_valid,
       ))
       liveParameters.steerRatioStd = float(P[States.STEER_RATIO].item())
       liveParameters.stiffnessFactorStd = float(P[States.STIFFNESS].item())
