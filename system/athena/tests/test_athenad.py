@@ -76,7 +76,7 @@ class TestAthenadMethods:
       self.params.put(k, v)
     self.params.put_bool("GsmMetered", True)
 
-    athenad.upload_queue = queue.Queue()
+    athenad.upload_queue.queue.clear()
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
 

@@ -77,6 +77,7 @@ class UploadFile:
 
 
 @dataclass
+@total_ordering
 class UploadItem:
   path: str
   url: str
