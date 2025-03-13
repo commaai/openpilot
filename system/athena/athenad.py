@@ -17,7 +17,7 @@ import time
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
-from queue import Queue, PriorityQueue
+from queue import Queue
 from typing import cast
 from collections.abc import Callable
 
@@ -77,7 +77,6 @@ class UploadFile:
 
 
 @dataclass
-@total_ordering
 class UploadItem:
   path: str
   url: str
