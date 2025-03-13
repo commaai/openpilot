@@ -98,6 +98,10 @@ class UploadItem:
   def __lt__(cls, other: UploadItem):
     return cls.priority < other.priority
 
+  @classmethod
+  def __eq__(cls, other: UploadItem):
+    return cls.priority == other.priority
+
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
