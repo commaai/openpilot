@@ -322,7 +322,9 @@ class TestAthenadMethods:
     assert items[0]['current']
 
   def test_list_upload_queue_priority(self, host: str):
-    for i in (100, 500, 0):
+    priorities = (25, 50, 99, 75, 0)
+
+    for i in priorities:
       fn = f'qlog_{i}.zst'
       fp = self._create_file(fn)
       item = athenad.UploadItem(
@@ -336,7 +338,7 @@ class TestAthenadMethods:
       )
       athenad.upload_queue.put_nowait(item)
 
-    for i in (0, 100, 500):
+    for i in sorted(priorities):
       assert athenad.upload_queue.get_nowait().priority == i
 
   def test_list_upload_queue(self):
