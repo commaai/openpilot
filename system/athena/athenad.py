@@ -99,11 +99,11 @@ class UploadItem:
 
 
 dispatcher["echo"] = lambda s: s
-recv_queue: Queue[str] = Queue()
-send_queue: Queue[str] = Queue()
+recv_queue: Queue[str] = queue.Queue()
+send_queue: Queue[str] = queue.Queue()
 upload_queue: Queue[UploadItem] = PriorityQueue()
-low_priority_send_queue: Queue[str] = Queue()
-log_recv_queue: Queue[str] = Queue()
+low_priority_send_queue: Queue[str] = queue.Queue()
+log_recv_queue: Queue[str] = queue.Queue()
 cancelled_uploads: set[str] = set()
 
 cur_upload_items: dict[int, UploadItem | None] = {}
