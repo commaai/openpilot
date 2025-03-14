@@ -52,6 +52,8 @@ public:
   static RouteIdentifier parseRoute(const std::string &str);
 
 protected:
+  bool loadFromAutoSource();
+  bool loadFromCommaApi();
   bool loadFromLocal();
   bool loadFromServer(int retries = 3);
   bool loadFromJson(const std::string &json);
