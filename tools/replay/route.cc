@@ -59,19 +59,22 @@ bool Route::loadFromCommaApi() {
     date_time_ = mktime(&tm_time);
   }
 
-  bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
-  if (ret) {
-    if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
-    if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
-    for (auto it = segments_.begin(); it != segments_.end(); /**/) {
-      if (it->first < route_.begin_segment || it->first > route_.end_segment) {
-        it = segments_.erase(it);
-      } else {
-        ++it;
-      }
+  bool load_success = data_dir_.empty() ? loadFromServer() : loadFromLocal();
+  if (!load_success) {
+    rInfo("Failed to load route from %s", data_dir_.empty() ? "server" : "local");
+    return false;
+  }
+
+  if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
+  if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
+  for (auto it = segments_.begin(); it != segments_.end(); /**/) {
+    if (it->first < route_.begin_segment || it->first > route_.end_segment) {
+      it = segments_.erase(it);
+    } else {
+      ++it;
     }
   }
-  return !segments_.empty();
+  return true;
 }
 
 bool Route::loadFromAutoSource() {
