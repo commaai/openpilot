@@ -242,10 +242,9 @@ def migrate_gpsLocation(msgs):
 @migration(inputs=["deviceState", "initData"])
 def migrate_deviceState(msgs):
   ops = []
-  dt = None
+  dt = next((m.initData.deviceType for _, m in msgs if m.which() == 'initData'), None)
+  assert dt is not None, "initData message not found"
   for i, msg in msgs:
-    if msg.which() == 'initData':
-      dt = msg.initData.deviceType
     if msg.which() == 'deviceState':
       n = msg.as_builder()
       n.deviceState.deviceType = dt
