@@ -1330,7 +1330,7 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
   //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
 
-  if (stress_test("skipping SOF event")) return false;
+  //if (stress_test("skipping SOF event")) return false;
 
   if (!validateEvent(request_id, frame_id_raw)) {
     return false;
@@ -1401,6 +1401,11 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   int buf_idx = request_id % ife_buf_depth;
   assert(sync_objs_ife[buf_idx]);
+
+  if (stress_test("sync max out time")) {
+    util::sleep_for(350);
+    return false;
+  }
 
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
     struct cam_sync_wait sync_wait = {};
