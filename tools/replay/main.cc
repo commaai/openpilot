@@ -18,6 +18,7 @@ Options:
   -c, --cache        Cache <n> segments in memory. Default is 5
   -s, --start        Start from <seconds>
   -x, --playback     Playback <speed>
+      --auto         auto load the route from the most appropriate available source
       --demo         Use a demo route instead of providing your own
   -d, --data_dir     Local directory with routes
   -p, --prefix       Set OPENPILOT_PREFIX
@@ -39,6 +40,7 @@ struct ReplayConfig {
   std::string data_dir;
   std::string prefix;
   uint32_t flags = REPLAY_FLAG_NONE;
+  bool auto_source = false;
   int start_seconds = 0;
   int cache_segments = -1;
   float playback_speed = -1;
@@ -52,6 +54,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"start", required_argument, nullptr, 's'},
       {"playback", required_argument, nullptr, 'x'},
       {"demo", no_argument, nullptr, 0},
+      {"auto", no_argument, nullptr, 0},
       {"data_dir", required_argument, nullptr, 'd'},
       {"prefix", required_argument, nullptr, 'p'},
       {"dcam", no_argument, nullptr, 0},
@@ -96,6 +99,8 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
         std::string name = cli_options[option_index].name;
         if (name == "demo") {
           config.route = DEMO_ROUTE;
+        } else if (name == "auto") {
+          config.auto_source = true;
         } else {
           config.flags |= flag_map.at(name);
         }
@@ -136,7 +141,7 @@ int main(int argc, char *argv[]) {
     op_prefix = std::make_unique<OpenpilotPrefix>(config.prefix);
   }
 
-  Replay replay(config.route, config.allow, config.block, nullptr, config.flags, config.data_dir);
+  Replay replay(config.route, config.allow, config.block, nullptr, config.flags, config.data_dir, config.auto_source);
   if (config.cache_segments > 0) {
     replay.setSegmentCacheLimit(config.cache_segments);
   }
