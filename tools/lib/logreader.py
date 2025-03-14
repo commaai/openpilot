@@ -336,9 +336,7 @@ if __name__ == "__main__":
 
   parser = ArgumentParser(description="Process a log file and print identifiers or full messages.")
   parser.add_argument("log_path", help="Path to the log file")
-  parser.add_argument(
-    "--identifiers-only", action="store_true", help="Print only log identifiers instead of full messages"
-  )
+  parser.add_argument("--identifiers-only", action="store_true", help="Print only log identifiers")
   args = parser.parse_args()
 
   lr = LogReader(args.log_path, sort_by_time=True)
