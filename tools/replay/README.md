@@ -64,6 +64,7 @@ Options:
   -s, --start <seconds>  start from <seconds>
   -x <speed>             playback <speed>. between 0.2 - 3
   --demo                 use a demo route instead of providing your own
+  --auto                 auto load the route from the most appropriate available source
   --data_dir <data_dir>  local directory with routes
   --prefix <prefix>      set OPENPILOT_PREFIX
   --dcam                 load driver camera

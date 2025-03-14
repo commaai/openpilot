@@ -18,8 +18,8 @@ Options:
   -c, --cache        Cache <n> segments in memory. Default is 5
   -s, --start        Start from <seconds>
   -x, --playback     Playback <speed>
-      --auto         auto load the route from the most appropriate available source
       --demo         Use a demo route instead of providing your own
+      --auto         auto load the route from the most appropriate available source
   -d, --data_dir     Local directory with routes
   -p, --prefix       Set OPENPILOT_PREFIX
       --dcam         Load driver camera
