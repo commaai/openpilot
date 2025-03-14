@@ -10,6 +10,7 @@ import pyaudio
 import wave
 from aiohttp import web
 from aiohttp import ClientSession
+import socket
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.webrtc.webrtcd import StreamRequestBody
@@ -120,7 +121,12 @@ def main():
   app.router.add_post("/offer", offer)
   app.router.add_post("/sound", sound)
   app.router.add_static('/static', os.path.join(TELEOPDIR, 'static'))
-  web.run_app(app, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
+
+  sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+  sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+  sock.setsockopt(socket.SOL_IP, socket.IP_TOS, 0xB8)  # Expedited Forwarding (EF)
+
+  web.run_app(app, sock=sock, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 
 
 if __name__ == "__main__":
