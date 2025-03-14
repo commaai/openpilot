@@ -231,10 +231,10 @@ class RadarD:
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     # *** publish radarState ***
-    self.radar_state_valid = sm.all_checks() and len(rr.errors) == 0
+    self.radar_state_valid = sm.all_checks()
     self.radar_state = log.RadarState.new_message()
     self.radar_state.mdMonoTime = sm.logMonoTime['modelV2']
-    self.radar_state.radarErrors = list(rr.errors)
+    self.radar_state.radarErrors = rr.errors
     self.radar_state.carStateMonoTime = sm.logMonoTime['carState']
 
     if len(sm['modelV2'].velocity.x):
