@@ -6,12 +6,12 @@ import capnp
 import enum
 import os
 import pathlib
-import sys
 import tqdm
 import urllib.parse
 import warnings
 import zstandard as zstd
 
+from argparse import ArgumentParser
 from collections.abc import Callable, Iterable, Iterator
 from urllib.parse import parse_qs, urlparse
 
@@ -333,7 +333,17 @@ if __name__ == "__main__":
   # capnproto <= 0.8.0 throws errors converting byte data to string
   # below line catches those errors and replaces the bytes with \x__
   codecs.register_error("strict", codecs.backslashreplace_errors)
-  log_path = sys.argv[1]
-  lr = LogReader(log_path, sort_by_time=True)
-  for msg in lr:
-    print(msg)
+
+  parser = ArgumentParser(description="Process a log file and print identifiers or full messages.")
+  parser.add_argument("log_path", help="Path to the log file")
+  parser.add_argument(
+    "--identifiers-only", action="store_true", help="Print only log identifiers instead of full messages"
+  )
+  args = parser.parse_args()
+
+  lr = LogReader(args.log_path, sort_by_time=True)
+  if args.identifiers_only:
+    print("\n".join(lr.logreader_identifiers))
+  else:
+    for msg in lr:
+      print(msg)
