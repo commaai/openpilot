@@ -10,8 +10,11 @@
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
-Route::Route(const std::string &route, const std::string &data_dir) : data_dir_(data_dir) {
-  route_ = parseRoute(route);
+Route::Route(const std::string &route, const std::string &data_dir, bool auto_source)
+    : route_string_(route), data_dir_(data_dir), auto_source_(auto_source) {
+  if (!auto_source) {
+    route_ = parseRoute(route);
+  }
 }
 
 RouteIdentifier Route::parseRoute(const std::string &str) {
@@ -45,6 +48,22 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
 
 bool Route::load() {
   err_ = RouteLoadError::None;
+
+  if (auto_source_) {
+    auto cmd = util::string_format("python ../lib/logreader.py \"%s\" --identifiers-only", route_string_.c_str());
+    auto output = util::check_output(cmd);
+    auto log_files = split(output, '\n');
+    for (int i = 0; i < log_files.size(); ++i) {
+      addFileToSegment(i, log_files[i]);
+    }
+    route_.begin_segment = 0;
+    route_.end_segment = log_files.size() - 1;
+    route_.dongle_id = route_string_;
+    route_.str = route_string_;
+    route_.timestamp = "";
+    return !segments_.empty();
+  }
+
   if (route_.str.empty() || (data_dir_.empty() && route_.dongle_id.empty())) {
     rInfo("invalid route format");
     return false;
