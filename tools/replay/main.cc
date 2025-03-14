@@ -97,13 +97,9 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       case 'p': config.prefix = optarg; break;
       case 0: {
         std::string name = cli_options[option_index].name;
-        if (name == "demo") {
-          config.route = DEMO_ROUTE;
-        } else if (name == "auto") {
-          config.auto_source = true;
-        } else {
-          config.flags |= flag_map.at(name);
-        }
+        if (name == "demo") config.route = DEMO_ROUTE;
+        else if (name == "auto") config.auto_source = true;
+        else config.flags |= flag_map.at(name);
         break;
       }
       case 'h': std::cout << helpText; return false;

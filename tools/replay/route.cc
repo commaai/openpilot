@@ -79,8 +79,7 @@ bool Route::loadFromCommaApi() {
 
 bool Route::loadFromAutoSource() {
   auto cmd = util::string_format("python ../lib/logreader.py \"%s\" --identifiers-only", route_string_.c_str());
-  auto output = util::check_output(cmd);
-  auto log_files = split(output, '\n');
+  auto log_files = split(util::check_output(cmd), '\n');
   for (int i = 0; i < log_files.size(); ++i) {
     addFileToSegment(i, log_files[i]);
   }
@@ -88,7 +87,6 @@ bool Route::loadFromAutoSource() {
   route_.end_segment = log_files.size() - 1;
   route_.dongle_id = route_string_;
   route_.str = route_string_;
-  route_.timestamp = "";
   return !segments_.empty();
 }
 
