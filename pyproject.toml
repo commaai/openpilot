@@ -232,6 +232,7 @@ lint.ignore = [
   "B024",
   "NPY002",  # new numpy random syntax is worse
   "UP038",   # (x, y) -> x|y for isinstance
+  "C420",
 ]
 line-length = 160
 target-version ="py311"
