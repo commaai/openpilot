@@ -124,7 +124,7 @@ def main():
 
   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
   sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-  sock.setsockopt(socket.SOL_IP, socket.IP_TOS, 0xB8)  # Expedited Forwarding (EF)
+  sock.setsockopt(socket.SOL_IP, socket.IP_TOS, 46 << 2)  # Expedited Forwarding (EF)
 
   web.run_app(app, sock=sock, access_log=None, host="0.0.0.0", port=5000, ssl_context=ssl_context)
 
