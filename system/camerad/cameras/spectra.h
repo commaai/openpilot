@@ -181,6 +181,7 @@ public:
   int sync_objs_ife[MAX_IFE_BUFS] = {};
   int sync_objs_bps[MAX_IFE_BUFS] = {};
   uint64_t request_id_last = 0;
+  uint64_t last_requeue_ts = 0;
   uint64_t frame_id_raw_last = 0;
   int invalid_request_count = 0;
   bool skip_expected = true;
@@ -202,11 +203,16 @@ private:
   inline static bool first_frame_synced = false;
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
-  inline bool stress_test(const char* log) {
-    static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));;
-    bool triggered = (prob > 0) && ((static_cast<double>(rand()) / RAND_MAX) < prob);
+  inline bool stress_test(std::string log) {
+    static double last_trigger = 0;
+    static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));
+    static double dt = std::stod(util::getenv("SPECTRA_ERROR_DT", "1"));
+    bool triggered = (prob > 0) && \
+                     ((static_cast<double>(rand()) / RAND_MAX) < prob) && \
+                     (millis_since_boot() - last_trigger) > dt;
     if (triggered) {
-      LOGE("stress test (cam %d): %s", cc.camera_num, log);
+      last_trigger = millis_since_boot();
+      LOGE("stress test (cam %d): %s", cc.camera_num, log.c_str());
     }
     return triggered;
   }
