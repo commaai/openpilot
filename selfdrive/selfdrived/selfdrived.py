@@ -69,7 +69,7 @@ class SelfdriveD:
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
-    ignore = self.sensor_packets + self.gps_packets + ['alertDebug']
+    ignore = self.sensor_packets + self.gps_packets + ['alertDebug', 'liveTracks']  # liveTracks is checked by radarState
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     if REPLAY:
@@ -80,7 +80,7 @@ class SelfdriveD:
                                    'managerState', 'liveParameters', 'radarState', 'liveTracks', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
-                                  ignore_alive=ignore, ignore_avg_freq=ignore + ['liveTracks'],
+                                  ignore_alive=ignore, ignore_avg_freq=ignore,
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
 
     # read params
