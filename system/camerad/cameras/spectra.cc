@@ -237,7 +237,7 @@ SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
     enabled(config.enabled),
     cc(config) {
-  ife_buf_depth = (cc.output_type == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
+  ife_buf_depth = VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
@@ -1337,7 +1337,9 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
     return false;
   }
 
-  if (stress_test("skipping SOF event")) return false;
+  if (stress_test("skipping SOF event")) {
+    return false;
+  }
 
   if (!validateEvent(request_id, frame_id_raw)) {
     return false;
@@ -1388,7 +1390,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 
     if (request_id != request_id_last + 1) {
       LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, request_id_last, request_id);
-      clearAndRequeue(request_id_last + 1);
+      clearAndRequeue(request_id + 1);
       return false;
     }
   }

@@ -203,7 +203,7 @@ private:
   inline static bool first_frame_synced = false;
 
   // a mode for stressing edge cases: realignment, sync failures, etc.
-  inline bool stress_test(const char* log) {
+  inline bool stress_test(std::string log) {
     static double last_trigger = 0;
     static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));
     static double dt = std::stod(util::getenv("SPECTRA_ERROR_DT", "1"));
@@ -212,7 +212,7 @@ private:
                      (millis_since_boot() - last_trigger) > dt;
     if (triggered) {
       last_trigger = millis_since_boot();
-      LOGE("stress test (cam %d): %s", cc.camera_num, log);
+      LOGE("stress test (cam %d): %s", cc.camera_num, log.c_str());
     }
     return triggered;
   }
