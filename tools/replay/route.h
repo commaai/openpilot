@@ -40,7 +40,7 @@ struct SegmentFile {
 
 class Route {
 public:
-  Route(const std::string &route, const std::string &data_dir = {});
+  Route(const std::string &route, const std::string &data_dir = {}, bool auto_source = false);
   bool load();
   RouteLoadError lastError() const { return err_; }
   inline const std::string &name() const { return route_.str; }
@@ -52,15 +52,20 @@ public:
   static RouteIdentifier parseRoute(const std::string &str);
 
 protected:
+  bool loadFromAutoSource();
+  bool loadFromCommaApi();
   bool loadFromLocal();
   bool loadFromServer(int retries = 3);
   bool loadFromJson(const std::string &json);
   void addFileToSegment(int seg_num, const std::string &file);
+  std::time_t strToTime(const std::string &timestamp);
   RouteIdentifier route_ = {};
   std::string data_dir_;
   std::map<int, SegmentFile> segments_;
   std::time_t date_time_;
   RouteLoadError err_ = RouteLoadError::None;
+  bool auto_source_ = false;
+  std::string route_string_;
 };
 
 class Segment {

@@ -10,9 +10,8 @@
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
-Route::Route(const std::string &route, const std::string &data_dir) : data_dir_(data_dir) {
-  route_ = parseRoute(route);
-}
+Route::Route(const std::string &route, const std::string &data_dir, bool auto_source)
+    : route_string_(route), data_dir_(data_dir), auto_source_(auto_source) {}
 
 RouteIdentifier Route::parseRoute(const std::string &str) {
   RouteIdentifier identifier = {};
@@ -44,28 +43,64 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
 }
 
 bool Route::load() {
-  err_ = RouteLoadError::None;
+  return auto_source_ ? loadFromAutoSource() : loadFromCommaApi();
+}
+
+bool Route::loadFromCommaApi() {
+  route_ = parseRoute(route_string_);
   if (route_.str.empty() || (data_dir_.empty() && route_.dongle_id.empty())) {
     rInfo("invalid route format");
     return false;
   }
+  date_time_ = strToTime(route_.timestamp);
 
-  struct tm tm_time = {0};
-  strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time);
-  date_time_ = mktime(&tm_time);
+  bool load_success = data_dir_.empty() ? loadFromServer() : loadFromLocal();
+  if (!load_success) {
+    rInfo("Failed to load route from %s", data_dir_.empty() ? "server" : "local");
+    return false;
+  }
 
-  bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
-  if (ret) {
-    if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
-    if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
-    for (auto it = segments_.begin(); it != segments_.end(); /**/) {
-      if (it->first < route_.begin_segment || it->first > route_.end_segment) {
-        it = segments_.erase(it);
-      } else {
-        ++it;
-      }
+  if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
+  if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
+  for (auto it = segments_.begin(); it != segments_.end(); /**/) {
+    if (it->first < route_.begin_segment || it->first > route_.end_segment) {
+      it = segments_.erase(it);
+    } else {
+      ++it;
     }
   }
+  return true;
+}
+
+bool Route::loadFromAutoSource() {
+  auto origin_prefix = getenv("OPENPILOT_PREFIX");
+  if (origin_prefix) {
+    setenv("OPENPILOT_PREFIX", "", 1);
+  }
+  auto cmd = util::string_format("python ../lib/logreader.py \"%s\" --identifiers-only", route_string_.c_str());
+  auto log_files = split(util::check_output(cmd), '\n');
+  if (origin_prefix) {
+    setenv("OPENPILOT_PREFIX", origin_prefix, 1);
+  }
+
+  for (int i = 0; i < log_files.size(); ++i) {
+    addFileToSegment(i, log_files[i]);
+  }
+  static const std::regex pattern(R"(([a-z0-9]{16})\|(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2}))");
+  std::smatch matches;
+  if (std::regex_search(route_string_, matches, pattern)) {
+    route_.str = matches[0];
+    route_.dongle_id = matches[1];
+    route_.timestamp = matches[2];
+    date_time_ = strToTime(route_.timestamp);
+  } else {
+    route_.dongle_id = route_string_;
+    route_.timestamp = route_string_;
+    route_.str = route_string_;
+  }
+  route_.begin_segment = 0;
+  route_.end_segment = log_files.size() - 1;
+
   return !segments_.empty();
 }
 
@@ -153,6 +188,12 @@ void Route::addFileToSegment(int n, const std::string &file) {
   } else if (name == "qcamera.ts") {
     segments_[n].qcamera = file;
   }
+}
+
+std::time_t Route::strToTime(const std::string &timestamp) {
+  struct tm tm_time = {0};
+  strptime(timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time);
+  return mktime(&tm_time);
 }
 
 // class Segment
