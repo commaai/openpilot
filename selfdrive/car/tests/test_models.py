@@ -219,7 +219,7 @@ class TestCarModelBase(unittest.TestCase):
     for i, msg in enumerate(self.can_msgs[self.elm_frame:]):
       rr: structs.RadarData | None = RI.update(msg)
       if rr is not None and i > 50:
-        error_cnt += structs.RadarData.Error.canError in rr.errors
+        error_cnt += rr.errors.canError
     self.assertEqual(error_cnt, 0)
 
   def test_panda_safety_rx_checks(self):
