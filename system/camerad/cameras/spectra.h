@@ -206,9 +206,10 @@ private:
   inline bool stress_test(const char* log) {
     static double last_trigger = 0;
     static double prob = std::stod(util::getenv("SPECTRA_ERROR_PROB", "-1"));
+    static double dt = std::stod(util::getenv("SPECTRA_ERROR_DT", "1"));
     bool triggered = (prob > 0) && \
                      ((static_cast<double>(rand()) / RAND_MAX) < prob) && \
-                     (millis_since_boot() - last_trigger) > 5000;
+                     (millis_since_boot() - last_trigger) > dt;
     if (triggered) {
       last_trigger = millis_since_boot();
       LOGE("stress test (cam %d): %s", cc.camera_num, log);
