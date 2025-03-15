@@ -234,6 +234,7 @@ class RadarD:
     self.radar_state_valid = sm.all_checks()
     self.radar_state = log.RadarState.new_message()
     self.radar_state.mdMonoTime = sm.logMonoTime['modelV2']
+    self.radar_state.radarErrors = rr.errors
     self.radar_state.carStateMonoTime = sm.logMonoTime['carState']
 
     if len(sm['modelV2'].velocity.x):
