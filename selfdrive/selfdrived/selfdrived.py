@@ -69,7 +69,7 @@ class SelfdriveD:
     # TODO: de-couple selfdrived with card/conflate on carState without introducing controls mismatches
     self.car_state_sock = messaging.sub_sock('carState', timeout=20)
 
-    ignore = self.sensor_packets + self.gps_packets + ['alertDebug', 'liveTracks']  # liveTracks is checked by radarState
+    ignore = self.sensor_packets + self.gps_packets + ['alertDebug']
     if SIMULATION:
       ignore += ['driverCameraState', 'managerState']
     if REPLAY:
@@ -77,7 +77,7 @@ class SelfdriveD:
       ignore += ['roadCameraState', 'wideRoadCameraState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose',
-                                   'managerState', 'liveParameters', 'radarState', 'liveTracks', 'liveTorqueParameters',
+                                   'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
@@ -270,7 +270,7 @@ class SelfdriveD:
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
     if not self.sm.valid['radarState']:
-      if self.sm['liveTracks'].errors.radarUnavailableTemporary:
+      if self.sm['radarState'].radarErrors.radarUnavailableTemporary:
         self.events.add(EventName.radarTempUnavailable)
       else:
         self.events.add(EventName.radarFault)
@@ -287,6 +287,7 @@ class SelfdriveD:
     no_system_errors = (not has_disable_events) or (len(self.events) == num_events)
     if not self.sm.all_checks() and no_system_errors:
       if not self.sm.all_alive():
+        print('invalid', [s for s, valid in self.sm.valid.items() if not valid])
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
         self.events.add(EventName.commIssueAvgFreq)

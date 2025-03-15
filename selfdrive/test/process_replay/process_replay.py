@@ -463,7 +463,7 @@ CONFIGS = [
     proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "livePose", "liveParameters", "radarState", "liveTracks",
+      "longitudinalPlan", "livePose", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
