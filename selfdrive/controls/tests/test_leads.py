@@ -27,4 +27,5 @@ class TestLeads:
     out = replay_process_with_name("card", msgs, fingerprint=TOYOTA.TOYOTA_COROLLA_TSS2)
     states = [m for m in out if m.which() == "liveTracks"]
     failures = [not state.valid for state in states]
+
     assert len(states) == 0 or all(failures)
