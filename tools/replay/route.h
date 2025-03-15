@@ -58,6 +58,7 @@ protected:
   bool loadFromServer(int retries = 3);
   bool loadFromJson(const std::string &json);
   void addFileToSegment(int seg_num, const std::string &file);
+  std::time_t strToTime(const std::string &timestamp);
   RouteIdentifier route_ = {};
   std::string data_dir_;
   std::map<int, SegmentFile> segments_;

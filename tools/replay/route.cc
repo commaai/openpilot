@@ -52,12 +52,7 @@ bool Route::loadFromCommaApi() {
     rInfo("invalid route format");
     return false;
   }
-
-  // Parse the timestamp from the route identifier (only applicable for old route formats).
-  struct tm tm_time = {0};
-  if (strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time)) {
-    date_time_ = mktime(&tm_time);
-  }
+  date_time_ = strToTime(route_.timestamp);
 
   bool load_success = data_dir_.empty() ? loadFromServer() : loadFromLocal();
   if (!load_success) {
@@ -91,10 +86,21 @@ bool Route::loadFromAutoSource() {
   for (int i = 0; i < log_files.size(); ++i) {
     addFileToSegment(i, log_files[i]);
   }
+  static const std::regex pattern(R"(([a-z0-9]{16})\|(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2}))");
+  std::smatch matches;
+  if (std::regex_search(route_string_, matches, pattern)) {
+    route_.str = matches[0];
+    route_.dongle_id = matches[1];
+    route_.timestamp = matches[2];
+    date_time_ = strToTime(route_.timestamp);
+  } else {
+    route_.dongle_id = route_string_;
+    route_.timestamp = route_string_;
+    route_.str = route_string_;
+  }
   route_.begin_segment = 0;
   route_.end_segment = log_files.size() - 1;
-  route_.dongle_id = route_string_;
-  route_.str = route_string_;
+
   return !segments_.empty();
 }
 
@@ -182,6 +188,15 @@ void Route::addFileToSegment(int n, const std::string &file) {
   } else if (name == "qcamera.ts") {
     segments_[n].qcamera = file;
   }
+}
+
+std::time_t Route::strToTime(const std::string &timestamp) {
+  // Parse the timestamp from the route identifier (only applicable for old route formats).
+  struct tm tm_time = {0};
+  if (strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time)) {
+    return mktime(&tm_time);
+  }
+  return 0;
 }
 
 // class Segment
