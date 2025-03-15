@@ -172,6 +172,9 @@ class TestCarModelBase(unittest.TestCase):
     # TODO: check safetyModel is in release panda build
     self.safety = libsafety_py.libsafety
 
+    safety_param_sp = self.CP_SP.safetyParam
+    self.safety.set_current_safety_param_sp(safety_param_sp)
+
     cfg = self.CP.safetyConfigs[-1]
     set_status = self.safety.set_safety_hooks(cfg.safetyModel.raw, cfg.safetyParam)
     self.assertEqual(0, set_status, f"failed to set safetyModel {cfg}")

@@ -16,8 +16,8 @@ public:
 
 private:
   void updateMultiplexingMode();
-  std::string fetchCarParams();
-  void setSafetyMode(const std::string &params_string);
+  std::vector<std::string> fetchCarParams();
+  void setSafetyMode(const std::vector<std::string> &params_string);
 
   bool initialized_ = false;
   bool log_once_ = false;

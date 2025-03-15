@@ -27,8 +27,7 @@ Last updated: July 29, 2024
 from openpilot.common.params import Params
 
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
-from opendbc.car.hyundai.values import HyundaiSafetyFlags
-from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
+from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 
 class MadsParams:
@@ -55,7 +54,7 @@ class MadsParams:
       hyundai_cruise_main_toggleable = True
       if hyundai_cruise_main_toggleable:
         CP_SP.flags |= HyundaiFlagsSP.LONGITUDINAL_MAIN_CRUISE_TOGGLEABLE.value
-        CP.safetyConfigs[-1].safetyParam |= HyundaiSafetyFlags.FLAG_HYUNDAI_LONG_MAIN_CRUISE_TOGGLEABLE.value
+        CP_SP.safetyParam |= HyundaiSafetyFlagsSP.LONG_MAIN_CRUISE_TOGGLEABLE
 
     # MADS is currently not supported in Tesla due to lack of consistent states to engage controls
     # TODO-SP: To enable MADS for Tesla, identify consistent signals for MADS toggling
