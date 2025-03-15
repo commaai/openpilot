@@ -125,13 +125,15 @@ class Amplifier:
   def set_configs(self, configs: list[AmpConfig]) -> bool:
     # retry in case panda is using the amp
     tries = 15
-    for i in range(15):
+    backoff = 0.
+    for i in range(tries):
       try:
         self._set_configs(configs)
         return True
       except OSError:
+        backoff += 0.1
+        time.sleep(backoff)
         print(f"Failed to set amp config, {tries - i - 1} retries left")
-        time.sleep(0.02)
     return False
 
   def set_global_shutdown(self, amp_disabled: bool) -> bool:

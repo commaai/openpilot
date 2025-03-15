@@ -16,8 +16,9 @@ import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware.hw import Paths
 
-WATCHDOG_FN = "/dev/shm/wd_"
+WATCHDOG_FN = f"{Paths.shm_path()}/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 
@@ -30,7 +31,7 @@ def launcher(proc: str, name: str) -> None:
     setproctitle(proc)
 
     # create new context since we forked
-    messaging.context = messaging.Context()
+    messaging.reset_context()
 
     # add daemon name tag to logs
     cloudlog.bind(daemon=name)
@@ -220,8 +221,12 @@ class PythonProcess(ManagerProcess):
     if self.proc is not None:
       return
 
+    # TODO: this is just a workaround for this tinygrad check:
+    # https://github.com/tinygrad/tinygrad/blob/ac9c96dae1656dc220ee4acc39cef4dd449aa850/tinygrad/device.py#L26
+    name = self.name if "modeld" not in self.name else "MainProcess"
+
     cloudlog.info(f"starting python {self.module}")
-    self.proc = Process(name=self.name, target=self.launcher, args=(self.module, self.name))
+    self.proc = Process(name=name, target=self.launcher, args=(self.module, self.name))
     self.proc.start()
     self.watchdog_seen = False
     self.shutting_down = False

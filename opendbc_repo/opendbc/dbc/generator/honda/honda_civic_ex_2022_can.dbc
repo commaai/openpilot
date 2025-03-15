@@ -1,0 +1,107 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _bosch_2018.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+
+BO_ 401 GEARBOX: 8 PCM
+ SG_ GEAR_SHIFTER : 5|6@0+ (1,0) [0|63] "" EON
+ SG_ BOH : 45|6@0+ (1,0) [0|63] "" XXX
+ SG_ GEAR2 : 31|8@0+ (1,0) [0|1] "" XXX
+ SG_ GEAR : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ ZEROS_BOH : 47|2@0+ (1,0) [0|3] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 419 GEARBOX_ALT: 8 PCM
+ SG_ GEAR : 7|8@0+ (1,0) [0|255] "" EON
+ SG_ GEAR_SHIFTER : 29|6@0+ (1,0) [0|63] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+
+BO_ 432 STANDSTILL: 7 VSA
+ SG_ WHEELS_MOVING : 12|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_1 : 11|1@0+ (1,0) [0|1] "" EON
+ SG_ BRAKE_ERROR_2 : 9|1@0+ (1,0) [0|1] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
+
+BO_ 446 BRAKE_MODULE: 3 VSA
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRUISE_FAULT : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 456 ACC_CONTROL: 8 XXX
+ SG_ ACCEL_COMMAND : 7|12@0- (0.01,0) [0|0] "m/s^2" XXX
+ SG_ IDLESTOP_ALLOW : 8|1@0+ (1,0) [0|1] "" XXX
+ SG_ STANDSTILL : 9|1@0+ (1,0) [0|1] "" XXX
+ SG_ CONTROL_ON : 10|1@0+ (1,0) [0|1] "" XXX
+ SG_ BOH : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_STATUS : 33|1@1+ (1,0) [0|7] "" XXX
+ SG_ AEB_BRAKING : 47|1@0+ (1,0) [0|1] "" XXX
+ SG_ AEB_PREPARE : 43|1@0+ (1,0) [0|1] "" XXX
+ SG_ FCW_1 : 24|1@1+ (1,0) [0|3] "" XXX
+ SG_ FCW_2 : 54|1@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 467 CRUISE_FAULT_STATUS: 8 XXX
+ SG_ CRUISE_FAULT : 3|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 477 GEARBOX_ALT_2: 8 XXX
+ SG_ GEAR_MT : 39|4@0+ (1,0) [0|15] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 495 SPEED_LIMIT_DASH_DISPLAY: 8 ADAS
+ SG_ SPEED_LIMIT : 47|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 829 LKAS_HUD: 8 ADAS
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ LANE_LINES : 36|2@0+ (1,0) [0|3] "" BDY
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
+
+BO_ 882 CRUISE_PARAMS: 8 PCM
+ SG_ CRUISE_SPEED_OFFSET : 31|8@0- (0.1,0) [-128|127] "kph" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|15] "" EON
+
+BO_ 254913108 LKAS_HUD_2: 8 ADAS
+ SG_ COUNTER_2 : 7|2@0+ (1,0) [0|3] "" XXX
+ SG_ SET_ME_X01 : 5|1@0+ (1,0) [0|1] "" XXX
+ SG_ LKAS_BOH_1 : 15|6@0+ (1,0) [0|63] "" XXX
+ SG_ LEFT_LANE : 23|2@0+ (1,0) [0|3] "" XXX
+ SG_ RIGHT_LANE : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ LKAS_BOH_2 : 30|5@0+ (1,0) [0|31] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+CM_ 446 "If exists, describes cruise faults and what the PCM uses for brake press detection.";
+CM_ SG_ 456 IDLESTOP_ALLOW "allows car to turn off engine at a standstill";
+CM_ SG_ 456 STANDSTILL "set to 1 when camera requests -4.0 m/s^2";
+CM_ SG_ 495 SPEED_LIMIT "Defaults to 0xFF if no speed limit found";
+
+VAL_ 401 GEAR_SHIFTER 32 "L" 16 "S" 8 "D" 4 "N" 2 "R" 1 "P";
+VAL_ 401 GEAR 7 "L" 10 "S" 4 "D" 3 "N" 2 "R" 1 "P";
+VAL_ 419 GEAR_SHIFTER  32 "D" 16 "N" 8 "R" 4 "P" 0 "B" ;
+VAL_ 477 GEAR_MT 14 "reverse" 6 "6th" 5 "5th" 4 "4th" 3 "3rd" 2 "2nd" 1 "1st" 0 "Clutch";

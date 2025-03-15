@@ -1,15 +1,19 @@
 import numpy as np
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
+def safe_exp(x, out=None):
+  # -11 is around 10**14, more causes float16 overflow
+  return np.exp(np.clip(x, -np.inf, 11), out=out)
+
 def sigmoid(x):
-  return 1. / (1. + np.exp(-x))
+  return 1. / (1. + safe_exp(-x))
 
 def softmax(x, axis=-1):
   x -= np.max(x, axis=axis, keepdims=True)
   if x.dtype == np.float32 or x.dtype == np.float64:
-    np.exp(x, out=x)
+    safe_exp(x, out=x)
   else:
-    x = np.exp(x)
+    x = safe_exp(x)
   x /= np.sum(x, axis=axis, keepdims=True)
   return x
 
@@ -42,10 +46,9 @@ class Parser:
     raw = outs[name]
     raw = raw.reshape((raw.shape[0], max(in_N, 1), -1))
 
-    pred_mu = raw[:,:,:(raw.shape[2] - out_N)//2]
     n_values = (raw.shape[2] - out_N)//2
     pred_mu = raw[:,:,:n_values]
-    pred_std = np.exp(raw[:,:,n_values: 2*n_values])
+    pred_std = safe_exp(raw[:,:,n_values: 2*n_values])
 
     if in_N > 1:
       weights = np.zeros((raw.shape[0], in_N, out_N), dtype=raw.dtype)
@@ -81,23 +84,32 @@ class Parser:
     outs[name] = pred_mu_final.reshape(final_shape)
     outs[name + '_stds'] = pred_std_final.reshape(final_shape)
 
-  def parse_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+  def parse_vision_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    self.parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
+    self.parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(ModelConstants.WIDE_FROM_DEVICE_WIDTH,))
+    self.parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
+    self.parse_categorical_crossentropy('desire_pred', outs, out_shape=(ModelConstants.DESIRE_PRED_LEN,ModelConstants.DESIRE_PRED_WIDTH))
+    self.parse_binary_crossentropy('meta', outs)
+    return outs
+
+  def parse_policy_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     self.parse_mdn('plan', outs, in_N=ModelConstants.PLAN_MHP_N, out_N=ModelConstants.PLAN_MHP_SELECTION,
                    out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
     self.parse_mdn('lane_lines', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_LANE_LINES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
     self.parse_mdn('road_edges', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_ROAD_EDGES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
-    self.parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
-    self.parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
     self.parse_mdn('sim_pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
-    self.parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(ModelConstants.WIDE_FROM_DEVICE_WIDTH,))
     self.parse_mdn('lead', outs, in_N=ModelConstants.LEAD_MHP_N, out_N=ModelConstants.LEAD_MHP_SELECTION,
                    out_shape=(ModelConstants.LEAD_TRAJ_LEN,ModelConstants.LEAD_WIDTH))
     if 'lat_planner_solution' in outs:
       self.parse_mdn('lat_planner_solution', outs, in_N=0, out_N=0, out_shape=(ModelConstants.IDX_N,ModelConstants.LAT_PLANNER_SOLUTION_WIDTH))
     if 'desired_curvature' in outs:
       self.parse_mdn('desired_curvature', outs, in_N=0, out_N=0, out_shape=(ModelConstants.DESIRED_CURV_WIDTH,))
-    for k in ['lead_prob', 'lane_lines_prob', 'meta']:
+    for k in ['lead_prob', 'lane_lines_prob']:
       self.parse_binary_crossentropy(k, outs)
     self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
-    self.parse_categorical_crossentropy('desire_pred', outs, out_shape=(ModelConstants.DESIRE_PRED_LEN,ModelConstants.DESIRE_PRED_WIDTH))
+    return outs
+
+  def parse_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    outs = self.parse_vision_outputs(outs)
+    outs = self.parse_policy_outputs(outs)
     return outs

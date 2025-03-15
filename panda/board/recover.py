@@ -11,8 +11,8 @@ if __name__ == "__main__":
   subprocess.check_call(f"scons -C {board_path}/.. -j$(nproc) {board_path}", shell=True)
 
   for s in Panda.list():
-    print("putting", s, "in DFU mode")
     with Panda(serial=s) as p:
+      print(f"putting {p.get_usb_serial()} in DFU mode")
       p.reset(enter_bootstub=True)
       p.reset(enter_bootloader=True)
 

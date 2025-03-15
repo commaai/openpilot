@@ -9,7 +9,7 @@ typedef void (*board_set_ignition)(bool enabled);
 typedef void (*board_set_individual_ignition)(uint8_t bitmask);
 typedef void (*board_set_harness_orientation)(uint8_t orientation);
 typedef void (*board_set_can_mode)(uint8_t mode);
-typedef void (*board_enable_can_transciever)(uint8_t transciever, bool enabled);
+typedef void (*board_enable_can_transceiver)(uint8_t transceiver, bool enabled);
 typedef void (*board_enable_header_pin)(uint8_t pin_num, bool enabled);
 typedef float (*board_get_channel_power)(uint8_t channel);
 typedef uint16_t (*board_get_sbu_mV)(uint8_t channel, uint8_t sbu);
@@ -28,7 +28,7 @@ struct board {
   board_set_individual_ignition set_individual_ignition;
   board_set_harness_orientation set_harness_orientation;
   board_set_can_mode set_can_mode;
-  board_enable_can_transciever enable_can_transciever;
+  board_enable_can_transceiver enable_can_transceiver;
   board_enable_header_pin enable_header_pin;
   board_get_channel_power get_channel_power;
   board_get_sbu_mV get_sbu_mV;

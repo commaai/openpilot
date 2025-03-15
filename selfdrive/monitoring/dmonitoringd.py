@@ -1,19 +1,16 @@
 #!/usr/bin/env python3
-import gc
-
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.common.realtime import set_realtime_priority
+from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.monitoring.helpers import DriverMonitoring
 
 
 def dmonitoringd_thread():
-  gc.disable()
-  set_realtime_priority(2)
+  config_realtime_process([0, 1, 2, 3], 5)
 
   params = Params()
   pm = messaging.PubMaster(['driverMonitoringState'])
-  sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'controlsState', 'modelV2'], poll='driverStateV2')
+  sm = messaging.SubMaster(['driverStateV2', 'liveCalibration', 'carState', 'selfdriveState', 'modelV2'], poll='driverStateV2')
 
   DM = DriverMonitoring(rhd_saved=params.get_bool("IsRhdDetected"), always_on=params.get_bool("AlwaysOnDM"))
 

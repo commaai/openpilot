@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from openpilot.selfdrive.car.values import BRANDS
+from opendbc.car.values import BRANDS
 
 for brand in BRANDS:
   all_flags = set()

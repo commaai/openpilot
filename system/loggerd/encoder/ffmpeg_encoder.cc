@@ -47,8 +47,11 @@ FfmpegEncoder::~FfmpegEncoder() {
   av_frame_free(&frame);
 }
 
-void FfmpegEncoder::encoder_open(const char* path) {
-  const AVCodec *codec = avcodec_find_encoder(AV_CODEC_ID_FFVHUFF);
+void FfmpegEncoder::encoder_open() {
+  auto codec_id = encoder_info.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
+                      ? AV_CODEC_ID_H264
+                      : AV_CODEC_ID_FFVHUFF;
+  const AVCodec *codec = avcodec_find_encoder(codec_id);
 
   this->codec_ctx = avcodec_alloc_context3(codec);
   assert(this->codec_ctx);
@@ -138,7 +141,7 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
       printf("%20s got %8d bytes flags %8x idx %4d id %8d\n", encoder_info.publish_name, pkt.size, pkt.flags, counter, extra->frame_id);
     }
 
-    publisher_publish(this, segment_num, counter, *extra,
+    publisher_publish(segment_num, counter, *extra,
       (pkt.flags & AV_PKT_FLAG_KEY) ? V4L2_BUF_FLAG_KEYFRAME : 0,
       kj::arrayPtr<capnp::byte>(pkt.data, (size_t)0), // TODO: get the header
       kj::arrayPtr<capnp::byte>(pkt.data, pkt.size));

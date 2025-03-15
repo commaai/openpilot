@@ -6,12 +6,12 @@ import json
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
-from openpilot.selfdrive.controls.lib.alertmanager import set_offroad_alert
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 if __name__ == "__main__":
   params = Params()
 
-  with open(os.path.join(BASEDIR, "selfdrive/controls/lib/alerts_offroad.json")) as f:
+  with open(os.path.join(BASEDIR, "selfdrive/selfdrived/alerts_offroad.json")) as f:
     offroad_alerts = json.load(f)
 
   t = 10 if len(sys.argv) < 2 else int(sys.argv[1])

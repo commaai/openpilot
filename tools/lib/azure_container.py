@@ -1,5 +1,5 @@
 import os
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from functools import lru_cache
 from pathlib import Path
 from typing import IO
@@ -20,7 +20,7 @@ def get_azure_credential():
 @lru_cache
 def get_container_sas(account_name: str, container_name: str):
   from azure.storage.blob import BlobServiceClient, ContainerSasPermissions, generate_container_sas
-  start_time = datetime.utcnow()
+  start_time = datetime.now(UTC).replace(tzinfo=None)
   expiry_time = start_time + timedelta(hours=1)
   blob_service = BlobServiceClient(
     account_url=f"https://{account_name}.blob.core.windows.net",
@@ -53,9 +53,8 @@ class AzureContainer:
     key = get_container_sas(self.ACCOUNT, self.CONTAINER)
     return client, key
 
-  def get_url(self, route_name: str, segment_num, log_type="rlog") -> str:
-    ext = "hevc" if log_type.endswith('camera') else "bz2"
-    return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{log_type}.{ext}"
+  def get_url(self, route_name: str, segment_num: str, filename: str) -> str:
+    return self.BASE_URL + f"{route_name.replace('|', '/')}/{segment_num}/{filename}"
 
   def upload_bytes(self, data: bytes | IO, blob_name: str, overwrite=False) -> str:
     from azure.storage.blob import BlobClient

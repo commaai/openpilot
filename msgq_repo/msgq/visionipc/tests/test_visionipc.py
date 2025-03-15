@@ -1,8 +1,6 @@
-#!/usr/bin/env python3
 import os
 import time
 import random
-import unittest
 import numpy as np
 from msgq.visionipc import VisionIpcServer, VisionIpcClient, VisionStreamType
 
@@ -11,17 +9,17 @@ def zmq_sleep(t=1):
     time.sleep(t)
 
 
-class TestVisionIpc(unittest.TestCase):
+class TestVisionIpc:
 
-  def setup_vipc(self, name, *stream_types, num_buffers=1, rgb=False, width=100, height=100, conflate=False):
+  def setup_vipc(self, name, *stream_types, num_buffers=1, width=100, height=100, conflate=False):
     self.server = VisionIpcServer(name)
     for stream_type in stream_types:
-      self.server.create_buffers(stream_type, num_buffers, rgb, width, height)
+      self.server.create_buffers(stream_type, num_buffers, width, height)
     self.server.start_listener()
 
     if len(stream_types):
       self.client = VisionIpcClient(name, stream_types[0], conflate)
-      self.assertTrue(self.client.connect(True))
+      assert self.client.connect(True)
     else:
       self.client = None
 
@@ -30,28 +28,28 @@ class TestVisionIpc(unittest.TestCase):
 
   def test_connect(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD)
-    self.assertTrue(self.client.is_connected)
+    assert self.client.is_connected
+    del self.client
+    del self.server
 
   def test_available_streams(self):
     for k in range(4):
       stream_types = set(random.choices([x.value for x in VisionStreamType], k=k))
       self.setup_vipc("camerad", *stream_types)
       available_streams = VisionIpcClient.available_streams("camerad", True)
-      self.assertEqual(available_streams, stream_types)
+      assert available_streams == stream_types
+      del self.client
+      del self.server
 
   def test_buffers(self):
     width, height, num_buffers = 100, 200, 5
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD, num_buffers=num_buffers, width=width, height=height)
-    self.assertEqual(self.client.width, width)
-    self.assertEqual(self.client.height, height)
-    self.assertGreater(self.client.buffer_len, 0)
-    self.assertEqual(self.client.num_buffers, num_buffers)
-
-  def test_yuv_rgb(self):
-    _, client_yuv = self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD, rgb=False)
-    _, client_rgb = self.setup_vipc("navd", VisionStreamType.VISION_STREAM_MAP, rgb=True)
-    self.assertTrue(client_rgb.rgb)
-    self.assertFalse(client_yuv.rgb)
+    assert self.client.width == width
+    assert self.client.height == height
+    assert self.client.buffer_len > 0
+    assert self.client.num_buffers == num_buffers
+    del self.client
+    del self.server
 
   def test_send_single_buffer(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD)
@@ -61,9 +59,11 @@ class TestVisionIpc(unittest.TestCase):
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=1337)
 
     recv_buf = self.client.recv()
-    self.assertIsNot(recv_buf, None)
-    self.assertEqual(recv_buf.data.view('<i4')[0], 1234)
-    self.assertEqual(self.client.frame_id, 1337)
+    assert recv_buf is not None
+    assert recv_buf.data.view('<i4')[0] == 1234
+    assert self.client.frame_id == 1337
+    del self.client
+    del self.server
 
   def test_no_conflate(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD)
@@ -73,12 +73,14 @@ class TestVisionIpc(unittest.TestCase):
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=2)
 
     recv_buf = self.client.recv()
-    self.assertIsNot(recv_buf, None)
-    self.assertEqual(self.client.frame_id, 1)
+    assert recv_buf is not None
+    assert self.client.frame_id == 1
 
     recv_buf = self.client.recv()
-    self.assertIsNot(recv_buf, None)
-    self.assertEqual(self.client.frame_id, 2)
+    assert recv_buf is not None
+    assert self.client.frame_id == 2
+    del self.client
+    del self.server
 
   def test_conflate(self):
     self.setup_vipc("camerad", VisionStreamType.VISION_STREAM_ROAD, conflate=True)
@@ -88,12 +90,10 @@ class TestVisionIpc(unittest.TestCase):
     self.server.send(VisionStreamType.VISION_STREAM_ROAD, buf, frame_id=2)
 
     recv_buf = self.client.recv()
-    self.assertIsNot(recv_buf, None)
-    self.assertEqual(self.client.frame_id, 2)
+    assert recv_buf is not None
+    assert self.client.frame_id == 2
 
     recv_buf = self.client.recv()
-    self.assertIs(recv_buf, None)
-
-
-if __name__ == "__main__":
-  unittest.main()
+    assert recv_buf is None
+    del self.client
+    del self.server

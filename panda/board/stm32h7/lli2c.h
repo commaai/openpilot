@@ -1,20 +1,27 @@
-
 // TODO: this driver relies heavily on polling,
 // if we want it to be more async, we should use interrupts
 
+#define I2C_RETRY_COUNT 10U
 #define I2C_TIMEOUT_US 100000U
 
-// cppcheck-suppress misra-c2012-2.7; not sure why it triggers here?
 bool i2c_status_wait(const volatile uint32_t *reg, uint32_t mask, uint32_t val) {
   uint32_t start_time = microsecond_timer_get();
   while(((*reg & mask) != val) && (get_ts_elapsed(microsecond_timer_get(), start_time) < I2C_TIMEOUT_US));
   return ((*reg & mask) == val);
 }
 
+void i2c_reset(I2C_TypeDef *I2C) {
+  // peripheral reset
+  register_clear_bits(&I2C->CR1, I2C_CR1_PE);
+  while ((I2C->CR1 & I2C_CR1_PE) != 0U);
+  register_set_bits(&I2C->CR1, I2C_CR1_PE);
+}
+
 bool i2c_write_reg(I2C_TypeDef *I2C, uint8_t addr, uint8_t reg, uint8_t value) {
-  // Setup transfer and send START + addr
   bool ret = false;
-  for(uint32_t i=0U; i<10U; i++) {
+
+  // Setup transfer and send START + addr
+  for (uint32_t i = 0U; i < I2C_RETRY_COUNT; i++) {
     register_clear_bits(&I2C->CR2, I2C_CR2_ADD10);
     I2C->CR2 = ((uint32_t)addr << 1U) & I2C_CR2_SADD_Msk;
     register_clear_bits(&I2C->CR2, I2C_CR2_RD_WRN);
@@ -57,9 +64,10 @@ end:
 }
 
 bool i2c_read_reg(I2C_TypeDef *I2C, uint8_t addr, uint8_t reg, uint8_t *value) {
-  // Setup transfer and send START + addr
   bool ret = false;
-  for(uint32_t i=0U; i<10U; i++) {
+
+  // Setup transfer and send START + addr
+  for (uint32_t i = 0U; i < I2C_RETRY_COUNT; i++) {
     register_clear_bits(&I2C->CR2, I2C_CR2_ADD10);
     I2C->CR2 = ((uint32_t)addr << 1U) & I2C_CR2_SADD_Msk;
     register_clear_bits(&I2C->CR2, I2C_CR2_RD_WRN);
@@ -116,6 +124,11 @@ bool i2c_read_reg(I2C_TypeDef *I2C, uint8_t addr, uint8_t reg, uint8_t *value) {
   I2C->CR2 |= I2C_CR2_STOP;
 
 end:
+
+  if (!ret) {
+    i2c_reset(I2C);
+  }
+
   return ret;
 }
 
@@ -131,7 +144,7 @@ bool i2c_set_reg_bits(I2C_TypeDef *I2C, uint8_t address, uint8_t regis, uint8_t 
 bool i2c_clear_reg_bits(I2C_TypeDef *I2C, uint8_t address, uint8_t regis, uint8_t bits) {
   uint8_t value;
   bool ret = i2c_read_reg(I2C, address, regis, &value);
-  if(ret) {
+  if (ret) {
     ret = i2c_write_reg(I2C, address, regis, value & (uint8_t) (~bits));
   }
   return ret;
@@ -149,5 +162,6 @@ bool i2c_set_reg_mask(I2C_TypeDef *I2C, uint8_t address, uint8_t regis, uint8_t 
 void i2c_init(I2C_TypeDef *I2C) {
   // 100kHz clock speed
   I2C->TIMINGR = 0x107075B0;
-  I2C->CR1 = I2C_CR1_PE;
+
+  i2c_reset(I2C);
 }

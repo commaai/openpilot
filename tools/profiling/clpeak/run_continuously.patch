@@ -1,0 +1,13 @@
+diff --git a/src/clpeak.cpp b/src/clpeak.cpp
+index 8cb192b..b6fe6f5 100644
+--- a/src/clpeak.cpp
++++ b/src/clpeak.cpp
+@@ -47,7 +47,7 @@ int clPeak::runAll()
+ 
+     log->xmlOpenTag("clpeak");
+     log->xmlAppendAttribs("os", OS_NAME);
+-    for (size_t p = 0; p < platforms.size(); p++)
++    for (size_t p = 0; p < platforms.size(); (p+1 % platforms.size()))
+     {
+       if (forcePlatform && (p != specifiedPlatform))
+         continue;
