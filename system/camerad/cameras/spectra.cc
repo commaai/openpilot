@@ -266,7 +266,7 @@ int SpectraCamera::clear_req_queue() {
   req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
-  LOGD("flushed all req: %d", ret);
+  LOGD("flushed all req: %d", ret);  // returns a "time until timeout" on clearing the workq
 
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
@@ -1425,6 +1425,7 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
     if (!ret) LOGE("camera %d %s failed", cc.camera_num, sync_type);
     return ret;
   };
+  double st = millis_since_boot();
 
   // wait for frame from IFE
   // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
@@ -1434,6 +1435,12 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
     // BPS is typically 7ms
     success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
   }
+
+  if (!success) {
+    double et = millis_since_boot();
+    LOGE("camera %d sync failed after %.2f ms", cc.camera_num, et-st);
+  }
+
   return success;
 }
 
