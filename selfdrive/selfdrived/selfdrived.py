@@ -77,10 +77,10 @@ class SelfdriveD:
       ignore += ['roadCameraState', 'wideRoadCameraState']
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose',
-                                   'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
+                                   'managerState', 'liveParameters', 'radarState', 'liveTracks', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
-                                  ignore_alive=ignore, ignore_avg_freq=ignore,
+                                  ignore_alive=ignore, ignore_avg_freq=ignore + ['liveTracks'],
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
 
     # read params
@@ -270,7 +270,7 @@ class SelfdriveD:
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
     if not self.sm.valid['radarState']:
-      if "unavailableTemporary" in self.sm['radarState'].radarErrors:
+      if self.sm['liveTracks'].errors.radarUnavailableTemporary:
         self.events.add(EventName.radarUnavailableTemporary)
       else:
         self.events.add(EventName.radarFault)
