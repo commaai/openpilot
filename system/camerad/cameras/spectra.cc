@@ -1418,14 +1418,15 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   }
 
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
+    double st = millis_since_boot();
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
     sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
     bool ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait)) == 0;
-    if (!ret) LOGE("camera %d %s failed", cc.camera_num, sync_type);
+    double et = millis_since_boot();
+    if (!ret) LOGE("camera %d %s failed after %.2fms", cc.camera_num, sync_type, et-st);
     return ret;
   };
-  double st = millis_since_boot();
 
   // wait for frame from IFE
   // - in RAW_OUTPUT mode, this time is just the frame readout from the sensor
@@ -1434,11 +1435,6 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   if (success && sync_objs_bps[buf_idx]) {
     // BPS is typically 7ms
     success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
-  }
-
-  if (!success) {
-    double et = millis_since_boot();
-    LOGE("camera %d sync failed after %.2f ms", cc.camera_num, et-st);
   }
 
   return success;
