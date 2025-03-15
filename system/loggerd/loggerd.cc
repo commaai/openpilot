@@ -111,6 +111,11 @@ size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEnc
   auto evt = bmsg.initEvent(event.getValid());
   evt.setLogMonoTime(event.getLogMonoTime());
   (evt.*(encoder_info.set_encode_idx_func))(idx);
+
+  // update its segment number to match the logger's
+  auto encoder_idx = (evt.*(encoder_info.get_encode_idx_func))();
+  encoder_idx.setSegmentNum(s->logger.segment());
+
   auto new_msg = bmsg.toBytes();
   s->logger.write((uint8_t *)new_msg.begin(), new_msg.size(), true);  // always in qlog?
   return new_msg.size();
