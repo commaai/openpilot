@@ -9,9 +9,9 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog', 'qlog.bz2']
+QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
 QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2']
+LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2', 'rlog.zst']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
@@ -259,10 +259,6 @@ class SegmentRange:
   @property
   def dongle_id(self) -> str:
     return self.m.group("dongle_id")
-
-  @property
-  def timestamp(self) -> str:
-    return self.m.group("timestamp")
 
   @property
   def log_id(self) -> str:

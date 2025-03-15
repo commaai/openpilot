@@ -110,7 +110,7 @@ int LSM6DS3_Gyro::init() {
   uint8_t value = 0;
   bool do_self_test = false;
 
-  const char* env_lsm_selftest =env_lsm_selftest = std::getenv("LSM_SELF_TEST");
+  const char* env_lsm_selftest = std::getenv("LSM_SELF_TEST");
   if (env_lsm_selftest != nullptr && strncmp(env_lsm_selftest, "1", 1) == 0) {
     do_self_test = true;
   }

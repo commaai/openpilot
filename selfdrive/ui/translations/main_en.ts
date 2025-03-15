@@ -2,6 +2,16 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="en_US">
 <context>
+    <name>FirehosePanel</name>
+    <message numerus="yes">
+        <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
+        <translation>
+            <numerusform>&lt;b&gt;%n segment&lt;/b&gt; of your driving is in the training dataset so far.</numerusform>
+            <numerusform>&lt;b&gt;%n segments&lt;/b&gt; of your driving are in the training dataset so far.</numerusform>
+        </translation>
+    </message>
+</context>
+<context>
     <name>InputDialog</name>
     <message numerus="yes">
         <source>Need at least %n character(s)!</source>

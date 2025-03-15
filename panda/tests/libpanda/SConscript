@@ -16,10 +16,22 @@ env = Environment(
     '-Wfatal-errors',
     '-Wno-pointer-to-int-cast',
   ],
-  CPPPATH=[".", "../../board/"],
+  CPPPATH=[".", "../../board/", "../../../opendbc/safety/"],
 )
 if system == "Darwin":
   env.PrependENVPath('PATH', '/opt/homebrew/bin')
+
+if GetOption('mutation'):
+  env['CC'] = 'clang-17'
+  flags = [
+    '-fprofile-instr-generate',
+    '-fcoverage-mapping',
+    '-fpass-plugin=/usr/lib/mull-ir-frontend-17',
+    '-g',
+    '-grecord-command-line',
+  ]
+  env['CFLAGS'] += flags
+  env['LINKFLAGS'] += flags
 
 if GetOption('ubsan'):
   flags = [

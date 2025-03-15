@@ -48,7 +48,8 @@ void Setup::download(QString url) {
   auto version = util::read_file("/VERSION");
 
   struct curl_slist *list = NULL;
-  list = curl_slist_append(list, ("X-openpilot-serial: " + Hardware::get_serial()).c_str());
+  std::string header = "X-openpilot-serial: " + Hardware::get_serial();
+  list = curl_slist_append(list, header.c_str());
 
   char tmpfile[] = "/tmp/installer_XXXXXX";
   FILE *fp = fdopen(mkstemp(tmpfile), "wb");
