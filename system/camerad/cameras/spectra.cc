@@ -1328,15 +1328,16 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t request_id = event_data->u.frame_msg.request_id;  // ID from the camera request manager
   uint64_t frame_id_raw = event_data->u.frame_msg.frame_id;  // raw as opposed to our re-indexed frame ID
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
-  LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+  //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
 
-  // if there's a lag, some more frames could have already come in
+  // if there's a lag, some more frames could have already come in before
+  // we cleared the queue, so we'll still get them with valid (> 0) request IDs.
   if (timestamp < last_requeue_ts) {
-    LOGD("- skipping frame: ts before requeue / cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
-    //return false;
+    LOGD("skipping frame: ts before requeue / cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+    return false;
   }
 
-  //if (stress_test("skipping SOF event")) return false;
+  if (stress_test("skipping SOF event")) return false;
 
   if (!validateEvent(request_id, frame_id_raw)) {
     return false;
@@ -1409,8 +1410,8 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   int buf_idx = request_id % ife_buf_depth;
   assert(sync_objs_ife[buf_idx]);
 
-  if (stress_test("sync max out time")) {
-    util::sleep_for(150);
+  if (stress_test("sync sleep time")) {
+    util::sleep_for(350);
     return false;
   }
 
