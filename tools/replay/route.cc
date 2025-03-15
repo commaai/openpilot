@@ -78,8 +78,16 @@ bool Route::loadFromCommaApi() {
 }
 
 bool Route::loadFromAutoSource() {
+  auto origin_prefix = getenv("OPENPILOT_PREFIX");
+  if (origin_prefix) {
+    setenv("OPENPILOT_PREFIX", "", 1);
+  }
   auto cmd = util::string_format("python ../lib/logreader.py \"%s\" --identifiers-only", route_string_.c_str());
   auto log_files = split(util::check_output(cmd), '\n');
+  if (origin_prefix) {
+    setenv("OPENPILOT_PREFIX", origin_prefix, 1);
+  }
+
   for (int i = 0; i < log_files.size(); ++i) {
     addFileToSegment(i, log_files[i]);
   }
