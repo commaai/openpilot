@@ -237,7 +237,7 @@ SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
     enabled(config.enabled),
     cc(config) {
-  ife_buf_depth = (cc.output_type == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
+  ife_buf_depth = VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
@@ -1330,7 +1330,16 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
   //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
 
-  if (stress_test("skipping SOF event")) return false;
+  // if there's a lag, some more frames could have already come in before
+  // we cleared the queue, so we'll still get them with valid (> 0) request IDs.
+  if (timestamp < last_requeue_ts) {
+    LOGD("skipping frame: ts before requeue / cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+    return false;
+  }
+
+  if (stress_test("skipping SOF event")) {
+    return false;
+  }
 
   if (!validateEvent(request_id, frame_id_raw)) {
     return false;
@@ -1381,7 +1390,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 
     if (request_id != request_id_last + 1) {
       LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, request_id_last, request_id);
-      clearAndRequeue(request_id_last + 1);
+      clearAndRequeue(request_id + 1);
       return false;
     }
   }
@@ -1392,6 +1401,7 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
   // clear everything, then queue up a fresh set of frames
   LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
   clear_req_queue();
+  last_requeue_ts = nanos_since_boot();
   for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
     enqueue_frame(id);
   }
@@ -1401,6 +1411,11 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
 bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   int buf_idx = request_id % ife_buf_depth;
   assert(sync_objs_ife[buf_idx]);
+
+  if (stress_test("sync sleep time")) {
+    util::sleep_for(350);
+    return false;
+  }
 
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
     struct cam_sync_wait sync_wait = {};
