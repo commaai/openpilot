@@ -832,7 +832,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
   },
 
-  EventName.radarUnavailableTemporary: {
+  EventName.radarTempUnavailable: {
     ET.SOFT_DISABLE: soft_disable_alert("Radar Temporarily Unavailable"),
     ET.NO_ENTRY: NoEntryAlert("Radar Temporarily Unavailable"),
   },

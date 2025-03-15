@@ -271,7 +271,7 @@ class SelfdriveD:
       self.events.add(EventName.selfdrivedLagging)
     if not self.sm.valid['radarState']:
       if self.sm['liveTracks'].errors.radarUnavailableTemporary:
-        self.events.add(EventName.radarUnavailableTemporary)
+        self.events.add(EventName.radarTempUnavailable)
       else:
         self.events.add(EventName.radarFault)
       self.events.add(EventName.radarFault)
