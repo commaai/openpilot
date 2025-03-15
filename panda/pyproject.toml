@@ -12,4 +12,4 @@ flake8-implicit-str-concat.allow-multiline=false
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 
 [tool.pytest.ini_options]
-addopts = "-n auto"
+addopts = "-n auto --ignore-glob='*.sh'"

@@ -1,4 +1,8 @@
+#ifdef BOOTSTUB
 void gpio_usb_init(void) {
+#else
+static void gpio_usb_init(void) {
+#endif
   // A11,A12: USB
   set_gpio_alternate(GPIOA, 11, GPIO_AF10_OTG_FS);
   set_gpio_alternate(GPIOA, 12, GPIO_AF10_OTG_FS);

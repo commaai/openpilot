@@ -15,7 +15,7 @@ static void zmq_sleep(int milliseconds=1000){
 
 TEST_CASE("Connecting"){
   VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, 1, false, 100, 100);
+  server.create_buffers(VISION_STREAM_ROAD, 1, 100, 100);
   server.start_listener();
 
   VisionIpcClient client = VisionIpcClient("camerad", VISION_STREAM_ROAD, false);
@@ -26,8 +26,8 @@ TEST_CASE("Connecting"){
 
 TEST_CASE("getAvailableStreams"){
   VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, 1, false, 100, 100);
-  server.create_buffers(VISION_STREAM_WIDE_ROAD, 1, false, 100, 100);
+  server.create_buffers(VISION_STREAM_ROAD, 1, 100, 100);
+  server.create_buffers(VISION_STREAM_WIDE_ROAD, 1, 100, 100);
   server.start_listener();
   auto available_streams = VisionIpcClient::getAvailableStreams("camerad");
   REQUIRE(available_streams.size() == 2);
@@ -38,7 +38,7 @@ TEST_CASE("getAvailableStreams"){
 TEST_CASE("Check buffers"){
   size_t width = 100, height = 200, num_buffers = 5;
   VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, num_buffers, false, width, height);
+  server.create_buffers(VISION_STREAM_ROAD, num_buffers, width, height);
   server.start_listener();
 
   VisionIpcClient client = VisionIpcClient("camerad", VISION_STREAM_ROAD, false);
@@ -50,24 +50,9 @@ TEST_CASE("Check buffers"){
   REQUIRE(client.num_buffers == num_buffers);
 }
 
-TEST_CASE("Check yuv/rgb"){
-  VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, 1, false, 100, 100);
-  server.create_buffers(VISION_STREAM_MAP, 1, true, 100, 100);
-  server.start_listener();
-
-  VisionIpcClient client_yuv = VisionIpcClient("camerad", VISION_STREAM_ROAD, false);
-  VisionIpcClient client_rgb = VisionIpcClient("camerad", VISION_STREAM_MAP, false);
-  client_yuv.connect();
-  client_rgb.connect();
-
-  REQUIRE(client_rgb.buffers[0].rgb == true);
-  REQUIRE(client_yuv.buffers[0].rgb == false);
-}
-
 TEST_CASE("Send single buffer"){
   VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, 1, true, 100, 100);
+  server.create_buffers(VISION_STREAM_ROAD, 1, 100, 100);
   server.start_listener();
 
   VisionIpcClient client = VisionIpcClient("camerad", VISION_STREAM_ROAD, false);
@@ -96,7 +81,7 @@ TEST_CASE("Send single buffer"){
 
 TEST_CASE("Test no conflate"){
   VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, 1, true, 100, 100);
+  server.create_buffers(VISION_STREAM_ROAD, 1, 100, 100);
   server.start_listener();
 
   VisionIpcClient client = VisionIpcClient("camerad", VISION_STREAM_ROAD, false);
@@ -124,7 +109,7 @@ TEST_CASE("Test no conflate"){
 
 TEST_CASE("Test conflate"){
   VisionIpcServer server("camerad");
-  server.create_buffers(VISION_STREAM_ROAD, 1, true, 100, 100);
+  server.create_buffers(VISION_STREAM_ROAD, 1, 100, 100);
   server.start_listener();
 
   VisionIpcClient client = VisionIpcClient("camerad", VISION_STREAM_ROAD, true);

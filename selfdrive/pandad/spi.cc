@@ -239,7 +239,7 @@ int PandaSpiHandle::spi_transfer_retry(uint8_t endpoint, uint8_t *tx_data, uint1
         // due to full TX buffers
         nack_count += 1;
         if (nack_count > 3) {
-          SPILOG(LOGE, "NACK sleep %d", nack_count);
+          SPILOG(LOGD, "NACK sleep %d", nack_count);
           usleep(std::clamp(nack_count*10, 200, 2000));
         }
       }
@@ -418,7 +418,7 @@ fail:
     }
   }
 
-  if (ret > 0) ret = -1;
+  if (ret >= 0) ret = -1;
   return ret;
 }
 #endif

@@ -9,8 +9,10 @@ def write_code(folder, name, code, header):
   if not os.path.exists(folder):
     os.mkdir(folder)
 
-  open(os.path.join(folder, f"{name}.cpp"), 'w', encoding='utf-8').write(code)
-  open(os.path.join(folder, f"{name}.h"), 'w', encoding='utf-8').write(header)
+  with open(os.path.join(folder, f"{name}.cpp"), 'w', encoding='utf-8') as f:
+    f.write(code)
+  with open(os.path.join(folder, f"{name}.h"), 'w', encoding='utf-8') as f:
+    f.write(header)
 
 
 def load_code(folder, name):

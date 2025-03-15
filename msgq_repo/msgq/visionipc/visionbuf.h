@@ -29,7 +29,6 @@ class VisionBuf {
   uint64_t *frame_id;
   int fd = 0;
 
-  bool rgb = false;
   size_t width = 0;
   size_t height = 0;
   size_t stride = 0;
@@ -54,7 +53,6 @@ class VisionBuf {
   void allocate(size_t len);
   void import();
   void init_cl(cl_device_id device_id, cl_context ctx);
-  void init_rgb(size_t width, size_t height, size_t stride);
   void init_yuv(size_t width, size_t height, size_t stride, size_t uv_offset);
   int sync(int dir);
   int free();
@@ -62,5 +60,3 @@ class VisionBuf {
   void set_frame_id(uint64_t id);
   uint64_t get_frame_id();
 };
-
-void visionbuf_compute_aligned_width_and_height(int width, int height, int *aligned_w, int *aligned_h);

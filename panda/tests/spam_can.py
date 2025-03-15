@@ -2,6 +2,7 @@
 import os
 import random
 
+from opendbc.car.structs import CarParams
 from panda import Panda
 
 def get_test_string():
@@ -9,7 +10,7 @@ def get_test_string():
 
 if __name__ == "__main__":
   p = Panda()
-  p.set_safety_mode(Panda.SAFETY_ALLOUTPUT)
+  p.set_safety_mode(CarParams.SafetyModel.allOutput)
 
   print("Spamming all buses...")
   while True:

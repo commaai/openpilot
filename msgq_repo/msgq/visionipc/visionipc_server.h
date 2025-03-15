@@ -33,10 +33,10 @@ class VisionIpcServer {
   VisionIpcServer(std::string name, cl_device_id device_id=nullptr, cl_context ctx=nullptr);
   ~VisionIpcServer();
 
-  VisionBuf * get_buffer(VisionStreamType type);
+  VisionBuf * get_buffer(VisionStreamType type, int idx = -1);
 
-  void create_buffers(VisionStreamType type, size_t num_buffers, bool rgb, size_t width, size_t height);
-  void create_buffers_with_sizes(VisionStreamType type, size_t num_buffers, bool rgb, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset);
+  void create_buffers(VisionStreamType type, size_t num_buffers, size_t width, size_t height);
+  void create_buffers_with_sizes(VisionStreamType type, size_t num_buffers, size_t width, size_t height, size_t size, size_t stride, size_t uv_offset);
   void send(VisionBuf * buf, VisionIpcBufExtra * extra, bool sync=true);
   void start_listener();
 };

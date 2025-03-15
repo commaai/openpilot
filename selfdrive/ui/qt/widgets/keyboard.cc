@@ -10,10 +10,12 @@
 
 const QString BACKSPACE_KEY = "⌫";
 const QString ENTER_KEY = "→";
+const QString SHIFT_KEY = "⇧";
+const QString CAPS_LOCK_KEY = "⇪";
 
-const QMap<QString, int> KEY_STRETCH = {{"  ", 5}, {ENTER_KEY, 2}};
+const QMap<QString, int> KEY_STRETCH = {{"  ", 3}, {ENTER_KEY, 2}};
 
-const QStringList CONTROL_BUTTONS = {"↑", "↓", "ABC", "#+=", "123", BACKSPACE_KEY, ENTER_KEY};
+const QStringList CONTROL_BUTTONS = {SHIFT_KEY, CAPS_LOCK_KEY, "ABC", "#+=", "123", BACKSPACE_KEY, ENTER_KEY};
 
 const float key_spacing_vertical = 20;
 const float key_spacing_horizontal = 15;
@@ -106,8 +108,8 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> lowercase = {
     {"q", "w", "e", "r", "t", "y", "u", "i", "o", "p"},
     {"a", "s", "d", "f", "g", "h", "j", "k", "l"},
-    {"↑", "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY},
-    {"123", "  ", ".", ENTER_KEY},
+    {SHIFT_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY},
+    {"123", "/", "-", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, lowercase));
 
@@ -115,8 +117,8 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   std::vector<QVector<QString>> uppercase = {
     {"Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"},
     {"A", "S", "D", "F", "G", "H", "J", "K", "L"},
-    {"↓", "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY},
-    {"123", "  ", ".", ENTER_KEY},
+    {SHIFT_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY},
+    {"123", "/", "-", "  ", ".", ENTER_KEY},
   };
   main_layout->addWidget(new KeyboardLayout(this, uppercase));
 
@@ -141,26 +143,39 @@ Keyboard::Keyboard(QWidget *parent) : QFrame(parent) {
   main_layout->setCurrentIndex(0);
 }
 
+void Keyboard::handleCapsPress() {
+  shift_state = (shift_state + 1) % 3;
+  bool is_uppercase = shift_state > 0;
+  main_layout->setCurrentIndex(is_uppercase);
+
+  for (KeyButton* btn : main_layout->currentWidget()->findChildren<KeyButton*>()) {
+    if (btn->text() == SHIFT_KEY || btn->text() == CAPS_LOCK_KEY) {
+      btn->setText(shift_state == 2 ? CAPS_LOCK_KEY : SHIFT_KEY);
+      btn->setStyleSheet(is_uppercase ? "background-color: #465BEA;" : "");
+    }
+  }
+}
+
 void Keyboard::handleButton(QAbstractButton* btn) {
   const QString &key = btn->text();
   if (CONTROL_BUTTONS.contains(key)) {
-    if (key == "↓" || key == "ABC") {
-      main_layout->setCurrentIndex(0);
-    } else if (key == "↑") {
-      main_layout->setCurrentIndex(1);
-    } else if (key == "123") {
-      main_layout->setCurrentIndex(2);
-    } else if (key == "#+=") {
-      main_layout->setCurrentIndex(3);
+    if (key == "ABC" || key == "123" || key == "#+=") {
+      int index = (key == "ABC") ? 0 : (key == "123" ? 2 : 3);
+      main_layout->setCurrentIndex(index);
+      shift_state = 0;
+    } else if (key == SHIFT_KEY || key == CAPS_LOCK_KEY) {
+      handleCapsPress();
     } else if (key == ENTER_KEY) {
       main_layout->setCurrentIndex(0);
+      shift_state = 0;
       emit emitEnter();
     } else if (key == BACKSPACE_KEY) {
       emit emitBackspace();
     }
   } else {
-    if ("A" <= key && key <= "Z") {
+    if (shift_state == 1 && "A" <= key && key <= "Z") {
       main_layout->setCurrentIndex(0);
+      shift_state = 0;
     }
     emit emitKey(key);
   }

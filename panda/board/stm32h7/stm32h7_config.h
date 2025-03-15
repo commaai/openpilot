@@ -2,9 +2,6 @@
 #include "stm32h7/inc/stm32h7xx_hal_gpio_ex.h"
 #define MCU_IDCODE 0x483U
 
-// from the linker script
-#define APP_START_ADDRESS 0x8020000U
-
 #define CORE_FREQ 240U // in Mhz
 //APB1 - 120Mhz, APB2 - 120Mhz
 #define APB1_FREQ (CORE_FREQ/4U)
@@ -46,11 +43,11 @@ separate IRQs for RX and TX.
 #define PROVISION_CHUNK_ADDRESS 0x080FFFE0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x080FFFC0U
 
-#include "can_definitions.h"
+#include "can.h"
 #include "comms_definitions.h"
 
 #ifndef BOOTSTUB
-  #include "main_declarations.h"
+  #include "main_definitions.h"
 #else
   #include "bootstub_declarations.h"
 #endif

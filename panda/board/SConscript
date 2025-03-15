@@ -15,7 +15,4 @@ for project_name, project in build_projects.items():
   if ("ENABLE_SPI" in os.environ or "h7" in project_name):
     flags.append('-DENABLE_SPI')
 
-  if "H723" in os.environ:
-    flags.append('-DSTM32H723')
-
   build_project(project_name, project, flags)

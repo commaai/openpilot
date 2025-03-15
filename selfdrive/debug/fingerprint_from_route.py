@@ -8,10 +8,12 @@ def get_fingerprint(lr):
   # TODO: make this a nice tool for car ports. should also work with qlogs for FW
 
   fw = None
+  vin = None
   msgs = {}
   for msg in lr:
     if msg.which() == 'carParams':
       fw = msg.carParams.carFw
+      vin = msg.carParams.carVin
     elif msg.which() == 'can':
       for c in msg.can:
         # read also msgs sent by EON on CAN bus 0x80 and filter out the
@@ -20,7 +22,7 @@ def get_fingerprint(lr):
           msgs[c.address] = len(c.dat)
 
   # show CAN fingerprint
-  fingerprint = ', '.join("%d: %d" % v for v in sorted(msgs.items()))
+  fingerprint = ', '.join(f"{v[0]}: {v[1]}" for v in sorted(msgs.items()))
   print(f"\nfound {len(msgs)} messages. CAN fingerprint:\n")
   print(fingerprint)
 
@@ -32,6 +34,7 @@ def get_fingerprint(lr):
     print(f"      {f.fwVersion},")
     print("    ],")
   print()
+  print(f"VIN: {vin}")
 
 
 if __name__ == "__main__":

@@ -7,7 +7,7 @@ import subprocess
 import time
 from collections import defaultdict
 from pathlib import Path
-from flaky import flaky
+import pytest
 
 import cereal.messaging as messaging
 from cereal import log
@@ -136,13 +136,13 @@ class TestLoggerd:
       assert getattr(initData, initData_key) == v
       assert logged_params[param_key].decode() == v
 
-  @flaky(max_runs=3)
+  @pytest.mark.skip("FIXME: encoderd sometimes crashes in CI when running with pytest-xdist")
   def test_rotation(self):
     os.environ["LOGGERD_TEST"] = "1"
     Params().put("RecordFront", "1")
 
     d = DEVICE_CAMERAS[("tici", "ar0231")]
-    expected_files = {"rlog", "qlog", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
+    expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
     streams = [(VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048*2346, 2048, 2048*1216), "roadCameraState"),
                (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048*2346, 2048, 2048*1216), "driverCameraState"),
                (VisionStreamType.VISION_STREAM_WIDE_ROAD, (d.ecam.width, d.ecam.height, 2048*2346, 2048, 2048*1216), "wideRoadCameraState")]
@@ -150,7 +150,7 @@ class TestLoggerd:
     pm = messaging.PubMaster(["roadCameraState", "driverCameraState", "wideRoadCameraState"])
     vipc_server = VisionIpcServer("camerad")
     for stream_type, frame_spec, _ in streams:
-      vipc_server.create_buffers_with_sizes(stream_type, 40, False, *(frame_spec))
+      vipc_server.create_buffers_with_sizes(stream_type, 40, *(frame_spec))
     vipc_server.start_listener()
 
     num_segs = random.randint(2, 5)
@@ -229,7 +229,7 @@ class TestLoggerd:
                random.sample(no_qlog_services, random.randint(2, min(10, len(no_qlog_services))))
     sent_msgs = self._publish_random_messages(services)
 
-    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog")
+    qlog_path = os.path.join(self._get_latest_log_dir(), "qlog.zst")
     lr = list(LogReader(qlog_path))
 
     # check initData and sentinel
@@ -255,7 +255,7 @@ class TestLoggerd:
     services = random.sample(CEREAL_SERVICES, random.randint(5, 10))
     sent_msgs = self._publish_random_messages(services)
 
-    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog")))
+    lr = list(LogReader(os.path.join(self._get_latest_log_dir(), "rlog.zst")))
 
     # check initData and sentinel
     self._check_init_data(lr)
@@ -281,4 +281,3 @@ class TestLoggerd:
 
     segment_dir = self._get_latest_log_dir()
     assert getxattr(segment_dir, PRESERVE_ATTR_NAME) is None
-

@@ -23,18 +23,16 @@
 #endif
 
 #include "msgq/visionipc/visionipc_client.h"
-#include "system/camerad/cameras/camera_common.h"
 #include "selfdrive/ui/ui.h"
 
 const int FRAME_BUFFER_SIZE = 5;
-static_assert(FRAME_BUFFER_SIZE <= YUV_BUFFER_COUNT);
 
 class CameraWidget : public QOpenGLWidget, protected QOpenGLFunctions {
   Q_OBJECT
 
 public:
   using QOpenGLWidget::QOpenGLWidget;
-  explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, bool zoom, QWidget* parent = nullptr);
+  explicit CameraWidget(std::string stream_name, VisionStreamType stream_type, QWidget* parent = nullptr);
   ~CameraWidget();
   void setBackgroundColor(const QColor &color) { bg = color; }
   void setFrameId(int frame_id) { draw_frame_id = frame_id; }
@@ -51,21 +49,17 @@ signals:
 protected:
   void paintGL() override;
   void initializeGL() override;
-  void resizeGL(int w, int h) override { updateFrameMat(); }
   void showEvent(QShowEvent *event) override;
   void mouseReleaseEvent(QMouseEvent *event) override { emit clicked(); }
-  virtual void updateFrameMat();
-  void updateCalibration(const mat3 &calib);
+  virtual mat4 calcFrameMatrix();
   void vipcThread();
   void clearFrames();
 
   int glWidth();
   int glHeight();
 
-  bool zoomed_view;
   GLuint frame_vao, frame_vbo, frame_ibo;
   GLuint textures[2];
-  mat4 frame_mat = {};
   std::unique_ptr<QOpenGLShaderProgram> program;
   QColor bg = QColor("#000000");
 
@@ -81,14 +75,6 @@ protected:
   std::atomic<VisionStreamType> requested_stream_type;
   std::set<VisionStreamType> available_streams;
   QThread *vipc_thread = nullptr;
-
-  // Calibration
-  float x_offset = 0;
-  float y_offset = 0;
-  float zoom = 1.0;
-  mat3 calibration = DEFAULT_CALIBRATION;
-  mat3 intrinsic_matrix = FCAM_INTRINSIC_MATRIX;
-
   std::recursive_mutex frame_lock;
   std::deque<std::pair<uint32_t, VisionBuf*>> frames;
   uint32_t draw_frame_id = 0;

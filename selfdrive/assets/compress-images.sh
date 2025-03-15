@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 echo "compressing training guide images"
 optipng -o7 -strip all training/*

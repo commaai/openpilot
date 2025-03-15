@@ -1,5 +1,0 @@
-cffi
-scons
-ruff
-pre-commit
-pycryptodome==3.9.8

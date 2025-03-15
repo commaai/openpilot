@@ -27,18 +27,18 @@ float gts[TONE_SPLITS * TONE_SPLITS * TONE_SPLITS * TONE_SPLITS] = {
   0.000000};
 
 
-TEST_CASE("camera.test_set_exposure_target") {
+TEST_CASE("camera.test_calculate_exposure_value") {
   // set up fake camerabuf
   CameraBuf cb = {};
   VisionBuf vb = {};
   uint8_t * fb_y = new uint8_t[W*H];
   vb.y = fb_y;
   cb.cur_yuv_buf = &vb;
-  cb.rgb_width = W;
-  cb.rgb_height = H;
+  cb.out_img_width = W;
+  cb.out_img_height = H;
   Rect rect = {0, 0, W-1, H-1};
 
-  printf("AE test patterns %dx%d\n", cb.rgb_width, cb.rgb_height);
+  printf("AE test patterns %dx%d\n", cb.out_img_width, cb.out_img_height);
 
   // mix of 5 tones
   uint8_t l[5] = {0, 24, 48, 96, 235}; // 235 is yuv max
@@ -61,7 +61,7 @@ TEST_CASE("camera.test_set_exposure_target") {
           memset(&fb_y[h_0*W+h_1*W], l[2], h_2*W);
           memset(&fb_y[h_0*W+h_1*W+h_2*W], l[3], h_3*W);
           memset(&fb_y[h_0*W+h_1*W+h_2*W+h_3*W], l[4], h_4*W);
-          float ev = set_exposure_target((const CameraBuf*) &cb, rect, 1, 1);
+          float ev = calculate_exposure_value((const CameraBuf*) &cb, rect, 1, 1);
           // printf("%d/%d/%d/%d/%d ev is %f\n", h_0, h_1, h_2, h_3, h_4, ev);
           // printf("%f\n", ev);
 
