@@ -151,8 +151,8 @@ class TestCarModelBase(unittest.TestCase):
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
 
-    cls.CarInterface, cls.CarController, cls.CarState, cls.RadarInterface = interfaces[cls.platform]
-    cls.CP = cls.CarInterface.get_params(cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
+    cls.CarInterface = interfaces[cls.platform]
+    cls.CP = cls.CarInterface.get_params(cls.platform, cls.fingerprint, car_fw, experimental_long, docs=False)
     assert cls.CP
     assert cls.CP.carFingerprint == cls.platform
 
@@ -163,7 +163,7 @@ class TestCarModelBase(unittest.TestCase):
     del cls.can_msgs
 
   def setUp(self):
-    self.CI = self.CarInterface(self.CP.copy(), self.CarController, self.CarState)
+    self.CI = self.CarInterface(self.CP.copy())
     assert self.CI
 
     # TODO: check safetyModel is in release panda build
@@ -210,7 +210,7 @@ class TestCarModelBase(unittest.TestCase):
     self.assertEqual(can_invalid_cnt, 0)
 
   def test_radar_interface(self):
-    RI = self.RadarInterface(self.CP)
+    RI = self.CarInterface.RadarInterface(self.CP)
     assert RI
 
     # Since OBD port is multiplexed to bus 1 (commonly radar bus) while fingerprinting,
@@ -273,7 +273,7 @@ class TestCarModelBase(unittest.TestCase):
     def test_car_controller(car_control):
       now_nanos = 0
       msgs_sent = 0
-      CI = self.CarInterface(self.CP, self.CarController, self.CarState)
+      CI = self.CarInterface(self.CP)
       for _ in range(round(10.0 / DT_CTRL)):  # make sure we hit the slowest messages
         CI.update([])
         _, sendcan = CI.apply(car_control, now_nanos)
