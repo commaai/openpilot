@@ -64,10 +64,12 @@ std::vector<std::string> PandaSafety::fetchCarParams() {
 // TODO-SP: Use structs instead of vector
 void PandaSafety::setSafetyMode(const std::vector<std::string> &params_string) {
   AlignedBuffer aligned_buf;
+  AlignedBuffer aligned_buf_sp;
+
   capnp::FlatArrayMessageReader cmsg(aligned_buf.align(params_string[0].data(), params_string[0].size()));
   cereal::CarParams::Reader car_params = cmsg.getRoot<cereal::CarParams>();
 
-  capnp::FlatArrayMessageReader cmsg_sp(aligned_buf.align(params_string[1].data(), params_string[1].size()));
+  capnp::FlatArrayMessageReader cmsg_sp(aligned_buf_sp.align(params_string[1].data(), params_string[1].size()));
   cereal::CarParamsSP::Reader car_params_sp = cmsg_sp.getRoot<cereal::CarParamsSP>();
 
   auto safety_configs = car_params.getSafetyConfigs();
