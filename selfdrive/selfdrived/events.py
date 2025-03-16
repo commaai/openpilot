@@ -885,6 +885,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Controls Mismatch"),
   },
 
+  EventName.safetyChecksInvalid: {
+    ET.IMMEDIATE_DISABLE: ImmediateDisableAlert("Safety Checks Invalid"),
+    ET.NO_ENTRY: NoEntryAlert("Safety Checks Invalid"),
+  },
+
   # Sometimes the USB stack on the device can get into a bad state
   # causing the connection to the panda to be lost
   EventName.usbError: {

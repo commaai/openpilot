@@ -56,6 +56,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     calibrationInvalid @20;
     calibrationRecalibrating @21;
     controlsMismatch @22;
+    safetyChecksInvalid @94;
     pcmEnable @23;
     pcmDisable @24;
     radarFault @25;
