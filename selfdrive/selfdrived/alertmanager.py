@@ -39,6 +39,7 @@ class AlertManager:
   def __init__(self):
     self.alerts: dict[str, AlertEntry] = defaultdict(AlertEntry)
     self.current_alert = EmptyAlert
+    self.current_audible_alert = EmptyAlert
 
   def add_many(self, frame: int, alerts: list[Alert]) -> None:
     for alert in alerts:
@@ -52,6 +53,7 @@ class AlertManager:
 
   def process_alerts(self, frame: int, clear_event_types: set):
     ae = AlertEntry()
+    ae_audible = AlertEntry()
     for v in self.alerts.values():
       if not v.alert:
         continue
@@ -63,5 +65,19 @@ class AlertManager:
       greater = ae.alert is None or (v.alert.priority, v.start_frame) > (ae.alert.priority, ae.start_frame)
       if v.active(frame) and greater:
         ae = v
+        ae_audible = v
+
+    for v in self.alerts.values():
+      if not v.alert:
+        continue
+
+      if v.alert.event_type in clear_event_types:
+        v.end_frame = -1
+
+      # sort by priority first and then by start_frame
+      greater = ae_audible.alert is None or (v.alert.priority, v.start_frame) > (ae_audible.alert.priority, ae_audible.start_frame)
+      if v.active(frame) and v.alert.alert_size == AlertSize.none and greater:
+        ae_audible = v
 
     self.current_alert = ae.alert if ae.alert is not None else EmptyAlert
+    self.current_alert = ae_audible.alert if ae_audible.alert is not None else EmptyAlert
