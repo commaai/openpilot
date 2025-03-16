@@ -55,7 +55,7 @@ class SunnylinkApi(BaseApi):
     imei_try = 0
     while imei1 is None and imei2 is None and imei_try < MAX_RETRIES:
       try:
-        imei1, imei2 = self.params.get("IMEI", encoding='utf8') or HARDWARE.get_imei(0), HARDWARE.get_imei(1)
+        imei1, imei2 = HARDWARE.get_imei(0), HARDWARE.get_imei(1)
       except Exception:
         self._status_update(f"Error getting imei, trying again... [{imei_try + 1}/{MAX_RETRIES}]")
         time.sleep(1)
