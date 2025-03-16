@@ -99,11 +99,11 @@ jobs:
             if [ ! -f "${{ github.workspace }}/master_ui/${A[$i]}.png" ]; then
               # This is a new file in PR UI that doesn't exist in master
               DIFF="${DIFF}<details open>"
-              DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{blue}\\text{NEW}}\$\$</summary>"
+              DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
               DIFF="${DIFF}<table>"
 
               DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> master <img src=\"https://dummyimage.com/1986x993/000000/ffffff?text=Not+in+master\"> </td>"
+              DIFF="${DIFF}  <td> master <img src=\"https://dummyimage.com/1986x993/000000/ffffff?text=++Not+in+master\"> </td>"
               DIFF="${DIFF}  <td> proposed <img src=\"https://raw.githubusercontent.com/sunnypilot/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
               DIFF="${DIFF}</tr>"
 
