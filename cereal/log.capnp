@@ -58,6 +58,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     controlsMismatch @22;
     pcmEnable @23;
     pcmDisable @24;
+    cancellingCruise @24;
     radarFault @25;
     radarTempUnavailable @93;
     brakeHold @26;

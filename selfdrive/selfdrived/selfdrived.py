@@ -158,6 +158,9 @@ class SelfdriveD:
     if self.CP.passive:
       return
 
+    if self.sm['carControl'].cruiseControl.cancel:
+      self.events.add(EventName.cancellingCruise)
+
     # Block resume if cruise never previously enabled
     resume_pressed = any(be.type in (ButtonType.accelCruise, ButtonType.resumeCruise) for be in CS.buttonEvents)
     if not self.CP.pcmCruise and CS.vCruise > 250 and resume_pressed:
