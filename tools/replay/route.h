@@ -24,6 +24,7 @@ enum class RouteLoadError {
 struct RouteIdentifier {
   std::string dongle_id;
   std::string timestamp;
+  std::time_t date_time;
   int begin_segment = 0;
   int end_segment = -1;
   std::string str;
@@ -44,7 +45,7 @@ public:
   bool load();
   RouteLoadError lastError() const { return err_; }
   inline const std::string &name() const { return route_.str; }
-  inline const std::time_t datetime() const { return date_time_; }
+  inline const std::time_t datetime() const { return route_.date_time; }
   inline const std::string &dir() const { return data_dir_; }
   inline const RouteIdentifier &identifier() const { return route_; }
   inline const std::map<int, SegmentFile> &segments() const { return segments_; }
@@ -52,17 +53,16 @@ public:
   static RouteIdentifier parseRoute(const std::string &str);
 
 protected:
+  bool loadSegments();
   bool loadFromAutoSource();
-  bool loadFromCommaApi();
   bool loadFromLocal();
   bool loadFromServer(int retries = 3);
   bool loadFromJson(const std::string &json);
   void addFileToSegment(int seg_num, const std::string &file);
-  std::time_t strToTime(const std::string &timestamp);
+  static std::time_t strToTime(const std::string &timestamp);
   RouteIdentifier route_ = {};
   std::string data_dir_;
   std::map<int, SegmentFile> segments_;
-  std::time_t date_time_ = 0;
   RouteLoadError err_ = RouteLoadError::None;
   bool auto_source_ = false;
   std::string route_string_;

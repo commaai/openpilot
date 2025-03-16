@@ -21,6 +21,7 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
   if (std::regex_match(str, match, pattern)) {
     identifier.dongle_id = match[2].str();
     identifier.timestamp = match[3].str();
+    identifier.date_time = strToTime(identifier.timestamp);
     identifier.str = identifier.dongle_id + "|" + identifier.timestamp;
 
     const auto separator = match[5].str();
@@ -43,33 +44,35 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
 }
 
 bool Route::load() {
-  return auto_source_ ? loadFromAutoSource() : loadFromCommaApi();
-}
-
-bool Route::loadFromCommaApi() {
   route_ = parseRoute(route_string_);
   if (route_.str.empty() || (data_dir_.empty() && route_.dongle_id.empty())) {
     rInfo("invalid route format");
     return false;
   }
-  date_time_ = strToTime(route_.timestamp);
 
-  bool load_success = data_dir_.empty() ? loadFromServer() : loadFromLocal();
-  if (!load_success) {
-    rInfo("Failed to load route from %s", data_dir_.empty() ? "server" : "local");
+  if (!loadSegments()) {
+    rInfo("Failed to load segments");
     return false;
   }
 
-  if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
-  if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
-  for (auto it = segments_.begin(); it != segments_.end(); /**/) {
-    if (it->first < route_.begin_segment || it->first > route_.end_segment) {
-      it = segments_.erase(it);
-    } else {
-      ++it;
-    }
-  }
   return true;
+}
+
+bool Route::loadSegments() {
+  if (!auto_source_) {
+    bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
+    if (ret) {
+      // Trim segments
+      if (route_.begin_segment > 0) {
+        segments_.erase(segments_.begin(), segments_.lower_bound(route_.begin_segment));
+      }
+      if (route_.end_segment >= 0) {
+        segments_.erase(segments_.upper_bound(route_.end_segment), segments_.end());
+      }
+    }
+    return !segments_.empty();
+  }
+  return loadFromAutoSource();
 }
 
 bool Route::loadFromAutoSource() {
@@ -86,21 +89,6 @@ bool Route::loadFromAutoSource() {
   for (int i = 0; i < log_files.size(); ++i) {
     addFileToSegment(i, log_files[i]);
   }
-  static const std::regex pattern(R"(([a-z0-9]{16})\|(\d{4}-\d{2}-\d{2}--\d{2}-\d{2}-\d{2}))");
-  std::smatch matches;
-  if (std::regex_search(route_string_, matches, pattern)) {
-    route_.str = matches[0];
-    route_.dongle_id = matches[1];
-    route_.timestamp = matches[2];
-    date_time_ = strToTime(route_.timestamp);
-  } else {
-    route_.dongle_id = route_string_;
-    route_.timestamp = route_string_;
-    route_.str = route_string_;
-  }
-  route_.begin_segment = 0;
-  route_.end_segment = log_files.size() - 1;
-
   return !segments_.empty();
 }
 
