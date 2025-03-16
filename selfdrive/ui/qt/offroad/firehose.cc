@@ -12,6 +12,10 @@
 #include <QJsonObject>
 #include <QTimer>
 
+#ifdef SUNNYPILOT
+#define UIState UIStateSP
+#endif
+
 FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent) {
   layout = new QVBoxLayout(this);
   layout->setContentsMargins(40, 40, 40, 40);
