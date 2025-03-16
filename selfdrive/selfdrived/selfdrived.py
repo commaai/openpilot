@@ -158,7 +158,7 @@ class SelfdriveD:
     if self.CP.passive:
       return
 
-    if self.sm['carControl'].cruiseControl.cancel:
+    if CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise):
       self.events.add(EventName.cancellingCruise)
 
     # Block resume if cruise never previously enabled
