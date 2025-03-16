@@ -48,6 +48,16 @@ UIStateSP *uiStateSP() {
   return &ui_state;
 }
 
+void UIStateSP::setSunnylinkRoles(const std::vector<RoleModel>& roles) {
+  sunnylinkRoles = roles;
+  emit sunnylinkRolesChanged(roles);
+}
+
+void UIStateSP::setSunnylinkDeviceUsers(const std::vector<UserModel>& users) {
+  sunnylinkUsers = users;
+  emit sunnylinkDeviceUsersChanged(users);
+}
+
 DeviceSP *deviceSP() {
   static DeviceSP _device;
   return &_device;
