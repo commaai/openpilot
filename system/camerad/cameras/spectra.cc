@@ -237,7 +237,7 @@ SpectraCamera::SpectraCamera(SpectraMaster *master, const CameraConfig &config)
   : m(master),
     enabled(config.enabled),
     cc(config) {
-  ife_buf_depth = (cc.output_type == ISP_RAW_OUTPUT) ? 4 : VIPC_BUFFER_COUNT;
+  ife_buf_depth = VIPC_BUFFER_COUNT;
   assert(ife_buf_depth < MAX_IFE_BUFS);
 }
 
@@ -266,7 +266,7 @@ int SpectraCamera::clear_req_queue() {
   req_mgr_flush_request.link_hdl = link_handle;
   req_mgr_flush_request.flush_type = CAM_REQ_MGR_FLUSH_TYPE_ALL;
   int ret = do_cam_control(m->video0_fd, CAM_REQ_MGR_FLUSH_REQ, &req_mgr_flush_request, sizeof(req_mgr_flush_request));
-  LOGD("flushed all req: %d", ret);
+  LOGD("flushed all req: %d", ret);  // returns a "time until timeout" on clearing the workq
 
   for (int i = 0; i < MAX_IFE_BUFS; ++i) {
     destroySyncObjectAt(i);
@@ -1330,7 +1330,16 @@ bool SpectraCamera::handle_camera_event(const cam_req_mgr_message *event_data) {
   uint64_t timestamp = event_data->u.frame_msg.timestamp;    // timestamped in the kernel's SOF IRQ callback
   //LOGD("handle cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
 
-  if (stress_test("skipping SOF event")) return false;
+  // if there's a lag, some more frames could have already come in before
+  // we cleared the queue, so we'll still get them with valid (> 0) request IDs.
+  if (timestamp < last_requeue_ts) {
+    LOGD("skipping frame: ts before requeue / cam %d ts %lu req id %lu frame id %lu", cc.camera_num, timestamp, request_id, frame_id_raw);
+    return false;
+  }
+
+  if (stress_test("skipping SOF event")) {
+    return false;
+  }
 
   if (!validateEvent(request_id, frame_id_raw)) {
     return false;
@@ -1381,7 +1390,7 @@ bool SpectraCamera::validateEvent(uint64_t request_id, uint64_t frame_id_raw) {
 
     if (request_id != request_id_last + 1) {
       LOGE("camera %d requests skipped %ld -> %ld", cc.camera_num, request_id_last, request_id);
-      clearAndRequeue(request_id_last + 1);
+      clearAndRequeue(request_id + 1);
       return false;
     }
   }
@@ -1392,6 +1401,7 @@ void SpectraCamera::clearAndRequeue(uint64_t from_request_id) {
   // clear everything, then queue up a fresh set of frames
   LOGW("clearing and requeuing camera %d from %lu", cc.camera_num, from_request_id);
   clear_req_queue();
+  last_requeue_ts = nanos_since_boot();
   for (uint64_t id = from_request_id; id < from_request_id + ife_buf_depth; ++id) {
     enqueue_frame(id);
   }
@@ -1402,12 +1412,19 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
   int buf_idx = request_id % ife_buf_depth;
   assert(sync_objs_ife[buf_idx]);
 
+  if (stress_test("sync sleep time")) {
+    util::sleep_for(350);
+    return false;
+  }
+
   auto waitForSync = [&](uint32_t sync_obj, int timeout_ms, const char *sync_type) {
+    double st = millis_since_boot();
     struct cam_sync_wait sync_wait = {};
     sync_wait.sync_obj = sync_obj;
     sync_wait.timeout_ms = stress_test(sync_type) ? 1 : timeout_ms;
     bool ret = do_sync_control(m->cam_sync_fd, CAM_SYNC_WAIT, &sync_wait, sizeof(sync_wait)) == 0;
-    if (!ret) LOGE("camera %d %s failed", cc.camera_num, sync_type);
+    double et = millis_since_boot();
+    if (!ret) LOGE("camera %d %s failed after %.2fms", cc.camera_num, sync_type, et-st);
     return ret;
   };
 
@@ -1419,6 +1436,7 @@ bool SpectraCamera::waitForFrameReady(uint64_t request_id) {
     // BPS is typically 7ms
     success = waitForSync(sync_objs_bps[buf_idx], 50, "BPS sync");
   }
+
   return success;
 }
 
