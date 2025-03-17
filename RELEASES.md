@@ -1,6 +1,10 @@
-Version 0.9.9 (2025-04-XX)
+Version 0.9.9 (2025-04-30)
 ========================
+* New driving model
 * Tesla Model 3 and Y support thanks to lukasloetkolben!
+* Coming soon
+  * New driving model supervised by MLSIM
+  * An online learner for steering actuator delay
 
 Version 0.9.8 (2025-02-28)
 ========================
