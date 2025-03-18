@@ -101,8 +101,7 @@ jobs:
               DIFF="${DIFF}<table>"
 
               DIFF="${DIFF}<tr>"
-              DIFF="${DIFF}  <td> master <img src=\"https://dummyimage.com/1986x993/000000/ffffff?text=++Not+in+master\"> </td>"
-              DIFF="${DIFF}  <td> proposed <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
+              DIFF="${DIFF}  <td> <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
               DIFF="${DIFF}</tr>"
 
               DIFF="${DIFF}</table>"
