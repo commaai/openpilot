@@ -17,10 +17,10 @@ class TestLatControl:
 
   @parameterized.expand([(HONDA.HONDA_CIVIC, LatControlPID), (TOYOTA.TOYOTA_RAV4, LatControlTorque),  (NISSAN.NISSAN_LEAF, LatControlAngle)])
   def test_saturation(self, car_name, controller):
-    CarInterface, CarController, CarState, RadarInterface = interfaces[car_name]
+    CarInterface = interfaces[car_name]
     CP = CarInterface.get_non_essential_params(car_name)
     CP_SP = CarInterface.get_non_essential_params_sp(CP, car_name)
-    CI = CarInterface(CP, CP_SP, CarController, CarState)
+    CI = CarInterface(CP, CP_SP)
     VM = VehicleModel(CP)
 
     controller = controller(CP.as_reader(), CI)

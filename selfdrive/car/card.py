@@ -16,7 +16,7 @@ from opendbc.car import DT_CTRL, structs
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from opendbc.car.carlog import carlog
 from opendbc.car.fw_versions import ObdCallback
-from opendbc.car.car_helpers import get_car, get_radar_interface
+from opendbc.car.car_helpers import get_car, interfaces
 from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
@@ -25,7 +25,7 @@ from openpilot.selfdrive.car.car_specific import MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControlSP, convert_to_capnp
 
 from openpilot.sunnypilot.mads.mads import MadsParams
-from openpilot.sunnypilot.selfdrive.car import interfaces
+from openpilot.sunnypilot.selfdrive.car import interfaces as sunnypilot_interfaces
 
 REPLAY = "REPLAY" in os.environ
 
@@ -108,8 +108,8 @@ class Car:
       fixed_fingerprint = json.loads(self.params.get("CarPlatformBundle", encoding='utf-8') or "{}").get("platform", None)
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params, fixed_fingerprint)
-      interfaces.setup_car_interface_sp(self.CI.CP, self.CI.CP_SP, self.params)
-      self.RI = get_radar_interface(self.CI.CP, self.CI.CP_SP)
+      sunnypilot_interfaces.setup_car_interface_sp(self.CI.CP, self.CI.CP_SP, self.params)
+      self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP, self.CI.CP_SP)
       self.CP = self.CI.CP
       self.CP_SP = self.CI.CP_SP
 
@@ -192,7 +192,7 @@ class Car:
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
     # log fingerprint in sentry
-    interfaces.log_fingerprint(self.CP)
+    sunnypilot_interfaces.log_fingerprint(self.CP)
 
   def state_update(self) -> tuple[car.CarState, structs.RadarDataT | None]:
     """carState update loop, driven by can"""
@@ -256,7 +256,7 @@ class Car:
 
     if RD is not None:
       tracks_msg = messaging.new_message('liveTracks')
-      tracks_msg.valid = len(RD.errors) == 0
+      tracks_msg.valid = not any(RD.errors.to_dict().values())
       tracks_msg.liveTracks = RD
       self.pm.send('liveTracks', tracks_msg)
 
@@ -274,7 +274,7 @@ class Car:
       # Initialize CarInterface, once controls are ready
       # TODO: this can make us miss at least a few cycles when doing an ECU knockout
       self.CI.init(self.CP, self.CP_SP, *self.can_callbacks)
-      interfaces.initialize_car_interface_sp(self.CP, self.CP_SP, self.params, *self.can_callbacks)
+      sunnypilot_interfaces.initialize_car_interface_sp(self.CP, self.CP_SP, self.params, *self.can_callbacks)
       # signal pandad to switch to car safety mode
       self.params.put_bool_nonblocking("ControlsReady", True)
 
