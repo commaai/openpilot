@@ -19,7 +19,8 @@ Options:
   -s, --start        Start from <seconds>
   -x, --playback     Playback <speed>
       --demo         Use a demo route instead of providing your own
-      --auto         auto load the route from the most appropriate available source
+      --auto         Auto load the route from the best available source (no video):
+                     internal, openpilotci, comma_api, car_segments, testing_closet
   -d, --data_dir     Local directory with routes
   -p, --prefix       Set OPENPILOT_PREFIX
       --dcam         Load driver camera
