@@ -51,8 +51,6 @@ def decompress_stream(data: bytes):
 class _LogFileReader:
   def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
-    self._only_union_types = only_union_types
-
     ext = None
     if not dat:
       _, ext = os.path.splitext(urllib.parse.urlparse(fn).path)
@@ -69,12 +67,9 @@ class _LogFileReader:
       # https://github.com/facebook/zstd/blob/dev/doc/zstd_compression_format.md#zstandard-frames
       dat = decompress_stream(dat)
 
-    ents = capnp_log.Event.read_multiple_bytes(dat)
-
-    self._ents = []
     try:
-      for e in ents:
-        self._ents.append(e)
+      ents = capnp_log.Event.read_multiple_bytes(dat)
+      self._ents = [e for e in ents if not only_union_types or hasattr(e, "which")]
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
@@ -82,15 +77,7 @@ class _LogFileReader:
       self._ents.sort(key=lambda x: x.logMonoTime)
 
   def __iter__(self) -> Iterator[capnp._DynamicStructReader]:
-    for ent in self._ents:
-      if self._only_union_types:
-        try:
-          ent.which()
-          yield ent
-        except capnp.lib.capnp.KjException:
-          pass
-      else:
-        yield ent
+    return iter(self._ents)
 
 
 class ReadMode(enum.StrEnum):
