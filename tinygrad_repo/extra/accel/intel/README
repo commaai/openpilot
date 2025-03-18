@@ -1,0 +1,2 @@
+source /opt/intel/oneapi/compiler/latest/env/vars.sh
+sycl-ls

@@ -1,0 +1,20 @@
+Built ROCT-Thunk-Interface (hsakmt)
+  hsakmt-roct-dev_5.4.4.99999-local_amd64.deb
+  note: installs to /opt/rocm
+Built ROCm-Device-Libs
+  Works with ROCM_PATH=/home/tiny/build/ROCm-Device-Libs/build/dist
+  rocm-device-libs_1.0.0.99999-local_amd64.deb
+Built ROCm-CompilerSupport (amd_comgr)
+  no deb, sudo make install to /usr/local
+Built ROCR-Runtime
+  hsa-rocr_1.8.0-local_amd64.deb
+  hsa-rocr-dev_1.8.0-local_amd64.deb
+Built ROCm-OpenCL-Runtime
+  rocm-ocl-icd_2.0.0-local_amd64.deb
+  ISSUE: these depend on "comgr"
+  rocm-opencl_2.0.0-local_amd64.deb
+  rocm-opencl-dev_2.0.0-local_amd64.deb
+  Did sudo make install
+
+
+

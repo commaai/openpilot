@@ -1,0 +1,23 @@
+Import('env', 'envCython', 'common', 'arch')
+
+envDBC = env.Clone()
+dbc_file_path = '-DDBC_FILE_PATH=\'"%s"\'' % (envDBC.Dir("../dbc").abspath)
+envDBC['CXXFLAGS'] += [dbc_file_path]
+src = ["dbc.cc", "parser.cc", "packer.cc", "common.cc"]
+
+# shared library for openpilot
+LINKFLAGS = envDBC["LINKFLAGS"]
+if arch == "Darwin":
+  LINKFLAGS += ["-Wl,-install_name,@loader_path/libdbc.dylib"]
+libdbc = envDBC.SharedLibrary('libdbc', src, LIBS=[common, ], LINKFLAGS=LINKFLAGS)
+
+# Build packer and parser
+lenv = envCython.Clone()
+lenv["LIBPATH"].append(Dir("."))
+lenv["RPATH"] = [libdbc[0].dir.abspath, ]
+parser = lenv.Program('parser_pyx.so', 'parser_pyx.pyx', LIBS=[common, libdbc[0].name])
+packer = lenv.Program('packer_pyx.so', 'packer_pyx.pyx', LIBS=[common, libdbc[0].name])
+
+opendbc_python = Alias("opendbc_python", [parser, packer])
+
+Export('opendbc_python')
