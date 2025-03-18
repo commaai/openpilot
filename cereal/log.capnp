@@ -156,6 +156,8 @@ struct InitData {
   gitSrcCommit @23 :Text;
   gitSrcCommitDate @24 :Text;
 
+  logVersion @25 : Int32;
+
   androidProperties @16 :Map(Text, Text);
 
   pandaInfo @8 :PandaInfo;

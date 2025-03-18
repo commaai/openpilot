@@ -20,6 +20,7 @@ kj::Array<capnp::word> logger_build_init_data() {
 
   init.setWallTimeNanos(wall_time);
   init.setVersion(COMMA_VERSION);
+  init.setLogVersion(cereal::LOG_VERSION);
   init.setDirty(!getenv("CLEAN"));
   init.setDeviceType(Hardware::get_device_type());
 
