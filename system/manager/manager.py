@@ -46,7 +46,7 @@ def manager_init() -> None:
     ("DynamicExperimentalControl", "0"),
     ("Mads", "1"),
     ("MadsMainCruiseAllowed", "1"),
-    ("MadsSteeringMode", "1"),
+    ("MadsPauseLateralOnBrake", "0"),
     ("MadsUnifiedEngagementMode", "1"),
     ("ModelManager_LastSyncTime", "0"),
     ("ModelManager_ModelsCache", "")
