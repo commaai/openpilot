@@ -98,14 +98,13 @@ class UploadItem:
   def __lt__(self, other):
     if not isinstance(other, UploadItem):
       return NotImplemented
-
     return self.priority < other.priority
 
   def __eq__(self, other):
     if not isinstance(other, UploadItem):
       return NotImplemented
-
     return self.priority == other.priority
+
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
