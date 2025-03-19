@@ -76,7 +76,7 @@ class TestAthenadMethods:
       self.params.put(k, v)
     self.params.put_bool("GsmMetered", True)
 
-    athenad.upload_queue.queue.clear()
+    athenad.upload_queue = queue.PriorityQueue()
     athenad.cur_upload_items.clear()
     athenad.cancelled_uploads.clear()
 
@@ -321,7 +321,7 @@ class TestAthenadMethods:
     assert len(items) == 1
     assert items[0]['current']
 
-  def test_list_upload_queue_priority(self, host: str):
+  def test_list_upload_queue_priority(self):
     priorities = (25, 50, 99, 75, 0)
 
     for i in priorities:
@@ -329,7 +329,7 @@ class TestAthenadMethods:
       fp = self._create_file(fn)
       item = athenad.UploadItem(
         path=fp,
-        url=f"{host}/{fn}",
+        url=f"http://localhost:44444/{fn}",
         headers={},
         created_at=int(time.time()*1000),
         id='',

@@ -53,7 +53,7 @@ MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
-DEFAULT_UPLOAD_PRIORITY = 99 # lower number = higher priority. default will be 99
+DEFAULT_UPLOAD_PRIORITY = 99 # higher number = lower priority
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -95,7 +95,7 @@ class UploadItem:
     return cls(d["path"], d["url"], d["headers"], d["created_at"], d["id"], d["retry_count"], d["current"],
                d["progress"], d["allow_cellular"], d["priority"])
 
-  def __lt__(self, other: UploadItem):
+  def __lt__(self, other):
     return self.priority < other.priority
 
   def __eq__(self, other):
@@ -103,7 +103,6 @@ class UploadItem:
       return NotImplemented
 
     return self.priority == other.priority
-
 
 dispatcher["echo"] = lambda s: s
 recv_queue: Queue[str] = queue.Queue()
@@ -411,7 +410,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       created_at=int(time.time() * 1000),
       id=None,
       allow_cellular=file.allow_cellular,
-      priority=file.priority
+      priority=file.priority,
     )
     upload_id = hashlib.sha1(str(item).encode()).hexdigest()
     item = replace(item, id=upload_id)
