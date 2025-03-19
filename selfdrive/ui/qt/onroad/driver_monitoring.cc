@@ -20,11 +20,13 @@ static const QColor DMON_ENGAGED_COLOR = QColor::fromRgbF(0.1, 0.945, 0.26);
 static const QColor DMON_DISENGAGED_COLOR = QColor::fromRgbF(0.545, 0.545, 0.545);
 
 DriverMonitorRenderer::DriverMonitorRenderer(QWidget *parent) : QWidget(parent), face_kpts_draw(std::size(DEFAULT_FACE_KPTS_3D)) {
-  setFixedSize(btn_size, btn_size);
-
-  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
-  connect(uiState(), &UIState::uiUpdate, this, &DriverMonitorRenderer::updateState);
+  int bufferSpace = 5;
   setAttribute(Qt::WA_OpaquePaintEvent);
+  setAttribute(Qt::WA_TranslucentBackground);
+  setFixedSize(btn_size + bufferSpace, btn_size + bufferSpace);
+
+  dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + bufferSpace, img_size + bufferSpace});
+  connect(uiState(), &UIState::uiUpdate, this, &DriverMonitorRenderer::updateState);
 }
 
 void DriverMonitorRenderer::updateState(const UIState &s) {
