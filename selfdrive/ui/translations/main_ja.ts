@@ -337,7 +337,9 @@ Firehoseモードを有効にすると、学習データを最大限アップロ
     </message>
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
-        <translation>あなたの運転の&lt;b&gt;%nセグメント&lt;/b&gt;がこれまでのトレーニングデータに含まれています。</translation>
+        <translation>
+            <numerusform>あなたの運転の&lt;b&gt;%nセグメント&lt;/b&gt;がこれまでのトレーニングデータに含まれています。</numerusform>
+        </translation>
     </message>
 </context>
 <context>
