@@ -6,6 +6,10 @@
 #include "selfdrive/ui/qt/util.h"
 
 DriverViewWindow::DriverViewWindow(QWidget* parent) : CameraWidget("camerad", VISION_STREAM_DRIVER, parent) {
+  driver_monitor = new DriverMonitorRenderer(this);
+  int x = rect().width();
+  int y = rect().bottom() - rect().height();
+  driver_monitor->move(x, y);
   QObject::connect(this, &CameraWidget::clicked, this, &DriverViewWindow::done);
   QObject::connect(device(), &Device::interactiveTimeout, this, [this]() {
     if (isVisible()) {
@@ -18,12 +22,14 @@ void DriverViewWindow::showEvent(QShowEvent* event) {
   params.putBool("IsDriverViewEnabled", true);
   device()->resetInteractiveTimeout(60);
   CameraWidget::showEvent(event);
+  driver_monitor->setVisible(true);
 }
 
 void DriverViewWindow::hideEvent(QHideEvent* event) {
   params.putBool("IsDriverViewEnabled", false);
   stopVipcThread();
   CameraWidget::hideEvent(event);
+  driver_monitor->setVisible(false);
 }
 
 void DriverViewWindow::paintGL() {
@@ -65,8 +71,7 @@ void DriverViewWindow::paintGL() {
     p.drawRoundedRect(fbox_x - box_size / 2, fbox_y - box_size / 2, box_size, box_size, 35.0, 35.0);
   }
 
-  driver_monitor.updateState(*uiState());
-  driver_monitor.draw(p, rect());
+  driver_monitor->render(&p);
 }
 
 mat4 DriverViewWindow::calcFrameMatrix() {

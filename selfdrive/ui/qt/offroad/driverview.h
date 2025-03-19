@@ -19,5 +19,6 @@ protected:
   void paintGL() override;
 
   Params params;
-  DriverMonitorRenderer driver_monitor;
+private:
+  DriverMonitorRenderer *driver_monitor;
 };
