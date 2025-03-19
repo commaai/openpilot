@@ -96,6 +96,9 @@ class UploadItem:
                d["progress"], d["allow_cellular"], d["priority"])
 
   def __lt__(self, other):
+    if not isinstance(other, UploadItem):
+      return NotImplemented
+
     return self.priority < other.priority
 
   def __eq__(self, other):
