@@ -24,7 +24,7 @@ from openpilot.selfdrive.car.cruise import VCruiseHelper
 from openpilot.selfdrive.car.car_specific import MockCarState
 from openpilot.selfdrive.car.helpers import convert_carControlSP, convert_to_capnp
 
-from openpilot.sunnypilot.mads.mads import MadsParams
+from openpilot.sunnypilot.mads.helpers import set_alternative_experience, set_car_specific_params
 from openpilot.sunnypilot.selfdrive.car import interfaces as sunnypilot_interfaces
 
 REPLAY = "REPLAY" in os.environ
@@ -126,8 +126,8 @@ class Car:
       self.CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
 
     # mads
-    MadsParams().set_alternative_experience(self.CP)
-    MadsParams().set_car_specific_params(self.CP, self.CP_SP)
+    set_alternative_experience(self.CP, self.params)
+    set_car_specific_params(self.CP, self.CP_SP, self.params)
 
     # Dynamic Experimental Control
     self.dynamic_experimental_control = self.params.get_bool("DynamicExperimentalControl")
