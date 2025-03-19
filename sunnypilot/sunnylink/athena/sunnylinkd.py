@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import gzip
 import os
+import ssl
 import threading
 import time
 
@@ -29,7 +30,8 @@ SUNNYLINK_RECONNECT_TIMEOUT_S = 70  # FYI changing this will also would require 
 DISALLOW_LOG_UPLOAD = threading.Event()
 
 params = Params()
-sunnylink_api = SunnylinkApi(params.get("SunnylinkDongleId", encoding='utf-8'))
+sunnylink_dongle_id = params.get("SunnylinkDongleId", encoding='utf-8')
+sunnylink_api = SunnylinkApi(sunnylink_dongle_id)
 
 
 def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
@@ -211,7 +213,7 @@ def main(exit_event: threading.Event = None):
 
   UploadQueueCache.initialize(upload_queue)
 
-  ws_uri = SUNNYLINK_ATHENA_HOST
+  ws_uri = f"{SUNNYLINK_ATHENA_HOST}"
   conn_start = None
   conn_retries = 0
   while (exit_event is None or not exit_event.is_set()) and sunnylink_ready(params):
@@ -222,8 +224,9 @@ def main(exit_event: threading.Event = None):
       cloudlog.event("sunnylinkd.main.connecting_ws", ws_uri=ws_uri, retries=conn_retries)
       ws = create_connection(
         ws_uri,
-        cookie=f"jwt={sunnylink_api.get_token()}",
+        header={"Authorization": f"Bearer {sunnylink_api.get_token()}"},
         enable_multithread=True,
+        sslopt={"cert_reqs": ssl.CERT_NONE if "localhost" in ws_uri else ssl.CERT_REQUIRED},
         timeout=SUNNYLINK_RECONNECT_TIMEOUT_S,
       )
       cloudlog.event("sunnylinkd.main.connected_ws", ws_uri=ws_uri, retries=conn_retries,
