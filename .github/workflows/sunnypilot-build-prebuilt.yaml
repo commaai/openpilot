@@ -21,8 +21,6 @@ on:
   push:
     branches: [ master, master-new, master-dev-c3-new ]
     tags: [ '*' ]
-  pull_request:
-    branches: [ master, master-new ]
   workflow_dispatch:
     inputs:
       extra_version:
