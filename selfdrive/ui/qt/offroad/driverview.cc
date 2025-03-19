@@ -52,9 +52,9 @@ void DriverViewWindow::paintGL() {
 
   const auto &sm = *(uiState()->sm);
   cereal::DriverStateV2::Reader driver_state = sm["driverStateV2"].getDriverStateV2();
-  bool current_is_rhd = driver_state.getWheelOnRightProb() > 0.5;
-  if (is_rhd != current_is_rhd) {
-    is_rhd = current_is_rhd;
+  bool new_is_rhd = driver_state.getWheelOnRightProb() > 0.5;
+  if (is_rhd != new_is_rhd) {
+    is_rhd = new_is_rhd;
     main_layout->removeWidget(driver_monitor);
     main_layout->addWidget(driver_monitor, 0, Qt::AlignBottom | (is_rhd ? Qt::AlignRight : Qt::AlignLeft));
   }
