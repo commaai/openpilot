@@ -19,9 +19,8 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *par
   dmon = new DriverMonitorRenderer(this);
 
   experimental_btn = new ExperimentalButton(this);
-  auto direction = is_rhd ? Qt::AlignRight : Qt::AlignLeft;
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
-  main_layout->addWidget(dmon, 0, Qt::AlignBottom | direction);
+  main_layout->addWidget(dmon, 0, Qt::AlignBottom | Qt::AlignLeft);
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
