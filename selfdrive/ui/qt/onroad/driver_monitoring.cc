@@ -24,6 +24,7 @@ DriverMonitorRenderer::DriverMonitorRenderer(QWidget *parent) : QWidget(parent),
 
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
   connect(uiState(), &UIState::uiUpdate, this, &DriverMonitorRenderer::updateState);
+  setAttribute(Qt::WA_OpaquePaintEvent);
 }
 
 void DriverMonitorRenderer::updateState(const UIState &s) {

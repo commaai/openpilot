@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QVBoxLayout>
+
 #include "selfdrive/ui/qt/widgets/cameraview.h"
 #include "selfdrive/ui/qt/onroad/driver_monitoring.h"
 
@@ -20,5 +22,7 @@ protected:
 
   Params params;
 private:
+  QVBoxLayout *main_layout;
   DriverMonitorRenderer *driver_monitor;
+  bool is_rhd = false;
 };
