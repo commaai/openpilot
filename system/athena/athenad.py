@@ -53,7 +53,7 @@ MAX_RETRY_COUNT = 30  # Try for at most 5 minutes if upload fails immediately
 MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
-DEFAULT_UPLOAD_PRIORITY = 99 # higher number = lower priority
+DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
 
 NetworkType = log.DeviceState.NetworkType
 
