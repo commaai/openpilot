@@ -19,7 +19,6 @@
 #include "system/camerad/cameras/ife.h"
 #include "system/camerad/cameras/spectra.h"
 #include "system/camerad/cameras/bps_blobs.h"
-#include "third_party/linux/include/msm_media_info.h"
 
 
 // ************** low level camera helpers ****************
