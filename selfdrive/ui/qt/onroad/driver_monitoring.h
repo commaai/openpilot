@@ -2,15 +2,22 @@
 
 #include <vector>
 #include <QPainter>
+#include <QWidget>
+
 #include "selfdrive/ui/ui.h"
 
-class DriverMonitorRenderer {
+class DriverMonitorRenderer : public QWidget {
+  Q_OBJECT
+
 public:
-  DriverMonitorRenderer();
+  explicit DriverMonitorRenderer(QWidget *parent = nullptr);
   void updateState(const UIState &s);
-  void draw(QPainter &painter, const QRect &surface_rect);
+
+protected:
+  void paintEvent(QPaintEvent*) override;
 
 private:
+  void draw(QPainter &painter, const QRect &surface_rect);
   float driver_pose_vals[3] = {};
   float driver_pose_diff[3] = {};
   float driver_pose_sins[3] = {};

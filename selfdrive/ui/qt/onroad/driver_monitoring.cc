@@ -1,8 +1,7 @@
-#include "selfdrive/ui/qt/onroad/driver_monitoring.h"
-#include <algorithm>
 #include <cmath>
 
 #include "selfdrive/ui/qt/onroad/buttons.h"
+#include "selfdrive/ui/qt/onroad/driver_monitoring.h"
 #include "selfdrive/ui/qt/util.h"
 
 // Default 3D coordinates for face keypoints
@@ -20,14 +19,18 @@ static constexpr vec3 DEFAULT_FACE_KPTS_3D[] = {
 static const QColor DMON_ENGAGED_COLOR = QColor::fromRgbF(0.1, 0.945, 0.26);
 static const QColor DMON_DISENGAGED_COLOR = QColor::fromRgbF(0.545, 0.545, 0.545);
 
-DriverMonitorRenderer::DriverMonitorRenderer() : face_kpts_draw(std::size(DEFAULT_FACE_KPTS_3D)) {
+DriverMonitorRenderer::DriverMonitorRenderer(QWidget *parent) : QWidget(parent), face_kpts_draw(std::size(DEFAULT_FACE_KPTS_3D)) {
+  setFixedSize(btn_size, btn_size);
+
   dm_img = loadPixmap("../assets/img_driver_face.png", {img_size + 5, img_size + 5});
+  connect(uiState(), &UIState::uiUpdate, this, &DriverMonitorRenderer::updateState);
 }
 
 void DriverMonitorRenderer::updateState(const UIState &s) {
   auto &sm = *(s.sm);
   is_visible = sm["selfdriveState"].getSelfdriveState().getAlertSize() == cereal::SelfdriveState::AlertSize::NONE &&
                sm.rcv_frame("driverStateV2") > s.scene.started_frame;
+  QWidget::setVisible(is_visible);
   if (!is_visible) return;
 
   auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
@@ -61,19 +64,18 @@ void DriverMonitorRenderer::updateState(const UIState &s) {
     vec3 kpt = matvecmul3(r_xyz, DEFAULT_FACE_KPTS_3D[i]);
     face_kpts_draw[i] = {{kpt.v[0], kpt.v[1], kpt.v[2] * (1.0f - dm_fade_state) + 8 * dm_fade_state}};
   }
+
+  update();
 }
 
-void DriverMonitorRenderer::draw(QPainter &painter, const QRect &surface_rect) {
-  if (!is_visible) return;
+void DriverMonitorRenderer::paintEvent(QPaintEvent *paintEvent) {
+  QPainter painter(this);
 
-  painter.save();
-
-  int offset = UI_BORDER_SIZE + btn_size / 2;
-  float x = is_rhd ? surface_rect.width() - offset : offset;
-  float y = surface_rect.height() - offset;
+  float x = (float) rect().center().x();
+  float y = (float) rect().center().y();
   float opacity = is_active ? 0.65f : 0.2f;
 
-  drawIcon(painter, QPoint(x, y), dm_img, QColor(0, 0, 0, 70), opacity);
+  drawIcon(painter, QPoint(rect().center().x(), rect().center().y()), dm_img, QColor(0, 0, 0, 70), opacity);
 
   QPointF keypoints[std::size(DEFAULT_FACE_KPTS_3D)];
   for (int i = 0; i < std::size(keypoints); ++i) {
@@ -102,6 +104,4 @@ void DriverMonitorRenderer::draw(QPainter &painter, const QRect &surface_rect) {
   // Draw vertical tracking arc
   painter.setPen(QPen(arc_color, arc_t_default + arc_t_extend * std::min(1.0, driver_pose_diff[0] * 5.0), Qt::SolidLine, Qt::RoundCap));
   painter.drawArc(QRectF(x - arc_l / 2, std::min(y + delta_y, y), arc_l, std::abs(delta_y)), (driver_pose_sins[0] > 0 ? 0 : 180) * 16, 180 * 16);
-
-  painter.restore();
 }

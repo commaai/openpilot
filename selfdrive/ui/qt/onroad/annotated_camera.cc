@@ -16,15 +16,26 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *par
   main_layout = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
   main_layout->setSpacing(0);
+  dmon = new DriverMonitorRenderer(this);
 
   experimental_btn = new ExperimentalButton(this);
+  auto direction = is_rhd ? Qt::AlignRight : Qt::AlignLeft;
   main_layout->addWidget(experimental_btn, 0, Qt::AlignTop | Qt::AlignRight);
+  main_layout->addWidget(dmon, 0, Qt::AlignBottom | direction);
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
-  dmon.updateState(s);
+  auto &sm = *(s.sm);
+  auto dm_state = sm["driverMonitoringState"].getDriverMonitoringState();
+  auto new_is_rhd = dm_state.getIsRHD();
+  if (new_is_rhd != is_rhd) {
+    auto direction = new_is_rhd ? Qt::AlignRight : Qt::AlignLeft;
+    main_layout->removeWidget(dmon);
+    main_layout->addWidget(dmon, 0, Qt::AlignBottom | direction);
+    is_rhd = new_is_rhd;
+  }
 }
 
 void AnnotatedCameraWidget::initializeGL() {
@@ -130,7 +141,6 @@ void AnnotatedCameraWidget::paintGL() {
   painter.setPen(Qt::NoPen);
 
   model.draw(painter, rect());
-  dmon.draw(painter, rect());
   hud.updateState(*s);
   hud.draw(painter, rect());
 

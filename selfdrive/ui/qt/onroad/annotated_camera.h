@@ -18,13 +18,14 @@ public:
 private:
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
-  DriverMonitorRenderer dmon;
+  DriverMonitorRenderer *dmon;
   HudRenderer hud;
   ModelRenderer model;
   std::unique_ptr<PubMaster> pm;
 
   int skip_frame_count = 0;
   bool wide_cam_requested = false;
+  bool is_rhd = false;
 
 protected:
   void paintGL() override;
