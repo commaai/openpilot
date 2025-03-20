@@ -26,14 +26,16 @@ def build(dirty: bool = False, minimal: bool = False) -> None:
   nproc = os.cpu_count() or 2
 
   extra_args = ["--minimal"] if minimal else []
+  CI = os.getenv("CI") is not None
   if AGNOS:
     HARDWARE.set_power_save(False)
     os.sched_setaffinity(0, range(8))  # ensure we can use the isolcpus cores
 
   # building with all cores can result in using too
   # much memory, so retry with less parallelism
-  gui_app.init_window("Spinner")
-  spinner = Spinner()
+  if not CI:
+    gui_app.init_window("Spinner")
+    spinner = Spinner()
   compile_output: list[bytes] = []
   for n in (nproc, nproc/2, 1):
     compile_output.clear()
@@ -42,13 +44,15 @@ def build(dirty: bool = False, minimal: bool = False) -> None:
     os.set_blocking(scons.stderr.fileno(), False)  # Non-blocking reads
 
     # Read progress from stderr and update spinner
-    spinner.set_text("0")
+    if not CI:
+      spinner.set_text("0")
     while scons.poll() is None:
       try:
-        rl.begin_drawing()
-        rl.clear_background(rl.BLACK)
-        spinner.render()
-        rl.end_drawing()
+        if not CI:
+          rl.begin_drawing()
+          rl.clear_background(rl.BLACK)
+          spinner.render()
+          rl.end_drawing()
 
         if scons.stderr in select.select([scons.stderr], [], [], 0.02)[0]:
           line = scons.stderr.readline()
@@ -57,8 +61,9 @@ def build(dirty: bool = False, minimal: bool = False) -> None:
         line = line.rstrip()
         prefix = b'progress: '
         if line.startswith(prefix):
-          i = int(line[len(prefix):])
-          spinner.set_text(str(int(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES))))
+          if not CI:
+            i = int(line[len(prefix):])
+            spinner.set_text(str(int(MAX_BUILD_PROGRESS * min(1., i / TOTAL_SCONS_NODES))))
         elif len(line):
           compile_output.append(line)
           print(line.decode('utf8', 'replace'))
@@ -79,7 +84,7 @@ def build(dirty: bool = False, minimal: bool = False) -> None:
     cloudlog.error("scons build failed\n" + error_s)
 
     # Show TextWindow
-    if not os.getenv("CI"):
+    if not CI:
       text_window = TextWindow("openpilot failed to build\n \n" + error_s)
       while True:
         rl.begin_drawing()
