@@ -5,7 +5,7 @@
  * See the LICENSE.md file in the root directory for more details.
  */
 
-#include "selfdrive/ui/sunnypilot/qt/offroad/settings/sunnypilot/mads_settings.h"
+#include "selfdrive/ui/sunnypilot/qt/offroad/settings/lateral/mads_settings.h"
 
 #include "selfdrive/ui/sunnypilot/qt/widgets/scrollview.h"
 
