@@ -7,8 +7,8 @@ STEER_ANGLE_SATURATION_THRESHOLD = 2.5  # Degrees
 
 
 class LatControlAngle(LatControl):
-  def __init__(self, CP, CI):
-    super().__init__(CP, CI)
+  def __init__(self, CP, CP_SP, CI):
+    super().__init__(CP, CP_SP, CI)
     self.sat_check_min_speed = 5.
 
   def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose, curvature_limited):

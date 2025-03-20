@@ -42,7 +42,7 @@ class TestCarInterfaces:
     car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
                                          experimental_long=args['experimental_long'], docs=False)
     car_params_sp = CarInterface.get_params_sp(car_params, car_name, args['fingerprints'], args['car_fw'],
-                                                           experimental_long=args['experimental_long'], docs=False)
+                                               experimental_long=args['experimental_long'], docs=False)
     car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, car_params_sp)
     assert car_params
@@ -100,8 +100,8 @@ class TestCarInterfaces:
     #  hypothesis also slows down significantly with just one more message draw
     LongControl(car_params)
     if car_params.steerControlType == CarParams.SteerControlType.angle:
-      LatControlAngle(car_params, car_interface)
+      LatControlAngle(car_params, car_params_sp, car_interface)
     elif car_params.lateralTuning.which() == 'pid':
-      LatControlPID(car_params, car_interface)
+      LatControlPID(car_params, car_params_sp, car_interface)
     elif car_params.lateralTuning.which() == 'torque':
-      LatControlTorque(car_params, car_interface)
+      LatControlTorque(car_params, car_params_sp, car_interface)

@@ -55,11 +55,11 @@ class Controls:
     self.VM = VehicleModel(self.CP)
     self.LaC: LatControl
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-      self.LaC = LatControlAngle(self.CP, self.CI)
+      self.LaC = LatControlAngle(self.CP, self.CP_SP, self.CI)
     elif self.CP.lateralTuning.which() == 'pid':
-      self.LaC = LatControlPID(self.CP, self.CI)
+      self.LaC = LatControlPID(self.CP, self.CP_SP, self.CI)
     elif self.CP.lateralTuning.which() == 'torque':
-      self.LaC = LatControlTorque(self.CP, self.CI)
+      self.LaC = LatControlTorque(self.CP, self.CP_SP, self.CI)
 
   def update(self):
     self.sm.update(15)
@@ -84,6 +84,8 @@ class Controls:
       if self.sm.all_checks(['liveTorqueParameters']) and torque_params.useParams:
         self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered,
                                            torque_params.frictionCoefficientFiltered)
+
+      self.LaC.extension.update_model_v2(self.sm['modelV2'])
 
     long_plan = self.sm['longitudinalPlan']
     model_v2 = self.sm['modelV2']
