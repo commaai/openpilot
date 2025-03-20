@@ -150,44 +150,44 @@
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve color="#d62728" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel"/>
-       <curve color="#1f77b4" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desired vs actual lateral acceleration (desired shifted by +0.1s)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
         <transform alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]" name="Scale/Offset">
          <options value_scale="1.0" time_offset="0.1" value_offset="0"/>
         </transform>
        </curve>
-       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desired vs actual lateral acceleration (desired shifted by +0.2s)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
         <transform alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]" name="Scale/Offset">
          <options value_scale="1.0" time_offset="0.2" value_offset="0"/>
         </transform>
        </curve>
-       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
      <DockArea name="desired vs actual lateral acceleration (desired shifted by +0.3s)">
       <plot flip_x="false" style="Lines" flip_y="false" mode="TimeSeries">
        <range top="3.586831" right="269.943117" left="0.134774" bottom="-2.354077"/>
        <limitY/>
-       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
+       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/desiredLateralAccel">
         <transform alias="/controlsState/lateralControlState/torqueState/desiredLateralAccel[Scale/Offset]" name="Scale/Offset">
          <options value_scale="1.0" time_offset="0.3" value_offset="0"/>
         </transform>
        </curve>
-       <curve color="#ff7f0e" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
+       <curve color="#1ac938" name="/controlsState/lateralControlState/torqueState/actualLateralAccel"/>
       </plot>
      </DockArea>
     </DockSplitter>
