@@ -42,21 +42,8 @@ LateralPanel::LateralPanel(SettingsWindowSP *parent) : QFrame(parent) {
   });
   list->addItem(madsSettingsButton);
 
-  nnlcToggle = new NeuralNetworkLateralControl();
-  list->addItem(nnlcToggle);
-
-  QObject::connect(nnlcToggle, &ParamControl::toggleFlipped, [=](bool state) {
-    if (state) {
-      nnlcToggle->showDescription();
-    } else {
-      nnlcToggle->hideDescription();
-    }
-
-    nnlcToggle->updateToggle();
-  });
-
   toggleOffroadOnly = {
-    madsToggle, nnlcToggle,
+    madsToggle,
   };
   QObject::connect(uiState(), &UIState::offroadTransition, this, &LateralPanel::updateToggles);
 

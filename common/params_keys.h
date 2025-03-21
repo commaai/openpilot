@@ -141,9 +141,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"ModelManager_LastSyncTime", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"ModelManager_ModelsCache", PERSISTENT | BACKUP},
 
-    // Neural Network Lateral Control
-    {"NeuralNetworkLateralControl", PERSISTENT | BACKUP},
-
     // sunnylink params
     {"EnableSunnylinkUploader", PERSISTENT | BACKUP},
     {"LastSunnylinkPingTime", CLEAR_ON_MANAGER_START},
