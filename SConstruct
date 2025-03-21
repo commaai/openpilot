@@ -307,6 +307,7 @@ qt_flags = [
 qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
+Export('qt_libs')
 
 if GetOption("clazy"):
   checks = [

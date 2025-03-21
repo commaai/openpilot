@@ -9,6 +9,9 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
 
+signals:
+  void drewOnroadFrame(QImage *frame);
+
 private:
   void paintEvent(QPaintEvent *event);
   OnroadAlerts *alerts;

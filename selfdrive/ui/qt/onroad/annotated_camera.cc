@@ -131,7 +131,7 @@ void AnnotatedCameraWidget::paintGL() {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
-  model.draw(painter, rect());
+  // model.draw(painter, rect());
   dmon.draw(painter, rect());
   hud.updateState(*s);
   hud.draw(painter, rect());

@@ -44,6 +44,8 @@ void OnroadWindow::updateState(const UIState &s) {
     return;
   }
 
+  emit drewOnroadFrame(new QImage(grab().toImage()));
+
   alerts->updateState(s);
   nvg->updateState(s);
 

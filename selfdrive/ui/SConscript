@@ -24,15 +24,17 @@ widgets_src = ["qt/widgets/input.cc", "qt/widgets/wifi.cc", "qt/prime_state.cc",
 
 widgets = qt_env.Library("qt_widgets", widgets_src, LIBS=base_libs)
 Export('widgets')
-qt_libs = [widgets, qt_util] + base_libs
+ui_libs = qt_util + widgets + base_libs
 
-qt_src = ["main.cc", "ui.cc", "qt/sidebar.cc", "qt/body.cc",
-          "qt/recorder/recorder.cc",
+qt_src = ["ui.cc", "qt/sidebar.cc", "qt/body.cc",
           "qt/window.cc", "qt/home.cc", "qt/offroad/settings.cc",
           "qt/offroad/software_settings.cc", "qt/offroad/developer_panel.cc", "qt/offroad/onboarding.cc",
           "qt/offroad/driverview.cc", "qt/offroad/experimental_mode.cc", "qt/offroad/firehose.cc",
           "qt/onroad/onroad_home.cc", "qt/onroad/annotated_camera.cc", "qt/onroad/model.cc",
           "qt/onroad/buttons.cc", "qt/onroad/alerts.cc", "qt/onroad/driver_monitoring.cc", "qt/onroad/hud.cc"]
+qt_ui = qt_env.Library("qt_ui", qt_src, LIBS=ui_libs)
+Export('qt_ui')
+Export('ui_libs')
 
 # build translation files
 with open(File("translations/languages.json").abspath) as f:
@@ -59,25 +61,26 @@ qt_env.Command(assets, [assets_src, translations_assets_src], f"rcc $SOURCES -o 
 qt_env.Depends(assets, Glob('#selfdrive/assets/*', exclude=[assets, assets_src, translations_assets_src, "#selfdrive/assets/assets.o"]) + [lrelease])
 asset_obj = qt_env.Object("assets", assets)
 
-# build main UI
-qt_env.Program("ui", qt_src + [asset_obj], LIBS=qt_libs)
-if GetOption('extras'):
-  qt_src.remove("main.cc")  # replaced by test_runner
-  qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=qt_libs)
+Export('asset_obj')
 
-  qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
+# build main UI
+qt_env.Program("ui", ["main.cc", asset_obj] + qt_src, LIBS=ui_libs)
+if GetOption('extras'):
+  qt_env.Program('tests/test_translations', [asset_obj, 'tests/test_runner.cc', 'tests/test_translations.cc'] + qt_src, LIBS=ui_libs)
+
+  qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=ui_libs)
 
   # spinner and text window
-  qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
-  qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
+  qt_env.Program("_text", ["qt/text.cc"], LIBS=ui_libs)
+  qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=ui_libs)
 
   # setup and factory resetter
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=ui_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
-                 LIBS=qt_libs + ['curl', 'common'])
+                 LIBS=ui_libs + ['curl', 'common'])
 
   # build updater UI
-  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
+  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=ui_libs)
 
   if arch != "Darwin":
     # build installers
@@ -100,10 +103,10 @@ if GetOption('extras'):
         d['INTERNAL'] = "1"
 
       obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
+      f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=ui_libs)
       # keep installers small
       assert f[0].get_size() < 370*1e3
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])
+  qt_env.Program("watch3", ["watch3.cc"], LIBS=ui_libs + ['common', 'msgq', 'visionipc'])

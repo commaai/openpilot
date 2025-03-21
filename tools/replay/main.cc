@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "clip/application.h"
 #include "common/prefix.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
@@ -40,6 +41,7 @@ struct ReplayConfig {
   std::string prefix;
   uint32_t flags = REPLAY_FLAG_NONE;
   int start_seconds = 0;
+  int end_seconds = 0;
   int cache_segments = -1;
   float playback_speed = -1;
 };
@@ -50,6 +52,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"block", required_argument, nullptr, 'b'},
       {"cache", required_argument, nullptr, 'c'},
       {"start", required_argument, nullptr, 's'},
+      {"end", required_argument, nullptr, 'e'},
       {"playback", required_argument, nullptr, 'x'},
       {"demo", no_argument, nullptr, 0},
       {"data_dir", required_argument, nullptr, 'd'},
@@ -62,6 +65,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", no_argument, nullptr, 0},
       {"no-vipc", no_argument, nullptr, 0},
       {"all", no_argument, nullptr, 0},
+      {"clip", no_argument, nullptr, 0},
       {"help", no_argument, nullptr, 'h'},
       {nullptr, 0, nullptr, 0},  // Terminating entry
   };
@@ -75,6 +79,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       {"no-hw-decoder", REPLAY_FLAG_NO_HW_DECODER},
       {"no-vipc", REPLAY_FLAG_NO_VIPC},
       {"all", REPLAY_FLAG_ALL_SERVICES},
+      {"clip", REPLAY_FLAG_CLIP},
   };
 
   if (argc == 1) {
@@ -88,6 +93,7 @@ bool parseArgs(int argc, char *argv[], ReplayConfig &config) {
       case 'a': config.allow = split(optarg, ','); break;
       case 'b': config.block = split(optarg, ','); break;
       case 'c': config.cache_segments = std::atoi(optarg); break;
+      case 'e': config.end_seconds = std::atoi(optarg); break;
       case 's': config.start_seconds = std::atoi(optarg); break;
       case 'x': config.playback_speed = std::atof(optarg); break;
       case 'd': config.data_dir = optarg; break;
@@ -147,7 +153,14 @@ int main(int argc, char *argv[]) {
     return 1;
   }
 
-  ConsoleUI console_ui(&replay);
   replay.start(config.start_seconds);
-  return console_ui.exec();
+
+  if (replay.hasFlag(REPLAY_FLAG_CLIP)) {
+    Application a;
+    // kick off
+    return a.exec(argc, argv);
+  } else {
+    ConsoleUI console_ui(&replay);
+    return console_ui.exec();
+  }
 }

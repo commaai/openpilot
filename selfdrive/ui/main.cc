@@ -20,7 +20,6 @@
 #include "selfdrive/ui/qt/qt_window.h"
 #include "selfdrive/ui/qt/util.h"
 #include "selfdrive/ui/qt/window.h"
-#include "selfdrive/ui/qt/recorder/recorder.h"
 
 int main(int argc, char *argv[]) {
   setpriority(PRIO_PROCESS, 0, -20);
@@ -62,46 +61,6 @@ int main(int argc, char *argv[]) {
   w.resize(DEVICE_SCREEN_SIZE);
   setMainWindow(&w);
   a.installEventFilter(&w);
-
-  QSurfaceFormat format;
-  format.setRenderableType(QSurfaceFormat::OpenGLES);
-  format.setVersion(3, 0);
-  format.setProfile(QSurfaceFormat::CoreProfile);
-  QSurfaceFormat::setDefaultFormat(format);
-
-  QOffscreenSurface surface;
-  surface.create();
-  QOpenGLContext context;
-  context.create();
-  context.makeCurrent(&surface);
-
-  QScopedPointer<FFmpegEncoder> encoder(new FFmpegEncoder(outputFile, DEVICE_SCREEN_SIZE.width(), DEVICE_SCREEN_SIZE.height(), 30));
-  encoder->startRecording();
-
-  QScopedPointer<QTimer> captureTimer(new QTimer);
-  QObject::connect(captureTimer.data(), &QTimer::timeout, [&]() {
-    context.makeCurrent(&surface);
-
-    QCoreApplication::processEvents();
-
-    QImage image = w.grab().toImage();
-
-    if (image.isNull() || image.size() != DEVICE_SCREEN_SIZE) {
-      qWarning() << "Invalid image captured";
-      context.doneCurrent();
-      return;
-    }
-
-    image = image.convertToFormat(QImage::Format_ARGB32_Premultiplied);
-
-    if (!encoder->writeFrame(image)) {
-      qWarning() << "Failed to write frame";
-    }
-
-    context.doneCurrent();
-  });
-
-  captureTimer->start(1000/30);
 
   return a.exec();
 }
