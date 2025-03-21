@@ -36,6 +36,7 @@ qt_src = [
 
 lateral_panel_qt_src = [
   "sunnypilot/qt/offroad/settings/lateral/mads_settings.cc",
+  "sunnypilot/qt/offroad/settings/lateral/neural_network_lateral_control.cc",
 ]
 
 network_src = [

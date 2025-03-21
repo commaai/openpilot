@@ -4,10 +4,11 @@ Copyright (c) 2021-, Haibin Wen, sunnypilot, and a number of other contributors.
 This file is part of sunnypilot and is licensed under the MIT License.
 See the LICENSE.md file in the root directory for more details.
 """
-from openpilot.sunnypilot.selfdrive.controls.lib.latcontrol_torque_ext_base import LatControlTorqueExtBase
+
+from openpilot.sunnypilot.selfdrive.controls.lib.nnlc.nnlc import NeuralNetworkLateralControl
 
 
-class LatControlTorqueExt(LatControlTorqueExtBase):
+class LatControlTorqueExt(NeuralNetworkLateralControl):
   def __init__(self, lac_torque, CP, CP_SP):
     super().__init__(lac_torque, CP, CP_SP)
 
@@ -22,5 +23,6 @@ class LatControlTorqueExt(LatControlTorqueExtBase):
     self._actual_lateral_accel = actual_lateral_accel
 
     self.update_calculations(CS, VM, desired_lateral_accel)
+    self.update_neural_network_feedforward(CS, params, calibrated_pose)
 
     return self._ff, self._pid_log
