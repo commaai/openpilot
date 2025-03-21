@@ -274,7 +274,6 @@ class SelfdriveD:
         self.events.add(EventName.radarTempUnavailable)
       else:
         self.events.add(EventName.radarFault)
-      self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:
