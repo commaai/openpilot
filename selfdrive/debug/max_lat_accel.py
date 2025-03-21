@@ -83,7 +83,7 @@ if __name__ == '__main__':
   for route in tqdm(args.route):
     try:
       lr = LogReader(route, sort_by_time=True)
-    except:
+    except Exception:
       print(f'Skipping {route}')
       continue
 
