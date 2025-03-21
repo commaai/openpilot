@@ -21,6 +21,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
     {"retrainingBtn", tr("Training Guide")},
     {"regulatoryBtn", tr("Regulatory")},
     {"translateBtn", tr("Language")},
+    {"resetParams", tr("Reset Settings")},
   };
 
   int row = 0, col = 0;
@@ -63,6 +64,15 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
       params.put("LanguageSetting", langs[selection].toStdString());
       qApp->exit(18);
       watchdog_kick(0);
+    }
+  });
+
+  connect(buttons["resetParams"], &PushButtonSP::clicked, [=]() {
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset all sunnypilot settings to default ? This cannot be undone."), tr("Reset"), this)) {
+      int rm = std::system("sudo rm -rf /data/params/d/*");
+      if (rm == 0) {
+        Hardware::reboot();
+      }
     }
   });
 
