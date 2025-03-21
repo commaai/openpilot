@@ -93,8 +93,20 @@ jobs:
 
           for ((i=0; i<${#A[*]}; i=i+1));
           do
+            # Check if the master file exists
+            if [ ! -f "${{ github.workspace }}/master_ui/${A[$i]}.png" ]; then
+              # This is a new file in PR UI that doesn't exist in master
+              DIFF="${DIFF}<details open>"
+              DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
+              DIFF="${DIFF}<table>"
 
-            if ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+              DIFF="${DIFF}<tr>"
+              DIFF="${DIFF}  <td> <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}.png\"> </td>"
+              DIFF="${DIFF}</tr>"
+
+              DIFF="${DIFF}</table>"
+              DIFF="${DIFF}</details>"
+            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
               convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
               composite mask.png ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png
               convert -delay 100 ${{ github.workspace }}/master_ui/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
