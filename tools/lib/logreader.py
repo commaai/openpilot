@@ -119,11 +119,10 @@ def default_valid_file(fn: LogPath) -> bool:
 
 def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interactive: bool, valid_file: ValidFileCallable) -> list[LogPath]:
   # auto select logs based on availability
-
-  missing_rlogs = sum(1 for rlog in rlog_paths if rlog is None or not valid_file(rlog))
+  missing_rlogs = sum(rlog is None or not valid_file(rlog) for rlog in rlog_paths)
   # If all rlogs are missing, check qlogs
   if missing_rlogs == len(rlog_paths):
-    missing_qlogs = sum(1 for qlog in qlog_paths if qlog is None or not valid_file(qlog))
+    missing_qlogs = sum(qlog is None or not valid_file(qlog) for qlog in qlog_paths)
     if missing_qlogs == len(qlog_paths):
       # Neither rlogs nor qlogs are available, return rlog_paths as-is
       return rlog_paths
