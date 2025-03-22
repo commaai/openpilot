@@ -24,11 +24,11 @@ class SunnylinkApi(BaseApi):
     self.spinner = None
     self.params = Params()
 
-  def api_get(self, endpoint, method='GET', timeout=10, access_token=None, **kwargs):
+  def api_get(self, endpoint, method='GET', timeout=10, access_token=None, json=None, **kwargs):
     if not self.params.get_bool("SunnylinkEnabled"):
       return None
 
-    return super().api_get(endpoint, method, timeout, access_token, **kwargs)
+    return super().api_get(endpoint, method, timeout, access_token, json, **kwargs)
 
   def resume_queued(self, timeout=10, **kwargs):
     sunnylinkId, commaId = self._resolve_dongle_ids()

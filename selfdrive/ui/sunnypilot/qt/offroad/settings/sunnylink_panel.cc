@@ -7,8 +7,10 @@
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/sunnylink_panel.h"
 
+#include "common/watchdog.h"
 #include "selfdrive/ui/sunnypilot/qt/util.h"
 #include "selfdrive/ui/sunnypilot/qt/widgets/controls.h"
+#include <QtConcurrent>
 
 SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
   main_layout = new QStackedLayout(this);
@@ -75,7 +77,6 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
       description = "<font color='SeaGreen'>"+ tr("🎉Welcome back! We're excited to see you've enabled sunnylink again! 🚀")+ "</font>";
     } else {
       description = "<font color='orange'>"+ tr("👋Not going to lie, it's sad to see you disabled sunnylink 😢, but we'll be here when you're ready to come back 🎉.")+ "</font>";
-
     }
     sunnylinkEnabledBtn->showDescription();
     sunnylinkEnabledBtn->setDescription(description);
@@ -83,7 +84,38 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
     updatePanel();
   });
 
+  // Backup Settings
+  backupSettings = new PushButtonSP(tr("Backup Settings"), 730, this);
+  backupSettings->setObjectName("backup_btn");
+  connect(backupSettings, &QPushButton::clicked, [=]() {
+    backupSettings->setEnabled(false);
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to backup sunnypilot settings?"), tr("Back Up"), this)) {
+      params.putBool("BackupManager_CreateBackup", true);
+      backup_request_pending = true;
+    }
+  });
+
+  // Restore Settings
+  restoreSettings = new PushButtonSP(tr("Restore Settings"), 730, this);
+  restoreSettings->setObjectName("restore_btn");
+  connect(restoreSettings, &QPushButton::clicked, [=]() {
+    restoreSettings->setEnabled(false);
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to restore the last backed up sunnypilot settings?"), tr("Restore"), this)) {
+      params.put("BackupManager_RestoreVersion", "latest");
+      restore_request_pending = true;
+    }
+  });
+  // Settings Restore and Settings Backup in the same horizontal space
+  auto settings_layout = new QHBoxLayout;
+  settings_layout->setContentsMargins(0, 0, 0, 30);
+  settings_layout->addWidget(backupSettings);
+  settings_layout->addSpacing(10);
+  settings_layout->addWidget(restoreSettings);
+  settings_layout->setAlignment(Qt::AlignLeft);
+  list->addItem(settings_layout);
+
   QObject::connect(uiState(), &UIState::offroadTransition, this, &SunnylinkPanel::updatePanel);
+  QObject::connect(uiStateSP(), &UIStateSP::uiUpdate, this, &SunnylinkPanel::updatePanel);
 
   sunnylinkScroller = new ScrollViewSP(list, this);
   vlayout->addWidget(sunnylinkScroller);
@@ -92,6 +124,76 @@ SunnylinkPanel::SunnylinkPanel(QWidget *parent) : QFrame(parent) {
 
   if (is_sunnylink_enabled) {
     startSunnylink();
+  }
+}
+
+void SunnylinkPanel::updateBackupManagerState() {
+  const SubMaster &sm = *(uiStateSP()->sm);
+  backup_manager = sm["backupManagerSP"].getBackupManagerSP();
+}
+
+void SunnylinkPanel::handleBackupProgress() {
+  auto backup_status = backup_manager.getBackupStatus();
+  auto restore_status = backup_manager.getRestoreStatus();
+  auto backup_progress = backup_manager.getBackupProgress();
+  auto restore_progress = backup_manager.getRestoreProgress();
+
+  switch (backup_status) {
+    case cereal::BackupManagerSP::Status::IN_PROGRESS:
+      backup_request_pending = false;
+      backup_request_started = true;
+      backupSettings->setEnabled(false);
+      backupSettings->setText(QString(tr("Backup in progress %1%").arg(backup_progress)));
+    break;
+    case cereal::BackupManagerSP::Status::FAILED:
+      backup_request_pending = false;
+      backup_request_started = false;
+      backupSettings->setEnabled(!is_onroad);
+      backupSettings->setText(tr("Backup Failed"));
+    break;
+    case cereal::BackupManagerSP::Status::COMPLETED:
+      backup_request_pending = false;
+      break;
+    default:
+      if (!backup_request_pending && backup_request_started) {
+        backup_request_started = false;
+        ConfirmationDialog::alert(tr("Settings backup completed."), this);
+      } else {
+        backupSettings->setEnabled(!is_onroad && !backup_request_pending && is_sunnylink_enabled);
+      }
+      backupSettings->setText(tr("Backup Settings"));
+    break;
+  }
+
+  switch (restore_status) {
+    case cereal::BackupManagerSP::Status::IN_PROGRESS:
+      restore_request_pending = false;
+      restore_request_started = true;
+      restoreSettings->setEnabled(false);
+      restoreSettings->setText(QString(tr("Restore in progress %1%").arg(restore_progress)));
+      break;
+    case cereal::BackupManagerSP::Status::FAILED:
+      restore_request_pending = false;
+      restore_request_started = false;
+      restoreSettings->setEnabled(!is_onroad);
+      restoreSettings->setText(tr("Restore Failed"));
+      ConfirmationDialog::alert(tr("Unable to restore the settings, try again later."), this);
+      break;
+    case cereal::BackupManagerSP::Status::COMPLETED:
+      restore_request_pending = false;
+      break;
+    default:
+      if (!restore_request_pending && restore_request_started) {
+        restore_request_started = false;
+        if (ConfirmationDialog::alert(tr("Settings restored. Confirm to restart the interface."), this)) {
+          qApp->exit(18);
+          watchdog_kick(0);
+        }
+      } else {
+        restoreSettings->setEnabled(!is_onroad && !restore_request_pending && is_sunnylink_enabled);
+      }
+      restoreSettings->setText(tr("Restore Settings"));
+    break;
   }
 }
 
@@ -128,7 +230,7 @@ void SunnylinkPanel::stopSunnylink() const {
 void SunnylinkPanel::showEvent(QShowEvent *event) {
   updatePanel();
   if (is_sunnylink_enabled) {
-      startSunnylink();
+    startSunnylink();
   }
 }
 
@@ -137,6 +239,8 @@ void SunnylinkPanel::updatePanel() {
     return;
   }
 
+  updateBackupManagerState();
+  handleBackupProgress();
   const auto sunnylinkDongleId = getSunnylinkDongleId().value_or(tr("N/A"));
   sunnylinkEnabledBtn->setEnabled(!is_onroad);
 
@@ -152,12 +256,11 @@ void SunnylinkPanel::updatePanel() {
   sunnylinkEnabledBtn->setValue(tr("Device ID") + " " + sunnylinkDongleId);
 
   sponsorBtn->setEnabled(!is_onroad && is_sunnylink_enabled);
-  sponsorBtn->setText(is_sub ? tr("THANKS ♥")/* + " ♥️"*/ : tr("SPONSOR"));
+  sponsorBtn->setText(is_sub ? tr("THANKS ♥") : tr("SPONSOR"));
   sponsorBtn->setValue(is_sub ? tr(role_name.toStdString().c_str()) : tr("Not Sponsor"), role_color);
 
   pairSponsorBtn->setEnabled(!is_onroad && is_sunnylink_enabled);
   pairSponsorBtn->setValue(is_paired ? tr("Paired") : tr("Not Paired"));
-
 
   if (!is_sunnylink_enabled) {
     sunnylinkEnabledBtn->setValue("");

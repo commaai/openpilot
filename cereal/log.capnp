@@ -2582,7 +2582,7 @@ struct Event {
     onroadEventsSP @110 :List(Custom.OnroadEventSP);
     carParamsSP @111 :Custom.CarParamsSP;
     carControlSP @112 :Custom.CarControlSP;
-    customReserved6 @113 :Custom.CustomReserved6;
+    backupManagerSP @113 :Custom.BackupManagerSP;
     customReserved7 @114 :Custom.CustomReserved7;
     customReserved8 @115 :Custom.CustomReserved8;
     customReserved9 @116 :Custom.CustomReserved9;

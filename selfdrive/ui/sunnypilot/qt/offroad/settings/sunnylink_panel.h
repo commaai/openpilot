@@ -19,7 +19,9 @@ class SunnylinkPanel : public QFrame {
 public:
   explicit SunnylinkPanel(QWidget *parent = nullptr);
   void showEvent(QShowEvent *event) override;
-  void paramsRefresh(const QString&param_name, const QString&param_value);
+  void paramsRefresh(const QString &param_name, const QString &param_value);
+  void updateBackupManagerState();
+  void handleBackupProgress();
 
 public slots:
   void updatePanel();
@@ -31,17 +33,23 @@ private:
   ScrollViewSP *sunnylinkScroller = nullptr;
   SunnylinkSponsorPopup *status_popup;
   SunnylinkSponsorPopup *pair_popup;
-  ButtonControlSP* sponsorBtn;
-  ButtonControlSP* pairSponsorBtn;
-  SunnylinkClient* sunnylink_client;
+  ButtonControlSP *sponsorBtn;
+  ButtonControlSP *pairSponsorBtn;
+  SunnylinkClient *sunnylink_client;
+  cereal::BackupManagerSP::Reader backup_manager;
 
   ParamControl *sunnylinkEnabledBtn;
   bool is_onroad = false;
-  bool is_backup = false;
-  bool is_restore = false;
   bool is_sunnylink_enabled = false;
+  bool backup_request_pending = false;
+  bool backup_request_started = false;
+  bool restore_request_pending = false;
+  bool restore_request_started = false;
   ParamWatcher *param_watcher;
   QString sunnylinkBtnDescription;
+  PushButtonSP *restoreSettings;
+  PushButtonSP *backupSettings;
+
   void stopSunnylink() const;
   void startSunnylink() const;
 };

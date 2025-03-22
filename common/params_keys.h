@@ -153,6 +153,10 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"SunnylinkdPid", PERSISTENT},
     {"SunnylinkEnabled", PERSISTENT},
 
+    // Backup Manager params
+    {"BackupManager_CreateBackup", PERSISTENT},
+    {"BackupManager_RestoreVersion", PERSISTENT},
+
     // sunnypilot car specific params
     {"HyundaiRadarTracks", PERSISTENT},
     {"HyundaiRadarTracksConfirmed", PERSISTENT},

@@ -156,7 +156,46 @@ struct CarControlSP @0xa5cd762cd951a455 {
   mads @0 :ModularAssistiveDrivingSystem;
 }
 
-struct CustomReserved6 @0xf98d843bfd7004a3 {
+struct BackupManagerSP @0xf98d843bfd7004a3 {
+  backupStatus @0 :Status;
+  restoreStatus @1 :Status;
+  backupProgress @2 :Float32;
+  restoreProgress @3 :Float32;
+  lastError @4 :Text;
+  currentBackup @5 :BackupInfo;
+  backupHistory @6 :List(BackupInfo);
+  
+  enum Status {
+    idle @0;
+    inProgress @1;
+    completed @2;
+    failed @3;
+  }
+  
+  struct Version {
+    major @0 :UInt16;
+    minor @1 :UInt16;
+    patch @2 :UInt16;
+    build @3 :UInt16;
+    branch @4 :Text;
+  }
+  
+  struct MetadataEntry {
+    key @0 :Text;
+    value @1 :Text;
+    tags @2 :List(Text);
+  }
+  
+  struct BackupInfo {
+    deviceId @0 :Text;
+    version @1 :UInt32;
+    config @2 :Text;
+    isEncrypted @3 :Bool;
+    createdAt @4 :Text;  # ISO timestamp
+    updatedAt @5 :Text;  # ISO timestamp
+    sunnypilotVersion @6 :Version;
+    backupMetadata @7 :List(MetadataEntry);
+  }
 }
 
 struct CustomReserved7 @0xb86e6369214c01c8 {

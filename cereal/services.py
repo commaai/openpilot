@@ -76,6 +76,7 @@ _services: dict[str, tuple] = {
 
   # sunnypilot
   "modelManagerSP": (False, 1., 1),
+  "backupManagerSP": (False, 1., 1),
   "selfdriveStateSP": (True, 100., 10),
   "longitudinalPlanSP": (True, 20., 10),
   "onroadEventsSP": (True, 1., 1),
