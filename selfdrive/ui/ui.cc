@@ -68,13 +68,27 @@ void ui_update_params(UIState *s) {
 }
 
 void UIState::updateStatus() {
-  if (scene.started && sm->updated("selfdriveState")) {
-    auto ss = (*sm)["selfdriveState"].getSelfdriveState();
-    auto state = ss.getState();
-    if (state == cereal::SelfdriveState::OpenpilotState::PRE_ENABLED || state == cereal::SelfdriveState::OpenpilotState::OVERRIDING) {
-      status = STATUS_OVERRIDE;
-    } else {
-      status = ss.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+  if (scene.started) {
+    // Check for user flag events
+    if (sm->updated("userFlag")) {
+      user_flag_active_frame = sm->frame;
+    }
+
+    // Show user flag status for 1 second after event is received
+    if (user_flag_active_frame > 0 && (sm->frame - user_flag_active_frame) < (1 * UI_FREQ)) {
+      status = STATUS_USER_FLAG;
+      return;  // Skip rest of status checks for this frame
+    }
+
+    // Check for selfdrive state status
+    if (sm->updated("selfdriveState")) {
+      auto ss = (*sm)["selfdriveState"].getSelfdriveState();
+      auto state = ss.getState();
+      if (state == cereal::SelfdriveState::OpenpilotState::PRE_ENABLED || state == cereal::SelfdriveState::OpenpilotState::OVERRIDING) {
+        status = STATUS_OVERRIDE;
+      } else {
+        status = ss.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
+      }
     }
   }
 
@@ -93,7 +107,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
   sm = std::make_unique<SubMaster>(std::vector<const char*>{
     "modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
-    "wideRoadCameraState", "managerState", "selfdriveState", "longitudinalPlan",
+    "wideRoadCameraState", "managerState", "selfdriveState", "longitudinalPlan", "userFlag"
   });
   prime_state = new PrimeState(this);
   language = QString::fromStdString(Params().get("LanguageSetting"));
