@@ -11,7 +11,7 @@ import pickle
 import time
 from collections import namedtuple
 
-from cereal import car, log
+from cereal import car, log, custom
 from msgq.visionipc import VisionIpcServer, VisionStreamType
 from cereal.messaging import PubMaster, log_from_bytes, sub_sock
 from openpilot.common.basedir import BASEDIR
@@ -212,17 +212,25 @@ def setup_settings_sunnylink_sponsor_button(click, pm: PubMaster, scroll=None):
   click(1967, 225)
   time.sleep(UI_DELAY)
 
-def setup_settings_sunnypilot(click, pm: PubMaster, scroll=None):
+def setup_settings_steering(click, pm: PubMaster, scroll=None):
+  CP = car.CarParams()
+  CP.carFingerprint = "HONDA_CIVIC"
+  CP_SP = custom.CarParamsSP()
+  CP_SP.neuralNetworkLateralControl.model.name = CP.carFingerprint
+  CP_SP.neuralNetworkLateralControl.fuzzyFingerprint = True
+  Params().put("CarParamsPersistent", CP.to_bytes())
+  Params().put("CarParamsSPPersistent", CP_SP.to_bytes())
+
   setup_settings_device(click, pm)
   click(278, 852)
   time.sleep(UI_DELAY)
 
-def setup_settings_sunnypilot_mads(click, pm: PubMaster, scroll=None):
+def setup_settings_steering_mads(click, pm: PubMaster, scroll=None):
   Params().put_bool("Mads", True)
 
   setup_settings_device(click, pm)
   click(278, 852)
-  click(970, 455)
+  click(970, 250)
   time.sleep(UI_DELAY)
 
 def setup_settings_trips(click, pm: PubMaster, scroll=None):
@@ -274,8 +282,8 @@ CASES = {
 CASES.update({
   "settings_sunnylink": setup_settings_sunnylink,
   "settings_sunnylink_sponsor_button": setup_settings_sunnylink_sponsor_button,
-  "settings_sunnypilot": setup_settings_sunnypilot,
-  "settings_sunnypilot_mads": setup_settings_sunnypilot_mads,
+  "settings_steering": setup_settings_steering,
+  "settings_steering_mads": setup_settings_steering_mads,
   "settings_trips": setup_settings_trips,
   "settings_vehicle": setup_settings_vehicle,
 })

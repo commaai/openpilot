@@ -12,6 +12,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.locationd.helpers import Pose
 from openpilot.common.mock.generators import generate_livePose
+from openpilot.sunnypilot.selfdrive.car import interfaces as sunnypilot_interfaces
 
 
 class TestLatControl:
@@ -22,6 +23,7 @@ class TestLatControl:
     CP = CarInterface.get_non_essential_params(car_name)
     CP_SP = CarInterface.get_non_essential_params_sp(CP, car_name)
     CI = CarInterface(CP, CP_SP)
+    sunnypilot_interfaces.setup_car_interface_sp(CP, CP_SP)
     CP_SP = convert_to_capnp(CP_SP)
     VM = VehicleModel(CP)
 

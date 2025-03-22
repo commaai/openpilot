@@ -19,6 +19,8 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
+from openpilot.sunnypilot.selfdrive.car import interfaces as sunnypilot_interfaces
+
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
 
@@ -43,6 +45,7 @@ class TestCarInterfaces:
                                          experimental_long=args['experimental_long'], docs=False)
     car_params_sp = CarInterface.get_params_sp(car_params, car_name, args['fingerprints'], args['car_fw'],
                                                experimental_long=args['experimental_long'], docs=False)
+    sunnypilot_interfaces.setup_car_interface_sp(car_params, car_params_sp)
     car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, car_params_sp)
     assert car_params
