@@ -10,9 +10,8 @@
 #include "tools/replay/replay.h"
 #include "tools/replay/util.h"
 
-Route::Route(const std::string &route, const std::string &data_dir) : data_dir_(data_dir) {
-  route_ = parseRoute(route);
-}
+Route::Route(const std::string &route, const std::string &data_dir, bool auto_source)
+    : route_string_(route), data_dir_(data_dir), auto_source_(auto_source) {}
 
 RouteIdentifier Route::parseRoute(const std::string &str) {
   RouteIdentifier identifier = {};
@@ -22,6 +21,7 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
   if (std::regex_match(str, match, pattern)) {
     identifier.dongle_id = match[2].str();
     identifier.timestamp = match[3].str();
+    identifier.date_time = strToTime(identifier.timestamp);
     identifier.str = identifier.dongle_id + "|" + identifier.timestamp;
 
     const auto separator = match[5].str();
@@ -44,27 +44,50 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
 }
 
 bool Route::load() {
-  err_ = RouteLoadError::None;
+  route_ = parseRoute(route_string_);
   if (route_.str.empty() || (data_dir_.empty() && route_.dongle_id.empty())) {
     rInfo("invalid route format");
     return false;
   }
 
-  struct tm tm_time = {0};
-  strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time);
-  date_time_ = mktime(&tm_time);
+  if (!loadSegments()) {
+    rInfo("Failed to load segments");
+    return false;
+  }
 
-  bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
-  if (ret) {
-    if (route_.begin_segment == -1) route_.begin_segment = segments_.rbegin()->first;
-    if (route_.end_segment == -1) route_.end_segment = segments_.rbegin()->first;
-    for (auto it = segments_.begin(); it != segments_.end(); /**/) {
-      if (it->first < route_.begin_segment || it->first > route_.end_segment) {
-        it = segments_.erase(it);
-      } else {
-        ++it;
+  return true;
+}
+
+bool Route::loadSegments() {
+  if (!auto_source_) {
+    bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
+    if (ret) {
+      // Trim segments
+      if (route_.begin_segment > 0) {
+        segments_.erase(segments_.begin(), segments_.lower_bound(route_.begin_segment));
+      }
+      if (route_.end_segment >= 0) {
+        segments_.erase(segments_.upper_bound(route_.end_segment), segments_.end());
       }
     }
+    return !segments_.empty();
+  }
+  return loadFromAutoSource();
+}
+
+bool Route::loadFromAutoSource() {
+  auto origin_prefix = getenv("OPENPILOT_PREFIX");
+  if (origin_prefix) {
+    setenv("OPENPILOT_PREFIX", "", 1);
+  }
+  auto cmd = util::string_format("python ../lib/logreader.py \"%s\" --identifiers-only", route_string_.c_str());
+  auto log_files = split(util::check_output(cmd), '\n');
+  if (origin_prefix) {
+    setenv("OPENPILOT_PREFIX", origin_prefix, 1);
+  }
+
+  for (int i = 0; i < log_files.size(); ++i) {
+    addFileToSegment(i, log_files[i]);
   }
   return !segments_.empty();
 }
@@ -153,6 +176,12 @@ void Route::addFileToSegment(int n, const std::string &file) {
   } else if (name == "qcamera.ts") {
     segments_[n].qcamera = file;
   }
+}
+
+std::time_t Route::strToTime(const std::string &timestamp) {
+  struct tm tm_time = {0};
+  strptime(timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time);
+  return mktime(&tm_time);
 }
 
 // class Segment
