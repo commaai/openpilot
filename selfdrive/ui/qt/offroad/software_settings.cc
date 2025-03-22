@@ -70,9 +70,7 @@ SoftwarePanel::SoftwarePanel(QWidget* parent) : ListWidget(parent) {
       checkForUpdates();
     }
   });
-  if (!params.getBool("IsTestedBranch")) {
-    addItem(targetBranchBtn);
-  }
+  addItem(targetBranchBtn);
 
   // uninstall button
   auto uninstallBtn = new ButtonControl(tr("Uninstall %1").arg(getBrand()), tr("UNINSTALL"));
