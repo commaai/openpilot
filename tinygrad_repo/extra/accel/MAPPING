@@ -1,0 +1,52 @@
+We have to figure out how to make the tinygrad ops match to hw.
+Generic folded reduce may not work.
+
+
+GPUs:
+
+
+AMD:
+
+RDNA2: https://developer.amd.com/wp-content/resources/RDNA2_Shader_ISA_November2020.pdf
+
+We have RX6900XT with 80 CU, 40 WGP, and 1 "processor"
+@ 1.825 GHz, there's 18,688 FP32 GFLOPS of compute. 10240 FLOPS/cycle, 128 per CU (32 FMAs per vALU, 2 per compute unit)
+
+286 GFLOP for ENET=2 BS=64. At theoretical max, (286/18688)*1000 = 15.3 ms.
+We observe about 10x factor off with pytorch.
+
+We will focus on speed for AMD, since we have complete docs for that GPU.
+Each "processor" has an "ultra threaded dispatch processor"
+
+Each SIMD unit has 256 vector registers (or 1024?), and operates on 32 at once.
+Ahh, I think there's 1024 total, but only 256 per wavefront
+
+
+M1:
+
+On M1 GPU, theoretical is 2.275 TFLOPS. https://www.notebookcheck.net/Apple-M1-GPU-Benchmarks-and-Specs.503610.0.html
+
+We observe 2000ms for BS=8 (37 GFLOP). 37/2275 = 11.9 ms. tinygrad is over a factor of 100x off (similar on AMD GPU)
+
+NOTE: the timer in the M1 OpenCL doesn't seem to be anywhere close to wall time.
+
+
+Adreno:
+
+TBD, no comma three here. Image > Buffer because the L1 cache is used. Would UBWC help on weights?
+
+We have a good bit of work on this in hyperthneed. Let's get the disassembler out and make this fast.
+
+
+
+TPUs:
+
+These use really big systolic arrays and have a lot less flexibility.
+
+IIRC, their vector math unit is similar to the GPU.
+
+
+
+
+
+
