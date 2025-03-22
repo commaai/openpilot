@@ -94,6 +94,12 @@ void harness_tick(void) {
 }
 
 void harness_init(void) {
+  // init OBD_SBUx_RELAY
+  set_gpio_output_type(current_board->harness_config->GPIO_relay_SBU1, current_board->harness_config->pin_relay_SBU1, OUTPUT_TYPE_OPEN_DRAIN);
+  set_gpio_output_type(current_board->harness_config->GPIO_relay_SBU2, current_board->harness_config->pin_relay_SBU2, OUTPUT_TYPE_OPEN_DRAIN);
+  set_gpio_output(current_board->harness_config->GPIO_relay_SBU1, current_board->harness_config->pin_relay_SBU1, 1);
+  set_gpio_output(current_board->harness_config->GPIO_relay_SBU2, current_board->harness_config->pin_relay_SBU2, 1);
+
   // try to detect orientation
   harness.status = harness_detect_orientation();
   if (harness.status != HARNESS_STATUS_NC) {

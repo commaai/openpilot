@@ -39,4 +39,7 @@ void detect_board_type(void) {
     hw_type = HW_TYPE_BLACK_PANDA;
     current_board = &board_black;
   }
+
+  // Return A13 to the alt mode to fix SWD
+  set_gpio_alternate(GPIOA, 13, GPIO_AF0_SWJ);
 }

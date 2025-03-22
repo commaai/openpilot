@@ -18,30 +18,6 @@ static void white_enable_can_transceiver(uint8_t transceiver, bool enabled) {
       set_gpio_output(GPIOA, 0, !enabled);
       break;
     default:
-      print("Invalid CAN transceiver ("); puth(transceiver); print("): enabling failed\n");
-      break;
-  }
-}
-
-static void white_enable_can_transceivers(bool enabled) {
-  uint8_t t1 = enabled ? 1U : 2U;  // leave transceiver 1 enabled to detect CAN ignition
-  for(uint8_t i=t1; i<=3U; i++) {
-    white_enable_can_transceiver(i, enabled);
-  }
-}
-
-static void white_set_led(uint8_t color, bool enabled) {
-  switch (color){
-    case LED_RED:
-      set_gpio_output(GPIOC, 9, !enabled);
-      break;
-     case LED_GREEN:
-      set_gpio_output(GPIOC, 7, !enabled);
-      break;
-    case LED_BLUE:
-      set_gpio_output(GPIOC, 6, !enabled);
-      break;
-    default:
       break;
   }
 }
@@ -152,18 +128,6 @@ static void white_grey_init(void) {
   set_gpio_alternate(GPIOC, 11, GPIO_AF7_USART3);
   set_gpio_pullup(GPIOC, 11, PULL_UP);
 
-
-  // Enable CAN transceivers
-  white_enable_can_transceivers(true);
-
-  // Disable LEDs
-  white_set_led(LED_RED, false);
-  white_set_led(LED_GREEN, false);
-  white_set_led(LED_BLUE, false);
-
-  // Set normal CAN mode
-  white_set_can_mode(CAN_MODE_NORMAL);
-
   // Init usb power mode
   // Init in CDP mode only if panda is powered by 12V.
   // Otherwise a PC would not be able to flash a standalone panda
@@ -191,7 +155,6 @@ static harness_configuration white_harness_config = {
 board board_white = {
   .set_bootkick = unused_set_bootkick,
   .harness_config = &white_harness_config,
-  .has_obd = false,
   .has_spi = false,
   .has_canfd = false,
   .fan_max_rpm = 0U,
@@ -202,8 +165,8 @@ board board_white = {
   .init = white_grey_init,
   .init_bootloader = white_grey_init_bootloader,
   .enable_can_transceiver = white_enable_can_transceiver,
-  .enable_can_transceivers = white_enable_can_transceivers,
-  .set_led = white_set_led,
+  .led_GPIO = {GPIOC, GPIOC, GPIOC},
+  .led_pin = {9, 7, 6},
   .set_can_mode = white_set_can_mode,
   .check_ignition = white_check_ignition,
   .read_voltage_mV = white_read_voltage_mV,
