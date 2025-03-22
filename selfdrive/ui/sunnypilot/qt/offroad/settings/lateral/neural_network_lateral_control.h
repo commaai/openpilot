@@ -18,15 +18,12 @@ class NeuralNetworkLateralControl : public ParamControl {
 
 public:
   NeuralNetworkLateralControl();
-  void showEvent(QShowEvent *event) override;
 
 public slots:
   void updateToggle();
 
 private:
   Params params;
-
-  void refresh();
 
   // Status messages
   const QString STATUS_NOT_AVAILABLE = tr("NNLC is currently not available on this platform.");

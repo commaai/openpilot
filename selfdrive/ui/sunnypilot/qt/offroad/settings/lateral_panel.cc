@@ -85,6 +85,7 @@ LateralPanel::LateralPanel(SettingsWindowSP *parent) : QFrame(parent) {
 }
 
 void LateralPanel::showEvent(QShowEvent *event) {
+  nnlcToggle->updateToggle();
   updateToggles(offroad);
 }
 

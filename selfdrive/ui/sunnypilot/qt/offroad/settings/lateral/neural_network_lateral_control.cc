@@ -13,10 +13,6 @@ NeuralNetworkLateralControl::NeuralNetworkLateralControl() :
   updateToggle();
 }
 
-void NeuralNetworkLateralControl::showEvent(QShowEvent *event) {
-  updateToggle();
-}
-
 void NeuralNetworkLateralControl::updateToggle() {
   QString statusInitText = "<font color='yellow'>" + STATUS_CHECK_COMPATIBILITY + "</font>";
   QString notLoadedText = "<font color='yellow'>" + STATUS_NOT_LOADED + "</font>";
