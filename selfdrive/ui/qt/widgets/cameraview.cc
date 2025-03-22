@@ -8,6 +8,8 @@
 
 #include <cmath>
 #include <QApplication>
+#include <QPainter>
+#include <QOpenGLPaintDevice>
 
 namespace {
 

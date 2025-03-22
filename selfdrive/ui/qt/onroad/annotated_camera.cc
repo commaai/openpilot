@@ -2,6 +2,7 @@
 #include "selfdrive/ui/qt/onroad/annotated_camera.h"
 
 #include <QPainter>
+#include <QOpenGLPaintDevice>
 #include <algorithm>
 #include <cmath>
 
@@ -125,7 +126,8 @@ void AnnotatedCameraWidget::paintGL() {
     CameraWidget::paintGL();
   }
 
-  QPainter painter(this);
+  QOpenGLPaintDevice fboPaintDevice(width(), height());
+  QPainter painter(&fboPaintDevice);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
