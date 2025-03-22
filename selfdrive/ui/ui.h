@@ -42,12 +42,14 @@ typedef enum UIStatus {
   STATUS_DISENGAGED,
   STATUS_OVERRIDE,
   STATUS_ENGAGED,
+  STATUS_USER_FLAG,
 } UIStatus;
 
 const QColor bg_colors [] = {
   [STATUS_DISENGAGED] = QColor(0x17, 0x33, 0x49, 0xc8),
   [STATUS_OVERRIDE] = QColor(0x91, 0x9b, 0x95, 0xf1),
   [STATUS_ENGAGED] = QColor(0x17, 0x86, 0x44, 0xf1),
+  [STATUS_USER_FLAG] = QColor(0xff, 0xff, 0x00, 0xf1),
 };
 
 typedef struct UIScene {
@@ -77,6 +79,7 @@ public:
   UIScene scene = {};
   QString language;
   PrimeState *prime_state;
+  uint64_t user_flag_active_frame = 0; // frame when user flag was received
 
 signals:
   void uiUpdate(const UIState &s);
