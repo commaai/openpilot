@@ -28,7 +28,7 @@ public:
   Params(const Params&) = delete;
   Params& operator=(const Params&) = delete;
 
-  std::vector<std::string> allKeys() const;
+  std::vector<std::string> allKeys(ParamKeyType type = ALL) const;
   bool checkKey(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {

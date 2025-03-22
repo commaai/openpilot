@@ -11,6 +11,7 @@ cdef extern from "common/params.h":
     CLEAR_ON_ONROAD_TRANSITION
     CLEAR_ON_OFFROAD_TRANSITION
     DEVELOPMENT_ONLY
+    BACKUP
     ALL
 
   cdef cppclass c_Params "Params":
@@ -25,7 +26,7 @@ cdef extern from "common/params.h":
     bool checkKey(string) nogil
     string getParamPath(string) nogil
     void clearAll(ParamKeyType)
-    vector[string] allKeys()
+    vector[string] allKeys(ParamKeyType)
 
 
 def ensure_bytes(v):
@@ -119,5 +120,5 @@ cdef class Params:
     cdef string key_bytes = ensure_bytes(key)
     return self.p.getParamPath(key_bytes).decode("utf-8")
 
-  def all_keys(self):
-    return self.p.allKeys()
+  def all_keys(self, type=ParamKeyType.ALL):
+    return self.p.allKeys(type)
