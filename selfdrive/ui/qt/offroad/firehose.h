@@ -3,6 +3,7 @@
 #include <QWidget>
 #include <QVBoxLayout>
 #include <QLabel>
+#include "selfdrive/ui/qt/widgets/controls.h"
 #include "selfdrive/ui/qt/request_repeater.h"
 
 // Forward declarations
@@ -16,6 +17,7 @@ public:
 private:
   QVBoxLayout *layout;
 
+  ParamControl *disable_firehose;
   QLabel *detailed_instructions;
   QLabel *contribution_label;
   QLabel *toggle_label;
