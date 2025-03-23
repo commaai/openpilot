@@ -67,14 +67,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
     }
   });
 
-  connect(buttons["resetParams"], &PushButtonSP::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset all sunnypilot settings to default ? This cannot be undone."), tr("Reset"), this)) {
-      int rm = std::system("sudo rm -rf /data/params/d/*");
-      if (rm == 0) {
-        Hardware::reboot();
-      }
-    }
-  });
+  connect(buttons["resetParams"], &PushButtonSP::clicked, this, &DevicePanelSP::resetSettings);
 
   addItem(device_grid_layout);
 
@@ -139,6 +132,19 @@ void DevicePanelSP::setOffroadMode() {
   }
 
   updateState();
+}
+
+void DevicePanelSP::resetSettings() {
+  if (ConfirmationDialog::confirm(tr("Are you sure you want to reset all sunnypilot settings to default? Once the settings are reset, there is no going back."), tr("Reset"), this)) {
+    if (ConfirmationDialog::confirm(tr("The reset cannot be undone. You have been warned."), tr("Confirm"), this)) {
+      const std::vector<std::string> keys = params.allKeys();
+      for (const auto& key : keys) {
+        params.remove(key);
+      }
+
+      Hardware::reboot();
+    }
+  }
 }
 
 void DevicePanelSP::showEvent(QShowEvent *event) {

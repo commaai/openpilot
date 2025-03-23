@@ -18,6 +18,7 @@ public:
   void showEvent(QShowEvent *event) override;
   void setOffroadMode();
   void updateState();
+  void resetSettings();
 
 private:
   std::map<QString, PushButtonSP*> buttons;
