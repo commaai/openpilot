@@ -5,7 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "clip/application.h"
 #include "common/prefix.h"
 #include "tools/replay/consoleui.h"
 #include "tools/replay/replay.h"
@@ -154,13 +153,6 @@ int main(int argc, char *argv[]) {
   }
 
   replay.start(config.start_seconds);
-
-  if (replay.hasFlag(REPLAY_FLAG_CLIP)) {
-    Application a;
-    // kick off
-    return a.exec(argc, argv);
-  } else {
-    ConsoleUI console_ui(&replay);
-    return console_ui.exec();
-  }
+  ConsoleUI console_ui(&replay);
+  return console_ui.exec();
 }

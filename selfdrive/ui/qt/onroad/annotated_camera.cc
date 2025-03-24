@@ -91,6 +91,7 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
 void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
+  sm.update(0);
   const double start_draw_t = millis_since_boot();
 
   // draw camera frame
@@ -131,7 +132,7 @@ void AnnotatedCameraWidget::paintGL() {
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
-  // model.draw(painter, rect());
+  model.draw(painter, rect());
   dmon.draw(painter, rect());
   hud.updateState(*s);
   hud.draw(painter, rect());

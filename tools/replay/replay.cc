@@ -78,6 +78,7 @@ bool Replay::load() {
 
   min_seconds_ = seg_mgr_->route_.segments().begin()->first * 60;
   max_seconds_ = (seg_mgr_->route_.segments().rbegin()->first + 1) * 60;
+  end_seconds_ = max_seconds_;
   return true;
 }
 
@@ -181,6 +182,7 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
   // write CarParams
   it = std::find_if(events.begin(), events.end(), [](const Event &e) { return e.which == cereal::Event::Which::CAR_PARAMS; });
   if (it != events.end()) {
+    publishMessage(&*it);
     capnp::FlatArrayMessageReader reader(it->data);
     auto event = reader.getRoot<cereal::Event>();
     car_fingerprint_ = event.getCarParams().getCarFingerprint();
@@ -238,8 +240,9 @@ void Replay::publishFrame(const Event *e) {
     default: return;  // Invalid event type
   }
 
-  if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM)))
+  if ((cam == DriverCam && !hasFlag(REPLAY_FLAG_DCAM)) || (cam == WideRoadCam && !hasFlag(REPLAY_FLAG_ECAM))) {
     return;  // Camera isdisabled
+  }
 
   auto seg_it = event_data_->segments.find(e->eidx_segnum);
   if (seg_it != event_data_->segments.end()) {
@@ -333,4 +336,43 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
   }
 
   return first;
+}
+
+void Replay::waitUntilEnd() {
+  std::mutex mutex;
+  std::condition_variable cv;
+  std::atomic<bool> reached_end{false};
+
+  // Add a temporary callback to check when we've reached the end time
+  auto original_filter = event_filter_;
+
+  event_filter_ = [this, &mutex, &cv, &reached_end, original_filter](const Event* e) {
+    bool should_filter = original_filter ? original_filter(e) : false;
+
+    // Check if we've reached the end seconds
+    if (currentSeconds() >= end_seconds_) {
+      std::unique_lock<std::mutex> lock(mutex);
+      reached_end = true;
+      cv.notify_one();
+    }
+
+    return should_filter;
+  };
+
+  // If we're already at or past the end, return immediately
+  if (currentSeconds() >= end_seconds_) {
+    event_filter_ = original_filter;
+    return;
+  }
+
+  // Wait until we reach the end or exit
+  {
+    std::unique_lock<std::mutex> lock(mutex);
+    cv.wait(lock, [&reached_end, this]() {
+      return reached_end || exit_;
+    });
+  }
+
+  // Restore the original filter
+  event_filter_ = original_filter;
 }

@@ -59,7 +59,9 @@ static void update_state(UIState *s) {
   } else if (!sm.allAliveAndValid({"wideRoadCameraState"})) {
     scene.light_sensor = -1;
   }
-  scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  if (sm.updated("deviceState")) {
+    scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+  }
 }
 
 void ui_update_params(UIState *s) {
@@ -105,6 +107,7 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 }
 
 void UIState::update() {
+  fprintf(stderr, "updatng ui state\n");
   update_sockets(this);
   update_state(this);
   updateStatus();

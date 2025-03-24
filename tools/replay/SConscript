@@ -15,7 +15,7 @@ if arch == 'larch64':
   base_libs.append('EGL')
 
 replay_lib_src = ["replay.cc", "consoleui.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc",
-                  "route.cc", "util.cc", "seg_mgr.cc", "timeline.cc", "api.cc", "clip/recorder/widget.cc", "clip/recorder/ffmpeg.cc", "clip/application.cc"]
+                  "route.cc", "util.cc", "seg_mgr.cc", "timeline.cc", "api.cc"]
 replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')
 replay_libs = [replay_lib, cereal, 'bz2', 'zstd', 'curl', 'yuv', 'ncurses'] + base_libs + qt_libs + ui_libs + qt_ui
