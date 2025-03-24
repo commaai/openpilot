@@ -149,7 +149,7 @@ class LagEstimator:
 
     self.block_avg.update(delay)
     if (new_lag := self.block_avg.get()) is not None:
-      self.lag = new_lag
+      self.lag = float(new_lag.item())
 
   def correlation_lags(self, sig_len, dt):
     return np.arange(0, sig_len) * dt
