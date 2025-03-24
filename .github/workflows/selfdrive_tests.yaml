@@ -227,7 +227,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 6 }}
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"

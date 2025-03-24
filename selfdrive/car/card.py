@@ -15,7 +15,7 @@ from opendbc.car import DT_CTRL, structs
 from opendbc.car.can_definitions import CanData, CanRecvCallable, CanSendCallable
 from opendbc.car.carlog import carlog
 from opendbc.car.fw_versions import ObdCallback
-from opendbc.car.car_helpers import get_car, get_radar_interface
+from opendbc.car.car_helpers import get_car, interfaces
 from opendbc.car.interfaces import CarInterfaceBase, RadarInterfaceBase
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from openpilot.selfdrive.pandad import can_capnp_to_list, can_list_to_can_capnp
@@ -99,7 +99,7 @@ class Car:
           cached_params = _cached_params
 
       self.CI = get_car(*self.can_callbacks, obd_callback(self.params), experimental_long_allowed, num_pandas, cached_params)
-      self.RI = get_radar_interface(self.CI.CP)
+      self.RI = interfaces[self.CI.CP.carFingerprint].RadarInterface(self.CI.CP)
       self.CP = self.CI.CP
 
       # continue onto next fingerprinting step in pandad
@@ -227,7 +227,7 @@ class Car:
 
     if RD is not None:
       tracks_msg = messaging.new_message('liveTracks')
-      tracks_msg.valid = len(RD.errors) == 0
+      tracks_msg.valid = not any(RD.errors.to_dict().values())
       tracks_msg.liveTracks = RD
       self.pm.send('liveTracks', tracks_msg)
 

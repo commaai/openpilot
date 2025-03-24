@@ -832,6 +832,11 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Radar Error: Restart the Car"),
   },
 
+  EventName.radarTempUnavailable: {
+    ET.SOFT_DISABLE: soft_disable_alert("Radar Temporarily Unavailable"),
+    ET.NO_ENTRY: NoEntryAlert("Radar Temporarily Unavailable"),
+  },
+
   # Every frame from the camera should be processed by the model. If modeld
   # is not processing frames fast enough they have to be dropped. This alert is
   # thrown when over 20% of frames are dropped.

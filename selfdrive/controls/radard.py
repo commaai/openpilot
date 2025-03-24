@@ -6,6 +6,7 @@ from typing import Any
 
 import capnp
 from cereal import messaging, log, car
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.common.realtime import DT_MDL, Priority, config_realtime_process
 from openpilot.common.swaglog import cloudlog
@@ -51,7 +52,7 @@ class Track:
   def __init__(self, identifier: int, v_lead: float, kalman_params: KalmanParams):
     self.identifier = identifier
     self.cnt = 0
-    self.aLeadTau = _LEAD_ACCEL_TAU
+    self.aLeadTau = FirstOrderFilter(_LEAD_ACCEL_TAU, 0.45, DT_MDL)
     self.K_A = kalman_params.A
     self.K_C = kalman_params.C
     self.K_K = kalman_params.K
@@ -74,16 +75,11 @@ class Track:
 
     # Learn if constant acceleration
     if abs(self.aLeadK) < 0.5:
-      self.aLeadTau = _LEAD_ACCEL_TAU
+      self.aLeadTau.x = _LEAD_ACCEL_TAU
     else:
-      self.aLeadTau *= 0.9
+      self.aLeadTau.update(0.0)
 
     self.cnt += 1
-
-  def reset_a_lead(self, aLeadK: float, aLeadTau: float):
-    self.kf = KF1D([[self.vLead], [aLeadK]], self.K_A, self.K_C, self.K_K)
-    self.aLeadK = aLeadK
-    self.aLeadTau = aLeadTau
 
   def get_RadarState(self, model_prob: float = 0.0):
     return {
@@ -93,7 +89,7 @@ class Track:
       "vLead": float(self.vLead),
       "vLeadK": float(self.vLeadK),
       "aLeadK": float(self.aLeadK),
-      "aLeadTau": float(self.aLeadTau),
+      "aLeadTau": float(self.aLeadTau.x),
       "status": True,
       "fcw": self.is_potential_fcw(model_prob),
       "modelProb": model_prob,
@@ -231,10 +227,10 @@ class RadarD:
       self.tracks[ids].update(rpt[0], rpt[1], rpt[2], v_lead, rpt[3])
 
     # *** publish radarState ***
-    self.radar_state_valid = sm.all_checks() and len(rr.errors) == 0
+    self.radar_state_valid = sm.all_checks()
     self.radar_state = log.RadarState.new_message()
     self.radar_state.mdMonoTime = sm.logMonoTime['modelV2']
-    self.radar_state.radarErrors = list(rr.errors)
+    self.radar_state.radarErrors = rr.errors
     self.radar_state.carStateMonoTime = sm.logMonoTime['carState']
 
     if len(sm['modelV2'].velocity.x):

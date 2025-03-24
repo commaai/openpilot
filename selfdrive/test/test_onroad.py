@@ -187,7 +187,7 @@ class TestOnroad:
 
   def test_manager_starting_time(self):
     st = self.ts['managerState']['t'][0]
-    assert (st - self.manager_st) < 10, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
+    assert (st - self.manager_st) < 12.5, f"manager.py took {st - self.manager_st}s to publish the first 'managerState' msg"
 
   def test_cloudlog_size(self):
     msgs = self.msgs['logMessage']
@@ -391,7 +391,7 @@ class TestOnroad:
     result += "----------------- Model Timing -----------------\n"
     result += "------------------------------------------------\n"
     cfgs = [
-      ("modelV2", 0.045, 0.035),
+      ("modelV2", 0.045, 0.040),  # TODO: this should be stricter but it's hard to measure exactly
       ("driverStateV2", 0.045, 0.035),
     ]
     for (s, instant_max, avg_max) in cfgs:

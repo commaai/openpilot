@@ -88,7 +88,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
       QJsonDocument doc = QJsonDocument::fromJson(response.toUtf8());
       QJsonObject json = doc.object();
       int count = json["firehose"].toInt();
-      contribution_label->setText(tr("<b>%1 %2</b> of your driving are in the training dataset so far.").arg(count).arg(count == 1 ? "segment" : "segments"));
+      contribution_label->setText(tr("<b>%n segment(s)</b> of your driving is in the training dataset so far.", "", count));
       contribution_label->show();
     }
   });
@@ -106,7 +106,7 @@ void FirehosePanel::refresh() {
     toggle_label->setText(tr("ACTIVE"));
     toggle_label->setStyleSheet("font-size: 60px; font-weight: bold; color: #2ecc71;");
   } else {
-    toggle_label->setText(tr("<span stylesheet='font-size: 60px; font-weight: bold; color: #e74c3c;'>INACTIVE</span>: connect to unmetered network"));
+    toggle_label->setText(tr("<span stylesheet='font-size: 60px; font-weight: bold; color: #e74c3c;'>INACTIVE</span>: connect to an unmetered network"));
     toggle_label->setStyleSheet("font-size: 60px;");
   }
 }

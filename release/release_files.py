@@ -8,6 +8,7 @@ ROOT = HERE + "/.."
 
 blacklist = [
   ".git/",
+  ".github/workflows/",
 
   "matlab.*.md",
 

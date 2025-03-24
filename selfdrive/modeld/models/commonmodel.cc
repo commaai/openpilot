@@ -37,6 +37,7 @@ cl_mem* DrivingModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_hei
 DrivingModelFrame::~DrivingModelFrame() {
   deinit_transform();
   loadyuv_destroy(&loadyuv);
+  CL_CHECK(clReleaseMemObject(input_frames_cl));
   CL_CHECK(clReleaseMemObject(img_buffer_20hz_cl));
   CL_CHECK(clReleaseMemObject(last_img_cl));
   CL_CHECK(clReleaseCommandQueue(q));
@@ -58,5 +59,6 @@ cl_mem* MonitoringModelFrame::prepare(cl_mem yuv_cl, int frame_width, int frame_
 
 MonitoringModelFrame::~MonitoringModelFrame() {
   deinit_transform();
+  CL_CHECK(clReleaseMemObject(input_frame_cl));
   CL_CHECK(clReleaseCommandQueue(q));
 }
