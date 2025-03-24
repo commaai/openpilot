@@ -69,7 +69,7 @@ class BlockAverage:
 
 
 class LagEstimator:
-  def __init__(self, CP, dt, block_count=5, block_size=100, window_sec=300.0, okay_window_sec=30.0,  min_vego=15, min_yr=np.radians(1), min_ncc=0.95):
+  def __init__(self, CP, dt, block_count=10, block_size=100, window_sec=300.0, okay_window_sec=30.0,  min_vego=15, min_yr=np.radians(1), min_ncc=0.95):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
@@ -106,6 +106,7 @@ class LagEstimator:
     liveDelay.steerActuatorDelay = self.lag
     liveDelay.isEstimated = self.block_avg.valid_blocks > 0
     liveDelay.validBlocks = self.block_avg.valid_blocks
+    liveDelay.points = self.block_avg.values.tolist()
 
     return msg
 
