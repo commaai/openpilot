@@ -89,14 +89,13 @@ class LagEstimator:
 
     self.calibrator = PoseCalibrator()
 
-    self.lag = self.initial_lag
-
     self.reset(self.initial_lag, 0)
 
   def reset(self, initial_lag, valid_blocks):
     window_len = int(self.window_sec / self.dt)
     self.points = Points(window_len)
     self.block_avg = BlockAverage(self.block_count, self.block_size, valid_blocks, initial_lag)
+    self.lag = initial_lag
 
   def get_msg(self, valid):
     msg = messaging.new_message('liveActuatorDelay')
