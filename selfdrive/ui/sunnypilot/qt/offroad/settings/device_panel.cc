@@ -17,6 +17,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   device_grid_layout->setVerticalSpacing(25);
 
   std::vector<std::tuple<QString, QString, QString>> device_btns = {
+    {"quietModeBtn", tr("Quiet Mode"), "QuietMode"},
     {"dcamBtn", tr("Driver Camera Preview"), ""},
     {"retrainingBtn", tr("Training Guide"), ""},
     {"regulatoryBtn", tr("Regulatory"), ""},
@@ -44,6 +45,8 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   }
 
   connect(buttons["dcamBtn"], &PushButtonSP::clicked, [=]() { emit showDriverView(); });
+
+  connect(buttons["quietModeBtn"], &PushButtonSP::clicked, buttons["quietModeBtn"], &PushButtonSP::updateButton);
 
   connect(buttons["retrainingBtn"], &PushButtonSP::clicked, [=]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {

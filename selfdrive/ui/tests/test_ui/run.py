@@ -151,7 +151,7 @@ def setup_keyboard_uppercase(click, pm: PubMaster, scroll=None):
 
 def setup_driver_camera(click, pm: PubMaster, scroll=None):
   setup_settings_device(click, pm)
-  click(950, 620)
+  click(1720, 620)
   DATA['deviceState'].deviceState.started = False
   setup_onroad(click, pm)
   DATA['deviceState'].deviceState.started = True
