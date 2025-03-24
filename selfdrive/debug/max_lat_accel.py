@@ -82,8 +82,8 @@ if __name__ == '__main__':
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
   parser.add_argument("route", nargs='+')
-  parser.add_argument("--extrapolate", action="store_true", help="Extrapolates max lateral acceleration events linearly. " +
-                                                                 "This option can be far less accurate.")
+  parser.add_argument("-e", "--extrapolate", action="store_true", help="Extrapolates max lateral acceleration events linearly. " +
+                                                                       "This option can be far less accurate.")
   args = parser.parse_args()
 
   events = []
