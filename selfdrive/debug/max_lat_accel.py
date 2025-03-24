@@ -26,10 +26,10 @@ def find_events(lr: LogReader, extrapolate: bool = False, qlog: bool = False) ->
   min_steering_unpressed = RLOG_MIN_STEERING_UNPRESSED // QLOG_DECIMATION if qlog else RLOG_MIN_STEERING_UNPRESSED
   min_requesting_max = RLOG_MIN_REQUESTING_MAX // QLOG_DECIMATION if qlog else RLOG_MIN_REQUESTING_MAX
 
-  steer_threshold = 0.6 if extrapolate else 0.95
+  # if we test with driver torque safety, max torque can be slightly noisy
+  steer_threshold = 0.7 if extrapolate else 0.95
 
   events = []
-
 
   # state tracking
   steering_unpressed = 0  # frames
@@ -51,7 +51,6 @@ def find_events(lr: LogReader, extrapolate: bool = False, qlog: bool = False) ->
       lat_active = lat_active + 1 if msg.carControl.latActive else 0
 
     elif msg.which() == 'carOutput':
-      # if we test with driver torque safety, max torque can be slightly noisy
       out_torque = msg.carOutput.actuatorsOutput.torque
       requesting_max = requesting_max + 1 if abs(out_torque) > steer_threshold else 0
 
