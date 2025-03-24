@@ -12,7 +12,7 @@ class Recorder : public QObject {
     Q_OBJECT
 
 public:
-    Recorder(QObject *parent = nullptr) : QObject(parent) {}
+    Recorder(QObject *parent = nullptr);
     ~Recorder() override;
 
 public slots:
@@ -20,7 +20,7 @@ public slots:
     void stop();
 
 private:
-    FFmpegEncoder encoder = FFmpegEncoder("/Users/trey/Desktop/out.mp4", DEVICE_SCREEN_SIZE.width(), DEVICE_SCREEN_SIZE.height(), UI_FREQ);
+    FFmpegEncoder *encoder;
     QQueue<QImage *> frameQueue;
     QMutex mutex;
     bool isProcessing = false;

@@ -2,8 +2,13 @@
 
 #include "tools/replay/clip/recorder/ffmpeg.h"
 
+Recorder::Recorder(QObject *parent) : QObject(parent) {
+  encoder = new FFmpegEncoder("/Users/trey/Desktop/out.mp4", DEVICE_SCREEN_SIZE.width(), DEVICE_SCREEN_SIZE.height(), UI_FREQ);
+}
+
 Recorder::~Recorder() {
     fprintf(stderr, "closing\n");
+    delete encoder;
     QObject::~QObject();
 }
 
@@ -27,15 +32,12 @@ void Recorder::processQueue() {
             }
             frame = frameQueue.dequeue();
         }
-        // Save the frame (this runs in the worker thread)
-        static int frameCount = 0;
-        if (frameCount == 0 && !encoder.startRecording()) {
-            fprintf(stderr, "failed to start record\n");
-        }
-        fprintf(stderr, "processing frame %d: %p\n", frameCount++, &frame);
-        if (!encoder.writeFrame(frame->convertToFormat(QImage::Format_ARGB32_Premultiplied))) {
+
+        if (!encoder->writeFrame(frame->convertToFormat(QImage::Format_ARGB32))) {
             fprintf(stderr, "did not write\n");
         }
+
+        delete frame;
     }
 }
 

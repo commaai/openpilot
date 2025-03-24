@@ -1,23 +1,13 @@
 #include "tools/replay/clip/recorder/ffmpeg.h"
-
 #include <QDebug>
 
 FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, int fps) {
-  // Enable FFmpeg logging to stderr
-  av_log_set_level(AV_LOG_ERROR);
-  av_log_set_callback([](void* ptr, int level, const char* fmt, va_list vargs) {
-    if (level <= av_log_get_level()) {
-      vfprintf(stderr, fmt, vargs);
-    }
-  });
-
   // Allocate output context
-  avformat_alloc_output_context2(&format_ctx, nullptr, nullptr, outputFile.toStdString().c_str());
-  if (!format_ctx) {
+  if (avformat_alloc_output_context2(&format_ctx, nullptr, nullptr, outputFile.toStdString().c_str()) < 0) {
     return;
   }
 
-  // Find the H264 encoder
+  // Find H.264 encoder
   const AVCodec* codec = avcodec_find_encoder(AV_CODEC_ID_H264);
   if (!codec) {
     return;
@@ -39,26 +29,26 @@ FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, i
   codec_ctx->codec_id = AV_CODEC_ID_H264;
   codec_ctx->width = width;
   codec_ctx->height = height;
-  codec_ctx->time_base = (AVRational){1, fps};
+  codec_ctx->time_base = {1, fps};
+  codec_ctx->framerate = {fps, 1};
   codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
-  codec_ctx->codec_type = AVMEDIA_TYPE_VIDEO;
-  codec_ctx->gop_size = 24;
+  codec_ctx->gop_size = 12;
   codec_ctx->max_b_frames = 0;
   codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-  // Set encoding parameters using AVDictionary
+  stream->time_base = codec_ctx->time_base;
+
+  // Set encoding options
   AVDictionary* opts = nullptr;
   av_dict_set(&opts, "preset", "ultrafast", 0);
-  av_dict_set(&opts, "profile", "baseline", 0);
+  av_dict_set(&opts, "tune", "zerolatency", 0);
   av_dict_set(&opts, "crf", "28", 0);
 
-  // Open codec with options
+  // Open codec
   if (avcodec_open2(codec_ctx, codec, &opts) < 0) {
     av_dict_free(&opts);
     return;
   }
-
-  // Free options dictionary
   av_dict_free(&opts);
 
   // Copy codec parameters to stream
@@ -66,7 +56,6 @@ FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, i
     return;
   }
 
-  // Set stream time base
   stream->time_base = codec_ctx->time_base;
 
   // Open output file
@@ -76,27 +65,30 @@ FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, i
     }
   }
 
+  // Write header
+  if (avformat_write_header(format_ctx, nullptr) < 0) {
+    return;
+  }
+
   // Allocate frame
   frame = av_frame_alloc();
   if (!frame) {
     return;
   }
-
-  frame->format = codec_ctx->pix_fmt;
+  frame->format = AV_PIX_FMT_YUV420P;
   frame->width = width;
   frame->height = height;
-
-  // Allocate frame buffer
-  int ret = av_image_alloc(frame->data, frame->linesize,
-                         width, height, codec_ctx->pix_fmt, 1);
-  if (ret < 0) {
+  if (av_frame_get_buffer(frame, 0) < 0) {
     return;
   }
 
   // Create scaling context
   sws_ctx = sws_getContext(width, height, AV_PIX_FMT_BGRA,
-                         width, height, codec_ctx->pix_fmt,
-                         SWS_BILINEAR, nullptr, nullptr, nullptr);
+                           width, height, AV_PIX_FMT_YUV420P,
+                           SWS_BILINEAR, nullptr, nullptr, nullptr);
+  if (!sws_ctx) {
+    return;
+  }
 
   // Allocate packet
   packet = av_packet_alloc();
@@ -109,77 +101,66 @@ FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, i
 
 FFmpegEncoder::~FFmpegEncoder() {
   if (initialized) {
-    // Write trailer
+    encodeFrame(nullptr);  // Flush encoder
     av_write_trailer(format_ctx);
-
-    // Close output file
-    if (!(format_ctx->oformat->flags & AVFMT_NOFILE)) {
+    if (!(format_ctx->oformat->flags & AVFMT_NOFILE) && format_ctx->pb) {
       avio_closep(&format_ctx->pb);
     }
-
-    // Free resources
-    avcodec_free_context(&codec_ctx);
-    avformat_free_context(format_ctx);
-    av_frame_free(&frame);
-    av_packet_free(&packet);
-    sws_freeContext(sws_ctx);
-  }
-}
-
-bool FFmpegEncoder::startRecording() {
-  if (!initialized) return false;
-
-  // Write header
-  if (avformat_write_header(format_ctx, nullptr) < 0) {
-    return false;
   }
 
-  return true;
+  av_frame_free(&frame);
+  av_packet_free(&packet);
+  sws_freeContext(sws_ctx);
+  avcodec_free_context(&codec_ctx);
+  avformat_free_context(format_ctx);
 }
 
 bool FFmpegEncoder::writeFrame(const QImage& image) {
   if (!initialized) return false;
 
   // Convert BGRA to YUV420P
-  uint8_t* inData[4] = { (uint8_t*)image.bits(), nullptr, nullptr, nullptr };
-  int inLinesize[4] = { image.bytesPerLine(), 0, 0, 0 };
+  uint8_t* inData[1] = { (uint8_t*)image.bits() };
+  int inLinesize[1] = { image.bytesPerLine() };
   sws_scale(sws_ctx, inData, inLinesize, 0, image.height(),
             frame->data, frame->linesize);
 
-  // Set frame timestamp and duration
-  frame->pts = frame_count;
-  frame->duration = 1;  // Each frame has duration of 1 in the time base units
+  frame->pts = frame_count;  // PTS in codec_ctx->time_base units
+  return encodeFrame(frame);
+}
 
-  // Send frame to encoder
-  int ret = avcodec_send_frame(codec_ctx, frame);
+bool FFmpegEncoder::encodeFrame(AVFrame* input_frame) {
+  int ret = avcodec_send_frame(codec_ctx, input_frame);
   if (ret < 0) {
+    fprintf(stderr, "Failed to send frame: %d\n", ret);
     return false;
   }
 
-  // Read encoded packets
-  while (ret >= 0) {
+  while (true) {
     ret = avcodec_receive_packet(codec_ctx, packet);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
       break;
     } else if (ret < 0) {
+      fprintf(stderr, "Error receiving packet: %d\n", ret);
       return false;
     }
 
-    // Set packet timestamp and duration
+    // Set packet timestamps and duration, rescaling if necessary
     packet->pts = av_rescale_q(frame_count, codec_ctx->time_base, stream->time_base);
-    packet->dts = packet->pts;
+    packet->dts = packet->pts;  // No B-frames, so DTS = PTS
     packet->duration = av_rescale_q(1, codec_ctx->time_base, stream->time_base);
-
-    // Write packet to output file
     packet->stream_index = stream->index;
+
     ret = av_interleaved_write_frame(format_ctx, packet);
+    av_packet_unref(packet);
+
     if (ret < 0) {
+      fprintf(stderr, "Failed to write packet: %d\n", ret);
       return false;
     }
 
-    av_packet_unref(packet);
+    if (input_frame) {
+      frame_count++;  // Only increment on actual frames, not flushing
+    }
   }
-
-  frame_count++;
   return true;
 }
