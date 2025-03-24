@@ -5,7 +5,7 @@ from collections import deque
 from skimage.registration._masked_phase_cross_correlation import cross_correlate_masked
 
 import cereal.messaging as messaging
-from cereal import car
+from cereal import car, log
 from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, DT_CTRL
@@ -45,14 +45,14 @@ class Points:
 
 
 class BlockAverage:
-  def __init__(self, num_blocks, block_size, initial_value):
+  def __init__(self, num_blocks, block_size, valid_blocks, initial_value):
     self.num_blocks = num_blocks
     self.block_size = block_size
     self.block_idx = 0
     self.idx = 0
 
     self.values = np.tile(initial_value, (num_blocks, 1))
-    self.valid_blocks = 0
+    self.valid_blocks = valid_blocks
 
   def update(self, value):
     self.values[self.block_idx] = (self.idx * self.values[self.block_idx] + (self.block_size - self.idx) * value) / self.block_size
@@ -69,11 +69,13 @@ class BlockAverage:
 
 
 class LagEstimator:
-  def __init__(self, CP, dt, block_num=5, block_size=100, window_sec=300.0, okay_window_sec=30.0,  min_vego=15, min_yr=np.radians(1), min_ncc=0.95):
+  def __init__(self, CP, dt, block_count=5, block_size=100, window_sec=300.0, okay_window_sec=30.0,  min_vego=15, min_yr=np.radians(1), min_ncc=0.95):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
-    self.initial_lag = CP.steerActuatorDelay
+    self.initial_lag = CP.steerActuatorDelay + 0.2
+    self.block_size = block_size
+    self.block_count = block_count
     self.min_vego = min_vego
     self.min_yr = min_yr
     self.min_ncc = min_ncc
@@ -85,13 +87,16 @@ class LagEstimator:
     self.v_ego = 0
     self.yaw_rate = 0
 
-    window_len = int(window_sec / self.dt)
-    self.points = Points(window_len)
-    self.block_avg = BlockAverage(block_num, block_size, self.initial_lag)
-
     self.calibrator = PoseCalibrator()
 
-    self.lag = self.initial_lag + 0.2
+    self.lag = self.initial_lag
+
+    self.reset(self.initial_lag, 0)
+
+  def reset(self, initial_lag, valid_blocks):
+    window_len = int(self.window_sec / self.dt)
+    self.points = Points(window_len)
+    self.block_avg = BlockAverage(self.block_count, self.block_size, valid_blocks, initial_lag)
 
   def get_msg(self, valid):
     msg = messaging.new_message('liveActuatorDelay')
@@ -101,6 +106,7 @@ class LagEstimator:
     liveDelay = msg.liveActuatorDelay
     liveDelay.steerActuatorDelay = self.lag
     liveDelay.isEstimated = self.block_avg.valid_blocks > 0
+    liveDelay.validBlocks = self.block_avg.valid_blocks
 
     return msg
 
@@ -178,6 +184,16 @@ def main():
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   estimator = LagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency)
 
+  lag_params = params.get("LagParams")
+  if lag_params:
+    try:
+      with log.Event.from_bytes(lag_params) as msg:
+        lag_init = msg.liveActuatorDelay.steerActuatorDelay
+        valid_blocks = msg.liveActuatorDelay.validBlocks
+        estimator.reset(lag_init, valid_blocks)
+    except Exception:
+      print("Error reading cached LagParams")
+
   while True:
     sm.update()
     if sm.all_checks():
@@ -195,6 +211,9 @@ def main():
 
       pm.send('liveActuatorDelay', msg)
       pm.send('alertDebug', alert_msg)
+
+      if msg.liveActuatorDelay.isEstimated: # TODO maybe to often once estimated
+        params.put_nonblocking("LagParams", msg.to_bytes())
 
 
 if __name__ == "__main__":

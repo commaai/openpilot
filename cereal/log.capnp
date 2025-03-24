@@ -2278,6 +2278,7 @@ struct LiveDelayData {
   points @2 :List(List(Float32));
   isEstimated @3 :Bool;
   correlation @4 :Float32;
+  validBlocks @5 :Int32;
 }
 
 struct LiveMapDataDEPRECATED {
