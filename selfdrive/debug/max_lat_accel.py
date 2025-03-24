@@ -97,8 +97,8 @@ if __name__ == '__main__':
   print()
   print(f'Found {len(events)} events')
 
-  perc_left_accel = -np.percentile([-ev.lateral_accel for ev in events if ev.lateral_accel < 0], 90)
-  perc_right_accel = np.percentile([ev.lateral_accel for ev in events if ev.lateral_accel > 0], 90)
+  perc_left_accel = -np.percentile([-ev.lateral_accel for ev in events if ev.lateral_accel < 0] or [0], 90)
+  perc_right_accel = np.percentile([ev.lateral_accel for ev in events if ev.lateral_accel > 0] or [0], 90)
 
   CP = lr.first('carParams')
 
