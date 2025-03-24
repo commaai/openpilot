@@ -18,6 +18,7 @@
 #include "selfdrive/ui/sunnypilot/qt/widgets/toggle.h"
 
 QFrame *horizontal_line(QWidget *parent = nullptr);
+QFrame *vertical_space(int height = 10, QWidget *parent = nullptr);
 
 inline void ReplaceWidget(QWidget *old_widget, QWidget *new_widget) {
   if (old_widget && old_widget->parentWidget() && old_widget->parentWidget()->layout()) {

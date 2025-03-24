@@ -22,6 +22,13 @@ QFrame *horizontal_line(QWidget *parent) {
   return line;
 }
 
+QFrame *vertical_space(int height, QWidget *parent) {
+  QFrame *v_space = new QFrame(parent);
+  v_space->setFrameShape(QFrame::StyledPanel);
+  v_space->setFixedHeight(height);
+  return v_space;
+}
+
 // AbstractControlSP
 
 AbstractControlSP::AbstractControlSP(const QString &title, const QString &desc, const QString &icon, QWidget *parent)
