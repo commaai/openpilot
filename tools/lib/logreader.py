@@ -205,7 +205,7 @@ def get_invalid_files(files):
   if not files:
     return
 
-  with ThreadPoolExecutor() as executor:
+  with ThreadPoolExecutor(max_workers=32) as executor:
     future_to_file = {executor.submit(file_exists, file): file for file in files}
     for future in as_completed(future_to_file):
       file = future_to_file[future]
