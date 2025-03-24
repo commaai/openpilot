@@ -16,23 +16,25 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   device_grid_layout->setHorizontalSpacing(5);
   device_grid_layout->setVerticalSpacing(25);
 
-  std::vector<std::pair<QString, QString>> device_btns = {
-    {"dcamBtn", tr("Driver Camera Preview")},
-    {"retrainingBtn", tr("Training Guide")},
-    {"regulatoryBtn", tr("Regulatory")},
-    {"translateBtn", tr("Language")},
-    {"resetParams", tr("Reset Settings")},
+  std::vector<std::tuple<QString, QString, QString>> device_btns = {
+    {"dcamBtn", tr("Driver Camera Preview"), ""},
+    {"retrainingBtn", tr("Training Guide"), ""},
+    {"regulatoryBtn", tr("Regulatory"), ""},
+    {"translateBtn", tr("Language"), ""},
+    {"resetParams", tr("Reset Settings"), ""},
   };
 
   int row = 0, col = 0;
-  for (int i = 0; i < device_btns.size(); i++) {
-    if (device_btns[i].first == "regulatoryBtn" && !Hardware::TICI()) {
+  for (const auto &[id, text, param] : device_btns) {
+    if (id == "regulatoryBtn" && !Hardware::TICI()) {
       continue;
     }
 
-    auto *btn = new PushButtonSP(device_btns[i].second, 720, this);
+    auto *btn = new PushButtonSP(text, 720, this, param);
+    btn->setObjectName(id);
+
     device_grid_layout->addWidget(btn, row, col);
-    buttons[device_btns[i].first] = btn;
+    buttons[id] = btn;
 
     col++;
     if (col > 1) {
