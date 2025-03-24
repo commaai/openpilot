@@ -121,7 +121,7 @@ class LagEstimator:
     self.t = t
 
   def points_valid(self):
-    return self.points.num_okay < int(self.okay_window_sec / self.dt)
+    return self.points.num_okay >= int(self.okay_window_sec / self.dt)
 
   def update_points(self):
     okay = self.lat_active and not self.steering_pressed and self.v_ego > self.min_vego and np.abs(self.yaw_rate) >= self.min_yr
@@ -129,7 +129,7 @@ class LagEstimator:
     la_actual_pose = self.yaw_rate * self.v_ego
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
-    if not okay or self.points_valid():
+    if not okay or not self.points_valid():
       return
 
     times, desired, actual, okay = self.points.get()

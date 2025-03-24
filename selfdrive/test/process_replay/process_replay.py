@@ -401,7 +401,7 @@ def torqued_rcv_callback(msg, cfg, frame):
   return (frame - 1) == 0 or msg.which() == 'livePose'
 
 def lagd_rcv_callback(msg, cfg, frame):
-  return (frame - 1) == 0 or msg.which() == 'controlsState'
+  return (frame - 1) == 0 or msg.which() == 'livePose'
 
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
