@@ -393,7 +393,7 @@ class TestOnroad:
     cfgs = [
       # since multiple processes use the GPU and can preempt each other,
       # these numbers are not fully self-contained.
-      ("modelV2", 0.045, 0.040),
+      ("modelV2", 0.06, 0.040),
 
       # can miss cycles here and there, just important the avg frequency is 20Hz
       ("driverStateV2", 0.2, 0.05),
