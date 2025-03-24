@@ -97,19 +97,8 @@ if __name__ == '__main__':
   print()
   print(f'Found {len(events)} events')
 
-  negative_accels = [-ev.lateral_accel for ev in events if ev.lateral_accel < 0]
-  if negative_accels:
-    perc_left_accel = -np.percentile(negative_accels, 90)
-  else:
-    perc_left_accel = np.float64(0)
-    print("no negative lateral acceleration value found.")
-
-  positive_accels = [ev.lateral_accel for ev in events if ev.lateral_accel > 0]
-  if positive_accels:
-    perc_right_accel = np.percentile(positive_accels, 90)
-  else:
-    perc_right_accel = np.float64(0)
-    print("no positive lateral acceleration value found.")
+  perc_left_accel = -np.percentile([-ev.lateral_accel for ev in events if ev.lateral_accel < 0] or [0], 90)
+  perc_right_accel = np.percentile([ev.lateral_accel for ev in events if ev.lateral_accel > 0] or [0], 90)
 
   CP = lr.first('carParams')
 
