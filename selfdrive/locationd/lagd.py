@@ -183,7 +183,7 @@ def main():
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   estimator = LagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency)
 
-  lag_params = params.get("LagParams")
+  lag_params = params.get("LiveLag")
   if lag_params:
     try:
       with log.Event.from_bytes(lag_params) as msg:
@@ -212,7 +212,7 @@ def main():
       pm.send('alertDebug', alert_msg)
 
       if msg.liveActuatorDelay.isEstimated: # TODO maybe to often once estimated
-        params.put_nonblocking("LagParams", msg.to_bytes())
+        params.put_nonblocking("LiveLag", msg.to_bytes())
 
 
 if __name__ == "__main__":
