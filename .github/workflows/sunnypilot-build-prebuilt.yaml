@@ -38,6 +38,7 @@ jobs:
       new_branch: ${{ steps.set-env.outputs.new_branch }}
       version: ${{ steps.set-env.outputs.version }}
       extra_version_identifier: ${{ steps.set-env.outputs.extra_version_identifier }}
+      commit_sha: ${{ steps.set-env.outputs.commit_sha }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -94,6 +95,7 @@ jobs:
           echo "new_branch=$NEW_BRANCH" >> $GITHUB_OUTPUT
           [[ ! -z "$EXTRA_VERSION_IDENTIFIER" ]] && echo "extra_version_identifier=$EXTRA_VERSION_IDENTIFIER" >> $GITHUB_OUTPUT
           [[ ! -z "$VERSION" ]] && echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "commit_sha=${{ github.sha }}" >> $GITHUB_OUTPUT
           
           # Set up common environment
           source /etc/profile;
