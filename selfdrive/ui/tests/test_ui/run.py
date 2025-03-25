@@ -233,6 +233,12 @@ def setup_settings_steering_mads(click, pm: PubMaster, scroll=None):
   click(970, 250)
   time.sleep(UI_DELAY)
 
+def setup_settings_steering_alc(click, pm: PubMaster, scroll=None):
+  setup_settings_device(click, pm)
+  click(278, 852)
+  click(970, 534)
+  time.sleep(UI_DELAY)
+
 def setup_settings_trips(click, pm: PubMaster, scroll=None):
   setup_settings_device(click, pm)
   click(278, 962)
@@ -284,6 +290,7 @@ CASES.update({
   "settings_sunnylink_sponsor_button": setup_settings_sunnylink_sponsor_button,
   "settings_steering": setup_settings_steering,
   "settings_steering_mads": setup_settings_steering_mads,
+  "settings_steering_alc": setup_settings_steering_alc,
   "settings_trips": setup_settings_trips,
   "settings_vehicle": setup_settings_vehicle,
 })
