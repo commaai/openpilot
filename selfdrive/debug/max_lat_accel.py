@@ -2,6 +2,7 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from functools import partial
 from tqdm import tqdm
 from typing import NamedTuple
 from openpilot.tools.lib.logreader import LogReader
@@ -98,7 +99,7 @@ if __name__ == '__main__':
       print('WARNING: Treating route as qlog!')
 
     print('Finding events...')
-    events += find_events(lr, extrapolate=args.extrapolate, qlog=qlog)
+    events += lr.run_across_segments(8, partial(find_events, extrapolate=args.extrapolate, qlog=qlog), disable_tqdm=True)
 
   print()
   print(f'Found {len(events)} events')
