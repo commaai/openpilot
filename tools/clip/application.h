@@ -6,16 +6,17 @@
 #include "recorder/widget.h"
 
 
-class Application {
+class Application : public QObject {
+    Q_OBJECT
 public:
-    Application(int argc, char* argv[]);
+    Application(int argc, char* argv[], QObject *parent = nullptr);
     ~Application();
     int exec() const;
     void close() const;
 
 private:
-    void initReplay();
-    void startReplay();
+    void initReplay(const std::string& route);
+    void startReplay(int start = 0);
 
     QApplication *app;
     QThread *recorderThread = nullptr;

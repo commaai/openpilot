@@ -56,7 +56,7 @@ void OnroadWindow::updateState(const UIState &s) {
     update();
   }
 
-  emit drewOnroadFrame(std::make_shared<QPixmap>(std::move(grab())));
+  emit redrew();
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {

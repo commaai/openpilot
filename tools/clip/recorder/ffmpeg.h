@@ -11,7 +11,7 @@ extern "C" {
 
 class FFmpegEncoder {
 public:
-  FFmpegEncoder(const QString& outputFile, int width, int height, int fps);
+  FFmpegEncoder(const std::string& outputFile, int width, int height, int fps);
   ~FFmpegEncoder();
   bool writeFrame(const QImage& image);
 

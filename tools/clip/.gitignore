@@ -1,1 +1,4 @@
+moc_*
+*.moc
+
 clip

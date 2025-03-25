@@ -1,9 +1,9 @@
 #include "tools/clip/recorder/ffmpeg.h"
 #include <QDebug>
 
-FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, int fps) {
+FFmpegEncoder::FFmpegEncoder(const std::string& outputFile, int width, int height, int fps) {
   // Allocate output context
-  if (avformat_alloc_output_context2(&format_ctx, nullptr, nullptr, outputFile.toStdString().c_str()) < 0) {
+  if (avformat_alloc_output_context2(&format_ctx, nullptr, nullptr, outputFile.c_str()) < 0) {
     return;
   }
 
@@ -60,7 +60,7 @@ FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, i
 
   // Open output file
   if (!(format_ctx->oformat->flags & AVFMT_NOFILE)) {
-    if (avio_open(&format_ctx->pb, outputFile.toStdString().c_str(), AVIO_FLAG_WRITE) < 0) {
+    if (avio_open(&format_ctx->pb, outputFile.c_str(), AVIO_FLAG_WRITE) < 0) {
       return;
     }
   }

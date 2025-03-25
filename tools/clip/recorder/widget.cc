@@ -2,8 +2,8 @@
 
 #include "tools/clip/recorder/ffmpeg.h"
 
-Recorder::Recorder(QObject *parent) : QObject(parent) {
-  encoder = new FFmpegEncoder("/Users/trey/Desktop/out.mp4", DEVICE_SCREEN_SIZE.width(), DEVICE_SCREEN_SIZE.height(), UI_FREQ);
+Recorder::Recorder(const std::string& outputFile, QObject *parent) : QObject(parent) {
+  encoder = new FFmpegEncoder(outputFile, DEVICE_SCREEN_SIZE.width(), DEVICE_SCREEN_SIZE.height(), UI_FREQ);
 }
 
 Recorder::~Recorder() {
@@ -12,7 +12,7 @@ Recorder::~Recorder() {
 
 void Recorder::saveFrame(const std::shared_ptr<QPixmap> &frame) {
     QMutexLocker locker(&mutex);
-    frameQueue.enqueue(frame); // Add frame to queue
+    frameQueue.enqueue(frame);
     if (!isProcessing) {
         isProcessing = true;
         QMetaObject::invokeMethod(this, &Recorder::processQueue, Qt::QueuedConnection);

@@ -12,7 +12,7 @@ class Recorder : public QObject {
     Q_OBJECT
 
 public:
-    Recorder(QObject *parent = nullptr);
+    Recorder(const std::string& outputFile, QObject *parent = nullptr);
     ~Recorder() override;
 
 public slots:

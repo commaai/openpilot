@@ -10,14 +10,16 @@ public:
   OnroadWindow(QWidget* parent = 0);
 
 signals:
-  void drewOnroadFrame(const std::shared_ptr<QPixmap> &frame);
+  void redrew();
 
 private:
-  void paintEvent(QPaintEvent *event);
   OnroadAlerts *alerts;
   AnnotatedCameraWidget *nvg;
   QColor bg = bg_colors[STATUS_DISENGAGED];
   QHBoxLayout* split;
+
+protected:
+  void paintEvent(QPaintEvent *event) override;
 
 private slots:
   void offroadTransition(bool offroad);

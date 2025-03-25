@@ -7,12 +7,53 @@
 
 #include "recorder/widget.h"
 
-Application::Application(int argc, char *argv[]) {
+Application::Application(int argc, char *argv[], QObject *parent) : QObject(parent) {
   initApp(argc, argv);
 
   app = new QApplication(argc, argv);
 
-  QString outputFile = "/Users/trey/Desktop/out.mp4";
+  QCommandLineParser parser;
+  parser.setApplicationDescription("Clip your ride!");
+  parser.addHelpOption();
+
+  const QCommandLineOption start({"s", "start"}, "start time", "start");
+  parser.addOption(start);
+
+  const QCommandLineOption output({"o", "output"}, "output file", "output");
+  parser.addOption(output);
+
+  parser.addPositionalArgument("route", "route string");
+
+  parser.process(*app);
+
+  int startTime = 0;
+  if (parser.isSet(start)) {
+    bool ok;
+    int parsed = parser.value(start).toInt(&ok);
+    if (!ok) {
+      qDebug() << "start time must be an integer\n";
+      fprintf(stderr, "%s", parser.helpText().toStdString().c_str());
+      exit(1);
+    }
+    startTime = parsed;
+  }
+
+  if (!parser.isSet(output)) {
+    qDebug() << "output is required\n";
+    fprintf(stderr, "%s", parser.helpText().toStdString().c_str());
+    exit(1);
+  }
+  QString outputFile = parser.value(output);
+
+  QString route;
+  QStringList positionalArgs = parser.positionalArguments();
+  if (!positionalArgs.isEmpty()) {
+    route = positionalArgs.at(0);
+  } else {
+    qDebug() << "No file specified\n";
+    fprintf(stderr, "%s", parser.helpText().toStdString().c_str());
+    exit(1);
+  }
 
   QTranslator translator;
   QString translation_file = QString::fromStdString(Params().get("LanguageSetting"));
@@ -25,10 +66,14 @@ Application::Application(int argc, char *argv[]) {
   window = new OnroadWindow();
 
   recorderThread = new QThread;
-  recorder = new Recorder;
+  recorder = new Recorder(outputFile.toStdString());
   recorder->moveToThread(recorderThread);
   QObject::connect(recorderThread, &QThread::finished, recorder, &QObject::deleteLater);
-  QObject::connect(window, &OnroadWindow::drewOnroadFrame, recorder, &Recorder::saveFrame, Qt::QueuedConnection);
+
+  QObject::connect(window, &OnroadWindow::redrew, this, [&]() {
+    recorder->saveFrame(std::make_shared<QPixmap>(std::move(window->grab())));
+  }, Qt::DirectConnection);
+
   QObject::connect(app, &QCoreApplication::aboutToQuit, recorderThread, &QThread::quit);
 
   window->setAttribute(Qt::WA_DontShowOnScreen);
@@ -37,29 +82,28 @@ Application::Application(int argc, char *argv[]) {
   recorderThread->start();
 
   // Initialize and start replay
-  initReplay();
-  replayThread = QThread::create([this] { startReplay(); });
+  initReplay(route.toStdString());
+  replayThread = QThread::create([this, startTime] { startReplay(startTime); });
   replayThread->start();
 }
 
-void Application::initReplay() {
+void Application::initReplay(const std::string& route) {
   std::vector<std::string> allow;
   std::vector<std::string> block;
-  replay = std::make_unique<Replay>("a2a0ccea32023010|2023-07-27--13-01-19", allow, block, nullptr,
-                                  REPLAY_FLAG_NONE);
-  replay->setSegmentCacheLimit(10);
+  replay = std::make_unique<Replay>(route, allow, block, nullptr, REPLAY_FLAG_NONE);
+  replay->setSegmentCacheLimit(1);
 }
 
-void Application::startReplay() {
+void Application::startReplay(int start) {
   if (!replay || !replay->load()) {
     qWarning() << "Failed to load replay";
-    return;
+    QApplication::instance()->quit();
   }
 
   qInfo() << "Replay started.";
   replayRunning = true;
-  replay->setEndSeconds(120);
-  replay->start(60);
+  replay->setEndSeconds(start + 60);
+  replay->start(start + 2);
   replay->waitUntilEnd();
   qInfo() << "Replay ended.";
   replayRunning = false;
@@ -83,10 +127,10 @@ Application::~Application() {
 }
 
 int Application::exec() const {
-  std::this_thread::sleep_for(std::chrono::seconds(3));
+  // TODO: modify Replay to block until all OnroadWindow required messages have been broadcast at least once
+  std::this_thread::sleep_for(std::chrono::seconds(5));
   setMainWindow(window);
-  app->exec();
-  return 0;
+  return app->exec();
 }
 
 
