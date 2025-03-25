@@ -74,12 +74,18 @@ Application::Application(int argc, char *argv[], QObject *parent) : QObject(pare
   QObject::connect(recorderThread, &QThread::finished, recorder, &QObject::deleteLater);
 
   QObject::connect(window, &OnroadWindow::redrew, this, [&]() {
-    recorder->saveFrame(std::make_shared<QPixmap>(std::move(window->grab())));
-  }, Qt::DirectConnection);
+    QElapsedTimer timer;
+    timer.start();
+    QPixmap pixmap = window->grab();
+    // qDebug() << "pixmap took " << timer.elapsed() << " ms";
+    timer.restart();
+    recorder->saveFrame(std::make_shared<QPixmap>(std::move(pixmap)));
+    // qDebug() << "save frame took" << timer.elapsed() << " ms";
+  }, Qt::QueuedConnection);
 
   QObject::connect(app, &QCoreApplication::aboutToQuit, recorderThread, &QThread::quit);
 
-  window->setAttribute(Qt::WA_DontShowOnScreen);
+  // window->setAttribute(Qt::WA_DontShowOnScreen);
   window->setAttribute(Qt::WA_Mapped);
   window->setAttribute(Qt::WA_NoSystemBackground);
   recorderThread->start();
