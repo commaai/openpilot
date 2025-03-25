@@ -8,9 +8,12 @@
 #include "recorder/widget.h"
 
 Application::Application(int argc, char *argv[], QObject *parent) : QObject(parent) {
-  initApp(argc, argv);
+  argc_ = argc;
+  argv_ = argv;
 
-  app = new QApplication(argc, argv);
+  initApp(argc_, argv_);
+
+  app = new QApplication(argc_, argv_);
 
   QCommandLineParser parser;
   parser.setApplicationDescription("Clip your ride!");

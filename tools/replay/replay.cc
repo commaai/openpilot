@@ -215,6 +215,8 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
 }
 
 void Replay::publishMessage(const Event *e) {
+  if (event_filter_ && event_filter_(e)) return;
+
   if (!sm_) {
     auto bytes = e->data.asBytes();
     int ret = pm_->send(sockets_[e->which], (capnp::byte *)bytes.begin(), bytes.size());

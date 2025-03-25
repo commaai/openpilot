@@ -27,4 +27,7 @@ private:
     std::unique_ptr<Replay> replay;
     QThread *replayThread = nullptr;
     bool replayRunning = false;
+
+    int argc_;
+    char **argv_;
 };
