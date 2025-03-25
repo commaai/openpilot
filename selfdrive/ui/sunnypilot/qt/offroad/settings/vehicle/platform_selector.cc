@@ -48,8 +48,19 @@ PlatformSelector::PlatformSelector() : ButtonControl(tr("Vehicle"), "", "") {
 
 void PlatformSelector::refresh(bool _offroad) {
   QString name = getPlatformBundle("name").toString();
-  setValue(name);
-  setText(name.isEmpty() ? tr("SEARCH") : tr("REMOVE"));
+  if (!name.isEmpty()) {
+    setValue(name);
+    setText(tr("REMOVE"));
+  } else {
+    setText(tr("SEARCH"));
+    auto cp_bytes = params.get("CarParamsPersistent");
+    if (!cp_bytes.empty()) {
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
+      cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+      setValue(QString::fromStdString(CP.getCarFingerprint().cStr()));
+    }
+  }
   setEnabled(true);
 
   offroad = _offroad;
