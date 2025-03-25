@@ -6,6 +6,8 @@
 #include "selfdrive/ui/qt/util.h"
 
 OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
+  qRegisterMetaType<std::shared_ptr<QPixmap>>("std::shared_ptr<QPixmap>");
+
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
   QStackedLayout *stacked_layout = new QStackedLayout;
@@ -44,8 +46,6 @@ void OnroadWindow::updateState(const UIState &s) {
     return;
   }
 
-  emit drewOnroadFrame(new QImage(grab().toImage()));
-
   alerts->updateState(s);
   nvg->updateState(s);
 
@@ -55,6 +55,8 @@ void OnroadWindow::updateState(const UIState &s) {
     bg = bgColor;
     update();
   }
+
+  emit drewOnroadFrame(std::make_shared<QPixmap>(std::move(grab())));
 }
 
 void OnroadWindow::offroadTransition(bool offroad) {

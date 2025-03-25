@@ -46,7 +46,8 @@ void Application::initReplay() {
   std::vector<std::string> allow;
   std::vector<std::string> block;
   replay = std::make_unique<Replay>("a2a0ccea32023010|2023-07-27--13-01-19", allow, block, nullptr,
-                                  REPLAY_FLAG_NONE & REPLAY_FLAG_ECAM & REPLAY_FLAG_DCAM);
+                                  REPLAY_FLAG_NONE);
+  replay->setSegmentCacheLimit(10);
 }
 
 void Application::startReplay() {

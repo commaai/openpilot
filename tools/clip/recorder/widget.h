@@ -16,12 +16,11 @@ public:
     ~Recorder() override;
 
 public slots:
-    void saveFrame(QImage *frame);
-    void stop();
+    void saveFrame(const std::shared_ptr<QPixmap> &frame);
 
 private:
     FFmpegEncoder *encoder;
-    QQueue<QImage *> frameQueue;
+    QQueue<std::shared_ptr<QPixmap>> frameQueue;
     QMutex mutex;
     bool isProcessing = false;
     bool keepRunning = true;

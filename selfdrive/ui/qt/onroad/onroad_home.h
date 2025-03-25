@@ -10,7 +10,7 @@ public:
   OnroadWindow(QWidget* parent = 0);
 
 signals:
-  void drewOnroadFrame(QImage *frame);
+  void drewOnroadFrame(const std::shared_ptr<QPixmap> &frame);
 
 private:
   void paintEvent(QPaintEvent *event);

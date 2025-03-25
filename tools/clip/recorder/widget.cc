@@ -10,7 +10,7 @@ Recorder::~Recorder() {
     delete encoder;
 }
 
-void Recorder::saveFrame(QImage *frame) {
+void Recorder::saveFrame(const std::shared_ptr<QPixmap> &frame) {
     QMutexLocker locker(&mutex);
     frameQueue.enqueue(frame); // Add frame to queue
     if (!isProcessing) {
@@ -21,7 +21,7 @@ void Recorder::saveFrame(QImage *frame) {
 
 void Recorder::processQueue() {
     while (true) {
-        QImage *frame;
+        std::shared_ptr<QPixmap> frame;
         {
             QMutexLocker locker(&mutex);
             if (frameQueue.isEmpty() || !keepRunning) {
@@ -31,16 +31,9 @@ void Recorder::processQueue() {
             frame = frameQueue.dequeue();
         }
 
-        if (!encoder->writeFrame(frame->convertToFormat(QImage::Format_ARGB32_Premultiplied))) {
+        if (!encoder->writeFrame(frame->toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied))) {
             fprintf(stderr, "did not write\n");
         }
-
-        delete frame;
     }
-}
-
-void Recorder::stop() {
-    QMutexLocker locker(&mutex);
-    keepRunning = false;
 }
 
