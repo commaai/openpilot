@@ -91,8 +91,13 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
 void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
-  sm.update();
   const double start_draw_t = millis_since_boot();
+
+  // if we haven't received all messages at least once, force an update of latest state
+  // many messages are required for UI draw and this will fail if any are not valid
+  if (!sm.allValid()) {
+    sm.update();
+  }
 
   // draw camera frame
   {
