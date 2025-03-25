@@ -99,7 +99,7 @@ if __name__ == '__main__':
       print('WARNING: Treating route as qlog!')
 
     print('Finding events...')
-    events += lr.run_across_segments(8, partial(find_events, extrapolate=args.extrapolate, qlog=qlog))
+    events += lr.run_across_segments(8, partial(find_events, extrapolate=args.extrapolate, qlog=qlog), disable_tqdm=True)
 
   print()
   print(f'Found {len(events)} events')
