@@ -101,7 +101,7 @@ FFmpegEncoder::FFmpegEncoder(const QString& outputFile, int width, int height, i
 
 FFmpegEncoder::~FFmpegEncoder() {
   if (initialized) {
-    // encodeFrame(nullptr);  // Flush encoder
+    encodeFrame(nullptr);
     av_write_trailer(format_ctx);
     if (!(format_ctx->oformat->flags & AVFMT_NOFILE) && format_ctx->pb) {
       avio_closep(&format_ctx->pb);

@@ -320,7 +320,7 @@ std::vector<Event>::const_iterator Replay::publishEvents(std::vector<Event>::con
       loop_start_ts = current_nanos;
       prev_replay_speed = speed_;
     } else if (time_diff > 0) {
-      precise_nano_sleep(time_diff, interrupt_requested_);
+      std::this_thread::sleep_for(std::chrono::nanoseconds(time_diff));
     }
 
     if (interrupt_requested_) break;

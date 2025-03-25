@@ -91,7 +91,7 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
 void AnnotatedCameraWidget::paintGL() {
   UIState *s = uiState();
   SubMaster &sm = *(s->sm);
-  sm.update(0);
+  sm.update();
   const double start_draw_t = millis_since_boot();
 
   // draw camera frame

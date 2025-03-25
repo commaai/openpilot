@@ -20,7 +20,7 @@ public:
     bool isSegmentLoaded(int n) const { return segments.find(n) != segments.end(); }
   };
 
-  SegmentManager(const std::string &route_name, uint32_t flags, const std::string &data_dir = "")
+  SegmentManager(const std::string &route_name, uint32_t flags, const std::string &data_dir = "/tmp/clip")
       : flags_(flags), route_(route_name, data_dir), event_data_(std::make_shared<EventData>()) {}
   ~SegmentManager();
 

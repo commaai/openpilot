@@ -8,7 +8,6 @@ Recorder::Recorder(QObject *parent) : QObject(parent) {
 
 Recorder::~Recorder() {
     delete encoder;
-    QObject::~QObject();
 }
 
 void Recorder::saveFrame(QImage *frame) {

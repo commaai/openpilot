@@ -334,6 +334,7 @@ void CameraWidget::vipcThread() {
         QThread::msleep(100);
         continue;
       }
+      qDebug().nospace() << "connected to stream " << requested_stream_type << ", was connected to " << cur_stream;
       emit vipcAvailableStreamsUpdated(streams);
 
       if (!vipc_client->connect(false)) {

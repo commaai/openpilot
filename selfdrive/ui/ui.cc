@@ -107,7 +107,6 @@ UIState::UIState(QObject *parent) : QObject(parent) {
 }
 
 void UIState::update() {
-  fprintf(stderr, "updatng ui state\n");
   update_sockets(this);
   update_state(this);
   updateStatus();
