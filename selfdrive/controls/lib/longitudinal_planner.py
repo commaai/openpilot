@@ -106,7 +106,8 @@ class LongitudinalPlanner:
     return x, v, a, j, throttle_prob
 
   def update(self, sm):
-    self.mpc.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
+    self.mpc.mode = 'acc'
+    self.mode = 'blended' if sm['selfdriveState'].experimentalMode else 'acc'
 
     if len(sm['carControl'].orientationNED) == 3:
       accel_coast = get_coast_accel(sm['carControl'].orientationNED[1])
@@ -129,7 +130,7 @@ class LongitudinalPlanner:
     # No change cost when user is controlling the speed, or when standstill
     prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
-    if self.mpc.mode == 'acc':
+    if self.mode == 'acc':
       accel_clip = [ACCEL_MIN, get_max_accel(v_ego)]
       steer_angle_without_offset = sm['carState'].steeringAngleDeg - sm['liveParameters'].angleOffsetDeg
       accel_clip = limit_accel_in_turns(v_ego, steer_angle_without_offset, accel_clip, self.CP)
@@ -176,8 +177,17 @@ class LongitudinalPlanner:
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
-    output_a_target, self.output_should_stop = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory,
+    output_a_target_mpc, output_should_stop_mpc = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory,
                                                                         action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+    output_a_target_e2e, output_should_stop_e2e = get_accel_from_plan(np.interp(CONTROL_N_T_IDX, ModelConstants.T_IDXS, model_msg.velocity.x),
+                                                                      np.interp(CONTROL_N_T_IDX, ModelConstants.T_IDXS, model_msg.acceleration.x),
+                                                                      action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
+    if self.mode == 'acc':
+      output_a_target = output_a_target_mpc
+      self.output_should_stop = output_should_stop_mpc
+    else:
+      output_a_target = min(output_a_target_mpc, output_a_target_e2e)
+      self.output_should_stop = output_should_stop_e2e or output_should_stop_mpc
 
     for idx in range(2):
       accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
