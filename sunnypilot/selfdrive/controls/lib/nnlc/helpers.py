@@ -43,12 +43,13 @@ def get_nn_model_path(CP: structs.CarParams) -> tuple[str, str, bool]:
     nn_candidate = car_fingerprint
 
   model_path, max_similarity = check_nn_path(nn_candidate)
-
   exact_match = max_similarity >= 0.99
 
   if car_fingerprint not in model_path or 0.0 <= max_similarity < 0.9:
     nn_candidate = car_fingerprint
     model_path, max_similarity = check_nn_path(nn_candidate)
+    exact_match = max_similarity >= 0.99
+
     if 0.0 <= max_similarity < 0.9:
       with open(TORQUE_NN_MODEL_SUBSTITUTE_PATH, 'rb') as f:
         sub = tomllib.load(f)
