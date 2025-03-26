@@ -24,4 +24,4 @@ def get_lag_adjusted_curvature(steer_delay, v_ego, psis, curvatures):
                                 current_curvature_desired - max_curvature_rate * DT_MDL,
                                 current_curvature_desired + max_curvature_rate * DT_MDL)
 
-  return safe_desired_curvature
+  return float(safe_desired_curvature)
