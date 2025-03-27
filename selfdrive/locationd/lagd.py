@@ -14,6 +14,7 @@ BLOCK_SIZE = 100
 BLOCK_NUM = 50
 MOVING_WINDOW_SEC = 300.0
 MIN_OKAY_WINDOW_SEC = 30.0
+MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
 MIN_ABS_YAW_RATE = np.radians(1.0)
 MIN_NCC = 0.95
@@ -139,11 +140,12 @@ class BlockAverage:
 class LagEstimator:
   def __init__(self, CP, dt,
                block_count=BLOCK_NUM, block_size=BLOCK_SIZE,
-               window_sec=MOVING_WINDOW_SEC, okay_window_sec=MIN_OKAY_WINDOW_SEC,
+               window_sec=MOVING_WINDOW_SEC, okay_window_sec=MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec=MIN_RECOVERY_BUFFER_SEC,
                min_vego=MIN_VEGO, min_yr=MIN_ABS_YAW_RATE, min_ncc=MIN_NCC):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
+    self.min_recovery_buffer_sec = min_recovery_buffer_sec
     self.initial_lag = CP.steerActuatorDelay + 0.2
     self.block_size = block_size
     self.block_count = block_count
@@ -158,6 +160,10 @@ class LagEstimator:
     self.desired_curvature = 0
     self.v_ego = 0
     self.yaw_rate = 0
+
+    self.last_lat_inactive_t = 0
+    self.last_steering_pressed_t = 0
+    self.last_steering_saturated_t = 0
 
     self.calibrator = PoseCalibrator()
 
@@ -189,8 +195,8 @@ class LagEstimator:
       self.steering_pressed = msg.steeringPressed
       self.v_ego = msg.vEgo
     elif which == "controlsState":
-      self.desired_curvature = msg.desiredCurvature
       self.steering_saturated = getattr(msg.lateralControlState, msg.lateralControlState.which()).saturated
+      self.desired_curvature = msg.desiredCurvature
     elif which == "liveCalibration":
       self.calibrator.feed_live_calib(msg)
     elif which == "livePose":
@@ -203,12 +209,23 @@ class LagEstimator:
     return self.points.num_okay >= int(self.okay_window_sec / self.dt)
 
   def update_points(self):
+    if not self.lat_active:
+      self.last_lat_inactive_t = self.t
+    if self.steering_pressed:
+      self.last_steering_pressed_t = self.t
+    if self.steering_saturated:
+      self.last_steering_saturated_t = self.t
+
     la_desired = self.desired_curvature * self.v_ego * self.v_ego
     la_actual_pose = self.yaw_rate * self.v_ego
 
     fast = self.v_ego > self.min_vego
     turning = np.abs(self.yaw_rate) >= self.min_yr
-    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning
+    has_recovered = all([ # wait for recovery after !lat_active, steering_pressed, steering_saturated
+      self.t - last_t >= self.min_recovery_buffer_sec
+      for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t]
+    ])
+    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
     if not okay or not self.points_valid():
