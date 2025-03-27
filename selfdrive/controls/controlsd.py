@@ -115,8 +115,8 @@ class Controls:
 
     # Steering PID loop and lateral MPC
     # Reset desired curvature to current to avoid violating the limits on engage
-    desired_curvature = model_v2.action.desiredCurvature if CC.latActive else self.curvature
-    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, desired_curvature, lp.roll)
+    new_desired_curvature = model_v2.action.desiredCurvature if CC.latActive else self.curvature
+    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, new_desired_curvature, lp.roll)
 
     actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
