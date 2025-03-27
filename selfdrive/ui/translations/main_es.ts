@@ -681,7 +681,7 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>Firehose</source>
-        <translation type="unfinished"></translation>
+        <translation>Firehose</translation>
     </message>
 </context>
 <context>
