@@ -10,7 +10,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
-BLOCK_SIZE = 100
+BLOCK_SIZE = 20
 BLOCK_NUM = 50
 BLOCK_NUM_NEEDED = 5
 MOVING_WINDOW_SEC = 300.0
@@ -166,6 +166,7 @@ class LagEstimator:
     self.last_lat_inactive_t = 0
     self.last_steering_pressed_t = 0
     self.last_steering_saturated_t = 0
+    self.last_estimate_t = 0
 
     self.calibrator = PoseCalibrator()
 
@@ -237,16 +238,24 @@ class LagEstimator:
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
-    if not okay or not self.points_valid():
+
+  def update_estimate(self):
+    # check if the points are valid overall
+    if not self.points_valid():
       return
 
-    _, desired, actual, okay = self.points.get()
+    times, desired, actual, okay = self.points.get()
+    # check if there are any new valid data points since the last update
+    new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
+    if self.last_estimate_t != 0 and (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:])):
+      return
 
     delay, corr = self.actuator_delay(desired, actual, okay, self.dt)
     if corr < self.min_ncc:
       return
 
     self.block_avg.update(delay)
+    self.last_estimate_t = self.t
 
   def correlation_lags(self, sig_len, dt):
     return np.arange(0, sig_len) * dt
@@ -294,13 +303,15 @@ def main():
           estimator.handle_log(t, which, sm[which])
       estimator.update_points()
 
-    if sm.frame % 25 == 0:
+    # 4Hz driven by livePose
+    if sm.frame % 5 == 0:
+      estimator.update_estimate()
       msg = estimator.get_msg(sm.all_checks())
 
       # TODO remove
       alert_msg = messaging.new_message('alertDebug')
       alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
-      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelay:.2f} s ({msg.liveDelay.status == 'estimated'})"
+      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelay:.2f} s ({msg.liveDelay.status == 'estimated'}, blocks: {msg.liveDelay.validBlocks})"
       pm.send('alertDebug', alert_msg)
 
       msg_dat = msg.to_bytes()
