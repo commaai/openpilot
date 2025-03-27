@@ -7,7 +7,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from cereal.services import SERVICE_LIST
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process, DT_CTRL
+from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
 MIN_LAG_VEL = 20.0
@@ -16,6 +16,16 @@ MIN_ABS_YAW_RATE_DEG = 1
 MOVING_CORR_WINDOW = 300.0
 MIN_OKAY_WINDOW = 25.0
 MIN_NCC = 0.95
+
+
+def parabolic_peak_interp(R, max_index):
+  if max_index == 0 or max_index == len(R) - 1:
+    return max_index
+
+  y_m1, y_0, y_p1 = R[max_index - 1], R[max_index], R[max_index + 1]
+  offset = 0.5 * (y_p1 - y_m1) / (2 * y_0 - y_p1 - y_m1)
+
+  return max_index + offset
 
 
 class Points:
@@ -137,13 +147,9 @@ class LagEstimator:
     if not okay or not self.points_valid():
       return
 
-    times, desired, actual, okay = self.points.get()
-    times_interp = np.arange(times[-1] - self.window_sec, times[-1], DT_CTRL)
-    desired_interp = np.interp(times_interp, times, desired)
-    actual_interp = np.interp(times_interp, times, actual)
-    okay_interp = np.interp(times_interp, times, okay).astype(bool)
+    _, desired, actual, okay = self.points.get()
 
-    delay, corr = self.actuator_delay(desired_interp, actual_interp, okay_interp, DT_CTRL)
+    delay, corr = self.actuator_delay(desired, actual, okay, self.dt)
     if corr < self.min_ncc:
       return
 
@@ -209,12 +215,13 @@ class LagEstimator:
     ncc[nonzero_indices] = numerator[nonzero_indices] / denom[nonzero_indices]
     np.clip(ncc, -1, 1, out=ncc)
 
+    # only consider lags from 0 to max_lag
     max_lag_samples = int(max_lag / dt)
     roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
 
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
-    lag = max_corr_index * dt
+    lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt
 
     return lag, corr
 
