@@ -114,11 +114,9 @@ class Controls:
     actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget, long_plan.shouldStop, pid_accel_limits))
 
     # Steering PID loop and lateral MPC
-    if CC.latActive:
-      self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, model_v2.action.desiredCurvature, lp.roll)
-    else:
-      # Reset desired curvature to current to avoid violating the limits on engage
-      self.desired_curvature, curvature_limited = self.curvature, False
+    # Reset desired curvature to current to avoid violating the limits on engage
+    desired_curvature = model_v2.action.desiredCurvature if CC.latActive else self.curvature
+    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, desired_curvature, lp.roll)
 
     actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
