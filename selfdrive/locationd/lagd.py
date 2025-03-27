@@ -312,7 +312,7 @@ def main():
       # TODO remove
       alert_msg = messaging.new_message('alertDebug')
       alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
-      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelay:.2f} s ({msg.liveDelay.status == 'estimated'}, blocks: {msg.liveDelay.validBlocks})"
+      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelayEstimate:.2f} s ({msg.liveDelay.status == 'estimated'}, blocks: {msg.liveDelay.validBlocks})"
       pm.send('alertDebug', alert_msg)
 
       msg_dat = msg.to_bytes()
