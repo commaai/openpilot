@@ -10,11 +10,12 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
-MIN_LAG_VEL = 20.0
-MAX_SANE_LAG = 3.0
-MIN_ABS_YAW_RATE_DEG = 1
-MOVING_CORR_WINDOW = 300.0
-MIN_OKAY_WINDOW = 25.0
+BLOCK_SIZE = 100
+BLOCK_NUM = 50
+MOVING_WINDOW_SEC = 300.0
+MIN_OKAY_WINDOW_SEC = 30.0
+MIN_VEGO = 15.0
+MIN_ABS_YAW_RATE = np.radians(1.0)
 MIN_NCC = 0.95
 
 
@@ -136,7 +137,10 @@ class BlockAverage:
 
 
 class LagEstimator:
-  def __init__(self, CP, dt, block_count=10, block_size=100, window_sec=300.0, okay_window_sec=30.0,  min_vego=15, min_yr=np.radians(1), min_ncc=0.95):
+  def __init__(self, CP, dt,
+               block_count=BLOCK_NUM, block_size=BLOCK_SIZE,
+               window_sec=MOVING_WINDOW_SEC, okay_window_sec=MIN_OKAY_WINDOW_SEC,
+               min_vego=MIN_VEGO, min_yr=MIN_ABS_YAW_RATE, min_ncc=MIN_NCC):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
