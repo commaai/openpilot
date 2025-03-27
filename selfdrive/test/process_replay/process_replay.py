@@ -572,7 +572,7 @@ CONFIGS = [
   ProcessConfig(
     proc_name="lagd",
     pubs=["carState", "carControl", "controlsState", "livePose", "liveCalibration"],
-    subs=["liveActuatorDelay"],
+    subs=["liveDelay"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=lagd_rcv_callback,

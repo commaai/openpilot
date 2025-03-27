@@ -12,6 +12,7 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
 BLOCK_SIZE = 100
 BLOCK_NUM = 50
+BLOCK_NUM_NEEDED = 5
 MOVING_WINDOW_SEC = 300.0
 MIN_OKAY_WINDOW_SEC = 30.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
@@ -134,12 +135,12 @@ class BlockAverage:
     valid_block_idx = [i for i in range(self.valid_blocks) if i != self.block_idx]
     if not valid_block_idx:
       return None
-    return np.mean(self.values[valid_block_idx], axis=0)
+    return float(np.mean(self.values[valid_block_idx], axis=0).item())
 
 
 class LagEstimator:
   def __init__(self, CP, dt,
-               block_count=BLOCK_NUM, block_size=BLOCK_SIZE,
+               block_count=BLOCK_NUM, min_valid_block_count=BLOCK_NUM_NEEDED, block_size=BLOCK_SIZE,
                window_sec=MOVING_WINDOW_SEC, okay_window_sec=MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec=MIN_RECOVERY_BUFFER_SEC,
                min_vego=MIN_VEGO, min_yr=MIN_ABS_YAW_RATE, min_ncc=MIN_NCC):
     self.dt = dt
@@ -149,6 +150,7 @@ class LagEstimator:
     self.initial_lag = CP.steerActuatorDelay + 0.2
     self.block_size = block_size
     self.block_count = block_count
+    self.min_valid_block_count = min_valid_block_count
     self.min_vego = min_vego
     self.min_yr = min_yr
     self.min_ncc = min_ncc
@@ -173,18 +175,25 @@ class LagEstimator:
     window_len = int(self.window_sec / self.dt)
     self.points = Points(window_len)
     self.block_avg = BlockAverage(self.block_count, self.block_size, valid_blocks, initial_lag)
-    self.lag = initial_lag
 
   def get_msg(self, valid):
-    msg = messaging.new_message('liveActuatorDelay')
+    msg = messaging.new_message('liveDelay')
 
     msg.valid = valid
 
-    liveDelay = msg.liveActuatorDelay
-    liveDelay.steerActuatorDelay = self.lag
-    liveDelay.isEstimated = self.block_avg.valid_blocks > 0
+    liveDelay = msg.liveDelay
+
+    estimated_lag = self.block_avg.get()
+    liveDelay.estimatedLateralDelay = estimated_lag or self.initial_lag
+    if self.block_avg.valid_blocks >= self.min_valid_block_count and estimated_lag is not None:
+      liveDelay.status = log.LiveDelayData.Status.estimated
+      liveDelay.lateralDelay = estimated_lag
+    else:
+      liveDelay.status = log.LiveDelayData.Status.initial
+      liveDelay.lateralDelay = self.initial_lag
     liveDelay.validBlocks = self.block_avg.valid_blocks
-    liveDelay.points = self.block_avg.values.tolist()
+    # TODO only in debug
+    liveDelay.points = self.block_avg.values.flatten().tolist()
 
     return msg
 
@@ -238,8 +247,6 @@ class LagEstimator:
       return
 
     self.block_avg.update(delay)
-    if (new_lag := self.block_avg.get()) is not None:
-      self.lag = float(new_lag.item())
 
   def correlation_lags(self, sig_len, dt):
     return np.arange(0, sig_len) * dt
@@ -261,7 +268,7 @@ class LagEstimator:
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
-  pm = messaging.PubMaster(['liveActuatorDelay', 'alertDebug'])
+  pm = messaging.PubMaster(['liveDelay', 'alertDebug'])
   sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carControl', 'carState', 'controlsState'], poll='livePose')
 
   params = Params()
@@ -272,8 +279,8 @@ def main():
   if lag_params:
     try:
       with log.Event.from_bytes(lag_params) as msg:
-        lag_init = msg.liveActuatorDelay.steerActuatorDelay
-        valid_blocks = msg.liveActuatorDelay.validBlocks
+        lag_init = msg.liveDelay.estimatedLateralDelay
+        valid_blocks = msg.liveDelay.validBlocks
         estimator.reset(lag_init, valid_blocks)
     except Exception:
       print("Error reading cached LagParams")
@@ -289,15 +296,17 @@ def main():
 
     if sm.frame % 25 == 0:
       msg = estimator.get_msg(sm.all_checks())
+
+      # TODO remove
       alert_msg = messaging.new_message('alertDebug')
       alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
-      alert_msg.alertDebug.alertText2 = f"{msg.liveActuatorDelay.steerActuatorDelay:.2f} s ({msg.liveActuatorDelay.isEstimated})"
-
-      pm.send('liveActuatorDelay', msg)
+      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelay:.2f} s ({msg.liveDelay.status == 'estimated'})"
       pm.send('alertDebug', alert_msg)
 
-      if msg.liveActuatorDelay.isEstimated: # TODO maybe to often once estimated
-        params.put_nonblocking("LiveLag", msg.to_bytes())
+      msg_dat = msg.to_bytes()
+      if msg.liveDelay.status == 'estimated': # TODO maybe to often once estimated
+        params.put_nonblocking("LiveLag", msg_dat)
+      pm.send('liveDelay', msg_dat)
 
 
 if __name__ == "__main__":

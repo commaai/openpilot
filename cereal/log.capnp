@@ -2275,12 +2275,17 @@ struct LiveTorqueParametersData {
 }
 
 struct LiveDelayData {
-  steerActuatorDelay @0 :Float32;
-  totalPoints @1 :Int32;
-  points @2 :List(List(Float32));
-  isEstimated @3 :Bool;
-  correlation @4 :Float32;
-  validBlocks @5 :Int32;
+  lateralDelay @0 :Float32;
+  validBlocks @1 :Int32;
+  status @2 :Status;
+
+  estimatedLateralDelay @3 :Float32;
+  points @4 :List(Float32);
+
+  enum Status {
+    initial @0;
+    estimated @1;
+  }
 }
 
 struct LiveMapDataDEPRECATED {
@@ -2513,7 +2518,7 @@ struct Event {
     gnssMeasurements @91 :GnssMeasurements;
     liveParameters @61 :LiveParametersData;
     liveTorqueParameters @94 :LiveTorqueParametersData;
-    liveActuatorDelay @146 : LiveDelayData;
+    liveDelay @146 : LiveDelayData;
     cameraOdometry @63 :CameraOdometry;
     thumbnail @66: Thumbnail;
     onroadEvents @134: List(OnroadEvent);
