@@ -150,6 +150,7 @@ class LagEstimator:
     self.t = 0
     self.lat_active = False
     self.steering_pressed = False
+    self.steering_saturated = False
     self.desired_curvature = 0
     self.v_ego = 0
     self.yaw_rate = 0
@@ -185,6 +186,7 @@ class LagEstimator:
       self.v_ego = msg.vEgo
     elif which == "controlsState":
       self.desired_curvature = msg.desiredCurvature
+      self.steering_saturated = getattr(msg.lateralControlState, msg.lateralControlState.which()).saturated
     elif which == "liveCalibration":
       self.calibrator.feed_live_calib(msg)
     elif which == "livePose":
@@ -197,9 +199,12 @@ class LagEstimator:
     return self.points.num_okay >= int(self.okay_window_sec / self.dt)
 
   def update_points(self):
-    okay = self.lat_active and not self.steering_pressed and self.v_ego > self.min_vego and np.abs(self.yaw_rate) >= self.min_yr
     la_desired = self.desired_curvature * self.v_ego * self.v_ego
     la_actual_pose = self.yaw_rate * self.v_ego
+
+    fast = self.v_ego > self.min_vego
+    turning = np.abs(self.yaw_rate) >= self.min_yr
+    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
     if not okay or not self.points_valid():
