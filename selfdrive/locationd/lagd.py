@@ -246,9 +246,10 @@ class LagEstimator:
 
     times, desired, actual, okay = self.points.get()
     # check if there are any new valid data points since the last update
-    new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
-    if self.last_estimate_t != 0 and (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:])):
-      return
+    if self.last_estimate_t != 0:
+      new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
+      if (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:])):
+        return
 
     delay, corr = self.actuator_delay(desired, actual, okay, self.dt)
     if corr < self.min_ncc:
