@@ -184,7 +184,7 @@ class LagEstimator:
     liveDelay = msg.liveDelay
 
     estimated_lag = self.block_avg.get()
-    liveDelay.estimatedLateralDelay = estimated_lag or self.initial_lag
+    liveDelay.lateralDelayEstimate = estimated_lag or self.initial_lag
     if self.block_avg.valid_blocks >= self.min_valid_block_count and estimated_lag is not None:
       liveDelay.status = log.LiveDelayData.Status.estimated
       liveDelay.lateralDelay = estimated_lag
@@ -279,7 +279,7 @@ def main():
   if lag_params:
     try:
       with log.Event.from_bytes(lag_params) as msg:
-        lag_init = msg.liveDelay.estimatedLateralDelay
+        lag_init = msg.liveDelay.lateralDelayEstimate
         valid_blocks = msg.liveDelay.validBlocks
         estimator.reset(lag_init, valid_blocks)
     except Exception:

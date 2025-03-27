@@ -2279,7 +2279,7 @@ struct LiveDelayData {
   validBlocks @1 :Int32;
   status @2 :Status;
 
-  estimatedLateralDelay @3 :Float32;
+  lateralDelayEstimate @3 :Float32;
   points @4 :List(Float32);
 
   enum Status {
