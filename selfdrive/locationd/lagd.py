@@ -221,10 +221,10 @@ class LagEstimator:
 
     fast = self.v_ego > self.min_vego
     turning = np.abs(self.yaw_rate) >= self.min_yr
-    has_recovered = all([ # wait for recovery after !lat_active, steering_pressed, steering_saturated
+    has_recovered = all( # wait for recovery after !lat_active, steering_pressed, steering_saturated
       self.t - last_t >= self.min_recovery_buffer_sec
       for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t]
-    ])
+    )
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
