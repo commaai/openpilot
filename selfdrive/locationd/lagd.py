@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import numpy as np
 from collections import deque
 from functools import partial
@@ -177,7 +178,7 @@ class LagEstimator:
     self.points = Points(window_len)
     self.block_avg = BlockAverage(self.block_count, self.block_size, valid_blocks, initial_lag)
 
-  def get_msg(self, valid):
+  def get_msg(self, valid, debug=False):
     msg = messaging.new_message('liveDelay')
 
     msg.valid = valid
@@ -194,6 +195,7 @@ class LagEstimator:
       liveDelay.lateralDelay = self.initial_lag
     liveDelay.validBlocks = self.block_avg.valid_blocks
     # TODO only in debug
+    # if debug:
     liveDelay.points = self.block_avg.values.flatten().tolist()
 
     return msg
@@ -278,6 +280,8 @@ class LagEstimator:
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
+  DEBUG = bool(int(os.getenv("DEBUG", "0")))
+
   pm = messaging.PubMaster(['liveDelay', 'alertDebug'])
   sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carControl', 'carState', 'controlsState'], poll='livePose')
 
@@ -307,7 +311,7 @@ def main():
     # 4Hz driven by livePose
     if sm.frame % 5 == 0:
       estimator.update_estimate()
-      msg = estimator.get_msg(sm.all_checks())
+      msg = estimator.get_msg(sm.all_checks(), DEBUG)
 
       # TODO remove
       alert_msg = messaging.new_message('alertDebug')
