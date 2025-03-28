@@ -71,22 +71,25 @@ Application::Application(int argc, char *argv[], QObject *parent) : QObject(pare
   recorderThread = new QThread;
   recorder = new Recorder(outputFile.toStdString());
   recorder->moveToThread(recorderThread);
-  QObject::connect(recorderThread, &QThread::finished, recorder, &QObject::deleteLater);
+  connect(recorderThread, &QThread::finished, recorder, &QObject::deleteLater);
+  connect(app, &QCoreApplication::aboutToQuit, recorderThread, &QThread::quit);
 
-  QObject::connect(window, &OnroadWindow::redrew, this, [&]() {
+  QTimer *loop = new QTimer;
+  connect(loop, &QTimer::timeout, this, [&]() {
+    if (!window->isVisible()) {
+      return;
+    }
     QElapsedTimer timer;
     timer.start();
     QPixmap pixmap = window->grab();
-    // qDebug() << "pixmap took " << timer.elapsed() << " ms";
+    qDebug() << "pixmap took " << timer.elapsed() << " ms";
     timer.restart();
     recorder->saveFrame(std::make_shared<QPixmap>(std::move(pixmap)));
-    // qDebug() << "save frame took" << timer.elapsed() << " ms";
-  }, Qt::QueuedConnection);
+  });
+  loop->start(1000 / UI_FREQ);
 
-  QObject::connect(app, &QCoreApplication::aboutToQuit, recorderThread, &QThread::quit);
-
-  // window->setAttribute(Qt::WA_DontShowOnScreen);
-  window->setAttribute(Qt::WA_Mapped);
+  window->setAttribute(Qt::WA_DontShowOnScreen);
+  window->setAttribute(Qt::WA_OpaquePaintEvent);
   window->setAttribute(Qt::WA_NoSystemBackground);
   recorderThread->start();
 
