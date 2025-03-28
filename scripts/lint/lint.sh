@@ -55,8 +55,8 @@ function run_tests() {
   run "check_nomerge_comments" $DIR/check_nomerge_comments.sh $ALL_FILES
 
   if [[ -z "$FAST" ]]; then
-    run "mypy" mypy $PYTHON_FILES
     run "uv_lock" uv lock --check
+    run "mypy" mypy $PYTHON_FILES
     run "codespell" codespell $ALL_FILES
   fi
 
@@ -72,8 +72,11 @@ function help() {
   echo -e "  ${BOLD}ruff${NC}"
   echo -e "  ${BOLD}mypy${NC}"
   echo -e "  ${BOLD}codespell${NC}"
+  echo -e "  ${BOLD}uv_lock${NC}"
   echo -e "  ${BOLD}check_added_large_files${NC}"
   echo -e "  ${BOLD}check_shebang_scripts_are_executable${NC}"
+  echo -e "  ${BOLD}check_shebang_format${NC}"
+  echo -e "  ${BOLD}check_nomerge_comments${NC}"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Options:${NC}"
   echo -e "  ${BOLD}-f, --fast${NC}"
