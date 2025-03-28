@@ -23,7 +23,6 @@ private:
     FFmpegEncoder *encoder;
     QQueue<std::shared_ptr<QPixmap>> frameQueue;
     QMutex mutex;
-    QAtomicInt isProcessing{0};  // Use atomic for thread safety
     bool keepRunning = true;
     void processQueue();
 };

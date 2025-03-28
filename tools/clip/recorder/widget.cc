@@ -22,10 +22,7 @@ void Recorder::saveFrame(const std::shared_ptr<QPixmap> &frame) {
     }
 
     frameQueue.enqueue(frame);
-    if (isProcessing.loadRelaxed() == 0) {
-        isProcessing.storeRelaxed(1);
-        QMetaObject::invokeMethod(this, &Recorder::processQueue, Qt::QueuedConnection);
-    }
+    QMetaObject::invokeMethod(this, &Recorder::processQueue, Qt::QueuedConnection);
 }
 
 void Recorder::processQueue() {
@@ -34,7 +31,6 @@ void Recorder::processQueue() {
         {
             QMutexLocker locker(&mutex);
             if (frameQueue.isEmpty()) {
-                isProcessing.storeRelaxed(0);
                 return;
             }
             frame = frameQueue.dequeue();
@@ -44,6 +40,5 @@ void Recorder::processQueue() {
             fprintf(stderr, "did not write\n");
         }
     }
-    isProcessing.storeRelaxed(0);
 }
 
