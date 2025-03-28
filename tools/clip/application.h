@@ -15,7 +15,7 @@ public:
     void close() const;
 
 private:
-    void initReplay(const std::string& route);
+    void initReplay(const std::string& route, const std::string& data_dir = "");
     void startReplay(int start = 0);
 
     QApplication *app;

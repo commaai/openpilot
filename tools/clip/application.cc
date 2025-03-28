@@ -26,9 +26,14 @@ Application::Application(int argc, char *argv[], QObject *parent) : QObject(pare
   const QCommandLineOption output({"o", "output"}, "output file", "output");
   parser.addOption(output);
 
+  const QCommandLineOption data_dir_arg({"d", "data_dir"}, "data directory", "data_dir");
+  parser.addOption(data_dir_arg);
+
   parser.addPositionalArgument("route", "route string");
 
   parser.process(*app);
+
+  const QString data_dir = parser.value(data_dir_arg);
 
   int startTime = 0;
   if (parser.isSet(start)) {
@@ -77,7 +82,7 @@ Application::Application(int argc, char *argv[], QObject *parent) : QObject(pare
   recorderThread->start();
 
   // Initialize and start replay
-  initReplay(route.toStdString());
+  initReplay(route.toStdString(), data_dir.isEmpty() ? "" : data_dir.toStdString());
   replayThread = QThread::create([this, startTime] { startReplay(startTime); });
   replayThread->start();
 
@@ -124,10 +129,10 @@ Application::Application(int argc, char *argv[], QObject *parent) : QObject(pare
   window->setAttribute(Qt::WA_StaticContents);
 }
 
-void Application::initReplay(const std::string& route) {
+void Application::initReplay(const std::string& route, const std::string& data_dir) {
   std::vector<std::string> allow;
   std::vector<std::string> block;
-  replay = std::make_unique<Replay>(route, allow, block, nullptr, REPLAY_FLAG_NONE);
+  replay = std::make_unique<Replay>(route, allow, block, nullptr, REPLAY_FLAG_NONE, data_dir);
   replay->setSegmentCacheLimit(1);
 }
 
