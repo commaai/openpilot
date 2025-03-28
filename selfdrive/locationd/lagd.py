@@ -316,7 +316,8 @@ def main():
       # TODO remove
       alert_msg = messaging.new_message('alertDebug')
       alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
-      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelayEstimate:.2f} s ({msg.liveDelay.status == 'estimated'}, blocks: {msg.liveDelay.validBlocks})"
+      progress = int(min((estimator.block_avg.block_idx * estimator.block_avg.block_size + estimator.block_avg.idx) / (estimator.min_valid_block_count * estimator.block_avg.block_size), 1.0) * 100)
+      alert_msg.alertDebug.alertText2 = f"{msg.liveDelay.lateralDelayEstimate:.2f} s ({msg.liveDelay.status == 'estimated'}, blocks: {msg.liveDelay.validBlocks}, progress: {progress}%)"
       pm.send('alertDebug', alert_msg)
 
       msg_dat = msg.to_bytes()
