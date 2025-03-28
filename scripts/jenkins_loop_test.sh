@@ -16,7 +16,7 @@ CRUMB=$(curl -s --cookie-jar $COOKIE_JAR 'https://jenkins.comma.life/crumbIssuer
 FIRST_LOOP=1
 
 function loop() {
-  JENKINS_BRANCH="__jenkins_loop_${BRANCH}"
+  JENKINS_BRANCH="__jenkins_loop_${BRANCH}_$(date +%s)"
   API_ROUTE="https://jenkins.comma.life/job/openpilot/job/$JENKINS_BRANCH"
 
   for run in $(seq 1 $((RUNS / 2))); do
