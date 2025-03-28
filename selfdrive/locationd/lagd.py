@@ -10,7 +10,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 
-BLOCK_SIZE = 20
+BLOCK_SIZE = 100
 BLOCK_NUM = 50
 BLOCK_NUM_NEEDED = 5
 MOVING_WINDOW_SEC = 300.0
