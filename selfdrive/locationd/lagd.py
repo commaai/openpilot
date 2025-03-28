@@ -248,7 +248,7 @@ class LagEstimator:
 
     times, desired, actual, okay = self.points.get()
     # check if there are any new valid data points since the last update
-    if self.last_estimate_t != 0:
+    if self.last_estimate_t != 0 and times[0] <= self.last_estimate_t:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       if (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:])):
         return
