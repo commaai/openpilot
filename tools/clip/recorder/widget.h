@@ -19,10 +19,11 @@ public slots:
     void saveFrame(const std::shared_ptr<QPixmap> &frame);
 
 private:
+    static constexpr int MAX_QUEUE_SIZE = 30;  // Limit queue size to prevent memory growth
     FFmpegEncoder *encoder;
     QQueue<std::shared_ptr<QPixmap>> frameQueue;
     QMutex mutex;
-    bool isProcessing = false;
+    QAtomicInt isProcessing{0};  // Use atomic for thread safety
     bool keepRunning = true;
     void processQueue();
 };

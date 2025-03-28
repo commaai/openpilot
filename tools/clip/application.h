@@ -22,6 +22,7 @@ private:
     QThread *recorderThread = nullptr;
     Recorder *recorder = nullptr;
     OnroadWindow *window;
+    QTimer *loop;
 
     // Replay related members
     std::unique_ptr<Replay> replay;

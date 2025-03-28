@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QTranslator>
+#include <QWindow>
 #include <selfdrive/ui/qt/util.h>
 #include <selfdrive/ui/qt/window.h>
 
@@ -73,30 +74,54 @@ Application::Application(int argc, char *argv[], QObject *parent) : QObject(pare
   recorder->moveToThread(recorderThread);
   connect(recorderThread, &QThread::finished, recorder, &QObject::deleteLater);
   connect(app, &QCoreApplication::aboutToQuit, recorderThread, &QThread::quit);
-
-  QTimer *loop = new QTimer;
-  connect(loop, &QTimer::timeout, this, [&]() {
-    if (!window->isVisible()) {
-      return;
-    }
-    QElapsedTimer timer;
-    timer.start();
-    QPixmap pixmap = window->grab();
-    qDebug() << "pixmap took " << timer.elapsed() << " ms";
-    timer.restart();
-    recorder->saveFrame(std::make_shared<QPixmap>(std::move(pixmap)));
-  });
-  loop->start(1000 / UI_FREQ);
-
-  window->setAttribute(Qt::WA_DontShowOnScreen);
-  window->setAttribute(Qt::WA_OpaquePaintEvent);
-  window->setAttribute(Qt::WA_NoSystemBackground);
   recorderThread->start();
 
   // Initialize and start replay
   initReplay(route.toStdString());
   replayThread = QThread::create([this, startTime] { startReplay(startTime); });
   replayThread->start();
+
+  // Frame capture optimization
+  QElapsedTimer frameTimer;
+  frameTimer.start();
+  int64_t lastFrameTime = 0;
+  const int64_t frameInterval = 1000 / UI_FREQ;  // Target frame interval in ms
+
+  loop = new QTimer;
+  connect(loop, &QTimer::timeout, this, [&, frameTimer, lastFrameTime]() mutable {
+    if (!window->isVisible()) {
+      return;
+    }
+
+    int64_t currentTime = frameTimer.elapsed();
+    int64_t elapsedSinceLastFrame = currentTime - lastFrameTime;
+
+    // Skip frame if we're ahead of schedule
+    if (elapsedSinceLastFrame < frameInterval) {
+      return;
+    }
+
+    QPixmap pixmap = window->grab();
+
+    // Only process frame if capture was successful
+    if (!pixmap.isNull()) {
+      recorder->saveFrame(std::make_shared<QPixmap>(std::move(pixmap)));
+      lastFrameTime = currentTime;
+    }
+  });
+
+  // Use a higher timer resolution for more precise frame timing
+  loop->setTimerType(Qt::PreciseTimer);
+  loop->start(1);  // Run at highest possible frequency, we'll control frame rate ourselves
+
+  window->setAttribute(Qt::WA_DontShowOnScreen);
+  window->setAttribute(Qt::WA_OpaquePaintEvent);
+  window->setAttribute(Qt::WA_NoSystemBackground);
+  window->setAttribute(Qt::WA_TranslucentBackground, false);
+  window->setAttribute(Qt::WA_AlwaysStackOnTop);
+  window->setAttribute(Qt::WA_ShowWithoutActivating);
+  window->setAttribute(Qt::WA_UpdatesDisabled);
+  window->setAttribute(Qt::WA_StaticContents);
 }
 
 void Application::initReplay(const std::string& route) {
@@ -132,15 +157,18 @@ Application::~Application() {
   if (recorderThread) {
     recorderThread->quit();
     recorderThread->wait();
+    delete recorderThread;
   }
 
+  delete recorder;
   delete window;
+  delete loop;
   delete app;
 }
 
 int Application::exec() const {
   // TODO: modify Replay to block until all OnroadWindow required messages have been broadcast at least once
-  std::this_thread::sleep_for(std::chrono::seconds(5));
+  std::this_thread::sleep_for(std::chrono::seconds(8));
   setMainWindow(window);
   return app->exec();
 }

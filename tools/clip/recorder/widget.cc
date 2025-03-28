@@ -3,37 +3,47 @@
 #include "tools/clip/recorder/ffmpeg.h"
 
 Recorder::Recorder(const std::string& outputFile, QObject *parent) : QObject(parent) {
-  encoder = new FFmpegEncoder(outputFile, DEVICE_SCREEN_SIZE.width(), DEVICE_SCREEN_SIZE.height(), UI_FREQ);
+  const float scale = util::getenv("SCALE", 1.0f);
+  encoder = new FFmpegEncoder(outputFile, DEVICE_SCREEN_SIZE.width() * scale, DEVICE_SCREEN_SIZE.height() * scale, UI_FREQ);
 }
 
 Recorder::~Recorder() {
+    keepRunning = false;  // Signal processing thread to stop
     delete encoder;
 }
 
 void Recorder::saveFrame(const std::shared_ptr<QPixmap> &frame) {
     QMutexLocker locker(&mutex);
+
+    // Drop frame if queue is full
+    if (frameQueue.size() >= MAX_QUEUE_SIZE) {
+        qDebug() << "Dropping frame";
+        return;
+    }
+
     frameQueue.enqueue(frame);
-    if (!isProcessing) {
-        isProcessing = true;
+    if (isProcessing.loadRelaxed() == 0) {
+        isProcessing.storeRelaxed(1);
         QMetaObject::invokeMethod(this, &Recorder::processQueue, Qt::QueuedConnection);
     }
 }
 
 void Recorder::processQueue() {
-    while (true) {
+    while (keepRunning) {
         std::shared_ptr<QPixmap> frame;
         {
             QMutexLocker locker(&mutex);
-            if (frameQueue.isEmpty() || !keepRunning) {
-                isProcessing = false;
+            if (frameQueue.isEmpty()) {
+                isProcessing.storeRelaxed(0);
                 return;
             }
             frame = frameQueue.dequeue();
         }
 
-        if (!encoder->writeFrame(frame->toImage().convertToFormat(QImage::Format_ARGB32_Premultiplied))) {
+        if (!encoder->writeFrame(frame->toImage().convertToFormat(QImage::Format_ARGB32))) {
             fprintf(stderr, "did not write\n");
         }
     }
+    isProcessing.storeRelaxed(0);
 }
 
