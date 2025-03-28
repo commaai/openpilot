@@ -316,7 +316,8 @@ def main():
       pm.send('alertDebug', alert_msg)
 
       msg_dat = msg.to_bytes()
-      if msg.liveDelay.status == 'estimated': # TODO maybe to often once estimated
+      # cache every 60 seconds
+      if sm.frame % 240 == 0:
         params.put_nonblocking("LiveLag", msg_dat)
       pm.send('liveDelay', msg_dat)
 
