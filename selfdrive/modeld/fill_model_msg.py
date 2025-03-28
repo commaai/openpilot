@@ -102,7 +102,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   modelV2.action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
 
   # times at X_IDXS of edges and lines aren't used
-  LINE_T_IDXS = []
+  LINE_T_IDXS: list[float] = []
 
   # lane lines
   modelV2.init('laneLines', 4)
