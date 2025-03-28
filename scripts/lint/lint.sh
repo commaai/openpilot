@@ -56,6 +56,7 @@ function run_tests() {
 
   if [[ -z "$FAST" ]]; then
     run "mypy" mypy $PYTHON_FILES
+    run "uv_lock" uv lock --check
     run "codespell" codespell $ALL_FILES
   fi
 
