@@ -194,9 +194,8 @@ class LagEstimator:
       liveDelay.status = log.LiveDelayData.Status.initial
       liveDelay.lateralDelay = self.initial_lag
     liveDelay.validBlocks = self.block_avg.valid_blocks
-    # TODO only in debug
-    # if debug:
-    liveDelay.points = self.block_avg.values.flatten().tolist()
+    if debug:
+      liveDelay.points = self.block_avg.values.flatten().tolist()
 
     return msg
 
@@ -280,7 +279,8 @@ class LagEstimator:
 def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
-  DEBUG = bool(int(os.getenv("DEBUG", "0")))
+  # DEBUG = bool(int(os.getenv("DEBUG", "0")))
+  DEBUG = True
 
   pm = messaging.PubMaster(['liveDelay', 'alertDebug'])
   sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carControl', 'carState', 'controlsState'], poll='livePose')
