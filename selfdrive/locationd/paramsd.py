@@ -42,6 +42,7 @@ class VehicleParamsLearner:
 
     self.active = False
 
+    self.speed = 0.0
     self.yaw_rate = 0.0
     self.roll = 0.0
 
@@ -107,15 +108,14 @@ class VehicleParamsLearner:
 
     elif which == 'carState':
       steering_angle = msg.steeringAngleDeg
-      speed = msg.vEgo
 
       in_linear_region = abs(steering_angle) < 45
-      self.active = speed > MIN_ACTIVE_SPEED and in_linear_region
-      self.moderate_speed = speed > LOW_ACTIVE_SPEED
+      self.speed = msg.vEgo
+      self.active = self.speed > MIN_ACTIVE_SPEED and in_linear_region
 
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[speed]]))
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
@@ -136,7 +136,7 @@ class VehicleParamsLearner:
                         self.angle_offset - MAX_ANGLE_OFFSET_DELTA, self.angle_offset + MAX_ANGLE_OFFSET_DELTA)
     self.roll = np.clip(float(x[States.ROAD_ROLL].item()), self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
     roll_std = float(P[States.ROAD_ROLL].item())
-    if self.active and self.moderate_speed:
+    if self.active and self.speed > LOW_ACTIVE_SPEED:
       # Account for the opposite signs of the yaw rates
       # At low speeds, bumping into a curb can cause the yaw rate to be very high
       sensors_valid = bool(abs(self.speed * (x[States.YAW_RATE].item() + self.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
@@ -203,7 +203,7 @@ def retrieve_initial_vehicle_params(params_reader, CP, replay=False, debug=False
         lp = last_lp_msg.liveParameters
         # Check if car model matches
         if last_CP.carFingerprint != CP.carFingerprint:
-          raise Exception(f"Car model mismatch")
+          raise Exception("Car model mismatch")
 
         # Check if starting values are sane
         min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
