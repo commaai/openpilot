@@ -94,6 +94,7 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: ~/Library/Caches/Homebrew
+        key: mac-setup-${{ hashFiles('tools/mac_setup.sh') }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
