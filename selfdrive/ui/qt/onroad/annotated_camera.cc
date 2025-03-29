@@ -2,6 +2,7 @@
 #include "selfdrive/ui/qt/onroad/annotated_camera.h"
 
 #include <QPainter>
+#include <QOpenGLPaintDevice>
 #include <algorithm>
 #include <cmath>
 
@@ -92,6 +93,12 @@ void AnnotatedCameraWidget::paintGL() {
   SubMaster &sm = *(s->sm);
   const double start_draw_t = millis_since_boot();
 
+  // if we haven't received all messages at least once, force an update of latest state
+  // many messages are required for UI draw and this will fail if any are not valid
+  if (!sm.allValid()) {
+    sm.update();
+  }
+
   // draw camera frame
   {
     std::lock_guard lk(frame_lock);
@@ -125,7 +132,8 @@ void AnnotatedCameraWidget::paintGL() {
     CameraWidget::paintGL();
   }
 
-  QPainter painter(this);
+  QOpenGLPaintDevice fboPaintDevice(width(), height());
+  QPainter painter(&fboPaintDevice);
   painter.setRenderHint(QPainter::Antialiasing);
   painter.setPen(Qt::NoPen);
 
