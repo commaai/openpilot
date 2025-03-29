@@ -2579,7 +2579,7 @@ struct Event {
     selfdriveStateSP @107 :Custom.SelfdriveStateSP;
     modelManagerSP @108 :Custom.ModelManagerSP;
     longitudinalPlanSP @109 :Custom.LongitudinalPlanSP;
-    onroadEventsSP @110 :List(Custom.OnroadEventSP);
+    onroadEventsSP @110 :Custom.OnroadEventSP;
     carParamsSP @111 :Custom.CarParamsSP;
     carControlSP @112 :Custom.CarControlSP;
     backupManagerSP @113 :Custom.BackupManagerSP;

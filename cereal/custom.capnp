@@ -102,19 +102,23 @@ struct LongitudinalPlanSP @0xf35cc4560bbf6ec2 {
 }
 
 struct OnroadEventSP @0xda96579883444c35 {
-  name @0 :EventName;
+  events @0 :List(Event);
 
-  # event types
-  enable @1 :Bool;
-  noEntry @2 :Bool;
-  warning @3 :Bool;   # alerts presented only when  enabled or soft disabling
-  userDisable @4 :Bool;
-  softDisable @5 :Bool;
-  immediateDisable @6 :Bool;
-  preEnable @7 :Bool;
-  permanent @8 :Bool; # alerts presented regardless of openpilot state
-  overrideLateral @10 :Bool;
-  overrideLongitudinal @9 :Bool;
+  struct Event {
+    name @0 :EventName;
+
+    # event types
+    enable @1 :Bool;
+    noEntry @2 :Bool;
+    warning @3 :Bool;   # alerts presented only when  enabled or soft disabling
+    userDisable @4 :Bool;
+    softDisable @5 :Bool;
+    immediateDisable @6 :Bool;
+    preEnable @7 :Bool;
+    permanent @8 :Bool; # alerts presented regardless of openpilot state
+    overrideLateral @10 :Bool;
+    overrideLongitudinal @9 :Bool;
+  }
 
   enum EventName {
     lkasEnable @0;

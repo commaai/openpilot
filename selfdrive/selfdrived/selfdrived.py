@@ -509,9 +509,9 @@ class SelfdriveD(CruiseHelper):
 
     # onroadEventsSP - logged every second or on change
     if (self.sm.frame % int(1. / DT_CTRL) == 0) or (self.events_sp.names != self.events_sp_prev):
-      ce_send_sp = messaging.new_message('onroadEventsSP', len(self.events_sp))
+      ce_send_sp = messaging.new_message('onroadEventsSP')
       ce_send_sp.valid = True
-      ce_send_sp.onroadEventsSP = self.events_sp.to_msg()
+      ce_send_sp.onroadEventsSP.events = self.events_sp.to_msg()
       self.pm.send('onroadEventsSP', ce_send_sp)
     self.events_sp_prev = self.events_sp.names.copy()
 

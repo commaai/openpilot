@@ -1,0 +1,77 @@
+name: cereal validation
+
+on:
+  push:
+    branches:
+      - master
+      - master-new
+  pull_request:
+    paths:
+      - 'cereal/**'
+  workflow_dispatch:
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
+
+concurrency:
+  group: cereal-validation-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/master-new') && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  PYTHONWARNINGS: error
+  BASE_IMAGE: openpilot-base
+  BUILD: selfdrive/test/docker_build.sh base
+  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
+
+jobs:
+  generate_cereal_artifact:
+    name: Generate cereal validation artifacts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: ./.github/workflows/setup-with-retry
+      - name: Build openpilot
+        run: ${{ env.RUN }} "scons -j$(nproc) cereal"
+      - name: Generate the log file
+        run: |
+          ${{ env.RUN }} "cereal/messaging/tests/validate_sp_cereal_upstream.py -g -f schema_instances.bin" && \
+          ls -la
+          ls -la cereal/messaging/tests
+      - name: 'Prepare artifact'
+        run: |
+          mkdir -p "cereal/messaging/tests/cereal_validations"
+          cp cereal/messaging/tests/validate_sp_cereal_upstream.py "cereal/messaging/tests/cereal_validations/validate_sp_cereal_upstream.py"
+          cp schema_instances.bin "cereal/messaging/tests/cereal_validations/schema_instances.bin"
+      - name: 'Upload Artifact'
+        uses: actions/upload-artifact@v4
+        with:
+          name: cereal_validations
+          path: cereal/messaging/tests/cereal_validations
+
+  validate_cereal_with_upstream:
+    name: Validate cereal with Upstream
+    runs-on: ubuntu-24.04
+    needs: generate_cereal_artifact
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          repository: 'commaai/openpilot'
+          submodules: true
+          ref: "refs/heads/master"
+      - uses: ./.github/workflows/setup-with-retry
+      - name: Build openpilot
+        run: ${{ env.RUN }} "scons -j$(nproc) cereal"
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: cereal_validations
+          path: cereal/messaging/tests/cereal_validations
+      - name: 'Run the validation'
+        run: |
+          chmod +x cereal/messaging/tests/cereal_validations/validate_sp_cereal_upstream.py
+          ${{ env.RUN }} "cereal/messaging/tests/cereal_validations/validate_sp_cereal_upstream.py -r -f cereal/messaging/tests/cereal_validations/schema_instances.bin"

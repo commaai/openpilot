@@ -26,7 +26,7 @@ class EventsSP(EventsBase):
     return EVENT_NAME_SP[event]
 
   def get_event_msg_type(self):
-    return custom.OnroadEventSP
+    return custom.OnroadEventSP.Event
 
 
 EVENTS_SP: dict[int, dict[str, Alert | AlertCallbackType]] = {
