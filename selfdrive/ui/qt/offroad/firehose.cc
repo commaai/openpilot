@@ -12,7 +12,7 @@
 #include <QProgressBar>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QTimer>
+#include <QTimer>  // test ci
 
 FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent) {
   layout = new QVBoxLayout(this);
