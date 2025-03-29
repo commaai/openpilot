@@ -127,7 +127,7 @@ jobs:
         authorized-users: maxime-desroches
     - name: Static analysis
       timeout-minutes: 1
-      run: ${{ env.RUN }} "PATH=/home/batman/.local/bin:$PATH scripts/lint/lint.sh"
+      run: ${{ env.RUN }} "PATH=/home/batman/.local/bin:$PATH  scripts/lint/lint.sh"
 
   unit_tests:
     name: unit tests
