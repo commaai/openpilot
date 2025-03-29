@@ -42,9 +42,10 @@ class VehicleParamsLearner:
     self.active = False
 
     self.speed = 0.0
-    self.yaw_rate = 0.0
-    self.roll = 0.0
+    self.observed_yaw_rate = 0.0
+    self.observed_roll = 0.0
 
+    self.roll = 0.0
     self.avg_angle_offset = np.degrees(angle_offset)
     self.angle_offset = self.avg_angle_offset
     self.avg_offset_valid = True
@@ -66,7 +67,7 @@ class VehicleParamsLearner:
       if not yaw_rate_valid:
         # This is done to bound the yaw rate estimate when localizer values are invalid or calibrating
         yaw_rate, yaw_rate_std = 0.0, np.radians(10.0)
-      self.yaw_rate = yaw_rate
+      self.observed_yaw_rate = yaw_rate
 
       localizer_roll, localizer_roll_std = device_pose.orientation.x, device_pose.orientation.x_std
       localizer_roll_std = np.radians(1) if np.isnan(localizer_roll_std) else localizer_roll_std
@@ -79,18 +80,18 @@ class VehicleParamsLearner:
         # This is done to bound the road roll estimate when localizer values are invalid
         roll = 0.0
         roll_std = np.radians(10.0)
-      roll = np.clip(roll, self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
+      self.observed_roll = np.clip(roll, self.observed_roll - ROLL_MAX_DELTA, self.observed_roll + ROLL_MAX_DELTA)
 
       if self.active:
         if msg.posenetOK:
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_FRAME_YAW_RATE,
-                                      np.array([[-yaw_rate]]),
+                                      np.array([[-self.observed_yaw_rate]]),
                                       np.array([np.atleast_2d(yaw_rate_std**2)]))
 
           self.kf.predict_and_observe(t,
                                       ObservationKind.ROAD_ROLL,
-                                      np.array([[roll]]),
+                                      np.array([[self.observed_roll]]),
                                       np.array([np.atleast_2d(roll_std**2)]))
         self.kf.predict_and_observe(t, ObservationKind.ANGLE_OFFSET_FAST, np.array([[0]]))
 
@@ -138,7 +139,7 @@ class VehicleParamsLearner:
     if self.active and self.speed > LOW_ACTIVE_SPEED:
       # Account for the opposite signs of the yaw rates
       # At low speeds, bumping into a curb can cause the yaw rate to be very high
-      sensors_valid = bool(abs(self.speed * (x[States.YAW_RATE].item() + self.yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      sensors_valid = bool(abs(self.speed * (x[States.YAW_RATE].item() + self.observed_yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
     else:
       sensors_valid = True
     self.avg_offset_valid = check_valid_with_hysteresis(self.avg_offset_valid, self.avg_angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
@@ -235,10 +236,7 @@ def main():
   sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carState'], poll='livePose')
 
   params_reader = Params()
-  # wait for stats about the car to come in from controls
-  cloudlog.info("paramsd is waiting for CarParams")
   CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
-  cloudlog.info("paramsd got CarParams")
 
   steer_ratio, stiffness_factor, angle_offset_deg, pInitial = retrieve_initial_vehicle_params(params_reader, CP, REPLAY, DEBUG)
   learner = VehicleParamsLearner(CP, steer_ratio, stiffness_factor, np.radians(angle_offset_deg), pInitial)
