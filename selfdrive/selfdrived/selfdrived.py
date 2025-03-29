@@ -45,17 +45,14 @@ class SelfdriveD:
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
-    build_metadata = get_build_metadata()
+    self.build_metadata = get_build_metadata()
 
+    self.CP = car.CarParams()
+    self.CP_initialized = False
     if CP is None:
       cloudlog.info("selfdrived is waiting for CarParams")
-      self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
-      cloudlog.info("selfdrived got CarParams")
     else:
-      self.CP = CP
-
-    self.car_events = CarSpecificEvents(self.CP)
-    self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
+      self.initialize_car_params(CP)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -86,14 +83,6 @@ class SelfdriveD:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
 
-    car_recognized = self.CP.brand != 'mock'
-
-    # cleanup old params
-    if not self.CP.experimentalLongitudinalAvailable:
-      self.params.remove("ExperimentalLongitudinalEnabled")
-    if not self.CP.openpilotLongitudinalControl:
-      self.params.remove("ExperimentalMode")
-
     self.CS_prev = car.CarState.new_message()
     self.AM = AlertManager()
     self.events = Events()
@@ -115,8 +104,23 @@ class SelfdriveD:
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+    self.startup_event = None
+
+  def initialize_car_params(self, CP):
+    self.CP = CP
+    self.car_events = CarSpecificEvents(self.CP)
+    self.disengage_on_accelerator = not (self.CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
+
+    # cleanup old params
+    if not self.CP.experimentalLongitudinalAvailable:
+      self.params.remove("ExperimentalLongitudinalEnabled")
+    if not self.CP.openpilotLongitudinalControl:
+      self.params.remove("ExperimentalMode")
+
+    car_recognized = self.CP.brand != 'mock'
+
     # Determine startup event
-    self.startup_event = EventName.startup if build_metadata.openpilot.comma_remote and build_metadata.tested_channel else EventName.startupMaster
+    self.startup_event = EventName.startup if self.build_metadata.openpilot.comma_remote and self.build_metadata.tested_channel else EventName.startupMaster
     if not car_recognized:
       self.startup_event = EventName.startupNoCar
     elif car_recognized and self.CP.passive:
@@ -130,11 +134,14 @@ class SelfdriveD:
     elif self.CP.passive:
       self.events.add(EventName.dashcamMode, static=True)
 
+    self.CP_initialized = True
+
   def update_events(self, CS):
     """Compute onroadEvents from carState"""
 
     self.events.clear()
 
+    # TODO: it's fine to show startup alert here right? remove self.startup_event = None for these 2
     if self.sm['controlsState'].lateralControlState.which() == 'debugState':
       self.events.add(EventName.joystickDebug)
       self.startup_event = None
@@ -373,7 +380,7 @@ class SelfdriveD:
     self.sm.update(0)
 
     if not self.initialized:
-      all_valid = CS.canValid and self.sm.all_checks()
+      all_valid = CS.canValid and self.sm.all_checks() and self.CP_initialized
       timed_out = self.sm.frame * DT_CTRL > 6.
       if all_valid or timed_out or (SIMULATION and not REPLAY):
         available_streams = VisionIpcClient.available_streams("camerad", block=False)
@@ -475,9 +482,16 @@ class SelfdriveD:
 
   def params_thread(self, evt):
     while not evt.is_set():
-      self.is_metric = self.params.get_bool("IsMetric")
-      self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.personality = self.read_personality_param()
+      if self.CP_initialized:
+        self.is_metric = self.params.get_bool("IsMetric")
+        self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
+        self.personality = self.read_personality_param()
+      else:
+        CP = self.params.get("CarParams")
+        if CP is not None:
+          self.initialize_car_params(messaging.log_from_bytes(CP, car.CarParams))
+          cloudlog.info("selfdrived got CarParams")
+
       time.sleep(0.1)
 
   def run(self):
