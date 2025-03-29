@@ -126,6 +126,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     espActive @90;
     personalityChanged @91;
     aeb @92;
+    userFlag @94;
 
     soundsUnavailableDEPRECATED @47;
   }
