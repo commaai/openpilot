@@ -53,7 +53,7 @@ class VehicleParamsLearner:
     self.roll_valid = True
 
   def reset(self, t):
-    self.kf.reset(t)
+    self.kf.init_state(self.kf.initial_x, covs=self.P_initial, filter_time=t)
 
   def handle_log(self, t, which, msg):
     if which == 'livePose':

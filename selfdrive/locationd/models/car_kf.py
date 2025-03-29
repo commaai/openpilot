@@ -174,9 +174,6 @@ class CarKalman(KalmanFilter):
     self.filter = EKF_sym_pyx(generated_dir, self.name, self.Q, self.initial_x, self.P_initial,
                               dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
 
-  def reset(self, t):
-    self.filter.init_state(self.initial_x, self.P_initial, t)
-
 
 if __name__ == "__main__":
   generated_dir = sys.argv[2]
