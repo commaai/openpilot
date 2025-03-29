@@ -80,7 +80,6 @@ def add_pr_comment(pr_number, comment):
     print(f"Failed to parse comments data for PR #{pr_number}")
 
 
-
 def validate_pr(pr):
   """Validate a PR and return (is_valid, skip_reason)"""
   pr_number = pr.get('number', 'UNKNOWN')
@@ -143,26 +142,30 @@ def process_pr(pr_data, source_branch, target_branch, squash_script_path):
         subprocess.run(['git', 'branch', branch, f'origin/{branch}'], check=True)
 
         # Run squash script
-        subprocess.run([
+        result = subprocess.run([
           squash_script_path,
           '--target', target_branch,
-          '--source', branch,
+          '--base', source_branch,
           '--title', f"{title} (PR-{pr_number})",
-        ], check=True)
+          branch,
+        ], capture_output=True, text=True)
 
-        print(f"Successfully processed PR #{pr_number}")
-        success_count += 1
+        print(result.stdout)
+        if result.returncode == 0:
+          print(f"Successfully processed PR #{pr_number}")
+          success_count += 1
+          continue
 
-      except subprocess.CalledProcessError as e:
         print(f"Error processing PR #{pr_number}:")
-        print(f"Command failed with exit code {e.returncode}")
-        error_output = getattr(e, 'stderr', 'No error output available')
-        print(f"Error output: {error_output}")
-        add_pr_comment(pr_number,
-                       f"⚠️ Error during automated `{target_branch}` squash:\n```\n{error_output}\n```")
+        print(f"Command failed with exit code {result.returncode}")
+        output = result.stdout
+        print(f"Error output: {output}")
+        add_pr_comment(pr_number, f"⚠️ Error during automated `{target_branch}` squash:\n```\n{output}\n```")
+        subprocess.run(['git', 'reset', '--hard'], check=True)
         continue
       except Exception as e:
         print(f"Unexpected error processing PR #{pr_number}: {str(e)}")
+        subprocess.run(['git', 'reset', '--hard'], check=True)
         continue
 
     return success_count

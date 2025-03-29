@@ -36,7 +36,7 @@ jobs:
         run: |
           git config --global user.name 'github-actions[bot]'
           git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          
+
       - name: Set up SSH
         uses: webfactory/ssh-agent@v0.9.0
         with:
@@ -63,10 +63,10 @@ jobs:
             echo "Source branch ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }} does not exist!"
             exit 1
           fi
-          
+
           # Make sure we have the latest source branch
           git fetch origin ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}
-          
+
           # Check if target branch exists
           if ! git ls-remote --heads origin ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} | grep -q "${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }}"; then
             echo "Target branch ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} does not exist, creating it from ${{ inputs.source_branch || env.DEFAULT_SOURCE_BRANCH }}"
@@ -110,17 +110,19 @@ jobs:
                 }
               }
             }' -F label="is:pr is:open label:${PR_LABEL} sort:created-asc")
-          
+
           echo "PR_LIST=${PR_LIST}" >> $GITHUB_OUTPUT
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Process PRs
         run: |
+          cp ${{ github.workspace }}/release/ci/squash_and_merge.py /tmp/squash_and_merge.py && \
+          chmod +x /tmp/squash_and_merge.py && \
           python3 ${{ github.workspace }}/release/ci/squash_and_merge_prs.py \
             --pr-data '${{ steps.get-prs.outputs.PR_LIST }}' \
             --target-branch ${{ inputs.target_branch || env.DEFAULT_TARGET_BRANCH }} \
-            --squash-script-path '${{ github.workspace }}/release/ci/squash_and_merge.py'
+            --squash-script-path '/tmp/squash_and_merge.py'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
