@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import os
 import math
-import json
 import numpy as np
 
 import cereal.messaging as messaging
@@ -192,54 +191,39 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
 
 
 def retrieve_initial_vehicle_params(params_reader, CP, replay=False, debug=False):
-  params = params_reader.get("LiveParameters")
+  last_parameters_data = params_reader.get("LiveParameters")
+  last_carparams_data = params_reader.get("CarParamsPrevRoute")
 
-  # Check if car model matches
-  if params is not None:
-    params = json.loads(params)
-    if params.get('carFingerprint', None) != CP.carFingerprint:
-      cloudlog.info("Parameter learner found parameters for wrong car.")
-      params = None
+  steer_ratio, stiffness_factor, angle_offset_deg, p_initial = CP.steerRatio, 1.0, 0.0, None
 
-  # Check if starting values are sane
-  if params is not None:
+  retrieve_success = True
+  if last_parameters_data is not None and last_carparams_data is not None:
     try:
-      min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
-      steer_ratio_sane = min_sr <= params['steerRatio'] <= max_sr
-      if not steer_ratio_sane:
-        cloudlog.info(f"Invalid starting values found {params}")
-        params = None
-    except Exception as e:
-      cloudlog.info(f"Error reading params {params}: {str(e)}")
-      params = None
+      with log.Event.from_bytes(last_parameters_data) as last_lp_msg, car.CarParams.from_bytes(last_carparams_data) as last_CP:
+        lp = last_lp_msg.liveParameters
+        # Check if car model matches
+        if last_CP.carFingerprint != CP.carFingerprint:
+          raise Exception(f"Car model mismatch")
 
-  # TODO: cache the params with the capnp struct
-  if params is not None:
-    steer_ratio, stiffness_factor, angle_offset_deg = params['steerRatio'], params['stiffnessFactor'], params['angleOffsetAverageDeg']
-  else:
-    steer_ratio, stiffness_factor, angle_offset_deg = CP.steerRatio, 1.0, 0.0
+        # Check if starting values are sane
+        min_sr, max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
+        steer_ratio_sane = min_sr <= lp.steerRatio <= max_sr
+        if not steer_ratio_sane:
+          raise Exception(f"Invalid starting values found {lp}")
+
+        initial_filter_std = np.array(lp.debugFilterState.std)
+        if debug and len(initial_filter_std) != 0:
+          p_initial = initial_filter_std
+
+        steer_ratio, stiffness_factor, angle_offset_deg = lp.steerRatio, lp.stiffnessFactor, lp.angleOffsetAverageDeg
+    except Exception as e:
+      cloudlog.error(f"Failed to retrieve initial values: {e}")
+      retrieve_success = False
+
+  if not retrieve_success:
     cloudlog.info("Parameter learner resetting to default values")
 
-  if not replay:
-    # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
-    # Without a way to detect this we have to reset the stiffness every drive
-    stiffness_factor = 1.0
-
-  pInitial = None
-  if debug:
-    pInitial = np.array(params['debugFilterState']['std']) if 'debugFilterState' in params else None
-
-  return steer_ratio, stiffness_factor, angle_offset_deg, pInitial
-
-
-def save_vehicle_params(params_reader, CP, steer_ratio, stiffness_factor, angle_offset_deg):
-  params = {
-    'carFingerprint': CP.carFingerprint,
-    'steerRatio': steer_ratio,
-    'stiffnessFactor': stiffness_factor,
-    'angleOffsetAverageDeg': angle_offset_deg,
-  }
-  params_reader.put_nonblocking("LiveParameters", json.dumps(params))
+  return steer_ratio, stiffness_factor, angle_offset_deg, p_initial
 
 
 def main():
@@ -271,10 +255,11 @@ def main():
     if sm.updated['livePose']:
       msg = learner.get_msg(sm.all_checks(), debug=DEBUG)
 
+      msg_dat = msg.to_bytes()
       if sm.frame % 1200 == 0:  # once a minute
-        save_vehicle_params(params_reader, CP, msg.liveParameters.steerRatio, msg.liveParameters.stiffnessFactor, msg.liveParameters.angleOffsetAverageDeg)
+        params_reader.put_nonblocking("LiveParameters", msg_dat)
 
-      pm.send('liveParameters', msg)
+      pm.send('liveParameters', msg_dat)
 
 
 if __name__ == "__main__":
