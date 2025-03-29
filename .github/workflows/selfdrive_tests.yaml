@@ -106,6 +106,7 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
+        key: mac-setup-${{ hashFiles('tools/mac_setup.sh') }}
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
