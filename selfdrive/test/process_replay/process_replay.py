@@ -400,6 +400,9 @@ def torqued_rcv_callback(msg, cfg, frame):
   # should_recv always true to increment frame
   return (frame - 1) == 0 or msg.which() == 'livePose'
 
+def lagd_rcv_callback(msg, cfg, frame):
+  return (frame - 1) == 0 or msg.which() == 'livePose'
+
 
 def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
   return msg.which() == "driverCameraState"
@@ -564,6 +567,15 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
+    tolerance=NUMPY_TOLERANCE,
+  ),
+  ProcessConfig(
+    proc_name="lagd",
+    pubs=["carState", "carControl", "controlsState", "livePose", "liveCalibration"],
+    subs=["liveDelay"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=lagd_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
