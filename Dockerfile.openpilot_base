@@ -72,7 +72,7 @@ COPY --chown=$USER pyproject.toml uv.lock /home/$USER
 COPY --chown=$USER tools/install_python_dependencies.sh /home/$USER/tools/
 
 ENV VIRTUAL_ENV=/home/$USER/.venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+ENV PATH="$VIRTUAL_ENV/bin:/home/$USER/.local/bin:$PATH"
 RUN cd /home/$USER && \
     tools/install_python_dependencies.sh && \
     rm -rf tools/ pyproject.toml uv.lock .cache
