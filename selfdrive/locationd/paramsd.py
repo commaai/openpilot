@@ -2,6 +2,7 @@
 import os
 import math
 import numpy as np
+import capnp
 
 import cereal.messaging as messaging
 from cereal import car, log
@@ -25,8 +26,14 @@ LOW_ACTIVE_SPEED = 10.0
 
 
 class VehicleParamsLearner:
-  def __init__(self, CP, steer_ratio, stiffness_factor, angle_offset, P_initial=None):
-    self.kf = CarKalman(GENERATED_DIR, steer_ratio, stiffness_factor, angle_offset, P_initial)
+  def __init__(self, CP: car.CarParams, steer_ratio: float, stiffness_factor: float, angle_offset: float, P_initial: np.ndarray | None = None):
+    self.kf = CarKalman(GENERATED_DIR)
+
+    self.x_initial = CarKalman.initial_x.copy()
+    self.x_initial[States.STEER_RATIO] = steer_ratio
+    self.x_initial[States.STIFFNESS] = stiffness_factor
+    self.x_initial[States.ANGLE_OFFSET] = angle_offset
+    self.P_initial = P_initial or CarKalman.P_initial
 
     self.kf.filter.set_global("mass", CP.mass)
     self.kf.filter.set_global("rotational_inertia", CP.rotationalInertia)
@@ -52,11 +59,12 @@ class VehicleParamsLearner:
     self.total_offset_valid = True
     self.roll_valid = True
 
-  def reset(self, t):
-    # TODO dont like this
-    self.kf.init_state(self.kf.initial_x, covs=self.P_initial, filter_time=t)
+    self.reset(None)
 
-  def handle_log(self, t, which, msg):
+  def reset(self, t: float | None):
+    self.kf.init_state(self.x_initial, covs=self.P_initial, filter_time=t)
+
+  def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
     if which == 'livePose':
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
@@ -123,7 +131,7 @@ class VehicleParamsLearner:
       self.kf.filter.set_filter_time(t)
       self.kf.filter.reset_rewind()
 
-  def get_msg(self, valid, debug=False):
+  def get_msg(self, valid: bool, debug: bool = False):
     x = self.kf.x
     P = np.sqrt(self.kf.P.diagonal())
     if not all(map(math.isfinite, x)):
@@ -191,7 +199,7 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
   return current_valid
 
 
-def retrieve_initial_vehicle_params(params_reader, CP, replay=False, debug=False):
+def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, replay: bool, debug: bool):
   last_parameters_data = params_reader.get("LiveParameters")
   last_carparams_data = params_reader.get("CarParamsPrevRoute")
 
@@ -220,6 +228,11 @@ def retrieve_initial_vehicle_params(params_reader, CP, replay=False, debug=False
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial values: {e}")
       retrieve_success = False
+
+  if not replay:
+    # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
+    # Without a way to detect this we have to reset the stiffness every drive
+    stiffness_factor = 1.0
 
   if not retrieve_success:
     cloudlog.info("Parameter learner resetting to default values")
