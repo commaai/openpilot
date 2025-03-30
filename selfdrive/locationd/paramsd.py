@@ -35,12 +35,14 @@ class VehicleParamsLearner:
     self.x_initial[States.ANGLE_OFFSET] = angle_offset
     self.P_initial = P_initial or CarKalman.P_initial
 
-    self.kf.filter.set_global("mass", CP.mass)
-    self.kf.filter.set_global("rotational_inertia", CP.rotationalInertia)
-    self.kf.filter.set_global("center_to_front", CP.centerToFront)
-    self.kf.filter.set_global("center_to_rear", CP.wheelbase - CP.centerToFront)
-    self.kf.filter.set_global("stiffness_front", CP.tireStiffnessFront)
-    self.kf.filter.set_global("stiffness_rear", CP.tireStiffnessRear)
+    self.kf.set_globals(
+      mass=CP.mass,
+      rotational_inertia=CP.rotationalInertia,
+      center_to_front=CP.centerToFront,
+      center_to_rear=CP.wheelbase - CP.centerToFront,
+      stiffness_front=CP.tireStiffnessFront,
+      stiffness_rear=CP.tireStiffnessRear
+    )
 
     self.min_sr, self.max_sr = 0.5 * CP.steerRatio, 2.0 * CP.steerRatio
 

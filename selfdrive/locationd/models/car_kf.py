@@ -165,6 +165,14 @@ class CarKalman(KalmanFilter):
     self.filter = EKF_sym_pyx(generated_dir, CarKalman.name, CarKalman.Q, CarKalman.initial_x, CarKalman.P_initial,
                               dim_state, dim_state_err, global_vars=CarKalman.global_vars, logger=cloudlog)
 
+  def set_globals(self, mass, rotational_inertia, center_to_front, center_to_rear, stiffness_front, stiffness_rear):
+    self.filter.set_global("mass", mass)
+    self.filter.set_global("rotational_inertia", rotational_inertia)
+    self.filter.set_global("center_to_front", center_to_front)
+    self.filter.set_global("center_to_rear", center_to_rear)
+    self.filter.set_global("stiffness_front", stiffness_front)
+    self.filter.set_global("stiffness_rear", stiffness_rear)
+
 
 if __name__ == "__main__":
   generated_dir = sys.argv[2]
