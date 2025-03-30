@@ -45,7 +45,7 @@ class TestCarInterfaces:
                                          experimental_long=args['experimental_long'], docs=False)
     car_params_sp = CarInterface.get_params_sp(car_params, car_name, args['fingerprints'], args['car_fw'],
                                                experimental_long=args['experimental_long'], docs=False)
-    sunnypilot_interfaces.setup_car_interface_sp(car_params, car_params_sp)
+    sunnypilot_interfaces.setup_interfaces(car_params, car_params_sp)
     car_params = car_params.as_reader()
     car_interface = CarInterface(car_params, car_params_sp)
     assert car_params

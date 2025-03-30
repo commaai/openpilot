@@ -26,7 +26,7 @@ def log_fingerprint(CP: structs.CarParams) -> None:
     sentry.capture_fingerprint(CP.carFingerprint, CP.brand)
 
 
-def initialize_neural_network_lateral_control(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None,
+def _initialize_neural_network_lateral_control(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None,
                                               enabled: bool = False) -> None:
   if params is None:
     params = Params()
@@ -47,7 +47,7 @@ def initialize_neural_network_lateral_control(CP: structs.CarParams, CP_SP: stru
   CP_SP.neuralNetworkLateralControl.fuzzyFingerprint = not exact_match
 
 
-def setup_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None):
+def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None) -> None:
   if params is None:
     params = Params()
 
@@ -60,11 +60,14 @@ def setup_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, pa
         if params.get_bool("HyundaiRadarTracks"):
           CP.radarUnavailable = False
 
-  initialize_neural_network_lateral_control(CP, CP_SP, params)
+
+def setup_interfaces(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None):
+  _initialize_neural_network_lateral_control(CP, CP_SP, params)
+  _initialize_radar_tracks(CP, CP_SP, params)
 
 
-def initialize_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params, can_recv: CanRecvCallable,
-                                can_send: CanSendCallable):
+def _enable_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, can_recv: CanRecvCallable,
+                        params: Params) -> None:
   if CP.brand == 'hyundai':
     if CP_SP.flags & HyundaiFlagsSP.ENABLE_RADAR_TRACKS:
       can_recv()
@@ -79,3 +82,8 @@ def initialize_car_interface_sp(CP: structs.CarParams, CP_SP: structs.CarParamsS
       if not radar_tracks_persistent:
         params.put_bool_nonblocking("HyundaiRadarTracks", not radar_unavailable)
         params.put_bool_nonblocking("HyundaiRadarTracksPersistent", True)
+
+
+def init_interfaces(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params,
+                                can_recv: CanRecvCallable, can_send: CanSendCallable):
+  _enable_radar_tracks(CP, CP_SP, can_recv, params)
