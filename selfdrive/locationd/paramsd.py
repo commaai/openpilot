@@ -207,7 +207,7 @@ def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, re
 
   steer_ratio, stiffness_factor, angle_offset_deg, p_initial = CP.steerRatio, 1.0, 0.0, None
 
-  retrieve_success = True
+  retrieve_success = False
   if last_parameters_data is not None and last_carparams_data is not None:
     try:
       with log.Event.from_bytes(last_parameters_data) as last_lp_msg, car.CarParams.from_bytes(last_carparams_data) as last_CP:
@@ -227,9 +227,9 @@ def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, re
           p_initial = initial_filter_std
 
         steer_ratio, stiffness_factor, angle_offset_deg = lp.steerRatio, lp.stiffnessFactor, lp.angleOffsetAverageDeg
+        retrieve_success = True
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial values: {e}")
-      retrieve_success = False
 
   if not replay:
     # When driving in wet conditions the stiffness can go down, and then be too low on the next drive
