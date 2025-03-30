@@ -133,7 +133,7 @@ class VehicleParamsLearner:
       self.kf.filter.set_filter_time(t)
       self.kf.filter.reset_rewind()
 
-  def get_msg(self, valid: bool, debug: bool = False):
+  def get_msg(self, valid: bool, debug: bool = False) -> capnp._DynamicStructBuilder:
     x = self.kf.x
     P = np.sqrt(self.kf.P.diagonal())
     if not all(map(math.isfinite, x)):
