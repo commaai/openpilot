@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import math
 import numpy as np
 import capnp
 
@@ -14,10 +13,10 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from openpilot.common.swaglog import cloudlog
 
 MAX_ANGLE_OFFSET_DELTA = 20 * DT_MDL  # Max 20 deg/s
-ROLL_MAX_DELTA = math.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
-ROLL_MIN, ROLL_MAX = math.radians(-10), math.radians(10)
-ROLL_LOWERED_MAX = math.radians(8)
-ROLL_STD_MAX = math.radians(1.5)
+ROLL_MAX_DELTA = np.radians(20.0) * DT_MDL  # 20deg in 1 second is well within curvature limits
+ROLL_MIN, ROLL_MAX = np.radians(-10), np.radians(10)
+ROLL_LOWERED_MAX = np.radians(8)
+ROLL_STD_MAX = np.radians(1.5)
 LATERAL_ACC_SENSOR_THRESHOLD = 4.0
 OFFSET_MAX = 10.0
 OFFSET_LOWERED_MAX = 8.0
@@ -125,7 +124,7 @@ class VehicleParamsLearner:
       self.active = self.speed > MIN_ACTIVE_SPEED and in_linear_region
 
       if self.active:
-        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[math.radians(msg.steeringAngleDeg)]]))
+        self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[np.radians(steering_angle)]]))
         self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
 
     if not self.active:
@@ -136,14 +135,14 @@ class VehicleParamsLearner:
   def get_msg(self, valid: bool, debug: bool = False) -> capnp._DynamicStructBuilder:
     x = self.kf.x
     P = np.sqrt(self.kf.P.diagonal())
-    if not all(map(math.isfinite, x)):
+    if not np.all(np.isfinite(x)):
       cloudlog.error("NaN in liveParameters estimate. Resetting to default values")
       self.reset(self.kf.t)
       x = self.kf.x
 
-    self.avg_angle_offset = np.clip(math.degrees(x[States.ANGLE_OFFSET].item()),
+    self.avg_angle_offset = np.clip(np.degrees(x[States.ANGLE_OFFSET].item()),
                                 self.avg_angle_offset - MAX_ANGLE_OFFSET_DELTA, self.avg_angle_offset + MAX_ANGLE_OFFSET_DELTA)
-    self.angle_offset = np.clip(math.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
+    self.angle_offset = np.clip(np.degrees(x[States.ANGLE_OFFSET].item() + x[States.ANGLE_OFFSET_FAST].item()),
                         self.angle_offset - MAX_ANGLE_OFFSET_DELTA, self.angle_offset + MAX_ANGLE_OFFSET_DELTA)
     self.roll = np.clip(float(x[States.ROAD_ROLL].item()), self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
     roll_std = float(P[States.ROAD_ROLL].item())
