@@ -39,6 +39,7 @@ function install_fedora_common_requirements() {
 	qt-devel \
 	qtchooser \
         python-devel \
+	portaudio-devel \
 	gcc-arm-linux-gnu
 }
 
