@@ -119,7 +119,7 @@ class BlockAverage:
   def __init__(self, num_blocks, block_size, valid_blocks, initial_value):
     self.num_blocks = num_blocks
     self.block_size = block_size
-    self.block_idx = 0
+    self.block_idx = valid_blocks % block_size
     self.idx = 0
 
     self.values = np.tile(initial_value, (num_blocks, 1))
