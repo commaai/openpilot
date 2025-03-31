@@ -91,18 +91,21 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Homebrew cache
       uses: ./.github/workflows/auto-cache
       with:
         path: ~/Library/Caches/Homebrew
-        key: brew-${{ github.sha }}
+        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          brew-macos-${{ env.CACHE_COMMIT_DATE }}
+          brew-macos
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
     - run: git lfs pull
-    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Getting scons cache
       uses: ./.github/workflows/auto-cache
       with:
