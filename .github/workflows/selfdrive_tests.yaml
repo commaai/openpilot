@@ -94,6 +94,7 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: ~/Library/Caches/Homebrew
+        key: brew-${{ github.sha }}
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
@@ -105,6 +106,10 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
