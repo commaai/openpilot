@@ -30,7 +30,7 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
 
 
 class VehicleParamsLearner:
-  inputs = set(['carState', 'liveCalibration', 'livePose'])
+  inputs = {'carState', 'liveCalibration', 'livePose'}
 
   def __init__(self, CP: car.CarParams, steer_ratio: float, stiffness_factor: float, angle_offset: float, P_initial: np.ndarray | None = None):
     self.kf = CarKalman(GENERATED_DIR)

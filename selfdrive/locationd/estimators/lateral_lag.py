@@ -135,7 +135,7 @@ class BlockAverage:
 
 
 class LateralLagEstimator:
-  inputs = set(["carControl", "carState", "controlsState", "liveCalibration", "livePose"])
+  inputs = {"carControl", "carState", "controlsState", "liveCalibration", "livePose"}
 
   def __init__(self, CP, dt,
                block_count=BLOCK_NUM, min_valid_block_count=BLOCK_NUM_NEEDED, block_size=BLOCK_SIZE,
