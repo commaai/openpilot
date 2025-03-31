@@ -2,7 +2,6 @@
 import os
 import time
 import copy
-import json
 import heapq
 import signal
 from collections import Counter, OrderedDict
