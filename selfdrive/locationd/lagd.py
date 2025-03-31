@@ -314,6 +314,7 @@ def main():
       msg = estimator.get_msg(sm.all_checks(), DEBUG)
 
       # TODO remove
+      # FIXME this also causes commIssues, remove
       alert_msg = messaging.new_message('alertDebug')
       alert_msg.alertDebug.alertText1 = f"Lag estimate (fixed: {CP.steerActuatorDelay:.2f} s)"
       progress = int(min((estimator.block_avg.block_idx * estimator.block_avg.block_size + estimator.block_avg.idx) / (estimator.min_valid_block_count * estimator.block_avg.block_size), 1.0) * 100)
