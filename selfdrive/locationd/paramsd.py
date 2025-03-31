@@ -119,8 +119,10 @@ def main():
       for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
         if sm.updated[which]:
           t = sm.logMonoTime[which] * 1e-9
-          params_learner.handle_log(t, which, sm[which])
-          lag_learner.handle_log(t, which, sm[which])
+          if which in params_learner.inputs:
+            params_learner.handle_log(t, which, sm[which])
+          if which in lag_learner.inputs:
+            lag_learner.handle_log(t, which, sm[which])
       lag_learner.update_points()
 
     params_msg, lag_msg = None, None
