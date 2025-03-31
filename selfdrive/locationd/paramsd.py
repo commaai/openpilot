@@ -47,13 +47,10 @@ class VehicleParamsLearner:
 
     self.calibrator = PoseCalibrator()
 
-    self.active = False
-
-    self.speed = 0.0
+    self.observed_speed = 0.0
     self.observed_yaw_rate = 0.0
     self.observed_roll = 0.0
 
-    self.avg_angle_offset = self.angle_offset
     self.avg_offset_valid = True
     self.total_offset_valid = True
     self.roll_valid = True
@@ -121,12 +118,12 @@ class VehicleParamsLearner:
       steering_angle = msg.steeringAngleDeg
 
       in_linear_region = abs(steering_angle) < 45
-      self.speed = msg.vEgo
-      self.active = self.speed > MIN_ACTIVE_SPEED and in_linear_region
+      self.observed_speed = msg.vEgo
+      self.active = self.observed_speed > MIN_ACTIVE_SPEED and in_linear_region
 
       if self.active:
         self.kf.predict_and_observe(t, ObservationKind.STEER_ANGLE, np.array([[np.radians(steering_angle)]]))
-        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.speed]]))
+        self.kf.predict_and_observe(t, ObservationKind.ROAD_FRAME_X_SPEED, np.array([[self.observed_speed]]))
 
     if not self.active:
       # Reset time when stopped so uncertainty doesn't grow
@@ -147,10 +144,10 @@ class VehicleParamsLearner:
                         self.angle_offset - MAX_ANGLE_OFFSET_DELTA, self.angle_offset + MAX_ANGLE_OFFSET_DELTA)
     self.roll = np.clip(float(x[States.ROAD_ROLL].item()), self.roll - ROLL_MAX_DELTA, self.roll + ROLL_MAX_DELTA)
     roll_std = float(P[States.ROAD_ROLL].item())
-    if self.active and self.speed > LOW_ACTIVE_SPEED:
+    if self.active and self.observed_speed > LOW_ACTIVE_SPEED:
       # Account for the opposite signs of the yaw rates
       # At low speeds, bumping into a curb can cause the yaw rate to be very high
-      sensors_valid = bool(abs(self.speed * (x[States.YAW_RATE].item() + self.observed_yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
+      sensors_valid = bool(abs(self.observed_speed * (x[States.YAW_RATE].item() + self.observed_yaw_rate)) < LATERAL_ACC_SENSOR_THRESHOLD)
     else:
       sensors_valid = True
     self.avg_offset_valid = check_valid_with_hysteresis(self.avg_offset_valid, self.avg_angle_offset, OFFSET_MAX, OFFSET_LOWERED_MAX)
