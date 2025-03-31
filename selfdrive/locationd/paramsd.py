@@ -54,7 +54,7 @@ def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, re
 
         initial_filter_std = np.array(lp.debugFilterState.std)
         if debug and len(initial_filter_std) != 0:
-          p_initial = initial_filter_std
+          p_initial = np.diag(initial_filter_std)
 
         steer_ratio, stiffness_factor, angle_offset_deg = lp.steerRatio, lp.stiffnessFactor, lp.angleOffsetAverageDeg
         retrieve_success = True
