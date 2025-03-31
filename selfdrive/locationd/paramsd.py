@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import json
 import numpy as np
 import capnp
 
@@ -198,6 +199,24 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
   return current_valid
 
 
+# TODO: Remove this function after few releases (added in 0.9.9)
+def migrate_cached_vehicle_params_if_needed(params_reader: Params):
+  last_parameters_data = params_reader.get("LiveParameters")
+  if last_parameters_data is None:
+    return
+
+  try:
+    last_parameters_dict = json.loads(last_parameters_data)
+    last_parameters_msg = messaging.new_message('liveParameters')
+    last_parameters_msg.liveParameters.valid = True
+    last_parameters_msg.liveParameters.steerRatio = last_parameters_dict['steerRatio']
+    last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_dict['stiffnessFactor']
+    last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_dict['angleOffsetAverageDeg']
+    params_reader.put("LiveParameters", last_parameters_msg.to_bytes())
+  except (json.JSONDecodeError, KeyError):
+    pass
+
+
 def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, replay: bool, debug: bool):
   last_parameters_data = params_reader.get("LiveParameters")
   last_carparams_data = params_reader.get("CarParamsPrevRoute")
@@ -250,6 +269,8 @@ def main():
 
   params_reader = Params()
   CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
+
+  migrate_cached_vehicle_params_if_needed(params_reader)
 
   steer_ratio, stiffness_factor, angle_offset_deg, pInitial = retrieve_initial_vehicle_params(params_reader, CP, REPLAY, DEBUG)
   learner = VehicleParamsLearner(CP, steer_ratio, stiffness_factor, np.radians(angle_offset_deg), pInitial)
