@@ -160,19 +160,18 @@ class CarKalman(KalmanFilter):
 
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state, global_vars=global_vars)
 
-  def __init__(self, generated_dir, steer_ratio=15, stiffness_factor=1, angle_offset=0, P_initial=None):
-    dim_state = self.initial_x.shape[0]
-    dim_state_err = self.P_initial.shape[0]
-    x_init = self.initial_x
-    x_init[States.STEER_RATIO] = steer_ratio
-    x_init[States.STIFFNESS] = stiffness_factor
-    x_init[States.ANGLE_OFFSET] = angle_offset
+  def __init__(self, generated_dir):
+    dim_state, dim_state_err = CarKalman.initial_x.shape[0], CarKalman.P_initial.shape[0]
+    self.filter = EKF_sym_pyx(generated_dir, CarKalman.name, CarKalman.Q, CarKalman.initial_x, CarKalman.P_initial,
+                              dim_state, dim_state_err, global_vars=CarKalman.global_vars, logger=cloudlog)
 
-    if P_initial is not None:
-      self.P_initial = P_initial
-    # init filter
-    self.filter = EKF_sym_pyx(generated_dir, self.name, self.Q, self.initial_x, self.P_initial,
-                              dim_state, dim_state_err, global_vars=self.global_vars, logger=cloudlog)
+  def set_globals(self, mass, rotational_inertia, center_to_front, center_to_rear, stiffness_front, stiffness_rear):
+    self.filter.set_global("mass", mass)
+    self.filter.set_global("rotational_inertia", rotational_inertia)
+    self.filter.set_global("center_to_front", center_to_front)
+    self.filter.set_global("center_to_rear", center_to_rear)
+    self.filter.set_global("stiffness_front", stiffness_front)
+    self.filter.set_global("stiffness_rear", stiffness_rear)
 
 
 if __name__ == "__main__":
