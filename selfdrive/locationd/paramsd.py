@@ -53,9 +53,6 @@ class VehicleParamsLearner:
     self.observed_yaw_rate = 0.0
     self.observed_roll = 0.0
 
-    self.roll = 0.0
-    self.avg_angle_offset = np.degrees(angle_offset)
-    self.angle_offset = self.avg_angle_offset
     self.avg_offset_valid = True
     self.total_offset_valid = True
     self.roll_valid = True
@@ -64,6 +61,9 @@ class VehicleParamsLearner:
 
   def reset(self, t: float | None):
     self.kf.init_state(self.x_initial, covs=self.P_initial, filter_time=t)
+
+    self.angle_offset, self.roll, self.active = np.degrees(self.x_initial[States.ANGLE_OFFSET]), 0.0, False
+    self.avg_angle_offset = self.angle_offset
 
   def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader):
     if which == 'livePose':
