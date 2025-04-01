@@ -125,27 +125,24 @@ def main():
             lag_learner.handle_log(t, which, sm[which])
       lag_learner.update_points()
 
-    params_msg, lag_msg = None, None
+    params_msg_dat, lag_msg_dat = None, None
     if sm.updated['livePose']:
       params_msg = params_learner.get_msg(sm.all_checks(), debug=DEBUG)
+      params_msg_dat = params_msg.to_bytes()
+      pm.send('liveParameters', params_msg_dat)
 
     # 4Hz driven by livePose
     if sm.frame % 5 == 0:
       lag_learner.update_estimate()
       lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
+      lag_msg_dat = lag_msg.to_bytes()
+      pm.send('liveDelay', lag_msg_dat)
 
-    if params_msg is not None:
-      msg_dat = params_msg.to_bytes()
-      if sm.frame % 1200 == 0: # cache every 60 seconds
-        params_reader.put_nonblocking("LiveParameters", msg_dat)
-      pm.send('liveParameters', msg_dat)
-
-    if lag_msg is not None:
-      msg_dat = lag_msg.to_bytes()
-      if sm.frame % 1200 == 0:
-        params_reader.put_nonblocking("LiveLag", msg_dat)
-      pm.send('liveDelay', msg_dat)
-
+    if sm.frame % 1200 == 0: # cache every 60 seconds
+      if params_msg_dat is not None:
+        params_reader.put_nonblocking("LiveParameters", params_msg_dat)
+      if lag_msg_dat is not None:
+        params_reader.put_nonblocking("LiveLag", lag_msg_dat)
 
 if __name__ == "__main__":
   main()
