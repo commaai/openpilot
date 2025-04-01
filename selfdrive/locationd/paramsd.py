@@ -33,7 +33,7 @@ class VehicleParamsLearner:
     self.x_initial[States.STEER_RATIO] = steer_ratio
     self.x_initial[States.STIFFNESS] = stiffness_factor
     self.x_initial[States.ANGLE_OFFSET] = angle_offset
-    self.P_initial = P_initial or CarKalman.P_initial
+    self.P_initial = P_initial if P_initial is not None else CarKalman.P_initial
 
     self.kf.set_globals(
       mass=CP.mass,
@@ -240,7 +240,7 @@ def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, re
 
         initial_filter_std = np.array(lp.debugFilterState.std)
         if debug and len(initial_filter_std) != 0:
-          p_initial = initial_filter_std
+          p_initial = np.diag(initial_filter_std)
 
         steer_ratio, stiffness_factor, angle_offset_deg = lp.steerRatio, lp.stiffnessFactor, lp.angleOffsetAverageDeg
         retrieve_success = True
