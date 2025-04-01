@@ -105,12 +105,12 @@ def main():
 
   migrate_cached_vehicle_params_if_needed(params_reader)
 
-  steer_ratio, stiffness_factor, angle_offset_deg, pInitial = retrieve_initial_vehicle_params(params_reader, CP, REPLAY, DEBUG)
-  params_learner = VehicleParamsLearner(CP, steer_ratio, stiffness_factor, np.radians(angle_offset_deg), pInitial)
+  steer_ratio, stiffness_factor, angle_offset_deg, p_initial = retrieve_initial_vehicle_params(params_reader, CP, REPLAY, DEBUG)
+  params_learner = VehicleParamsLearner(CP, steer_ratio, stiffness_factor, np.radians(angle_offset_deg), p_initial)
 
   lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency)
-  if (initial_lag := retrieve_initial_lag(params_reader, CP)) is not None:
-    lag, valid_blocks = initial_lag
+  if (initial_lag_params := retrieve_initial_lag(params_reader, CP)) is not None:
+    lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)
 
   while True:
