@@ -27,7 +27,7 @@ def migrate_cached_vehicle_params_if_needed(params_reader: Params):
     last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_dict['stiffnessFactor']
     last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_dict['angleOffsetAverageDeg']
     params_reader.put("LiveParameters", last_parameters_msg.to_bytes())
-  except (json.JSONDecodeError, KeyError):
+  except Exception:
     pass
 
 

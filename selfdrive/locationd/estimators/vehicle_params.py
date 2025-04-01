@@ -39,7 +39,7 @@ class VehicleParamsLearner:
     self.x_initial[States.STEER_RATIO] = steer_ratio
     self.x_initial[States.STIFFNESS] = stiffness_factor
     self.x_initial[States.ANGLE_OFFSET] = angle_offset
-    self.P_initial = P_initial or CarKalman.P_initial
+    self.P_initial = P_initial if P_initial is not None else CarKalman.P_initial
 
     self.kf.set_globals(
       mass=CP.mass,
