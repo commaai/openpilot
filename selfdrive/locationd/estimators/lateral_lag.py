@@ -188,7 +188,7 @@ class LateralLagEstimator:
       liveDelay.status = log.LiveDelayData.Status.estimated
       liveDelay.lateralDelay = estimated_lag
     else:
-      liveDelay.status = log.LiveDelayData.Status.initial
+      liveDelay.status = log.LiveDelayData.Status.unestimated
       liveDelay.lateralDelay = self.initial_lag
     liveDelay.validBlocks = self.block_avg.valid_blocks
     if debug:

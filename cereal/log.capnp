@@ -2287,8 +2287,9 @@ struct LiveDelayData {
   points @4 :List(Float32);
 
   enum Status {
-    initial @0;
+    unestimated @0;
     estimated @1;
+    invalid @2;
   }
 }
 
