@@ -5,11 +5,10 @@ import json
 from cereal import messaging
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params, migrate_cached_vehicle_params_if_needed
 from openpilot.selfdrive.locationd.models.car_kf import CarKalman
+from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.common.params import Params
 from openpilot.tools.lib.logreader import LogReader
-
-TEST_ROUTE = "4019fff6e54cf1c7|00000123--4bc0d95ef6/5"
 
 
 def get_random_live_parameters(CP):
