@@ -16,6 +16,7 @@ MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
 MIN_ABS_YAW_RATE = np.radians(1.0)
 MIN_NCC = 0.95
+MAX_LAG = 1.0
 
 
 @cache
@@ -276,14 +277,14 @@ class LateralLagEstimator:
       if (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:])):
         return
 
-    delay, corr = self.actuator_delay(desired, actual, okay, self.dt)
+    delay, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
     if corr < self.min_ncc:
       return
 
     self.block_avg.update(delay)
     self.last_estimate_t = self.t
 
-  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float = 1.) -> tuple[float, float]:
+  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float]:
     assert len(expected_sig) == len(actual_sig)
     max_lag_samples = int(max_lag / dt)
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
