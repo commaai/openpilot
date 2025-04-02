@@ -44,7 +44,6 @@ PROCS = {
   "./camerad": 10.0,
   "selfdrive.controls.plannerd": 9.0,
   "./ui": 18.0,
-  "selfdrive.locationd.paramsd": 9.0,
   "./sensord": 7.0,
   "selfdrive.controls.radard": 2.0,
   "selfdrive.modeld.modeld": 22.0,
