@@ -241,6 +241,9 @@ class LateralLagEstimator:
       self.yaw_rate = calibrated_pose.angular_velocity.z
     self.t = t
 
+  def points_enough(self):
+    return self.points.num_points >= int(self.okay_window_sec / self.dt)
+
   def points_valid(self):
     return self.points.num_okay >= int(self.okay_window_sec / self.dt)
 
@@ -266,19 +269,18 @@ class LateralLagEstimator:
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
   def update_estimate(self):
-    # check if the points are valid overall
-    if not self.points_valid():
+    if not self.points_enough():
       return
 
     times, desired, actual, okay = self.points.get()
     # check if there are any new valid data points since the last update
+    is_valid = self.points_valid()
     if self.last_estimate_t != 0 and times[0] <= self.last_estimate_t:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
-      if (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:])):
-        return
+      is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
     delay, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
-    if corr < self.min_ncc:
+    if corr < self.min_ncc or not is_valid:
       return
 
     self.block_avg.update(delay)
