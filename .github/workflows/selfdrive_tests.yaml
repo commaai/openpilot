@@ -128,6 +128,11 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+    - name: Breakpoint
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 30m
+        authorized-users: maxime-desroches
     - name: Static analysis
       timeout-minutes: 1
       run: ${{ env.RUN }} "scripts/lint/lint.sh"
