@@ -114,10 +114,10 @@ def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np
 
 class Points:
   def __init__(self, num_points: int):
-    self.times = deque(maxlen=num_points)
-    self.okay = deque(maxlen=num_points)
-    self.desired = deque(maxlen=num_points)
-    self.actual = deque(maxlen=num_points)
+    self.times = deque[float](maxlen=num_points)
+    self.okay = deque[bool](maxlen=num_points)
+    self.desired = deque[float](maxlen=num_points)
+    self.actual = deque[float](maxlen=num_points)
 
   @property
   def num_points(self):
@@ -180,18 +180,18 @@ class LateralLagEstimator:
     self.min_yr = min_yr
     self.min_ncc = min_ncc
 
-    self.t = 0
+    self.t = 0.0
     self.lat_active = False
     self.steering_pressed = False
     self.steering_saturated = False
-    self.desired_curvature = 0
-    self.v_ego = 0
-    self.yaw_rate = 0
+    self.desired_curvature = 0.0
+    self.v_ego = 0.0
+    self.yaw_rate = 0.0
 
-    self.last_lat_inactive_t = 0
-    self.last_steering_pressed_t = 0
-    self.last_steering_saturated_t = 0
-    self.last_estimate_t = 0
+    self.last_lat_inactive_t = 0.0
+    self.last_steering_pressed_t = 0.0
+    self.last_steering_saturated_t = 0.0
+    self.last_estimate_t = 0.0
 
     self.calibrator = PoseCalibrator()
 
