@@ -1,6 +1,6 @@
 import numpy as np
 from collections import deque
-from functools import partial
+from functools import partial, cache
 
 import cereal.messaging as messaging
 from cereal import log
@@ -17,6 +17,31 @@ MIN_ABS_YAW_RATE = np.radians(1.0)
 MIN_NCC = 0.95
 
 
+@cache
+def fft_next_good_size(n):
+    """
+    smallest composite of 2, 3, 5, 7, 11 that is >= n
+    inspired by pocketfft
+    """
+    if n <= 6: return n
+    best = 2 * n; f2 = 1
+    while f2 < best:
+        f23 = f2
+        while f23 < best:
+            f235 = f23
+            while f235 < best:
+                f2357 = f235
+                while f2357 < best:
+                    f235711 = f2357
+                    while f235711 < best:
+                        best = f235711 if f235711 >= n else best; f235711 *= 11
+                    f2357 *= 7
+                f235 *= 5
+            f23 *= 3
+        f2 *= 2
+    return best
+
+
 def parabolic_peak_interp(R, max_index):
   if max_index == 0 or max_index == len(R) - 1:
     return max_index
@@ -27,7 +52,7 @@ def parabolic_peak_interp(R, max_index):
   return max_index + offset
 
 
-def masked_normalized_cross_correlation(expected_sig, actual_sig, mask):
+def masked_normalized_cross_correlation(expected_sig, actual_sig, mask, n):
   """
   References:
     D. Padfield. "Masked FFT registration". In Proc. Computer Vision and
@@ -45,7 +70,6 @@ def masked_normalized_cross_correlation(expected_sig, actual_sig, mask):
   rotated_expected_sig = expected_sig[::-1]
   rotated_mask = mask[::-1]
 
-  n = len(expected_sig) + len(actual_sig) - 1
   fft = partial(np.fft.fft, n=n)
 
   actual_sig_fft = fft(actual_sig)
@@ -260,10 +284,13 @@ class LateralLagEstimator:
     return np.arange(0, sig_len) * dt
 
   def actuator_delay(self, expected_sig, actual_sig, mask, dt, max_lag=1.):
-    ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask)
+    assert len(expected_sig) == len(actual_sig)
+    max_lag_samples = int(max_lag / dt)
+    padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
+
+    ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
     # only consider lags from 0 to max_lag
-    max_lag_samples = int(max_lag / dt)
     roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
 
     max_corr_index = np.argmax(roi_ncc)
