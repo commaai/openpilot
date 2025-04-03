@@ -117,7 +117,7 @@ class SelfdriveD:
 
     # some comma three with NVMe experience NVMe dropouts mid-drive that
     # cause loggerd to crash on write, so ignore it only on that platform
-    self.ignored_processes = {}
+    self.ignored_processes = set()
     if HARDWARE.get_device_type() == 'tici' and os.path.exists('/dev/nvme0'):
       self.ignored_processes = {'loggerd', }
 
