@@ -556,7 +556,7 @@ CONFIGS = [
     subs=["liveDelay"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("livePose"),
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
