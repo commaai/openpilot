@@ -124,7 +124,7 @@ class BlockAverage:
       self.block_idx = (self.block_idx + 1) % self.num_blocks
       self.valid_blocks = min(self.valid_blocks + 1, self.num_blocks)
 
-  def get(self) -> float | None:
+  def get(self) -> tuple[float, float]:
     valid_block_idx = [i for i in range(self.valid_blocks) if i != self.block_idx]
     valid_and_current_idx = valid_block_idx + [self.block_idx]
 
