@@ -53,7 +53,7 @@ PROCS = {
   "selfdrive.locationd.torqued": 5.0,
   "selfdrive.locationd.locationd": 25.0,
   "selfdrive.locationd.paramsd": 9.0,
-  "selfdrive.locationd.lagd": 9.0,
+  "selfdrive.locationd.lagd": 11.0,
   "selfdrive.ui.soundd": 3.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 2.0,
