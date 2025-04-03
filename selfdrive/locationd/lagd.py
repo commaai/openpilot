@@ -84,10 +84,10 @@ def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np
 
 class Points:
   def __init__(self, num_points: int):
-    self.times = deque[float](maxlen=num_points)
-    self.okay = deque[bool](maxlen=num_points)
-    self.desired = deque[float](maxlen=num_points)
-    self.actual = deque[float](maxlen=num_points)
+    self.times = deque[float]([0.0 for _ in range(num_points)], maxlen=num_points)
+    self.okay = deque[bool]([False for _ in range(num_points)], maxlen=num_points)
+    self.desired = deque[float]([0.0 for _ in range(num_points)], maxlen=num_points)
+    self.actual = deque[float]([0.0 for _ in range(num_points)], maxlen=num_points)
 
   @property
   def num_points(self):
