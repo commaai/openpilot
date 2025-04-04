@@ -72,8 +72,12 @@ class TestLagd:
       msgs = [
         (t, "carControl", mock.Mock(latActive=True)),
         (t, "carState", mock.Mock(vEgo=vego, steeringPressed=False)),
-        (t, "controlsState", mock.Mock(desiredCurvature=desired_cuvature, lateralControlState=mock.Mock(which=mock.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
-        (t, "livePose", mock.Mock(orientationNED=ZeroMock(), velocityDevice=ZeroMock(), accelerationDevice=ZeroMock(), angularVelocityDevice=ZeroMock(z=actual_yr))),
+        (t, "controlsState", mock.Mock(desiredCurvature=desired_cuvature,
+                                       lateralControlState=mock.Mock(which=mock.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
+        (t, "livePose", mock.Mock(orientationNED=ZeroMock(),
+                                  velocityDevice=ZeroMock(),
+                                  accelerationDevice=ZeroMock(),
+                                  angularVelocityDevice=ZeroMock(z=actual_yr))),
       ]
       for t, w, m in msgs:
         estimator.handle_log(t, w, m)
@@ -92,7 +96,7 @@ class TestLagd:
     estimator = LateralLagEstimator(mocked_CP, 0.05)
 
     ds = []
-    for i in range(1000):
+    for _ in range(1000):
       st = time.perf_counter()
       estimator.update_points()
       estimator.update_estimate()
