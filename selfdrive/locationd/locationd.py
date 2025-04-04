@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import json
 import time
 import capnp
 import numpy as np
@@ -278,12 +277,13 @@ def main():
   input_invalid_threshold = {s: input_invalid_limit[s] - 0.5 for s in critcal_services}
   input_invalid_decay = {s: calculate_invalid_input_decay(input_invalid_limit[s], INPUT_INVALID_RECOVERY, SERVICE_LIST[s].frequency) for s in critcal_services}
 
-  initial_pose = params.get("LocationFilterInitialState")
-  if initial_pose is not None:
-    initial_pose = json.loads(initial_pose)
-    x_initial = np.array(initial_pose["x"], dtype=np.float64)
-    P_initial = np.diag(np.array(initial_pose["P"], dtype=np.float64))
-    estimator.reset(None, x_initial, P_initial)
+  initial_pose_data = params.get("LocationFilterInitialState")
+  if initial_pose_data is not None:
+    with log.Event.from_bytes(initial_pose_data) as lp_msg:
+      filter_state = lp_msg.livePose.debugFilterState
+      x_initial = np.array(filter_state.value, dtype=np.float64) if len(filter_state) != 0 else PoseKalman.initial_x
+      P_initial = np.array(filter_state.std, dtype=np.float64) if len(filter_state) != 0 else PoseKalman.initial_P
+      estimator.reset(None, x_initial, P_initial)
 
   while True:
     sm.update()
