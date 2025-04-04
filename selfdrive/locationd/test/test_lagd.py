@@ -1,7 +1,6 @@
 import random
 import numpy as np
 import time
-from unittest import mock
 import pytest
 
 from cereal import messaging
@@ -51,15 +50,15 @@ class TestLagd:
     corr = masked_normalized_cross_correlation(desired_sig, actual_sig, mask, 200)[len(desired_sig) - 1:len(desired_sig) + 20]
     assert np.argmax(corr)  in range(lag_frames - MAX_ERR_FRAMES, lag_frames + MAX_ERR_FRAMES + 1)
 
-  def test_estimator(self):
-    class ZeroMock(mock.Mock):
+  def test_estimator(self, mocker):
+    class ZeroMock(mocker.Mock):
       def __getattr__(self, *args):
         return 0
 
     dt = 0.05
     lag_frames = random.randint(1, 20)
 
-    mocked_CP = mock.Mock(steerActuatorDelay=1.0)
+    mocked_CP = mocker.Mock(steerActuatorDelay=1.0)
     estimator = LateralLagEstimator(mocked_CP, 0.05,
                                     block_count=10, min_valid_block_count=0,
                                     block_size=1, okay_window_sec=100 * dt,
@@ -67,14 +66,14 @@ class TestLagd:
     for i in range(100):
       t = i * dt
       vego = 20.0
-      desired_cuvature = np.cos(t) * 100 / (vego ** 2)
-      actual_yr = np.cos(t - lag_frames * dt) * 100 / vego
+      desired_cuvature = np.cos(t) / (vego ** 2)
+      actual_yr = np.cos(t - lag_frames * dt) / vego
       msgs = [
-        (t, "carControl", mock.Mock(latActive=True)),
-        (t, "carState", mock.Mock(vEgo=vego, steeringPressed=False)),
-        (t, "controlsState", mock.Mock(desiredCurvature=desired_cuvature,
-                                       lateralControlState=mock.Mock(which=mock.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
-        (t, "livePose", mock.Mock(orientationNED=ZeroMock(),
+        (t, "carControl", mocker.Mock(latActive=True)),
+        (t, "carState", mocker.Mock(vEgo=vego, steeringPressed=False)),
+        (t, "controlsState", mocker.Mock(desiredCurvature=desired_cuvature,
+                                         lateralControlState=mocker.Mock(which=mocker.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
+        (t, "livePose", mocker.Mock(orientationNED=ZeroMock(),
                                   velocityDevice=ZeroMock(),
                                   accelerationDevice=ZeroMock(),
                                   angularVelocityDevice=ZeroMock(z=actual_yr))),
@@ -92,8 +91,8 @@ class TestLagd:
 
   @pytest.mark.skipif(PC, reason="only on device")
   @pytest.mark.timeout(30)
-  def test_estimator_performance(self):
-    mocked_CP = mock.Mock(steerActuatorDelay=0.1)
+  def test_estimator_performance(self, mocker):
+    mocked_CP = mocker.Mock(steerActuatorDelay=0.1)
     estimator = LateralLagEstimator(mocked_CP, 0.05)
 
     ds = []
