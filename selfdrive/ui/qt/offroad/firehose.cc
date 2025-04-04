@@ -33,7 +33,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   content_layout->setSpacing(20);
 
   // Top description
-  QLabel *description = new QLabel(tr("openpilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models, which means better Experimental Mode."));
+  QLabel *description = new QLabel(tr("sunnypilot learns to drive by watching humans, like you, drive.\n\nFirehose Mode allows you to maximize your training data uploads to improve openpilot's driving models. More data means bigger models, which means better Experimental Mode."));
   description->setStyleSheet("font-size: 45px; padding-bottom: 20px;");
   description->setWordWrap(true);
   content_layout->addWidget(description);
@@ -73,7 +73,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
     "<i>Does it matter how or where I drive?</i> Nope, just drive as you normally would.<br><br>"
     "<i>Do all of my segments get pulled in Firehose Mode?</i> No, we selectively pull a subset of your segments.<br><br>"
     "<i>What's a good USB-C adapter?</i> Any fast phone or laptop charger should be fine.<br><br>"
-    "<i>Does it matter which software I run?</i> Yes, only upstream openpilot (and particular forks) are able to be used for training."
+    "<i>Does it matter which software I run?</i> Yes, only upstream sunnypilot (and particular forks) are able to be used for training."
   ));
   detailed_instructions->setStyleSheet("font-size: 40px; color: #E4E4E4;");
   detailed_instructions->setWordWrap(true);

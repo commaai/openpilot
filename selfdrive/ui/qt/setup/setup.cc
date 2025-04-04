@@ -274,11 +274,11 @@ QWidget * Setup::software_selection() {
 
   main_layout->addSpacing(50);
 
-  // openpilot + custom radio buttons
+  // sunnypilot + custom radio buttons
   QButtonGroup *group = new QButtonGroup(widget);
   group->setExclusive(true);
 
-  QWidget *openpilot = radio_button(tr("openpilot"), group);
+  QWidget *openpilot = radio_button(tr("sunnypilot"), group);
   main_layout->addWidget(openpilot);
 
   main_layout->addSpacing(30);

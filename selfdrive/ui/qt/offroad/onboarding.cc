@@ -91,12 +91,12 @@ void TermsPage::showEvent(QShowEvent *event) {
   vlayout->setContentsMargins(165, 165, 165, 0);
   main_layout->addLayout(vlayout);
 
-  QLabel *title = new QLabel(tr("Welcome to openpilot"));
+  QLabel *title = new QLabel(tr("Welcome to sunnypilot"));
   title->setStyleSheet("font-size: 90px; font-weight: 500;");
   vlayout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
 
   vlayout->addSpacing(90);
-  QLabel *desc = new QLabel(tr("You must accept the Terms and Conditions to use openpilot. Read the latest terms at <span style='color: #465BEA;'>https://comma.ai/terms</span> before continuing."));
+  QLabel *desc = new QLabel(tr("You must accept the Terms and Conditions to use sunnypilot. Read the latest terms at <span style='color: #465BEA;'>https://comma.ai/terms</span> before continuing."));
   desc->setWordWrap(true);
   desc->setStyleSheet("font-size: 80px; font-weight: 300;");
   vlayout->addWidget(desc, 0);
@@ -135,7 +135,7 @@ void DeclinePage::showEvent(QShowEvent *event) {
   main_layout->setSpacing(40);
 
   QLabel *text = new QLabel(this);
-  text->setText(tr("You must accept the Terms and Conditions in order to use openpilot."));
+  text->setText(tr("You must accept the Terms and Conditions in order to use sunnypilot."));
   text->setStyleSheet(R"(font-size: 80px; font-weight: 300; margin: 200px;)");
   text->setWordWrap(true);
   main_layout->addWidget(text, 0, Qt::AlignCenter);

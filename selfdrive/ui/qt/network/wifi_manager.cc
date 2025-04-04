@@ -186,7 +186,7 @@ void WifiManager::connect(const Network &n, const bool is_hidden, const QString 
   Connection connection;
   connection["connection"]["type"] = "802-11-wireless";
   connection["connection"]["uuid"] = QUuid::createUuid().toString().remove('{').remove('}');
-  connection["connection"]["id"] = "openpilot connection " + QString::fromStdString(n.ssid.toStdString());
+  connection["connection"]["id"] = "sunnypilot connection " + QString::fromStdString(n.ssid.toStdString());
   connection["connection"]["autoconnect-retries"] = 0;
 
   connection["802-11-wireless"]["ssid"] = n.ssid;

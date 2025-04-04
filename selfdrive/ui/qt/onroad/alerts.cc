@@ -35,7 +35,7 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
     // Handle selfdrive timeout
     if (selfdrive_frame < started_frame) {
       // car is started, but selfdriveState hasn't been seen at all
-      a = {tr("openpilot Unavailable"), tr("Waiting to start"),
+      a = {tr("sunnypilot Unavailable"), tr("Waiting to start"),
            "selfdriveWaiting", cereal::SelfdriveState::AlertSize::MID,
            cereal::SelfdriveState::AlertStatus::NORMAL};
     } else if (ss_missing > SELFDRIVE_STATE_TIMEOUT && !Hardware::PC()) {

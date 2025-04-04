@@ -32,11 +32,11 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   experimentalLongitudinalToggle = new ParamControl(
     "ExperimentalLongitudinalEnabled",
-    tr("openpilot Longitudinal Control (Alpha)"),
+    tr("sunnypilot Longitudinal Control (Alpha)"),
     QString("<b>%1</b><br><br>%2")
-      .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, openpilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
-              "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
+      .arg(tr("WARNING: sunnypilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
+      .arg(tr("On this car, sunnypilot defaults to the car's built-in ACC instead of sunnypilot's longitudinal control. "
+              "Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha.")),
     ""
   );
   experimentalLongitudinalToggle->setConfirmation(true, false);

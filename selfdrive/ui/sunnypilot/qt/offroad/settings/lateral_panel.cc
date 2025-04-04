@@ -22,7 +22,7 @@ LateralPanel::LateralPanel(SettingsWindowSP *parent) : QFrame(parent) {
   madsToggle = new ParamControl(
     "Mads",
     tr("Modular Assistive Driving System (MADS)"),
-    tr("Enable the beloved MADS feature. Disable toggle to revert back to stock openpilot engagement/disengagement."),
+    tr("Enable the beloved MADS feature. Disable toggle to revert back to stock sunnypilot engagement/disengagement."),
     "");
   madsToggle->setConfirmation(true, false);
   list->addItem(madsToggle);

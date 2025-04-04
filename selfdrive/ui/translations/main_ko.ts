@@ -88,6 +88,34 @@
     </message>
 </context>
 <context>
+    <name>AutoLaneChangeTimer</name>
+    <message>
+        <source>Auto Lane Change by Blinker</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Set a timer to delay the auto lane change operation when the blinker is used. No nudge on the steering wheel is required to auto lane change if a timer is set. Default is Nudge.
+Please use caution when using this feature. Only use the blinker when traffic and road conditions permit.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>s</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Off</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nudge</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Nudgeless</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>ConfirmationDialog</name>
     <message>
         <source>Ok</source>
@@ -101,8 +129,8 @@
 <context>
     <name>DeclinePage</name>
     <message>
-        <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>오픈파일럿을 사용하려면 이용약관에 동의해야 합니다.</translation>
+        <source>You must accept the Terms and Conditions in order to use sunnypilot.</source>
+        <translation>sunnypilot을 사용하려면 이용약관에 동의해야 합니다.</translation>
     </message>
     <message>
         <source>Back</source>
@@ -121,19 +149,19 @@
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation>가감속 제어 조작 모드</translation>
+        <translation>롱컨 제어 모드</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation>오픈파일럿 가감속 제어 (알파)</translation>
+        <source>sunnypilot Longitudinal Control (Alpha)</source>
+        <translation>sunnypilot 가감속 제어 (알파)</translation>
     </message>
     <message>
-        <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation>경고: 오픈파일럿 가감속 제어는 알파 기능으로 차량의 자동긴급제동(AEB)기능이 작동하지 않습니다.</translation>
+        <source>WARNING: sunnypilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
+        <translation>경고: sunnypilot 가감속 제어는 알파 기능으로 차량의 자동긴급제동(AEB)기능이 작동하지 않습니다.</translation>
     </message>
     <message>
-        <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation>이 차량에서 오픈파일럿은 오픈파일럿 가감속 제어 대신 기본적으로 차량의 ACC로 가감속을 제어합니다. 오픈파일럿 가감속 제어로 전환하려면 이 기능을 활성화하세요. 오픈파일럿 가감속 제어 알파 기능을 활성화하는 경우 실험 모드 활성화를 권장합니다.</translation>
+        <source>On this car, sunnypilot defaults to the car&apos;s built-in ACC instead of sunnypilot&apos;s longitudinal control. Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha.</source>
+        <translation>이 차량에서 sunnypilot은 sunnypilot 가감속 제어 대신 기본적으로 차량의 ACC로 가감속을 제어합니다. sunnypilot 가감속 제어로 전환하려면 이 기능을 활성화하세요. sunnypilot 가감속 제어 알파 기능을 활성화하는 경우 실험 모드 활성화를 권장합니다.</translation>
     </message>
     <message>
         <source>Enable ADB</source>
@@ -219,8 +247,8 @@
         <translation>다시보기</translation>
     </message>
     <message>
-        <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>오픈파일럿의 규칙, 기능 및 제한 다시 확인</translation>
+        <source>Review the rules, features, and limitations of sunnypilot</source>
+        <translation>sunnypilot의 규칙, 기능 및 제한 다시 확인</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
@@ -255,8 +283,8 @@
         <translation>전원 끄기</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>오픈파일럿 장치는 좌우 4°, 위로 5°, 아래로 9° 이내 각도로 장착되어야 합니다. 오픈파일럿은 지속적으로 자동 보정되며 재설정은 거의 필요하지 않습니다.</translation>
+        <source>sunnypilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. sunnypilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>sunnypilot 장치는 좌우 4°, 위로 5°, 아래로 9° 이내 각도로 장착되어야 합니다. sunnypilot은 지속적으로 자동 보정되며 재설정은 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -381,6 +409,26 @@
         <source>Always Offroad</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Quiet Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to reset all sunnypilot settings to default? Once the settings are reset, there is no going back.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation type="unfinished">초기화</translation>
+    </message>
+    <message>
+        <source>The reset cannot be undone. You have been warned.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriveStats</name>
@@ -434,34 +482,32 @@
         <translation>🔥 파이어호스 모드 🔥</translation>
     </message>
     <message>
-        <source>openpilot learns to drive by watching humans, like you, drive.
-
-Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
-        <translation>오픈파일럿은 여러분과 같은 사람이 운전하는 모습을 보면서 운전하는 법을 배웁니다.
-
-파이어호스 모드를 사용하면 학습 데이터 업로드를 최대화하여 오픈파일럿의 주행 모델을 개선할 수 있습니다. 더 많은 데이터는 더 큰 모델을 의미하며, 이는 더 나은 실험 모드를 의미합니다.</translation>
-    </message>
-    <message>
         <source>Firehose Mode: ACTIVE</source>
         <translation>파이어호스 모드: 활성화</translation>
     </message>
     <message>
         <source>ACTIVE</source>
-        <translation>활성 상태</translation>
+        <translation>활성화</translation>
     </message>
     <message>
-        <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
-        <translation>최대한의 효과를 얻으려면 매주 장치를 실내로 가져와 좋은 USB-C 충전기와 Wi-Fi에 연결하세요.&lt;br&gt;&lt;br&gt;파이어호스 모드는 핫스팟 또는 무제한 네트워크에 연결된 경우 주행 중에도 작동할 수 있습니다.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;자주 묻는 질문&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;운전 방법이나 장소가 중요한가요?&lt;/i&gt; 아니요, 평소처럼 운전하시면 됩니다.&lt;br&gt;&lt;br&gt;&lt;i&gt;파이어호스 모드에서 제 모든 구간을 가져오나요?&lt;br&gt;&lt;br&gt;&lt;i&gt; 아니요, 저희는 여러분의 구간 중 일부를 선별적으로 가져옵니다.&lt;br&gt;&lt;br&gt;&lt;i&gt;좋은 USB-C 충전기는 무엇인가요?&lt;/i&gt; 휴대폰이나 노트북충전이 가능한 고속 충전기이면 괜찮습니다.&lt;br&gt;&lt;br&gt;&lt;i&gt;어떤 소프트웨어를 실행하는지가 중요한가요?&lt;/i&gt; 예, 오직 공식 오픈파일럿의 특정 포크만 트레이닝에 사용할 수 있습니다.</translation>
+        <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream sunnypilot (and particular forks) are able to be used for training.</source>
+        <translation>최대한의 효과를 얻으려면 매주 장치를 실내로 가져와 좋은 USB-C 케이블에 연결하고 Wi-Fi에 연결하세요.&lt;br&gt;&lt;br&gt;파이어호스 모드는 핫스팟 또는 무제한 SIM 카드에 연결된 경우에는 운전 중에도 작동할 수 있습니다.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;자주 묻는 질문&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;운전 방법이나 장소가 중요한가요?&lt;/i&gt; 아니요, 평소처럼 운전하시면 됩니다.&lt;br&gt;&lt;br&gt;&lt;i&gt;파이어호스 모드에서 제 모든 구간을 가져오나요?.&lt;br&gt;&lt;br&gt;&lt;i&gt; 아니요, 저희는 여러분의 구간 중 일부를 선별적으로 가져옵니다.&lt;br&gt;&lt;br&gt;&lt;i&gt;좋은 USB-C 케이블은 무엇인가요?&lt;/i&gt; 휴대폰이나 노트북 고속 충전기가 있으면 됩니다.&lt;br&gt;&lt;br&gt;&lt;i&gt;어떤 소프트웨어를 실행하는지가 중요한가요?&lt;/i&gt; 예, 오직 공식 sunnypilot의 특정 포크만 트레이닝에 사용할 수 있습니다.</translation>
     </message>
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
-        <translation>
-            <numerusform>&lt;b&gt;%n 구간&lt;/b&gt; 의 운전이 지금까지의 학습 데이터셋에 포함되어 있습니다.</numerusform>
+        <translation type="unfinished">
+            <numerusform></numerusform>
         </translation>
     </message>
     <message>
+        <source>sunnypilot learns to drive by watching humans, like you, drive.
+
+Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
-        <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;비활성 상태&lt;/span&gt;: 무제한 네트워크에 연결 하세요</translation>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -500,6 +546,40 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
 </context>
 <context>
+    <name>LaneChangeSettings</name>
+    <message>
+        <source>Back</source>
+        <translation type="unfinished">뒤로</translation>
+    </message>
+    <message>
+        <source>Auto Lane Change: Delay with Blind Spot</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Toggle to enable a delay timer for seamless lane changes when blind spot monitoring (BSM) detects a obstructing vehicle, ensuring safe maneuvering.</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>LateralPanel</name>
+    <message>
+        <source>Modular Assistive Driving System (MADS)</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable the beloved MADS feature. Disable toggle to revert back to stock sunnypilot engagement/disengagement.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Customize MADS</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Customize Lane Change</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
     <name>MadsSettings</name>
     <message>
         <source>Toggle with Main Cruise</source>
@@ -530,14 +610,18 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Steering Mode After Braking</source>
+        <source>Disengage</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Steering Mode on Brake Pedal</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
         <source>Choose how Automatic Lane Centering (ALC) behaves after the brake pedal is manually pressed in sunnypilot.
 
 Remain Active: ALC will remain active even after the brake pedal is pressed.
-Pause Steering: ALC will be paused after the brake pedal is manually pressed.</source>
+Pause Steering: ALC will be paused when the brake pedal is manually pressed.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -583,14 +667,73 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
     </message>
 </context>
 <context>
-    <name>OffroadAlert</name>
+    <name>NeuralNetworkLateralControl</name>
     <message>
-        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
-        <translation>즉시 인터넷에 연결하여 업데이트를 확인하세요. 인터넷에 연결되어 있지 않으면 %1 이후에는 오픈파일럿이 활성화되지 않습니다.</translation>
+        <source>Neural Network Lateral Control (NNLC)</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
-        <translation>업데이트 확인을 위해 인터넷 연결이 필요합니다. 오픈파일럿은 업데이트 확인을 위해 인터넷에 연결될 때까지 자동으로 시작되지 않습니다.</translation>
+        <source>NNLC is currently not available on this platform.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Start the car to check car compatibility</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NNLC Not Loaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>NNLC Loaded</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Match</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Exact</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Fuzzy</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Match: &quot;Exact&quot; is ideal, but &quot;Fuzzy&quot; is fine too.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Formerly known as &lt;b&gt;&quot;NNFF&quot;&lt;/b&gt;, this replaces the lateral &lt;b&gt;&quot;torque&quot;&lt;/b&gt; controller, with one using a neural network trained on each car&apos;s (actually, each separate EPS firmware) driving data for increased controls accuracy.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Reach out to the sunnypilot team in the following channel at the sunnypilot Discord server</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>with feedback, or to provide log data for your car if your car is currently unsupported:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>if there are any issues:</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>and donate logs to get NNLC loaded for your car:</source>
+        <translation type="unfinished"></translation>
+    </message>
+</context>
+<context>
+    <name>OffroadAlert</name>
+    <message>
+        <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, sunnypilot won&apos;t engage in %1</source>
+        <translation>즉시 인터넷에 연결하여 업데이트를 확인하세요. 인터넷에 연결되어 있지 않으면 %1 이후에는 sunnypilot이 활성화되지 않습니다.</translation>
+    </message>
+    <message>
+        <source>Connect to internet to check for updates. sunnypilot won&apos;t automatically start until it connects to internet to check for updates.</source>
+        <translation>업데이트를 확인하려면 인터넷에 연결하세요. sunnypilot은 업데이트를 확인하기 위해 인터넷에 연결할 때까지 자동으로 시작되지 않습니다.</translation>
     </message>
     <message>
         <source>Unable to download updates
@@ -619,16 +762,16 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation>지원되지 않는 NVMe 드라이브가 감지되었습니다. 지원되지 않는 NVMe 드라이브는 많은 전력을 소비하고 장치를 과열시킬 수 있습니다.</translation>
     </message>
     <message>
-        <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
-        <translation>오픈파일럿이 차량을 식별할 수 없습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 맞는 펌웨어 버전을 추가하려면 PR을 제출하세요. 도움이 필요하시면 discord.comma.ai에 참여하세요.</translation>
+        <source>sunnypilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
+        <translation>sunnypilot이 차량을 식별할 수 없습니다. 지원되지 않는 차량이거나 ECU가 인식되지 않습니다. 해당 차량에 맞는 펌웨어 버전을 추가하려면 PR을 제출하세요. 도움이 필요하시면 discord.comma.ai에 가입하세요.</translation>
     </message>
     <message>
-        <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation>오픈파일럿 장치의 장착 위치가 변경되었습니다. 장치가 마운트에 완전히 장착되고 마운트가 앞유리에 단단히 고정되었는지 확인하세요. </translation>
+        <source>sunnypilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation>sunnypilot 장치의 장착 위치가 변경되었습니다. 장치가 마운트에 완전히 장착되고 마운트가 앞유리에 단단히 고정되었는지 확인하세요. </translation>
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation>장치 온도가 너무 높습니다. 시작하기 전에 시스템을 냉각하고 있습니다. 현재 내부 구성 요소 온도: %1</translation>
+        <translation>장치의 온도가 너무 높습니다. 시작 전에 온도를 낮춰주세요. 현재 내부 구성 요소 온도: %1</translation>
     </message>
     <message>
         <source>sunnypilot is now in Always Offroad mode. sunnypilot won&apos;t start until Always Offroad mode is disabled. Go to &quot;Settings&quot; -&gt; &quot;Device&quot; to exit Always Offroad mode.</source>
@@ -653,7 +796,7 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
 <context>
     <name>OnroadAlerts</name>
     <message>
-        <source>openpilot Unavailable</source>
+        <source>sunnypilot Unavailable</source>
         <translation>오픈파일럿을 사용할수없습니다</translation>
     </message>
     <message>
@@ -781,7 +924,7 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
     </message>
     <message>
         <source>Become a comma prime member at connect.comma.ai</source>
-        <translation>connect.comma.ai에서 comma prime 사용자로 등록하세요</translation>
+        <translation>connect.comma.ai에 접속하여 comma prime 회원으로 등록하세요</translation>
     </message>
     <message>
         <source>PRIME FEATURES:</source>
@@ -797,7 +940,7 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation>1년간 주행 로그 저장</translation>
+        <translation>1년간 드라이브 로그 저장</translation>
     </message>
     <message>
         <source>Remote snapshots</source>
@@ -826,8 +969,8 @@ Pause Steering: ALC will be paused after the brake pedal is manually pressed.</s
         <translation>종료</translation>
     </message>
     <message>
-        <source>openpilot</source>
-        <translation>오픈파일럿</translation>
+        <source>sunnypilot</source>
+        <translation>sunnypilot</translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
@@ -951,10 +1094,6 @@ This may take up to a minute.</source>
         <translation type="unfinished">소프트웨어</translation>
     </message>
     <message>
-        <source>sunnypilot</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Trips</source>
         <translation type="unfinished"></translation>
     </message>
@@ -969,6 +1108,10 @@ This may take up to a minute.</source>
     <message>
         <source>Firehose</source>
         <translation type="unfinished">파이어호스</translation>
+    </message>
+    <message>
+        <source>Steering</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1058,8 +1201,8 @@ This may take up to a minute.</source>
         <translation>설치할 소프트웨어 선택</translation>
     </message>
     <message>
-        <source>openpilot</source>
-        <translation>오픈파일럿</translation>
+        <source>sunnypilot</source>
+        <translation>sunnypilot</translation>
     </message>
     <message>
         <source>Custom Software</source>
@@ -1481,6 +1624,58 @@ This may take up to a minute.</source>
         <source>THANKS ♥</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Backup Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to backup sunnypilot settings?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Back Up</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Settings</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Are you sure you want to restore the last backed up sunnypilot settings?</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup in progress %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Backup Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings backup completed.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore in progress %1%</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Restore Failed</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Unable to restore the settings, try again later.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Settings restored. Confirm to restart the interface.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SunnylinkSponsorPopup</name>
@@ -1522,21 +1717,6 @@ This may take up to a minute.</source>
     </message>
 </context>
 <context>
-    <name>SunnypilotPanel</name>
-    <message>
-        <source>Modular Assistive Driving System (MADS)</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Enable the beloved MADS feature. Disable toggle to revert back to stock openpilot engagement/disengagement.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Customize MADS</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>TermsPage</name>
     <message>
         <source>Decline</source>
@@ -1547,24 +1727,16 @@ This may take up to a minute.</source>
         <translation>동의</translation>
     </message>
     <message>
-        <source>Welcome to openpilot</source>
-        <translation>오픈파일럿에 오신 것을 환영합니다.</translation>
+        <source>Welcome to sunnypilot</source>
+        <translation>오픈 파일럿에 오신 것을 환영합니다.</translation>
     </message>
     <message>
-        <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
+        <source>You must accept the Terms and Conditions to use sunnypilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
         <translation>오픈파일럿을 사용하려면 이용약관에 동의해야 합니다. 최신 약관은 &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; 에서 최신 약관을 읽은 후 계속하세요.</translation>
     </message>
 </context>
 <context>
     <name>TogglesPanel</name>
-    <message>
-        <source>Enable openpilot</source>
-        <translation>오픈파일럿 사용</translation>
-    </message>
-    <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>오픈파일럿 시스템을 사용하여 어댑티브 크루즈 컨트롤과 차로 유지 보조 기능을 활용하십시오. 이 기능을 사용할 때에는 항상 주의를 기울여야 합니다. 설정 변경은 차량을 재시동해야 적용됩니다.</translation>
-    </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>차선 이탈 경고 활성화</translation>
@@ -1594,20 +1766,20 @@ This may take up to a minute.</source>
         <translation>가속페달 조작 시 해제</translation>
     </message>
     <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>활성화된 경우 가속 페달을 밟으면 오픈파일럿이 해제됩니다.</translation>
+        <source>When enabled, pressing the accelerator pedal will disengage sunnypilot.</source>
+        <translation>활성화된 경우 가속 페달을 밟으면 sunnypilot이 해제됩니다.</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
         <translation>실험 모드</translation>
     </message>
     <message>
-        <source>openpilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
-        <translation>오픈파일럿은 기본적으로 &lt;b&gt;안정 모드&lt;/b&gt;로 주행합니다. 실험 모드는 안정화되지 않은 &lt;b&gt;알파 수준의 기능&lt;/b&gt;을 활성화합니다. 실험 모드의 기능은 아래와 같습니다:</translation>
+        <source>sunnypilot defaults to driving in &lt;b&gt;chill mode&lt;/b&gt;. Experimental mode enables &lt;b&gt;alpha-level features&lt;/b&gt; that aren&apos;t ready for chill mode. Experimental features are listed below:</source>
+        <translation>sunnypilot은 기본적으로 &lt;b&gt;안정 모드&lt;/b&gt;로 주행합니다. 실험 모드는 안정화되지 않은 &lt;b&gt;알파 수준의 기능&lt;/b&gt;을 활성화합니다. 실험 모드의 기능은 아래와 같습니다:</translation>
     </message>
     <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
-        <translation>주행모델이 가감속을 제어하도록 합니다. 오픈파일럿은 빨간불과 정지신호를 보고 정지하는것을 포함하여 사람이 운전하는 방식대로 작동하며 주행 모델이 속도를 결정하므로 설정 속도는 최대 제한 속도로만 작동합니다. 이는 알파 수준의 기능이며 오류가 발생할수있으니 사용에 주의해야 합니다.</translation>
+        <source>Let the driving model control the gas and brakes. sunnypilot will drive as it thinks a human would, including stopping for red lights and stop signs. Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; mistakes should be expected.</source>
+        <translation>sunnypilot의 주행모델이 가감속을 제어합니다. sunnypilot은 신호등과 정지 표지판을 보고 멈추는 것을 포함하여 인간이 운전하는 것처럼 생각하고 주행합니다. 주행 모델이 주행할 속도를 결정하므로 설정된 속도는 최대 주행 속도로만 기능합니다. 이 기능은 알파 수준이므로 사용에 각별히 주의해야 합니다.</translation>
     </message>
     <message>
         <source>New Driving Visualization</source>
@@ -1615,11 +1787,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Experimental mode is currently unavailable on this car since the car&apos;s stock ACC is used for longitudinal control.</source>
-        <translation>차량의 ACC가 가감속 제어에 사용되기 때문에, 이 차량에서는 실험 모드를 사용할 수 없습니다.</translation>
+        <translation>차량에 장착된 ACC로 가감속을 제어하기 때문에 현재 이 차량에서는 실험 모드를 사용할 수 없습니다.</translation>
     </message>
     <message>
-        <source>openpilot longitudinal control may come in a future update.</source>
-        <translation>오픈파일럿 가감속 제어는 향후 업데이트에서 지원될 수 있습니다.</translation>
+        <source>sunnypilot longitudinal control may come in a future update.</source>
+        <translation>sunnypilot 가감속 제어는 향후 업데이트에서 지원될 수 있습니다.</translation>
     </message>
     <message>
         <source>Aggressive</source>
@@ -1638,20 +1810,20 @@ This may take up to a minute.</source>
         <translation>주행 모드</translation>
     </message>
     <message>
-        <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation>오픈파일럿 가감속 제어 알파 버전은 비 릴리즈 브랜치에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
+        <source>An alpha version of sunnypilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
+        <translation>sunnypilot 가감속 제어 알파 버전은 비 릴리즈 브랜치에서 실험 모드와 함께 테스트할 수 있습니다.</translation>
     </message>
     <message>
-        <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation>실험 모드를 사용하려면 오픈파일럿 E2E 가감속 제어 (알파) 토글을 활성화하세요.</translation>
+        <source>Enable the sunnypilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
+        <translation>실험 모드를 사용하려면 sunnypilot E2E 가감속 제어 (알파) 토글을 활성화하세요.</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
         <translation>E2E 가감속 제어</translation>
     </message>
     <message>
-        <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation>표준 모드를 권장합니다. 공격적 모드의 오픈파일럿은 선두 차량을 더 가까이 따라가고 가감속제어를 사용하여 더욱 공격적으로 움직입니다. 편안한 모드의 오픈파일럿은 선두 차량으로부터 더 멀리 떨어져 있습니다. 지원되는 차량에서는 차간거리 버튼을 사용하여 이러한 특성을 순환할 수 있습니다.</translation>
+        <source>Standard is recommended. In aggressive mode, sunnypilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode sunnypilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
+        <translation>표준 모드를 권장합니다. 공격적 모드의 sunnypilot은 선두 차량을 더 가까이 따라가고 가감속제어를 사용하여 더욱 공격적으로 움직입니다. 편안한 모드의 sunnypilot은 선두 차량으로부터 더 멀리 떨어져 있습니다. 지원되는 차량에서는 스티어링 휠 거리 버튼을 사용하여 이러한 특성을 순환할 수 있습니다.</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
@@ -1662,8 +1834,8 @@ This may take up to a minute.</source>
         <translation>상시 운전자 모니터링</translation>
     </message>
     <message>
-        <source>Enable driver monitoring even when openpilot is not engaged.</source>
-        <translation>오픈파일럿이 활성화되지 않은 경우에도 드라이버 모니터링을 활성화합니다.</translation>
+        <source>Enable driver monitoring even when sunnypilot is not engaged.</source>
+        <translation>sunnypilot이 활성화되지 않은 경우에도 드라이버 모니터링을 활성화합니다.</translation>
     </message>
     <message>
         <source>Enable Dynamic Experimental Control</source>
@@ -1672,6 +1844,14 @@ This may take up to a minute.</source>
     <message>
         <source>Enable toggle to allow the model to determine when to use sunnypilot ACC or sunnypilot End to End Longitudinal.</source>
         <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Enable sunnypilot</source>
+        <translation>sunnypilot 사용</translation>
+    </message>
+    <message>
+        <source>Use the sunnypilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation>어댑티브 크루즈 컨트롤 및 차로 유지 보조를 위해 sunnypilot 시스템을 사용할 수 있습니다. 이 기능을 사용할 때에는 언제나 주의를 기울여야 합니다. 설정을 변경하면 차량 시동이 꺼졌을 때 적용됩니다.</translation>
     </message>
 </context>
 <context>
@@ -1716,12 +1896,12 @@ This may take up to a minute.</source>
         <translation>열기</translation>
     </message>
     <message>
-        <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
-        <translation>오픈파일럿의 주행 모델 개선을 위해 학습 데이터 업로드를 최대화하세요.</translation>
-    </message>
-    <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
         <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; 파이어호스 모드 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
+    </message>
+    <message>
+        <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

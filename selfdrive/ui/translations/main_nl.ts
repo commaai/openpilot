@@ -104,8 +104,8 @@
 <context>
     <name>DeclinePage</name>
     <message>
-        <source>You must accept the Terms and Conditions in order to use openpilot.</source>
-        <translation>U moet de Algemene Voorwaarden accepteren om openpilot te gebruiken.</translation>
+        <source>You must accept the Terms and Conditions in order to use sunnypilot.</source>
+        <translation>U moet de Algemene Voorwaarden accepteren om sunnypilot te gebruiken.</translation>
     </message>
     <message>
         <source>Back</source>
@@ -163,8 +163,8 @@
         <translation>BEKIJKEN</translation>
     </message>
     <message>
-        <source>Review the rules, features, and limitations of openpilot</source>
-        <translation>Bekijk de regels, functies en beperkingen van openpilot</translation>
+        <source>Review the rules, features, and limitations of sunnypilot</source>
+        <translation>Bekijk de regels, functies en beperkingen van sunnypilot</translation>
     </message>
     <message>
         <source>Are you sure you want to review the training guide?</source>
@@ -199,8 +199,8 @@
         <translation>Uitschakelen</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot vereist dat het apparaat binnen 4° links of rechts en binnen 5° omhoog of 8° omlaag wordt gemonteerd. openpilot kalibreert continu, resetten is zelden nodig.</translation>
+        <source>sunnypilot requires the device to be mounted within 4° left or right and within 5° up or 8° down. sunnypilot is continuously calibrating, resetting is rarely required.</source>
+        <translation>sunnypilot vereist dat het apparaat binnen 4° links of rechts en binnen 5° omhoog of 8° omlaag wordt gemonteerd. sunnypilot kalibreert continu, resetten is zelden nodig.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -228,7 +228,7 @@
     </message>
     <message>
         <source>Disengage to Reboot</source>
-        <translation>Deactiveer openpilot om opnieuw op te starten</translation>
+        <translation>Deactiveer sunnypilot om opnieuw op te starten</translation>
     </message>
     <message>
         <source>Are you sure you want to power off?</source>
@@ -236,7 +236,7 @@
     </message>
     <message>
         <source>Disengage to Power Off</source>
-        <translation>Deactiveer openpilot om uit te schakelen</translation>
+        <translation>Deactiveer sunnypilot om uit te schakelen</translation>
     </message>
 </context>
 <context>
@@ -525,8 +525,8 @@ ingesteld</translation>
         <translation>dashcam</translation>
     </message>
     <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
+        <source>sunnypilot</source>
+        <translation>sunnypilot</translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s) ago</source>
@@ -827,8 +827,8 @@ ingesteld</translation>
         <translation type="vanished">Laatste Updatecontrole</translation>
     </message>
     <message>
-        <source>The last time openpilot successfully checked for an update. The updater only runs while the car is off.</source>
-        <translation type="vanished">De laatste keer dat openpilot met succes heeft gecontroleerd op een update. De updater werkt alleen als de auto is uitgeschakeld.</translation>
+        <source>The last time sunnypilot successfully checked for an update. The updater only runs while the car is off.</source>
+        <translation type="vanished">De laatste keer dat sunnypilot met succes heeft gecontroleerd op een update. De updater werkt alleen als de auto is uitgeschakeld.</translation>
     </message>
     <message>
         <source>Check for Update</source>
@@ -975,12 +975,12 @@ ingesteld</translation>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <source>Enable openpilot</source>
-        <translation>openpilot Inschakelen</translation>
+        <source>Enable sunnypilot</source>
+        <translation>sunnypilot Inschakelen</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Gebruik het openpilot-systeem voor adaptieve cruisecontrol en rijstrookassistentie. Uw aandacht is te allen tijde vereist om deze functie te gebruiken. Het wijzigen van deze instelling wordt van kracht wanneer de auto wordt uitgeschakeld.</translation>
+        <source>Use the sunnypilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
+        <translation>Gebruik het sunnypilot-systeem voor adaptieve cruisecontrol en rijstrookassistentie. Uw aandacht is te allen tijde vereist om deze functie te gebruiken. Het wijzigen van deze instelling wordt van kracht wanneer de auto wordt uitgeschakeld.</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
@@ -1011,8 +1011,8 @@ ingesteld</translation>
         <translation>Deactiveren Met Gaspedaal</translation>
     </message>
     <message>
-        <source>When enabled, pressing the accelerator pedal will disengage openpilot.</source>
-        <translation>Indien ingeschakeld, zal het indrukken van het gaspedaal openpilot deactiveren.</translation>
+        <source>When enabled, pressing the accelerator pedal will disengage sunnypilot.</source>
+        <translation>Indien ingeschakeld, zal het indrukken van het gaspedaal sunnypilot deactiveren.</translation>
     </message>
     <message>
         <source>Show ETA in 24h Format</source>
@@ -1031,31 +1031,31 @@ ingesteld</translation>
         <translation>Toon kaart links in gesplitste schermweergave.</translation>
     </message>
     <message>
-        <source>openpilot Longitudinal Control</source>
-        <translation type="vanished">openpilot Longitudinale Controle</translation>
+        <source>sunnypilot Longitudinal Control</source>
+        <translation type="vanished">sunnypilot Longitudinale Controle</translation>
     </message>
     <message>
-        <source>openpilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
-        <translation type="vanished">openpilot zal de radar van de auto uitschakelen en de controle over gas en remmen overnemen. Waarschuwing: hierdoor wordt AEB (automatische noodrem) uitgeschakeld!</translation>
+        <source>sunnypilot will disable the car&apos;s radar and will take over control of gas and brakes. Warning: this disables AEB!</source>
+        <translation type="vanished">sunnypilot zal de radar van de auto uitschakelen en de controle over gas en remmen overnemen. Waarschuwing: hierdoor wordt AEB (automatische noodrem) uitgeschakeld!</translation>
     </message>
     <message>
         <source>🌮 End-to-end longitudinal (extremely alpha) 🌮</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Experimental openpilot Longitudinal Control</source>
+        <source>Experimental sunnypilot Longitudinal Control</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;b&gt;WARNING: openpilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
+        <source>&lt;b&gt;WARNING: sunnypilot longitudinal control is experimental for this car and will disable AEB.&lt;/b&gt;</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would. Super experimental.</source>
+        <source>Let the driving model control the gas and brakes. sunnypilot will drive as it thinks a human would. Super experimental.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>openpilot longitudinal control is not currently available for this car.</source>
+        <source>sunnypilot longitudinal control is not currently available for this car.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
