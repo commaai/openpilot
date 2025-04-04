@@ -81,7 +81,7 @@ class TestLagd:
       for t, w, m in msgs:
         estimator.handle_log(t, w, m)
       estimator.update_points()
-    estimator.update_estimate()
+      estimator.update_estimate()
 
     # expect one block filled, with lateralDelayEstimate equal to lateralDelay equal to lag_frames
     output = estimator.get_msg(True)
