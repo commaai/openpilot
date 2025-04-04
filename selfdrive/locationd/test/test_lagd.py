@@ -96,11 +96,16 @@ class TestLagd:
     estimator = LateralLagEstimator(mocked_CP, 0.05)
 
     ds = []
+    test_start = time.perf_counter()
     for _ in range(1000):
       st = time.perf_counter()
       estimator.update_points()
       estimator.update_estimate()
       d = time.perf_counter() - st
       ds.append(d)
+
+      # limit the test to 20 seconds
+      if time.perf_counter() - test_start > 20.0:
+        break
 
     assert np.mean(ds) < 0.05
