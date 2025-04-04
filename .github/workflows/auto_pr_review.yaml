@@ -1,7 +1,7 @@
 name: "PR review"
 on:
   pull_request_target:
-    types: [opened, reopened, synchronize, edited, edited]
+    types: [opened, reopened, synchronize, edited]
 
 jobs:
   labeler:
@@ -50,4 +50,3 @@ jobs:
               * all the tests are passing
               * the change is [something we merge](https://github.com/sunnypilot/sunnypilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
               * include a route or your device' dongle ID if relevant
-

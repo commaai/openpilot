@@ -108,30 +108,14 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   # lateral planning
   modelV2.action.desiredCurvature = float(net_output_data['desired_curvature'][0,0])
 
-  # times at X_IDXS according to model plan
-  PLAN_T_IDXS = [np.nan] * ModelConstants.IDX_N
-  PLAN_T_IDXS[0] = 0.0
-  plan_x = net_output_data['plan'][0,:,Plan.POSITION][:,0].tolist()
-  for xidx in range(1, ModelConstants.IDX_N):
-    tidx = 0
-    # increment tidx until we find an element that's further away than the current xidx
-    while tidx < ModelConstants.IDX_N - 1 and plan_x[tidx+1] < ModelConstants.X_IDXS[xidx]:
-      tidx += 1
-    if tidx == ModelConstants.IDX_N - 1:
-      # if the Plan doesn't extend far enough, set plan_t to the max value (10s), then break
-      PLAN_T_IDXS[xidx] = ModelConstants.T_IDXS[ModelConstants.IDX_N - 1]
-      break
-    # interpolate to find `t` for the current xidx
-    current_x_val = plan_x[tidx]
-    next_x_val = plan_x[tidx+1]
-    p = (ModelConstants.X_IDXS[xidx] - current_x_val) / (next_x_val - current_x_val) if abs(next_x_val - current_x_val) > 1e-9 else float('nan')
-    PLAN_T_IDXS[xidx] = p * ModelConstants.T_IDXS[tidx+1] + (1 - p) * ModelConstants.T_IDXS[tidx]
+  # times at X_IDXS of edges and lines aren't used
+  LINE_T_IDXS: list[float] = []
 
   # lane lines
   modelV2.init('laneLines', 4)
   for i in range(4):
     lane_line = modelV2.laneLines[i]
-    fill_xyzt(lane_line, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
+    fill_xyzt(lane_line, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['lane_lines'][0,i,:,0], net_output_data['lane_lines'][0,i,:,1])
   modelV2.laneLineStds = net_output_data['lane_lines_stds'][0,:,0,0].tolist()
   modelV2.laneLineProbs = net_output_data['lane_lines_prob'][0,1::2].tolist()
 
@@ -141,7 +125,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   modelV2.init('roadEdges', 2)
   for i in range(2):
     road_edge = modelV2.roadEdges[i]
-    fill_xyzt(road_edge, PLAN_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
+    fill_xyzt(road_edge, LINE_T_IDXS, np.array(ModelConstants.X_IDXS), net_output_data['road_edges'][0,i,:,0], net_output_data['road_edges'][0,i,:,1])
   modelV2.roadEdgeStds = net_output_data['road_edges_stds'][0,:,0,0].tolist()
 
   # leads
