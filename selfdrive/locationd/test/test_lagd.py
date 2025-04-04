@@ -14,6 +14,32 @@ from openpilot.system.hardware import PC
 MAX_ERR_FRAMES = 1
 
 
+def run_estimator_on_fake_data(estimator, dt, lag_frames, n_frames, mocker):
+  class ZeroMock(mocker.Mock):
+    def __getattr__(self, *args):
+      return 0
+
+  for i in range(n_frames):
+    t = i * dt
+    vego = 20.0
+    desired_cuvature = np.cos(t) / (vego ** 2)
+    actual_yr = np.cos(t - lag_frames * dt) / vego
+    msgs = [
+      (t, "carControl", mocker.Mock(latActive=True)),
+      (t, "carState", mocker.Mock(vEgo=vego, steeringPressed=False)),
+      (t, "controlsState", mocker.Mock(desiredCurvature=desired_cuvature,
+                                        lateralControlState=mocker.Mock(which=mocker.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
+      (t, "livePose", mocker.Mock(orientationNED=ZeroMock(),
+                                velocityDevice=ZeroMock(),
+                                accelerationDevice=ZeroMock(),
+                                angularVelocityDevice=ZeroMock(z=actual_yr))),
+    ]
+    for t, w, m in msgs:
+      estimator.handle_log(t, w, m)
+    estimator.update_points()
+    estimator.update_estimate()
+
+
 class TestLagd:
   def test_read_saved_params(self):
     params = Params()
@@ -35,7 +61,7 @@ class TestLagd:
     assert valid_blocks == msg.liveDelay.validBlocks
 
   def test_ncc(self):
-    lag_frames = random.randint(1, 20)
+    lag_frames = random.randint(1, 19)
 
     desired_sig = np.sin(np.arange(0.0, 10.0, 0.1))
     actual_sig = np.sin(np.arange(0.0, 10.0, 0.1) - lag_frames * 0.1)
@@ -50,43 +76,29 @@ class TestLagd:
     corr = masked_normalized_cross_correlation(desired_sig, actual_sig, mask, 200)[len(desired_sig) - 1:len(desired_sig) + 20]
     assert np.argmax(corr)  in range(lag_frames - MAX_ERR_FRAMES, lag_frames + MAX_ERR_FRAMES + 1)
 
-  def test_estimator(self, mocker):
-    class ZeroMock(mocker.Mock):
-      def __getattr__(self, *args):
-        return 0
+  def test_empty_estimator(self, mocker):
+    mocked_CP = mocker.Mock(steerActuatorDelay=0.8)
+    estimator = LateralLagEstimator(mocked_CP, 0.05)
+    msg = estimator.get_msg(True)
+    assert msg.liveDelay.status == 'unestimated'
+    assert np.allclose(msg.liveDelay.lateralDelay, 1.0)
 
-    dt = 0.05
-    lag_frames = random.randint(1, 20)
+  def test_estimator(self, mocker):
+    dt, iters = 0.05, 100
+    lag_frames = random.randint(1, 19)
 
     mocked_CP = mocker.Mock(steerActuatorDelay=1.0)
-    estimator = LateralLagEstimator(mocked_CP, 0.05,
+    estimator = LateralLagEstimator(mocked_CP, dt,
                                     block_count=10, min_valid_block_count=0,
-                                    block_size=1, okay_window_sec=100 * dt,
+                                    block_size=1, okay_window_sec=iters * dt,
                                     min_recovery_buffer_sec=0, min_yr=0)
-    for i in range(100):
-      t = i * dt
-      vego = 20.0
-      desired_cuvature = np.cos(t) / (vego ** 2)
-      actual_yr = np.cos(t - lag_frames * dt) / vego
-      msgs = [
-        (t, "carControl", mocker.Mock(latActive=True)),
-        (t, "carState", mocker.Mock(vEgo=vego, steeringPressed=False)),
-        (t, "controlsState", mocker.Mock(desiredCurvature=desired_cuvature,
-                                         lateralControlState=mocker.Mock(which=mocker.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
-        (t, "livePose", mocker.Mock(orientationNED=ZeroMock(),
-                                  velocityDevice=ZeroMock(),
-                                  accelerationDevice=ZeroMock(),
-                                  angularVelocityDevice=ZeroMock(z=actual_yr))),
-      ]
-      for t, w, m in msgs:
-        estimator.handle_log(t, w, m)
-      estimator.update_points()
-      estimator.update_estimate()
+    run_estimator_on_fake_data(estimator, dt, lag_frames, iters, mocker)
 
     # expect one block filled, with lateralDelayEstimate equal to lateralDelay equal to lag_frames
     output = estimator.get_msg(True)
-    assert np.allclose(output.liveDelay.lateralDelay, lag_frames * dt, atol=0.01)
     assert output.liveDelay.status == 'estimated'
+    assert np.allclose(output.liveDelay.lateralDelay, lag_frames * dt, atol=0.01)
+    assert np.allclose(output.liveDelay.lateralDelayEstimate, output.liveDelay.lateralDelay, atol=0.01)
     assert output.liveDelay.validBlocks == 1
 
   @pytest.mark.skipif(PC, reason="only on device")

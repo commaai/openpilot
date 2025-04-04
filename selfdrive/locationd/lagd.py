@@ -126,10 +126,10 @@ class BlockAverage:
 
   def get(self) -> tuple[float, float]:
     valid_block_idx = [i for i in range(self.valid_blocks) if i != self.block_idx]
-    valid_and_current_idx = valid_block_idx + [self.block_idx]
+    valid_and_current_idx = valid_block_idx + ([self.block_idx] if self.idx > 0 else [])
 
     valid_mean = float(np.mean(self.values[valid_block_idx], axis=0).item()) if len(valid_block_idx) > 0 else float('nan')
-    current_mean = float(np.mean(self.values[valid_and_current_idx], axis=0).item())
+    current_mean = float(np.mean(self.values[valid_and_current_idx], axis=0).item()) if len(valid_and_current_idx) > 0 else float('nan')
     return valid_mean, current_mean
 
 
@@ -188,7 +188,10 @@ class LateralLagEstimator:
     else:
       liveDelay.status = log.LiveDelayData.Status.unestimated
       liveDelay.lateralDelay = self.initial_lag
-    liveDelay.lateralDelayEstimate = current_mean_lag
+    if not np.isnan(current_mean_lag):
+      liveDelay.lateralDelayEstimate = current_mean_lag
+    else:
+      liveDelay.lateralDelayEstimate = self.initial_lag
     liveDelay.validBlocks = self.block_avg.valid_blocks
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
