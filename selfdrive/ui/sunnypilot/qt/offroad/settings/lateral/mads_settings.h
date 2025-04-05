@@ -32,5 +32,5 @@ private:
 
   ParamControl *madsMainCruiseToggle;
   ParamControl *madsUnifiedEngagementModeToggle;
-  ButtonParamControl *madsSteeringMode;
+  ButtonParamControl *madsPauseLateralOnBrake;
 };

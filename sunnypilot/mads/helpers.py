@@ -11,30 +11,15 @@ from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP, HyundaiSafetyFlagsSP
 
 
-class MadsSteeringModeOnBrake:
-  REMAIN_ACTIVE = 0
-  PAUSE = 1
-  DISENGAGE = 2
-
-
-def read_steering_mode_param(params: Params):
-  try:
-    return int(params.get("MadsSteeringMode"))
-  except (ValueError, TypeError):
-    return f"{MadsSteeringModeOnBrake.REMAIN_ACTIVE}"
-
-
 def set_alternative_experience(CP: structs.CarParams, params: Params):
   enabled = params.get_bool("Mads")
-  steering_mode = read_steering_mode_param(params)
+  pause_lateral_on_brake = params.get_bool("MadsPauseLateralOnBrake")
 
   if enabled:
     CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.ENABLE_MADS
 
-    if steering_mode == MadsSteeringModeOnBrake.DISENGAGE:
-      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.MADS_DISENGAGE_LATERAL_ON_BRAKE
-    elif steering_mode == MadsSteeringModeOnBrake.PAUSE:
-      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.MADS_PAUSE_LATERAL_ON_BRAKE
+    if pause_lateral_on_brake:
+      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISENGAGE_LATERAL_ON_BRAKE
 
 
 def set_car_specific_params(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params):

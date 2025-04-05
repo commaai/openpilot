@@ -41,7 +41,7 @@
 #define CUTOFF_IL 400
 #define SATURATE_IL 1000
 
-#define ALT_EXP_MADS_DISENGAGE_LATERAL_ON_BRAKE 2048
+#define ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE 2048
 
 ExitHandler do_exit;
 
@@ -57,7 +57,7 @@ bool check_all_connected(const std::vector<Panda *> &pandas) {
 
 bool process_mads_heartbeat(SubMaster *sm) {
   const int &alt_exp = (*sm)["carParams"].getCarParams().getAlternativeExperience();
-  const bool disengage_lateral_on_brake = (alt_exp & ALT_EXP_MADS_DISENGAGE_LATERAL_ON_BRAKE) != 0;
+  const bool disengage_lateral_on_brake = (alt_exp & ALT_EXP_DISENGAGE_LATERAL_ON_BRAKE) != 0;
 
   const auto &mads = (*sm)["selfdriveStateSP"].getSelfdriveStateSP().getMads();
   const bool heartbeat_type = disengage_lateral_on_brake ? mads.getActive() : mads.getEnabled();
