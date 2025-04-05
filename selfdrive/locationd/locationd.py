@@ -64,7 +64,7 @@ class LocationEstimator:
     self.observation_errors = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
 
   def reset(self, t: float, x_initial: np.ndarray = PoseKalman.initial_x, P_initial: np.ndarray = PoseKalman.initial_P):
-    self.kf.reset(t, x_initial, P_initial)
+    self.kf.init_state(x_initial, covs=P_initial, filter_time=t)
 
   def _validate_sensor_source(self, source: log.SensorEventData.SensorSource):
     # some segments have two IMUs, ignore the second one
@@ -185,8 +185,8 @@ class LocationEstimator:
       rot_device_noise = rot_device_std ** 2
       trans_device_noise = trans_device_std ** 2
 
-      cam_odo_rot_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, rot_device_noise)
-      cam_odo_trans_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, trans_device_noise)
+      cam_odo_rot_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_ROTATION, rot_device, np.array([np.diag(rot_device_noise)]))
+      cam_odo_trans_res = self.kf.predict_and_observe(t, ObservationKind.CAMERA_ODO_TRANSLATION, trans_device, np.array([np.diag(trans_device_noise)]))
       self.camodo_yawrate_distribution =  np.array([rot_device[2], rot_device_std[2]])
       if cam_odo_rot_res is not None:
         _, new_x, _, new_P, _, _, (cam_odo_rot_err,), _, _ = cam_odo_rot_res
