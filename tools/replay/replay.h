@@ -24,6 +24,7 @@ enum REPLAY_FLAGS {
   REPLAY_FLAG_NO_HW_DECODER = 0x0100,
   REPLAY_FLAG_NO_VIPC = 0x0400,
   REPLAY_FLAG_ALL_SERVICES = 0x0800,
+  REPLAY_FLAG_CLIP = 0x1000,
 };
 
 class Replay {
@@ -50,6 +51,8 @@ public:
   inline double toSeconds(uint64_t mono_time) const { return (mono_time - route_start_ts_) / 1e9; }
   inline double minSeconds() const { return min_seconds_; }
   inline double maxSeconds() const { return max_seconds_; }
+  inline double endSeconds() const { return end_seconds_; }
+  inline void setEndSeconds(double seconds) { end_seconds_ = std::max(0.0, std::min(seconds, max_seconds_)); }
   inline void setSpeed(float speed) { speed_ = speed; }
   inline float getSpeed() const { return speed_; }
   inline const std::string &carFingerprint() const { return car_fingerprint_; }
@@ -57,6 +60,7 @@ public:
   inline const std::optional<Timeline::Entry> findAlertAtTime(double sec) const { return timeline_.findAlertAtTime(sec); }
   const std::shared_ptr<SegmentManager::EventData> getEventData() const { return seg_mgr_->getEventData(); }
   void installEventFilter(std::function<bool(const Event *)> filter) { event_filter_ = filter; }
+  void waitUntilEnd();
 
   // Event callback functions
   std::function<void()> onSegmentsMerged = nullptr;
@@ -96,6 +100,7 @@ private:
   cereal::Event::Which cur_which_ = cereal::Event::Which::INIT_DATA;
   double min_seconds_ = 0;
   double max_seconds_ = 0;
+  double end_seconds_ = 0;
   SubMaster *sm_ = nullptr;
   std::unique_ptr<PubMaster> pm_;
   std::vector<const char*> sockets_;

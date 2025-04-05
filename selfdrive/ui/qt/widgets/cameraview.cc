@@ -8,6 +8,8 @@
 
 #include <cmath>
 #include <QApplication>
+#include <QPainter>
+#include <QOpenGLPaintDevice>
 
 namespace {
 
@@ -67,7 +69,7 @@ CameraWidget::CameraWidget(std::string stream_name, VisionStreamType type, QWidg
   setAttribute(Qt::WA_OpaquePaintEvent);
   qRegisterMetaType<std::set<VisionStreamType>>("availableStreams");
   QObject::connect(this, &CameraWidget::vipcThreadConnected, this, &CameraWidget::vipcConnected, Qt::BlockingQueuedConnection);
-  QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
+  // QObject::connect(this, &CameraWidget::vipcThreadFrameReceived, this, &CameraWidget::vipcFrameReceived, Qt::QueuedConnection);
   QObject::connect(this, &CameraWidget::vipcAvailableStreamsUpdated, this, &CameraWidget::availableStreamsUpdated, Qt::QueuedConnection);
   QObject::connect(QApplication::instance(), &QCoreApplication::aboutToQuit, this, &CameraWidget::stopVipcThread);
 }
@@ -332,6 +334,7 @@ void CameraWidget::vipcThread() {
         QThread::msleep(100);
         continue;
       }
+      qDebug().nospace() << "connected to stream " << requested_stream_type << ", was connected to " << cur_stream;
       emit vipcAvailableStreamsUpdated(streams);
 
       if (!vipc_client->connect(false)) {

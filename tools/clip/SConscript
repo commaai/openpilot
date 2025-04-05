@@ -1,0 +1,21 @@
+Import('qt_env', 'ui_libs', 'qt_libs', 'qt_ui', 'replay_lib', 'asset_obj', 'arch', 'common', 'messaging', 'visionipc', 'cereal')
+
+clip_env = qt_env.Clone()
+clip_env['CCFLAGS'] += ['-Wno-deprecated-declarations']
+
+base_frameworks = clip_env["FRAMEWORKS"]
+base_libs = clip_env["LIBS"]
+
+if arch == "Darwin":
+  base_frameworks.append('OpenCL')
+else:
+  base_libs.append('OpenCL')
+
+if arch == 'larch64':
+  base_libs.append('EGL')
+
+clip_lib_src = ["application.cc", "recorder/ffmpeg.cc", "recorder/widget.cc"]
+clip_lib = clip_env.Library("clip", clip_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
+Export('clip_lib')
+clip_libs = [clip_lib, replay_lib, cereal, 'bz2', 'zstd', 'curl', 'yuv', 'ncurses'] + base_libs + qt_libs + ui_libs + qt_ui
+clip_env.Program("clip", ["main.cc", asset_obj], LIBS=clip_libs, FRAMEWORKS=base_frameworks)
