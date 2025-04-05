@@ -281,8 +281,8 @@ def main():
   if initial_pose_data is not None:
     with log.Event.from_bytes(initial_pose_data) as lp_msg:
       filter_state = lp_msg.livePose.debugFilterState
-      x_initial = np.array(filter_state.value, dtype=np.float64) if len(filter_state) != 0 else PoseKalman.initial_x
-      P_initial = np.array(filter_state.std, dtype=np.float64) if len(filter_state) != 0 else PoseKalman.initial_P
+      x_initial = np.array(filter_state.value, dtype=np.float64) if len(filter_state.value) != 0 else PoseKalman.initial_x
+      P_initial = np.diag(np.array(filter_state.std, dtype=np.float64)) if len(filter_state.std) != 0 else PoseKalman.initial_P
       estimator.reset(None, x_initial, P_initial)
 
   while True:
