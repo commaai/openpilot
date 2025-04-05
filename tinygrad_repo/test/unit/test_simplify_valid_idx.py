@@ -1,9 +1,9 @@
 import unittest, itertools
-from typing import Tuple
 
-from tinygrad.codegen.uopgraph import full_graph_rewrite, is_increasing
+from tinygrad.codegen.devectorizer import full_graph_rewrite
 from tinygrad.dtype import dtypes
-from tinygrad.ops import UOp, Ops, simplify_valid
+from tinygrad.ops import UOp, Ops
+from tinygrad.codegen.symbolic import simplify_valid
 
 def get_gated_load_uop(valid:UOp, idx:UOp):
   return UOp(Ops.LOAD, dtypes.float, (
@@ -11,7 +11,7 @@ def get_gated_load_uop(valid:UOp, idx:UOp):
     UOp.const(dtypes.float, 0.0)
   ))
 
-def get_load_image_uop(image_shape:Tuple[int, ...], valid:UOp, idx:Tuple[UOp, UOp]):
+def get_load_image_uop(image_shape:tuple[int, ...], valid:UOp, idx:tuple[UOp, UOp]):
   return UOp(Ops.LOAD, dtypes.float.vec(4), (
     UOp(Ops.DEFINE_GLOBAL, dtypes.imagef(image_shape), arg=0).index(UOp(Ops.VECTORIZE, dtypes.int.vec(2), idx), valid),
     UOp(Ops.VECTORIZE, dtypes.float.vec(4), src=(UOp.const(dtypes.float, 0.0),) * 4)
@@ -34,19 +34,19 @@ class TestHelpers(unittest.TestCase):
     f2 = (idx2*2)+ridx1+((idx1+((ridx2+7)//8)+31)//32)+(-2)
     f3 = (idx2*2)+ridx1+(-1)
 
-    self.assertFalse(is_increasing(f0))
-    self.assertTrue(is_increasing(f1))
-    self.assertTrue(is_increasing(f2))
-    self.assertTrue(is_increasing(f3))
+    self.assertFalse(f0.is_increasing())
+    self.assertTrue(f1.is_increasing())
+    self.assertTrue(f2.is_increasing())
+    self.assertTrue(f3.is_increasing())
 
     rng = UOp(Ops.RANGE, dtypes.int, arg=(2, True), src=(UOp(Ops.CONST, dtypes.int, arg=0, src=()), UOp(Ops.CONST, dtypes.int, arg=5, src=()),))
-    self.assertTrue(is_increasing(rng))
-    self.assertTrue(is_increasing(rng+2))
+    self.assertTrue(rng.is_increasing())
+    self.assertTrue((rng+2).is_increasing())
 
 class TestValidIdxSimplification(unittest.TestCase):
   def check(self, load, sidx, svalid):
     load = full_graph_rewrite(load.sink()).src[0]
-    idx, valid = load.src[0].src[1], load.src[2]
+    idx, valid = load.src[0].src[1], load.src[0].src[2]
     self.assertEqual(idx.render(simplify=False), sidx)
     self.assertEqual(valid.render(simplify=False), svalid)
 
@@ -124,6 +124,20 @@ class TestValidIdxSimplification(unittest.TestCase):
       "(((ridx0*2)+(ridx3*-1))+1)",
       "(ridx2<1)")
 
+  def test_valid_becomes_const1(self):
+    # from DSP mobilenetv2
+    ridx0 = Range(0, 30)
+    ridx1 = Range(1, 7)
+    ridx2 = Range(2, 2)
+    alu11 = (ridx1+ridx2)
+    alu15 = ((alu11+1)//7)
+    idx = (alu15*-31)+(((((alu11+218)//224)+ridx0)%30)*1568)
+    valid = (ridx2<1)&(ridx1<6)
+    load = get_gated_load_uop(valid, idx)
+    self.check(load,
+      "(ridx0*1568)",
+      "((ridx2<1)&(ridx1<6))")
+
 class TestImageSimplification(unittest.TestCase):
   def check(self, load, svalid, sidx0, sidx1):
     load = full_graph_rewrite(load.sink()).src[0]
@@ -133,7 +147,7 @@ class TestImageSimplification(unittest.TestCase):
     idx0, idx1 = idx.src[0], idx.src[1]
     self.assertEqual(idx0.render(simplify=False), sidx0)
     self.assertEqual(idx1.render(simplify=False), sidx1)
-    if svalid is not None: self.assertEqual(load.src[2].render(simplify=False), svalid)
+    if svalid is not None: self.assertEqual(load.src[0].src[2].render(simplify=False), svalid)
 
   def test_idx_gt_c(self):
     # (idx1 < c+1).ne(True) ? (..., idx1-1+c) : 0 can drop the valid
@@ -260,7 +274,7 @@ class TestImageSimplification(unittest.TestCase):
     self.check(load,
                "((((idx2*2)+ridx0)<11)&((((idx1*8)+ridx1)<3)!=True))",
                "(((idx0+((idx1*512)+(ridx1*64)))+832)%1024)",
-               "((((idx2*2)+ridx0)+(((idx1+((ridx1+5)//8))+1)//2))+-4)")
+               "(((((idx1+((ridx1+5)//8))+1)//2)+((idx2*2)+ridx0))+-4)")
 
   def test_simplify1(self):
     # idx has the form (A % m, A // m + k) and valid has (c0 < A) and (A < c1)

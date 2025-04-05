@@ -190,6 +190,10 @@ class TestSpeed(unittest.TestCase):
     def f(a, b): return a.exp()
     helper_test_generic_square('exp', 2048, f, f, onearg=True)
 
+  def test_sqrt(self):
+    def f(a, b): return a.sqrt()
+    helper_test_generic_square('sqrt', 2048, f, f, onearg=True)
+
   def test_relu(self):
     def f(a, b): return a.relu()
     helper_test_generic_square('relu', 4096, f, f, onearg=True)
@@ -202,8 +206,12 @@ class TestSpeed(unittest.TestCase):
     def f(a, b): return (a*b).sum()
     helper_test_generic_square('mul_sum', 4096, f, f)
 
-  def test_add(self):
-    for N in [1, 1024, 4096]:
+  def test_add_a(self):
+    def f(a, b): return a + b
+    helper_test_generic_square('add', 1, f, f)
+
+  def test_add_big(self):
+    for N in [1024, 4096]:
       def f(a, b): return a + b
       helper_test_generic_square('add', N, f, f)
 

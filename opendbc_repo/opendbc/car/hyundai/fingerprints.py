@@ -53,11 +53,13 @@ FW_VERSIONS = {
       b'\xf1\x00AE  MDPS C 1.00 1.05 56310/G2501 4AEHC105',
       b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2301 4AEHC107',
       b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2501 4AEHC107',
+      b'\xf1\x00AE  MDPS C 1.00 1.07 56310/G2551 4AEHC107',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00AEH MFC  AT EUR LHD 1.00 1.00 95740-G2400 180222',
       b'\xf1\x00AEH MFC  AT EUR LHD 1.00 1.00 95740-G7200 160418',
       b'\xf1\x00AEH MFC  AT USA LHD 1.00 1.00 95740-G2400 180222',
+      b'\xf1\x00AEH MFC  AT EUR RHD 1.00 1.00 95740-G2400 180222',
     ],
   },
   CAR.HYUNDAI_IONIQ_PHEV_2019: {
@@ -728,9 +730,11 @@ FW_VERSIONS = {
   },
   CAR.KIA_NIRO_EV_2ND_GEN: {
     (Ecu.fwdRadar, 0x7d0, None): [
+      b'\xf1\x00SG__ RDR -----      1.00 1.00 99110-AT200         ',
       b'\xf1\x00SG2_ RDR -----      1.00 1.01 99110-AT000         ',
     ],
     (Ecu.fwdCamera, 0x7c4, None): [
+      b'\xf1\x00SG2EMFC  AT EUR LHD 1.00 1.00 99211-AT200 240315',
       b'\xf1\x00SG2EMFC  AT EUR LHD 1.01 1.09 99211-AT000 220801',
       b'\xf1\x00SG2EMFC  AT USA LHD 1.01 1.09 99211-AT000 220801',
     ],
@@ -1043,6 +1047,7 @@ FW_VERSIONS = {
     (Ecu.fwdCamera, 0x7c4, None): [
       b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.00 99211-N9260 14Y',
       b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.01 99211-N9100 14A',
+      b'\xf1\x00NX4 FR_CMR AT CAN LHD 1.00 1.00 99211-N9220 14K',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 1.00 99211-N9220 14K',
       b'\xf1\x00NX4 FR_CMR AT EUR LHD 1.00 2.02 99211-N9000 14E',
       b'\xf1\x00NX4 FR_CMR AT USA LHD 1.00 1.00 99211-N9210 14G',

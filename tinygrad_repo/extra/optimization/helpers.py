@@ -1,5 +1,4 @@
 # stuff needed to unpack a kernel
-from typing import Tuple
 from tinygrad import Variable
 from tinygrad.codegen.kernel import Opt, OptOps
 from tinygrad.ops import UOp, Ops, KernelInfo
@@ -101,3 +100,24 @@ def lin_to_feats(lin:Kernel, use_sts=True):
   else:
     assert len(ret) == 274, f"wrong len {len(ret)}"
   return ret
+
+from tinygrad.device import Device, Buffer
+from tinygrad.engine.search import _ensure_buffer_alloc, _time_program
+from tinygrad.helpers import to_function_name, CACHELEVEL, diskcache_get, diskcache_put
+
+def time_linearizer(lin:Kernel, rawbufs:list[Buffer], allow_test_size=True, max_global_size=65536, cnt=3, disable_cache=False, clear_l2=False) -> float:  # noqa: E501
+  key = {"ast": lin.ast.key, "opts": str(lin.applied_opts), "allow_test_size": allow_test_size,
+         "max_global_size": max_global_size, "clear_l2": clear_l2, "device": lin.opts.device, "suffix": lin.opts.suffix}
+  if not disable_cache and CACHELEVEL >= 2 and (val:=diskcache_get("time_linearizer", key)) is not None: return min(val)
+
+  dev = Device[lin.opts.device]
+  assert dev.compiler is not None
+
+  rawbufs = _ensure_buffer_alloc(rawbufs)
+  var_vals: dict[Variable, int] = {k:int(k.vmax+k.vmin)//2 for k in lin.ast.variables()}
+  p = lin.to_program()
+  tms = _time_program(p, dev.compiler.compile(p.src), var_vals, rawbufs,
+                      max_global_size=max_global_size if allow_test_size else None, clear_l2=clear_l2, cnt=cnt, name=to_function_name(lin.name))
+
+  if CACHELEVEL >= 2: diskcache_put("time_linearizer", key, tms)
+  return min(tms)

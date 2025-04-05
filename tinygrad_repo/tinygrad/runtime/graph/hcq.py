@@ -1,5 +1,5 @@
 import collections, time
-from typing import Any, cast, Optional
+from typing import Any, cast
 from tinygrad.helpers import round_up, PROFILE
 from tinygrad.runtime.support.hcq import HCQCompiled, HCQAllocator, HCQSignal, HCQBuffer, HWQueue, HCQArgsState, BumpAllocator
 from tinygrad.device import Buffer, BufferSpec, Compiled, Device, ProfileGraphEntry, ProfileGraphEvent
@@ -31,7 +31,7 @@ class HCQGraph(MultiGraphRunner):
     # Fill initial arguments.
     self.ji_args: dict[int, HCQArgsState] = {}
 
-    kargs_alloc: dict[Compiled, BumpAllocator] = {dev:BumpAllocator(buf.size, start=cast(int, buf.va_addr)) for dev,buf in self.kernargs_bufs.items()}
+    kargs_alloc: dict[Compiled, BumpAllocator] = {dev:BumpAllocator(buf.size, base=cast(int, buf.va_addr)) for dev,buf in self.kernargs_bufs.items()}
     for j,ji in enumerate(jit_cache):
       if not isinstance(ji.prg, CompiledRunner): continue
 
@@ -42,7 +42,7 @@ class HCQGraph(MultiGraphRunner):
     # graph-related tasks. This synchronization uses a global timeline signal per device. Within the graph, the compute queue coordinates with
     # global operations and sets a kickoff signal. Any queue accessing a buffer from another device waits for this signal from the device’s
     # compute queue to ensure exclusive access. The compute queue signals the completion of the graph, synchronizing with the device's copy queue.
-    self.ji_schedule: dict[int, tuple[HCQCompiled, HWQueue, list, list, HCQSignal, Optional[int]]] = {}
+    self.ji_schedule: dict[int, tuple[HCQCompiled, HWQueue, list, list, HCQSignal, int|None]] = {}
 
     self.comp_queues: dict[HCQCompiled, HWQueue] = {dev: dev.hw_compute_queue_t() for dev in self.devices}
     self.copy_queues: dict[HCQCompiled, HWQueue] = {} # lazy allocation
@@ -57,8 +57,8 @@ class HCQGraph(MultiGraphRunner):
     self.prog_graph_deps: list[list[int]] = []
     self.prof_graph_entries: list[ProfileGraphEntry] = []
 
-    last_j: dict[HWQueue, Optional[int]] = collections.defaultdict(lambda: None)
-    queue_access: dict[HWQueue, dict[HWQueue, Optional[int]]] = collections.defaultdict(lambda: collections.defaultdict(lambda: None))
+    last_j: dict[HWQueue, int|None] = collections.defaultdict(lambda: None)
+    queue_access: dict[HWQueue, dict[HWQueue, int|None]] = collections.defaultdict(lambda: collections.defaultdict(lambda: None))
     dev_access: dict[HWQueue, set[HCQCompiled]] = collections.defaultdict(set)
 
     for dev, queue in self.comp_queues.items(): dev_access[queue].add(dev)
@@ -164,7 +164,7 @@ class HCQGraph(MultiGraphRunner):
     self.last_timeline: dict[HCQCompiled, tuple[HCQSignal, int]] = {dev: (dev.timeline_signal, 0) for dev in self.devices}
     self.queue_signals_to_reset = [self.signals[q] for q in list(self.comp_queues.values()) + list(self.copy_queues.values()) if q in self.signals]
 
-  def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> Optional[float]:
+  def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> float|None:
     # Wait and restore signals
     self.kickoff_value += 1
     for dev in self.devices: self.last_timeline[dev][0].wait(self.last_timeline[dev][1])
@@ -184,8 +184,7 @@ class HCQGraph(MultiGraphRunner):
       self.comp_queues[dev].submit(dev, hcq_var_vals)
       if (copy_queue:=self.copy_queues.get(dev, None)) is not None: copy_queue.submit(dev, hcq_var_vals)
 
-      self.last_timeline[dev] = (dev.timeline_signal, dev.timeline_value)
-      dev.timeline_value += 1
+      self.last_timeline[dev] = (dev.timeline_signal, dev.next_timeline())
 
     if wait:
       st = time.perf_counter()

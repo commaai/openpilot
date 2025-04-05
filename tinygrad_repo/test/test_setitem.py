@@ -1,6 +1,5 @@
 import unittest
-from tinygrad import Device, Tensor, TinyJit, Variable, dtypes
-from tinygrad.helpers import CI
+from tinygrad import Tensor, TinyJit, Variable, dtypes
 import numpy as np
 
 class TestSetitem(unittest.TestCase):
@@ -70,7 +69,8 @@ class TestSetitem(unittest.TestCase):
     t[1] ^= 5
     np.testing.assert_allclose(t.numpy(), [[0, 1], [7, 6]])
 
-  @unittest.expectedFailure
+  #@unittest.expectedFailure
+  # update: passing after delete_forced_realize
   def test_setitem_consecutive_inplace_operator(self):
     t = Tensor.arange(4).reshape(2, 2).contiguous()
     t[1] += 2
@@ -139,12 +139,7 @@ class TestSetitem(unittest.TestCase):
   def test_setitem_overlapping_inplace1(self):
     t = Tensor([[3.0], [2.0], [1.0]]).contiguous()
     t[1:] = t[:-1]
-    if (Device.DEFAULT == "LLVM") or (CI and Device.DEFAULT == "AMD"):
-      # TODO: FIXME
-      with self.assertRaises(AssertionError):
-        self.assertEqual(t.tolist(), [[3.0], [3.0], [2.0]])
-    else:
-      self.assertEqual(t.tolist(), [[3.0], [3.0], [2.0]])
+    self.assertEqual(t.tolist(), [[3.0], [3.0], [2.0]])
 
   def test_setitem_overlapping_inplace2(self):
     t = Tensor([[3.0], [2.0], [1.0]]).contiguous()

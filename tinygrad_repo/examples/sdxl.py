@@ -3,10 +3,10 @@
 # Stability-AI/generative-models | MIT     | https://github.com/Stability-AI/generative-models/blob/fbdc58cab9f4ee2be7a5e1f2e2787ecd9311942f/LICENSE-CODE
 # mlfoundations/open_clip        | MIT     | https://github.com/mlfoundations/open_clip/blob/58e4e39aaabc6040839b0d2a7e8bf20979e4558a/LICENSE
 
-from tinygrad import Tensor, TinyJit, dtypes
+from tinygrad import Tensor, TinyJit, dtypes, GlobalCounters
 from tinygrad.nn import Conv2d, GroupNorm
 from tinygrad.nn.state import safe_load, load_state_dict
-from tinygrad.helpers import fetch, trange, colored, Timing, GlobalCounters
+from tinygrad.helpers import fetch, trange, colored, Timing
 from extra.models.clip import Embedder, FrozenClosedClipEmbedder, FrozenOpenClipEmbedder
 from extra.models.unet import UNetModel, Upsample, Downsample, timestep_embedding
 from examples.stable_diffusion import ResnetBlock, Mid
@@ -345,6 +345,7 @@ class DPMPP2MSampler:
     old_denoised = None
     for i in trange(num_sigmas - 1):
       with Timing("step in ", enabled=timing, on_exit=lambda _: f", using {GlobalCounters.mem_used/1e9:.2f} GB"):
+        GlobalCounters.reset()
         x, old_denoised = self.sampler_step(
           old_denoised=old_denoised,
           prev_sigma=(None if i==0 else sigmas[i-1].expand(x.shape[0])),

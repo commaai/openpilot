@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import os, argparse
+import os, argparse, contextlib
 from typing import Optional, Union
-import tiktoken
+with contextlib.suppress(ImportError): import tiktoken
 from tinygrad import Tensor, TinyJit, Device, GlobalCounters, Variable, dtypes
 from tinygrad.ops import UOp
 from tinygrad.helpers import Timing, DEBUG, JIT, getenv, fetch, colored, trange

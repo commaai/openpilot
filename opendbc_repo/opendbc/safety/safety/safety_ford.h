@@ -69,7 +69,6 @@ static uint32_t ford_compute_checksum(const CANPacket_t *to_push) {
     chksum = 0xFFU - chksum;
   } else {
   }
-
   return chksum;
 }
 
@@ -154,6 +153,7 @@ static void ford_rx_hook(const CANPacket_t *to_push) {
       // Signal: Veh_V_ActlEng
       float filtered_pcm_speed = ((GET_BYTE(to_push, 6) << 8) | GET_BYTE(to_push, 7)) * 0.01 / 3.6;
       bool is_invalid_speed = ABS(filtered_pcm_speed - ((float)vehicle_speed.values[0] / VEHICLE_SPEED_FACTOR)) > FORD_MAX_SPEED_DELTA;
+      // TODO: this should generically cause rx valid to fall until re-enable
       if (is_invalid_speed) {
         controls_allowed = false;
       }

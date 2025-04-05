@@ -98,13 +98,12 @@ static void gm_rx_hook(const CANPacket_t *to_push) {
 
 static bool gm_tx_hook(const CANPacket_t *to_send) {
   const TorqueSteeringLimits GM_STEERING_LIMITS = {
-    .max_steer = 300,
+    .max_torque = 300,
     .max_rate_up = 10,
     .max_rate_down = 15,
     .driver_torque_allowance = 65,
     .driver_torque_multiplier = 4,
     .max_rt_delta = 128,
-    .max_rt_interval = 250000,
     .type = TorqueDriverLimited,
   };
 
@@ -135,7 +134,8 @@ static bool gm_tx_hook(const CANPacket_t *to_send) {
   // GAS/REGEN: safety check
   if (addr == 0x2CB) {
     bool apply = GET_BIT(to_send, 0U);
-    int gas_regen = ((GET_BYTE(to_send, 2) & 0x7FU) << 5) + ((GET_BYTE(to_send, 3) & 0xF8U) >> 3);
+    // convert float CAN signal to an int for gas checks: 22534 / 0.125 = 180272
+    int gas_regen = (((GET_BYTE(to_send, 1) & 0x7U) << 16) | (GET_BYTE(to_send, 2) << 8) | GET_BYTE(to_send, 3)) - 180272U;
 
     bool violation = false;
     // Allow apply bit in pre-enabled and overriding states
@@ -189,10 +189,13 @@ static safety_config gm_init(uint16_t param) {
   const uint16_t GM_PARAM_HW_CAM = 1;
   const uint16_t GM_PARAM_EV = 4;
 
+  // common safety checks assume unscaled integer values
+  static const int GM_GAS_TO_CAN = 8;  // 1 / 0.125
+
   static const LongitudinalLimits GM_ASCM_LONG_LIMITS = {
-    .max_gas = 3072,
-    .min_gas = 1404,
-    .inactive_gas = 1404,
+    .max_gas = 1018 * GM_GAS_TO_CAN,
+    .min_gas = -650 * GM_GAS_TO_CAN,
+    .inactive_gas = -650 * GM_GAS_TO_CAN,
     .max_brake = 400,
   };
 
@@ -202,9 +205,9 @@ static safety_config gm_init(uint16_t param) {
 
 
   static const LongitudinalLimits GM_CAM_LONG_LIMITS = {
-    .max_gas = 3400,
-    .min_gas = 1514,
-    .inactive_gas = 1554,
+    .max_gas = 1346 * GM_GAS_TO_CAN,
+    .min_gas = -540 * GM_GAS_TO_CAN,
+    .inactive_gas = -500 * GM_GAS_TO_CAN,
     .max_brake = 400,
   };
 

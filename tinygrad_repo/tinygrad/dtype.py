@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Final, Optional, ClassVar, Tuple, Union, Callable, Literal
+from typing import Final, Optional, ClassVar, Union, Callable, Literal
 import math, struct, ctypes, functools
 from dataclasses import dataclass, fields
 from tinygrad.helpers import getenv, prod
@@ -10,7 +10,7 @@ FmtStr = Literal['?', 'b', 'B', 'h', 'H', 'i', 'I', 'q', 'Q', 'e', 'f', 'd']
 
 # all DTypes should only be created once
 class DTypeMetaClass(type):
-  dcache: dict[Tuple, DType] = {}
+  dcache: dict[tuple, DType] = {}
   def __call__(cls, *args, **kwargs):
     if (ret:=DTypeMetaClass.dcache.get(args, None)) is not None: return ret
     DTypeMetaClass.dcache[args] = ret = super().__call__(*args)
@@ -54,7 +54,9 @@ class PtrDType(DType):
   def vec(self, sz:int) -> DType:
     assert self.v == 1, f"can't vectorize ptr {self} with size {sz}"
     if sz == 1: return self  # sz=1 is a scalar
-    return type(self)(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.local, sz)
+    if isinstance(self, ImageDType):
+      return ImageDType(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.local, sz, self.size, self.shape)
+    return type(self)(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.local, sz, self.size)
   def ptr(self, size=-1, local=False): raise RuntimeError("can't make a pointer from a pointer")
   @property
   def vcount(self): return self.v
@@ -73,12 +75,14 @@ class dtypes:
   @staticmethod
   @functools.lru_cache(None)
   def is_float(x: DType) -> bool: return x.scalar() in dtypes.floats or isinstance(x, ImageDType)
-  @staticmethod # static methds on top, or bool in the type info will refer to dtypes.bool
+  @staticmethod # static methods on top, or bool in the type info will refer to dtypes.bool
   @functools.lru_cache(None)
   def is_int(x: DType) -> bool: return x.scalar() in dtypes.ints
   @staticmethod
   @functools.lru_cache(None)
   def is_unsigned(x: DType) -> bool: return x.scalar() in dtypes.uints
+  @staticmethod
+  def is_bool(x: DType) -> bool: return x.scalar() == dtypes.bool
   @staticmethod
   def from_py(x) -> DType:
     if x.__class__ is float: return dtypes.default_float
@@ -145,13 +149,14 @@ class dtypes:
   uints = (uint8, uint16, uint32, uint64)
   sints = (int8, int16, int32, int64)
   ints = uints + sints
+  all = floats + ints + (bool,)
 
 if (env_default_float := getenv("DEFAULT_FLOAT", "")):
   dtypes.default_float = getattr(dtypes, env_default_float.lower())
   assert dtypes.is_float(dtypes.default_float), f"{env_default_float} is not a float dtype"
 
 DTypeLike = Union[str, DType]
-def to_dtype(dtype:DTypeLike) -> DType: return dtype if isinstance(dtype, DType) else getattr(dtypes, dtype)
+def to_dtype(dtype:DTypeLike) -> DType: return dtype if isinstance(dtype, DType) else getattr(dtypes, dtype.lower())
 
 # https://jax.readthedocs.io/en/latest/jep/9407-type-promotion.html
 # we don't support weak type and complex type
@@ -166,7 +171,7 @@ def _get_recursive_parents(dtype:DType) -> set[DType]:
 @functools.lru_cache(None)
 def least_upper_dtype(*ds:DType) -> DType:
   return min(set.intersection(*[_get_recursive_parents(d) for d in ds])) if not (images:=[d for d in ds if isinstance(d, ImageDType)]) else images[0]
-def least_upper_float(dt:DType) -> DType: return dt if dtypes.is_float(dt) else least_upper_dtype(dt, dtypes.float32)
+def least_upper_float(dt:DType) -> DType: return dt if dtypes.is_float(dt) else least_upper_dtype(dt, dtypes.default_float)
 
 DTYPES_DICT = {k: v for k, v in dtypes.__dict__.items() if isinstance(v, DType) and not k.startswith(("default", "void"))}
 INVERSE_DTYPES_DICT = {**{v.name:k for k,v in DTYPES_DICT.items()}, "void": "void"}
@@ -175,16 +180,42 @@ def sum_acc_dtype(dt:DType):
   # default acc dtype for sum
   if dtypes.is_unsigned(dt): return least_upper_dtype(dt, dtypes.uint)
   if dtypes.is_int(dt) or dt == dtypes.bool: return least_upper_dtype(dt, dtypes.int)
-  return least_upper_dtype(dt, dtypes.float)
+  return least_upper_dtype(dt, to_dtype(getenv("SUM_DTYPE", "float32")))
 
 def truncate_fp16(x):
   try: return struct.unpack("@e", struct.pack("@e", float(x)))[0]
   except OverflowError: return math.copysign(math.inf, x)
 
+def truncate_bf16(x):
+  max_bf16 = struct.unpack('f', struct.pack('I', 0x7f7f0000))[0]
+  if x > max_bf16 or x < -max_bf16: return math.copysign(math.inf, x)
+  f32_int = struct.unpack('I', struct.pack('f', x))[0]
+  bf = struct.unpack('f', struct.pack('I', f32_int & 0xFFFF0000))[0]
+  return bf
+
 truncate: dict[DType, Callable] = {dtypes.bool: bool,
-  # TODO: bfloat16
-  dtypes.float16: truncate_fp16, dtypes.float32: lambda x: ctypes.c_float(x).value, dtypes.float64: lambda x: ctypes.c_double(x).value,
+  dtypes.float16: truncate_fp16, dtypes.bfloat16: truncate_bf16,
+  dtypes.float32: lambda x: ctypes.c_float(x).value, dtypes.float64: lambda x: ctypes.c_double(x).value,
   dtypes.uint8: lambda x: ctypes.c_uint8(x).value, dtypes.uint16: lambda x: ctypes.c_uint16(x).value,
   dtypes.uint32: lambda x: ctypes.c_uint32(x).value, dtypes.uint64: lambda x: ctypes.c_uint64(x).value,
   dtypes.int8: lambda x: ctypes.c_int8(x).value, dtypes.int16: lambda x: ctypes.c_int16(x).value, dtypes.int32: lambda x: ctypes.c_int32(x).value,
   dtypes.int64: lambda x: ctypes.c_int64(x).value}
+
+# numpy and torch dtype interop
+
+def _to_np_dtype(dtype:DType) -> Optional[type]:
+  import numpy as np
+  return np.dtype(dtype.fmt).type if dtype.fmt is not None else None
+def _from_np_dtype(npdtype:'np.dtype') -> DType: # type: ignore [name-defined] # noqa: F821
+  import numpy as np
+  return dtypes.fields()[np.dtype(npdtype).name]
+
+@functools.lru_cache(None)
+def _to_torch_dtype(dtype:DType) -> Optional['torch.dtype']:  # type: ignore [name-defined] # noqa: F821
+  import numpy as np, torch
+  # NOTE: torch doesn't expose this mapping with a stable API
+  try: return torch.from_numpy(np.array([], dtype=_to_np_dtype(dtype))).dtype
+  except TypeError: return None
+@functools.lru_cache(None)
+def _from_torch_dtype(torchdtype:'torch.dtype') -> DType: # type: ignore [name-defined] # noqa: F821
+  return {v:k for k in dtypes.all if (v:=_to_torch_dtype(k)) is not None}[torchdtype]

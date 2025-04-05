@@ -127,9 +127,8 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *to_push) {
 static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
   // lateral limits
   const TorqueSteeringLimits VOLKSWAGEN_MQB_STEERING_LIMITS = {
-    .max_steer = 300,              // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
+    .max_torque = 300,             // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
     .max_rt_delta = 75,            // 4 max rate up * 50Hz send rate * 250000 RT interval / 1000000 = 50 ; 50 * 1.5 for safety pad = 75
-    .max_rt_interval = 250000,     // 250ms between real time checks
     .max_rate_up = 4,              // 2.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
     .max_rate_down = 10,           // 5.0 Nm/s RoC limit (EPS rack has own soft-limit of 5.0 Nm/s)
     .driver_torque_allowance = 80,

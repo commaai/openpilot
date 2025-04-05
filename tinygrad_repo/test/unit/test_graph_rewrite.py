@@ -2,7 +2,7 @@ import unittest, math
 from tinygrad import dtypes
 from tinygrad.helpers import all_same
 from tinygrad.ops import GroupOp, UOp, Ops, exec_alu
-from tinygrad.codegen.uopgraph import full_graph_rewrite
+from tinygrad.codegen.devectorizer import full_graph_rewrite
 
 # Helper function to apply the graph rewrite
 def apply_rewrite(expr):
@@ -203,7 +203,8 @@ class TestGEPAndVectorizeRewrite(unittest.TestCase):
 
 
 import inspect
-from tinygrad.ops import graph_rewrite, _substitute, track_rewrites, symbolic_simple
+from tinygrad.ops import graph_rewrite, _substitute, track_rewrites
+from tinygrad.codegen.symbolic import symbolic_simple
 
 class TestBottomUpRewrite(unittest.TestCase):
   def test_const_folding(self):
@@ -273,6 +274,7 @@ class TestSubstitute(unittest.TestCase):
     # NOTE: this would work if it had gone in the opposite order
     ret = substitute(ret, {a.sin():a.sqrt(), n1.sin():n1.sqrt()})
     self.assertIs(ret, a.sqrt().sqrt())
+
 
 if __name__ == '__main__':
   unittest.main()

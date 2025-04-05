@@ -88,7 +88,7 @@
 |Honda|Inspire 2018|All|[Upstream](#upstream)|
 |Honda|Odyssey 2018-20|Honda Sensing|[Upstream](#upstream)|
 |Honda|Odyssey 2021-25|All|[Community](#community)|
-|Honda|Passport 2019-23|All|[Upstream](#upstream)|
+|Honda|Passport 2019-25|All|[Upstream](#upstream)|
 |Honda|Pilot 2016-22|Honda Sensing|[Upstream](#upstream)|
 |Honda|Pilot 2023-24|All|[Community](#community)|
 |Honda|Ridgeline 2017-25|Honda Sensing|[Upstream](#upstream)|
@@ -155,7 +155,7 @@
 |Kia|Niro EV 2020|All|[Upstream](#upstream)|
 |Kia|Niro EV 2021|All|[Upstream](#upstream)|
 |Kia|Niro EV 2022|All|[Upstream](#upstream)|
-|Kia|Niro EV 2023|All|[Upstream](#upstream)|
+|Kia|Niro EV 2023-24|All|[Upstream](#upstream)|
 |Kia|Niro Hybrid 2018|All|[Upstream](#upstream)|
 |Kia|Niro Hybrid 2021|Smart Cruise Control (SCC)|[Upstream](#upstream)|
 |Kia|Niro Hybrid 2022|Smart Cruise Control (SCC)|[Upstream](#upstream)|
@@ -299,7 +299,7 @@
 |Toyota|RAV4 2017-18|All|[Upstream](#upstream)|
 |Toyota|RAV4 2019-21|All|[Upstream](#upstream)|
 |Toyota|RAV4 2022|All|[Upstream](#upstream)|
-|Toyota|RAV4 2023-24|All|[Upstream](#upstream)|
+|Toyota|RAV4 2023-25|All|[Upstream](#upstream)|
 |Toyota|RAV4 Hybrid 2016|Toyota Safety Sense P|[Upstream](#upstream)|
 |Toyota|RAV4 Hybrid 2017-18|All|[Upstream](#upstream)|
 |Toyota|RAV4 Hybrid 2019-21|All|[Upstream](#upstream)|

@@ -15,9 +15,8 @@ class TestChryslerSafety(common.PandaCarSafetyTest, common.MotorTorqueSteeringSa
 
   MAX_RATE_UP = 3
   MAX_RATE_DOWN = 3
-  MAX_TORQUE = 261
+  MAX_TORQUE_LOOKUP = [0], [261]
   MAX_RT_DELTA = 112
-  RT_INTERVAL = 250000
   MAX_TORQUE_ERROR = 80
 
   LKAS_ACTIVE_VALUE = 1
@@ -80,7 +79,7 @@ class TestChryslerRamDTSafety(TestChryslerSafety):
 
   MAX_RATE_UP = 6
   MAX_RATE_DOWN = 6
-  MAX_TORQUE = 350
+  MAX_TORQUE_LOOKUP = [0], [350]
 
   DAS_BUS = 2
 
@@ -101,7 +100,7 @@ class TestChryslerRamHDSafety(TestChryslerSafety):
   RELAY_MALFUNCTION_ADDRS = {0: (0x276,)}
   FWD_BLACKLISTED_ADDRS = {2: [0x275, 0x276]}
 
-  MAX_TORQUE = 361
+  MAX_TORQUE_LOOKUP = [0], [361]
   MAX_RATE_UP = 14
   MAX_RATE_DOWN = 14
   MAX_RT_DELTA = 182

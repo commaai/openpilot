@@ -26,33 +26,6 @@ static void black_enable_can_transceiver(uint8_t transceiver, bool enabled) {
   }
 }
 
-static void black_enable_can_transceivers(bool enabled) {
-  for(uint8_t i=1U; i<=4U; i++){
-    // Leave main CAN always on for CAN-based ignition detection
-    if((harness.status == HARNESS_STATUS_FLIPPED) ? (i == 3U) : (i == 1U)){
-      black_enable_can_transceiver(i, true);
-    } else {
-      black_enable_can_transceiver(i, enabled);
-    }
-  }
-}
-
-static void black_set_led(uint8_t color, bool enabled) {
-  switch (color){
-    case LED_RED:
-      set_gpio_output(GPIOC, 9, !enabled);
-      break;
-     case LED_GREEN:
-      set_gpio_output(GPIOC, 7, !enabled);
-      break;
-    case LED_BLUE:
-      set_gpio_output(GPIOC, 6, !enabled);
-      break;
-    default:
-      break;
-  }
-}
-
 static void black_set_usb_load_switch(bool enabled) {
   set_gpio_output(GPIOB, 1, !enabled);
 }
@@ -102,41 +75,12 @@ static void black_init(void) {
   set_gpio_alternate(GPIOA, 8, GPIO_AF11_CAN3);
   set_gpio_alternate(GPIOA, 15, GPIO_AF11_CAN3);
 
-  // C0: OBD_SBU1 (orientation detection)
-  // C3: OBD_SBU2 (orientation detection)
-  set_gpio_mode(GPIOC, 0, MODE_ANALOG);
-  set_gpio_mode(GPIOC, 3, MODE_ANALOG);
-
   // GPS OFF
   set_gpio_output(GPIOC, 5, 0);
   set_gpio_output(GPIOC, 12, 0);
 
-  // C10: OBD_SBU1_RELAY (harness relay driving output)
-  // C11: OBD_SBU2_RELAY (harness relay driving output)
-  set_gpio_mode(GPIOC, 10, MODE_OUTPUT);
-  set_gpio_mode(GPIOC, 11, MODE_OUTPUT);
-  set_gpio_output_type(GPIOC, 10, OUTPUT_TYPE_OPEN_DRAIN);
-  set_gpio_output_type(GPIOC, 11, OUTPUT_TYPE_OPEN_DRAIN);
-  set_gpio_output(GPIOC, 10, 1);
-  set_gpio_output(GPIOC, 11, 1);
-
   // Turn on USB load switch.
   black_set_usb_load_switch(true);
-
-  // Initialize harness
-  harness_init();
-
-
-  // Enable CAN transceivers
-  black_enable_can_transceivers(true);
-
-  // Disable LEDs
-  black_set_led(LED_RED, false);
-  black_set_led(LED_GREEN, false);
-  black_set_led(LED_BLUE, false);
-
-  // Set normal CAN mode
-  black_set_can_mode(CAN_MODE_NORMAL);
 }
 
 static void black_init_bootloader(void) {
@@ -162,7 +106,6 @@ static harness_configuration black_harness_config = {
 board board_black = {
   .set_bootkick = unused_set_bootkick,
   .harness_config = &black_harness_config,
-  .has_obd = true,
   .has_spi = false,
   .has_canfd = false,
   .fan_max_rpm = 0U,
@@ -173,8 +116,8 @@ board board_black = {
   .init = black_init,
   .init_bootloader = black_init_bootloader,
   .enable_can_transceiver = black_enable_can_transceiver,
-  .enable_can_transceivers = black_enable_can_transceivers,
-  .set_led = black_set_led,
+  .led_GPIO = {GPIOC, GPIOC, GPIOC},
+  .led_pin = {9, 7, 6},
   .set_can_mode = black_set_can_mode,
   .check_ignition = black_check_ignition,
   .read_voltage_mV = white_read_voltage_mV,

@@ -30,10 +30,9 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
 
   MAX_RATE_UP = 2
   MAX_RATE_DOWN = 3
-  MAX_TORQUE = 270
+  MAX_TORQUE_LOOKUP = [0], [270]
 
   MAX_RT_DELTA = 112
-  RT_INTERVAL = 250000
 
   DRIVER_TORQUE_ALLOWANCE = 250
   DRIVER_TORQUE_FACTOR = 2
@@ -41,7 +40,6 @@ class TestHyundaiCanfdBase(HyundaiButtonBase, common.PandaCarSafetyTest, common.
   # Safety around steering req bit
   MIN_VALID_STEERING_FRAMES = 89
   MAX_INVALID_STEERING_FRAMES = 2
-  MIN_VALID_STEERING_RT_INTERVAL = 810000  # a ~10% buffer, can send steer up to 110Hz
 
   PT_BUS = 0
   SCC_BUS = 2

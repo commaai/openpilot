@@ -2,10 +2,11 @@ from __future__ import annotations
 import os, ctypes, functools, mmap, struct, array, math, sys
 assert sys.platform != 'win32'
 from types import SimpleNamespace
-from typing import Any, cast, Optional
+from typing import Any, cast, ClassVar
 from tinygrad.device import BufferSpec
 from tinygrad.runtime.support.hcq import HCQBuffer, HWQueue, HCQProgram, HCQCompiled, HCQAllocatorBase, HCQSignal, HCQArgsState, BumpAllocator
-from tinygrad.runtime.autogen import kgsl, adreno, libc
+from tinygrad.runtime.support.hcq import HWInterface
+from tinygrad.runtime.autogen import kgsl, adreno
 from tinygrad.runtime.ops_gpu import CLCompiler, CLDevice
 from tinygrad.renderer.cstyle import QCOMRenderer
 from tinygrad.helpers import getenv, mv_address, to_mv, round_up, data64_le, prod, fromimport
@@ -36,14 +37,11 @@ class QCOMCompiler(CLCompiler):
   def disassemble(self, lib:bytes): fromimport('extra.disassemblers.adreno', 'disasm')(lib)
 
 class QCOMSignal(HCQSignal):
-  def __init__(self, base_addr:Optional[int]=None, **kwargs):
-    super().__init__(QCOMDevice.signals_pool.pop() if base_addr is None else base_addr, **kwargs, timestamp_divider=19.2)
-
-  def __del__(self):
-    if isinstance(self.base_addr, int): QCOMDevice.signals_pool.append(self.base_addr)
+  def __init__(self, base_addr:int|None=None, **kwargs):
+    super().__init__(base_addr, **kwargs, timestamp_divider=19.2, dev_t=QCOMDevice)
 
   def _sleep(self, time_spent_waiting_ms:int):
-    # Sleep only for only timeline signals. Do it immidiately to free cpu.
+    # Sleep only for only timeline signals. Do it immediately to free cpu.
     if self.timeline_for_device is not None:
       kgsl.IOCTL_KGSL_DEVICE_WAITTIMESTAMP_CTXTID(self.timeline_for_device.fd, context_id=self.timeline_for_device.ctx,
                                                   timestamp=self.timeline_for_device.last_cmd, timeout=0xffffffff)
@@ -319,23 +317,23 @@ class QCOMAllocator(HCQAllocatorBase):
     self.dev._gpu_free(opaque)
 
 class QCOMDevice(HCQCompiled):
-  signals_page: Any = None
-  signals_pool: list[int] = []
+  devices: ClassVar[list[HCQCompiled]] = []
+  signal_pages: ClassVar[list[Any]] = []
+  signal_pool: ClassVar[list[int]] = []
+
   gpu_id: int = 0
   dummy_addr: int = 0
 
   def __init__(self, device:str=""):
-    self.fd = os.open('/dev/kgsl-3d0', os.O_RDWR)
+    self.fd = HWInterface('/dev/kgsl-3d0', os.O_RDWR)
     QCOMDevice.dummy_addr = cast(int, self._gpu_alloc(0x1000).va_addr)
-    QCOMDevice.signals_page = self._gpu_alloc(16 * 65536, uncached=True)
-    QCOMDevice.signals_pool = [self.signals_page.va_addr + off for off in range(0, self.signals_page.size, 16)]
 
     flags = kgsl.KGSL_CONTEXT_PREAMBLE | kgsl.KGSL_CONTEXT_PWR_CONSTRAINT | kgsl.KGSL_CONTEXT_NO_FAULT_TOLERANCE | kgsl.KGSL_CONTEXT_NO_GMEM_ALLOC \
               | kgsl.KGSL_CONTEXT_PRIORITY(8) | kgsl.KGSL_CONTEXT_PREEMPT_STYLE(kgsl.KGSL_CONTEXT_PREEMPT_STYLE_FINEGRAIN)
     self.ctx = kgsl.IOCTL_KGSL_DRAWCTXT_CREATE(self.fd, flags=flags).drawctxt_id
 
     self.cmd_buf = self._gpu_alloc(16 << 20)
-    self.cmd_buf_allocator = BumpAllocator(size=self.cmd_buf.size, start=cast(int, self.cmd_buf.va_addr), wrap=True)
+    self.cmd_buf_allocator = BumpAllocator(size=self.cmd_buf.size, base=cast(int, self.cmd_buf.va_addr), wrap=True)
 
     self.border_color_buf = self._gpu_alloc(0x1000, fill_zeroes=True)
 
@@ -359,14 +357,14 @@ class QCOMDevice(HCQCompiled):
     if uncached: flags |= kgsl.KGSL_CACHEMODE(kgsl.KGSL_CACHEMODE_UNCACHED)
 
     alloc = kgsl.IOCTL_KGSL_GPUOBJ_ALLOC(self.fd, size=(bosz:=round_up(size, 1<<alignment_hint)), flags=flags, mmapsize=bosz)
-    va_addr = libc.mmap(0, bosz, mmap.PROT_READ | mmap.PROT_WRITE, mmap.MAP_SHARED, self.fd, alloc.id * 0x1000)
+    va_addr = self.fd.mmap(0, bosz, mmap.PROT_READ | mmap.PROT_WRITE, mmap.MAP_SHARED, alloc.id * 0x1000)
 
     if fill_zeroes: ctypes.memset(va_addr, 0, size)
     return HCQBuffer(va_addr=va_addr, size=size, meta=alloc)
 
   def _gpu_free(self, mem:HCQBuffer):
     kgsl.IOCTL_KGSL_GPUOBJ_FREE(self.fd, id=mem.meta.id)
-    libc.munmap(mem.va_addr, mem.meta.mmapsize)
+    HWInterface.munmap(mem.va_addr, mem.meta.mmapsize)
 
   def _ensure_stack_size(self, sz):
     if not hasattr(self, '_stack'): self._stack = self._gpu_alloc(sz)

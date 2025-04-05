@@ -29,5 +29,12 @@
 ::: tinygrad.nn.state.get_state_dict
 ::: tinygrad.nn.state.get_parameters
 ::: tinygrad.nn.state.load_state_dict
+::: tinygrad.nn.state.tar_extract
+    options:
+        show_signature: false
+        separate_signature: false
 ::: tinygrad.nn.state.torch_load
+    options:
+        show_signature: false
+        separate_signature: false
 ::: tinygrad.nn.state.gguf_load

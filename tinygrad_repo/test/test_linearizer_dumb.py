@@ -35,7 +35,7 @@ class TestLinearizerDumb(unittest.TestCase):
               UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(64, 1, 512, 7, 7, 1, 1, 1), strides=(0, 0, 0, 0, 0, 0, 0, 0), offset=0, mask=None, contiguous=False),)), src=()),)),)),
           ast_const(dtypes.half, 0.0, st_src=(
             UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(64, 1, 512, 7, 7, 1, 1, 1), strides=(0, 0, 0, 0, 0, 0, 0, 0), offset=0, mask=None, contiguous=False),)), src=()),)),)),)),))
-    opts = [Opt(op=OptOps.TC, axis=2, amt=2), Opt(op=OptOps.UPCAST, axis=2, amt=0), Opt(op=OptOps.UNROLL, axis=1, amt=0)]
+    opts = [Opt(op=OptOps.TC, axis=2, arg=(-1, 2)), Opt(op=OptOps.UPCAST, axis=2, arg=0), Opt(op=OptOps.UNROLL, axis=1, arg=0)]
     k = Kernel(ast, opts=Device["METAL"].renderer)
     k.required_optimizations()
     for opt in opts: k.apply_opt(opt)
@@ -70,7 +70,7 @@ class TestLinearizerDumb(unittest.TestCase):
                 UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(1001, 1999), strides=(0, 0), offset=0, mask=((0, 1001), (999, 1999)), contiguous=False), View(shape=(1000, 1000), strides=(1, 2000), offset=0, mask=None, contiguous=False))), src=()),)),)),
             ast_const(dtypes.int, 1000, st_src=(
               UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(1000, 1), strides=(0, 0), offset=0, mask=None, contiguous=False),)), src=()),)),)),)),)),))
-    opts = [Opt(op=OptOps.UNROLL, axis=0, amt=4), Opt(op=OptOps.LOCAL, axis=0, amt=8)]
+    opts = [Opt(op=OptOps.UNROLL, axis=0, arg=4), Opt(op=OptOps.LOCAL, axis=0, arg=8)]
     k = Kernel(ast, opts=Device[Device.DEFAULT].renderer)
     k.required_optimizations()
     for opt in opts: k.apply_opt(opt)
@@ -88,7 +88,7 @@ class TestLinearizerDumb(unittest.TestCase):
           UOp(Ops.LOAD, dtypes.float, arg=None, src=(
             UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr(), arg=1, src=()),
             UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(26, 49), strides=(0, -1), offset=48, mask=((0, 26), (24, 49)), contiguous=False), View(shape=(25, 25), strides=(1, 50), offset=0, mask=None, contiguous=False))), src=()),)),)),)),))
-    opts = [Opt(op=OptOps.GROUP, axis=0, amt=0), Opt(op=OptOps.PADTO, axis=0, amt=32), Opt(op=OptOps.LOCAL, axis=0, amt=4), Opt(op=OptOps.UPCAST, axis=0, amt=0)]
+    opts = [Opt(op=OptOps.GROUP, axis=0, arg=0), Opt(op=OptOps.PADTO, axis=0, arg=32), Opt(op=OptOps.LOCAL, axis=0, arg=4), Opt(op=OptOps.UPCAST, axis=0, arg=0)]
     k = Kernel(ast, opts=Device[Device.DEFAULT].renderer)
     k.required_optimizations()
     for opt in opts: k.apply_opt(opt)
@@ -155,7 +155,7 @@ class TestLinearizerDumb(unittest.TestCase):
             UOp(Ops.LOAD, dtypes.float, arg=None, src=(
               UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr(), arg=3, src=()),
               UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(3, 1, 5), strides=(0, 0, 1), offset=0, mask=None, contiguous=False),)), src=()),)),)),)),)),))
-    opts = [Opt(op=OptOps.UNROLL, axis=0, amt=0), Opt(op=OptOps.LOCAL, axis=0, amt=3)]
+    opts = [Opt(op=OptOps.UNROLL, axis=0, arg=0), Opt(op=OptOps.LOCAL, axis=0, arg=3)]
     k = Kernel(ast, opts=Device[Device.DEFAULT].renderer)
     for opt in opts: k.apply_opt(opt)
     prg = k.to_program()
@@ -186,7 +186,7 @@ class TestLinearizerDumb(unittest.TestCase):
             UOp(Ops.LOAD, dtypes.float, arg=None, src=(
               UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr(), arg=2, src=()),
               UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(3, 6), strides=(6, 1), offset=0, mask=None, contiguous=True),)), src=()),)),)),)),)),))
-    opts = [Opt(op=OptOps.UNROLL, axis=0, amt=0)]
+    opts = [Opt(op=OptOps.UNROLL, axis=0, arg=0)]
     k = Kernel(ast, opts=Device[Device.DEFAULT].renderer)
     for opt in opts: k.apply_opt(opt)
     prg = k.to_program()
@@ -210,7 +210,7 @@ class TestLinearizerDumb(unittest.TestCase):
             UOp(Ops.LOAD, dtypes.float, arg=None, src=(
               UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr(), arg=2, src=()),
               UOp(Ops.VIEW, dtypes.void, arg=ShapeTracker(views=(View(shape=(4, 5, 13, 1, 1, 1, 4, 1, 4, 3, 3), strides=(260, 13, 1, 0, 0, 0, 65, 0, 0, 0, 0), offset=0, mask=None, contiguous=False),)), src=()),)),)),)),)),))
-    opts = [Opt(op=OptOps.UPCAST, axis=3, amt=0), Opt(op=OptOps.UPCAST, axis=2, amt=0)]
+    opts = [Opt(op=OptOps.UPCAST, axis=3, arg=0), Opt(op=OptOps.UPCAST, axis=2, arg=0)]
     k = Kernel(ast, opts=Device[Device.DEFAULT].renderer)
     for opt in opts: k.apply_opt(opt)
     prg = k.to_program()
