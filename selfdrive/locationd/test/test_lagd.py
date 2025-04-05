@@ -4,7 +4,8 @@ import time
 import pytest
 
 from cereal import messaging
-from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC
+from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
+                                               BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
 from openpilot.selfdrive.locationd.test.test_locationd_scenarios import TEST_ROUTE
 from openpilot.common.params import Params
@@ -107,7 +108,7 @@ class TestLagd:
   @pytest.mark.skipif(PC, reason="only on device")
   @pytest.mark.timeout(30)
   def test_estimator_performance(self, mocker):
-    mocked_CP = mocker.Mock(steerActuatorDelay=0.1)
+    mocked_CP = mocker.Mock(steerActuatorDelay=0.8)
     estimator = LateralLagEstimator(mocked_CP, DT)
 
     ds = []
@@ -119,5 +120,3 @@ class TestLagd:
       ds.append(d)
 
     assert np.mean(ds) < DT
-
-import sys
