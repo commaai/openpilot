@@ -1,0 +1,1564 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: CLOCK HUD H_U DATC CCP KMA_TMU CUBIS TMU IPM RSE_R RRC CGW RSE_L AMP EDT SWRC IBOX CLU FHCU ASD MON AVM KBD
+
+
+BO_ 3221225472 VECTOR__INDEPENDENT_SIG_MSG: 0 Vector__XXX
+ SG_ C_WHEEL_FL : 0|12@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_WHEEL_FR : 0|12@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_WHEEL_RL : 0|12@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_WHEEL_RR : 0|12@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 2046 TP_EDT_AMP: 8 EDT
+ SG_ Byte0_TCP_7FE : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte1_Data_7FE : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte2_Data_7FE : 23|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte3_Data_7FE : 31|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte4_Data_7FE : 39|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte5_Data_7FE : 47|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte6_Data_7FE : 55|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte7_Data_7FE : 63|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 251 HU_TMU_E_02: 8 H_U
+ SG_ HU_GPS_Year : 7|8@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ HU_GPS_Month : 15|8@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ HU_GPS_Day : 23|8@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ HU_GPS_Hour : 31|8@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ HU_GPS_Minute : 39|8@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ HU_GPS_Second : 47|8@0+ (1,0) [0|0] ""  CUBIS,TMU
+
+BO_ 250 HU_TMU_E_01: 8 H_U
+ SG_ HU_VoiceRecCom : 2|3@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_LangChgCom : 5|3@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_CallEndCmd : 9|2@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_ServiceReqtID : 13|4@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_MicReqCmd : 15|2@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_SeviceAction : 18|3@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_eCallStatus : 20|2@0+ (1,0) [0|0] ""  TMU
+
+BO_ 1269 TP_CLU_ANDAUTO_HU: 8 CLU
+ SG_ Byte0_TCP_4F5 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4F5 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4F5 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4F5 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4F5 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4F5 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4F5 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4F5 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1268 TP_HU_ANDAUTO_CLU: 8 H_U
+ SG_ Byte0_TCP_4F4 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4F4 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4F4 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4F4 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4F4 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4F4 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4F4 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4F4 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1267 TP_CLU_CARPLAY_HU: 8 CLU
+ SG_ Byte0_TCP_4F3 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4F3 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4F3 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4F3 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4F3 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4F3 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4F3 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4F3 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1266 TP_HU_CARPLAY_CLU: 8 H_U
+ SG_ Byte0_TCP_4F2 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4F2 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4F2 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4F2 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4F2 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4F2 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4F2 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4F2 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1263 TP_CLU_IBOX_HU: 8 CLU
+ SG_ Byte0_TCP_4EF : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4EF : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4EF : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4EF : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4EF : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4EF : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4EF : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4EF : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1262 TP_HU_IBOX_CLU: 8 H_U
+ SG_ Byte0_TCP_4EE : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4EE : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4EE : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4EE : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4EE : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4EE : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4EE : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4EE : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1261 TP_CLU_DLNA_HU: 8 CLU
+ SG_ Byte0_TCP_4ED : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4ED : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4ED : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4ED : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4ED : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4ED : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4ED : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4ED : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1260 TP_HU_DLNA_CLU: 8 H_U
+ SG_ Byte0_TCP_4EC : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4EC : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4EC : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4EC : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4EC : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4EC : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4EC : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4EC : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 491 GW_DDM_PE: 8 CLU
+ SG_ C_DRVDoorStatus : 1|2@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CUBIS,DATC,EDT,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ C_ASTDoorStatus : 3|2@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CUBIS,DATC,EDT,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ C_RLDoorStatus : 5|2@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CUBIS,DATC,EDT,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ C_RRDoorStatus : 7|2@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CUBIS,DATC,EDT,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ C_TrunkStatus : 9|2@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CUBIS,DATC,EDT,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ C_OSMirrorStatus : 11|2@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CUBIS,DATC,EDT,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+
+BO_ 1259 TP_CLU_MP_HU: 8 CLU
+ SG_ Byte0_TCP_4EB : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4EB : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4EB : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4EB : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4EB : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4EB : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4EB : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4EB : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1258 TP_HU_MP_CLU: 8 H_U
+ SG_ Byte0_TCP_4EA : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4EA : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4EA : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4EA : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4EA : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4EA : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4EA : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4EA : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1257 TP_CLU_FM_HU: 8 CLU
+ SG_ Byte0_TCP_4E9 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4E9 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4E9 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4E9 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4E9 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4E9 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4E9 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4E9 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1256 TP_HU_FM_CLU: 8 H_U
+ SG_ Byte0_TCP_4E8 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4E8 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4E8 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4E8 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4E8 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4E8 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4E8 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4E8 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1255 TP_CLU_MLT_HU: 8 CLU
+ SG_ Byte0_TCP_4E7 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4E7 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4E7 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4E7 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4E7 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4E7 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4E7 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4E7 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 487 HU_CLU_PE_13: 8 H_U
+ SG_ Navi_DistToPoint1_F : 11|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint1_I : 7|12@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint1_U : 23|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint2_I : 19|12@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint2_F : 35|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint2_U : 39|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint3_F : 51|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint3_I : 47|12@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToPoint3_U : 63|4@0+ (1,0) [0|0] ""  CLU,HUD
+
+BO_ 1254 TP_HU_MLT_CLU: 8 H_U
+ SG_ Byte0_TCP_4E6 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4E6 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4E6 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4E6 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4E6 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4E6 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4E6 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4E6 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 486 HU_CLU_PE_12: 8 H_U
+ SG_ Navi_DistToDest_I : 7|16@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToDest_F : 19|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_DistToDest_U : 23|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_EstimHour : 31|8@0+ (1,0) [0|254] "hh"  CLU,HUD
+ SG_ Navi_EstimMin : 37|6@0+ (1,0) [0|59] "mm"  CLU,HUD
+ SG_ Navi_EstimTimeType : 39|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_Compass : 45|6@0+ (7.5,-7.5) [0|352.5] "Degree"  CLU,HUD
+
+BO_ 229 HU_SYS_E_00: 8 H_U
+ SG_ SYS_SW_Ver_Req : 1|2@0+ (1,0) [0|0] ""  AMP,CCP,CGW,CLOCK,CLU,HUD,IBOX,RRC,RSE_L
+ SG_ SYS_CAN_Ver_Req : 3|2@0+ (1,0) [0|0] ""  AMP,CCP,CGW,CLOCK,CLU,HUD,IBOX,RRC,RSE_L
+ SG_ SYS_HW_Ver_Req : 5|2@0+ (1,0) [0|0] ""  AMP,CCP,CGW,CLOCK,CLU,IBOX,RRC
+ SG_ SYS_RBD_Req : 9|2@0+ (1,0) [0|0] ""  AMP,IBOX
+ SG_ SYS_MOSTErrorDiag_Req : 11|2@0+ (1,0) [0|0] ""  AMP,IBOX
+ SG_ SYS_Reset_Req : 17|2@0+ (1,0) [0|0] ""  AMP,IBOX
+
+BO_ 1253 TP_CLU_VCDC_HU: 8 CLU
+ SG_ Byte0_TCP_4E5 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4E5 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4E5 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4E5 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4E5 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4E5 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4E5 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4E5 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 485 HU_CLU_PE_11: 8 H_U
+ SG_ Navi_FixedSpdTrap : 3|4@0+ (10,0) [10|110] "Km/h"  CLU,HUD
+ SG_ Navi_MobileSpdTrap : 7|4@0+ (10,0) [10|110] "Km/h"  CLU,HUD
+ SG_ Navi_OverSpdAlarm : 11|2@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+ SG_ Navi_SpdRedlightTrap : 15|4@0+ (10,0) [10|110] "Km/h"  CLU,HUD
+ SG_ Navi_NonSpdTrap : 20|5@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_WarningZone : 27|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_MergeWarning : 33|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_CurveWarning : 39|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_BusSpdTrap : 43|4@0+ (10,0) [10|110] "Km/h"  CLU,HUD
+ SG_ Navi_SpdLimit_Type : 49|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_SpdLimit_Unit : 51|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_SpdInfo_Type : 55|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ Navi_SpdLimit : 63|8@0+ (1,0) [1|254] ""  CLU,HUD
+
+BO_ 1252 TP_HU_VCDC_CLU: 8 H_U
+ SG_ Byte0_TCP_4E4 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4E4 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4E4 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4E4 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4E4 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4E4 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4E4 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4E4 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1251 TP_CLU_JB_HU: 8 CLU
+ SG_ Byte0_TCP_4E3 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4E3 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4E3 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4E3 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4E3 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4E3 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4E3 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4E3 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1250 TP_HU_JB_CLU: 8 H_U
+ SG_ Byte0_TCP_4E2 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4E2 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4E2 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4E2 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4E2 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4E2 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4E2 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4E2 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1248 TP_TMU_HU: 8 TMU
+ SG_ Byte0_TCP_4E0 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4E0 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4E0 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4E0 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4E0 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4E0 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4E0 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4E0 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 479 CLU_HU_PE_01: 8 CLU
+ SG_ CLU_Type : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ CLU_Region : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ CLU_VersionMinor : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ CLU_VersionMajor : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ CLU_CurrentDispState : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ C_DRVDRSW : 41|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_Clu_LowfuelWarning : 44|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CLU_PowerInfo : 46|2@0+ (1,0) [0|0] ""  H_U
+ SG_ C_DrivingModeState : 50|3@0+ (1,0) [0|0] ""  H_U
+ SG_ Clu_RheostatLvl : 55|5@0+ (1,0) [0|0] ""  H_U,MON,SWRC
+ SG_ C_Clu_ActiveEcoSW : 57|2@0+ (1,0) [0|0] ""  H_U
+ SG_ C_Detent : 59|2@0+ (1,0) [0|0] ""  CCP,CLOCK,H_U,KBD,MON,RRC,RSE_L,RSE_R
+ SG_ C_DrivingModeOn : 61|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 2015 TP_EDT_All_Req: 8 EDT
+ SG_ Byte0_TCP_7DF : 7|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte1_Data_7DF : 15|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte2_Data_7DF : 23|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte3_Data_7DF : 31|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte4_Data_7DF : 39|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte5_Data_7DF : 47|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte6_Data_7DF : 55|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+ SG_ Byte7_Data_7DF : 63|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,FHCU,HUD,H_U,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+
+BO_ 474 CLU_HU_PE_02: 8 CLU
+ SG_ CF_Clu_AvgFCU : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_Clu_AvgFCL : 9|10@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_Clu_TermAvgSync : 25|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_Clu_EcoDriveInf : 36|3@0+ (1,0) [0|0] ""  H_U
+ SG_ CR_Clu_TermAvgFCI : 33|10@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_CLU_EcoScore : 55|16@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1495 CLU_HU_P_05: 8 CLU
+ SG_ Clu_TripUnit : 9|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ Clu_DTEWarn : 11|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ Clu_DTE : 7|12@0+ (1,0) [0|1500] "km"  H_U,IBOX
+ SG_ Clu_AFC : 23|10@0+ (0.1,0) [0|99.9] ""  H_U,IBOX
+ SG_ Clu_IFC : 29|10@0+ (0.1,0) [0|99.9] ""  H_U,IBOX
+ SG_ Clu_Odometer : 47|24@0+ (1,0) [0|999999] ""  H_U,IBOX
+
+BO_ 1494 CLU_HU_P_01: 8 CLU
+ SG_ CF_TripUnit : 13|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_DTE : 7|10@0+ (1,0) [0|0] ""  H_U
+
+BO_ 214 AMP_HU_E_SYS: 8 AMP
+ SG_ AMP_SWVerMajor : 7|8@0+ (1,0) [0|254] ""  H_U,IBOX
+ SG_ AMP_SWVerMinor : 15|8@0+ (1,0) [0|254] ""  H_U,IBOX
+ SG_ AMP_CANVerMajor : 23|8@0+ (1,0) [0|254] ""  H_U,IBOX
+ SG_ AMP_CANVerMinor : 31|8@0+ (1,0) [0|254] ""  H_U,IBOX
+ SG_ AMP_RBDResult : 34|3@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MOSTErrorDiagResult : 38|3@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_HWVerMajor : 55|8@0+ (1,0) [0|254] ""  H_U,IBOX
+ SG_ AMP_HWVerMinor : 63|8@0+ (1,0) [0|254] ""  H_U,IBOX
+
+BO_ 1492 CLU_HU_P_04: 8 CLU
+ SG_ MM_CR_Fatc_AcnComCst_W : 7|10@0+ (10,0) [0|8000] "W"  H_U
+ SG_ MM_CR_Ldc_PwrMon_W : 12|8@0+ (10,0) [0|2550] "W"  H_U
+ SG_ MM_CR_Fatc_PTCPwrCon_W : 17|10@0+ (10,0) [0|10000] "W"  H_U
+ SG_ MM_CR_BmsChgExp_T_Fast : 39|16@0+ (1,0) [0|0] "minute"  H_U
+ SG_ MM_CR_BmsChgExp_T_Slow : 55|16@0+ (1,0) [0|0] "minute"  H_U
+
+BO_ 1491 CLU_HU_P_03: 8 CLU
+ SG_ MM_CF_Vcu_EvMod : 3|4@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CF_Vcu_GarSelDisp : 7|4@0+ (999,0) [0|0] ""  H_U
+ SG_ MM_CF_Vcu_ThiBatTir : 8|1@0+ (1,0) [0|0] ""  H_U
+ SG_ CR_Mcu_MotEstTqPc : 23|10@0+ (0.2,-100) [-100|99.8] "%"  H_U
+ SG_ CR_Mcu_MotActRotSpd_rpm : 39|16@0+ (1,-32768) [-32768|32767] "rpm"  H_U
+
+BO_ 1490 CLU_HU_P_02: 8 CLU
+ SG_ MM_CR_Vcu_EcoSco : 3|4@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CF_Vcu_PgmRun5 : 5|2@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CR_Clu_Odometer_kph : 15|24@0+ (0.1,0) [0|0] "km"  H_U
+
+BO_ 1489 DATC_P_B_01: 8 CLU
+ SG_ C_InhibitR_DATC : 51|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_InhibitP_DATC : 50|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_InhibitN_DATC : 49|1@0+ (1,0) [0|0] "" Vector__XXX
+ SG_ C_InhibitD_DATC : 48|1@0+ (1,0) [0|0] "" Vector__XXX
+
+BO_ 465 CLU_HU_PE_03: 8 CLU
+ SG_ CF_Clu_EVDTEDisp : 0|9@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ CF_Clu_GasDTEDisp : 17|10@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ MM_CR_Clu_TotalDTEDisp : 34|11@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ CF_Clu_TripUnit : 49|2@0+ (1,0) [0|0] ""  H_U,IBOX
+
+BO_ 1232 TP_HU_TMU: 8 H_U
+ SG_ Byte0_TCP_4D0 : 7|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte1_Data_4D0 : 15|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte2_Data_4D0 : 23|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte3_Data_4D0 : 31|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte4_Data_4D0 : 39|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte5_Data_4D0 : 47|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte6_Data_4D0 : 55|8@0+ (1,0) [0|0] ""  TMU
+ SG_ Byte7_Data_4D0 : 63|8@0+ (1,0) [0|0] ""  TMU
+
+BO_ 1488 CLU_HU_P_00: 8 CLU
+ SG_ MM_CR_Mcu_VehSpd_Kph : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CR_Mcu_VehSpdDec_Kph : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CR_Bms_Soc_Pc : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CR_Vcu_TqMotClu_Pc : 31|8@0+ (1,-127) [0|0] ""  H_U
+ SG_ MM_CR_Bms_DrvEnaDist : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ MM_CR_Clu_Soc_Seg : 44|5@0+ (1,0) [0|0] ""  H_U,IBOX
+
+BO_ 208 CLU_HU_E_SYS: 8 CLU
+ SG_ CLU_SWVerMajor : 7|8@0+ (1,0) [0|254] ""  H_U
+ SG_ CLU_SWVerMinor : 15|8@0+ (1,0) [0|254] ""  H_U
+ SG_ CLU_CANVerMajor : 23|8@0+ (1,0) [0|254] ""  H_U
+ SG_ CLU_CANVerMinor : 31|8@0+ (1,0) [0|254] ""  H_U
+ SG_ CLU_HWVerMajor : 55|8@0+ (1,0) [0|254] ""  H_U
+ SG_ CLU_HWVerMinor : 63|8@0+ (1,0) [0|254] ""  H_U
+
+BO_ 448 HU_DATC_PE_00: 8 H_U
+ SG_ DATC_AqsLevelChg : 3|4@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ RSELockOnOff : 7|2@0+ (1,0) [0|0] ""  CGW,DATC,IPM,RRC
+ SG_ DATC_AqsMode : 9|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_Graphreset_Info : 17|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_VRActivity : 33|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_PhoneActivity : 35|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ BlowerNoiseControl : 37|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+
+BO_ 1211 TP_HU_TBT_CLU: 8 H_U
+ SG_ Byte0_TCP_4BB : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4BB : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4BB : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4BB : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4BB : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4BB : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4BB : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4BB : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1207 TP_HU_DAB_CLU: 8 H_U
+ SG_ Byte0_TCP_4B7 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4B7 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4B7 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4B7 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4B7 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4B7 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4B7 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4B7 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1206 TP_HU_XM_CLU: 8 H_U
+ SG_ Byte0_TCP_4B6 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4B6 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4B6 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4B6 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4B6 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4B6 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4B6 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4B6 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1204 TP_HU_DMB_CLU: 8 H_U
+ SG_ Byte0_TCP_4B4 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_4B4 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_4B4 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_4B4 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_4B4 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_4B4 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_4B4 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_4B4 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 432 TMU_GW_PE_01: 8 TMU
+ SG_ C_DATCOnOffReq : 1|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,H_U,IPM
+ SG_ C_DATCTempUnit : 3|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,H_U,IPM
+ SG_ C_DATCTempSet : 15|8@0+ (1,0) [0|0] ""  CGW,CLU,DATC,H_U,IPM
+ SG_ TMU_IVRActivity : 33|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,H_U,IPM
+ SG_ TMU_PhoneActivity : 35|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,H_U,IPM
+
+BO_ 1195 TP_CLU_TBT_HU: 8 CLU
+ SG_ Byte0_TCP_4AB : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4AB : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4AB : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4AB : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4AB : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4AB : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4AB : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4AB : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1191 TP_CLU_DAB_HU: 8 CLU
+ SG_ Byte0_TCP_4A7 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4A7 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4A7 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4A7 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4A7 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4A7 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4A7 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4A7 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1190 TP_CLU_XM_HU: 8 CLU
+ SG_ Byte0_TCP_4A6 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4A6 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4A6 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4A6 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4A6 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4A6 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4A6 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4A6 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1188 TP_CLU_DMB_HU: 8 CLU
+ SG_ Byte0_TCP_4A4 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_4A4 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_4A4 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_4A4 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_4A4 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_4A4 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_4A4 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_4A4 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1179 TP_HU_NAVI_CLU: 8 H_U
+ SG_ Byte0_TCP_49B : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_49B : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_49B : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_49B : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_49B : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_49B : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_49B : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_49B : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1178 TP_CLU_Ipod_HU: 8 CLU
+ SG_ Byte0_TCP_49A : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_49A : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_49A : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_49A : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_49A : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_49A : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_49A : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_49A : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 410 HU_CLU_PE_08: 8 H_U
+ SG_ VCDC_SelDiscNo : 11|4@0+ (1,0) [0|0] ""  CLU
+ SG_ VCDC_TrackChapterNo : 7|10@0+ (1,0) [0|0] ""  CLU
+ SG_ VCDC_PlayTime : 23|24@0+ (1,0) [0|0] ""  CLU
+ SG_ MLT_PlayTime : 47|24@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1176 TP_CLU_DVD_HU: 8 CLU
+ SG_ Byte0_TCP_498 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_498 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_498 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_498 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_498 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_498 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_498 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_498 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1175 TP_CLU_USB_HU: 8 CLU
+ SG_ Byte0_TCP_497 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_497 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_497 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_497 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_497 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_497 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_497 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_497 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 407 HU_CLU_PE_05: 8 H_U
+ SG_ HU_LanguageInfo : 7|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ HU_MuteStatus : 9|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ HU_VolumeStatus : 15|6@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ HU_NaviDisp : 17|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ HU_NaviStatus : 19|2@0+ (1,0) [0|0] ""  CGW,CLU,HUD,IPM
+ SG_ HU_DistanceUnit : 21|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ HU_Navigation_On_Off : 23|2@0+ (1,0) [0|0] ""  AVM,CGW,CLU,DATC,HUD,IPM
+
+BO_ 1942 TP_AMP_HU_DiagRes: 8 AMP
+ SG_ Byte0_TCP_796 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_796 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_796 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_796 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_796 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_796 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_796 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_796 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 406 HU_CLU_PE_04: 8 H_U
+ SG_ C_SDARS_ChannelNo : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ C_NaviRouteGuidance : 11|2@0+ (1,0) [0|0] ""  CLU
+ SG_ HD_SPS_ChannelNo : 15|4@0+ (1,0) [0|0] ""  CLU
+ SG_ C_SDARS_PresetNo : 19|4@0+ (1,0) [0|0] ""  CLU
+ SG_ DAB_ServiceFollowing : 21|2@0+ (1,0) [0|0] ""  CLU
+ SG_ SXM_ChannelNo : 25|10@0+ (1,0) [0|999] ""  AMP,CLU,HUD
+
+BO_ 1941 TP_HU_AMP_DiagReq: 8 H_U
+ SG_ Byte0_TCP_795 : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte1_Data_795 : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte2_Data_795 : 23|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte3_Data_795 : 31|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte4_Data_795 : 39|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte5_Data_795 : 47|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte6_Data_795 : 55|8@0+ (1,0) [0|0] ""  AMP
+ SG_ Byte7_Data_795 : 63|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 1173 TP_CLU_CD_HU: 8 CLU
+ SG_ Byte0_TCP_495 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_495 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_495 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_495 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_495 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_495 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_495 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_495 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 405 HU_CLU_PE_03: 8 H_U
+ SG_ HU_IntegPresetNum : 7|8@0+ (1,0) [0|0] ""  AMP,CLU,HUD
+ SG_ Radio_Area : 10|8@0+ (1,0) [0|0] ""  CLU
+ SG_ DMB_PresetNo : 29|5@0+ (1,0) [0|0] ""  CLU
+ SG_ RADIO_PresetNo : 18|5@0+ (1,0) [0|0] ""  CLU
+ SG_ HU_Opstate_DIS2 : 38|7@0+ (1,0) [0|0] ""  AMP,CLU,HUD
+
+BO_ 1168 TP_HU_USB_CLU: 8 H_U
+ SG_ Byte0_TCP_490 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_490 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_490 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_490 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_490 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_490 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_490 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_490 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1936 TP_HU_All_Req: 8 H_U
+ SG_ Byte0_TCP_790 : 7|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte1_Data_790 : 15|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte2_Data_790 : 23|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte3_Data_790 : 31|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte4_Data_790 : 39|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte5_Data_790 : 47|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte6_Data_790 : 55|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+ SG_ Byte7_Data_790 : 63|8@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CGW,CLOCK,CLU,CUBIS,DATC,EDT,FHCU,HUD,IBOX,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,SWRC,TMU
+
+BO_ 1167 TP_HU_Ipod_CLU: 8 H_U
+ SG_ Byte0_TCP_48F : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_48F : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_48F : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_48F : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_48F : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_48F : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_48F : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_48F : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1166 TP_HU_DVD_CLU: 8 H_U
+ SG_ Byte0_TCP_48E : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_48E : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_48E : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_48E : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_48E : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_48E : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_48E : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_48E : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1165 TP_HU_CD_CLU: 8 H_U
+ SG_ Byte0_TCP_48D : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_48D : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_48D : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_48D : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_48D : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_48D : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_48D : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_48D : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1164 TP_CLU_NAVI_HU: 8 CLU
+ SG_ Byte0_TCP_48C : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_48C : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_48C : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_48C : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_48C : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_48C : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_48C : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_48C : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 139 AMP_HU_E_12: 8 AMP
+ SG_ AMP_Beep2VolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep2FrequencyState : 15|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep2OutputMaskState : 31|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep2DOnState : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep2DOffState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep2NOfCycleState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 138 AMP_HU_E_11: 8 AMP
+ SG_ AMP_Beep1VolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep1FrequencyState : 15|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep1OutputMaskState : 31|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep1DOnState : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep1DOffState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep1NOfCycleState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 137 AMP_HU_E_10: 8 AMP
+ SG_ AMP_MTSOutputMaskSupport : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MTSMuteMaskSupport : 5|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_HFOutputMaskSupport : 9|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_HFMuteMaskSupport : 13|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_NaviOutputMaskSupport : 17|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_NaviMuteMaskSupport : 21|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1928 TP_HU_PhyRes: 8 H_U
+ SG_ Byte0_TCP_788 : 7|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte1_Data_788 : 15|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte2_Data_788 : 23|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte3_Data_788 : 31|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte4_Data_788 : 39|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte5_Data_788 : 47|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte6_Data_788 : 55|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte7_Data_788 : 63|8@0+ (1,0) [0|0] ""  EDT
+
+BO_ 136 AMP_HU_E_09: 8 AMP
+ SG_ AMP_MaxBeep2VolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep2Freq_State : 15|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep2OutputMaskSup : 33|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep2DOnState : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep2DOffState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep2NOfCycleState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 135 AMP_HU_E_08: 8 AMP
+ SG_ AMP_MaxBeep1VolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep1Freq_State : 15|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_Beep1OutputMaskSup : 33|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep1DOnState : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep1DOffState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBeep1NOfCycleState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 134 AMP_HU_E_07: 8 AMP
+ SG_ ASD_SetValue : 2|3@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ ASD_Version : 15|8@0+ (1,0) [0|0] ""  H_U,IBOX
+
+BO_ 1157 TP_HU_CLU_HF: 8 H_U
+ SG_ Byte0_TCP_485 : 7|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte1_Data_485 : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte2_Data_485 : 23|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte3_Data_485 : 31|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte4_Data_485 : 39|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte5_Data_485 : 47|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte6_Data_485 : 55|8@0+ (1,0) [0|0] ""  CLU
+ SG_ Byte7_Data_485 : 63|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 133 AMP_HU_E_06: 8 AMP
+ SG_ AMP_MaxVolumeStep : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBalanceStep : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxFadeStep : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxBassStep : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxMidStep : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxTrebleStep : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_ASDMajorVer : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_ASDMinorVer : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 389 AMP_HU_PE_05: 8 AMP
+ SG_ AMP_EngOrderC2Setting : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_EngOrderC4Setting : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_EngOrderC6Setting : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_APSBand0Setting : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_APSBand1Setting : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_APSBand2Setting : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_APSBand3Setting : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_APSBand4Setting : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 132 AMP_HU_E_05: 8 AMP
+ SG_ AMP_HFVolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_HFAudioCutState : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_HFOutputMaskState : 23|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_HFMuteMaskState : 39|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxHFVolumeState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxHFAudioCutState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 388 AMP_HU_PE_04: 8 AMP
+ SG_ AMP_PESSModeState : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_PESSDesignSetting : 4|3@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_PESSAPSSetting : 7|3@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_PESSVolumeSetting : 15|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1156 TP_CLU_HF_HU: 8 CLU
+ SG_ Byte0_TCP_484 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_484 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_484 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_484 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_484 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_484 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_484 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_484 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 131 AMP_HU_E_04: 8 AMP
+ SG_ AMP_MTSVolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MTSAudioCutState : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MTSOutputMaskState : 23|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MTSMuteMaskState : 39|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxMTSVolumeState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxMTSAudioCutState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 387 AMP_HU_PE_03: 8 AMP
+ SG_ AMP_MainVolumeSetting : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_BalanceSetting : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_FadeSetting : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_BassSetting : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MidSetting : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_TrebleSetting : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_VehicleSpeedamp : 55|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 130 AMP_HU_E_03: 8 AMP
+ SG_ AMP_NaviVolumeState : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_NaviAudioCutState : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_NaviOutputMaskState : 23|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_NaviMuteMaskState : 39|16@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxNaviVolumeState : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MaxNaviAudioCutState : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 129 AMP_HU_E_02: 8 AMP
+ SG_ AMP_DriveState : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_ConvertibleTopState : 5|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 385 AMP_HU_PE_02: 8 AMP
+ SG_ AMP_MuteState : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_RearSpMuteState : 3|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SurroundModeState : 9|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_EQState : 13|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SPDIFMuteSt : 17|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_BeatsModeState : 21|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_DefaultBeep1St : 25|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_DefaultBeep2St : 29|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_AudioSource : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_VIPModeState : 41|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_QLSModeState : 43|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 128 AMP_HU_E_01: 8 AMP
+ SG_ AMP_CurrentVehicleID : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SPDIFModeState : 11|4@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MajorVer : 23|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ AMP_MinorVer : 31|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ AMP_UpdateStartResp : 33|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_UpdateEndResp : 41|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_TuningMajorVer : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_TuningMinorVer : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 384 AMP_HU_PE_01: 8 AMP
+ SG_ AMP_HFModeState : 1|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ HU_InitInfo : 3|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_ASDModeState : 6|3@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_NaviModeState : 9|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_SPDIFInfo : 12|3@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_MTSModeState : 17|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_VSCModeState : 25|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_SDVCStepState : 29|3@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_Beep1ModeState : 33|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_Beep2ModeState : 41|2@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_DistrInfoState : 55|8@0+ (1,0) [0|0] ""  CLU,H_U
+ SG_ AMP_INFORM_TO_IPM : 57|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,H_U,IPM
+ SG_ AMP_SignalDoctorState : 59|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_AutoVolumeState : 61|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1408 AMP_HU_P_01: 8 AMP
+ SG_ AMP_SupportMute : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportHFMode : 3|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportCfgBeep1 : 5|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportCfgBeep2 : 7|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportSpeedAdjust : 9|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportSurroundMode : 11|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportNaviMode : 13|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportMTSMode : 15|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportTopState : 17|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportBothLHDandRHD : 19|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportEQState : 21|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportVehicleID : 23|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportAudioSource : 25|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportSPDIFModeState : 27|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportRearSpMute : 29|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportVEQMode : 31|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_MakerID : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportASDMode : 41|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportBeatsMode : 43|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportVIPMode : 45|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportQLS : 47|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportSignalDoctor : 49|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportAutoVolume : 51|2@0+ (1,0) [0|0] ""  H_U
+ SG_ AMP_SupportPESSMode : 53|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1920 TP_HU_PhyReq: 8 EDT
+ SG_ Byte0_TCP_780 : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte1_Data_780 : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte2_Data_780 : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte3_Data_780 : 31|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte4_Data_780 : 39|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte5_Data_780 : 47|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte6_Data_780 : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ Byte7_Data_780 : 63|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 371 HU_TMU_PE_01: 8 H_U
+ SG_ HU_AliveStatus : 1|2@0+ (1,0) [0|0] ""  CLU,CGW,TMU
+ SG_ HU_DeviceType : 5|4@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_DistanceUnit : 7|2@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_AudAllocStatus : 9|2@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_PowerStatus : 12|3@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_BTCallStatus : 15|3@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_VoiceRecStatus : 17|2@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_LangStatus : 20|3@0+ (1,0) [0|0] ""  TMU
+
+BO_ 369 HU_Car_PE_01: 8 H_U
+ SG_ HU_VehiclePwr : 3|4@0+ (1,0) [0|0] ""  AMP,ASD,AVM,CCP,CLOCK,CLU,CUBIS,DATC,FHCU,IPM,KBD,KMA_TMU,MON,RRC,RSE_L,RSE_R,TMU
+
+BO_ 1392 HU_TMU_P_01: 8 H_U
+ SG_ HU_GPS_Signal : 7|64@0+ (1,0) [0|0] ""  TMU
+
+BO_ 112 HU_AMP_E_09: 8 H_U
+ SG_ AMP_Beep1VolumeStep : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep1Frequency : 15|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep1Ch_OutputMask : 31|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep1DurationOn : 47|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep1DurationOff : 55|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep1NumberOfCycles : 63|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 1390 GW_CLU_P: 8 CLU
+ SG_ C_VehicleSpeed : 7|8@0+ (1,0) [0|254] ""  H_U,IBOX
+ SG_ C_Odometer : 15|24@0+ (1,0) [0|999999] ""  H_U,IBOX
+
+BO_ 363 GW_IPM_PE_2: 8 CLU
+ SG_ C_DRVUnlockState : 1|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_ASTUnlockState : 3|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_RLUnlockstate : 5|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_RRUnlockState : 7|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_VehicleInfoTMU : 9|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_Engine_Status : 11|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_TMULockFeedBack : 23|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+
+BO_ 362 GW_IPM_PE_1: 8 CLU
+ SG_ C_AV_Tail : 1|2@0+ (1,0) [0|0] ""  AMP,CCP,CLOCK,CLU,HUD,H_U,IBOX,RRC,RSE_L
+ SG_ C_ParkingBrakeSW : 3|2@0+ (1,0) [0|0] ""  H_U
+ SG_ C_RKECMD : 7|4@0+ (1,0) [0|0] ""  H_U
+ SG_ C_BAState : 9|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_IGNSW : 14|3@0+ (1,0) [0|0] ""  AMP,AVM,CUBIS,EDT,H_U,MON,RRC,SWRC
+ SG_ C_CountryCfg : 18|3@0+ (1,0) [0|0] ""  AVM,H_U
+ SG_ C_AltL : 25|2@0+ (1,0) [0|0] ""  H_U
+ SG_ C_TailLampActivity : 27|2@0+ (1,0) [0|0] ""  AMP,CCP,CLOCK,HUD,H_U,IBOX,RRC,RSE_L,SWRC
+ SG_ RearSW_RSELockOnOff : 29|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_TMULockFeedBack : 31|2@0+ (1,0) [0|0] ""  CUBIS,TMU
+ SG_ C_SMKTeleCrankingState : 33|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_SMKTeleCrankingFailRes : 35|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_RKECMD_GEN2 : 39|3@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_Acu_CshAct : 41|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_IntTailAct : 43|2@0+ (1,0) [0|0] ""  AMP,CCP,CLOCK,CLU,HUD,H_U,IBOX,RRC,RSE_L
+ SG_ C_PassiveAccessUnlock : 47|3@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ Lca_IndLeft : 49|2@0+ (1,0) [0|0] ""  H_U
+ SG_ FL_SndWarn : 51|2@0+ (1,0) [0|0] ""  AMP
+ SG_ FR_SndWarn : 53|2@0+ (1,0) [0|0] ""  AMP
+ SG_ Lca_IndRight : 55|2@0+ (1,0) [0|0] ""  H_U
+ SG_ RCTA_IndLeft : 57|2@0+ (1,0) [0|0] ""  H_U
+ SG_ RL_SndWarn : 59|2@0+ (1,0) [0|0] ""  AMP
+ SG_ RR_SndWarn : 61|2@0+ (1,0) [0|0] ""  AMP
+ SG_ RCTA_IndRight : 63|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 361 GW_CHASSIS_PE_1: 8 CLU
+ SG_ C_Inhibit_State : 3|4@0+ (1,0) [0|0] ""  AVM,H_U
+ SG_ C_P_BrakeStatus : 5|2@0+ (1,0) [0|0] ""  AVM,H_U
+ SG_ C_Clu_AltLStatus : 7|2@0+ (1,0) [0|0] ""  AVM,H_U
+
+BO_ 359 GW_WARNING_PE_01: 8 CLU
+ SG_ Spas_BEEP_Alarm : 3|4@0+ (1,0) [0|0] ""  AMP
+ SG_ Spas_Audio_VolumeDown : 5|2@0+ (1,0) [0|0] ""  AMP
+ SG_ Spas_Spkr_Flh_Alarm : 9|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Spas_Spkr_Fcnt_Alarm : 11|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Spas_Spkr_Frh_Alarm : 13|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Spas_Spkr_Rlh_Alarm : 17|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Spas_Spkr_Rcnt_Alarm : 19|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Spas_Spkr_Rrh_Alarm : 21|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Lkas_SysStatus : 27|4@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Lkas_LH_Warning : 29|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Lkas_RH_Warning : 31|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Spas_Spkr_Level : 35|3@0+ (1,0) [0|0] ""  AMP
+ SG_ Lkas_Audio_VolumeDown : 37|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Audio_VolumeDown : 39|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_BEEP_Alarm : 43|4@0+ (1,0) [0|0] ""  AMP
+ SG_ Pas_Audio_VolumeDown : 45|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_Spkr_Level : 32|3@0+ (1,0) [0|0] ""  AMP
+ SG_ Pas_Spkr_Flh_Alarm : 49|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_Spkr_Fcnt_Alarm : 51|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_Spkr_Frh_Alarm : 53|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_Spkr_Rlh_Alarm : 57|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_Spkr_Rcnt_Alarm : 59|2@0+ (1,0) [0|0] ""  AMP,H_U
+ SG_ Pas_Spkr_Rrh_Alarm : 61|2@0+ (1,0) [0|0] ""  AMP,H_U
+
+BO_ 1376 HU_TMU_P_02: 8 H_U
+ SG_ HU_GPS_Signal2 : 7|8@0+ (2,0) [0|0] "Degree"  TMU
+ SG_ HU_GPS_Signal3 : 9|2@0+ (1,0) [0|0] ""  TMU
+ SG_ HU_GPS_Signal4 : 12|3@0+ (1,0) [0|0] ""  TMU
+
+BO_ 93 DATC_HU_E_SYS: 8 CLU
+ SG_ DATC_SWVerMajor : 7|8@0+ (1,0) [0|254] ""  H_U
+ SG_ DATC_SWVerMinor : 15|8@0+ (1,0) [0|254] ""  H_U
+ SG_ DATC_CANVerMajor : 23|8@0+ (1,0) [0|254] ""  H_U
+ SG_ DATC_CANVerMinor : 31|8@0+ (1,0) [0|254] ""  H_U
+
+BO_ 344 GW_CLU_PE: 8 CLU
+ SG_ C_InhibitP : 1|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_InhibitR : 3|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_InhibitN : 5|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_InhibitD : 7|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_P_BrakeStatus : 9|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_Clu_AltLStatus : 11|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ CF_Clu_LowfuelWarning : 13|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ C_InhibitRMT : 15|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CF_SMKRKECmd : 18|3@0+ (1,0) [0|0] ""  H_U
+
+BO_ 87 HU_E_02: 8 H_U
+ SG_ NaviValidity : 1|2@0+ (1,0) [0|0] ""  CGW,CLU
+
+BO_ 343 GW_WARNING_PE_02: 8 CLU
+ SG_ CF_Lkas_TsrSlifOpt : 1|2@0+ (1,0) [0|3] ""  H_U
+ SG_ CF_Lkas_TsrStatus : 3|2@0+ (1,0) [0|3] ""  H_U
+ SG_ CF_Lkas_TsrAddinfo_Disp : 7|2@0+ (1,0) [0|3] ""  H_U
+ SG_ CF_Lkas_TsrSpeed_Display : 15|8@0+ (1,0) [0|255] ""  H_U
+
+BO_ 75 HU_AMP_E_12: 8 H_U
+ SG_ AMP_EngOrderC2GainSet : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_EngOrderC4GainSet : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_EngOrderC6GainSet : 23|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_APSBand0GainSet : 31|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_APSBand1GainSet : 39|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_APSBand2GainSet : 47|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_APSBand3GainSet : 55|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_APSBand4GainSet : 63|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 74 HU_AMP_E_11: 8 H_U
+ SG_ AMP_PESSMode : 1|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_PESSDesignSet : 4|3@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_PESSAPSSet : 7|3@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_PESSVolumeSet : 15|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 1864 TP_AMP_EDT: 8 AMP
+ SG_ Byte0_TCP_748 : 7|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte1_Data_748 : 15|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte2_Data_748 : 23|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte3_Data_748 : 31|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte4_Data_748 : 39|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte5_Data_748 : 47|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte6_Data_748 : 55|8@0+ (1,0) [0|0] ""  EDT
+ SG_ Byte7_Data_748 : 63|8@0+ (1,0) [0|0] ""  EDT
+
+BO_ 327 TMU_HU_PE_03: 8 TMU
+ SG_ TMU_TbT_TurnIcon : 7|8@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_CountDownBar : 11|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_Distance_Unit : 13|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_DestDistance_Unit : 15|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_DistanceLo : 27|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_DistanceHi : 23|12@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_DestDistanceLo : 43|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_DestDistanceHi : 39|12@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_ExpectRemainHour : 55|8@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TbT_ExpectRemainMin : 61|6@0+ (1,0) [0|0] ""  H_U
+
+BO_ 326 TMU_HU_PE_02: 8 TMU
+ SG_ TMU_CallStatus : 3|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_CallType : 6|3@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_CDMA_Streng : 11|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_PacketStatus : 13|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TalkTimeHour : 20|5@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TalkTimeMinute : 29|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TalkTimeSecond : 37|6@0+ (1,0) [0|0] ""  H_U
+
+BO_ 325 TMU_HU_PE_01: 8 TMU
+ SG_ TMU_AliveStatus : 2|3@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_AudioStatus : 4|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_UpdateStatus : 7|3@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_LangStatus : 10|3@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_VoiceRecStatus : 12|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_MicStatus : 14|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_ServCommuStatus : 19|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_PowerStatus : 21|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_EngineStatus : 23|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_DownProgress : 31|8@0+ (1,0) [0|0] ""  H_U
+
+BO_ 69 TMU_HU_E_04: 8 TMU
+ SG_ TMU_eCall : 1|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 67 TMU_GW_E_01: 8 TMU
+ SG_ C_ReqDrLock : 1|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ C_ReqDrUnlock : 3|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ C_ReqHazard : 5|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ C_ReqHorn : 7|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ C_ReqEngineOperate : 9|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+
+BO_ 66 TMU_HU_E_03: 8 TMU
+ SG_ CDMA_SelfDiag : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CDMA_Antena_SelfDiag : 3|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1345 TMU_HU_P_02: 8 TMU
+ SG_ TMU_SupVoiceTextService : 1|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_SupEcoCoachService : 3|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_SupSongTagService : 5|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_SupContentService : 7|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_MajorVersion : 15|8@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_MinorVersion : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_DistributeInfo : 27|4@0+ (1,0) [0|0] ""  H_U
+
+BO_ 65 TMU_HU_E_02: 8 TMU
+ SG_ TMU_BarLevel1 : 7|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel2 : 1|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel4 : 21|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel3 : 11|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel5 : 31|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel6 : 25|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel8 : 45|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel7 : 35|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel9 : 55|6@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BarLevel10 : 63|6@0+ (1,0) [0|0] ""  H_U
+
+BO_ 1344 TMU_HU_P_01: 8 TMU
+ SG_ TMU_Arrow : 3|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_ReFill_Info : 5|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_AverageMPG : 1|10@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_TotalMPG : 23|10@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_RewardStar : 37|14@0+ (1,0) [0|0] ""  H_U
+
+BO_ 64 TMU_HU_E_01: 8 TMU
+ SG_ TMU_DisMode : 3|4@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_AudSrcType : 7|4@0+ (1,0) [0|0] ""  CLU,DATC,H_U
+ SG_ TMU_AudReqCmd : 9|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_LangCmd : 12|3@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_ServReq : 15|3@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_ErrorEvent : 23|8@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_BeepCmd : 25|2@0+ (1,0) [0|0] ""  H_U
+ SG_ TMU_eCall : 28|3@0+ (1,0) [0|0] ""  H_U
+
+BO_ 62 HU_Navi_E_00: 8 H_U
+ SG_ Navi_SLIF_SpdUnit : 1|2@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+ SG_ Navi_SLIF_Frwinfo : 4|3@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+ SG_ Navi_SLIF_LinkClass : 7|3@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+ SG_ Navi_SLIF_SpdLimit : 15|8@0+ (1,0) [1|254] ""  CGW,CLU,HUD
+ SG_ Navi_SLIFMapSource : 29|4@0+ (1,0) [0|8] ""  CGW,CLU,HUD
+ SG_ Navi_SLIF_CountryCode : 23|10@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+
+BO_ 52 HU_DATC_E_02: 8 H_U
+ SG_ HU_DATC_DrTempUpDn : 1|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_PsTempUpDn : 3|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_RlTempUpDn : 5|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_RrTempUpDn : 7|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_MainBlower : 11|4@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_SubBlower : 15|4@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_RearBlower : 19|4@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATCRearPsModeSet : 23|4@0+ (1,0) [0|0] ""  CGW,CLU
+ SG_ HU_DATC_FrontModeSet : 27|4@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_RearModeSet : 31|4@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_AutoSet : 33|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_OffReq : 35|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_IntakeSet : 37|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_RearOnOffSet : 39|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_AcSet : 41|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_AqsSet : 43|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_FrontDefog : 45|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_RearDefog : 47|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_ZoneControl : 49|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ HU_DATC_CO2Set : 51|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ DATC_SmartVentOnOffSet : 53|2@0+ (1,0) [0|0] ""  CGW,CLU,DATC,IPM
+ SG_ DATC_ADSOnOffSet : 55|2@0+ (1,0) [0|0] ""  CGW,CLU
+ SG_ HU_DATC_RearAutoDisp : 57|2@0+ (1,0) [0|0] ""  CGW,CLU
+ SG_ HU_DATC_RearOffDisp : 59|2@0+ (1,0) [0|0] ""  CGW,CLU
+
+BO_ 308 DATC_PE_05: 8 CLU
+ SG_ DATC_PwrInfo : 3|4@0+ (1,0) [0|0] ""  AMP,AVM,CUBIS,H_U,MON
+ SG_ DATC_AltL : 5|2@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_CarInfo : 7|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_ParkingBrake : 9|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_LowFuelWarn : 11|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_Rear_Off_Disp : 13|2@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_Rear_AutoDisp : 15|2@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_Rear_BlowerDisp : 19|4@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_DrSeatWarmerDisp : 22|3@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_SyncDisp : 27|4@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_RearDispCtrl : 31|4@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_RearDrModeDisp : 35|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_PsSeatWarmerDisp : 38|3@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_DrVentSeatDisp : 42|3@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_PSVentSeatDisp : 46|3@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_RrDefLed : 49|2@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_SmartVentOnOffStatus : 51|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_ADSOnOffStatus : 53|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_AcDisp_OSD : 55|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_PsModeDisp_OSD : 59|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_ModeDisp_OSD : 63|4@0+ (1,0) [0|0] ""  H_U
+
+BO_ 307 DATC_PE_04: 8 CLU
+ SG_ DATC_DiagMode : 1|2@0+ (1,0) [0|0] ""  H_U,IBOX,MON
+ SG_ DATC_Rear_ChangeReqDisp : 3|2@0+ (1,0) [0|0] ""  H_U,IBOX,MON
+ SG_ DATC_Rear_ClimateScnDisp : 5|2@0+ (1,0) [0|0] ""  H_U,IBOX,MON
+ SG_ DATC_CO2OnOffStatus : 7|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_SelfDiagDisp : 15|8@0+ (1,0) [0|0] ""  H_U,IBOX,MON
+ SG_ DATC_RearBlwDisp_OSD : 19|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_AqsLevelOut : 23|4@0+ (1,0) [0|0] ""  H_U,IBOX,MON
+ SG_ DATC_RearModeDisp : 27|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_RearPsModeDisp : 31|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_FrontBlwDisp_Ps : 35|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_AutoDisp_Ps : 39|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_RearModeDisp_OSD : 43|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_RearPSModeDisp_OSD : 47|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_FrontBlwDisp_OSD : 51|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_FrontBlwDispPs_OSD : 55|4@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_Variant : 63|8@0+ (1,0) [0|0] ""  H_U,IBOX,MON
+
+BO_ 306 DATC_PE_03: 8 CLU
+ SG_ DATC_ModeDisp : 3|4@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_TempUnit : 5|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_AutoDisp : 9|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_IntakeDisp : 11|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_ChangeReqDisp : 13|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_AcDisp : 17|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_AqsDisp : 19|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_ClimateScnDisp : 21|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_DualDisp : 25|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_OffDisp : 27|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_OpSts : 30|3@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_RearManual : 33|2@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_FrDefLed : 37|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_SmartVentDisp : 39|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_AutoDefogBlink : 41|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_ADSDisp : 43|2@0+ (1,0) [0|0] ""  H_U
+ SG_ DATC_IonClean : 45|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_CO2Warning : 47|2@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_SubBlowerDisp : 51|4@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_BeepReq : 55|4@0+ (1,0) [0|0] ""  H_U,KBD,MON
+ SG_ DATC_MainBlowerDisp : 59|4@0+ (1,0) [0|0] ""  H_U,IBOX
+ SG_ DATC_PsModeDisp : 63|4@0+ (1,0) [0|0] ""  H_U,IBOX
+
+BO_ 1329 DATC_P_02: 8 CLU
+ SG_ DATC_AmbientTemp_C : 7|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_AmbientTemp_F : 23|8@0+ (1,0) [0|0] ""  H_U,MON
+
+BO_ 305 DATC_PE_02: 8 CLU
+ SG_ DATC_DrTempDispC : 7|8@0+ (0.5,14) [15|32] "C"  H_U,IBOX,MON
+ SG_ DATC_Rear_DrTempDispC : 15|8@0+ (0.5,14) [15|32] "C"  H_U,IBOX,MON
+ SG_ DATC_DrTempDispF : 23|8@0+ (1,56) [58|90] "F"  H_U,IBOX,MON
+ SG_ DATC_Rear_DrTempDispF : 31|8@0+ (1,56) [58|90] "F"  H_U,IBOX,MON
+ SG_ DATC_PsTempDispC : 39|8@0+ (0.5,14) [15|32] "C"  H_U,IBOX,MON
+ SG_ Datc_RearPsTempDispC : 47|8@0+ (0.5,14) [15|32] "C"  H_U,IBOX,MON
+ SG_ DATC_PsTempDispF : 55|8@0+ (1,56) [58|90] "F"  H_U,IBOX,MON
+ SG_ DATC_RearPsTempDispF : 63|8@0+ (1,56) [58|90] "F"  H_U,IBOX,MON
+
+BO_ 304 DATC_PE_01: 8 CLU
+ SG_ DATC_Type : 7|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_VerMMMajor : 15|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_VerMMMinor : 23|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_VerBDFMajor : 31|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_VerBDMinor : 39|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_VerCSMajor : 47|8@0+ (1,0) [0|0] ""  H_U,MON
+ SG_ DATC_VerCSMinor : 55|8@0+ (1,0) [0|0] ""  H_U,MON
+
+BO_ 291 HU_CLU_PE_07: 8 H_U
+ SG_ NV_DS_Curve : 3|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_Merge : 7|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_RailCross : 9|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_FallingRocks : 11|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_SchoolZone : 13|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_AccidentBlack : 15|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_SpeedBump : 17|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_RoadKill : 19|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_Downhill : 21|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DS_Fog : 23|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_Display_TG : 31|2@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_Charge : 39|16@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_Charge_Unit : 55|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ TBT_BarGraph100Level : 63|8@0+ (1,0) [0|100] "%"  CLU,HUD
+
+BO_ 290 HU_CLU_PE_06: 8 H_U
+ SG_ NV_SD_SpdLimit2 : 3|4@0+ (10,0) [0|0] "km/h"  CLU
+ SG_ NV_SD_SpdLimit1 : 7|4@0+ (10,0) [0|0] "km/h"  CLU
+ SG_ NV_SD_EtcCam : 11|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_SpdLimit3 : 15|4@0+ (10,0) [0|0] "km/h"  CLU
+ SG_ NV_SD_SignCam : 17|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_SignOverCam : 19|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_MobileCam : 21|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_FixedCam : 23|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_OverLoadCam : 25|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_ParkCam : 27|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_CutInCam : 29|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_BusOnlyCam : 31|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_ShoulderCam : 35|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_TrafficCam : 37|2@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_SD_PlateRcgCam : 39|2@0+ (1,0) [0|0] ""  CLU
+
+BO_ 286 HU_CLU_PE_10: 8 H_U
+ SG_ Navi_TBTInfo : 63|8@0+ (1,0) [0|0] ""  CGW,CLU
+
+BO_ 29 CLU_HU_E_00: 8 CLU
+ SG_ SYS_CLUVer : 7|16@0+ (1,0) [0|0] ""  CUBIS,H_U
+ SG_ CLU_ClockInfoReq : 17|2@0+ (1,0) [0|0] ""  H_U
+ SG_ CLU_DateInfoReq : 19|2@0+ (1,0) [0|0] ""  H_U
+
+BO_ 27 AMP_HU_E_00: 8 AMP
+ SG_ SYS_AMPVer : 7|16@0+ (1,0) [0|0] ""  H_U
+
+BO_ 23 HU_IPM_E_00: 8 H_U
+ SG_ C_ADrLNValueSet : 2|3@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ADrUNValueSet : 5|3@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ SYS_Ver_Req : 7|2@0+ (1,0) [0|0] ""  AMP,AVM,CLU,CUBIS,DATC,IPM
+ SG_ C_IMSRValueReq : 9|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_PSMNValueSet : 11|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_SCMNValueSet : 13|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ADrLURValueReq : 15|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ABuzzerNValueSet : 17|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_AlarmRValueReq : 19|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ArmWKeyNValueSet : 21|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_TwUnRValueReq : 23|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_TwUnNValueSet : 25|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_AutoMRFoldRValueReq : 27|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_AutoMRFoldNValueSet : 29|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ADrLRValueReq : 31|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ArmWKeyRValueReq : 33|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ABuzzerRValueReq : 35|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_ADrURValueReq : 37|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_PSMRValueReq : 39|2@0+ (1,0) [0|0] ""  DATC,IPM
+ SG_ C_SCMRValueReq : 47|2@0+ (1,0) [0|0] ""  DATC,IPM
+
+BO_ 277 HU_CLU_PE_02: 8 H_U
+ SG_ TBT_Display_Type : 7|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ TBT_Side_Street : 15|16@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ TBT_Direction : 31|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ TBT_Distance_Turn_Point : 39|16@0+ (1,0) [0|0] "m"  CLU,HUD
+ SG_ TBT_Combined_Side_Street : 51|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ TBT_Scale : 55|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ TBT_DistancetoTurnPoint : 59|4@0+ (1,0) [0|0] "times"  CLU,HUD
+ SG_ TBT_Bar_Graph_Level : 63|4@0+ (10,0) [0|100] ""  CLU,HUD
+
+BO_ 276 HU_CLU_PE_01: 8 H_U
+ SG_ HU_OpState : 6|7@0+ (1,0) [0|0] ""  AMP,CLU
+ SG_ HU_Navi_On_Off : 7|1@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ HU_Preset_Number : 12|5@0+ (1,1) [1|30] ""  AMP,CLU
+ SG_ HU_Tuner_Area : 15|3@0+ (1,0) [0|0] ""  AMP,CLU
+ SG_ HU_Track_Number : 23|16@0+ (1,0) [0|0] ""  CLU
+ SG_ HU_Play_time_Sec : 39|6@0+ (1,0) [0|0] ""  CLU
+ SG_ HU_Play_time_Min : 33|7@0+ (1,0) [0|0] ""  CLU
+ SG_ HU_Play_time_Hour : 42|6@0+ (1,0) [0|0] ""  CLU
+ SG_ HU_Disc_select_No : 59|4@0+ (1,0) [0|0] ""  CLU
+ SG_ HU_Frequency : 52|9@0+ (1,0) [0|0] ""  AMP,CLU
+
+BO_ 17 HU_AMP_E_10: 8 H_U
+ SG_ AMP_Beep2VolumeStep : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep2Frequency : 15|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep2Ch_OutputMask : 31|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep2DurationOn : 47|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep2DurationOff : 55|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep2NumberOfCycles : 63|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 15 HU_AMP_E_08: 8 H_U
+ SG_ AMP_MainVolumeSet : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_BalanceSet : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_FadeSet : 23|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_BassSet : 31|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_MidSet : 39|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_TrebleSet : 47|8@0+ (1,0) [0|0] ""  AMP
+
+BO_ 14 HU_AMP_E_07: 8 H_U
+ SG_ AMP_HFVolumeStep : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_HFMainAudioCut : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_HFChannelOutputMask : 23|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_HFChannelMuteMask : 39|16@0+ (1,0) [0|0] ""  AMP
+
+BO_ 13 HU_AMP_E_06: 8 H_U
+ SG_ AMP_MTSVolumeStep : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_MTSMainAudioCut : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_MTSChannelOutputMask : 23|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_MTSChannelMuteMask : 39|16@0+ (1,0) [0|0] ""  AMP
+
+BO_ 12 HU_AMP_E_05: 8 H_U
+ SG_ AMP_NaviVolumeStep : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_NaviMainAudioCut : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_NaviChannelOutputMask : 23|16@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_NaviChannelMuteMask : 39|16@0+ (1,0) [0|0] ""  AMP
+
+BO_ 11 HU_AMP_E_04: 8 H_U
+ SG_ AMP_Drive : 1|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_ConvertibleTop : 5|2@0+ (1,0) [0|0] ""  AMP
+
+BO_ 10 HU_AMP_E_03: 8 H_U
+ SG_ AMP_CrtVehicleID : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_SPDIFMode : 11|4@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_VersionReq : 17|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_UpdateStart : 25|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_UpdateEnd : 33|2@0+ (1,0) [0|0] ""  AMP
+
+BO_ 9 HU_AMP_E_02: 8 H_U
+ SG_ AMP_Mute : 1|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_RearSpMute : 3|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_SurroundMode : 5|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_VEQMode : 7|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_AudioMode : 15|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_EQ : 17|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Reset : 19|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_SPDIFMute : 21|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_DefaultBeep1 : 25|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_DefaultBeep2 : 29|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_BeatsMode : 33|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_VIPMode : 35|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_QLSMode : 37|2@0+ (1,0) [0|0] ""  AMP
+
+BO_ 1288 HU_CLU_P_02: 8 H_U
+ SG_ NV_TIME_TYPE : 3|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_Hour : 15|8@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_Min : 23|8@0+ (1,0) [0|0] ""  CLU
+
+BO_ 8 HU_AMP_E_01: 8 H_U
+ SG_ AMP_HFMode : 1|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_NaviMode : 3|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_MTSMode : 5|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_VSCMode : 7|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep1Mode : 9|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_Beep2Mode : 11|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_SDVCStep : 14|3@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_ASDMode : 18|3@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_SignalDoctor : 20|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_AutoVolume : 22|2@0+ (1,0) [0|0] ""  AMP
+
+BO_ 1287 HU_CLU_P_01: 8 H_U
+ SG_ NV_DistToTurn_F1 : 3|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DistToTurn_Unit : 7|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DistToTurn_F3 : 11|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DistToTurn_F2 : 15|4@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DistToTurn_I1 : 23|16@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DistToTurn_I2 : 39|16@0+ (1,0) [0|0] ""  CLU
+ SG_ NV_DistToTurn_I3 : 55|16@0+ (1,0) [0|0] ""  CLU
+
+BO_ 1286 HU_CLU_P_00: 8 H_U
+ SG_ NV_EstDist_F : 3|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_EstDist_Unit : 7|4@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_EstHour : 15|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_EstMin : 23|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_Azimuth : 31|8@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_EstDist_I : 39|16@0+ (1,0) [0|0] ""  CLU,HUD
+ SG_ NV_EstimTimeType : 49|2@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+ SG_ NV_EstimTimeFormat : 51|2@0+ (1,0) [0|0] ""  CGW,CLU,HUD
+
+BO_ 1284 HU_AMP_P_01: 8 H_U
+ SG_ HU_VehicleSpeed : 7|8@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_SetMaxMainVolStep : 9|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_LKASWarningOn : 21|2@0+ (1,0) [0|0] ""  AMP
+ SG_ AMP_BSDWarningOn : 23|2@0+ (1,0) [0|0] ""  AMP
+
+BO_ 256 HU_MON_PE_01: 8 H_U
+ SG_ HU_Type : 7|8@0+ (1,0) [0|0] ""  AMP,CGW,CLU,HUD,KMA_TMU
+ SG_ HU_VerMajor : 15|8@0+ (1,0) [0|0] ""  AMP,CLU,KMA_TMU,MON
+ SG_ HU_VerMinor : 23|8@0+ (1,0) [0|0] ""  AMP,CLU,KMA_TMU,MON
+ SG_ HU_DistributeInfo : 31|8@0+ (1,0) [0|0] ""  AMP,CGW,CLU,KMA_TMU,MON,RRC
+ SG_ HU_SubVerMajor : 39|8@0+ (1,0) [0|0] ""  AMP,MON
+ SG_ HU_SubVerMinor : 47|8@0+ (1,0) [0|0] ""  AMP,MON
+ SG_ HU_SDARSVersion : 55|8@0+ (1,0) [0|0] ""  AMP,MON
+ SG_ HU_AdasSupport : 58|3@0+ (1,0) [0|0] ""  CGW,CLU
+
+BO_ 1092 NM_CLOCK: 8 CLOCK
+ SG_ Destination_CLOCK : 7|8@0+ (1,0) [0|0] ""  HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_CLOCK : 13|2@0+ (1,0) [0|0] ""  HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_CLOCK : 10|3@0+ (1,0) [0|0] ""  HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1108 NM_HUD: 8 HUD
+ SG_ Destination_HUD : 7|8@0+ (1,0) [0|0] ""  CLOCK,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_HUD : 13|2@0+ (1,0) [0|0] ""  CLOCK,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_HUD : 10|3@0+ (1,0) [0|0] ""  CLOCK,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1088 NM_H_U: 8 H_U
+ SG_ Destination_H_U : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_H_U : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_H_U : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1091 NM_DATC: 8 DATC
+ SG_ Destination_DATC : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_DATC : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_DATC : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1105 NM_CCP: 8 CCP
+ SG_ Destination_CCP : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_CCP : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_CCP : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1100 NM_KMA_TMU: 8 KMA_TMU
+ SG_ Destination_KMA_TMU : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_KMA_TMU : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_KMA_TMU : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1098 NM_CUBIS: 8 CUBIS
+ SG_ Destination_CUBIS : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_CUBIS : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_CUBIS : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1099 NM_TMU: 8 TMU
+ SG_ Destination_TMU : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_TMU : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_TMU : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1095 NM_IPM: 8 IPM
+ SG_ Destination_IPM : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_IPM : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_IPM : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1107 NM_RSE_R: 8 RSE_R
+ SG_ Destination_RSE_R : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_RSE_R : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_RSE_R : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1093 NM_RRC: 8 RRC
+ SG_ Destination_RRC : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_RRC : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_RRC : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1109 NM_CGW: 8 CGW
+ SG_ Destination_CGW : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_CGW : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_CGW : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1106 NM_RSE_L: 8 RSE_L
+ SG_ Destination_RSE_L : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_RSE_L : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_RSE_L : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1096 NM_AMP: 8 AMP
+ SG_ Destination_AMP : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_AMP : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_AMP : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1103 NM_EDT: 8 EDT
+ SG_ Destination_EDT : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_EDT : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_EDT : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1110 NM_SWRC: 8 SWRC
+ SG_ Destination_SWRC : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_SWRC : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_SWRC : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,IBOX,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1102 NM_IBOX: 8 IBOX
+ SG_ Destination_IBOX : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_IBOX : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,CLU,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_IBOX : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,CLU,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1101 NM_CLU: 8 CLU
+ SG_ Destination_CLU : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,FHCU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_CLU : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,FHCU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_CLU : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,FHCU,ASD,MON,AVM,KBD
+
+BO_ 1097 NM_FHCU: 8 FHCU
+ SG_ Destination_FHCU : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,ASD,MON,AVM,KBD
+ SG_ NMSleepFlag_FHCU : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,ASD,MON,AVM,KBD
+ SG_ NMCommandCode_FHCU : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,ASD,MON,AVM,KBD
+
+BO_ 1094 NM_ASD: 8 ASD
+ SG_ Destination_ASD : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,MON,AVM,KBD
+ SG_ NMSleepFlag_ASD : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,MON,AVM,KBD
+ SG_ NMCommandCode_ASD : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,MON,AVM,KBD
+
+BO_ 1089 NM_MON: 8 MON
+ SG_ Destination_MON : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,AVM,KBD
+ SG_ NMSleepFlag_MON : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,AVM,KBD
+ SG_ NMCommandCode_MON : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,AVM,KBD
+
+BO_ 1104 NM_AVM: 8 AVM
+ SG_ Destination_AVM : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,KBD
+ SG_ NMSleepFlag_AVM : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,KBD
+ SG_ NMCommandCode_AVM : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,KBD
+
+BO_ 1090 NM_KBD: 8 KBD
+ SG_ Destination_KBD : 7|8@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM
+ SG_ NMSleepFlag_KBD : 13|2@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM
+ SG_ NMCommandCode_KBD : 10|3@0+ (1,0) [0|0] ""  CLOCK,HUD,H_U,DATC,CCP,KMA_TMU,CUBIS,TMU,IPM,RSE_R,RRC,CGW,RSE_L,AMP,EDT,SWRC,IBOX,CLU,FHCU,ASD,MON,AVM
+
