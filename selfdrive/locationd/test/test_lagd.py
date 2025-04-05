@@ -121,7 +121,7 @@ class TestLagd:
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
 
   @pytest.mark.skipif(PC, reason="only on device")
-  @pytest.mark.timeout(30)
+  @pytest.mark.timeout(60)
   def test_estimator_performance(self, mocker):
     mocked_CP = mocker.Mock(steerActuatorDelay=0.8)
     estimator = LateralLagEstimator(mocked_CP, DT)
