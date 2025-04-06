@@ -42,7 +42,24 @@ Please refer to [Recommended Branches](#-recommended-branches) to find your pref
 | `staging-c3` | https://staging-c3.sunnypilot.ai |
 |   `dev-c3`   | https://dev-c3.sunnypilot.ai     |
 
-Requires further assistance with software installation? Join the [sunnypilot Discord server](https://discord.sunnypilot.com) and message us in the `#installation-help` channel.
+### If you want to use our newest branches (our rewrite)
+> [!TIP]
+>You can see the rewrite state on our [rewrite project board](https://github.com/orgs/sunnypilot/projects/2), and to install the new branches, you can use the following links
+
+
+> [!IMPORTANT]
+> It is recommended to [re-flash AGNOS](https://flash.comma.ai/) if you intend to downgrade from the new branches.
+> You can still restore the latest sunnylink backup made on the old branches.
+
+|      Branch      |                 Installation URL              |
+|:----------------:|:---------------------------------------------:|
+| `staging-c3-new` | `https://staging-c3-new.sunnypilot.ai`        |
+|   `dev-c3-new`   | `https://dev-c3-new.sunnypilot.ai`            |
+| `custom-branch`  | `https://install.sunnypilot.ai/{branch_name}` |
+| `release-c3-new` |            **Not yet available**.             |
+
+> [!TIP]
+> Do you require further assistance with software installation? Join the [sunnypilot Discord server](https://discord.sunnypilot.com) and message us in the `#installation-help` channel.
 
 ## 🎆 Pull Requests
 We welcome both pull requests and issues on GitHub. Bug fixes are encouraged.
@@ -66,12 +83,12 @@ sunnypilot is released under the [MIT License](LICENSE). This repository include
 
 The original openpilot license notice, including comma.ai’s indemnification and alpha software disclaimer, is reproduced below as required:
 
-> openpilot is released under the MIT license. Some parts of the software are released under other licenses as specified.  
->  
-> Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by user.  
->  
-> **THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.  
-> YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.  
+> openpilot is released under the MIT license. Some parts of the software are released under other licenses as specified.
+>
+> Any user of this software shall indemnify and hold harmless Comma.ai, Inc. and its directors, officers, employees, agents, stockholders, affiliates, subcontractors and customers from and against all allegations, claims, actions, suits, demands, damages, liabilities, obligations, losses, settlements, judgments, costs and expenses (including without limitation attorneys’ fees and costs) which arise out of, relate to or result from any use of this software by user.
+>
+> **THIS IS ALPHA QUALITY SOFTWARE FOR RESEARCH PURPOSES ONLY. THIS IS NOT A PRODUCT.
+> YOU ARE RESPONSIBLE FOR COMPLYING WITH LOCAL LAWS AND REGULATIONS.
 > NO WARRANTY EXPRESSED OR IMPLIED.**
 
 For full license terms, please see the [`LICENSE`](LICENSE) file.
