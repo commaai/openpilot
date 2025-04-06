@@ -136,6 +136,7 @@ struct OnroadEventSP @0xda96579883444c35 {
     controlsMismatchLateral @12;
     hyundaiRadarTracksConfirmed @13;
     experimentalModeSwitched @14;
+    wrongCarModeAlertOnly @15;
   }
 }
 

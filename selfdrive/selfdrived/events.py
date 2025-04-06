@@ -11,7 +11,7 @@ from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
 
 from openpilot.sunnypilot.selfdrive.selfdrived.events_base import EventsBase, Priority, ET, Alert, \
   NoEntryAlert, SoftDisableAlert, UserSoftDisableAlert, ImmediateDisableAlert, EngagementAlert, NormalPermanentAlert, \
-  StartupAlert, AlertCallbackType
+  StartupAlert, AlertCallbackType, wrong_car_mode_alert
 
 
 AlertSize = log.SelfdriveState.AlertSize
@@ -168,13 +168,6 @@ def high_cpu_usage_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
 
 def modeld_lagging_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   return NormalPermanentAlert("Driving Model Lagging", f"{sm['modelV2'].frameDropPerc:.1f}% frames dropped")
-
-
-def wrong_car_mode_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  text = "Enable Adaptive Cruise to Engage"
-  if CP.brand == "honda":
-    text = "Enable Main Switch to Engage"
-  return NoEntryAlert(text)
 
 
 def joystick_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
