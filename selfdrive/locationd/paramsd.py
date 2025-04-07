@@ -201,24 +201,25 @@ def check_valid_with_hysteresis(current_valid: bool, val: float, threshold: floa
 
 # TODO: Remove this function after few releases (added in 0.9.9)
 def migrate_cached_vehicle_params_if_needed(params_reader: Params):
-  last_parameters_data = params_reader.get("LiveParameters")
-  if last_parameters_data is None:
+  last_parameters_data_old = params_reader.get("LiveParameters")
+  last_parameters_data = params_reader.get("LiveParametersV2")
+  if last_parameters_data_old is None or last_parameters_data is not None:
     return
 
   try:
-    last_parameters_dict = json.loads(last_parameters_data)
+    last_parameters_dict = json.loads(last_parameters_data_old)
     last_parameters_msg = messaging.new_message('liveParameters')
     last_parameters_msg.liveParameters.valid = True
     last_parameters_msg.liveParameters.steerRatio = last_parameters_dict['steerRatio']
     last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_dict['stiffnessFactor']
     last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_dict['angleOffsetAverageDeg']
-    params_reader.put("LiveParameters", last_parameters_msg.to_bytes())
+    params_reader.put("LiveParametersV2", last_parameters_msg.to_bytes())
   except Exception:
     pass
 
 
 def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, replay: bool, debug: bool):
-  last_parameters_data = params_reader.get("LiveParameters")
+  last_parameters_data = params_reader.get("LiveParametersV2")
   last_carparams_data = params_reader.get("CarParamsPrevRoute")
 
   steer_ratio, stiffness_factor, angle_offset_deg, p_initial = CP.steerRatio, 1.0, 0.0, None
@@ -288,7 +289,7 @@ def main():
 
       msg_dat = msg.to_bytes()
       if sm.frame % 1200 == 0:  # once a minute
-        params_reader.put_nonblocking("LiveParameters", msg_dat)
+        params_reader.put_nonblocking("LiveParametersV2", msg_dat)
 
       pm.send('liveParameters', msg_dat)
 
