@@ -519,9 +519,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="calibrationd",
-    pubs=["carState", "cameraOdometry", "carParams"],
+    pubs=["carState", "cameraOdometry"],
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
