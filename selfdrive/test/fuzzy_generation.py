@@ -1,10 +1,9 @@
 import capnp
 import hypothesis.strategies as st
 from typing import Any
+from types import ModuleType
 from collections.abc import Callable
 from functools import cache
-
-from cereal import log
 
 DrawType = Callable[[st.SearchStrategy], Any]
 
@@ -76,6 +75,6 @@ class FuzzyGenerator:
     return data
 
   @classmethod
-  def get_random_event_msg(cls, draw: DrawType, events: list[str], real_floats: bool = False) -> list[dict[str, Any]]:
+  def get_random_event_msg(cls, draw: DrawType, log_schema: ModuleType, events: list[str], real_floats: bool = False) -> list[dict[str, Any]]:
     fg = cls(draw, real_floats=real_floats)
-    return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
+    return [draw(fg.generate_struct(log_schema.Event.schema, e)) for e in sorted(events)]
