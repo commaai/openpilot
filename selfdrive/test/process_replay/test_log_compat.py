@@ -24,4 +24,4 @@ def test_log_backwards_compatibility(schema_path, data):
   lr = list(LogReader.from_bytes(dat))
   assert len(lr) == len(msgs)
   # calling which() on a removed union type will raise an exception
-  assert set([m.which() for m in lr]) == set([msg.which() for msg in msgs])
+  assert {m.which() for m in lr} == {msg.which() for msg in msgs}
