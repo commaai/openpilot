@@ -215,7 +215,7 @@ def migrate_cached_vehicle_params_if_needed(params_reader: Params):
     last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_dict['angleOffsetAverageDeg']
     params_reader.put("LiveParametersV2", last_parameters_msg.to_bytes())
   except Exception as e:
-    cloudlog.error(f"Failed to migrate LiveParameters to LiveParametersV2: {e}")
+    cloudlog.error(f"Failed to perform parameter migration: {e}")
     params_reader.remove("LiveParameters")
 
 
