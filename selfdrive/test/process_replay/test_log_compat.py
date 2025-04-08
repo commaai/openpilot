@@ -18,6 +18,8 @@ TARGET_BRANCH = os.environ.get("TARGET_BRANCH", "master")
 @pytest.fixture(scope="module")
 def parent_schema_file(tmp_path_factory):
   tmp_dir = tmp_path_factory.mktemp("cereal")
+  # FIXME this is an ugly way to do this, but for some reason capnp.load ignores the `imports``, and only looks at dir where the file is
+  # how it supposed to work is: capnp.load(my_custom_log_capnp, imports=[CEREAL_PATH])
   shutil.copytree(CEREAL_PATH, tmp_dir, dirs_exist_ok=True)
 
   commit = run_cmd(["git", "merge-base", f"{TARGET_REMOTE}/{TARGET_BRANCH}", "HEAD"])
