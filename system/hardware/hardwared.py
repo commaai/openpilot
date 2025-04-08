@@ -99,6 +99,7 @@ def touch_thread(end_event):
 def hw_state_thread(end_event, hw_queue):
   """Handles non critical hardware state, and sends over queue"""
   count = 0
+  registered_count = 0
   prev_hw_state = None
 
   modem_version = None
@@ -148,6 +149,16 @@ def hw_state_thread(end_event, hw_queue):
           hw_queue.put_nowait(hw_state)
         except queue.Full:
           pass
+
+        if AGNOS and (hw_state.network_info is not None) and (hw_state.network_info.get('state', None) == "REGISTERED"):
+          registered_count += 1
+        else:
+          registered_count = 0
+
+        if registered_count > 10:
+          cloudlog.warning(f"Modem stuck in registered state {hw_state.network_info}, bringing connection back up")
+          os.system("nmcli conn up esim")
+          registered_count = 0
 
         if not modem_configured and HARDWARE.get_modem_version() is not None:
           cloudlog.warning("configuring modem")
