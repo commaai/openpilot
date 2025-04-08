@@ -30,7 +30,6 @@ class TestParamsd:
     msg = get_random_live_parameters(CP)
     params.put("LiveParametersV2", msg.to_bytes())
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes())
-    params.remove("LiveParameters")
 
     migrate_cached_vehicle_params_if_needed(params) # this is not tested here but should not mess anything up or throw an error
     sr, sf, offset, p_init = retrieve_initial_vehicle_params(params, CP, replay=True, debug=True)
@@ -57,3 +56,4 @@ class TestParamsd:
     np.testing.assert_allclose(sr, msg.liveParameters.steerRatio)
     np.testing.assert_allclose(sf, msg.liveParameters.stiffnessFactor)
     np.testing.assert_allclose(offset, msg.liveParameters.angleOffsetAverageDeg)
+    assert params.get("LiveParametersV2") is not None
