@@ -57,3 +57,12 @@ class TestParamsd:
     np.testing.assert_allclose(sf, msg.liveParameters.stiffnessFactor)
     np.testing.assert_allclose(offset, msg.liveParameters.angleOffsetAverageDeg)
     assert params.get("LiveParametersV2") is not None
+
+  def test_read_saved_params_corrupted_old_format(self):
+    params = Params()
+    params.put("LiveParameters", b'\x00\x00\x02\x00\x01\x00:F\xde\xed\xae;')
+    params.remove("LiveParametersV2")
+
+    migrate_cached_vehicle_params_if_needed(params)
+    assert params.get("LiveParameters") is None
+    assert params.get("LiveParametersV2") is None
