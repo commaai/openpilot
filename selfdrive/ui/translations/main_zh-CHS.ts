@@ -149,7 +149,7 @@ Please use caution when using this feature. Only use the blinker when traffic an
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation>纵向机动模式</translation>
+        <translation>纵向操控测试模式</translation>
     </message>
     <message>
         <source>sunnypilot Longitudinal Control (Alpha)</source>
@@ -507,7 +507,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;闲置&lt;/span&gt;：请连接到不限流量的网络</translation>
     </message>
 </context>
 <context>
