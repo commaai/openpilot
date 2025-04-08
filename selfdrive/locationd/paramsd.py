@@ -214,8 +214,9 @@ def migrate_cached_vehicle_params_if_needed(params_reader: Params):
     last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_dict['stiffnessFactor']
     last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_dict['angleOffsetAverageDeg']
     params_reader.put("LiveParametersV2", last_parameters_msg.to_bytes())
-  except Exception:
-    pass
+  except Exception as e:
+    cloudlog.error(f"Failed to migrate LiveParameters to LiveParametersV2: {e}")
+    params_reader.remove("LiveParameters")
 
 
 def retrieve_initial_vehicle_params(params_reader: Params, CP: car.CarParams, replay: bool, debug: bool):
