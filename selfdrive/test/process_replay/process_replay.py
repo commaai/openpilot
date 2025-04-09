@@ -462,7 +462,7 @@ CONFIGS = [
     proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "livePose", "liveParameters", "radarState",
+      "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
@@ -516,9 +516,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="calibrationd",
-    pubs=["carState", "cameraOdometry", "carParams"],
+    pubs=["carState", "cameraOdometry"],
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -542,13 +543,22 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="paramsd",
-    pubs=["livePose", "liveCalibration", "carState", "carControl", "controlsState"],
-    subs=["liveParameters", "liveDelay"],
+    pubs=["livePose", "liveCalibration", "carState"],
+    subs=["liveParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="lagd",
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "controlsState"],
+    subs=["liveDelay"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="ubloxd",

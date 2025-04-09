@@ -5,6 +5,8 @@ import numpy as np
 
 from openpilot.selfdrive.locationd.models.constants import ObservationKind
 
+from rednose.helpers.kalmanfilter import KalmanFilter
+
 if __name__=="__main__":
   import sympy as sp
   from rednose.helpers.ekf_sym import gen_code
@@ -24,7 +26,7 @@ class States:
   ACCEL_BIAS = slice(15, 18)  # Acceletometer bias in m/s**2
 
 
-class PoseKalman:
+class PoseKalman(KalmanFilter):
   name = "pose"
 
   # state
@@ -50,10 +52,10 @@ class PoseKalman:
                3**2, 3**2, 3**2,
                0.005**2, 0.005**2, 0.005**2])
 
-  obs_noise = {ObservationKind.PHONE_GYRO: np.array([0.025**2, 0.025**2, 0.025**2]),
-               ObservationKind.PHONE_ACCEL: np.array([.5**2, .5**2, .5**2]),
-               ObservationKind.CAMERA_ODO_TRANSLATION: np.array([0.5**2, 0.5**2, 0.5**2]),
-               ObservationKind.CAMERA_ODO_ROTATION: np.array([0.05**2, 0.05**2, 0.05**2])}
+  obs_noise = {ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
+               ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
+               ObservationKind.CAMERA_ODO_TRANSLATION: np.diag([0.5**2, 0.5**2, 0.5**2]),
+               ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2])}
 
   @staticmethod
   def generate_code(generated_dir):
@@ -102,35 +104,6 @@ class PoseKalman:
     dim_state, dim_state_err = PoseKalman.initial_x.shape[0], PoseKalman.initial_P.shape[0]
     self.filter = EKF_sym_pyx(generated_dir, self.name, PoseKalman.Q, PoseKalman.initial_x, PoseKalman.initial_P,
                               dim_state, dim_state_err, max_rewind_age=max_rewind_age)
-
-  @property
-  def x(self):
-    return self.filter.state()
-
-  @property
-  def P(self):
-    return self.filter.covs()
-
-  @property
-  def t(self):
-    return self.filter.get_filter_time()
-
-  def predict_and_observe(self, t, kind, data, obs_noise=None):
-    data = np.atleast_2d(data)
-    if obs_noise is None:
-      obs_noise = self.obs_noise[kind]
-    R = self._get_R(len(data), obs_noise)
-    return self.filter.predict_and_update_batch(t, kind, data, R)
-
-  def reset(self, t, x_init, P_init):
-    self.filter.init_state(x_init, P_init, t)
-
-  def _get_R(self, n, obs_noise):
-    dim = obs_noise.shape[0]
-    R = np.zeros((n, dim, dim))
-    for i in range(n):
-      R[i, :, :] = np.diag(obs_noise)
-    return R
 
 
 if __name__ == "__main__":
