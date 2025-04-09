@@ -22,7 +22,7 @@ source_segments = [
   ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.HYUNDAI_KIA_EV6 (+ QCOM GPS)
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.TOYOTA_PRIUS
   ("TOYOTA2", "0982d79ebb0de295|2021-01-03--20-03-36--6"),     # TOYOTA.TOYOTA_RAV4
-  ("TOYOTA3", "f7d7e3538cda1a2a|2021-08-16--08-55-34--6"),     # TOYOTA.TOYOTA_COROLLA_TSS2
+  ("TOYOTA3", "8011d605be1cbb77|000000cc--8e8d8ec716--6"),     # TOYOTA.TOYOTA_COROLLA_TSS2
   ("HONDA", "eb140f119469d9ab|2021-06-12--10-46-24--27"),      # HONDA.HONDA_CIVIC (NIDEC)
   ("HONDA2", "7d2244f34d1bbcda|2021-06-25--12-25-37--26"),     # HONDA.HONDA_ACCORD (BOSCH)
   ("CHRYSLER", "4deb27de11bee626|2021-02-20--11-28-55--8"),    # CHRYSLER.CHRYSLER_PACIFICA_2018_HYBRID
@@ -32,6 +32,7 @@ source_segments = [
   ("GM2", "376bf99325883932|2022-10-27--13-41-22--1"),         # GM.CHEVROLET_BOLT_EUV
   ("NISSAN", "35336926920f3571|2021-02-12--18-38-48--46"),     # NISSAN.NISSAN_XTRAIL
   ("VOLKSWAGEN", "de9592456ad7d144|2021-06-29--11-00-15--6"),  # VOLKSWAGEN.VOLKSWAGEN_GOLF
+  # FIXME the sensor timings are bad in mazda segment, we're not fully testing it, but it should be replaced
   ("MAZDA", "bd6a637565e91581|2021-10-30--15-14-53--4"),       # MAZDA.MAZDA_CX9_2021
   ("FORD", "54827bf84c38b14f|2023-01-26--21-59-07--4"),        # FORD.FORD_BRONCO_SPORT_MK1
   ("RIVIAN", "bc095dc92e101734|000000db--ee9fe46e57--1"),      # RIVIAN.RIVIAN_R1_GEN1
@@ -46,7 +47,7 @@ segments = [
   ("HYUNDAI2", "regen306779F6870|2024-10-03--04-03-23--0"),
   ("TOYOTA", "regen4A5115B248D|2025-03-04--03-21-43--0"),
   ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
-  ("TOYOTA3", "regen4CE950B0267|2024-08-30--02-51-30--0"),
+  ("TOYOTA3", "8011d605be1cbb77|000000cc--8e8d8ec716--6"),
   ("HONDA", "regenB8CABEC09CC|2025-03-04--03-32-55--0"),
   ("HONDA2", "regen4B38A7428CD|2024-08-30--02-56-31--0"),
   ("CHRYSLER", "regenF3DBBA9E8DF|2024-08-30--02-59-03--0"),
@@ -62,7 +63,7 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "tesla", "rivian"]
+excluded_interfaces = ["mock", "tesla"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
