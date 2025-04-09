@@ -118,7 +118,7 @@ class BlockAverage:
     self.valid_blocks = valid_blocks
 
   def update(self, value: float):
-    self.values[self.block_idx] = (self.idx * self.values[self.block_idx] + (self.block_size - self.idx) * value) / self.block_size
+    self.values[self.block_idx] = (self.idx * self.values[self.block_idx] + value) / (self.idx + 1)
     self.idx = (self.idx + 1) % self.block_size
     if self.idx == 0:
       self.block_idx = (self.block_idx + 1) % self.num_blocks
