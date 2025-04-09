@@ -41,23 +41,23 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regenA67A128BCD8|2024-08-30--02-36-22--0"),
-  ("HYUNDAI", "regenCCD47FEBC0C|2025-03-04--03-21-48--0"),
-  ("HYUNDAI2", "regen306779F6870|2024-10-03--04-03-23--0"),
-  ("TOYOTA", "regen4A5115B248D|2025-03-04--03-21-43--0"),
-  ("TOYOTA2", "regen6E484EDAB96|2024-08-30--02-47-37--0"),
-  ("TOYOTA3", "8011d605be1cbb77|000000cc--8e8d8ec716--6"),
-  ("HONDA", "regenB8CABEC09CC|2025-03-04--03-32-55--0"),
-  ("HONDA2", "regen4B38A7428CD|2024-08-30--02-56-31--0"),
-  ("CHRYSLER", "regenF3DBBA9E8DF|2024-08-30--02-59-03--0"),
-  ("RAM", "regenDB02684E00A|2024-08-30--03-02-54--0"),
-  ("SUBARU", "regen5E3347D0A0F|2025-03-04--03-23-55--0"),
-  ("GM", "regen9ADBECBCD1C|2024-08-30--03-13-04--0"),
-  ("NISSAN", "regen58464878D07|2024-08-30--03-15-31--0"),
-  ("VOLKSWAGEN", "regenED976DEB757|2024-08-30--03-18-02--0"),
+  ("BODY", "regen2F3C7259F1B|2025-04-08--23-00-23--0"),
+  ("HYUNDAI", "regenAA0FC4ED71E|2025-04-08--22-57-50--0"),
+  ("HYUNDAI2", "regenAFB9780D823|2025-04-08--23-00-34--0"),
+  ("TOYOTA", "regen218A4DCFAA1|2025-04-08--22-57-51--0"),
+  ("TOYOTA2", "regen107352E20EB|2025-04-08--22-57-46--0"),
+  ("TOYOTA3", "regen1455E3B4BDF|2025-04-09--03-26-06--0"),
+  ("HONDA", "regenB328FF8BA0A|2025-04-08--22-57-45--0"),
+  ("HONDA2", "regen6170C8C9A35|2025-04-08--22-57-46--0"),
+  ("CHRYSLER", "regen5B28FC2A437|2025-04-08--23-04-24--0"),
+  ("RAM", "regenBF81EA96E08|2025-04-08--23-06-54--0"),
+  ("SUBARU", "regen7366F13F6A1|2025-04-08--23-07-07--0"),
+  ("GM", "regen1271097D038|2025-04-09--03-26-00--0"),
+  ("NISSAN", "regen15D60604EAB|2025-04-08--23-06-59--0"),
+  ("VOLKSWAGEN", "regen0F2F06C9539|2025-04-08--23-06-56--0"),
   ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
-  ("FORD", "regenA75209BD115|2025-03-04--03-23-53--0"),
-  ("RIVIAN", "bc095dc92e101734|000000db--ee9fe46e57--1"),
+  ("FORD", "regen755D8CB1E1F|2025-04-08--23-13-43--0"),
+  ("RIVIAN", "regen5FCAC896BBE|2025-04-08--23-13-35--0"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -195,7 +195,7 @@ if __name__ == "__main__":
           continue
 
         # to speed things up, we only test all segments on card
-        if cfg.proc_name != 'card' and car_brand not in ('HYUNDAI', 'TOYOTA', 'HONDA', 'SUBARU', 'FORD'):
+        if cfg.proc_name != 'card' and car_brand not in ('HYUNDAI', 'TOYOTA', 'HONDA', 'SUBARU', 'FORD', 'RIVIAN'):
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
