@@ -240,6 +240,7 @@ class TestCarModelBase(unittest.TestCase):
           continue
 
         to_send = libsafety_py.make_CANPacket(msg.address, msg.src % 4, msg.dat)
+        self.safety.safety_fwd_hook(msg.src, msg.address)
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
