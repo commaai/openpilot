@@ -9,7 +9,7 @@ from opendbc.car.fingerprints import MIGRATION
 from opendbc.car.toyota.values import EPS_SCALE, ToyotaSafetyFlags
 from opendbc.car.ford.values import CAR as FORD, FordFlags, FordSafetyFlags
 from opendbc.car.hyundai.values import HyundaiSafetyFlags
-from opendbc.can.gm.values import GMSafetyFlags
+from opendbc.car.gm.values import GMSafetyFlags
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_line_meta
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
