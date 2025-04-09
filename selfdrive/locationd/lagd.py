@@ -289,6 +289,7 @@ def retrieve_initial_lag(params_reader: Params, CP: car.CarParams):
           raise Exception("Car model mismatch")
 
         lag, valid_blocks = ld.lateralDelayEstimate, ld.validBlocks
+        assert valid_blocks <= BLOCK_NUM, "Invalid number of valid blocks"
         return lag, valid_blocks
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial lag: {e}")
