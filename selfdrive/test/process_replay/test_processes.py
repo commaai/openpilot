@@ -47,17 +47,17 @@ segments = [
   ("HYUNDAI2", "regenAFB9780D823|2025-04-08--23-00-34--0"),
   ("TOYOTA", "regen218A4DCFAA1|2025-04-08--22-57-51--0"),
   ("TOYOTA2", "regen107352E20EB|2025-04-08--22-57-46--0"),
-  ("TOYOTA3", "8011d605be1cbb77|000000cc--8e8d8ec716--6"), # locationd temp error
+  ("TOYOTA3", "regen1455E3B4BDF|2025-04-09--03-26-06--0"),
   ("HONDA", "regenB328FF8BA0A|2025-04-08--22-57-45--0"),
   ("HONDA2", "regen6170C8C9A35|2025-04-08--22-57-46--0"),
   ("CHRYSLER", "regen5B28FC2A437|2025-04-08--23-04-24--0"),
   ("RAM", "regenBF81EA96E08|2025-04-08--23-06-54--0"),
   ("SUBARU", "regen7366F13F6A1|2025-04-08--23-07-07--0"),
-  ("GM", "regen720F2BA4CF6|2024-08-30--03-09-15--0"), # controls mismatch
-  ("GM2", "regen9ADBECBCD1C|2024-08-30--03-13-04--0"), # controls mismatch
+  ("GM", "regen720F2BA4CF6|2024-08-30--03-09-15--0"),
+  ("GM2", "regen1271097D038|2025-04-09--03-26-00--0"),
   ("NISSAN", "regen15D60604EAB|2025-04-08--23-06-59--0"),
   ("VOLKSWAGEN", "regen0F2F06C9539|2025-04-08--23-06-56--0"),
-  ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"), # locationd temp error
+  ("MAZDA", "regenACF84CCF482|2024-08-30--03-21-55--0"),
   ("FORD", "regen755D8CB1E1F|2025-04-08--23-13-43--0"),
   ("RIVIAN", "regen5FCAC896BBE|2025-04-08--23-13-35--0"),
 ]
