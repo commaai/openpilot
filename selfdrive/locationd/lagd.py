@@ -278,7 +278,7 @@ class LateralLagEstimator:
 
 
 def retrieve_initial_lag(params_reader: Params, CP: car.CarParams):
-  last_lag_data = params_reader.get("LiveLag")
+  last_lag_data = params_reader.get("LiveDelay")
   last_carparams_data = params_reader.get("CarParamsPrevRoute")
 
   if last_lag_data is not None:
@@ -329,4 +329,4 @@ def main():
       pm.send('liveDelay', lag_msg_dat)
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
-        params_reader.put_nonblocking("LiveLag", lag_msg_dat)
+        params_reader.put_nonblocking("LiveDelay", lag_msg_dat)

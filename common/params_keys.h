@@ -71,7 +71,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"LastPowerDropDetected", CLEAR_ON_MANAGER_START},
     {"LastUpdateException", CLEAR_ON_MANAGER_START},
     {"LastUpdateTime", PERSISTENT},
-    {"LiveLag", PERSISTENT},
+    {"LiveDelay", PERSISTENT},
     {"LiveParameters", PERSISTENT},
     {"LiveParametersV2", PERSISTENT},
     {"LiveTorqueParameters", PERSISTENT | DONT_LOG},
