@@ -2280,10 +2280,12 @@ struct LiveTorqueParametersData {
 
 struct LiveDelayData {
   lateralDelay @0 :Float32;
+  lateralDelayStd @5 :Float32;
   validBlocks @1 :Int32;
   status @2 :Status;
 
   lateralDelayEstimate @3 :Float32;
+  lateralDelayStdEstimate @6 :Float32;
   points @4 :List(Float32);
 
   enum Status {
