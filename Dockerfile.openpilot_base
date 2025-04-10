@@ -66,6 +66,7 @@ ARG USER_UID=1001
 RUN useradd -m -s /bin/bash -u $USER_UID $USER
 RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN echo "alias adb_shell='/home/$USER/tools/adb_shell.sh'" >> /home/$USER/.bashrc
 USER $USER
 
 COPY --chown=$USER pyproject.toml uv.lock /home/$USER
