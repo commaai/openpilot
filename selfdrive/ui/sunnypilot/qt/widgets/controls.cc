@@ -132,10 +132,7 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
 
         if (isVisible && spacingItem) {
           main_layout->removeItem(spacingItem);
-          delete spacingItem;
-          spacingItem = nullptr;
-        } else if (!isVisible && spacingItem == nullptr) {
-          spacingItem = new QSpacerItem(44, 44, QSizePolicy::Minimum, QSizePolicy::Fixed);
+        } else if (!isVisible && spacingItem != nullptr && main_layout->indexOf(spacingItem) == -1) {
           main_layout->insertItem(main_layout->indexOf(description), spacingItem);
         }
       }
@@ -145,8 +142,7 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
   }
 
   main_layout->addLayout(hlayout);
-  if (!desc.isEmpty() && spacingItem == nullptr) {
-    spacingItem = new QSpacerItem(44, 44, QSizePolicy::Minimum, QSizePolicy::Fixed);
+  if (!desc.isEmpty() && spacingItem != nullptr && main_layout->indexOf(spacingItem) == -1) {
     main_layout->insertItem(main_layout->count(), spacingItem);
   }
 
@@ -166,8 +162,7 @@ void AbstractControlSP_SELECTOR::hideEvent(QHideEvent *e) {
     description->hide();
   }
 
-  if (spacingItem == nullptr) {
-    spacingItem = new QSpacerItem(44, 44, QSizePolicy::Minimum, QSizePolicy::Fixed);
+  if (spacingItem != nullptr && main_layout->indexOf(spacingItem) == -1) {
     main_layout->insertItem(main_layout->indexOf(description), spacingItem);
   }
 }
