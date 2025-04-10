@@ -67,7 +67,7 @@ RUN useradd -m -s /bin/bash -u $USER_UID $USER
 RUN usermod -aG sudo $USER
 RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 COPY tools/adb_shell.sh /usr/local/bin/
-RUN echo "alias adb='/usr/local/bin/adb_shell.sh'" >> /home/$USER/.bashrc
+RUN echo "alias adb_shell='/usr/local/bin/adb_shell.sh'" >> /home/$USER/.bashrc
 USER $USER
 
 COPY --chown=$USER pyproject.toml uv.lock /home/$USER
