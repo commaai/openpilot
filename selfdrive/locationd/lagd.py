@@ -128,9 +128,19 @@ class BlockAverage:
     valid_block_idx = [i for i in range(self.valid_blocks) if i != self.block_idx]
     valid_and_current_idx = valid_block_idx + ([self.block_idx] if self.idx > 0 else [])
 
-    valid_mean = float(np.mean(self.values[valid_block_idx], axis=0).item()) if len(valid_block_idx) > 0 else float('nan')
-    current_mean = float(np.mean(self.values[valid_and_current_idx], axis=0).item()) if len(valid_and_current_idx) > 0 else float('nan')
-    return valid_mean, current_mean
+    if len(valid_block_idx) > 0:
+      valid_mean = float(np.mean(self.values[valid_block_idx], axis=0).item())
+      valid_std = float(np.std(self.values[valid_block_idx], axis=0).item())
+    else:
+      valid_mean, valid_std = float('nan'), float('nan')
+
+    if len(valid_and_current_idx) > 0:
+      current_mean = float(np.mean(self.values[valid_and_current_idx], axis=0).item())
+      current_std = float(np.std(self.values[valid_and_current_idx], axis=0).item())
+    else:
+      current_mean, current_std = float('nan'), float('nan')
+
+    return valid_mean, valid_std, current_mean, current_std
 
 
 class LateralLagEstimator:
@@ -181,17 +191,21 @@ class LateralLagEstimator:
 
     liveDelay = msg.liveDelay
 
-    valid_mean_lag, current_mean_lag = self.block_avg.get()
-    if self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag):
+    valid_mean_lag, valid_std, current_mean_lag, current_std = self.block_avg.get()
+    if self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
       liveDelay.status = log.LiveDelayData.Status.estimated
       liveDelay.lateralDelay = valid_mean_lag
+      liveDelay.lateralDelayStd = valid_std
     else:
       liveDelay.status = log.LiveDelayData.Status.unestimated
       liveDelay.lateralDelay = self.initial_lag
-    if not np.isnan(current_mean_lag):
+      liveDelay.lateralDelayStd = 0.0
+    if not np.isnan(current_mean_lag) and not np.isnan(current_std):
       liveDelay.lateralDelayEstimate = current_mean_lag
+      liveDelay.lateralDelayStdEstimate = current_std
     else:
       liveDelay.lateralDelayEstimate = self.initial_lag
+      liveDelay.lateralDelayStdEstimate = 0.0
     liveDelay.validBlocks = self.block_avg.valid_blocks
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
