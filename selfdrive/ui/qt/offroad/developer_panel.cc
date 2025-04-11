@@ -26,7 +26,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(longManeuverToggle);
 
   experimentalLongitudinalToggle = new ParamControl(
-    "ExperimentalLongitudinalEnabled",
+    "AlphaLongitudinalEnabled",
     tr("openpilot Longitudinal Control (Alpha)"),
     QString("<b>%1</b><br><br>%2")
       .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
@@ -69,7 +69,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
     if (!CP.getAlphaLongitudinalAvailable() || is_release) {
-      params.remove("ExperimentalLongitudinalEnabled");
+      params.remove("AlphaLongitudinalEnabled");
       experimentalLongitudinalToggle->setEnabled(false);
     }
 

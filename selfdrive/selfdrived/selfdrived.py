@@ -90,7 +90,7 @@ class SelfdriveD:
 
     # cleanup old params
     if not self.CP.alphaLongitudinalAvailable:
-      self.params.remove("ExperimentalLongitudinalEnabled")
+      self.params.remove("AlphaLongitudinalEnabled")
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
 
