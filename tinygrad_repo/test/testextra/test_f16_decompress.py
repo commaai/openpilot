@@ -7,7 +7,7 @@ import numpy as np
 
 class TestF16Decompression(unittest.TestCase):
   def test_u32_to_f16(self):
-    a = Tensor.randn(50, dtype=dtypes.float16, device=None if is_dtype_supported(dtypes.float16) else "CLANG:0")
+    a = Tensor.randn(50, dtype=dtypes.float16, device=None if is_dtype_supported(dtypes.float16) else "CPU")
     f16_as_u32 = a.bitcast(dtypes.uint32) if is_dtype_supported(dtypes.float16) else a.bitcast(dtypes.uint32).to(Device.DEFAULT)
     f16 = u32_to_f16(f16_as_u32)
     ref = a.numpy()

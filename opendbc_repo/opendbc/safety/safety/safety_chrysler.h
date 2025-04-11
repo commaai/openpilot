@@ -104,9 +104,8 @@ static void chrysler_rx_hook(const CANPacket_t *to_push) {
 
 static bool chrysler_tx_hook(const CANPacket_t *to_send) {
   const TorqueSteeringLimits CHRYSLER_STEERING_LIMITS = {
-    .max_steer = 261,
+    .max_torque = 261,
     .max_rt_delta = 112,
-    .max_rt_interval = 250000,
     .max_rate_up = 3,
     .max_rate_down = 3,
     .max_torque_error = 80,
@@ -114,9 +113,8 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
   };
 
   const TorqueSteeringLimits CHRYSLER_RAM_DT_STEERING_LIMITS = {
-    .max_steer = 350,
+    .max_torque = 350,
     .max_rt_delta = 112,
-    .max_rt_interval = 250000,
     .max_rate_up = 6,
     .max_rate_down = 6,
     .max_torque_error = 80,
@@ -124,9 +122,8 @@ static bool chrysler_tx_hook(const CANPacket_t *to_send) {
   };
 
   const TorqueSteeringLimits CHRYSLER_RAM_HD_STEERING_LIMITS = {
-    .max_steer = 361,
+    .max_torque = 361,
     .max_rt_delta = 182,
-    .max_rt_interval = 250000,
     .max_rate_up = 14,
     .max_rate_down = 14,
     .max_torque_error = 80,

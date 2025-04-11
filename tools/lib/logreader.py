@@ -300,11 +300,11 @@ class LogReader:
   def _run_on_segment(self, func, i):
     return func(self._get_lr(i))
 
-  def run_across_segments(self, num_processes, func, desc=None):
+  def run_across_segments(self, num_processes, func, disable_tqdm=False, desc=None):
     with multiprocessing.Pool(num_processes) as pool:
       ret = []
       num_segs = len(self.logreader_identifiers)
-      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs, desc=desc):
+      for p in tqdm.tqdm(pool.imap(partial(self._run_on_segment, func), range(num_segs)), total=num_segs, disable=disable_tqdm, desc=desc):
         ret.extend(p)
       return ret
 

@@ -4,6 +4,7 @@ typedef struct reg {
   volatile uint32_t *address;
   uint32_t value;
   uint32_t check_mask;
+  bool logged_fault;
 } reg;
 
 // 10 bit hash with 23 as a prime

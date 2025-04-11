@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image
 from pathlib import Path
 import boto3, botocore
+from tinygrad import Tensor, dtypes
 from tinygrad.helpers import fetch, tqdm, getenv
 import pandas as pd
 import concurrent.futures
@@ -70,7 +71,7 @@ def export_to_coco(class_map, annotations, image_list, dataset_path, output_path
   cats = [{"id": i, "name": c, "supercategory": None} for i, c in enumerate(classes)]
   categories_map = pd.DataFrame([(i, c) for i, c in enumerate(classes)], columns=["category_id", "category_name"])
   class_map = class_map.merge(categories_map, left_on="DisplayName", right_on="category_name", how="inner")
-  annotations = annotations[np.isin(annotations["ImageID"], image_list)]
+  annotations = annotations[annotations["ImageID"].isin(image_list)]
   annotations = annotations.merge(class_map, on="LabelName", how="inner")
   annotations["image_id"] = pd.factorize(annotations["ImageID"].tolist())[0]
   annotations[["height", "width"]] = annotations.apply(lambda x: extract_dims(dataset_path / f"{x['ImageID']}.jpg"), axis=1, result_type="expand")
@@ -96,8 +97,8 @@ def export_to_coco(class_map, annotations, image_list, dataset_path, output_path
     json.dump(coco_annotations, fp)
 
 def get_image_list(class_map, annotations, classes=MLPERF_CLASSES):
-  labels = class_map[np.isin(class_map["DisplayName"], classes)]["LabelName"]
-  image_ids = annotations[np.isin(annotations["LabelName"], labels)]["ImageID"].unique()
+  labels = class_map[class_map["DisplayName"].isin(classes)]["LabelName"]
+  image_ids = annotations[annotations["LabelName"].isin(labels)]["ImageID"].unique()
   return image_ids
 
 def download_image(bucket, subset, image_id, data_dir):
@@ -139,11 +140,7 @@ def fetch_openimages(output_fn:str, base_dir:Path, subset:str):
 
 def image_load(base_dir, subset, fn):
   img_folder = base_dir / f"{subset}/data"
-  img = Image.open(img_folder / fn).convert('RGB')
-  import torchvision.transforms.functional as F
-  ret = F.resize(img, size=(800, 800))
-  ret = np.array(ret)
-  return ret, img.size[::-1]
+  return Image.open(img_folder / fn).convert('RGB')
 
 def prepare_target(annotations, img_id, img_size):
   boxes = [annot["bbox"] for annot in annotations]
@@ -164,7 +161,7 @@ def iterate(coco, base_dir, bs=8):
     X, targets  = [], []
     for img_id in image_ids[i:i+bs]:
       img_dict = coco.loadImgs(img_id)[0]
-      x, original_size = image_load(base_dir, img_dict['subset'], img_dict["file_name"])
+      x, original_size = resize(image_load(base_dir, img_dict['subset'], img_dict["file_name"]))
       X.append(x)
       annotations = coco.loadAnns(coco.getAnnIds(img_id))
       targets.append(prepare_target(annotations, img_id, original_size))
@@ -179,6 +176,34 @@ def download_dataset(base_dir:Path, subset:str) -> Path:
 
   return ann_file
 
+def random_horizontal_flip(img, tgt, prob=0.5):
+  import torch
+  import torchvision.transforms.functional as F
+  if torch.rand(1) < prob:
+    w = img.size[0]
+    img = F.hflip(img)
+    tgt["boxes"][:, [0, 2]] = w - tgt["boxes"][:, [2, 0]]
+  return img, tgt
+
+def resize(img:Image, tgt:dict[str, np.ndarray|tuple]|None=None, size:tuple[int, int]=(800, 800)) -> tuple[np.ndarray, np.ndarray, tuple]|tuple[np.ndarray, tuple]:
+  import torchvision.transforms.functional as F
+  img_size = img.size[::-1]
+  img = F.resize(img, size=size)
+  img = np.array(img)
+
+  if tgt is not None:
+    ratios = [s / s_orig for s, s_orig in zip(size, img_size)]
+    ratio_h, ratio_w = ratios
+    x_min, y_min, x_max, y_max = [tgt["boxes"][:, i] for i in range(tgt["boxes"].shape[-1])]
+    x_min = x_min * ratio_w
+    x_max = x_max * ratio_w
+    y_min = y_min * ratio_h
+    y_max = y_max * ratio_h
+
+    tgt["boxes"] = np.stack([x_min, y_min, x_max, y_max], axis=1)
+    return img, tgt, img_size
+
+  return img, img_size
 
 if __name__ == "__main__":
   download_dataset(base_dir:=getenv("BASE_DIR", BASEDIR), "train")

@@ -1,15 +1,14 @@
 #!/usr/bin/env python
 import unittest, pickle
-from typing import Tuple
 
 from tinygrad.dtype import dtypes, ConstType
 from tinygrad.codegen.linearize import linearize_uop
-from tinygrad.codegen.uopgraph import full_graph_rewrite, sym
+from tinygrad.codegen.devectorizer import full_graph_rewrite, sym
 from tinygrad.ops import UOp, Ops, graph_rewrite, sym_infer
 from tinygrad import Variable
 import functools
 
-def render(self) -> Tuple[str, ConstType, ConstType]:
+def render(self) -> tuple[str, ConstType, ConstType]:
   # NOTE: we need STORE so the ALU op has children
   glbl = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(), arg=0)
   uops = linearize_uop(full_graph_rewrite(UOp(Ops.STORE, dtypes.void, (glbl.index(UOp.const(dtypes.int, 0)), self)).sink()))
@@ -91,11 +90,16 @@ class TestSymbolic(unittest.TestCase):
 
   def test_factorize(self):
     a = Variable("a", 0, 8)
+    b = Variable("b", 0, 8)
     self.helper_test_variable(a*2+a*3, 0, 8*5, "(a*5)")
+    self.helper_test_variable(b+a*2+a*3, 0, 8*6, "(b+(a*5))")
 
   def test_factorize_no_mul(self):
     a = Variable("a", 0, 8)
+    b = Variable("b", 0, 8)
     self.helper_test_variable(a+a*3, 0, 8*4, "(a*4)")
+    self.helper_test_variable((a+b)+a*3, 0, 8*5, "(b+(a*4))")
+    self.helper_test_variable((a*3+b)+b*3, 0, 8*7, "((a*3)+(b*4))")
 
   def test_neg(self):
     self.helper_test_variable(-Variable("a", 0, 8), -8, 0, "(a*-1)")
@@ -108,7 +112,9 @@ class TestSymbolic(unittest.TestCase):
 
   def test_add_self(self):
     a = Variable("a", 0, 8)
+    b = Variable("b", 0, 8)
     self.helper_test_variable(a+a, 0, 16, "(a*2)")
+    self.helper_test_variable((a+b)+b, 0, 24, "(a+(b*2))")
 
   def test_sub_self(self):
     a = Variable("a", 0, 8)
@@ -133,6 +139,9 @@ class TestSymbolic(unittest.TestCase):
 
   def test_mod_1(self):
     self.helper_test_variable(Variable("a", 0, 8)%1, 0, 0, "0")
+
+  def test_max_folds(self):
+    self.helper_test_variable(Variable("a", 0, 20).maximum(10).maximum(11), 11, 20, "max(a, 11)")
 
   def test_add_min_max(self):
     self.helper_test_variable(Variable("a", 0, 8) * 2 + 12, 12, 16+12, "((a*2)+12)")
@@ -188,7 +197,8 @@ class TestSymbolic(unittest.TestCase):
 
   def test_mod_congruence_multiple_vars(self):
     self.helper_test_variable((9+9*Variable("x",0,3)+9*Variable("y",0,3))%10, 3, 9, "(((x*-1)+(y*-1))+9)")
-    self.helper_test_variable((7+9*Variable("x",0,2)+9*Variable("y",0,2)+Variable("z",0,2))%10, 3, 9, "(((z+(x*-1))+(y*-1))+7)")
+    self.helper_test_variable((7+9*Variable("x",0,2)+9*Variable("y",0,2)+Variable("z",0,2))%10, 3, 9,
+                              ("(((z+(x*-1))+(y*-1))+7)", "(((y*-1)+(z+(x*-1)))+7)"))
     self.helper_test_variable((10+12*Variable("x",0,2)+Variable("y", 0, 4)%3)%13, 8, 12, "(((x*-1)+(y%3))+10)")
 
   def test_div_congruence(self):
@@ -280,11 +290,11 @@ class TestSymbolic(unittest.TestCase):
 
   def test_lt_sum_factor_rhs_partial(self):
     self.helper_test_variable((Variable("a", 0, 6)*6 + Variable("b", 0, 6)*4 + Variable("c", 0, 6)*8) < 4, 0, 1,
-                              "((((a*3)+(b*2))+(c*4))<2)")
+                              ("((((a*3)+(b*2))+(c*4))<2)", "(((b*2)+((a*3)+(c*4)))<2)"))
 
   def test_lt_sum_factor_rhs_all(self):
     self.helper_test_variable((Variable("a", 0, 6)*6 + Variable("b", 0, 6)*4 + Variable("c", 0, 6)*8) < 2, 0, 1,
-                              "((((a*3)+(b*2))+(c*4))<1)")
+                              ("((((a*3)+(b*2))+(c*4))<1)", "(((b*2)+((a*3)+(c*4)))<1)"))
 
   def test_and_fold(self):
     self.helper_test_variable(uand([uconst(0), Variable("a", 0, 1)]), 0, 0, "0")
@@ -360,6 +370,7 @@ class TestSymbolic(unittest.TestCase):
     alu0 = gidx2*640+gidx1*160+(gidx0//5)*2+lidx0*320+lidx1*10
     self.helper_test_variable((alu0+lidx2*2+1)//20, 0, 8192,
                               ("((((((gidx0//5)+lidx2)//5)+lidx1)//2)+(((gidx2*32)+(gidx1*8))+(lidx0*16)))",
+                               "(((lidx1+((lidx2+(gidx0//5))//5))//2)+((gidx2*32)+((gidx1*8)+(lidx0*16))))",
                                "((((gidx1*8)+(gidx2*32))+(lidx0*16))+((lidx1+((lidx2+(gidx0//5))//5))//2))"))
 
   def test_sum_div_complex2(self):
@@ -381,7 +392,8 @@ class TestSymbolic(unittest.TestCase):
     gidx0 = Variable("gidx0", 0, 7)
     lidx2 = Variable("lidx2", 0, 12)
     lidx3 = Variable("lidx3", 0, 1)
-    self.helper_test_variable((gidx0+lidx2+lidx3)*4, 0, 80, "(((gidx0*4)+(lidx2*4))+(lidx3*4))")
+    self.helper_test_variable((gidx0+lidx2+lidx3)*4, 0, 80,
+                              ("(((gidx0*4)+(lidx2*4))+(lidx3*4))","((lidx3*4)+((gidx0*4)+(lidx2*4)))"))
 
   @unittest.expectedFailure
   def test_variable_divmod(self):
@@ -391,6 +403,17 @@ class TestSymbolic(unittest.TestCase):
     idx1 = Variable("idx1", 0, start_pos)
     self.helper_test_variable((idx0*v+idx1)//v, 0, 2, "(idx0)")
     self.helper_test_variable((idx0*v+idx1)%v, 0, start_pos, "idx1")
+
+  def test_divmod_variable_denom_fold_to_const(self):
+    x = Variable("x", 20, 23)
+    y = Variable("y", 8, 10)
+    self.helper_test_variable(x//y, 2, 2, "2")
+    self.helper_test_variable(x%y, 0, 7, "(x+(y*-2))")
+    # ensure all 4 corners are checked
+    x = Variable("x", -10, 10)
+    y = Variable("y", -8, 9)
+    self.helper_test_variable(x//y, -2147483648, 2147483647, "(x//y)")
+    self.helper_test_variable(x%y, -2147483648, 2147483647, "(x%y)")
 
   # TODO: simplify the expression
   def test_div_neg_all_range(self):
@@ -477,8 +500,8 @@ class TestSymbolic(unittest.TestCase):
     self.helper_test_variable((a*3+b*4<1).ne(True), 0, 1, "(((a+b)<1)!=True)")
     self.helper_test_variable((a*(-3)+b*4<1).ne(True), 0, 1, "((((a*-3)+(b*4))<1)!=True)")  # negative coeff, should not be simplified
     self.helper_test_variable((a*3+d*4<1).ne(True), 0, 1, "((((a*3)+(d*4))<1)!=True)")  # var can be negative, should not be simplified
-    self.helper_test_variable((a+b+c*2<1).ne(True), 0, 1, ("((((a+b)+c)<1)!=True)", "(((c+(a+b))<1)!=True)"))
-    self.helper_test_variable((a+b*2+c*4<1).ne(True), 0, 1, ("((((a+b)+c)<1)!=True)", "(((c+(a+b))<1)!=True)"))
+    self.helper_test_variable((a+b+c*2<1).ne(True), 0, 1, ("((((a+b)+c)<1)!=True)", "(((c+(a+b))<1)!=True)", '(((b+(a+c))<1)!=True)'))
+    self.helper_test_variable((a+b*2+c*4<1).ne(True), 0, 1, ("((((a+b)+c)<1)!=True)", "(((c+(a+b))<1)!=True)", '(((b+(a+c))<1)!=True)'))
 
   def test_where_removal(self):
     cond = Variable("a", 0, 3) < 2
@@ -510,6 +533,20 @@ class TestSymbolic(unittest.TestCase):
 
     # not combining  # TODO: can combine if one is identity element const
     self.helper_test_variable(aa+ab, 0, 6, "((a if (x<2) else b)+(a if (x<2) else 0))")
+
+  def test_where_cast(self):
+    s = Variable("s", 0, 3)
+    cond = s < 2
+    a = Variable("a", 0, 3)
+    b = Variable("b", 0, 3)
+    expr = cond.where(a, b).cast(dtypes.half)
+
+    # TODO: copied from render, render does not support cast
+    glbl = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(), arg=0)
+    uops = linearize_uop(full_graph_rewrite(UOp(Ops.STORE, dtypes.void, (glbl.index(UOp.const(dtypes.int, 0)), expr)).sink()))
+    rewritten_uop = [uop for uop in uops if uop.op is Ops.STORE][0].src[-1]
+
+    self.assertEqual(rewritten_uop, cond.where(a.cast(dtypes.half), b.cast(dtypes.half)))
 
   def test_symbolic_div(self):
     # from symbolic arange
@@ -583,6 +620,7 @@ class TestSymInfer(unittest.TestCase):
     c = Variable("c", 0, 10)
     var_vals = {a: 2, b: 3, c: 4}
     assert sym_infer(5, var_vals) == 5
+    assert sym_infer(4.2, var_vals) == 4.2
     assert sym_infer(a, var_vals) == 2
     assert sym_infer(b, var_vals) == 3
     assert sym_infer(a+b, var_vals) == 5
@@ -705,6 +743,7 @@ class TestSymbolicRealWorld(unittest.TestCase):
     self.assertIn(idx.render(),
       ("((((((((((lidx5+1)//16)*802816)+(((lidx5+1)%16)*49))+(gidx0*3211264))+(gidx1*784))+(gidx2*8))+(lidx4*100352))+lidx3)+2207744)",
        '((lidx3+((((((((lidx5+1)//16)*802816)+(((lidx5+1)%16)*49))+(gidx0*3211264))+(gidx1*784))+(gidx2*8))+(lidx4*100352)))+2207744)',
+       '((lidx3+((lidx4*100352)+((gidx2*8)+((gidx1*784)+((gidx0*3211264)+((((lidx5+1)//16)*802816)+(((lidx5+1)%16)*49)))))))+2207744)',
       ))
 
 class TestBounds(unittest.TestCase):

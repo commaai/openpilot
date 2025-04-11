@@ -1,21 +1,28 @@
 import unittest, math
 import numpy as np
 from tinygrad import dtypes
-from tinygrad.ops import UOp
+from tinygrad.ops import UOp, Ops
 from tinygrad.codegen.transcendental import payne_hanek_reduction, cody_waite_reduction, frexp, rintk, pow2if
 from test.helpers import eval_uop
 
 class TestTranscendentalFunctions(unittest.TestCase):
   def test_payne_hanek_reduction(self):
-    r, q = (eval_uop(u) for u in payne_hanek_reduction(UOp.const(dtypes.float64, 12 * math.pi + 0.1)))
+    # TODO: Test constant input when constant folding is fixed (or maybe test both variants)
+    # Load input value from a buffer to prevent constant folding
+    input_buf = UOp(Ops.DEFINE_GLOBAL, dtypes.double.ptr(), arg=1, src=())
+    loaded_value = UOp.load(input_buf.index(UOp.const(dtypes.int, 0)), dtype=dtypes.double)
+    def eval_payne_hanek_reduction(v:float) -> tuple[float, int]:
+      return tuple(eval_uop(u, [(dtypes.float64, [v])]) for u in payne_hanek_reduction(loaded_value))
+
+    r, q = eval_payne_hanek_reduction(12 * math.pi + 0.1)
     np.testing.assert_allclose(r, 0.1 - math.pi / 2)
     np.testing.assert_equal(q, 1)
 
-    r, q = (eval_uop(u) for u in payne_hanek_reduction(UOp.const(dtypes.float64, 12 * math.pi)))
+    r, q = eval_payne_hanek_reduction(12 * math.pi)
     np.testing.assert_allclose(r, 0.0, atol=1e-8)
     np.testing.assert_equal(q, 4)
 
-    r, q = (eval_uop(u) for u in payne_hanek_reduction(UOp.const(dtypes.float64, 12 * math.pi - 0.1)))
+    r, q = eval_payne_hanek_reduction(12 * math.pi - 0.1)
     np.testing.assert_allclose(r, -0.1)
     np.testing.assert_equal(q, 4)
 

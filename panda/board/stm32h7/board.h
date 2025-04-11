@@ -14,7 +14,6 @@
 #include "stm32h7/sound.h"
 #include "drivers/clock_source.h"
 #include "boards/red.h"
-#include "boards/red_chiplet.h"
 #include "boards/tres.h"
 #include "boards/cuatro.h"
 

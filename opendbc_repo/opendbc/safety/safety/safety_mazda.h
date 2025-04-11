@@ -50,11 +50,10 @@ static void mazda_rx_hook(const CANPacket_t *to_push) {
 
 static bool mazda_tx_hook(const CANPacket_t *to_send) {
   const TorqueSteeringLimits MAZDA_STEERING_LIMITS = {
-    .max_steer = 800,
+    .max_torque = 800,
     .max_rate_up = 10,
     .max_rate_down = 25,
     .max_rt_delta = 300,
-    .max_rt_interval = 250000,
     .driver_torque_multiplier = 1,
     .driver_torque_allowance = 15,
     .type = TorqueDriverLimited,
@@ -78,7 +77,7 @@ static bool mazda_tx_hook(const CANPacket_t *to_send) {
     // cruise buttons check
     if (addr == MAZDA_CRZ_BTNS) {
       // allow resume spamming while controls allowed, but
-      // only allow cancel while contrls not allowed
+      // only allow cancel while controls not allowed
       bool cancel_cmd = (GET_BYTE(to_send, 0) == 0x1U);
       if (!controls_allowed && !cancel_cmd) {
         tx = false;

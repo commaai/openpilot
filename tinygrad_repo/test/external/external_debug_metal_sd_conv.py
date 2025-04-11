@@ -29,7 +29,7 @@ ast = UOp(Ops.SINK, dtypes.void, arg=None, src=(
       UOp(Ops.LOAD, dtypes.half, arg=None, src=(
         UOp(Ops.DEFINE_GLOBAL, dtypes.half.ptr(), arg=4, src=()),
          x17,)),)),)),))
-opts = [Opt(op=OptOps.UPCAST, axis=3, amt=4), Opt(op=OptOps.UPCAST, axis=1, amt=4), Opt(op=OptOps.UNROLL, axis=2, amt=0), Opt(op=OptOps.UNROLL, axis=1, amt=0), Opt(op=OptOps.LOCAL, axis=1, amt=8), Opt(op=OptOps.LOCAL, axis=2, amt=8), Opt(op=OptOps.LOCAL, axis=2, amt=2)]
+opts = [Opt(op=OptOps.UPCAST, axis=3, arg=4), Opt(op=OptOps.UPCAST, axis=1, arg=4), Opt(op=OptOps.UNROLL, axis=2, arg=0), Opt(op=OptOps.UNROLL, axis=1, arg=0), Opt(op=OptOps.LOCAL, axis=1, arg=8), Opt(op=OptOps.LOCAL, axis=2, arg=8), Opt(op=OptOps.LOCAL, axis=2, arg=2)]
 
 k = Kernel(ast)
 for opt in opts: k.apply_opt(opt)

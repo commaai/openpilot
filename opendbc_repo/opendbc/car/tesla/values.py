@@ -39,9 +39,8 @@ class CAR(Platforms):
   TESLA_MODEL_3 = TeslaPlatformConfig(
     [
       # TODO: do we support 2017? It's HW3
-      # TODO: do we support 2025? It's HW4
       TeslaCarDocsHW3("Tesla Model 3 (with HW3) 2019-23"),
-      TeslaCarDocsHW4("Tesla Model 3 (with HW4) 2024"),
+      TeslaCarDocsHW4("Tesla Model 3 (with HW4) 2024-25"),
     ],
     CarSpecs(mass=1899., wheelbase=2.875, steerRatio=12.0),
   )

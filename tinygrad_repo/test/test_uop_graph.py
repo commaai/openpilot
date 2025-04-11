@@ -1,11 +1,12 @@
 from typing import List
-import unittest, time
+import unittest, time, pytest
 from tinygrad import dtypes, Device
 from tinygrad.helpers import DEBUG
-from tinygrad.ops import Ops, UOp, KernelInfo, UPat, PatternMatcher
+from tinygrad.ops import Ops, UOp, KernelInfo, UPat, PatternMatcher, track_rewrites
 from tinygrad.renderer import Renderer
 from tinygrad.codegen.lowerer import rewrite_shapetracker_with_index
-from tinygrad.codegen.uopgraph import full_graph_rewrite, graph_rewrite, expander, sym
+from tinygrad.codegen.devectorizer import full_graph_rewrite, graph_rewrite, sym
+from tinygrad.codegen.expander import expander, expand_rewrite
 from tinygrad.codegen.linearize import linearize_uop
 from tinygrad.shape.shapetracker import ShapeTracker, View
 
@@ -92,6 +93,57 @@ class TestGraphRewriteConst(unittest.TestCase):
     self.assertEqual(ret.op, Ops.CONST)
     self.assertEqual(ret.dtype, dtypes.int.vec(3))
     self.assertEqual(ret.arg, 2)
+
+xfail_broken_const_wraparound = pytest.mark.xfail(reason="const folding does not properly implement modular arithmetic")
+class TestModularWraparound(unittest.TestCase):
+  def _test(self, uop:UOp, expected:int):
+    results = to_uops_list([uop])
+    self.assertEqual(len(results), 1)
+    self.assertEqual(results[0].op, Ops.CONST)
+    self.assertEqual(results[0].dtype, uop.dtype)
+    self.assertEqual(results[0].arg, expected)
+
+  @xfail_broken_const_wraparound
+  def test_cast(self):
+    t = self._test
+    t(UOp.const(dtypes.uint, 0xABCD17D6).cast(dtypes.uint8), 0xD6)
+    t(UOp.const(dtypes.uint, 0xABCD17D6).cast(dtypes.uint8).cast(dtypes.uint), 0xD6)
+
+  @xfail_broken_const_wraparound
+  def test_mul(self):
+    t = self._test
+    t(UOp.const(dtypes.uint, 0xABCD17D6) * 0xAABBCCDD, 1147018174)
+    t(UOp.const(dtypes.int, 0xABCD17D6) * 10, -1241321892)
+
+  @xfail_broken_const_wraparound
+  def test_div(self):
+    t = self._test
+    t(UOp.const(dtypes.uint, 0xABCD17D6) * 0xAABBCCDD // 11, 104274379)
+    t(UOp.const(dtypes.int, 0xABCD17D6) * 10 // 11, -112847444)
+
+  @xfail_broken_const_wraparound
+  def test_neg(self):
+    t = self._test
+    t(-UOp.const(dtypes.uint8, 1), 0xFF)
+    t(-UOp.const(dtypes.uint16, 1), 0xFFFF)
+    t(-UOp.const(dtypes.uint32, 1), 0xFFFFFFFF)
+    t(-UOp.const(dtypes.uint64, 1), 0xFFFFFFFFFFFFFFFF)
+
+  @xfail_broken_const_wraparound
+  def test_neg_min_int(self):
+    t = self._test
+    t(-UOp.const(dtypes.int8, -2**7), -2**7)
+    t(-UOp.const(dtypes.int16, -2**15), -2**15)
+    t(-UOp.const(dtypes.int32, -2**31), -2**31)
+    t(-UOp.const(dtypes.int64, -2**63), -2**63)
+
+  @xfail_broken_const_wraparound
+  def test_payne_hanek_reduction_bug(self):
+    t = self._test
+    a = (UOp.const(dtypes.uint, 43748177600).cast(dtypes.uint) | 36).cast(dtypes.ulong)
+    b = 2536655455 * a + 4294967296 * UOp.const(dtypes.ulong, 25366554550)
+    c = (b + 2261737165) // 4611686018427387904
+    t(c, 0)
 
 class TestGraphRewrite(unittest.TestCase):
   def test_dedup(self):
@@ -383,6 +435,18 @@ class TestUOpGraph(unittest.TestCase):
     self.assertEqual(out.src[1].op, Ops.CONST)
     self.assertEqual(out.src[1].arg, 6)
 
+  def test_bitcast_to_same_dtype_fold(self):
+    for dt in dtypes.ints + dtypes.floats + (dtypes.bool,):
+      d0 = UOp(Ops.DEFINE_GLOBAL, dt.ptr(), arg=0)
+      v = UOp(Ops.LOAD, dt, (d0.index(UOp.const(dtypes.int, 0)),))
+      uops = to_uops_list([v.bitcast(dt)])
+      self.assertEqual(len([x for x in uops if x.op is Ops.BITCAST]), 0, f"dtype = {dt}")
+
+  def test_out_of_bounds_access(self):
+    glbl0 = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(16), (), 0)
+    ld0 = UOp(Ops.LOAD, dtypes.int, (glbl0.index(UOp.const(dtypes.int, 42)),))
+    with self.assertRaises(RuntimeError): to_uops_list([ld0])
+
   def test_fold_gated_load(self):
     glbl0 = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(), (), 0)
     glbl1 = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(), (), 1)
@@ -397,7 +461,7 @@ class TestUOpGraph(unittest.TestCase):
 
   def test_fold_gated_load_local(self):
     glbl0 = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(), (), 0)
-    smem = UOp(Ops.DEFINE_LOCAL, dtypes.int.ptr(local=True), (), ("temp", 1))
+    smem = UOp(Ops.DEFINE_LOCAL, dtypes.int.ptr(size=18, local=True), (), "temp")
     lidx = UOp(Ops.SPECIAL, dtypes.int, (), ("lidx0", 16))
     st = UOp(Ops.STORE, dtypes.void, (smem.index(lidx), UOp.load(glbl0.index(lidx), dtype=dtypes.int)))
     barrier = UOp(Ops.BARRIER, dtypes.void, (st, ))
@@ -443,7 +507,9 @@ class TestUOpGraph(unittest.TestCase):
     # ranges are closed in the right order
     self.assertEqual(endranges[-1].src[0], ranges[0])
 
+@track_rewrites()
 def expander_rewrite(sink): return graph_rewrite(sink, sym + expander)
+@track_rewrites()
 def float4_rewrite(sink): return full_graph_rewrite(sink, Renderer())
 
 class TestExpander(unittest.TestCase):
@@ -593,75 +659,10 @@ class TestExpander(unittest.TestCase):
     sink = expander_rewrite(sink)
     print(sink)
 
-class TestLoadStoreFolder(unittest.TestCase):
-  def test_simple_load_fold(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    load = [UOp(Ops.LOAD, dtypes.float, (buf.index(UOp.const(dtypes.int, i)),)) for i in range(4)]
-    sink = UOp(Ops.VECTORIZE, dtypes.float.vec(len(load)), tuple(load))
-
-    sink = float4_rewrite(sink.sink())
-    assert len([x for x in sink.toposort if x.op is Ops.LOAD]) == 1
-
-  def test_two_load_fold(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    load = [UOp(Ops.LOAD, dtypes.float, (buf.index(UOp.const(dtypes.int, i)),)) for i in range(8)]
-    sink = UOp(Ops.VECTORIZE, dtypes.float.vec(len(load)), tuple(load))
-    sink = float4_rewrite(sink.sink())
-    assert len([x for x in sink.toposort if x.op is Ops.LOAD]) == 2
-
-  def test_simple_load_fold_gated(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    gate = UOp(Ops.DEFINE_VAR, dtypes.bool)
-    load = [UOp(Ops.LOAD, dtypes.float, (buf.index(UOp.const(dtypes.int, i), gate),)) for i in range(4)]
-    sink = UOp(Ops.VECTORIZE, dtypes.float.vec(len(load)), tuple(load))
-    sink = float4_rewrite(sink.sink())
-    assert len([x for x in sink.toposort if x.op is Ops.LOAD]) == 1
-    single_load = [x for x in sink.toposort if x.op is Ops.LOAD][0]
-    self.assertEqual(single_load.src[1].op, Ops.VECTORIZE)
-
-  def test_simple_load_dont_fold_different_gated(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    gate = UOp.variable("g1", False, True, dtypes.bool)
-    gate2 = UOp.variable("g2", False, True, dtypes.bool)
-    load = [UOp(Ops.LOAD, dtypes.float, (buf.index(UOp.const(dtypes.int, i), gate if i == 0 else gate2),
-                                          UOp.const(dtypes.float, 0))) for i in range(4)]
-    sink = UOp(Ops.VECTORIZE, dtypes.float.vec(len(load)), tuple(load))
-    sink = float4_rewrite(sink.sink())
-    assert len([x for x in sink.toposort if x.op is Ops.LOAD]) == 3
-
-  def test_simple_store_fold(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    load = [UOp(Ops.STORE, dtypes.float, (buf.index(UOp.const(dtypes.int, i)), UOp.const(dtypes.float, 0))) for i in range(4)]
-    sink = UOp(Ops.SINK, dtypes.void, tuple(load))
-    sink = float4_rewrite(sink)
-    assert len([x for x in sink.toposort if x.op is Ops.STORE]) == 1
-
-  def test_simple_store_fold_gate(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    gate = UOp.variable("g1", False, True, dtypes.bool)
-    load = [UOp(Ops.STORE, dtypes.float, (buf.index(UOp.const(dtypes.int, i)), UOp.const(dtypes.float, 0), gate)) for i in range(4)]
-    sink = UOp(Ops.SINK, dtypes.void, tuple(load))
-    sink = float4_rewrite(sink)
-    assert len([x for x in sink.toposort if x.op is Ops.STORE]) == 1
-    one_store = [x for x in sink.toposort if x.op is Ops.STORE][0]
-    assert len(one_store.src) == 3
-    _if_node = one_store.src[2]
-    assert _if_node.op == Ops.IF and _if_node.src[0] == gate
-
-  def test_simple_store_dont_fold(self):
-    buf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr())
-    gate = UOp.variable("g1", False, True, dtypes.bool)
-    gate2 = UOp.variable("g2", False, True, dtypes.bool)
-    load = [UOp(Ops.STORE, dtypes.float, (buf.index(UOp.const(dtypes.int, i), gate if i == 0 else gate2),
-                                           UOp.const(dtypes.float, i))) for i in range(4)]
-    sink = UOp(Ops.SINK, dtypes.void, tuple(load))
-    sink = float4_rewrite(sink)
-    assert len([x for x in sink.toposort if x.op is Ops.STORE]) == 3
-
 class TestIFUOps(unittest.TestCase):
   def test_create_ifs(self):
     gbuf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr(), (), 0)
-    sbuf = UOp(Ops.DEFINE_LOCAL, dtypes.float.ptr(local=True), (), ("smem", 4))
+    sbuf = UOp(Ops.DEFINE_LOCAL, dtypes.float.ptr(size=4, local=True), (), "smem")
     valid = UOp(Ops.SPECIAL, dtypes.int, (), ("gidx0", 10))<5
     lidx = UOp(Ops.SPECIAL, dtypes.int, (), ("lidx0", 4))
     gate = valid&(lidx.ne(2))
@@ -671,7 +672,7 @@ class TestIFUOps(unittest.TestCase):
     lbuf = UOp(Ops.LOAD, dtypes.float, (sbuf.index(UOp.const(dtypes.int, 0)), barrier))
     store = UOp(Ops.STORE, dtypes.void, (gbuf.index(UOp.const(dtypes.int, 0), gate), lbuf))
     sink = UOp(Ops.SINK, dtypes.void, (store,))
-    sink = full_graph_rewrite(sink)
+    sink = full_graph_rewrite(expand_rewrite(sink))
     if_uops = [u for u in sink.toposort if u.op is Ops.IF]
     self.assertEqual(len(if_uops), 1)
     self.assertEqual(if_uops[0].src[0], gate)
@@ -680,7 +681,7 @@ class TestIFUOps(unittest.TestCase):
 
   def test_expand_ifs_one_gate(self):
     gbuf = UOp(Ops.DEFINE_GLOBAL, dtypes.float.ptr(), (), 0)
-    sbuf = UOp(Ops.DEFINE_LOCAL, dtypes.float.ptr(local=True), (), ("smem", 16))
+    sbuf = UOp(Ops.DEFINE_LOCAL, dtypes.float.ptr(size=16, local=True), (), "smem")
     valid = UOp(Ops.SPECIAL, dtypes.int, (), ("gidx0", 4))<1
     lidx = UOp(Ops.SPECIAL, dtypes.int, (), ("lidx0", 16))
     gate = valid&(lidx.ne(2))
@@ -689,7 +690,7 @@ class TestIFUOps(unittest.TestCase):
     lbufs = [UOp(Ops.LOAD, dtypes.float, (sbuf.index(UOp.const(dtypes.int, i)), barrier)) for i in range(4)]
     stores = [UOp(Ops.STORE, dtypes.void, (gbuf.index(UOp.const(dtypes.int, i), gate), lbufs[i])) for i in range(4)]
     sink = UOp(Ops.SINK, dtypes.void, tuple(stores))
-    sink = full_graph_rewrite(sink)
+    sink = full_graph_rewrite(expand_rewrite(sink))
     if_uops = [u for u in sink.toposort if u.op is Ops.IF]
     self.assertEqual(len(if_uops), 1)
     self.assertEqual(if_uops[0].src[0], gate)

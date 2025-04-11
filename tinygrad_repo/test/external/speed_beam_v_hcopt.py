@@ -1,7 +1,7 @@
 from tinygrad import Device
 from tinygrad.helpers import getenv, DEBUG, BEAM
-from tinygrad.engine.search import beam_search, time_linearizer, bufs_from_lin
-from extra.optimization.helpers import load_worlds, ast_str_to_lin
+from tinygrad.engine.search import beam_search, bufs_from_lin
+from extra.optimization.helpers import load_worlds, ast_str_to_lin, time_linearizer
 
 if __name__ == "__main__":
   filter_reduce = bool(getenv("FILTER_REDUCE"))

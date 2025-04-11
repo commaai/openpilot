@@ -5,7 +5,7 @@ from tinygrad.engine.jit import GraphRunner, GraphException
 from tinygrad.device import Buffer, Device
 from tinygrad.engine.realize import ExecItem, CompiledRunner
 from tinygrad.ops import Variable
-from tinygrad.runtime.ops_clang import ClangProgram
+from tinygrad.runtime.ops_cpu import ClangProgram
 from tinygrad.renderer.cstyle import ClangRenderer
 render_dtype = ClangRenderer().render_dtype
 
@@ -30,7 +30,7 @@ class ClangGraph(GraphRunner):
       code.append(f"  {cast(CompiledRunner, ji.prg).p.function_name}({','.join(args)});")
     code.append("}")
     if DEBUG >= 4: print("\n".join(code))
-    compiler = Device["CLANG"].compiler
+    compiler = Device["CPU"].compiler
     assert compiler is not None
     self._prg = ClangProgram("batched", compiler.compile(prgs+"\n"+"\n".join(code))) # no point in caching the pointers
 

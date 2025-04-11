@@ -1783,4 +1783,21 @@ FW_VERSIONS = {
       b'\x028646FV201000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
     ],
   },
+  CAR.TOYOTA_YARIS: {
+    (Ecu.engine, 0x700, None): [
+      b'\x0189663K015300\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x018965BK003200\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'\x01F1526K007500\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0D05300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F5205200\x00\x00\x00\x008646G5202200\x00\x00\x00\x00',
+    ],
+  },
 }

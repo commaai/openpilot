@@ -2,7 +2,6 @@
 import os
 import time
 import copy
-import json
 import heapq
 import signal
 from collections import Counter, OrderedDict
@@ -463,7 +462,7 @@ CONFIGS = [
     proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "livePose", "liveParameters", "radarState",
+      "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
@@ -517,9 +516,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="calibrationd",
-    pubs=["carState", "cameraOdometry", "carParams"],
+    pubs=["carState", "cameraOdometry"],
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -550,6 +550,15 @@ CONFIGS = [
     should_recv_callback=FrequencyBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="lagd",
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "controlsState"],
+    subs=["liveDelay"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -628,9 +637,7 @@ def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> 
   if len(live_calibration) > 0:
     custom_params["CalibrationParams"] = live_calibration[msg_index].as_builder().to_bytes()
   if len(live_parameters) > 0:
-    lp_dict = live_parameters[msg_index].to_dict()
-    lp_dict["carFingerprint"] = CP.carFingerprint
-    custom_params["LiveParameters"] = json.dumps(lp_dict)
+    custom_params["LiveParameters"] = live_parameters[msg_index].as_builder().to_bytes()
   if len(live_torque_parameters) > 0:
     custom_params["LiveTorqueParameters"] = live_torque_parameters[msg_index].as_builder().to_bytes()
 

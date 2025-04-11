@@ -73,6 +73,7 @@ legend = ["LAT_ACCEL_FACTOR", "MAX_LAT_ACCEL_MEASURED", "FRICTION"]
 "HYUNDAI_STARIA_4TH_GEN" = [1.8, 2.0, 0.15]
 "GENESIS_GV70_ELECTRIFIED_1ST_GEN" = [1.9, 1.9, 0.09]
 "GENESIS_G80_2ND_GEN_FL" = [2.5819356441497803, 2.5, 0.11244568973779678]
+# Note that some Rivians achieve significantly less lateral acceleration than this
 "RIVIAN_R1_GEN1" = [2.8, 2.5, 0.07]
 "HYUNDAI_NEXO_1ST_GEN" = [2.5, 2.5, 0.1]
 

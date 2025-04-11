@@ -194,15 +194,12 @@ BO_ 711 BECMBatteryVoltageCurrent: 6 K17_EBCM
  SG_ HVBatteryCurrent : 12|13@0- (0.15,0) [-614.4|614.25] "A"  NEO
 
 BO_ 715 ASCMGasRegenCmd: 8 K124_ASCM
- SG_ GasRegenAlwaysOne2 : 9|1@0+ (1,0) [0|1] ""  NEO
- SG_ GasRegenAlwaysOne : 14|1@0+ (1,0) [0|1] ""  NEO
- SG_ GasRegenChecksum : 47|24@0+ (1,0) [0|0] ""  NEO
- SG_ GasRegenCmdActiveInv : 32|1@0+ (1,0) [0|0] ""  NEO
+ SG_ GasRegenAccType : 15|2@0+ (1,0) [0|3] ""  NEO
+ SG_ GasRegenChecksum : 32|25@0+ (1,0) [0|0] ""  NEO
  SG_ GasRegenFullStopActive : 13|1@0+ (1,0) [0|0] ""  NEO
  SG_ GasRegenCmdActive : 0|1@0+ (1,0) [0|0] ""  NEO
  SG_ RollingCounter : 7|2@0+ (1,0) [0|0] ""  NEO
- SG_ GasRegenAlwaysOne3 : 23|1@0+ (1,0) [0|1] ""  NEO
- SG_ GasRegenCmd : 22|12@0+ (1,0) [0|0] ""  NEO
+ SG_ GasRegenCmd : 10|19@0+ (0.125,-22534) [-22534|43001.875] "Nm"  NEO
 
 BO_ 717 ASCM_2CD: 5 K124_ASCM
 

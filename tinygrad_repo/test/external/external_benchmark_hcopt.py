@@ -1,7 +1,7 @@
 import random
 from tinygrad.helpers import getenv
-from tinygrad.engine.search import time_linearizer, beam_search, bufs_from_lin
-from extra.optimization.helpers import load_worlds, ast_str_to_lin
+from tinygrad.engine.search import beam_search, bufs_from_lin
+from extra.optimization.helpers import load_worlds, ast_str_to_lin, time_linearizer
 
 def optimize_kernel(k):
   # TODO: update this

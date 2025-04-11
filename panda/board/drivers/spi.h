@@ -108,7 +108,9 @@ void spi_rx_done(void) {
       response_len = 1U;
     } else {
       // response: NACK and reset state machine
-      print("- incorrect header sync or checksum "); hexdump(spi_buf_rx, SPI_HEADER_SIZE);
+      #ifdef DEBUG_SPI
+        print("- incorrect header sync or checksum "); hexdump(spi_buf_rx, SPI_HEADER_SIZE);
+      #endif
       spi_buf_tx[0] = SPI_NACK;
       next_rx_state = SPI_STATE_HEADER_NACK;
       response_len = 1U;
@@ -160,12 +162,14 @@ void spi_rx_done(void) {
     } else {
       // Checksum was incorrect
       response_ack = false;
-      print("- incorrect data checksum ");
-      puth4(spi_data_len_mosi);
-      print("\n");
-      hexdump(spi_buf_rx, SPI_HEADER_SIZE);
-      hexdump(&(spi_buf_rx[SPI_HEADER_SIZE]), MIN(spi_data_len_mosi, 64));
-      print("\n");
+      #ifdef DEBUG_SPI
+        print("- incorrect data checksum ");
+        puth4(spi_data_len_mosi);
+        print("\n");
+        hexdump(spi_buf_rx, SPI_HEADER_SIZE);
+        hexdump(&(spi_buf_rx[SPI_HEADER_SIZE]), MIN(spi_data_len_mosi, 64));
+        print("\n");
+      #endif
     }
 
     if (!response_ack) {

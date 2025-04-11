@@ -96,6 +96,7 @@ FW_VERSIONS = {
   CAR.FORD_F_150_LIGHTNING_MK1: {
     (Ecu.abs, 0x760, None): [
       b'PL38-2D053-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'RL38-2D053-BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'ML3T-14H102-ABT\x00\x00\x00\x00\x00\x00\x00\x00\x00',

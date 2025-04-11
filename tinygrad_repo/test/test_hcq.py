@@ -1,9 +1,8 @@
-import unittest, ctypes, struct
+import unittest, ctypes, struct, os
 from tinygrad import Device, Tensor, dtypes
-from tinygrad.helpers import CI, getenv
+from tinygrad.helpers import getenv
 from tinygrad.device import Buffer, BufferSpec
 from tinygrad.runtime.support.hcq import HCQCompiled
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import get_runner, CompiledRunner
 from tinygrad.codegen.kernel import Kernel, Opt, OptOps
 from tinygrad import Variable
@@ -17,7 +16,7 @@ class TestHCQ(unittest.TestCase):
     TestHCQ.d0 = Device[Device.DEFAULT]
     TestHCQ.a = Tensor([0.,1.], device=Device.DEFAULT).realize()
     TestHCQ.b = self.a + 1
-    si = create_schedule([self.b.lazydata])[-1]
+    si = self.b.schedule()[-1]
 
     TestHCQ.runner = get_runner(TestHCQ.d0.device, si.ast)
     TestHCQ.b.lazydata.buffer.allocate()
@@ -159,9 +158,9 @@ class TestHCQ(unittest.TestCase):
 
     a = Tensor.randint((3, 3, 3), dtype=dtypes.int, device=Device.DEFAULT).realize()
     b = a + 1
-    si = create_schedule([b.lazydata])[-1]
+    si = b.schedule()[-1]
     k = Kernel(si.ast, opts=TestHCQ.d0.renderer)
-    for i in range(3): k.apply_opt(Opt(op=OptOps.LOCAL, axis=0, amt=3))
+    for i in range(3): k.apply_opt(Opt(op=OptOps.LOCAL, axis=0, arg=3))
 
     runner = CompiledRunner(k.to_program())
 
@@ -312,7 +311,7 @@ class TestHCQ(unittest.TestCase):
     et = float(sig_en.timestamp - sig_st.timestamp)
 
     print(f"exec kernel time: {et:.2f} us")
-    assert 0.1 <= et <= (7000 if CI else 100)
+    assert 0.1 <= et <= (10000 if MOCKGPU else 100)
 
   def test_speed_copy_bandwidth(self):
     if TestHCQ.d0.hw_copy_queue_t is None: self.skipTest("device does not support copy queue")
@@ -336,7 +335,7 @@ class TestHCQ(unittest.TestCase):
 
     gb_s = ((SZ / 1e9) / et_ms) * 1e3
     print(f"same device copy:  {et_ms:.2f} ms, {gb_s:.2f} GB/s")
-    assert (0.3 if CI else 10) <= gb_s <= 1000
+    assert (0.2 if MOCKGPU else 10) <= gb_s <= 1000
 
   def test_speed_cross_device_copy_bandwidth(self):
     if TestHCQ.d0.hw_copy_queue_t is None: self.skipTest("device does not support copy queue")
@@ -347,7 +346,7 @@ class TestHCQ(unittest.TestCase):
     SZ = 200_000_000
     b = Buffer(f"{Device.DEFAULT}:1", SZ, dtypes.uint8, options=BufferSpec(nolru=True)).allocate()
     a = Buffer(Device.DEFAULT, SZ, dtypes.uint8, options=BufferSpec(nolru=True)).allocate()
-    TestHCQ.d0._gpu_map(b._buf)
+    TestHCQ.d0.allocator.map(b._buf)
 
     sig_st, sig_en = TestHCQ.d0.signal_t(), TestHCQ.d0.signal_t()
     TestHCQ.d0.hw_copy_queue_t().timestamp(sig_st) \
@@ -363,7 +362,7 @@ class TestHCQ(unittest.TestCase):
 
     gb_s = ((SZ / 1e9) / et_ms) * 1e3
     print(f"cross device copy: {et_ms:.2f} ms, {gb_s:.2f} GB/s")
-    assert (0.3 if CI else 2) <= gb_s <= 50
+    assert (0.2 if MOCKGPU else 2) <= gb_s <= 50
 
   def test_timeline_signal_rollover(self):
     for queue_type in [TestHCQ.d0.hw_compute_queue_t, TestHCQ.d0.hw_copy_queue_t]:
@@ -442,7 +441,7 @@ class TestHCQ(unittest.TestCase):
   def test_memory_barrier(self):
     a = Tensor([0, 1], device=Device.DEFAULT, dtype=dtypes.int8).realize()
     b = a + 1
-    runner = get_runner(TestHCQ.d0.device, create_schedule([b.lazydata])[-1].ast)
+    runner = get_runner(TestHCQ.d0.device, b.schedule()[-1].ast)
 
     buf1 = Buffer(Device.DEFAULT, 2, dtypes.int8, options=BufferSpec(nolru=True)).ensure_allocated()
     buf2 = Buffer(Device.DEFAULT, 2, dtypes.int8, options=BufferSpec(cpu_access=True, nolru=True)).ensure_allocated()
@@ -486,6 +485,31 @@ class TestHCQ(unittest.TestCase):
       TestHCQ.d0.timeline_value += 1
 
       assert buf2.as_buffer()[0] == i
+
+  @unittest.skipUnless(MOCKGPU, "Emulate this on MOCKGPU to check the path in CI")
+  def test_on_device_hang(self):
+    if not hasattr(self.d0, 'on_device_hang'): self.skipTest("device does not have on_device_hang")
+
+    os.environ["MOCKGPU_EMU_FAULTADDR"] = "0xDEADBEE1"
+
+    # Check api calls
+    with self.assertRaises(RuntimeError) as ctx:
+      self.d0.on_device_hang()
+
+    assert "0xDEADBEE1" in str(ctx.exception)
+    os.environ.pop("MOCKGPU_EMU_FAULTADDR")
+
+  def test_multidevice(self):
+    try: amd_dev = Device["AMD"]
+    except Exception: self.skipTest("no AMD device, test skipped")
+
+    try: nv_dev = Device["NV"]
+    except Exception: self.skipTest("no NV device, test skipped")
+
+    x = amd_dev.signal_t()
+    y = nv_dev.signal_t()
+    assert type(x) is amd_dev.signal_t
+    assert type(y) is nv_dev.signal_t
 
 if __name__ == "__main__":
   unittest.main()

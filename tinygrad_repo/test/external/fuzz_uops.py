@@ -52,7 +52,7 @@ class UOpsFuzzerRunner(CompiledRunner):
       # setup prg
       uops = list(path)
       if DEBUG >= 5: print_uops(uops)
-      self.p = replace(self.p, name=(name:=f"{init_name}fuzz{i}"), src=Device[self.p.device].renderer.render(name, uops), uops=uops)
+      self.p = replace(self.p, name=(name:=f"{init_name}fuzz{i}"), src=Device[self.p.device].renderer.render(uops), uops=uops)
       if DEBUG >= 4: print(self.p.src)
       self.lib = Device[self.p.device].compiler.compile_cached(self.p.src)
       self.clprg = Device[self.p.device].runtime(name, self.lib)

@@ -2,15 +2,13 @@
 import unittest
 import numpy as np
 import torch
-from tinygrad import Tensor, Device, TinyJit, dtypes
+from tinygrad import Tensor, Device, TinyJit
 from tinygrad.ops import Ops
-from tinygrad.helpers import CI, Context
+from tinygrad.helpers import CI, Context, OSX
 from tinygrad.nn import Conv1d, ConvTranspose1d, Conv2d, ConvTranspose2d, Linear, Embedding
 from tinygrad.nn import BatchNorm, LayerNorm, LayerNorm2d, GroupNorm, InstanceNorm, RMSNorm, LSTMCell
 from tinygrad.nn.state import load_state_dict
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import run_schedule
-from tinygrad.device import is_dtype_supported
 
 @unittest.skipIf(CI and Device.DEFAULT in {"CUDA", "NV"}, "slow")
 class TestNN(unittest.TestCase):
@@ -268,7 +266,6 @@ class TestNN(unittest.TestCase):
     np.testing.assert_allclose(gb.numpy(), torch_layer.bias.grad.numpy(), atol=5e-4, rtol=1e-5)
     np.testing.assert_allclose(gx.numpy(), torch_x.grad.numpy(), atol=5e-4, rtol=1e-5)
 
-  @unittest.skipIf(CI and Device.DEFAULT == "WEBGPU", "runs out of memory in CI")
   def test_conv_transpose1d(self):
     BS, C1, W = 4, 16, 224//4
     C2, K, S, P = 64, 7, 2, 1
@@ -289,7 +286,6 @@ class TestNN(unittest.TestCase):
     torch_z = torch_layer(torch_x)
     np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-4, rtol=1e-5)
 
-  @unittest.skipIf(CI and Device.DEFAULT == "WEBGPU", "runs out of memory in CI")
   def test_conv_transpose2d(self):
     BS, C1, H, W = 4, 16, 224//4, 224//4
     C2, K, S, P = 64, 7, 2, 1
@@ -310,6 +306,7 @@ class TestNN(unittest.TestCase):
     torch_z = torch_layer(torch_x)
     np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-4, rtol=1e-5)
 
+  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_groupnorm(self):
     BS, H, W, C, G = 20, 10, 10, 6, 3
 
@@ -329,13 +326,14 @@ class TestNN(unittest.TestCase):
 
       torch_x = torch.tensor(x.numpy(), requires_grad=True)
       torch_z = torch_layer(torch_x)
-      torch_z.sum().backward(retain_graph=True)
+      torch_z.sum().backward()
 
       np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-6, rtol=5e-6)
       np.testing.assert_allclose(x.grad.numpy(), torch_x.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
 
+  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_layernorm(self):
     N, C, H, W = 20, 5, 10, 10
 
@@ -355,13 +353,14 @@ class TestNN(unittest.TestCase):
 
       torch_x = torch.tensor(x.numpy(), requires_grad=True)
       torch_z = torch_layer(torch_x)
-      torch_z.sum().backward(retain_graph=True)
+      torch_z.sum().backward()
 
       np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-6, rtol=5e-6)
       np.testing.assert_allclose(x.grad.numpy(), torch_x.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
 
+  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_layernorm_2d(self):
     N, C, H, W = 20, 5, 10, 10
 
@@ -381,13 +380,14 @@ class TestNN(unittest.TestCase):
 
       torch_x = torch.tensor(x.numpy(), requires_grad=True)
       torch_z = torch_layer(torch_x.permute(0,2,3,1)).permute(0,3,1,2)
-      torch_z.sum().backward(retain_graph=True)
+      torch_z.sum().backward()
 
       np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-6, rtol=5e-6)
       np.testing.assert_allclose(x.grad.numpy(), torch_x.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
 
+  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_instancenorm_2d(self):
     N, C, H, W = 20, 10, 10, 10
 
@@ -407,13 +407,14 @@ class TestNN(unittest.TestCase):
 
       torch_x = torch.tensor(x.numpy(), requires_grad=True)
       torch_z = torch_layer(torch_x)
-      torch_z.sum().backward(retain_graph=True)
+      torch_z.sum().backward()
 
       np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-6, rtol=5e-6)
       np.testing.assert_allclose(x.grad.numpy(), torch_x.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
 
+  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_instancenorm_3d(self):
     N, C, D, H, W = 20, 10, 10, 10, 10
 
@@ -433,13 +434,14 @@ class TestNN(unittest.TestCase):
 
       torch_x = torch.tensor(x.numpy(), requires_grad=True)
       torch_z = torch_layer(torch_x)
-      torch_z.sum().backward(retain_graph=True)
+      torch_z.sum().backward()
 
       np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-6, rtol=5e-6)
       np.testing.assert_allclose(x.grad.numpy(), torch_x.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=2e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
 
+  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_rmsnorm(self):
     class TorchRMSNorm(torch.nn.Module):
       # https://github.com/meta-llama/llama/blob/be327c427cc5e89cc1d3ab3d3fec4484df771245/llama/model.py#L34C1-L77C36
@@ -468,13 +470,12 @@ class TestNN(unittest.TestCase):
 
       torch_x = torch.tensor(x.numpy(), requires_grad=True)
       torch_z = torch_layer(torch_x)
-      torch_z.sum().backward(retain_graph=True)
+      torch_z.sum().backward()
 
       np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-6, rtol=5e-6)
       np.testing.assert_allclose(x.grad.numpy(), torch_x.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=2e-3, rtol=1e-3)
 
-  @unittest.skipUnless(is_dtype_supported(dtypes.long), f"no long on {Device.DEFAULT}")
   def test_embedding(self):
     B, T, embed_size, vocab_size = 4, 10, 20, 28
 
@@ -486,14 +487,14 @@ class TestNN(unittest.TestCase):
       torch_layer.weight[:] = torch.tensor(layer.weight.numpy(), dtype=torch.float32)
 
     # test
-    x = Tensor(np.random.randint(0, vocab_size, (B, T)))
+    x = Tensor(np.random.randint(0, vocab_size, (B, T), dtype=np.int32))
     z = layer(x)
     torch_x = torch.tensor(x.numpy())
     torch_z = torch_layer(torch_x)
     np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=1e-8, rtol=1e-8)
 
     # test with empty input length
-    x = Tensor(np.random.randint(0, vocab_size, (B, 0)))
+    x = Tensor(np.random.randint(0, vocab_size, (B, 0), dtype=np.int32))
     z = layer(x)
     torch_x = torch.tensor(x.numpy())
     torch_z = torch_layer(torch_x)
@@ -505,7 +506,7 @@ class TestNN(unittest.TestCase):
       return layer(x).realize()
 
     for _ in range(3):
-      x = Tensor(np.random.randint(0, vocab_size, (B, T)))
+      x = Tensor(np.random.randint(0, vocab_size, (B, T), dtype=np.int32))
       z = layer_jit(x)
       torch_x = torch.tensor(x.numpy())
       torch_z = torch_layer(torch_x)
@@ -517,7 +518,7 @@ class TestNN(unittest.TestCase):
     a = Tensor([[1, 5, 9, 11],
                 [12, 19, 8, 1]])
     result = layer(a)
-    schedule = create_schedule([result.lazydata])
+    schedule = result.schedule()
     self.assertEqual(3, len([item for item in schedule if item.ast.op is Ops.SINK]), "first run realizes arange, weight, and embedding")
     run_schedule(schedule)
 
@@ -525,7 +526,7 @@ class TestNN(unittest.TestCase):
                 [4, 5, 6],
                 [7, 8, 9]])
     result = layer(b)
-    schedule = create_schedule([result.lazydata])
+    schedule = result.schedule()
     self.assertEqual(1, len([item for item in schedule if item.ast.op is Ops.SINK]), "second run realizes embedding only")
     run_schedule(schedule)
 
@@ -552,14 +553,14 @@ class TestNN(unittest.TestCase):
 
   @unittest.skipIf(CI and Device.DEFAULT in {"GPU", "CUDA", "METAL"}, "no GPU CI")
   def test_load_state_dict_sharded_model(self):
-    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2")
+    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3")
 
     layer = Conv2d(3, 5, kernel_size=3)
     layer.weight.shard_(devices, 3)
     layer.bias.shard_(devices, None)
     state_dict = {
-      'weight': Tensor.randn(5, 3, 3, 3),
-      'bias': Tensor.randn(5),
+      'weight': Tensor.randn(5, 3, 3, 3).realize(),
+      'bias': Tensor.randn(5).realize(),
     }
     load_state_dict(layer, state_dict)
 
@@ -573,7 +574,7 @@ class TestNN(unittest.TestCase):
 
   @unittest.skipIf(CI and Device.DEFAULT in {"GPU", "CUDA", "METAL"}, "no GPU CI")
   def test_load_state_dict_sharded_dict(self):
-    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2")
+    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3")
 
     layer = Conv2d(3, 5, kernel_size=3)
     state_dict = {
@@ -590,7 +591,7 @@ class TestNN(unittest.TestCase):
 
   @unittest.skipIf(CI and Device.DEFAULT in {"GPU", "CUDA", "METAL"}, "no GPU CI")
   def test_load_state_dict_sharded_model_dict_same_axis(self):
-    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2")
+    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3")
 
     layer = Conv2d(3, 5, kernel_size=3)
     layer.weight.shard_(devices, 3)
@@ -611,7 +612,8 @@ class TestNN(unittest.TestCase):
 
   @unittest.skipIf(CI and Device.DEFAULT in {"GPU", "CUDA", "METAL"}, "no GPU CI")
   def test_load_state_dict_sharded_model_dict_different_axis(self):
-    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2")
+    devices = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3")
+    devices5 = (f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3", f"{Device.DEFAULT}:4", f"{Device.DEFAULT}:5")
 
     layer = Conv2d(3, 5, kernel_size=3)
     layer.weight.shard_(devices, 3)
@@ -620,14 +622,14 @@ class TestNN(unittest.TestCase):
     # different shard axis
     state_dict = {
       'weight': Tensor.randn(5, 3, 3, 3).shard(devices, None),
-      'bias': Tensor.randn(5).shard(devices, 0),
+      'bias': Tensor.randn(5).shard(devices5, 0),
     }
     load_state_dict(layer, state_dict)
 
     # NOTE: model and state_dict shard differently, use the state_dict sharding  # TODO: revisit this?
     self.assertEqual(layer.weight.device, devices)
     self.assertEqual(layer.weight.lazydata.axis, None)
-    self.assertEqual(layer.bias.device, devices)
+    self.assertEqual(layer.bias.device, devices5)
     self.assertEqual(layer.bias.lazydata.axis, 0)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())

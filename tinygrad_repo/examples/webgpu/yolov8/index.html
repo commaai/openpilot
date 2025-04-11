@@ -251,7 +251,10 @@
         const getDevice = async () => {
             if (!navigator.gpu) return false;
             const adapter = await navigator.gpu.requestAdapter();
-            return await adapter.requestDevice();
+            return await adapter.requestDevice({
+                requiredFeatures: ["shader-f16"],
+                powerPreference: "high-performance"
+		    });
         };
         
         function processOutput(output, img_width, img_height) {
