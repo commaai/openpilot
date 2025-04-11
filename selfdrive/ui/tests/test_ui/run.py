@@ -284,8 +284,11 @@ def create_screenshots():
   else:
     with open(frames_cache, 'wb') as f:
       road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      print()
       wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      print()
       driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      print()
       pickle.dump([road_img, wide_road_img, driver_img], f)
     raise Exception
 
