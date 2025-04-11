@@ -89,7 +89,7 @@ class SelfdriveD:
     car_recognized = self.CP.brand != 'mock'
 
     # cleanup old params
-    if not self.CP.experimentalLongitudinalAvailable:
+    if not self.CP.alphaLongitudinalAvailable:
       self.params.remove("ExperimentalLongitudinalEnabled")
     if not self.CP.openpilotLongitudinalControl:
       self.params.remove("ExperimentalMode")
