@@ -31,15 +31,16 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
       continue;
     }
 
-    auto *btn = new PushButtonSP(text, 720, this, param);
+    auto *btn = new PushButtonSP(text, 750, this, param);
     btn->setObjectName(id);
-
-    device_grid_layout->addWidget(btn, row, col);
     buttons[id] = btn;
 
-    col++;
-    if (col > 1) {
-      col = 0;
+    if (col==0) {
+      device_grid_layout->addWidget(btn, row, col, Qt::AlignLeft);
+      col++;
+    } else {
+      device_grid_layout->addWidget(btn, row, col, Qt::AlignRight);
+      col=0;
       row++;
     }
   }
@@ -79,14 +80,14 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   // offroad mode and power buttons
 
   QHBoxLayout *power_layout = new QHBoxLayout();
-  power_layout->setSpacing(5);
+  power_layout->setSpacing(25);
 
-  PushButtonSP *rebootBtn = new PushButtonSP(tr("Reboot"), 720, this);
+  PushButtonSP *rebootBtn = new PushButtonSP(tr("Reboot"), 750, this);
   rebootBtn->setStyleSheet(rebootButtonStyle);
   power_layout->addWidget(rebootBtn);
   QObject::connect(rebootBtn, &PushButtonSP::clicked, this, &DevicePanelSP::reboot);
 
-  PushButtonSP *poweroffBtn = new PushButtonSP(tr("Power Off"), 720, this);
+  PushButtonSP *poweroffBtn = new PushButtonSP(tr("Power Off"), 750, this);
   poweroffBtn->setStyleSheet(powerOffButtonStyle);
   power_layout->addWidget(poweroffBtn);
   QObject::connect(poweroffBtn, &PushButtonSP::clicked, this, &DevicePanelSP::poweroff);
@@ -100,7 +101,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
   QObject::connect(offroadBtn, &PushButtonSP::clicked, this, &DevicePanelSP::setOffroadMode);
 
   QVBoxLayout *power_group_layout = new QVBoxLayout();
-  power_group_layout->setSpacing(30);
+  power_group_layout->setSpacing(25);
   power_group_layout->addWidget(offroadBtn, 0, Qt::AlignHCenter);
   power_group_layout->addLayout(power_layout);
 
