@@ -275,7 +275,7 @@ def create_screenshots():
   cam = DEVICE_CAMERAS[("tici", "ar0231")]
 
   frames_cache = f'{DEFAULT_CACHE_DIR}/ui_frames'
-  if os.path.isfile(frames_cache):
+  if os.path.isfile(frames_cache) and False:
     with open(frames_cache, 'rb') as f:
       frames = pickle.load(f)
       road_img = frames[0]
@@ -287,6 +287,7 @@ def create_screenshots():
       wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
       driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
       pickle.dump([road_img, wide_road_img, driver_img], f)
+    raise Exception
 
   STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
   STREAMS.append((VisionStreamType.VISION_STREAM_WIDE_ROAD, cam.ecam, wide_road_img.flatten().tobytes()))
