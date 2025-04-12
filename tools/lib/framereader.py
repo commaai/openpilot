@@ -173,7 +173,7 @@ def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
           "-threads", threads,
           "-hwaccel", "none" if not cuda else "cuda",
           "-c:v", "hevc",
-          "-vsync", "0",
+          #"-fps_mode", "passthrough",
           "-f", vid_fmt,
           "-flags2", "showall",
           "-i", "-",
@@ -181,6 +181,7 @@ def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
           "-f", "rawvideo",
           "-pix_fmt", pix_fmt,
           "-"]
+  print(' '.join(args))
   dat = subprocess.check_output(args, input=rawdat)
 
   if pix_fmt == "rgb24":
@@ -490,6 +491,7 @@ class GOPFrameReader(BaseFrameReader):
 
       ret = decompress_video_data(rawdat, self.vid_fmt, self.w, self.h, pix_fmt)
       ret = ret[skip_frames:]
+      print(ret.shape, num_frames, self.w, self.h)
       assert ret.shape[0] == num_frames
 
       for i in range(ret.shape[0]):
