@@ -345,6 +345,11 @@ jobs:
           key: ui_screenshots_test_${{ hashFiles('selfdrive/ui/tests/test_ui/run.py') }}
       - name: Build openpilot
         run: ${{ env.RUN }} "scons -j$(nproc)"
+      - name: Breakpoint
+        uses: namespacelabs/breakpoint-action@v0
+        with:
+          duration: 30m
+          authorized-users: maxime-desroches
       - name: Create Test Report
         timeout-minutes: ${{ ((steps.frames-cache.outputs.cache-hit == 'true') && 1 || 3) }}
         run: >
