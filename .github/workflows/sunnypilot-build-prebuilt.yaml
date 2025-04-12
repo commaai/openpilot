@@ -122,10 +122,6 @@ jobs:
           fi
           PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/ ${{ github.workspace }}/scripts/manage-powersave.py --disable
 
-      - name: Build Panda
-        run: |
-          scons -j$(nproc) cache_dir=${{env.SCONS_CACHE_DIR}} ${{ github.workspace }}/panda
-
       - name: Build Main Project
         run: |
           export PYTHONPATH="$BUILD_DIR"
