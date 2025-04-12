@@ -75,6 +75,11 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
 
   connect(buttons["resetParams"], &PushButtonSP::clicked, this, &DevicePanelSP::resetSettings);
 
+  // Max Time Offroad
+  maxTimeOffroad = new MaxTimeOffroad();
+  connect(maxTimeOffroad, &OptionControlSP::updateLabels, maxTimeOffroad, &MaxTimeOffroad::refresh);
+  addItem(maxTimeOffroad);
+
   addItem(device_grid_layout);
 
   // offroad mode and power buttons

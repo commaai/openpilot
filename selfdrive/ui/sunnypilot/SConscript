@@ -21,6 +21,7 @@ qt_src = [
   "sunnypilot/qt/offroad/offroad_home.cc",
   "sunnypilot/qt/offroad/settings/device_panel.cc",
   "sunnypilot/qt/offroad/settings/lateral_panel.cc",
+  "sunnypilot/qt/offroad/settings/max_time_offroad.cc",
   "sunnypilot/qt/offroad/settings/settings.cc",
   "sunnypilot/qt/offroad/settings/software_panel.cc",
   "sunnypilot/qt/offroad/settings/sunnylink_panel.cc",

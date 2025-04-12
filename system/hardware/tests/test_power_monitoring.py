@@ -2,7 +2,7 @@ import pytest
 
 from openpilot.common.params import Params
 from openpilot.system.hardware.power_monitoring import PowerMonitoring, CAR_BATTERY_CAPACITY_uWh, \
-                                                CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S
+  CAR_CHARGING_RATE_W, VBATT_PAUSE_CHARGING, DELAY_SHUTDOWN_TIME_S, MAX_TIME_OFFROAD_S
 
 # Create fake time
 ssb = 0.
@@ -197,3 +197,38 @@ class TestPowerMonitoring:
                                        offroad_timestamp,
                                        started_seen), \
                     f"Should shutdown after {DELAY_SHUTDOWN_TIME_S} seconds offroad time"
+
+  @pytest.mark.parametrize(
+    "max_time_offroad, offroad_time_min, expected_result",
+    [
+      # No max time set – fallback to default (30 hours)
+      (None, 0, False),
+      (None, MAX_TIME_OFFROAD_S + 1, True),  # exceeds 30h (1800+ mins)
+
+      # Valid max time values (in minutes)
+      ("60", 59, False),  # under limit
+      ("60", 120, True),  # over limit
+      ("10", 8, False),  # under limit
+      ("10", 11, True),  # over limit
+
+      # Edge case: max time is zero → no limit enforced
+      ("0", 0, False),
+      ("0", 400, False),
+
+      # Invalid max time formats or negative values → fallback to 30 hours
+      ("invalid", 100, False),  # should fallback to 30h
+      ("-1", MAX_TIME_OFFROAD_S + 1, True),  # should fallback to 30h, and exceed it
+    ]
+  )
+  def test_max_time_offroad_exceeded(self, max_time_offroad, offroad_time_min, expected_result):
+    # Set the parameter if provided
+    if max_time_offroad is not None:
+      self.params.put("MaxTimeOffroad", max_time_offroad)
+
+    # Convert offroad time from minutes to seconds
+    offroad_time_s = offroad_time_min * 60
+
+    pm = PowerMonitoring()
+    result = pm.max_time_offroad_exceeded(offroad_time_s)
+
+    assert result == expected_result
