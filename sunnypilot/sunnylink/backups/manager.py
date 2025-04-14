@@ -210,12 +210,25 @@ class BackupManagerSP:
   def _get_current_version(self) -> custom.BackupManagerSP.Version:
     """Gets current sunnypilot version information."""
     version_obj = custom.BackupManagerSP.Version()
-    version_parts = get_version().split('.')
-    version_obj.major = int(version_parts[0]) if len(version_parts) > 0 else 0
-    version_obj.minor = int(version_parts[1]) if len(version_parts) > 1 else 0
-    version_obj.patch = int(version_parts[2]) if len(version_parts) > 2 else 0
-    version_obj.build = int(version_parts[3]) if len(version_parts) > 3 else 0
+    version_str = get_version()
+
+    version_parts = version_str.split('-')  # For when version is like "1.2.3-456"
+    version_nums = version_parts[0].split('.')
+
+    # Extract build number from hyphen format or as 4th version component
+    build = 0
+    if len(version_parts) > 1 and version_parts[1].isdigit():
+      build = int(version_parts[1])
+    elif len(version_nums) > 3 and version_nums[3].isdigit():
+      build = int(version_nums[3])
+
+    # Set version components with safer defaults
+    version_obj.major = int(version_nums[0]) if len(version_nums) > 0 and version_nums[0].isdigit() else 0
+    version_obj.minor = int(version_nums[1]) if len(version_nums) > 1 and version_nums[1].isdigit() else 0
+    version_obj.patch = int(version_nums[2]) if len(version_nums) > 2 and version_nums[2].isdigit() else 0
+    version_obj.build = build
     version_obj.branch = get_branch()
+
     return version_obj
 
   async def main_thread(self) -> None:
