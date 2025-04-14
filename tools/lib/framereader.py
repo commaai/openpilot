@@ -358,7 +358,6 @@ class StreamGOPReader(GOPReader):
     assert frame_type == FrameType.h265_stream
 
     self.fn = fn
-    print('fn', fn)
 
     self.frame_type = frame_type
     self.frame_count = None
