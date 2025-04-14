@@ -105,7 +105,6 @@ def index_stream(fn, ft):
   frame_types, dat_len, prefix = hevc_index(fn)
   index = np.array(frame_types + [(0xFFFFFFFF, dat_len)], dtype=np.uint32)
   probe = ffprobe(fn, "hevc")
-  print('frame_types', frame_types, 'dat_len', dat_len, 'prefix', prefix)
 
   return {
     'index': index,
@@ -359,12 +358,11 @@ class StreamGOPReader(GOPReader):
     assert frame_type == FrameType.h265_stream
 
     self.fn = fn
-    # print('fn', fn)
+    print('fn', fn)
 
     self.frame_type = frame_type
     self.frame_count = None
     self.w, self.h = None, None
-    print('frame_type', frame_type)
 
     self.prefix = None
     self.index = None
@@ -372,9 +370,6 @@ class StreamGOPReader(GOPReader):
     self.index = index_data['index']
     self.prefix = index_data['global_prefix']
     probe = index_data['probe']
-    print('index_data[\'index\']', self.index)
-    print('index_data[\'global_prefix\']', self.prefix)
-    print('probe', probe)
 
     self.prefix_frame_data = None
     self.num_prefix_frames = 0
@@ -388,11 +383,9 @@ class StreamGOPReader(GOPReader):
     assert self.first_iframe == 0
 
     self.frame_count = len(self.index) - 1
-    print('frame_count', self.frame_count)
 
     self.w = probe['streams'][0]['width']
     self.h = probe['streams'][0]['height']
-    print('w', self.w, 'h', self.h)
 
   def _lookup_gop(self, num):
     frame_b = num
@@ -429,7 +422,6 @@ class StreamGOPReader(GOPReader):
       skip_frames = self.num_prefix_frames
 
     print('frame_b', frame_b, 'num_frames', num_frames, 'skip_frames', skip_frames, 'rawdat', len(rawdat))
-    print()
 
     return frame_b, num_frames, skip_frames, rawdat
 
