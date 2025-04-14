@@ -97,6 +97,17 @@ jobs:
                     headRefName
                     title
                     createdAt
+                    labels(last:10) {
+                      nodes {
+                        name
+                      }
+                    }
+                    headRepository {
+                      name
+                      nameWithOwner
+                      url
+                      isFork
+                    }
                     commits(last: 1) {
                       nodes {
                         commit {
