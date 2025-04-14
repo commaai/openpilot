@@ -487,12 +487,9 @@ class GOPFrameReader(BaseFrameReader):
         return self.frame_cache[(num, pix_fmt)]
 
       frame_b, num_frames, skip_frames, rawdat = self.get_gop(num)
-      print('skip_frames', skip_frames)
 
       ret = decompress_video_data(rawdat, self.vid_fmt, self.w, self.h, pix_fmt)
-      print('ret.shape', ret.shape)
       ret = ret[skip_frames:]
-      print((ret.shape[0], num_frames))
       assert ret.shape[0] == num_frames, (ret.shape[0], num_frames)
 
       for i in range(ret.shape[0]):
