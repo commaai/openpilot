@@ -420,8 +420,6 @@ class StreamGOPReader(GOPReader):
     if num < self.first_iframe:
       skip_frames = self.num_prefix_frames
 
-    print('frame_b', frame_b, 'num_frames', num_frames, 'skip_frames', skip_frames, 'rawdat', len(rawdat))
-
     return frame_b, num_frames, skip_frames, rawdat
 
 
@@ -490,7 +488,6 @@ class GOPFrameReader(BaseFrameReader):
 
       frame_b, num_frames, skip_frames, rawdat = self.get_gop(num)
       print('skip_frames', skip_frames)
-
 
       ret = decompress_video_data(rawdat, self.vid_fmt, self.w, self.h, pix_fmt)
       print('ret.shape', ret.shape)
