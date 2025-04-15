@@ -19,7 +19,8 @@ env:
 
 jobs:
   preview:
-    if: github.repository == 'commaai/openpilot'
+    #if: github.repository == 'commaai/openpilot'
+    if: false  # FIXME: FrameReader is broken on CI runners
     name: preview
     runs-on: ubuntu-latest
     timeout-minutes: 20
