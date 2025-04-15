@@ -331,6 +331,7 @@ jobs:
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || 'ubuntu-24.04' }}
+    if: false  # FIXME: FrameReader is broken on CI runners
     steps:
       - uses: actions/checkout@v4
         with:
