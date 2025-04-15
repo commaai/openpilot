@@ -1,0 +1,44 @@
+name: 'Wait for Tests'
+description: 'Action to wait for workflow tests to start and complete'
+inputs:
+  workflow:
+    description: 'The workflow file name to monitor'
+    required: true
+    default: 'selfdrive_tests.yaml'
+  branch:
+    description: 'The branch to monitor (defaults to current branch)'
+    required: false
+    default: ''
+  github-token:
+    description: 'GitHub token for API access'
+    required: true
+  wait-time:
+    description: 'Initial sleep time in seconds before monitoring starts'
+    required: false
+    default: '30'
+  should-wait-for-start:
+    description: 'Whether to wait for tests to start'
+    required: false
+    default: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Wait for tests to start
+      if: inputs.should-wait-for-start == 'true'
+      shell: bash
+      run: |
+        echo "Sleeping for ${{ inputs.wait-time }} seconds to give some time for the action to start and then we'll wait"
+        sleep ${{ inputs.wait-time }}
+
+    - name: Wait for tests to finish
+      shell: bash
+      run: |
+        BRANCH="${{ inputs.branch || github.head_ref || github.ref_name }}"
+        
+        echo "Looking for workflow runs of ${{ inputs.workflow }} on branch $BRANCH"
+        RUN_ID=$(gh run list --workflow=${{ inputs.workflow }} --branch="$BRANCH" --limit=1 --json databaseId --jq '.[0].databaseId')
+        echo "Watching run ID: $RUN_ID"
+        gh run watch "$RUN_ID"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}

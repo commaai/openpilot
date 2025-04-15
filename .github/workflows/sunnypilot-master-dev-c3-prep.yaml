@@ -1,13 +1,23 @@
-name: Nightly Branch Reset and PR Squash
+name: Build dev-c3-new
 
 env:
   DEFAULT_SOURCE_BRANCH: "master-new"
-  DEFAULT_TARGET_BRANCH: "nightly"
+  DEFAULT_TARGET_BRANCH: "master-dev-c3-new"
   PR_LABEL: "dev-c3"
+  TRUST_FORK_PR_LABEL: "trust-fork-pr"
   LFS_URL: 'https://gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git/info/lfs'
   LFS_PUSH_URL: 'ssh://git@gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git'
 
 on:
+  push:
+    branches:
+      - master
+      - master-new    
+  pull_request_target:
+    types: [ synchronize, opened, labeled ]  
+    branches:    
+      - 'master'        
+      - 'master-new'            
   workflow_dispatch:
     inputs:
       source_branch:
@@ -20,17 +30,82 @@ on:
         required: true
         default: 'master-dev-c3-new'
         type: string
-#  schedule:
-#     - cron: '0 0 * * *'  # Run at midnight UTC for nightly
 
 jobs:
+  manage-pr-labels:
+    name: Remove trust-fork-pr label if present
+    runs-on: ubuntu-latest
+    if: (github.event.pull_request.head.repo.fork && (github.event_name == 'pull_request_target' && github.event.action == 'synchronize'))
+    steps:
+      - name: Check if PR has dev-c3 label
+        id: check-labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+            
+            const hasDevC3Label = labels.some(label => label.name === process.env.PR_LABEL);
+            const hasTrustLabel = labels.some(label => label.name === process.env.TRUST_FORK_PR_LABEL);
+            
+            console.log(`PR #${prNumber} has ${process.env.PR_LABEL} label: ${hasDevC3Label}`);
+            console.log(`PR #${prNumber} has ${process.env.TRUST_FORK_PR_LABEL} label: ${hasTrustLabel}`);
+            
+            core.setOutput('has-dev-c3', hasDevC3Label ? 'true' : 'false');
+            core.setOutput('has-trust', hasTrustLabel ? 'true' : 'false');
+
+      - name: Remove trust-fork-pr label if present
+        if: steps.check-labels.outputs.has-dev-c3 == 'true' && steps.check-labels.outputs.has-trust == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              name: process.env.TRUST_FORK_PR_LABEL
+            });
+            
+            console.log(`Removed '${process.env.TRUST_FORK_PR_LABEL}' label from PR #${prNumber} as it received new commits`);
+            
+            // Add a comment to the PR
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `The \`${process.env.TRUST_FORK_PR_LABEL}\` label has been automatically removed because new commits were pushed to this PR. This PR will need to be re-reviewed before the label can be applied again.`
+            });
+
   reset-and-squash:
     runs-on: ubuntu-latest
+    if: (
+            (github.event_name == 'workflow_dispatch')
+            || (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+            || (github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && (github.event.label.name == 'dev-c3' || github.event.label.name == 'trust-fork-pr') && contains(github.event.pull_request.labels.*.name, 'dev-c3'))))
+        )
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch all history for all branches
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for Tests
+        uses: ./.github/workflows/wait-for-action # Path to where you place the action
+        if: (
+                (github.event_name == 'push' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch))
+                || (github.event_name == 'pull_request_target' && ((github.event.action == 'labeled' && (github.event.label.name == 'dev-c3' || github.event.label.name == 'trust-fork-pr') && contains(github.event.pull_request.labels.*.name, 'dev-c3'))))
+            )
+        with:
+          workflow: selfdrive_tests.yaml # The workflow file to monitor
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Configure Git
         run: |
