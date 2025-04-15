@@ -978,12 +978,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.userFlag: {
-    ET.PERMANENT: Alert(
-      "Bookmark Saved",
-      "",
-      AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.5
-    ),
+    ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
   },
 }
 
