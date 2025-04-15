@@ -982,7 +982,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Bookmark Saved",
       "",
       AlertStatus.normal, AlertSize.small,
-      Priority.LOW, VisualAlert.none, AudibleAlert.prompt, 1.5
+      Priority.LOW, VisualAlert.none, AudibleAlert.none, 1.5
     ),
   },
 }
