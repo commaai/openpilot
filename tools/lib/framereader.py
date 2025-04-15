@@ -169,17 +169,17 @@ def rgb24tonv12(rgb):
 def decompress_video_data(rawdat, vid_fmt, w, h, pix_fmt):
   threads = os.getenv("FFMPEG_THREADS", "0")
   cuda = os.getenv("FFMPEG_CUDA", "0") == "1"
-  args = ["ffmpeg", "-v", "quiet",
+  args = ["ffmpeg",
           "-threads", threads,
           "-hwaccel", "none" if not cuda else "cuda",
           "-c:v", "hevc",
-          #"-fps_mode", "passthrough",
           "-f", vid_fmt,
           "-flags2", "showall",
           "-i", "-",
           "-threads", threads,
           "-f", "rawvideo",
           "-pix_fmt", pix_fmt,
+          "-fps_mode", "passthrough",
           "-"]
   print(' '.join(args))
   dat = subprocess.check_output(args, input=rawdat)
