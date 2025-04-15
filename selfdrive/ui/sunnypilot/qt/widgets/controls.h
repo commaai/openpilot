@@ -418,12 +418,12 @@ class OptionControlSP : public AbstractControlSP_SELECTOR {
 private:
   bool isInlineLayout;
   QHBoxLayout *optionSelectorLayout = isInlineLayout ? new QHBoxLayout() : hlayout;
-  
+
   struct MinMaxValue {
     int min_value;
     int max_value;
   };
-  
+
   int getParamValue() {
     const auto param_value = QString::fromStdString(params.get(key));
     const auto result = valueMap != nullptr ? valueMap->key(param_value) : param_value;
@@ -490,6 +490,8 @@ public:
       if (i == 0) {
         optionSelectorLayout->addWidget(&label, 0, Qt::AlignCenter);
       }
+      button->setEnabled((i == 0) ? !(value <= range.min_value) : !(value >= range.max_value));
+      button->setFocusPolicy(Qt::NoFocus); // This prevents unintended scroll due to loss of focus when the button gets disabled based on min/max values
       button_group->addButton(button, i);
 
       QObject::connect(button, &QPushButton::clicked, [=]() {
