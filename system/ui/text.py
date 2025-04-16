@@ -3,6 +3,7 @@ import pyray as rl
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.wrapper import Wrapper
 from openpilot.system.ui.lib.application import gui_app
 
 MARGIN = 50
@@ -31,7 +32,7 @@ def wrap_text(text, font_size, max_width):
 
   return lines
 
-class TextWindow:
+class Renderer:
   def __init__(self, text: str):
     self._textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2)
     self._wrapped_lines = wrap_text(text, FONT_SIZE, self._textarea_rect.width - 20)
@@ -55,12 +56,12 @@ class TextWindow:
     return ret
 
 
-def show_text_in_window(text: str):
-  gui_app.init_window("Text")
-  text_window = TextWindow(text)
-  for _ in gui_app.render():
-    text_window.render()
+class TextWindow(Wrapper):
+  def __init__(self, text: str):
+    super().__init__("Text", Renderer, text)
 
 
 if __name__ == "__main__":
-  show_text_in_window(DEMO_TEXT)
+  import time
+  with TextWindow(DEMO_TEXT):
+    time.sleep(5)

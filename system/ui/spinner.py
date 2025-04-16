@@ -2,9 +2,9 @@
 import pyray as rl
 import os
 import threading
-import time
 
 from openpilot.common.basedir import BASEDIR
+from openpilot.system.ui.lib.wrapper import Wrapper
 from openpilot.system.ui.lib.application import gui_app
 
 # Constants
@@ -68,54 +68,21 @@ class Renderer:
                         rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
 
 
-class Spinner:
+class Spinner(Wrapper):
   def __init__(self):
-    self._stop_event = threading.Event()
-    self._renderer: Renderer | None = None
-    self._thread = threading.Thread(target=self._run, args=(self._stop_event,), daemon=True)
-    self._thread.start()
-
-  def _run(self, stop_event: threading.Event):
-    gui_app.init_window("Spinner")
-    self._renderer = Renderer()
-    try:
-      for _ in gui_app.render():
-        if stop_event.is_set():
-          break
-        self._renderer.render()
-    finally:
-      gui_app.close()
-      self._renderer = None
-
-  def __enter__(self):
-    return self
+    super().__init__("Spinner", Renderer)
 
   def update(self, spinner_text: str):
-    # wait for renderer to be initialized
-    while self._renderer is None and self._thread is not None and self._thread.is_alive():
-      time.sleep(0.01)
+    self.wait()
     if self._renderer:
       self._renderer.set_text(spinner_text)
 
   def update_progress(self, cur: float, total: float):
     self.update(str(round(100 * cur / total)))
 
-  def close(self):
-    if self._thread is not None and self._thread.is_alive():
-      self._stop_event.set()
-      self._thread.join(timeout=2.0)
-      if self._thread.is_alive():
-        print("WARNING: failed to join spinner thread")
-    self._thread = None
-
-  def __del__(self):
-    self.close()
-
-  def __exit__(self, exc_type, exc_value, traceback):
-    self.close()
-
 
 if __name__ == "__main__":
+  import time
   with Spinner() as s:
     s.update("Spinner text")
     time.sleep(5)
