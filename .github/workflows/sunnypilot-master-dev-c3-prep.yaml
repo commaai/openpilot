@@ -195,7 +195,7 @@ jobs:
                   }
                 }
               }
-            }' -F label="is:pr is:open label:${PR_LABEL} sort:created-asc")
+            }' -F label="is:pr is:open label:${PR_LABEL} draft:false sort:created-asc")
 
           echo "PR_LIST=${PR_LIST}" >> $GITHUB_OUTPUT
         env:
