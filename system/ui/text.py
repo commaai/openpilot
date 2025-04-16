@@ -32,7 +32,7 @@ def wrap_text(text, font_size, max_width):
 
   return lines
 
-class TextRenderer:
+class TextWindowRenderer:
   def __init__(self, text: str):
     self._textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2)
     self._wrapped_lines = wrap_text(text, FONT_SIZE, self._textarea_rect.width - 20)
@@ -58,7 +58,7 @@ class TextRenderer:
 
 class TextWindow(Wrapper):
   def __init__(self, text: str):
-    super().__init__("Text", TextRenderer, text)
+    super().__init__("Text", TextWindowRenderer, text)
 
 
 if __name__ == "__main__":
