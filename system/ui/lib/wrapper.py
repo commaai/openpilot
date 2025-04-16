@@ -4,23 +4,24 @@ from openpilot.system.ui.lib.application import gui_app
 
 
 class Wrapper:
-  def __init__(self, title: str, renderer_cls, *args):
+  def __init__(self, title: str, renderer_cls, *renderer_args):
     self._title = title
-    self._renderer_class = renderer_cls
-    self._args = args
-    self._renderer = None
+    self._renderer_cls = renderer_cls
+    self._renderer_args = renderer_args
     self._stop_event = threading.Event()
     self._thread = threading.Thread(target=self._run, args=(self._stop_event,), daemon=True)
     self._thread.start()
+    self._initialized = False
 
   def _run(self, stop_event: threading.Event):
     gui_app.init_window(self._title)
-    self._renderer = self._renderer_class(*self._args)
+    renderer = self._renderer_cls(*self._renderer_args)
+    self._initialized = True
     try:
       for _ in gui_app.render():
         if stop_event.is_set():
           break
-        self._renderer.render()
+        renderer.render()
     finally:
       gui_app.close()
 
@@ -29,7 +30,7 @@ class Wrapper:
 
   def wait(self):
     """wait for renderer to be initialized"""
-    while self._renderer is None and self._thread is not None and self._thread.is_alive():
+    while not self._initialized and self._thread is not None and self._thread.is_alive():
       time.sleep(0.01)
 
   def close(self):
