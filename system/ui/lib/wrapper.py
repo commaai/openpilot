@@ -1,21 +1,32 @@
 import threading
 import time
+from abc import ABC, abstractmethod
+from typing import Generic, TypeVar
 from openpilot.system.ui.lib.application import gui_app
 
 
-class Wrapper:
-  def __init__(self, title: str, renderer_cls, *args):
+class Renderer(ABC):
+  @abstractmethod
+  def render(self) -> None:
+    pass
+
+
+T = TypeVar("T", bound=Renderer)
+
+
+class Wrapper(Generic[T]):
+  def __init__(self, title: str, renderer_cls: type[T], *args):
     self._title = title
     self._renderer_class = renderer_cls
-    self._args = args
-    self._renderer = None
+    self._renderer_args = args
+    self._renderer: T | None = None
     self._stop_event = threading.Event()
     self._thread = threading.Thread(target=self._run, args=(self._stop_event,), daemon=True)
     self._thread.start()
 
   def _run(self, stop_event: threading.Event):
     gui_app.init_window(self._title)
-    self._renderer = self._renderer_class(*self._args)
+    self._renderer = self._renderer_class(*self._renderer_args)
     try:
       for _ in gui_app.render():
         if stop_event.is_set():
