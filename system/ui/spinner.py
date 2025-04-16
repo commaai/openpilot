@@ -73,7 +73,8 @@ class Spinner(Wrapper):
     super().__init__("Spinner", Renderer)
 
   def update(self, spinner_text: str):
-    self._renderer.set_text(spinner_text)
+    if self._renderer is not None:
+      self._renderer.set_text(spinner_text)
 
   def update_progress(self, cur: float, total: float):
     self.update(str(round(100 * cur / total)))

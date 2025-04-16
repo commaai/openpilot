@@ -4,7 +4,7 @@ from typing import Any
 from openpilot.system.ui.lib.application import gui_app
 
 class Wrapper:
-  _renderer: Any = None
+  _renderer: Any | None = None
 
   def __init__(self, title: str, renderer_cls, *renderer_args):
     self._title = title
@@ -20,12 +20,12 @@ class Wrapper:
 
   def _run(self):
     gui_app.init_window(self._title)
-    self._renderer = self._renderer_cls(*self._renderer_args)
+    self._renderer = renderer = self._renderer_cls(*self._renderer_args)
     try:
       for _ in gui_app.render():
         if self._stop_event.is_set():
           break
-        self._renderer.render()
+        renderer.render()
     finally:
       gui_app.close()
 
