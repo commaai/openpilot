@@ -1,18 +1,12 @@
 import threading
 import time
-from abc import ABC, abstractmethod
 from typing import Generic, TypeVar
 from openpilot.system.ui.lib.application import gui_app
 
-
-class Renderer(ABC):
-  @abstractmethod
-  def render(self) -> None:
-    pass
-
+class Renderer:
+  def render(self): ...
 
 T = TypeVar("T", bound=Renderer)
-
 
 class Wrapper(Generic[T]):
   def __init__(self, title: str, renderer_cls: type[T], *args):
