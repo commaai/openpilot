@@ -4,7 +4,7 @@ from typing import Any
 from openpilot.system.ui.lib.application import gui_app
 
 class Wrapper:
-  _renderer: Any
+  _renderer: Any = None
 
   def __init__(self, title: str, renderer_cls, *renderer_args):
     self._title = title
