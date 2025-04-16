@@ -3,37 +3,23 @@ import time
 import json
 import jwt
 from pathlib import Path
-import threading
-import pyray as rl
 
 from datetime import datetime, timedelta, UTC
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
+from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.hardware.hw import Paths
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.spinner import Spinner
-from openpilot.system.ui.lib.application import gui_app
+
 
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
-
-spinner: Spinner | None = None
 
 def is_registered_device() -> bool:
   dongle = Params().get("DongleId", encoding='utf-8')
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
-def _show_spinner_window(end_evt: threading.Event):
-  global spinner
-  gui_app.init_window("registering device")
-  spinner = Spinner()
-  while not end_evt.is_set():
-    rl.begin_drawing()
-    rl.clear_background(rl.BLACK)
-    spinner.render()
-    rl.end_drawing()
-  gui_app.close()
 
 def register(show_spinner=False) -> str | None:
   """
@@ -58,12 +44,9 @@ def register(show_spinner=False) -> str | None:
     dongle_id = UNREGISTERED_DONGLE_ID
     cloudlog.warning(f"missing public key: {pubkey}")
   elif dongle_id is None:
-    global spinner
-    spinner_thread = None
     if show_spinner:
-      end_evt = threading.Event()
-      spinner_thread = threading.Thread(target=_show_spinner_window, args=(end_evt,))
-      spinner_thread.start()
+      spinner = Spinner()
+      spinner.update("registering device")
 
     # Create registration token, in the future, this key will make JWTs directly
     with open(Paths.persist_root()+"/comma/id_rsa.pub") as f1, open(Paths.persist_root()+"/comma/id_rsa") as f2:
@@ -82,8 +65,8 @@ def register(show_spinner=False) -> str | None:
         cloudlog.exception("Error getting imei, trying again...")
         time.sleep(1)
 
-      if time.monotonic() - start_time > 60 and spinner:
-        spinner.set_text(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
+      if time.monotonic() - start_time > 60 and show_spinner:
+        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
 
     backoff = 0
     start_time = time.monotonic()
@@ -106,12 +89,11 @@ def register(show_spinner=False) -> str | None:
         backoff = min(backoff + 1, 15)
         time.sleep(backoff)
 
-      if time.monotonic() - start_time > 60 and spinner:
-        spinner.set_text(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
+      if time.monotonic() - start_time > 60 and show_spinner:
+        spinner.update(f"registering device - serial: {serial}, IMEI: ({imei1}, {imei2})")
 
-    if spinner_thread:
-      end_evt.set()
-      spinner_thread.join()
+    if show_spinner:
+      spinner.close()
 
   if dongle_id:
     params.put("DongleId", dongle_id)
