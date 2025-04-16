@@ -2,6 +2,7 @@
 import pyray as rl
 import os
 import threading
+import time
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
@@ -19,7 +20,7 @@ def clamp(value, min_value, max_value):
   return max(min(value, max_value), min_value)
 
 
-class Spinner:
+class Renderer:
   def __init__(self):
     self._comma_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_comma.png"), TEXTURE_SIZE, TEXTURE_SIZE)
     self._spinner_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE, TEXTURE_SIZE)
@@ -67,9 +68,54 @@ class Spinner:
                         rl.Vector2(center.x - text_size.x / 2, y_pos), FONT_SIZE, 1.0, rl.WHITE)
 
 
+class Spinner:
+  def __init__(self):
+    self._stop_event = threading.Event()
+    self._renderer: Renderer | None = None
+    self._thread = threading.Thread(target=self._run, args=(self._stop_event,), daemon=True)
+    self._thread.start()
+
+  def _run(self, stop_event: threading.Event):
+    gui_app.init_window("Spinner")
+    self._renderer = Renderer()
+    try:
+      for _ in gui_app.render():
+        if stop_event.is_set():
+          break
+        self._renderer.render()
+    finally:
+      gui_app.close()
+      self._renderer = None
+
+  def __enter__(self):
+    return self
+
+  def update(self, spinner_text: str):
+    # wait for renderer to be initialized
+    while self._renderer is None and self._thread is not None and self._thread.is_alive():
+      time.sleep(0.01)
+    if self._renderer:
+      self._renderer.set_text(spinner_text)
+
+  def update_progress(self, cur: float, total: float):
+    self.update(str(round(100 * cur / total)))
+
+  def close(self):
+    if self._thread is not None and self._thread.is_alive():
+      self._stop_event.set()
+      self._thread.join(timeout=2.0)
+      if self._thread.is_alive():
+        print("WARNING: failed to join spinner thread")
+    self._thread = None
+
+  def __del__(self):
+    self.close()
+
+  def __exit__(self, exc_type, exc_value, traceback):
+    self.close()
+
+
 if __name__ == "__main__":
-  gui_app.init_window("Spinner")
-  spinner = Spinner()
-  spinner.set_text("Spinner text")
-  for _ in gui_app.render():
-    spinner.render()
+  with Spinner() as s:
+    s.update("Spinner text")
+    time.sleep(5)
