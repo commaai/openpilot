@@ -20,6 +20,17 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 }  // namespace
 
+void OS04C10::OS04C10_IFE_ds_override() {
+  out_scale = 2;
+
+  pixel_size_mm = 0.002;
+  frame_width = 2688;
+  frame_height = 1520;
+  exposure_time_max = 2352;
+
+  init_reg_array.insert(init_reg_array.end(), std::begin(isp_ds_override_array_os04c10), std::end(isp_ds_override_array_os04c10));
+}
+
 OS04C10::OS04C10() {
   image_sensor = cereal::FrameData::ImageSensor::OS04C10;
   bayer_pattern = CAM_ISP_PATTERN_BAYER_BGBGBG;
