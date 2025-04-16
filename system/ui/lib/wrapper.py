@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 from typing import Any
@@ -19,6 +20,8 @@ class Wrapper:
       time.sleep(0.01)
 
   def _run(self):
+    if os.getenv("CI") is not None:
+      return
     gui_app.init_window(self._title)
     self._renderer = renderer = self._renderer_cls(*self._renderer_args)
     try:
