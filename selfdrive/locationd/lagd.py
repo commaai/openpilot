@@ -159,6 +159,8 @@ class LateralLagEstimator:
     self.desired_curvature = 0.0
     self.v_ego = 0.0
     self.yaw_rate = 0.0
+    self.yaw_rate_std = 0.0
+    self.pose_valid = False
 
     self.last_lat_inactive_t = 0.0
     self.last_steering_pressed_t = 0.0
@@ -212,7 +214,9 @@ class LateralLagEstimator:
     elif which == "livePose":
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
-      self.yaw_rate = calibrated_pose.angular_velocity.z
+      self.yaw_rate = calibrated_pose.angular_velocity.yaw
+      self.yaw_rate_std = calibrated_pose.angular_velocity.yaw_std
+      self.pose_valid = msg.angularVelocityDevice.valid and msg.posenetOK and msg.inputsOK
     self.t = t
 
   def points_enough(self):
@@ -238,7 +242,10 @@ class LateralLagEstimator:
       self.t - last_t >= self.min_recovery_buffer_sec
       for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t]
     )
-    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered
+    calib_valid = self.calibrator.calib_valid
+    sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < 1.0 and self.yaw_rate_std < 1.0
+    la_valid = np.abs(la_actual_pose) < 2.0 and np.abs(la_desired - la_actual_pose) < 0.5
+    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
