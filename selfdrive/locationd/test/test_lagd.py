@@ -113,6 +113,7 @@ class TestLagd:
         assert msg.liveDelay.status == 'estimated'
         assert np.allclose(msg.liveDelay.lateralDelay, lag_frames * DT, atol=0.01)
         assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+        assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
         assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
 
   def test_estimator_masking(self, mocker):
@@ -121,6 +122,7 @@ class TestLagd:
     process_messages(mocker, estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+    assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
 
   @pytest.mark.skipif(PC, reason="only on device")
   @pytest.mark.timeout(60)
