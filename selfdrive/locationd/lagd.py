@@ -24,6 +24,7 @@ MIN_ABS_YAW_RATE = np.radians(1.0)
 MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
 MAX_LAG = 1.0
+MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
 
@@ -202,19 +203,25 @@ class LateralLagEstimator:
 
     valid_mean_lag, valid_std, current_mean_lag, current_std = self.block_avg.get()
     if self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
-      liveDelay.status = log.LiveDelayData.Status.estimated
-      liveDelay.lateralDelay = valid_mean_lag
-      liveDelay.lateralDelayStd = valid_std
+      if valid_std > MAX_LAG_STD:
+        liveDelay.status = log.LiveDelayData.Status.invalid
+      else:
+        liveDelay.status = log.LiveDelayData.Status.estimated
     else:
       liveDelay.status = log.LiveDelayData.Status.unestimated
+
+    if liveDelay.status == log.LiveDelayData.Status.estimated:
+      liveDelay.lateralDelay = valid_mean_lag
+    else:
       liveDelay.lateralDelay = self.initial_lag
-      liveDelay.lateralDelayStd = 0.0
+
     if not np.isnan(current_mean_lag) and not np.isnan(current_std):
       liveDelay.lateralDelayEstimate = current_mean_lag
-      liveDelay.lateralDelayStdEstimate = current_std
+      liveDelay.lateralDelayEstimateStd = current_std
     else:
       liveDelay.lateralDelayEstimate = self.initial_lag
-      liveDelay.lateralDelayStdEstimate = 0.0
+      liveDelay.lateralDelayEstimateStd = 0.0
+
     liveDelay.validBlocks = self.block_avg.valid_blocks
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
