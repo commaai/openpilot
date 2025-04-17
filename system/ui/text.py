@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app
 
 MARGIN = 50
 SPACING = 50
-FONT_SIZE = 60
+FONT_SIZE = 72
 LINE_HEIGHT = 64
 BUTTON_SIZE = rl.Vector2(310, 160)
 
