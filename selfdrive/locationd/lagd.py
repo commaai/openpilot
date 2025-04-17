@@ -246,7 +246,8 @@ class LateralLagEstimator:
     calib_valid = self.calibrator.calib_valid
     sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK and self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK
     la_valid = np.abs(la_actual_pose) < 2.0 and np.abs(la_desired - la_actual_pose) < 0.5
-    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
+    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
+           fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
