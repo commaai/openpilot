@@ -3,7 +3,7 @@ import numpy as np
 import time
 import pytest
 
-from cereal import messaging
+from cereal import messaging, log
 from openpilot.selfdrive.locationd.lagd import LateralLagEstimator, retrieve_initial_lag, masked_normalized_cross_correlation, \
                                                BLOCK_NUM_NEEDED, BLOCK_SIZE, MIN_OKAY_WINDOW_SEC
 from openpilot.selfdrive.test.process_replay.migration import migrate, migrate_carParams
@@ -23,8 +23,8 @@ def process_messages(mocker, estimator, lag_frames, n_frames, vego=20.0, rejecti
 
   for i in range(n_frames):
     t = i * estimator.dt
-    desired_la = np.cos(t)
-    actual_la = np.cos(t - lag_frames * estimator.dt)
+    desired_la = np.cos(t) * 0.1
+    actual_la = np.cos(t - lag_frames * estimator.dt) * 0.1
 
     # if sample is masked out, set it to desired value (no lag)
     rejected = random.uniform(0, 1) < rejection_threshold
@@ -41,7 +41,9 @@ def process_messages(mocker, estimator, lag_frames, n_frames, vego=20.0, rejecti
       (t, "livePose", mocker.Mock(orientationNED=ZeroMock(),
                                 velocityDevice=ZeroMock(),
                                 accelerationDevice=ZeroMock(),
-                                angularVelocityDevice=ZeroMock(z=actual_yr))),
+                                angularVelocityDevice=ZeroMock(z=actual_yr, valid=True),
+                                posenetOK=True, inputsOK=True)),
+      (t, "liveCalibration", mocker.Mock(rpyCalib=[0, 0, 0], calStatus=log.LiveCalibrationData.Status.calibrated)),
     ]
     for t, w, m in msgs:
       estimator.handle_log(t, w, m)
@@ -111,6 +113,7 @@ class TestLagd:
         assert msg.liveDelay.status == 'estimated'
         assert np.allclose(msg.liveDelay.lateralDelay, lag_frames * DT, atol=0.01)
         assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+        assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
         assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
 
   def test_estimator_masking(self, mocker):
@@ -119,6 +122,7 @@ class TestLagd:
     process_messages(mocker, estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
+    assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
 
   @pytest.mark.skipif(PC, reason="only on device")
   @pytest.mark.timeout(60)
