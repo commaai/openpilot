@@ -21,8 +21,11 @@ MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
 MIN_ABS_YAW_RATE = np.radians(1.0)
+MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
 MAX_LAG = 1.0
+MAX_LAT_ACCEL = 2.0
+MAX_LAT_ACCEL_DIFF = 0.6
 
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
@@ -139,7 +142,8 @@ class LateralLagEstimator:
   def __init__(self, CP: car.CarParams, dt: float,
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
                window_sec: float = MOVING_WINDOW_SEC, okay_window_sec: float = MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec: float = MIN_RECOVERY_BUFFER_SEC,
-               min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC):
+               min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC,
+               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
@@ -151,6 +155,8 @@ class LateralLagEstimator:
     self.min_vego = min_vego
     self.min_yr = min_yr
     self.min_ncc = min_ncc
+    self.max_lat_accel = max_lat_accel
+    self.max_lat_accel_diff = max_lat_accel_diff
 
     self.t = 0.0
     self.lat_active = False
@@ -159,10 +165,13 @@ class LateralLagEstimator:
     self.desired_curvature = 0.0
     self.v_ego = 0.0
     self.yaw_rate = 0.0
+    self.yaw_rate_std = 0.0
+    self.pose_valid = False
 
     self.last_lat_inactive_t = 0.0
     self.last_steering_pressed_t = 0.0
     self.last_steering_saturated_t = 0.0
+    self.last_pose_invalid_t = 0.0
     self.last_estimate_t = 0.0
 
     self.calibrator = PoseCalibrator()
@@ -212,7 +221,9 @@ class LateralLagEstimator:
     elif which == "livePose":
       device_pose = Pose.from_live_pose(msg)
       calibrated_pose = self.calibrator.build_calibrated_pose(device_pose)
-      self.yaw_rate = calibrated_pose.angular_velocity.z
+      self.yaw_rate = calibrated_pose.angular_velocity.yaw
+      self.yaw_rate_std = calibrated_pose.angular_velocity.yaw_std
+      self.pose_valid = msg.angularVelocityDevice.valid and msg.posenetOK and msg.inputsOK
     self.t = t
 
   def points_enough(self):
@@ -222,23 +233,30 @@ class LateralLagEstimator:
     return self.points.num_okay >= int(self.okay_window_sec / self.dt)
 
   def update_points(self):
+    la_desired = self.desired_curvature * self.v_ego * self.v_ego
+    la_actual_pose = self.yaw_rate * self.v_ego
+
+    fast = self.v_ego > self.min_vego
+    turning = np.abs(self.yaw_rate) >= self.min_yr
+    sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK and self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK
+    la_valid = np.abs(la_actual_pose) <= self.max_lat_accel and np.abs(la_desired - la_actual_pose) <= self.max_lat_accel_diff
+    calib_valid = self.calibrator.calib_valid
+
     if not self.lat_active:
       self.last_lat_inactive_t = self.t
     if self.steering_pressed:
       self.last_steering_pressed_t = self.t
     if self.steering_saturated:
       self.last_steering_saturated_t = self.t
+    if not sensors_valid or not la_valid:
+      self.last_pose_invalid_t = self.t
 
-    la_desired = self.desired_curvature * self.v_ego * self.v_ego
-    la_actual_pose = self.yaw_rate * self.v_ego
-
-    fast = self.v_ego > self.min_vego
-    turning = np.abs(self.yaw_rate) >= self.min_yr
-    has_recovered = all( # wait for recovery after !lat_active, steering_pressed, steering_saturated
+    has_recovered = all( # wait for recovery after !lat_active, steering_pressed, steering_saturated, !sensors/la_valid
       self.t - last_t >= self.min_recovery_buffer_sec
-      for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t]
+      for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t, self.last_pose_invalid_t]
     )
-    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered
+    okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
+           fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
