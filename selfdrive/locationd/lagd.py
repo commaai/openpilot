@@ -21,9 +21,11 @@ MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
 MIN_ABS_YAW_RATE = np.radians(1.0)
-MAX_YAW_RATE_SANITY_CHECK = 1.0 # rad/s
+MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
 MAX_LAG = 1.0
+MAX_LAT_ACCEL = 2.0
+MAX_LAT_ACCEL_DIFF = 0.5
 
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
@@ -140,7 +142,7 @@ class LateralLagEstimator:
   def __init__(self, CP: car.CarParams, dt: float,
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
                window_sec: float = MOVING_WINDOW_SEC, okay_window_sec: float = MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec: float = MIN_RECOVERY_BUFFER_SEC,
-               min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC):
+               min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC, max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
@@ -152,6 +154,8 @@ class LateralLagEstimator:
     self.min_vego = min_vego
     self.min_yr = min_yr
     self.min_ncc = min_ncc
+    self.max_lat_accel = max_lat_accel
+    self.max_lat_accel_diff = max_lat_accel_diff
 
     self.t = 0.0
     self.lat_active = False
@@ -245,7 +249,7 @@ class LateralLagEstimator:
     )
     calib_valid = self.calibrator.calib_valid
     sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK and self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK
-    la_valid = np.abs(la_actual_pose) < 2.0 and np.abs(la_desired - la_actual_pose) < 0.5
+    la_valid = np.abs(la_actual_pose) <= self.max_lat_accel and np.abs(la_desired - la_actual_pose) <= self.max_lat_accel_diff
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
            fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
