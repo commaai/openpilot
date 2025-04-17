@@ -21,6 +21,7 @@ MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
 MIN_ABS_YAW_RATE = np.radians(1.0)
+MAX_YAW_RATE_SANITY_CHECK = 1.0 # rad/s
 MIN_NCC = 0.95
 MAX_LAG = 1.0
 
@@ -243,7 +244,7 @@ class LateralLagEstimator:
       for last_t in [self.last_lat_inactive_t, self.last_steering_pressed_t, self.last_steering_saturated_t]
     )
     calib_valid = self.calibrator.calib_valid
-    sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < 1.0 and self.yaw_rate_std < 1.0
+    sensors_valid = self.pose_valid and np.abs(self.yaw_rate) < MAX_YAW_RATE_SANITY_CHECK and self.yaw_rate_std < MAX_YAW_RATE_SANITY_CHECK
     la_valid = np.abs(la_actual_pose) < 2.0 and np.abs(la_desired - la_actual_pose) < 0.5
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
 
