@@ -60,6 +60,12 @@ class TextWindow(Wrapper):
   def __init__(self, text: str):
     super().__init__("Text", TextWindowRenderer, text)
 
+  def get_status(self):
+    pass
+
+  def wait_for_exit(self):
+    pass
+
 
 if __name__ == "__main__":
   import time
