@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import re
 import pyray as rl
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
@@ -11,23 +12,31 @@ FONT_SIZE = 72
 LINE_HEIGHT = 80
 BUTTON_SIZE = rl.Vector2(310, 160)
 
-DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
-            The text is long enough to demonstrate scrolling and word wrapping.""" * 30
+DEMO_TEXT = """Traceback (most recent call last):
+  File "./controlsd.py", line 608, in <module>
+    main()
+  File "./controlsd.py", line 604, in main
+    controlsd_thread(sm, pm, logcan)
+  File "./controlsd.py", line 455, in controlsd_thread
+    1/0
+ZeroDivisionError: division by zero"""
 
 def wrap_text(text, font_size, max_width):
   lines = []
-  current_line = ""
   font = gui_app.font()
 
-  for word in text.split():
-    test_line = current_line + word + " "
-    if rl.measure_text_ex(font, test_line, font_size, 0).x <= max_width:
-      current_line = test_line
-    else:
+  for paragraph in text.split("\n"):
+    indent = re.match(r"^\s*", paragraph).group()
+    current_line = indent
+    for word in paragraph.split():
+      test_line = current_line + word + " "
+      if rl.measure_text_ex(font, test_line, font_size, 0).x <= max_width:
+        current_line = test_line
+      else:
+        lines.append(current_line)
+        current_line = word + " "
+    if current_line:
       lines.append(current_line)
-      current_line = word + " "
-  if current_line:
-    lines.append(current_line)
 
   return lines
 
@@ -45,7 +54,7 @@ class TextWindow:
       position = rl.Vector2(self._textarea_rect.x + scroll.x, self._textarea_rect.y + scroll.y + i * LINE_HEIGHT)
       if position.y + LINE_HEIGHT < self._textarea_rect.y or position.y > self._textarea_rect.y + self._textarea_rect.height:
         continue
-      rl.draw_text_ex(gui_app.font(), line.strip(), position, FONT_SIZE, 0, rl.WHITE)
+      rl.draw_text_ex(gui_app.font(), line.rstrip(), position, FONT_SIZE, 0, rl.WHITE)
     rl.end_scissor_mode()
 
     button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
