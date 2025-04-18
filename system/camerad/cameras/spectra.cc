@@ -997,7 +997,7 @@ bool SpectraCamera::openSensor() {
 
   auto init_sensor_lambda = [this](SensorInfo *s) {
     if (s->image_sensor == cereal::FrameData::ImageSensor::OS04C10 && cc.output_type == ISP_IFE_PROCESSED) {
-      ((OS04C10*)s)->OS04C10_IFE_ds_override();
+      ((OS04C10*)s)->ife_downscale_configure();
     }
     sensor.reset(s);
     return (sensors_init() == 0);

@@ -331,7 +331,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
   {0x3821, 0x01},
 };
 
-const struct i2c_random_wr_payload isp_ds_override_array_os04c10[] = {
+const struct i2c_random_wr_payload ife_ds_override_array_os04c10[] = {
   // OS04C10_AA_00_02_17_wAO_2688x1524_MIPI728Mbps_Linear12bit_20FPS_4Lane_MCLK24MHz
   {0x3829, 0x03},
   {0x3714, 0x24},

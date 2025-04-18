@@ -20,7 +20,7 @@ const uint32_t os04c10_analog_gains_reg[] = {
 
 }  // namespace
 
-void OS04C10::OS04C10_IFE_ds_override() {
+void OS04C10::ife_downscale_configure() {
   out_scale = 2;
 
   pixel_size_mm = 0.002;
@@ -28,7 +28,7 @@ void OS04C10::OS04C10_IFE_ds_override() {
   frame_height = 1520;
   exposure_time_max = 2352;
 
-  init_reg_array.insert(init_reg_array.end(), std::begin(isp_ds_override_array_os04c10), std::end(isp_ds_override_array_os04c10));
+  init_reg_array.insert(init_reg_array.end(), std::begin(ife_ds_override_array_os04c10), std::end(ife_ds_override_array_os04c10));
 }
 
 OS04C10::OS04C10() {
