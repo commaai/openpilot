@@ -28,7 +28,7 @@ void OS04C10::ife_downscale_configure() {
   frame_height = 1520;
   exposure_time_max = 2352;
 
-  init_reg_array.insert(init_reg_array.end(), std::begin(ife_ds_override_array_os04c10), std::end(ife_ds_override_array_os04c10));
+  init_reg_array.insert(init_reg_array.end(), std::begin(ife_downscale_override_array_os04c10), std::end(ife_downscale_override_array_os04c10));
 }
 
 OS04C10::OS04C10() {
