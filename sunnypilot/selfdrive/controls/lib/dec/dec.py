@@ -164,7 +164,7 @@ class DynamicExperimentalController:
     """
     Adapts the slow-down threshold based on vehicle speed and recent behavior.
     """
-    slowdown_scaling_factor: float = (1.0 + 0.05 * np.log(1 + len(self._slow_down_gmac.data)))
+    slowdown_scaling_factor: float = (1.0 + 0.03 * np.log(1 + len(self._slow_down_gmac.data)))
     adaptive_threshold: float = float(
       interp(self._v_ego_kph, WMACConstants.SLOW_DOWN_BP, WMACConstants.SLOW_DOWN_DIST) * slowdown_scaling_factor
     )
