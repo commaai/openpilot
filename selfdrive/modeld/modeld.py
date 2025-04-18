@@ -43,6 +43,12 @@ POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
 VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
 POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
 
+LAT_SMOOTH_SECONDS = 0.0
+LONG_SMOOTH_SECONDS = 0.0
+
+def smooth_value(val, prev_val, tau):
+  alpha = 1 - np.exp(-DT_MDL / tau) if tau > 0 else 1
+  return alpha * val + (1 - alpha) * prev_val
 
 
 def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.ModelDataV2.Action,
@@ -52,7 +58,11 @@ def get_action_from_model(model_output: dict[str, np.ndarray], prev_action: log.
                                                      plan[:,Plan.ACCELERATION][:,0],
                                                      ModelConstants.T_IDXS,
                                                      action_t=long_action_t)
+    desired_accel = smooth_value(desired_accel, prev_action.desiredAcceleration, LONG_SMOOTH_SECONDS)
+
     desired_curvature = model_output['desired_curvature'][0, 0]
+    desired_curvature = smooth_value(desired_curvature, prev_action.desiredCurvature, LAT_SMOOTH_SECONDS)
+
     return log.ModelDataV2.Action(desiredCurvature=float(desired_curvature),
                                   desiredAcceleration=float(desired_accel),
                                   shouldStop=bool(should_stop))
@@ -238,8 +248,9 @@ def main(demo=False):
   cloudlog.info("modeld got CarParams: %s", CP.brand)
 
   # TODO this needs more thought, use .2s extra for now to estimate other delays
-  lat_delay = CP.steerActuatorDelay + .2
-  long_delay = CP.longitudinalActuatorDelay
+  # TODO Move smooth seconds to action function
+  lat_delay = CP.steerActuatorDelay + .2 + LAT_SMOOTH_SECONDS
+  long_delay = CP.longitudinalActuatorDelay + LONG_SMOOTH_SECONDS
   prev_action = log.ModelDataV2.Action()
 
   DH = DesireHelper()
