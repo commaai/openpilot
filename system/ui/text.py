@@ -12,14 +12,8 @@ FONT_SIZE = 72
 LINE_HEIGHT = 80
 BUTTON_SIZE = rl.Vector2(310, 160)
 
-DEMO_TEXT = """Traceback (most recent call last):
-  File "./controlsd.py", line 608, in <module>
-    main()
-  File "./controlsd.py", line 604, in main
-    controlsd_thread(sm, pm, logcan)
-  File "./controlsd.py", line 455, in controlsd_thread
-    1/0
-ZeroDivisionError: division by zero"""
+DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
+            The text is long enough to demonstrate scrolling and word wrapping.""" * 30
 
 def wrap_text(text, font_size, max_width):
   lines = []
