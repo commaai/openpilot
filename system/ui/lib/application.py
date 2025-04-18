@@ -73,7 +73,7 @@ class GuiApplication:
 
     for font in self._fonts.values():
       rl.unload_font(font)
-    self._fonts = []
+    self._fonts = {}
 
     rl.close_window()
 
@@ -90,8 +90,8 @@ class GuiApplication:
       rl.end_drawing()
       self._monitor_fps()
 
-  def font(self, font_wight: FontWeight=FontWeight.NORMAL):
-    return self._fonts[font_wight]
+  def font(self, font_weight: FontWeight=FontWeight.NORMAL):
+    return self._fonts[font_weight]
 
   @property
   def width(self):
