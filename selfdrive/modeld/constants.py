@@ -1,5 +1,4 @@
 import numpy as np
-from dataclasses import dataclass
 
 def index_function(idx, max_val=192, max_idx=32):
   return (max_val) * ((idx/max_idx)**2)
