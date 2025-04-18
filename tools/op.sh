@@ -293,7 +293,7 @@ function op_build() {
     op_run_command system/manager/build.py
   else
     # scons is fine on PC
-    op_run_command scons $@
+    op_run_command scons -u -j$(nproc) $@
   fi
 }
 
@@ -416,8 +416,8 @@ function op_default() {
   echo "          Run the setup script to install"
   echo "          openpilot's dependencies."
   echo ""
-  echo "  op build -j4"
-  echo "          Compile openpilot using 4 cores"
+  echo "  op build"
+  echo "          Compile openpilot using all cores"
   echo ""
   echo "  op juggle --demo"
   echo "          Run PlotJuggler on the demo route"
