@@ -7,8 +7,8 @@ from openpilot.system.ui.lib.application import gui_app
 
 MARGIN = 50
 SPACING = 50
-FONT_SIZE = 60
-LINE_HEIGHT = 64
+FONT_SIZE = 72
+LINE_HEIGHT = 80
 BUTTON_SIZE = rl.Vector2(310, 160)
 
 DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
