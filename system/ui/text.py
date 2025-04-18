@@ -29,6 +29,7 @@ def wrap_text(text, font_size, max_width):
       else:
         lines.append(current_line)
         current_line = word + " "
+    current_line = current_line.rstrip()
     if current_line:
       lines.append(current_line)
 
@@ -48,7 +49,7 @@ class TextWindow:
       position = rl.Vector2(self._textarea_rect.x + scroll.x, self._textarea_rect.y + scroll.y + i * LINE_HEIGHT)
       if position.y + LINE_HEIGHT < self._textarea_rect.y or position.y > self._textarea_rect.y + self._textarea_rect.height:
         continue
-      rl.draw_text_ex(gui_app.font(), line.rstrip(), position, FONT_SIZE, 0, rl.WHITE)
+      rl.draw_text_ex(gui_app.font(), line, position, FONT_SIZE, 0, rl.WHITE)
     rl.end_scissor_mode()
 
     button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
