@@ -43,8 +43,8 @@ POLICY_PKL_PATH = Path(__file__).parent / 'models/driving_policy_tinygrad.pkl'
 VISION_METADATA_PATH = Path(__file__).parent / 'models/driving_vision_metadata.pkl'
 POLICY_METADATA_PATH = Path(__file__).parent / 'models/driving_policy_metadata.pkl'
 
-LAT_SMOOTH_SECONDS = 0.0
-LONG_SMOOTH_SECONDS = 0.0
+LAT_SMOOTH_SECONDS = 0.3
+LONG_SMOOTH_SECONDS = 0.3
 
 def smooth_value(val, prev_val, tau):
   alpha = 1 - np.exp(-DT_MDL / tau) if tau > 0 else 1
