@@ -73,7 +73,7 @@ This change will tint all speed-related UI text to blue with the same transparen
 
 ## 4. Rebuild the UI
 
-After making changes, rebuild OpenPilot so your new UI is compiled:
+After making changes, rebuild Openpilot so your new UI is compiled:
 ```bash
 scons -j$(nproc) && selfdrive/ui/ui
 ```
@@ -85,7 +85,7 @@ You should now see the speed displayed in a nice blue shade during the demo repl
 
 ## 5. Push your fork to GitHub
 
-Click **"Fork"** on the [OpenPilot GitHub repo](https://github.com/commaai/openpilot). Then push with:
+Click **"Fork"** on the [Openpilot GitHub repo](https://github.com/commaai/openpilot). Then push with:
 ```bash
 git remote rm origin
 git remote add origin git@github.com:<your-github-username>/openpilot.git
@@ -98,7 +98,7 @@ git push --set-upstream origin master
 
 ## 6. Run your fork on your comma device
 
-Uninstall OpenPilot through the settings on your device.
+Uninstall Openpilot through the settings on your device.
 
 Then reinstall using your own GitHub-hosted fork:
 ```
@@ -109,6 +109,6 @@ installer.comma.ai/<your-github-username>/master
 
 ## 7. Admire your work IRL 🚗💨
 
-You’ve now successfully modified OpenPilot’s UI and deployed it to your own car!
+You’ve now successfully modified Openpilot’s UI and deployed it to your own car!
 
 ![](https://blog.comma.ai/img/c3_blue_ui.jpg)
