@@ -80,7 +80,8 @@ class LatControlTorque(LatControl):
       # Lateral acceleration torque controller extension updates
       # Overrides stock ff and pid_log.error
       ff, pid_log = self.extension.update(CS, VM, params, ff, pid_log, setpoint, measurement, calibrated_pose, roll_compensation,
-                                          desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, gravity_adjusted_lateral_accel)
+                                          desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, gravity_adjusted_lateral_accel,
+                                          desired_curvature, actual_curvature)
 
       freeze_integrator = steer_limited_by_controls or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,

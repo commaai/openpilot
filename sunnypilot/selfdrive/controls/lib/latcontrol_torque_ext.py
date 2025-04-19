@@ -13,7 +13,8 @@ class LatControlTorqueExt(NeuralNetworkLateralControl):
     super().__init__(lac_torque, CP, CP_SP)
 
   def update(self, CS, VM, params, ff, pid_log, setpoint, measurement, calibrated_pose, roll_compensation,
-             desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, gravity_adjusted_lateral_accel):
+             desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, gravity_adjusted_lateral_accel,
+             desired_curvature, actual_curvature):
     self._ff = ff
     self._pid_log = pid_log
     self._setpoint = setpoint
@@ -21,6 +22,8 @@ class LatControlTorqueExt(NeuralNetworkLateralControl):
     self._lateral_accel_deadzone = lateral_accel_deadzone
     self._desired_lateral_accel = desired_lateral_accel
     self._actual_lateral_accel = actual_lateral_accel
+    self._desired_curvature = desired_curvature
+    self._actual_curvature = actual_curvature
 
     self.update_calculations(CS, VM, desired_lateral_accel)
     self.update_neural_network_feedforward(CS, params, calibrated_pose)

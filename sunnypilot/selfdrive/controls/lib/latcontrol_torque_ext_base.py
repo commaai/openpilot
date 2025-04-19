@@ -62,6 +62,8 @@ class LatControlTorqueExtBase:
     self._lateral_accel_deadzone = 0.0
     self._desired_lateral_accel = 0.0
     self._actual_lateral_accel = 0.0
+    self._desired_curvature = 0.0
+    self._actual_curvature = 0.0
 
     # twilsonco's Lateral Neural Network Feedforward
     # Instantaneous lateral jerk changes very rapidly, making it not useful on its own,
