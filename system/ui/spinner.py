@@ -13,6 +13,7 @@ ROTATION_TIME_SECONDS = 1.0  # Time for one full circle
 MARGIN = 200
 TEXTURE_SIZE = 360
 FONT_SIZE = 80
+DARKGRAY = (55, 55, 55, 255)
 
 
 def clamp(value, min_value, max_value):
@@ -57,10 +58,10 @@ class Spinner:
       if text.isdigit():
         progress = clamp(int(text), 0, 100)
         bar = rl.Rectangle(center.x - PROGRESS_BAR_WIDTH / 2.0, y_pos, PROGRESS_BAR_WIDTH, PROGRESS_BAR_HEIGHT)
-        rl.draw_rectangle_rounded(bar, 0.5, 10, rl.GRAY)
+        rl.draw_rectangle_rounded(bar, 1, 10, DARKGRAY)
 
         bar.width *= progress / 100.0
-        rl.draw_rectangle_rounded(bar, 0.5, 10, rl.WHITE)
+        rl.draw_rectangle_rounded(bar, 1, 10, rl.WHITE)
       else:
         text_size = rl.measure_text_ex(gui_app.font(), text, FONT_SIZE, 1.0)
         rl.draw_text_ex(gui_app.font(), text,
