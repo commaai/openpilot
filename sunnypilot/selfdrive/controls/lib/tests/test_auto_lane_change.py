@@ -51,6 +51,7 @@ class TestAutoLaneChangeController:
     assert not self.alc.prev_brake_pressed
 
   @parameterized.expand([(AutoLaneChangeMode.OFF, ), (AutoLaneChangeMode.NUDGE, )])
+
   def test_off_and_nudge_mode(self, timer_state):
     """Test the default OFF and NUDGE mode behavior."""
     self._reset_states()
@@ -196,3 +197,17 @@ class TestAutoLaneChangeController:
         self.alc.update_lane_change(blindspot_detected=False, brake_pressed=False)
 
       assert not self.alc.auto_lane_change_allowed
+
+  def test_auto_lane_change_mode_off_disallows_lane_change(self):
+    """Test that OFF mode never allows auto lane change."""
+    self._reset_states()
+    self.alc.lane_change_bsm_delay = False
+    self.alc.lane_change_set_timer = AutoLaneChangeMode.OFF
+
+    # Simulate updates for a long period of time (e.g., 10 seconds)
+    num_updates = int(10.0 / DT_MDL)
+    for _ in range(num_updates):
+      self.alc.update_lane_change(blindspot_detected=False, brake_pressed=False)
+
+    # Lane change should never be allowed
+    assert not self.alc.auto_lane_change_allowed
