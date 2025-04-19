@@ -60,6 +60,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
 ENV QTWEBENGINE_DISABLE_SANDBOX=1
 
 RUN dbus-uuidgen > /etc/machine-id
+RUN apt-get update && apt-get install -y fonts-noto-cjk fonts-noto-color-emoji
 
 ARG USER=batman
 ARG USER_UID=1001
