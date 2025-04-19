@@ -328,6 +328,11 @@ function op_sim() {
   op_run_command exec tools/sim/launch_openpilot.sh
 }
 
+function op_clip() {
+  op_before_cmd
+  op_run_command tools/clip/run.py $@
+}
+
 function op_switch() {
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
@@ -395,6 +400,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
@@ -445,6 +451,7 @@ function _op() {
     lint )          shift 1; op_lint "$@" ;;
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
+    clip )          shift 1; op_clip "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
