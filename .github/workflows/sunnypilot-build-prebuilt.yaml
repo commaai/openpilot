@@ -21,15 +21,30 @@ on:
   push:
     branches: [ master, master-new, master-dev-c3-new ]
     tags: [ '*' ]
+  pull_request_target:
+    types: [ labeled ]
   workflow_dispatch:
     inputs:
-      extra_version:
-        description: 'Extra version identifier'
+      wait_for_tests:
+        description: 'Wait for selfdrive_tests to finish'
         required: false
-        default: ''
+        type: boolean
+        default: false
 
 jobs:
+  validate_tests:
+    runs-on: ubuntu-24.04
+    if: ((github.event_name == 'workflow_dispatch' && inputs.wait_for_tests) || contains('pull_request', github.event_name) && (github.event.action == 'labeled' && github.event.label.name == 'prebuilt'))
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wait for Tests
+        uses: ./.github/workflows/wait-for-action # Path to where you place the action
+        with:
+          workflow: selfdrive_tests.yaml # The workflow file to monitor
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
   build:
+    needs: [ validate_tests ]
     concurrency:
       group: build-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: false
@@ -39,6 +54,7 @@ jobs:
       version: ${{ steps.set-env.outputs.version }}
       extra_version_identifier: ${{ steps.set-env.outputs.extra_version_identifier }}
       commit_sha: ${{ steps.set-env.outputs.commit_sha }}
+    if: always() && !failure() && !cancelled()
     steps:
       - uses: actions/checkout@v4
         with:
@@ -194,10 +210,10 @@ jobs:
     concurrency:
       group: publish-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: true
-    if: ${{ github.event_name != 'pull_request' || github.event_name == 'pull_request' && github.event.pull_request.draft }} 
+    if: ${{ !contains('pull_request', github.event_name) || (github.event.action == 'labeled' && github.event.label.name == 'prebuilt') }}
     needs: build
     runs-on: ubuntu-24.04
-    environment: ${{ contains(fromJSON(vars.AUTO_DEPLOY_PREBUILT_BRANCHES), github.head_ref || github.ref_name) && 'auto-deploy' || 'feature-branch' }}
+    environment: ${{ (contains(fromJSON(vars.AUTO_DEPLOY_PREBUILT_BRANCHES), github.head_ref || github.ref_name) || contains(github.event.pull_request.labels.*.name, 'prebuilt')) && 'auto-deploy' || 'feature-branch' }}
     steps:
       - uses: actions/checkout@v4
 
@@ -269,3 +285,26 @@ jobs:
           echo "2. Current value: ${{ vars.DEV_FEEDBACK_NOTIFICATION_BRANCHES }}"
           echo "3. Update as needed (JSON array with no spaces)"
         shell: alpine.sh {0}
+  
+  manage-pr-labels:
+    name: Remove prebuilt label
+    runs-on: ubuntu-latest
+    if: (always() && contains('pull_request', github.event_name) && (github.event.action == 'labeled' && github.event.label.name == 'prebuilt'))
+    env:
+      LABEL: prebuilt
+    steps:
+      - name: Remove trust-fork-pr label if present
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              name: process.env.LABEL
+            });
+
+            console.log(`Removed '${process.env.LABEL}' label from PR #${prNumber}`);
