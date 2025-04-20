@@ -76,9 +76,36 @@ def validate_pr(pr):
   if not commits:
     return False, "no commit data found"
 
+  # First check if we have the rollup status
   status = commits[0].get('commit', {}).get('statusCheckRollup', {})
+
+  # If status is not SUCCESS, we need to check individual check runs
   if not status or status.get('state') != 'SUCCESS':
-    return False, "not all checks have passed"
+    # Get detailed check runs for this PR
+    checks_output = subprocess.run(
+      ['gh', 'pr', 'checks', str(pr_number), '--json', 'name,state'],
+      capture_output=True, text=True
+    )
+
+    try:
+      checks_data = json.loads(checks_output.stdout)
+
+      # Check if all checks are successful except for our reset-and-squash check
+      for check in checks_data:
+        check_name = check.get('name', '')
+        check_state = check.get('state', '')
+
+        # Skip our own check and any skipped checks
+        if check_name == 'reset-and-squash' or check_state == 'SKIPPED':
+          continue
+
+        # If any other check is not successful, the PR is not valid
+        if check_state != 'SUCCESS':
+          return False, f"check '{check_name}' has state '{check_state}'"
+
+    except json.JSONDecodeError:
+      # If we can't parse the JSON, fall back to the original check
+      return False, "unable to verify check status"
 
   # Check for merge conflicts
   merge_status = subprocess.run(['gh', 'pr', 'view', str(pr_number), '--json', 'mergeable,mergeStateStatus'],
@@ -86,9 +113,6 @@ def validate_pr(pr):
   merge_data = json.loads(merge_status.stdout)
   if not merge_data.get('mergeable'):
     return False, "merge conflicts detected"
-
-  # if (mergeStateStatus := merge_data.get('mergeStateStatus')) == "BEHIND":
-  #   return False, f"branch is `{mergeStateStatus}`"
 
   return True, None
 
