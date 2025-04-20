@@ -7,6 +7,8 @@ See the LICENSE.md file in the root directory for more details.
 from json import load
 import numpy as np
 
+from openpilot.selfdrive.modeld.parse_model_outputs import safe_exp
+
 # dict used to rename activation functions whose names aren't valid python identifiers
 ACTIVATION_FUNCTION_NAMES = {'σ': 'sigmoid'}
 
@@ -40,7 +42,7 @@ class NNTorqueModel:
   # These are called by name using the keys in the model json file
   @staticmethod
   def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return 1 / (1 + safe_exp(-x))
 
   @staticmethod
   def identity(x):
