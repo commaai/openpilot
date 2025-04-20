@@ -9,6 +9,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
+      issues: write
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
@@ -28,25 +29,63 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        target: /^(?!master$).*/
-        exclude: /commaai:.*/
+        target: /^(?!master-new$).*/
+        exclude: /sunnypilot:.*/
         change-to: ${{ github.base_ref }}
         already-exists-action: close_this
-        already-exists-comment: "Your PR should be made against the `master` branch"
+        already-exists-comment: "Your PR should be made against the `master-new` branch"
 
-    # Welcome comment
-    - name: "First timers PR"
-      uses: actions/first-interaction@v1
-      if: github.event.pull_request.head.repo.full_name != 'sunnypilot/sunnypilot'
-      with:
-        repo-token: ${{ secrets.GITHUB_TOKEN }}
-        pr-message: |
-            <!-- _(run_id **${{ github.run_id }}**)_ -->
-            Thanks for contributing to openpilot! In order for us to review your PR as quickly as possible, check the following:
-            * Convert your PR to a draft unless it's ready to review
-            * Read the [contributing docs](https://github.com/sunnypilot/sunnypilot/blob/master/docs/CONTRIBUTING.md)
-            * Before marking as "ready for review", ensure:
-              * the goal is clearly stated in the description
-              * all the tests are passing
-              * the change is [something we merge](https://github.com/sunnypilot/sunnypilot/blob/master/docs/CONTRIBUTING.md#what-gets-merged)
-              * include a route or your device' dongle ID if relevant
+  update-pr-labels:
+    name: Update fork's PR Labels
+    runs-on: ubuntu-latest
+    if: (github.event.pull_request.head.repo.fork && (contains('pull_request', github.event_name) && github.event.action == 'synchronize'))
+    env: 
+      PR_LABEL: 'dev-c3'
+      TRUST_FORK_PR_LABEL: 'trust-fork-pr'
+    steps:
+      - name: Check if PR has dev-c3 label
+        id: check-labels
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber
+            });
+            
+            const hasDevC3Label = labels.some(label => label.name === process.env.PR_LABEL);
+            const hasTrustLabel = labels.some(label => label.name === process.env.TRUST_FORK_PR_LABEL);
+            
+            console.log(`PR #${prNumber} has ${process.env.PR_LABEL} label: ${hasDevC3Label}`);
+            console.log(`PR #${prNumber} has ${process.env.TRUST_FORK_PR_LABEL} label: ${hasTrustLabel}`);
+            
+            core.setOutput('has-dev-c3', hasDevC3Label ? 'true' : 'false');
+            core.setOutput('has-trust', hasTrustLabel ? 'true' : 'false');
+      
+      - name: Remove trust-fork-pr label if present
+        if: steps.check-labels.outputs.has-dev-c3 == 'true' && steps.check-labels.outputs.has-trust == 'true'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            
+            await github.rest.issues.removeLabel({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              name: process.env.TRUST_FORK_PR_LABEL
+            });
+            
+            console.log(`Removed '${process.env.TRUST_FORK_PR_LABEL}' label from PR #${prNumber} as it received new commits`);
+            
+            // Add a comment to the PR
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body: `The \`${process.env.TRUST_FORK_PR_LABEL}\` label has been automatically removed because new commits were pushed to this PR. This PR will need to be re-reviewed before the label can be applied again.`
+            });

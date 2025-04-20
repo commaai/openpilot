@@ -4,7 +4,6 @@ env:
   DEFAULT_SOURCE_BRANCH: "master-new"
   DEFAULT_TARGET_BRANCH: "master-dev-c3-new"
   PR_LABEL: "dev-c3"
-  TRUST_FORK_PR_LABEL: "trust-fork-pr"
   LFS_URL: 'https://gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git/info/lfs'
   LFS_PUSH_URL: 'ssh://git@gitlab.com/sunnypilot/public/sunnypilot-new-lfs.git'
 
@@ -35,61 +34,9 @@ concurrency:
   group: ${{ github.workflow }}
   cancel-in-progress: ${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) }}
   
-run-name: ${{ github.event.pull_request.head.repo.fork && (contains('pull_request', github.event_name) && github.event.action == 'synchronize') && format('{0} - {1}', github.workflow, github.event.action) || format('{0} - {1}', github.workflow, github.event_name) }}
+run-name: ${{ contains('pull_request', github.event_name) && github.event.action == 'synchronize' && format('{0} - {1}', github.workflow, github.event.action) || format('{0} - {1}', github.workflow, github.event_name) }}
 
 jobs:
-  manage-pr-labels:
-    name: Remove trust-fork-pr label if present
-    runs-on: ubuntu-latest
-    if: (github.event.pull_request.head.repo.fork && (contains('pull_request', github.event_name) && github.event.action == 'synchronize'))
-    steps:
-      - name: Check if PR has dev-c3 label
-        id: check-labels
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            const { data: labels } = await github.rest.issues.listLabelsOnIssue({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber
-            });
-            
-            const hasDevC3Label = labels.some(label => label.name === process.env.PR_LABEL);
-            const hasTrustLabel = labels.some(label => label.name === process.env.TRUST_FORK_PR_LABEL);
-            
-            console.log(`PR #${prNumber} has ${process.env.PR_LABEL} label: ${hasDevC3Label}`);
-            console.log(`PR #${prNumber} has ${process.env.TRUST_FORK_PR_LABEL} label: ${hasTrustLabel}`);
-            
-            core.setOutput('has-dev-c3', hasDevC3Label ? 'true' : 'false');
-            core.setOutput('has-trust', hasTrustLabel ? 'true' : 'false');
-
-      - name: Remove trust-fork-pr label if present
-        if: steps.check-labels.outputs.has-dev-c3 == 'true' && steps.check-labels.outputs.has-trust == 'true'
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const prNumber = context.payload.pull_request.number;
-            
-            await github.rest.issues.removeLabel({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              name: process.env.TRUST_FORK_PR_LABEL
-            });
-            
-            console.log(`Removed '${process.env.TRUST_FORK_PR_LABEL}' label from PR #${prNumber} as it received new commits`);
-            
-            // Add a comment to the PR
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: prNumber,
-              body: `The \`${process.env.TRUST_FORK_PR_LABEL}\` label has been automatically removed because new commits were pushed to this PR. This PR will need to be re-reviewed before the label can be applied again.`
-            });
-
   reset-and-squash:
     runs-on: ubuntu-latest
     if: (
