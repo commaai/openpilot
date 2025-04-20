@@ -206,12 +206,13 @@ jobs:
         run: |
           PYTHONPATH=$PYTHONPATH:${{ github.workspace }}/ ${{ github.workspace }}/scripts/manage-powersave.py --enable
 
+
   publish:
     concurrency:
       group: publish-${{ github.head_ref || github.ref_name }}
       cancel-in-progress: true
-    if: ${{ !contains(github.event_name, 'pull_request') || (github.event.action == 'labeled' && github.event.label.name == 'prebuilt') }}
-    needs: build
+    if: ${{ (always() && !failure() && !cancelled()) && (!contains(github.event_name, 'pull_request') || (github.event.action == 'labeled' && github.event.label.name == 'prebuilt')) }}
+    needs: [ build ]
     runs-on: ubuntu-24.04
     environment: ${{ (contains(fromJSON(vars.AUTO_DEPLOY_PREBUILT_BRANCHES), github.head_ref || github.ref_name) || contains(github.event.pull_request.labels.*.name, 'prebuilt')) && 'auto-deploy' || 'feature-branch' }}
     steps:
@@ -257,7 +258,7 @@ jobs:
   notify:
     needs: [ build, publish ]
     runs-on: ubuntu-24.04
-    if: success()
+    if: ${{ (always() && !failure() && !cancelled()) }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Alpine Linux environment
