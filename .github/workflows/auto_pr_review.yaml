@@ -38,7 +38,7 @@ jobs:
   update-pr-labels:
     name: Update fork's PR Labels
     runs-on: ubuntu-latest
-    if: (github.event.pull_request.head.repo.fork && (contains('pull_request', github.event_name) && github.event.action == 'synchronize'))
+    if: (github.event.pull_request.head.repo.fork && (contains(github.event_name, 'pull_request') && github.event.action == 'synchronize'))
     env: 
       PR_LABEL: 'dev-c3'
       TRUST_FORK_PR_LABEL: 'trust-fork-pr'
