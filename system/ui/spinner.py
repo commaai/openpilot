@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.application import gui_app
 # Constants
 PROGRESS_BAR_WIDTH = 1000
 PROGRESS_BAR_HEIGHT = 20
-ROTATION_TIME_SECONDS = 1.0  # Time for one full circle
+DEGREES_PER_SECOND = 360.0  # one full rotation per second
 MARGIN = 200
 TEXTURE_SIZE = 360
 FONT_SIZE = 80
@@ -43,10 +43,8 @@ class Spinner:
     spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
     comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
-    fps = rl.get_fps()
-    if fps > 0:
-      degrees_per_frame = 360.0 / (ROTATION_TIME_SECONDS * fps)
-      self._rotation = (self._rotation + degrees_per_frame) % 360.0
+    delta_time = rl.get_frame_time()
+    self._rotation = (self._rotation + DEGREES_PER_SECOND * delta_time) % 360.0
 
     # Draw rotating spinner and static comma logo
     rl.draw_texture_pro(self._spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
