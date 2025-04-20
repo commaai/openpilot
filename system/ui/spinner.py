@@ -23,11 +23,20 @@ def clamp(value, min_value, max_value):
 class Spinner:
   def __init__(self):
     self._comma_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_comma.png"), TEXTURE_SIZE, TEXTURE_SIZE)
-    self._spinner_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE, TEXTURE_SIZE)
+    self._raw_spinner_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE, TEXTURE_SIZE)
     self._rotation = 0.0
     self._text: str = ""
     self._progress: int | None = None
     self._lock = threading.Lock()
+
+    # pre-render the spinner onto a black background
+    self._spinner_rt = rl.load_render_texture(TEXTURE_SIZE, TEXTURE_SIZE)
+    rl.begin_texture_mode(self._spinner_rt)
+    rl.clear_background(rl.BLANK)
+    rl.draw_texture(self._raw_spinner_texture, 0, 0, rl.WHITE)
+    rl.end_texture_mode()
+    rl.unload_texture(self._raw_spinner_texture)
+    rl.set_texture_filter(self._spinner_rt.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
   def set_text(self, text: str) -> None:
     with self._lock:
@@ -47,7 +56,7 @@ class Spinner:
     self._rotation = (self._rotation + DEGREES_PER_SECOND * delta_time) % 360.0
 
     # Draw rotating spinner and static comma logo
-    rl.draw_texture_pro(self._spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
+    rl.draw_texture_pro(self._spinner_rt.texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
                         rl.Rectangle(center.x, center.y, TEXTURE_SIZE, TEXTURE_SIZE),
                         spinner_origin, self._rotation, rl.WHITE)
     rl.draw_texture_v(self._comma_texture, comma_position, rl.WHITE)
