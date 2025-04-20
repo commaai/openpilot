@@ -12,7 +12,7 @@ from opendbc.car.interfaces import LatControlInputs
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params
 from openpilot.selfdrive.modeld.constants import ModelConstants
-from openpilot.sunnypilot.selfdrive.controls.lib.latcontrol_torque_ext_base import LatControlTorqueExtBase
+from openpilot.sunnypilot.selfdrive.controls.lib.latcontrol_torque_ext_base import LatControlTorqueExtBase, sign
 from openpilot.sunnypilot.selfdrive.controls.lib.nnlc.helpers import MOCK_MODEL_PATH
 from openpilot.sunnypilot.selfdrive.controls.lib.nnlc.model import NNTorqueModel
 
@@ -98,6 +98,22 @@ class NeuralNetworkLateralControl(LatControlTorqueExtBase):
     torque_from_setpoint = self.model.evaluate(nnff_setpoint_input)
     torque_from_measurement = self.model.evaluate(nnff_measurement_input)
     self._pid_log.error = torque_from_setpoint - torque_from_measurement
+
+    # The "pure" NNLC error response can be too weak for cars whose models were trained
+    # with a lack of high-magnitude lateral acceleration data, for which the NNLC model
+    # torque response flattens out at high lateral accelerations.
+    # This workaround blends in a guaranteed stronger error response only when the
+    # desired lateral acceleration is high enough to warrant it, by using the lateral acceleration
+    # error as the input to the NNLC model. This is not ideal, and potentially degrades the NNLC
+    # accuracy for cars that don't have this issue, but it's necessary until a better NNLC model
+    # structure is used that doesn't create this issue when high-magnitude data is missing.
+    error_blend_factor = float(np.interp(abs(self._desired_lateral_accel), [1.0, 2.0], [0.0, 1.0]))
+    if error_blend_factor > 0.0:  # blend in stronger error response when in high lat accel
+      # NNFF inputs 5+ are optional, and if left out are replaced with 0.0 inside the NNFF class
+      nnff_error_input = [CS.vEgo, self._setpoint - self._measurement, self.lateral_jerk_setpoint - self.lateral_jerk_measurement, 0.0]
+      torque_from_error = self.model.evaluate(nnff_error_input)
+      if sign(self._pid_log.error) == sign(torque_from_error) and abs(self._pid_log.error) < abs(torque_from_error):
+        self._pid_log.error = self._pid_log.error * (1.0 - error_blend_factor) + torque_from_error * error_blend_factor
 
     # compute feedforward (same as nn setpoint output)
     friction_input = self.update_friction_input(self._setpoint, self._measurement)
