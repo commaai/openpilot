@@ -19,6 +19,9 @@ def clamp(val, min_val, max_val):
   clamped_val = float(np.clip(val, min_val, max_val))
   return clamped_val, clamped_val != val
 
+def smooth_value(val, prev_val, tau):
+  alpha = 1 - np.exp(-DT_MDL / tau) if tau > 0 else 1
+  return alpha * val + (1 - alpha) * prev_val
 
 def clip_curvature(v_ego, prev_curvature, new_curvature, roll):
   # This function respects ISO lateral jerk and acceleration limits + a max curvature
