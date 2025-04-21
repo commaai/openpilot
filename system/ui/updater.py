@@ -28,26 +28,12 @@ class Screen(IntEnum):
   PROGRESS = 2
 
 
-# Placeholder for a real WiFi manager implementation
-class SimpleWifiManager:
-  def __init__(self):
-    pass
-
-  def start(self):
-    pass
-
-  def stop(self):
-    pass
-
-
 class Updater:
   def __init__(self, updater_path, manifest_path):
     self.updater = updater_path
     self.manifest = manifest_path
     self.current_screen = Screen.PROMPT
 
-    # Initialize simpler components
-    self.wifi_manager = SimpleWifiManager()
     self.progress_value = 0
     self.progress_text = "Loading..."
     self.show_reboot_button = False
@@ -66,12 +52,11 @@ class Updater:
     self.update_thread.start()
 
   def _run_update_process(self):
-    # Create a subprocess to run the updater
+    # TODO: just import it and run in a thread without a subprocess
     cmd = [self.updater, "--swap", self.manifest]
     self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                    text=True, bufsize=1, universal_newlines=True)
 
-    # Read output line by line
     for line in self.process.stdout:
       parts = line.strip().split(":")
       if len(parts) == 2:
@@ -81,14 +66,10 @@ class Updater:
         except ValueError:
           pass
 
-    # Wait for process to complete
     exit_code = self.process.wait()
-
     if exit_code == 0:
-      # Update succeeded, trigger reboot
       HARDWARE.reboot()
     else:
-      # Update failed, show reboot button
       self.progress_text = "Update failed"
       self.show_reboot_button = True
 
@@ -111,7 +92,6 @@ class Updater:
     wifi_button_rect = rl.Rectangle(MARGIN, button_y, button_width, BUTTON_HEIGHT)
     if gui_button(wifi_button_rect, "Connect to Wi-Fi"):
       self.current_screen = Screen.WIFI
-      self.wifi_manager.start()
       return  # Return to avoid processing other buttons after screen change
 
     # Install button
@@ -128,7 +108,6 @@ class Updater:
     back_button_rect = rl.Rectangle(MARGIN, gui_app.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     if gui_button(back_button_rect, "Back"):
       self.current_screen = Screen.PROMPT
-      self.wifi_manager.stop()
       return  # Return to avoid processing other interactions after screen change
 
     # Draw placeholder for WiFi implementation
@@ -188,17 +167,12 @@ class Updater:
         return
 
   def render(self):
-    try:
-      if self.current_screen == Screen.PROMPT:
-        self.render_prompt_screen()
-      elif self.current_screen == Screen.WIFI:
-        self.render_wifi_screen()
-      elif self.current_screen == Screen.PROGRESS:
-        self.render_progress_screen()
-    except Exception as e:
-      import traceback
-      print(f"Error in render: {e}")
-      traceback.print_exc()  # Print full traceback for debugging
+    if self.current_screen == Screen.PROMPT:
+      self.render_prompt_screen()
+    elif self.current_screen == Screen.WIFI:
+      self.render_wifi_screen()
+    elif self.current_screen == Screen.PROGRESS:
+      self.render_progress_screen()
 
 
 def main():
@@ -212,16 +186,8 @@ def main():
   try:
     gui_app.init_window("System Update")
     updater = Updater(updater_path, manifest_path)
-
     for _ in gui_app.render():
-      try:
-        updater.render()
-      except Exception as e:
-        import traceback
-        print(f"Error in main render loop: {e}")
-        traceback.print_exc()
-  except Exception as e:
-    print(f"Error initializing application: {e}")
+      updater.render()
   finally:
     # Make sure we clean up even if there's an error
     gui_app.close()
