@@ -12,7 +12,6 @@ PROGRESS_BAR_WIDTH = 1000
 PROGRESS_BAR_HEIGHT = 20
 DEGREES_PER_SECOND = 360.0  # one full rotation per second
 MARGIN_H = 100
-SPACING = 150
 TEXTURE_SIZE = 360
 FONT_SIZE = 88
 LINE_HEIGHT = 96
@@ -49,12 +48,14 @@ class Spinner:
 
     if wrapped_lines:
       # Calculate total height required for spinner and text
-      total_height = TEXTURE_SIZE + SPACING + len(wrapped_lines) * LINE_HEIGHT
+      spacing = 50
+      total_height = TEXTURE_SIZE + spacing + len(wrapped_lines) * LINE_HEIGHT
       center_y = (gui_app.height - total_height) / 2.0 + TEXTURE_SIZE / 2.0
     else:
       # Center spinner vertically
+      spacing = 150
       center_y = gui_app.height / 2.0
-    y_pos = center_y + TEXTURE_SIZE / 2.0 + SPACING
+    y_pos = center_y + TEXTURE_SIZE / 2.0 + spacing
 
     center = rl.Vector2(gui_app.width / 2.0, center_y)
     spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
