@@ -54,11 +54,13 @@ jobs:
       version: ${{ steps.set-env.outputs.version }}
       extra_version_identifier: ${{ steps.set-env.outputs.extra_version_identifier }}
       commit_sha: ${{ steps.set-env.outputs.commit_sha }}
-    if: always() && !failure() && !cancelled()
+    if: ${{ (always() && !failure() && !cancelled()) && (!contains(github.event_name, 'pull_request') || (github.event.action == 'labeled' && github.event.label.name == 'prebuilt')) }}
     steps:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
+          ref: ${{ github.head_ref || github.ref_name }}
+          repository: ${{ github.event.pull_request.head.repo.fork && github.event.pull_request.head.repo.full_name || github.repository }}
       - run: git lfs pull
 
       - name: Cache SCons
@@ -75,15 +77,16 @@ jobs:
             scons-${{ runner.os }}-${{ runner.arch }}
 
       - name: Set Configuration
+        if: (!github.event.pull_request.head.repo.fork)
         run: |
-          if [[ "${{ github.ref_name }}" == "${{ env.DEV_C3_SOURCE_BRANCH }}" ]]; then
+          if [[ "${{ github.head_ref || github.ref_name }}" == "${{ env.DEV_C3_SOURCE_BRANCH }}" ]]; then
             # Dev configuration
             echo "BRANCH_TYPE=dev" >> $GITHUB_ENV
             echo "NEW_BRANCH=${{ env.DEV_TARGET_BRANCH }}" >> $GITHUB_ENV
             echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
             echo "EXTRA_VERSION_IDENTIFIER=${{ github.run_number }}" >> $GITHUB_ENV
           
-          elif [[ "${{ github.ref_name }}" == "${{ env.MASTER_BRANCH }}" || "${{ github.ref_name }}" == "${{ env.MASTER_NEW_BRANCH }}" ]]; then
+          elif [[ "${{ github.head_ref || github.ref_name }}" == "${{ env.MASTER_BRANCH }}" || "${{ github.ref_name }}" == "${{ env.MASTER_NEW_BRANCH }}" ]]; then
             # Master configuration
             echo "BRANCH_TYPE=master" >> $GITHUB_ENV
             echo "NEW_BRANCH=${{ env.STAGING_TARGET_BRANCH }}" >> $GITHUB_ENV
@@ -103,6 +106,13 @@ jobs:
             echo "NEW_BRANCH=${{ github.head_ref || github.ref_name }}-prebuilt" >> $GITHUB_ENV
             echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
           fi
+          
+      - name: Set Configuration (only forks)
+        if: (github.event.pull_request.head.repo.fork)
+        run: |
+          echo "BRANCH_TYPE=dispatch" >> $GITHUB_ENV
+          echo "NEW_BRANCH=${{ github.head_ref || github.ref_name }}-fork-prebuilt" >> $GITHUB_ENV
+          echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
 
       - name: Set environment variables
         id: set-env
@@ -258,7 +268,7 @@ jobs:
   notify:
     needs: [ build, publish ]
     runs-on: ubuntu-24.04
-    if: ${{ (always() && !failure() && !cancelled()) }}
+    if: ${{ (always() && !failure() && !cancelled()) && (!contains(github.event_name, 'pull_request') || (github.event.action == 'labeled' && github.event.label.name == 'prebuilt')) }}
     steps:
       - uses: actions/checkout@v4
       - name: Setup Alpine Linux environment
