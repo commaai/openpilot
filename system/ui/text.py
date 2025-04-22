@@ -72,6 +72,7 @@ def show_text_in_window(text: str):
   text_window = TextWindow(text)
   for _ in gui_app.render():
     text_window.render()
+  gui_app.close()
 
 
 if __name__ == "__main__":
