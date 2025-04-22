@@ -65,9 +65,6 @@ class SpinnerRenderer:
     delta_time = rl.get_frame_time()
     self._rotation = (self._rotation + DEGREES_PER_SECOND * delta_time) % 360.0
 
-    spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
-    comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
-
     rl.draw_texture_pro(self._spinner_texture, rl.Rectangle(0, 0, TEXTURE_SIZE, TEXTURE_SIZE),
                         rl.Rectangle(center.x, center.y, TEXTURE_SIZE, TEXTURE_SIZE),
                         spinner_origin, self._rotation, rl.WHITE)
