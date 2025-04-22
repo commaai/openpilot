@@ -21,6 +21,7 @@ def wrap_text(text, font_size, max_width):
 
   for paragraph in text.split("\n"):
     if not paragraph.strip():
+      # Don't add an empty line to the start of the list, ensuring wrap_text("") returns []
       if lines:
         lines.append("")
       continue
