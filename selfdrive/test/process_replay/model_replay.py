@@ -64,6 +64,7 @@ def generate_report(proposed, master, tmp, commit):
   ModelV2_Plots = zl([
                      (lambda x: get_idx_if_non_empty(x.velocity.x, 0), "velocity.x"),
                      (lambda x: get_idx_if_non_empty(x.action.desiredCurvature), "desiredCurvature"),
+                     (lambda x: get_idx_if_non_empty(x.action.desiredAcceleration), "desiredAcceleration"),
                      (lambda x: get_idx_if_non_empty(x.leadsV3[0].x, 0), "leadsV3.x"),
                      (lambda x: get_idx_if_non_empty(x.laneLines[1].y, 0), "laneLines.y"),
                      (lambda x: get_idx_if_non_empty(x.meta.desireState, 3), "desireState.laneChangeLeft"),

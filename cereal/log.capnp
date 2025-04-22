@@ -1174,6 +1174,8 @@ struct ModelDataV2 {
 
   struct Action {
     desiredCurvature @0 :Float32;
+    desiredAcceleration @1 :Float32;
+    shouldStop @2 :Bool;
   }
 }
 
@@ -2284,6 +2286,7 @@ struct LiveDelayData {
   status @2 :Status;
 
   lateralDelayEstimate @3 :Float32;
+  lateralDelayEstimateStd @5 :Float32;
   points @4 :List(Float32);
 
   enum Status {

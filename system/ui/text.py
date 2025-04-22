@@ -21,13 +21,12 @@ def wrap_text(text, font_size, max_width):
   font = gui_app.font()
 
   for paragraph in text.split("\n"):
-    indent = re.match(r'^\s*', paragraph).group()
-    content = paragraph[len(indent):]
-
-    if content == "":
-      lines.append("")
+    if not paragraph.strip():
+      # Don't add empty lines first, ensuring wrap_text("") returns []
+      if lines:
+        lines.append("")
       continue
-
+    indent = re.match(r"^\s*", paragraph).group()
     current_line = indent
     for word in paragraph.split():
       test_line = current_line + word + " "
@@ -35,8 +34,8 @@ def wrap_text(text, font_size, max_width):
         current_line = test_line
       else:
         lines.append(current_line)
-        current_line = indent + word + " "
-
+        current_line = word + " "
+    current_line = current_line.rstrip()
     if current_line:
       lines.append(current_line)
 
@@ -56,7 +55,7 @@ class TextWindowRenderer:
       position = rl.Vector2(self._textarea_rect.x + scroll.x, self._textarea_rect.y + scroll.y + i * LINE_HEIGHT)
       if position.y + LINE_HEIGHT < self._textarea_rect.y or position.y > self._textarea_rect.y + self._textarea_rect.height:
         continue
-      rl.draw_text_ex(gui_app.font(), line.rstrip(), position, FONT_SIZE, 0, rl.WHITE)
+      rl.draw_text_ex(gui_app.font(), line, position, FONT_SIZE, 0, rl.WHITE)
     rl.end_scissor_mode()
 
     button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
