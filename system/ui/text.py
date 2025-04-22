@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import re
-import sys
 import pyray as rl
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
