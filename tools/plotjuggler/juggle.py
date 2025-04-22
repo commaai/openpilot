@@ -67,7 +67,7 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, pl
 
   extra_args = ""
   if fn is not None:
-    extra_args += f" -d {fn}"
+    extra_args += f" -d {os.path.abspath(fn)}"
   if layout is not None:
     extra_args += f" -l {os.path.abspath(layout)}"
   if route_or_segment_name is not None:
