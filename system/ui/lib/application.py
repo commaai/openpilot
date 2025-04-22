@@ -53,7 +53,8 @@ class GuiApplication:
   def load_texture_from_image(self, file_name: str, width: int, height: int, alpha_premultiply = False):
     """Load and resize a texture, storing it for later automatic unloading."""
     image = rl.load_image(file_name)
-    if alpha_premultiply: rl.image_alpha_premultiply(image)
+    if alpha_premultiply:
+      rl.image_alpha_premultiply(image)
     rl.image_resize(image, width, height)
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
