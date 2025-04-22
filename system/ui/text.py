@@ -21,7 +21,8 @@ def wrap_text(text, font_size, max_width):
 
   for paragraph in text.split("\n"):
     if not paragraph.strip():
-      lines.append("")
+      if lines:
+        lines.append("")
       continue
     indent = re.match(r"^\s*", paragraph).group()
     current_line = indent
