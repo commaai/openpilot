@@ -70,9 +70,9 @@ class Spinner:
       rl.draw_rectangle_rounded(bar, 1, 10, rl.WHITE)
     elif wrapped_lines:
       for i, line in enumerate(wrapped_lines):
-        text_size = rl.measure_text_ex(gui_app.font(), line, FONT_SIZE, 1.0)
+        text_size = rl.measure_text_ex(gui_app.font(), line, FONT_SIZE, 0.0)
         rl.draw_text_ex(gui_app.font(), line, rl.Vector2(center.x - text_size.x / 2, y_pos + i * LINE_HEIGHT),
-                        FONT_SIZE, 1.0, rl.WHITE)
+                        FONT_SIZE, 0.0, rl.WHITE)
 
 
 if __name__ == "__main__":
