@@ -23,7 +23,8 @@ def clamp(value, min_value, max_value):
 class Spinner:
   def __init__(self):
     self._comma_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_comma.png"), TEXTURE_SIZE, TEXTURE_SIZE)
-    self._spinner_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE, TEXTURE_SIZE)
+    self._spinner_texture = gui_app.load_texture_from_image(os.path.join(BASEDIR, "selfdrive/assets/img_spinner_track.png"), TEXTURE_SIZE, TEXTURE_SIZE,
+                                                            alpha_premultiply=True)
     self._rotation = 0.0
     self._text: str = ""
     self._progress: int | None = None
