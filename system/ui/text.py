@@ -61,7 +61,7 @@ class TextWindow:
     ret = gui_button(button_bounds, "Exit" if PC else "Reboot", button_style=ButtonStyle.TRANSPARENT)
     if ret:
       if PC:
-        gui_app.close()
+        gui_app.request_close()
       else:
         HARDWARE.reboot()
     return ret

@@ -38,6 +38,10 @@ class GuiApplication:
     self._textures: list[rl.Texture] = []
     self._target_fps: int = DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
+    self._window_close_requested = False
+
+  def request_close(self):
+    self._window_close_requested = True
 
   def init_window(self, title: str, fps: int=DEFAULT_FPS):
     atexit.register(self.close)  # Automatically call close() on exit
@@ -80,7 +84,7 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
-    while not rl.window_should_close():
+    while not (self._window_close_requested or rl.window_should_close()):
       rl.begin_drawing()
       rl.clear_background(rl.BLACK)
 
