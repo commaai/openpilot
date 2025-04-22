@@ -31,12 +31,12 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(longManeuverToggle);
 
   experimentalLongitudinalToggle = new ParamControl(
-    "ExperimentalLongitudinalEnabled",
-    tr("sunnypilot Longitudinal Control (Alpha)"),
+    "AlphaLongitudinalEnabled",
+    tr("openpilot Longitudinal Control (Alpha)"),
     QString("<b>%1</b><br><br>%2")
-      .arg(tr("WARNING: sunnypilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
-      .arg(tr("On this car, sunnypilot defaults to the car's built-in ACC instead of sunnypilot's longitudinal control. "
-              "Enable this to switch to sunnypilot longitudinal control. Enabling Experimental mode is recommended when enabling sunnypilot longitudinal control alpha.")),
+      .arg(tr("WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB)."))
+      .arg(tr("On this car, sunnypilot defaults to the car's built-in ACC instead of openpilot's longitudinal control. "
+              "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
     ""
   );
   experimentalLongitudinalToggle->setConfirmation(true, false);
@@ -99,8 +99,8 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     auto hyundai = CP.getBrand() == "hyundai";
     auto hyundai_mando_radar = hyundai && (CP.getFlags() & 4096);
 
-    if (!CP.getExperimentalLongitudinalAvailable() || is_release) {
-      params.remove("ExperimentalLongitudinalEnabled");
+    if (!CP.getAlphaLongitudinalAvailable() || is_release) {
+      params.remove("AlphaLongitudinalEnabled");
       experimentalLongitudinalToggle->setEnabled(false);
     }
 
@@ -109,7 +109,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
      * - is not a release branch, and
      * - the car supports experimental longitudinal control (alpha)
      */
-    experimentalLongitudinalToggle->setVisible(CP.getExperimentalLongitudinalAvailable() && !is_release);
+    experimentalLongitudinalToggle->setVisible(CP.getAlphaLongitudinalAvailable() && !is_release);
 
     longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
     hyundaiRadarTracksToggle->setVisible(hyundai_mando_radar && hasLongitudinalControl(CP));
