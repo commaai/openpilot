@@ -333,6 +333,7 @@ const struct i2c_random_wr_payload init_array_os04c10[] = {
 
 const struct i2c_random_wr_payload ife_downscale_override_array_os04c10[] = {
   // OS04C10_AA_00_02_17_wAO_2688x1524_MIPI728Mbps_Linear12bit_20FPS_4Lane_MCLK24MHz
+  {0x3822, 0x14},
   {0x3714, 0x24},
   {0x37c2, 0x04},
   {0x3662, 0x10},
