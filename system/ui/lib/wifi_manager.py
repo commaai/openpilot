@@ -143,7 +143,6 @@ class WifiManager:
   async def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False) -> None:
     """Connect to a selected Wi-Fi network."""
     try:
-      # settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
       connection = {
         'connection': {
           'type': Variant('s', '802-11-wireless'),
@@ -172,9 +171,6 @@ class WifiManager:
 
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
       await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
-
-      # for network in self.networks:
-      #   network.is_connected = True if network.ssid == ssid else False
       await self._update_connection_status()
 
     except DBusError as e:
