@@ -135,7 +135,7 @@ class WifiManager:
   async def connect_to_network(
     self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False
   ) -> None:
-    """Connect to a selected WiFi network."""
+    """Connect to a selected Wi-Fi network."""
     try:
       # settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
       connection = {
@@ -186,7 +186,7 @@ class WifiManager:
       device_proxy = self.bus.get_proxy_object(NM, device_path, device)
       device_interface = device_proxy.get_interface(NM_DEVICE_IFACE)
       device_type = await device_interface.get_device_type()  # type: ignore[attr-defined]
-      if device_type == 2:  # WiFi device
+      if device_type == 2:  # Wi-Fi device
         self.device_path = device_path
         self.device_proxy = device_proxy
         return True
@@ -279,7 +279,7 @@ class WifiManager:
     await self._get_available_networks()
 
   async def _add_match_rule(self, rule):
-    """ "Add a match rule on the bus."""
+    """Add a match rule on the bus."""
     reply = await self.bus.call(
       Message(
         message_type=MessageType.METHOD_CALL,
