@@ -162,6 +162,7 @@ def main():
   for _ in gui_app.render():
     wifi_ui.render(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
 
+  wifi_manager.shutdown()
   gui_app.close()
 
 
