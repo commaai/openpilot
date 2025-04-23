@@ -1,7 +1,8 @@
-import asyncio
+from dataclasses import dataclass
+from typing import Literal
+
 import pyray as rl
-from enum import IntEnum
-from openpilot.system.ui.lib.wifi_manager import WifiManager, NetworkInfo
+from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.label import gui_label
@@ -12,57 +13,67 @@ from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 NM_DEVICE_STATE_NEED_AUTH = 60
 ITEM_HEIGHT = 160
 
-class ActionState(IntEnum):
-  NONE = 0
-  CONNECT = 1
-  CONNECTING = 2
-  FORGOT = 3
-  FORGETTING = 4
-  NEED_AUTH = 5
-  SHOW_FORGOT_CONFIRM = 6
+
+@dataclass
+class StateIdle:
+  action: Literal["idle"] = "idle"
+
+@dataclass
+class StateConnecting:
+  network: NetworkInfo
+  action: Literal["connecting"] = "connecting"
+
+@dataclass
+class StateNeedsAuth:
+  network: NetworkInfo
+  action: Literal["needs_auth"] = "needs_auth"
+
+@dataclass
+class StateShowForgetConfirm:
+  network: NetworkInfo
+  action: Literal["show_forget_confirm"] = "show_forget_confirm"
+
+@dataclass
+class StateForgetting:
+  network: NetworkInfo
+  action: Literal["forgetting"] = "forgetting"
+
+UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm | StateForgetting
 
 
 class WifiManagerUI:
-  def __init__(self, wifi_manager):
-    self.wifi_manager = wifi_manager
-    self.wifi_manager.need_auth_callback = self._on_need_auth
-    self.wifi_manager.activated_callback = self._on_activated
-    self._selected_network = None
+  def __init__(self, wifi_manager: WifiManagerWrapper):
+    self.state: UIState = StateIdle()
     self.btn_width = 200
-    self.current_action: ActionState = ActionState.NONE
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard()
 
-    asyncio.create_task(self._initialize())
-
-  async def _initialize(self) -> None:
-    try:
-      await self.wifi_manager.connect()
-    except Exception as e:
-      print(f"Initialization error: {e}")
+    self.wifi_manager = wifi_manager
+    self.wifi_manager.callbacks = WifiManagerCallbacks(self._on_need_auth, self._on_activated, self._on_forgotten)
+    self.wifi_manager.connect()
 
   def render(self, rect: rl.Rectangle):
     if not self.wifi_manager.networks:
-      gui_label(rect, "Scanning Wi-Fi networks...", 40, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       return
 
-    if self.current_action == ActionState.SHOW_FORGOT_CONFIRM:
-      result = confirm_dialog(rect, f'Forget Wi-Fi Network "{self._selected_network.ssid}"?', 'Forget')
-      if result == 1:
-        asyncio.create_task(self.forgot_network())
-      elif result == 0:
-        self.current_action = ActionState.NONE
-      return
+    match self.state:
+      case StateNeedsAuth(network):
+        result = self.keyboard.render(rect, "Enter password", f"for {network.ssid}")
+        if result == 1:
+          self.connect_to_network(network, self.keyboard.text)
+        elif result == 0:
+          self.state = StateIdle()
 
-    if self.current_action == ActionState.NEED_AUTH:
-      result = self.keyboard.render(rect, 'Enter password', f'for {self._selected_network.ssid}')
-      if result == 1:
-        asyncio.create_task(self.connect_to_network(self.keyboard.text))
-      elif result == 0:
-        self.current_action = ActionState.NONE
-      return
+      case StateShowForgetConfirm(network):
+        result = confirm_dialog(rect, f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
+        if result == 1:
+          self.forget_network(network)
+        elif result == 0:
+          self.state = StateIdle()
 
-    self._draw_network_list(rect)
+      case _:
+        self._draw_network_list(rect)
 
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self.wifi_manager.networks) * ITEM_HEIGHT)
@@ -89,10 +100,18 @@ class WifiManagerUI:
 
     gui_label(label_rect, network.ssid, 55)
 
-    if network.is_connected and self.current_action == ActionState.NONE:
-      rl.gui_label(state_rect, "Connected")
-    elif self.current_action == ActionState.CONNECTING and self._selected_network and self._selected_network.ssid == network.ssid:
-      rl.gui_label(state_rect, "CONNECTING...")
+    status_text = ""
+    if network.is_connected:
+      status_text = "Connected"
+    match self.state:
+      case StateConnecting(network=connecting):
+        if connecting.ssid == network.ssid:
+          status_text = "CONNECTING..."
+      case StateForgetting(network=forgetting):
+        if forgetting.ssid == network.ssid:
+          status_text = "FORGETTING..."
+    if status_text:
+      rl.gui_label(state_rect, status_text)
 
     # If the network is saved, show the "Forget" button
     if self.wifi_manager.is_saved(network.ssid):
@@ -102,46 +121,42 @@ class WifiManagerUI:
         self.btn_width,
         80,
       )
-      if gui_button(forget_btn_rect, "Forget") and self.current_action == ActionState.NONE and clicked:
-        self._selected_network = network
-        self.current_action = ActionState.SHOW_FORGOT_CONFIRM
+      if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget") and clicked:
+        self.state = StateShowForgetConfirm(network)
 
-    if (
-      self.current_action == ActionState.NONE
-      and rl.check_collision_point_rec(rl.get_mouse_position(), label_rect)
-      and clicked
-    ):
-      self._selected_network = network
-      if not self.wifi_manager.is_saved(self._selected_network.ssid):
-        self.current_action = ActionState.NEED_AUTH
+    if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), label_rect) and clicked:
+      if not self.wifi_manager.is_saved(network.ssid):
+        self.state = StateNeedsAuth(network)
       else:
-        asyncio.create_task(self.connect_to_network())
+        self.connect_to_network(network)
 
-  async def forgot_network(self):
-    self.current_action = ActionState.FORGETTING
-    await self.wifi_manager.forget_connection(self._selected_network.ssid)
-    self.current_action = ActionState.NONE
-
-  async def connect_to_network(self, password=''):
-    self.current_action = ActionState.CONNECTING
-    if self.wifi_manager.is_saved(self._selected_network.ssid) and not password:
-      await self.wifi_manager.activate_connection(self._selected_network.ssid)
+  def connect_to_network(self, network: NetworkInfo, password=''):
+    if self.wifi_manager.is_saved(network.ssid) and not password:
+      self.wifi_manager.activate_connection(network.ssid)
     else:
-      await self.wifi_manager.connect_to_network(self._selected_network.ssid, password)
+      self.wifi_manager.connect_to_network(network.ssid, password)
+
+  def forget_network(self, network: NetworkInfo):
+    self.state = StateForgetting(network)
+    self.wifi_manager.forget_connection(network.ssid)
 
   def _on_need_auth(self):
-    if self.current_action == ActionState.CONNECTING and self._selected_network:
-      self.current_action = ActionState.NEED_AUTH
+    match self.state:
+      case StateConnecting(network):
+        self.state = StateNeedsAuth(network)
 
   def _on_activated(self):
-    if self.current_action == ActionState.CONNECTING:
-      self.current_action = ActionState.NONE
+    if isinstance(self.state, StateConnecting):
+      self.state = StateIdle()
+
+  def _on_forgotten(self):
+    if isinstance(self.state, StateForgetting):
+      self.state = StateIdle()
 
 
-async def main():
-  gui_app.init_window("Wifi Manager")
-
-  wifi_manager = WifiManager()
+def main():
+  gui_app.init_window("Wi-Fi Manager")
+  wifi_manager = WifiManagerWrapper()
   wifi_ui = WifiManagerUI(wifi_manager)
 
   for _ in gui_app.render():
@@ -151,4 +166,4 @@ async def main():
 
 
 if __name__ == "__main__":
-  asyncio.run(main())
+  main()
