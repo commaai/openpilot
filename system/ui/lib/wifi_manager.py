@@ -25,7 +25,6 @@ NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
 
 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
 
-
 # NetworkManager device states
 class NMDeviceState(IntEnum):
   DISCONNECTED = 30
@@ -34,14 +33,12 @@ class NMDeviceState(IntEnum):
   IP_CONFIG = 70
   ACTIVATED = 100
 
-
 class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
   WPA2 = 2
   WPA3 = 3
   UNSUPPORTED = 4
-
 
 @dataclass
 class NetworkInfo:
@@ -66,10 +63,10 @@ class WifiManager:
     self.callbacks = callbacks
     self.networks: list[NetworkInfo] = []
     self.bus: MessageBus = None
-    self.device_path: str = ''
+    self.device_path: str = ""
     self.device_proxy = None
     self.saved_connections: dict[str, str] = {}
-    self.active_ap_path: str = ''
+    self.active_ap_path: str = ""
     self.scan_task: asyncio.Task | None = None
     self.running: bool = True
 
@@ -137,7 +134,7 @@ class WifiManager:
       return False
     try:
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
-      await nm_iface.call_activate_connection(connection_path, self.device_path, '/')
+      await nm_iface.call_activate_connection(connection_path, self.device_path, "/")
       return True
     except DBusError as e:
       cloudlog.error(f"Failed to activate connection {ssid}: {str(e)}")
