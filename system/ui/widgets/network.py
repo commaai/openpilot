@@ -144,14 +144,10 @@ async def main():
   wifi_manager = WifiManager()
   wifi_ui = WifiManagerUI(wifi_manager)
 
-  while not rl.window_should_close():
-    rl.begin_drawing()
-    rl.clear_background(rl.BLACK)
-
+  for _ in gui_app.render():
     wifi_ui.render(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
 
-    rl.end_drawing()
-    await asyncio.sleep(0.001)
+  gui_app.close()
 
 
 if __name__ == "__main__":
