@@ -28,15 +28,11 @@ class GuiScrollPanel:
     mouse_pos = rl.get_mouse_position()
 
     # Handle dragging logic
-    if rl.check_collision_point_rec(mouse_pos, bounds) and rl.is_mouse_button_pressed(
-      rl.MouseButton.MOUSE_BUTTON_LEFT
-    ):
+    if rl.check_collision_point_rec(mouse_pos, bounds) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
       if self._scroll_state == ScrollState.IDLE:
         self._scroll_state = ScrollState.DRAGGING_CONTENT
         if self._show_vertical_scroll_bar:
-          scrollbar_width = rl.gui_get_style(
-            rl.GuiControl.LISTVIEW, rl.GuiListViewProperty.SCROLLBAR_WIDTH
-          )
+          scrollbar_width = rl.gui_get_style(rl.GuiControl.LISTVIEW, rl.GuiListViewProperty.SCROLLBAR_WIDTH)
           scrollbar_x = bounds.x + bounds.width - scrollbar_width
           if mouse_pos.x >= scrollbar_x:
             self._scroll_state = ScrollState.DRAGGING_SCROLLBAR
