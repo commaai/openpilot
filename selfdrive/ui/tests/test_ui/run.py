@@ -66,7 +66,7 @@ def setup_settings_firehose(click, pm: PubMaster, scroll=None):
 
 def setup_settings_developer(click, pm: PubMaster, scroll=None):
   CP = car.CarParams()
-  CP.experimentalLongitudinalAvailable = True
+  CP.alphaLongitudinalAvailable = True
   Params().put("CarParamsPersistent", CP.to_bytes())
 
   setup_settings_device(click, pm)

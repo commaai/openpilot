@@ -79,7 +79,7 @@ class TestCarModelBase(unittest.TestCase):
     cls.elm_frame = None
     cls.car_safety_mode_frame = None
     cls.fingerprint = gen_empty_fingerprint()
-    experimental_long = False
+    alpha_long = False
     for msg in lr:
       if msg.which() == "can":
         can = can_capnp_to_list((msg.as_builder().to_bytes(),))[0]
@@ -92,7 +92,7 @@ class TestCarModelBase(unittest.TestCase):
       elif msg.which() == "carParams":
         car_fw = msg.carParams.carFw
         if msg.carParams.openpilotLongitudinalControl:
-          experimental_long = True
+          alpha_long = True
         if cls.platform is None:
           live_fingerprint = msg.carParams.carFingerprint
           cls.platform = MIGRATION.get(live_fingerprint, live_fingerprint)
@@ -114,7 +114,7 @@ class TestCarModelBase(unittest.TestCase):
           cls.car_safety_mode_frame = len(can_msgs)
 
     assert len(can_msgs) > int(50 / DT_CTRL), "no can data found"
-    return car_fw, can_msgs, experimental_long
+    return car_fw, can_msgs, alpha_long
 
   @classmethod
   def get_testing_data(cls):
@@ -147,14 +147,14 @@ class TestCarModelBase(unittest.TestCase):
         raise unittest.SkipTest
       raise Exception(f"missing test route for {cls.platform}")
 
-    car_fw, cls.can_msgs, experimental_long = cls.get_testing_data()
+    car_fw, cls.can_msgs, alpha_long = cls.get_testing_data()
 
     # if relay is expected to be open in the route
     cls.openpilot_enabled = cls.car_safety_mode_frame is not None
 
     cls.CarInterface = interfaces[cls.platform]
-    cls.CP = cls.CarInterface.get_params(cls.platform, cls.fingerprint, car_fw, experimental_long, docs=False)
-    cls.CP_SP = cls.CarInterface.get_params_sp(cls.CP, cls.platform,  cls.fingerprint, car_fw, experimental_long, docs=False)
+    cls.CP = cls.CarInterface.get_params(cls.platform, cls.fingerprint, car_fw, alpha_long, docs=False)
+    cls.CP_SP = cls.CarInterface.get_params_sp(cls.CP, cls.platform,  cls.fingerprint, car_fw, alpha_long, docs=False)
     assert cls.CP
     assert cls.CP_SP
     assert cls.CP.carFingerprint == cls.platform

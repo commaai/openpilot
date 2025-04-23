@@ -364,7 +364,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    _CI = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params)
+    _CI = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), cached_params=cached_params)
     CP, CP_SP = _CI.CP, _CI.CP_SP
 
     if not params.get_bool("DisengageOnAccelerator"):
@@ -465,7 +465,7 @@ CONFIGS = [
     proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "livePose", "liveParameters", "radarState",
+      "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
@@ -553,6 +553,15 @@ CONFIGS = [
     should_recv_callback=FrequencyBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
+  ),
+  ProcessConfig(
+    proc_name="lagd",
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "controlsState"],
+    subs=["liveDelay"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
+    tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -771,7 +780,7 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
         params_dict["CarParamsCache"] = CP.as_builder().to_bytes()
 
     if CP.openpilotLongitudinalControl:
-      params_dict["ExperimentalLongitudinalEnabled"] = True
+      params_dict["AlphaLongitudinalEnabled"] = True
 
     if CP.notCar:
       params_dict["JoystickDebugMode"] = True
