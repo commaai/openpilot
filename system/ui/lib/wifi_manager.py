@@ -59,8 +59,8 @@ class WifiManagerCallbacks:
 
 
 class WifiManager:
-  def __init__(self, callbacks: WifiManagerCallbacks):
-    self.callbacks = callbacks
+  def __init__(self, callbacks):
+    self.callbacks: WifiManagerCallbacks = callbacks
     self.networks: list[NetworkInfo] = []
     self.bus: MessageBus = None
     self.device_path: str = ""
@@ -394,24 +394,18 @@ class WifiManagerWrapper:
     self._manager: WifiManager | None = None
     self._callbacks: WifiManagerCallbacks = WifiManagerCallbacks()
 
-    self._loop = None
-    self._running = False
-    self._lock = threading.RLock()
-
     self._thread = threading.Thread(target=self._run, daemon=True)
-    self._thread.start()
+    self._loop: asyncio.EventLoop | None = None
+    self._running = False
 
-    while self._thread is not None and not self._running:
-      time.sleep(0.1)
+  def set_callbacks(self, callbacks: WifiManagerCallbacks):
+    self._callbacks = callbacks
 
-  @property
-  def callbacks(self) -> WifiManagerCallbacks:
-    return self._callbacks
-
-  @callbacks.setter
-  def callbacks(self, callbacks: WifiManagerCallbacks):
-    with self._lock:
-      self._callbacks = callbacks
+  def start(self) -> None:
+    if not self._running:
+      self._thread.start()
+      while self._thread is not None and not self._running:
+        time.sleep(0.1)
 
   def _run(self):
     self._loop = asyncio.new_event_loop()
@@ -428,9 +422,10 @@ class WifiManagerWrapper:
         self._loop.stop()
       self._running = False
 
-  def shutdown(self):
+  def shutdown(self) -> None:
     if self._running:
-      self._run_coroutine(self._manager.shutdown())
+      if self._manager is not None:
+        self._run_coroutine(self._manager.shutdown())
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():
@@ -439,33 +434,41 @@ class WifiManagerWrapper:
 
   @property
   def networks(self) -> list[NetworkInfo]:
-    """Get the current list of networks (thread-safe)."""
-    with self._lock:
-      return self._manager.networks if self._manager else []
+    """Get the current list of networks."""
+    return self._manager.networks if self._manager else []
 
   def is_saved(self, ssid: str) -> bool:
-    """Check if a network is saved (thread-safe)."""
-    with self._lock:
-      return self._manager.is_saved(ssid) if self._manager else False
+    """Check if a network is saved."""
+    return self._manager.is_saved(ssid) if self._manager else False
 
   def connect(self):
     """Connect to DBus and start Wi-Fi scanning."""
+    if not self._manager:
+      return
     self._run_coroutine(self._manager.connect())
 
   def request_scan(self):
     """Request a scan for Wi-Fi networks."""
+    if not self._manager:
+      return
     self._run_coroutine(self._manager.request_scan())
 
   def forget_connection(self, ssid: str):
     """Forget a saved Wi-Fi connection."""
+    if not self._manager:
+      return
     self._run_coroutine(self._manager.forget_connection(ssid))
 
   def activate_connection(self, ssid: str):
     """Activate an existing Wi-Fi connection."""
+    if not self._manager:
+      return
     self._run_coroutine(self._manager.activate_connection(ssid))
 
   def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False):
     """Connect to a Wi-Fi network."""
+    if not self._manager:
+      return
     self._run_coroutine(self._manager.connect_to_network(ssid, password, bssid, is_hidden))
 
   def _run_coroutine(self, coro):

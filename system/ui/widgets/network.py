@@ -49,7 +49,8 @@ class WifiManagerUI:
     self.keyboard = Keyboard()
 
     self.wifi_manager = wifi_manager
-    self.wifi_manager.callbacks = WifiManagerCallbacks(self._on_need_auth, self._on_activated, self._on_forgotten)
+    self.wifi_manager.set_callbacks(WifiManagerCallbacks(self._on_need_auth, self._on_activated, self._on_forgotten))
+    self.wifi_manager.start()
     self.wifi_manager.connect()
 
   def render(self, rect: rl.Rectangle):
