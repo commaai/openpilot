@@ -87,6 +87,10 @@ class TextWindow:
     while self._renderer is None and self._thread.is_alive():
       time.sleep(0.01)
 
+  def wait_for_exit(self):
+    while self._thread.is_alive():
+      time.sleep(0.01)
+
   def _run(self):
     if os.getenv("CI") is not None:
       return
