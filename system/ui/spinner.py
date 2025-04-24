@@ -12,7 +12,6 @@ PROGRESS_BAR_WIDTH = 1000
 PROGRESS_BAR_HEIGHT = 20
 DEGREES_PER_SECOND = 360.0  # one full rotation per second
 MARGIN_H = 100
-MARGIN_V = 200
 TEXTURE_SIZE = 360
 FONT_SIZE = 88
 LINE_HEIGHT = 96
@@ -43,7 +42,22 @@ class Spinner:
         self._wrapped_lines = wrap_text(text, FONT_SIZE, gui_app.width - MARGIN_H)
 
   def render(self):
-    center = rl.Vector2(gui_app.width / 2.0, gui_app.height / 2.0)
+    with self._lock:
+      progress = self._progress
+      wrapped_lines = self._wrapped_lines
+
+    if wrapped_lines:
+      # Calculate total height required for spinner and text
+      spacing = 50
+      total_height = TEXTURE_SIZE + spacing + len(wrapped_lines) * LINE_HEIGHT
+      center_y = (gui_app.height - total_height) / 2.0 + TEXTURE_SIZE / 2.0
+    else:
+      # Center spinner vertically
+      spacing = 150
+      center_y = gui_app.height / 2.0
+    y_pos = center_y + TEXTURE_SIZE / 2.0 + spacing
+
+    center = rl.Vector2(gui_app.width / 2.0, center_y)
     spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
     comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
@@ -57,11 +71,6 @@ class Spinner:
     rl.draw_texture_v(self._comma_texture, comma_position, rl.WHITE)
 
     # Display progress bar or text based on user input
-    y_pos = rl.get_screen_height() - MARGIN_V - PROGRESS_BAR_HEIGHT
-    with self._lock:
-      progress = self._progress
-      wrapped_lines = self._wrapped_lines
-
     if progress is not None:
       bar = rl.Rectangle(center.x - PROGRESS_BAR_WIDTH / 2.0, y_pos, PROGRESS_BAR_WIDTH, PROGRESS_BAR_HEIGHT)
       rl.draw_rectangle_rounded(bar, 1, 10, DARKGRAY)

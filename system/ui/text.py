@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import re
 import pyray as rl
-from openpilot.system.hardware import HARDWARE
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
@@ -21,7 +21,9 @@ def wrap_text(text, font_size, max_width):
 
   for paragraph in text.split("\n"):
     if not paragraph.strip():
-      lines.append("")
+      # Don't add empty lines first, ensuring wrap_text("") returns []
+      if lines:
+        lines.append("")
       continue
     indent = re.match(r"^\s*", paragraph).group()
     current_line = indent
@@ -56,9 +58,12 @@ class TextWindow:
     rl.end_scissor_mode()
 
     button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
-    ret = gui_button(button_bounds, "Reboot", button_style=ButtonStyle.TRANSPARENT)
+    ret = gui_button(button_bounds, "Exit" if PC else "Reboot", button_style=ButtonStyle.TRANSPARENT)
     if ret:
-      HARDWARE.reboot()
+      if PC:
+        gui_app.request_close()
+      else:
+        HARDWARE.reboot()
     return ret
 
 
@@ -67,6 +72,7 @@ def show_text_in_window(text: str):
   text_window = TextWindow(text)
   for _ in gui_app.render():
     text_window.render()
+  gui_app.close()
 
 
 if __name__ == "__main__":
