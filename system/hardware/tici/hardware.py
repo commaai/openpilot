@@ -341,6 +341,13 @@ class Tici(HardwareBase):
                          exhaust=exhaust,
                          case=case)
 
+  def set_display_power(self, on):
+    try:
+      with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
+        f.write("0" if on else "4")
+    except Exception:
+      pass
+
   def set_screen_brightness(self, percentage):
     try:
       with open("/sys/class/backlight/panel0-backlight/max_brightness") as f:

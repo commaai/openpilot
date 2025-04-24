@@ -53,6 +53,9 @@ class Pc(HardwareBase):
   def shutdown(self):
     print("SHUTDOWN!")
 
+  def set_display_power(self, on):
+    pass
+
   def set_screen_brightness(self, percentage):
     pass
 
