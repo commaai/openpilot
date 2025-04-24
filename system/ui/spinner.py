@@ -71,7 +71,7 @@ class SpinnerRenderer:
                         spinner_origin, self._rotation, rl.WHITE)
     rl.draw_texture_v(self._comma_texture, comma_position, rl.WHITE)
 
-    # Display progress bar or text based on user input
+    # Display the progress bar or text based on user input
     if progress is not None:
       bar = rl.Rectangle(center.x - PROGRESS_BAR_WIDTH / 2.0, y_pos, PROGRESS_BAR_WIDTH, PROGRESS_BAR_HEIGHT)
       rl.draw_rectangle_rounded(bar, 1, 10, DARKGRAY)
@@ -92,7 +92,7 @@ class Spinner:
     self._thread = threading.Thread(target=self._run)
     self._thread.start()
 
-    # wait for renderer to be initialized
+    # wait for the renderer to be initialized
     while self._renderer is None and self._thread.is_alive():
       time.sleep(0.01)
 
