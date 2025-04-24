@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
+import os
 import re
+import threading
+import time
 import pyray as rl
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
@@ -42,7 +45,8 @@ def wrap_text(text, font_size, max_width):
 
   return lines
 
-class TextWindow:
+
+class TextWindowRenderer:
   def __init__(self, text: str):
     self._textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2)
     self._wrapped_lines = wrap_text(text, FONT_SIZE, self._textarea_rect.width - 20)
@@ -70,13 +74,49 @@ class TextWindow:
     return ret
 
 
-def show_text_in_window(text: str):
-  gui_app.init_window("Text")
-  text_window = TextWindow(text)
-  for _ in gui_app.render():
-    text_window.render()
-  gui_app.close()
+class TextWindow:
+  def __init__(self, text: str):
+    self._text = text
+
+    self._renderer: TextWindowRenderer | None = None
+    self._stop_event = threading.Event()
+    self._thread = threading.Thread(target=self._run)
+    self._thread.start()
+
+    # wait for the renderer to be initialized
+    while self._renderer is None and self._thread.is_alive():
+      time.sleep(0.01)
+
+  def _run(self):
+    if os.getenv("CI") is not None:
+      return
+    gui_app.init_window("Text")
+    self._renderer = renderer = TextWindowRenderer(self._text)
+    try:
+      for _ in gui_app.render():
+        if self._stop_event.is_set():
+          break
+        renderer.render()
+    finally:
+      gui_app.close()
+
+  def __enter__(self):
+    return self
+
+  def close(self):
+    if self._thread.is_alive():
+      self._stop_event.set()
+      self._thread.join(timeout=2.0)
+      if self._thread.is_alive():
+        print("WARNING: failed to join text window thread")
+
+  def __del__(self):
+    self.close()
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    self.close()
 
 
 if __name__ == "__main__":
-  show_text_in_window(DEMO_TEXT)
+  with TextWindow(DEMO_TEXT):
+    time.sleep(5)
