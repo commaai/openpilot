@@ -130,7 +130,6 @@ class HardwareBase(ABC):
   def get_thermal_config(self):
     return ThermalConfig()
 
-  @abstractmethod
   def set_display_power(self, on: bool):
     pass
 
