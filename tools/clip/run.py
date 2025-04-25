@@ -41,7 +41,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   atexit.register(lambda: ui_proc.terminate())
 
   replay_proc = subprocess.Popen(
-    ["./tools/replay/replay", "-c", "1", "-s", str(start_seconds), "--no-loop", "--prefix", env.get('OPENPILOT_PREFIX'), route],
+    ["./tools/replay/replay", "-c", "1", "-s", str(start_seconds), "--no-loop", "--prefix", str(env.get('OPENPILOT_PREFIX')), route],
     env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: replay_proc.terminate())
 
