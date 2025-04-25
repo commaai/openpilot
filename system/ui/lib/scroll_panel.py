@@ -17,12 +17,12 @@ class GuiScrollPanel:
   def __init__(self, show_vertical_scroll_bar: bool = False):
     self._scroll_state: ScrollState = ScrollState.IDLE
     self._last_mouse_y: float = 0.0
-    self._start_mouse_y: float = 0.0  # Track initial mouse position for drag detection
+    self._start_mouse_y: float = 0.0  # Track the initial mouse position for drag detection
     self._offset = rl.Vector2(0, 0)
     self._view = rl.Rectangle(0, 0, 0, 0)
     self._show_vertical_scroll_bar: bool = show_vertical_scroll_bar
     self._velocity_y = 0.0  # Velocity for inertia
-    self._is_dragging = False  # Flag to indicate if drag occurred
+    self._is_dragging = False
 
   def handle_scroll(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
     mouse_pos = rl.get_mouse_position()
@@ -46,15 +46,15 @@ class GuiScrollPanel:
       if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
         delta_y = mouse_pos.y - self._last_mouse_y
 
-        # Check if movement exceeds drag threshold
+        # Check if movement exceeds the drag threshold
         total_drag = abs(mouse_pos.y - self._start_mouse_y)
         if total_drag > DRAG_THRESHOLD:
           self._is_dragging = True
 
         if self._scroll_state == ScrollState.DRAGGING_CONTENT:
           self._offset.y += delta_y
-        else:  # DRAGGING_SCROLLBAR
-          delta_y = -delta_y  # Invert for scrollbar
+        elif self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
+          delta_y = -delta_y
 
         self._last_mouse_y = mouse_pos.y
         self._velocity_y = delta_y  # Update velocity during drag
@@ -85,8 +85,4 @@ class GuiScrollPanel:
     return self._offset
 
   def is_click_valid(self) -> bool:
-    return (
-      self._scroll_state == ScrollState.IDLE
-      and not self._is_dragging
-      and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-    )
+    return self._scroll_state == ScrollState.IDLE and not self._is_dragging and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
