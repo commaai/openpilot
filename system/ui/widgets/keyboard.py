@@ -64,9 +64,7 @@ class Keyboard:
 
     # Text box for input
     self._sync_string_pointer()
-    rl.gui_text_box(
-      rl.Rectangle(rect.x, rect.y + 160, rect.width, 100), self._string_pointer, self._max_text_size, True
-    )
+    rl.gui_text_box(rl.Rectangle(rect.x, rect.y + 160, rect.width, 100), self._string_pointer, self._max_text_size, True)
     self._input_text = rl.ffi.string(self._string_pointer).decode('utf-8')
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
@@ -82,11 +80,7 @@ class Keyboard:
         if i > 0:
           start_x += h_space
 
-        new_width = (
-          (key_width * 3 + h_space * 2)
-          if key == SPACE_KEY
-          else (key_width * 2 + h_space if key == ENTER_KEY else key_width)
-        )
+        new_width = (key_width * 3 + h_space * 2) if key == SPACE_KEY else (key_width * 2 + h_space if key == ENTER_KEY else key_width)
         key_rect = rl.Rectangle(start_x, row_y_start + row * (key_height + v_space), new_width, key_height)
         start_x += new_width
 
