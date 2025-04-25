@@ -15,7 +15,7 @@ RESOLUTION = "2160x1080"
 PIXEL_DEPTH = "24"
 FRAMERATE = 20
 DEFAULT_OUTPUT = "output.mp4"
-DEMO_ROUTE = "a2a0ccea32023010/2023-07-27--13-01-19/0"
+DEMO_ROUTE = "a2a0ccea32023010/2023-07-27--13-01-19"
 
 
 def wait_for_video():
@@ -26,15 +26,6 @@ def wait_for_video():
     no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
 
 
-def ensure_xvfb(display: str):
-  xvfb_cmd = ["Xvfb", display, "-screen", "0", f"{RESOLUTION}x{PIXEL_DEPTH}"]
-  xvfb_proc = subprocess.Popen(xvfb_cmd, stdout=DEVNULL, stderr=DEVNULL)
-  time.sleep(1)
-  if xvfb_proc.poll() is not None:
-    raise RuntimeError(f"Failed to start Xvfb on display {display}")
-  return xvfb_proc
-
-
 def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display_num = str(randint(99, 999))
@@ -43,9 +34,6 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
 
   env = os.environ.copy()
   env["QT_QPA_PLATFORM"] = "xcb"
-
-  #xvfb_proc = ensure_xvfb(display)
-  #atexit.register(lambda: xvfb_proc.terminate())
 
   ui_proc = subprocess.Popen([
     'xvfb-run',
@@ -62,14 +50,11 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "--no-loop",
     "--prefix", env.get('OPENPILOT_PREFIX'),
     route
-  ], env=env)
+  ], env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: replay_proc.terminate())
 
-  # Wait for video data
   wait_for_video()
-  time.sleep(2)
 
-  # Start FFmpeg
   ffmpeg_cmd = [
     "ffmpeg",
     "-y",
@@ -101,8 +86,6 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   ffmpeg_proc.wait(timeout=5)
   ui_proc.terminate()
   ui_proc.wait(timeout=5)
-  #xvfb_proc.terminate()
-  #xvfb_proc.wait(timeout=5)
 
   print(f"recording complete: {output_filepath}")
 
@@ -120,6 +103,7 @@ if __name__ == "__main__":
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int, required=True)
   args = p.parse_args()
   assert args.end > args.start, 'end must be greater than start'
+  assert args.route.count('/') == 1, 'do not include segment, example: ' + DEMO_ROUTE
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
       main(args.route, args.output, args.start, args.end)
