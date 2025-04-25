@@ -85,4 +85,4 @@ class GuiScrollPanel:
     return self._offset
 
   def is_click_valid(self) -> bool:
-    return self._scroll_state == ScrollState.IDLE and not self._is_dragging and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    return (self._scroll_state == ScrollState.IDLE or not self._is_dragging) and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
