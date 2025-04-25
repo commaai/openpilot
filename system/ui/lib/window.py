@@ -2,13 +2,11 @@ import threading
 import time
 import os
 from typing import Generic, Protocol, TypeVar
-
 from openpilot.system.ui.lib.application import gui_app
 
 
 class RendererProtocol(Protocol):
-  def render(self):
-    ...
+  def render(self): ...
 
 
 R = TypeVar("R", bound=RendererProtocol)
