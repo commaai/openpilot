@@ -37,18 +37,22 @@ def ensure_xvfb(display: str):
 
 def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
-  display = ':' + str(randint(99, 999))
+  display_num = str(randint(99, 999))
 
   duration = end_seconds - start_seconds
 
   env = os.environ.copy()
-  env["DISPLAY"] = display
   env["QT_QPA_PLATFORM"] = "xcb"
 
-  xvfb_proc = ensure_xvfb(display)
-  atexit.register(lambda: xvfb_proc.terminate())
+  #xvfb_proc = ensure_xvfb(display)
+  #atexit.register(lambda: xvfb_proc.terminate())
 
-  ui_proc = subprocess.Popen(['./selfdrive/ui/ui'], env=env, stdout=DEVNULL, stderr=DEVNULL)
+  ui_proc = subprocess.Popen([
+    'xvfb-run',
+    '-n', display_num,
+    '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}',
+    './selfdrive/ui/ui'
+  ], env=env)
   atexit.register(lambda: ui_proc.terminate())
 
   replay_proc = subprocess.Popen([
@@ -58,7 +62,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "--no-loop",
     "--prefix", env.get('OPENPILOT_PREFIX'),
     route
-  ], env=env, stdout=DEVNULL, stderr=DEVNULL)
+  ], env=env)
   atexit.register(lambda: replay_proc.terminate())
 
   # Wait for video data
@@ -78,7 +82,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "-draw_mouse",
     "0",
     "-i",
-    env.get('DISPLAY'),
+    ':' + display_num,
     "-c:v",
     "libx264",
     "-preset",
@@ -97,8 +101,8 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   ffmpeg_proc.wait(timeout=5)
   ui_proc.terminate()
   ui_proc.wait(timeout=5)
-  xvfb_proc.terminate()
-  xvfb_proc.wait(timeout=5)
+  #xvfb_proc.terminate()
+  #xvfb_proc.wait(timeout=5)
 
   print(f"recording complete: {output_filepath}")
 
@@ -118,7 +122,7 @@ if __name__ == "__main__":
   assert args.end > args.start, 'end must be greater than start'
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
-      main(args.prefix, args.route, args.output, args.start, args.end)
+      main(args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print("Interrupted by user")
   except Exception as e:
