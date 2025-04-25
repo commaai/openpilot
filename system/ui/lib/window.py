@@ -1,14 +1,23 @@
 import threading
 import time
 import os
+from typing import Generic, Protocol, TypeVar
 
 from openpilot.system.ui.lib.application import gui_app
 
 
-class BaseWindow:
+class RendererProtocol(Protocol):
+  def render(self):
+    ...
+
+
+R = TypeVar("R", bound=RendererProtocol)
+
+
+class BaseWindow(Generic[R]):
   def __init__(self, title: str):
     self._title = title
-    self._renderer = None
+    self._renderer: R | None = None
     self._stop_event = threading.Event()
     self._thread = threading.Thread(target=self._run)
     self._thread.start()
@@ -17,7 +26,7 @@ class BaseWindow:
     while self._renderer is None and self._thread.is_alive():
       time.sleep(0.01)
 
-  def _create_renderer(self):
+  def _create_renderer(self) -> R:
     raise NotImplementedError("Subclasses of BaseWindow must implement _create_renderer()")
 
   def _run(self):

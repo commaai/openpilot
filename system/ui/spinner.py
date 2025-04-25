@@ -86,7 +86,7 @@ class SpinnerRenderer:
                         FONT_SIZE, 0.0, rl.WHITE)
 
 
-class Spinner(BaseWindow):
+class Spinner(BaseWindow[SpinnerRenderer]):
   def __init__(self):
     super().__init__("Spinner")
 
