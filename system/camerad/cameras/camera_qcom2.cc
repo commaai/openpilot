@@ -55,7 +55,7 @@ public:
   float fl_pix = 0;
   std::unique_ptr<PubMaster> pm;
 
-  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config, config.stream_type == VISION_STREAM_DRIVER ? ISP_BPS_PROCESSED : ISP_IFE_PROCESSED) {};
+  CameraState(SpectraMaster *master, const CameraConfig &config) : camera(master, config) {};
   ~CameraState();
   void init(VisionIpcServer *v, cl_device_id device_id, cl_context ctx);
   void update_exposure_score(float desired_ev, int exp_t, int exp_g_idx, float exp_gain);
@@ -73,7 +73,7 @@ void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ct
 
   if (!camera.enabled) return;
 
-  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
+  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm / camera.sensor->out_scale;
   set_exposure_rect();
 
   dc_gain_weight = camera.sensor->dc_gain_min_weight;
@@ -107,10 +107,10 @@ void CameraState::set_exposure_rect() {
   float fl_ref = ae_target.second;
 
   ae_xywh = (Rect){
-    std::max(0, camera.buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::max(0, camera.buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.w), camera.buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.h), camera.buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
+    std::max(0, (int)camera.buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::max(0, (int)camera.buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.w), (int)camera.buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.h), (int)camera.buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
   };
 }
 
@@ -141,7 +141,8 @@ void CameraState::set_camera_exposure(float grey_frac) {
   // TODO: Lower latency to 2 frames, by using the histogram outputted by the sensor we can do AE before the debayering is complete
 
   const auto &sensor = camera.sensor;
-  const float cur_ev_ = cur_ev[camera.buf.cur_frame_data.frame_id % 3] * sensor->ev_scale;
+  // Offset idx by one to not get stuck in self loop
+  const float cur_ev_ = cur_ev[(camera.buf.cur_frame_data.frame_id - 1) % 3] * sensor->ev_scale;
 
   // Scale target grey between min and 0.4 depending on lighting conditions
   float new_target_grey = std::clamp(0.4 - 0.3 * log2(1.0 + sensor->target_grey_factor*cur_ev_) / log2(6000.0), target_grey_minimums[camera.cc.camera_num], 0.4);
@@ -268,7 +269,7 @@ void camerad_thread() {
 
   // *** per-cam init ***
   std::vector<std::unique_ptr<CameraState>> cams;
-  for (const auto &config : {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG}) {
+  for (const auto &config : ALL_CAMERA_CONFIGS) {
     auto cam = std::make_unique<CameraState>(&m, config);
     cam->init(&v, device_id, ctx);
     cams.emplace_back(std::move(cam));

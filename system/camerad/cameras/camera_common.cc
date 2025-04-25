@@ -15,7 +15,7 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
   const SensorInfo *sensor = cam->sensor.get();
 
   // RAW frames from ISP
-  if (cam->output_type != ISP_IFE_PROCESSED) {
+  if (cam->cc.output_type != ISP_IFE_PROCESSED) {
     camera_bufs_raw = std::make_unique<VisionBuf[]>(frame_buf_count);
 
     const int raw_frame_size = (sensor->frame_height + sensor->extra_height) * sensor->frame_stride;
@@ -25,9 +25,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
     }
     LOGD("allocated %d CL buffers", frame_buf_count);
   }
-
-  out_img_width = sensor->frame_width;
-  out_img_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
 
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?

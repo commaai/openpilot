@@ -29,6 +29,7 @@ public:
   uint32_t frame_stride;
   uint32_t frame_offset = 0;
   uint32_t extra_height = 0;
+  int out_scale = 1;
   int registers_offset = -1;
   int stats_offset = -1;
   int hdr_offset = -1;
@@ -109,6 +110,7 @@ public:
 class OS04C10 : public SensorInfo {
 public:
   OS04C10();
+  void ife_downscale_configure();
   std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
   float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
   int getSlaveAddress(int port) const override;

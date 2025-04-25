@@ -6,6 +6,13 @@
 
 #include "media/cam_isp_ife.h"
 
+
+typedef enum {
+  ISP_RAW_OUTPUT,   // raw frame from sensor
+  ISP_IFE_PROCESSED,  // fully processed image through the IFE
+  ISP_BPS_PROCESSED,  // fully processed image through the BPS
+} SpectraOutputType;
+
 // For the comma 3/3X three camera platform
 
 struct CameraConfig {
@@ -17,6 +24,7 @@ struct CameraConfig {
   bool enabled;
   uint32_t phy;
   bool vignetting_correction;
+  SpectraOutputType output_type;
 };
 
 // NOTE: to be able to disable road and wide road, we still have to configure the sensor over i2c
@@ -30,6 +38,7 @@ const CameraConfig WIDE_ROAD_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_WIDE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_0,
   .vignetting_correction = false,
+  .output_type = ISP_IFE_PROCESSED,
 };
 
 const CameraConfig ROAD_CAMERA_CONFIG = {
@@ -41,6 +50,7 @@ const CameraConfig ROAD_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_ROAD"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_1,
   .vignetting_correction = true,
+  .output_type = ISP_IFE_PROCESSED,
 };
 
 const CameraConfig DRIVER_CAMERA_CONFIG = {
@@ -52,6 +62,7 @@ const CameraConfig DRIVER_CAMERA_CONFIG = {
   .enabled = !getenv("DISABLE_DRIVER"),
   .phy = CAM_ISP_IFE_IN_RES_PHY_2,
   .vignetting_correction = false,
+  .output_type = ISP_BPS_PROCESSED,
 };
 
 const CameraConfig ALL_CAMERA_CONFIGS[] = {WIDE_ROAD_CAMERA_CONFIG, ROAD_CAMERA_CONFIG, DRIVER_CAMERA_CONFIG};

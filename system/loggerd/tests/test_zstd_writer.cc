@@ -18,15 +18,21 @@ TEST_CASE("ZstdFileWriter writes and compresses data correctly in loops", "[Zstd
   // Step 1: Write compressed data to file in a loop
   {
     ZstdFileWriter writer(filename, LOG_COMPRESSION_LEVEL);
+    // Write various data sizes including edge cases
+    std::vector<size_t> testSizes = {dataSize, 1, 0, dataSize * 2};  // Normal, minimal, empty, large
     for (int i = 0; i < iterations; ++i) {
-      std::string testData = util::random_string(dataSize);
+      size_t currentSize = testSizes[i % testSizes.size()];
+      std::string testData = util::random_string(currentSize);
       totalTestData.append(testData);
+
       writer.write((void *)testData.c_str(), testData.size());
     }
   }
 
   // Step 2: Decompress the file and verify the data
   auto compressedContent = util::read_file(filename);
+  REQUIRE(compressedContent.size() > 0);
+  REQUIRE(compressedContent.size() < totalTestData.size());
   std::string decompressedData = zstd_decompress(compressedContent);
 
   // Step 3: Verify that the decompressed data matches the original accumulated data

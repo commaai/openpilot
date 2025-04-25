@@ -85,26 +85,34 @@ jobs:
 
   build_mac:
     name: build macOS
-    runs-on: ${{ github.repository == 'commaai/openpilot' && 'namespace-profile-macos-8x14' || 'macos-latest' }}
+    runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
+    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Homebrew cache
       uses: ./.github/workflows/auto-cache
       with:
         path: ~/Library/Caches/Homebrew
+        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          brew-macos-${{ env.CACHE_COMMIT_DATE }}
+          brew-macos
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
         # package install has DeprecationWarnings
         PYTHONWARNINGS: default
     - run: git lfs pull
-    - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Getting scons cache
       uses: ./.github/workflows/auto-cache
       with:
         path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
     - name: Building openpilot
       run: . .venv/bin/activate && scons -j$(nproc)
 
@@ -227,7 +235,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 6 }}
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
@@ -323,6 +331,7 @@ jobs:
     runs-on:
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-amd64-8x16' || 'ubuntu-24.04' }}
       - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-experiments:docker.builds.local-cache=separate' || 'ubuntu-24.04' }}
+    if: false  # FIXME: FrameReader is broken on CI runners
     steps:
       - uses: actions/checkout@v4
         with:

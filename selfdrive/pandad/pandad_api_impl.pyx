@@ -17,14 +17,17 @@ cdef extern from "opendbc/can/common.h":
     vector[CanFrame] frames
 
 cdef extern from "can_list_to_can_capnp.cc":
-  void can_list_to_can_capnp_cpp(const vector[CanFrame] &can_list, string &out, bool sendcan, bool valid)
+  void can_list_to_can_capnp_cpp(const vector[CanFrame] &can_list, string &out, bool sendcan, bool valid) nogil
   void can_capnp_to_can_list_cpp(const vector[string] &strings, vector[CanData] &can_data, bool sendcan)
 
 def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
   cdef CanFrame *f
   cdef vector[CanFrame] can_list
+  cdef uint32_t cpp_can_msgs_len = len(can_msgs)
 
-  can_list.reserve(len(can_msgs))
+  with nogil:
+    can_list.reserve(cpp_can_msgs_len)
+
   for can_msg in can_msgs:
     f = &(can_list.emplace_back())
     f.address = can_msg[0]
@@ -32,7 +35,10 @@ def can_list_to_can_capnp(can_msgs, msgtype='can', valid=True):
     f.src = can_msg[2]
 
   cdef string out
-  can_list_to_can_capnp_cpp(can_list, out, msgtype == 'sendcan', valid)
+  cdef bool is_sendcan = (msgtype == 'sendcan')
+  cdef bool is_valid = valid
+  with nogil:
+    can_list_to_can_capnp_cpp(can_list, out, is_sendcan, is_valid)
   return out
 
 def can_capnp_to_list(strings, msgtype='can'):
