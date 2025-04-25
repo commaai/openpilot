@@ -48,6 +48,7 @@ class TextWindow:
     self._wrapped_lines = wrap_text(text, FONT_SIZE, self._textarea_rect.width - 20)
     self._content_rect = rl.Rectangle(0, 0, self._textarea_rect.width - 20, len(self._wrapped_lines) * LINE_HEIGHT)
     self._scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)
+    self._scroll_panel._offset.y = -max(self._content_rect.height - self._textarea_rect.height, 0)
 
   def render(self):
     scroll = self._scroll_panel.handle_scroll(self._textarea_rect, self._content_rect)
