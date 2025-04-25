@@ -32,7 +32,7 @@ lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LI
 tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
 
 # Get model metadata
-for model_name in ['driving_vision', 'driving_policy']:
+for model_name in ['driving_vision', 'driving_policy', 'driving_misc']:
   fn = File(f"models/{model_name}").abspath
   script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
   cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
@@ -48,7 +48,7 @@ def tg_compile(flags, model_name):
   )
 
 # Compile small models
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+for model_name in ['driving_vision', 'driving_policy', 'driving_misc', 'dmonitoring_model']:
   flags = {
     'larch64': 'QCOM=1',
     'Darwin': 'CPU=1 IMAGE=0 JIT=2',
