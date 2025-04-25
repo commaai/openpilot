@@ -27,7 +27,7 @@ def wrap_text(text, font_size, max_width):
       continue
     indent = re.match(r"^\s*", paragraph).group()
     current_line = indent
-    words = re.split("(\s+)", paragraph[len(indent):])
+    words = re.split(r"(\s+)", paragraph[len(indent):])
     while len(words):
       word = words.pop(0)
       test_line = current_line + word + (words.pop(0) if words else "")
