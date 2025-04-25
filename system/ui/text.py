@@ -7,7 +7,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
 
 MARGIN = 50
-SPACING = 50
+SPACING = 40
 FONT_SIZE = 72
 LINE_HEIGHT = 80
 BUTTON_SIZE = rl.Vector2(310, 160)
@@ -60,7 +60,7 @@ class TextWindow:
       rl.draw_text_ex(gui_app.font(), line, position, FONT_SIZE, 0, rl.WHITE)
     rl.end_scissor_mode()
 
-    button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
+    button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x - SPACING, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
     ret = gui_button(button_bounds, "Exit" if PC else "Reboot", button_style=ButtonStyle.TRANSPARENT)
     if ret:
       if PC:
