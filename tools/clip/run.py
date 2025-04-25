@@ -1,3 +1,4 @@
+from argparse import ArgumentParser
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 import os
 import signal
@@ -10,11 +11,8 @@ XVFB_DISPLAY = ":99"
 RESOLUTION = "2160x1080"
 PIXEL_DEPTH = "24"
 FRAMERATE = 20
-FFMPEG_OUTPUT = "output.mp4"  # TODO: input
-ROUTE = "a2a0ccea32023010/2023-07-27--13-01-19/0"  # TODO: input
-START = 60
-END = 70
-DURATION = END - START
+DEFAULT_OUTPUT = "output.mp4"
+DEMO_ROUTE = "a2a0ccea32023010/2023-07-27--13-01-19/0"
 
 
 def wait_for_video():
@@ -38,7 +36,10 @@ def ensure_xvfb():
   return xvfb_proc
 
 
-def main():
+def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int):
+  assert end_seconds > start_seconds, 'end must be greater than start'
+
+  duration = end_seconds - start_seconds
   # Set up environment
   env = os.environ.copy()
   env["DISPLAY"] = XVFB_DISPLAY  # Set DISPLAY for all processes
@@ -54,7 +55,7 @@ def main():
   atexit.register(lambda: ui_proc.terminate())
 
   # Start replay process
-  replay_proc = subprocess.Popen(["./tools/replay/replay", "-s", str(START), "--no-loop", ROUTE], env=env, stdout=DEVNULL, stderr=DEVNULL)
+  replay_proc = subprocess.Popen(["./tools/replay/replay", "-s", str(start_seconds), "--no-loop", route], env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: replay_proc.terminate())
 
   # Wait for video data
@@ -64,7 +65,7 @@ def main():
   # Start FFmpeg
   ffmpeg_cmd = [
     "ffmpeg",
-    "-y",  # Overwrite output
+    "-y",
     "-video_size",
     RESOLUTION,
     "-framerate",
@@ -81,13 +82,13 @@ def main():
     "ultrafast",
     "-pix_fmt",
     "yuv420p",
-    FFMPEG_OUTPUT,
+    output_filepath,
   ]
   ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: ffmpeg_proc.terminate())
 
-  print(f'starting at {START} seconds and clipping {DURATION} seconds')
-  time.sleep(DURATION)
+  print(f'starting at {start_seconds} seconds and clipping {duration} seconds')
+  time.sleep(duration)
 
   # Stop FFmpeg gracefully
   ffmpeg_proc.send_signal(signal.SIGINT)
@@ -99,12 +100,22 @@ def main():
   xvfb_proc.terminate()
   xvfb_proc.wait(timeout=5)
 
-  print(f"Recording complete: {FFMPEG_OUTPUT}")
+  print(f"Recording complete: {output_filepath}")
 
 
 if __name__ == "__main__":
+  p = ArgumentParser(
+    prog='clip.py',
+    description='Clip your openpilot route.',
+    epilog='comma.ai'
+  )
+  p.add_argument('-r', '--route', help='Route', default=DEMO_ROUTE)
+  p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
+  p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int, required=True)
+  p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int, required=True)
+  args = p.parse_args()
   try:
-    main()
+    main(args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print("Interrupted by user")
   except Exception as e:
