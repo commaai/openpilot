@@ -48,8 +48,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   xvfb_proc = ensure_xvfb(display)
   atexit.register(lambda: xvfb_proc.terminate())
 
-  ui_args = ["./selfdrive/ui/ui"]
-  ui_proc = subprocess.Popen(ui_args, env=env, stdout=DEVNULL, stderr=DEVNULL)
+  ui_proc = subprocess.Popen(['./selfdrive/ui/ui'], env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: ui_proc.terminate())
 
   replay_proc = subprocess.Popen([
