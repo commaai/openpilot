@@ -139,13 +139,9 @@ class Controls:
   def publish(self, CC, lac_log):
     CS = self.sm['carState']
 
-    lp = self.sm['liveParameters']
-    steer_angle_without_offset = math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg)
-    current_curvature = -self.VM.calc_curvature(steer_angle_without_offset, CS.vEgo, lp.roll)
-
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
-    CC.currentCurvature = current_curvature
+    CC.currentCurvature = self.curvature
     if self.calibrated_pose is not None:
       CC.orientationNED = self.calibrated_pose.orientation.xyz.tolist()
       CC.angularVelocity = self.calibrated_pose.angular_velocity.xyz.tolist()
