@@ -132,6 +132,7 @@ class WifiManagerUI:
         self.connect_to_network(network)
 
   def connect_to_network(self, network: NetworkInfo, password=''):
+    self.state = StateConnecting(network)
     if self.wifi_manager.is_saved(network.ssid) and not password:
       self.wifi_manager.activate_connection(network.ssid)
     else:
