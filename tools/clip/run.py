@@ -45,6 +45,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: replay_proc.terminate())
 
+  print('waiting for replay to begin (may take a while)...')
   wait_for_video()
 
   ffmpeg_cmd = [
