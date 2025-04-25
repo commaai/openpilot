@@ -73,7 +73,7 @@ class TextWindowRenderer:
     return ret
 
 
-class TextWindow(BaseWindow[TextWindowRenderer]):
+class TextWindow(BaseWindow):
   def __init__(self, text: str):
     self._text = text
     super().__init__("Text")
