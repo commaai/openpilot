@@ -256,6 +256,8 @@ class WifiManager:
     for ssid, p in list(self.saved_connections.items()):
       if path == p:
         del self.saved_connections[ssid]
+        if self.callbacks.forgotten:
+          self.callbacks.forgotten()
         break
 
   async def _add_saved_connection(self, path: str) -> None:
