@@ -46,12 +46,12 @@ class Keyboard:
     self._layout = keyboard_layouts["lowercase"]
     self._max_text_size = max_text_size
     self._string_pointer = rl.ffi.new("char[]", max_text_size)
-    self._input_text: str = ''
+    self._input_text = ""
     self._clear()
 
   @property
   def text(self):
-    result = rl.ffi.string(self._string_pointer).decode('utf-8')
+    result = rl.ffi.string(self._string_pointer).decode("utf-8")
     self._clear()
     return result
 
@@ -65,7 +65,7 @@ class Keyboard:
     # Text box for input
     self._sync_string_pointer()
     rl.gui_text_box(rl.Rectangle(rect.x, rect.y + 160, rect.width, 100), self._string_pointer, self._max_text_size, True)
-    self._input_text = rl.ffi.string(self._string_pointer).decode('utf-8')
+    self._input_text = rl.ffi.string(self._string_pointer).decode("utf-8")
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
     key_height = (rect.height - 300 - 3 * v_space) / 4
@@ -112,7 +112,7 @@ class Keyboard:
 
   def _sync_string_pointer(self):
     """Sync the C-string pointer with the internal Python string."""
-    encoded = self._input_text.encode("utf-8")[:self._max_text_size - 1]  # Leave room for null terminator
+    encoded = self._input_text.encode("utf-8")[:self._max_text_size - 1]  # Leave room for the null terminator
     buffer = rl.ffi.buffer(self._string_pointer)
     buffer[:len(encoded)] = encoded
-    self._string_pointer[len(encoded)] = b'\0'  # Null terminate
+    self._string_pointer[len(encoded)] = b'\0'  # Null terminator
