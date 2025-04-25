@@ -46,7 +46,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   env["QT_QPA_PLATFORM"] = "xcb"
 
   xvfb_proc = ensure_xvfb(display)
-  atexit.register(lambda: xvfb_proc.terminate())  # Ensure cleanup on exit
+  atexit.register(lambda: xvfb_proc.terminate())
 
   ui_args = ["./selfdrive/ui/ui"]
   ui_proc = subprocess.Popen(ui_args, env=env, stdout=DEVNULL, stderr=DEVNULL)
@@ -94,11 +94,8 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   print(f'starting at {start_seconds} seconds and clipping {duration} seconds')
   time.sleep(duration)
 
-  # Stop FFmpeg gracefully
   ffmpeg_proc.send_signal(signal.SIGINT)
   ffmpeg_proc.wait(timeout=5)
-
-  # Clean up
   ui_proc.terminate()
   ui_proc.wait(timeout=5)
   xvfb_proc.terminate()
@@ -128,5 +125,4 @@ if __name__ == "__main__":
   except Exception as e:
     print(f"Error: {e}")
   finally:
-    # Ensure all processes are terminated
     atexit._run_exitfuncs()
