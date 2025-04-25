@@ -16,15 +16,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
       - name: Checkout master
         uses: actions/checkout@v4
         with:
           ref: master
           path: base
-
       - run: git lfs pull
       - run: cd base && git lfs pull
 
