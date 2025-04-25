@@ -104,6 +104,4 @@ class Spinner(BaseWindow):
 if __name__ == "__main__":
   with Spinner() as s:
     s.update("Spinner text")
-    time.sleep(1)
-    s.update("50")
     time.sleep(5)
