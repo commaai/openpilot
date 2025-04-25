@@ -243,6 +243,11 @@ class TestCarModelBase(unittest.TestCase):
         if self.safety.safety_rx_hook(to_send) != 1:
           failed_addrs[hex(msg.address)] += 1
 
+        if self.CP.brand in ("gm", "mazda", "rivian", "tesla"):
+          self.assertTrue(self.safety.get_ignition_can())
+        else:
+          self.assertFalse(self.safety.get_ignition_can())
+
       # ensure all msgs defined in the addr checks are valid
       self.safety.safety_tick_current_safety_config()
       if t > 1e6:
