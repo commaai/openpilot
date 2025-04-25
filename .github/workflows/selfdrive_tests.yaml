@@ -232,16 +232,16 @@ jobs:
       with:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: Check submodules
+      timeout-minutes: 3
+      run: release/check-submodules.sh
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 6 }}
+      timeout-minutes: 15
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
-      env:
-        NUM_JOBS: 4
-        JOB_ID: ${{ matrix.job }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
