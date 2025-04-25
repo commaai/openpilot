@@ -1,5 +1,4 @@
 from argparse import ArgumentParser
-from msgq.visionipc import VisionIpcClient, VisionStreamType
 from cereal.messaging import SubMaster
 import os
 import signal
@@ -8,6 +7,8 @@ from subprocess import DEVNULL
 import time
 import atexit
 from random import randint
+
+from openpilot.common.prefix import OpenpilotPrefix
 
 DEFAULT_DISPLAY = ":99"
 RESOLUTION = "2160x1080"
@@ -35,7 +36,7 @@ def ensure_xvfb(display: str):
 
 
 def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int):
-  assert end_seconds > start_seconds, 'end must be greater than start'
+  # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = ':' + str(randint(99, 999))
 
   duration = end_seconds - start_seconds
@@ -44,7 +45,6 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   env["DISPLAY"] = display
   env["QT_QPA_PLATFORM"] = "xcb"
 
-  print(f'starting xvfb on display {display}')
   xvfb_proc = ensure_xvfb(display)
   atexit.register(lambda: xvfb_proc.terminate())  # Ensure cleanup on exit
 
@@ -52,7 +52,14 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   ui_proc = subprocess.Popen(ui_args, env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: ui_proc.terminate())
 
-  replay_proc = subprocess.Popen(["./tools/replay/replay", "-c", "1", "-s", str(start_seconds), "--no-loop", "--demo"], env=env, stdout=DEVNULL, stderr=DEVNULL)
+  replay_proc = subprocess.Popen([
+    "./tools/replay/replay",
+    "-c", "1",
+    "-s", str(start_seconds),
+    "--no-loop",
+    "--prefix", env.get('OPENPILOT_PREFIX'),
+    route
+  ], env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: replay_proc.terminate())
 
   # Wait for video data
@@ -97,7 +104,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   xvfb_proc.terminate()
   xvfb_proc.wait(timeout=5)
 
-  print(f"Recording complete: {output_filepath}")
+  print(f"recording complete: {output_filepath}")
 
 
 if __name__ == "__main__":
@@ -106,13 +113,16 @@ if __name__ == "__main__":
     description='Clip your openpilot route.',
     epilog='comma.ai'
   )
+  p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-r', '--route', help='Route', default=DEMO_ROUTE)
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int, required=True)
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int, required=True)
   args = p.parse_args()
+  assert args.end > args.start, 'end must be greater than start'
   try:
-    main(args.route, args.output, args.start, args.end)
+    with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
+      main(args.prefix, args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print("Interrupted by user")
   except Exception as e:
