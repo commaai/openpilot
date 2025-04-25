@@ -69,7 +69,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "yuv420p",
     output_filepath,
   ]
-  ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env)
+  ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: ffmpeg_proc.terminate())
 
   print('recording in progress...')
