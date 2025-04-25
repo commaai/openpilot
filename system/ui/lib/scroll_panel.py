@@ -40,6 +40,7 @@ class GuiScrollPanel:
         self._last_mouse_y = mouse_pos.y
         self._start_mouse_y = mouse_pos.y  # Record starting position
         self._velocity_y = 0.0  # Reset velocity when drag starts
+        self._is_dragging = False  # Reset dragging flag
 
     if self._scroll_state != ScrollState.IDLE:
       if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
@@ -59,7 +60,6 @@ class GuiScrollPanel:
         self._velocity_y = delta_y  # Update velocity during drag
       elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
         self._scroll_state = ScrollState.IDLE
-        self._is_dragging = False
 
     # Handle mouse wheel scrolling
     wheel_move = rl.get_mouse_wheel_move()
