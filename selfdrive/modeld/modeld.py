@@ -206,7 +206,7 @@ class ModelState:
 
     combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict, **misc_outputs_dict}
     if SEND_RAW_PRED:
-      combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy()])
+      combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy(), self.misc_output.copy()])
 
     return combined_outputs_dict
 
