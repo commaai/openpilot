@@ -2,17 +2,16 @@
 
 from argparse import ArgumentParser
 from cereal.messaging import SubMaster
+from openpilot.common.prefix import OpenpilotPrefix
+from subprocess import DEVNULL
+from random import randint
+import atexit
 import os
 import signal
 import subprocess
-from subprocess import DEVNULL
 import time
-import atexit
-from random import randint
 
-from openpilot.common.prefix import OpenpilotPrefix
 
-DEFAULT_DISPLAY = ":99"
 RESOLUTION = "2160x1080"
 PIXEL_DEPTH = "24"
 FRAMERATE = 20
@@ -37,9 +36,11 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   duration = end_seconds - start_seconds
 
   env = os.environ.copy()
+  xauth = f'/tmp/clip-xauth--{display_num}'
+  env['XAUTHORITY'] = xauth
   env["QT_QPA_PLATFORM"] = "xcb"
 
-  ui_proc = subprocess.Popen(['xvfb-run', '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
+  ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
   atexit.register(lambda: ui_proc.terminate())
 
   replay_proc = subprocess.Popen(
@@ -57,9 +58,9 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "-framerate", str(FRAMERATE),
     "-f",
     "x11grab",
+    "-i", f":{display_num}",
     "-draw_mouse",
     "0",
-    "-i", ":" + display_num,
     "-c:v",
     "libx264",
     "-preset",
@@ -68,7 +69,7 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "yuv420p",
     output_filepath,
   ]
-  ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
+  ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env)
   atexit.register(lambda: ffmpeg_proc.terminate())
 
   print('recording in progress...')
@@ -82,6 +83,28 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   print(f"recording complete: {output_filepath}")
 
 
+def parse_args(parser: ArgumentParser):
+  args = parser.parse_args()
+
+  if not args.demo:
+    assert args.route is not None, 'must provide route'
+    assert args.route.count('/') == 1 or args.route.count('/') == 3, 'route must include or exclude timing, example: ' + DEMO_ROUTE
+
+  if args.demo:
+    args.route = DEMO_ROUTE
+    args.start = DEMO_START
+    args.end = DEMO_END
+  elif args.route.count('/') == 3:
+    parts = args.route.split('/')
+    args.start = int(parts[2])
+    args.end = int(parts[3])
+    args.route = '/'.join(parts[:2])
+
+  assert args.end > args.start, 'end must be greater than start'
+
+  return args
+
+
 if __name__ == "__main__":
   p = ArgumentParser(
     prog='clip.py',
@@ -89,19 +112,15 @@ if __name__ == "__main__":
     epilog='comma.ai'
   )
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
-  p.add_argument('-r', '--route', help='Route', default=DEMO_ROUTE)
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
-  p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int, default=DEMO_START)
-  p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int, default=DEMO_END)
-  args = p.parse_args()
-  assert args.end > args.start, 'end must be greater than start'
-  assert args.route.count('/') == 1 or args.route.count('/') == 3, 'route must include or exclude timing, example: ' + DEMO_ROUTE
-  if args.route.count('/') == 3:
-    parts = args.route.split('/')
-    args.start = int(parts[2])
-    args.end = int(parts[3])
-    args.route = '/'.join(parts[:2])
+  p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
+  p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
+  p.add_argument('-d', '--demo', help='Use the demo route', action='store_true')
+  p.add_argument('-r', '--route', help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
+
+  args = parse_args(p)
   print(f'clipping route {args.route}, start={args.start} end={args.end}')
+
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
       main(args.route, args.output, args.start, args.end)
