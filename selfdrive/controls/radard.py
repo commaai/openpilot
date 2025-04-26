@@ -116,23 +116,30 @@ def laplacian_pdf(x: float, mu: float, b: float):
 
 
 def match_vision_to_track(v_ego: float, lead: capnp._DynamicStructReader, tracks: dict[int, Track]):
-  offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA
+  offset_vision_dist = lead.x[0] - RADAR_TO_CAMERA - lead.xStd[0] / 2
 
   def prob(c):
+    # print('y', c.yRel, -lead.y[0])
     prob_d = laplacian_pdf(c.dRel, offset_vision_dist, lead.xStd[0])
     prob_y = laplacian_pdf(c.yRel, -lead.y[0], lead.yStd[0])
     prob_v = laplacian_pdf(c.vRel + v_ego, lead.v[0], lead.vStd[0])
 
     # This isn't exactly right, but it's a good heuristic
-    return prob_d * prob_y * prob_v
+    ret = prob_d * prob_y * prob_v
+
+    # if no 'sane' match is found return -1
+    # stationary radar points can be false positives
+    dist_sane = abs(c.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
+    vel_sane = (abs(c.vRel + v_ego - lead.v[0]) < 10) or (v_ego + c.vRel > 3)
+    if not dist_sane or not vel_sane:
+      ret = 0.0
+
+    return ret
 
   track = max(tracks.values(), key=prob)
 
-  # if no 'sane' match is found return -1
-  # stationary radar points can be false positives
-  dist_sane = abs(track.dRel - offset_vision_dist) < max([(offset_vision_dist)*.25, 5.0])
-  vel_sane = (abs(track.vRel + v_ego - lead.v[0]) < 10) or (v_ego + track.vRel > 3)
-  if dist_sane and vel_sane:
+  print('y', track.yRel, -lead.y[0])
+  if prob(track) > 0:
     return track
   else:
     return None
