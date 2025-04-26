@@ -34,6 +34,9 @@ def wait_for_video(proc: subprocess.Popen):
       print('-' * 49)
       raise RuntimeError('replay failed to start!')
 
+  # TODO: need to wait a little longer, sometimes UI doesn't react fast enough
+  time.sleep(0.75)
+
 
 def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
