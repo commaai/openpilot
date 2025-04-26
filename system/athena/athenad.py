@@ -184,8 +184,8 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
       thread.join()
 
 
-def jsonrpc_handler(end_event: threading.Event) -> None:
-  dispatcher["startLocalProxy"] = partial(startLocalProxy, end_event)
+def jsonrpc_handler(end_event: threading.Event, localProxyHandler = None) -> None:
+  dispatcher["startLocalProxy"] = localProxyHandler or partial(startLocalProxy, end_event)
   while not end_event.is_set():
     try:
       data = recv_queue.get(timeout=1)
@@ -480,21 +480,25 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
 
 
 def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
+  cloudlog.debug("athena.startLocalProxy.starting")
+  dongle_id = Params().get("DongleId").decode('utf8')
+  identity_token = Api(dongle_id).get_token()
+  ws = create_connection(remote_ws_uri, cookie="jwt=" + identity_token, enable_multithread=True)
+
+  return start_local_proxy_shim(global_end_event, local_port, ws)
+
+
+def start_local_proxy_shim(global_end_event: threading.Event, local_port: int, ws: WebSocket) -> dict[str, int]:
   try:
+    if ws.sock is None:
+      raise Exception("WebSocket is not connected")
+
     # migration, can be removed once 0.9.8 is out for a while
     if local_port == 8022:
       local_port = 22
 
     if local_port not in LOCAL_PORT_WHITELIST:
       raise Exception("Requested local port not whitelisted")
-
-    cloudlog.debug("athena.startLocalProxy.starting")
-
-    dongle_id = Params().get("DongleId").decode('utf8')
-    identity_token = Api(dongle_id).get_token()
-    ws = create_connection(remote_ws_uri,
-                           cookie="jwt=" + identity_token,
-                           enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
     # DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag

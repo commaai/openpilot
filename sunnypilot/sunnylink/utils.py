@@ -46,3 +46,12 @@ def register_sunnylink():
 
   sunnylink_id = SunnylinkApi(None).register_device(None, **extra_args)
   print(f"SunnyLinkId: {sunnylink_id}")
+
+
+def get_api_token():
+  """Get the API token for the device."""
+  params = Params()
+  sunnylink_dongle_id = params.get("SunnylinkDongleId", encoding='utf-8')
+  sunnylink_api = SunnylinkApi(sunnylink_dongle_id)
+  token = sunnylink_api.get_token()
+  print(f"API Token: {token}")

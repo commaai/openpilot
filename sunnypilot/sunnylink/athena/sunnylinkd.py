@@ -10,11 +10,12 @@ import threading
 import time
 
 from jsonrpc import dispatcher
+from functools import partial
 from openpilot.common.params import Params
 from openpilot.common.realtime import set_core_affinity
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.athenad import ws_send, jsonrpc_handler, \
-  recv_queue, UploadQueueCache, upload_queue, cur_upload_items, backoff, ws_manage, log_handler
+  recv_queue, UploadQueueCache, upload_queue, cur_upload_items, backoff, ws_manage, log_handler, start_local_proxy_shim
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
 
@@ -50,7 +51,7 @@ def handle_long_poll(ws: WebSocket, exit_event: threading.Event | None) -> None:
               # threading.Thread(target=sunny_log_handler, args=(end_event, comma_prime_cellular_end_event), name='log_handler'),
               # threading.Thread(target=stat_handler, args=(end_event,), name='stat_handler'),
             ] + [
-              threading.Thread(target=jsonrpc_handler, args=(end_event,), name=f'worker_{x}')
+              threading.Thread(target=jsonrpc_handler, args=(end_event, partial(startLocalProxy, end_event),), name=f'worker_{x}')
               for x in range(HANDLER_THREADS)
             ]
 
@@ -199,6 +200,18 @@ def saveParams(params_to_update: dict[str, str], compression: bool = False) -> N
       params.put(key, value)
     except Exception as e:
       cloudlog.error(f"sunnylinkd.saveParams.exception {e}")
+
+
+def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local_port: int) -> dict[str, int]:
+  cloudlog.debug("athena.startLocalProxy.starting")
+  ws = create_connection(
+    remote_ws_uri,
+    header={"Authorization": f"Bearer {sunnylink_api.get_token()}"},
+    enable_multithread=True,
+    sslopt={"cert_reqs": ssl.CERT_NONE}
+  )
+
+  return start_local_proxy_shim(global_end_event, local_port, ws)
 
 
 def main(exit_event: threading.Event = None):
