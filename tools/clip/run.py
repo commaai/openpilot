@@ -21,15 +21,21 @@ DEMO_END = 30
 DEMO_ROUTE = "a2a0ccea32023010/2023-07-27--13-01-19"
 
 
-def wait_for_video():
+def wait_for_video(proc: subprocess.Popen):
   sm = SubMaster(['uiDebug'])
   no_frames_drawn = True
   while no_frames_drawn:
     sm.update()
     no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
+    if proc.poll() is not None:
+      stdout, stderr = proc.communicate()
+      print('-' * 16, ' replay output ', '-' * 16)
+      print(stdout.decode().strip(), stderr.decode().strip())
+      print('-' * 49)
+      raise RuntimeError('replay failed to start!')
 
 
-def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int):
+def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display_num = str(randint(99, 999))
 
@@ -43,13 +49,14 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
   ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
   atexit.register(lambda: ui_proc.terminate())
 
-  replay_proc = subprocess.Popen(
-    ["./tools/replay/replay", "-c", "1", "-s", str(start_seconds), "--no-loop", "--prefix", str(env.get('OPENPILOT_PREFIX')), route],
-    env=env, stdout=DEVNULL, stderr=DEVNULL)
+  replay_args = ["./tools/replay/replay", "-c", "1", "-s", str(start_seconds), "--no-loop", "--prefix", str(env.get('OPENPILOT_PREFIX'))]
+  if data_dir:
+    replay_args.extend(['--data_dir', data_dir])
+  replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   atexit.register(lambda: replay_proc.terminate())
 
   print('waiting for replay to begin (may take a while)...')
-  wait_for_video()
+  wait_for_video(replay_proc)
 
   ffmpeg_cmd = [
     "ffmpeg",
@@ -58,9 +65,9 @@ def main(route: str, output_filepath: str, start_seconds: int, end_seconds: int)
     "-framerate", str(FRAMERATE),
     "-f",
     "x11grab",
-    "-i", f":{display_num}",
     "-draw_mouse",
     "0",
+    "-i", f":{display_num}",
     "-c:v",
     "libx264",
     "-preset",
@@ -113,6 +120,7 @@ if __name__ == "__main__":
   )
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
+  p.add_argument('-dir', '--data_dir', help='Local directory where route data is stored')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
   p.add_argument('-d', '--demo', help='Use the demo route', action='store_true')
@@ -123,7 +131,7 @@ if __name__ == "__main__":
 
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
-      main(args.route, args.output, args.start, args.end)
+      main(args.data_dir, args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print("Interrupted by user")
   except Exception as e:
