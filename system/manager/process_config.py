@@ -30,6 +30,9 @@ def ublox(started: bool, params: Params, CP: car.CarParams) -> bool:
     params.put_bool("UbloxAvailable", use_ublox)
   return started and use_ublox
 
+def webrtc_stream(started: bool, params: Params, CP: car.CarParams) -> bool:
+  return params.get_bool("LiveStreamRunning")
+
 def joystick(started: bool, params: Params, CP: car.CarParams) -> bool:
   return started and params.get_bool("JoystickDebugMode")
 
@@ -63,7 +66,7 @@ def and_(*fns):
 procs = [
   DaemonProcess("manage_athenad", "system.athena.manage_athenad", "AthenadPid"),
 
-  NativeProcess("camerad", "system/camerad", ["./camerad"], driverview),
+  NativeProcess("camerad", "system/camerad", ["./camerad"], or_(driverview, webrtc_stream),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
   NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
   PythonProcess("logmessaged", "system.logmessaged", always_run),
@@ -72,7 +75,7 @@ procs = [
 
   NativeProcess("dmonitoringmodeld", "selfdrive/modeld", ["./dmonitoringmodeld"], driverview, enabled=(not PC or WEBCAM)),
   NativeProcess("encoderd", "system/loggerd", ["./encoderd"], only_onroad),
-  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], notcar),
+  NativeProcess("stream_encoderd", "system/loggerd", ["./encoderd", "--stream"], or_(notcar, webrtc_stream),
   NativeProcess("loggerd", "system/loggerd", ["./loggerd"], logging),
   NativeProcess("modeld", "selfdrive/modeld", ["./modeld"], only_onroad),
   NativeProcess("sensord", "system/sensord", ["./sensord"], only_onroad, enabled=not PC),
