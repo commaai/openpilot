@@ -12,13 +12,13 @@ import subprocess
 import time
 
 
-RESOLUTION = "2160x1080"
-PIXEL_DEPTH = "24"
+RESOLUTION = '2160x1080'
+PIXEL_DEPTH = '24'
 FRAMERATE = 20
-DEFAULT_OUTPUT = "output.mp4"
+DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 20
 DEMO_END = 30
-DEMO_ROUTE = "a2a0ccea32023010/2023-07-27--13-01-19"
+DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 
 
 def wait_for_video(proc: subprocess.Popen):
@@ -47,12 +47,12 @@ def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: 
   env = os.environ.copy()
   xauth = f'/tmp/clip-xauth--{display_num}'
   env['XAUTHORITY'] = xauth
-  env["QT_QPA_PLATFORM"] = "xcb"
+  env['QT_QPA_PLATFORM'] = 'xcb'
 
   ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
   atexit.register(lambda: ui_proc.terminate())
 
-  replay_args = ["./tools/replay/replay", "-c", "1", "-s", str(start_seconds), "--no-loop", "--prefix", str(env.get('OPENPILOT_PREFIX'))]
+  replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(start_seconds), '--no-loop', '--prefix', str(env.get('OPENPILOT_PREFIX'))]
   if data_dir:
     replay_args.extend(['--data_dir', data_dir])
   replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -62,21 +62,21 @@ def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: 
   wait_for_video(replay_proc)
 
   ffmpeg_cmd = [
-    "ffmpeg",
-    "-y",
-    "-video_size", RESOLUTION,
-    "-framerate", str(FRAMERATE),
-    "-f",
-    "x11grab",
-    "-draw_mouse",
-    "0",
-    "-i", f":{display_num}",
-    "-c:v",
-    "libx264",
-    "-preset",
-    "ultrafast",
-    "-pix_fmt",
-    "yuv420p",
+    'ffmpeg',
+    '-y',
+    '-video_size', RESOLUTION,
+    '-framerate', str(FRAMERATE),
+    '-f',
+    'x11grab',
+    '-draw_mouse',
+    '0',
+    '-i', f':{display_num}',
+    '-c:v',
+    'libx264',
+    '-preset',
+    'ultrafast',
+    '-pix_fmt',
+    'yuv420p',
     output_filepath,
   ]
   ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
@@ -90,7 +90,7 @@ def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: 
   ui_proc.terminate()
   ui_proc.wait(timeout=5)
 
-  print(f"recording complete: {output_filepath}")
+  print(f'recording complete: {output_filepath}')
 
 
 def parse_args(parser: ArgumentParser):
@@ -118,6 +118,7 @@ def parse_args(parser: ArgumentParser):
 
   return args
 
+
 def validate_route(route):
     slash_count = route.count('/')
     if slash_count not in (1, 3):
@@ -125,7 +126,7 @@ def validate_route(route):
     return route
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   p = ArgumentParser(
     prog='clip.py',
     description='Clip your openpilot route.',
@@ -148,8 +149,8 @@ if __name__ == "__main__":
       print(f'clipping route {args.route}, start={args.start} end={args.end}')
       main(args.data_dir, args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
-    print("Interrupted by user")
+    print('Interrupted by user')
   except Exception as e:
-    print(f"Error: {e}")
+    print(f'Error: {e}')
   finally:
     atexit._run_exitfuncs()
