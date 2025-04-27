@@ -119,7 +119,7 @@ def parse_args(parser: ArgumentParser):
   return args
 
 
-def validate_route(route):
+def validate_route(route: str):
   slash_count = route.count('/')
   if slash_count not in (1, 3):
     raise ArgumentTypeError('route must include or exclude timing, example: ' + DEMO_ROUTE)
