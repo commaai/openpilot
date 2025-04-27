@@ -96,9 +96,6 @@ def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: 
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
 
-  if args.end is not None and args.start is not None and args.end <= args.start:
-    parser.error('end must be greater than start')
-
   if args.demo:
     args.route = DEMO_ROUTE
     if args.start is None or args.end is None:
@@ -115,6 +112,9 @@ def parse_args(parser: ArgumentParser):
     args.route = '/'.join(parts[:2])
     args.start = int(parts[2])
     args.end = int(parts[3])
+
+  if args.end is not None and args.start is not None and args.end <= args.start:
+    parser.error(f'end ({args.end}) must be greater than start ({args.start})')
 
   return args
 
