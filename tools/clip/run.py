@@ -129,7 +129,7 @@ if __name__ == '__main__':
   )
   route_group = p.add_mutually_exclusive_group(required=True)
   route_group.add_argument('route', nargs='?', type=validate_route,
-      help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
+    help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
   route_group.add_argument('--demo', help='Use the demo route', action='store_true')
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
