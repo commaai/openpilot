@@ -38,23 +38,24 @@ def wait_for_video(proc: subprocess.Popen):
   time.sleep(0.75)
 
 
-def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
-  # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
-  display_num = str(randint(99, 999))
-
+def main(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   duration = end_seconds - start_seconds
 
+  # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
+  display_num = str(randint(99, 999))
+  xauth = f'/tmp/{prefix}-{display_num}'
+
   env = os.environ.copy()
-  xauth = f'/tmp/clip-xauth--{display_num}'
   env['XAUTHORITY'] = xauth
   env['QT_QPA_PLATFORM'] = 'xcb'
 
   ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
   atexit.register(lambda: ui_proc.terminate())
 
-  replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(start_seconds), '--no-loop', '--prefix', str(env.get('OPENPILOT_PREFIX'))]
+  replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(start_seconds), '--no-loop', '--prefix', prefix]
   if data_dir:
     replay_args.extend(['--data_dir', data_dir])
+
   replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   atexit.register(lambda: replay_proc.terminate())
 
@@ -66,17 +67,12 @@ def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: 
     '-y',
     '-video_size', RESOLUTION,
     '-framerate', str(FRAMERATE),
-    '-f',
-    'x11grab',
-    '-draw_mouse',
-    '0',
+    '-f', 'x11grab',
+    '-draw_mouse', '0',
     '-i', f':{display_num}',
-    '-c:v',
-    'libx264',
-    '-preset',
-    'ultrafast',
-    '-pix_fmt',
-    'yuv420p',
+    '-c:v', 'libx264',
+    '-preset', 'ultrafast',
+    '-pix_fmt', 'yuv420p',
     output_filepath,
   ]
   ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
@@ -146,7 +142,7 @@ if __name__ == '__main__':
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
       print(f'clipping route {args.route}, start={args.start} end={args.end}')
-      main(args.data_dir, args.route, args.output, args.start, args.end)
+      main(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print('Interrupted by user')
   except Exception as e:
