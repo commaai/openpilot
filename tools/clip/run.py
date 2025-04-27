@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser
+from argparse import ArgumentParser, ArgumentTypeError
 from cereal.messaging import SubMaster
 from openpilot.common.prefix import OpenpilotPrefix
 from subprocess import DEVNULL
@@ -96,23 +96,33 @@ def main(data_dir: str | None, route: str, output_filepath: str, start_seconds: 
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
 
-  if not args.demo:
-    assert args.route is not None, 'must provide route'
-    assert args.route.count('/') == 1 or args.route.count('/') == 3, 'route must include or exclude timing, example: ' + DEMO_ROUTE
+  if args.end is not None and args.start is not None and args.end <= args.start:
+    parser.error('end must be greater than start')
 
   if args.demo:
     args.route = DEMO_ROUTE
-    args.start = DEMO_START
-    args.end = DEMO_END
+    if args.start is None or args.end is None:
+      args.start = DEMO_START
+      args.end = DEMO_END
+  elif args.route.count('/') == 1:
+    if args.start is None or args.end is None:
+      parser.error('must provide both start and end if timing is not in the route ID')
   elif args.route.count('/') == 3:
+    if args.start is not None or args.end is not None:
+      parser.error('don\'t provide timing when including it in the route ID')
+
     parts = args.route.split('/')
+    args.route = '/'.join(parts[:2])
     args.start = int(parts[2])
     args.end = int(parts[3])
-    args.route = '/'.join(parts[:2])
-
-  assert args.end > args.start, 'end must be greater than start'
 
   return args
+
+def validate_route(route):
+    slash_count = route.count('/')
+    if slash_count not in (1, 3):
+        raise ArgumentTypeError('route must include or exclude timing, example: ' + DEMO_ROUTE)
+    return route
 
 
 if __name__ == "__main__":
@@ -121,19 +131,21 @@ if __name__ == "__main__":
     description='Clip your openpilot route.',
     epilog='comma.ai'
   )
+  route_group = p.add_mutually_exclusive_group(required=True)
+  route_group.add_argument('route', nargs='?', type=validate_route,
+      help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
+  route_group.add_argument('--demo', help='Use the demo route', action='store_true')
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
   p.add_argument('-dir', '--data_dir', help='Local directory where route data is stored')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
-  p.add_argument('-d', '--demo', help='Use the demo route', action='store_true')
-  p.add_argument('-r', '--route', help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
 
   args = parse_args(p)
-  print(f'clipping route {args.route}, start={args.start} end={args.end}')
 
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
+      print(f'clipping route {args.route}, start={args.start} end={args.end}')
       main(args.data_dir, args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print("Interrupted by user")
