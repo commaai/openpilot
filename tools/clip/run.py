@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser, ArgumentTypeError
-from cereal.messaging import SubMaster
+from argparse import ArgumentParser
 from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, parse_args, validate_route, wait_for_video
 from subprocess import DEVNULL
 from random import randint
 import atexit
@@ -12,33 +12,13 @@ import subprocess
 import time
 
 
-RESOLUTION = '2160x1080'
-PIXEL_DEPTH = '24'
-FRAMERATE = 20
 DEFAULT_OUTPUT = 'output.mp4'
-DEMO_START = 20
-DEMO_END = 30
-DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
+FRAMERATE = 20
+PIXEL_DEPTH = '24'
+RESOLUTION = '2160x1080'
 
 
-def wait_for_video(proc: subprocess.Popen):
-  sm = SubMaster(['uiDebug'])
-  no_frames_drawn = True
-  while no_frames_drawn:
-    sm.update()
-    no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
-    if proc.poll() is not None:
-      stdout, stderr = proc.communicate()
-      print('-' * 16, ' replay output ', '-' * 16)
-      print(stdout.decode().strip(), stderr.decode().strip())
-      print('-' * 49)
-      raise RuntimeError('replay failed to start!')
-
-  # TODO: need to wait a little longer, sometimes UI doesn't react fast enough
-  time.sleep(0.75)
-
-
-def main(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
+def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   duration = end_seconds - start_seconds
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
@@ -89,39 +69,7 @@ def main(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
   print(f'recording complete: {output_filepath}')
 
 
-def parse_args(parser: ArgumentParser):
-  args = parser.parse_args()
-
-  if args.demo:
-    args.route = DEMO_ROUTE
-    if args.start is None or args.end is None:
-      args.start = DEMO_START
-      args.end = DEMO_END
-  elif args.route.count('/') == 1:
-    if args.start is None or args.end is None:
-      parser.error('must provide both start and end if timing is not in the route ID')
-  elif args.route.count('/') == 3:
-    if args.start is not None or args.end is not None:
-      parser.error('don\'t provide timing when including it in the route ID')
-
-    parts = args.route.split('/')
-    args.route = '/'.join(parts[:2])
-    args.start = int(parts[2])
-    args.end = int(parts[3])
-
-  if args.end is not None and args.start is not None and args.end <= args.start:
-    parser.error(f'end ({args.end}) must be greater than start ({args.start})')
-
-  return args
-
-
-def validate_route(route: str):
-  if route.count('/') not in (1, 3):
-    raise ArgumentTypeError('route must include or exclude timing, example: ' + DEMO_ROUTE)
-  return route
-
-
-if __name__ == '__main__':
+def main():
   p = ArgumentParser(
     prog='clip.py',
     description='Clip your openpilot route.',
@@ -142,10 +90,14 @@ if __name__ == '__main__':
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
       print(f'clipping route {args.route}, start={args.start} end={args.end}')
-      main(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
+      clip(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
   except KeyboardInterrupt:
     print('Interrupted by user')
   except Exception as e:
     print(f'Error: {e}')
   finally:
     atexit._run_exitfuncs()
+
+
+if __name__ == '__main__':
+  main()
