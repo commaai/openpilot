@@ -25,7 +25,7 @@ class BaseWindow(Generic[R]):
       time.sleep(0.01)
 
   def _create_renderer(self) -> R:
-    raise NotImplementedError("Subclasses of BaseWindow must implement _create_renderer()")
+    raise NotImplementedError()
 
   def _run(self):
     if os.getenv("CI") is not None:
