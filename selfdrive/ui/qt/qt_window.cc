@@ -14,6 +14,8 @@ void setMainWindow(QWidget *w) {
   w->show();
 
 #ifdef QCOM2
+  const QString platform = QGuiApplication::platformName();
+  if (platform == "xcb") return;
   QPlatformNativeInterface *native = QGuiApplication::platformNativeInterface();
   wl_surface *s = reinterpret_cast<wl_surface*>(native->nativeResourceForWindow("surface", w->windowHandle()));
   wl_surface_set_buffer_transform(s, WL_OUTPUT_TRANSFORM_270);
