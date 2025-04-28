@@ -30,7 +30,7 @@ class BaseWindow(Generic[R]):
   def _run(self):
     if os.getenv("CI") is not None:
       return
-    gui_app.init_window("Spinner")
+    gui_app.init_window(self._title)
     self._renderer = self._create_renderer()
     try:
       for _ in gui_app.render():
