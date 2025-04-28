@@ -130,6 +130,9 @@ class HardwareBase(ABC):
   def get_thermal_config(self):
     return ThermalConfig()
 
+  def set_display_power(self, on: bool):
+    pass
+
   @abstractmethod
   def set_screen_brightness(self, percentage):
     pass

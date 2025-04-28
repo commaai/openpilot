@@ -73,10 +73,6 @@ if GetOption('extras'):
 
   qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
 
-  # spinner and text window
-  qt_env.Program("_text", ["qt/text.cc"], LIBS=qt_libs)
-  qt_env.Program("_spinner", ["qt/spinner.cc"], LIBS=qt_libs)
-
   # setup and factory resetter
   qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],

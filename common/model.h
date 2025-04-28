@@ -1,1 +1,1 @@
-#define DEFAULT_MODEL "Tomb Raider 3 (Default)"
+#define DEFAULT_MODEL "Tomb_Raider_5 (Default)"

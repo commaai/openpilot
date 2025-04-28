@@ -439,7 +439,7 @@ void WifiManager::addTetheringConnection() {
   address["prefix"] = 24u;
   connection["ipv4"]["address-data"] = QVariant::fromValue(IpConfig() << address);
   connection["ipv4"]["gateway"] = "192.168.43.1";
-  connection["ipv4"]["route-metric"] = 1100;
+  connection["ipv4"]["never-default"] = true;
   connection["ipv6"]["method"] = "ignore";
 
   asyncCall(NM_DBUS_PATH_SETTINGS, NM_DBUS_INTERFACE_SETTINGS, "AddConnection", QVariant::fromValue(connection));
