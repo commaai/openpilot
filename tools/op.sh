@@ -341,8 +341,8 @@ function op_switch() {
   fi
   BRANCH="$1"
 
+  git remote set-branches --add "$REMOTE" "$BRANCH"
   git fetch "$REMOTE" "$BRANCH"
-  git checkout -f FETCH_HEAD
   git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"
   git reset --hard "${REMOTE}/${BRANCH}"
   git clean -df
