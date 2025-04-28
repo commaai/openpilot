@@ -121,7 +121,7 @@ bool Route::loadFromJson(const std::string &json) {
 bool Route::loadFromLocal() {
   std::string pattern = route_.timestamp + "--";
   for (const auto &entry : std::filesystem::directory_iterator(data_dir_)) {
-    if (entry.is_directory() && entry.path().filename().string().find(pattern) == 0) {
+    if (entry.is_directory() && entry.path().filename().string().find(pattern) != std::string::npos) {
       std::string segment = entry.path().string();
       int seg_num = std::atoi(segment.substr(segment.rfind("--") + 2).c_str());
 
