@@ -20,7 +20,7 @@ SECONDS_TO_WARM = 2
 
 logger = logging.getLogger('clip.py')
 
-def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int, target_size_mb: int = 10):
+def clip(data_dir: str | None, low_quality: bool, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int, target_size_mb: int = 10):
   # offset the requested start point to allow the UI to "warm up" (sometimes the uiDebug msg has been seen but it has not drawn to the screen yet)
   begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
   extra_buffer_seconds = min(SECONDS_TO_WARM, start_seconds)
@@ -41,6 +41,8 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
     replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--no-loop', '--prefix', prefix]
     if data_dir:
       replay_args.extend(['--data_dir', data_dir])
+    if low_quality:
+      replay_args.append('--qcam')
 
     replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: replay_proc.terminate())
@@ -100,6 +102,7 @@ def main():
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
   p.add_argument('-dir', '--data_dir', help='Local directory where route data is stored')
+  p.add_argument('-l', '--low-quality', help='use qcams for video (lower quality)', action='store_true')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
 
@@ -108,7 +111,7 @@ def main():
 
   try:
     logger.info(f'clipping route {args.route}, start={args.start} end={args.end}')
-    clip(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
+    clip(args.data_dir, args.low_quality, args.prefix, args.route, args.output, args.start, args.end)
     logger.info(f'recording complete: {Path(args.output).resolve()}')
   except KeyboardInterrupt as e:
     logging.exception('interrupted by user', exc_info=e)
