@@ -139,7 +139,7 @@ class RaylibCameraView:
     return True
 
   def render(self, x: int, y: int, w: int, h: int):
-    frame_updated = self.update_frame()
+    self.update_frame()
 
     if self.rgb_texture is None:
       rl.draw_rectangle(x, y, w, h, rl.DARKGRAY)
