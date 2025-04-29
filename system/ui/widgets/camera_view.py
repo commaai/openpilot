@@ -3,48 +3,49 @@ import time
 import pyray as rl
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.hardware import TICI
+from openpilot.system.hardware import APPLE, TICI
 from openpilot.system.ui.lib.application import gui_app
 
 
-VERTEX_SHADER = """#version 300 es
+VERTEX_SHADER = f"""{'#version 330 core' if APPLE else '#version 300 es'}
 layout(location = 0) in vec4 aPosition;
 layout(location = 1) in vec2 aTexCoord;
 uniform mat4 uTransform;
 out vec2 vTexCoord;
-void main() {
+void main() {{
   gl_Position = uTransform * aPosition;
   vTexCoord = aTexCoord;
-}"""
+}}
+"""
 
-QCOM2_FRAGMENT_SHADER = """#version 300 es
-precision mediump float;
-uniform sampler2D uTextureY;
-uniform sampler2D uTextureUV;
-in vec2 vTexCoord;
-out vec4 colorOut;
-void main() {
-  float y = texture(uTextureY, vTexCoord).r;
-  vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;
-  float r = y + 1.402 * uv.y;
-  float g = y - 0.344 * uv.x - 0.714 * uv.y;
-  float b = y + 1.772 * uv.x;
-  colorOut = vec4(r, g, b, 1.0);
-}"""
-
-PC_FRAGMENT_SHADER = """#version 330 es
-#extension GL_OES_EGL_image_external_essl3 : enable
-precision mediump float;
-uniform samplerExternalOES uTexture;
-in vec2 vTexCoord;
-out vec4 colorOut;
-void main() {
-  colorOut = texture(uTexture, vTexCoord);
-  // gamma to improve worst case visibility when dark
-  colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));
-}"""
-
-FRAGMENT_SHADER = QCOM2_FRAGMENT_SHADER if TICI else PC_FRAGMENT_SHADER
+if TICI:
+  FRAGMENT_SHADER = """#version 300 es
+  #extension GL_OES_EGL_image_external_essl3 : enable
+  precision mediump float;
+  uniform samplerExternalOES uTexture;
+  in vec2 vTexCoord;
+  out vec4 colorOut;
+  void main() {
+    colorOut = texture(uTexture, vTexCoord);
+    // gamma to improve worst case visibility when dark
+    colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));
+  }"""
+else:
+  FRAGMENT_SHADER = f"""#version {'330 core' if APPLE else '300 es'}
+  {'precision mediump float;' if not APPLE else ''}
+  uniform sampler2D uTextureY;
+  uniform sampler2D uTextureUV;
+  in vec2 vTexCoord;
+  out vec4 colorOut;
+  void main() {{
+    float y = texture(uTextureY, vTexCoord).r;
+    vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;
+    float r = y + 1.402 * uv.y;
+    float g = y - 0.344 * uv.x - 0.714 * uv.y;
+    float b = y + 1.772 * uv.x;
+    colorOut = vec4(r, g, b, 1.0);
+  }}
+  """
 
 
 class CameraView:
@@ -58,7 +59,8 @@ class CameraView:
     self._updated = False
     self._retries = 0
 
-    # Texture state
+    # Rendering resources
+    self._shader: rl.Shader | None = None
     self._texture: rl.Texture | None = None
     self._texture_rect: rl.Rectangle | None = None
 
