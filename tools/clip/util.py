@@ -36,12 +36,12 @@ def parse_args(parser: ArgumentParser):
 
 
 def validate_env(parser: ArgumentParser):
-  if platform.system() not in ('Linux'):
+  if platform.system() not in ['Linux']:
     parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
-  for proc in ('xvfb-run', 'ffmpeg'):
+  for proc in ['xvfb-run', 'ffmpeg']:
     if shutil.which(proc) is None:
       parser.exit(1, f'clip.py: error: missing {proc} command, is it installed?\n')
-  for proc in ('./selfdrive/ui/ui'):
+  for proc in ['selfdrive/ui/ui', 'tools/replay/replay']:
     if shutil.which(proc) is None:
       parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
 
