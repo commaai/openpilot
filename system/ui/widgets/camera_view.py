@@ -27,7 +27,7 @@ def yuv_to_rgb(y, u, v):
   ], dtype=np.float32)
 
   rgb = np.dot(yuv, m)
-  np.clip(rgb, 0, 255, out=rgb)
+  # np.clip(rgb, 0, 255, out=rgb)
   return rgb.astype(np.uint8)
 
 
