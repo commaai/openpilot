@@ -62,3 +62,13 @@ def get_accel_from_plan(speeds, accels, t_idxs, action_t=DT_MDL, vEgoStopping=0.
   should_stop = (v_target < vEgoStopping and
                  v_target_1sec < vEgoStopping)
   return a_target, should_stop
+
+def curv_from_psis(psi_target, psi_rate, vego, action_t):
+  vego = np.clip(vego, MIN_SPEED, np.inf)
+  curv_from_psi = psi_target / (vego * action_t)
+  return 2*curv_from_psi - psi_rate / vego
+
+def get_curvature_from_plan(plan, vego, action_t):
+  psi_target = np.interp(action_t, T_IDXS, plan[:, Plan.T_FROM_CURRENT_EULER][:, 2])
+  psi_rate = plan[:, Plan.ORIENTATION_RATE][0, 2]
+  return curv_from_psis(psi_target, psi_rate, vego, action_t)
