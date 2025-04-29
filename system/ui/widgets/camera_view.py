@@ -8,11 +8,9 @@ from openpilot.system.ui.lib.application import gui_app
 
 
 class RaylibCameraView:
-  def __init__(self, stream_name: str, stream_type: VisionStreamType, width: int | None = None, height: int | None = None):
+  def __init__(self, stream_name: str, stream_type: VisionStreamType):
     self.stream_name = stream_name
     self.stream_type = stream_type
-    self.render_width = width if width is not None else gui_app.width
-    self.render_height = height if height is not None else gui_app.height
 
     # Frame acquisition state
     self.vipc_client: VisionIpcClient | None = None
