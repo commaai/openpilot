@@ -142,8 +142,7 @@ class RaylibCameraView:
     self.update_frame()
 
     if self.rgb_texture is None:
-      rl.draw_rectangle(x, y, w, h, rl.DARKGRAY)
-      rl.draw_text("Connecting...", x + 20, y + 20, 40, rl.WHITE)
+      rl.draw_text_ex(gui_app.font(), "Connecting...", rl.Vector2(x + w / 2 - 100, y + h / 2), 40, 0, rl.WHITE)
       return
 
     source_rect = rl.Rectangle(0, 0, float(self.rgb_texture.width), float(self.rgb_texture.height))
