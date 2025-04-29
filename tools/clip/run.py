@@ -2,9 +2,8 @@
 
 from argparse import ArgumentParser
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, parse_args, validate_route, validate_env, wait_for_video
+from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, monitor_processes, parse_args, validate_route, validate_env, wait_for_video
 from pathlib import Path
-from subprocess import DEVNULL
 from random import randint
 import atexit
 import logging
@@ -70,14 +69,17 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
       '-pix_fmt', 'yuv420p',
       output_filepath,
     ]
-    ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
+    ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: ffmpeg_proc.terminate())
 
     logger.debug(f'recording in progress ({duration}s)...')
+    monitor_processes([ui_proc, replay_proc, ffmpeg_proc], ['ui', 'replay', 'ffmpeg'])
     time.sleep(duration)
 
     ffmpeg_proc.send_signal(signal.SIGINT)
     ffmpeg_proc.wait(timeout=5)
+    replay_proc.terminate()
+    replay_proc.wait(timeout=5)
     ui_proc.terminate()
     ui_proc.wait(timeout=5)
 

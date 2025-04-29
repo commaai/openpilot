@@ -1,12 +1,49 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from cereal.messaging import SubMaster
+import logging
+import os
 import platform
 import shutil
 import subprocess
+import threading
 
 DEMO_START = 20
 DEMO_END = 30
 DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
+
+logger = logging.getLogger('clip.py')
+
+
+def monitor_processes(processes, names):
+  def check_process(proc, name):
+    returncode = proc.wait()
+    logger.debug(f"{name} exited with return code {returncode}")
+    if returncode > 0:
+      logger.error(f"{name} failed with return code {returncode}")
+      stdout, stderr = proc.communicate()
+      if stdout is not None and stderr is not None:
+        print('-' * 16, f' {name} output ', '-' * 16)
+        print(stdout.decode().strip(), stderr.decode().strip())
+        print('-' * 49)
+      for p in processes:
+        if p != proc and p.poll() is None:
+          try:
+            p.terminate()
+            p.wait(timeout=2)
+          except Exception:
+            p.kill()
+            p.wait(timeout=2)
+        if p.stdout:
+          p.stdout.close()
+        if p.stderr:
+          p.stderr.close()
+      os._exit(returncode)
+
+  for proc, name in zip(processes, names, strict=True):
+    thread = threading.Thread(target=check_process, args=(proc, name))
+    thread.daemon = True
+    thread.start()
+
 
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
