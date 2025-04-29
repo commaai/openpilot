@@ -1,5 +1,7 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from cereal.messaging import SubMaster
+import platform
+import shutil
 import subprocess
 import time
 
@@ -31,6 +33,18 @@ def parse_args(parser: ArgumentParser):
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
 
   return args
+
+
+def validate_env(parser: ArgumentParser):
+  if platform.system() not in ('Linux'):
+    parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
+  for proc in ('xvfb-run', 'ffmpeg'):
+    if shutil.which(proc) is None:
+      parser.exit(1, f'clip.py: error: missing {proc} command, is it installed?\n')
+  for proc in ('./selfdrive/ui/ui'):
+    if shutil.which(proc) is None:
+      parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
+
 
 
 def validate_route(route: str):

@@ -2,7 +2,7 @@
 
 from argparse import ArgumentParser
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, parse_args, validate_route, wait_for_video
+from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, parse_args, validate_route, validate_env, wait_for_video
 from subprocess import DEVNULL
 from random import randint
 import atexit
@@ -85,6 +85,7 @@ def main():
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
 
+  validate_env(p)
   args = parse_args(p)
 
   try:
