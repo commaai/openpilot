@@ -3,7 +3,7 @@ import time
 import pyray as rl
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.common.yuv_to_rgb import yuv420_to_rgb
+from openpilot.system.camerad.snapshot.snapshot import extract_image
 from openpilot.system.ui.lib.application import gui_app
 
 
@@ -117,7 +117,7 @@ class RaylibCameraView:
     if buf is None:
       return False
 
-    rgb_image_np = yuv420_to_rgb(buf)
+    rgb_image_np = extract_image(buf)
 
     if rgb_image_np is None:
       return False
