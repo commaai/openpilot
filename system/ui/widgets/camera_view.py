@@ -106,7 +106,6 @@ class RaylibCameraView:
       if self.rgb_texture is not None:
         rl.unload_texture(self.rgb_texture)
       img_rgb = rl.gen_image_color(width, height, rl.BLANK)
-      # Ensure the format is correct for the data we will upload (RGB888)
       rl.image_format(img_rgb, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
       self.rgb_texture = rl.load_texture_from_image(img_rgb)
       rl.unload_image(img_rgb)
@@ -132,7 +131,6 @@ class RaylibCameraView:
       return False
 
     height, width = rgb_image_np.shape[:2]
-
     self._ensure_texture(width, height)
 
     if self.rgb_texture is None:
@@ -140,15 +138,9 @@ class RaylibCameraView:
       return False
 
     try:
-      rgb_data_cont = np.ascontiguousarray(rgb_image_np).data
-      # Ensure rl.UpdateTexture gets the correct format (PIXELFORMAT_UNCOMPRESSED_R8G8B8)
-      # This might require creating an rl.Image first if UpdateTexture doesn't handle raw pointers well
-      # for specific formats, or if byte order is wrong. Let's try direct update first.
-      # If it fails or looks wrong, create an Image object:
-      # img = rl.Image(data=rgb_data_cont, width=width, height=height, mipmaps=1, format=rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
-      # rl.update_texture(self.rgb_texture, img.data)
-      rl.update_texture(self.rgb_texture, rgb_data_cont)
-
+      rgb_image_cont = np.ascontiguousarray(rgb_image_np)
+      data_ptr = rl.ffi.cast('void *', rgb_image_cont.ctypes.data)
+      rl.update_texture(self.rgb_texture, data_ptr)
     except Exception as e:
       print(f"[{self.stream_type}] Error updating texture: {e}")
       return False
