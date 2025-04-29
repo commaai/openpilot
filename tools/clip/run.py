@@ -11,13 +11,11 @@ import signal
 import subprocess
 import time
 
-
 DEFAULT_OUTPUT = 'output.mp4'
 FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 1
-
 
 def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   # offset the requested start point to allow the UI to "warm up" (sometimes the uiDebug msg has been seen but it has not drawn to the screen yet)

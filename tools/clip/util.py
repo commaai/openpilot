@@ -3,7 +3,6 @@ from cereal.messaging import SubMaster
 import platform
 import shutil
 import subprocess
-import time
 
 DEMO_START = 20
 DEMO_END = 30
