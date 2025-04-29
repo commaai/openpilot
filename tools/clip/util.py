@@ -22,9 +22,10 @@ def monitor_processes(processes, names):
       logger.error(f"{name} failed with return code {returncode}")
       stdout, stderr = proc.communicate()
       if stdout is not None and stderr is not None:
-        print('-' * 16, f' {name} output ', '-' * 16)
+        top = '-' * 16, f' {name} output ', '-' * 16
+        print(top)
         print(stdout.decode().strip(), stderr.decode().strip())
-        print('-' * 49)
+        print('-' * len(top))
       for p in processes:
         if p != proc and p.poll() is None:
           try:
