@@ -16,9 +16,13 @@ DEFAULT_OUTPUT = 'output.mp4'
 FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
+SECONDS_TO_WARM = 1
 
 
 def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
+  # offset the requested start point to allow the UI to "warm up" (sometimes the uiDebug msg has been seen but it has not drawn to the screen yet)
+  begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
+  extra_buffer_seconds = min(SECONDS_TO_WARM, start_seconds)
   duration = end_seconds - start_seconds
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
@@ -32,7 +36,7 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
   ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
   atexit.register(lambda: ui_proc.terminate())
 
-  replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(start_seconds), '--no-loop', '--prefix', prefix]
+  replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--no-loop', '--prefix', prefix]
   if data_dir:
     replay_args.extend(['--data_dir', data_dir])
 
@@ -41,6 +45,8 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
 
   print('waiting for replay to begin (may take a while)...')
   wait_for_video(replay_proc)
+  print(f'letting UI warm up for {extra_buffer_seconds} seconds...')
+  time.sleep(extra_buffer_seconds)
 
   ffmpeg_cmd = [
     'ffmpeg',

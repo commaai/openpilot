@@ -65,6 +65,3 @@ def wait_for_video(proc: subprocess.Popen):
       print(stdout.decode().strip(), stderr.decode().strip())
       print('-' * 49)
       raise RuntimeError('replay failed to start!')
-
-  # TODO: need to wait a little longer, sometimes UI doesn't react fast enough
-  time.sleep(0.75)
