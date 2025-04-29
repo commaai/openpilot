@@ -6,6 +6,7 @@ from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, parse_ar
 from subprocess import DEVNULL
 from random import randint
 import atexit
+import logging
 import os
 import signal
 import subprocess
@@ -15,7 +16,9 @@ DEFAULT_OUTPUT = 'output.mp4'
 FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
-SECONDS_TO_WARM = 1
+SECONDS_TO_WARM = 2
+
+logger = logging.getLogger('clip.py')
 
 def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
   # offset the requested start point to allow the UI to "warm up" (sometimes the uiDebug msg has been seen but it has not drawn to the screen yet)
@@ -41,9 +44,9 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
   replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
   atexit.register(lambda: replay_proc.terminate())
 
-  print('waiting for replay to begin (may take a while)...')
+  logger.debug('waiting for replay to begin (loading segments, may take a while)...')
   wait_for_video(replay_proc)
-  print(f'letting UI warm up for {extra_buffer_seconds} seconds...')
+  logger.debug(f'letting UI warm up for {extra_buffer_seconds} second(s)...')
   time.sleep(extra_buffer_seconds)
 
   ffmpeg_cmd = [
@@ -62,7 +65,7 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
   ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
   atexit.register(lambda: ffmpeg_proc.terminate())
 
-  print('recording in progress...')
+  logger.debug('recording in progress...')
   time.sleep(duration)
 
   ffmpeg_proc.send_signal(signal.SIGINT)
@@ -70,10 +73,13 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
   ui_proc.terminate()
   ui_proc.wait(timeout=5)
 
-  print(f'recording complete: {output_filepath}')
+  logger.debug(f'recording complete: {output_filepath}')
+
+  return
 
 
 def main():
+  logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
   p = ArgumentParser(
     prog='clip.py',
     description='Clip your openpilot route.',
@@ -94,12 +100,12 @@ def main():
 
   try:
     with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
-      print(f'clipping route {args.route}, start={args.start} end={args.end}')
+      logger.info(f'clipping route {args.route}, start={args.start} end={args.end}')
       clip(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
-  except KeyboardInterrupt:
-    print('Interrupted by user')
+  except KeyboardInterrupt as e:
+    logging.exception('interrupted by user', exc_info=e)
   except Exception as e:
-    print(f'Error: {e}')
+    logging.exception('encountered error', exc_info=e)
   finally:
     atexit._run_exitfuncs()
 
