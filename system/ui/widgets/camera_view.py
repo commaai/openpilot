@@ -171,12 +171,14 @@ class RaylibCameraView:
 
 
 if __name__ == "__main__":
-  gui_app.init_window("Camera Test")
+  gui_app.init_window("watch3")
   road_cam_view = RaylibCameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  wide_road_cam_view = RaylibCameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
   driver_cam_view = RaylibCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
 
   for _ in gui_app.render():
-    road_cam_view.render(0, 0, gui_app.width // 2, gui_app.height)
+    road_cam_view.render(gui_app.width // 3, 0, gui_app.width // 2, gui_app.height // 2)
+    wide_road_cam_view.render(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
     driver_cam_view.render(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
 
   road_cam_view.close()
