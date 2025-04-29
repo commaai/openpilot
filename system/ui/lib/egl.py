@@ -16,7 +16,6 @@ try:
       raise ImportError("Could not find EGL library")
 except ImportError as e:
   print(f"Error loading EGL library: {e}")
-  egl = None
 
 # Define necessary EGL constants
 EGL_NO_CONTEXT = 0
@@ -48,13 +47,6 @@ EGLDisplay = ctypes.c_void_p
 EGLContext = ctypes.c_void_p
 EGLBoolean = ctypes.c_uint
 EGLint = ctypes.c_int32
-
-# Extension function pointers
-eglGetCurrentDisplay = None
-eglCreateImageKHR = None
-eglDestroyImageKHR = None
-glEGLImageTargetTexture2DOES = None
-eglGetError = None
 
 # Initialize extension functions
 if egl is not None:
