@@ -25,6 +25,7 @@ class RaylibCameraView:
 
     # Rendering state
     self.rgb_texture: rl.Texture | None = None
+    self.rgb_texture_rect: rl.Rectangle | None = None
 
     self.start_vipc_thread()
 
@@ -103,6 +104,7 @@ class RaylibCameraView:
       img_rgb = rl.gen_image_color(width, height, rl.BLANK)
       rl.image_format(img_rgb, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
       self.rgb_texture = rl.load_texture_from_image(img_rgb)
+      self.rgb_texture_rect = rl.Rectangle(0, 0, width, height)
       rl.unload_image(img_rgb)
       rl.set_texture_filter(self.rgb_texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       print(f"[{self.stream_type}] Created RGB texture {width}x{height}")
@@ -138,18 +140,14 @@ class RaylibCameraView:
 
     return True
 
-  def render(self, x: int, y: int, w: int, h: int):
+  def render(self, dest: rl.Rectangle, origin = rl.Vector2(0, 0)):
     self.update_frame()
 
     if self.rgb_texture is None:
-      rl.draw_text_ex(gui_app.font(), "Connecting...", rl.Vector2(x + w / 2 - 100, y + h / 2), 40, 0, rl.WHITE)
+      rl.draw_text_ex(gui_app.font(), "Connecting...", rl.Vector2(dest.x + dest.width / 2 - 100, dest.y + dest.height / 2), 40, 0, rl.WHITE)
       return
 
-    source_rect = rl.Rectangle(0, 0, float(self.rgb_texture.width), float(self.rgb_texture.height))
-    dest_rect = rl.Rectangle(float(x), float(y), float(w), float(h))
-    origin = rl.Vector2(0, 0)
-
-    rl.draw_texture_pro(self.rgb_texture, source_rect, dest_rect, origin, 0.0, rl.WHITE)
+    rl.draw_texture_pro(self.rgb_texture, self.rgb_texture_rect, dest, origin, 0.0, rl.WHITE)
 
   def close(self):
     self.running = False
@@ -166,10 +164,14 @@ if __name__ == "__main__":
   wide_road_cam_view = RaylibCameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
   driver_cam_view = RaylibCameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
 
+  road_cam_rect = rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2)
+  wide_road_cam_rect = rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
+  driver_cam_rect = rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
+
   for _ in gui_app.render():
-    road_cam_view.render(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2)
-    wide_road_cam_view.render(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
-    driver_cam_view.render(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
+    road_cam_view.render(road_cam_rect)
+    wide_road_cam_view.render(wide_road_cam_rect)
+    driver_cam_view.render(driver_cam_rect)
 
   road_cam_view.close()
   wide_road_cam_view.close()
