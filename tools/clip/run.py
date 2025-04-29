@@ -79,6 +79,7 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
 
 def main():
   logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
+
   p = ArgumentParser(
     prog='clip.py',
     description='Clip your openpilot route.',
