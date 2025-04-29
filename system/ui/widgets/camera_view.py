@@ -97,8 +97,6 @@ class RaylibCameraView:
     self.vipc_client = None
 
   def _ensure_texture(self, width: int, height: int):
-    if not rl.is_window_ready():
-      return
     if width <= 0 or height <= 0:
       return
 
@@ -138,8 +136,7 @@ class RaylibCameraView:
       return False
 
     try:
-      rgb_image_cont = np.ascontiguousarray(rgb_image_np)
-      data_ptr = rl.ffi.cast('void *', rgb_image_cont.ctypes.data)
+      data_ptr = rl.ffi.cast('void *', rgb_image_np.ctypes.data)
       rl.update_texture(self.rgb_texture, data_ptr)
     except Exception as e:
       print(f"[{self.stream_type}] Error updating texture: {e}")
