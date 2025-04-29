@@ -7,7 +7,7 @@ from openpilot.system.camerad.snapshot.snapshot import extract_image
 from openpilot.system.ui.lib.application import gui_app
 
 
-class RaylibCameraView:
+class CameraView:
   def __init__(self, stream_name: str, stream_type: VisionStreamType):
     self.stream_name = stream_name
     self.stream_type = stream_type
@@ -143,7 +143,7 @@ if __name__ == "__main__":
     (VisionStreamType.VISION_STREAM_DRIVER, (gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)),
   ]
 
-  camera_views = [RaylibCameraView("camerad", t) for t, _ in views]
+  camera_views = [CameraView("camerad", t) for t, _ in views]
   rects = [rl.Rectangle(*r) for _, r in views]
 
   for _ in gui_app.render():
