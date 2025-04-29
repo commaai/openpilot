@@ -48,8 +48,9 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
 
     logger.debug('waiting for replay to begin (loading segments, may take a while)...')
     wait_for_video(replay_proc)
-    logger.debug(f'letting UI warm up ({extra_buffer_seconds}s)...')
-    time.sleep(extra_buffer_seconds)
+    if extra_buffer_seconds > 0:
+      logger.debug(f'letting UI warm up ({extra_buffer_seconds}s)...')
+      time.sleep(extra_buffer_seconds)
 
     bit_rate_kbps = int(round(target_size_mb * 8 * 1_000_000 / duration / 1000))
 
@@ -72,7 +73,7 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
     ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
     atexit.register(lambda: ffmpeg_proc.terminate())
 
-    logger.debug('recording in progress...')
+    logger.debug(f'recording in progress ({duration}s)...')
     time.sleep(duration)
 
     ffmpeg_proc.send_signal(signal.SIGINT)
