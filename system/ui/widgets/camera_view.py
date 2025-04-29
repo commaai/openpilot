@@ -140,14 +140,14 @@ class RaylibCameraView:
 
     return True
 
-  def render(self, dest: rl.Rectangle, origin = rl.Vector2(0, 0)):
+  def render(self, dest: rl.Rectangle):
     self.update_frame()
 
-    if self.rgb_texture is None:
+    if self.rgb_texture is None or self.rgb_texture_rect is None:
       rl.draw_text_ex(gui_app.font(), "Connecting...", rl.Vector2(dest.x + dest.width / 2 - 100, dest.y + dest.height / 2), 40, 0, rl.WHITE)
       return
 
-    rl.draw_texture_pro(self.rgb_texture, self.rgb_texture_rect, dest, origin, 0.0, rl.WHITE)
+    rl.draw_texture_pro(self.rgb_texture, self.rgb_texture_rect, dest, rl.vector2_zero(), 0.0, rl.WHITE)
 
   def close(self):
     self.running = False
