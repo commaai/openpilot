@@ -25,8 +25,6 @@ class RaylibCameraView:
 
     # Rendering state
     self.rgb_texture: rl.Texture | None = None
-    self.current_width: int = 0
-    self.current_height: int = 0
 
     self.start_vipc_thread()
 
@@ -108,9 +106,6 @@ class RaylibCameraView:
       rl.unload_image(img_rgb)
       rl.set_texture_filter(self.rgb_texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       print(f"[{self.stream_type}] Created RGB texture {width}x{height}")
-
-    self.current_width = width
-    self.current_height = height
 
   def update_frame(self):
     buf = None
