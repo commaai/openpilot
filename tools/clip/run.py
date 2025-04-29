@@ -21,7 +21,7 @@ SECONDS_TO_WARM = 2
 
 logger = logging.getLogger('clip.py')
 
-def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int):
+def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int, target_size_mb: int = 10):
   # offset the requested start point to allow the UI to "warm up" (sometimes the uiDebug msg has been seen but it has not drawn to the screen yet)
   begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
   extra_buffer_seconds = min(SECONDS_TO_WARM, start_seconds)
@@ -48,8 +48,10 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
 
     logger.debug('waiting for replay to begin (loading segments, may take a while)...')
     wait_for_video(replay_proc)
-    logger.debug(f'letting UI warm up for {extra_buffer_seconds} second(s)...')
+    logger.debug(f'letting UI warm up ({extra_buffer_seconds}s)...')
     time.sleep(extra_buffer_seconds)
+
+    bit_rate_kbps = int(round(target_size_mb * 8 * 1_000_000 / duration / 1000))
 
     ffmpeg_cmd = [
       'ffmpeg',
@@ -60,6 +62,9 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
       '-draw_mouse', '0',
       '-i', f':{display_num}',
       '-c:v', 'libx264',
+      '-crf', '23',
+      '-maxrate', f'{bit_rate_kbps}k',
+      '-bufsize', f'{bit_rate_kbps * 2}k',
       '-preset', 'ultrafast',
       '-pix_fmt', 'yuv420p',
       output_filepath,
