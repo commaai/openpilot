@@ -37,7 +37,6 @@ class GuiApplication:
     self._width = width
     self._height = height
     self._textures: list[rl.Texture] = []
-    self._shaders: list[rl.Shader] = []
     self._target_fps: int = DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
@@ -74,18 +73,9 @@ class GuiApplication:
     self._textures.append(texture)
     return texture
 
-  def load_shader_from_memory(self, vertex_shader: str, fragment_shader: str):
-    shader = rl.load_shader_from_memory(vertex_shader, fragment_shader)
-    self._shaders.append(shader)
-    return shader
-
   def close(self):
     if not rl.is_window_ready():
       return
-
-    for shader in self._shaders:
-      rl.unload_shader(shader)
-    self._shaders = []
 
     for texture in self._textures:
       rl.unload_texture(texture)
