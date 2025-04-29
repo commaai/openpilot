@@ -16,10 +16,9 @@ logger = logging.getLogger('clip.py')
 
 def monitor_processes(processes, names):
   def check_process(proc, name):
-    returncode = proc.wait()
-    logger.debug(f"{name} exited with return code {returncode}")
-    if returncode > 0:
-      logger.error(f"{name} failed with return code {returncode}")
+    return_code = proc.wait()
+    if return_code > 0:
+      logger.error(f"{name} failed with return code {return_code}")
       stdout, stderr = proc.communicate()
       if stdout is not None and stderr is not None:
         top = '-' * 16, f' {name} output ', '-' * 16
@@ -38,7 +37,7 @@ def monitor_processes(processes, names):
           p.stdout.close()
         if p.stderr:
           p.stderr.close()
-      os._exit(returncode)
+      os._exit(return_code)
 
   for proc, name in zip(processes, names, strict=True):
     thread = threading.Thread(target=check_process, args=(proc, name))
