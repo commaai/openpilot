@@ -25,7 +25,7 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display_num = str(randint(99, 999))
-  xauth = f'/tmp/{prefix}-{display_num}'
+  xauth = f'/tmp/.Xauthority-{prefix}-{display_num}'
 
   env = os.environ.copy()
   env['XAUTHORITY'] = xauth
