@@ -20,7 +20,7 @@ class RaylibCameraView:
 
     # Texture state
     self._texture: rl.Texture | None = None
-    self._rect: rl.Rectangle | None = None
+    self._texture_rect: rl.Rectangle | None = None
 
     # IPC client and threading
     self.running = True
@@ -88,7 +88,7 @@ class RaylibCameraView:
       img = rl.gen_image_color(w, h, rl.BLANK)
       rl.image_format(img, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
       self._texture = rl.load_texture_from_image(img)
-      self._rect = rl.Rectangle(0, 0, w, h)
+      self._texture_rect = rl.Rectangle(0, 0, w, h)
       rl.unload_image(img)
       rl.set_texture_filter(self._texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
       print(f"[{self.stream_type}] Texture {w}x{h} created")
@@ -119,12 +119,11 @@ class RaylibCameraView:
 
   def render(self, dest: rl.Rectangle):
     self.update_frame()
-    if not self._texture or not self._rect:
-      text = "Connecting..."
+    if not self._texture or not self._texture_rect:
       pos = rl.Vector2(dest.x + dest.width / 2 - 100, dest.y + dest.height / 2)
-      rl.draw_text_ex(gui_app.font(), text, pos, 40, 0, rl.WHITE)
-    else:
-      rl.draw_texture_pro(self._texture, self._rect, dest, rl.Vector2(0, 0), 0.0, rl.WHITE)
+      rl.draw_text_ex(gui_app.font(), "Connecting...", pos, 40, 0, rl.WHITE)
+      return
+    rl.draw_texture_pro(self._texture, self._texture_rect, dest, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
   def close(self):
     self.running = False
