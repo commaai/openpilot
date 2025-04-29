@@ -3,6 +3,7 @@
 from argparse import ArgumentParser
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.clip.util import DEMO_ROUTE, DEMO_START, DEMO_END, parse_args, validate_route, validate_env, wait_for_video
+from pathlib import Path
 from subprocess import DEVNULL
 from random import randint
 import atexit
@@ -30,52 +31,50 @@ def clip(data_dir: str | None, prefix: str, route: str, output_filepath: str, st
   display_num = str(randint(99, 999))
   xauth = f'/tmp/.Xauthority-{prefix}-{display_num}'
 
-  env = os.environ.copy()
-  env['XAUTHORITY'] = xauth
-  env['QT_QPA_PLATFORM'] = 'xcb'
+  with OpenpilotPrefix(prefix, shared_download_cache=True) as _:
+    env = os.environ.copy()
+    env['XAUTHORITY'] = xauth
+    env['QT_QPA_PLATFORM'] = 'xcb'
 
-  ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
-  atexit.register(lambda: ui_proc.terminate())
+    ui_proc = subprocess.Popen(['xvfb-run', '-f', xauth, '-n', display_num, '-s', f'-screen 0 {RESOLUTION}x{PIXEL_DEPTH}', './selfdrive/ui/ui'], env=env)
+    atexit.register(lambda: ui_proc.terminate())
 
-  replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--no-loop', '--prefix', prefix]
-  if data_dir:
-    replay_args.extend(['--data_dir', data_dir])
+    replay_args = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--no-loop', '--prefix', prefix]
+    if data_dir:
+      replay_args.extend(['--data_dir', data_dir])
 
-  replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  atexit.register(lambda: replay_proc.terminate())
+    replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    atexit.register(lambda: replay_proc.terminate())
 
-  logger.debug('waiting for replay to begin (loading segments, may take a while)...')
-  wait_for_video(replay_proc)
-  logger.debug(f'letting UI warm up for {extra_buffer_seconds} second(s)...')
-  time.sleep(extra_buffer_seconds)
+    logger.debug('waiting for replay to begin (loading segments, may take a while)...')
+    wait_for_video(replay_proc)
+    logger.debug(f'letting UI warm up for {extra_buffer_seconds} second(s)...')
+    time.sleep(extra_buffer_seconds)
 
-  ffmpeg_cmd = [
-    'ffmpeg',
-    '-y',
-    '-video_size', RESOLUTION,
-    '-framerate', str(FRAMERATE),
-    '-f', 'x11grab',
-    '-draw_mouse', '0',
-    '-i', f':{display_num}',
-    '-c:v', 'libx264',
-    '-preset', 'ultrafast',
-    '-pix_fmt', 'yuv420p',
-    output_filepath,
-  ]
-  ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
-  atexit.register(lambda: ffmpeg_proc.terminate())
+    ffmpeg_cmd = [
+      'ffmpeg',
+      '-y',
+      '-video_size', RESOLUTION,
+      '-framerate', str(FRAMERATE),
+      '-f', 'x11grab',
+      '-draw_mouse', '0',
+      '-i', f':{display_num}',
+      '-c:v', 'libx264',
+      '-preset', 'ultrafast',
+      '-pix_fmt', 'yuv420p',
+      output_filepath,
+    ]
+    ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=DEVNULL, stderr=DEVNULL)
+    atexit.register(lambda: ffmpeg_proc.terminate())
 
-  logger.debug('recording in progress...')
-  time.sleep(duration)
+    logger.debug('recording in progress...')
+    time.sleep(duration)
 
-  ffmpeg_proc.send_signal(signal.SIGINT)
-  ffmpeg_proc.wait(timeout=5)
-  ui_proc.terminate()
-  ui_proc.wait(timeout=5)
+    ffmpeg_proc.send_signal(signal.SIGINT)
+    ffmpeg_proc.wait(timeout=5)
+    ui_proc.terminate()
+    ui_proc.wait(timeout=5)
 
-  logger.debug(f'recording complete: {output_filepath}')
-
-  return
 
 
 def main():
@@ -99,9 +98,9 @@ def main():
   args = parse_args(p)
 
   try:
-    with OpenpilotPrefix(args.prefix, shared_download_cache=True) as p:
-      logger.info(f'clipping route {args.route}, start={args.start} end={args.end}')
-      clip(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
+    logger.info(f'clipping route {args.route}, start={args.start} end={args.end}')
+    clip(args.data_dir, args.prefix, args.route, args.output, args.start, args.end)
+    logger.info(f'recording complete: {Path(args.output).resolve()}')
   except KeyboardInterrupt as e:
     logging.exception('interrupted by user', exc_info=e)
   except Exception as e:
