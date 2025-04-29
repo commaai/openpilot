@@ -1,56 +1,10 @@
 import threading
 import time
 import pyray as rl
-import numpy as np
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.common.yuv_to_rgb import yuv420_to_rgb
 from openpilot.system.ui.lib.application import gui_app
-
-
-def yuv_to_rgb(y, u, v):
-  height, width = y.shape
-
-  ul = np.repeat(np.repeat(u, 2, axis=1), 2, axis=0)
-  vl = np.repeat(np.repeat(v, 2, axis=1), 2, axis=0)
-
-  ul = ul[:height, :width]
-  vl = vl[:height, :width]
-
-  yuv = np.dstack((y, ul, vl)).astype(np.float32)
-
-  yuv[:, :, 1:] -= 128.0
-
-  m = np.array([
-    [1.00000, 1.00000, 1.00000],
-    [0.00000, -0.39465, 2.03211],
-    [1.13983, -0.58060, 0.00000],
-  ], dtype=np.float32)
-
-  rgb = np.dot(yuv, m)
-  # np.clip(rgb, 0, 255, out=rgb)
-  return rgb.astype(np.uint8)
-
-
-def extract_image(buf):
-  height, width, stride = buf.height, buf.width, buf.stride
-  uv_offset = buf.uv_offset
-  data = buf.data
-
-  y_plane = np.frombuffer(data, dtype=np.uint8, count=uv_offset)
-  if stride == width:
-    y = y_plane.reshape((height, width))
-  else:
-    y = np.lib.stride_tricks.as_strided(y_plane, shape=(height, width), strides=(stride, 1))
-
-  uv_height = height // 2
-  uv_width = width // 2
-
-  uv_plane = np.frombuffer(data, dtype=np.uint8, offset=uv_offset)
-
-  u = np.lib.stride_tricks.as_strided(uv_plane, shape=(uv_height, uv_width), strides=(stride, 2))
-  v = np.lib.stride_tricks.as_strided(uv_plane[1:], shape=(uv_height, uv_width), strides=(stride, 2))
-
-  return yuv_to_rgb(y, u, v)
 
 
 class RaylibCameraView:
@@ -168,7 +122,7 @@ class RaylibCameraView:
     if buf is None:
       return False
 
-    rgb_image_np = extract_image(buf)
+    rgb_image_np = yuv420_to_rgb(buf)
 
     if rgb_image_np is None:
       return False

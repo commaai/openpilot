@@ -1,0 +1,2 @@
+from openpilot.common.yuv_to_rgb_pyx import yuv420_to_rgb
+assert yuv420_to_rgb
