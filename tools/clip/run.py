@@ -139,7 +139,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   begin_at, start, end, duration = clip_timing(route_dict, start, end)
   bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
 
-  logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}mb')
+  logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}MB')
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
