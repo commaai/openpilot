@@ -64,7 +64,7 @@ def get_route(route: str):
   if resp.status_code == 403:
     raise ValueError('route not public')
   if resp.status_code != 200:
-    raise ValueError('unknown route request error code: ' + resp.status_code)
+    raise ValueError(f'unknown route request error code: {resp.status_code}')
   return resp.json()
 
 
@@ -120,7 +120,7 @@ def validate_output_file(output_file: str):
 
 def validate_route(route: str):
   if route.count('/') not in (1, 3):
-    raise ArgumentTypeError('route must include or exclude timing, example: ' + DEMO_ROUTE)
+    raise ArgumentTypeError(f'route must include or exclude timing, example: {DEMO_ROUTE}')
   return route
 
 
