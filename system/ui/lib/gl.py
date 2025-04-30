@@ -138,6 +138,13 @@ def glTexParameterf(target: GLenum, pname: GLenum, param: GLfloat) -> None:
   func(target, pname, param)
 
 
+# glActiveTexture(GLenum texture)
+def glActiveTexture(texture: GLenum) -> None:
+    """Select active texture unit."""
+    func = get_gl_function("glActiveTexture", None, [GLenum])
+    func(texture)
+
+
 # --- OpenGL Constants ---
 
 # Pixel storage parameters
@@ -146,6 +153,10 @@ GL_UNPACK_ROW_LENGTH = cast(GLenum, 0x0CF2)
 
 # Texture targets
 GL_TEXTURE_2D = cast(GLenum, 0x0DE1)
+
+# Texture units
+GL_TEXTURE0 = cast(GLenum, 0x84C0)
+# Add GL_TEXTURE1, GL_TEXTURE2 etc. if needed (GL_TEXTURE0 + i)
 
 # Texture parameters (pname for TexParameter*)
 GL_TEXTURE_MIN_FILTER = cast(GLenum, 0x2801)
