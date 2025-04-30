@@ -86,6 +86,7 @@ def parse_args(parser: ArgumentParser):
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
   # if using local files, don't worry about length check right now so we skip the network call
+  # TODO: derive segment count from local FS
   if not args.data_dir:
     try:
       route_dict = get_route(args.route)
