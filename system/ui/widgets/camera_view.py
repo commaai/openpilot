@@ -1,196 +1,281 @@
 import threading
 import time
+from collections import deque
+from ctypes import c_int
+
+import numpy as np
 import pyray as rl
+from pyray import ffi, PixelFormat
 
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
-from openpilot.system.hardware import APPLE, TICI
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import APPLE
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib import gl
+
+RL_UNSIGNED_BYTE = 0x1401  # GL_UNSIGNED_BYTE
+RL_FLOAT = 0x1406  # GL_FLOAT
 
 
 VERTEX_SHADER = f"""{'#version 330 core' if APPLE else '#version 300 es'}
 layout(location = 0) in vec4 aPosition;
 layout(location = 1) in vec2 aTexCoord;
-uniform mat4 uTransform;
 out vec2 vTexCoord;
 void main() {{
-  gl_Position = uTransform * aPosition;
+  gl_Position = aPosition;
   vTexCoord = aTexCoord;
 }}
 """
 
-if TICI:
-  FRAGMENT_SHADER = """#version 300 es
-  #extension GL_OES_EGL_image_external_essl3 : enable
-  precision mediump float;
-  uniform samplerExternalOES uTexture;
-  in vec2 vTexCoord;
-  out vec4 colorOut;
-  void main() {
-    colorOut = texture(uTexture, vTexCoord);
-    // gamma to improve worst case visibility when dark
-    colorOut.rgb = pow(colorOut.rgb, vec3(1.0/1.28));
-  }"""
-else:
-  FRAGMENT_SHADER = f"""#version {'330 core' if APPLE else '300 es'}
-  {'precision mediump float;' if not APPLE else ''}
-  uniform sampler2D uTextureY;
-  uniform sampler2D uTextureUV;
-  in vec2 vTexCoord;
-  out vec4 colorOut;
-  void main() {{
-    float y = texture(uTextureY, vTexCoord).r;
-    vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;
-    float r = y + 1.402 * uv.y;
-    float g = y - 0.344 * uv.x - 0.714 * uv.y;
-    float b = y + 1.772 * uv.x;
-    colorOut = vec4(r, g, b, 1.0);
-  }}
-  """
+FRAGMENT_SHADER = f"""#version {'330 core' if APPLE else '300 es'}
+{'precision mediump float;' if not APPLE else ''}
+uniform sampler2D uTextureY;
+uniform sampler2D uTextureUV;
+in vec2 vTexCoord;
+out vec4 colorOut;
+void main() {{
+  float y = texture(uTextureY, vTexCoord).r;
+  vec2 uv = texture(uTextureUV, vTexCoord).rg - 0.5;
+  float r = y + 1.402 * uv.y;
+  float g = y - 0.344 * uv.x - 0.714 * uv.y;
+  float b = y + 1.772 * uv.x;
+  colorOut = vec4(r, g, b, 1.0);
+}}
+"""
+
+FRAME_BUFFER_SIZE = 5
+
+
+class CheckGL:
+  def __init__(self, name: str):
+    self.name = name
+
+  def __enter__(self):
+    rl.rl_check_errors()
+    print("\n>> ", self.name)
+
+  def __exit__(self, exc_type, exc_val, exc_tb):
+    rl.rl_check_errors()
+    print("<< ", self.name)
 
 
 class CameraView:
   def __init__(self, stream_name: str, stream_type: VisionStreamType):
     self.stream_name = stream_name
-    self.stream_type = stream_type
+    self.active_stream_type = stream_type
+    self.requested_stream_type = stream_type
 
-    # Frame buffer and synchronization
-    self._lock = threading.Lock()
-    self._buf: VisionBuf | None = None
-    self._updated = False
-    self._retries = 0
+    self.frames: deque[tuple[int, VisionBuf]] = deque()
+    self.frame_lock = threading.Lock()
+    self.prev_frame_id: int | None = None
 
-    # Rendering resources
-    self._shader: rl.Shader | None = None
-    self._texture: rl.Texture | None = None
-    self._texture_rect: rl.Rectangle | None = None
+    self.stream_width = 0
+    self.stream_height = 0
+    self.stream_stride = 0
 
-    # IPC client and threading
-    self.running = True
+    self.program: rl.Shader | None = None
+    self.vao: int | None = None
+    self.vbo: int | None = None
+    self.ibo: int | None = None
+    self.textures: tuple[int, int] | None = None  # Y and UV textures
+
     self.vipc_client: VisionIpcClient | None = None
-    self.vipc_thread = threading.Thread(target=self._thread_loop, name=f"vipc_{self.stream_type}", daemon=True)
+    self.vipc_thread = threading.Thread(target=self._vipc_thread_func, daemon=True)
+    self.vipc_thread_stop_event = threading.Event()
+    self.vipc_connected_event = threading.Event()
+
+    self._initialize_gl()
     self.vipc_thread.start()
 
-  def _thread_loop(self):
-    print(f"Connecting to {self.stream_name} [{self.stream_type}]...")
-    while self.running:
-      try:
-        client = VisionIpcClient(self.stream_name, self.stream_type, True)
-        if not client.connect(False):
-          if self._retries % 100 == 0:
-            print(f"[{self.stream_type}] Connection failed, retrying...")
-          self._retries += 1
+  def _initialize_gl(self) -> None:
+    self.program = rl.load_shader_from_memory(VERTEX_SHADER, FRAGMENT_SHADER)
+    if not self.program:
+      raise RuntimeError("Failed to load shader program")
+
+    if self.requested_stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+      x1, x2, y1, y2 = 0.0, 1.0, 1.0, 0.0
+    else:
+      x1, x2, y1, y2 = 1.0, 0.0, 1.0, 0.0
+
+    self.vao = rl.rl_load_vertex_array()
+    rl.rl_enable_vertex_array(self.vao)
+
+    vertices = np.array([
+      -1.0, -1.0, x2, y1,
+      -1.0,  1.0, x2, y2,
+       1.0,  1.0, x1, y2,
+       1.0, -1.0, x1, y1,
+    ], dtype=np.float32)  # fmt: skip
+    vertices_ptr = ffi.cast("float *", ffi.from_buffer(vertices))
+    self.vbo = rl.rl_load_vertex_buffer(vertices_ptr, vertices.nbytes, False)
+    rl.rl_enable_vertex_buffer(self.vbo)
+
+    indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint8)
+    indices_ptr = ffi.cast("char *", ffi.from_buffer(indices))
+    self.ibo = rl.rl_load_vertex_buffer_element(indices_ptr, indices.nbytes, False)
+    rl.rl_enable_vertex_buffer_element(self.ibo)
+
+    position_loc = rl.get_shader_location_attrib(self.program, "aPosition")
+    rl.rl_enable_vertex_attribute(position_loc)
+    rl.rl_set_vertex_attribute(position_loc, 2, RL_FLOAT, False, 4 * 4, 0)
+
+    tex_coord_loc = rl.get_shader_location_attrib(self.program, "aTexCoord")
+    rl.rl_enable_vertex_attribute(tex_coord_loc)
+    rl.rl_set_vertex_attribute(tex_coord_loc, 2, RL_FLOAT, False, 4 * 4, 2 * 4)
+
+    rl.rl_disable_vertex_array()
+
+    with CheckGL("early init textures"):
+      self.textures = (
+        rl.rl_load_texture(None, 1, 1, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, 1),
+        rl.rl_load_texture(None, 1, 1, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, 1),
+      )
+
+    with CheckGL("set shader uniforms"):
+      rl.rl_enable_shader(self.program.id)
+      rl.rl_active_texture_slot(0)
+      rl.rl_enable_texture(self.textures[0])
+      rl.rl_set_uniform_sampler(rl.get_shader_location(self.program, "uTextureY"), ffi.cast("int", 0))
+      rl.rl_active_texture_slot(1)
+      rl.rl_enable_texture(self.textures[1])
+      rl.rl_set_uniform_sampler(rl.get_shader_location(self.program, "uTextureUV"), ffi.cast("int", 1))
+
+  def _start_vipc_thread(self) -> None:
+    self.vipc_thread_stop_event.clear()
+    self.vipc_thread = threading.Thread(target=self._vipc_thread_func, daemon=True)
+    self.vipc_thread.start()
+
+  def _vipc_thread_func(self) -> None:
+    cur_stream = self.requested_stream_type
+    self.vipc_client = VisionIpcClient(self.stream_name, cur_stream, False)
+
+    while not self.vipc_thread_stop_event.is_set():
+      if not self.vipc_client.is_connected() or cur_stream != self.requested_stream_type:
+        cur_stream = self.requested_stream_type
+        self.vipc_client = VisionIpcClient(self.stream_name, cur_stream, False)
+
+      if not self.vipc_client.is_connected():
+        streams = VisionIpcClient.available_streams(self.stream_name, False)
+        if not streams:
+          time.sleep(0.1)
+          continue
+        if not self.vipc_client.connect(False):
           time.sleep(0.1)
           continue
 
-        # wait for valid buffers
-        for _ in range(20):
-          if client.buffer_len:
-            break
-          time.sleep(0.05)
+        self.vipc_connected_event.set()
 
-        if not client.buffer_len:
-          print(f"[{self.stream_type}] Invalid buffer length: {client.buffer_len}")
-          time.sleep(0.5)
-          continue
+      buf = self.vipc_client.recv(1000)
+      if buf is not None:
+        with self.frame_lock:
+          self.frames.append((self.vipc_client.frame_id, buf))
+          while len(self.frames) > FRAME_BUFFER_SIZE:
+            self.frames.popleft()
 
-        self.vipc_client = client
-        self._retries = 0
-        print(f"[{self.stream_type}] Connected with {client.buffer_len} buffers")
-
-        # receive loop
-        while self.running and client.is_connected():
-          buf = client.recv()
-          if buf is None:
-            if not client.is_connected():
-              print(f"[{self.stream_type}] Disconnected")
-              break
-            time.sleep(0.01)
-            continue
-
-          with self._lock:
-            self._buf = buf
-            self._updated = True
-
-        print(f"[{self.stream_type}] Exiting receive loop")
-        self.vipc_client = None
-
-      except Exception as e:
-        print(f"[{self.stream_type}] Error: {e}")
-        time.sleep(1)
-
-    print(f"VIPC thread for {self.stream_type} stopped")
-    self.vipc_client = None
-
-  def _ensure_texture(self, w: int, h: int):
-    if w <= 0 or h <= 0:
+  def _on_vipc_connected(self) -> None:
+    if self.vipc_client is None:
       return
-    if not self._texture or self._texture.width != w or self._texture.height != h:
-      if self._texture:
-        rl.unload_texture(self._texture)
-      img = rl.gen_image_color(w, h, rl.BLANK)
-      rl.image_format(img, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8)
-      self._texture = rl.load_texture_from_image(img)
-      self._texture_rect = rl.Rectangle(0, 0, w, h)
-      rl.unload_image(img)
-      rl.set_texture_filter(self._texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      print(f"[{self.stream_type}] Texture {w}x{h} created")
 
-  def update_frame(self) -> bool:
-    with self._lock:
-      if not self._updated:
-        return False
-      buf = self._buf
-      self._updated = False
+    self.stream_width = self.vipc_client.width or 0
+    self.stream_height = self.vipc_client.height or 0
+    self.stream_stride = self.vipc_client.stride or 0
 
-    if buf is None:
-      return False
+    if self.textures:
+      for tex_id in self.textures:
+        rl.rl_unload_texture(tex_id)
 
-    img_np = extract_image(buf)
-    if img_np is None:
-      return False
+    with CheckGL("_on_vipc_connected load textures"):
+      self.textures = (
+        rl.rl_load_texture(None, self.stream_width, self.stream_height, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, 1),
+        rl.rl_load_texture(None, self.stream_width // 2, self.stream_height // 2, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, 1),
+      )
 
-    h, w = img_np.shape[:2]
-    self._ensure_texture(w, h)
-    if not self._texture:
-      print(f"[{self.stream_type}] Texture not ready")
-      return False
+  def render(self) -> None:
+    rl.clear_background(rl.BLACK)
 
-    data = rl.ffi.cast('void *', img_np.ctypes.data)
-    rl.update_texture(self._texture, data)
-    return True
+    if self.vipc_connected_event.is_set():
+      self.vipc_connected_event.clear()
+      self._on_vipc_connected()
 
-  def render(self, dest: rl.Rectangle):
-    self.update_frame()
-    if not self._texture or not self._texture_rect:
-      pos = rl.Vector2(dest.x + dest.width / 2 - 100, dest.y + dest.height / 2)
-      rl.draw_text_ex(gui_app.font(), "Connecting...", pos, 40, 0, rl.WHITE)
+    if self.program is None or self.textures is None or self.vao is None or self.vbo is None or self.ibo is None:
       return
-    rl.draw_texture_pro(self._texture, self._texture_rect, dest, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
-  def close(self):
-    self.running = False
-    if self.vipc_thread:
-      self.vipc_thread.join(timeout=1.0)
+    with self.frame_lock:
+      if not self.frames:
+        return
+      frame_id, frame = self.frames[-1]
+
+    if self.prev_frame_id is not None:
+      if frame_id == self.prev_frame_id:
+        cloudlog.debug(f"Drawing same frame twice {frame_id}")
+      elif frame_id != self.prev_frame_id + 1:
+        cloudlog.debug(f"Skipped frame {frame_id}")
+    self.prev_frame_id = frame_id
+
+    rl.rl_viewport(0, 0, gui_app.width, gui_app.height)
+    rl.rl_enable_vertex_array(self.vao)  # glBindVertexArray(vao)
+    rl.rl_enable_shader(self.program.id)  # glUseProgram(id)
+    gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, c_int(1))
+
+    with CheckGL("update textures"):
+      buf_data = frame.data
+      y_ptr = ffi.cast("unsigned char *", ffi.from_buffer(buf_data))
+      uv_ptr = ffi.cast("unsigned char *", ffi.from_buffer(buf_data[frame.uv_offset:]))
+      gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, c_int(self.stream_stride))
+      rl.rl_update_texture(self.textures[0], 0, 0, self.stream_width, self.stream_height,
+                           rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, y_ptr)
+      gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, c_int(self.stream_stride // 2))
+      rl.rl_update_texture(self.textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
+                           rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, uv_ptr)
+
+    rl.rl_enable_vertex_attribute(0)  # glEnableVertexAttribArray(0)
+
+    with CheckGL("draw elements"):
+      rl.rl_draw_vertex_array_elements(0, 6, None)
+
+    rl.rl_disable_vertex_attribute(0)  # glDisableVertexAttribArray(0)
+    rl.rl_disable_vertex_array()  # glBindVertexArray(0)
+
+    rl.rl_disable_texture()  # glEnable(GL_TEXTURE_2D); glBindTexture(GL_TEXTURE_2D, 0);
+    # glActiveTexture(GL_TEXTURE0);
+    gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, c_int(4))
+    gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, c_int(0))
+
+  def close(self) -> None:
+    self.vipc_thread_stop_event.set()
+    if self.vipc_thread and self.vipc_thread.is_alive():
+      self.vipc_thread.join(timeout=2.0)
       if self.vipc_thread.is_alive():
-        print(f"[{self.stream_type}] Thread did not exit cleanly")
-    self.vipc_thread = None
+        print(f"[{self.active_stream_type}] Thread did not exit cleanly")
+
+    if self.program:
+      rl.unload_shader(self.program)
+      self.program = None
+
+    if self.vao:
+      rl.rl_unload_vertex_array(self.vao)
+      self.vao = None
+
+    if self.vbo:
+      rl.rl_unload_vertex_buffer(self.vbo)
+      self.vbo = None
+
+    if self.ibo:
+      rl.rl_unload_vertex_buffer(self.ibo)
+      self.ibo = None
+
+    if self.textures:
+      for tex_id in self.textures:
+        rl.rl_unload_texture(tex_id)
+      self.textures = None
+
+    gui_app.close()
 
 
 if __name__ == "__main__":
   gui_app.init_window("watch3")
-
-  views = [
-    (VisionStreamType.VISION_STREAM_ROAD, (gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2)),
-    (VisionStreamType.VISION_STREAM_WIDE_ROAD, (0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)),
-    (VisionStreamType.VISION_STREAM_DRIVER, (gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)),
-  ]
-
-  camera_views = [CameraView("camerad", t) for t, _ in views]
-  rects = [rl.Rectangle(*r) for _, r in views]
-
+  road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   for _ in gui_app.render():
-    for view, rect in zip(camera_views, rects, strict=True):
-      view.render(rect)
-
-  for view in camera_views:
-    view.close()
+    road_camera_view.render()
+  road_camera_view.close()
+  gui_app.close()
