@@ -42,7 +42,7 @@ def clip_timing(route_dict: dict, start_seconds: int, end_seconds: int):
   return begin_at, start_seconds, end_seconds, duration
 
 
-def check_and_log_proc_failure(proc: subprocess.Popen):
+def check_for_failure(proc: subprocess.Popen):
   exit_code = proc.poll()
   if exit_code is not None and exit_code != 0:
     name = proc.args[0]
@@ -131,7 +131,7 @@ def wait_for_frames(procs: list[subprocess.Popen]):
     sm.update()
     no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
     for proc in procs:
-      check_and_log_proc_failure(proc)
+      check_for_failure(proc)
 
 
 def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int):
@@ -176,8 +176,8 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
     logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
     time.sleep(SECONDS_TO_WARM)
-    check_and_log_proc_failure(replay_proc)
-    check_and_log_proc_failure(ui_proc)
+    check_for_failure(replay_proc)
+    check_for_failure(ui_proc)
 
     ffmpeg_proc = start_proc(ffmpeg_cmd, env)
     atexit.register(lambda: ffmpeg_proc.terminate())
@@ -186,7 +186,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
     ffmpeg_exit_code = ffmpeg_proc.poll()
     if ffmpeg_exit_code is not None and ffmpeg_exit_code != 0:
-      check_and_log_proc_failure(ffmpeg_proc)
+      check_for_failure(ffmpeg_proc)
     else:
       logger.info(f'recording complete: {Path(output_filepath).resolve()}')
 
