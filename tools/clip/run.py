@@ -149,7 +149,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
-    '-i', display, '-c:v', 'libx264', '-crf', '23', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps * 2}k',
+    '-i', display, '-c:v', 'libx264', '-crf', '0', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps * 2}k',
     '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'MP4', '-t', str(duration), output_filepath,
   ]
 
@@ -173,14 +173,15 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     atexit.register(lambda: ui_proc.terminate())
     replay_proc = start_proc(replay_cmd, env)
     atexit.register(lambda: replay_proc.terminate())
+    procs = [replay_proc, ui_proc, xvfb_proc]
 
     logger.info('waiting for replay to begin (loading segments, may take a while)...')
-    wait_for_frames([replay_proc, ui_proc, xvfb_proc])
+    wait_for_frames(procs)
 
     logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
     time.sleep(SECONDS_TO_WARM)
-    check_for_failure(replay_proc)
-    check_for_failure(ui_proc)
+    for proc in procs:
+      check_for_failure(proc)
 
     ffmpeg_proc = start_proc(ffmpeg_cmd, env)
     atexit.register(lambda: ffmpeg_proc.terminate())
