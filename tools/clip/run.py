@@ -7,13 +7,13 @@ import platform
 import shutil
 import time
 from argparse import ArgumentParser, ArgumentTypeError
+from collections.abc import Sequence
 from pathlib import Path
 from random import randint
 from subprocess import Popen, PIPE
 from typing import Literal
 
 from cereal.messaging import SubMaster
-from collections.abc import Sequence
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import SegmentRange, get_max_seg_number_cached
