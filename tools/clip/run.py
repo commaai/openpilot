@@ -26,6 +26,10 @@ RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
 PROC_WAIT_SECONDS = 5
 
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+REPLAY = Path(SCRIPT_DIR, '../../tools/replay/replay').resolve()
+UI = Path(SCRIPT_DIR, '../../selfdrive/ui/ui').resolve()
+
 logger = logging.getLogger('clip.py')
 
 
@@ -106,10 +110,10 @@ def start_proc(args: list[str], env: dict[str, str]):
 def validate_env(parser: ArgumentParser):
   if platform.system() not in ['Linux']:
     parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
-  for proc in ['xvfb-run', 'ffmpeg']:
+  for proc in ['Xvfb', 'ffmpeg']:
     if shutil.which(proc) is None:
       parser.exit(1, f'clip.py: error: missing {proc} command, is it installed?\n')
-  for proc in ['selfdrive/ui/ui', 'tools/replay/replay']:
+  for proc in [REPLAY, UI]:
     if shutil.which(proc) is None:
       parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
 
@@ -152,14 +156,14 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     '-preset', 'slow', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), output_filepath,
   ]
 
-  replay_cmd = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
+  replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
     replay_cmd.append('--qcam')
   replay_cmd.append(route)
 
-  ui_cmd = ['./selfdrive/ui/ui', '-platform', 'xcb']
+  ui_cmd = [UI, '-platform', 'xcb']
   xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
 
   with OpenpilotPrefix(prefix, shared_download_cache=True):
