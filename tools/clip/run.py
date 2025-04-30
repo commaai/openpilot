@@ -6,13 +6,13 @@ from openpilot.common.api import api_get
 from openpilot.common.prefix import OpenpilotPrefix
 from pathlib import Path
 from random import randint
+from subprocess import Popen, PIPE
 from typing import Literal
 import atexit
 import logging
 import os
 import platform
 import shutil
-import subprocess
 import time
 
 DEFAULT_OUTPUT = 'output.mp4'
@@ -28,7 +28,7 @@ PROC_WAIT_SECONDS = 5
 logger = logging.getLogger('clip.py')
 
 
-def check_for_failure(proc: subprocess.Popen):
+def check_for_failure(proc: Popen):
   exit_code = proc.poll()
   if exit_code is not None and exit_code != 0:
     name = proc.args[0]
@@ -97,8 +97,8 @@ def parse_args(parser: ArgumentParser):
   return args
 
 
-def start_proc(args: list[str], env: dict):
-  return subprocess.Popen(args, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def start_proc(args: list[str], env: dict[str, str]):
+  return Popen(args, env=env, stdout=PIPE, stderr=PIPE)
 
 
 def validate_env(parser: ArgumentParser):
@@ -124,7 +124,7 @@ def validate_route(route: str):
   return route
 
 
-def wait_for_frames(procs: list[subprocess.Popen]):
+def wait_for_frames(procs: list[Popen]):
   sm = SubMaster(['uiDebug'])
   no_frames_drawn = True
   while no_frames_drawn:
