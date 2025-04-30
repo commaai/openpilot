@@ -202,7 +202,7 @@ def main():
   p.add_argument('-f', '--file-size', help='Target file size (Discord/GitHub support max 10MB)', type=float, default=10.)
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
-  p.add_argument('-q', '--quality', help='quality of video (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
+  p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
   args = parse_args(p)
   try:
