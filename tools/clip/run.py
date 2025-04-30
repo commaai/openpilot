@@ -205,7 +205,7 @@ def main():
   route_group.add_argument('--demo', help='use the demo route', action='store_true')
   p.add_argument('-d', '--data-dir', help='local directory where route data is stored')
   p.add_argument('-e', '--end', help='stop clipping at <end> seconds', type=int)
-  p.add_argument('-f', '--file-size', help='target file size (Discord/GitHub support max 10MB, default is 9.5MB)', type=float, default=9.5)
+  p.add_argument('-f', '--file-size', help='target file size (Discord/GitHub support max 10MB, default is 9MB)', type=float, default=9.)
   p.add_argument('-o', '--output', help='output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
