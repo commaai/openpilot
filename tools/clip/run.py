@@ -42,6 +42,20 @@ def clip_timing(route_dict: dict, start_seconds: int, end_seconds: int):
   return begin_at, start_seconds, end_seconds, duration
 
 
+def check_and_log_proc_failure(proc: subprocess.Popen):
+  exit_code = proc.poll()
+  if exit_code is not None and exit_code != 0:
+    name = proc.args[0]
+    msg = f'{name} failed, exit code {proc.poll()}'
+    logger.error(msg)
+    stdout, stderr = proc.communicate()
+    if stdout:
+      logger.error(stdout.decode())
+    if stderr:
+      logger.error(stderr.decode())
+    raise ChildProcessError(msg)
+
+
 def get_route(route: str):
   dongle, route_id = route.split('/')
   resp = api_get(f'/v1/route/{dongle}|{route_id}')
@@ -106,24 +120,22 @@ def validate_route(route: str):
   return route
 
 
-def wait_for_video(proc: subprocess.Popen):
+def wait_for_video(procs: list[subprocess.Popen]):
   sm = SubMaster(['uiDebug'])
   no_frames_drawn = True
   while no_frames_drawn:
     sm.update()
     no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
-    if proc.poll() is not None:
-      stdout, stderr = proc.communicate()
-      print('-' * 16, ' replay output ', '-' * 16)
-      print(stdout.decode().strip(), stderr.decode().strip())
-      print('-' * 49)
-      raise RuntimeError('replay failed to start!')
+    for proc in procs:
+      check_and_log_proc_failure(proc)
 
 
 def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int):
   route_dict = get_route(route)
   begin_at, start, end, duration = clip_timing(route_dict, start, end)
-  logger.info(f'clipping route {route}, start={start} end={end}')
+  bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
+
+  logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}mb')
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
@@ -134,8 +146,6 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   if quality == 'low':
     replay_cmd.append('--qcam')
   replay_cmd.append(route)
-
-  bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
@@ -156,17 +166,22 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     atexit.register(lambda: replay_proc.terminate())
 
     logger.info('waiting for replay to begin (loading segments, may take a while)...')
-    wait_for_video(replay_proc)
+    wait_for_video([replay_proc, ui_proc])
 
     logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
     time.sleep(SECONDS_TO_WARM)
+    check_and_log_proc_failure(ui_proc)
 
     ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: ffmpeg_proc.terminate())
 
     logger.info(f'recording in progress ({duration}s)...')
     ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-    logger.info(f'recording complete: {Path(output_filepath).resolve()}')
+    ffmpeg_exit_code = ffmpeg_proc.poll()
+    if ffmpeg_exit_code is not None and ffmpeg_exit_code != 0:
+      check_and_log_proc_failure(ffmpeg_proc)
+    else:
+      logger.info(f'recording complete: {Path(output_filepath).resolve()}')
 
 
 def main():
