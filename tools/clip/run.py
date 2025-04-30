@@ -119,10 +119,10 @@ def wait_for_video(proc: subprocess.Popen):
       raise RuntimeError('replay failed to start!')
 
 
-def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start_seconds: int, end_seconds: int, target_size_mb: int = 10):
+def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int):
   route_dict = get_route(route)
-  begin_at, start_seconds, end_seconds, duration = clip_timing(route_dict, start_seconds, end_seconds)
-  logger.info(f'clipping route {route}, start={start_seconds} end={end_seconds}')
+  begin_at, start, end, duration = clip_timing(route_dict, start, end)
+  logger.info(f'clipping route {route}, start={start} end={end}')
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display_num = str(randint(99, 999))
@@ -171,16 +171,10 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
 
 def main():
-  logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
-
-  p = ArgumentParser(
-    prog='clip.py',
-    description='Clip your openpilot route.',
-    epilog='comma.ai'
-  )
+  p = ArgumentParser(prog='clip.py', description='Clip your openpilot route.', epilog='comma.ai')
+  validate_env(p)
   route_group = p.add_mutually_exclusive_group(required=True)
-  route_group.add_argument('route', nargs='?', type=validate_route,
-    help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
+  route_group.add_argument('route', nargs='?', type=validate_route, help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
   route_group.add_argument('--demo', help='Use the demo route', action='store_true')
   p.add_argument('-d', '--data-dir', help='Local directory where route data is stored')
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
@@ -189,10 +183,7 @@ def main():
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of video (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
-
-  validate_env(p)
   args = parse_args(p)
-
   try:
     clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size)
   except KeyboardInterrupt as e:
@@ -204,4 +195,5 @@ def main():
 
 
 if __name__ == '__main__':
+  logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s %(levelname)s\t%(message)s')
   main()
