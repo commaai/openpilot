@@ -50,7 +50,6 @@ def check_for_failure(proc: Popen):
 
 def clip_timing(route_dict: dict, start_seconds: int, end_seconds: int):
   length = round((route_dict['maxqlog'] + 1) * 60)
-
   begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
   end_seconds = min(end_seconds, length)
   duration = end_seconds - start_seconds
@@ -88,7 +87,6 @@ def parse_args(parser: ArgumentParser):
   elif args.route.count('/') == 3:
     if args.start is not None or args.end is not None:
       parser.error('don\'t provide timing when including it in the route ID')
-
     parts = args.route.split('/')
     args.route = '/'.join(parts[:2])
     args.start = int(parts[2])
@@ -96,7 +94,6 @@ def parse_args(parser: ArgumentParser):
 
   if args.end <= args.start:
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
-
   if args.start < SECONDS_TO_WARM:
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
@@ -166,7 +163,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   ui_cmd = ['./selfdrive/ui/ui', '-platform', 'xcb']
   xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
 
-  with OpenpilotPrefix(prefix, shared_download_cache=True) as _:
+  with OpenpilotPrefix(prefix, shared_download_cache=True):
     env = os.environ.copy()
     env['DISPLAY'] = display
 
