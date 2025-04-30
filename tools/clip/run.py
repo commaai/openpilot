@@ -76,7 +76,7 @@ def parse_args(parser: ArgumentParser):
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
 
   if args.start < SECONDS_TO_WARM:
-    parser.error(f'start must be greater than {SECONDS_TO_WARM}s')
+    parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
   return args
 
