@@ -38,7 +38,7 @@ def check_for_failure(proc: Popen):
     elif isinstance(proc.args, Sequence):
       cmd = str(proc.args[0])
 
-    msg = f'{cmd} failed, exit code {proc.poll()}'
+    msg = f'{cmd} failed, exit code {exit_code}'
     logger.error(msg)
     stdout, stderr = proc.communicate()
     if stdout:
