@@ -120,7 +120,7 @@ def validate_route(route: str):
   return route
 
 
-def wait_for_video(procs: list[subprocess.Popen]):
+def wait_for_frames(procs: list[subprocess.Popen]):
   sm = SubMaster(['uiDebug'])
   no_frames_drawn = True
   while no_frames_drawn:
@@ -166,7 +166,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     atexit.register(lambda: replay_proc.terminate())
 
     logger.info('waiting for replay to begin (loading segments, may take a while)...')
-    wait_for_video([replay_proc, ui_proc])
+    wait_for_frames([replay_proc, ui_proc])
 
     logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
     time.sleep(SECONDS_TO_WARM)
