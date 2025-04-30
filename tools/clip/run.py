@@ -68,9 +68,9 @@ def get_route(route: str):
   if resp.status_code == 404:
     raise ValueError('route not found')
   if resp.status_code == 403:
-    raise ValueError('route not public')
+    raise PermissionError('route not public')
   if resp.status_code != 200:
-    raise ValueError(f'unknown route request error code: {resp.status_code}')
+    raise RuntimeError(f'unknown route request error code: {resp.status_code}')
   return resp.json()
 
 
