@@ -97,6 +97,10 @@ def parse_args(parser: ArgumentParser):
   return args
 
 
+def start_proc(args: list[str], env: dict):
+  return subprocess.Popen(args, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+
 def validate_env(parser: ArgumentParser):
   if platform.system() not in ['Linux']:
     parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
@@ -153,16 +157,17 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'MP4', '-t', str(duration), output_filepath,
   ]
   xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
+  ui_cmd = ['./selfdrive/ui/ui', '-platform', 'xcb']
 
   with OpenpilotPrefix(prefix, shared_download_cache=True) as _:
     env = os.environ.copy()
     env['DISPLAY'] = display
 
-    xvfb_proc = subprocess.Popen(xvfb_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    xvfb_proc = start_proc(xvfb_cmd, env)
     atexit.register(lambda: xvfb_proc.terminate())
-    ui_proc = subprocess.Popen(['./selfdrive/ui/ui', '-platform', 'xcb'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ui_proc = start_proc(ui_cmd, env)
     atexit.register(lambda: ui_proc.terminate())
-    replay_proc = subprocess.Popen(replay_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    replay_proc = start_proc(replay_cmd, env)
     atexit.register(lambda: replay_proc.terminate())
 
     logger.info('waiting for replay to begin (loading segments, may take a while)...')
@@ -170,9 +175,10 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
     logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
     time.sleep(SECONDS_TO_WARM)
+    check_and_log_proc_failure(replay_proc)
     check_and_log_proc_failure(ui_proc)
 
-    ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ffmpeg_proc = start_proc(ffmpeg_cmd, env)
     atexit.register(lambda: ffmpeg_proc.terminate())
 
     logger.info(f'recording in progress ({duration}s)...')
