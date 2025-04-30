@@ -87,7 +87,10 @@ def parse_args(parser: ArgumentParser):
 
   # if using local files, don't worry about length check right now so we skip the network call
   if not args.data_dir:
-    route_dict = get_route(args.route)
+    try:
+      route_dict = get_route(args.route)
+    except Exception as e:
+      parser.error('failed to get route: ', e)
 
     # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
     length = round((route_dict['maxqcamera'] + 1) * 60)
