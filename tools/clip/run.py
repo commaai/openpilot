@@ -192,7 +192,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
 
 def main():
-  p = ArgumentParser(prog='clip.py', description='Clip your openpilot route.', epilog='comma.ai')
+  p = ArgumentParser(prog='clip.py', description='clip your openpilot route.', epilog='comma.ai')
   validate_env(p)
   route_group = p.add_mutually_exclusive_group(required=True)
   route_group.add_argument('route', nargs='?', type=validate_route, help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
