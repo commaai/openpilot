@@ -187,9 +187,9 @@ def main():
   try:
     clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size)
   except KeyboardInterrupt as e:
-    logging.exception('interrupted by user', exc_info=e)
+    logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
-    logging.exception('encountered error', exc_info=e)
+    logger.exception('encountered error', exc_info=e)
   finally:
     atexit._run_exitfuncs()
 
