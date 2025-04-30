@@ -93,6 +93,12 @@ def validate_env(parser: ArgumentParser):
       parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
 
 
+def validate_output_file(output_file: str):
+  if not output_file.endswith('.mp4'):
+    raise ArgumentTypeError('output must be an mp4')
+  return output_file
+
+
 def validate_route(route: str):
   if route.count('/') not in (1, 3):
     raise ArgumentTypeError('route must include or exclude timing, example: ' + DEMO_ROUTE)
@@ -144,6 +150,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     '-preset', 'ultrafast',
     '-pix_fmt', 'yuv420p',
     '-movflags', '+faststart',
+    '-f', 'MP4',
     '-t', str(duration),
     output_filepath,
   ]
@@ -190,9 +197,9 @@ def main():
     help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
   route_group.add_argument('--demo', help='Use the demo route', action='store_true')
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
-  p.add_argument('-o', '--output', help='Output clip to (.mp4)', default=DEFAULT_OUTPUT)
+  p.add_argument('-o', '--output', help='Output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
   p.add_argument('-d', '--data_dir', help='Local directory where route data is stored')
-  p.add_argument('-q', '--quality', help='quality of video (low = qcam, high = hevc)', choices=['low', 'high'])
+  p.add_argument('-q', '--quality', help='quality of video (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
   p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
 
