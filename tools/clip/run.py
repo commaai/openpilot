@@ -4,6 +4,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from cereal.messaging import SubMaster
 from collections.abc import Sequence
 from openpilot.common.api import api_get
+from openpilot.common.basedir import BASEDIR
 from openpilot.common.prefix import OpenpilotPrefix
 from pathlib import Path
 from random import randint
@@ -26,9 +27,8 @@ RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
 PROC_WAIT_SECONDS = 5
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPLAY = str(Path(SCRIPT_DIR, '../../tools/replay/replay').resolve())
-UI = str(Path(SCRIPT_DIR, '../../selfdrive/ui/ui').resolve())
+REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
+UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
 
 logger = logging.getLogger('clip.py')
 
