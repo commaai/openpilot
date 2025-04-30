@@ -2,6 +2,7 @@
 
 from argparse import ArgumentParser, ArgumentTypeError
 from cereal.messaging import SubMaster
+from collections.abc import Sequence
 from openpilot.common.api import api_get
 from openpilot.common.prefix import OpenpilotPrefix
 from pathlib import Path
@@ -31,8 +32,13 @@ logger = logging.getLogger('clip.py')
 def check_for_failure(proc: Popen):
   exit_code = proc.poll()
   if exit_code is not None and exit_code != 0:
-    name = proc.args[0]
-    msg = f'{name} failed, exit code {proc.poll()}'
+    cmd = str(proc.args)
+    if isinstance(proc.args, str):
+      cmd = proc.args
+    elif isinstance(proc.args, Sequence):
+      cmd = str(proc.args[0])
+
+    msg = f'{cmd} failed, exit code {proc.poll()}'
     logger.error(msg)
     stdout, stderr = proc.communicate()
     if stdout:
