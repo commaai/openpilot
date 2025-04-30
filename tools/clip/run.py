@@ -66,11 +66,11 @@ def get_route(route: str):
   dongle, route_id = route.split('/')
   resp = api_get(f'/v1/route/{dongle}|{route_id}')
   if resp.status_code == 404:
-    raise ValueError('route not found')
+    raise ValueError(f'route {route} not found')
   if resp.status_code == 403:
-    raise PermissionError('route not public')
+    raise PermissionError(f'route {route} not public')
   if resp.status_code != 200:
-    raise RuntimeError(f'unknown route request error code: {resp.status_code}')
+    raise RuntimeError(f'unknown request error code for route {route}: {resp.status_code}')
   return resp.json()
 
 
