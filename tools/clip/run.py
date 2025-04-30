@@ -27,8 +27,8 @@ SECONDS_TO_WARM = 2
 PROC_WAIT_SECONDS = 5
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
-REPLAY = Path(SCRIPT_DIR, '../../tools/replay/replay').resolve()
-UI = Path(SCRIPT_DIR, '../../selfdrive/ui/ui').resolve()
+REPLAY = str(Path(SCRIPT_DIR, '../../tools/replay/replay').resolve())
+UI = str(Path(SCRIPT_DIR, '../../selfdrive/ui/ui').resolve())
 
 logger = logging.getLogger('clip.py')
 
