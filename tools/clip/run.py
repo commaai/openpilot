@@ -37,7 +37,6 @@ def check_for_failure(proc: Popen):
       cmd = proc.args
     elif isinstance(proc.args, Sequence):
       cmd = str(proc.args[0])
-
     msg = f'{cmd} failed, exit code {exit_code}'
     logger.error(msg)
     stdout, stderr = proc.communicate()
@@ -62,7 +61,6 @@ def get_route(route: str):
 
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
-
   if args.demo:
     args.route = DEMO_ROUTE
     if args.start is None or args.end is None:
@@ -78,8 +76,6 @@ def parse_args(parser: ArgumentParser):
     args.route = '/'.join(parts[:2])
     args.start = int(parts[2])
     args.end = int(parts[3])
-
-
   if args.end <= args.start:
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
   if args.start < SECONDS_TO_WARM:
@@ -95,7 +91,6 @@ def parse_args(parser: ArgumentParser):
 
     # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
     length = round((route_dict['maxqcamera'] + 1) * 60)
-
     if args.start >= length:
       parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
     if args.end > length:
