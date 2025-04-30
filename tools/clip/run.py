@@ -196,18 +196,19 @@ def main():
   route_group.add_argument('route', nargs='?', type=validate_route,
     help=f'The route (e.g. {DEMO_ROUTE} or {DEMO_ROUTE}/{DEMO_START}/{DEMO_END})')
   route_group.add_argument('--demo', help='Use the demo route', action='store_true')
-  p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
+  p.add_argument('-d', '--data-dir', help='Local directory where route data is stored')
+  p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
+  p.add_argument('-f', '--file-size', help='Target file size (Discord/GitHub support max 10MB)', type=float, default=10.)
   p.add_argument('-o', '--output', help='Output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
-  p.add_argument('-d', '--data_dir', help='Local directory where route data is stored')
+  p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of video (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='Start clipping at <start> seconds', type=int)
-  p.add_argument('-e', '--end', help='Stop clipping at <end> seconds', type=int)
 
   validate_env(p)
   args = parse_args(p)
 
   try:
-    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end)
+    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size)
   except KeyboardInterrupt as e:
     logging.exception('interrupted by user', exc_info=e)
   except Exception as e:
