@@ -28,20 +28,6 @@ PROC_WAIT_SECONDS = 5
 logger = logging.getLogger('clip.py')
 
 
-def clip_timing(route_dict: dict, start_seconds: int, end_seconds: int):
-  length = round((route_dict['maxqlog'] + 1) * 60)
-
-  begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
-  end_seconds = min(end_seconds, length)
-  duration = end_seconds - start_seconds
-
-  # FIXME: length isn't exactly max segment seconds, replay should exit at end of route
-  assert start_seconds < length, f'start ({start_seconds}s) cannot be after end of route ({length}s)'
-  assert start_seconds < end_seconds, f'end ({end_seconds}s) cannot be after start ({start_seconds}s)'
-
-  return begin_at, start_seconds, end_seconds, duration
-
-
 def check_for_failure(proc: subprocess.Popen):
   exit_code = proc.poll()
   if exit_code is not None and exit_code != 0:
@@ -54,6 +40,20 @@ def check_for_failure(proc: subprocess.Popen):
     if stderr:
       logger.error(stderr.decode())
     raise ChildProcessError(msg)
+
+
+def clip_timing(route_dict: dict, start_seconds: int, end_seconds: int):
+  length = round((route_dict['maxqlog'] + 1) * 60)
+
+  begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
+  end_seconds = min(end_seconds, length)
+  duration = end_seconds - start_seconds
+
+  # FIXME: length isn't exactly max segment seconds, replay should exit at end of route
+  assert start_seconds < length, f'start ({start_seconds}s) cannot be after end of route ({length}s)'
+  assert start_seconds < end_seconds, f'end ({end_seconds}s) cannot be after start ({start_seconds}s)'
+
+  return begin_at, start_seconds, end_seconds, duration
 
 
 def get_route(route: str):
