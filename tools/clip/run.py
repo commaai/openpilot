@@ -136,23 +136,9 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
 
   ffmpeg_cmd = [
-    'ffmpeg',
-    '-y',
-    '-video_size', RESOLUTION,
-    '-framerate', str(FRAMERATE),
-    '-f', 'x11grab',
-    '-draw_mouse', '0',
-    '-i', f':{display_num}',
-    '-c:v', 'libx264',
-    '-crf', '23',
-    '-maxrate', f'{bit_rate_kbps}k',
-    '-bufsize', f'{bit_rate_kbps * 2}k',
-    '-preset', 'ultrafast',
-    '-pix_fmt', 'yuv420p',
-    '-movflags', '+faststart',
-    '-f', 'MP4',
-    '-t', str(duration),
-    output_filepath,
+    'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
+    '-i', f':{display_num}', '-c:v', 'libx264', '-crf', '23', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps * 2}k',
+    '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'MP4', '-t', str(duration), output_filepath,
   ]
 
   with OpenpilotPrefix(prefix, shared_download_cache=True) as _:
