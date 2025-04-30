@@ -184,11 +184,13 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
       check_for_failure(proc)
 
     ffmpeg_proc = start_proc(ffmpeg_cmd, env)
+    procs.append(ffmpeg_proc)
     atexit.register(lambda: ffmpeg_proc.terminate())
 
     logger.info(f'recording in progress ({duration}s)...')
     ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-    check_for_failure(ffmpeg_proc)
+    for proc in procs:
+      check_for_failure(proc)
     logger.info(f'recording complete: {Path(output_filepath).resolve()}')
 
 
