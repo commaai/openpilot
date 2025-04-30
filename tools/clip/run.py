@@ -23,6 +23,7 @@ FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
+PROC_WAIT_SECONDS = 5
 
 logger = logging.getLogger('clip.py')
 
@@ -125,35 +126,33 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   logger.info(f'clipping route {route}, start={start} end={end}')
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
-  display_num = str(randint(99, 999))
+  display = f':{randint(99, 999)}'
 
-  replay_args = ['./tools/replay/replay', '--all', '-c', '1', '-s', str(begin_at), '--no-loop', '--prefix', prefix]
+  replay_cmd = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
-    replay_args.extend(['--data_dir', data_dir])
+    replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
-    replay_args.append('--qcam')
+    replay_cmd.append('--qcam')
+  replay_cmd.append(route)
 
   bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
-    '-i', f':{display_num}', '-c:v', 'libx264', '-crf', '23', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps * 2}k',
+    '-i', display, '-c:v', 'libx264', '-crf', '23', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps * 2}k',
     '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'MP4', '-t', str(duration), output_filepath,
   ]
+  xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
 
   with OpenpilotPrefix(prefix, shared_download_cache=True) as _:
     env = os.environ.copy()
-    env['DISPLAY'] = ':' + display_num
-
-    xvfb_cmd = ['Xvfb', env['DISPLAY'], '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
+    env['DISPLAY'] = display
 
     xvfb_proc = subprocess.Popen(xvfb_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: xvfb_proc.terminate())
-
     ui_proc = subprocess.Popen(['./selfdrive/ui/ui', '-platform', 'xcb'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: ui_proc.terminate())
-
-    replay_proc = subprocess.Popen([*replay_args, route], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    replay_proc = subprocess.Popen(replay_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: replay_proc.terminate())
 
     logger.info('waiting for replay to begin (loading segments, may take a while)...')
@@ -166,7 +165,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     atexit.register(lambda: ffmpeg_proc.terminate())
 
     logger.info(f'recording in progress ({duration}s)...')
-    ffmpeg_proc.wait(duration + 5)
+    ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
     logger.info(f'recording complete: {Path(output_filepath).resolve()}')
 
 
