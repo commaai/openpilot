@@ -1,21 +1,22 @@
 #!/usr/bin/env python3
 
-from argparse import ArgumentParser, ArgumentTypeError
-from cereal.messaging import SubMaster
-from collections.abc import Sequence
-from openpilot.common.basedir import BASEDIR
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.tools.lib.route import SegmentRange, get_max_seg_number_cached
-from pathlib import Path
-from random import randint
-from subprocess import Popen, PIPE
-from typing import Literal
 import atexit
 import logging
 import os
 import platform
 import shutil
 import time
+from argparse import ArgumentParser, ArgumentTypeError
+from pathlib import Path
+from random import randint
+from subprocess import Popen, PIPE
+from typing import Literal
+
+from cereal.messaging import SubMaster
+from collections.abc import Sequence
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.tools.lib.route import SegmentRange, get_max_seg_number_cached
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
