@@ -48,19 +48,6 @@ def check_for_failure(proc: Popen):
     raise ChildProcessError(msg)
 
 
-def clip_timing(route_dict: dict, start_seconds: int, end_seconds: int):
-  length = round((route_dict['maxqlog'] + 1) * 60)
-  begin_at = max(start_seconds - SECONDS_TO_WARM, 0)
-  end_seconds = min(end_seconds, length)
-  duration = end_seconds - start_seconds
-
-  # FIXME: length isn't exactly max segment seconds, replay should exit at end of route
-  assert start_seconds < length, f'start ({start_seconds}s) cannot be after end of route ({length}s)'
-  assert start_seconds < end_seconds, f'end ({end_seconds}s) cannot be after start ({start_seconds}s)'
-
-  return begin_at, start_seconds, end_seconds, duration
-
-
 def get_route(route: str):
   dongle, route_id = route.split('/')
   resp = api_get(f'/v1/route/{dongle}|{route_id}')
@@ -92,10 +79,23 @@ def parse_args(parser: ArgumentParser):
     args.start = int(parts[2])
     args.end = int(parts[3])
 
+
   if args.end <= args.start:
     parser.error(f'end ({args.end}) must be greater than start ({args.start})')
   if args.start < SECONDS_TO_WARM:
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
+
+  # if using local files, don't worry about length check right now so we skip the network call
+  if not args.data_dir:
+    route_dict = get_route(args.route)
+
+    # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
+    length = round((route_dict['maxqcamera'] + 1) * 60)
+
+    if args.start >= length:
+      parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
+    if args.end > length:
+      parser.error(f'end ({args.end}s) cannot be after end of route ({length}s)')
 
   return args
 
@@ -138,11 +138,11 @@ def wait_for_frames(procs: list[Popen]):
 
 
 def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int):
-  route_dict = get_route(route)
-  begin_at, start, end, duration = clip_timing(route_dict, start, end)
-  bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
-
   logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}MB')
+
+  begin_at = max(start - SECONDS_TO_WARM, 0)
+  duration = end - start
+  bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
