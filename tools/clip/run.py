@@ -69,17 +69,15 @@ def clip(data_dir: str | None, low_quality: bool, prefix: str, route: str, outpu
       '-bufsize', f'{bit_rate_kbps * 2}k',
       '-preset', 'ultrafast',
       '-pix_fmt', 'yuv420p',
+      '-t', str(duration),
       output_filepath,
     ]
     ffmpeg_proc = subprocess.Popen(ffmpeg_cmd, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     atexit.register(lambda: ffmpeg_proc.terminate())
-
     logger.debug(f'recording in progress ({duration}s)...')
-    monitor_processes([ui_proc, replay_proc, ffmpeg_proc], ['ui', 'replay', 'ffmpeg'])
-    time.sleep(duration)
+    ffmpeg_proc.wait(duration + 5)
+    #monitor_processes([ui_proc, replay_proc, ffmpeg_proc], ['ui', 'replay', 'ffmpeg'])
 
-    ffmpeg_proc.send_signal(signal.SIGINT)
-    ffmpeg_proc.wait(timeout=5)
     replay_proc.terminate()
     replay_proc.wait(timeout=5)
     ui_proc.terminate()
