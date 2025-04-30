@@ -3,9 +3,9 @@
 from argparse import ArgumentParser, ArgumentTypeError
 from cereal.messaging import SubMaster
 from collections.abc import Sequence
-from openpilot.common.api import api_get
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.tools.lib.route import SegmentRange, get_max_seg_number_cached
 from pathlib import Path
 from random import randint
 from subprocess import Popen, PIPE
@@ -51,18 +51,6 @@ def check_for_failure(proc: Popen):
     raise ChildProcessError(msg)
 
 
-def get_route(route: str):
-  dongle, route_id = route.split('/')
-  resp = api_get(f'/v1/route/{dongle}|{route_id}')
-  if resp.status_code == 404:
-    raise ValueError(f'route {route} not found')
-  if resp.status_code == 403:
-    raise PermissionError(f'route {route} not public')
-  if resp.status_code != 200:
-    raise RuntimeError(f'unknown request error code for route {route}: {resp.status_code}')
-  return resp.json()
-
-
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
   if args.demo:
@@ -89,12 +77,12 @@ def parse_args(parser: ArgumentParser):
   # TODO: derive segment count from local FS
   if not args.data_dir:
     try:
-      route_dict = get_route(args.route)
+      num_segs = get_max_seg_number_cached(SegmentRange(args.route))
     except Exception as e:
-      parser.error(f'failed to get route: {e}')
+      parser.error(f'failed to get route length: {e}')
 
     # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
-    length = round((route_dict['maxqcamera'] + 1) * 60)
+    length = round(num_segs * 60)
     if args.start >= length:
       parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
     if args.end > length:
