@@ -187,11 +187,8 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
     logger.info(f'recording in progress ({duration}s)...')
     ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-    ffmpeg_exit_code = ffmpeg_proc.poll()
-    if ffmpeg_exit_code is not None and ffmpeg_exit_code != 0:
-      check_for_failure(ffmpeg_proc)
-    else:
-      logger.info(f'recording complete: {Path(output_filepath).resolve()}')
+    check_for_failure(ffmpeg_proc)
+    logger.info(f'recording complete: {Path(output_filepath).resolve()}')
 
 
 def main():
