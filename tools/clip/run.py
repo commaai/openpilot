@@ -149,8 +149,8 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
-    '-i', display, '-c:v', 'libx264', '-crf', '23', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps * 2}k',
-    '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'MP4', '-t', str(duration), output_filepath,
+    '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
+    '-preset', 'medium', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), output_filepath,
   ]
 
   replay_cmd = ['./tools/replay/replay', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
