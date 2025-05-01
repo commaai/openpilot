@@ -26,7 +26,7 @@ FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
-PROC_WAIT_SECONDS = 5
+PROC_WAIT_SECONDS = 30
 
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
 UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
