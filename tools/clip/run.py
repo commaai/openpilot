@@ -16,7 +16,7 @@ from typing import Literal
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.tools.lib.route import SegmentRange, get_max_seg_number_cached
+from openpilot.tools.lib.route import Route
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
@@ -26,7 +26,7 @@ FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
-PROC_WAIT_SECONDS = 5
+PROC_WAIT_SECONDS = 30
 
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
 UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
@@ -52,6 +52,16 @@ def check_for_failure(proc: Popen):
     raise ChildProcessError(msg)
 
 
+def generate_overlay_text(metadata: dict):
+  origin = metadata['git_remote'].split('/')[3]
+  return ', '.join([
+    f'route\\: {metadata['fullname']}',
+    f'origin\\: {origin}',
+    f'branch\\: {metadata['git_branch']}',
+  ])
+
+
+
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
   if args.demo:
@@ -74,20 +84,18 @@ def parse_args(parser: ArgumentParser):
   if args.start < SECONDS_TO_WARM:
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
-  # if using local files, don't worry about length check right now so we skip the network call
-  # TODO: derive segment count from local FS
-  if not args.data_dir:
-    try:
-      num_segs = get_max_seg_number_cached(SegmentRange(args.route))
-    except Exception as e:
-      parser.error(f'failed to get route length: {e}')
+  try:
+    route = Route(args.route, data_dir=args.data_dir)
+    args.route_metadata = route.get_metadata()
+  except Exception as e:
+    parser.error(f'failed to get route length: {e}')
 
-    # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
-    length = round(num_segs * 60)
-    if args.start >= length:
-      parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
-    if args.end > length:
-      parser.error(f'end ({args.end}s) cannot be after end of route ({length}s)')
+  # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
+  length = round(route.max_seg_number * 60)
+  if args.start >= length:
+    parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
+  if args.end > length:
+    parser.error(f'end ({args.end}s) cannot be after end of route ({length}s)')
 
   return args
 
@@ -129,8 +137,11 @@ def wait_for_frames(procs: list[Popen]):
       check_for_failure(proc)
 
 
-def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int):
+def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int, meta: dict):
   logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}MB')
+
+  title_text = ''
+  metadata_text = generate_overlay_text(meta)
 
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
@@ -139,11 +150,24 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
 
+  title_y = '18'
+  meta_y = '60' if title_text else '18'
+
+  ffmpeg_filter = ''.join([
+    f"drawtext=text='{title_text}':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y={title_y}," if title_text else '',
+    f"drawtext=text='{metadata_text}':fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y={meta_y}" if metadata_text else ''
+  ])
+
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
     '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
-    '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), output_filepath,
+    '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration),
   ]
+
+  if title_text or metadata_text:
+    ffmpeg_cmd.extend(['-filter:v', ffmpeg_filter])
+
+  ffmpeg_cmd.append(output_filepath)
 
   replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
@@ -201,7 +225,7 @@ def main():
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
   args = parse_args(p)
   try:
-    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size)
+    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size, args.route_metadata)
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
