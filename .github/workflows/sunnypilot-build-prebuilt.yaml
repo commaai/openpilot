@@ -8,14 +8,16 @@ env:
   PUBLIC_REPO_URL: "https://github.com/sunnypilot/sunnypilot"
   
   # Branch configurations
-  MASTER_BRANCH: "master"
-  MASTER_NEW_BRANCH: "master-new"
-  DEV_C3_SOURCE_BRANCH: "master-dev-c3-new"
+  STAGING_C3_SOURCE_BRANCH: ${{ vars.STAGING_C3_SOURCE_BRANCH || 'master-new' }} # vars are set on repo settings.
+  DEV_C3_SOURCE_BRANCH: ${{ vars.DEV_C3_SOURCE_BRANCH || 'master-dev-c3-new' }} # vars are set on repo settings.
   
   # Target branch configurations
-  STAGING_TARGET_BRANCH: "staging-c3-new"
-  DEV_TARGET_BRANCH: "dev-c3-new"
-  RELEASE_TARGET_BRANCH: "release-c3-new"
+  STAGING_TARGET_BRANCH: ${{ vars.STAGING_TARGET_BRANCH || 'staging-c3-new' }} # vars are set on repo settings.
+  DEV_TARGET_BRANCH: ${{ vars.DEV_TARGET_BRANCH || 'dev-c3-new' }} # vars are set on repo settings.
+  RELEASE_TARGET_BRANCH: ${{ vars.RELEASE_TARGET_BRANCH || 'release-c3-new' }} # vars are set on repo settings.
+  
+  # Runtime configuration
+  SOURCE_BRANCH: "${{ github.head_ref || github.ref_name }}"
 
 on:
   push:
@@ -59,7 +61,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: recursive
-          ref: ${{ github.head_ref || github.ref_name }}
+          ref: ${{ env.SOURCE_BRANCH }}
           repository: ${{ github.event.pull_request.head.repo.fork && github.event.pull_request.head.repo.full_name || github.repository }}
       - run: git lfs pull
 
@@ -67,52 +69,61 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{env.SCONS_CACHE_DIR}}
-          key: scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}-${{ github.sha }}
+          key: scons-${{ runner.os }}-${{ runner.arch }}-${{ env.SOURCE_BRANCH }}-${{ github.sha }}
           # Note: GitHub Actions enforces cache isolation between different build sources (PR builds, workflow dispatches, etc.) 
           #   for security. Only caches from the default branch are shared across all builds. This is by design and cannot be overridden.
           restore-keys: |
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ github.head_ref || github.ref_name }}
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ env.MASTER_NEW_BRANCH }}
-            scons-${{ runner.os }}-${{ runner.arch }}-${{ env.MASTER_BRANCH }}
+            scons-${{ runner.os }}-${{ runner.arch }}-${{ env.SOURCE_BRANCH }}
+            scons-${{ runner.os }}-${{ runner.arch }}-${{ env.STAGING_C3_SOURCE_BRANCH }}
             scons-${{ runner.os }}-${{ runner.arch }}
 
-      - name: Set Configuration
-        if: (!github.event.pull_request.head.repo.fork)
+      - name: Set Feature Branch Prebuilt Configuration
+        id: set_feature_configuration
+        if: (
+              !(env.SOURCE_BRANCH == env.DEV_C3_SOURCE_BRANCH) &&
+              !(env.SOURCE_BRANCH == env.STAGING_C3_SOURCE_BRANCH) &&
+              !(startsWith(github.ref, 'refs/tags/'))
+            )
         run: |
-          if [[ "${{ github.head_ref || github.ref_name }}" == "${{ env.DEV_C3_SOURCE_BRANCH }}" ]]; then
-            # Dev configuration
-            echo "BRANCH_TYPE=dev" >> $GITHUB_ENV
-            echo "NEW_BRANCH=${{ env.DEV_TARGET_BRANCH }}" >> $GITHUB_ENV
-            echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
-            echo "EXTRA_VERSION_IDENTIFIER=${{ github.run_number }}" >> $GITHUB_ENV
-          
-          elif [[ "${{ github.head_ref || github.ref_name }}" == "${{ env.MASTER_BRANCH }}" || "${{ github.ref_name }}" == "${{ env.MASTER_NEW_BRANCH }}" ]]; then
-            # Master configuration
-            echo "BRANCH_TYPE=master" >> $GITHUB_ENV
-            echo "NEW_BRANCH=${{ env.STAGING_TARGET_BRANCH }}" >> $GITHUB_ENV
-            echo "EXTRA_VERSION_IDENTIFIER=staging" >> $GITHUB_ENV
-            echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')-staging" >> $GITHUB_ENV
-          
-          elif [[ "${{ github.ref }}" == refs/tags/* ]]; then
-            # Tag configuration
-            echo "BRANCH_TYPE=tag" >> $GITHUB_ENV
-            echo "NEW_BRANCH=${{ env.RELEASE_TARGET_BRANCH }}" >> $GITHUB_ENV
-            echo "EXTRA_VERSION_IDENTIFIER=release" >> $GITHUB_ENV
-            echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')-release" >> $GITHUB_ENV
-          
-          else
-            # Feature branch configuration
-            echo "BRANCH_TYPE=dispatch" >> $GITHUB_ENV
-            echo "NEW_BRANCH=${{ github.head_ref || github.ref_name }}-prebuilt" >> $GITHUB_ENV
-            echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
-          fi
-          
-      - name: Set Configuration (only forks)
-        if: (github.event.pull_request.head.repo.fork)
-        run: |
-          echo "BRANCH_TYPE=dispatch" >> $GITHUB_ENV
-          echo "NEW_BRANCH=${{ github.head_ref || github.ref_name }}-fork-prebuilt" >> $GITHUB_ENV
+          echo "NEW_BRANCH=${{ env.SOURCE_BRANCH }}${{ github.event.pull_request.head.repo.fork && '-fork' || '' }}-prebuilt" >> $GITHUB_ENV
           echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Set dev-c3-new prebuilt Configuration
+        id: set_dev_configuration
+        if: (
+                steps.set_feature_configuration.outcome == 'skipped' && 
+                env.SOURCE_BRANCH == env.DEV_C3_SOURCE_BRANCH
+            )
+        run: |
+          echo "NEW_BRANCH=${{ env.DEV_TARGET_BRANCH }}" >> $GITHUB_ENV
+          echo "VERSION=$(date '+%Y.%m.%d')-${{ github.run_number }}" >> $GITHUB_ENV
+          echo "EXTRA_VERSION_IDENTIFIER=${{ github.run_number }}" >> $GITHUB_ENV
+
+      - name: Set staging-c3-new prebuilt Configuration
+        id: set_staging_configuration
+        if: (
+                steps.set_feature_configuration.outcome == 'skipped' &&
+                !contains(github.event_name, 'pull_request') &&
+                steps.set_dev_configuration.outcome == 'skipped' && 
+                (env.SOURCE_BRANCH == env.STAGING_C3_SOURCE_BRANCH)
+            )
+        run: |
+          echo "NEW_BRANCH=${{ env.STAGING_TARGET_BRANCH }}" >> $GITHUB_ENV
+          echo "EXTRA_VERSION_IDENTIFIER=staging" >> $GITHUB_ENV
+          echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')-staging" >> $GITHUB_ENV
+
+      - name: Set release-c3-new prebuilt Configuration
+        id: set_tag_configuration
+        if: (
+              steps.set_feature_configuration.outcome == 'skipped' &&
+              !contains(github.event_name, 'pull_request') &&
+              steps.set_staging_configuration.outcome == 'skipped' &&
+              startsWith(github.ref, 'refs/tags/')
+            )
+        run: |
+          echo "NEW_BRANCH=${{ env.RELEASE_TARGET_BRANCH }}" >> $GITHUB_ENV
+          echo "EXTRA_VERSION_IDENTIFIER=release" >> $GITHUB_ENV
+          echo "VERSION=$(cat common/version.h | grep COMMA_VERSION | sed -e 's/[^0-9|.]//g')-release" >> $GITHUB_ENV
 
       - name: Set environment variables
         id: set-env
@@ -278,12 +289,12 @@ jobs:
 
       - name: Send Discord Notification
         env:
-          DISCORD_WEBHOOK: ${{ contains(fromJSON(vars.DEV_FEEDBACK_NOTIFICATION_BRANCHES), github.head_ref || github.ref_name) && secrets.DISCORD_DEV_FEEDBACK_CHANNEL_WEBHOOK || secrets.DISCORD_DEV_PRIVATE_CHANNEL_WEBHOOK }}
+          DISCORD_WEBHOOK: ${{ contains(fromJSON(vars.DEV_FEEDBACK_NOTIFICATION_BRANCHES), env.SOURCE_BRANCH) && secrets.DISCORD_DEV_FEEDBACK_CHANNEL_WEBHOOK || secrets.DISCORD_DEV_PRIVATE_CHANNEL_WEBHOOK }}
         run: |
           TEMPLATE='${{ vars.DISCORD_GENERAL_UPDATE_NOTICE }}'
           export EXTRA_VERSION_IDENTIFIER="${{ needs.build.outputs.extra_version_identifier }}"
           export VERSION="${{ needs.build.outputs.version }}"
-          export branch_name=${{ github.head_ref || github.ref_name }}
+          export branch_name=${{ env.SOURCE_BRANCH }}
           export new_branch=${{ needs.build.outputs.new_branch }}
           export extra_version_identifier=${{ needs.build.outputs.extra_version_identifier || github.run_number}}
           echo ${TEMPLATE} | envsubst | jq -c '.' | tee payload.json
