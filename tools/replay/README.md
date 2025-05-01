@@ -81,7 +81,7 @@ Arguments:
                          connect.comma.ai
 ```
 
-## Visualize the Replay in the Openpilot UI
+## Visualize the Replay in the openpilot UI
 To visualize the replay within the openpilot UI, run the following commands:
 
 ```bash
