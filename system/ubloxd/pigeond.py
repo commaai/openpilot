@@ -44,7 +44,7 @@ def add_ubx_checksum(msg: bytes) -> bytes:
     B = (B + A) % 256
   return msg + bytes([A, B])
 
-def get_assistnow_messages(token: bytes, assistance_path: str) -> list[bytes]:
+def get_assistnow_messages(token: bytes, assistance_path: str | None) -> list[bytes]:
   if token:
     # make request
     # TODO: implement adding the last known location
