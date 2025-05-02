@@ -47,8 +47,10 @@ elif arch == 'Darwin':
 else:
   device_string = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0'
 
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
-  fn = File(f"models/{model_name}").abspath
-  cmd = f'{pythonpath_string} {device_string} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
-  lenv.Command(fn + "_tinygrad.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
+# TODO-SP: after 15.4 it's not possible to compile models locally on mac https://discord.com/channels/469524606043160576/1362735424644055230
+if arch != 'Darwin':
+  for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+    fn = File(f"models/{model_name}").abspath
+    cmd = f'{pythonpath_string} {device_string} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
+    lenv.Command(fn + "_tinygrad.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
 

@@ -52,15 +52,3 @@ commonmodel_lib = lenv.Library('commonmodel', common_src)
 lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=cython_libs, FRAMEWORKS=frameworks)
 lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
-
-tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath)]
-
-# Get model metadata
-fn = File("models/supercombo").abspath
-cmd = f'python3 {Dir("#sunnypilot/modeld").abspath}/get_model_metadata.py {fn}.onnx'
-lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
-
-if arch == "larch64":
-  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'OpenCL', 'dl'])
-  thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
-  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'OpenCL'])
