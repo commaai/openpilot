@@ -115,11 +115,6 @@ class CameraView:
     gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTextureY"), 0)
     gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTextureUV"), 1)
 
-  def _start_vipc_thread(self) -> None:
-    self.vipc_thread_stop_event.clear()
-    self.vipc_thread = threading.Thread(target=self._vipc_thread_func, daemon=True)
-    self.vipc_thread.start()
-
   def _vipc_thread_func(self) -> None:
     cur_stream = self.requested_stream_type
     self.vipc_client = VisionIpcClient(self.stream_name, cur_stream, False)
