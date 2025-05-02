@@ -18,9 +18,10 @@ from openpilot.system.ui.lib.application import gui_app
 VERTEX_SHADER = f"""{'#version 330 core' if APPLE else '#version 300 es'}
 layout(location = 0) in vec4 aPosition;
 layout(location = 1) in vec2 aTexCoord;
+uniform mat4 uTransform;
 out vec2 vTexCoord;
 void main() {{
-  gl_Position = aPosition;
+  gl_Position = uTransform * aPosition;
   vTexCoord = aTexCoord;
 }}
 """
@@ -150,6 +151,13 @@ class CameraView:
     self.stream_height = self.vipc_client.height or 0
     self.stream_stride = self.vipc_client.stride or 0
 
+    # Scale the frame to fit the widget while maintaining the aspect ratio.
+    widget_aspect_ratio = gui_app.width / gui_app.height
+    frame_aspect_ratio = self.stream_width / self.stream_height
+    x = min(frame_aspect_ratio / widget_aspect_ratio, 1.0)
+    y = min(widget_aspect_ratio / frame_aspect_ratio, 1.0)
+    rl.rlSetUniformMatrix(rl.rlGetLocationUniform(self._shader.id, b"uTransform"), rl.MatrixScale(x, y, 1.0))
+
     if self._textures is not None:
       for tex_id in self._textures:
         rl.rlUnloadTexture(tex_id)
@@ -196,8 +204,6 @@ class CameraView:
 
       rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
-
-      # FIXME: add glUniformMatrix4fv
 
       rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
 
