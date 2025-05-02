@@ -52,14 +52,26 @@ def check_for_failure(proc: Popen):
     raise ChildProcessError(msg)
 
 
-def generate_overlay_text(metadata: dict):
-  origin = metadata['git_remote'].split('/')[3]
-  return ', '.join([
-    f'route\\: {metadata['fullname']}',
-    f'origin\\: {origin}',
-    f'branch\\: {metadata['git_branch']}',
-  ])
+def escape_ffmpeg_text(value: str):
+  special_chars = {',': '\\,', ':': '\\:', '=': '\\=', '[': '\\[', ']': '\\]'}
+  value = value.replace('\\', '\\\\\\\\\\\\\\\\')
+  for char, escaped in special_chars.items():
+    value = value.replace(char, escaped)
+  return value
 
+
+def get_meta_text(metadata: dict):
+  origin_parts = metadata['git_remote'].split('/')
+  origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
+  return ', '.join([
+    f'openpilot v{metadata['version']}',
+    f'route: {metadata['fullname']}',
+    f'car: {metadata['platform']}',
+    f'origin: {origin}',
+    f'branch: {metadata['git_branch']}',
+    f'commit: {metadata['git_commit'][:7]}',
+    f'modified: {str(metadata['git_dirty']).lower()}',
+  ])
 
 
 def parse_args(parser: ArgumentParser):
@@ -85,6 +97,7 @@ def parse_args(parser: ArgumentParser):
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
   try:
+    logger.info(f'fetching meta for route {args.route}')
     route = Route(args.route, data_dir=args.data_dir)
     args.route_metadata = route.get_metadata()
   except Exception as e:
@@ -127,6 +140,12 @@ def validate_route(route: str):
   return route
 
 
+def validate_title(title: str):
+  if len(title) > 80:
+    raise ArgumentTypeError('title must be less than 80 chars')
+  return title
+
+
 def wait_for_frames(procs: list[Popen]):
   sm = SubMaster(['uiDebug'])
   no_frames_drawn = True
@@ -137,11 +156,19 @@ def wait_for_frames(procs: list[Popen]):
       check_for_failure(proc)
 
 
-def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int, meta: dict):
+def clip(
+  data_dir: str | None,
+  quality: Literal['low', 'high'],
+  prefix: str,
+  route: str,
+  output_filepath: str,
+  start: int,
+  end: int,
+  target_size_mb: int,
+  meta: dict,
+  title: str | None
+):
   logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}MB')
-
-  title_text = ''
-  metadata_text = generate_overlay_text(meta)
 
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
@@ -150,24 +177,17 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
 
-  title_y = '18'
-  meta_y = '60' if title_text else '18'
-
-  ffmpeg_filter = ''.join([
-    f"drawtext=text='{title_text}':fontcolor=white:fontsize=24:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y={title_y}," if title_text else '',
-    f"drawtext=text='{metadata_text}':fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y={meta_y}" if metadata_text else ''
-  ])
+  meta_text = get_meta_text(meta)
+  overlays = [f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile=Inter.tff:fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=7:x=(w-text_w)/2:y=5.5:enable='between(t,1,10)'",]
+  if title:
+    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y=53")
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
     '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
-    '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration),
+    '-filter:v', ','.join(overlays), '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4',
+    '-t', str(duration), output_filepath
   ]
-
-  if title_text or metadata_text:
-    ffmpeg_cmd.extend(['-filter:v', ffmpeg_filter])
-
-  ffmpeg_cmd.append(output_filepath)
 
   replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
@@ -223,9 +243,21 @@ def main():
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
+  p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
   try:
-    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size, args.route_metadata)
+    clip(
+      args.data_dir,
+      args.quality,
+      args.prefix,
+      args.route,
+      args.output,
+      args.start,
+      args.end,
+      args.file_size,
+      args.route_metadata,
+      args.title
+    )
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
