@@ -6,22 +6,11 @@ from typing import Any, cast
 # --- OpenGL Type Definitions ---
 # Basic types
 GLenum = ctypes.c_uint
-GLboolean = ctypes.c_ubyte  # unsigned char
-GLbitfield = ctypes.c_uint
-GLbyte = ctypes.c_byte  # signed char
-GLshort = ctypes.c_short
 GLint = ctypes.c_int
 GLsizei = ctypes.c_int
-GLubyte = ctypes.c_ubyte
-GLushort = ctypes.c_ushort
 GLuint = ctypes.c_uint
 GLfloat = ctypes.c_float
-GLclampf = ctypes.c_float
-GLdouble = ctypes.c_double
-GLclampd = ctypes.c_double
 GLvoidp = ctypes.c_void_p
-GLintptr = ctypes.c_ssize_t  # Corresponds to ptrdiff_t / ssize_t
-GLsizeiptr = ctypes.c_size_t  # Corresponds to size_t
 
 if sys.platform.startswith('linux') or sys.platform == 'darwin':
   try:
@@ -152,18 +141,11 @@ def glTexSubImage2D(
 
 # --- OpenGL Constants ---
 
-GL_NO_ERROR = cast(GLenum, 0)
-
 # Pixel storage parameters
-GL_UNPACK_ALIGNMENT = cast(GLenum, 0x0CF5)
 GL_UNPACK_ROW_LENGTH = cast(GLenum, 0x0CF2)
 
 # Texture targets
 GL_TEXTURE_2D = cast(GLenum, 0x0DE1)
-
-# Texture units
-GL_TEXTURE0 = cast(GLenum, 0x84C0)
-# Add GL_TEXTURE1, GL_TEXTURE2 etc. if needed (GL_TEXTURE0 + i)
 
 # Texture parameters (pname for TexParameter*)
 GL_TEXTURE_MIN_FILTER = cast(GLenum, 0x2801)
@@ -182,25 +164,6 @@ GL_RG8 = cast(GLint, 0x822B)
 # Pixel formats (format for TexImage*)
 GL_RED = cast(GLenum, 0x1903)
 GL_RG = cast(GLenum, 0x8227)
-GL_RGBA = cast(GLenum, 0x1908)
 
 # Pixel types (type for TexImage*)
 GL_UNSIGNED_BYTE = cast(GLenum, 0x1401)
-
-# Framebuffer
-GL_STENCIL_BUFFER_BIT = cast(GLbitfield, 0x00000400)
-GL_COLOR_BUFFER_BIT = cast(GLbitfield, 0x00004000)
-
-# Drawing
-GL_TRIANGLES = cast(GLenum, 0x0004)
-
-# Buffer
-GL_ARRAY_BUFFER = cast(GLenum, 0x8892)
-GL_ELEMENT_ARRAY_BUFFER = cast(GLenum, 0x8893)
-GL_STATIC_DRAW = cast(GLenum, 0x88E4)
-
-# Shaders
-GL_VERTEX_SHADER = cast(GLenum, 0x8B31)
-GL_FRAGMENT_SHADER = cast(GLenum, 0x8B30)
-GL_COMPILE_STATUS = cast(GLenum, 0x8B81)
-GL_LINK_STATUS = cast(GLenum, 0x8B82)
