@@ -141,7 +141,7 @@ def validate_route(route: str):
 
 def validate_title(title: str):
   if len(title) > 80:
-    raise ArgumentTypeError('title must be less than 80 chars')
+    raise ArgumentTypeError('title must be no longer than 80 chars')
   return title
 
 
