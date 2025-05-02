@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import sys
 import time
 import signal
@@ -17,6 +18,8 @@ from openpilot.common.gpio import gpio_init, gpio_set
 from openpilot.system.hardware.tici.pins import GPIO
 
 UBLOX_TTY = "/dev/ttyHS0"
+
+UBLOX_ASSISTANCE_PATH = "/data/ublox_assistance"
 
 UBLOX_ACK = b"\xb5\x62\x05\x01\x02\x00"
 UBLOX_NACK = b"\xb5\x62\x05\x00\x02\x00"
@@ -41,16 +44,22 @@ def add_ubx_checksum(msg: bytes) -> bytes:
     B = (B + A) % 256
   return msg + bytes([A, B])
 
-def get_assistnow_messages(token: bytes) -> list[bytes]:
-  # make request
-  # TODO: implement adding the last known location
-  r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
-    'token': token,
-    'gnss': 'gps,glo',
-    'datatype': 'eph,alm,aux',
-  }, safe=':,'), timeout=5)
-  assert r.status_code == 200, "Got invalid status code"
-  dat = r.content
+def get_assistnow_messages(token: bytes, assistance_path: str) -> list[bytes]:
+  if token:
+    # make request
+    # TODO: implement adding the last known location
+    r = requests.get("https://online-live2.services.u-blox.com/GetOnlineData.ashx", params=urllib.parse.urlencode({
+      'token': token,
+      'gnss': 'gps,glo',
+      'datatype': 'eph,alm,aux',
+    }, safe=':,'), timeout=5)
+    assert r.status_code == 200, "Got invalid status code"
+    dat = r.content
+  elif assistance_path:
+    with open(assistance_path, 'rb') as f:
+      dat = f.read()
+  else:
+    raise Exception("Must provide either a token or an assistance path")
 
   # split up messages
   msgs = []
@@ -221,9 +230,10 @@ def initialize_pigeon(pigeon: TTYPigeon) -> bool:
 
       # try getting AssistNow if we have a token
       token = Params().get('AssistNowToken')
-      if token is not None:
+      assistance_path = UBLOX_ASSISTANCE_PATH if os.path.isfile(UBLOX_ASSISTANCE_PATH) else None
+      if token is not None or assistance_path is not None:
         try:
-          for msg in get_assistnow_messages(token):
+          for msg in get_assistnow_messages(token, assistance_path):
             pigeon.send_with_ack(msg, ack=UBLOX_ASSIST_ACK)
           cloudlog.warning("AssistNow messages sent")
         except Exception:
