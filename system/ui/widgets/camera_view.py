@@ -232,7 +232,6 @@ class CameraView:
 
 def run():
   gui_app.init_window("watch3")
-  time.sleep(1)
   road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   # rl.rlDisableBackfaceCulling()
   for _ in gui_app.render():
