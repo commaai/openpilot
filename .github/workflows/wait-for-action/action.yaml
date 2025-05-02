@@ -40,5 +40,13 @@ runs:
         RUN_ID=$(gh run list --workflow=${{ inputs.workflow }} --branch="$BRANCH" --limit=1 --json databaseId --jq '.[0].databaseId')
         echo "Watching run ID: $RUN_ID"
         gh run watch "$RUN_ID"
+
+        CONCLUSION=$(gh run view "$RUN_ID" --json conclusion --jq '.conclusion')
+        echo "Run concluded with: $CONCLUSION"
+
+        if [[ "$CONCLUSION" != "success" ]]; then
+          echo "❌ Workflow run failed with conclusion: $CONCLUSION"
+          exit 1
+        fi
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
