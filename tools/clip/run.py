@@ -60,7 +60,9 @@ def escape_ffmpeg_text(value: str):
   return value
 
 
-def get_meta_text(metadata: dict):
+def get_meta_text(route: Route):
+  logger.info('getting route metadata')
+  metadata = route.get_metadata()
   origin_parts = metadata['git_remote'].split('/')
   origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
   return ', '.join([
@@ -97,14 +99,12 @@ def parse_args(parser: ArgumentParser):
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
   try:
-    logger.info(f'fetching meta for route {args.route}')
-    route = Route(args.route, data_dir=args.data_dir)
-    args.route_metadata = route.get_metadata()
+    args.route = Route(args.route, data_dir=args.data_dir)
   except Exception as e:
-    parser.error(f'failed to get route length: {e}')
+    parser.error(f'failed to get route: {e}')
 
   # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
-  length = round(route.max_seg_number * 60)
+  length = round(args.route.max_seg_number * 60)
   if args.start >= length:
     parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
   if args.end > length:
@@ -156,28 +156,17 @@ def wait_for_frames(procs: list[Popen]):
       check_for_failure(proc)
 
 
-def clip(
-  data_dir: str | None,
-  quality: Literal['low', 'high'],
-  prefix: str,
-  route: str,
-  output_filepath: str,
-  start: int,
-  end: int,
-  target_size_mb: int,
-  meta: dict,
-  title: str | None
-):
-  logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}MB')
+def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: Route, out: str, start: int, end: int, target_mb: int, title: str | None):
+  logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
 
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
-  bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
+  bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
 
-  meta_text = get_meta_text(meta)
+  meta_text = get_meta_text(route)
   overlays = [
     f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile=Inter.tff:fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=7:x=(w-text_w)/2:y=5.5:enable='between(t,1,10)'"
   ]
@@ -187,8 +176,7 @@ def clip(
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
     '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
-    '-filter:v', ','.join(overlays), '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4',
-    '-t', str(duration), output_filepath
+    '-filter:v', ','.join(overlays), '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), out
   ]
 
   replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
@@ -196,7 +184,7 @@ def clip(
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
     replay_cmd.append('--qcam')
-  replay_cmd.append(route)
+  replay_cmd.append(route.name.canonical_name)
 
   ui_cmd = [UI, '-platform', 'xcb']
   xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
@@ -229,7 +217,7 @@ def clip(
     ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
     for proc in procs:
       check_for_failure(proc)
-    logger.info(f'recording complete: {Path(output_filepath).resolve()}')
+    logger.info(f'recording complete: {Path(out).resolve()}')
 
 
 def main():
@@ -248,18 +236,7 @@ def main():
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
   try:
-    clip(
-      args.data_dir,
-      args.quality,
-      args.prefix,
-      args.route,
-      args.output,
-      args.start,
-      args.end,
-      args.file_size,
-      args.route_metadata,
-      args.title
-    )
+    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size, args.title)
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
