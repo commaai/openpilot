@@ -206,7 +206,7 @@ class CameraView:
     if self.vipc_thread and self.vipc_thread.is_alive():
       self.vipc_thread.join(timeout=2.0)
       if self.vipc_thread.is_alive():
-        print(f"[{self.active_stream_type}] Thread did not exit cleanly")
+        print(f"VIPC thread did not exit cleanly")
 
     if self._shader:
       rl.UnloadShader(self._shader)
