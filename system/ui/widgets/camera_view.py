@@ -100,7 +100,7 @@ class CameraView:
        1.0,  1.0, x1, y2,
        1.0, -1.0, x1, y1,
     ], dtype=np.float32)  # fmt: skip
-    frame_indices = np.array([0, 2, 1, 0, 3, 2], dtype=np.uint16)
+    frame_indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint16)
 
     self._vao = rl.rlLoadVertexArray()
     rl.rlEnableVertexArray(self._vao)

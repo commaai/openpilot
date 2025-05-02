@@ -55,6 +55,9 @@ class GuiApplication:
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
 
+    # avoid unexpected behavior with 2D rendering (CW/CCW winding order)
+    rl.rl_disable_backface_culling()
+
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
