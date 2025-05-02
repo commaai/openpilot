@@ -38,6 +38,7 @@ class CarSpecificEvents:
     self.low_speed_alert = False
     self.no_steer_warning = False
     self.silent_steer_warning = True
+    self.steering_disengage_prev = False
 
     self.cruise_buttons: deque = deque([], maxlen=HYUNDAI_PREV_BUTTON_SAMPLES)
 
@@ -191,7 +192,7 @@ class CarSpecificEvents:
       events.add(EventName.accFaulted)
     if CS.steeringPressed:
       events.add(EventName.steerOverride)
-    if CS.steeringDisengage:
+    if CS.steeringDisengage and not self.steering_disengage_prev:
       events.add(EventName.steerDisengage)
     if CS.brakePressed and CS.standstill:
       events.add(EventName.preEnableStandstill)
@@ -205,6 +206,8 @@ class CarSpecificEvents:
       events.add(EventName.belowSteerSpeed)
     if CS.buttonEnable:
       events.add(EventName.buttonEnable)
+
+    self.steering_disengage_prev = CS.steeringDisengage
 
     # Handle cancel button presses
     for b in CS.buttonEvents:
