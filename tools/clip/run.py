@@ -61,7 +61,6 @@ def escape_ffmpeg_text(value: str):
 
 
 def get_meta_text(route: Route):
-  logger.info('getting route metadata')
   metadata = route.get_metadata()
   origin_parts = metadata['git_remote'].split('/')
   origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
