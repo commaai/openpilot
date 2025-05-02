@@ -167,7 +167,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
 
   meta_text = get_meta_text(route)
   overlays = [
-    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile=Inter.tff:fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=7:x=(w-text_w)/2:y=5.5:enable='between(t,1,10)'"
+    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile=Inter.tff:fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=7:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'"
   ]
   if title:
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y=53")
