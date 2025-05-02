@@ -79,7 +79,8 @@ def glUniform1i(location: GLint, v0: GLint) -> None:
   func(location, v0)
 
 
-# void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const GLvoid *pixels)
+# void glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border,
+#                   GLenum format, GLenum type, const GLvoid *pixels)
 def glTexImage2D(
   target: GLenum,
   level: GLint,
