@@ -164,7 +164,7 @@ class CameraView:
 
     if TICI:
       egl_display = egl.eglGetCurrentDisplay()
-      assert egl_display is not egl.EGL_NO_DISPLAY
+      assert egl_display != egl.EGL_NO_DISPLAY
       for _, image in self._egl_images:
         egl.eglDestroyImageKHR(egl_display, image)
       self._egl_images = []
@@ -172,21 +172,21 @@ class CameraView:
       # import buffers into OpenGL
       for i in range(self.vipc_client.num_buffers):
         # int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
-        # EGLint img_attrs[] = {
-        #   EGL_WIDTH, (int)vipc_client->buffers[i].width,
-        #   EGL_HEIGHT, (int)vipc_client->buffers[i].height,
-        #   EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
-        #   EGL_DMA_BUF_PLANE0_FD_EXT, fd,
-        #   EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-        #   EGL_DMA_BUF_PLANE0_PITCH_EXT, (int)vipc_client->buffers[i].stride,
-        #   EGL_DMA_BUF_PLANE1_FD_EXT, fd,
-        #   EGL_DMA_BUF_PLANE1_OFFSET_EXT, (int)vipc_client->buffers[i].uv_offset,
-        #   EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
-        #   EGL_NONE
-        # };
-        # egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
-        # assert(eglGetError() == EGL_SUCCESS);
-        pass
+        fd = os.dup(self.vipc_client.get_fd(i))
+        attrs = [
+          egl.EGL_WIDTH, self.vipc_client.width,
+          egl.EGL_HEIGHT, self.vipc_client.height,
+          egl.EGL_LINUX_DRM_FOURCC_EXT, egl.DRM_FORMAT_NV12,
+          egl.EGL_DMA_BUF_PLANE0_FD_EXT, fd,
+          egl.EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+          egl.EGL_DMA_BUF_PLANE0_PITCH_EXT, self.vipc_client.stride,
+          egl.EGL_DMA_BUF_PLANE1_FD_EXT, fd,
+          egl.EGL_DMA_BUF_PLANE1_OFFSET_EXT, self.vipc_client.uv_offset,
+          egl.EGL_DMA_BUF_PLANE1_PITCH_EXT, self.vipc_client.stride,
+          egl.EGL_NONE,
+        ]
+        self._egl_images[i] = egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs)
+        assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
     else:
       if self._textures is not None:
         for tex_id in self._textures:
@@ -226,20 +226,20 @@ class CameraView:
         # no frame copy
         rl.rlActiveTextureSlot(0)
         egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame_id])
-        assert gl.glGetError() == gl.GL_NO_ERROR
+        assert gl.glGetError() == gl.GL_NO_ERRORgl.glGetError()
       else:
         # fallback to copy
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
         rl.rlActiveTextureSlot(0)
         rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
-        assert gl.glGetError() == gl.GL_NO_ERROR
+        assert gl.glGetError() == gl.GL_NO_ERRORgl.glGetError()
 
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
         rl.rlActiveTextureSlot(1)
         rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
-        assert gl.glGetError() == gl.GL_NO_ERROR
+        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
 
       rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
