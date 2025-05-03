@@ -226,25 +226,28 @@ class CameraView:
         # no frame copy
         rl.rlActiveTextureSlot(0)
         egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame_id])
+        assert gl.glGetError() == gl.GL_NO_ERROR
       else:
         # fallback to copy
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
         rl.rlActiveTextureSlot(0)
         rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
+        assert gl.glGetError() == gl.GL_NO_ERROR
 
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
         rl.rlActiveTextureSlot(1)
         rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
+        assert gl.glGetError() == gl.GL_NO_ERROR
 
-        rl.rlEnableShader(self._shader.id)
-        rl.rlEnableVertexArray(self._vao)
+      rl.rlEnableShader(self._shader.id)
+      rl.rlEnableVertexArray(self._vao)
 
-        rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
+      rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
 
-        rl.rlDisableVertexArray()
-        rl.rlDisableShader()
+      rl.rlDisableVertexArray()
+      rl.rlDisableShader()
 
   def close(self) -> None:
     self.vipc_thread_stop_event.set()
