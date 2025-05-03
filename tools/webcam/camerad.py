@@ -25,9 +25,7 @@ class Camerad:
 
     self.cameras = []
     for c in CAMERAS:
-      cam_device = f"/dev/video{c.cam_id}"
-      print(f"opening {c.msg_name} at {cam_device}")
-      cam = Camera(c.msg_name, c.stream_type, cam_device)
+      cam = Camera(c.msg_name, c.stream_type, c.cam_id)
       self.cameras.append(cam)
       self.vipc_server.create_buffers(c.stream_type, 20, cam.W, cam.H)
 
