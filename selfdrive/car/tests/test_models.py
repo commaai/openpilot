@@ -330,6 +330,7 @@ class TestCarModelBase(unittest.TestCase):
       prev_panda_gas = self.safety.get_gas_pressed_prev()
       prev_panda_brake = self.safety.get_brake_pressed_prev()
       prev_panda_regen_braking = self.safety.get_regen_braking_prev()
+      prev_panda_steering_disengage = self.safety.get_steering_disengage_prev()
       prev_panda_vehicle_moving = self.safety.get_vehicle_moving()
       prev_panda_vehicle_speed_min = self.safety.get_vehicle_speed_min()
       prev_panda_vehicle_speed_max = self.safety.get_vehicle_speed_max()
@@ -356,6 +357,9 @@ class TestCarModelBase(unittest.TestCase):
 
       if self.safety.get_regen_braking_prev() != prev_panda_regen_braking:
         self.assertEqual(CS.regenBraking, self.safety.get_regen_braking_prev())
+
+      if self.safety.get_steering_disengage_prev() != prev_panda_steering_disengage:
+        self.assertEqual(CS.steeringDisengage, self.safety.get_steering_disengage_prev())
 
       if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
@@ -432,6 +436,7 @@ class TestCarModelBase(unittest.TestCase):
           brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
       checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
+      checks['steeringDisengage'] += CS.steeringDisengage != self.safety.get_steering_disengage_prev()
 
       if self.CP.pcmCruise:
         # On most pcmCruise cars, openpilot's state is always tied to the PCM's cruise state.
