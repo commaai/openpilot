@@ -120,6 +120,12 @@ def glActiveTexture(texture: GLenum) -> None:
   func(texture)
 
 
+# GLenum glGetError(void)
+def glGetError() -> GLenum:
+  func = get_gl_function("glGetError", GLenum, [])
+  return func()
+
+
 # void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)
 def glTexSubImage2D(
   target: GLenum,
@@ -141,6 +147,8 @@ def glTexSubImage2D(
 
 
 # --- OpenGL Constants ---
+
+GL_NO_ERROR = cast(GLenum, 0)
 
 # Pixel storage parameters
 GL_UNPACK_ROW_LENGTH = cast(GLenum, 0x0CF2)
