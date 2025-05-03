@@ -78,7 +78,7 @@ class CameraView:
     self._vbo: int = 0
     self._ebo: int = 0
     self._textures: list[int] | None = None  # Y and UV textures
-    self._egl_images: list[tuple[int, int]] | None = None
+    self._egl_images: list[tuple[int, egl.EGLImageKHR]] | None = None
 
     self.vipc_client: VisionIpcClient | None = None
     self.vipc_thread = threading.Thread(target=self._vipc_thread_func, daemon=True)
@@ -281,7 +281,6 @@ class CameraView:
 def run():
   gui_app.init_window("watch3")
   road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
-  # rl.rlDisableBackfaceCulling()
   for _ in gui_app.render():
     road_camera_view.render()
   road_camera_view.close()
