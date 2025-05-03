@@ -1,3 +1,4 @@
+import os
 import threading
 import time
 from collections import deque
@@ -11,9 +12,8 @@ from raylib.enums import PixelFormat
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import APPLE, TICI
-from openpilot.system.ui.lib import gl
+from openpilot.system.ui.lib import egl, gl
 from openpilot.system.ui.lib.application import gui_app
-
 
 VERTEX_SHADER = f"""{'#version 330 core' if APPLE else '#version 300 es'}
 layout(location = 0) in vec4 aPosition;
@@ -78,6 +78,7 @@ class CameraView:
     self._vbo: int = 0
     self._ebo: int = 0
     self._textures: list[int] | None = None  # Y and UV textures
+    self._egl_images: list[tuple[int, int]] | None = None
 
     self.vipc_client: VisionIpcClient | None = None
     self.vipc_thread = threading.Thread(target=self._vipc_thread_func, daemon=True)
@@ -113,8 +114,11 @@ class CameraView:
     self._ebo = rl.rlLoadVertexBufferElement(ffi.cast("void *", frame_indices.ctypes.data), frame_indices.nbytes, False)
 
     rl.rlEnableShader(self._shader.id)
-    gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTextureY"), 0)
-    gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTextureUV"), 1)
+    if TICI:
+      gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTexture"), 0)
+    else:
+      gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTextureY"), 0)
+      gl.glUniform1i(rl.rlGetLocationUniform(self._shader.id, b"uTextureUV"), 1)
 
   def _vipc_thread_func(self) -> None:
     cur_stream = self.requested_stream_type
@@ -158,19 +162,45 @@ class CameraView:
     y = min(widget_aspect_ratio / frame_aspect_ratio, 1.0)
     rl.rlSetUniformMatrix(rl.rlGetLocationUniform(self._shader.id, b"uTransform"), rl.MatrixScale(x, y, 1.0))
 
-    if self._textures is not None:
-      for tex_id in self._textures:
-        rl.rlUnloadTexture(tex_id)
+    if TICI:
+      egl_display = egl.eglGetCurrentDisplay()
+      assert egl_display is not egl.EGL_NO_DISPLAY
+      for _, image in self._egl_images:
+        egl.eglDestroyImageKHR(egl_display, image)
+      self._egl_images = []
 
-    self._textures = [
-      rl.rlLoadTexture(ffi.NULL, self.stream_width, self.stream_height, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, 1),
-      rl.rlLoadTexture(ffi.NULL, self.stream_width // 2, self.stream_height // 2, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, 0),
-    ]
+      # import buffers into OpenGL
+      for i in range(self.vipc_client.num_buffers):
+        # int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
+        # EGLint img_attrs[] = {
+        #   EGL_WIDTH, (int)vipc_client->buffers[i].width,
+        #   EGL_HEIGHT, (int)vipc_client->buffers[i].height,
+        #   EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
+        #   EGL_DMA_BUF_PLANE0_FD_EXT, fd,
+        #   EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
+        #   EGL_DMA_BUF_PLANE0_PITCH_EXT, (int)vipc_client->buffers[i].stride,
+        #   EGL_DMA_BUF_PLANE1_FD_EXT, fd,
+        #   EGL_DMA_BUF_PLANE1_OFFSET_EXT, (int)vipc_client->buffers[i].uv_offset,
+        #   EGL_DMA_BUF_PLANE1_PITCH_EXT, (int)vipc_client->buffers[i].stride,
+        #   EGL_NONE
+        # };
+        # egl_images[i] = eglCreateImageKHR(egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, 0, img_attrs);
+        # assert(eglGetError() == EGL_SUCCESS);
+        pass
+    else:
+      if self._textures is not None:
+        for tex_id in self._textures:
+          rl.rlUnloadTexture(tex_id)
 
-    # FIXME: why is this required
-    gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
-    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RG8, self.stream_width // 2, self.stream_height // 2, 0, gl.GL_RG, gl.GL_UNSIGNED_BYTE, None)
-    gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+      self._textures = [
+        rl.rlLoadTexture(ffi.NULL, self.stream_width, self.stream_height, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, 1),
+        rl.rlLoadTexture(ffi.NULL, self.stream_width // 2, self.stream_height // 2, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, 0),
+      ]
+
+      # FIXME: why is this required
+      gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
+      gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RG8, self.stream_width // 2, self.stream_height // 2, 0, gl.GL_RG, gl.GL_UNSIGNED_BYTE, None)
+      gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
   def render(self) -> None:
     if self.vipc_connected_event.is_set():
@@ -192,20 +222,28 @@ class CameraView:
           cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
 
-      gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
-      rl.rlActiveTextureSlot(0)
-      rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
-                         PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
+      if TICI:
+        # no frame copy
+        pass
+      else:
+        # fallback to copy
+        gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
+        rl.rlActiveTextureSlot(0)
+        rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
+                           PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
 
-      gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
-      rl.rlActiveTextureSlot(1)
-      rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
-                         PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
+        gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
+        rl.rlActiveTextureSlot(1)
+        rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
+                           PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
 
-      rl.rlEnableShader(self._shader.id)
-      rl.rlEnableVertexArray(self._vao)
+        rl.rlEnableShader(self._shader.id)
+        rl.rlEnableVertexArray(self._vao)
 
-      rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
+        rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
+
+        rl.rlDisableVertexArray()
+        rl.rlDisableShader()
 
   def close(self) -> None:
     self.vipc_thread_stop_event.set()
