@@ -224,7 +224,8 @@ class CameraView:
 
       if TICI:
         # no frame copy
-        pass
+        rl.rlActiveTextureSlot(0)
+        egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame_id])
       else:
         # fallback to copy
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
