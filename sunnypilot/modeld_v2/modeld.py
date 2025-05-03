@@ -18,7 +18,6 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS
 from openpilot.common.transformations.model import get_warp_matrix
 from openpilot.system import sentry
 from openpilot.selfdrive.controls.lib.desire_helper import DesireHelper
-from openpilot.sunnypilot.modeld_v2.parse_model_outputs import Parser
 from openpilot.sunnypilot.modeld_v2.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.sunnypilot.modeld_v2.constants import ModelConstants
 from openpilot.sunnypilot.modeld_v2.models.commonmodel_pyx import DrivingModelFrame, CLContext
@@ -41,7 +40,6 @@ class FrameMeta:
 class ModelState:
   frames: dict[str, DrivingModelFrame]
   inputs: dict[str, np.ndarray]
-  output: np.ndarray
   prev_desire: np.ndarray  # for tracking the rising edge of the pulse
 
   def __init__(self, context: CLContext):
@@ -64,12 +62,7 @@ class ModelState:
       if key not in self.frames: # Managed by opencl
         self.numpy_inputs[key] = np.zeros(shape, dtype=np.float32)
 
-    self.parser = Parser()
-
     if self.model_runner.is_20hz:
-      net_output_size = self.model_runner.model_metadata['output_shapes']['outputs'][1]
-      self.output = np.zeros(net_output_size, dtype=np.float32)
-
       num_elements = self.numpy_inputs['features_buffer'].shape[1]
       step_size = int(-100 / num_elements)
       self.full_features_20Hz_idxs = np.arange(step_size, step_size * (num_elements + 1), step_size)[::-1]
@@ -105,8 +98,7 @@ class ModelState:
       return None
 
     # Run model inference
-    self.output = self.model_runner.run_model()
-    outputs = self.parser.parse_outputs(self.model_runner.slice_outputs(self.output))
+    outputs = self.model_runner.run_model()
 
     if self.model_runner.is_20hz:
       self.full_features_20Hz[:-1] = self.full_features_20Hz[1:]

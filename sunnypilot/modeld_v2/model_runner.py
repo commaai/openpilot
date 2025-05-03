@@ -8,6 +8,7 @@ from openpilot.sunnypilot.modeld_v2 import MODEL_PATH, MODEL_PKL_PATH, METADATA_
 from openpilot.sunnypilot.modeld_v2.models.commonmodel_pyx import DrivingModelFrame, CLMem
 from openpilot.sunnypilot.modeld_v2.runners.ort_helpers import make_onnx_cpu_runner, ORT_TYPES_TO_NP_TYPES
 from openpilot.sunnypilot.modeld_v2.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
+from openpilot.sunnypilot.modeld_v2.parse_model_outputs import Parser
 from openpilot.system.hardware import TICI
 from openpilot.system.hardware.hw import Paths
 
@@ -48,6 +49,7 @@ class ModelRunner(ABC):
     self.input_shapes = self.model_metadata['input_shapes']
     self.output_slices = self.model_metadata['output_slices']
     self.inputs: dict = {}
+    self.parser = Parser()
 
   @abstractmethod
   def prepare_inputs(self, imgs_cl: dict[str, CLMem], numpy_inputs: dict[str, np.ndarray], frames: dict[str, DrivingModelFrame]) -> dict:
@@ -55,15 +57,21 @@ class ModelRunner(ABC):
     raise NotImplementedError
 
   @abstractmethod
-  def run_model(self):
+  def _run_model(self):
     """Run model inference with prepared inputs."""
+    raise NotImplementedError("This method should be implemented in subclasses.")
 
-  def slice_outputs(self, model_outputs: np.ndarray) -> dict:
+  def _slice_outputs(self, model_outputs: np.ndarray) -> dict:
     """Slice model outputs according to metadata configuration."""
     parsed_outputs = {k: model_outputs[np.newaxis, v] for k, v in self.output_slices.items()}
     if SEND_RAW_PRED:
       parsed_outputs['raw_pred'] = model_outputs.copy()
     return parsed_outputs
+
+  def run_model(self) -> dict[str, np.ndarray]:
+    """Run model inference with prepared inputs and parse outputs."""
+    result: dict[str, np.ndarray] = self.parser.parse_outputs(self._slice_outputs(self._run_model()))
+    return result
 
 
 class TinygradRunner(ModelRunner):
@@ -108,7 +116,7 @@ class TinygradRunner(ModelRunner):
 
     return self.inputs
 
-  def run_model(self):
+  def _run_model(self):
     return self.model_run(**self.inputs).numpy().flatten()
 
 
@@ -130,5 +138,5 @@ class ONNXRunner(ModelRunner):
       self.inputs[key] = frames[key].buffer_from_cl(imgs_cl[key]).reshape(self.input_shapes[key]).astype(dtype=self.input_to_nptype[key])
     return self.inputs
 
-  def run_model(self):
+  def _run_model(self):
     return self.runner.run(None, self.inputs)[0].flatten()
