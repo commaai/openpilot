@@ -52,3 +52,8 @@ commonmodel_lib = lenv.Library('commonmodel', common_src)
 lenvCython.Program('runners/runmodel_pyx.so', 'runners/runmodel_pyx.pyx', LIBS=cython_libs, FRAMEWORKS=frameworks)
 lenvCython.Program('runners/snpemodel_pyx.so', 'runners/snpemodel_pyx.pyx', LIBS=[snpemodel_lib, snpe_lib, *cython_libs], FRAMEWORKS=frameworks, RPATH=snpe_rpath)
 lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
+
+if arch == "larch64":
+  thneed_lib = env.SharedLibrary('thneed', thneed_src, LIBS=[gpucommon, common, 'OpenCL', 'dl'])
+  thneedmodel_lib = env.Library('thneedmodel', ['runners/thneedmodel.cc'])
+  lenvCython.Program('runners/thneedmodel_pyx.so', 'runners/thneedmodel_pyx.pyx', LIBS=envCython["LIBS"]+[thneedmodel_lib, thneed_lib, gpucommon, common, 'dl', 'OpenCL'])
