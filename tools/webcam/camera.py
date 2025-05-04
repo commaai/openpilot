@@ -10,7 +10,7 @@ class Camera:
     print(f"opening {cam_type_state} at {camera_id}")
 
     if platform.system() == "Darwin":
-      self.container = av.open(camera_id, format='avfoundation', container_options={"framerate": "20"})
+      self.container = av.open(camera_id, format='avfoundation', container_options={"framerate": "30"})
     else:
       self.container = av.open(f"/dev/video{camera_id}")
 
