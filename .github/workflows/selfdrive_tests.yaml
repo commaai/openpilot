@@ -84,11 +84,18 @@ jobs:
       timeout-minutes: 30
 
   build_mac:
-    name: build macOS (${{ matrix.version }})
+    name: build macOS (${{ matrix.os }})
     strategy:
       matrix:
-        version: [15, latest]
-    runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-${{ matrix.version }}' }}
+        os: [macos-latest, macos-15, namespace-profile-macos-8x14]
+        isOrigin:
+          - ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) }}
+        exclude:
+          - isOrigin: false
+            os: namespace-profile-macos-8x14
+          - isOrigin: true
+            os: macos-latest
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@v4
       with:
