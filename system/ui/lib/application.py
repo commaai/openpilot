@@ -93,8 +93,7 @@ class GuiApplication:
 
       yield
 
-      if DEBUG_FPS:
-        rl.draw_fps(10, 10)
+      rl.draw_fps(10, 10)
 
       rl.end_drawing()
       self._monitor_fps()
