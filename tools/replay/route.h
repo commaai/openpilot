@@ -59,7 +59,7 @@ protected:
   RouteIdentifier route_ = {};
   std::string data_dir_;
   std::map<int, SegmentFile> segments_;
-  std::time_t date_time_;
+  std::time_t date_time_ = 0;
   RouteLoadError err_ = RouteLoadError::None;
 };
 

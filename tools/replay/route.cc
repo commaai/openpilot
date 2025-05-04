@@ -50,9 +50,11 @@ bool Route::load() {
     return false;
   }
 
+  // Parse the timestamp from the route identifier (only applicable for old route formats).
   struct tm tm_time = {0};
-  strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time);
-  date_time_ = mktime(&tm_time);
+  if (strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time)) {
+    date_time_ = mktime(&tm_time);
+  }
 
   bool ret = data_dir_.empty() ? loadFromServer() : loadFromLocal();
   if (ret) {
