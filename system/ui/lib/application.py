@@ -52,7 +52,6 @@ class GuiApplication:
 
     rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
     rl.init_window(self._width, self._height, title)
-    # rl.set_target_fps(fps)
 
     self._target_fps = fps
     self._set_styles()
