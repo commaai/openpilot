@@ -47,24 +47,24 @@ void SoftwarePanelSP::handleBundleDownloadProgress() {
   // Get status for each model type in order
   for (const auto &model: models) {
     QString typeName;
-    QString modelName;
+    QString modelName = QString::fromStdString(bundle.getDisplayName());
 
     switch (model.getType()) {
-      case cereal::ModelManagerSP::Type::DRIVE:
+      case cereal::ModelManagerSP::Model::Type::SUPERCOMBO:
         typeName = tr("Driving");
-        modelName = QString::fromStdString(bundle.getDisplayName());
         break;
-      case cereal::ModelManagerSP::Type::NAVIGATION:
+      case cereal::ModelManagerSP::Model::Type::NAVIGATION:
         typeName = tr("Navigation");
-        modelName = QString::fromStdString(model.getFullName());
         break;
-      case cereal::ModelManagerSP::Type::METADATA:
-        typeName = tr("Metadata");
-        modelName = QString::fromStdString(model.getFullName());
+      case cereal::ModelManagerSP::Model::Type::VISION:
+        typeName = tr("Vision");
+        break;
+      case cereal::ModelManagerSP::Model::Type::POLICY:
+        typeName = tr("Policy");
         break;
     }
 
-    const auto &progress = model.getDownloadProgress();
+    const auto &progress = model.getArtifact().getDownloadProgress();
     QString line;
 
     if (progress.getStatus() == cereal::ModelManagerSP::DownloadStatus::DOWNLOADING) {

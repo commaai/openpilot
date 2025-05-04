@@ -39,20 +39,6 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
     sha256 @1 :Text;
   }
 
-  enum Type {
-    drive @0;
-    navigation @1;
-    metadata @2;
-  }
-
-  struct Model {
-    fullName @0 :Text;
-    fileName @1 :Text;
-    downloadUri @2 :DownloadUri;
-    downloadProgress @3 :DownloadProgress;
-    type @4 :Type;
-  }
-
   enum DownloadStatus {
     notDownloading @0;
     downloading @1;
@@ -65,6 +51,25 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
     status @0 :DownloadStatus;
     progress @1 :Float32;
     eta @2 :UInt32;
+  }
+
+  struct Artifact {
+    fileName @0 :Text;
+    downloadUri @1 :DownloadUri;
+    downloadProgress @2 :DownloadProgress;
+  }
+
+  struct Model {
+    type @0 :Type;
+    artifact @1 :Artifact;  # Main artifact
+    metadata @2 :Artifact;  # Metadata artifact
+    
+    enum Type {
+      supercombo @0;
+      navigation @1;
+      vision @2;
+      policy @3;
+    }
   }
 
   enum Runner {
@@ -83,6 +88,8 @@ struct ModelManagerSP @0xaedffd8f31e7b55d {
     environment @6 :Text;
     runner @7 :Runner;
     is20hz @8 :Bool;
+    ref @9 :Text;  # New field
+    minimumSelectorVersion @10 :UInt32;
   }
 }
 

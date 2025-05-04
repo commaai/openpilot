@@ -8,7 +8,11 @@ See the LICENSE.md file in the root directory for more details.
 import hashlib
 import os
 from openpilot.common.params import Params
-from cereal import custom, messaging
+from cereal import custom
+import json
+
+CURRENT_SELECTOR_VERSION = 2
+REQUIRED_MIN_SELECTOR_VERSION = 2
 
 
 async def verify_file(file_path: str, expected_hash: str) -> bool:
@@ -24,13 +28,36 @@ async def verify_file(file_path: str, expected_hash: str) -> bool:
   return sha256_hash.hexdigest().lower() == expected_hash.lower()
 
 
+def is_bundle_version_compatible(bundle: dict) -> bool:
+  """
+  Checks whether the model bundle is compatible with the current selector version constraints.
+
+  The bundle specifies a `minimum_selector_version`, which defines the minimum selector version
+  required to load the model. This function ensures that:
+
+    1. The model is not too old: the bundle must require at least `REQUIRED_MIN_SELECTOR_VERSION`.
+    2. The model is not too new: it must support the current selector version (`CURRENT_SELECTOR_VERSION`).
+
+  This allows the selector to enforce both a minimum and maximum range of supported models,
+  even if a model would otherwise be compatible.
+
+  :param bundle: Dictionary containing `minimum_selector_version`, as defined by the model bundle.
+  :type bundle: Dict
+  :return: True if the selector version is within the accepted range for the bundle; otherwise False.
+  :rtype: Bool
+  """
+  return bool(REQUIRED_MIN_SELECTOR_VERSION <= bundle.get("minimumSelectorVersion", 0) <= CURRENT_SELECTOR_VERSION)
+
 def get_active_bundle(params: Params = None) -> custom.ModelManagerSP.ModelBundle:
   """Gets the active model bundle from cache"""
   if params is None:
     params = Params()
 
-  if active_bundle := params.get("ModelManager_ActiveBundle"):
-    return messaging.log_from_bytes(active_bundle, custom.ModelManagerSP.ModelBundle)
+  try:
+    if (active_bundle := json.loads(params.get("ModelManager_ActiveBundle") or "{}")) and is_bundle_version_compatible(active_bundle):
+      return custom.ModelManagerSP.ModelBundle(**active_bundle)
+  except Exception:
+    pass
 
   return None
 

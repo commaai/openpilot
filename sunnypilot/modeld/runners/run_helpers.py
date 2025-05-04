@@ -25,13 +25,19 @@ METADATA_PATH = Path(__file__).parent / '../models/supercombo_metadata.pkl'
 ModelManager = custom.ModelManagerSP
 
 
+def _get_model():
+  if bundle := get_active_bundle():
+    drive_model = next(model for model in bundle.models if model.type == ModelManager.Model.Type.supercombo)
+    return drive_model
+
+  return None
+
 def get_model_path():
   if USE_ONNX:
     return {ModelRunner.ONNX: Path(__file__).parent / '../models/supercombo.onnx'}
 
-  if bundle := get_active_bundle():
-    drive_model = next(model for model in bundle.models if model.type == ModelManager.Type.drive)
-    return {ModelRunner.THNEED: f"{CUSTOM_MODEL_PATH}/{drive_model.fileName}"}
+  if model := _get_model():
+    return {ModelRunner.THNEED: f"{CUSTOM_MODEL_PATH}/{model.fileName}"}
 
   return {ModelRunner.THNEED: Path(__file__).parent / '../models/supercombo.thneed'}
 
@@ -39,9 +45,8 @@ def get_model_path():
 def load_metadata():
   metadata_path = METADATA_PATH
 
-  if bundle := get_active_bundle():
-    metadata_model = next(model for model in bundle.models if model.type == ModelManager.Type.metadata)
-    metadata_path = f"{CUSTOM_MODEL_PATH}/{metadata_model.fileName}"
+  if model := _get_model():
+    metadata_path = f"{CUSTOM_MODEL_PATH}/{model.metadata.fileName}"
 
   with open(metadata_path, 'rb') as f:
     return pickle.load(f)
