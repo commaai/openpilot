@@ -21,7 +21,6 @@ RouteIdentifier Route::parseRoute(const std::string &str) {
   if (std::regex_match(str, match, pattern)) {
     identifier.dongle_id = match[2].str();
     identifier.timestamp = match[3].str();
-    identifier.date_time = strToTime(identifier.timestamp);
     identifier.str = identifier.dongle_id + "|" + identifier.timestamp;
 
     const auto separator = match[5].str();
@@ -48,6 +47,12 @@ bool Route::load() {
   if (route_.str.empty() || (data_dir_.empty() && route_.dongle_id.empty())) {
     rInfo("invalid route format");
     return false;
+  }
+
+  // Parse the timestamp from the route identifier (only applicable for old route formats).
+  struct tm tm_time = {0};
+  if (strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time)) {
+    date_time_ = mktime(&tm_time);
   }
 
   if (!loadSegments()) {
@@ -182,15 +187,6 @@ void Route::addFileToSegment(int n, const std::string &file) {
   } else if (name == "qcamera.ts") {
     segments_[n].qcamera = file;
   }
-}
-
-std::time_t Route::strToTime(const std::string &timestamp) {
-  // Parse the timestamp from the route identifier (only applicable for old route formats).
-  struct tm tm_time = {0};
-  if (strptime(route_.timestamp.c_str(), "%Y-%m-%d--%H-%M-%S", &tm_time)) {
-    return mktime(&tm_time);
-  }
-  return 0;
 }
 
 // class Segment
