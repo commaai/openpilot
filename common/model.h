@@ -1,1 +1,1 @@
-#define DEFAULT_MODEL "Tomb_Raider_6 (Default)"
+#define DEFAULT_MODEL "Filet o Fish (Default)"
