@@ -80,7 +80,7 @@ bool Route::loadFromAutoSource() {
   if (origin_prefix) {
     setenv("OPENPILOT_PREFIX", "", 1);
   }
-  auto cmd = util::string_format("python ../lib/logreader.py \"%s\" --identifiers-only", route_string_.c_str());
+  auto cmd = util::string_format("../auto_source.py \"%s\"", route_string_.c_str());
   auto log_files = split(util::check_output(cmd), '\n');
   if (origin_prefix) {
     setenv("OPENPILOT_PREFIX", origin_prefix, 1);
