@@ -33,6 +33,7 @@ function install_ubuntu_common_requirements() {
     git \
     git-lfs \
     ffmpeg \
+    fonts-inter \
     libavformat-dev \
     libavcodec-dev \
     libavdevice-dev \
