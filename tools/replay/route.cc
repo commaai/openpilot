@@ -86,8 +86,14 @@ bool Route::loadFromAutoSource() {
     setenv("OPENPILOT_PREFIX", origin_prefix, 1);
   }
 
+  const static std::regex rx(R"(\/(\d+)\/)");
   for (int i = 0; i < log_files.size(); ++i) {
-    addFileToSegment(i, log_files[i]);
+    int seg_num = i;
+    std::smatch match;
+    if (std::regex_search(log_files[i], match, rx)) {
+      seg_num = std::stoi(match[1]);
+    }
+    addFileToSegment(seg_num, log_files[i]);
   }
   return !segments_.empty();
 }
