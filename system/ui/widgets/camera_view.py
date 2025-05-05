@@ -165,8 +165,9 @@ class CameraView:
     if TICI:
       egl_display = egl.eglGetCurrentDisplay()
       assert egl_display != egl.EGL_NO_DISPLAY
-      for _, image in self._egl_images:
-        egl.eglDestroyImageKHR(egl_display, image)
+      if self._egl_images is not None:
+        for _, image in self._egl_images:
+          egl.eglDestroyImageKHR(egl_display, image)
       self._egl_images = []
 
       # import buffers into OpenGL
