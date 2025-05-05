@@ -172,6 +172,9 @@ class CameraView:
           assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
         self._egl_images.clear()
 
+      while True:
+        self.vipc_client.debug()
+
       # import buffers into OpenGL
       for i in range(self.vipc_client.num_buffers):
         fd = os.dup(self.vipc_client.get_fd(i))  # eglDestroyImageKHR will close, so duplicate
