@@ -4,6 +4,7 @@ import os
 import threading
 import time
 
+from gettext import gettext as _
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.text import wrap_text
@@ -104,9 +105,10 @@ class Spinner:
     self.update(str(round(100 * cur / total)))
 
   def _run(self):
+    global _
     if os.getenv("CI") is not None:
       return
-    gui_app.init_window("Spinner")
+    gui_app.init_window(_("Spinner"))
     self._renderer = renderer = SpinnerRenderer()
     try:
       for _ in gui_app.render():

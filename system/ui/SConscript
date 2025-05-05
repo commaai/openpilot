@@ -1,0 +1,83 @@
+import json
+import os
+
+Import('env', 'arch', 'common')
+
+renv = env.Clone()
+
+AddOption('--update_pot', dest='update_pot', action='store_true', default=False, help='Update the .pot file')
+update_pot = GetOption('update_pot')
+
+# Load languages from languages.json
+languages_file = File("languages.json").abspath
+with open(languages_file) as f:
+  languages = json.loads(f.read())
+
+# Set translation directory and .pot file paths
+translation_dir = Dir("translations").abspath
+pot_file = os.path.join(translation_dir, "main.pot")
+
+# Define .po and .mo file paths for each language
+translation_sources = [os.path.join(translation_dir, f"{lang}/LC_MESSAGES/main.po") for lang in languages.values()]
+translation_targets = [po.replace(".po", ".mo") for po in translation_sources]
+
+# Set the base directory
+project_root = Dir(".").abspath
+
+# Get source files to extract translatable strings, and ensure they're relative paths
+source_files = [os.path.relpath(file.abspath, project_root) for file in Glob('./*.py')]
+print(source_files)
+
+# Only add the xgettext command if update_pot is set to 1
+if update_pot:
+  # Command to extract strings and generate the .pot file using relative paths
+  xgettext_cmd = f"xgettext --from-code=UTF-8 --keyword=_  -o {pot_file} -D {project_root} " + " ".join(source_files)
+  xgettext_action = renv.Command(pot_file, source_files, xgettext_cmd)
+
+  # Define dependencies between commands
+  renv.Depends(translation_sources, xgettext_action)  # .po after .pot
+
+# Mark translation files as important to keep
+renv.Precious(translation_sources)
+renv.NoClean(translation_sources)
+renv.Precious(translation_targets)
+renv.NoClean(translation_targets)
+
+# Create .po files if they don't exist
+def create_po_if_not_exists(target, source, env):
+  po_file = str(target[0])
+  pot_file = str(source[0])
+  lang_code = os.path.basename(os.path.dirname(os.path.dirname(po_file)))
+  # Create necessary directory and .po file
+  lang_dir = os.path.dirname(po_file)
+  if not os.path.exists(lang_dir):
+    os.makedirs(lang_dir)
+  os.system(f"msginit --no-translator --locale={lang_code}.UTF-8 --input={pot_file} --output={po_file}")
+  # Ensure charset is set to UTF-8
+  with open(po_file, 'r+', encoding='utf-8') as f:
+    content = f.read().replace('charset=CHARSET', 'charset=UTF-8')
+    f.seek(0)
+    f.write(content)
+    f.truncate()
+
+# Define builder for creating .po files
+po_builder = Builder(action=create_po_if_not_exists)
+renv.Append(BUILDERS={'CreatePO': po_builder})
+
+# Create .po files if missing
+po_create_cmds = [renv.CreatePO(po_file, pot_file) for po_file in translation_sources if not os.path.exists(po_file)]
+
+# Update .po files with new strings from .pot
+po_update_cmds = [renv.Command(po_file, pot_file, f"msgmerge --update --backup=off {po_file} {pot_file}")
+                  for po_file in translation_sources if os.path.exists(po_file)]
+
+# Compile .po files into .mo files
+msgfmt_cmds = [renv.Command(mo_file, po_file, f"msgfmt -o {mo_file} {po_file}")
+               for po_file, mo_file in zip(translation_sources, translation_targets)]
+
+# Define dependencies between commands
+renv.Depends(po_update_cmds, po_create_cmds)   # Update .po after creation
+renv.Depends(msgfmt_cmds, po_update_cmds)      # Compile .mo after .po
+
+# Add all commands to be executed
+renv.Alias('translations', po_create_cmds + po_update_cmds + msgfmt_cmds)
