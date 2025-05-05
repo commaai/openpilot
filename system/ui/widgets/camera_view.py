@@ -1,3 +1,4 @@
+import ctypes
 import os
 import threading
 import time
@@ -185,7 +186,8 @@ class CameraView:
           egl.EGL_DMA_BUF_PLANE1_PITCH_EXT, self.vipc_client.stride,
           egl.EGL_NONE,
         ]
-        self._egl_images[i] = egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs)
+        attrs_array = (ctypes.c_int * len(attrs))(*attrs)
+        self._egl_images[i] = egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs_array)
         assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
     else:
       if self._textures is not None:
