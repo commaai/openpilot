@@ -10,8 +10,8 @@ def getxattr(path: str, attr_name: str) -> bytes | None:
     try:
       response = xattr.getxattr(path, attr_name)
     except OSError as e:
-      # ENODATA means attribute hasn't been set
-      if e.errno == errno.ENODATA:
+      # ENODATA (Linux) or ENOATTR (macOS) means attribute hasn't been set
+      if e.errno in (errno.ENODATA, errno.ENOATTR):
         response = None
       else:
         raise
