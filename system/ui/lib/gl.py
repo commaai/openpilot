@@ -152,6 +152,7 @@ GL_NO_ERROR = cast(GLenum, 0)
 
 # Pixel storage parameters
 GL_UNPACK_ROW_LENGTH = cast(GLenum, 0x0CF2)
+GL_UNPACK_ALIGNMENT = cast(GLenum, 0x0CF5)
 
 # Texture targets
 GL_TEXTURE_2D = cast(GLenum, 0x0DE1)

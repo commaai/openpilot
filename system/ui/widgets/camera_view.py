@@ -225,6 +225,8 @@ class CameraView:
           cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
 
+      gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
+
       if TICI:
         # no frame copy
         rl.rlActiveTextureSlot(0)
