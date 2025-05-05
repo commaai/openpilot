@@ -79,7 +79,7 @@ class CameraView:
     self._vbo: int = 0
     self._ebo: int = 0
     self._textures: list[int] | None = None  # Y and UV textures
-    self._egl_images: list[tuple[int, egl.EGLImageKHR]] | None = None
+    self._egl_images: dict[int, egl.EGLImageKHR] = {}
 
     self.vipc_client: VisionIpcClient | None = None
     self.vipc_thread = threading.Thread(target=self._vipc_thread_func, daemon=True)
@@ -167,11 +167,12 @@ class CameraView:
       egl_display = egl.eglGetCurrentDisplay()
       assert egl_display != egl.EGL_NO_DISPLAY
       if self._egl_images is not None:
-        for _, image in self._egl_images:
+        for _, image in self._egl_images.items():
           egl.eglDestroyImageKHR(egl_display, image)
+          assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
+        self._egl_images.clear()
 
       # import buffers into OpenGL
-      self._egl_images = []
       for i in range(self.vipc_client.num_buffers):
         fd = os.dup(self.vipc_client.get_fd(i))  # eglDestroyImageKHR will close, so duplicate
         attrs = [
@@ -187,7 +188,7 @@ class CameraView:
           egl.EGL_NONE,
         ]
         attrs_array = (ctypes.c_int * len(attrs))(*attrs)
-        self._egl_images.append(egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs_array))
+        self._egl_images[i] = egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs_array)
         assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
     else:
       if self._textures is not None:
