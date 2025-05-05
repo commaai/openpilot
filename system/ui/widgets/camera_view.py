@@ -135,7 +135,7 @@ class CameraView:
         if not streams:
           time.sleep(0.1)
           continue
-        if not self.vipc_client.connect(False):
+        if not self.vipc_client.connect(True):
           time.sleep(0.1)
           continue
 
