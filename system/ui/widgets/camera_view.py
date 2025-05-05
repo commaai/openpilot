@@ -171,8 +171,7 @@ class CameraView:
 
       # import buffers into OpenGL
       for i in range(self.vipc_client.num_buffers):
-        # int fd = dup(vipc_client->buffers[i].fd);  // eglDestroyImageKHR will close, so duplicate
-        fd = os.dup(self.vipc_client.get_fd(i))
+        fd = os.dup(self.vipc_client.get_fd(i))  # eglDestroyImageKHR will close, so duplicate
         attrs = [
           egl.EGL_WIDTH, self.vipc_client.width,
           egl.EGL_HEIGHT, self.vipc_client.height,
