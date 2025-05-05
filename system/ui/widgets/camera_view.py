@@ -169,9 +169,9 @@ class CameraView:
       if self._egl_images is not None:
         for _, image in self._egl_images:
           egl.eglDestroyImageKHR(egl_display, image)
-      self._egl_images = []
 
       # import buffers into OpenGL
+      self._egl_images = []
       for i in range(self.vipc_client.num_buffers):
         fd = os.dup(self.vipc_client.get_fd(i))  # eglDestroyImageKHR will close, so duplicate
         attrs = [
@@ -187,7 +187,7 @@ class CameraView:
           egl.EGL_NONE,
         ]
         attrs_array = (ctypes.c_int * len(attrs))(*attrs)
-        self._egl_images[i] = egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs_array)
+        self._egl_images.append(egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs_array))
         assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
     else:
       if self._textures is not None:
