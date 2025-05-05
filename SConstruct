@@ -352,7 +352,6 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
 ])
@@ -360,6 +359,7 @@ if arch != "Darwin":
   SConscript([
     'system/sensord/SConscript',
     'system/logcatd/SConscript',
+    'system/proclogd/SConscript',
   ])
 
 if arch == "larch64":
