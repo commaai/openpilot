@@ -59,6 +59,7 @@ function install_ubuntu_common_requirements() {
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
+    pocl-opencl-icd \
     portaudio19-dev \
     qttools5-dev-tools \
     libqt5svg5-dev \
