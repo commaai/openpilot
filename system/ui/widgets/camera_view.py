@@ -68,7 +68,7 @@ class CameraView:
 
     self.frames: deque[tuple[int, VisionBuf]] = deque()
     self.frame_lock = threading.Lock()
-    self.prev_frame_id: int | None = None
+    self.prev_frame_id = 0
 
     self.stream_width = 0
     self.stream_height = 0
@@ -214,15 +214,18 @@ class CameraView:
       return
 
     with self.frame_lock:
-      if not self.frames:
+      if not self.frames or len(self.frames) == 0:
         return
-      frame_id, frame = self.frames[-1]
 
-      if self.prev_frame_id is not None:
-        if frame_id == self.prev_frame_id:
-          cloudlog.debug(f"Drawing same frame twice {frame_id}")
-        elif frame_id != self.prev_frame_id + 1:
-          cloudlog.debug(f"Skipped frame {frame_id}")
+      frame_idx = len(self.frames) - 1
+      frame_id, frame = self.frames[frame_idx]
+      assert frame is not None
+
+      # Log duplicate/dropped frames
+      if frame_id == self.prev_frame_id:
+        cloudlog.debug(f"Drawing same frame twice {frame_id}")
+      elif frame_id != self.prev_frame_id + 1:
+        cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
 
       gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
