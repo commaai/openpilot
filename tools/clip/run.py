@@ -65,13 +65,13 @@ def get_meta_text(route: Route):
   origin_parts = metadata['git_remote'].split('/')
   origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
   return ', '.join([
-    f'openpilot v{metadata['version']}',
-    f'route: {metadata['fullname']}',
-    f'car: {metadata['platform']}',
-    f'origin: {origin}',
-    f'branch: {metadata['git_branch']}',
-    f'commit: {metadata['git_commit'][:7]}',
-    f'modified: {str(metadata['git_dirty']).lower()}',
+    f"openpilot v{metadata['version']}",
+    f"route: {metadata['fullname']}",
+    f"car: {metadata['platform']}",
+    f"origin: {origin}",
+    f"branch: {metadata['git_branch']}",
+    f"commit: {metadata['git_commit'][:7]}",
+    f"modified: {str(metadata['git_dirty']).lower()}",
   ])
 
 
