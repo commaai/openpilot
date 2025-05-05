@@ -47,6 +47,7 @@ dependencies = [
   # logging
   "pyzmq",
   "sentry-sdk",
+  "xattr", # used in place of 'os.getxattr' for macos compatibility
 
   # athena
   "PyJWT",
@@ -64,7 +65,6 @@ dependencies = [
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
   "setproctitle",
-  "xattr", # used in place of 'os.getxattr' for macos compatibility
 
   # logreader
   "zstandard",
