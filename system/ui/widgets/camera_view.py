@@ -226,14 +226,14 @@ class CameraView:
         # no frame copy
         rl.rlActiveTextureSlot(0)
         egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame_id])
-        assert gl.glGetError() == gl.GL_NO_ERRORgl.glGetError()
+        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
       else:
         # fallback to copy
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
         rl.rlActiveTextureSlot(0)
         rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
-        assert gl.glGetError() == gl.GL_NO_ERRORgl.glGetError()
+        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
 
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
         rl.rlActiveTextureSlot(1)
