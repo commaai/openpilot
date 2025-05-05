@@ -233,7 +233,7 @@ class CameraView:
       if TICI:
         # no frame copy
         rl.rlActiveTextureSlot(0)
-        egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame_id])
+        egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame.frame_id])
         assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
       else:
         # fallback to copy
