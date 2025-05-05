@@ -1,85 +1,129 @@
-import ctypes.util
-import os
+import ctypes
+import sys
+from collections.abc import Callable
+from typing import Any, cast
 
-# Load EGL library
-try:
-  egl_lib = ctypes.util.find_library('EGL')
-  if egl_lib:
-    egl = ctypes.CDLL(egl_lib)
-  else:
-    # Try common paths on Linux systems
-    for path in ['/usr/lib/libEGL.so', '/usr/lib/aarch64-linux-gnu/libEGL.so']:
-      if os.path.exists(path):
-        egl = ctypes.CDLL(path)
-        break
-    else:
-      raise ImportError("Could not find EGL library")
-except ImportError as e:
-  print(f"Error loading EGL library: {e}")
-
-# Define necessary EGL constants
-EGL_NO_CONTEXT = 0
-EGL_NO_DISPLAY = 0
-EGL_SUCCESS = 0x3000
-
-# EGL extensions for DMA buffer handling
-EGL_LINUX_DMA_BUF_EXT = 0x3270
-EGL_LINUX_DRM_FOURCC_EXT = 0x3271
-EGL_DMA_BUF_PLANE0_FD_EXT = 0x3272
-EGL_DMA_BUF_PLANE0_OFFSET_EXT = 0x3273
-EGL_DMA_BUF_PLANE0_PITCH_EXT = 0x3274
-EGL_DMA_BUF_PLANE1_FD_EXT = 0x3275
-EGL_DMA_BUF_PLANE1_OFFSET_EXT = 0x3276
-EGL_DMA_BUF_PLANE1_PITCH_EXT = 0x3277
-EGL_WIDTH = 0x3057
-EGL_HEIGHT = 0x3056
-EGL_NONE = 0x3038
-
-# DRM format for NV12
-DRM_FORMAT_NV12 = 842094158  # fourcc code for NV12
-
-# OpenGL texture target for external textures
-GL_TEXTURE_EXTERNAL_OES = 0x8D65
-
-# Define function pointer types
-EGLImageKHR = ctypes.c_void_p
+# --- Type Definitions ---
+EGLBoolean = ctypes.c_uint
+EGLenum = ctypes.c_uint
+EGLint = ctypes.c_int
 EGLDisplay = ctypes.c_void_p
 EGLContext = ctypes.c_void_p
-EGLBoolean = ctypes.c_uint
-EGLint = ctypes.c_int32
+EGLImageKHR = ctypes.c_void_p
+EGLClientBuffer = ctypes.c_void_p
 
-# Initialize extension functions
-if egl is not None:
+# for glEGLImageTargetTexture2DOES
+GLenum = ctypes.c_uint
+
+# --- dlsym Setup ---
+if sys.platform.startswith("linux") or sys.platform == "darwin":
   try:
-    # Get basic functions
-    eglGetCurrentDisplay = egl.eglGetCurrentDisplay
-    eglGetCurrentDisplay.restype = EGLDisplay
+    ctypes.pythonapi.dlsym.restype = ctypes.c_void_p
+    ctypes.pythonapi.dlsym.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+    RTLD_DEFAULT = ctypes.c_void_p(0)
+  except AttributeError as err:
+    raise ImportError("Cannot access ctypes.pythonapi.dlsym. Ensure you are on a POSIX-like system.") from err
+else:
+  raise ImportError(f"Platform '{sys.platform}' not supported by egl.py.")
 
-    eglGetError = egl.eglGetError
-    eglGetError.restype = EGLint
+# --- Generic Function Loader ---
+_egl_func_cache: dict[str, Callable[..., Any]] = {}
 
-    # Get extension functions via eglGetProcAddress
-    _eglGetProcAddress = egl.eglGetProcAddress
-    _eglGetProcAddress.argtypes = [ctypes.c_char_p]
-    _eglGetProcAddress.restype = ctypes.c_void_p
 
-    # Function pointers for extensions
-    create_image_func = _eglGetProcAddress(b"eglCreateImageKHR")
-    if create_image_func:
-      PFNEGLCREATEIMAGEKHRPROC = ctypes.CFUNCTYPE(
-        EGLImageKHR, EGLDisplay, EGLContext, ctypes.c_uint, ctypes.c_void_p, ctypes.POINTER(EGLint)
-      )
-      eglCreateImageKHR = PFNEGLCREATEIMAGEKHRPROC(create_image_func)
+def get_egl_function(
+  name: str,
+  restype: Any | None,
+  argtypes: list[Any],
+) -> Callable[..., Any]:
+  """
+  Load an EGL (or related GL) function by name via dlsym, cache it,
+  and return a callable with the requested signature.
+  """
+  if name in _egl_func_cache:
+    return _egl_func_cache[name]
+  addr = ctypes.pythonapi.dlsym(RTLD_DEFAULT, name.encode("utf-8"))
+  if not addr:
+    raise AttributeError(f"Function '{name}' not found via dlsym. Ensure an EGL/GL context is active and the extension is supported.")
+  proto = ctypes.CFUNCTYPE(restype, *argtypes)
+  func = cast(Callable[..., Any], proto(addr))
+  _egl_func_cache[name] = func
+  return func
 
-    destroy_image_func = _eglGetProcAddress(b"eglDestroyImageKHR")
-    if destroy_image_func:
-      PFNEGLDESTROYIMAGEKHRPROC = ctypes.CFUNCTYPE(EGLBoolean, EGLDisplay, EGLImageKHR)
-      eglDestroyImageKHR = PFNEGLDESTROYIMAGEKHRPROC(destroy_image_func)
 
-    target_texture_func = _eglGetProcAddress(b"glEGLImageTargetTexture2DOES")
-    if target_texture_func:
-      PFNGLEGLIMAGETARGETTEXTURE2DOESPROC = ctypes.CFUNCTYPE(None, ctypes.c_uint, EGLImageKHR)
-      glEGLImageTargetTexture2DOES = PFNGLEGLIMAGETARGETTEXTURE2DOESPROC(target_texture_func)
+# --- EGL Function Wrappers ---
 
-  except Exception as e:
-    print(f"Error initializing EGL functions: {e}")
+
+def eglGetCurrentDisplay() -> EGLDisplay:
+  func = get_egl_function("eglGetCurrentDisplay", EGLDisplay, [])
+  return func()
+
+
+def eglGetError() -> EGLint:
+  func = get_egl_function("eglGetError", EGLint, [])
+  return func()
+
+
+def eglDestroyImageKHR(dpy: EGLDisplay, image: EGLImageKHR) -> EGLBoolean:
+  func = get_egl_function(
+    "eglDestroyImageKHR",
+    EGLBoolean,
+    [EGLDisplay, EGLImageKHR],
+  )
+  return func(dpy, image)
+
+
+def eglCreateImageKHR(
+  dpy: EGLDisplay,
+  ctx: EGLContext,
+  target: EGLenum,
+  buffer: EGLClientBuffer,
+  attrib_list: list[EGLint],
+) -> EGLImageKHR:
+  func = get_egl_function(
+    "eglCreateImageKHR",
+    EGLImageKHR,
+    [
+      EGLDisplay,
+      EGLContext,
+      EGLenum,
+      EGLClientBuffer,
+      ctypes.POINTER(EGLint),
+    ],
+  )
+  # NULL-terminated attribute list
+  attribs = (EGLint * (len(attrib_list) + 1))(*attrib_list, EGL_NONE)
+  return func(dpy, ctx, target, buffer, attribs)
+
+
+def glEGLImageTargetTexture2DOES(target: GLenum, image: EGLImageKHR) -> None:
+  func = get_egl_function(
+    "glEGLImageTargetTexture2DOES",
+    None,
+    [GLenum, ctypes.c_void_p],
+  )
+  func(target, image)
+
+
+# --- EGL Constants ---
+EGL_NO_DISPLAY = cast(EGLDisplay, 0)
+EGL_NO_CONTEXT = cast(EGLContext, 0)
+EGL_NONE = cast(EGLint, 0x3038)
+EGL_SUCCESS = cast(EGLint, 0x3000)
+
+EGL_LINUX_DMA_BUF_EXT = cast(EGLenum, 0x3270)
+EGL_LINUX_DRM_FOURCC_EXT = cast(EGLenum, 0x3271)
+EGL_DMA_BUF_PLANE0_FD_EXT = cast(EGLenum, 0x3272)
+EGL_DMA_BUF_PLANE0_OFFSET_EXT = cast(EGLenum, 0x3273)
+EGL_DMA_BUF_PLANE0_PITCH_EXT = cast(EGLenum, 0x3274)
+EGL_DMA_BUF_PLANE1_FD_EXT = cast(EGLenum, 0x3275)
+EGL_DMA_BUF_PLANE1_OFFSET_EXT = cast(EGLenum, 0x3276)
+EGL_DMA_BUF_PLANE1_PITCH_EXT = cast(EGLenum, 0x3277)
+
+EGL_WIDTH = cast(EGLint, 0x3057)
+EGL_HEIGHT = cast(EGLint, 0x3056)
+
+# DRM FourCC for NV12
+DRM_FORMAT_NV12 = cast(EGLint, 0x3231564E)
+
+# For binding the image as an external texture
+GL_TEXTURE_EXTERNAL_OES = cast(GLenum, 0x8D65)
