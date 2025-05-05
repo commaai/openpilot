@@ -71,7 +71,7 @@ procs = [
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
   PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
   NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad, enabled=not PC),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
+  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad, enabled=not PC),
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
