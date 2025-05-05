@@ -64,7 +64,7 @@ dependencies = [
   "psutil",
   "pycryptodome", # used in updated/casync, panda, body, and a test
   "setproctitle",
-  "xattr", # replace 'os.getxattr' for macos compatibility
+  "xattr", # used in place of 'os.getxattr' for macos compatibility
 
   # logreader
   "zstandard",
