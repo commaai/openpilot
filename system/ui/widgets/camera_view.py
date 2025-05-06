@@ -294,16 +294,10 @@ class CameraView:
       self._egl_images.clear()
 
 
-def run():
+if __name__ == "__main__":
   gui_app.init_window("watch3")
   road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   for _ in gui_app.render():
     road_camera_view.render()
   road_camera_view.close()
   gui_app.close()
-
-
-if __name__ == "__main__":
-  thread = threading.Thread(target=run, daemon=True)
-  thread.start()
-  thread.join()
