@@ -231,11 +231,8 @@ class CameraView:
       self.prev_frame_id = frame_id
 
       rl.rlEnableShader(self._shader.id)
-      assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
       rl.rlEnableVertexArray(self._vao)
-      assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
       gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
-      assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
 
       if TICI:
         # no frame copy
@@ -267,9 +264,7 @@ class CameraView:
       gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
       rl.rlActiveTextureSlot(0)
       gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
-      assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
       gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, 0)
-      assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
 
       rl.rlDisableShader()
 
