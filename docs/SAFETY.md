@@ -27,7 +27,7 @@ ensuring two main safety requirements.
    react. This means that while the system is engaged, the actuators are constrained
    to operate within reasonable limits[^1].
 
-For additional safety implementation details, refer to [panda safety model](https://github.com/commaai/panda#safety-model). For vehicle specific implementation of the safety concept, refer to [opendbc/safety/safety](https://github.com/commaai/opendbc/tree/master/opendbc/safety).
+For additional safety implementation details, refer to [panda safety model](https://github.com/commaai/panda#safety-model). For vehicle specific implementation of the safety concept, refer to [opendbc/safety/safety](https://github.com/commaai/opendbc/tree/master/opendbc/safety/safety).
 
 **Extra note**: comma.ai strongly discourages the use of openpilot forks with safety code either missing or
   not fully meeting the above requirements.
