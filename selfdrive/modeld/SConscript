@@ -48,6 +48,8 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   # TODO: switch to Metal on macOS?
   elif arch == 'Darwin':
     device_string = 'METAL=1 IMAGE=0 NOLOCALS=0'
+    # Fix for Error: $HOME must be set to run brew.
+    lenv['ENV']['HOME'] = os.environ['HOME']
     # Metal is not supported for dmonitoring model right now
     # https://github.com/tinygrad/tinygrad/issues/10169#issuecomment-2881824251
     if model_name.startswith("dmon"):
