@@ -231,7 +231,6 @@ class CameraView:
       self.prev_frame_id = frame_id
 
       rl.rlEnableShader(self._shader.id)
-      rl.rlEnableVertexArray(self._vao)
       gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
 
       if TICI:
@@ -257,8 +256,12 @@ class CameraView:
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
         assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
 
+      rl.rlEnableVertexArray(self._vao)
+      # rl.rlEnableVertexAttribute(0)
+      # rl.rlEnableVertexAttribute(1)
       rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
-
+      # rl.rlDisableVertexAttribute(1)
+      # rl.rlDisableVertexAttribute(0)
       rl.rlDisableVertexArray()
 
       gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
