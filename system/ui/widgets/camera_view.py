@@ -237,7 +237,7 @@ class CameraView:
       if TICI:
         # no frame copy
         rl.rlActiveTextureSlot(0)
-        egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame.frame_id])
+        egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame.idx])
         gl_errno = gl.glGetError()
         egl_errno = egl.eglGetError()
         print("gl:", gl_errno, "egl:", egl_errno)
