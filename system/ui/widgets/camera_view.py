@@ -205,7 +205,6 @@ class CameraView:
       # FIXME: why is this required
       gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
       gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RG8, self.stream_width // 2, self.stream_height // 2, 0, gl.GL_RG, gl.GL_UNSIGNED_BYTE, None)
-      gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
   def render(self) -> None:
     if self.vipc_connected_event.is_set():
