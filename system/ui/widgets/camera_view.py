@@ -285,7 +285,7 @@ class CameraView:
         rl.rlUnloadTexture(tex_id)
       self._textures = None
 
-    if self._egl_images is not None:
+    if len(self._egl_images) > 0:
       egl_display = egl.eglGetCurrentDisplay()
       assert egl_display != egl.EGL_NO_DISPLAY
       for _, image in self._egl_images.items():
