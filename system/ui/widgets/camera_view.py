@@ -91,6 +91,8 @@ class CameraView:
 
   def _initialize_gl(self) -> None:
     self._shader = rl.LoadShaderFromMemory(VERTEX_SHADER.encode("utf-8"), FRAGMENT_SHADER.encode("utf-8"))
+    position_loc = rl.rlGetLocationAttrib(self._shader.id, b"aPosition")
+    texcoord_loc = rl.rlGetLocationAttrib(self._shader.id, b"aTexCoord")
 
     if self.requested_stream_type == VisionStreamType.VISION_STREAM_DRIVER:
       x1, x2, y1, y2 = 0.0, 1.0, 1.0, 0.0
@@ -108,10 +110,10 @@ class CameraView:
     self._vao = rl.rlLoadVertexArray()
     rl.rlEnableVertexArray(self._vao)
     self._vbo = rl.rlLoadVertexBuffer(ffi.cast("void *", frame_coords.ctypes.data), frame_coords.nbytes, False)
-    rl.rlEnableVertexAttribute(0)
-    rl.rlSetVertexAttribute(0, 2, RL_FLOAT, False, 4 * 4, 0)
-    rl.rlEnableVertexAttribute(1)
-    rl.rlSetVertexAttribute(1, 2, RL_FLOAT, False, 4 * 4, 2 * 4)
+    rl.rlEnableVertexAttribute(position_loc)
+    rl.rlSetVertexAttribute(position_loc, 2, RL_FLOAT, False, 4 * 4, 0)
+    rl.rlEnableVertexAttribute(texcoord_loc)
+    rl.rlSetVertexAttribute(texcoord_loc, 2, RL_FLOAT, False, 4 * 4, 2 * 4)
     self._ebo = rl.rlLoadVertexBufferElement(ffi.cast("void *", frame_indices.ctypes.data), frame_indices.nbytes, False)
 
     rl.rlEnableShader(self._shader.id)
