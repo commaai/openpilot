@@ -275,7 +275,7 @@ function op_venv() {
 
 function op_adb() {
   op_before_cmd
-  op_run_command tools/adb_shell.sh
+  op_run_command tools/scripts/adb_ssh.sh
 }
 
 function op_check() {
