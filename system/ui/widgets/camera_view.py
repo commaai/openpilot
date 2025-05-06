@@ -230,18 +230,13 @@ class CameraView:
         cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
 
-      rl.rlEnableShader(self._shader.id)
       gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
 
       if TICI:
         # no frame copy
         rl.rlActiveTextureSlot(0)
         egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame.idx])
-        gl_errno = gl.glGetError()
-        egl_errno = egl.eglGetError()
-        print("gl:", gl_errno, "egl:", egl_errno)
-        assert egl_errno == egl.EGL_SUCCESS, egl_errno
-        assert gl_errno == gl.GL_NO_ERROR, gl_errno
+        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
       else:
         # fallback to copy
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
@@ -256,19 +251,10 @@ class CameraView:
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
         assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
 
+      rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
-      # rl.rlEnableVertexAttribute(0)
-      # rl.rlEnableVertexAttribute(1)
       rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
-      # rl.rlDisableVertexAttribute(1)
-      # rl.rlDisableVertexAttribute(0)
       rl.rlDisableVertexArray()
-
-      gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
-      rl.rlActiveTextureSlot(0)
-      gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
-      gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, 0)
-
       rl.rlDisableShader()
 
   def close(self) -> None:
