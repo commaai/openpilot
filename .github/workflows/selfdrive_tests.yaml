@@ -96,7 +96,6 @@ jobs:
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        save: 'true'
         restore-keys: |
           brew-macos-${{ env.CACHE_COMMIT_DATE }}
           brew-macos
@@ -111,7 +110,6 @@ jobs:
       with:
         path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        save: 'true'
         restore-keys: |
           scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}-macos
