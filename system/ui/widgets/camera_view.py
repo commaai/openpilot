@@ -227,6 +227,7 @@ class CameraView:
       elif frame_id != self.prev_frame_id + 1:
         cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
+      print("frame_id:", frame_id)
 
       rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
