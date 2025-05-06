@@ -210,7 +210,7 @@ class CameraView:
       self.vipc_connected_event.clear()
       self._on_vipc_connected()
 
-    if self._shader is None or self._textures is None or self._vao <= 0:
+    if self._shader is None or self._vao <= 0 or (not TICI and self._textures is None):
       return
 
     with self.frame_lock:
@@ -227,7 +227,6 @@ class CameraView:
       elif frame_id != self.prev_frame_id + 1:
         cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
-      print("frame_id:", frame_id)
 
       rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
