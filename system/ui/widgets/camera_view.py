@@ -256,6 +256,12 @@ class CameraView:
       rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
 
       rl.rlDisableVertexArray()
+
+      gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
+      rl.rlActiveTextureSlot(0)
+      gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 4)
+      gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, 0)
+
       rl.rlDisableShader()
 
   def close(self) -> None:
@@ -285,6 +291,14 @@ class CameraView:
       for tex_id in self._textures:
         rl.rlUnloadTexture(tex_id)
       self._textures = None
+
+    if self._egl_images is not None:
+      egl_display = egl.eglGetCurrentDisplay()
+      assert egl_display != egl.EGL_NO_DISPLAY
+      for _, image in self._egl_images.items():
+        egl.eglDestroyImageKHR(egl_display, image)
+        assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
+      self._egl_images.clear()
 
 
 def run():
