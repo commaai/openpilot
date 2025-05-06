@@ -42,15 +42,11 @@ class Toggle:
     rl.draw_circle(int(knob_x), int(knob_y), knob_radius, KNOB_COLOR)
 
 
-def main():
+if __name__ == "__main__":
   from openpilot.system.ui.lib.application import gui_app
 
   gui_app.init_window("Text toggle example")
   toggle = Toggle(100, 100)
   for _ in gui_app.render():
     toggle.handle_input()
-    toggle.render()
-
-
-if __name__ == "__main__":
-  main()
+    toggle.render()```
