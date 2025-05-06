@@ -87,6 +87,11 @@ def glGetError() -> GLenum:
   return func()
 
 
+def assert_gl_no_error() -> None:
+  errno = glGetError()
+  assert errno == GL_NO_ERROR, f"OpenGL error: {errno}"
+
+
 # void glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)
 def glTexSubImage2D(
   target: GLenum,

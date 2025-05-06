@@ -171,7 +171,7 @@ class CameraView:
       if self._egl_images is not None:
         for _, image in self._egl_images.items():
           egl.eglDestroyImageKHR(egl_display, image)
-          assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
+          egl.assert_egl_no_error()
         self._egl_images.clear()
 
       # import buffers into OpenGL
@@ -191,7 +191,7 @@ class CameraView:
         ]
         attrs_array = (ctypes.c_int * len(attrs))(*attrs)
         self._egl_images[i] = egl.eglCreateImageKHR(egl_display, egl.EGL_NO_CONTEXT, egl.EGL_LINUX_DMA_BUF_EXT, 0, attrs_array)
-        assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
+        egl.assert_egl_no_error()
     else:
       if self._textures is not None:
         for tex_id in self._textures:
@@ -235,20 +235,20 @@ class CameraView:
         # no frame copy
         rl.rlActiveTextureSlot(0)
         egl.glEGLImageTargetTexture2DOES(egl.GL_TEXTURE_EXTERNAL_OES, self._egl_images[frame.idx])
-        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
+        gl.assert_gl_no_error()
       else:
         # fallback to copy
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
         rl.rlActiveTextureSlot(0)
         rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
-        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
+        gl.assert_gl_no_error()
 
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
         rl.rlActiveTextureSlot(1)
         rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
-        assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
+        gl.assert_gl_no_error()
 
       rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
@@ -289,7 +289,7 @@ class CameraView:
       assert egl_display != egl.EGL_NO_DISPLAY
       for _, image in self._egl_images.items():
         egl.eglDestroyImageKHR(egl_display, image)
-        assert egl.eglGetError() == egl.EGL_SUCCESS, egl.eglGetError()
+        egl.assert_egl_no_error()
       self._egl_images.clear()
 
 

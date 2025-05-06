@@ -50,6 +50,11 @@ def eglGetError() -> EGLint:
   return func()
 
 
+def assert_egl_no_error() -> None:
+  errno = eglGetError()
+  assert errno == EGL_SUCCESS, f"EGL error: {errno}"
+
+
 def eglDestroyImageKHR(dpy: EGLDisplay, image: EGLImageKHR) -> EGLBoolean:
   func = get_egl_function(
     "eglDestroyImageKHR",
