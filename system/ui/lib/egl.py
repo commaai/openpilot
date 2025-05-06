@@ -1,7 +1,7 @@
 import ctypes
-import sys
 from collections.abc import Callable
 from typing import Any, cast
+from openpilot.system.ui.lib.gl import GLenum
 
 # --- Type Definitions ---
 EGLBoolean = ctypes.c_uint
@@ -12,29 +12,16 @@ EGLContext = ctypes.c_void_p
 EGLImageKHR = ctypes.c_void_p
 EGLClientBuffer = ctypes.c_void_p
 
-# for glEGLImageTargetTexture2DOES
-GLenum = ctypes.c_uint
+try:
+  ctypes.pythonapi.dlsym.restype = ctypes.c_void_p
+  ctypes.pythonapi.dlsym.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+  RTLD_DEFAULT = ctypes.c_void_p(0)
+except AttributeError as err:
+  raise ImportError("Cannot access ctypes.pythonapi.dlsym. Ensure you are on a POSIX-like system (Linux, macOS).") from err
 
-# --- dlsym Setup ---
-if sys.platform.startswith("linux") or sys.platform == "darwin":
-  try:
-    ctypes.pythonapi.dlsym.restype = ctypes.c_void_p
-    ctypes.pythonapi.dlsym.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-    RTLD_DEFAULT = ctypes.c_void_p(0)
-  except AttributeError as err:
-    raise ImportError("Cannot access ctypes.pythonapi.dlsym. Ensure you are on a POSIX-like system.") from err
-else:
-  raise ImportError(f"Platform '{sys.platform}' not supported by egl.py.")
-
-# --- Generic Function Loader ---
 _egl_func_cache: dict[str, Callable[..., Any]] = {}
 
-
-def get_egl_function(
-  name: str,
-  restype: Any | None,
-  argtypes: list[Any],
-) -> Callable[..., Any]:
+def get_egl_function(name: str, restype: Any | None, argtypes: list[Any]) -> Callable[..., Any]:
   """
   Load an EGL (or related GL) function by name via dlsym, cache it,
   and return a callable with the requested signature.

@@ -1,10 +1,8 @@
 import ctypes
-import sys
 from collections.abc import Callable
 from typing import Any, cast
 
-# --- OpenGL Type Definitions ---
-# Basic types
+# --- Type Definitions ---
 GLenum = ctypes.c_uint
 GLint = ctypes.c_int
 GLsizei = ctypes.c_int
@@ -12,26 +10,16 @@ GLuint = ctypes.c_uint
 GLfloat = ctypes.c_float
 GLvoidp = ctypes.c_void_p
 
-if sys.platform.startswith('linux') or sys.platform == 'darwin':
-  try:
-    # Access dlsym function from python's C API
-    ctypes.pythonapi.dlsym.restype = ctypes.c_void_p
-    ctypes.pythonapi.dlsym.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
-    RTLD_DEFAULT = ctypes.c_void_p(0)  # Handle for searching all loaded symbols
-  except AttributeError as err:
-    raise ImportError("Cannot access ctypes.pythonapi.dlsym. Ensure you are on a POSIX-like system (Linux, macOS).") from err
-else:
-  raise ImportError(f"Platform '{sys.platform}' not supported by this gl.py version (requires dlsym).")
+try:
+  ctypes.pythonapi.dlsym.restype = ctypes.c_void_p
+  ctypes.pythonapi.dlsym.argtypes = [ctypes.c_void_p, ctypes.c_char_p]
+  RTLD_DEFAULT = ctypes.c_void_p(0)
+except AttributeError as err:
+  raise ImportError("Cannot access ctypes.pythonapi.dlsym. Ensure you are on a POSIX-like system (Linux, macOS).") from err
 
-# --- Generic Function Loader ---
-_gl_func_cache: dict[str, Callable[..., Any]] = {}  # Cache for loaded functions
+_gl_func_cache: dict[str, Callable[..., Any]] = {}
 
-
-def get_gl_function(
-  name: str,
-  restype: Any | None,  # e.g., None, GLenum, POINTER(GLuint)
-  argtypes: list,  # e.g., [GLenum, GLint], [GLsizei, POINTER(GLuint)]
-) -> Callable[..., Any]:
+def get_gl_function(name: str, restype: Any | None, argtypes: list) -> Callable[..., Any]:
   """
   Retrieves an OpenGL function pointer using dlsym after an OpenGL context
   is expected to be active. Caches the result.
@@ -40,31 +28,16 @@ def get_gl_function(
   """
   if name in _gl_func_cache:
     return _gl_func_cache[name]
-
-  # Convert name to bytes for dlsym
-  name_bytes = name.encode('utf-8')
-
-  # Use dlsym to find the function address in the current process space
-  # This relies on Raylib/GLFW having already loaded the necessary GL functions.
-  func_ptr_addr = ctypes.pythonapi.dlsym(RTLD_DEFAULT, name_bytes)
-
-  if not func_ptr_addr:
-    # Function not found. This might happen if the GL context is not
-    # yet created, the function is not supported by the driver, or
-    # it's an extension function that needs specific loading.
+  addr = ctypes.pythonapi.dlsym(RTLD_DEFAULT, name.encode('utf-8'))
+  if not addr:
     raise AttributeError(f"OpenGL function '{name}' not found using dlsym. Ensure OpenGL context is active and function is supported.")
-
-  # Create the ctypes function pointer object with the correct signature
-  func_proto = ctypes.CFUNCTYPE(restype, *argtypes)
-  func_ptr = cast(Callable[..., Any], func_proto(func_ptr_addr))  # Cast to generic Callable
-
-  # Cache and return
-  _gl_func_cache[name] = func_ptr
-  # print(f"Loaded OpenGL function: {name}") # Optional debug log
-  return func_ptr
+  proto = ctypes.CFUNCTYPE(restype, *argtypes)
+  func = cast(Callable[..., Any], proto(addr))
+  _gl_func_cache[name] = func
+  return func
 
 
-# --- OpenGL Function Definitions ---
+# --- OpenGL Function Wrappers ---
 
 
 # void glPixelStorei(GLenum pname, GLint param)
@@ -100,18 +73,6 @@ def glTexImage2D(
 def glBindTexture(target: GLenum, texture: GLuint) -> None:
   func = get_gl_function("glBindTexture", None, [GLenum, GLuint])
   func(target, texture)
-
-
-# void glTexParameteri(GLenum target, GLenum pname, GLint param)
-def glTexParameteri(target: GLenum, pname: GLenum, param: GLint) -> None:
-  func = get_gl_function("glTexParameteri", None, [GLenum, GLenum, GLint])
-  func(target, pname, param)
-
-
-# void glTexParameterf(GLenum target, GLenum pname, GLfloat param)
-def glTexParameterf(target: GLenum, pname: GLenum, param: GLfloat) -> None:
-  func = get_gl_function("glTexParameterf", None, [GLenum, GLenum, GLfloat])
-  func(target, pname, param)
 
 
 # void glActiveTexture(GLenum texture)
