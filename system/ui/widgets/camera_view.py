@@ -228,6 +228,8 @@ class CameraView:
         cloudlog.debug(f"Skipped frame {frame_id}")
       self.prev_frame_id = frame_id
 
+      rl.rlEnableShader(self._shader.id)
+      rl.rlEnableVertexArray(self._vao)
       gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, 1)
 
       if TICI:
@@ -248,9 +250,6 @@ class CameraView:
         rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
         assert gl.glGetError() == gl.GL_NO_ERROR, gl.glGetError()
-
-      rl.rlEnableShader(self._shader.id)
-      rl.rlEnableVertexArray(self._vao)
 
       rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
 
