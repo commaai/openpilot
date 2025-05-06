@@ -33,6 +33,7 @@ function install_ubuntu_common_requirements() {
     git \
     git-lfs \
     ffmpeg \
+    fonts-inter \
     libavformat-dev \
     libavcodec-dev \
     libavdevice-dev \
@@ -63,7 +64,8 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
-    libqt5opengl5-dev
+    libqt5opengl5-dev \
+    xvfb
 }
 
 # Install Ubuntu 24.04 LTS packages
