@@ -53,4 +53,5 @@ if __name__ == "__main__":
   toggle = Toggle(100, 100)
   for _ in gui_app.render():
     toggle.handle_input()
-    toggle.render()
+    toggle.render(rl.Rectangle(100, 100, 160, 80))
+

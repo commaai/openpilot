@@ -92,6 +92,7 @@ class WifiManager:
         self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
+    self._ip_address: str = ""
 
   async def connect(self) -> None:
     """Connect to the DBus system bus."""
@@ -408,6 +409,7 @@ class WifiManager:
     while self.running:
       try:
         await self._request_scan()
+        await self.update_ip_address()
         await asyncio.sleep(30)
       except asyncio.CancelledError:
         break
@@ -615,6 +617,40 @@ class WifiManager:
       return SecurityType.WPA
     return SecurityType.UNSUPPORTED
 
+  async def update_ip_address(self) -> None:
+    """
+    Query the first 802-11-wireless device's IPv4 address
+    """
+    try:
+      if not self.device_proxy:
+        return
+
+      props_iface = self.device_proxy.get_interface(NM_PROPERTIES_IFACE)
+      ip4config_path = await props_iface.call_get(NM_DEVICE_IFACE, 'Ip4Config')
+      ip4config_path = ip4config_path.value
+      if not ip4config_path or ip4config_path == "/":
+        self._ip_address = ""
+        return
+
+      # Get the Addresses property from the IP4Config object
+      ip4config_iface = await self._get_interface(NM, ip4config_path, NM_PROPERTIES_IFACE)
+      addresses = await ip4config_iface.call_get('org.freedesktop.NetworkManager.IP4Config', 'Addresses')
+      addresses = addresses.value  # List of [address, netmask, gateway]
+      if addresses and len(addresses) > 0 and len(addresses[0]) > 0:
+        # addresses[0][0] is the IPv4 address as an integer
+        ip_int = addresses[0][0]
+        self._ip_address = ".".join(str((ip_int >> (i * 8)) & 0xFF) for i in range(4)[::-1])
+      else:
+        self._ip_address = ""
+      print(f"Wi-Fi IP address: {self._ip_address}")
+    except Exception as e:
+      print(f"Failed to get Wi-Fi IP address: {e}")
+      self._ip_address = ""
+
+  @property
+  def ip_address(self) -> str:
+    """Return the last known Wi-Fi IPv4 address"""
+    return self._ip_address
 
 class WifiManagerWrapper:
   def __init__(self):
