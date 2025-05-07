@@ -78,7 +78,7 @@ class CameraWidget:
     self._vao: int = 0
     self._vbo: int = 0
     self._ebo: int = 0
-    self._textures: list[int] | None = None  # Y and UV textures
+    self._textures: tuple[rl.Texture, rl.Texture] | None = None  # Y and UV textures
     self._egl_images: dict[int, egl.EGLImageKHR] = {}
 
     self.vipc_client: VisionIpcClient | None = None
@@ -194,16 +194,15 @@ class CameraWidget:
         egl.assert_egl_no_error()
     else:
       if self._textures is not None:
-        for tex_id in self._textures:
-          rl.rlUnloadTexture(tex_id)
+        for tex in self._textures:
+          rl.UnloadTexture(tex)
 
-      self._textures = [
-        rl.rlLoadTexture(ffi.NULL, self.stream_width, self.stream_height, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, 1),
-        rl.rlLoadTexture(ffi.NULL, self.stream_width // 2, self.stream_height // 2, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, 0),
-      ]
+      texture_y = rl.LoadTextureFromImage((ffi.NULL, self.stream_width, self.stream_height, 1, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
+      texture_uv = rl.LoadTextureFromImage((ffi.NULL, self.stream_width // 2, self.stream_height // 2, 0, PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
+      self._textures = (texture_y, texture_uv)
 
       # FIXME: why is this required
-      gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
+      gl.glBindTexture(gl.GL_TEXTURE_2D, texture_uv.id)
       gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RG8, self.stream_width // 2, self.stream_height // 2, 0, gl.GL_RG, gl.GL_UNSIGNED_BYTE, None)
 
   def render(self, x: int, y: int, width: int, height: int) -> None:
@@ -238,18 +237,20 @@ class CameraWidget:
         gl.assert_gl_no_error()
       else:
         # fallback to copy
+        (texture_y, texture_uv) = self._textures
+
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride)
         rl.rlActiveTextureSlot(0)
-        rl.rlUpdateTexture(self._textures[0], 0, 0, self.stream_width, self.stream_height,
+        rl.rlUpdateTexture(texture_y.id, 0, 0, self.stream_width, self.stream_height,
                            PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE, ffi.cast("void *", frame.y.ctypes.data))
         gl.assert_gl_no_error()
 
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
         rl.rlActiveTextureSlot(1)
         # FIXME: this doesn't work
-        # rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
+        # rl.rlUpdateTexture(texture_uv.id, 0, 0, self.stream_width // 2, self.stream_height // 2,
         #                    PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
-        gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
+        gl.glBindTexture(gl.GL_TEXTURE_2D, texture_uv.id)
         gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, self.stream_width // 2, self.stream_height // 2, gl.GL_RG, gl.GL_UNSIGNED_BYTE, frame.uv.ctypes)
         gl.assert_gl_no_error()
 
@@ -285,8 +286,8 @@ class CameraWidget:
       self._ebo = 0
 
     if self._textures:
-      for tex_id in self._textures:
-        rl.rlUnloadTexture(tex_id)
+      for tex in self._textures:
+        rl.UnloadTexture(tex)
       self._textures = None
 
     if len(self._egl_images) > 0:
