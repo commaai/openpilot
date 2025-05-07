@@ -246,8 +246,11 @@ class CameraWidget:
 
         gl.glPixelStorei(gl.GL_UNPACK_ROW_LENGTH, self.stream_stride // 2)
         rl.rlActiveTextureSlot(1)
-        rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
-                           PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
+        # FIXME: this doesn't work
+        # rl.rlUpdateTexture(self._textures[1], 0, 0, self.stream_width // 2, self.stream_height // 2,
+        #                    PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA, ffi.cast("void *", frame.uv.ctypes.data))
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
+        gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, self.stream_width // 2, self.stream_height // 2, gl.GL_RG, gl.GL_UNSIGNED_BYTE, frame.uv.ctypes)
         gl.assert_gl_no_error()
 
       rl.rlEnableShader(self._shader.id)
