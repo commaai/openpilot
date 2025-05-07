@@ -37,7 +37,7 @@ dependencies = [
   "pyaudio",
 
   # panda
-  "libusb1",
+  "libusb1 == 3.1.0", # recent versions segfault sometime on device
   "spidev; platform_system == 'Linux'",
 
   # modeld

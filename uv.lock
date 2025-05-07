@@ -779,13 +779,13 @@ wheels = [
 
 [[package]]
 name = "libusb1"
-version = "3.3.1"
+version = "3.1.0"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/a2/7f/c59ad56d1bca8fa4321d1bb77ba4687775751a4deceec14943a44da18ca0/libusb1-3.3.1.tar.gz", hash = "sha256:3951d360f2daf0e0eacf839e15d2d1d2f4f5e7830231eb3188eeffef2dd17bad", size = 107600, upload-time = "2025-03-24T05:36:47.834Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/af/19/53ecbfb96d6832f2272d13b84658c360802fcfff7c0c497ab8f6bf15ac40/libusb1-3.1.0.tar.gz", hash = "sha256:4ee9b0a55f8bd0b3ea7017ae919a6c1f439af742c4a4b04543c5fd7af89b828c", size = 83013, upload-time = "2023-10-29T03:14:31.821Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/10/f7/4577cfc55c9520ecab5563173e83235382ac7980c8c2c08d6c9f7ef9e615/libusb1-3.3.1-py3-none-any.whl", hash = "sha256:808c9362299dcee01651aa87e71e9d681ccedb27fc4dbd70aaf14e245fb855f1", size = 67243, upload-time = "2025-03-24T05:36:42.312Z" },
-    { url = "https://files.pythonhosted.org/packages/6a/60/d3fd4831c601f063a16fc59f465ef4c1108247b07fbff371a982bd1bac45/libusb1-3.3.1-py3-none-win32.whl", hash = "sha256:0ef69825173ce74af34444754c081cc324233edc6acc405658b3ad784833e076", size = 129576, upload-time = "2025-03-24T05:36:45.202Z" },
-    { url = "https://files.pythonhosted.org/packages/94/6d/344a164d32d65d503ffe9201cd74cf13a020099dc446554d1e50b07f167b/libusb1-3.3.1-py3-none-win_amd64.whl", hash = "sha256:6e21b772d80d6487fbb55d3d2141218536db302da82f1983754e96c72781c102", size = 141080, upload-time = "2025-03-24T05:36:46.594Z" },
+    { url = "https://files.pythonhosted.org/packages/85/5c/9169aea7690df382b677d9f725accc3ec864849c5ab49991e3823a942392/libusb1-3.1.0-py3-none-any.whl", hash = "sha256:9d9f16e2c199cab91f48ead585d3f5ec7e8e4be428a25ddfed22abf786fa9b3a", size = 62368, upload-time = "2023-10-29T03:14:24.767Z" },
+    { url = "https://files.pythonhosted.org/packages/2f/84/d851eb09565ff72b0dfbb988f4e1c79d3746c16eda5bb8e81ec6ce3bb16e/libusb1-3.1.0-py3-none-win32.whl", hash = "sha256:bc7874302565721f443a27d8182fcc7152e5b560523f12f1377b130f473e4a0c", size = 127838, upload-time = "2023-10-29T03:14:27.327Z" },
+    { url = "https://files.pythonhosted.org/packages/02/a5/620d383ec17051f42a907f21517eb498ddecd45b2b81e46cc42e6ec4038e/libusb1-3.1.0-py3-none-win_amd64.whl", hash = "sha256:77a06ecfb3d002d7c2ce369e28d0138b292fe8db8a3d102b73fda231a716dd35", size = 140380, upload-time = "2023-10-29T03:14:29.583Z" },
 ]
 
 [[package]]
@@ -1360,7 +1360,7 @@ requires-dist = [
     { name = "inputs" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
-    { name = "libusb1" },
+    { name = "libusb1", specifier = "==3.1.0" },
     { name = "llvmlite" },
     { name = "lru-dict", marker = "extra == 'dev'" },
     { name = "matplotlib", marker = "extra == 'dev'" },
