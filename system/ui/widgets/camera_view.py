@@ -115,6 +115,8 @@ class CameraWidget:
     rl.rlEnableVertexAttribute(texcoord_loc)
     rl.rlSetVertexAttribute(texcoord_loc, 2, RL_FLOAT, False, 4 * 4, 2 * 4)
     self._ebo = rl.rlLoadVertexBufferElement(ffi.cast("void *", frame_indices.ctypes.data), frame_indices.nbytes, False)
+    rl.rlDisableVertexBuffer()
+    rl.rlDisableVertexArray()
 
     rl.rlEnableShader(self._shader.id)
     if TICI:
@@ -261,6 +263,9 @@ class CameraWidget:
       rl.rlDisableVertexArray()
       rl.rlDisableShader()
       rl.rlViewport(0, 0, gui_app.width, gui_app.height)
+
+      rl.rlActiveTextureSlot(0)
+      gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
   def close(self) -> None:
     self.vipc_thread_stop_event.set()
