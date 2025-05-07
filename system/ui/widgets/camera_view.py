@@ -60,7 +60,7 @@ FRAGMENT_SHADER = QCOM2_FRAGMENT_SHADER if TICI else PC_FRAGMENT_SHADER
 FRAME_BUFFER_SIZE = 5
 
 
-class CameraView:
+class CameraWidget:
   def __init__(self, stream_name: str, stream_type: VisionStreamType):
     self.stream_name = stream_name
     self.active_stream_type = stream_type
@@ -295,7 +295,7 @@ class CameraView:
 
 if __name__ == "__main__":
   gui_app.init_window("watch3")
-  road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  road_camera_view = CameraWidget("camerad", VisionStreamType.VISION_STREAM_ROAD)
   for _ in gui_app.render():
     road_camera_view.render()
   road_camera_view.close()
