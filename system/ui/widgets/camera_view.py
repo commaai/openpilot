@@ -206,7 +206,7 @@ class CameraWidget:
       gl.glBindTexture(gl.GL_TEXTURE_2D, self._textures[1])
       gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RG8, self.stream_width // 2, self.stream_height // 2, 0, gl.GL_RG, gl.GL_UNSIGNED_BYTE, None)
 
-  def render(self) -> None:
+  def render(self, x: int, y: int, width: int, height: int) -> None:
     if self.vipc_connected_event.is_set():
       self.vipc_connected_event.clear()
       self._on_vipc_connected()
@@ -253,11 +253,13 @@ class CameraWidget:
         gl.glTexSubImage2D(gl.GL_TEXTURE_2D, 0, 0, 0, self.stream_width // 2, self.stream_height // 2, gl.GL_RG, gl.GL_UNSIGNED_BYTE, frame.uv.ctypes)
         gl.assert_gl_no_error()
 
+      rl.rlViewport(x, y, width, height)
       rl.rlEnableShader(self._shader.id)
       rl.rlEnableVertexArray(self._vao)
       rl.rlDrawVertexArrayElements(0, 6, ffi.NULL)
       rl.rlDisableVertexArray()
       rl.rlDisableShader()
+      rl.rlViewport(0, 0, gui_app.width, gui_app.height)
 
   def close(self) -> None:
     self.vipc_thread_stop_event.set()
@@ -300,6 +302,6 @@ if __name__ == "__main__":
   gui_app.init_window("watch3")
   road_camera_view = CameraWidget("camerad", VisionStreamType.VISION_STREAM_ROAD)
   for _ in gui_app.render():
-    road_camera_view.render()
+    road_camera_view.render(gui_app.width // 4, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
   road_camera_view.close()
   gui_app.close()
