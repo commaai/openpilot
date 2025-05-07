@@ -192,7 +192,22 @@ std::string Params::get(const std::string &key, bool block) {
 
 std::map<std::string, std::string> Params::readAll() {
   FileLock file_lock(params_path + "/.lock");
-  return util::read_files_in_dir(getParamPath());
+
+  std::map<std::string, std::string> ret;
+
+  std::string path = getParamPath();
+  DIR *d = opendir(path.c_str());
+  if (!d) return ret;
+
+  struct dirent *de = nullptr;
+  while ((de = readdir(d))) {
+    if (de->d_type != DT_DIR && keys.find(de->d_name) != keys.end()) {
+      ret[de->d_name] = util::read_file(path + "/" + de->d_name);
+    }
+  }
+
+  closedir(d);
+  return ret;
 }
 
 void Params::clearAll(ParamKeyType key_type) {
