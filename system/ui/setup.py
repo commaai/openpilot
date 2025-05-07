@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import math
 import os
 import threading
 import urllib.error
@@ -18,6 +19,7 @@ MARGIN = 50
 TEXT_COLOR = rl.WHITE
 TITLE_FONT_SIZE = 116
 TITLE_FONT_WEIGHT = FontWeight.MEDIUM
+NEXT_BUTTON_WIDTH = 310
 BODY_FONT_SIZE = 100
 BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
@@ -97,17 +99,25 @@ class Setup:
     desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE, TEXT_COLOR)
 
-    btn_rect = rl.Rectangle(rect.width - 310, 0, 310, rect.height)
+    btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
-    ret = 0 #gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
+    ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
 
-    center_y = rect.height / 2
-    arrow_size = 50
+    length = 64
+    angle = math.radians(50)
 
-    p1 = rl.Vector2(btn_rect.x + btn_rect.width / 2 - arrow_size, center_y - arrow_size)
-    p2 = rl.Vector2(btn_rect.x + btn_rect.width / 2 + arrow_size, center_y)
-    p3 = rl.Vector2(btn_rect.x + btn_rect.width / 2 - arrow_size, center_y + arrow_size)
-    rl.draw_triangle(p1, p2, p3, rl.WHITE)
+    center = rl.Vector2(btn_rect.x + btn_rect.width / 2 + math.cos(angle) * length / 2, btn_rect.height / 2)
+    point_a = rl.Vector2(center.x - math.cos(angle) * length,
+                         center.y + math.sin(angle) * length)
+    point_c = rl.Vector2(center.x + math.cos(angle) * 4,
+                         center.y - math.sin(angle) * 4)
+    point_b = rl.Vector2(center.x - math.cos(angle) * length,
+                         center.y - math.sin(angle) * length)
+    point_d = rl.Vector2(center.x + math.cos(angle) * 4,
+                         center.y + math.sin(angle) * 4)
+
+    rl.draw_line_ex(point_a, point_c, 10.0, rl.WHITE)
+    rl.draw_line_ex(point_b, point_d, 10.0, rl.WHITE)
 
     if ret:
       self.state = SetupState.NETWORK_SETUP
