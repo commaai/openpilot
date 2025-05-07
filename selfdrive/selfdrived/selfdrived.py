@@ -159,7 +159,11 @@ class SelfdriveD:
       self.events.add(EventName.selfdriveInitializing)
       return
 
-    # no more events while in dashcam mode
+    # Check for user flag (bookmark) press
+    if self.sm.updated['userFlag']:
+      self.events.add(EventName.userFlag)
+
+    # Don't add any more events while in dashcam mode
     if self.CP.passive:
       return
 
@@ -371,10 +375,6 @@ class SelfdriveD:
         self.personality = (self.personality - 1) % 3
         self.params.put_nonblocking('LongitudinalPersonality', str(self.personality))
         self.events.add(EventName.personalityChanged)
-
-    # Check for user flag (bookmark) press
-    if self.sm.updated['userFlag']:
-      self.events.add(EventName.userFlag)
 
   def data_sample(self):
     car_state = messaging.recv_one(self.car_state_sock)
