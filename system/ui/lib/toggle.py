@@ -22,7 +22,8 @@ class Toggle:
   def get_state(self):
     return self._state
 
-  def render(self):
+  def render(self, rect: rl.Rectangle):
+    self._rect = rect
     self._draw_background()
     self._draw_knob()
 
@@ -49,5 +50,5 @@ if __name__ == "__main__":
   toggle = Toggle(100, 100)
   for _ in gui_app.render():
     toggle.handle_input()
-    toggle.render()
+    toggle.render(rl.Rectangle(100, 100, 160, 80))
 
