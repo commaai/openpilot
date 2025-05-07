@@ -216,13 +216,13 @@ class SubMaster:
       self.valid[s] = msg.valid
 
     for s in self.services:
-      if SERVICE_LIST[s].frequency > 1e-5 and not self.simulation:
+      if SERVICE_LIST[s].frequency > 1e-5:
         # alive if delay is within 10x the expected frequency
-        self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency)
-        self.freq_ok[s] = self.freq_tracker[s].valid
+        self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
+        self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
       else:
         self.freq_ok[s] = True
-        self.alive[s] = self.seen[s] if self.simulation else True
+        self.alive[s] = True
 
   def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
     return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
