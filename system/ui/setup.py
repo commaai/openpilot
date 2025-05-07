@@ -97,16 +97,16 @@ class Setup:
     desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE, TEXT_COLOR)
 
-    triangle_button_rect = rl.Rectangle(rect.width - 310, 0, 310, rect.height)
+    btn_rect = rl.Rectangle(rect.width - 310, 0, 310, rect.height)
 
-    ret = gui_button(triangle_button_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
+    ret = 0 #gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
 
     center_y = rect.height / 2
-    triangle_size = 50
+    arrow_size = 50
 
-    p1 = rl.Vector2(rect.width - 200, center_y - triangle_size)
-    p2 = rl.Vector2(rect.width - 200 + triangle_size * 2, center_y)
-    p3 = rl.Vector2(rect.width - 200, center_y + triangle_size)
+    p1 = rl.Vector2(btn_rect.x + btn_rect.width / 2 - arrow_size, center_y - arrow_size)
+    p2 = rl.Vector2(btn_rect.x + btn_rect.width / 2 + arrow_size, center_y)
+    p3 = rl.Vector2(btn_rect.x + btn_rect.width / 2 - arrow_size, center_y + arrow_size)
     rl.draw_triangle(p1, p2, p3, rl.WHITE)
 
     if ret:
