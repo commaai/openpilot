@@ -448,6 +448,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
   },
 
+  EventName.stockLkas: {
+    ET.PERMANENT: Alert(
+      "Lane Departure Detected",
+      "Stock LKAS: Risk of Collision",
+      AlertStatus.critical, AlertSize.full,
+      Priority.HIGHEST, VisualAlert.fcw, AudibleAlert.none, 2.),
+    ET.NO_ENTRY: NoEntryAlert("Stock AEB: Risk of Collision"),
+  },
+
   EventName.fcw: {
     ET.PERMANENT: Alert(
       "BRAKE!",
