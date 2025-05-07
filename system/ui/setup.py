@@ -15,8 +15,10 @@ from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrappe
 from openpilot.system.ui.widgets.keyboard import Keyboard
 
 MARGIN = 50
-TITLE_FONT_SIZE = 90
-BODY_FONT_SIZE = 80
+TEXT_COLOR = rl.WHITE
+TITLE_FONT_SIZE = 116
+TITLE_FONT_WEIGHT = FontWeight.MEDIUM
+BODY_FONT_SIZE = 100
 BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
 
@@ -90,10 +92,10 @@ class Setup:
 
   def render_getting_started(self, rect):
     title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
+    gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, TEXT_COLOR, FontWeight.MEDIUM)
 
-    desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 265, BODY_FONT_SIZE * 3)
-    gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE)
+    desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, BODY_FONT_SIZE * 3)
+    gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE, TEXT_COLOR)
 
     triangle_button_rect = rl.Rectangle(rect.width - 310, 0, 310, rect.height)
 
