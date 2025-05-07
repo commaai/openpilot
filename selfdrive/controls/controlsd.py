@@ -47,6 +47,10 @@ class Controls:
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose | None = None
 
+    # Sticky engagement and brake release resume
+    self.brake_pressed_prev = False
+    self.sticky_enabled = False
+
     self.LoC = LongControl(self.CP)
     self.VM = VehicleModel(self.CP)
     self.LaC: LatControl
@@ -68,6 +72,13 @@ class Controls:
   def state_control(self):
     CS = self.sm['carState']
 
+    # Track sticky engagement
+    if self.sm['selfdriveState'].enabled and not self.sticky_enabled:
+      self.sticky_enabled = True
+    # Clear sticky on explicit disengage
+    if not self.sm['selfdriveState'].enabled and self.sticky_enabled and not CS.brakePressed:
+      self.sticky_enabled = False
+
     # Update VehicleModel
     lp = self.sm['liveParameters']
     x = max(lp.stiffnessFactor, 0.1)
@@ -81,19 +92,34 @@ class Controls:
     if self.CP.lateralTuning.which() == 'torque':
       torque_params = self.sm['liveTorqueParameters']
       if self.sm.all_checks(['liveTorqueParameters']) and torque_params.useParams:
-        self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered, torque_params.latAccelOffsetFiltered,
+        self.LaC.update_live_torque_params(torque_params.latAccelFactorFiltered,
+                                           torque_params.latAccelOffsetFiltered,
                                            torque_params.frictionCoefficientFiltered)
 
     long_plan = self.sm['longitudinalPlan']
     model_v2 = self.sm['modelV2']
 
     CC = car.CarControl.new_message()
-    CC.enabled = self.sm['selfdriveState'].enabled
+    CC.enabled = self.sticky_enabled
 
     # Check which actuators can be enabled
     standstill = abs(CS.vEgo) <= max(self.CP.minSteerSpeed, 0.3) or CS.standstill
-    CC.latActive = True
-    CC.longActive = CC.enabled and not any(e.overrideLongitudinal for e in self.sm['onroadEvents']) and self.CP.openpilotLongitudinalControl
+    # Pause lateral on brake, resume on release
+    if CS.brakePressed:
+      CC.latActive = False
+      self.brake_pressed_prev = True
+    else:
+      if self.brake_pressed_prev and CC.enabled:
+        CC.latActive = True
+      else:
+        CC.latActive = (CC.enabled
+                       and not CS.steerFaultTemporary
+                       and not CS.steerFaultPermanent
+                       and (not standstill or self.CP.steerAtStandstill))
+      self.brake_pressed_prev = False
+
+    # Longitudinal disabled
+    CC.longActive = self.sticky_enabled and not any(e.overrideLongitudinal for e in self.sm['onroadEvents']) and self.CP.openpilotLongitudinalControl  # longitudinal bajo demanda
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
@@ -110,25 +136,28 @@ class Controls:
 
     # accel PID loop
     pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, CS.vCruise * CV.KPH_TO_MS)
-    actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget, long_plan.shouldStop, pid_accel_limits))
+    actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget,
+                                           long_plan.shouldStop, pid_accel_limits))
 
     # Steering PID loop and lateral MPC
-    # Reset desired curvature to current to avoid violating the limits on engage
     new_desired_curvature = model_v2.action.desiredCurvature if CC.latActive else self.curvature
-    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo, self.desired_curvature, new_desired_curvature, lp.roll)
+    self.desired_curvature, curvature_limited = clip_curvature(CS.vEgo,
+                                                              self.desired_curvature,
+                                                              new_desired_curvature, lp.roll)
 
     actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
-                                                       self.steer_limited_by_controls, self.desired_curvature,
-                                                       self.calibrated_pose, curvature_limited)  # TODO what if not available
+                                                       self.steer_limited_by_controls,
+                                                       self.desired_curvature,
+                                                       self.calibrated_pose,
+                                                       curvature_limited)
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
-    # Ensure no NaNs/Infs
+
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
       if not isinstance(attr, SupportsFloat):
         continue
-
       if not math.isfinite(attr):
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
@@ -138,15 +167,15 @@ class Controls:
   def publish(self, CC, lac_log):
     CS = self.sm['carState']
 
-    # Orientation and angle rates can be useful for carcontroller
-    # Only calibrated (car) frame is relevant for the carcontroller
+    # Orientation and angle rates
     CC.currentCurvature = self.curvature
     if self.calibrated_pose is not None:
       CC.orientationNED = self.calibrated_pose.orientation.xyz.tolist()
       CC.angularVelocity = self.calibrated_pose.angular_velocity.xyz.tolist()
 
-    CC.cruiseControl.override = CC.enabled and not CC.longActive and self.CP.openpilotLongitudinalControl
-    CC.cruiseControl.cancel = CS.cruiseState.enabled and (not CC.enabled or not self.CP.pcmCruise)
+    # Disable stock cruise on engage
+    CC.cruiseControl.override = False
+    CC.cruiseControl.cancel = CC.enabled
 
     speeds = self.sm['longitudinalPlan'].speeds
     if len(speeds):
@@ -174,10 +203,6 @@ class Controls:
       else:
         self.steer_limited_by_controls = abs(CC.actuators.torque - CO.actuatorsOutput.torque) > 1e-2
 
-    # TODO: both controlsState and carControl valids should be set by
-    #       sm.all_checks(), but this creates a circular dependency
-
-    # controlsState
     dat = messaging.new_message('controlsState')
     dat.valid = CS.canValid
     cs = dat.controlsState
@@ -222,7 +247,6 @@ def main():
   config_realtime_process(4, Priority.CTRL_HIGH)
   controls = Controls()
   controls.run()
-
 
 if __name__ == "__main__":
   main()
