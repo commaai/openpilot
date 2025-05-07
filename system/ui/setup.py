@@ -99,20 +99,17 @@ class Setup:
 
     triangle_button_rect = rl.Rectangle(rect.width - 310, 0, 310, rect.height)
 
+    ret = gui_button(triangle_button_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
+
     center_y = rect.height / 2
     triangle_size = 50
-
-    mouse_pos = rl.get_mouse_position()
-    is_hovered = rl.check_collision_point_rec(mouse_pos, triangle_button_rect)
-    button_color = rl.Color(70, 91, 234, 255) if is_hovered else rl.Color(51, 51, 51, 255)
-    rl.draw_rectangle_rec(triangle_button_rect, button_color)
 
     p1 = rl.Vector2(rect.width - 200, center_y - triangle_size)
     p2 = rl.Vector2(rect.width - 200 + triangle_size * 2, center_y)
     p3 = rl.Vector2(rect.width - 200, center_y + triangle_size)
     rl.draw_triangle(p1, p2, p3, rl.WHITE)
 
-    if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    if ret:
       self.state = SetupState.NETWORK_SETUP
       self.wifi_manager.request_scan()
 
