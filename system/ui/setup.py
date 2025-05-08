@@ -123,31 +123,34 @@ class Setup:
       self.wifi_manager.request_scan()
 
   def render_network_setup(self, rect):
-    title_rect = rl.Rectangle(rect.x, rect.y, rect.width, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
     gui_label(title_rect, "Connect to Wi-Fi", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
-    wifi_rect = rl.Rectangle(rect.x, rect.y + TITLE_FONT_SIZE + 25, rect.width, rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN)
-    self.wifi_ui.render(wifi_rect)
+    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN + 25, rect.width - MARGIN * 2, rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN * 3)
+    rl.draw_rectangle_rounded(wifi_rect, 0.05, 10, rl.Color(51, 51, 51, 255))
+    wifi_content_rect = rl.Rectangle(wifi_rect.x + MARGIN, wifi_rect.y, wifi_rect.width - MARGIN * 2, wifi_rect.height)
+    self.wifi_ui.render(wifi_content_rect)
 
-    button_width = (rect.width - BUTTON_SPACING) / 2
-    button_y = rect.height - BUTTON_HEIGHT
+    button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
+    button_y = rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x, button_y, button_width, BUTTON_HEIGHT), "Back"):
+    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.GETTING_STARTED
 
     continue_enabled = True
     continue_text = "Continue"
 
-    try:
-      urllib.request.urlopen("https://google.com", timeout=0.5)
-    except urllib.error.HTTPError:
-      continue_text = "Waiting for internet"
-      continue_enabled = False
+    # FIXME: use coroutine/thread
+    # try:
+    #   urllib.request.urlopen("https://google.com", timeout=0.5)
+    # except urllib.error.HTTPError:
+    #   continue_text = "Waiting for internet"
+    #   continue_enabled = False
 
     if gui_button(
-      rl.Rectangle(rect.x + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
+      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       continue_text,
-      ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
+      button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
     ):
       if continue_enabled:
         self.state = SetupState.SOFTWARE_SELECTION
