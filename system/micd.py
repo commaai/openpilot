@@ -53,7 +53,7 @@ class Mic:
     self.sound_pressure_weighted = 0
     self.sound_pressure_level_weighted = 0
 
-    self.lock = threading.Lock()  # Add a lock for thread safety
+    self.lock = threading.Lock()
 
   def update(self):
     with self.lock:
