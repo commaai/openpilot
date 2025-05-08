@@ -2,6 +2,7 @@ import threading
 import time
 import os
 from typing import Generic, Protocol, TypeVar
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 
 
@@ -48,7 +49,7 @@ class BaseWindow(Generic[R]):
       self._stop_event.set()
       self._thread.join(timeout=2.0)
       if self._thread.is_alive():
-        print(f"WARNING: failed to join {self._title} thread")
+        cloudlog.warning(f"Failed to join {self._title} thread")
 
   def __del__(self):
     self.close()
