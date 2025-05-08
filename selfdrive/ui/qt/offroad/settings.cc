@@ -61,16 +61,23 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Display speed in km/h instead of mph."),
       "../assets/offroad/icon_metric.png",
     },
+    {
+      "LateralOnlyMode",
+      tr("Lateral Only"),
+      tr("Enable steering assistance only. Speed control is manual via the stock cruise SET button; lateral pauses on brake and resumes on release."),
+      "../assets/offroad/icon_lateral_only.png",
+    }
   };
 
-
   std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
-  long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
-                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
-                                             "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
-                                             "your steering wheel distance button."),
-                                          "../assets/offroad/icon_speed_limit.png",
-                                          longi_button_texts);
+  long_personality_setting = new ButtonParamControl(
+    "LongitudinalPersonality", tr("Driving Personality"),
+    tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
+       "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
+       "your steering wheel distance button."),
+    "../assets/offroad/icon_speed_limit.png",
+    longi_button_texts
+  );
 
   // set up uiState update for personality setting
   QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
@@ -84,7 +91,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
 
-    // insert longitudinal personality after NDOG toggle
+    // insert longitudinal personality after DisengageOnAccelerator toggle
     if (param == "DisengageOnAccelerator") {
       addItem(long_personality_setting);
     }
@@ -292,8 +299,7 @@ void DevicePanel::updateCalibDescription() {
 
 void DevicePanel::reboot() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reboot?"), tr("Reboot"), this)) {
-      // Check engaged again in case it changed while the dialog was open
+    if (ConfirmationDialog::confirm(tr("Are você sure want reboot?"), tr("Reboot"), this)) {
       if (!uiState()->engaged()) {
         params.putBool("DoReboot", true);
       }
@@ -305,8 +311,7 @@ void DevicePanel::reboot() {
 
 void DevicePanel::poweroff() {
   if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to power off?"), tr("Power Off"), this)) {
-      // Check engaged again in case it changed while the dialog was open
+    if (ConfirmationDialog::confirm(tr("Are você sure want power off?"), tr("Power Off"), this)) {
       if (!uiState()->engaged()) {
         params.putBool("DoShutdown", true);
       }
@@ -322,12 +327,9 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 
 void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   if (!param.isEmpty()) {
-    // Check if param ends with "Panel" to determine if it's a panel name
     if (param.endsWith("Panel")) {
       QString panelName = param;
-      panelName.chop(5); // Remove "Panel" suffix
-      
-      // Find the panel by name
+      panelName.chop(5);
       for (int i = 0; i < nav_btns->buttons().size(); i++) {
         if (nav_btns->buttons()[i]->text() == tr(panelName.toStdString().c_str())) {
           index = i;
@@ -338,19 +340,16 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
       emit expandToggleDescription(param);
     }
   }
-  
+
   panel_widget->setCurrentIndex(index);
   nav_btns->buttons()[index]->setChecked(true);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-
-  // setup two main layouts
-  sidebar_widget = new QWidget;
+  QWidget *sidebar_widget = new QWidget;
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
   panel_widget = new QStackedWidget();
 
-  // close button
   QPushButton *close_btn = new QPushButton(tr("×"));
   close_btn->setStyleSheet(R"(
     QPushButton {
@@ -369,7 +368,6 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
   QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
 
-  // setup panels
   DevicePanel *device = new DevicePanel(this);
   QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
@@ -413,7 +411,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
     nav_btns->addButton(btn);
     sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
 
-    const int lr_margin = name != tr("Network") ? 50 : 0;  // Network panel handles its own margins
+    int lr_margin = (name != tr("Network")) ? 50 : 0;
     panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
 
     ScrollView *panel_frame = new ScrollView(panel, this);
@@ -424,9 +422,9 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
       panel_widget->setCurrentWidget(w);
     });
   }
+
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
 
-  // main settings layout, sidebar + main panel
   QHBoxLayout *main_layout = new QHBoxLayout(this);
 
   sidebar_widget->setFixedWidth(500);
