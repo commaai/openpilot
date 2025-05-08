@@ -24,7 +24,7 @@ class TestNNLCFingerprintBase:
     CP_SP = CarInterface.get_non_essential_params_sp(CP, car_name)
     CI = CarInterface(CP, CP_SP)
 
-    sunnypilot_interfaces.setup_interfaces(CP, CP_SP, Params())
+    sunnypilot_interfaces.setup_interfaces(CI, Params())
 
     return CI
 

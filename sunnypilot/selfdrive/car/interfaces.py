@@ -26,8 +26,8 @@ def log_fingerprint(CP: structs.CarParams) -> None:
     sentry.capture_fingerprint(CP.carFingerprint, CP.brand)
 
 
-def _initialize_neural_network_lateral_control(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None,
-                                              enabled: bool = False) -> None:
+def _initialize_neural_network_lateral_control(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
+                                               params: Params = None, enabled: bool = False) -> None:
   if params is None:
     params = Params()
 
@@ -40,7 +40,7 @@ def _initialize_neural_network_lateral_control(CP: structs.CarParams, CP_SP: str
     enabled = params.get_bool("NeuralNetworkLateralControl")
 
   if enabled:
-    CarInterfaceBase.configure_torque_tune(CP.carFingerprint, CP.lateralTuning)
+    CI.configure_torque_tune(CP.carFingerprint, CP.lateralTuning)
 
   CP_SP.neuralNetworkLateralControl.model.path = nnlc_model_path
   CP_SP.neuralNetworkLateralControl.model.name = nnlc_model_name
@@ -61,8 +61,11 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
           CP.radarUnavailable = False
 
 
-def setup_interfaces(CP: structs.CarParams, CP_SP: structs.CarParamsSP, params: Params = None):
-  _initialize_neural_network_lateral_control(CP, CP_SP, params)
+def setup_interfaces(CI: CarInterfaceBase, params: Params = None):
+  CP = CI.CP
+  CP_SP = CI.CP_SP
+
+  _initialize_neural_network_lateral_control(CI, CP, CP_SP, params)
   _initialize_radar_tracks(CP, CP_SP, params)
 
 

@@ -22,7 +22,7 @@ class TestNNTorqueModel:
     CP_SP = CarInterface.get_non_essential_params_sp(CP, car_name)
     CI = CarInterface(CP, CP_SP)
 
-    sunnypilot_interfaces.setup_interfaces(CP, CP_SP, params)
+    sunnypilot_interfaces.setup_interfaces(CI, params)
 
     CP_SP = convert_to_capnp(CP_SP)
 
