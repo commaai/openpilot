@@ -73,6 +73,14 @@ class Controls:
   def state_control(self):
     CS = self.sm['carState']
 
+    # Froggpilot workaround: pretend stock cruise is active in lateral-only mode to avoid mismatch
+    if self.sticky_enabled and not self.CP.openpilotLongitudinalControl:
+      CS.cruiseState.enabled = True
+      self.CP.pcmCruise = True
+
+    # Sticky engagement persists through brake
+    CS = self.sm['carState']
+
     # Sticky engagement persists through brake
     if self.sm['selfdriveState'].enabled and not self.sticky_enabled:
       self.sticky_enabled = True
