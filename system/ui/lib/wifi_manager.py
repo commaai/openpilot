@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 import threading
 import time
 import uuid
@@ -11,6 +12,10 @@ from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
 from openpilot.common.swaglog import cloudlog
+
+from typing import TypeVar
+
+T = TypeVar('T')  # Create a generic type variable
 
 # NetworkManager constants
 NM = "org.freedesktop.NetworkManager"
@@ -437,11 +442,15 @@ class WifiManagerWrapper:
   @property
   def networks(self) -> list[NetworkInfo]:
     """Get the current list of networks."""
-    return self._manager.networks if self._manager else []
+    if not self._manager:
+      return []
+    return self._run_coroutine_sync(lambda: self._manager.networks.copy(), default=[])
 
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""
-    return self._manager.is_saved(ssid) if self._manager else False
+    if not self._manager:
+      return False
+    return self._run_coroutine_sync(lambda: self._manager.is_saved(ssid))
 
   def connect(self):
     """Connect to DBus and start Wi-Fi scanning."""
@@ -479,3 +488,22 @@ class WifiManagerWrapper:
       cloudlog.error("WifiManager thread is not running")
       return
     asyncio.run_coroutine_threadsafe(coro, self._loop)
+
+  def _run_coroutine_sync(self, func, *args, default: T | None = None) -> T:
+    """Run a function synchronously in the async thread."""
+    if not self._running or not self._loop or not self._manager:
+      return default  # type: ignore
+    future: concurrent.futures.Future[T] = concurrent.futures.Future()
+
+    def wrapper() -> None:
+      try:
+        future.set_result(func(*args))
+      except Exception as e:
+        future.set_exception(e)
+
+    try:
+      self._loop.call_soon_threadsafe(wrapper)
+      return future.result(timeout=1.0)
+    except Exception as e:
+      cloudlog.error(f"WifiManagerWrapper property access failed: {e}")
+      return default  # type: ignore
