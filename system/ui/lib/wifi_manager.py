@@ -398,15 +398,15 @@ class WifiManagerWrapper:
 
     self._thread = threading.Thread(target=self._run, daemon=True)
     self._loop: asyncio.EventLoop | None = None
-    self._running = False
+    self._running = threading.Event()
 
   def set_callbacks(self, callbacks: WifiManagerCallbacks):
     self._callbacks = callbacks
 
   def start(self) -> None:
-    if not self._running:
+    if not self._running.is_set():
       self._thread.start()
-      while self._thread is not None and not self._running:
+      while not self._running.is_set():
         time.sleep(0.1)
 
   def _run(self):
@@ -415,24 +415,24 @@ class WifiManagerWrapper:
 
     try:
       self._manager = WifiManager(self._callbacks)
-      self._running = True
+      self._running.set()
       self._loop.run_forever()
     except Exception as e:
       cloudlog.error(f"Error in WifiManagerWrapper thread: {e}")
     finally:
       if self._loop.is_running():
         self._loop.stop()
-      self._running = False
+      self._running.clear()
 
   def shutdown(self) -> None:
-    if self._running:
+    if self._running.is_set():
       if self._manager is not None:
         self._run_coroutine(self._manager.shutdown())
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():
         self._thread.join(timeout=2.0)
-      self._running = False
+      self._running.clear()
 
   @property
   def networks(self) -> list[NetworkInfo]:
@@ -475,7 +475,7 @@ class WifiManagerWrapper:
 
   def _run_coroutine(self, coro):
     """Run a coroutine in the async thread."""
-    if not self._running or not self._loop:
+    if not self._running.is_set() or not self._loop:
       cloudlog.error("WifiManager thread is not running")
       return
     asyncio.run_coroutine_threadsafe(coro, self._loop)
