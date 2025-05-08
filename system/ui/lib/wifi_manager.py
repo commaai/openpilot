@@ -442,15 +442,11 @@ class WifiManagerWrapper:
   @property
   def networks(self) -> list[NetworkInfo]:
     """Get the current list of networks."""
-    if not self._manager:
-      return []
-    return self._run_coroutine_sync(lambda: self._manager.networks.copy(), default=[])
+    return self._run_coroutine_sync(lambda manager: manager.networks.copy(), default=[])
 
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""
-    if not self._manager:
-      return False
-    return self._run_coroutine_sync(lambda: self._manager.is_saved(ssid))
+    return self._run_coroutine_sync(lambda manager: manager.is_saved(ssid), default=False)
 
   def connect(self):
     """Connect to DBus and start Wi-Fi scanning."""
@@ -489,21 +485,21 @@ class WifiManagerWrapper:
       return
     asyncio.run_coroutine_threadsafe(coro, self._loop)
 
-  def _run_coroutine_sync(self, func, *args, default: T | None = None) -> T:
+  def _run_coroutine_sync(self, func: Callable[[WifiManager], T], default: T) -> T:
     """Run a function synchronously in the async thread."""
     if not self._running or not self._loop or not self._manager:
-      return default  # type: ignore
+      return default
     future = concurrent.futures.Future[T]()
 
-    def wrapper() -> None:
+    def wrapper(manager: WifiManager) -> None:
       try:
-        future.set_result(func(*args))
+        future.set_result(func(manager))
       except Exception as e:
         future.set_exception(e)
 
     try:
-      self._loop.call_soon_threadsafe(wrapper)
+      self._loop.call_soon_threadsafe(wrapper, self._manager)
       return future.result(timeout=1.0)
     except Exception as e:
       cloudlog.error(f"WifiManagerWrapper property access failed: {e}")
-      return default  # type: ignore
+      return default
