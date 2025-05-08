@@ -71,22 +71,25 @@ class Mic:
 
   def callback(self, indata, frames, time, status):
     """
-    Using amplitude measurements, calculate an uncalibrated sound pressure and sound pressure level.
-    Then apply A-weighting to the raw amplitudes and run the same calculations again.
-
-    Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
+    Using amplitude measurements, calculate an uncalibrated sound pressure and
+    sound pressure level, then apply A‐weighting. Only the last full FFT window
+    is used to update the microphone state.
     """
     with self.lock:
       self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
-      while self.measurements.size >= FFT_SAMPLES:
-        measurements = self.measurements[:FFT_SAMPLES]
+      n_full = self.measurements.size // FFT_SAMPLES
+      if n_full == 0:
+        return
 
-        self.sound_pressure, _ = calculate_spl(measurements)
-        measurements_weighted = apply_a_weighting(measurements)
-        self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
+      start = (n_full - 1) * FFT_SAMPLES
+      window = self.measurements[start:start + FFT_SAMPLES]
 
-        self.measurements = self.measurements[FFT_SAMPLES:]
+      self.sound_pressure, _ = calculate_spl(window)
+      window_weighted = apply_a_weighting(window)
+      self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(window_weighted)
+
+      self.measurements = self.measurements[n_full * FFT_SAMPLES:]
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):
