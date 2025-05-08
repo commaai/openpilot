@@ -15,7 +15,7 @@ from openpilot.common.swaglog import cloudlog
 
 from typing import TypeVar
 
-T = TypeVar('T')  # Create a generic type variable
+T = TypeVar("T")
 
 # NetworkManager constants
 NM = "org.freedesktop.NetworkManager"
@@ -493,7 +493,7 @@ class WifiManagerWrapper:
     """Run a function synchronously in the async thread."""
     if not self._running or not self._loop or not self._manager:
       return default  # type: ignore
-    future: concurrent.futures.Future[T] = concurrent.futures.Future()
+    future = concurrent.futures.Future[T]()
 
     def wrapper() -> None:
       try:
