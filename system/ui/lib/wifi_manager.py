@@ -24,6 +24,8 @@ NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
 NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
 
 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
+DISCONNECTED_SCAN_INTERVAL = 30  # Scan interval when not connected
+CONNECTED_SCAN_INTERVAL = 60     # Scan interval when connected
 
 # NetworkManager device states
 class NMDeviceState(IntEnum):
@@ -200,7 +202,11 @@ class WifiManager:
       try:
         await self.request_scan()
         await self._get_available_networks()
-        await asyncio.sleep(30)
+
+        # Use longer interval when connected
+        is_connected = any(network.is_connected for network in self.networks)
+        scan_interval = CONNECTED_SCAN_INTERVAL if is_connected else DISCONNECTED_SCAN_INTERVAL
+        await asyncio.sleep(scan_interval)
       except asyncio.CancelledError:
         break
       except DBusError as e:
