@@ -58,7 +58,7 @@ class Setup:
     except (FileNotFoundError, ValueError):
       self.state = SetupState.LOW_VOLTAGE
 
-  def render(self, rect):
+  def render(self, rect: rl.Rectangle):
     if self.state == SetupState.LOW_VOLTAGE:
       self.render_low_voltage(rect)
     elif self.state == SetupState.GETTING_STARTED:
@@ -72,7 +72,7 @@ class Setup:
     elif self.state == SetupState.DOWNLOAD_FAILED:
       self.render_download_failed(rect)
 
-  def render_low_voltage(self, rect):
+  def render_low_voltage(self, rect: rl.Rectangle):
     icon_rect = rl.Rectangle(rect.x + 110, rect.y + 144, 100, 100)
     rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), "⚠", rl.Vector2(icon_rect.x, icon_rect.y), 100, 0, rl.Color(255, 89, 79, 255))
 
@@ -91,7 +91,7 @@ class Setup:
     if gui_button(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT), "Continue"):
       self.state = SetupState.GETTING_STARTED
 
-  def render_getting_started(self, rect):
+  def render_getting_started(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
     gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, rl.WHITE, FontWeight.MEDIUM)
 
@@ -122,7 +122,7 @@ class Setup:
       self.state = SetupState.NETWORK_SETUP
       self.wifi_manager.request_scan()
 
-  def render_network_setup(self, rect):
+  def render_network_setup(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
     gui_label(title_rect, "Connect to Wi-Fi", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
@@ -155,7 +155,7 @@ class Setup:
       if continue_enabled:
         self.state = SetupState.SOFTWARE_SELECTION
 
-  def render_software_selection(self, rect):
+  def render_software_selection(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x, rect.y, rect.width, TITLE_FONT_SIZE)
     gui_label(title_rect, "Choose Software to Install", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
@@ -207,11 +207,11 @@ class Setup:
         else:
           self.get_custom_url()
 
-  def render_downloading(self, rect):
+  def render_downloading(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE)
     gui_label(title_rect, "Downloading...", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
-  def render_download_failed(self, rect):
+  def render_download_failed(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE)
     gui_label(title_rect, "Download Failed", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
@@ -250,7 +250,7 @@ class Setup:
 
       gui_app.close()
 
-  def download(self, url):
+  def download(self, url: str):
     # autocomplete incomplete URLs
     if url.match("^([^/.]+)/([^/]+)$"):
       url = f"https://installer.comma.ai/{url}"
@@ -308,7 +308,7 @@ class Setup:
       error_msg = "Ensure the entered URL is valid, and the device's internet connection is good."
       self.download_failed(self.download_url, error_msg)
 
-  def download_failed(self, url, reason):
+  def download_failed(self, url: str, reason: str):
     self.failed_url = url
     self.failed_reason = reason
     self.state = SetupState.DOWNLOAD_FAILED
