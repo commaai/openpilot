@@ -16,7 +16,7 @@ DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 
 DEFAULT_TEXT_SIZE = 60
-DEFAULT_TEXT_COLOR = rl.Color(200, 200, 200, 255)
+DEFAULT_TEXT_COLOR = rl.WHITE
 FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
 
