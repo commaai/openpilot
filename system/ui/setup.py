@@ -24,7 +24,7 @@ BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
 
 OPENPILOT_URL = "https://openpilot.comma.ai"
-USER_AGENT = f"AGNOSSetup-{open('/VERSION').read().strip()}" if os.path.isfile('/VERSION') else "AGNOSSetup-dev"
+USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 
 class SetupState(IntEnum):
