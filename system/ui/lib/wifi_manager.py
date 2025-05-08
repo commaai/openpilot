@@ -6,14 +6,13 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import TypeVar
 
 from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
 from openpilot.common.swaglog import cloudlog
-
-from typing import TypeVar
 
 T = TypeVar("T")
 
