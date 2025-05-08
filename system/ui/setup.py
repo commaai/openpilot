@@ -16,7 +16,6 @@ from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrappe
 from openpilot.system.ui.widgets.keyboard import Keyboard
 
 MARGIN = 50
-TEXT_COLOR = rl.WHITE
 TITLE_FONT_SIZE = 116
 TITLE_FONT_WEIGHT = FontWeight.MEDIUM
 NEXT_BUTTON_WIDTH = 310
@@ -57,7 +56,7 @@ class Setup:
         if voltage < 7:
           self.state = SetupState.LOW_VOLTAGE
     except (FileNotFoundError, ValueError):
-      pass
+      self.state = SetupState.LOW_VOLTAGE
 
   def render(self, rect):
     if self.state == SetupState.LOW_VOLTAGE:
@@ -81,7 +80,7 @@ class Setup:
     gui_label(title_rect, "WARNING: Low Voltage", TITLE_FONT_SIZE, rl.Color(255, 89, 79, 255), FontWeight.MEDIUM)
 
     body_rect = rl.Rectangle(rect.x + 110, rect.y + 224 + TITLE_FONT_SIZE + 25, rect.width - 365 - 110, BODY_FONT_SIZE * 3)
-    gui_text_box(body_rect, "Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE)
+    gui_text_box(body_rect, "Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE, rl.WHITE)
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
@@ -94,10 +93,10 @@ class Setup:
 
   def render_getting_started(self, rect):
     title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, TEXT_COLOR, FontWeight.MEDIUM)
+    gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, rl.WHITE, FontWeight.MEDIUM)
 
     desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, BODY_FONT_SIZE * 3)
-    gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE, TEXT_COLOR)
+    gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE, rl.WHITE)
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
