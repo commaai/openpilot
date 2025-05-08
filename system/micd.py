@@ -71,9 +71,10 @@ class Mic:
 
   def callback(self, indata, frames, time, status):
     """
-    Using amplitude measurements, calculate an uncalibrated sound pressure and
-    sound pressure level, then apply A‐weighting. Only the last full FFT window
-    is used to update the microphone state.
+    Using amplitude measurements, calculate an uncalibrated sound pressure and sound pressure level.
+    Then apply A-weighting to the raw amplitudes and run the same calculations again.
+
+    Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
     with self.lock:
       self.measurements = np.concatenate((self.measurements, indata[:, 0]))
