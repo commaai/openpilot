@@ -62,6 +62,7 @@ void PlatformSelector::refresh(bool _offroad) {
     }
   }
   setEnabled(true);
+  emit refreshPanel();
 
   offroad = _offroad;
 }
