@@ -26,6 +26,7 @@ from openpilot.sunnypilot.modeld_v2.meta_helper import load_meta_constants
 from openpilot.sunnypilot.modeld_v2.model_runner import ONNXRunner, TinygradRunner
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
+LAT_SMOOTH_SECONDS = 0.0
 
 
 class FrameMeta:
@@ -163,7 +164,7 @@ def main(demo=False):
 
   # messaging
   pm = PubMaster(["modelV2", "drivingModelData", "cameraOdometry"])
-  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl"])
+  sm = SubMaster(["deviceState", "carState", "roadCameraState", "liveCalibration", "driverMonitoringState", "carControl", "liveDelay"])
 
   publish_state = PublishState()
   params = Params()
@@ -188,8 +189,8 @@ def main(demo=False):
     CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
   cloudlog.info("modeld got CarParams: %s", CP.brand)
 
-  # TODO this needs more thought, use .2s extra for now to estimate other delays
-  steer_delay = CP.steerActuatorDelay + .2
+  # Enable lagd support for modeld_v2
+  steer_delay = sm["liveDelay"].lateralDelay + LAT_SMOOTH_SECONDS
 
   DH = DesireHelper()
 
