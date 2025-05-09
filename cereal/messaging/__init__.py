@@ -145,12 +145,16 @@ class SubMaster:
     self.updated = {s: False for s in services}
     self.recv_time = {s: 0. for s in services}
     self.recv_frame = {s: 0 for s in services}
-    self.alive = {s: False for s in services}
-    self.freq_ok = {s: False for s in services}
     self.sock = {}
     self.data = {}
-    self.valid = {}
-    self.logMonoTime = {}
+    self.logMonoTime = {s: 0 for s in services}
+
+    # zero-frequency / on-demand services are always alive and presumed valid; all others must pass checks
+    on_demand = {s: SERVICE_LIST[s].frequency <= 1e5 for s in services}
+    self.static_freq_services = set(s for s in services if not on_demand[s])
+    self.alive = {s: on_demand[s] for s in services}
+    self.freq_ok = {s: on_demand[s] for s in services}
+    self.valid = {s: on_demand[s] for s in services}
 
     self.freq_tracker: Dict[str, FrequencyTracker] = {}
     self.poller = Poller()
@@ -177,15 +181,13 @@ class SubMaster:
         data = new_message(s, 0) # lists
 
       self.data[s] = getattr(data.as_reader(), s)
-      self.logMonoTime[s] = 0
-      self.valid[s] = False
       self.freq_tracker[s] = FrequencyTracker(SERVICE_LIST[s].frequency, self.update_freq, s == poll)
 
   def __getitem__(self, s: str) -> capnp.lib.capnp._DynamicStructReader:
     return self.data[s]
 
   def _check_avg_freq(self, s: str) -> bool:
-    return SERVICE_LIST[s].frequency > 0.99 and (s not in self.ignore_average_freq) and (s not in self.ignore_alive)
+    return not self.on_demand[s] and (s not in self.ignore_average_freq) and (s not in self.ignore_alive)
 
   def update(self, timeout: int = 100) -> None:
     msgs = []
@@ -216,13 +218,10 @@ class SubMaster:
       self.valid[s] = msg.valid
 
     for s in self.services:
-      if SERVICE_LIST[s].frequency > 1e-5:
-        # alive if delay is within 10x the expected frequency
+      if not self.on_demand[s]:
+        # alive if delay is within 10x the expected frequency; checks relaxed in simulator
         self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
         self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
-      else:
-        self.freq_ok[s] = True
-        self.alive[s] = True
 
   def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
     return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
