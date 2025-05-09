@@ -156,13 +156,13 @@ class Setup:
         self.state = SetupState.SOFTWARE_SELECTION
 
   def render_software_selection(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x, rect.y, rect.width, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
     gui_label(title_rect, "Choose Software to Install", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
     radio_height = 230
     radio_spacing = 30
 
-    openpilot_rect = rl.Rectangle(rect.x, rect.y + TITLE_FONT_SIZE + 50, rect.width, radio_height)
+    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
     openpilot_selected = self.selected_radio == "openpilot"
 
     rl.draw_rectangle_rounded(openpilot_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if openpilot_selected else rl.Color(79, 79, 79, 255))
@@ -172,7 +172,7 @@ class Setup:
       checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100, openpilot_rect.y + radio_height / 2 - 25)
       rl.draw_text_ex(gui_app.font(), "✓", checkmark_pos, 100, 0, rl.WHITE)
 
-    custom_rect = rl.Rectangle(rect.x, rect.y + TITLE_FONT_SIZE + 50 + radio_height + radio_spacing, rect.width, radio_height)
+    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
     custom_selected = self.selected_radio == "custom"
 
     rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
@@ -189,17 +189,17 @@ class Setup:
       elif rl.check_collision_point_rec(mouse_pos, custom_rect):
         self.selected_radio = "custom"
 
-    button_width = (rect.width - BUTTON_SPACING) / 2
-    button_y = rect.height - BUTTON_HEIGHT
+    button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
+    button_y = rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x, button_y, button_width, BUTTON_HEIGHT), "Back"):
+    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.NETWORK_SETUP
 
     continue_enabled = self.selected_radio is not None
     if gui_button(
-      rl.Rectangle(rect.x + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
+      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       "Continue",
-      ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
+      button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
     ):
       if continue_enabled:
         if self.selected_radio == "openpilot":
