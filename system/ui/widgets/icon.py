@@ -12,11 +12,6 @@ RENDER_SCALE = 4.0
 
 
 def render_svg_to_texture(asset_name: str) -> tuple[rl.Rectangle, rl.RenderTexture]:
-  """
-  Parse a limited subset of SVG (absolute M/L/C/Z, stroke-only)
-  and render directly into a high-DPI RenderTexture via pyray.
-  Returns (src_rect, render_texture).
-  """
   tree = ET.parse(os.path.join(BASEDIR, "selfdrive", "assets", asset_name))
   root = tree.getroot()
 
