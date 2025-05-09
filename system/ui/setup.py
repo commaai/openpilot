@@ -172,7 +172,8 @@ class Setup:
       checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100, openpilot_rect.y + radio_height / 2 - 25)
       rl.draw_text_ex(gui_app.font(), "✓", checkmark_pos, 100, 0, rl.WHITE)
 
-    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
+    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing,
+                               rect.width - MARGIN * 2, radio_height)
     custom_selected = self.selected_radio == "custom"
 
     rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
