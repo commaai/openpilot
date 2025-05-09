@@ -19,7 +19,7 @@ MARGIN = 50
 TITLE_FONT_SIZE = 116
 TITLE_FONT_WEIGHT = FontWeight.MEDIUM
 NEXT_BUTTON_WIDTH = 310
-BODY_FONT_SIZE = 100
+BODY_FONT_SIZE = 96
 BUTTON_HEIGHT = 160
 BUTTON_SPACING = 50
 
@@ -166,7 +166,7 @@ class Setup:
     openpilot_selected = self.selected_radio == "openpilot"
 
     rl.draw_rectangle_rounded(openpilot_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if openpilot_selected else rl.Color(79, 79, 79, 255))
-    gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", 80)
+    gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", BODY_FONT_SIZE)
 
     if openpilot_selected:
       checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100, openpilot_rect.y + radio_height / 2 - 25)
@@ -177,7 +177,7 @@ class Setup:
     custom_selected = self.selected_radio == "custom"
 
     rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
-    gui_label(rl.Rectangle(custom_rect.x + 100, custom_rect.y, custom_rect.width - 200, radio_height), "Custom Software", 80)
+    gui_label(rl.Rectangle(custom_rect.x + 100, custom_rect.y, custom_rect.width - 200, radio_height), "Custom Software", BODY_FONT_SIZE)
 
     if custom_selected:
       checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100, custom_rect.y + radio_height / 2 - 25)
