@@ -46,12 +46,14 @@ class NMDeviceState(IntEnum):
   IP_CONFIG = 70
   ACTIVATED = 100
 
+
 class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
   WPA2 = 2
   WPA3 = 3
   UNSUPPORTED = 4
+
 
 @dataclass
 class NetworkInfo:
@@ -182,7 +184,21 @@ class WifiManager:
       cloudlog.error(f"Failed to activate connection {ssid}: {str(e)}")
       return False
 
-  async def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False) -> None:
+  async def disactivate_connection(self, ssid: str) -> bool:
+    connection_path = self.saved_connections.get(ssid)
+    if not connection_path:
+      return False
+    try:
+      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+      await nm_iface.call_deactivate_connection(connection_path)
+      return True
+    except DBusError as e:
+      cloudlog.error(f"Failed to deactivate connection {ssid}: {str(e)}")
+      return False
+
+  async def connect_to_network(
+    self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False
+  ) -> None:
     """Connect to a selected Wi-Fi network."""
     try:
       self._current_connection_ssid = ssid
@@ -651,59 +667,6 @@ class WifiManager:
     """Return the last known Wi-Fi IPv4 address"""
     return self._ip_address
 
-  async def add_tethering_connection(self, ssid: str, password: str = "12345678") -> bool:
-    """Create a WiFi hotspot/tethering connection.  """
-    try:
-      if len(password) < 8:
-        cloudlog.error("Tethering password must be at least 8 characters")
-        return False
-
-      connection = {
-        'connection': {
-          'id': Variant('s', 'Hotspot'),
-          'uuid': Variant('s', str(uuid.uuid4())),
-          'type': Variant('s', '802-11-wireless'),
-          'interface-name': Variant('s', 'wlan0'),
-          'autoconnect': Variant('b', False),
-        },
-        '802-11-wireless': {
-          'band': Variant('s', 'bg'),
-          'mode': Variant('s', 'ap'),
-          'ssid': Variant('ay', ssid.encode('utf-8')),
-        },
-        '802-11-wireless-security': {
-          'group': Variant('as', ['ccmp']),
-          'key-mgmt': Variant('s', 'wpa-psk'),
-          'pairwise': Variant('as', ['ccmp']),
-          'proto': Variant('as', ['rsn']),
-          'psk': Variant('s', password),
-        },
-        'ipv4': {
-          'method': Variant('s', 'shared'),
-          'addresses': Variant('aau', [[
-            # Convert 192.168.43.1 to integer
-            192 | (168 << 8) | (43 << 16) | (1 << 24),
-            24,  # Prefix
-            0,   # Gateway (not used for shared)
-          ]]),
-          'gateway': Variant('s', '192.168.43.1'),
-          'never-default': Variant('b', True),
-        },
-        'ipv6': {
-          'method': Variant('s', 'ignore'),
-        },
-      }
-
-      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
-      new_connection = await settings_iface.call_add_connection(connection)
-      cloudlog.info(f"Added tethering connection with path: {new_connection}")
-      return True
-    except DBusError as e:
-      cloudlog.error(f"Failed to add tethering connection: {e}")
-      return False
-    except Exception as e:
-      cloudlog.error(f"Unexpected error adding tethering connection: {e}")
-      return False
 
 class WifiManagerWrapper:
   def __init__(self):
@@ -777,6 +740,10 @@ class WifiManagerWrapper:
       return
     self._run_coroutine(self._manager.activate_connection(ssid))
 
+  def disactivate_connection(self, ssid: str):
+    """Deactivate an existing Wi-Fi connection."""
+    self._run_coroutine(self._manager.disactivate_connection(ssid))
+
   def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False):
     """Connect to a Wi-Fi network."""
     if not self._manager:
@@ -785,6 +752,14 @@ class WifiManagerWrapper:
 
   def add_tethering_connection(self, ssid: str, password: str):
     self._run_coroutine(self._manager.add_tethering_connection(ssid, password))
+
+  def get_tethering_password(self) -> str:
+    """Get the current tethering password."""
+    return self._run_coroutine_sync(lambda manager: manager.get_tethering_password(), default="")
+
+  def set_tethering_password(self, password: str) -> bool:
+    """Set the tethering password."""
+    return self._run_coroutine_sync(lambda manager: manager.set_tethering_password(password), default=False)
 
   def _run_coroutine(self, coro):
     """Run a coroutine in the async thread."""
@@ -799,11 +774,21 @@ class WifiManagerWrapper:
       return default
     future = concurrent.futures.Future[T]()
 
+    async def async_wrapper(manager: WifiManager) -> None:
+        """Handle both coroutines and regular functions"""
+        try:
+            result = func(manager)
+            # If result is awaitable (coroutine), await it
+            if asyncio.iscoroutine(result):
+                result = await result
+            future.set_result(result)
+        except Exception as e:
+            future.set_exception(e)
+            cloudlog.exception(f"Error in _run_coroutine_sync: {e}")
+
     def wrapper(manager: WifiManager) -> None:
-      try:
-        future.set_result(func(manager))
-      except Exception as e:
-        future.set_exception(e)
+        """Schedule the async wrapper in the event loop"""
+        asyncio.create_task(async_wrapper(manager))
 
     try:
       self._loop.call_soon_threadsafe(wrapper, self._manager)
