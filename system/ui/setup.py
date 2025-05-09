@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import math
 import os
+import re
 import threading
-import urllib.error
 import urllib.request
-import pyray as rl
 from enum import IntEnum
+import pyray as rl
 
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
@@ -254,7 +254,7 @@ class Setup:
 
   def download(self, url: str):
     # autocomplete incomplete URLs
-    if url.match("^([^/.]+)/([^/]+)$"):
+    if re.match("^([^/.]+)/([^/]+)$", url):
       url = f"https://installer.comma.ai/{url}"
 
     self.download_url = url
