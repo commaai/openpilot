@@ -150,11 +150,11 @@ class SubMaster:
     self.logMonoTime = {s: 0 for s in services}
 
     # zero-frequency / on-demand services are always alive and presumed valid; all others must pass checks
-    on_demand = {s: SERVICE_LIST[s].frequency <= 1e5 for s in services}
-    self.static_freq_services = set(s for s in services if not on_demand[s])
-    self.alive = {s: on_demand[s] for s in services}
-    self.freq_ok = {s: on_demand[s] for s in services}
-    self.valid = {s: on_demand[s] for s in services}
+    self.on_demand = {s: SERVICE_LIST[s].frequency <= 1e5 for s in services}
+    self.static_freq_services = set(s for s in services if not self.on_demand[s])
+    self.alive = {s: self.on_demand[s] for s in services}
+    self.freq_ok = {s: self.on_demand[s] for s in services}
+    self.valid = {s: self.on_demand[s] for s in services}
 
     self.freq_tracker: Dict[str, FrequencyTracker] = {}
     self.poller = Poller()
