@@ -23,7 +23,7 @@ class Toggle:
       mouse_pos = rl.get_mouse_position()
       if rl.check_collision_point_rec(mouse_pos, self._rect):
         self._state = not self._state
-      ret = 1
+        ret = 1
 
     self._draw_background()
     self._draw_knob()
