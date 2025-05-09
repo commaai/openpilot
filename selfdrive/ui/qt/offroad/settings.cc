@@ -19,54 +19,28 @@
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
   std::vector<std::tuple<QString, QString, QString, QString>> toggle_defs{
-    {
-      "OpenpilotEnabledToggle",
-      tr("Enable openpilot"),
+    {"OpenpilotEnabledToggle", tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
-      "../assets/img_chffr_wheel.png",
-    },
-    {
-      "ExperimentalMode",
-      tr("Experimental Mode"),
-      "",
-      "../assets/img_experimental_white.svg",
-    },
-    {
-      "DisengageOnAccelerator",
-      tr("Disengage on Accelerator Pedal"),
+      "../assets/img_chffr_wheel.png"},
+    {"ExperimentalMode", tr("Experimental Mode"), "", "../assets/img_experimental_white.svg"},
+    {"DisengageOnAccelerator", tr("Disengage on Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-      "../assets/offroad/icon_disengage_on_accelerator.svg",
-    },
-    {
-      "IsLdwEnabled",
-      tr("Enable Lane Departure Warnings"),
+      "../assets/offroad/icon_disengage_on_accelerator.svg"},
+    {"IsLdwEnabled", tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
-      "../assets/offroad/icon_warning.png",
-    },
-    {
-      "AlwaysOnDM",
-      tr("Always-On Driver Monitoring"),
+      "../assets/offroad/icon_warning.png"},
+    {"AlwaysOnDM", tr("Always-On Driver Monitoring"),
       tr("Enable driver monitoring even when openpilot is not engaged."),
-      "../assets/offroad/icon_monitoring.png",
-    },
-    {
-      "RecordFront",
-      tr("Record and Upload Driver Camera"),
+      "../assets/offroad/icon_monitoring.png"},
+    {"RecordFront", tr("Record and Upload Driver Camera"),
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
-      "../assets/offroad/icon_monitoring.png",
-    },
-    {
-      "IsMetric",
-      tr("Use Metric System"),
+      "../assets/offroad/icon_monitoring.png"},
+    {"IsMetric", tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
-      "../assets/offroad/icon_metric.png",
-    },
-    {
-      "LateralOnlyMode",
-      tr("Lateral Only"),
+      "../assets/offroad/icon_metric.png"},
+    {"LateralOnlyMode", tr("Lateral Only"),
       tr("Enable steering assistance only. Speed control is manual via the stock cruise SET button; lateral pauses on brake and resumes on release."),
-      "../assets/offroad/icon_lateral_only.png",
-    }
+      "../assets/offroad/icon_lateral_only.png"},
   };
 
   std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
@@ -79,32 +53,25 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     longi_button_texts
   );
 
-  // set up uiState update for personality setting
   QObject::connect(uiState(), &UIState::uiUpdate, this, &TogglesPanel::updateState);
 
   for (auto &[param, title, desc, icon] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
-
     bool locked = params.getBool((param + "Lock").toStdString());
     toggle->setEnabled(!locked);
-
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
-
-    // insert longitudinal personality after DisengageOnAccelerator toggle
     if (param == "DisengageOnAccelerator") {
       addItem(long_personality_setting);
     }
   }
 
-  // Toggles with confirmation dialogs
   toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
   toggles["ExperimentalMode"]->setConfirmation(true, true);
 }
 
 void TogglesPanel::updateState(const UIState &s) {
   const SubMaster &sm = *(s.sm);
-
   if (sm.updated("selfdriveState")) {
     auto personality = sm["selfdriveState"].getSelfdriveState().getPersonality();
     if (personality != s.scene.personality && s.scene.started && isVisible()) {
@@ -131,9 +98,7 @@ void TogglesPanel::updateToggles() {
                                           "%5<br>")
                                   .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
                                   .arg(tr("End-to-End Longitudinal Control"))
-                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
-                                          "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
-                                          "mistakes should be expected."))
+                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. First, mistakes should be expected."))
                                   .arg(tr("New Driving Visualization"))
                                   .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
 
@@ -143,22 +108,16 @@ void TogglesPanel::updateToggles() {
     AlignedBuffer aligned_buf;
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
-
     if (hasLongitudinalControl(CP)) {
-      // normal description and toggle
       experimental_mode_toggle->setEnabled(true);
       experimental_mode_toggle->setDescription(e2e_description);
       long_personality_setting->setEnabled(true);
     } else {
-      // no long for now
       experimental_mode_toggle->setEnabled(false);
       long_personality_setting->setEnabled(false);
       params.remove("ExperimentalMode");
-
       const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
-
-      QString long_desc = unavailable + " " + \
-                          tr("openpilot longitudinal control may come in a future update.");
+      QString long_desc = unavailable + " " + tr("openpilot longitudinal control may come in a future update.");
       if (CP.getAlphaLongitudinalAvailable()) {
         if (is_release) {
           long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
@@ -168,7 +127,6 @@ void TogglesPanel::updateToggles() {
       }
       experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
     }
-
     experimental_mode_toggle->refresh();
   } else {
     experimental_mode_toggle->setDescription(e2e_description);
@@ -182,13 +140,8 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 
   pair_device = new ButtonControl(tr("Pair Device"), tr("PAIR"),
                                   tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."));
-  connect(pair_device, &ButtonControl::clicked, [=]() {
-    PairingPopup popup(this);
-    popup.exec();
-  });
+  connect(pair_device, &ButtonControl::clicked, [=]() { PairingPopup popup(this); popup.exec(); });
   addItem(pair_device);
-
-  // offroad-only buttons
 
   auto dcamBtn = new ButtonControl(tr("Driver Camera"), tr("PREVIEW"),
                                    tr("Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)"));
@@ -199,17 +152,15 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
-      params.remove("CalibrationParams");
-      params.remove("LiveTorqueParameters");
+      params.remove("CalibrationParams"); params.remove("LiveTorqueParameters");
     }
   });
   addItem(resetCalibBtn);
 
-  auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"), tr("Review the rules, features, and limitations of openpilot"));
+  auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"),
+                                        tr("Review the rules, features, and limitations of openpilot"));
   connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
-      emit reviewTrainingGuide();
-    }
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this))) { emit reviewTrainingGuide(); }
   });
   addItem(retrainingBtn);
 
@@ -227,42 +178,29 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     QMap<QString, QString> langs = getSupportedLanguages();
     QString selection = MultiOptionDialog::getSelection(tr("Select a language"), langs.keys(), langs.key(uiState()->language), this);
     if (!selection.isEmpty()) {
-      // put language setting, exit Qt UI, and trigger fast restart
       params.put("LanguageSetting", langs[selection].toStdString());
-      qApp->exit(18);
-      watchdog_kick(0);
+      qApp->exit(18); watchdog_kick(0);
     }
   });
   addItem(translateBtn);
 
-  QObject::connect(uiState()->prime_state, &PrimeState::changed, [this] (PrimeState::Type type) {
+  QObject::connect(uiState()->prime_state, &PrimeState::changed, [this](PrimeState::Type type) {
     pair_device->setVisible(type == PrimeState::PRIME_TYPE_UNPAIRED);
   });
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
-    for (auto btn : findChildren<ButtonControl *>()) {
-      if (btn != pair_device) {
-        btn->setEnabled(offroad);
-      }
-    }
+    for (auto btn : findChildren<ButtonControl *>()) if (btn != pair_device) btn->setEnabled(offroad);
   });
 
   // power buttons
-  QHBoxLayout *power_layout = new QHBoxLayout();
-  power_layout->setSpacing(30);
+  QHBoxLayout *power_layout = new QHBoxLayout(); power_layout->setSpacing(30);
 
-  QPushButton *reboot_btn = new QPushButton(tr("Reboot"));
-  reboot_btn->setObjectName("reboot_btn");
-  power_layout->addWidget(reboot_btn);
-  QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
+  QPushButton *reboot_btn = new QPushButton(tr("Reboot")); reboot_btn->setObjectName("reboot_btn");
+  power_layout->addWidget(reboot_btn); QObject::connect(reboot_btn, &QPushButton::clicked, this, &DevicePanel::reboot);
 
-  QPushButton *poweroff_btn = new QPushButton(tr("Power Off"));
-  poweroff_btn->setObjectName("poweroff_btn");
-  power_layout->addWidget(poweroff_btn);
-  QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
+  QPushButton *poweroff_btn = new QPushButton(tr("Power Off")); poweroff_btn->setObjectName("poweroff_btn");
+  power_layout->addWidget(poweroff_btn); QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
 
-  if (!Hardware::PC()) {
-    connect(uiState(), &UIState::offroadTransition, poweroff_btn, &QPushButton::setVisible);
-  }
+  if (!Hardware::PC()) connect(uiState(), &UIState::offroadTransition, poweroff_btn, &QPushButton::setVisible);
 
   setStyleSheet(R"(
     #reboot_btn { height: 120px; border-radius: 15px; background-color: #393939; }
@@ -273,54 +211,6 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   addItem(power_layout);
 }
 
-void DevicePanel::updateCalibDescription() {
-  QString desc =
-      tr("openpilot requires the device to be mounted within 4° left or right and "
-         "within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.");
-  std::string calib_bytes = params.get("CalibrationParams");
-  if (!calib_bytes.empty()) {
-    try {
-      AlignedBuffer aligned_buf;
-      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(calib_bytes.data(), calib_bytes.size()));
-      auto calib = cmsg.getRoot<cereal::Event>().getLiveCalibration();
-      if (calib.getCalStatus() != cereal::LiveCalibrationData::Status::UNCALIBRATED) {
-        double pitch = calib.getRpyCalib()[1] * (180 / M_PI);
-        double yaw = calib.getRpyCalib()[2] * (180 / M_PI);
-        desc += tr(" Your device is pointed %1° %2 and %3° %4.")
-                    .arg(QString::number(std::abs(pitch), 'g', 1), pitch > 0 ? tr("down") : tr("up"),
-                         QString::number(std::abs(yaw), 'g', 1), yaw > 0 ? tr("left") : tr("right"));
-      }
-    } catch (kj::Exception) {
-      qInfo() << "invalid CalibrationParams";
-    }
-  }
-  qobject_cast<ButtonControl *>(sender())->setDescription(desc);
-}
-
-void DevicePanel::reboot() {
-  if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are você sure want reboot?"), tr("Reboot"), this)) {
-      if (!uiState()->engaged()) {
-        params.putBool("DoReboot", true);
-      }
-    }
-  } else {
-    ConfirmationDialog::alert(tr("Disengage to Reboot"), this);
-  }
-}
-
-void DevicePanel::poweroff() {
-  if (!uiState()->engaged()) {
-    if (ConfirmationDialog::confirm(tr("Are você sure want power off?"), tr("Power Off"), this)) {
-      if (!uiState()->engaged()) {
-        params.putBool("DoShutdown", true);
-      }
-    }
-  } else {
-    ConfirmationDialog::alert(tr("Disengage to Power Off"), this);
-  }
-}
-
 void SettingsWindow::showEvent(QShowEvent *event) {
   setCurrentPanel(0);
 }
@@ -328,25 +218,21 @@ void SettingsWindow::showEvent(QShowEvent *event) {
 void SettingsWindow::setCurrentPanel(int index, const QString &param) {
   if (!param.isEmpty()) {
     if (param.endsWith("Panel")) {
-      QString panelName = param;
-      panelName.chop(5);
+      QString panelName = param; panelName.chop(5);
       for (int i = 0; i < nav_btns->buttons().size(); i++) {
-        if (nav_btns->buttons()[i]->text() == tr(panelName.toStdString().c_str())) {
-          index = i;
-          break;
-        }
+        if (nav_btns->buttons()[i]->text() == tr(panelName.toStdString().c_str())) { index = i; break; }
       }
     } else {
       emit expandToggleDescription(param);
     }
   }
-
   panel_widget->setCurrentIndex(index);
   nav_btns->buttons()[index]->setChecked(true);
 }
 
 SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-  QWidget *sidebar_widget = new QWidget;
+  // Use existing member instead of redeclaration
+  sidebar_widget = new QWidget;
   QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
   panel_widget = new QStackedWidget();
 
@@ -391,7 +277,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   for (auto &[name, panel] : panels) {
     QPushButton *btn = new QPushButton(name);
     btn->setCheckable(true);
-    btn->setChecked(nav_btns->buttons().size() == 0);
+    btn->setChecked(nav_btns->buttons().empty());
     btn->setStyleSheet(R"(
       QPushButton {
         color: grey;
@@ -424,9 +310,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   }
 
   sidebar_layout->setContentsMargins(50, 50, 100, 50);
-
   QHBoxLayout *main_layout = new QHBoxLayout(this);
-
   sidebar_widget->setFixedWidth(500);
   main_layout->addWidget(sidebar_widget);
   main_layout->addWidget(panel_widget);
