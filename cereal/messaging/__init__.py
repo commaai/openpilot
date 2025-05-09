@@ -187,7 +187,7 @@ class SubMaster:
     return self.data[s]
 
   def _check_avg_freq(self, s: str) -> bool:
-    return not self.on_demand[s] and (s not in self.ignore_average_freq) and (s not in self.ignore_alive)
+    return SERVICE_LIST[s].frequency > 0.99 and (s not in self.ignore_average_freq) and (s not in self.ignore_alive)
 
   def update(self, timeout: int = 100) -> None:
     msgs = []
