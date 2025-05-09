@@ -13,19 +13,21 @@ class Toggle:
     self._state = initial_state
     self._rect = rl.Rectangle(x, y, WIDTH, KNOB_HEIGHT)
 
-  def handle_input(self):
-    if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON):
-      mouse_pos = rl.get_mouse_position()
-      if rl.check_collision_point_rec(mouse_pos, self._rect):
-        self._state = not self._state
-
   def get_state(self):
     return self._state
 
   def render(self, rect: rl.Rectangle):
     self._rect = rect
+    ret = 0
+    if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON):
+      mouse_pos = rl.get_mouse_position()
+      if rl.check_collision_point_rec(mouse_pos, self._rect):
+        self._state = not self._state
+      ret = 1
+
     self._draw_background()
     self._draw_knob()
+    return ret
 
   def _draw_background(self):
     bg_rect = rl.Rectangle(
