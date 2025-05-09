@@ -52,12 +52,21 @@ function op_run_command() {
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_get_openpilot_dir() {
+  # First try traversing up the directory tree
   while [[ "$OPENPILOT_ROOT" != '/' ]];
   do
     if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
       return 0
     fi
     OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
+  done
+
+  # Fallback to hardcoded directories if not found
+  for dir in "$HOME/openpilot" "/data/openpilot"; do
+    if [[ -f "$dir/launch_openpilot.sh" ]]; then
+      OPENPILOT_ROOT="$dir"
+      return 0
+    fi
   done
 }
 
@@ -275,7 +284,7 @@ function op_venv() {
 
 function op_adb() {
   op_before_cmd
-  op_run_command tools/adb_shell.sh
+  op_run_command tools/scripts/adb_ssh.sh
 }
 
 function op_check() {
@@ -377,11 +386,6 @@ function op_default() {
   echo "  op is your entry point for all things related to openpilot development."
   echo "  op is only a wrapper for existing scripts, tools, and commands."
   echo "  op will always show you what it will run on your system."
-  echo ""
-  echo "  op will try to find your openpilot directory in the following order:"
-  echo "   1: use the directory specified with the --dir option"
-  echo "   2: use the current working directory"
-  echo "   3: go up the file tree non-recursively"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
