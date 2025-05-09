@@ -8,6 +8,7 @@
 
 #include "common/watchdog.h"
 #include "common/util.h"
+#include "common/params.h"
 #include "selfdrive/ui/qt/network/networking.h"
 #include "selfdrive/ui/qt/offroad/settings.h"
 #include "selfdrive/ui/qt/qt_window.h"
@@ -15,6 +16,8 @@
 #include "selfdrive/ui/qt/widgets/scrollview.h"
 #include "selfdrive/ui/qt/offroad/developer_panel.h"
 #include "selfdrive/ui/qt/offroad/firehose.h"
+
+static Params params;
 
 TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   // param, title, desc, icon
@@ -40,7 +43,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/offroad/icon_metric.png"},
     {"LateralOnlyMode", tr("Lateral Only"),
       tr("Enable steering assistance only. Speed control is manual via the stock cruise SET button; lateral pauses on brake and resumes on release."),
-      "../assets/offroad/icon_lateral_only.png"},
+      "../assets/offroad/icon_lateral_only.png"}
   };
 
   std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
@@ -98,7 +101,7 @@ void TogglesPanel::updateToggles() {
                                           "%5<br>")
                                   .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
                                   .arg(tr("End-to-End Longitudinal Control"))
-                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. First, mistakes should be expected."))
+                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. Mistakes should be expected."))
                                   .arg(tr("New Driving Visualization"))
                                   .arg(tr("The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner."));
 
@@ -160,7 +163,9 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"),
                                         tr("Review the rules, features, and limitations of openpilot"));
   connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) { emit reviewTrainingGuide(); }
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) {
+      emit reviewTrainingGuide();
+    }
   });
   addItem(retrainingBtn);
 
@@ -200,132 +205,4 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   QPushButton *poweroff_btn = new QPushButton(tr("Power Off")); poweroff_btn->setObjectName("poweroff_btn");
   power_layout->addWidget(poweroff_btn); QObject::connect(poweroff_btn, &QPushButton::clicked, this, &DevicePanel::poweroff);
 
-  if (!Hardware::PC()) connect(uiState(), &UIState::offroadTransition, poweroff_btn, &QPushButton::setVisible);
-
-  setStyleSheet(R"(
-    #reboot_btn { height: 120px; border-radius: 15px; background-color: #393939; }
-    #reboot_btn:pressed { background-color: #4a4a4a; }
-    #poweroff_btn { height: 120px; border-radius: 15px; background-color: #E22C2C; }
-    #poweroff_btn:pressed { background-color: #FF2424; }
-  )");
-  addItem(power_layout);
-}
-
-void SettingsWindow::showEvent(QShowEvent *event) {
-  setCurrentPanel(0);
-}
-
-void SettingsWindow::setCurrentPanel(int index, const QString &param) {
-  if (!param.isEmpty()) {
-    if (param.endsWith("Panel")) {
-      QString panelName = param; panelName.chop(5);
-      for (int i = 0; i < nav_btns->buttons().size(); i++) {
-        if (nav_btns->buttons()[i]->text() == tr(panelName.toStdString().c_str())) { index = i; break; }
-      }
-    } else {
-      emit expandToggleDescription(param);
-    }
-  }
-  panel_widget->setCurrentIndex(index);
-  nav_btns->buttons()[index]->setChecked(true);
-}
-
-SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
-  // Use existing member instead of redeclaration
-  sidebar_widget = new QWidget;
-  QVBoxLayout *sidebar_layout = new QVBoxLayout(sidebar_widget);
-  panel_widget = new QStackedWidget();
-
-  QPushButton *close_btn = new QPushButton(tr("×"));
-  close_btn->setStyleSheet(R"(
-    QPushButton {
-      font-size: 140px;
-      padding-bottom: 20px;
-      border-radius: 100px;
-      background-color: #292929;
-      font-weight: 400;
-    }
-    QPushButton:pressed {
-      background-color: #3B3B3B;
-    }
-  )");
-  close_btn->setFixedSize(200, 200);
-  sidebar_layout->addSpacing(45);
-  sidebar_layout->addWidget(close_btn, 0, Qt::AlignCenter);
-  QObject::connect(close_btn, &QPushButton::clicked, this, &SettingsWindow::closeSettings);
-
-  DevicePanel *device = new DevicePanel(this);
-  QObject::connect(device, &DevicePanel::reviewTrainingGuide, this, &SettingsWindow::reviewTrainingGuide);
-  QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
-
-  TogglesPanel *toggles = new TogglesPanel(this);
-  QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
-
-  auto networking = new Networking(this);
-  QObject::connect(uiState()->prime_state, &PrimeState::changed, networking, &Networking::setPrimeType);
-
-  QList<QPair<QString, QWidget *>> panels = {
-    {tr("Device"), device},
-    {tr("Network"), networking},
-    {tr("Toggles"), toggles},
-    {tr("Software"), new SoftwarePanel(this)},
-    {tr("Firehose"), new FirehosePanel(this)},
-    {tr("Developer"), new DeveloperPanel(this)},
-  };
-
-  nav_btns = new QButtonGroup(this);
-  for (auto &[name, panel] : panels) {
-    QPushButton *btn = new QPushButton(name);
-    btn->setCheckable(true);
-    btn->setChecked(nav_btns->buttons().empty());
-    btn->setStyleSheet(R"(
-      QPushButton {
-        color: grey;
-        border: none;
-        background: none;
-        font-size: 65px;
-        font-weight: 500;
-      }
-      QPushButton:checked {
-        color: white;
-      }
-      QPushButton:pressed {
-        color: #ADADAD;
-      }
-    )");
-    btn->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Expanding);
-    nav_btns->addButton(btn);
-    sidebar_layout->addWidget(btn, 0, Qt::AlignRight);
-
-    int lr_margin = (name != tr("Network")) ? 50 : 0;
-    panel->setContentsMargins(lr_margin, 25, lr_margin, 25);
-
-    ScrollView *panel_frame = new ScrollView(panel, this);
-    panel_widget->addWidget(panel_frame);
-
-    QObject::connect(btn, &QPushButton::clicked, [=, w = panel_frame]() {
-      btn->setChecked(true);
-      panel_widget->setCurrentWidget(w);
-    });
-  }
-
-  sidebar_layout->setContentsMargins(50, 50, 100, 50);
-  QHBoxLayout *main_layout = new QHBoxLayout(this);
-  sidebar_widget->setFixedWidth(500);
-  main_layout->addWidget(sidebar_widget);
-  main_layout->addWidget(panel_widget);
-
-  setStyleSheet(R"(
-    * {
-      color: white;
-      font-size: 50px;
-    }
-    SettingsWindow {
-      background-color: black;
-    }
-    QStackedWidget, ScrollView {
-      background-color: #292929;
-      border-radius: 30px;
-    }
-  )");
-}
+  if (!Hardware::PC()) connect(uiState(), &UIState::offroadTransition, poweroff_btn, &
