@@ -118,7 +118,7 @@ AbstractControlSP_SELECTOR::AbstractControlSP_SELECTOR(const QString &title, con
   if (!title.isEmpty()) {
     title_label = new QPushButton(title);
     title_label->setFixedHeight(120);
-    title_label->setStyleSheet("font-size: 50px; font-weight: 450; text-align: left; border: none; padding: 20 0 0 0");
+    title_label->setStyleSheet("font-size: 50px; font-weight: 450; text-align: left; border: none; padding: 0 0 0 0");
     main_layout->addWidget(title_label, 1);
 
     connect(title_label, &QPushButton::clicked, [=]() {
