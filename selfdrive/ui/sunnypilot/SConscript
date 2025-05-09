@@ -50,6 +50,7 @@ network_src = [
 ]
 
 vehicle_panel_qt_src = [
+  "sunnypilot/qt/offroad/settings/vehicle/hyundai_settings.cc",
   "sunnypilot/qt/offroad/settings/vehicle/platform_selector.cc",
 ]
 
