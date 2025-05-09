@@ -14,6 +14,7 @@ from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label, gui_text_box
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets.icon import Icon
 
 MARGIN = 50
 TITLE_FONT_SIZE = 116
@@ -49,6 +50,9 @@ class Setup:
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.keyboard = Keyboard()
     self.selected_radio = None
+
+    self.triangle = Icon("img_continue_triangle.svg")
+    self.checkmark = Icon("img_circled_check.svg")
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -101,22 +105,7 @@ class Setup:
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
     ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
-
-    length = 64
-    angle = math.radians(50)
-
-    center = rl.Vector2(btn_rect.x + btn_rect.width / 2 + math.cos(angle) * length / 2, btn_rect.height / 2)
-    point_a = rl.Vector2(center.x - math.cos(angle) * length,
-                         center.y + math.sin(angle) * length)
-    point_c = rl.Vector2(center.x + math.cos(angle) * 4,
-                         center.y - math.sin(angle) * 4)
-    point_b = rl.Vector2(center.x - math.cos(angle) * length,
-                         center.y - math.sin(angle) * length)
-    point_d = rl.Vector2(center.x + math.cos(angle) * 4,
-                         center.y + math.sin(angle) * 4)
-
-    rl.draw_line_ex(point_a, point_c, 10.0, rl.WHITE)
-    rl.draw_line_ex(point_b, point_d, 10.0, rl.WHITE)
+    self.triangle.render(rl.Vector2(btn_rect.x + btn_rect.width / 2, btn_rect.height / 2), width=54)
 
     if ret:
       self.state = SetupState.NETWORK_SETUP
@@ -170,8 +159,8 @@ class Setup:
     gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", BODY_FONT_SIZE)
 
     if openpilot_selected:
-      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100, openpilot_rect.y + radio_height / 2 - 25)
-      rl.draw_text_ex(gui_app.font(), "✓", checkmark_pos, 100, 0, rl.WHITE)
+      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100, openpilot_rect.y + radio_height / 2)
+      self.checkmark.render(checkmark_pos, height=100)
 
     custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing,
                                rect.width - MARGIN * 2, radio_height)
@@ -181,8 +170,8 @@ class Setup:
     gui_label(rl.Rectangle(custom_rect.x + 100, custom_rect.y, custom_rect.width - 200, radio_height), "Custom Software", BODY_FONT_SIZE)
 
     if custom_selected:
-      checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100, custom_rect.y + radio_height / 2 - 25)
-      rl.draw_text_ex(gui_app.font(), "✓", checkmark_pos, 100, 0, rl.WHITE)
+      checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100, custom_rect.y + radio_height / 2)
+      self.checkmark.render(checkmark_pos, height=100)
 
     mouse_pos = rl.get_mouse_position()
     if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
