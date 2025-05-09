@@ -217,11 +217,10 @@ class SubMaster:
       self.logMonoTime[s] = msg.logMonoTime
       self.valid[s] = msg.valid
 
-    for s in self.services:
-      if not self.on_demand[s]:
-        # alive if delay is within 10x the expected frequency; checks relaxed in simulator
-        self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
-        self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
+    for s in self.static_freq_services:
+      # alive if delay is within 10x the expected frequency; checks relaxed in simulator
+      self.alive[s] = (cur_time - self.recv_time[s]) < (10. / SERVICE_LIST[s].frequency) or (self.seen[s] and self.simulation)
+      self.freq_ok[s] = self.freq_tracker[s].valid or self.simulation
 
   def all_alive(self, service_list: Optional[List[str]] = None) -> bool:
     return all(self.alive[s] for s in (service_list or self.services) if s not in self.ignore_alive)
