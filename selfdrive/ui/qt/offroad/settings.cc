@@ -160,7 +160,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto retrainingBtn = new ButtonControl(tr("Review Training Guide"), tr("REVIEW"),
                                         tr("Review the rules, features, and limitations of openpilot"));
   connect(retrainingBtn, &ButtonControl::clicked, [=]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this))) { emit reviewTrainingGuide(); }
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to review the training guide?"), tr("Review"), this)) { emit reviewTrainingGuide(); }
   });
   addItem(retrainingBtn);
 
