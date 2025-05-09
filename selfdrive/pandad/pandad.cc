@@ -474,7 +474,12 @@ void pandad_run(std::vector<Panda *> &pandas) {
     for (auto *panda : pandas) {
       std::string log = panda->serial_read();
       if (!log.empty()) {
-        LOGD("%s", log.c_str());
+        if (log.find("Register 0x") != std::string::npos) {
+          // Log register divergent faults as errors
+          LOGE("%s", log.c_str());
+        } else {
+          LOGD("%s", log.c_str());
+        }
       }
     }
 

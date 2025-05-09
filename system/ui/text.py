@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-import os
 import re
-import threading
 import time
 import pyray as rl
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.window import BaseWindow
 
 MARGIN = 50
 SPACING = 40
@@ -74,51 +73,17 @@ class TextWindowRenderer:
     return ret
 
 
-class TextWindow:
+class TextWindow(BaseWindow[TextWindowRenderer]):
   def __init__(self, text: str):
     self._text = text
+    super().__init__("Text")
 
-    self._renderer: TextWindowRenderer | None = None
-    self._stop_event = threading.Event()
-    self._thread = threading.Thread(target=self._run)
-    self._thread.start()
-
-    # wait for the renderer to be initialized
-    while self._renderer is None and self._thread.is_alive():
-      time.sleep(0.01)
+  def _create_renderer(self):
+    return TextWindowRenderer(self._text)
 
   def wait_for_exit(self):
     while self._thread.is_alive():
       time.sleep(0.01)
-
-  def _run(self):
-    if os.getenv("CI") is not None:
-      return
-    gui_app.init_window("Text")
-    self._renderer = renderer = TextWindowRenderer(self._text)
-    try:
-      for _ in gui_app.render():
-        if self._stop_event.is_set():
-          break
-        renderer.render()
-    finally:
-      gui_app.close()
-
-  def __enter__(self):
-    return self
-
-  def close(self):
-    if self._thread.is_alive():
-      self._stop_event.set()
-      self._thread.join(timeout=2.0)
-      if self._thread.is_alive():
-        print("WARNING: failed to join text window thread")
-
-  def __del__(self):
-    self.close()
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    self.close()
 
 
 if __name__ == "__main__":
