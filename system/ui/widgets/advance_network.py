@@ -38,7 +38,8 @@ class AdvanceNetwork:
     return self._wifi_manager.ip_address
 
   def on_tethering_toggle(self):
-    pass
+    self._wifi_manager.enable_tethering(self._tethering_toggle.get_state())
+    # pass
 
   def on_tethering_password_edit(self):
     pass
