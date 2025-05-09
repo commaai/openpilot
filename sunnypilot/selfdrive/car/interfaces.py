@@ -11,7 +11,6 @@ from opendbc.car.car_helpers import can_fingerprint
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.hyundai.radar_interface import RADAR_START_ADDR
 from opendbc.car.hyundai.values import HyundaiFlags, DBC as HYUNDAI_DBC
-from opendbc.sunnypilot.car.hyundai.longitudinal.helpers import LongitudinalTuningType
 from opendbc.sunnypilot.car.hyundai.values import HyundaiFlagsSP
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
@@ -25,21 +24,6 @@ def log_fingerprint(CP: structs.CarParams) -> None:
     sentry.capture_fingerprint_mock()
   else:
     sentry.capture_fingerprint(CP.carFingerprint, CP.brand)
-
-def _initialize_custom_longitudinal_tuning(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
-                                           params: Params = None) -> None:
-  if params is None:
-    params = Params()
-
-  # Hyundai Custom Longitudinal Tuning
-  if CP.brand == 'hyundai':
-    hyundai_longitudinal_tuning = int(params.get("HyundaiLongitudinalTuning", encoding="utf8") or 0)
-    if hyundai_longitudinal_tuning == LongitudinalTuningType.DYNAMIC:
-      CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_DYNAMIC.value
-    if hyundai_longitudinal_tuning == LongitudinalTuningType.PREDICTIVE:
-      CP_SP.flags |= HyundaiFlagsSP.LONG_TUNING_PREDICTIVE.value
-
-  CP_SP = CI.get_longitudinal_tuning_sp(CP, CP_SP)
 
 
 def _initialize_neural_network_lateral_control(CI: CarInterfaceBase, CP: structs.CarParams, CP_SP: structs.CarParamsSP,
@@ -77,11 +61,10 @@ def _initialize_radar_tracks(CP: structs.CarParams, CP_SP: structs.CarParamsSP, 
           CP.radarUnavailable = False
 
 
-def setup_interfaces(CI: CarInterfaceBase, params: Params = None) -> None:
+def setup_interfaces(CI: CarInterfaceBase, params: Params = None):
   CP = CI.CP
   CP_SP = CI.CP_SP
 
-  _initialize_custom_longitudinal_tuning(CI, CP, CP_SP, params)
   _initialize_neural_network_lateral_control(CI, CP, CP_SP, params)
   _initialize_radar_tracks(CP, CP_SP, params)
 

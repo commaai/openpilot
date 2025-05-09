@@ -45,7 +45,6 @@ def manager_init() -> None:
     ("AutoLaneChangeTimer", "0"),
     ("AutoLaneChangeBsmDelay", "0"),
     ("DynamicExperimentalControl", "0"),
-    ("HyundaiLongitudinalTuning", "0"),
     ("Mads", "1"),
     ("MadsMainCruiseAllowed", "1"),
     ("MadsPauseLateralOnBrake", "0"),
