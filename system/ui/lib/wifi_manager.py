@@ -639,10 +639,9 @@ class WifiManager:
       if addresses and len(addresses) > 0 and len(addresses[0]) > 0:
         # addresses[0][0] is the IPv4 address as an integer
         ip_int = addresses[0][0]
-        self._ip_address = ".".join(str((ip_int >> (i * 8)) & 0xFF) for i in range(4)[::-1])
+        self._ip_address = ".".join(str((ip_int >> (i * 8)) & 0xFF) for i in range(4))
       else:
         self._ip_address = ""
-      print(f"Wi-Fi IP address: {self._ip_address}")
     except Exception as e:
       print(f"Failed to get Wi-Fi IP address: {e}")
       self._ip_address = ""
@@ -696,6 +695,11 @@ class WifiManagerWrapper:
       if self._thread and self._thread.is_alive():
         self._thread.join(timeout=2.0)
       self._running = False
+
+  @property
+  def ip_address(self) -> str:
+    """Get the current IP address."""
+    return self._manager.ip_address if self._manager else ""
 
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""
