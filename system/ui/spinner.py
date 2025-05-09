@@ -6,6 +6,7 @@ import time
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.window import BaseWindow
 from openpilot.system.ui.text import wrap_text
 
 # Constants
@@ -85,16 +86,12 @@ class SpinnerRenderer:
                         FONT_SIZE, 0.0, rl.WHITE)
 
 
-class Spinner:
+class Spinner(BaseWindow[SpinnerRenderer]):
   def __init__(self):
-    self._renderer: SpinnerRenderer | None = None
-    self._stop_event = threading.Event()
-    self._thread = threading.Thread(target=self._run)
-    self._thread.start()
+    super().__init__("Spinner")
 
-    # wait for the renderer to be initialized
-    while self._renderer is None and self._thread.is_alive():
-      time.sleep(0.01)
+  def _create_renderer(self):
+    return SpinnerRenderer()
 
   def update(self, spinner_text: str):
     if self._renderer is not None:
@@ -102,35 +99,6 @@ class Spinner:
 
   def update_progress(self, cur: float, total: float):
     self.update(str(round(100 * cur / total)))
-
-  def _run(self):
-    if os.getenv("CI") is not None:
-      return
-    gui_app.init_window("Spinner")
-    self._renderer = renderer = SpinnerRenderer()
-    try:
-      for _ in gui_app.render():
-        if self._stop_event.is_set():
-          break
-        renderer.render()
-    finally:
-      gui_app.close()
-
-  def __enter__(self):
-    return self
-
-  def close(self):
-    if self._thread.is_alive():
-      self._stop_event.set()
-      self._thread.join(timeout=2.0)
-      if self._thread.is_alive():
-        print("WARNING: failed to join spinner thread")
-
-  def __del__(self):
-    self.close()
-
-  def __exit__(self, exc_type, exc_val, exc_tb):
-    self.close()
 
 
 if __name__ == "__main__":

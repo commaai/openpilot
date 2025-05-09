@@ -12,7 +12,7 @@ simulation:
 
 ui:
   - changed-files:
-    - any-glob-to-all-files: 'selfdrive/ui/**'
+    - any-glob-to-all-files: '{selfdrive/ui/**,system/ui/**}'
 
 tools:
   - changed-files:
