@@ -136,7 +136,10 @@ class WifiManager:
       await nm_iface.call_delete()
       if self._current_connection_ssid == ssid:
         self._current_connection_ssid = None
-      del self.saved_connections[ssid]
+
+      if ssid in self.saved_connections:
+        del self.saved_connections[ssid]
+
       return True
     except DBusError as e:
       cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
@@ -158,6 +161,17 @@ class WifiManager:
     """Connect to a selected Wi-Fi network."""
     try:
       self._current_connection_ssid = ssid
+
+      if ssid in self.saved_connections:
+        # Forget old connection if new password provided
+        if password:
+          await self.forget_connection(ssid)
+          await asyncio.sleep(0.2)  # NetworkManager delay
+        else:
+          # Just activate existing connection
+          await self.activate_connection(ssid)
+          return
+
       connection = {
         'connection': {
           'type': Variant('s', '802-11-wireless'),
