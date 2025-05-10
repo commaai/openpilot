@@ -57,7 +57,7 @@ class NetworkInfo:
 
 @dataclass
 class WifiManagerCallbacks:
-  need_auth: Callable[[], None] | None = None
+  need_auth: Callable[[str], None] | None = None
   activated: Callable[[], None] | None = None
   forgotten: Callable[[], None] | None = None
 
@@ -73,6 +73,7 @@ class WifiManager:
     self.active_ap_path: str = ""
     self.scan_task: asyncio.Task | None = None
     self.running: bool = True
+    self._current_connection_ssid: str | None = None
 
   async def connect(self) -> None:
     """Connect to the DBus system bus."""
@@ -127,6 +128,9 @@ class WifiManager:
     try:
       nm_iface = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
       await nm_iface.call_delete()
+      if self._current_connection_ssid == ssid:
+        self._current_connection_ssid = None
+      del self.saved_connections[ssid]
       return True
     except DBusError as e:
       cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
@@ -147,6 +151,7 @@ class WifiManager:
   async def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False) -> None:
     """Connect to a selected Wi-Fi network."""
     try:
+      self._current_connection_ssid = ssid
       connection = {
         'connection': {
           'type': Variant('s', '802-11-wireless'),
@@ -176,8 +181,8 @@ class WifiManager:
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
       await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
       await self._update_connection_status()
-
     except DBusError as e:
+      self._current_connection_ssid = None
       cloudlog.error(f"Error connecting to network: {e}")
 
   def is_saved(self, ssid: str) -> bool:
@@ -243,11 +248,22 @@ class WifiManager:
       if self.callbacks.activated:
         self.callbacks.activated()
       asyncio.create_task(self._update_connection_status())
+      self._current_connection_ssid = None
     elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
       for network in self.networks:
         network.is_connected = False
       if new_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self.callbacks.need_auth:
-        self.callbacks.need_auth()
+        if self._current_connection_ssid:
+          self.callbacks.need_auth(self._current_connection_ssid)
+        else:
+          # Try to find the network from active_ap_path
+          for network in self.networks:
+            if network.path == self.active_ap_path:
+              self.callbacks.need_auth(network.ssid)
+              break
+          else:
+            # Couldn't identify the network that needs auth
+            cloudlog.error("Network needs authentication but couldn't identify which one")
 
   def _on_new_connection(self, path: str) -> None:
     """Callback for NewConnection signal."""
