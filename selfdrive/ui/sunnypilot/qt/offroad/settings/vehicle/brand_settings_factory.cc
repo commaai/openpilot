@@ -17,7 +17,7 @@ static const QStringList supportedBrands = {
   "mazda",
   "nissan",
   "rivian",
-  "subaru"
+  "subaru",
   "tesla",
   "toyota",
   "volkswagen",
