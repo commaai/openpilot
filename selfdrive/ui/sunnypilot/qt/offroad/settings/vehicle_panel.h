@@ -9,6 +9,7 @@
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/settings.h"
 
+#include "selfdrive/ui/sunnypilot/qt/offroad/settings/vehicle/brand_settings_interface.h"
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/vehicle/platform_selector.h"
 
 class VehiclePanel : public QFrame {
@@ -24,6 +25,10 @@ public slots:
 private:
   QStackedLayout* main_layout = nullptr;
   QWidget* vehicleScreen = nullptr;
-  PlatformSelector *platformSelector = nullptr;
-  bool offroad;
+  PlatformSelector* platformSelector = nullptr;
+  BrandSettingsInterface* currentBrandSettings = nullptr;
+  bool offroad = false;
+
+private slots:
+  void updateBrandSettings();
 };

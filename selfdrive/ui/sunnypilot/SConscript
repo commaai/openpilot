@@ -50,11 +50,28 @@ network_src = [
 ]
 
 vehicle_panel_qt_src = [
+  "sunnypilot/qt/offroad/settings/vehicle/brand_settings_factory.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/brand_settings_interface.cc",
   "sunnypilot/qt/offroad/settings/vehicle/platform_selector.cc",
 ]
 
+brand_settings_qt_src = [
+  "sunnypilot/qt/offroad/settings/vehicle/chrysler_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/ford_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/gm_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/honda_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/hyundai_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/mazda_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/nissan_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/rivian_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/subaru_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/tesla_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/toyota_settings.cc",
+  "sunnypilot/qt/offroad/settings/vehicle/volkswagen_settings.cc",
+]
+
 sp_widgets_src = widgets_src + network_src
-sp_qt_src = qt_src + lateral_panel_qt_src + vehicle_panel_qt_src
+sp_qt_src = qt_src + lateral_panel_qt_src + vehicle_panel_qt_src + brand_settings_qt_src
 sp_qt_util = qt_util
 
 Export('sp_widgets_src', 'sp_qt_src', "sp_qt_util")
