@@ -142,10 +142,15 @@ class WifiManagerUI:
     self.state = StateForgetting(network)
     self.wifi_manager.forget_connection(network.ssid)
 
-  def _on_need_auth(self):
+  def _on_need_auth(self, ssid):
     match self.state:
-      case StateConnecting(network):
-        self.state = StateNeedsAuth(network)
+      case StateConnecting(ssid):
+        self.state = StateNeedsAuth(ssid)
+      case _:
+        # Find network by SSID
+        network = next((n for n in self.wifi_manager.networks if n.ssid == ssid), None)
+        if network:
+          self.state = StateNeedsAuth(network)
 
   def _on_activated(self):
     if isinstance(self.state, StateConnecting):
