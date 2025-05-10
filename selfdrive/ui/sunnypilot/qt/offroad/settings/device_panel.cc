@@ -116,6 +116,7 @@ DevicePanelSP::DevicePanelSP(SettingsWindowSP *parent) : DevicePanel(parent) {
     rebootBtn,
     poweroffBtn,
     offroadBtn,
+    buttons["quietModeBtn"],
   };
 
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {

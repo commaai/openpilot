@@ -658,16 +658,6 @@ public:
     }
   }
 
-protected:
-  // Override mouse release event to handle style updates smoothly
-  void mouseReleaseEvent(QMouseEvent *event) override {
-    if (!key.empty()) {
-      bool next_state = !params.getBool(key);
-      updateStyle(next_state);
-    }
-    QPushButton::mouseReleaseEvent(event);
-  }
-
 private:
   std::string key = "";
   Params params;
@@ -676,13 +666,14 @@ private:
 
   QString btn_enabled_off_style = "QPushButton:enabled { background-color: #393939; }";
   QString btn_enabled_on_style = "QPushButton:enabled { background-color: #1e79e8; }";
-  QString btn_pressed_style = "QPushButton:pressed { background-color: #4A4A4A; }";
-  QString btn_disabled_stype = "QPushButton:disabled { background-color: #121212; color: #5C5C5C; }";
+  QString btn_off_pressed_style = "QPushButton:pressed { background-color: #4A4A4A; }";
+  QString btn_on_pressed_style = "QPushButton:pressed { background-color: #1E8FFF; }";
+  QString btn_disabled_style = "QPushButton:disabled { background-color: #121212; color: #5C5C5C; }";
 
   void updateStyle(bool enabled) {
     QString enabled_style = enabled ? btn_enabled_on_style : btn_enabled_off_style;
-
-    setStyleSheet(buttonStyle + enabled_style + btn_pressed_style + btn_disabled_stype);
+    QString pressed_style = enabled ? btn_on_pressed_style : btn_off_pressed_style;
+    setStyleSheet(buttonStyle + enabled_style + pressed_style + btn_disabled_style);
   }
 };
 
