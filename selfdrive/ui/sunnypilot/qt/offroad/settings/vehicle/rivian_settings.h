@@ -19,8 +19,7 @@ class RivianSettings : public BrandSettingsInterface {
 
 public:
   explicit RivianSettings(QWidget *parent = nullptr);
-  void updatePanel(bool _offroad);
-  void updateSettings();
+  void updateSettings() override;
 
 private:
   bool offroad = false;

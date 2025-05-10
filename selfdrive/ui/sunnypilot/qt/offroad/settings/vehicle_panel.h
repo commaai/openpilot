@@ -23,10 +23,10 @@ public slots:
   void updatePanel(bool _offroad);
 
 private:
-  QStackedLayout* main_layout = nullptr;
-  QWidget* vehicleScreen = nullptr;
   PlatformSelector* platformSelector = nullptr;
   BrandSettingsInterface* currentBrandSettings = nullptr;
+  QWidget* brandSettingsContainer = nullptr;
+  QVBoxLayout* brandSettingsContainerLayout = nullptr;
   bool offroad = false;
 
 private slots:

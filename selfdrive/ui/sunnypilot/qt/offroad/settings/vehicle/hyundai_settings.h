@@ -19,9 +19,5 @@ class HyundaiSettings : public BrandSettingsInterface {
 
 public:
   explicit HyundaiSettings(QWidget *parent = nullptr);
-  void updatePanel(bool _offroad);
-  void updateSettings();
-
-private:
-  bool offroad = false;
+  void updateSettings() override;
 };

@@ -19,8 +19,7 @@ class ChryslerSettings : public BrandSettingsInterface {
 
 public:
   explicit ChryslerSettings(QWidget *parent = nullptr);
-  void updatePanel(bool _offroad);
-  void updateSettings();
+  void updateSettings() override;
 
 private:
   bool offroad = false;

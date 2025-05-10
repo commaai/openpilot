@@ -6,3 +6,16 @@
  */
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/vehicle/brand_settings_interface.h"
+
+BrandSettingsInterface::BrandSettingsInterface(QWidget *parent) : QWidget(parent) {
+  QVBoxLayout *main_layout = new QVBoxLayout(this);
+  main_layout->setContentsMargins(0, 0, 0, 0);
+
+  list = new ListWidget(this, false);
+  main_layout->addWidget(list);
+}
+
+void BrandSettingsInterface::updatePanel(bool _offroad) {
+  offroad = _offroad;
+  updateSettings();
+}

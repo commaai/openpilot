@@ -7,25 +7,8 @@
 
 #include "selfdrive/ui/sunnypilot/qt/offroad/settings/vehicle/tesla_settings.h"
 
-#include "selfdrive/ui/sunnypilot/qt/widgets/scrollview.h"
-
 TeslaSettings::TeslaSettings(QWidget *parent) : BrandSettingsInterface(parent) {
-  QVBoxLayout *main_layout = new QVBoxLayout(this);
-  main_layout->setContentsMargins(0, 0, 0, 0);
-
-  ListWidget *list = new ListWidget(this, false);
-
-  main_layout->addWidget(new ScrollViewSP(list, this));
-}
-
-void TeslaSettings::updatePanel(bool _offroad) {
-  updateSettings();
-
-  offroad = _offroad;
 }
 
 void TeslaSettings::updateSettings() {
-  if (!isVisible()) {
-    return;
-  }
 }

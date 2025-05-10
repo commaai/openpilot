@@ -19,8 +19,7 @@ class ToyotaSettings : public BrandSettingsInterface {
 
 public:
   explicit ToyotaSettings(QWidget *parent = nullptr);
-  void updatePanel(bool _offroad);
-  void updateSettings();
+  void updateSettings() override;
 
 private:
   bool offroad = false;

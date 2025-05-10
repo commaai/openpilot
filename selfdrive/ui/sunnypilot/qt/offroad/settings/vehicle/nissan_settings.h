@@ -19,8 +19,7 @@ class NissanSettings : public BrandSettingsInterface {
 
 public:
   explicit NissanSettings(QWidget *parent = nullptr);
-  void updatePanel(bool _offroad);
-  void updateSettings();
+  void updateSettings() override;
 
 private:
   bool offroad = false;
