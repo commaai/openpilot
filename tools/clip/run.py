@@ -16,7 +16,7 @@ from typing import Literal
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.tools.lib.route import SegmentRange, get_max_seg_number_cached
+from openpilot.tools.lib.route import Route
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
@@ -26,7 +26,7 @@ FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
-PROC_WAIT_SECONDS = 5
+PROC_WAIT_SECONDS = 30
 
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
 UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
@@ -52,6 +52,29 @@ def check_for_failure(proc: Popen):
     raise ChildProcessError(msg)
 
 
+def escape_ffmpeg_text(value: str):
+  special_chars = {',': '\\,', ':': '\\:', '=': '\\=', '[': '\\[', ']': '\\]'}
+  value = value.replace('\\', '\\\\\\\\\\\\\\\\')
+  for char, escaped in special_chars.items():
+    value = value.replace(char, escaped)
+  return value
+
+
+def get_meta_text(route: Route):
+  metadata = route.get_metadata()
+  origin_parts = metadata['git_remote'].split('/')
+  origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
+  return ', '.join([
+    f"openpilot v{metadata['version']}",
+    f"route: {metadata['fullname']}",
+    f"car: {metadata['platform']}",
+    f"origin: {origin}",
+    f"branch: {metadata['git_branch']}",
+    f"commit: {metadata['git_commit'][:7]}",
+    f"modified: {str(metadata['git_dirty']).lower()}",
+  ])
+
+
 def parse_args(parser: ArgumentParser):
   args = parser.parse_args()
   if args.demo:
@@ -74,20 +97,17 @@ def parse_args(parser: ArgumentParser):
   if args.start < SECONDS_TO_WARM:
     parser.error(f'start must be greater than {SECONDS_TO_WARM}s to allow the UI time to warm up')
 
-  # if using local files, don't worry about length check right now so we skip the network call
-  # TODO: derive segment count from local FS
-  if not args.data_dir:
-    try:
-      num_segs = get_max_seg_number_cached(SegmentRange(args.route))
-    except Exception as e:
-      parser.error(f'failed to get route length: {e}')
+  try:
+    args.route = Route(args.route, data_dir=args.data_dir)
+  except Exception as e:
+    parser.error(f'failed to get route: {e}')
 
-    # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
-    length = round(num_segs * 60)
-    if args.start >= length:
-      parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
-    if args.end > length:
-      parser.error(f'end ({args.end}s) cannot be after end of route ({length}s)')
+  # FIXME: length isn't exactly max segment seconds, simplify to replay exiting at end of data
+  length = round(args.route.max_seg_number * 60)
+  if args.start >= length:
+    parser.error(f'start ({args.start}s) cannot be after end of route ({length}s)')
+  if args.end > length:
+    parser.error(f'end ({args.end}s) cannot be after end of route ({length}s)')
 
   return args
 
@@ -119,6 +139,12 @@ def validate_route(route: str):
   return route
 
 
+def validate_title(title: str):
+  if len(title) > 80:
+    raise ArgumentTypeError('title must be no longer than 80 chars')
+  return title
+
+
 def wait_for_frames(procs: list[Popen]):
   sm = SubMaster(['uiDebug'])
   no_frames_drawn = True
@@ -129,20 +155,27 @@ def wait_for_frames(procs: list[Popen]):
       check_for_failure(proc)
 
 
-def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: str, output_filepath: str, start: int, end: int, target_size_mb: int):
-  logger.info(f'clipping route {route}, start={start} end={end} quality={quality} target_filesize={target_size_mb}MB')
+def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: Route, out: str, start: int, end: int, target_mb: int, title: str | None):
+  logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
 
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
-  bit_rate_kbps = int(round(target_size_mb * 8 * 1024 * 1024 / duration / 1000))
+  bit_rate_kbps = int(round(target_mb * 8 * 1024 * 1024 / duration / 1000))
 
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
 
+  meta_text = get_meta_text(route)
+  overlays = [
+    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile=Inter.tff:fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=7:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'"
+  ]
+  if title:
+    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y=53")
+
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
     '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
-    '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), output_filepath,
+    '-filter:v', ','.join(overlays), '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), out
   ]
 
   replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
@@ -150,7 +183,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
     replay_cmd.append('--qcam')
-  replay_cmd.append(route)
+  replay_cmd.append(route.name.canonical_name)
 
   ui_cmd = [UI, '-platform', 'xcb']
   xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
@@ -183,7 +216,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
     for proc in procs:
       check_for_failure(proc)
-    logger.info(f'recording complete: {Path(output_filepath).resolve()}')
+    logger.info(f'recording complete: {Path(out).resolve()}')
 
 
 def main():
@@ -199,9 +232,10 @@ def main():
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
+  p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
   try:
-    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size)
+    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size, args.title)
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
