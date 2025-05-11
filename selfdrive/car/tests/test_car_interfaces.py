@@ -1,16 +1,18 @@
-import os
 import math
+import os
+from collections.abc import Callable
+from typing import Any
+
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized
 
 from cereal import car
-from opendbc.car import DT_CTRL
+from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
 from opendbc.car.car_helpers import interfaces
-from opendbc.car.structs import CarParams
-from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
-from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
+from opendbc.car.fw_versions import FW_QUERY_CONFIGS, FW_VERSIONS
 from opendbc.car.mock.values import CAR as MOCK
+from opendbc.car.structs import CarParams
 from opendbc.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -18,28 +20,71 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
+DrawType = Callable[[st.SearchStrategy], Any]
+
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
+ALL_ECUS = sorted(ALL_ECUS)
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
+ALL_REQUESTS = sorted(ALL_REQUESTS)
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
+
+EMPTY_FINGERPRINT = gen_empty_fingerprint().keys()
+
+TRIPLE_FP_STRAT = st.lists(
+  st.tuples(st.sampled_from(tuple(EMPTY_FINGERPRINT)), st.integers(0, 0x7FF), st.integers(0, 64)),
+)
+
+
+def _build_fp(triples):
+  fp = {bus: {} for bus in EMPTY_FINGERPRINT}
+  for bus, msg_id, length in triples:
+    fp[bus][msg_id] = length
+  return fp
+
+
+FINGERPRINT_STRAT = st.builds(_build_fp, TRIPLE_FP_STRAT)
+
+REQUEST_STRAT = st.sampled_from(ALL_REQUESTS)
+
+
+@st.composite
+def car_fw_obj_list(draw):
+  entries = draw(
+    st.lists(
+      st.sampled_from(ALL_ECUS),
+    )
+  )
+  return [structs.CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRAT)) for e in entries]
+
+
+PARAMS_STRAT = st.fixed_dictionaries(
+  {
+    'fingerprints': FINGERPRINT_STRAT,
+    'car_fw': car_fw_obj_list(),
+    'alpha_long': st.booleans(),
+  }
+)
+
+
+def get_fuzzy_car_interface_args(draw):
+  return draw(PARAMS_STRAT)
 
 
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])
-  @settings(max_examples=MAX_EXAMPLES, deadline=None,
-            phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @settings(max_examples=MAX_EXAMPLES, deadline=None, phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
     CarInterface = interfaces[car_name]
 
     args = get_fuzzy_car_interface_args(data.draw)
 
-    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
-                                         alpha_long=args['alpha_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'], alpha_long=args['alpha_long'], docs=False)
     car_params = car_params.as_reader()
     car_interface = CarInterface(car_params)
     assert car_params
