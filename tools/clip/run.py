@@ -173,7 +173,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   if title:
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
 
-  overlays.append(f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile=Inter.tff:fontcolor=white:fontsize=32:{box_style}:x=w-text_w-38:y=38")
+  overlays.append(f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile=Inter.tff:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38")
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
