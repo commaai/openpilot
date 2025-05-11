@@ -53,7 +53,7 @@ class GuiApplication:
 
     self._set_log_callback()
 
-    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
     rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
@@ -158,7 +158,7 @@ class GuiApplication:
       elif log_level == rl.TraceLogLevel.LOG_DEBUG:
         cloudlog.debug(f"raylib: {text_str}")
       else:
-        cloudlog.debug(f"raylib: Unknown level {log_level}: {text_str}")
+        cloudlog.error(f"raylib: Unknown level {log_level}: {text_str}")
 
     # Store callback reference
     self._trace_log_callback = trace_log_callback
