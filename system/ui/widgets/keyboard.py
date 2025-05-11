@@ -1,8 +1,10 @@
 import pyray as rl
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.label import gui_label
 
 # Constants for special keys
+CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "Enter"
 SPACE_KEY = "  "
@@ -55,7 +57,8 @@ class Keyboard:
     self._clear()
     return result
 
-  def render(self, rect, title, sub_title):
+  def render(self, title, sub_title):
+    rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
     gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90)
     gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, rl.GRAY)
     if gui_button(rl.Rectangle(rect.x + rect.width - 300, rect.y, 300, 100), "Cancel"):
