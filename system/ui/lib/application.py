@@ -50,6 +50,7 @@ class GuiApplication:
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
 
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_WARNING)
     rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
