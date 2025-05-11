@@ -64,7 +64,9 @@ class WifiManagerUI:
       case StateNeedsAuth(network):
         result = self.keyboard.render(rect, "Enter password", f"for {network.ssid}")
         if result == 1:
-          self.connect_to_network(network, self.keyboard.text)
+          password = self.keyboard.text
+          self.keyboard.clear()
+          self.connect_to_network(network, password)
         elif result == 0:
           self.state = StateIdle()
 
