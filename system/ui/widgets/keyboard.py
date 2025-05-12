@@ -57,7 +57,7 @@ class Keyboard:
   def clear(self):
     self._input_box.clear()
 
-  def render(self, title, sub_title):
+  def render(self, title: str, sub_title: str):
     rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
     gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90)
     gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, rl.GRAY)
@@ -106,3 +106,17 @@ class Keyboard:
       self._input_box.delete_char_before_cursor()
     else:
       self._input_box.add_char_at_cursor(key)
+
+
+if __name__ == "__main__":
+  gui_app.init_window("Keyboard")
+  keyboard = Keyboard()
+  for _ in gui_app.render():
+    result = keyboard.render("Keyboard", "Type here")
+    if result == 1:
+      print(f"You typed: {keyboard.text}")
+      gui_app.request_close()
+    elif result == 0:
+      print("Canceled")
+      gui_app.request_close()
+  gui_app.close()
