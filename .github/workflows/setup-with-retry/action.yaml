@@ -3,51 +3,56 @@ name: setup-with-retry
 inputs:
   sleep_time:
     description: 'How long to sleep between retries'
-    default: '30'
+    default: '10'
 
 runs:
   using: "composite"
   steps:
-    - name: Cache pip packages
+    - name: Cache pip wheels
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ github.sha }}
+        key: pip-${{ runner.os }}-${{ hashFiles('**/*.py') }}
         restore-keys: |
-          ${{ runner.os }}-pip
+          pip-${{ runner.os }}-
 
-    - name: Cache apt packages
+    - name: Cache apt .deb packages
       uses: actions/cache@v3
       with:
-        path: /var/cache/apt
-        key: ${{ runner.os }}-apt
+        path: /var/cache/apt/archives
+        key: apt-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
         restore-keys: |
-          ${{ runner.os }}-apt
+          apt-${{ runner.os }}-
 
-    # First try
     - id: setup1
       continue-on-error: true
       uses: ./.github/workflows/setup
+      with:
+        is_retried: false
 
-    # Retry 1 if setup1 fails
+    - name: Retry Sleep 1
+      if: steps.setup1.outcome == 'failure'
+      run: sleep ${{ inputs.sleep_time }}
+
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       continue-on-error: true
       uses: ./.github/workflows/setup
+      with:
+        is_retried: true
 
-    # Sleep if setup2 fails
-    - if: steps.setup2.outcome == 'failure'
-      shell: bash
+    - name: Retry Sleep 2
+      if: steps.setup2.outcome == 'failure'
       run: sleep ${{ inputs.sleep_time }}
 
-    # Final retry if setup2 fails
     - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
+      with:
+        is_retried: true
 
-    # Final fallback result
-    - name: Check final outcome
+    - name: Check final failure
       if: steps.setup1.outcome == 'failure' && steps.setup2.outcome == 'failure' && steps.setup3.outcome == 'failure'
       run: |
-        echo "Setup failed after 3 attempts."
+        echo "❌ setup-with-retry failed after 3 attempts."
         exit 1
