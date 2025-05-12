@@ -29,7 +29,7 @@ class CameraView:
     if not self._ensure_connection():
       return
 
-    buffer = self.client.recv(timeout_ms=20)
+    buffer = self.client.recv(timeout_ms=0)
     self.frame = buffer if buffer else self.frame
     if not self.frame or not self.texture_y or not self.texture_uv:
       return
