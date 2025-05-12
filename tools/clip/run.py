@@ -134,6 +134,7 @@ def validate_env(parser: ArgumentParser):
   for proc in [REPLAY, UI]:
     if shutil.which(proc) is None:
       parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
+  assert get_font_path() is not None
 
 
 def validate_output_file(output_file: str):
