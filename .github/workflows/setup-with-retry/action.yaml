@@ -8,13 +8,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Cache pip wheels
+    - name: Cache pip packages
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
         key: pip-${{ runner.os }}-${{ hashFiles('**/*.py') }}
         restore-keys: |
-          pip-${{ runner.os }}
+          pip-${{ runner.os }}-
 
     - name: Cache apt .deb packages
       uses: actions/cache@v3
@@ -22,34 +22,36 @@ runs:
         path: /var/cache/apt/archives
         key: apt-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
         restore-keys: |
-          apt-${{ runner.os }}
+          apt-${{ runner.os }}-
 
-    - name: Setup 1
+    - name: Setup (attempt 1)
       id: setup1
       uses: ./.github/workflows/setup
       with:
         is_retried: false
-
-    - name: Sleep before retry 1
-      if: steps.setup1.outcome == 'failure'
       shell: bash
-      run: sleep ${{ inputs.sleep_time }}
 
-    - name: Setup 2
+    - name: Sleep between retries
+      if: steps.setup1.outcome == 'failure'
+      run: sleep ${{ inputs.sleep_time }}
+      shell: bash
+
+    - name: Setup (attempt 2)
       id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/setup
       with:
         is_retried: true
-
-    - name: Sleep before retry 2
-      if: steps.setup2.outcome == 'failure'
       shell: bash
-      run: sleep ${{ inputs.sleep_time }}
 
-    - name: Setup 3
-      id: setup3
+    - name: Sleep between retries (again)
+      if: steps.setup2.outcome == 'failure'
+      run: sleep ${{ inputs.sleep_time }}
+      shell: bash
+
+    - name: Setup (attempt 3)
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
       with:
         is_retried: true
+      shell: bash
