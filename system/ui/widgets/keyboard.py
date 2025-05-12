@@ -89,8 +89,7 @@ class Keyboard:
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
         if gui_button(key_rect, key, is_enabled=is_enabled):
           if key == ENTER_KEY:
-            if len(self._input_box.text) >= self._min_text_size:
-              return 1
+            return 1
           else:
             self.handle_key_press(key)
 
