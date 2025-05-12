@@ -28,14 +28,14 @@ MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 EMPTY_FINGERPRINT = gen_empty_fingerprint().keys()
 
 TRIPLE_FP_STRATEGY = st.lists(
-  st.tuples(st.sampled_from(tuple(EMPTY_FINGERPRINT)), st.integers(0, 0x7FF), st.integers(0, 64)),
+  st.tuples(st.sampled_from(tuple(EMPTY_FINGERPRINT)), st.integers(0, 0x800), st.integers(0, 64)),
 )
 
 
 def _build_fp(triples):
-  fp = {bus: {} for bus in EMPTY_FINGERPRINT}
-  for bus, msg_id, length in triples:
-    fp[bus][msg_id] = length
+  fp = {i: {} for i in EMPTY_FINGERPRINT}
+  for i, address, length in triples:
+    fp[i][address] = length
   return fp
 
 
