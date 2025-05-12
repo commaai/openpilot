@@ -1,5 +1,10 @@
 name: setup-with-retry
 
+inputs:
+  sleep_time:
+    description: 'How long to sleep between retries'
+    default: '30'
+
 runs:
   using: "composite"
   steps:
@@ -7,9 +12,9 @@ runs:
       uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        key: ${{ runner.os }}-pip-${{ github.sha }}
         restore-keys: |
-          ${{ runner.os }}-pip-
+          ${{ runner.os }}-pip
 
     - name: Cache apt packages
       uses: actions/cache@v3
@@ -19,11 +24,30 @@ runs:
         restore-keys: |
           ${{ runner.os }}-apt
 
-    - name: Install dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y python3-dev python3-pip
-        pip install -r requirements.txt
+    # First try
+    - id: setup1
+      continue-on-error: true
+      uses: ./.github/workflows/setup
 
-    - name: Run setup script
-      run: ./setup.sh
+    # Retry 1 if setup1 fails
+    - id: setup2
+      if: steps.setup1.outcome == 'failure'
+      continue-on-error: true
+      uses: ./.github/workflows/setup
+
+    # Sleep if setup2 fails
+    - if: steps.setup2.outcome == 'failure'
+      shell: bash
+      run: sleep ${{ inputs.sleep_time }}
+
+    # Final retry if setup2 fails
+    - id: setup3
+      if: steps.setup2.outcome == 'failure'
+      uses: ./.github/workflows/setup
+
+    # Final fallback result
+    - name: Check final outcome
+      if: steps.setup1.outcome == 'failure' && steps.setup2.outcome == 'failure' && steps.setup3.outcome == 'failure'
+      run: |
+        echo "Setup failed after 3 attempts."
+        exit 1
