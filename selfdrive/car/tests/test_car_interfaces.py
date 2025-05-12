@@ -6,7 +6,7 @@ from hypothesis import Phase, given, settings
 from parameterized import parameterized
 
 from cereal import car
-from opendbc.car import DT_CTRL, gen_empty_fingerprint, structs
+from opendbc.car import DT_CTRL, gen_empty_fingerprint
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.fw_versions import FW_QUERY_CONFIGS, FW_VERSIONS
 from opendbc.car.mock.values import CAR as MOCK
@@ -51,7 +51,7 @@ def car_fw_obj_list(draw):
       st.sampled_from(sorted(ALL_ECUS)),
     )
   )
-  return [structs.CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRATEGY)) for e in entries]
+  return [CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRATEGY)) for e in entries]
 
 
 PARAMS_STRATEGY = st.fixed_dictionaries(
