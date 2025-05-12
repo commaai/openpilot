@@ -14,7 +14,7 @@ runs:
         path: ~/.cache/pip
         key: pip-${{ runner.os }}-${{ hashFiles('**/*.py') }}
         restore-keys: |
-          pip-${{ runner.os }}-
+          pip-${{ runner.os }}
 
     - name: Cache apt .deb packages
       uses: actions/cache@v3
@@ -22,37 +22,34 @@ runs:
         path: /var/cache/apt/archives
         key: apt-${{ runner.os }}-${{ hashFiles('**/*.yaml') }}
         restore-keys: |
-          apt-${{ runner.os }}-
+          apt-${{ runner.os }}
 
-    - id: setup1
-      continue-on-error: true
+    - name: Setup 1
+      id: setup1
       uses: ./.github/workflows/setup
       with:
         is_retried: false
 
-    - name: Retry Sleep 1
+    - name: Sleep before retry 1
       if: steps.setup1.outcome == 'failure'
+      shell: bash
       run: sleep ${{ inputs.sleep_time }}
 
-    - id: setup2
+    - name: Setup 2
+      id: setup2
       if: steps.setup1.outcome == 'failure'
-      continue-on-error: true
       uses: ./.github/workflows/setup
       with:
         is_retried: true
 
-    - name: Retry Sleep 2
+    - name: Sleep before retry 2
       if: steps.setup2.outcome == 'failure'
+      shell: bash
       run: sleep ${{ inputs.sleep_time }}
 
-    - id: setup3
+    - name: Setup 3
+      id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
       with:
         is_retried: true
-
-    - name: Check final failure
-      if: steps.setup1.outcome == 'failure' && steps.setup2.outcome == 'failure' && steps.setup3.outcome == 'failure'
-      run: |
-        echo "❌ setup-with-retry failed after 3 attempts."
-        exit 1
