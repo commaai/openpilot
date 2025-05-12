@@ -72,7 +72,7 @@ class CameraView:
       rl.unload_texture(self.texture_uv)
 
 if __name__ == "__main__":
-  gui_app.init_window("Watch3 - CameraView Example")
+  gui_app.init_window("watch3")
   road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   driver_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
   wide_road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
