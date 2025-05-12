@@ -84,6 +84,11 @@ class WifiManagerUI:
       case _:
         self._draw_network_list(rect)
 
+  @property
+  def require_full_screen(self) -> bool:
+    """Check if the WiFi UI requires exclusive full-screen rendering."""
+    return isinstance(self.state, (StateNeedsAuth, StateShowForgetConfirm))
+
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
