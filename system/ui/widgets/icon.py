@@ -6,7 +6,7 @@ import pyray as rl
 from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
 
-RENDER_SCALE = 2
+SVG_RENDER_SCALE = 2
 ORIGIN = rl.Vector2(0, 0)
 
 
@@ -14,8 +14,12 @@ class Icon:
   def __init__(self, asset_name: str, origin: rl.Vector2 = ORIGIN):
     self.origin = origin
 
-    data = cairosvg.svg2png(url=os.path.join(BASEDIR, "selfdrive", "assets", asset_name), scale=RENDER_SCALE)
-    image = rl.load_image_from_memory(".png", bytes(data), len(data))
+    asset_path = os.path.join(BASEDIR, "selfdrive", "assets", asset_name)
+    if asset_name.endswith(".svg"):
+      data = cairosvg.svg2png(url=asset_path, scale=SVG_RENDER_SCALE)
+      image = rl.load_image_from_memory(".png", bytes(data), len(data))
+    else:
+      image = rl.load_image(asset_path)
     self.width = image.width
     self.height = image.height
     self.texture = rl.load_texture_from_image(image)
