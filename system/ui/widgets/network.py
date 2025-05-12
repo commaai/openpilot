@@ -11,6 +11,8 @@ from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
 NM_DEVICE_STATE_NEED_AUTH = 60
+MIN_PASSWORD_LENGTH = 8
+MAX_PASSWORD_LENGTH = 64
 ITEM_HEIGHT = 160
 
 
@@ -46,7 +48,7 @@ class WifiManagerUI:
     self.state: UIState = StateIdle()
     self.btn_width = 200
     self.scroll_panel = GuiScrollPanel()
-    self.keyboard = Keyboard()
+    self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH)
 
     self._networks: list[NetworkInfo] = []
 
@@ -66,7 +68,9 @@ class WifiManagerUI:
         if result == 1:
           password = self.keyboard.text
           self.keyboard.clear()
-          self.connect_to_network(network, password)
+
+          if len(password) >= MIN_PASSWORD_LENGTH:
+            self.connect_to_network(network, password)
         elif result == 0:
           self.state = StateIdle()
 

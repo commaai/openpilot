@@ -45,9 +45,10 @@ keyboard_layouts = {
 
 
 class Keyboard:
-  def __init__(self, max_text_size: int = 255):
+  def __init__(self, max_text_size: int = 255, min_text_size: int = 0):
     self._layout = keyboard_layouts["lowercase"]
     self._max_text_size = max_text_size
+    self._min_text_size = min_text_size
     self._input_box = InputBox(max_text_size)
 
   @property
@@ -85,7 +86,8 @@ class Keyboard:
         key_rect = rl.Rectangle(start_x, row_y_start + row * (key_height + v_space), new_width, key_height)
         start_x += new_width
 
-        if gui_button(key_rect, key):
+        is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
+        if gui_button(key_rect, key, is_enabled=is_enabled):
           if key == ENTER_KEY:
             return 1
           else:
@@ -110,7 +112,7 @@ class Keyboard:
 
 if __name__ == "__main__":
   gui_app.init_window("Keyboard")
-  keyboard = Keyboard()
+  keyboard = Keyboard(min_text_size=8)
   for _ in gui_app.render():
     result = keyboard.render("Keyboard", "Type here")
     if result == 1:
