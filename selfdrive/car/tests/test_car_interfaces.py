@@ -1,7 +1,5 @@
 import math
 import os
-from collections.abc import Callable
-from typing import Any
 
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
@@ -20,8 +18,6 @@ from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
-DrawType = Callable[[st.SearchStrategy], Any]
-
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
 
@@ -31,7 +27,7 @@ MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
 EMPTY_FINGERPRINT = gen_empty_fingerprint().keys()
 
-TRIPLE_FP_STRAT = st.lists(
+TRIPLE_FP_STRATEGY = st.lists(
   st.tuples(st.sampled_from(tuple(EMPTY_FINGERPRINT)), st.integers(0, 0x7FF), st.integers(0, 64)),
 )
 
@@ -43,9 +39,9 @@ def _build_fp(triples):
   return fp
 
 
-FINGERPRINT_STRAT = st.builds(_build_fp, TRIPLE_FP_STRAT)
+FINGERPRINT_STRATEGY = st.builds(_build_fp, TRIPLE_FP_STRATEGY)
 
-REQUEST_STRAT = st.sampled_from(sorted(ALL_REQUESTS))
+REQUEST_STRATEGY = st.sampled_from(sorted(ALL_REQUESTS))
 
 
 @st.composite
@@ -55,34 +51,32 @@ def car_fw_obj_list(draw):
       st.sampled_from(sorted(ALL_ECUS)),
     )
   )
-  return [structs.CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRAT)) for e in entries]
+  return [structs.CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRATEGY)) for e in entries]
 
 
-PARAMS_STRAT = st.fixed_dictionaries(
+PARAMS_STRATEGY = st.fixed_dictionaries(
   {
-    'fingerprints': FINGERPRINT_STRAT,
+    'fingerprints': FINGERPRINT_STRATEGY,
     'car_fw': car_fw_obj_list(),
     'alpha_long': st.booleans(),
   }
 )
 
 
-def get_fuzzy_car_interface_args(draw):
-  return draw(PARAMS_STRAT)
-
-
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
   #  many generated examples to overrun when max_examples > ~20, don't use it
   @parameterized.expand([(car,) for car in sorted(PLATFORMS)] + [MOCK.MOCK])
-  @settings(max_examples=MAX_EXAMPLES, deadline=None, phases=(Phase.reuse, Phase.generate, Phase.shrink))
+  @settings(max_examples=MAX_EXAMPLES, deadline=None,
+            phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
     CarInterface = interfaces[car_name]
 
-    args = get_fuzzy_car_interface_args(data.draw)
+    car_interface_args = data.draw(PARAMS_STRATEGY)
 
-    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'], alpha_long=args['alpha_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, car_interface_args['fingerprints'], car_interface_args['car_fw'],
+                                         alpha_long=car_interface_args['alpha_long'], docs=False)
     car_params = car_params.as_reader()
     car_interface = CarInterface(car_params)
     assert car_params
