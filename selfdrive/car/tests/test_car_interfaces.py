@@ -24,10 +24,8 @@ DrawType = Callable[[st.SearchStrategy], Any]
 
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
 ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
-ALL_ECUS = sorted(ALL_ECUS)
 
 ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
-ALL_REQUESTS = sorted(ALL_REQUESTS)
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
@@ -47,14 +45,14 @@ def _build_fp(triples):
 
 FINGERPRINT_STRAT = st.builds(_build_fp, TRIPLE_FP_STRAT)
 
-REQUEST_STRAT = st.sampled_from(ALL_REQUESTS)
+REQUEST_STRAT = st.sampled_from(sorted(ALL_REQUESTS))
 
 
 @st.composite
 def car_fw_obj_list(draw):
   entries = draw(
     st.lists(
-      st.sampled_from(ALL_ECUS),
+      st.sampled_from(sorted(ALL_ECUS)),
     )
   )
   return [structs.CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRAT)) for e in entries]
