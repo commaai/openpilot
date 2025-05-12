@@ -108,7 +108,7 @@ class InputBox:
     if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON) and rl.check_collision_point_rec(mouse_pos, rect):
       # Calculate cursor position from click
       if len(self._input_text) > 0:
-        text_width = rl.measure_text(self._input_text, font_size)
+        text_width = rl.measure_text_ex(gui_app.font(), self._input_text, font_size, 0).x
         text_pos_x = rect.x + 10
 
         if mouse_pos.x - text_pos_x > text_width:
@@ -116,7 +116,7 @@ class InputBox:
         else:
           click_ratio = (mouse_pos.x - text_pos_x) / text_width
           self.set_cursor_position(int(len(self._input_text) * click_ratio))
-
+      else:
         self.set_cursor_position(0)
 
   def _handle_keyboard_input(self):
