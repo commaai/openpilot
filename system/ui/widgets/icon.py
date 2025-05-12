@@ -7,7 +7,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
 
 SVG_RENDER_SCALE = 2
-ORIGIN = rl.Vector2(0, 0)
+ORIGIN = rl.Vector2(0.5, 0.5)
 
 
 class Icon:
@@ -48,6 +48,6 @@ if __name__ == "__main__":
   icon = Icon("img_circled_check.svg")
   # icon = Icon("img_continue_triangle.svg")
   for _ in gui_app.render():
-    icon.render(rl.Vector2(10, 10), scale=1)
+    icon.render(rl.Vector2(200, 200))
   icon.close()
   gui_app.close()
