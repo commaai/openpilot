@@ -27,7 +27,10 @@ class Icon:
     rl.unload_image(image)
 
   def render(self, pos: rl.Vector2, width: float | None = None, height: float | None = None, scale: float = 1.0, rotation: float = 0.0):
-    if width is not None:
+    if width is not None and height is not None:
+      w = width
+      h = height
+    elif width is not None:
       w = width
       h = width * (self.height / self.width)
     elif height is not None:
