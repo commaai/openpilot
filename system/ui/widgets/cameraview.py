@@ -20,7 +20,7 @@ class CameraView:
     self.texture_uv: rl.Texture | None = None
     self.frame = None
 
-  def __del__(self):
+  def close(self):
     self._clear_textures()
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
@@ -76,7 +76,12 @@ if __name__ == "__main__":
   road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
   wide_road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
   driver_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-  for _ in gui_app.render():
-    road_camera_view.render(rl.Rectangle(0, 0, 800, 600))
-    wide_road_camera_view.render(rl.Rectangle(800, 0, 800, 600))
-    driver_camera_view.render(rl.Rectangle(0, 600, 800, 600))
+  try:
+    for _ in gui_app.render():
+      road_camera_view.render(rl.Rectangle(0, 0, 800, 600))
+      wide_road_camera_view.render(rl.Rectangle(800, 0, 800, 600))
+      driver_camera_view.render(rl.Rectangle(0, 600, 800, 600))
+  finally:
+    road_camera_view.close()
+    wide_road_camera_view.close()
+    driver_camera_view.close()
