@@ -75,7 +75,7 @@ class WifiManagerUI:
           self.state = StateIdle()
 
       case StateShowForgetConfirm(network):
-        result = confirm_dialog(rect, f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
+        result = confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
         if result == 1:
           self.forget_network(network)
         elif result == 0:
