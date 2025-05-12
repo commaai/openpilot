@@ -17,7 +17,7 @@ class Icon:
     asset_path = os.path.join(BASEDIR, "selfdrive", "assets", asset_name)
     if asset_name.endswith(".svg"):
       data = cairosvg.svg2png(url=asset_path, scale=SVG_RENDER_SCALE)
-      image = rl.load_image_from_memory(".png", bytes(data), len(data))
+      image = rl.load_image_from_memory(".png", bytes(data), len(data))  # type: ignore
     else:
       image = rl.load_image(asset_path)
 
