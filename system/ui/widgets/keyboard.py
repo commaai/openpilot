@@ -112,7 +112,7 @@ class Keyboard:
 
 if __name__ == "__main__":
   gui_app.init_window("Keyboard")
-  keyboard = Keyboard()
+  keyboard = Keyboard(min_text_size=8)
   for _ in gui_app.render():
     result = keyboard.render("Keyboard", "Type here")
     if result == 1:
