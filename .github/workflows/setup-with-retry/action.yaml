@@ -1,37 +1,29 @@
-name: 'openpilot env setup, with retry on failure'
-
-inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: false
-    default: ''
-  sleep_time:
-    description: 'Time to sleep between retries'
-    required: false
-    default: 30
+name: setup-with-retry
 
 runs:
   using: "composite"
   steps:
-    - id: setup1
-      uses: ./.github/workflows/setup
-      continue-on-error: true
+    - name: Cache pip packages
+      uses: actions/cache@v3
       with:
-        is_retried: true
-    - if: steps.setup1.outcome == 'failure'
-      shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup2
-      if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      continue-on-error: true
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Cache apt packages
+      uses: actions/cache@v3
       with:
-        is_retried: true
-    - if: steps.setup2.outcome == 'failure'
-      shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup3
-      if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      with:
-        is_retried: true
+        path: /var/cache/apt
+        key: ${{ runner.os }}-apt
+        restore-keys: |
+          ${{ runner.os }}-apt
+
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y python3-dev python3-pip
+        pip install -r requirements.txt
+
+    - name: Run setup script
+      run: ./setup.sh
