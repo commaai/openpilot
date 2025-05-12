@@ -335,6 +335,7 @@ class Tici(HardwareBase):
     return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
                              [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
                          gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
+                         dsp=ThermalZone("compute-hvx-usr"),
                          memory=ThermalZone("ddr-usr"),
                          pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
                          intake=intake,

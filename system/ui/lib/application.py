@@ -40,6 +40,7 @@ class GuiApplication:
     self._target_fps: int = DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
+    self._trace_log_callback = None
 
   def request_close(self):
     self._window_close_requested = True
@@ -50,6 +51,9 @@ class GuiApplication:
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
 
+    self._set_log_callback()
+
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
     rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
@@ -136,6 +140,29 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+
+  def _set_log_callback(self):
+    @rl.ffi.callback("void(int, char *, void *)")
+    def trace_log_callback(log_level, text, args):
+      try:
+        text_str = rl.ffi.string(text).decode('utf-8')
+      except (TypeError, UnicodeDecodeError):
+        text_str = str(text)
+
+      if log_level == rl.TraceLogLevel.LOG_ERROR:
+        cloudlog.error(f"raylib: {text_str}")
+      elif log_level == rl.TraceLogLevel.LOG_WARNING:
+        cloudlog.warning(f"raylib: {text_str}")
+      elif log_level == rl.TraceLogLevel.LOG_INFO:
+        cloudlog.info(f"raylib: {text_str}")
+      elif log_level == rl.TraceLogLevel.LOG_DEBUG:
+        cloudlog.debug(f"raylib: {text_str}")
+      else:
+        cloudlog.error(f"raylib: Unknown level {log_level}: {text_str}")
+
+    # Store callback reference
+    self._trace_log_callback = trace_log_callback
+    rl.set_trace_log_callback(self._trace_log_callback)
 
   def _monitor_fps(self):
     fps = rl.get_fps()
