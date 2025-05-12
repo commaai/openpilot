@@ -176,8 +176,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   if title:
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
 
-  intermediate_file_loc = out + '.intermediate.mkv'
-  ffmpeg_cmd_stage_1 = [
+  ffmpeg_cmd = [
     'ffmpeg', '-y',
     '-video_size', RESOLUTION,
     '-framerate', str(FRAMERATE),
@@ -185,28 +184,15 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     '-draw_mouse', '0',
     '-i', display,
     '-c:v', 'libx264',
+    '-maxrate', f'{bit_rate_kbps}k',
+    '-bufsize', f'{bit_rate_kbps*2}k',
     '-crf', '18',
     '-filter:v', ','.join(overlays),
     '-preset', 'ultrafast',
     '-tune', '-zerolatency',
-    '-threads', '4',
-    '-rtbufsize', '100M',
-    '-f', 'matroska',
-    '-t', str(duration),
-    intermediate_file_loc,
-  ]
-
-  ffmpeg_cmd_stage_2 = [
-    'ffmpeg', '-y',
-    '-i', intermediate_file_loc,
-    '-c:v', 'libx264',
-    '-maxrate', f'{bit_rate_kbps}k',
-    '-bufsize', f'{bit_rate_kbps*2}k',
-    '-crf', '18',
-    '-preset', 'slow',
-    '-pix_fmt', 'yuv420p',
-    '-movflags', '+faststart',
+    '-rtbufsize', '200M',
     '-f', 'mp4',
+    '-t', str(duration),
     out,
   ]
 
@@ -240,20 +226,12 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     for proc in procs:
       check_for_failure(proc)
 
-    ffmpeg_proc_stage_1 = start_proc(ffmpeg_cmd_stage_1, env)
-    procs.append(ffmpeg_proc_stage_1)
-    atexit.register(lambda: ffmpeg_proc_stage_1.terminate())
+    ffmpeg_proc = start_proc(ffmpeg_cmd, env)
+    procs.append(ffmpeg_proc)
+    atexit.register(lambda: ffmpeg_proc.terminate())
 
     logger.info(f'recording in progress ({duration}s)...')
-    ffmpeg_proc_stage_1.wait(duration + PROC_WAIT_SECONDS)
-    for proc in procs:
-      check_for_failure(proc)
-
-    logger.info('performing final encoding...')
-    ffmpeg_proc_stage_2 = start_proc(ffmpeg_cmd_stage_2, env)
-    procs.append(ffmpeg_proc_stage_2)
-    atexit.register(lambda: ffmpeg_proc_stage_2.terminate())
-    ffmpeg_proc_stage_2.wait(duration + PROC_WAIT_SECONDS)
+    ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
     for proc in procs:
       check_for_failure(proc)
 
