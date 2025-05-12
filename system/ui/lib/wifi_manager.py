@@ -79,7 +79,11 @@ class WifiManager:
     self.saved_connections: dict[str, str] = {}
     self.active_ap_path: str = ""
     self.scan_task: asyncio.Task | None = None
-    self._tethering_ssid = "weedle-" + Params().get("DongleId", encoding="utf-8")
+    # Set tethering ssid as "weedle" + first 4 characters of a dongle id
+    self._tethering_ssid = "weedle"
+    dongle_id = Params().get("DongleId", encoding="utf-8")
+    if dongle_id:
+      self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
