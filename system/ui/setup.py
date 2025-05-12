@@ -50,8 +50,9 @@ class Setup:
     self.keyboard = Keyboard()
     self.selected_radio = None
 
-    self.triangle = Icon("img_continue_triangle.svg")
-    self.checkmark = Icon("img_circled_check.svg")
+    self.warning = Icon("offroad/icon_warning.png")
+    self.triangle = Icon("img_continue_triangle.svg", origin=rl.Vector2(0.5, 0.5))
+    self.checkmark = Icon("img_circled_check.svg", origin=rl.Vector2(0.5, 0.5))
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -76,13 +77,12 @@ class Setup:
       self.render_download_failed(rect)
 
   def render_low_voltage(self, rect: rl.Rectangle):
-    icon_rect = rl.Rectangle(rect.x + 110, rect.y + 144, 100, 100)
-    rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), "⚠", rl.Vector2(icon_rect.x, icon_rect.y), 100, 0, rl.Color(255, 89, 79, 255))
+    self.warning.render(rl.Vector2(rect.x + 150, rect.y + 110))
 
-    title_rect = rl.Rectangle(rect.x + 110, rect.y + 224, rect.width - 365 - 110, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE)
     gui_label(title_rect, "WARNING: Low Voltage", TITLE_FONT_SIZE, rl.Color(255, 89, 79, 255), FontWeight.MEDIUM)
 
-    body_rect = rl.Rectangle(rect.x + 110, rect.y + 224 + TITLE_FONT_SIZE + 25, rect.width - 365 - 110, BODY_FONT_SIZE * 3)
+    body_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100 + TITLE_FONT_SIZE + 25, rect.width - 500 - 150, BODY_FONT_SIZE * 3)
     gui_text_box(body_rect, "Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE)
 
     button_width = (rect.width - MARGIN * 3) / 2

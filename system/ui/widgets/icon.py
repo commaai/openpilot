@@ -7,7 +7,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.system.ui.lib.application import gui_app
 
 SVG_RENDER_SCALE = 2
-ORIGIN = rl.Vector2(0.5, 0.5)
+ORIGIN = rl.Vector2(0, 0)
 
 
 class Icon:
@@ -23,6 +23,7 @@ class Icon:
     self.width = image.width
     self.height = image.height
     self.texture = rl.load_texture_from_image(image)
+    gui_app._textures.append(self.texture)
     rl.unload_image(image)
 
   def render(self, pos: rl.Vector2, width: float | None = None, height: float | None = None, scale: float = 1.0, rotation: float = 0.0):
@@ -39,15 +40,20 @@ class Icon:
     rl.draw_texture_pro(self.texture, rl.Rectangle(0, 0, self.width, self.height),
                         rl.Rectangle(pos.x, pos.y, w, h), origin, rotation, rl.WHITE)
 
-  def close(self):
-    rl.unload_texture(self.texture)
-
 
 if __name__ == "__main__":
   gui_app.init_window("Icon")
-  icon = Icon("img_circled_check.svg")
-  # icon = Icon("img_continue_triangle.svg")
-  for _ in gui_app.render():
-    icon.render(rl.Vector2(200, 200))
-  icon.close()
-  gui_app.close()
+  checkmark = Icon("img_circled_check.svg", origin=rl.Vector2(0.5, 0.5))
+  warning = Icon("img_warning_triangle.svg", invert=True)
+  png = Icon("offroad/icon_warning.png")
+  experimental = Icon("img_experimental.svg")
+  experimental_grey = Icon("img_experimental_grey.svg", invert=True)
+  try:
+    for _ in gui_app.render():
+      checkmark.render(rl.Vector2(400, 400))
+      warning.render(rl.Vector2(0, 0), height=128)
+      png.render(rl.Vector2(128, 0), height=128)
+      experimental.render(rl.Vector2(150, 150), scale=0.2)
+      experimental_grey.render(rl.Vector2(300, 150), scale=0.2)
+  finally:
+    gui_app.close()
