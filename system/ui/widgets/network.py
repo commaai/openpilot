@@ -47,7 +47,7 @@ class WifiManagerUI:
     self.state: UIState = StateIdle()
     self.btn_width = 200
     self.scroll_panel = GuiScrollPanel()
-    self.keyboard = Keyboard()
+    self.keyboard = Keyboard(min_text_size=MIN_PASSWORD_LENGTH)
 
     self._networks: list[NetworkInfo] = []
 

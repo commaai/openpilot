@@ -45,9 +45,10 @@ keyboard_layouts = {
 
 
 class Keyboard:
-  def __init__(self, max_text_size: int = 255):
+  def __init__(self, max_text_size: int = 255, min_text_size: int = 0):
     self._layout = keyboard_layouts["lowercase"]
     self._max_text_size = max_text_size
+    self._min_text_size = min_text_size
     self._input_box = InputBox(max_text_size)
 
   @property
@@ -87,7 +88,8 @@ class Keyboard:
 
         if gui_button(key_rect, key):
           if key == ENTER_KEY:
-            return 1
+            if len(self._input_box.text) >= self._min_text_size:
+              return 1
           else:
             self.handle_key_press(key)
 
