@@ -275,14 +275,16 @@ class SelfdriveD:
         elif not self.sm.all_freq_ok(self.camera_packets):
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
-      self.events.add(EventName.selfdrivedLagging)
+      # self.events.add(EventName.selfdrivedLagging)
+      pass
     if not self.sm.valid['radarState']:
       if self.sm['radarState'].radarErrors.canError:
         self.events.add(EventName.canError)
       elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
         self.events.add(EventName.radarTempUnavailable)
       else:
-        self.events.add(EventName.radarFault)
+        # self.events.add(EventName.radarFault)
+        pass
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:
@@ -297,7 +299,8 @@ class SelfdriveD:
       if not self.sm.all_alive():
         self.events.add(EventName.commIssue)
       elif not self.sm.all_freq_ok():
-        self.events.add(EventName.commIssueAvgFreq)
+        # self.events.add(EventName.commIssueAvgFreq)
+        pass
       else:
         self.events.add(EventName.commIssue)
 
@@ -316,7 +319,8 @@ class SelfdriveD:
       if not self.sm['livePose'].posenetOK:
         self.events.add(EventName.posenetInvalid)
       if not self.sm['livePose'].inputsOK:
-        self.events.add(EventName.locationdTemporaryError)
+        # self.events.add(EventName.locationdTemporaryError)
+        pass
       if not self.sm['liveParameters'].valid and cal_status == log.LiveCalibrationData.Status.calibrated and not TESTING_CLOSET and (not SIMULATION or REPLAY):
         self.events.add(EventName.paramsdTemporaryError)
 
@@ -364,7 +368,7 @@ class SelfdriveD:
         self.distance_traveled = 0
       self.distance_traveled += abs(CS.vEgo) * DT_CTRL
 
-      if self.sm['modelV2'].frameDropPerc > 20:
+      if self.sm['modelV2'].frameDropPerc > 40:
         self.events.add(EventName.modeldLagging)
 
     # decrement personality on distance button press
