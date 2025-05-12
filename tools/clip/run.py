@@ -182,7 +182,7 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     # metadata overlay
     f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={font}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
     # route time overlay
-    f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={font}\\\\:style=Light:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
+    f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={font}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
   ]
   if title:
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={font}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
