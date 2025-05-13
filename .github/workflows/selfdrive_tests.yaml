@@ -102,7 +102,7 @@ jobs:
     - name: Homebrew cellar cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: /usr/local/Cellar
+        path: /opt/homebrew/Cellar
         key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           brew-macos-cellar-${{ env.CACHE_COMMIT_DATE }}
