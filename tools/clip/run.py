@@ -218,7 +218,6 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     atexit.register(lambda: xvfb_proc.terminate())
     ui_proc = start_proc(ui_cmd, env)
     atexit.register(lambda: ui_proc.terminate())
-
     Params().put('IsMetric', '1')
 
     replay_proc = start_proc(replay_cmd, env)
