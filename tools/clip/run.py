@@ -53,6 +53,13 @@ def check_for_failure(proc: Popen):
     raise ChildProcessError(msg)
 
 
+def ensure_params_path(prefix: str):
+  params_path = Path(os.environ['HOME'], f'.comma{prefix}', 'params', prefix)
+  while not params_path.exists():
+    time.sleep(0.05)
+  return str(params_path.resolve())
+
+
 def escape_ffmpeg_text(value: str):
   special_chars = {',': '\\,', ':': '\\:', '=': '\\=', '[': '\\[', ']': '\\]'}
   value = value.replace('\\', '\\\\\\\\\\\\\\\\')
@@ -156,6 +163,11 @@ def wait_for_frames(procs: list[Popen]):
       check_for_failure(proc)
 
 
+def write_param(params_path: str, key: str, val: Literal['0', '1']):
+  with open(str(Path(params_path, key).resolve()), 'w') as f:
+    f.write(val)
+
+
 def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: Route, out: str, start: int, end: int, target_mb: int, title: str | None):
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
 
@@ -217,6 +229,11 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     atexit.register(lambda: xvfb_proc.terminate())
     ui_proc = start_proc(ui_cmd, env)
     atexit.register(lambda: ui_proc.terminate())
+
+    # needs to be after UI process starts
+    params = ensure_params_path(prefix)
+    write_param(params, 'IsMetric', '0')
+
     replay_proc = start_proc(replay_cmd, env)
     atexit.register(lambda: replay_proc.terminate())
     procs = [replay_proc, ui_proc, xvfb_proc]
