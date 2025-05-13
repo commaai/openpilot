@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import matplotlib.font_manager as fm
 import atexit
 import logging
 import os
