@@ -191,6 +191,8 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     '-filter:v', ','.join(overlays),
     '-preset', 'ultrafast',
     '-tune', 'zerolatency',
+    '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart',
     '-f', 'mp4',
     '-t', str(duration),
     out,
