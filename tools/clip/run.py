@@ -24,12 +24,12 @@ DEMO_START = 90
 DEMO_END = 105
 DEMO_ROUTE = 'a2a0ccea32023010/2023-07-27--13-01-19'
 FRAMERATE = 20
-OPENPILOT_FONT = 'Inter'
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
 PROC_WAIT_SECONDS = 30
 
+OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
 UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
 
@@ -60,13 +60,6 @@ def escape_ffmpeg_text(value: str):
   for char, escaped in special_chars.items():
     value = value.replace(char, escaped)
   return value
-
-
-def get_font_path(font_name = OPENPILOT_FONT):
-  try:
-    return fm.findfont(font_name, fallback_to_default=False)
-  except ValueError as e:
-    raise RuntimeError(f'Could not find font {font_name}, is it installed?') from e
 
 
 def get_meta_text(route: Route):
@@ -134,7 +127,6 @@ def validate_env(parser: ArgumentParser):
   for proc in [REPLAY, UI]:
     if shutil.which(proc) is None:
       parser.exit(1, f'clip.py: error: missing {proc} command, did you build openpilot yet?\n')
-  assert get_font_path() is not None
 
 
 def validate_output_file(output_file: str):
@@ -176,16 +168,15 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   display = f':{randint(99, 999)}'
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
-  font = get_font_path()
   meta_text = get_meta_text(route)
   overlays = [
     # metadata overlay
-    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={font}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
+    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
     # route time overlay
-    f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={font}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
+    f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
   ]
   if title:
-    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={font}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
+    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
 
   ffmpeg_cmd = [
     'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
