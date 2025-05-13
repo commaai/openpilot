@@ -91,14 +91,22 @@ jobs:
       with:
         submodules: true
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - name: Homebrew cache
+    - name: Homebrew download cache
       uses: ./.github/workflows/auto-cache
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          brew-macos-${{ env.CACHE_COMMIT_DATE }}
-          brew-macos
+          brew-macos-download-${{ env.CACHE_COMMIT_DATE }}
+          brew-macos-download
+    - name: Homebrew cellar cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: /usr/local/Cellar
+        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          brew-macos-cellar-${{ env.CACHE_COMMIT_DATE }}
+          brew-macos-cellar
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:

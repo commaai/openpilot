@@ -29,7 +29,7 @@ if [[ $(command -v brew) == "" ]]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
   fi
 else
-    brew up
+  brew up
 fi
 
 brew bundle --file=- <<-EOS
