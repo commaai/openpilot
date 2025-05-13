@@ -32,7 +32,7 @@ else
   brew up
 fi
 
-brew bundle --file=- <<-EOS
+brew bundle --verbose --no-upgrade --file=- <<-EOS
 brew "git-lfs"
 brew "zlib"
 brew "capnp"
