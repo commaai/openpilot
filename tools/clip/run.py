@@ -177,9 +177,25 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
 
   ffmpeg_cmd = [
-    'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
-    '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
-    '-filter:v', ','.join(overlays), '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), out
+    'ffmpeg', '-y',
+    '-video_size', RESOLUTION,
+    '-framerate', str(FRAMERATE),
+    '-f', 'x11grab',
+    '-rtbufsize', '100M',
+    '-draw_mouse', '0',
+    '-i', display,
+    '-c:v', 'libx264',
+    '-maxrate', f'{bit_rate_kbps}k',
+    '-bufsize', f'{bit_rate_kbps*2}k',
+    '-crf', '23',
+    '-filter:v', ','.join(overlays),
+    '-preset', 'ultrafast',
+    '-tune', 'zerolatency',
+    '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart',
+    '-f', 'mp4',
+    '-t', str(duration),
+    out,
   ]
 
   replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
