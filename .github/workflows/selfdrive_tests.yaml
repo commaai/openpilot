@@ -99,6 +99,14 @@ jobs:
         restore-keys: |
           brew-macos-download-${{ env.CACHE_COMMIT_DATE }}
           brew-macos-download
+    - name: Homebrew caskroom cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: /opt/homebrew/Caskroom
+        key: brew-macos-caskroom-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          brew-macos-caskroom-${{ env.CACHE_COMMIT_DATE }}
+          brew-macos-caskroom
     - name: Homebrew cellar cache
       uses: ./.github/workflows/auto-cache
       with:
