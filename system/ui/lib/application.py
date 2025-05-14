@@ -131,17 +131,20 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
-    while not (self._window_close_requested or rl.window_should_close()):
-      rl.begin_drawing()
-      rl.clear_background(rl.BLACK)
+    try:
+      while not (self._window_close_requested or rl.window_should_close()):
+        rl.begin_drawing()
+        rl.clear_background(rl.BLACK)
 
-      yield
+        yield
 
-      if DEBUG_FPS:
-        rl.draw_fps(10, 10)
+        if DEBUG_FPS:
+          rl.draw_fps(10, 10)
 
-      rl.end_drawing()
-      self._monitor_fps()
+        rl.end_drawing()
+        self._monitor_fps()
+    except KeyboardInterrupt:
+      pass
 
   def font(self, font_weight: FontWeight=FontWeight.NORMAL):
     return self._fonts[font_weight]
