@@ -130,7 +130,7 @@ def populate_car_params(route: Route):
     except UnknownKeyName:
       # forks of openpilot may have other Params keys configured. ignore these
       logger.warning(f'unknown key name {key}, skipping')
-  logger.info(f'persisted {len(entries)} CarParam(s)')
+  logger.debug('persisted CarParams')
 
 
 def start_proc(args: list[str], env: dict[str, str]):
