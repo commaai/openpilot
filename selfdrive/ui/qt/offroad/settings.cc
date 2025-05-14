@@ -194,6 +194,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
     if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
       params.remove("CalibrationParams");
       params.remove("LiveTorqueParameters");
+      params.remove("LiveParameters");
       params.remove("LiveParametersV2");
       params.remove("LiveDelay");
     }
