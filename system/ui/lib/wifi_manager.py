@@ -115,7 +115,7 @@ class WifiManager:
       except asyncio.CancelledError:
         pass
     if self.bus:
-      await self.bus.disconnect()
+      self.bus.disconnect()
 
   async def request_scan(self) -> None:
     try:
@@ -634,8 +634,10 @@ class WifiManagerWrapper:
 
   def shutdown(self) -> None:
     if self._running:
-      if self._manager is not None:
-        self._run_coroutine(self._manager.shutdown())
+      if self._manager is not None and self._loop:
+        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
+        shutdown_future.result(timeout=3.0)
+
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():
