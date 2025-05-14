@@ -11,8 +11,7 @@ from openpilot.tools.lib.logreader import LogReader
 from openpilot.common.run import run_cmd
 
 MAX_EXAMPLES = int(os.environ.get("MAX_EXAMPLES", "2"))
-TARGET_REMOTE = os.environ.get("TARGET_REMOTE", "origin")
-TARGET_BRANCH = os.environ.get("TARGET_BRANCH", "master")
+TARGET_REF = os.environ.get("TARGET_REF", "")
 
 
 @pytest.fixture(scope="module")
@@ -20,7 +19,7 @@ def parent_schema_file(tmp_path_factory):
   tmp_dir = tmp_path_factory.mktemp("cereal")
 
   # TODO this will fail if the any capnp files are added/removed vs what was on the parent commit
-  commit = run_cmd(["git", "merge-base", f"{TARGET_REMOTE}/{TARGET_BRANCH}", "HEAD"])
+  commit = run_cmd(["git", "rev-parse", TARGET_REF]) if TARGET_REF else run_cmd(["git", "merge-base", "origin/master", "HEAD"])
   opendbc_commit = run_cmd(["git", "ls-tree", "--object-only", commit, "opendbc_repo"]) # for car.capnp
   for capnp_fp in glob(os.path.join(CEREAL_PATH, "**", "*.capnp"), recursive=True):
     fname = os.path.relpath(capnp_fp, CEREAL_PATH)
