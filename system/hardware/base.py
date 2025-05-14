@@ -33,6 +33,7 @@ class ThermalZone:
 class ThermalConfig:
   cpu: list[ThermalZone] | None = None
   gpu: list[ThermalZone] | None = None
+  dsp: ThermalZone | None = None
   pmic: list[ThermalZone] | None = None
   memory: ThermalZone | None = None
   intake: ThermalZone | None = None
@@ -129,6 +130,9 @@ class HardwareBase(ABC):
 
   def get_thermal_config(self):
     return ThermalConfig()
+
+  def set_display_power(self, on: bool):
+    pass
 
   @abstractmethod
   def set_screen_brightness(self, percentage):

@@ -575,14 +575,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
 <context>
     <name>QObject</name>
     <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation>Salir</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>

@@ -48,6 +48,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     preEnableStandstill @12;  # added during pre-enable state with brake
     gasPressedOverride @13;  # added when user is pressing gas with no disengage on gas
     steerOverride @14;
+    steerDisengage @94;  # exits active state
     cruiseDisabled @15;
     speedTooLow @16;
     outOfSpace @17;
@@ -126,6 +127,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     espActive @90;
     personalityChanged @91;
     aeb @92;
+    userFlag @95;
 
     soundsUnavailableDEPRECATED @47;
   }
@@ -488,6 +490,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   # device thermals
   cpuTempC @26 :List(Float32);
   gpuTempC @27 :List(Float32);
+  dspTempC @49 :Float32;
   memoryTempC @28 :Float32;
   nvmeTempC @35 :List(Float32);
   modemTempC @36 :List(Float32);

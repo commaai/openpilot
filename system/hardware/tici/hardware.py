@@ -335,11 +335,19 @@ class Tici(HardwareBase):
     return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
                              [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
                          gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
+                         dsp=ThermalZone("compute-hvx-usr"),
                          memory=ThermalZone("ddr-usr"),
                          pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
                          intake=intake,
                          exhaust=exhaust,
                          case=case)
+
+  def set_display_power(self, on):
+    try:
+      with open("/sys/class/backlight/panel0-backlight/bl_power", "w") as f:
+        f.write("0" if on else "4")
+    except Exception:
+      pass
 
   def set_screen_brightness(self, percentage):
     try:

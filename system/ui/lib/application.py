@@ -5,6 +5,7 @@ import pyray as rl
 from enum import IntEnum
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import HARDWARE
 
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -38,10 +39,21 @@ class GuiApplication:
     self._textures: list[rl.Texture] = []
     self._target_fps: int = DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
+    self._window_close_requested = False
+    self._trace_log_callback = None
 
-  def init_window(self, title: str, fps: int=DEFAULT_FPS):
+  def request_close(self):
+    self._window_close_requested = True
+
+  def init_window(self, title: str, fps: int = DEFAULT_FPS):
     atexit.register(self.close)  # Automatically call close() on exit
 
+    HARDWARE.set_display_power(True)
+    HARDWARE.set_screen_brightness(65)
+
+    self._set_log_callback()
+
+    rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
     rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
@@ -50,9 +62,11 @@ class GuiApplication:
     self._set_styles()
     self._load_fonts()
 
-  def load_texture_from_image(self, file_name: str, width: int, height: int):
+  def load_texture_from_image(self, file_name: str, width: int, height: int, alpha_premultiply = False):
     """Load and resize a texture, storing it for later automatic unloading."""
     image = rl.load_image(file_name)
+    if alpha_premultiply:
+      rl.image_alpha_premultiply(image)
     rl.image_resize(image, width, height)
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
@@ -78,7 +92,7 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
-    while not rl.window_should_close():
+    while not (self._window_close_requested or rl.window_should_close()):
       rl.begin_drawing()
       rl.clear_background(rl.BLACK)
 
@@ -126,6 +140,29 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
+
+  def _set_log_callback(self):
+    @rl.ffi.callback("void(int, char *, void *)")
+    def trace_log_callback(log_level, text, args):
+      try:
+        text_str = rl.ffi.string(text).decode('utf-8')
+      except (TypeError, UnicodeDecodeError):
+        text_str = str(text)
+
+      if log_level == rl.TraceLogLevel.LOG_ERROR:
+        cloudlog.error(f"raylib: {text_str}")
+      elif log_level == rl.TraceLogLevel.LOG_WARNING:
+        cloudlog.warning(f"raylib: {text_str}")
+      elif log_level == rl.TraceLogLevel.LOG_INFO:
+        cloudlog.info(f"raylib: {text_str}")
+      elif log_level == rl.TraceLogLevel.LOG_DEBUG:
+        cloudlog.debug(f"raylib: {text_str}")
+      else:
+        cloudlog.error(f"raylib: Unknown level {log_level}: {text_str}")
+
+    # Store callback reference
+    self._trace_log_callback = trace_log_callback
+    rl.set_trace_log_callback(self._trace_log_callback)
 
   def _monitor_fps(self):
     fps = rl.get_fps()
