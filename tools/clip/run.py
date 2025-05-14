@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import shutil
+import sys
 import time
 from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Sequence
@@ -283,6 +284,7 @@ def main():
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
+  exit_code = 1
   try:
     clip(
       data_dir=args.data_dir,
@@ -295,12 +297,14 @@ def main():
       target_mb=args.file_size,
       title=args.title,
     )
+    exit_code = 0
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
     logger.exception('encountered error', exc_info=e)
   finally:
     atexit._run_exitfuncs()
+    sys.exit(exit_code)
 
 
 if __name__ == '__main__':
