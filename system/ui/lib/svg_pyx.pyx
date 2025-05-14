@@ -9,25 +9,25 @@ cdef extern from "nanosvg/nanosvg.h":
   ctypedef struct NSVGimage:
     float width
     float height
-  NSVGimage* nsvgParseFromFile(const char* filename, const char* units, float dpi)
-  void nsvgDelete(NSVGimage* image)
+  NSVGimage * nsvgParseFromFile(const char * filename, const char * units, float dpi)
+  void nsvgDelete(NSVGimage * image)
 
 
 cdef extern from "nanosvg/nanosvgrast.h":
   ctypedef struct NSVGrasterizer:
     pass
-  NSVGrasterizer* nsvgCreateRasterizer()
-  void nsvgRasterize(NSVGrasterizer* r,
-                     NSVGimage* image, float tx, float ty, float scale,
-				             unsigned char* dst, int w, int h, int stride)
-  void nsvgDeleteRasterizer(NSVGrasterizer*)
+  NSVGrasterizer * nsvgCreateRasterizer()
+  void nsvgRasterize(NSVGrasterizer * r,
+                     NSVGimage * image, float tx, float ty, float scale,
+                     unsigned char * dst, int w, int h, int stride)
+  void nsvgDeleteRasterizer(NSVGrasterizer *)
 
 
 def load_image_svg(image_path: str, width: int, height: int):
   cdef:
-    NSVGimage* svg_img
-    NSVGrasterizer* rast
-    unsigned char* img_data
+    NSVGimage * svg_img
+    NSVGrasterizer * rast
+    unsigned char * img_data
     int w = width
     int h = height
     float scale_w, scale_h, scale
@@ -67,4 +67,5 @@ def load_image_svg(image_path: str, width: int, height: int):
   nsvgDelete(svg_img)
   nsvgDeleteRasterizer(rast)
 
-  return rl.Image(data=img_data, width=w, height=h, mipmaps=1, format=rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
+  return rl.Image(data=img_data, width=w, height=h, mipmaps=1,
+                  format=rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8)
