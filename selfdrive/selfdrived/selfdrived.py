@@ -345,7 +345,7 @@ class SelfdriveD:
     self.lateral_actions.append(self.sm['modelV2'].action.desiredCurvature)
     if lac.active and not recent_steer_pressed and not self.CP.notCar:
       clipped_speed = max(CS.vEgo, 0.3)
-      action_index = min(round(self.sm['liveDelay'].delayEstimate / DT_CTRL) + 1, self.lateral_actions.maxlen)
+      action_index = min(round(self.sm['liveDelay'].lateralDelay / DT_CTRL) + 1, self.lateral_actions.maxlen)
       actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
       desired_lateral_accel = self.lateral_actions[-action_index] * (clipped_speed**2)
       undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
