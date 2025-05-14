@@ -152,6 +152,8 @@ jobs:
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
+      env:
+        TARGET_GIT_REF: ${{ github.event_name == 'pull_request' && github.base_ref || github.event.before }}
     - name: "Upload coverage to Codecov"
       uses: codecov/codecov-action@v4
       with:
