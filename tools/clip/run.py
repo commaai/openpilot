@@ -15,6 +15,7 @@ from typing import Literal
 
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
 
@@ -166,6 +167,7 @@ def clip(
   end: int,
   target_mb: int,
   title: str | None,
+  use_metric: bool = False,
 ):
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
 
@@ -225,8 +227,11 @@ def clip(
 
     xvfb_proc = start_proc(xvfb_cmd, env)
     atexit.register(lambda: xvfb_proc.terminate())
+
     ui_proc = start_proc(ui_cmd, env)
     atexit.register(lambda: ui_proc.terminate())
+    Params().put('IsMetric', '1' if use_metric else '0')
+
     replay_proc = start_proc(replay_cmd, env)
     atexit.register(lambda: replay_proc.terminate())
     procs = [replay_proc, ui_proc, xvfb_proc]
@@ -263,6 +268,7 @@ def main():
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
+  p.add_argument('-m', '--metric', help='use metric units in ui (e.g. kph)', action='store_true')
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
   try:
@@ -276,6 +282,7 @@ def main():
       end=args.end,
       target_mb=args.file_size,
       title=args.title,
+      use_metric=args.metric,
     )
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
