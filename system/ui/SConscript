@@ -1,0 +1,4 @@
+Import('envCython')
+
+d = {'NANOSVG_IMPLEMENTATION': '1', 'NANOSVGRAST_IMPLEMENTATION': '1'}
+envCython.SharedLibrary(target='lib/svg_pyx', source='lib/svg_pyx.pyx', LIBS=envCython['LIBS'], SHLIBPREFIX='', CPPDEFINES=d)

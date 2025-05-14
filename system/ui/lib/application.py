@@ -6,6 +6,7 @@ from enum import IntEnum
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.svg import load_image_svg
 
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -81,7 +82,7 @@ class GuiApplication:
   def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply = False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
     if image_path.endswith('.svg'):
-      image = self._load_image_from_svg(image_path)
+      image = load_image_svg(image_path, width, height)
     else:
       image = rl.load_image(image_path)
 
@@ -111,10 +112,6 @@ class GuiApplication:
 
     rl.unload_image(image)
     return texture
-
-  def _load_image_from_svg(self, svg_path: str):
-    # TODO: Implement SVG loading
-    assert(0)
 
   def close(self):
     if not rl.is_window_ready():

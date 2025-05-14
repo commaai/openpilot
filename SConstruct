@@ -355,6 +355,7 @@ SConscript([
   'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
+  'system/ui/SConscript',
 ])
 if arch != "Darwin":
   SConscript([
