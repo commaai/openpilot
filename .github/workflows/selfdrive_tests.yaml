@@ -94,8 +94,10 @@ jobs:
     - name: Homebrew download cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: ~/Library/Caches/Homebrew
-        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        path: |
+          ~/Library/Caches/Homebrew
+          /opt/homebrew/Cellar
+        key: brew-macos-download-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           brew-macos-download-${{ env.CACHE_COMMIT_DATE }}
           brew-macos-download
@@ -103,7 +105,7 @@ jobs:
       uses: ./.github/workflows/auto-cache
       with:
         path: /opt/homebrew/Cellar
-        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: brew-macos-cellar-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           brew-macos-cellar-${{ env.CACHE_COMMIT_DATE }}
           brew-macos-cellar
