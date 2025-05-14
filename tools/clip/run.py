@@ -16,7 +16,7 @@ from typing import Literal
 
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
+from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader, ReadMode, comma_api_source
@@ -126,8 +126,12 @@ def populate_car_params(route: Route):
   entries = init_data.params.entries
   for cp in entries:
     key, value = cp.key, cp.value
-    params.put(key, value)
-  logger.info(f'persisted {len(entries)} CarParam(s)')
+    try:
+      params.put(key, value)
+    except UnknownKeyName:
+      # forks of openpilot may have other Params keys configured. ignore these
+      logger.warning(f"unknown Params key '{key}', skipping")
+  logger.debug('persisted CarParams')
 
 
 def start_proc(args: list[str], env: dict[str, str]):
