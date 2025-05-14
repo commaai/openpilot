@@ -97,18 +97,10 @@ jobs:
         path: |
           ~/Library/Caches/Homebrew
           /opt/homebrew/Cellar
-        key: brew-macos-download-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          brew-macos-download-${{ env.CACHE_COMMIT_DATE }}
-          brew-macos-download
-    - name: Homebrew cellar cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: /opt/homebrew/Cellar
-        key: brew-macos-cellar-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          brew-macos-cellar-${{ env.CACHE_COMMIT_DATE }}
-          brew-macos-cellar
+          brew-macos-${{ env.CACHE_COMMIT_DATE }}
+          brew-macos
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
