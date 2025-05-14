@@ -25,11 +25,6 @@ runs:
           echo -e "\033[0;31m##################################################\033[0m"
           exit 1
         fi
-
-    - name: install uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
     # do this after checkout to ensure our custom LFS config is used to pull from GitLab
     - shell: bash
       run: git lfs pull
@@ -48,10 +43,6 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    - name: install uv
-      uses: astral-sh/setup-uv@v5
-      with:
-        enable-cache: true
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
