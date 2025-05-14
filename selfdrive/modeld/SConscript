@@ -1,3 +1,4 @@
+import os
 import glob
 
 Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
@@ -12,7 +13,6 @@ common_src = [
   "transforms/loadyuv.cc",
   "transforms/transform.cc",
 ]
-
 
 # OpenCL is a framework on Mac
 if arch == "Darwin":
@@ -40,15 +40,18 @@ for model_name in ['driving_vision', 'driving_policy']:
 
 # Compile tinygrad model
 pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
-if arch == 'larch64':
-  device_string = 'QCOM=1'
-elif arch == 'Darwin':
-  device_string = 'CLANG=1 IMAGE=0 JIT=2'
-else:
-  device_string = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2'
-
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  if "USBGPU" in os.environ and not model_name.startswith("dmon"):
+    device_string = "AMD=1 AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
+  elif arch == 'larch64':
+    device_string = 'QCOM=1'
+  elif arch == 'Darwin':
+    device_string = 'CLANG=1 IMAGE=0 JIT=2'
+  else:
+    device_string = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2'
+
   fn = File(f"models/{model_name}").abspath
   cmd = f'{pythonpath_string} {device_string} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
   lenv.Command(fn + "_tinygrad.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
 
+# USB GPU

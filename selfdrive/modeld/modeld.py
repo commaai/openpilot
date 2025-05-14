@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
-if TICI:
+USBGPU = "USBGPU" in os.environ
+if USBGPU:
+  os.environ['AMD'] = '1'
+elif TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
@@ -147,7 +150,7 @@ class ModelState:
     imgs_cl = {'input_imgs': self.frames['input_imgs'].prepare(buf, transform.flatten()),
                'big_input_imgs': self.frames['big_input_imgs'].prepare(wbuf, transform_wide.flatten())}
 
-    if TICI:
+    if TICI and not USBGPU:
       # The imgs tensors are backed by opencl memory, only need init once
       for key in imgs_cl:
         if key not in self.vision_inputs:
@@ -188,8 +191,12 @@ def main(demo=False):
   sentry.set_tag("daemon", PROCESS_NAME)
   cloudlog.bind(daemon=PROCESS_NAME)
   setproctitle(PROCESS_NAME)
-  config_realtime_process(7, 54)
+  if not USBGPU:
+    # USB GPU currently saturates a core so can't do this yet,
+    # also need to move the aux USB interrupts for good timings
+    config_realtime_process(7, 54)
 
+  st = time.monotonic()
   cloudlog.warning("setting up CL context")
   cl_context = CLContext()
   cloudlog.warning("CL context ready; loading model")
