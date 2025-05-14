@@ -18,7 +18,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import LogReader, ReadMode, comma_api_source
+from openpilot.tools.lib.logreader import LogReader
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
