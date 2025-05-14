@@ -196,7 +196,6 @@ def main(demo=False):
     # also need to move the aux USB interrupts for good timings
     config_realtime_process(7, 54)
 
-  st = time.monotonic()
   cloudlog.warning("setting up CL context")
   cl_context = CLContext()
   cloudlog.warning("CL context ready; loading model")
