@@ -116,8 +116,9 @@ def parse_args(parser: ArgumentParser):
 
 
 def populate_car_params(route: Route):
-  segment = route.name.canonical_name + '/0' # only get first segment qlog
-  lr = LogReader(segment, default_mode=ReadMode.QLOG, source=comma_api_source)
+  qlog_paths = route.qlog_paths()
+  assert len(qlog_paths) > 0, 'must have at least one qlog'
+  lr = LogReader(qlog_paths[0])
   init_data = lr.first('initData')
   assert init_data is not None
 
