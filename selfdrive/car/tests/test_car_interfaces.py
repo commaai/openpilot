@@ -16,6 +16,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
+from openpilot.selfdrive.locationd.lagd import MAX_LAG, STANDARD_LAG
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
 
 ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
@@ -56,6 +57,7 @@ class TestCarInterfaces:
     assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
 
     # Lateral sanity checks
+    assert (car_params.steerActuatorDelay + STANDARD_LAG) <= MAX_LAG
     if car_params.steerControlType != CarParams.SteerControlType.angle:
       tune = car_params.lateralTuning
       if tune.which() == 'pid':

@@ -22,6 +22,7 @@ MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
 MIN_ABS_YAW_RATE = np.radians(1.0)
 MAX_YAW_RATE_SANITY_CHECK = 1.0
+STANDARD_LAG = 0.2
 MIN_NCC = 0.95
 MAX_LAG = 1.0
 MAX_LAG_STD = 0.1
@@ -159,7 +160,7 @@ class LateralLagEstimator:
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
     self.min_recovery_buffer_sec = min_recovery_buffer_sec
-    self.initial_lag = CP.steerActuatorDelay + 0.2
+    self.initial_lag = CP.steerActuatorDelay + STANDARD_LAG
     self.block_size = block_size
     self.block_count = block_count
     self.min_valid_block_count = min_valid_block_count
