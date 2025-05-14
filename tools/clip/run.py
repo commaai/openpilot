@@ -156,7 +156,17 @@ def wait_for_frames(procs: list[Popen]):
       check_for_failure(proc)
 
 
-def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, route: Route, out: str, start: int, end: int, target_mb: int, title: str | None):
+def clip(
+  data_dir: str | None,
+  quality: Literal['low', 'high'],
+  prefix: str,
+  route: Route,
+  out: str,
+  start: int,
+  end: int,
+  target_mb: int,
+  title: str | None,
+):
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
 
   begin_at = max(start - SECONDS_TO_WARM, 0)
@@ -256,7 +266,17 @@ def main():
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
   try:
-    clip(args.data_dir, args.quality, args.prefix, args.route, args.output, args.start, args.end, args.file_size, args.title)
+    clip(
+      data_dir=args.data_dir,
+      quality=args.quality,
+      prefix=args.prefix,
+      route=args.route,
+      out=args.output,
+      start=args.start,
+      end=args.end,
+      target_mb=args.file_size,
+      title=args.title,
+    )
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
