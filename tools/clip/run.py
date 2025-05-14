@@ -116,10 +116,12 @@ def parse_args(parser: ArgumentParser):
 
 
 def populate_car_params(route: Route):
-  lr = LogReader(route.name.canonical_name, default_mode=ReadMode.QLOG, source=comma_api_source)
-  params = Params()
+  segment = route.name.canonical_name + '/0' # only get first segment qlog
+  lr = LogReader(segment, default_mode=ReadMode.QLOG, source=comma_api_source)
   init_data = lr.first('initData')
   assert init_data is not None
+
+  params = Params()
   entries = init_data.params.entries
   for cp in entries:
     key, value = cp.key, cp.value
