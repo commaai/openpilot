@@ -73,7 +73,7 @@ class TestMADSStateMachine:
         self.clear_events()
 
   def test_user_disable_to_paused(self):
-    paused_events = (EventNameSP.silentLkasDisable, EventNameSP.silentBrakeHold)
+    paused_events = (EventNameSP.silentLkasDisable, )
     for state in ALL_STATES:
       for et in MAINTAIN_STATES[state]:
         self.events_sp.add(make_event([et, ET.USER_DISABLE]))

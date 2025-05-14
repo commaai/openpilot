@@ -51,7 +51,7 @@ class StateMachine:
     if self.state != State.disabled:
       # user and immediate disable always have priority in a non-disabled state
       if self.check_contains(ET.USER_DISABLE):
-        if self._events_sp.has(EventNameSP.silentLkasDisable) or self._events_sp.has(EventNameSP.silentBrakeHold):
+        if self._events_sp.has(EventNameSP.silentLkasDisable):
           self.state = State.paused
         else:
           self.state = State.disabled
