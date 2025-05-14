@@ -33,6 +33,7 @@ class ThermalZone:
 class ThermalConfig:
   cpu: list[ThermalZone] | None = None
   gpu: list[ThermalZone] | None = None
+  dsp: ThermalZone | None = None
   pmic: list[ThermalZone] | None = None
   memory: ThermalZone | None = None
   intake: ThermalZone | None = None
