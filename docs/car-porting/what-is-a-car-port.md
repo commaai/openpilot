@@ -1,6 +1,6 @@
 # What is a car port?
 
-A car port enables openpilot support on a particular car. Each car model openpilot support needs to be individually ported. The complexity of a car port varies depending on many factors including:
+A car port enables openpilot support on a particular car. Each car model openpilot supports needs to be individually ported. The complexity of a car port varies depending on many factors including:
 
 * existing openpilot support for similar cars
 * architecture and APIs available in the car
