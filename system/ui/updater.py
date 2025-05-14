@@ -9,6 +9,9 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_text_box, gui_label
+from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
+from openpilot.system.ui.widgets.network import WifiManagerUI
+
 
 # Constants
 MARGIN = 50
@@ -39,6 +42,8 @@ class Updater:
     self.show_reboot_button = False
     self.process = None
     self.update_thread = None
+    self.wifi_manager = WifiManagerWrapper()
+    self.wifi_manager_ui = WifiManagerUI(self.wifi_manager)
 
   def install_update(self):
     self.current_screen = Screen.PROGRESS
@@ -79,8 +84,9 @@ class Updater:
     gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
 
     # Description
-    desc_text = "An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. \
-                 The download size is approximately 1GB."
+    desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
+                "The download size is approximately 1GB.")
+
     desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, gui_app.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
 
@@ -101,48 +107,16 @@ class Updater:
       return  # Return to avoid further processing after action
 
   def render_wifi_screen(self):
-    # Title and back button
-    title_rect = rl.Rectangle(MARGIN + 50, MARGIN, gui_app.width - MARGIN * 2 - 100, 60)
-    gui_label(title_rect, "Wi-Fi Networks", 60, font_weight=FontWeight.BOLD)
+    # Draw the Wi-Fi manager UI
+    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, gui_app.width - MARGIN * 2 - 100, gui_app.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
+    self.wifi_manager_ui.render(wifi_rect)
+    if self.wifi_manager_ui.require_full_screen:
+      return
 
     back_button_rect = rl.Rectangle(MARGIN, gui_app.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     if gui_button(back_button_rect, "Back"):
       self.current_screen = Screen.PROMPT
       return  # Return to avoid processing other interactions after screen change
-
-    # Draw placeholder for WiFi implementation
-    placeholder_rect = rl.Rectangle(
-      MARGIN,
-      title_rect.y + title_rect.height + MARGIN,
-      gui_app.width - MARGIN * 2,
-      gui_app.height - title_rect.height - MARGIN * 3 - BUTTON_HEIGHT
-    )
-
-    # Draw rounded rectangle background
-    rl.draw_rectangle_rounded(
-      placeholder_rect,
-      0.1,
-      10,
-      rl.Color(41, 41, 41, 255)
-    )
-
-    # Draw placeholder text
-    placeholder_text = "WiFi Implementation Placeholder"
-    text_size = rl.measure_text_ex(gui_app.font(), placeholder_text, 80, 1)
-    text_pos = rl.Vector2(
-      placeholder_rect.x + (placeholder_rect.width - text_size.x) / 2,
-      placeholder_rect.y + (placeholder_rect.height - text_size.y) / 2
-    )
-    rl.draw_text_ex(gui_app.font(), placeholder_text, text_pos, 80, 1, rl.WHITE)
-
-    # Draw instructions
-    instructions_text = "Real WiFi functionality would be implemented here"
-    instructions_size = rl.measure_text_ex(gui_app.font(), instructions_text, 40, 1)
-    instructions_pos = rl.Vector2(
-      placeholder_rect.x + (placeholder_rect.width - instructions_size.x) / 2,
-      text_pos.y + text_size.y + 20
-    )
-    rl.draw_text_ex(gui_app.font(), instructions_text, instructions_pos, 40, 1, rl.GRAY)
 
   def render_progress_screen(self):
     title_rect = rl.Rectangle(MARGIN + 100, 330, gui_app.width - MARGIN * 2 - 200, 100)

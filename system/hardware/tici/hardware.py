@@ -297,13 +297,11 @@ class Tici(HardwareBase):
       return None
 
   def get_modem_temperatures(self):
-    if self.get_device_type() == "mici":
-      return []
     timeout = 0.2  # Default timeout is too short
     try:
       modem = self.get_modem()
       temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
-      return list(map(int, temps.split(' ')[1].split(',')))
+      return list(filter(lambda t: t != 255, map(int, temps.split(' ')[1].split(','))))
     except Exception:
       return []
 
@@ -335,6 +333,7 @@ class Tici(HardwareBase):
     return ThermalConfig(cpu=[ThermalZone(f"cpu{i}-silver-usr") for i in range(4)] +
                              [ThermalZone(f"cpu{i}-gold-usr") for i in range(4)],
                          gpu=[ThermalZone("gpu0-usr"), ThermalZone("gpu1-usr")],
+                         dsp=ThermalZone("compute-hvx-usr"),
                          memory=ThermalZone("ddr-usr"),
                          pmic=[ThermalZone("pm8998_tz"), ThermalZone("pm8005_tz")],
                          intake=intake,

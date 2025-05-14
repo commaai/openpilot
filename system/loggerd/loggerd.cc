@@ -203,7 +203,7 @@ void handle_user_flag(LoggerdState *s) {
 
   // mark route for uploading
   Params params;
-  std::string routes = Params().get("AthenadRecentlyViewedRoutes");
+  std::string routes = params.get("AthenadRecentlyViewedRoutes");
   params.put("AthenadRecentlyViewedRoutes", routes + "," + s->logger.routeName());
 
   prev_segment = s->logger.segment();

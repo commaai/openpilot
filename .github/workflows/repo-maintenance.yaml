@@ -50,7 +50,7 @@ jobs:
     - name: bump submodules
       run: |
         git config --global --add safe.directory '*'
-        git -c submodule."tinygrad".update=none submodule update --remote
+        git submodule update --remote
         git add .
     - name: update car docs
       run: |

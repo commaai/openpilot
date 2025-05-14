@@ -12,7 +12,7 @@ inputs:
     required: true
   save:
     description: 'whether to save the cache'
-    default: 'false'
+    default: 'true'
     required: false
 outputs:
   cache-hit:
