@@ -12,6 +12,7 @@ FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
+ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
 DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 
@@ -52,9 +53,13 @@ class GuiApplication:
     HARDWARE.set_screen_brightness(65)
 
     self._set_log_callback()
-
     rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
-    rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
+
+    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
+    if ENABLE_VSYNC:
+      flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
+    rl.set_config_flags(flags)
+
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
 
