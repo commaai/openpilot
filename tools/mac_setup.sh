@@ -28,8 +28,6 @@ if [[ $(command -v brew) == "" ]]; then
     echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> $RC_FILE
     eval "$(/opt/homebrew/bin/brew shellenv)"
   fi
-else
-  brew up
 fi
 
 brew bundle --verbose --no-upgrade --file=- <<-EOS
