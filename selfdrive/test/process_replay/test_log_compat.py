@@ -21,9 +21,13 @@ def parent_schema_file(tmp_path_factory):
 
   # TODO this will fail if the any capnp files are added/removed vs what was on the parent commit
   commit = run_cmd(["git", "merge-base", f"{TARGET_REMOTE}/{TARGET_BRANCH}", "HEAD"])
+  opendbc_commit = run_cmd(["git", "ls-tree", "--object-only", commit, "opendbc_repo"]) # for car.capnp
   for capnp_fp in glob(os.path.join(CEREAL_PATH, "**", "*.capnp"), recursive=True):
     fname = os.path.relpath(capnp_fp, CEREAL_PATH)
-    capnp_url = f"https://raw.githubusercontent.com/commaai/openpilot/{commit}/cereal/{os.path.relpath(capnp_fp, CEREAL_PATH)}"
+    if fname == "car.capnp":
+      capnp_url = f"https://raw.githubusercontent.com/commaai/opendbc/{opendbc_commit}/opendbc/car/{fname}"
+    else:
+      capnp_url = f"https://raw.githubusercontent.com/commaai/openpilot/{commit}/cereal/{os.path.relpath(capnp_fp, CEREAL_PATH)}"
     tmp_capnp_path = tmp_dir / fname
     if not tmp_capnp_path.exists():
       run_cmd(["curl", "-o", str(tmp_capnp_path), "--create-dirs", capnp_url])
