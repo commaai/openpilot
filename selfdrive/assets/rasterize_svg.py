@@ -12,6 +12,8 @@ import argparse
 from pathlib import Path
 import cairosvg
 
+SVG_SCALE = 4
+
 def rasterize_svgs(directory=None, force=False):
   if directory is None:
     directory = os.path.dirname(os.path.abspath(__file__))
@@ -38,7 +40,7 @@ def rasterize_svgs(directory=None, force=False):
 
     print(f"Converting {svg_path.name} to {png_path.name}")
     try:
-      cairosvg.svg2png(url=str(svg_path), write_to=str(png_path), scale=4)
+      cairosvg.svg2png(url=str(svg_path), write_to=str(png_path), scale=SVG_SCALE)
       converted += 1
     except Exception as e:
       print(f"Failed to convert {svg_path.name}: {e}")
