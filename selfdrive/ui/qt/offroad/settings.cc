@@ -23,43 +23,43 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "OpenpilotEnabledToggle",
       tr("Enable openpilot"),
       tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off."),
-      "../assets/img_chffr_wheel.png",
+      "../assets/icons/chffr_wheel.png",
     },
     {
       "ExperimentalMode",
       tr("Experimental Mode"),
       "",
-      "../assets/img_experimental_white.svg",
+      "../assets/icons/experimental_white.svg",
     },
     {
       "DisengageOnAccelerator",
       tr("Disengage on Accelerator Pedal"),
       tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
-      "../assets/offroad/icon_disengage_on_accelerator.svg",
+      "../assets/icons/disengage_on_accelerator.svg",
     },
     {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
-      "../assets/offroad/icon_warning.png",
+      "../assets/icons/warning.png",
     },
     {
       "AlwaysOnDM",
       tr("Always-On Driver Monitoring"),
       tr("Enable driver monitoring even when openpilot is not engaged."),
-      "../assets/offroad/icon_monitoring.png",
+      "../assets/icons/monitoring.png",
     },
     {
       "RecordFront",
       tr("Record and Upload Driver Camera"),
       tr("Upload data from the driver facing camera and help improve the driver monitoring algorithm."),
-      "../assets/offroad/icon_monitoring.png",
+      "../assets/icons/monitoring.png",
     },
     {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
-      "../assets/offroad/icon_metric.png",
+      "../assets/icons/metric.png",
     },
   };
 
@@ -69,7 +69,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
                                           tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
                                              "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
                                              "your steering wheel distance button."),
-                                          "../assets/offroad/icon_speed_limit.png",
+                                          "../assets/icons/speed_limit.png",
                                           longi_button_texts);
 
   // set up uiState update for personality setting
@@ -91,7 +91,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   // Toggles with confirmation dialogs
-  toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
+  toggles["ExperimentalMode"]->setActiveIcon("../assets/icons/experimental.svg");
   toggles["ExperimentalMode"]->setConfirmation(true, true);
 }
 
