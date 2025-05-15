@@ -28,16 +28,47 @@ LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
 
 
-def save_log(dest, log_msgs, compress=True):
-  dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)
+def save_log(
+  dest: str | pathlib.Path,
+  msgs: Iterable[capnp._DynamicStructReader] | Iterable[Iterable[capnp._DynamicStructReader]],
+  compress=True
+) -> None:
+  """
+  Writes Cap’n-Proto messages to *dest*.
+  • `dest` extension decides codec (.zst / .bz2 / raw).
+  • Accepts *any* iterable: a flat iterator of messages or a
+    generator yielding segments.
+  • Streams bytes – never builds one huge bytes object in RAM.
+  • Use `compress` to toggle compression.
+  """
 
-  if compress and dest.endswith(".bz2"):
-    dat = bz2.compress(dat)
-  elif compress and dest.endswith(".zst"):
-    dat = zstd.compress(dat, 10)
+  def open_encoded(path: str | pathlib.Path, compress=True):
+    path = pathlib.Path(path)
+    if compress:
+      if path.suffix == ".zst":
+        cctx = zstd.ZstdCompressor(level=9)
+        raw = path.open("wb")
+        return cctx.stream_writer(raw)
+      if path.suffix == ".bz2":
+        return bz2.BZ2File(path, "wb", compresslevel=10)
+      print(f"Unknown file extension {path.suffix}, using plain binary")
 
-  with open(dest, "wb") as f:
-    f.write(dat)
+    return path.open("wb")
+
+  def flat_iter(
+    it: Iterable[capnp._DynamicStructReader]
+    | Iterable[Iterable[capnp._DynamicStructReader]]
+  ) -> Iterator[capnp._DynamicStructReader]:
+    for item in it:
+      if isinstance(item, capnp.lib.capnp._DynamicStructReader):
+        yield item
+      else:  # assume it's an iterable of messages
+        yield from item
+
+  with open_encoded(dest, compress) as f:
+    print(f"Saving log to {dest}")
+    for msg in flat_iter(msgs):
+      f.write(msg.as_builder().to_bytes())
 
 def decompress_stream(data: bytes):
   dctx = zstd.ZstdDecompressor()
