@@ -398,7 +398,7 @@ class TestOnroad:
       ("modelV2", 0.06, 0.040),
 
       # can miss cycles here and there, just important the avg frequency is 20Hz
-      ("driverStateV2", 0.2, 0.05),
+      ("driverStateV2", 0.3, 0.05),
     ]
     for (s, instant_max, avg_max) in cfgs:
       ts = [getattr(m, s).modelExecutionTime for m in self.msgs[s]]

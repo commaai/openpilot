@@ -12,11 +12,13 @@ FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
+ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
 DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
+ASSETS_DIR = os.path.join(BASEDIR, "selfdrive/assets")
 FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
 
@@ -36,7 +38,7 @@ class GuiApplication:
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
-    self._textures: list[rl.Texture] = []
+    self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
@@ -52,9 +54,13 @@ class GuiApplication:
     HARDWARE.set_screen_brightness(65)
 
     self._set_log_callback()
-
     rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
-    rl.set_config_flags(rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_VSYNC_HINT)
+
+    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
+    if ENABLE_VSYNC:
+      flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
+    rl.set_config_flags(flags)
+
     rl.init_window(self._width, self._height, title)
     rl.set_target_fps(fps)
 
@@ -62,28 +68,61 @@ class GuiApplication:
     self._set_styles()
     self._load_fonts()
 
-  def load_texture_from_image(self, file_name: str, width: int, height: int, alpha_premultiply = False):
+
+  def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
+    cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
+    if cache_key in self._textures:
+      return self._textures[cache_key]
+
+    texture_obj = self._load_texture_from_image(os.path.join(ASSETS_DIR, asset_path), width, height, alpha_premultiply, keep_aspect_ratio)
+    self._textures[cache_key] = texture_obj
+    return texture_obj
+
+  def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply = False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
-    image = rl.load_image(file_name)
+    if image_path.endswith('.svg'):
+      image = self._load_image_from_svg(image_path)
+    else:
+      image = rl.load_image(image_path)
+
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
-    rl.image_resize(image, width, height)
+
+    # Resize with aspect ratio preservation if requested
+    if keep_aspect_ratio:
+      orig_width = image.width
+      orig_height = image.height
+
+      scale_width = width / orig_width
+      scale_height = height / orig_height
+
+      # Calculate new dimensions
+      scale = min(scale_width, scale_height)
+      new_width = int(orig_width * scale)
+      new_height = int(orig_height * scale)
+
+      rl.image_resize(image, new_width, new_height)
+    else:
+      rl.image_resize(image, width, height)
+
     texture = rl.load_texture_from_image(image)
     # Set texture filtering to smooth the result
     rl.set_texture_filter(texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
 
     rl.unload_image(image)
-
-    self._textures.append(texture)
     return texture
+
+  def _load_image_from_svg(self, svg_path: str):
+    # TODO: Implement SVG loading
+    assert(0)
 
   def close(self):
     if not rl.is_window_ready():
       return
 
-    for texture in self._textures:
+    for texture in self._textures.values():
       rl.unload_texture(texture)
-    self._textures = []
+    self._textures = {}
 
     for font in self._fonts.values():
       rl.unload_font(font)
@@ -92,17 +131,20 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
-    while not (self._window_close_requested or rl.window_should_close()):
-      rl.begin_drawing()
-      rl.clear_background(rl.BLACK)
+    try:
+      while not (self._window_close_requested or rl.window_should_close()):
+        rl.begin_drawing()
+        rl.clear_background(rl.BLACK)
 
-      yield
+        yield
 
-      if DEBUG_FPS:
-        rl.draw_fps(10, 10)
+        if DEBUG_FPS:
+          rl.draw_fps(10, 10)
 
-      rl.end_drawing()
-      self._monitor_fps()
+        rl.end_drawing()
+        self._monitor_fps()
+    except KeyboardInterrupt:
+      pass
 
   def font(self, font_weight: FontWeight=FontWeight.NORMAL):
     return self._fonts[font_weight]

@@ -75,7 +75,7 @@ class WifiManagerUI:
           self.state = StateIdle()
 
       case StateShowForgetConfirm(network):
-        result = confirm_dialog(rect, f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
+        result = confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
         if result == 1:
           self.forget_network(network)
         elif result == 0:
@@ -83,6 +83,11 @@ class WifiManagerUI:
 
       case _:
         self._draw_network_list(rect)
+
+  @property
+  def require_full_screen(self) -> bool:
+    """Check if the WiFi UI requires exclusive full-screen rendering."""
+    return isinstance(self.state, (StateNeedsAuth, StateShowForgetConfirm))
 
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
