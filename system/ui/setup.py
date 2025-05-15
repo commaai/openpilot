@@ -49,8 +49,8 @@ class Setup:
     self.keyboard = Keyboard()
     self.selected_radio = None
 
-    self.warning = gui_app.texture("offroad/icon_warning.png", 150, 150)
-    self.checkmark = gui_app.texture("img_circled_check.png", 100, 100)
+    self.warning = gui_app.texture("icons/warning.png", 150, 150)
+    self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -102,7 +102,7 @@ class Setup:
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
     ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
-    triangle = gui_app.texture("img_continue_triangle.png", 54, int(btn_rect.height))
+    triangle = gui_app.texture("images/button_continue_triangle.svg", 54, int(btn_rect.height))
     rl.draw_texture_v(triangle, rl.Vector2(btn_rect.x + btn_rect.width / 2 - triangle.width / 2, btn_rect.height / 2 - triangle.height / 2), rl.WHITE)
 
     if ret:
