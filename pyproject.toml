@@ -28,9 +28,6 @@ dependencies = [
   "setuptools",
   "numpy >=2.0, <2.2", # Linting issues with mypy in 2.2
 
-  # ui
-  "cairosvg",
-
   # body / webrtcd
   "aiohttp",
   "aiortc",
