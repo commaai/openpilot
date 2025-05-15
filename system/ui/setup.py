@@ -125,6 +125,7 @@ class Setup:
     if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.GETTING_STARTED
 
+    # FIXME: "Continue without Wi-Fi" until we know we are connected
     continue_enabled = True
     continue_text = "Continue"
 
