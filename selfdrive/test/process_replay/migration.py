@@ -37,11 +37,24 @@ def migrated_segments(lr: LogIterable, manager_states: bool = False, panda_state
   if isinstance(lr, list):
     yield migrate_all(lr, **kwargs)
     return
-  seg_iter = getattr(lr, "segments", None)
-  if callable(seg_iter):
-    for seg in lr.segments(): # each seg auto-deallocated
-      yield migrate_all(seg, **kwargs)
-    return
+
+  total = len(lr.logreader_identifiers)
+  prev  = None                                 # previous segment list
+  for idx, seg in enumerate(lr.segments()):
+    seg = list(seg)                            # materialise once
+    if prev is None:                           # first segment
+      prev = seg
+      # edge-case: route has exactly one segment
+      if total == 1:
+        yield migrate_all(prev, **kwargs)
+      continue
+    # Last segment can miss important messages like carParams so we need to combine the last and second last
+    if idx == total - 1:                       # last segment
+      prev.extend(seg)                         # merge last → prev
+      yield migrate_all(prev, **kwargs)
+    else:
+      yield migrate_all(prev, **kwargs)
+      prev = seg
 
 
 def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
