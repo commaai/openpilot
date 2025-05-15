@@ -157,7 +157,8 @@ class Setup:
     gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", BODY_FONT_SIZE)
 
     if openpilot_selected:
-      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100 - self.checkmark.width, openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2)
+      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100 - self.checkmark.width,
+                                 openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2)
       rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
 
     custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing,
