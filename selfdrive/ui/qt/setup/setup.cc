@@ -159,7 +159,7 @@ QWidget * Setup::getting_started() {
   vlayout->addStretch();
 
   QPushButton *btn = new QPushButton();
-  btn->setIcon(QIcon(":/img_continue_triangle.svg"));
+  btn->setIcon(QIcon(":/images/button_continue_triangle.svg"));
   btn->setIconSize(QSize(54, 106));
   btn->setFixedSize(310, 1080);
   btn->setProperty("primary", true);
