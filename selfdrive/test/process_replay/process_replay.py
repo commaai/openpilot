@@ -656,21 +656,23 @@ def replay_process(
   fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
   captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
-  ret_logs = []
-  mrps = MultiProcessReplaySession(
+  ret_logs: list[capnp._DynamicStructReader] = []
+
+  with MultiProcessReplaySession(
     cfgs=cfg,
     lr=lr,
     frs=frs,
     fingerprint=fingerprint,
     custom_params=custom_params,
     captured_output_store=captured_output_store,
-    disable_progress=disable_progress
-  )
-
-  for proc_logs in mrps:
-    ret_logs.extend(proc_logs)
+    disable_progress=disable_progress,
+    return_all_logs=return_all_logs,
+  ) as mrps:                            # ← guarantees stop()
+    for proc_logs in mrps:
+      ret_logs.extend(proc_logs)
 
   return ret_logs
+
 
 
 def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=None) -> dict[str, Any]:
