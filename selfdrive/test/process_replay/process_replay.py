@@ -912,6 +912,10 @@ class MultiProcessReplaySession:
       print(f"Exception: {exc_type}, {exc_val}")
     return False
 
-  def __iter__(self):
+  def segments(self):
     for input_segment in self.input_segments:
-      yield from self._feed(input_segment)
+      yield self._feed(input_segment)
+
+  def __iter__(self):  # might be better to yield msgs here instead of segments?
+    for input_segment in self.input_segments:
+      yield self._feed(input_segment)
