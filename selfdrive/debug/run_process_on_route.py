@@ -16,6 +16,6 @@ if __name__ == "__main__":
   cfgs = [c for c in CONFIGS if c.proc_name in args.process]
 
   lr = LogReader(args.route)#, prefetch_all=True, max_download_workers=32)
-  fn = f"{args.route.replace('/', '_')}_{'_'.join(args.process)}.zst",
-  replay_stream = MultiProcessReplaySession(cfgs, lr, fingerprint=args.fingerprint, return_all_logs=True),
-  save_log(fn, replay_stream)
+  fn = f"{args.route.replace('/', '_')}_{'_'.join(args.process)}.zst"
+  with MultiProcessReplaySession(cfgs, lr, fingerprint=args.fingerprint, return_all_logs=True) as replay_stream:
+    save_log(fn, replay_stream)
