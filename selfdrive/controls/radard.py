@@ -266,7 +266,7 @@ def main() -> None:
 
   RD = RadarD(CP.radarDelay)
 
-  while 1:
+  while True:
     sm.update()
 
     RD.update(sm, sm['liveTracks'])
@@ -274,4 +274,11 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    pass
+  except Exception as e:
+    cloudlog.exception(f"radard crashed with exception: {e}")
+    raise
+

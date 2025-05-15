@@ -220,9 +220,15 @@ class Controls:
 
 
 def main():
-  config_realtime_process(4, Priority.CTRL_HIGH)
-  controls = Controls()
-  controls.run()
+  try:
+    config_realtime_process(4, Priority.CTRL_HIGH)
+    controls = Controls()
+    controls.run()
+  except KeyboardInterrupt:
+    pass
+  except Exception as e:
+    cloudlog.exception(f"controlsd crashed with exception: {e}")
+    raise
 
 
 if __name__ == "__main__":

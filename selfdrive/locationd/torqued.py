@@ -268,7 +268,13 @@ def main(demo=False):
 if __name__ == "__main__":
   import argparse
 
-  parser = argparse.ArgumentParser(description='Process the --demo argument.')
-  parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
-  args = parser.parse_args()
-  main(demo=args.demo)
+  try:
+    parser = argparse.ArgumentParser(description='Process the --demo argument.')
+    parser.add_argument('--demo', action='store_true', help='A boolean for demo mode.')
+    args = parser.parse_args()
+    main(demo=args.demo)
+  except KeyboardInterrupt:
+    pass
+  except Exception as e:
+    cloudlog.exception(f"torqued crashed with exception: {e}")
+    raise

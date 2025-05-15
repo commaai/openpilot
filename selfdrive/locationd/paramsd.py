@@ -297,4 +297,10 @@ def main():
 
 
 if __name__ == "__main__":
-  main()
+  try:
+    main()
+  except KeyboardInterrupt:
+    pass
+  except Exception as e:
+    cloudlog.exception(f"paramsd crashed with exception: {e}")
+    raise
