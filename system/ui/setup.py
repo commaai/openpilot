@@ -13,7 +13,6 @@ from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label, gui_text_box
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.icon import Icon
 
 MARGIN = 50
 TITLE_FONT_SIZE = 116
@@ -50,9 +49,8 @@ class Setup:
     self.keyboard = Keyboard()
     self.selected_radio = None
 
-    self.warning = Icon("offroad/icon_warning.png")
-    self.triangle = Icon("img_continue_triangle.svg", origin=rl.Vector2(0.5, 0.5))
-    self.checkmark = Icon("img_circled_check.svg", origin=rl.Vector2(0.5, 0.5))
+    self.warning = gui_app.texture("offroad/icon_warning.png", 150, 150)
+    self.checkmark = gui_app.texture("img_circled_check.png", 100, 100)
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -77,7 +75,7 @@ class Setup:
       self.render_download_failed(rect)
 
   def render_low_voltage(self, rect: rl.Rectangle):
-    self.warning.render(rl.Vector2(rect.x + 150, rect.y + 110))
+    rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
 
     title_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE)
     gui_label(title_rect, "WARNING: Low Voltage", TITLE_FONT_SIZE, rl.Color(255, 89, 79, 255), FontWeight.MEDIUM)
@@ -104,7 +102,8 @@ class Setup:
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
     ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
-    self.triangle.render(rl.Vector2(btn_rect.x + btn_rect.width / 2, btn_rect.height / 2), width=54)
+    triangle = gui_app.texture("img_continue_triangle.png", 54, int(btn_rect.height))
+    rl.draw_texture_v(triangle, rl.Vector2(btn_rect.x + btn_rect.width / 2 - triangle.width / 2, btn_rect.height / 2 - triangle.height / 2), rl.WHITE)
 
     if ret:
       self.state = SetupState.NETWORK_SETUP
@@ -158,8 +157,8 @@ class Setup:
     gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", BODY_FONT_SIZE)
 
     if openpilot_selected:
-      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100, openpilot_rect.y + radio_height / 2)
-      self.checkmark.render(checkmark_pos, height=100)
+      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100 - self.checkmark.width, openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2)
+      rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
 
     custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing,
                                rect.width - MARGIN * 2, radio_height)
@@ -169,8 +168,8 @@ class Setup:
     gui_label(rl.Rectangle(custom_rect.x + 100, custom_rect.y, custom_rect.width - 200, radio_height), "Custom Software", BODY_FONT_SIZE)
 
     if custom_selected:
-      checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100, custom_rect.y + radio_height / 2)
-      self.checkmark.render(checkmark_pos, height=100)
+      checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100 - self.checkmark.width, custom_rect.y + radio_height / 2 - self.checkmark.height / 2)
+      rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
 
     mouse_pos = rl.get_mouse_position()
     if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
@@ -185,6 +184,7 @@ class Setup:
     if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.NETWORK_SETUP
 
+    # FIXME: button not correctly disabled
     continue_enabled = self.selected_radio is not None
     if gui_button(
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
