@@ -49,6 +49,9 @@ def gui_button(
 ) -> int:
   result = 0
 
+  if button_style in (ButtonStyle.PRIMARY, ButtonStyle.DANGER) and not is_enabled:
+    button_style = ButtonStyle.NORMAL
+
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
   if is_enabled and rl.check_collision_point_rec(rl.get_mouse_position(), rect):
