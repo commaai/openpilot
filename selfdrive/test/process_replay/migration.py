@@ -28,6 +28,22 @@ MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 ## 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
 ## 4. it must return a list of operations to be applied to the logreader (replace, add, delete)
 ## 5. all migration functions must be independent of each other
+def migrated_segments(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
+  kwargs = dict(
+    manager_states=manager_states,
+    panda_states=panda_states,
+    camera_states=camera_states,
+  )
+  if isinstance(lr, list):
+    yield migrate_all(lr, **kwargs)
+    return
+  seg_iter = getattr(lr, "segments", None)
+  if callable(seg_iter):
+    for seg in lr.segments(): # each seg auto-deallocated
+      yield migrate_all(seg, **kwargs)
+    return
+
+
 def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
   migrations = [
     migrate_sensorEvents,
