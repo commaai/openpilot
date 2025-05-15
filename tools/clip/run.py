@@ -19,7 +19,7 @@ from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import LogReader, ReadMode, comma_api_source
+from openpilot.tools.lib.logreader import LogReader
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
@@ -117,8 +117,7 @@ def parse_args(parser: ArgumentParser):
 
 
 def populate_car_params(route: Route):
-  segment = route.name.canonical_name + '/0' # only get first segment qlog
-  lr = LogReader(segment, default_mode=ReadMode.QLOG, source=comma_api_source)
+  lr = LogReader(route.qlog_paths()[0] if len(route.qlog_paths()) else route.name.canonical_name)
   init_data = lr.first('initData')
   assert init_data is not None
 
