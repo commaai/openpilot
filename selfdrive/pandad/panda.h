@@ -13,6 +13,7 @@
 #include "cereal/gen/cpp/log.capnp.h"
 #include "panda/board/health.h"
 #include "panda/board/can.h"
+#include "opendbc/safety/board/can_declarations.h"
 #include "selfdrive/pandad/panda_comms.h"
 
 #define USB_TX_SOFT_LIMIT   (0x100U)
