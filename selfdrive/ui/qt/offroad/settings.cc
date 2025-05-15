@@ -91,7 +91,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   }
 
   // Toggles with confirmation dialogs
-  toggles["ExperimentalMode"]->setActiveIcon("../assets/img_experimental.svg");
+  toggles["ExperimentalMode"]->setActiveIcon("../assets/icons/experimental.svg");
   toggles["ExperimentalMode"]->setConfirmation(true, true);
 }
 
