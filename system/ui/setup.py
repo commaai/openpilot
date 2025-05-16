@@ -248,6 +248,7 @@ class Setup:
     # Enter pressed
     if result == 1:
       url = self.keyboard.text
+      self.keyboard.clear()
       if url:
         self.download(url)
 
