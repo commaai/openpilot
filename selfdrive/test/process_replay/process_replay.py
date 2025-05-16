@@ -652,14 +652,18 @@ def replay_process_with_name(name: str | Iterable[str], lr: LogIterable, *args, 
 
 
 def replay_process(
-  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] = None,
+  cfgs: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] = None,
   fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
   captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
   ret_logs: list[capnp._DynamicStructReader] = []
+  if isinstance(cfgs, Iterable) and not isinstance(cfgs, str):
+    cfgs = list(cfgs)
+  else:
+    cfgs = [cfgs]
 
   with MultiProcessReplaySession(
-    cfgs=cfg,
+    cfgs=cfgs,
     lr=lr,
     frs=frs,
     fingerprint=fingerprint,
@@ -768,21 +772,10 @@ def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool
 
 class MultiProcessReplaySession:
   def __init__(
-    self, cfgs: list[ProcessConfig], lr: LogIterable | str, frs: dict[str, BaseFrameReader]| None = None,
+    self, cfgs: list[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader]| None = None,
     fingerprint: str | None = None, custom_params: dict[str, Any] | None = None,
     captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False, return_all_logs: bool = False
   ) -> None:
-    if isinstance(cfgs, Iterable) and not isinstance(cfgs, str):
-      cfgs = list(cfgs)
-    else:
-      cfgs = [cfgs]
-
-    if isinstance(lr, str):
-      from openpilot.tools.lib.logreader import LogReader
-      self.lr = LogReader(lr)
-    else:
-      self.lr = lr
-
     self.cfgs = cfgs
     self.frs = frs
     self.fingerprint = fingerprint
