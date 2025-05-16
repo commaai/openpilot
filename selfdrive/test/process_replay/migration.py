@@ -260,14 +260,12 @@ def migrate_managerState(msgs):
 def migrate_gpsLocation(msgs):
   ops = []
   for index, msg in msgs:
-    new_msg = msg.as_builder()
-    g = getattr(new_msg, new_msg.which())
-    # hasFix is a newer field
+    g = getattr(msg, msg.which())
     if not g.hasFix and g.flags == 1:
-      g.hasFix = True
-    ops.append((index, new_msg.as_reader()))
+      new_msg = msg.as_builder()
+      getattr(new_msg, new_msg.which()).hasFix = True
+      ops.append((index, new_msg.as_reader()))
   return ops, [], []
-
 
 @migration(inputs=["deviceState", "initData"])
 def migrate_deviceState(msgs):
@@ -279,9 +277,11 @@ def migrate_deviceState(msgs):
   ops = []
   for i, msg in msgs:
     if msg.which() == 'deviceState':
-      n = msg.as_builder()
-      n.deviceState.deviceType = init_data.deviceType
-      ops.append((i, n.as_reader()))
+      ds = msg.deviceState
+      if ds.deviceType != init_data.deviceType:
+        n = msg.as_builder()
+        n.deviceState.deviceType = init_data.deviceType
+        ops.append((i, n.as_reader()))
   return ops, [], []
 
 
@@ -413,11 +413,14 @@ def migrate_cameraStates(msgs):
 def migrate_carParams(msgs):
   ops = []
   for index, msg in msgs:
-    CP = msg.as_builder()
-    CP.carParams.carFingerprint = MIGRATION.get(CP.carParams.carFingerprint, CP.carParams.carFingerprint)
-    for car_fw in CP.carParams.carFw:
-      car_fw.brand = CP.carParams.brand
-    ops.append((index, CP.as_reader()))
+    cp = msg.carParams
+    fp = MIGRATION.get(cp.carFingerprint, cp.carFingerprint)
+    if fp != cp.carFingerprint or any(fw.brand != cp.brand for fw in cp.carFw):
+      CP = msg.as_builder()
+      CP.carParams.carFingerprint = fp
+      for i in range(len(CP.carParams.carFw)):
+        CP.carParams.carFw[i].brand = CP.carParams.brand
+      ops.append((index, CP.as_reader()))
   return ops, [], []
 
 
@@ -483,17 +486,17 @@ def migrate_onroadEvents(msgs):
 def migrate_driverMonitoringState(msgs):
   ops = []
   for index, msg in msgs:
-    msg = msg.as_builder()
+    dms = msg.driverMonitoringState
     events = []
-    for event in msg.driverMonitoringState.eventsDEPRECATED:
+    for e in dms.eventsDEPRECATED:
       try:
-        if not str(event.name).endswith('DEPRECATED'):
-          # dict converts name enum into string representation
-          events.append(log.OnroadEvent(**event.to_dict()))
-      except RuntimeError:  # Member was null
+        if e is not None and not str(e.name).endswith("DEPRECATED"):
+          events.append(log.OnroadEvent(**e.to_dict()))
+      except RuntimeError:
         traceback.print_exc()
-
-    msg.driverMonitoringState.events = events
-    ops.append((index, msg.as_reader()))
-
+    if not events:
+      continue
+    n = msg.as_builder()
+    n.driverMonitoringState.events = events
+    ops.append((index, n.as_reader()))
   return ops, [], []
