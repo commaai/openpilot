@@ -14,18 +14,11 @@ ICON_IDS=(
 )
 ICON_FILL_COLOR="#fff"
 
+# extract bootstrap icons
 for id in "${ICON_IDS[@]}"; do
-  # Extract symbol and convert to SVG
   svg="${ICONS_DIR}/${id}.svg"
   perl -0777 -ne "print \$& if /<symbol[^>]*id=\"$id\"[^>]*>.*?<\/symbol>/s" "$BOOTSTRAP_SVG" \
   | sed "s/<symbol/<svg fill=\"$ICON_FILL_COLOR\"/; s/<\/symbol>/<\/svg>/" > "$svg"
-
-  # convert to PNG
-  png="${ICONS_DIR}/${id}.png"
-  inkscape "$svg" --export-filename="$png" --export-width=512
-  optipng -o7 -strip all "$png"
-
-  rm "$svg"
 done
 
 # sudo apt install inkscape
@@ -45,4 +38,9 @@ for svg in $(find $DIR -type f | grep svg$); do
   inkscape "$svg" --export-filename="$png" "$export_dim"
 
   optipng -o7 -strip all "$png"
+done
+
+# cleanup bootstrap SVGs
+for id in "${ICON_IDS[@]}"; do
+  rm "${ICONS_DIR}/${id}.svg"
 done
