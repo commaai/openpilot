@@ -1,10 +1,6 @@
 import random
 
-from cereal import log
-from openpilot.system.hardware.base import HardwareBase
-
-NetworkType = log.DeviceState.NetworkType
-NetworkStrength = log.DeviceState.NetworkStrength
+from openpilot.system.hardware.base import HardwareBase, NetworkStrength, NetworkType
 
 
 class Pc(HardwareBase):
