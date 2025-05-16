@@ -55,6 +55,10 @@ class Keyboard:
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
+    self._key_icons = {
+      BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 70, 70),
+      SHIFT_KEY: gui_app.texture("icons/shift.png", 70, 70),
+    }
 
   @property
   def text(self):
@@ -95,7 +99,14 @@ class Keyboard:
         start_x += new_width
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
-        if gui_button(key_rect, key, is_enabled=is_enabled):
+        result = -1
+        if key in self._key_icons:
+          texture = self._key_icons[key]
+          result = gui_button(key_rect, "", icon=texture, is_enabled=is_enabled)
+        else:
+          result = gui_button(key_rect, key, is_enabled=is_enabled)
+
+        if result:
           if key == ENTER_KEY:
             return 1
           else:
