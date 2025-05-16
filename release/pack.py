@@ -21,7 +21,7 @@ def copy(src, dest, follow_symlinks=False):
 
 
 if __name__ == '__main__':
-  parser = ArgumentParser(prog='pack-raylib.py', description="package openpilot's raylib code into a portable executable", epilog='comma.ai')
+  parser = ArgumentParser(prog='pack.py', description="package openpilot's raylib code into a portable executable", epilog='comma.ai')
   parser.add_argument('-e', '--entrypoint', help="function to call in module, default is 'main'", default='main')
   parser.add_argument('-o', '--output', help='output file')
   parser.add_argument('module', help="the module to target, e.g. 'openpilot.system.ui.spinner'")
