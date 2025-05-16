@@ -32,7 +32,6 @@ if __name__ == '__main__':
     args.output = args.module
 
   try:
-    print(args.module)
     mod = importlib.import_module(args.module)
   except ModuleNotFoundError:
     print(f'{args.module} not found, typo?')
