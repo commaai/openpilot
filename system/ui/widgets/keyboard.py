@@ -56,8 +56,9 @@ class Keyboard:
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
-      BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 70, 70),
-      SHIFT_KEY: gui_app.texture("icons/shift.png", 70, 70),
+      BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 60, 60),
+      SHIFT_KEY: gui_app.texture("icons/shift.png", 60, 60),
+      SHIFT_DOWN_KEY: gui_app.texture("icons/arrow-down.png", 60, 60),
     }
 
   @property
