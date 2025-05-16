@@ -23,14 +23,15 @@ ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 class FontWeight(IntEnum):
-  BLACK = 0
-  BOLD = 1
-  EXTRA_BOLD = 2
-  EXTRA_LIGHT = 3
+  THIN = 0
+  EXTRA_LIGHT = 1
+  LIGHT = 2
+  NORMAL = 3
   MEDIUM = 4
-  NORMAL = 5
-  SEMI_BOLD = 6
-  THIN = 7
+  SEMI_BOLD = 5
+  BOLD = 6
+  EXTRA_BOLD = 7
+  BLACK = 8
 
 
 class GuiApplication:
@@ -153,14 +154,15 @@ class GuiApplication:
 
   def _load_fonts(self):
     font_files = (
-      "Inter-Black.ttf",
+      "Inter-Thin.ttf",
+      "Inter-ExtraLight.ttf",
+      "Inter-Light.ttf",
+      "Inter-Regular.ttf",
+      "Inter-Medium.ttf",
+      "Inter-SemiBold.ttf",
       "Inter-Bold.ttf",
       "Inter-ExtraBold.ttf",
-      "Inter-ExtraLight.ttf",
-      "Inter-Medium.ttf",
-      "Inter-Regular.ttf",
-      "Inter-SemiBold.ttf",
-      "Inter-Thin.ttf"
+      "Inter-Black.ttf",
       )
 
     for index, font_file in enumerate(font_files):
