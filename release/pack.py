@@ -11,7 +11,7 @@ from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
 
-EXTS = ['.png', '.py']
+EXTS = ['.png', '.py', '.svg', '.ttf']
 INTERPRETER = '/usr/bin/env python3'
 
 
@@ -41,7 +41,7 @@ if __name__ == '__main__':
     sys.exit(1)
 
   with tempfile.TemporaryDirectory() as tmp:
-    shutil.copytree(BASEDIR + '/openpilot', tmp, symlinks=False, dirs_exist_ok=True, copy_function=copy)
+    shutil.copytree(BASEDIR + '/openpilot', tmp + '/openpilot', symlinks=False, dirs_exist_ok=True, copy_function=copy)
     entry = f'{args.module}:{args.entrypoint}'
     zipapp.create_archive(tmp, target=args.output, interpreter=INTERPRETER, main=entry)
 
