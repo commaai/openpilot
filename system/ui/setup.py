@@ -161,8 +161,8 @@ class Setup:
       continue_text,
       button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
     ):
-      if continue_enabled:
-        self.state = SetupState.SOFTWARE_SELECTION
+      self.state = SetupState.SOFTWARE_SELECTION
+      self.stop_network_check_thread.set()
 
   def render_software_selection(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
@@ -323,14 +323,12 @@ def main():
   try:
     gui_app.init_window("Setup")
     setup = Setup()
-
     for _ in gui_app.render():
       setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-
+    setup.close()
   except Exception as e:
     print(f"Setup error: {e}")
   finally:
-    setup.close()
     gui_app.close()
 
 
