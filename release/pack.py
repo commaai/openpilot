@@ -42,7 +42,8 @@ if __name__ == '__main__':
     print(f'{args.module} does not have a {args.entrypoint}() function, typo?')
     sys.exit(1)
 
-  with tempfile.TemporaryDirectory() as tmp:
+  with tempfile.TemporaryDirectory(delete=False) as tmp:
+    print(tmp)
     for directory in DIRS:
       shutil.copytree(BASEDIR + '/' + directory, tmp + '/' + directory, symlinks=False, dirs_exist_ok=True, copy_function=copy)
     entry = f'{args.module}:{args.entrypoint}'
