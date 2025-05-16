@@ -229,7 +229,8 @@ class Setup:
     url_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67, rect.width - 117 - 100, 64)
     gui_label(url_rect, self.failed_url, 64, font_weight=FontWeight.NORMAL)
 
-    error_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48, rect.width - 117 - 100, BODY_FONT_SIZE)
+    error_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48,
+                              rect.width - 117 - 100, rect.height - 185 + TITLE_FONT_SIZE + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2)
     gui_text_box(error_rect, self.failed_reason, BODY_FONT_SIZE)
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
