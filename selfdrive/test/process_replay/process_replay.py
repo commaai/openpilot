@@ -771,6 +771,7 @@ class MultiProcessReplaySession:
     captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False,
   ) -> None:
     self.cfgs = cfgs
+    self.lr = lr
     self.frs = frs
     self.fingerprint = fingerprint
     self.custom_params = custom_params
