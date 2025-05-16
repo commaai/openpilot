@@ -13,7 +13,13 @@ from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
-from openpilot.common.params import Params
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  # Params/Cythonized modules are not available in zipapp
+  class Params:
+    def get(self, key, encoding):
+      return None
 from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
