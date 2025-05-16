@@ -901,4 +901,4 @@ class MultiProcessReplaySession:
 
   def __iter__(self):  # might be better to yield msgs here instead of segments?
     for input_segment in self.input_segments:
-      yield self._feed(input_segment)
+      yield next(self._feed(input_segment))
