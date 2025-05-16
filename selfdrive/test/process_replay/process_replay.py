@@ -663,15 +663,9 @@ def replay_process(
     cfgs = [cfgs]
 
   with MultiProcessReplaySession(
-    cfgs=cfgs,
-    lr=lr,
-    frs=frs,
-    fingerprint=fingerprint,
-    custom_params=custom_params,
-    captured_output_store=captured_output_store,
-    disable_progress=disable_progress,
-    return_all_logs=return_all_logs,
-  ) as mrps:                            # ← guarantees stop()
+    cfgs, lr, frs, fingerprint, return_all_logs, custom_params, captured_output_store,
+    disable_progress,
+  ) as mrps:
     for proc_logs in mrps:
       ret_logs.extend(proc_logs)
 
@@ -773,8 +767,8 @@ def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool
 class MultiProcessReplaySession:
   def __init__(
     self, cfgs: list[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader]| None = None,
-    fingerprint: str | None = None, custom_params: dict[str, Any] | None = None,
-    captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False, return_all_logs: bool = False
+    fingerprint: str | None = None, return_all_logs: bool = False, custom_params: dict[str, Any] | None = None,
+    captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False,
   ) -> None:
     self.cfgs = cfgs
     self.frs = frs
@@ -879,11 +873,11 @@ class MultiProcessReplaySession:
         self.captured_output_store[container.cfg.proc_name] = {"out": out, "err": err}
 
   def __enter__(self):
-
     return self
 
   def __exit__(self, exc_type, exc_val, exc_tb):
-    self._stop()
+    if self._started:
+      self._stop()
     if exc_type is not None:
       print(f"Exception: {exc_type}, {exc_val}")
     return False

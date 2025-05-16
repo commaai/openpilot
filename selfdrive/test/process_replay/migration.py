@@ -34,7 +34,7 @@ def migrated_segments(lr: LogIterable | LogReader, manager_states: bool = False,
     panda_states=panda_states,
     camera_states=camera_states,
   )
-  if isinstance(lr, list):
+  if not isinstance(lr, LogReader):
     yield migrate_all(lr, **kwargs)
     return
 
