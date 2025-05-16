@@ -62,13 +62,12 @@ class InputBox:
       return True
     return False
 
-  def render(self, rect, color=rl.LIGHTGRAY, border_color=rl.DARKGRAY, text_color=rl.BLACK, font_size=80):
+  def render(self, rect, color=rl.BLACK, border_color=rl.DARKGRAY, text_color=rl.WHITE, font_size=80):
     # Handle mouse input
     self._handle_mouse_input(rect, font_size)
 
     # Draw input box
     rl.draw_rectangle_rec(rect, color)
-    rl.draw_rectangle_lines_ex(rect, 1, border_color)
 
     # Process keyboard input
     self._handle_keyboard_input()
@@ -81,7 +80,7 @@ class InputBox:
 
     # Display text
     font = gui_app.font()
-    display_text = "•" * len(self._input_text) if self._password_mode else self._input_text
+    display_text = "*" * len(self._input_text) if self._password_mode else self._input_text
     padding = 10
     rl.draw_text_ex(
       font,
@@ -100,7 +99,7 @@ class InputBox:
 
       cursor_height = font_size + 4
       cursor_y = rect.y + rect.height / 2 - cursor_height / 2
-      rl.draw_line(int(cursor_x), int(cursor_y), int(cursor_x), int(cursor_y + cursor_height), rl.BLACK)
+      rl.draw_line(int(cursor_x), int(cursor_y), int(cursor_x), int(cursor_y + cursor_height), rl.LIGHTGRAY)
 
   def _handle_mouse_input(self, rect, font_size):
     """Handle mouse clicks to position cursor."""
