@@ -3,7 +3,7 @@ import os
 import time
 import pyray as rl
 from enum import IntEnum
-from openpilot.common.basedir import BASEDIR
+from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 
@@ -18,9 +18,9 @@ STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
-ASSETS_DIR = os.path.join(BASEDIR, "selfdrive/assets")
-FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
 
+ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
+FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 class FontWeight(IntEnum):
   BLACK = 0
@@ -74,7 +74,8 @@ class GuiApplication:
     if cache_key in self._textures:
       return self._textures[cache_key]
 
-    texture_obj = self._load_texture_from_image(os.path.join(ASSETS_DIR, asset_path), width, height, alpha_premultiply, keep_aspect_ratio)
+    with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
+      texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
@@ -163,9 +164,10 @@ class GuiApplication:
       )
 
     for index, font_file in enumerate(font_files):
-      font = rl.load_font_ex(os.path.join(FONT_DIR, font_file), 120, None, 0)
-      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      self._fonts[index] = font
+      with as_file(FONT_DIR.joinpath(font_file)) as fspath:
+        font = rl.load_font_ex(fspath.as_posix(), 120, None, 0)
+        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        self._fonts[index] = font
 
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
