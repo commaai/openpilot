@@ -115,3 +115,14 @@ class TestDeleter(UploaderTestCase):
     self.join_thread()
 
     assert f_path.exists(), "File deleted when locked"
+
+  def test_delete_stray_file_in_log_root(self):
+    f_path = self.make_file_with_data("", self.f_type, 1)
+
+    self.start_thread()
+    start_time = time.monotonic()
+    while f_path.exists() and time.monotonic() - start_time < 2:
+      time.sleep(0.01)
+    self.join_thread()
+
+    assert not f_path.exists(), "Stray file in log root not deleted"
