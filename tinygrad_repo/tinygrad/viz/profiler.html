@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>tinygrad profiler</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <script src="assets/d3js.org/d3.v7.min.js" charset="utf-8"></script>
+  <style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  html, body {
+    color: #f0f0f5;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+    font-size: 14px;
+    overflow: hidden;
+    background-color: #08090e;
+  }
+  #root {
+    display:flex;
+    width:100%;
+    height: 100%;
+    padding: 20px;
+  }
+  #process-name {
+    background: #0f1018;
+    padding: 2px;
+    border-radius: 2px;
+  }
+  [id^="thread"] {
+    padding: 2px;
+  }
+  #table-root {
+    position: absolute;
+    width: 100%;
+    height: 300px;
+    background: #0f1018;
+    bottom: 0;
+    left: 0;
+    overflow: auto;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 1
+  }
+  th {
+    background: #1D1F2A;
+    cursor: pointer;
+  }
+  th, td {
+    padding: 8px 16px;
+    text-align: left;
+  }
+  th.sorted-asc::after { content: " ↑"; }
+  th.sorted-desc::after { content: " 	↓"; }
+  </style>
+</head>
+<body>
+  <script src="/js/profiler.js"></script>
+</body>
+</html>

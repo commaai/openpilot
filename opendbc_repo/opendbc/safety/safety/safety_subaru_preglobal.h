@@ -55,9 +55,8 @@ static void subaru_preglobal_rx_hook(const CANPacket_t *to_push) {
 
 static bool subaru_preglobal_tx_hook(const CANPacket_t *to_send) {
   const TorqueSteeringLimits SUBARU_PG_STEERING_LIMITS = {
-    .max_steer = 2047,
+    .max_torque = 2047,
     .max_rt_delta = 940,
-    .max_rt_interval = 250000,
     .max_rate_up = 50,
     .max_rate_down = 70,
     .driver_torque_multiplier = 10,
@@ -83,20 +82,10 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
-static bool subaru_preglobal_fwd_hook(int bus_num, int addr) {
-  bool block_msg = false;
-
-  if (bus_num == SUBARU_PG_CAM_BUS) {
-    block_msg = ((addr == MSG_SUBARU_PG_ES_Distance) || (addr == MSG_SUBARU_PG_ES_LKAS));
-  }
-
-  return block_msg;
-}
-
 static safety_config subaru_preglobal_init(uint16_t param) {
   static const CanMsg SUBARU_PG_TX_MSGS[] = {
-    {MSG_SUBARU_PG_ES_Distance, SUBARU_PG_MAIN_BUS, 8, false},
-    {MSG_SUBARU_PG_ES_LKAS,     SUBARU_PG_MAIN_BUS, 8, true}
+    {MSG_SUBARU_PG_ES_Distance, SUBARU_PG_MAIN_BUS, 8, .check_relay = true},
+    {MSG_SUBARU_PG_ES_LKAS,     SUBARU_PG_MAIN_BUS, 8, .check_relay = true}
   };
 
   // TODO: do checksum and counter checks after adding the signals to the outback dbc file
@@ -118,5 +107,4 @@ const safety_hooks subaru_preglobal_hooks = {
   .init = subaru_preglobal_init,
   .rx = subaru_preglobal_rx_hook,
   .tx = subaru_preglobal_tx_hook,
-  .fwd = subaru_preglobal_fwd_hook,
 };

@@ -15,3 +15,5 @@ To run process replay locally:
 1. Run tests with `RUN_PROCESS_REPLAY=1` in your branch. This will capture the kernels.
 2. Checkout master
 3. Run `test/external/process_replay/process_replay.py`
+
+For reference, see `test/external/process_replay/local.sh`.

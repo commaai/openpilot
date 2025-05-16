@@ -1,5 +1,5 @@
 import ctypes
-from typing import Any, Optional, cast
+from typing import Any, cast
 import tinygrad.runtime.autogen.cuda as cuda
 from tinygrad.helpers import init_c_var, dedup
 from tinygrad.device import Buffer, Device
@@ -48,7 +48,7 @@ class CUDAGraph(MultiGraphRunner):
 
     self.instance = init_c_var(cuda.CUgraphExec(), lambda x: check(cuda.cuGraphInstantiate_v2(ctypes.byref(x), self.graph, None, None, 0)))
 
-  def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> Optional[float]:
+  def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> float|None:
     # Update rawbuffers in the c_args struct.
     for (j,i),input_idx in self.input_replace.items():
       if not self.updatable_nodes[j][3]: setattr(self.updatable_nodes[j][2], f'f{i}', input_rawbuffers[input_idx]._buf)

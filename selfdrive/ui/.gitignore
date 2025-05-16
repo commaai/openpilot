@@ -3,9 +3,6 @@ moc_*
 
 translations/main_test_en.*
 
-_text
-_spinner
-
 ui
 mui
 watch3

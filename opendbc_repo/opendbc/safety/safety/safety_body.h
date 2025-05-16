@@ -34,9 +34,9 @@ static safety_config body_init(uint16_t param) {
     {.msg = {{0x201, 0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 100U}, { 0 }, { 0 }}},
   };
 
-  static const CanMsg BODY_TX_MSGS[] = {{0x250, 0, 8, false}, {0x250, 0, 6, false}, {0x251, 0, 5, false},  // body
-                                        {0x350, 0, 8, false}, {0x350, 0, 6, false}, {0x351, 0, 5, false},  // knee
-                                        {0x1, 0, 8, false}}; // CAN flasher
+  static const CanMsg BODY_TX_MSGS[] = {{0x250, 0, 8, .check_relay = false}, {0x250, 0, 6, .check_relay = false}, {0x251, 0, 5, .check_relay = false},  // body
+                                        {0x350, 0, 8, .check_relay = false}, {0x350, 0, 6, .check_relay = false}, {0x351, 0, 5, .check_relay = false},  // knee
+                                        {0x1, 0, 8, .check_relay = false}};  // CAN flasher
 
   UNUSED(param);
   safety_config ret = BUILD_SAFETY_CFG(body_rx_checks, BODY_TX_MSGS);

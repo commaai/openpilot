@@ -23,6 +23,14 @@ class TestPatternMatcher(unittest.TestCase):
     c1 = v1+v2
     self.assertEqual(matcher.rewrite(c1), c1)
 
+  def test_minimum_len(self):
+    matcher = PatternMatcher([
+      (UPat(Ops.NOOP, src=(UPat(Ops.NOOP), UPat(Ops.NOOP)), allow_any_len=True), lambda: True),
+    ])
+    self.assertTrue(matcher.rewrite(UOp(Ops.NOOP, src=(UOp(Ops.NOOP), UOp(Ops.NOOP), UOp(Ops.NOOP),))))
+    self.assertTrue(matcher.rewrite(UOp(Ops.NOOP, src=(UOp(Ops.NOOP), UOp(Ops.NOOP)))))
+    self.assertIsNone(matcher.rewrite(UOp(Ops.NOOP, src=(UOp(Ops.NOOP),))))
+
   @unittest.skip("closures aren't supported on pattern matchers")
   def test_match_sz_0(self):
     match_cnt = 0

@@ -16,8 +16,7 @@ CHUNK_SIZE = 1000 * K
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 def hash_256(link: str) -> str:
-  hsh = str(sha256((link.split("?")[0]).encode('utf-8')).hexdigest())
-  return hsh
+  return sha256((link.split("?")[0]).encode('utf-8')).hexdigest()
 
 
 class URLFileException(Exception):

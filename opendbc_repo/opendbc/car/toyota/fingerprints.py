@@ -1564,6 +1564,23 @@ FW_VERSIONS = {
       b'8646F2402200\x00\x00\x00\x00',
     ],
   },
+  CAR.LEXUS_RC_TSS2: {
+    (Ecu.engine, 0x700, None): [
+      b'\x018966324C8000\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'\x01F15262426000\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'8965B24481\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F6201400\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F2403100\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
+    ],
+  },
   CAR.LEXUS_RX: {
     (Ecu.engine, 0x700, None): [
       b'\x01896630E36100\x00\x00\x00\x00',
@@ -1781,6 +1798,23 @@ FW_VERSIONS = {
       b'\x028646F58010C0\x00\x00\x00\x008646G26011A0\x00\x00\x00\x00',
       b'\x028646F5803200\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
       b'\x028646FV201000\x00\x00\x00\x008646G2601400\x00\x00\x00\x00',
+    ],
+  },
+  CAR.TOYOTA_YARIS: {
+    (Ecu.engine, 0x700, None): [
+      b'\x0189663K015300\x00\x00\x00\x00',
+    ],
+    (Ecu.eps, 0x7a1, None): [
+      b'\x018965BK003200\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x7b0, None): [
+      b'\x01F1526K007500\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F0D05300\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F5205200\x00\x00\x00\x008646G5202200\x00\x00\x00\x00',
     ],
   },
 }

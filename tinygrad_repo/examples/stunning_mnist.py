@@ -5,9 +5,12 @@
 #  - symbolic removal
 
 from examples.beautiful_mnist import Model
-from tinygrad import Tensor, nn, getenv, GlobalCounters
+from tinygrad import Tensor, nn, getenv, GlobalCounters, Variable
 from tinygrad.nn.datasets import mnist
 from tinygrad.helpers import trange, DEBUG
+
+# STEPS=70 python3 examples/stunning_mnist.py
+# NOTE: it's broken with STACK=1, why?
 
 if __name__ == "__main__":
   X_train, Y_train, X_test, Y_test = mnist()
@@ -24,19 +27,21 @@ if __name__ == "__main__":
   print("*** got samples")
 
   with Tensor.train():
-    # TODO: this shouldn't be a for loop. something like: (contract is still up in the air)
     """
     i = UOp.range(samples.shape[0])  # TODO: fix range function on UOp
     losses = model(X_samp[i]).sparse_categorical_crossentropy(Y_samp[i]).backward().contract(i)
     opt.schedule_steps(i)
     """
+    # TODO: this shouldn't be a for loop. something like: (contract is still up in the air)
+    vi = Variable('i', 0, samples.shape[0]-1)
     losses = []
     for i in range(samples.shape[0]):
+      vib = vi.bind(i)
       opt.zero_grad()
-      losses.append(model(X_samp[i]).sparse_categorical_crossentropy(Y_samp[i]).backward())
+      losses.append(model(X_samp[vib]).sparse_categorical_crossentropy(Y_samp[vib]).backward())
       opt.schedule_step()
     # TODO: this stack currently breaks the "generator" aspect of losses. it probably shouldn't
-    #losses = Tensor.stack(*losses)
+    if getenv("STACK", 0): losses = Tensor.stack(*losses)
   print("*** scheduled training")
 
   # evaluate the model
@@ -49,5 +54,8 @@ if __name__ == "__main__":
 
   # only actually do anything at the end
   if getenv("LOSS", 1):
-    for i in (t:=trange(len(losses))): t.set_description(f"loss: {losses[i].item():6.2f}")
-  print(f"test_accuracy: {test_acc.item():5.2f}%")
+    for i in (t:=trange(len(losses))):
+      GlobalCounters.reset()
+      t.set_description(f"loss: {losses[i].item():6.2f}")
+  if getenv("TEST", 1):
+    print(f"test_accuracy: {test_acc.item():5.2f}%")

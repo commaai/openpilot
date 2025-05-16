@@ -4,9 +4,8 @@
 
 #define SUBARU_STEERING_LIMITS_GENERATOR(steer_max, rate_up, rate_down)               \
   {                                                                                   \
-    .max_steer = (steer_max),                                                         \
+    .max_torque = (steer_max),                                                        \
     .max_rt_delta = 940,                                                              \
-    .max_rt_interval = 250000,                                                        \
     .max_rate_up = (rate_up),                                                         \
     .max_rate_down = (rate_down),                                                     \
     .driver_torque_multiplier = 50,                                                   \
@@ -44,22 +43,25 @@
 #define SUBARU_ALT_BUS  1
 #define SUBARU_CAM_BUS  2
 
-#define SUBARU_COMMON_TX_MSGS(alt_bus, lkas_msg)             \
-  {lkas_msg,                     SUBARU_MAIN_BUS, 8, true},  \
-  {MSG_SUBARU_ES_Distance,       alt_bus,         8, false}, \
-  {MSG_SUBARU_ES_DashStatus,     SUBARU_MAIN_BUS, 8, false}, \
-  {MSG_SUBARU_ES_LKAS_State,     SUBARU_MAIN_BUS, 8, false}, \
-  {MSG_SUBARU_ES_Infotainment,   SUBARU_MAIN_BUS, 8, false}, \
+#define SUBARU_BASE_TX_MSGS(alt_bus, lkas_msg) \
+  {lkas_msg,                     SUBARU_MAIN_BUS, 8, .check_relay = true},  \
+  {MSG_SUBARU_ES_DashStatus,     SUBARU_MAIN_BUS, 8, .check_relay = true},  \
+  {MSG_SUBARU_ES_LKAS_State,     SUBARU_MAIN_BUS, 8, .check_relay = true},  \
+  {MSG_SUBARU_ES_Infotainment,   SUBARU_MAIN_BUS, 8, .check_relay = true},  \
 
-#define SUBARU_COMMON_LONG_TX_MSGS(alt_bus)                  \
-  {MSG_SUBARU_ES_Brake,          alt_bus,         8, false}, \
-  {MSG_SUBARU_ES_Status,         alt_bus,         8, false}, \
+#define SUBARU_COMMON_TX_MSGS(alt_bus) \
+  {MSG_SUBARU_ES_Distance, alt_bus, 8, .check_relay = false}, \
 
-#define SUBARU_GEN2_LONG_ADDITIONAL_TX_MSGS()                \
-  {MSG_SUBARU_ES_UDS_Request,    SUBARU_CAM_BUS,  8, false}, \
-  {MSG_SUBARU_ES_HighBeamAssist, SUBARU_MAIN_BUS, 8, false}, \
-  {MSG_SUBARU_ES_STATIC_1,       SUBARU_MAIN_BUS, 8, false}, \
-  {MSG_SUBARU_ES_STATIC_2,       SUBARU_MAIN_BUS, 8, false}, \
+#define SUBARU_COMMON_LONG_TX_MSGS(alt_bus) \
+  {MSG_SUBARU_ES_Distance,       alt_bus,         8, .check_relay = true}, \
+  {MSG_SUBARU_ES_Brake,          alt_bus,         8, .check_relay = true}, \
+  {MSG_SUBARU_ES_Status,         alt_bus,         8, .check_relay = true}, \
+
+#define SUBARU_GEN2_LONG_ADDITIONAL_TX_MSGS() \
+  {MSG_SUBARU_ES_UDS_Request,    SUBARU_CAM_BUS,  8, .check_relay = false}, \
+  {MSG_SUBARU_ES_HighBeamAssist, SUBARU_MAIN_BUS, 8, .check_relay = false}, \
+  {MSG_SUBARU_ES_STATIC_1,       SUBARU_MAIN_BUS, 8, .check_relay = false}, \
+  {MSG_SUBARU_ES_STATIC_2,       SUBARU_MAIN_BUS, 8, .check_relay = false}, \
 
 #define SUBARU_COMMON_RX_CHECKS(alt_bus)                                                                            \
   {.msg = {{MSG_SUBARU_Throttle,        SUBARU_MAIN_BUS, 8, .max_counter = 15U, .frequency = 100U}, { 0 }, { 0 }}}, \
@@ -205,42 +207,24 @@ static bool subaru_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
-static bool subaru_fwd_hook(int bus_num, int addr) {
-  bool block_msg = false;
-
-  if (bus_num == SUBARU_CAM_BUS) {
-    // Global platform
-    bool block_lkas = ((addr == MSG_SUBARU_ES_LKAS) ||
-                       (addr == MSG_SUBARU_ES_DashStatus) ||
-                       (addr == MSG_SUBARU_ES_LKAS_State) ||
-                       (addr == MSG_SUBARU_ES_Infotainment));
-
-    bool block_long = ((addr == MSG_SUBARU_ES_Brake) ||
-                       (addr == MSG_SUBARU_ES_Distance) ||
-                       (addr == MSG_SUBARU_ES_Status));
-
-    block_msg = block_lkas || (subaru_longitudinal && block_long);
-  }
-
-  return block_msg;
-}
-
 static safety_config subaru_init(uint16_t param) {
   static const CanMsg SUBARU_TX_MSGS[] = {
-    SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_BASE_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS)
   };
 
   static const CanMsg SUBARU_LONG_TX_MSGS[] = {
-    SUBARU_COMMON_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_BASE_TX_MSGS(SUBARU_MAIN_BUS, MSG_SUBARU_ES_LKAS)
     SUBARU_COMMON_LONG_TX_MSGS(SUBARU_MAIN_BUS)
   };
 
   static const CanMsg SUBARU_GEN2_TX_MSGS[] = {
-    SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_BASE_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS)
   };
 
   static const CanMsg SUBARU_GEN2_LONG_TX_MSGS[] = {
-    SUBARU_COMMON_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
+    SUBARU_BASE_TX_MSGS(SUBARU_ALT_BUS, MSG_SUBARU_ES_LKAS)
     SUBARU_COMMON_LONG_TX_MSGS(SUBARU_ALT_BUS)
     SUBARU_GEN2_LONG_ADDITIONAL_TX_MSGS()
   };
@@ -277,7 +261,6 @@ const safety_hooks subaru_hooks = {
   .init = subaru_init,
   .rx = subaru_rx_hook,
   .tx = subaru_tx_hook,
-  .fwd = subaru_fwd_hook,
   .get_counter = subaru_get_counter,
   .get_checksum = subaru_get_checksum,
   .compute_checksum = subaru_compute_checksum,

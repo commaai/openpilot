@@ -1,6 +1,6 @@
 #!/bin/bash
 
-export PYTHONPATH="."
+export PYTHONPATH="." AMD=1
 export MODEL="resnet"
 export SUBMISSION_PLATFORM="tinybox_red"
 export DEFAULT_FLOAT="HALF" GPUS=6 BS=1536 EVAL_BS=192

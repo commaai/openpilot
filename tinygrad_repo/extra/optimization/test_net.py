@@ -6,8 +6,9 @@ from copy import deepcopy
 from tinygrad.helpers import getenv, colored
 from tinygrad.tensor import Tensor
 from tinygrad.nn.state import get_parameters, get_state_dict, safe_save, safe_load, load_state_dict
-from tinygrad.engine.search import bufs_from_lin, time_linearizer, actions, get_kernel_actions
-from extra.optimization.helpers import load_worlds, ast_str_to_lin, lin_to_feats
+from tinygrad.engine.search import bufs_from_lin, actions, get_kernel_actions
+from tinygrad.codegen.heuristic import hand_coded_optimizations
+from extra.optimization.helpers import load_worlds, ast_str_to_lin, lin_to_feats, time_linearizer
 from extra.optimization.extract_policynet import PolicyNet
 from extra.optimization.pretrain_valuenet import ValueNet
 
@@ -34,7 +35,7 @@ if __name__ == "__main__":
     rawbufs = bufs_from_lin(lin)
 
     linhc = deepcopy(lin)
-    linhc.hand_coded_optimizations()
+    linhc.applied_opts(hand_coded_optimizations(linhc))
     tmhc = time_linearizer(linhc, rawbufs)
     print(f"{tmhc*1e6:10.2f}     HC    ", linhc.colored_shape())
 

@@ -10,7 +10,7 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 
 LongCtrlState = car.CarControl.Actuators.LongControlState
-MAX_LAT_ACCEL = 2.5
+MAX_LAT_ACCEL = 3.0
 
 
 def joystickd_thread():

@@ -211,11 +211,13 @@ class LLaMa:
     else:
       weights = load(str(model_path))
     if "model.embed_tokens.weight" in weights:
-      weights = convert_from_huggingface(weights, model, params["args"]["n_heads"], params["args"].get("n_kv_heads", params["args"]["n_heads"]))
+      weights = convert_from_huggingface(weights, params["args"]["n_layers"], params["args"]["n_heads"], params["args"].get("n_kv_heads", params["args"]["n_heads"]))
 
     weights = fix_bf16(weights)
 
-    with Context(BEAM=0):
+    # prevent tracking model weights
+    # this is a part of a larger problem with BUFFER UOps and gc in TRACK_MATCH_STATS=2
+    with Context(BEAM=0, TRACK_MATCH_STATS=0):
       # quantize
       if quantize is not None:
         weights = linear.quantize(weights, device)

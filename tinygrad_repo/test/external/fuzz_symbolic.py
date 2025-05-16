@@ -70,7 +70,7 @@ if __name__ == "__main__":
       v = [v1,v2,v3]
       rn = 0
       for t,r in zip(tape, rngs): rn, _ = t(rn, r)
-      num = eval(expr.render())
+      num = eval(expr.render(simplify=False))
       if num != rn:
         unsimplified_num = eval(expr.render(simplify=False))
         assert unsimplified_num == rn, "UNSIMPLIFIED MISMATCH!"

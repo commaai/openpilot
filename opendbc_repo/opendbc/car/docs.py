@@ -32,7 +32,7 @@ def get_params_for_docs(platform) -> CarParams:
   cp_platform = platform if platform in interfaces else MOCK.MOCK
   CP: CarParams = interfaces[cp_platform].get_params(cp_platform, fingerprint=gen_empty_fingerprint(),
                                                      car_fw=[CarParams.CarFw(ecu=CarParams.Ecu.unknown)],
-                                                     experimental_long=True, docs=True)
+                                                     alpha_long=True, docs=True)
   return CP
 
 

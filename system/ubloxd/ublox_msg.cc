@@ -476,6 +476,10 @@ kj::Array<capnp::word> UbloxMsgParser::gen_nav_sat(ubx_t::nav_sat_t *msg) {
     svs[i].setSvId(svs_data[i]->sv_id());
     svs[i].setGnssId(svs_data[i]->gnss_id());
     svs[i].setFlagsBitfield(svs_data[i]->flags());
+    svs[i].setCno(svs_data[i]->cno());
+    svs[i].setElevationDeg(svs_data[i]->elev());
+    svs[i].setAzimuthDeg(svs_data[i]->azim());
+    svs[i].setPseudorangeResidual(svs_data[i]->pr_res() * 0.1);
   }
 
   return capnp::messageToFlatArray(msg_builder);

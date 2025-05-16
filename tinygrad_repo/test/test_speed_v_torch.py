@@ -3,6 +3,7 @@ os.environ["NVIDIA_TF32_OVERRIDE"] = "0"
 os.environ["MKL_NUM_THREADS"] = "1"
 os.environ["NUMEXPR_NUM_THREADS"] = "1"
 os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["VECLIB_MAXIMUM_THREADS"] = "1"
 import unittest
 import torch
 torch.set_num_threads(1)
@@ -47,14 +48,16 @@ def helper_test_speed(f1, *args):
     cache_defeat += 1
 
     # manual pre sync
-    if isinstance(args[0], Tensor): Device[args[0].device].synchronize()
+    if isinstance(args[0], Tensor):
+      local_device = Device[args[0].device]
+      local_device.synchronize()
     else: sync()
 
     GlobalCounters.global_ops = 0
     GlobalCounters.global_mem = 0
     st = time.perf_counter()
     ret = f1(*args)
-    if isinstance(ret, Tensor): Device[ret.device].synchronize()
+    if isinstance(ret, Tensor): local_device.synchronize()
     else: sync()
     et = (time.perf_counter() - st) * 1000
     if i >= 1: ets.append(et)
@@ -159,8 +162,8 @@ class TestSpeed(unittest.TestCase):
     helper_test_generic_square('cumsum_1', 256, f1, f1, onearg=True)
 
   def test_cat(self):
-    helper_test_generic_square('cat_0', 256, lambda x,y: torch.cat((x,y),dim=0), lambda x,y: x.cat(y,dim=0))
-    helper_test_generic_square('cat_1', 256, lambda x,y: torch.cat((x,y),dim=1), lambda x,y: x.cat(y,dim=1))
+    helper_test_generic_square('cat_0', 2048, lambda x,y: torch.cat((x,y),dim=0), lambda x,y: x.cat(y,dim=0))
+    helper_test_generic_square('cat_1', 2048, lambda x,y: torch.cat((x,y),dim=1), lambda x,y: x.cat(y,dim=1))
 
   def test_array_packing(self):
     N = 2048
@@ -190,6 +193,10 @@ class TestSpeed(unittest.TestCase):
     def f(a, b): return a.exp()
     helper_test_generic_square('exp', 2048, f, f, onearg=True)
 
+  def test_sqrt(self):
+    def f(a, b): return a.sqrt()
+    helper_test_generic_square('sqrt', 2048, f, f, onearg=True)
+
   def test_relu(self):
     def f(a, b): return a.relu()
     helper_test_generic_square('relu', 4096, f, f, onearg=True)
@@ -202,8 +209,12 @@ class TestSpeed(unittest.TestCase):
     def f(a, b): return (a*b).sum()
     helper_test_generic_square('mul_sum', 4096, f, f)
 
-  def test_add(self):
-    for N in [1, 1024, 4096]:
+  def test_add_a(self):
+    def f(a, b): return a + b
+    helper_test_generic_square('add', 1, f, f)
+
+  def test_add_big(self):
+    for N in [1024, 4096]:
       def f(a, b): return a + b
       helper_test_generic_square('add', N, f, f)
 

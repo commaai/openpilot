@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
-import os, argparse
+import os, argparse, contextlib
 from typing import Optional, Union
-import tiktoken
+with contextlib.suppress(ImportError): import tiktoken
 from tinygrad import Tensor, TinyJit, Device, GlobalCounters, Variable, dtypes
 from tinygrad.ops import UOp
 from tinygrad.helpers import Timing, DEBUG, JIT, getenv, fetch, colored, trange
@@ -189,7 +189,7 @@ class GPT2:
           tokens = Variable("tokens", 0, VOCAB_SIZE).bind(toks[0][start_pos])
         else:
           tokens = Tensor([x[start_pos:] for x in toks])
-        tok = self.model(tokens, Variable("start_pos", 1 if start_pos else 0, MAX_CONTEXT).bind(start_pos), temperature).tolist()
+        tok = self.model(tokens, Variable("start_pos", 1 if start_pos else 0, MAX_CONTEXT-1).bind(start_pos), temperature).tolist()
       start_pos = len(toks[0])
       for i,t in enumerate(tok): toks[i].append(t)
     return [self.tokenizer.decode(x) for x in toks]

@@ -15,11 +15,11 @@ BASEDIR = Path(__file__).parent / "kits19" / "data"
 TRAIN_PREPROCESSED_DIR =  Path(__file__).parent / "kits19" / "preprocessed" / "train"
 VAL_PREPROCESSED_DIR =  Path(__file__).parent / "kits19" / "preprocessed" / "val"
 
-@functools.lru_cache(None)
+@functools.cache
 def get_train_files():
   return sorted([x for x in BASEDIR.iterdir() if x.stem.startswith("case") and int(x.stem.split("_")[-1]) < 210 and x not in get_val_files()])
 
-@functools.lru_cache(None)
+@functools.cache
 def get_val_files():
   data = fetch("https://raw.githubusercontent.com/mlcommons/training/master/retired_benchmarks/unet3d/pytorch/evaluation_cases.txt").read_text()
   return sorted([x for x in BASEDIR.iterdir() if x.stem.split("_")[-1] in data.split("\n")])

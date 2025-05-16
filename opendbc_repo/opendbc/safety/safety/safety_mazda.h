@@ -50,11 +50,10 @@ static void mazda_rx_hook(const CANPacket_t *to_push) {
 
 static bool mazda_tx_hook(const CANPacket_t *to_send) {
   const TorqueSteeringLimits MAZDA_STEERING_LIMITS = {
-    .max_steer = 800,
+    .max_torque = 800,
     .max_rate_up = 10,
     .max_rate_down = 25,
     .max_rt_delta = 300,
-    .max_rt_interval = 250000,
     .driver_torque_multiplier = 1,
     .driver_torque_allowance = 15,
     .type = TorqueDriverLimited,
@@ -78,7 +77,7 @@ static bool mazda_tx_hook(const CANPacket_t *to_send) {
     // cruise buttons check
     if (addr == MAZDA_CRZ_BTNS) {
       // allow resume spamming while controls allowed, but
-      // only allow cancel while contrls not allowed
+      // only allow cancel while controls not allowed
       bool cancel_cmd = (GET_BYTE(to_send, 0) == 0x1U);
       if (!controls_allowed && !cancel_cmd) {
         tx = false;
@@ -89,18 +88,8 @@ static bool mazda_tx_hook(const CANPacket_t *to_send) {
   return tx;
 }
 
-static bool mazda_fwd_hook(int bus, int addr) {
-  bool block_msg = false;
-
-  if (bus == MAZDA_CAM) {
-    block_msg = (addr == MAZDA_LKAS) || (addr == MAZDA_LKAS_HUD);
-  }
-
-  return block_msg;
-}
-
 static safety_config mazda_init(uint16_t param) {
-  static const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8, true}, {MAZDA_CRZ_BTNS, 0, 8, false}, {MAZDA_LKAS_HUD, 0, 8, false}};
+  static const CanMsg MAZDA_TX_MSGS[] = {{MAZDA_LKAS, 0, 8, .check_relay = true}, {MAZDA_CRZ_BTNS, 0, 8, .check_relay = false}, {MAZDA_LKAS_HUD, 0, 8, .check_relay = true}};
 
   static RxCheck mazda_rx_checks[] = {
     {.msg = {{MAZDA_CRZ_CTRL,     0, 8, .ignore_checksum = true, .ignore_counter = true, .frequency = 50U}, { 0 }, { 0 }}},
@@ -118,5 +107,4 @@ const safety_hooks mazda_hooks = {
   .init = mazda_init,
   .rx = mazda_rx_hook,
   .tx = mazda_tx_hook,
-  .fwd = mazda_fwd_hook,
 };

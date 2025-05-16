@@ -22,6 +22,7 @@ Elementwise ops operate on a per element basis. They don't change the shape of t
 ::: tinygrad.Tensor.round
 ::: tinygrad.Tensor.isinf
 ::: tinygrad.Tensor.isnan
+::: tinygrad.Tensor.isfinite
 ::: tinygrad.Tensor.lerp
 ::: tinygrad.Tensor.square
 ::: tinygrad.Tensor.clamp
@@ -52,7 +53,7 @@ Elementwise ops operate on a per element basis. They don't change the shape of t
 ::: tinygrad.Tensor.erf
 ::: tinygrad.Tensor.gelu
 ::: tinygrad.Tensor.quick_gelu
-::: tinygrad.Tensor.leakyrelu
+::: tinygrad.Tensor.leaky_relu
 ::: tinygrad.Tensor.mish
 ::: tinygrad.Tensor.softplus
 ::: tinygrad.Tensor.softsign
@@ -63,13 +64,19 @@ Elementwise ops operate on a per element basis. They don't change the shape of t
 ::: tinygrad.Tensor.sub
 ::: tinygrad.Tensor.mul
 ::: tinygrad.Tensor.div
-::: tinygrad.Tensor.xor
+::: tinygrad.Tensor.idiv
+::: tinygrad.Tensor.mod
+::: tinygrad.Tensor.bitwise_xor
+::: tinygrad.Tensor.bitwise_and
+::: tinygrad.Tensor.bitwise_or
+::: tinygrad.Tensor.bitwise_not
 ::: tinygrad.Tensor.lshift
 ::: tinygrad.Tensor.rshift
 ::: tinygrad.Tensor.pow
 ::: tinygrad.Tensor.maximum
 ::: tinygrad.Tensor.minimum
 ::: tinygrad.Tensor.where
+::: tinygrad.Tensor.copysign
 
 ## Casting Ops
 

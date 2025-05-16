@@ -51,7 +51,7 @@ def dataset_from_cache(fn):
       lin = Kernel(eval(ast))
     except Exception:
       continue
-    for opt in k[:-1]: lin.apply_opt(opt)
+    lin.apply_opts(k[:-1])
     act = k[-1]
     log_ratio = math.log(old_tm/new_tm)
     #print(f"ratio: {old_tm/new_tm:6.2f}x (log {log_ratio:5.2f}) from {str(act):50s} on {lin.colored_shape()}")
