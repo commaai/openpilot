@@ -2,6 +2,7 @@
 import os
 import re
 import threading
+import time
 import urllib.request
 from enum import IntEnum
 import pyray as rl
@@ -37,6 +38,9 @@ class SetupState(IntEnum):
 class Setup:
   def __init__(self):
     self.state = SetupState.GETTING_STARTED
+    self.network_check_thread = None
+    self.network_connected = threading.Event()
+    self.stop_network_check_thread = threading.Event()
     self.failed_url = ""
     self.failed_reason = ""
     self.download_url = ""
@@ -106,6 +110,27 @@ class Setup:
     if ret:
       self.state = SetupState.NETWORK_SETUP
       self.wifi_manager.request_scan()
+      self.start_network_check()
+
+  def check_network_connectivity(self):
+    while not self.stop_network_check_thread.is_set():
+      if self.state == SetupState.NETWORK_SETUP:
+        try:
+          urllib.request.urlopen("https://google.com", timeout=2)
+          self.network_connected.set()
+        except Exception:
+          self.network_connected.clear()
+      time.sleep(1)
+
+  def start_network_check(self):
+    if self.network_check_thread is None or not self.network_check_thread.is_alive():
+      self.network_check_thread = threading.Thread(target=self.check_network_connectivity, daemon=True)
+      self.network_check_thread.start()
+
+  def close(self):
+    if self.network_check_thread is not None:
+      self.stop_network_check_thread.set()
+      self.network_check_thread.join()
 
   def render_network_setup(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
@@ -123,16 +148,10 @@ class Setup:
     if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.GETTING_STARTED
 
-    # FIXME: "Continue without Wi-Fi" until we know we are connected
-    continue_enabled = True
-    continue_text = "Continue"
-
-    # FIXME: use coroutine/thread
-    # try:
-    #   urllib.request.urlopen("https://google.com", timeout=0.5)
-    # except urllib.error.HTTPError:
-    #   continue_text = "Waiting for internet"
-    #   continue_enabled = False
+    # Check network connectivity status
+    # FIXME: show "Continue without Wi-Fi" if not connected to Wi-Fi
+    continue_enabled = self.network_connected.is_set()
+    continue_text = "Continue" if continue_enabled else "Waiting for internet"
 
     if gui_button(
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
@@ -245,8 +264,7 @@ class Setup:
     self.download_url = url
     self.state = SetupState.DOWNLOADING
 
-    self.download_thread = threading.Thread(target=self._download_thread)
-    self.download_thread.daemon = True
+    self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
     self.download_thread.start()
 
   def _download_thread(self):
@@ -312,6 +330,7 @@ def main():
   except Exception as e:
     print(f"Setup error: {e}")
   finally:
+    setup.close()
     gui_app.close()
 
 
