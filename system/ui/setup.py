@@ -144,6 +144,10 @@ class Setup:
       self.network_check_thread.join()
 
   def render_network_setup(self, rect: rl.Rectangle):
+    if self.wifi_ui.require_full_screen:
+      self.wifi_ui.render(rect)
+      return
+
     title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
     gui_label(title_rect, "Connect to Wi-Fi", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
