@@ -766,12 +766,23 @@ def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool
 
 class MultiProcessReplaySession:
   def __init__(
-    self, cfgs: list[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader]| None = None,
-    fingerprint: str | None = None, return_all_logs: bool = False, custom_params: dict[str, Any] | None = None,
-    captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False,
+    self, configs: list[ProcessConfig] | ProcessConfig | str, lr: LogIterable | str, frs: dict[str, BaseFrameReader]| None = None,
+    fingerprint: str | None = None, custom_params: dict[str, Any] | None = None,
+    captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False, return_all_logs: bool = False
   ) -> None:
-    self.cfgs = cfgs
-    self.lr = lr
+    if isinstance(configs, str) or isinstance(configs, ProcessConfig): # Handle single process name as string.
+      requested = [configs.proc_name] if hasattr(configs, "proc_name") else [configs]
+    elif isinstance(configs, list) and all(isinstance(x, str) for x in configs): # Handle list of process names as strings
+      requested = configs
+    else: # Handle list of ProcessConfig objects
+      requested = [c.proc_name for c in list(configs)]
+
+    available_cfgs = [c.proc_name for c in CONFIGS]
+    missing_cfgs = [name for name in requested if name not in available_cfgs]
+    if missing_cfgs:
+      raise ValueError(f"Unknown process config(s): {missing_cfgs}\nAvailable configs: {available_cfgs}")
+
+    self.cfgs = [c for c in CONFIGS if c.proc_name in requested]
     self.frs = frs
     self.fingerprint = fingerprint
     self.custom_params = custom_params
@@ -782,12 +793,17 @@ class MultiProcessReplaySession:
     self.env_config = None
     self._started = False
 
+    if isinstance(lr, str):
+      from openpilot.tools.lib.logreader import LogReader
+      self.lr = LogReader(lr)
+    else:
+      self.lr = lr
+
     self.input_segments = migrated_segments(
       self.lr,
       manager_states=True,
-      panda_states=any("pandaStates" in c.pubs for c in cfgs),
-      camera_states=any(len(c.vision_pubs) != 0 for c in cfgs),
-    )
+      panda_states=any("pandaStates" in c.pubs for c in self.cfgs),
+      camera_states=any(len(c.vision_pubs) != 0 for c in self.cfgs))
 
   def _start(self, first_input_segment):
     # configs based on *this* segment
