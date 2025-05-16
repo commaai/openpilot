@@ -17,9 +17,7 @@ try:
   from openpilot.common.params import Params
 except ImportError:
   # Params/Cythonized modules are not available in zipapp
-  class Params:
-    def get(self, key, encoding):
-      return None
+  Params = None
 from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
@@ -87,9 +85,10 @@ class WifiManager:
     self.scan_task: asyncio.Task | None = None
     # Set tethering ssid as "weedle" + first 4 characters of a dongle id
     self._tethering_ssid = "weedle"
-    dongle_id = Params().get("DongleId", encoding="utf-8")
-    if dongle_id:
-      self._tethering_ssid += "-" + dongle_id[:4]
+    if Params is not None:
+      dongle_id = Params().get("DongleId", encoding="utf-8")
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
