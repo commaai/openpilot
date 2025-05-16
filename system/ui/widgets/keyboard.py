@@ -45,12 +45,13 @@ keyboard_layouts = {
 
 
 class Keyboard:
-  def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False):
+  def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
     self._layout = keyboard_layouts["lowercase"]
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
     self._input_box = InputBox(max_text_size)
     self._password_mode = password_mode
+    self._show_password_toggle = show_password_toggle
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -72,9 +73,8 @@ class Keyboard:
 
     # Draw input box and password toggle
     input_margin = 25
-    input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - 100 - input_margin, 100)
-    eye_rect = rl.Rectangle(rect.x + rect.width - 90 - input_margin, rect.y + 160, 80, 100)
-    self._render_input_area(input_box_rect, eye_rect)
+    input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - input_margin, 100)
+    self._render_input_area(input_box_rect)
 
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
@@ -103,30 +103,34 @@ class Keyboard:
 
     return -1
 
-  def _render_input_area(self, input_rect: rl.Rectangle, eye_rect: rl.Rectangle):
-    # Set password mode and render input box
-    self._input_box.set_password_mode(self._password_mode)
-    self._input_box.render(input_rect)
+  def _render_input_area(self, input_rect: rl.Rectangle):
+    if self._show_password_toggle:
+      self._input_box.set_password_mode(self._password_mode)
+      self._input_box.render(rl.Rectangle(input_rect.x, input_rect.y, input_rect.width - 100, input_rect.height))
+
+      # render eye icon
+      eye_texture = self._eye_closed_texture if self._password_mode else self._eye_open_texture
+
+      eye_rect = rl.Rectangle(input_rect.x + input_rect.width - 90, input_rect.y, 80, input_rect.height)
+      eye_x = eye_rect.x + (eye_rect.width - eye_texture.width) / 2
+      eye_y = eye_rect.y + (eye_rect.height - eye_texture.height) / 2
+
+      rl.draw_texture_v(eye_texture, rl.Vector2(eye_x, eye_y), rl.WHITE)
+
+      # Handle click on eye icon
+      if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(
+        rl.get_mouse_position(), eye_rect
+      ):
+        self._password_mode = not self._password_mode
+    else:
+      self._input_box.render(input_rect)
+
     rl.draw_line_ex(
       rl.Vector2(input_rect.x, input_rect.y + input_rect.height - 2),
-      rl.Vector2(eye_rect.x + eye_rect.width, input_rect.y + input_rect.height - 2),
+      rl.Vector2(input_rect.x + input_rect.width, input_rect.y + input_rect.height - 2),
       3.0,  # 3 pixel thickness
       rl.Color(189, 189, 189, 255),
     )
-
-    # render eye icon
-    eye_texture = self._eye_closed_texture if self._password_mode else self._eye_open_texture
-
-    eye_x = eye_rect.x + (eye_rect.width - eye_texture.width) / 2
-    eye_y = eye_rect.y + (eye_rect.height - eye_texture.height) / 2
-
-    rl.draw_texture_v(eye_texture, rl.Vector2(eye_x, eye_y), rl.WHITE)
-
-    # Handle click on eye icon
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(
-      rl.get_mouse_position(), eye_rect
-    ):
-      self._password_mode = not self._password_mode
 
   def handle_key_press(self, key):
     if key in (SHIFT_DOWN_KEY, ABC_KEY):
