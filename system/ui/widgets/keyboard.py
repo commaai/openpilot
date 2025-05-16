@@ -1,5 +1,5 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
@@ -45,11 +45,15 @@ keyboard_layouts = {
 
 
 class Keyboard:
-  def __init__(self, max_text_size: int = 255, min_text_size: int = 0):
+  def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False):
     self._layout = keyboard_layouts["lowercase"]
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
     self._input_box = InputBox(max_text_size)
+    self._password_mode = password_mode
+
+    self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
+    self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
 
   @property
   def text(self):
@@ -60,14 +64,18 @@ class Keyboard:
 
   def render(self, title: str, sub_title: str):
     rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
-    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90)
-    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, rl.GRAY)
-    if gui_button(rl.Rectangle(rect.x + rect.width - 300, rect.y, 300, 100), "Cancel"):
+    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90, font_weight=FontWeight.BOLD)
+    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, font_weight=FontWeight.NORMAL)
+    if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
       self.clear()
       return 0
 
-    # Text box for input
-    self._input_box.render(rl.Rectangle(rect.x, rect.y + 160, rect.width, 100))
+    # Draw input box and password toggle
+    input_margin = 25
+    input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - 100 - input_margin, 100)
+    eye_rect = rl.Rectangle(rect.x + rect.width - 90 - input_margin, rect.y + 160, 80, 100)
+    self._render_input_area(input_box_rect, eye_rect)
+
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
     key_height = (rect.height - 300 - 3 * v_space) / 4
@@ -94,6 +102,31 @@ class Keyboard:
             self.handle_key_press(key)
 
     return -1
+
+  def _render_input_area(self, input_rect: rl.Rectangle, eye_rect: rl.Rectangle):
+    # Set password mode and render input box
+    self._input_box.set_password_mode(self._password_mode)
+    self._input_box.render(input_rect)
+    rl.draw_line_ex(
+      rl.Vector2(input_rect.x, input_rect.y + input_rect.height - 2),
+      rl.Vector2(eye_rect.x + eye_rect.width, input_rect.y + input_rect.height - 2),
+      3.0,  # 3 pixel thickness
+      rl.Color(189, 189, 189, 255),
+    )
+
+    # render eye icon
+    eye_texture = self._eye_closed_texture if self._password_mode else self._eye_open_texture
+
+    eye_x = eye_rect.x + (eye_rect.width - eye_texture.width) / 2
+    eye_y = eye_rect.y + (eye_rect.height - eye_texture.height) / 2
+
+    rl.draw_texture_v(eye_texture, rl.Vector2(eye_x, eye_y), rl.WHITE)
+
+    # Handle click on eye icon
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(
+      rl.get_mouse_position(), eye_rect
+    ):
+      self._password_mode = not self._password_mode
 
   def handle_key_press(self, key):
     if key in (SHIFT_DOWN_KEY, ABC_KEY):
