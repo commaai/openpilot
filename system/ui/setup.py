@@ -31,8 +31,9 @@ class SetupState(IntEnum):
   GETTING_STARTED = 1
   NETWORK_SETUP = 2
   SOFTWARE_SELECTION = 3
-  DOWNLOADING = 4
-  DOWNLOAD_FAILED = 5
+  CUSTOM_URL = 4
+  DOWNLOADING = 5
+  DOWNLOAD_FAILED = 6
 
 
 class Setup:
@@ -71,6 +72,8 @@ class Setup:
       self.render_network_setup(rect)
     elif self.state == SetupState.SOFTWARE_SELECTION:
       self.render_software_selection(rect)
+    elif self.state == SetupState.CUSTOM_URL:
+      self.render_custom_url()
     elif self.state == SetupState.DOWNLOADING:
       self.render_downloading(rect)
     elif self.state == SetupState.DOWNLOAD_FAILED:
@@ -213,7 +216,7 @@ class Setup:
         if self.selected_radio == "openpilot":
           self.download(OPENPILOT_URL)
         else:
-          self.get_custom_url()
+          self.state = SetupState.CUSTOM_URL
 
   def render_downloading(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE)
@@ -229,32 +232,29 @@ class Setup:
     error_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48, rect.width - 117 - 100, BODY_FONT_SIZE)
     gui_text_box(error_rect, self.failed_reason, BODY_FONT_SIZE)
 
-    button_width = (rect.width - BUTTON_SPACING) / 2
-    button_y = rect.height - BUTTON_HEIGHT
+    button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
+    button_y = rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x, button_y, button_width, BUTTON_HEIGHT), "Reboot device"):
+    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Reboot device"):
       HARDWARE.reboot()
 
-    if gui_button(rl.Rectangle(rect.x + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT), "Start over", ButtonStyle.PRIMARY):
+    if gui_button(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT), "Start over",
+                  button_style=ButtonStyle.PRIMARY):
       self.state = SetupState.GETTING_STARTED
 
-  def get_custom_url(self):
-    keyboard_result = None
+  def render_custom_url(self):
+    result = self.keyboard.render("Enter URL", "for Custom Software")
 
-    while keyboard_result is None:
-      gui_app.init_window("Enter URL")
+    # Enter pressed
+    if result == 1:
+      url = self.keyboard.text
+      if url:
+        self.download(url)
 
-      for _ in gui_app.render():
-        match self.keyboard.render("Enter URL", "for Custom Software"):
-          case 1:  # Enter pressed
-            url = self.keyboard.text
-            if url:
-              self.download(url)
-              break
-          case 0:  # Cancel pressed
-            break
-
-      gui_app.close()
+    # Cancel pressed
+    elif result == 0:
+      print("result", result)
+      self.state = SetupState.SOFTWARE_SELECTION
 
   def download(self, url: str):
     # autocomplete incomplete URLs
