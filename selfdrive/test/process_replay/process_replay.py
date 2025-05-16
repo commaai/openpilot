@@ -801,25 +801,6 @@ class MultiProcessReplaySession:
       camera_states=any(len(c.vision_pubs) != 0 for c in cfgs),
     )
 
-  def start(self):
-    first_input_segment = next(self.input_segments)
-    # Use the first segment's messages to generate configs and check for vision streams
-    self.params_config, self.env_config = self._get_configs(first_input_segment)
-    all_vision_pubs = [pub for cfg in self.cfgs for pub in cfg.vision_pubs]
-    # validate frs and vision pubs
-    if len(all_vision_pubs) != 0:
-      assert self.frs is not None, "frs must be provided when replaying process using vision streams"
-      assert all(meta_from_camera_state(st) is not None for st in all_vision_pubs), \
-                                                            f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
-      required_vision_pubs = {m.camera_state for m in available_streams(first_input_segment)} & set(all_vision_pubs)
-      assert all(st in self.frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
-
-    for cfg in self.cfgs:
-      container = ProcessContainer(cfg)
-      self.containers.append(container)
-      container.start(self.params_config, self.env_config, first_input_segment, self.frs, self.fingerprint, self.captured_output_store is not None)
-    self._started = True
-
   def _start(self, first_input_segment):
     # configs based on *this* segment
     self.params_config, self.env_config = self._get_configs(first_input_segment)
@@ -905,7 +886,7 @@ class MultiProcessReplaySession:
         self.captured_output_store[container.cfg.proc_name] = {"out": out, "err": err}
 
   def __enter__(self):
-    self.start()
+
     return self
 
   def __exit__(self, exc_type, exc_val, exc_tb):
