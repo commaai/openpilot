@@ -7,12 +7,15 @@ import urllib.request
 from enum import IntEnum
 import pyray as rl
 
+from cereal import log
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label, gui_text_box
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 from openpilot.system.ui.widgets.keyboard import Keyboard
+
+NetworkType = log.DeviceState.NetworkType
 
 MARGIN = 50
 TITLE_FONT_SIZE = 116
@@ -41,6 +44,7 @@ class Setup:
     self.state = SetupState.GETTING_STARTED
     self.network_check_thread = None
     self.network_connected = threading.Event()
+    self.wifi_connected = threading.Event()
     self.stop_network_check_thread = threading.Event()
     self.failed_url = ""
     self.failed_reason = ""
@@ -121,6 +125,10 @@ class Setup:
         try:
           urllib.request.urlopen("https://google.com", timeout=2)
           self.network_connected.set()
+          if HARDWARE.get_network_type() == NetworkType.wifi:
+            self.wifi_connected.set()
+          else:
+            self.wifi_connected.clear()
         except Exception:
           self.network_connected.clear()
       time.sleep(1)
@@ -152,9 +160,8 @@ class Setup:
       self.state = SetupState.GETTING_STARTED
 
     # Check network connectivity status
-    # FIXME: show "Continue without Wi-Fi" if not connected to Wi-Fi
     continue_enabled = self.network_connected.is_set()
-    continue_text = "Continue" if continue_enabled else "Waiting for internet"
+    continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
 
     if gui_button(
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
