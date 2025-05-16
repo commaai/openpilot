@@ -167,6 +167,7 @@ class Setup:
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       continue_text,
       button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
+      is_enabled=continue_enabled,
     ):
       self.state = SetupState.SOFTWARE_SELECTION
       self.stop_network_check_thread.set()
