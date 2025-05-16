@@ -6,7 +6,6 @@ import urllib.request
 from enum import IntEnum
 import pyray as rl
 
-from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
@@ -43,7 +42,6 @@ class Setup:
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self.params = Params()
     self.wifi_manager = WifiManagerWrapper()
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.keyboard = Keyboard()
