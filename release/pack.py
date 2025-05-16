@@ -16,7 +16,7 @@ EXTS = ['.png', '.py', '.svg', '.ttf', '.capnp']
 INTERPRETER = '/usr/bin/env python3'
 
 
-def copy(src, dest, follow_symlinks=False):
+def copy(src, dest):
   if any(src.endswith(ext) for ext in EXTS):
     shutil.copy2(src, dest, follow_symlinks=True)
 
@@ -49,4 +49,3 @@ if __name__ == '__main__':
     zipapp.create_archive(tmp, target=args.output, interpreter=INTERPRETER, main=entry)
 
   print(f'created executable {Path(args.output).resolve()}')
-
