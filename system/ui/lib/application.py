@@ -80,10 +80,7 @@ class GuiApplication:
 
   def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply = False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
-    if image_path.endswith('.svg'):
-      image = self._load_image_from_svg(image_path)
-    else:
-      image = rl.load_image(image_path)
+    image = rl.load_image(image_path)
 
     if alpha_premultiply:
       rl.image_alpha_premultiply(image)
@@ -111,10 +108,6 @@ class GuiApplication:
 
     rl.unload_image(image)
     return texture
-
-  def _load_image_from_svg(self, svg_path: str):
-    # TODO: Implement SVG loading
-    assert(0)
 
   def close(self):
     if not rl.is_window_ready():
