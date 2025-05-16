@@ -8,5 +8,5 @@ for svg in $(find $DIR -type f | grep svg$); do
 
   # convert to PNG
   # sudo apt install inkscape
-  convert -background none -resize 400% -density 384 $svg "${svg%.svg}.png"
+  convert -background none -density 384 "$svg" -resize 512x512 "${svg%.svg}.png"
 done
