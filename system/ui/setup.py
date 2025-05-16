@@ -123,7 +123,7 @@ class Setup:
     while not self.stop_network_check_thread.is_set():
       if self.state == SetupState.NETWORK_SETUP:
         try:
-          urllib.request.urlopen("https://google.com", timeout=2)
+          urllib.request.urlopen(OPENPILOT_URL, timeout=2)
           self.network_connected.set()
           if HARDWARE.get_network_type() == NetworkType.wifi:
             self.wifi_connected.set()
