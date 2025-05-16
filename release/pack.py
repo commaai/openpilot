@@ -12,7 +12,7 @@ from openpilot.common.basedir import BASEDIR
 
 
 DIRS = ['cereal', 'openpilot']
-EXTS = ['.png', '.py', '.svg', '.ttf', '.capnp']
+EXTS = ['.png', '.py', '.ttf', '.capnp']
 INTERPRETER = '/usr/bin/env python3'
 
 
