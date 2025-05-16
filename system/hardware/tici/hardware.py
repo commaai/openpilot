@@ -8,8 +8,9 @@ from enum import IntEnum
 from functools import cached_property, lru_cache
 from pathlib import Path
 
+from cereal import log
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
-from openpilot.system.hardware.base import HardwareBase, NetworkStrength, NetworkType, ThermalConfig, ThermalZone
+from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
@@ -51,6 +52,9 @@ class NMMetered(IntEnum):
 
 TIMEOUT = 0.1
 REFRESH_RATE_MS = 1000
+
+NetworkType = log.DeviceState.NetworkType
+NetworkStrength = log.DeviceState.NetworkStrength
 
 # https://developer.gnome.org/ModemManager/unstable/ModemManager-Flags-and-Enumerations.html#MMModemAccessTechnology
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5

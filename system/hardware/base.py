@@ -1,23 +1,10 @@
 import os
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, fields
-from enum import IntEnum
 
-class NetworkType(IntEnum):
-  none = 0
-  wifi = 1
-  cell2G = 2
-  cell3G = 3
-  cell4G = 4
-  cell5G = 5
-  ethernet = 6
+from cereal import log
 
-class NetworkStrength(IntEnum):
-  unknown = 0
-  poor = 1
-  moderate = 2
-  good = 3
-  great = 4
+NetworkType = log.DeviceState.NetworkType
 
 @dataclass
 class ThermalZone:
