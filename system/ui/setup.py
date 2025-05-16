@@ -254,7 +254,6 @@ class Setup:
 
     # Cancel pressed
     elif result == 0:
-      print("result", result)
       self.state = SetupState.SOFTWARE_SELECTION
 
   def download(self, url: str):
