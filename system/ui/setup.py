@@ -206,7 +206,7 @@ class Setup:
     if gui_button(
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       "Continue",
-      button_style=ButtonStyle.DANGER,
+      button_style=ButtonStyle.PRIMARY,
       is_enabled=continue_enabled,
     ):
       if continue_enabled:
