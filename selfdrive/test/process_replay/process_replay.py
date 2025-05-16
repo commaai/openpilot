@@ -657,7 +657,6 @@ def replay_process(
   captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
   ret_logs: list[capnp._DynamicStructReader] = []
-  assert not isinstance(cfgs, str)
   if isinstance(cfgs, Iterable):
     cfgs = list(cfgs)
   else:
