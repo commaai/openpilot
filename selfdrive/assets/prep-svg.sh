@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -e
 
-for svg in $(find icons/ images/ -type f | grep svg$); do
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
+
+for svg in $(find $DIR -type f | grep svg$); do
   bunx svgo $svg --multipass --pretty --indent 2
 
   # convert to PNG
