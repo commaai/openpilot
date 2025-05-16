@@ -162,8 +162,7 @@ class Setup:
                                  openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2)
       rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
 
-    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing,
-                               rect.width - MARGIN * 2, radio_height)
+    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
     custom_selected = self.selected_radio == "custom"
 
     rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
@@ -191,7 +190,7 @@ class Setup:
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       "Continue",
       button_style=ButtonStyle.DANGER,
-      is_enabled=continue_enabled
+      is_enabled=continue_enabled,
     ):
       if continue_enabled:
         if self.selected_radio == "openpilot":
@@ -229,16 +228,14 @@ class Setup:
       gui_app.init_window("Enter URL")
 
       for _ in gui_app.render():
-        rect = rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100)
-        keyboard_result = self.keyboard.render(rect, "Enter URL", "for Custom Software")
-
-        if keyboard_result == 1:  # Enter pressed
-          url = self.keyboard.text
-          if url:
-            self.download(url)
+        match self.keyboard.render("Enter URL", "for Custom Software"):
+          case 1:  # Enter pressed
+            url = self.keyboard.text
+            if url:
+              self.download(url)
+              break
+          case 0:  # Cancel pressed
             break
-        elif keyboard_result == 0:  # Cancel pressed
-          break
 
       gui_app.close()
 
