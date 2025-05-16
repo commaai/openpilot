@@ -98,7 +98,11 @@ class Spinner(BaseWindow[SpinnerRenderer]):
     self.update(str(round(100 * cur / total)))
 
 
-if __name__ == "__main__":
+def main():
   with Spinner() as s:
     s.update("Spinner text")
     time.sleep(5)
+
+
+if __name__ == "__main__":
+  main()
