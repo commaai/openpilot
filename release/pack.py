@@ -11,13 +11,14 @@ from pathlib import Path
 from openpilot.common.basedir import BASEDIR
 
 
-EXTS = ['.png', '.py', '.svg', '.ttf']
+DIRS = ['cereal', 'openpilot']
+EXTS = ['.png', '.py', '.svg', '.ttf', '.capnp']
 INTERPRETER = '/usr/bin/env python3'
 
 
 def copy(src, dest, follow_symlinks=False):
   if any(src.endswith(ext) for ext in EXTS):
-    shutil.copy2(src, dest, follow_symlinks=follow_symlinks)
+    shutil.copy2(src, dest, follow_symlinks=True)
 
 
 if __name__ == '__main__':
@@ -31,6 +32,7 @@ if __name__ == '__main__':
     args.output = args.module
 
   try:
+    print(args.module)
     mod = importlib.import_module(args.module)
   except ModuleNotFoundError:
     print(f'{args.module} not found, typo?')
@@ -40,8 +42,10 @@ if __name__ == '__main__':
     print(f'{args.module} does not have a {args.entrypoint}() function, typo?')
     sys.exit(1)
 
-  with tempfile.TemporaryDirectory() as tmp:
-    shutil.copytree(BASEDIR + '/openpilot', tmp + '/openpilot', symlinks=False, dirs_exist_ok=True, copy_function=copy)
+  with tempfile.TemporaryDirectory(delete=False) as tmp:
+    print(tmp)
+    for directory in DIRS:
+      shutil.copytree(BASEDIR + '/' + directory, tmp + '/' + directory, symlinks=False, dirs_exist_ok=True, copy_function=copy)
     entry = f'{args.module}:{args.entrypoint}'
     zipapp.create_archive(tmp, target=args.output, interpreter=INTERPRETER, main=entry)
 
