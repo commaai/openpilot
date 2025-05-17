@@ -118,6 +118,10 @@ class SelfdriveD:
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
+    self.past_action = 0.0
+    self.undershooting = False
+    self.turning = False
+
     # some comma three with NVMe experience NVMe dropouts mid-drive that
     # cause loggerd to crash on write, so ignore it only on that platform
     self.ignored_processes = set()
@@ -348,10 +352,12 @@ class SelfdriveD:
       action_index = min(round(self.sm['liveDelay'].lateralDelay / DT_CTRL) + 1, self.lateral_actions.maxlen)
       actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
       desired_lateral_accel = self.lateral_actions[-action_index] * (clipped_speed**2)
-      undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
-      turning = abs(desired_lateral_accel) > 1.0
+      self.past_action = desired_lateral_accel
+      # this is if we're undershooting desired acceleration
+      self.undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
+      self.turning = abs(desired_lateral_accel) > 1.0
       # TODO: lac.saturated includes speed and other checks, should be pulled out
-      if undershooting and turning and lac.saturated:
+      if self.undershooting and self.turning and lac.saturated:
         self.events.add(EventName.steerSaturated)
 
     # Check for FCW
@@ -452,6 +458,10 @@ class SelfdriveD:
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
+
+    ss.pastAction = self.past_action
+    ss.undershooting = self.undershooting
+    ss.turning = self.turning
 
     ss.alertText1 = self.AM.current_alert.alert_text_1
     ss.alertText2 = self.AM.current_alert.alert_text_2

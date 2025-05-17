@@ -23,7 +23,8 @@ class LatControlAngle(LatControl):
       angle_steers_des += params.angleOffsetDeg
 
     angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
-    angle_log.saturated = bool(self._check_saturation(angle_control_saturated, CS, False, curvature_limited))
+    # this is supposed to be if we're applying the max torque possible, but we can't know that
+    angle_log.saturated = bool(self._check_saturation(angle_control_saturated, CS, steer_limited_by_controls, curvature_limited))
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
     return 0, float(angle_steers_des), angle_log

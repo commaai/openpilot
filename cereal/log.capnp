@@ -830,6 +830,10 @@ struct SelfdriveState {
   experimentalMode @10 :Bool;
   personality @11 :LongitudinalPersonality;
 
+  undershooting @13 :Bool;
+  turning @14 :Bool;
+  pastAction @15 :Float32;
+
   enum OpenpilotState @0xdbe58b96d2d1ac61 {
     disabled @0;
     preEnabled @1;
