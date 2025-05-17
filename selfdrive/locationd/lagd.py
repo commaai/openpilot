@@ -293,7 +293,7 @@ class LateralLagEstimator:
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
     delay, delay_std, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
-    if corr < self.min_ncc or not is_valid:
+    if corr < self.min_ncc or delay_std > MAX_LAG_STD or not is_valid:
       return
 
     self.block_avg.update(delay)
@@ -310,7 +310,7 @@ class LateralLagEstimator:
     roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
 
     if np.max(roi_ncc) == np.min(roi_ncc):
-      index_std = (max_lag_samples / 2)
+      index_std = np.float64(max_lag_samples / 2)
     else:
       scaled_ncc = roi_ncc - roi_ncc.min() / (roi_ncc.max() - roi_ncc.min())
       good_lag_candidate_indices = np.where(scaled_ncc > 0.9)[0]
