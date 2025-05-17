@@ -26,7 +26,7 @@ from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrated_segments
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
-from openpilot.tools.lib.logreader import LogIterable
+from openpilot.tools.lib.logreader import LogIterable, LogReader
 from openpilot.tools.lib.framereader import BaseFrameReader
 
 # Numpy gives different results based on CPU features after version 19
@@ -657,14 +657,12 @@ def replay_process(
   captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
   ret_logs: list[capnp._DynamicStructReader] = []
-  if isinstance(cfgs, Iterable):
-    cfgs = list(cfgs)
-  else:
-    cfgs = [cfgs]
 
   with MultiProcessReplaySession(
-    cfgs, lr, frs, fingerprint, return_all_logs, custom_params, captured_output_store,
-    disable_progress,
+    configs=cfgs, lr=lr, frs=frs, fingerprint=fingerprint,
+    custom_params=custom_params, return_all_logs=return_all_logs,
+    captured_output_store=captured_output_store,
+    disable_progress=disable_progress,
   ) as mrps:
     for proc_logs in mrps:
       ret_logs.extend(proc_logs)
@@ -766,23 +764,11 @@ def check_most_messages_valid(msgs: LogIterable, threshold: float = 0.9) -> bool
 
 class MultiProcessReplaySession:
   def __init__(
-    self, configs: list[ProcessConfig] | ProcessConfig | str, lr: LogIterable | str, frs: dict[str, BaseFrameReader]| None = None,
+    self, configs: Iterable[ProcessConfig] | ProcessConfig, lr: LogIterable | str, frs: dict[str, BaseFrameReader]| None = None,
     fingerprint: str | None = None, custom_params: dict[str, Any] | None = None,
     captured_output_store: dict[str, dict[str, str]] | None = None, disable_progress: bool = False, return_all_logs: bool = False
   ) -> None:
-    if isinstance(configs, str) or isinstance(configs, ProcessConfig): # Handle single process name as string.
-      requested = [configs.proc_name] if hasattr(configs, "proc_name") else [configs]
-    elif isinstance(configs, list) and all(isinstance(x, str) for x in configs): # Handle list of process names as strings
-      requested = configs
-    else: # Handle list of ProcessConfig objects
-      requested = [c.proc_name for c in list(configs)]
 
-    available_cfgs = [c.proc_name for c in CONFIGS]
-    missing_cfgs = [name for name in requested if name not in available_cfgs]
-    if missing_cfgs:
-      raise ValueError(f"Unknown process config(s): {missing_cfgs}\nAvailable configs: {available_cfgs}")
-
-    self.cfgs = [c for c in CONFIGS if c.proc_name in requested]
     self.frs = frs
     self.fingerprint = fingerprint
     self.custom_params = custom_params
@@ -792,13 +778,14 @@ class MultiProcessReplaySession:
     self.params_config = None
     self.env_config = None
     self._started = False
+    # Turn every cfg into its proc_name string. Handle list of ProcessConfig or strings or single ProcessConfig or string
+    requested: list[str] = [cfg if isinstance(cfg, str) else cfg.proc_name for cfg in (configs if isinstance(configs, list) else [configs])]
+    available: list[str] = [c.proc_name for c in CONFIGS]
+    if missing := [n for n in requested if n not in available]: # fail fast and informatively
+      raise ValueError(f"Unknown process config(s): {missing}\nAvailable configs: {available}")
+    self.cfgs = [c for c in CONFIGS if c.proc_name in requested]
 
-    if isinstance(lr, str):
-      from openpilot.tools.lib.logreader import LogReader
-      self.lr = LogReader(lr)
-    else:
-      self.lr = lr
-
+    self.lr = LogReader(lr) if isinstance(lr, str) else lr
     self.input_segments = migrated_segments(
       self.lr,
       manager_states=True,
