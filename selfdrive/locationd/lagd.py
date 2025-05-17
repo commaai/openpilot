@@ -310,11 +310,11 @@ class LateralLagEstimator:
     roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
 
     if np.max(roi_ncc) == np.min(roi_ncc):
-      index_std = np.float64(max_lag_samples / 2)
+      index_std = max_lag_samples / 2
     else:
       scaled_ncc = roi_ncc - roi_ncc.min() / (roi_ncc.max() - roi_ncc.min())
       good_lag_candidate_indices = np.where(scaled_ncc > 0.9)[0]
-      index_std = np.std(good_lag_candidate_indices)
+      index_std = float(np.std(good_lag_candidate_indices))
 
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
