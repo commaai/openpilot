@@ -187,7 +187,6 @@ class Segment:
   def name(self):
     return self._name
 
-
   @property
   def events(self):
     if not self._events:
