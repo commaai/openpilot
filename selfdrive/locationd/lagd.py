@@ -292,14 +292,14 @@ class LateralLagEstimator:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
-    delay, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
+    delay, delay_std, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
     if corr < self.min_ncc or not is_valid:
       return
 
     self.block_avg.update(delay)
     self.last_estimate_t = self.t
 
-  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float]:
+  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
     max_lag_samples = int(max_lag / dt)
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
@@ -309,11 +309,19 @@ class LateralLagEstimator:
     # only consider lags from 0 to max_lag
     roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
 
+    if np.max(roi_ncc) == np.min(roi_ncc):
+      index_std = (max_lag_samples / 2)
+    else:
+      scaled_ncc = roi_ncc - roi_ncc.min() / (roi_ncc.max() - roi_ncc.min())
+      good_lag_candidate_indices = np.where(scaled_ncc > 0.9)[0]
+      index_std = np.std(good_lag_candidate_indices)
+
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
     lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt
+    lag_std = index_std * dt
 
-    return lag, corr
+    return lag, lag_std, corr
 
 
 def retrieve_initial_lag(params: Params, CP: car.CarParams):
