@@ -28,4 +28,3 @@ if __name__ == "__main__":
   fn = f"{args.route.replace('/', '_')}_{'_'.join(args.process)}.zst"
   print(f"Saving log to {fn}")
   save_log(fn, outputs)
-  
