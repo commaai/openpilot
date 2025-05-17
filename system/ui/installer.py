@@ -18,15 +18,17 @@ from openpilot.system.ui.lib.label import gui_label, gui_text_box
 
 NETWORK_TYPE = log.DeviceState.NetworkType
 
-CACHE_PATH = "/data/openpilot.cache"
-INSTALL_PATH = "/data/openpilot"
-TMP_INSTALL_PATH = "/data/tmppilot"
-CONTINUE_PATH = "/data/continue.sh"
-GIT_SSH_URL = "git@github.com:commaai/openpilot.git"
-
 # TODO: can we patch these strings
 GIT_URL = "https://github.com/commaai/openpilot.git"
 BRANCH = "master"
+
+GIT_SSH_URL = "git@github.com:commaai/openpilot.git"
+CONTINUE_PATH = "/data/continue.sh"
+
+CACHE_PATH = "/data/openpilot.cache"
+
+INSTALL_PATH = "/data/openpilot"
+TMP_INSTALL_PATH = "/data/tmppilot"
 
 
 class InstallStage(IntEnum):
