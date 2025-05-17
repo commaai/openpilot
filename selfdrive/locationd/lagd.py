@@ -294,6 +294,8 @@ class LateralLagEstimator:
 
     delay, delay_std, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
     if corr < self.min_ncc or delay_std > MAX_LAG_STD or not is_valid:
+      if delay_std > MAX_LAG_STD:
+        cloudlog.warning(f"Delay std too high: {delay_std:.3f}")
       return
 
     self.block_avg.update(delay)
@@ -311,10 +313,10 @@ class LateralLagEstimator:
 
     # to estimate lag certainty, gather all high-correlation candidates and see how spread they are
     # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
-    if np.max(roi_ncc) == np.min(roi_ncc):
+    good_lag_candidate_indices = np.where(roi_ncc > np.quantile(roi_ncc, 0.9))[0]
+    if len(good_lag_candidate_indices) == 0:
       index_std = max_lag_samples / 2
     else:
-      good_lag_candidate_indices = np.where(roi_ncc > np.quantile(roi_ncc, 0.9))[0]
       index_std = float(np.std(good_lag_candidate_indices))
 
     max_corr_index = np.argmax(roi_ncc)
