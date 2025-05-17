@@ -1,16 +1,16 @@
-import os
 import math
+import os
+
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized
 
 from cereal import car
-from opendbc.car import DT_CTRL
+from opendbc.car import DT_CTRL, gen_empty_fingerprint
 from opendbc.car.car_helpers import interfaces
-from opendbc.car.structs import CarParams
-from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
-from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
+from opendbc.car.fw_versions import FW_QUERY_CONFIGS, FW_VERSIONS
 from opendbc.car.mock.values import CAR as MOCK
+from opendbc.car.structs import CarParams
 from opendbc.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
@@ -25,6 +25,43 @@ ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r i
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
+EMPTY_FINGERPRINT = gen_empty_fingerprint().keys()
+
+TRIPLE_FP_STRATEGY = st.lists(
+  st.tuples(st.sampled_from(tuple(EMPTY_FINGERPRINT)), st.integers(0, 0x800), st.integers(0, 64)),
+)
+
+
+def _build_fp(triples):
+  fp = {i: {} for i in EMPTY_FINGERPRINT}
+  for i, address, length in triples:
+    fp[i][address] = length
+  return fp
+
+
+FINGERPRINT_STRATEGY = st.builds(_build_fp, TRIPLE_FP_STRATEGY)
+
+REQUEST_STRATEGY = st.sampled_from(sorted(ALL_REQUESTS))
+
+
+@st.composite
+def car_fw_obj_list(draw):
+  entries = draw(
+    st.lists(
+      st.sampled_from(sorted(ALL_ECUS)),
+    )
+  )
+  return [CarParams.CarFw(ecu=e[0], address=e[1], subAddress=e[2] or 0, request=draw(REQUEST_STRATEGY)) for e in entries]
+
+
+PARAMS_STRATEGY = st.fixed_dictionaries(
+  {
+    'fingerprints': FINGERPRINT_STRATEGY,
+    'car_fw': car_fw_obj_list(),
+    'alpha_long': st.booleans(),
+  }
+)
+
 
 class TestCarInterfaces:
   # FIXME: Due to the lists used in carParams, Phase.target is very slow and will cause
@@ -36,10 +73,10 @@ class TestCarInterfaces:
   def test_car_interfaces(self, car_name, data):
     CarInterface = interfaces[car_name]
 
-    args = get_fuzzy_car_interface_args(data.draw)
+    car_interface_args = data.draw(PARAMS_STRATEGY)
 
-    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
-                                         alpha_long=args['alpha_long'], docs=False)
+    car_params = CarInterface.get_params(car_name, car_interface_args['fingerprints'], car_interface_args['car_fw'],
+                                         alpha_long=car_interface_args['alpha_long'], docs=False)
     car_params = car_params.as_reader()
     car_interface = CarInterface(car_params)
     assert car_params
