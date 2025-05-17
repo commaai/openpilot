@@ -353,7 +353,7 @@ class SelfdriveD:
 
     self.d.append(desired_lateral_accel)
     lac = getattr(controlstate.lateralControlState, controlstate.lateralControlState.which())
-    if controlstate.lateralControlState.which() != 'angleState':
+    if controlstate.lateralControlState.which() != 'angleState' or True:
       if lac.active and not recent_steer_pressed and not self.CP.notCar:
         actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
         desired_lateral_accel = self.d[-32]  # self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
@@ -361,15 +361,15 @@ class SelfdriveD:
         undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
         turning = abs(desired_lateral_accel) > 1.0
 
-      print(undershooting, turning, desired_lateral_accel, actual_lateral_accel)
+        print(undershooting, turning, desired_lateral_accel, actual_lateral_accel)
 
-      # if not undershooting and self.undershooting and turning:
-      #   raise Exception("Undershooting reset")
-      self.undershooting = undershooting
-      self.turning = turning
-      # TODO: lac.saturated includes speed and other checks, should be pulled out
-      if undershooting and turning and lac.saturated:
-        self.events.add(EventName.steerSaturated)
+        # if not undershooting and self.undershooting and turning:
+        #   raise Exception("Undershooting reset")
+        self.undershooting = undershooting
+        self.turning = turning
+        # TODO: lac.saturated includes speed and other checks, should be pulled out
+        if undershooting and turning and lac.saturated:
+          self.events.add(EventName.steerSaturated)
     else:
       desired_lateral_accel = self.d[-32]  # self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
       self.past_action = desired_lateral_accel

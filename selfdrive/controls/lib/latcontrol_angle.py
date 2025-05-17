@@ -22,7 +22,7 @@ class LatControlAngle(LatControl):
       angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des += params.angleOffsetDeg
 
-    angle_control_saturated = abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
+    angle_control_saturated = steer_limited_by_controls  # abs(angle_steers_des - CS.steeringAngleDeg) > STEER_ANGLE_SATURATION_THRESHOLD
     angle_log.saturated = bool(self._check_saturation(angle_control_saturated, CS, False, curvature_limited))
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     angle_log.steeringAngleDesiredDeg = angle_steers_des
