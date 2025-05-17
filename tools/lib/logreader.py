@@ -341,8 +341,12 @@ class LogReader:
   @property
   def segments(self):
     for i in range(len(self.logreader_identifiers)):
-      with self._get_lr(i) as seg:
-        yield seg
+      try:
+        with self._get_lr(i) as seg:
+          yield seg
+      except ValueError:
+        cloudlog.warning(f"Skipping invalid segment {i} ")
+        continue
 
   def _run_on_segment(self, func, i):
     return func(self._get_lr(i))
