@@ -338,10 +338,10 @@ class LogReader:
     for i in range(len(self.logreader_identifiers)):
       yield from self._get_lr(i)
 
+  @property
   def segments(self):
     for i in range(len(self.logreader_identifiers)):
-      seg = self._get_lr(i)
-      with seg: # <- ensures ram freed ASAP
+      with self._get_lr(i) as seg:
         yield seg
 
   def _run_on_segment(self, func, i):

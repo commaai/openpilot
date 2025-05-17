@@ -40,7 +40,7 @@ def migrated_segments(lr: LogIterable | LogReader, manager_states: bool = False,
 
   total = len(lr.logreader_identifiers)
   prev  = None                                 # previous segment list
-  for idx, seg in enumerate(lr.segments()):
+  for idx, seg in enumerate(lr.segments):
     seg = list(seg)                            # materialise once
     if prev is None:                           # first segment
       prev = seg
