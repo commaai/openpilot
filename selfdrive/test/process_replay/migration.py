@@ -15,7 +15,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_l
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.controls.lib.longitudinal_planner import get_accel_from_plan, CONTROL_N_T_IDX
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.tools.lib.logreader import LogIterable
+from openpilot.tools.lib.logreader import LogIterable, LogReader
 
 MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
@@ -28,6 +28,35 @@ MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 ## 3. product is the message type created by the migration function, and the function will be skipped if product type already exists in lr
 ## 4. it must return a list of operations to be applied to the logreader (replace, add, delete)
 ## 5. all migration functions must be independent of each other
+def migrated_segments(lr: LogIterable | LogReader, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
+  kwargs = dict(
+    manager_states=manager_states,
+    panda_states=panda_states,
+    camera_states=camera_states,
+  )
+  if not isinstance(lr, LogReader):
+    yield migrate_all(lr, **kwargs)
+    return
+
+  total = len(lr.logreader_identifiers)
+  prev  = None                                 # previous segment list
+  for idx, seg in enumerate(lr.segments):
+    seg = list(seg)                            # materialise once
+    if prev is None:                           # first segment
+      prev = seg
+      # edge-case: route has exactly one segment
+      if total == 1:
+        yield migrate_all(prev, **kwargs)
+      continue
+    # Last segment can miss important messages like carParams so we need to combine the last and second last
+    if idx == total - 1:                       # last segment
+      prev.extend(seg)                         # merge last → prev
+      yield migrate_all(prev, **kwargs)
+    else:
+      yield migrate_all(prev, **kwargs)
+      prev = seg
+
+
 def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
   migrations = [
     migrate_sensorEvents,
