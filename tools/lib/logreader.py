@@ -123,16 +123,13 @@ class _LogFileReader:
       else:
         yield ent
 
-  def close(self):
-    if hasattr(self, "_ents") and self._ents is not None:
-      self._ents.clear()
-      self._ents = None
-
   def __enter__(self):
     return self
 
   def __exit__(self, exc_type, exc_value, traceback):
-    self.close()
+    if hasattr(self, "_ents") and self._ents is not None:
+      self._ents.clear()
+      self._ents = None
 
 class ReadMode(enum.StrEnum):
   RLOG = "r"  # only read rlogs
