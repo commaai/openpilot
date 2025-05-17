@@ -234,7 +234,7 @@ def clip(
     out,
   ]
 
-  replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
+  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
