@@ -22,7 +22,7 @@ class LatControlAngle(LatControl):
       angle_steers_des = math.degrees(VM.get_steer_from_curvature(-desired_curvature, CS.vEgo, params.roll))
       angle_steers_des += params.angleOffsetDeg
 
-    # steer_limited_by_controls is a decent proxy for maxing out either angle/accel or angle rate/jerk.
+    # steer_limited_by_controls is a decent proxy for maxing out either angle/accel or angle rate/jerk allowed by carcontroller.
     # note that with torque, we use this to avoid saturation as we know the max torque we can ever apply there
     angle_log.saturated = bool(self._check_saturation(steer_limited_by_controls, CS, False, curvature_limited))
     angle_log.steeringAngleDeg = float(CS.steeringAngleDeg)
