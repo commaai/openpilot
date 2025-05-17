@@ -310,7 +310,7 @@ class LateralLagEstimator:
     roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
 
     # to estimate lag certainty, gather all high-correlation candidates and see how spread they are
-    # if e.g. 0.8 and 0.4 are both equally viable, this is an ambiguous case
+    # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
     if np.max(roi_ncc) == np.min(roi_ncc):
       index_std = max_lag_samples / 2
     else:
