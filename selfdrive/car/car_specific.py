@@ -140,6 +140,7 @@ class CarSpecificEvents:
       # To avoid re-engaging when openpilot cancels, check user engagement intention via buttons
       # Main button also can trigger an engagement on these cars
       self.cruise_buttons.append(any(ev.type in HYUNDAI_ENABLE_BUTTONS for ev in CS.buttonEvents))
+      print(self.cruise_buttons)
       events = self.create_common_events(CS, CS_prev, extra_gears=(GearShifter.sport, GearShifter.manumatic),
                                          pcm_enable=self.CP.pcmCruise, allow_enable=any(self.cruise_buttons), allow_button_cancel=False)
 
@@ -157,7 +158,7 @@ class CarSpecificEvents:
     return events
 
   def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
-                           allow_enable=True, allow_button_cancel=True):
+                           allow_enable=True, allow_button_cancel=True, buttons=[]):
     events = Events()
 
     if CS.doorOpen:
@@ -236,6 +237,8 @@ class CarSpecificEvents:
     # we engage when pcm is active (rising edge)
     # enabling can optionally be blocked by the car interface
     if pcm_enable:
+      if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled:
+        print('cruise rising edge. allow enable:', allow_enable, buttons)
       if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled and allow_enable:
         events.add(EventName.pcmEnable)
       elif not CS.cruiseState.enabled:
