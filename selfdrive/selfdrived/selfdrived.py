@@ -2,6 +2,7 @@
 import os
 import time
 import threading
+from collections import deque
 
 import cereal.messaging as messaging
 
@@ -52,6 +53,15 @@ class SelfdriveD:
       cloudlog.info("selfdrived got CarParams")
     else:
       self.CP = CP
+
+    self.d = deque([0] * 100, maxlen=100)
+
+    self.past_action = 0.0
+    self.undershooting = False
+    self.turning = False
+
+    self.rising = False
+    self.falling = False
 
     self.car_events = CarSpecificEvents(self.CP)
 
@@ -337,16 +347,38 @@ class SelfdriveD:
       self.last_steering_pressed_frame = self.sm.frame
     recent_steer_pressed = (self.sm.frame - self.last_steering_pressed_frame)*DT_CTRL < 2.0
     controlstate = self.sm['controlsState']
+
+    clipped_speed = max(CS.vEgo, 0.3)
+    desired_lateral_accel = self.sm['modelV2'].action.desiredCurvature * (clipped_speed ** 2)
+
+    self.d.append(desired_lateral_accel)
     lac = getattr(controlstate.lateralControlState, controlstate.lateralControlState.which())
-    if lac.active and not recent_steer_pressed and not self.CP.notCar:
-      clipped_speed = max(CS.vEgo, 0.3)
-      actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
-      desired_lateral_accel = self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
-      undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
-      turning = abs(desired_lateral_accel) > 1.0
+    if controlstate.lateralControlState.which() != 'angleState':
+      if lac.active and not recent_steer_pressed and not self.CP.notCar:
+        actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
+        desired_lateral_accel = self.d[-32]  # self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
+        self.past_action = desired_lateral_accel
+        undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
+        turning = abs(desired_lateral_accel) > 1.0
+
+      print(undershooting, turning, desired_lateral_accel, actual_lateral_accel)
+
+      # if not undershooting and self.undershooting and turning:
+      #   raise Exception("Undershooting reset")
+      self.undershooting = undershooting
+      self.turning = turning
       # TODO: lac.saturated includes speed and other checks, should be pulled out
       if undershooting and turning and lac.saturated:
         self.events.add(EventName.steerSaturated)
+    else:
+      desired_lateral_accel = self.d[-32]  # self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
+      self.past_action = desired_lateral_accel
+
+      self.rising = self.d[-1] - self.d[-32] > 0.2
+      self.falling = self.d[-1] - self.d[-32] < -0.2
+
+      # if self.rising:
+      #   undershooting =
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
@@ -446,6 +478,12 @@ class SelfdriveD:
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
+
+    ss.pastAction = self.past_action
+    ss.undershooting = self.undershooting
+    ss.turning = self.turning
+    ss.rising = self.rising
+    ss.falling = self.falling
 
     ss.alertText1 = self.AM.current_alert.alert_text_1
     ss.alertText2 = self.AM.current_alert.alert_text_2
