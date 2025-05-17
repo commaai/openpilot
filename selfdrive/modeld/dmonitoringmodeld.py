@@ -6,8 +6,11 @@ from tinygrad.dtype import dtypes
 if TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
+# TODO: switch to Metal on macOS
+# elif platform.system() == "Darwin":
+#   os.environ['METAL'] = '1'
 else:
-  os.environ['LLVM'] = '1'
+  os.environ['GPU'] = '1'
 import math
 import time
 import pickle
@@ -174,7 +177,8 @@ def main():
     t2 = time.perf_counter()
 
     # run one more time, just for the load
-    model.run(buf, calib, model_transform)
+    if TICI:
+      model.run(buf, calib, model_transform)
 
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
 
