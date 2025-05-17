@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import io
 import os
 import subprocess
 import sys
@@ -80,23 +81,22 @@ class Installer:
 
   def run_git_command(self, args, cwd=None):
     proc = subprocess.Popen(["git"] + args, cwd=cwd, stderr=subprocess.PIPE, universal_newlines=True)
-
-    # Process the git output for progress
-    base = 0
-    for line in iter(proc.stderr.readline, ""):
-      for prefix, weight in STAGE_WEIGHTS:
-        if line.startswith(prefix):
-          try:
-            perc = line.split(prefix)[1].split("%")[0]
-            p = base + int(float(perc) / 100.0 * weight)
-            self.progress = p
-          except (IndexError, ValueError):
-            pass
-          break
-      base += weight
-
+    self.read_progress(proc)
     ret = proc.wait()
     return ret == 0
+
+  def read_progress(self, proc: subprocess.Popen):
+    if proc.stderr is None:
+      return
+    base = 0
+    for line in io.TextIOWrapper(proc.stderr, encoding="utf-8"):
+      for prefix, weight in STAGE_WEIGHTS:
+        if line.startswith(prefix):
+          perc = line.split(prefix)[1].split("%")[0]
+          p = base + int(float(perc) / 100.0 * weight)
+          self.progress = p
+          break
+        base += weight
 
   def do_install(self):
     # wait for valid time
