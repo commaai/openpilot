@@ -56,6 +56,7 @@ class GuiApplication:
 
     self._set_log_callback()
     rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
+    self._set_window_size_callback()
 
     flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_WINDOW_RESIZABLE
     if ENABLE_VSYNC:
@@ -68,7 +69,6 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
-
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -206,6 +206,16 @@ class GuiApplication:
     # Store callback reference
     self._trace_log_callback = trace_log_callback
     rl.set_trace_log_callback(self._trace_log_callback)
+
+  def _set_window_size_callback(self):
+    @rl.ffi.callback("void(struct GLFWwindow *, int, int)")
+    def window_size_callback(handle, width, height):
+      self._width = width
+      self._height = height
+
+    window = rl.get_window_handle()
+    self._window_size_callback = window_size_callback
+    rl.glfw_set_window_size_callback(window, self._window_size_callback)
 
   def _monitor_fps(self):
     fps = rl.get_fps()
