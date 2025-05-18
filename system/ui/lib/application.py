@@ -56,7 +56,6 @@ class GuiApplication:
 
     self._set_log_callback()
     rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
-    self._set_window_size_callback()
 
     flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_WINDOW_RESIZABLE
     if ENABLE_VSYNC:
@@ -128,6 +127,11 @@ class GuiApplication:
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
+        if rl.is_window_resized():
+          self._width = rl.get_screen_width()
+          self._height = rl.get_screen_height()
+          cloudlog.debug(f"Window resized, new size: {self._width}x{self._height}")
+
         rl.begin_drawing()
         rl.clear_background(rl.BLACK)
 
@@ -202,16 +206,6 @@ class GuiApplication:
     # Store callback reference
     self._trace_log_callback = trace_log_callback
     rl.set_trace_log_callback(self._trace_log_callback)
-
-  def _set_window_size_callback(self):
-    @rl.ffi.callback("void(struct GLFWwindow *, int, int)")
-    def window_size_callback(handle, width, height):
-      self._width = width
-      self._height = height
-
-    window = rl.get_window_handle()
-    self._window_size_callback = window_size_callback
-    rl.glfw_set_window_size_callback(window, self._window_size_callback)
 
   def _monitor_fps(self):
     fps = rl.get_fps()
