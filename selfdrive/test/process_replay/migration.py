@@ -22,6 +22,7 @@ MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], lis
 MigrationFunc = Callable[[list[MessageWithIndex]], MigrationOps]
 
 
+
 ## rules for migration functions
 ## 1. must use the decorator @migration(inputs=[...], product="...") and MigrationFunc signature
 ## 2. it only gets the messages that are in the inputs list
@@ -335,6 +336,8 @@ def migrate_pandaStates(msgs):
     elif msg.which() == 'pandaStates':
       new_msg = msg.as_builder()
       new_msg.pandaStates[-1].safetyParam = safety_param
+      # Clear DISABLE_DISENGAGE_ON_GAS bit to fix controls mismatch
+      new_msg.pandaStates[-1].alternativeExperience &= ~1
       ops.append((index, new_msg.as_reader()))
   return ops, [], []
 

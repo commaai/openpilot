@@ -24,8 +24,8 @@ def clamp(value, min_value, max_value):
 
 class SpinnerRenderer:
   def __init__(self):
-    self._comma_texture = gui_app.texture("img_spinner_comma.png", TEXTURE_SIZE, TEXTURE_SIZE)
-    self._spinner_texture = gui_app.texture("img_spinner_track.png", TEXTURE_SIZE, TEXTURE_SIZE, alpha_premultiply=True)
+    self._comma_texture = gui_app.texture("images/spinner_comma.png", TEXTURE_SIZE, TEXTURE_SIZE)
+    self._spinner_texture = gui_app.texture("images/spinner_track.png", TEXTURE_SIZE, TEXTURE_SIZE, alpha_premultiply=True)
     self._rotation = 0.0
     self._progress: int | None = None
     self._wrapped_lines: list[str] = []
@@ -98,7 +98,11 @@ class Spinner(BaseWindow[SpinnerRenderer]):
     self.update(str(round(100 * cur / total)))
 
 
-if __name__ == "__main__":
+def main():
   with Spinner() as s:
     s.update("Spinner text")
     time.sleep(5)
+
+
+if __name__ == "__main__":
+  main()

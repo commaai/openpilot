@@ -21,7 +21,6 @@ class Route:
   def __init__(self, name, data_dir=None):
     self._name = RouteName(name)
     self.files = None
-    self.metadata = None
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
     else:
@@ -59,12 +58,6 @@ class Route:
   def qcamera_paths(self):
     qcamera_path_by_seg_num = {s.name.segment_num: s.qcamera_path for s in self._segments}
     return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
-
-  def get_metadata(self):
-    if not self.metadata:
-      api = CommaApi(get_token())
-      self.metadata = api.get('v1/route/' + self.name.canonical_name)
-    return self.metadata
 
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
