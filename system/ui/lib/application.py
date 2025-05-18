@@ -143,7 +143,8 @@ class GuiApplication:
         screen_width, screen_height = rl.get_screen_width(), rl.get_screen_height()
         render_scale = min(screen_width / self._width, screen_height / self._height)
         render_width, render_height = int(self._width * render_scale), int(self._height * render_scale)
-        rl.set_mouse_offset((render_width - screen_width) // 2, (render_height - screen_height) // 2)
+        render_offset_x, render_offset_y = int((screen_width - render_width) / 2), int((screen_height - render_height) / 2)
+        rl.set_mouse_offset(-render_offset_x, -render_offset_y)
         rl.set_mouse_scale(1 / render_scale, 1 / render_scale)
 
         rl.begin_texture_mode(target)
@@ -156,9 +157,9 @@ class GuiApplication:
         rl.begin_drawing()
         rl.clear_background(rl.BLACK)
 
-        rl.draw_texture_pro(target.texture, rl.Rectangle(0, 0, target.texture.width, -target.texture.height),
-                            rl.Rectangle(int((screen_width - render_width) / 2), int((screen_height - render_height) / 2),
-                            render_width, render_height), rl.Vector2(0, 0), 0.0, rl.WHITE)
+        rl.draw_texture_pro(target.texture, (0, 0, self._width, -self._height),
+                            (render_offset_x, render_offset_y, render_width, render_height),
+                            (0, 0), 0.0, rl.WHITE)
 
         if DEBUG_FPS:
           rl.draw_fps(10, 10)
