@@ -7,6 +7,7 @@ import threading
 import time
 from dataclasses import dataclass
 from enum import IntEnum
+from importlib.resources import files
 import pyray as rl
 
 from cereal import log
@@ -180,14 +181,13 @@ class Installer:
         return
 
     # Copy continue.sh script
-    with open("/tmp/continue.sh", "w") as f:
-      f.write("#!/usr/bin/env bash\n")
-      f.write("cd /data/openpilot\n")
-      f.write("exec ./launch_openpilot.sh\n")
+    with files("openpilot.selfdrive.ui").joinpath("installer/continue_openpilot.sh").open("rb") as rf:
+      with open("/data/continue.sh.new", "wb") as wf:
+        wf.write(rf.read())
 
-    if not self.run_command("chmod +x /tmp/continue.sh"):
+    if not self.run_command("chmod +x /data/continue.sh.new"):
       return
-    if not self.run_command(f"mv /tmp/continue.sh {CONTINUE_PATH}"):
+    if not self.run_command(f"mv /data/continue.sh.new {CONTINUE_PATH}"):
       return
 
     self.stage = InstallStage.COMPLETED
