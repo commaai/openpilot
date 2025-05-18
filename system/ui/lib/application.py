@@ -70,6 +70,7 @@ class GuiApplication:
 
     rl.init_window(self._scaled_width, self._scaled_height, title)
     if self._scale != 1.0:
+      rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
       self._render_texture = rl.load_render_texture(self._width, self._height)
     rl.set_target_fps(fps)
 
