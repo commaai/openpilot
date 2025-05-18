@@ -148,8 +148,6 @@ class GuiApplication:
 
         yield
 
-        if DEBUG_FPS:
-          rl.draw_fps(10, 10)
         if self._render_texture:
           rl.end_texture_mode()
           rl.begin_drawing()
@@ -157,9 +155,11 @@ class GuiApplication:
           src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-          rl.end_drawing()
-        else:
-          rl.end_drawing()
+
+        if DEBUG_FPS:
+          rl.draw_fps(10, 10)
+
+        rl.end_drawing()
         self._monitor_fps()
     except KeyboardInterrupt:
       pass
