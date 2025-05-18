@@ -104,8 +104,7 @@ class Keyboard:
         result = -1
         if key in self._key_icons:
           texture = self._key_icons[key]
-          result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL,
-                              is_enabled=is_enabled)
+          result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
         else:
           result = gui_button(key_rect, key, is_enabled=is_enabled)
 
