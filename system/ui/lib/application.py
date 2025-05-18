@@ -128,10 +128,6 @@ class GuiApplication:
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
-        if rl.is_window_resized():
-          self._width = rl.get_screen_width()
-          self._height = rl.get_screen_height()
-
         rl.begin_drawing()
         rl.clear_background(rl.BLACK)
 
