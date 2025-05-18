@@ -184,6 +184,7 @@ env = Environment(
     "#third_party/json11",
     "#third_party/linux/include",
     "#third_party",
+    "#msgq",
   ],
 
   CC='clang',
