@@ -139,7 +139,7 @@ class GuiApplication:
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
-        if self._scale != 1.0:
+        if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
         else:
@@ -150,7 +150,7 @@ class GuiApplication:
 
         if DEBUG_FPS:
           rl.draw_fps(10, 10)
-        if self._scale != 1.0:
+        if self._render_texture:
           rl.end_texture_mode()
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
