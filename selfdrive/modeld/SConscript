@@ -46,7 +46,7 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   elif arch == 'larch64':
     device_string = 'QCOM=1'
   elif arch == 'Darwin':
-    device_string = 'CLANG=1 IMAGE=0 JIT=2'
+    device_string = 'CPU=1 IMAGE=0 JIT=2'
   else:
     device_string = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2'
 
