@@ -15,6 +15,7 @@ FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
 DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
+RESIZABLE_WINDOW = os.getenv("RESIZABLE_WINDOW") == "1"
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
@@ -57,9 +58,11 @@ class GuiApplication:
     self._set_log_callback()
     rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
 
-    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT | rl.ConfigFlags.FLAG_WINDOW_RESIZABLE
+    flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
     if ENABLE_VSYNC:
       flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
+    if RESIZABLE_WINDOW:
+      flags |= rl.ConfigFlags.FLAG_WINDOW_RESIZABLE
     rl.set_config_flags(flags)
 
     rl.init_window(self._width, self._height, title)
