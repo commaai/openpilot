@@ -66,6 +66,7 @@ class GuiApplication:
     rl.set_config_flags(flags)
 
     rl.init_window(self._width, self._height, title)
+    rl.set_window_min_size(800, 450)
     rl.set_target_fps(fps)
 
     self._target_fps = fps
@@ -128,17 +129,36 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
+    target = rl.load_render_texture(self._width, self._height)
+    rl.set_texture_filter(target.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+
     try:
       while not (self._window_close_requested or rl.window_should_close()):
-        if RESIZABLE_WINDOW and rl.is_window_resized():
-          self._width = rl.get_screen_width()
-          self._height = rl.get_screen_height()
-          cloudlog.debug(f"Window resized, new size: {self._width}x{self._height}")
+        # if RESIZABLE_WINDOW and rl.is_window_resized():
+        #   self._width = rl.get_screen_width()
+        #   self._height = rl.get_screen_height()
+        #   cloudlog.debug(f"Window resized, new size: {self._width}x{self._height}")
+
+        # TODO: only recalculate if window resized
+        screen_width, screen_height = rl.get_screen_width(), rl.get_screen_height()
+        render_scale = min(screen_width / self._width, screen_height / self._height)
+        render_width, render_height = int(self._width * render_scale), int(self._height * render_scale)
+        rl.set_mouse_offset((render_width - screen_width) // 2, (render_height - screen_height) // 2)
+        rl.set_mouse_scale(1 / render_scale, 1 / render_scale)
+
+        rl.begin_texture_mode(target)
+        rl.clear_background(rl.BLACK)
+
+        yield
+
+        rl.end_texture_mode()
 
         rl.begin_drawing()
         rl.clear_background(rl.BLACK)
 
-        yield
+        rl.draw_texture_pro(target.texture, rl.Rectangle(0, 0, target.texture.width, -target.texture.height),
+                            rl.Rectangle(int((screen_width - render_width) / 2), int((screen_height - render_height) / 2),
+                            render_width, render_height), rl.Vector2(0, 0), 0.0, rl.WHITE)
 
         if DEBUG_FPS:
           rl.draw_fps(10, 10)
@@ -147,6 +167,8 @@ class GuiApplication:
         self._monitor_fps()
     except KeyboardInterrupt:
       pass
+    finally:
+      rl.unload_render_texture(target)
 
   def font(self, font_weight: FontWeight=FontWeight.NORMAL):
     return self._fonts[font_weight]
