@@ -24,7 +24,7 @@ class LatControlAngle(LatControl):
       angle_steers_des += params.angleOffsetDeg
 
     if self.use_steer_limited_by_controls:
-      # these cars' carcontrolers calculate max lateral accel and jerk, so we can rely on carOutput for saturation
+      # these cars' carcontrollers calculate max lateral accel and jerk, so we can rely on carOutput for saturation
       angle_control_saturated = steer_limited_by_controls
     else:
       # for cars which use a method of limiting torque such as a torque signal (Nissan and Toyota)
