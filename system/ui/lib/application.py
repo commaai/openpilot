@@ -130,7 +130,7 @@ class GuiApplication:
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
-        if rl.is_window_resized():
+        if RESIZABLE_WINDOW and rl.is_window_resized():
           self._width = rl.get_screen_width()
           self._height = rl.get_screen_height()
           cloudlog.debug(f"Window resized, new size: {self._width}x{self._height}")
