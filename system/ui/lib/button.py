@@ -21,6 +21,7 @@ ICON_PADDING = 15
 DEFAULT_BUTTON_FONT_SIZE = 60
 BUTTON_ENABLED_TEXT_COLOR = rl.Color(228, 228, 228, 255)
 BUTTON_DISABLED_TEXT_COLOR = rl.Color(228, 228, 228, 51)
+ACTION_BUTTON_FONT_SIZE = 48
 ACTION_BUTTON_TEXT_COLOR = rl.Color(0, 0, 0, 255)
 
 
@@ -57,6 +58,9 @@ def gui_button(
 
   if button_style in (ButtonStyle.PRIMARY, ButtonStyle.DANGER) and not is_enabled:
     button_style = ButtonStyle.NORMAL
+
+  if button_style == ButtonStyle.ACTION and font_size == DEFAULT_BUTTON_FONT_SIZE:
+    font_size = ACTION_BUTTON_FONT_SIZE
 
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
