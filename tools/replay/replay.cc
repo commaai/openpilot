@@ -191,6 +191,7 @@ void Replay::startStream(const std::shared_ptr<Segment> segment) {
     auto bytes = words.asBytes();
     Params().put("CarParams", (const char *)bytes.begin(), bytes.size());
     Params().put("CarParamsPersistent", (const char *)bytes.begin(), bytes.size());
+    publishMessage(&(*it));
   } else {
     rWarning("failed to read CarParams from current segment");
   }
