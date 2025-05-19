@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import json
 import os
 import math
 import time
@@ -6,6 +7,49 @@ import binascii
 import requests
 import serial
 import subprocess
+
+class LPA:
+  def __init__(self):
+    self.env = os.environ.copy()
+    self.env['LPAC_APDU'] = 'qmi'
+    self.env['QMI_DEVICE'] = '/dev/cdc-wdm0'
+
+    self.timeout_sec = 30
+
+  def _invoke(self, cmd):
+    ret = subprocess.Popen(['sudo', 'lpac', *cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
+    out, err = ret.communicate(timeout=self.timeout_sec)
+    if ret.returncode != 0:
+      raise Exception(f"lpac {cmd} failed: {err}")
+
+    # FIXME: lpac may respond with multiple json objects, so we need to parse all of them
+    parsed = json.loads(out.decode().strip())
+
+    # lpac response format validations
+    assert 'type' in parsed
+    assert parsed['type'] == 'lpa'
+    assert 'payload' in parsed
+    assert 'code' in parsed['payload']
+
+    if parsed['payload']['code'] != 0:
+      raise Exception(f"lpac {' '.join(cmd)} failed: {parsed['payload']['code']}")
+
+    return parsed['payload']['data']
+
+  def list_profiles(self):
+    raw = self._invoke(['profile', 'list'])
+
+    profiles = []
+    for profile in raw:
+      profiles.append({
+        'iccid': profile['iccid'],
+        'isdp_aid': profile['isdpAid'],
+        'nickname': profile['profileNickname'],
+        'enabled': profile['profileState'] == 'enabled',
+        'provider': profile['serviceProviderName'],
+      })
+
+    return profiles
 
 
 def post(url, payload):
