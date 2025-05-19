@@ -77,6 +77,8 @@ class Keyboard:
     return self._input_box.text
 
   def clear(self):
+    self._layout_name = "lowercase"
+    self._caps_lock = False
     self._input_box.clear()
 
   def render(self, title: str, sub_title: str):
