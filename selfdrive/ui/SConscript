@@ -79,6 +79,12 @@ if GetOption('extras'):
     raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
     raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
+    raylib_libs = common + ["raylib"]
+    if arch == "larch64":
+      raylib_libs += ["GLESv2", "wayland-client", "wayland-egl", "EGL"]
+    else:
+      raylib_libs += ["GL"]
+
     release = "release3"
     installers = [
       ("openpilot", release),
@@ -95,7 +101,7 @@ if GetOption('extras'):
         d['INTERNAL'] = "1"
 
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=["raylib", common])
+      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=raylib_libs)
       # keep installers small
       assert f[0].get_size() < 370*1e3, f[0].get_size()
 
