@@ -8,6 +8,7 @@ class ButtonStyle(IntEnum):
   PRIMARY = 1  # For main actions
   DANGER = 2  # For critical actions, like reboot or delete
   TRANSPARENT = 3  # For buttons with transparent background and border
+  ACTION = 4
 
 
 class TextAlignment(IntEnum):
@@ -27,6 +28,7 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(70, 91, 234, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
 }
 
 BUTTON_PRESSED_BACKGROUND_COLORS = {
@@ -34,6 +36,7 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
 }
 
 

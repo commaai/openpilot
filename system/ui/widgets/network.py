@@ -3,7 +3,7 @@ from typing import Literal
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
@@ -143,7 +143,7 @@ class WifiManagerUI:
           self.btn_width,
           80,
         )
-        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget") and clicked:
+        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget", button_style=ButtonStyle.ACTION) and clicked:
           self.state = StateShowForgetConfirm(network)
 
     self._draw_status_icon(security_icon_rect, network)
