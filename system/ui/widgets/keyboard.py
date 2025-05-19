@@ -22,7 +22,7 @@ SYMBOL_KEY = "#+="
 ABC_KEY = "ABC"
 
 # Define keyboard layouts as a dictionary for easier access
-keyboard_layouts = {
+KEYBOARD_LAYOUTS = {
   "lowercase": [
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
     ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
@@ -92,7 +92,7 @@ class Keyboard:
     input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - input_margin, 100)
     self._render_input_area(input_box_rect)
 
-    layout = keyboard_layouts[self._layout_name]
+    layout = KEYBOARD_LAYOUTS[self._layout_name]
 
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
