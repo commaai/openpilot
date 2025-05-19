@@ -111,7 +111,7 @@ class Keyboard:
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
         result = -1
         if key in self._key_icons:
-          if key in (SHIFT_KEY_OFF, SHIFT_KEY_ON) and self._caps_lock:
+          if key == SHIFT_KEY_ON and self._caps_lock:
             key = CAPS_LOCK_KEY
           texture = self._key_icons[key]
           result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
