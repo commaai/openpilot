@@ -1,3 +1,4 @@
+import time
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
@@ -156,15 +157,14 @@ class Keyboard:
     )
 
   def handle_key_press(self, key):
-    current_time = rl.get_time()
     if key in (CAPS_LOCK_KEY, ABC_KEY):
       self._caps_lock = False
       self._layout = keyboard_layouts["lowercase"]
     elif key == SHIFT_KEY_OFF:
-      self._last_shift_press_time = current_time
+      self._last_shift_press_time = time.monotonic()
       self._layout = keyboard_layouts["uppercase"]
     elif key == SHIFT_KEY_ON:
-      if current_time - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD:
+      if time.monotonic() - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD:
         self._caps_lock = True
       else:
         self._layout = keyboard_layouts["lowercase"]
