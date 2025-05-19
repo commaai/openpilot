@@ -14,8 +14,8 @@ CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "->"
 SPACE_KEY = "  "
-SHIFT_KEY_OFF = "SHIFT_OFF"
-SHIFT_KEY_ON = "SHIFT_ON"
+SHIFT_INACTIVE_KEY = "SHIFT_OFF"
+SHIFT_ACTIVE_KEY = "SHIFT_ON"
 CAPS_LOCK_KEY = "CAPS"
 NUMERIC_KEY = "123"
 SYMBOL_KEY = "#+="
@@ -26,13 +26,13 @@ keyboard_layouts = {
   "lowercase": [
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
     ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-    [SHIFT_KEY_OFF, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY],
+    [SHIFT_INACTIVE_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY],
     [NUMERIC_KEY, "/", "-", SPACE_KEY, ".", ENTER_KEY],
   ],
   "uppercase": [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
     ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-    [SHIFT_KEY_ON, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY],
+    [SHIFT_ACTIVE_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY],
     [NUMERIC_KEY, "/", "-", SPACE_KEY, ".", ENTER_KEY],
   ],
   "numbers": [
@@ -66,8 +66,8 @@ class Keyboard:
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
       BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 80, 80),
-      SHIFT_KEY_OFF: gui_app.texture("icons/shift.png", 80, 80),
-      SHIFT_KEY_ON: gui_app.texture("icons/shift-fill.png", 80, 80),
+      SHIFT_INACTIVE_KEY: gui_app.texture("icons/shift.png", 80, 80),
+      SHIFT_ACTIVE_KEY: gui_app.texture("icons/shift-fill.png", 80, 80),
       CAPS_LOCK_KEY: gui_app.texture("icons/capslock-fill.png", 80, 80),
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
@@ -115,7 +115,7 @@ class Keyboard:
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
         result = -1
         if key in self._key_icons:
-          if key == SHIFT_KEY_ON and self._caps_lock:
+          if key == SHIFT_ACTIVE_KEY and self._caps_lock:
             key = CAPS_LOCK_KEY
           texture = self._key_icons[key]
           result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
@@ -163,10 +163,10 @@ class Keyboard:
     if key in (CAPS_LOCK_KEY, ABC_KEY):
       self._caps_lock = False
       self._layout_name = "lowercase"
-    elif key == SHIFT_KEY_OFF:
+    elif key == SHIFT_INACTIVE_KEY:
       self._last_shift_press_time = time.monotonic()
       self._layout_name = "uppercase"
-    elif key == SHIFT_KEY_ON:
+    elif key == SHIFT_ACTIVE_KEY:
       if time.monotonic() - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD:
         self._caps_lock = True
       else:
