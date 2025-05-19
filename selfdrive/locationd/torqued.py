@@ -244,11 +244,11 @@ class TorqueEstimator(ParameterEstimator):
       self.offline_latAccelFactor,    # c
       0.0                             # d
     ])
-    lam, tol, it_max = 1e-3, 1e-5, 20 # λ lambda, tolerance, max iters
+    lam, tol, i_max = 1e-3, 1e-5, 20 # λ lambda, tolerance, max iters
     x = pts[:, 2].astype(float)   # lateral acceleration
     y = pts[:, 0].astype(float)   # steering torque
 
-    for it in range(it_max):
+    for i in range(i_max):
       a, b, c, d = params
       r  = model(x, a, b, c, d) - y
       J  = jacobian(x, a, b, c, d)
@@ -275,9 +275,9 @@ class TorqueEstimator(ParameterEstimator):
         break
       params = params_new
 
-    if it == it_max - 1 or not np.all(np.isfinite(params)):
-      cloudlog.debug("GN fit failed to converge")
-      return (np.nan,)*5
+      if i == i_max - 1 or not np.all(np.isfinite(params)):
+        cloudlog.debug("GN fit failed to converge")
+        return (np.nan,)*5
 
     a, b, c, d = params
     #print(f"GN fit {it+1:02d} iters: a={a:.4f}  b={b:.4f}  c={c:.4f}  d={d:.4f}  σ_f={friction_coeff:.4f}")
@@ -402,82 +402,8 @@ class TorqueEstimator(ParameterEstimator):
       + rng.normal(0, friction * envelope, size=x_sample.shape)
     )
 
-    for τ, a_lat in zip(steer_jitter, lat_accel_jitter):
+    for τ, a_lat in zip(steer_jitter, lat_accel_jitter, strict=True):
       self.filtered_points.add_point(τ, a_lat)
-
-  def plot(self, base_filename="bucket_plot", file_ext=".png"):
-    import matplotlib.pyplot as plt
-    all_points = []  # Collect all bucket points for the combined plot
-
-    # Iterate over each bucket in the filtered_points object
-    for bounds in self.filtered_points.x_bounds:
-      # Get the data for the current bucket. Each bucket is expected to be a list of points.
-      bucket_data = self.filtered_points.buckets.get(bounds, [])
-
-      # Check if the bucket has any data
-      if not bucket_data:
-        print(f"No data points in bucket {bounds}")
-        continue
-
-      # Convert bucket data to a numpy array for processing
-      bucket_points = np.array(bucket_data.arr)
-      if bucket_points.size == 0:
-        print(f"No data points in bucket {bounds}")
-        continue
-
-      # Append these points to all_points for the combined plot
-      all_points.append(bucket_points)
-
-
-    # Create one combined plot if there are any points
-    if all_points:
-        combined = np.concatenate(all_points, axis=0)
-        steer_all   = combined[:, 0]
-        lateral_all = combined[:, 2]
-
-        # ── figure ───────────────────────────────────────────────
-        plt.figure(figsize=(16, 4))
-
-
-        # fitted curve + friction band
-        a, b, c, d = self.nonlinear_params          # 4-tuple
-        sigma_f    = getattr(self, "friction_coeff", 0.0)
-
-        x_line = np.linspace(-4, 4, 400)
-        y_fit  = model(x_line, a, b, c, d)
-
-        plt.plot(x_line, y_fit,          color="red",  lw=2, label="Fitted curve")
-        if sigma_f > 0:
-            plt.plot(x_line, y_fit + sigma_f, color="blue", ls="--", lw=1.5, label="friction band")
-            plt.plot(x_line, y_fit - sigma_f, color="blue", ls="--", lw=1.5, label="")
-            # fill in the area between the two curves
-            plt.fill_between(x_line, y_fit - sigma_f, y_fit + sigma_f, color="grey", alpha=0.3)
-        plt.scatter(lateral_all, steer_all, s=8, alpha=0.4, label="Filtered samples")
-
-        # ── cosmetics ────────────────────────────────────────────
-        plt.xlim(-4, 4)
-        plt.ylim(-1, 1)
-        plt.xlabel("Lateral acceleration (m/s²)")
-        plt.ylabel("Steering torque (Nm equiv)")
-        plt.title("Torque vs lateral acceleration (all buckets)")
-        # print the current parameters
-        plt.text(0.05, 0.9, f"Friction: {self.friction_coeff:.3f}", transform=plt.gca().transAxes)
-        plt.text(0.05, 0.85, f"LatAccelFactor: {self.filtered_params['latAccelFactor'].x:.3f}", transform=plt.gca().transAxes)
-        plt.text(0.05, 0.8, f"SigmoidSharpness: {self.filtered_params['sigmoidSharpness'].x:.3f}", transform=plt.gca().transAxes)
-        plt.text(0.05, 0.75, f"SigmoidTorqueGain: {self.filtered_params['sigmoidTorqueGain'].x:.3f}", transform=plt.gca().transAxes)
-        plt.text(0.05, 0.7, f"LatAccelOffset: {self.filtered_params['latAccelOffset'].x:.3f}", transform=plt.gca().transAxes)
-        plt.text(0.05, 0.65, f"Decay: {self.decay:.3f}", transform=plt.gca().transAxes)
-        plt.text(0.05, 0.6, f"Valid: {self.filtered_points.is_valid()}", transform=plt.gca().transAxes)
-
-
-        plt.grid(True)
-        plt.legend()
-        plt.tight_layout()
-
-        filename_all = f"{base_filename}_all{file_ext}"
-        plt.savefig(filename_all)
-        plt.close()
-        print(f"Combined plot saved as {filename_all}")
 
 
 def main(demo=False):
