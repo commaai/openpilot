@@ -153,6 +153,7 @@ class WifiManagerUI:
       if not network.is_saved:
         self.state = StateNeedsAuth(network)
       else:
+        # FIXME: don't connect if already connected
         self.connect_to_network(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
