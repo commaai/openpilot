@@ -134,7 +134,7 @@ class WifiManagerUI:
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
-      rl.gui_label(status_text_rect, status_text)
+      gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
     else:
       # If the network is saved, show the "Forget" button
       if network.is_saved:
