@@ -150,20 +150,23 @@ class WifiManagerUI:
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
     if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), ssid_rect) and clicked:
-      if not network.is_saved:
+      if not network.is_saved and network.security_type != SecurityType.OPEN:
         self.state = StateNeedsAuth(network)
       elif not network.is_connected:
         self.connect_to_network(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
     """Draw the status icon based on network's connection state"""
-    icon_file = ""
+    icon_file = None
     if network.is_connected:
       icon_file = "icons/checkmark.png"
     elif network.security_type == SecurityType.UNSUPPORTED:
       icon_file = "icons/circled_slash.png"
-    else:
+    elif network.security_type != SecurityType.OPEN:
       icon_file = "icons/lock_closed.png"
+
+    if not icon_file:
+      return
 
     texture = gui_app.texture(icon_file, ICON_SIZE, ICON_SIZE)
     icon_rect = rl.Vector2(rect.x, rect.y + (ICON_SIZE - texture.height) / 2)
