@@ -22,7 +22,12 @@ class LPA:
 
   def _invoke(self, cmd):
     ret = subprocess.Popen(['sudo', 'lpac', *cmd], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
-    out, err = ret.communicate(timeout=self.timeout_sec)
+    try:
+      out, err = ret.communicate(timeout=self.timeout_sec)
+    except subprocess.TimeoutExpired as e:
+      ret.kill()
+      raise LPAError(f"lpac {cmd} timed out after {self.timeout_sec} seconds") from e
+
     if ret.returncode != 0:
       raise Exception(f"lpac {cmd} failed: {err}")
 
