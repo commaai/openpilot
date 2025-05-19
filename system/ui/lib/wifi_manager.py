@@ -596,7 +596,8 @@ class WifiManager:
     if flags == 0 and not (wpa_flags or rsn_flags):
       return SecurityType.OPEN
     if rsn_flags & 0x200:  # SAE (WPA3 Personal)
-      return SecurityType.WPA3
+      # TODO: support WPA3
+      return SecurityType.UNSUPPORTED
     if rsn_flags:  # RSN indicates WPA2 or higher
       return SecurityType.WPA2
     if wpa_flags:  # WPA flags indicate WPA
