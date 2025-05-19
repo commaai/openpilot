@@ -11,8 +11,8 @@ CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "->"
 SPACE_KEY = "  "
-SHIFT_KEY = "↑"
-SHIFT_DOWN_KEY = "↓"
+SHIFT_KEY_OFF = "SHIFT_OFF"
+SHIFT_KEY_ON = "SHIFT_ON"
 NUMERIC_KEY = "123"
 SYMBOL_KEY = "#+="
 ABC_KEY = "ABC"
@@ -22,13 +22,13 @@ keyboard_layouts = {
   "lowercase": [
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
     ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-    [SHIFT_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY],
+    [SHIFT_KEY_OFF, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY],
     [NUMERIC_KEY, "/", "-", SPACE_KEY, ".", ENTER_KEY],
   ],
   "uppercase": [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
     ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-    [SHIFT_DOWN_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY],
+    [SHIFT_KEY_ON, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY],
     [NUMERIC_KEY, "/", "-", SPACE_KEY, ".", ENTER_KEY],
   ],
   "numbers": [
@@ -59,8 +59,8 @@ class Keyboard:
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
       BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 80, 80),
-      SHIFT_KEY: gui_app.texture("icons/shift.png", 80, 80),
-      SHIFT_DOWN_KEY: gui_app.texture("icons/arrow-down.png", 80, 80),
+      SHIFT_KEY_OFF: gui_app.texture("icons/shift.png", 80, 80),
+      SHIFT_KEY_ON: gui_app.texture("icons/shift-fill.png", 80, 80),
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
@@ -148,9 +148,9 @@ class Keyboard:
     )
 
   def handle_key_press(self, key):
-    if key in (SHIFT_DOWN_KEY, ABC_KEY):
+    if key in (SHIFT_KEY_ON, ABC_KEY):
       self._layout = keyboard_layouts["lowercase"]
-    elif key == SHIFT_KEY:
+    elif key == SHIFT_KEY_OFF:
       self._layout = keyboard_layouts["uppercase"]
     elif key == NUMERIC_KEY:
       self._layout = keyboard_layouts["numbers"]
