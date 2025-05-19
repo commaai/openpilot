@@ -6,7 +6,6 @@ ICONS_DIR="$DIR/icons"
 BOOTSTRAP_SVG="$DIR/../../third_party/bootstrap/bootstrap-icons.svg"
 
 ICON_IDS=(
-  arrow-down
   arrow-right
   backspace
   capslock-fill
