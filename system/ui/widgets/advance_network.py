@@ -40,7 +40,7 @@ class DialogManager:
     ret = self.keyboard.render(rect, self.active_dialog["title"], self.active_dialog["sub_title"])
     if ret >= 0:
       if ret > 0:
-        if callback:=self.active_dialog["callback"]:
+        if callback := self.active_dialog["callback"]:
           callback(self.keyboard.text)
       self.active_dialog = None
 
@@ -72,9 +72,9 @@ class AdvanceNetwork:
 
   def on_tethering_password_edit(self):
     print(self._wifi_manager.get_tethering_password())
-    self._dialog_manager.show_input_dialog("Enter new tethering password",
-                                           self._wifi_manager.get_tethering_password(),
-                                           callback=self._set_tethering_password)
+    self._dialog_manager.show_input_dialog(
+      "Enter new tethering password", self._wifi_manager.get_tethering_password(), callback=self._set_tethering_password
+    )
 
   def _set_tethering_password(self, password):
     self._wifi_manager.set_tethering_password(password)
