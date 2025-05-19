@@ -152,8 +152,7 @@ class WifiManagerUI:
     if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), ssid_rect) and clicked:
       if not network.is_saved:
         self.state = StateNeedsAuth(network)
-      else:
-        # FIXME: don't connect if already connected
+      elif not network.is_connected:
         self.connect_to_network(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
