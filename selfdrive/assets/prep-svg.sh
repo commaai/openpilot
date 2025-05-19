@@ -9,8 +9,9 @@ ICON_IDS=(
   arrow-down
   arrow-right
   backspace
-  capslock
+  capslock-fill
   shift
+  shift-fill
 )
 ICON_FILL_COLOR="#fff"
 
