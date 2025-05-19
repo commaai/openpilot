@@ -21,6 +21,7 @@ ICON_PADDING = 15
 DEFAULT_BUTTON_FONT_SIZE = 60
 BUTTON_ENABLED_TEXT_COLOR = rl.Color(228, 228, 228, 255)
 BUTTON_DISABLED_TEXT_COLOR = rl.Color(228, 228, 228, 51)
+ACTION_BUTTON_TEXT_COLOR = rl.Color(0, 0, 0, 255)
 
 
 BUTTON_BACKGROUND_COLORS = {
@@ -50,7 +51,7 @@ def gui_button(
   border_radius: int = 10,  # Corner rounding in pixels
   text_alignment: TextAlignment = TextAlignment.CENTER,
   text_padding: int = 20,  # Padding for left/right alignment
-  icon = None,
+  icon=None,
 ) -> int:
   result = 0
 
@@ -108,7 +109,7 @@ def gui_button(
 
   # Draw the button text if any
   if text:
-    text_color = BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR
+    text_color = ACTION_BUTTON_TEXT_COLOR if button_style == ButtonStyle.ACTION else BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR
     rl.draw_text_ex(font, text, text_pos, font_size, 0, text_color)
 
   return result
