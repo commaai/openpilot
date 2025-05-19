@@ -5,6 +5,7 @@ import logging
 import os
 import platform
 import shutil
+import sys
 import time
 from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Sequence
@@ -15,10 +16,10 @@ from typing import Literal
 
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
-from openpilot.common.params import Params
+from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.tools.lib.route import Route
-from openpilot.tools.lib.logreader import LogReader, ReadMode, comma_api_source
+from openpilot.tools.lib.logreader import LogReader
 
 DEFAULT_OUTPUT = 'output.mp4'
 DEMO_START = 90
@@ -63,18 +64,23 @@ def escape_ffmpeg_text(value: str):
   return value
 
 
-def get_meta_text(route: Route):
-  metadata = route.get_metadata()
-  origin_parts = metadata['git_remote'].split('/')
+def get_logreader(route: Route):
+  return LogReader(route.qlog_paths()[0] if len(route.qlog_paths()) else route.name.canonical_name)
+
+
+def get_meta_text(lr: LogReader, route: Route):
+  init_data = lr.first('initData')
+  car_params = lr.first('carParams')
+  origin_parts = init_data.gitRemote.split('/')
   origin = origin_parts[3] if len(origin_parts) > 3 else 'unknown'
   return ', '.join([
-    f"openpilot v{metadata['version']}",
-    f"route: {metadata['fullname']}",
-    f"car: {metadata['platform']}",
+    f"openpilot v{init_data.version}",
+    f"route: {route.name.canonical_name}",
+    f"car: {car_params.carFingerprint}",
     f"origin: {origin}",
-    f"branch: {metadata['git_branch']}",
-    f"commit: {metadata['git_commit'][:7]}",
-    f"modified: {str(metadata['git_dirty']).lower()}",
+    f"branch: {init_data.gitBranch}",
+    f"commit: {init_data.gitCommit[:7]}",
+    f"modified: {str(init_data.dirty).lower()}",
   ])
 
 
@@ -115,9 +121,7 @@ def parse_args(parser: ArgumentParser):
   return args
 
 
-def populate_car_params(route: Route):
-  segment = route.name.canonical_name + '/0' # only get first segment qlog
-  lr = LogReader(segment, default_mode=ReadMode.QLOG, source=comma_api_source)
+def populate_car_params(lr: LogReader):
   init_data = lr.first('initData')
   assert init_data is not None
 
@@ -125,8 +129,12 @@ def populate_car_params(route: Route):
   entries = init_data.params.entries
   for cp in entries:
     key, value = cp.key, cp.value
-    params.put(key, value)
-  logger.info(f'persisted {len(entries)} CarParam(s)')
+    try:
+      params.put(key, value)
+    except UnknownKeyName:
+      # forks of openpilot may have other Params keys configured. ignore these
+      logger.warning(f"unknown Params key '{key}', skipping")
+  logger.debug('persisted CarParams')
 
 
 def start_proc(args: list[str], env: dict[str, str]):
@@ -184,6 +192,7 @@ def clip(
   title: str | None,
 ):
   logger.info(f'clipping route {route.name.canonical_name}, start={start} end={end} quality={quality} target_filesize={target_mb}MB')
+  lr = get_logreader(route)
 
   begin_at = max(start - SECONDS_TO_WARM, 0)
   duration = end - start
@@ -193,7 +202,7 @@ def clip(
   display = f':{randint(99, 999)}'
 
   box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
-  meta_text = get_meta_text(route)
+  meta_text = get_meta_text(lr, route)
   overlays = [
     # metadata overlay
     f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
@@ -225,7 +234,7 @@ def clip(
     out,
   ]
 
-  replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
+  replay_cmd = [REPLAY, '--ecam', '-c', '1', '-s', str(begin_at), '--prefix', prefix]
   if data_dir:
     replay_cmd.extend(['--data_dir', data_dir])
   if quality == 'low':
@@ -236,7 +245,7 @@ def clip(
   xvfb_cmd = ['Xvfb', display, '-terminate', '-screen', '0', f'{RESOLUTION}x{PIXEL_DEPTH}']
 
   with OpenpilotPrefix(prefix, shared_download_cache=True):
-    populate_car_params(route)
+    populate_car_params(lr)
 
     env = os.environ.copy()
     env['DISPLAY'] = display
@@ -283,6 +292,7 @@ def main():
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
+  exit_code = 1
   try:
     clip(
       data_dir=args.data_dir,
@@ -295,12 +305,14 @@ def main():
       target_mb=args.file_size,
       title=args.title,
     )
+    exit_code = 0
   except KeyboardInterrupt as e:
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
     logger.exception('encountered error', exc_info=e)
   finally:
     atexit._run_exitfuncs()
+    sys.exit(exit_code)
 
 
 if __name__ == '__main__':

@@ -13,7 +13,11 @@ from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
-from openpilot.common.params import Params
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  # Params/Cythonized modules are not available in zipapp
+  Params = None
 from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
@@ -81,9 +85,10 @@ class WifiManager:
     self.scan_task: asyncio.Task | None = None
     # Set tethering ssid as "weedle" + first 4 characters of a dongle id
     self._tethering_ssid = "weedle"
-    dongle_id = Params().get("DongleId", encoding="utf-8")
-    if dongle_id:
-      self._tethering_ssid += "-" + dongle_id[:4]
+    if Params is not None:
+      dongle_id = Params().get("DongleId", encoding="utf-8")
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
@@ -115,7 +120,7 @@ class WifiManager:
       except asyncio.CancelledError:
         pass
     if self.bus:
-      await self.bus.disconnect()
+      self.bus.disconnect()
 
   async def request_scan(self) -> None:
     try:
@@ -634,8 +639,10 @@ class WifiManagerWrapper:
 
   def shutdown(self) -> None:
     if self._running:
-      if self._manager is not None:
-        self._run_coroutine(self._manager.shutdown())
+      if self._manager is not None and self._loop:
+        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
+        shutdown_future.result(timeout=3.0)
+
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():

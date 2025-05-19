@@ -16,6 +16,7 @@ class TextAlignment(IntEnum):
   RIGHT = 2
 
 
+ICON_PADDING = 15
 DEFAULT_BUTTON_FONT_SIZE = 60
 BUTTON_ENABLED_TEXT_COLOR = rl.Color(228, 228, 228, 255)
 BUTTON_DISABLED_TEXT_COLOR = rl.Color(228, 228, 228, 51)
@@ -46,8 +47,12 @@ def gui_button(
   border_radius: int = 10,  # Corner rounding in pixels
   text_alignment: TextAlignment = TextAlignment.CENTER,
   text_padding: int = 20,  # Padding for left/right alignment
+  icon = None,
 ) -> int:
   result = 0
+
+  if button_style in (ButtonStyle.PRIMARY, ButtonStyle.DANGER) and not is_enabled:
+    button_style = ButtonStyle.NORMAL
 
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
@@ -65,20 +70,42 @@ def gui_button(
     rl.draw_rectangle_rounded(rect, roundness, 20, rl.BLACK)
     rl.draw_rectangle_rounded_lines_ex(rect, roundness, 20, 2, rl.WHITE)
 
+  # Handle icon and text positioning
   font = gui_app.font(font_weight)
   text_size = rl.measure_text_ex(font, text, font_size, 0)
   text_pos = rl.Vector2(0, rect.y + (rect.height - text_size.y) // 2)  # Vertical centering
 
-  # Horizontal alignment
-  if text_alignment == TextAlignment.LEFT:
-    text_pos.x = rect.x + text_padding
-  elif text_alignment == TextAlignment.CENTER:
-    text_pos.x = rect.x + (rect.width - text_size.x) // 2
-  elif text_alignment == TextAlignment.RIGHT:
-    text_pos.x = rect.x + rect.width - text_size.x - text_padding
+  # Draw icon if provided
+  if icon:
+    icon_y = rect.y + (rect.height - icon.height) / 2
+    if text:
+      if text_alignment == TextAlignment.LEFT:
+        icon_x = rect.x + text_padding
+        text_pos.x = icon_x + icon.width + ICON_PADDING
+      elif text_alignment == TextAlignment.CENTER:
+        total_width = icon.width + ICON_PADDING + text_size.x
+        icon_x = rect.x + (rect.width - total_width) / 2
+        text_pos.x = icon_x + icon.width + ICON_PADDING
+      else:  # RIGHT
+        text_pos.x = rect.x + rect.width - text_size.x - text_padding
+        icon_x = text_pos.x - ICON_PADDING - icon.width
+    else:
+      # Center icon when no text
+      icon_x = rect.x + (rect.width - icon.width) / 2
 
-  # Draw the button text
-  text_color = BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR
-  rl.draw_text_ex(font, text, text_pos, font_size, 0, text_color)
+    rl.draw_texture_v(icon, rl.Vector2(icon_x, icon_y), rl.WHITE if is_enabled else rl.Color(255, 255, 255, 100))
+  else:
+    # No icon, position text normally
+    if text_alignment == TextAlignment.LEFT:
+      text_pos.x = rect.x + text_padding
+    elif text_alignment == TextAlignment.CENTER:
+      text_pos.x = rect.x + (rect.width - text_size.x) // 2
+    elif text_alignment == TextAlignment.RIGHT:
+      text_pos.x = rect.x + rect.width - text_size.x - text_padding
+
+  # Draw the button text if any
+  if text:
+    text_color = BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR
+    rl.draw_text_ex(font, text, text_pos, font_size, 0, text_color)
 
   return result

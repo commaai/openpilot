@@ -71,6 +71,7 @@ protected:
   void createSpeedDropdown(QToolBar *toolbar);
   void loopPlaybackClicked();
   void vipcAvailableStreamsUpdated(std::set<VisionStreamType> streams);
+  void showRouteInfo();
 
   StreamCameraView *cam_widget;
   QAction *time_display_action = nullptr;
