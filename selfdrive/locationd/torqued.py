@@ -68,7 +68,7 @@ def model(x, a, b, c, d):
 
 def jacobian(x, a, b, c, d):
   xs = x - d
-  # plain σ for derivative (cheaper than calling centred helper again)
+  # plain σ for derivative (cheaper than calling centered helper again)
   s  = 1.0 / (1.0 + np.exp(-np.clip(a * xs, -50.0, 50.0)))
   ds = s * (1.0 - s)          # σ′(z)
   sc = s - 0.5                # (σ − 0.5) value
