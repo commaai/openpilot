@@ -1,4 +1,3 @@
-import os
 import json
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
@@ -88,7 +87,7 @@ if GetOption('extras'):
       ("openpilot_internal", "nightly-dev"),
     ]
 
-    cont = raylib_env.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
+    cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
                               "ld -r -b binary -o $TARGET $SOURCE")
     for name, branch in installers:
       d = {'BRANCH': f"'\"{branch}\"'"}
