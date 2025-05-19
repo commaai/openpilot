@@ -78,7 +78,6 @@ if GetOption('extras'):
     # build installers
     raylib_env = env.Clone()
     raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
-    raylib_frameworks = ['CoreVideo', 'Cocoa', 'GLUT', 'CoreFoundation', 'OpenGL', 'IOKit'] if arch == 'Darwin' else []
     raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
 
     release = "release3"
@@ -97,7 +96,7 @@ if GetOption('extras'):
         d['INTERNAL'] = "1"
 
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=['raylib', common], FRAMEWORKS=raylib_frameworks)
+      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=['raylib', common])
       # keep installers small
       assert f[0].get_size() < 370*1e3
 
