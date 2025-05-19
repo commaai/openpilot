@@ -1,4 +1,5 @@
 import time
+from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
@@ -51,7 +52,7 @@ keyboard_layouts = {
 
 class Keyboard:
   def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
-    self._layout = keyboard_layouts["lowercase"]
+    self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
 
@@ -91,13 +92,15 @@ class Keyboard:
     input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - input_margin, 100)
     self._render_input_area(input_box_rect)
 
+    layout = keyboard_layouts[self._layout_name]
+
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
     key_height = (rect.height - 300 - 3 * v_space) / 4
-    key_max_width = (rect.width - (len(self._layout[2]) - 1) * h_space) / len(self._layout[2])
+    key_max_width = (rect.width - (len(layout[2]) - 1) * h_space) / len(layout[2])
 
     # Iterate over the rows of keys in the current layout
-    for row, keys in enumerate(self._layout):
+    for row, keys in enumerate(layout):
       key_width = min((rect.width - (180 if row == 1 else 0) - h_space * (len(keys) - 1)) / len(keys), key_max_width)
       start_x = rect.x + (90 if row == 1 else 0)
 
@@ -159,25 +162,25 @@ class Keyboard:
   def handle_key_press(self, key):
     if key in (CAPS_LOCK_KEY, ABC_KEY):
       self._caps_lock = False
-      self._layout = keyboard_layouts["lowercase"]
+      self._layout_name = "lowercase"
     elif key == SHIFT_KEY_OFF:
       self._last_shift_press_time = time.monotonic()
-      self._layout = keyboard_layouts["uppercase"]
+      self._layout_name = "uppercase"
     elif key == SHIFT_KEY_ON:
       if time.monotonic() - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD:
         self._caps_lock = True
       else:
-        self._layout = keyboard_layouts["lowercase"]
+        self._layout_name = "lowercase"
     elif key == NUMERIC_KEY:
-      self._layout = keyboard_layouts["numbers"]
+      self._layout_name = "numbers"
     elif key == SYMBOL_KEY:
-      self._layout = keyboard_layouts["specials"]
+      self._layout_name = "specials"
     elif key == BACKSPACE_KEY:
       self._input_box.delete_char_before_cursor()
     else:
       self._input_box.add_char_at_cursor(key)
-      if not self._caps_lock and self._layout == keyboard_layouts["uppercase"]:
-        self._layout = keyboard_layouts["lowercase"]
+      if not self._caps_lock and self._layout_name == "uppercase":
+        self._layout_name = "lowercase"
 
 
 if __name__ == "__main__":
