@@ -5,6 +5,7 @@ from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
 
 KEY_FONT_SIZE = 96
+DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
 
 # Constants for special keys
 CONTENT_MARGIN = 50
@@ -13,6 +14,7 @@ ENTER_KEY = "->"
 SPACE_KEY = "  "
 SHIFT_KEY_OFF = "SHIFT_OFF"
 SHIFT_KEY_ON = "SHIFT_ON"
+CAPS_LOCK_KEY = "CAPS"
 NUMERIC_KEY = "123"
 SYMBOL_KEY = "#+="
 ABC_KEY = "ABC"
@@ -49,6 +51,9 @@ keyboard_layouts = {
 class Keyboard:
   def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
     self._layout = keyboard_layouts["lowercase"]
+    self._caps_lock = False
+    self._last_shift_press_time = 0
+
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
     self._input_box = InputBox(max_text_size)
@@ -61,6 +66,7 @@ class Keyboard:
       BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 80, 80),
       SHIFT_KEY_OFF: gui_app.texture("icons/shift.png", 80, 80),
       SHIFT_KEY_ON: gui_app.texture("icons/shift-fill.png", 80, 80),
+      CAPS_LOCK_KEY: gui_app.texture("icons/capslock-fill.png", 80, 80),
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
@@ -105,6 +111,8 @@ class Keyboard:
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
         result = -1
         if key in self._key_icons:
+          if key in (SHIFT_KEY_OFF, SHIFT_KEY_ON) and self._caps_lock:
+            key = CAPS_LOCK_KEY
           texture = self._key_icons[key]
           result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
         else:
@@ -148,13 +156,30 @@ class Keyboard:
     )
 
   def handle_key_press(self, key):
-    if key in (SHIFT_KEY_ON, ABC_KEY):
+    current_time = rl.get_time()
+    if key in (CAPS_LOCK_KEY, ABC_KEY):
+      self._caps_lock = False
       self._layout = keyboard_layouts["lowercase"]
-    elif key == SHIFT_KEY_OFF:
-      self._layout = keyboard_layouts["uppercase"]
+    elif key in (SHIFT_KEY_OFF, SHIFT_KEY_ON):
+      # Handle caps lock (double-click on shift)
+      if current_time - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD and not self._caps_lock:
+        self._caps_lock = True
+        self._layout = keyboard_layouts["uppercase"]
+      else:
+        # Regular shift toggle
+        self._caps_lock = False
+        if self._layout == keyboard_layouts["uppercase"]:
+          # If already in uppercase and not caps lock, go back to lowercase
+          self._layout = keyboard_layouts["lowercase"]
+        else:
+          # Otherwise switch to uppercase
+          self._layout = keyboard_layouts["uppercase"]
+      self._last_shift_press_time = current_time
     elif key == NUMERIC_KEY:
+      self._caps_lock = False
       self._layout = keyboard_layouts["numbers"]
     elif key == SYMBOL_KEY:
+      self._caps_lock = False
       self._layout = keyboard_layouts["specials"]
     elif key == BACKSPACE_KEY:
       self._input_box.delete_char_before_cursor()
