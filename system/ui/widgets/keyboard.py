@@ -160,31 +160,24 @@ class Keyboard:
     if key in (CAPS_LOCK_KEY, ABC_KEY):
       self._caps_lock = False
       self._layout = keyboard_layouts["lowercase"]
-    elif key in (SHIFT_KEY_OFF, SHIFT_KEY_ON):
-      # Handle caps lock (double-click on shift)
-      if current_time - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD and not self._caps_lock:
-        self._caps_lock = True
-        self._layout = keyboard_layouts["uppercase"]
-      else:
-        # Regular shift toggle
-        self._caps_lock = False
-        if self._layout == keyboard_layouts["uppercase"]:
-          # If already in uppercase and not caps lock, go back to lowercase
-          self._layout = keyboard_layouts["lowercase"]
-        else:
-          # Otherwise switch to uppercase
-          self._layout = keyboard_layouts["uppercase"]
+    elif key == SHIFT_KEY_OFF:
       self._last_shift_press_time = current_time
+      self._layout = keyboard_layouts["uppercase"]
+    elif key == SHIFT_KEY_ON:
+      if current_time - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD:
+        self._caps_lock = True
+      else:
+        self._layout = keyboard_layouts["lowercase"]
     elif key == NUMERIC_KEY:
-      self._caps_lock = False
       self._layout = keyboard_layouts["numbers"]
     elif key == SYMBOL_KEY:
-      self._caps_lock = False
       self._layout = keyboard_layouts["specials"]
     elif key == BACKSPACE_KEY:
       self._input_box.delete_char_before_cursor()
     else:
       self._input_box.add_char_at_cursor(key)
+      if not self._caps_lock and self._layout == keyboard_layouts["uppercase"]:
+        self._layout = keyboard_layouts["lowercase"]
 
 
 if __name__ == "__main__":
