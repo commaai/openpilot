@@ -421,6 +421,119 @@ class WifiManager:
     except Exception:
       return False
 
+  async def update_gsm_settings(self, roaming: bool, apn: str, metered: bool = False) -> bool:
+    """Update GSM connection settings for cellular connectivity."""
+    try:
+      # Get all connections
+      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
+      connection_paths = await settings_iface.call_list_connections()
+
+      # Find LTE/GSM connection
+      lte_connection_path = None
+      for path in connection_paths:
+        try:
+          settings = await self._get_connection_settings(path)
+          conn_id = settings.get('connection', {}).get('id', Variant('s', '')).value
+          if conn_id == 'lte':
+            lte_connection_path = path
+            break
+        except DBusError:
+          continue
+
+      if not lte_connection_path:
+        cloudlog.warning("No LTE connection found to update GSM settings")
+        return False
+
+      # Get current settings
+      settings = await self._get_connection_settings(lte_connection_path)
+
+      # Check if any changes are needed
+      changes = False
+      auto_config = len(apn) == 0
+
+      # Update GSM section if it doesn't exist
+      if 'gsm' not in settings:
+        settings['gsm'] = {}
+        changes = True
+
+      # Update auto-config setting
+      current_auto_config = settings.get('gsm', {}).get('auto-config', Variant('b', False)).value
+      if current_auto_config != auto_config:
+        cloudlog.info(f"Changing gsm.auto-config to {auto_config}")
+        settings['gsm']['auto-config'] = Variant('b', auto_config)
+        changes = True
+
+      # Update APN setting
+      current_apn = settings.get('gsm', {}).get('apn', Variant('s', '')).value
+      if current_apn != apn:
+        cloudlog.info(f"Changing gsm.apn to {apn}")
+        settings['gsm']['apn'] = Variant('s', apn)
+        changes = True
+
+      # Update roaming setting (home-only is the inverse of roaming)
+      current_home_only = settings.get('gsm', {}).get('home-only', Variant('b', True)).value
+      if current_home_only == roaming:  # If home_only is opposite of roaming
+        cloudlog.info(f"Changing gsm.home-only to {not roaming}")
+        settings['gsm']['home-only'] = Variant('b', not roaming)
+        changes = True
+
+      # Update metered setting
+      # NM_METERED_UNKNOWN = 0, NM_METERED_NO = 1
+      metered_int = 0 if metered else 1
+      current_metered = settings.get('connection', {}).get('metered', Variant('i', 1)).value
+      if current_metered != metered_int:
+        cloudlog.info(f"Changing connection.metered to {metered_int}")
+        if 'connection' not in settings:
+          settings['connection'] = {}
+        settings['connection']['metered'] = Variant('i', metered_int)
+        changes = True
+
+      # If changes were made, update the connection
+      if changes:
+        # Update connection settings
+        connection_iface = await self._get_interface(NM, lte_connection_path, NM_CONNECTION_IFACE)
+        await connection_iface.call_update_unsaved(settings)  # Update is temporary
+
+        # Deactivate and reactivate the connection
+        nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+
+        # Find active connection for this path
+        active_connections = await nm_iface.get_active_connections()
+        for conn_path in active_connections:
+          props_iface = await self._get_interface(NM, conn_path, NM_PROPERTIES_IFACE)
+          conn_id_path = await props_iface.call_get('org.freedesktop.NetworkManager.Connection.Active', 'Connection')
+          if conn_id_path.value == lte_connection_path:
+            await nm_iface.call_deactivate_connection(conn_path)
+            break
+
+        # Find modem device
+        devices = await nm_iface.get_devices()
+        modem_path = None
+        for device_path in devices:
+          device = await self.bus.introspect(NM, device_path)
+          device_proxy = self.bus.get_proxy_object(NM, device_path, device)
+          device_interface = device_proxy.get_interface(NM_DEVICE_IFACE)
+          device_type = await device_interface.get_device_type()
+          if device_type == 8:  # NM_DEVICE_TYPE_MODEM = 8
+            modem_path = device_path
+            break
+
+        if modem_path:
+          # Activate the connection on the modem
+          await nm_iface.call_activate_connection(lte_connection_path, modem_path, "/")
+          return True
+        else:
+          cloudlog.error("No modem device found to activate GSM connection")
+          return False
+
+      return changes
+    except DBusError as e:
+      cloudlog.error(f"DBus error updating GSM settings: {e}")
+      return False
+    except Exception as e:
+      cloudlog.error(f"Error updating GSM settings: {e}")
+      return False
+
   async def _periodic_scan(self):
     while self.running:
       try:
