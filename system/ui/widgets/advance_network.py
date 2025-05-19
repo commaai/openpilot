@@ -1,4 +1,6 @@
 import pyray as rl
+from enum import IntEnum
+
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.button import gui_button
@@ -17,42 +19,22 @@ BUTTON_HEIGHT = 100
 LINE_COLOR = rl.GRAY
 
 
-class DialogManager:
-  def __init__(self):
-    self.active_dialog = None
-    self.keyboard = Keyboard()
-
-  def show_input_dialog(
-    self, title, sub_title="", initial_value="", validator=None, callback=None, placeholder=None, password_mode=False
-  ):
-    dialog = {
-      "title": title,
-      "sub_title": sub_title,
-      "value": initial_value,
-      "validator": validator,
-      "callback": callback,
-      "error": None,
-      "password_mode": password_mode,
-    }
-    self.active_dialog = dialog
-
-  def render(self, rect: rl.Rectangle):
-    ret = self.keyboard.render(rect, self.active_dialog["title"], self.active_dialog["sub_title"])
-    if ret >= 0:
-      if ret > 0:
-        if callback := self.active_dialog["callback"]:
-          callback(self.keyboard.text)
-      self.active_dialog = None
+class AdvanceNetworkState(IntEnum):
+  NONE = 0
+  EDIT_TETHERING_PASSWORD = 1
+  EDIT_APN = 2
 
 
 class AdvanceNetwork:
-  def __init__(self, wifi_manager: WifiManagerWrapper):
-    self._dialog_manager = DialogManager()
+  def __init__(self, manager: WifiManagerUI, wifi_manager: WifiManagerWrapper):
+    self._state = AdvanceNetworkState.NONE
+    self._manager = manager
     self._wifi_manager = wifi_manager
     self._scroll_panel = None
     self._tethering_toggle = Toggle(0, 0, initial_state=True)
     self._roaming_toggle = Toggle(0, 0)
     self._cellular_toggle = Toggle(0, 0)
+    self._keyboard = Keyboard(max_text_size=64, min_text_size=8)
 
     self._items = [
       {"label": "Enable Tethering", "toggle": self._tethering_toggle, "handler": self.on_tethering_toggle},
@@ -71,10 +53,10 @@ class AdvanceNetwork:
     self._wifi_manager.enable_tethering(self._tethering_toggle.get_state())
 
   def on_tethering_password_edit(self):
+    # Show the current password in the dialog
+    self._state = AdvanceNetworkState.EDIT_TETHERING_PASSWORD
     print(self._wifi_manager.get_tethering_password())
-    self._dialog_manager.show_input_dialog(
-      "Enter new tethering password", self._wifi_manager.get_tethering_password(), callback=self._set_tethering_password
-    )
+    self._keyboard.render("Enter new tethering password", "")
 
   def _set_tethering_password(self, password):
     self._wifi_manager.set_tethering_password(password)
@@ -83,9 +65,10 @@ class AdvanceNetwork:
     pass
 
   def on_apn_edit(self):
-    self._dialog_manager.show_input_dialog(
-      "Enter APN", "leave blank for automatic configuration", callback=self._set_apn
-    )
+    # self._dialog_manager.show_input_dialog(
+    #   "Enter APN", "leave blank for automatic configuration", callback=self._set_apn
+    # )
+    pass
 
   def _set_apn(self, apn):
     pass
@@ -115,8 +98,9 @@ class AdvanceNetwork:
           item["handler"]()
 
   def render(self, rect: rl.Rectangle):
-    if self._dialog_manager.active_dialog:
-      self._dialog_manager.render(rect)
+    if self._state == AdvanceNetworkState.EDIT_TETHERING_PASSWORD:
+      self.on_tethering_password_edit()
+
     else:
       item_rect = rl.Rectangle(rect.x, rect.y, rect.width, ITEM_HEIGHT)
       button_rect = rl.Rectangle(
@@ -139,7 +123,7 @@ if __name__ == "__main__":
   gui_app.init_window("Advance Network Example")
   wifi_manager = WifiManagerWrapper()
   wifi_ui = WifiManagerUI(wifi_manager)
-  advance_network = AdvanceNetwork(wifi_manager)
+  advance_network = AdvanceNetwork(wifi_ui, wifi_manager)
   for _ in gui_app.render():
     # wifi_ui.render(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
     advance_network.render(rl.Rectangle(50, 50, 1024, 768))
