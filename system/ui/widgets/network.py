@@ -135,14 +135,16 @@ class WifiManagerUI:
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
       gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-    elif network.is_saved:
-      forget_btn_rect = rl.Rectangle(security_icon_rect.x - self.btn_width - spacing,
-        rect.y + (ITEM_HEIGHT - 80) / 2,
-        self.btn_width,
-        80,
-      )
-      if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "FORGET", button_style=ButtonStyle.ACTION) and clicked:
-        self.state = StateShowForgetConfirm(network)
+    else:
+      # If the network is saved, show the "Forget" button
+      if network.is_saved:
+        forget_btn_rect = rl.Rectangle(security_icon_rect.x - self.btn_width - spacing,
+          rect.y + (ITEM_HEIGHT - 80) / 2,
+          self.btn_width,
+          80,
+        )
+        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget", button_style=ButtonStyle.ACTION) and clicked:
+          self.state = StateShowForgetConfirm(network)
 
     self._draw_status_icon(security_icon_rect, network)
     self._draw_signal_strength_icon(signal_icon_rect, network)
