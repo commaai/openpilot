@@ -8,6 +8,7 @@ class ButtonStyle(IntEnum):
   PRIMARY = 1  # For main actions
   DANGER = 2  # For critical actions, like reboot or delete
   TRANSPARENT = 3  # For buttons with transparent background and border
+  ACTION = 4
 
 
 class TextAlignment(IntEnum):
@@ -20,6 +21,8 @@ ICON_PADDING = 15
 DEFAULT_BUTTON_FONT_SIZE = 60
 BUTTON_ENABLED_TEXT_COLOR = rl.Color(228, 228, 228, 255)
 BUTTON_DISABLED_TEXT_COLOR = rl.Color(228, 228, 228, 51)
+ACTION_BUTTON_FONT_SIZE = 48
+ACTION_BUTTON_TEXT_COLOR = rl.Color(0, 0, 0, 255)
 
 
 BUTTON_BACKGROUND_COLORS = {
@@ -27,6 +30,7 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(70, 91, 234, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
 }
 
 BUTTON_PRESSED_BACKGROUND_COLORS = {
@@ -34,6 +38,7 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
 }
 
 
@@ -47,12 +52,15 @@ def gui_button(
   border_radius: int = 10,  # Corner rounding in pixels
   text_alignment: TextAlignment = TextAlignment.CENTER,
   text_padding: int = 20,  # Padding for left/right alignment
-  icon = None,
+  icon=None,
 ) -> int:
   result = 0
 
   if button_style in (ButtonStyle.PRIMARY, ButtonStyle.DANGER) and not is_enabled:
     button_style = ButtonStyle.NORMAL
+
+  if button_style == ButtonStyle.ACTION and font_size == DEFAULT_BUTTON_FONT_SIZE:
+    font_size = ACTION_BUTTON_FONT_SIZE
 
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
@@ -105,7 +113,7 @@ def gui_button(
 
   # Draw the button text if any
   if text:
-    text_color = BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR
+    text_color = ACTION_BUTTON_TEXT_COLOR if button_style == ButtonStyle.ACTION else BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR
     rl.draw_text_ex(font, text, text_pos, font_size, 0, text_color)
 
   return result
