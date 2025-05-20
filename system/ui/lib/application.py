@@ -194,10 +194,8 @@ class GuiApplication:
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
     all_chars = ""
     for layout in KEYBOARD_LAYOUTS.values():
-      for row in layout:
-        for key in row:
-          all_chars += key
-    all_chars = "".join(set(all_chars))
+      all_chars.update(key for row in layout for key in row)
+    all_chars = "".join(all_chars)
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
