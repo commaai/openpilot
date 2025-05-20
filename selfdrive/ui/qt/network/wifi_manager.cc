@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 
 #include <utility>
+#include <iostream>
 
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
@@ -100,6 +101,7 @@ void WifiManager::refreshNetworks() {
 
 void WifiManager::refreshFinished(QDBusPendingCallWatcher *watcher) {
   ipv4_address = getIp4Address();
+
   seenNetworks.clear();
 
   const QDBusReply<QList<QDBusObjectPath>> watcher_reply = *watcher;
@@ -160,6 +162,10 @@ QString WifiManager::getIp4Address() {
   }
   return "";
 }
+
+//void WifiManager::getConnectionMetered() {
+//
+//}
 
 SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
   int sflag = properties["Flags"].toUInt();
@@ -370,6 +376,53 @@ NetworkType WifiManager::currentNetworkType() {
     }
   }
   return NetworkType::NONE;
+}
+
+bool WifiManager::currentNetworkMetered() {
+//  auto primary_conn = call<QDBusObjectPath>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "PrimaryConnection");
+//  auto primary_type = call<QString>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
+//  auto primary_devices = call<QDBusObjectPath>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Devices");
+
+  NetworkType type = currentNetworkType();
+  if (type == NetworkType::WIFI) {
+    int metered_prop = call<int>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "Metered");
+    std::cout << "Metered property: " << metered_prop << "\n";
+    if (metered_prop == NM_METERED_YES || metered_prop == NM_METERED_GUESS_YES) {
+      return true;
+    }
+  }
+
+  return type != NetworkType::NONE && type != NetworkType::WIFI && type != NetworkType::ETHERNET;
+}
+
+bool WifiManager::setCurrentNetworkMetered(bool metered) {
+  auto primary_conn = call<QDBusObjectPath>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "PrimaryConnection");
+  QDBusObjectPath settingsConnPath = call<QDBusObjectPath>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Connection");
+  auto primary_type = call<QString>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
+
+
+  NetworkType type = currentNetworkType();
+  if (type == NetworkType::WIFI && !isTetheringEnabled()) {  // note: already checks tethering
+    Connection settings = getConnectionSettings(settingsConnPath);
+    int meteredInt = metered ? NM_METERED_UNKNOWN : NM_METERED_NO;
+    settings["connection"]["metered"] = meteredInt;
+
+    call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));
+    return true;
+  }
+  return false;
+//
+//  // TODO: support eth? why not
+//  if (primary_type == "802-3-ethernet") {
+//    return false;
+//  } else if (primary_type == "802-11-wireless" && !isTetheringEnabled()) {
+//    int meteredInt = metered ? NM_METERED_UNKNOWN : NM_METERED_NO;
+//    settings["connection"]["metered"] = meteredInt;
+////    call(primary_conn.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(meteredInt));
+//    call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));
+//    return true;
+//  }
+  return false;
 }
 
 void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {

@@ -42,6 +42,7 @@ public:
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
+//  bool metered = false;
   bool tethering_on = false;
   bool ipv4_forward = false;
 
@@ -53,6 +54,8 @@ public:
   bool isKnownConnection(const QString &ssid);
   std::optional<QDBusPendingCall> activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
+  bool currentNetworkMetered();
+  bool setCurrentNetworkMetered(bool metered);
   void updateGsmSettings(bool roaming, QString apn, bool metered);
   void connect(const Network &ssid, const bool is_hidden = false, const QString &password = {}, const QString &username = {});
 

@@ -1,6 +1,7 @@
 #include "selfdrive/ui/qt/network/networking.h"
 
 #include <algorithm>
+#include <iostream>
 
 #include <QHBoxLayout>
 #include <QScrollBar>
@@ -175,12 +176,12 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Metered toggle
   const bool metered = params.getBool("GsmMetered");
-  meteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
-  QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
+  cellularMeteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
+  QObject::connect(cellularMeteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
     params.putBool("GsmMetered", state);
     wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
   });
-  list->addItem(meteredToggle);
+  list->addItem(cellularMeteredToggle);
 
   // Hidden Network
   hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
@@ -204,6 +205,25 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
+  // Wi-Fi metered toggle
+  std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
+  wifiMeteredToggle = new ToggleControl(tr("Meter Wi-Fi Network"), tr("Prevent large data uploads when on a metered connection"), "", false);
+  wifiMeteredToggle->setTitle(tr("Meter Wi-Fi Network"));
+  wifiMeteredToggle->setValue("Disconnected");
+  wifiMeteredToggle->setEnabled(false);
+  QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
+    wifi->setCurrentNetworkMetered(state);
+    refresh();
+    std::cout << "Set Wi-Fi metered to " << state << std::endl;
+  });
+//  wifiMeteredToggle = new ToggleControl("LongitudinalPersonality", tr("Meter Wi-Fi Network"),
+//                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
+//                                             "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
+//                                             "your steering wheel distance button."),
+//                                          "../assets/icons/speed_limit.png",
+//                                          longi_button_texts);
+  list->addItem(wifiMeteredToggle);
+
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
 }
@@ -211,18 +231,35 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 void AdvancedNetworking::setGsmVisible(bool visible) {
   roamingToggle->setVisible(visible);
   editApnButton->setVisible(visible);
-  meteredToggle->setVisible(visible);
+  cellularMeteredToggle->setVisible(visible);
 }
 
 void AdvancedNetworking::refresh() {
   ipLabel->setText(wifi->ipv4_address);
   tetheringToggle->setEnabled(true);
+
+  // TODO: which?!
+//  wifiMeteredToggle->setEnabled(wifi->currentNetworkType() == NetworkType::WIFI);
+  if (wifi->isTetheringEnabled()) {
+    wifiMeteredToggle->setEnabled(false);
+    wifiMeteredToggle->setValue("Unsupported while tethering");
+  } else if (wifi->ipv4_address != "") {  // TODO: check wifi
+    wifiMeteredToggle->setEnabled(true);
+    wifiMeteredToggle->setValue(wifi->currentNetworkMetered() ? "Metered" : "Unmetered");
+    wifiMeteredToggle->setToggled(wifi->currentNetworkMetered());
+  } else {
+    wifiMeteredToggle->setEnabled(false);
+    wifiMeteredToggle->setValue("Disconnected");
+    wifiMeteredToggle->setToggled(false);
+  }
+
   update();
 }
 
 void AdvancedNetworking::toggleTethering(bool enabled) {
   wifi->setTetheringEnabled(enabled);
   tetheringToggle->setEnabled(false);
+  wifiMeteredToggle->setEnabled(!enabled);
 }
 
 // WifiUI functions
