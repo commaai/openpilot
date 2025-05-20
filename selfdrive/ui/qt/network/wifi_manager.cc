@@ -417,7 +417,7 @@ bool WifiManager::setCurrentNetworkMetered(bool metered) {
           settings["connection"]["metered"] = meteredInt;
 
           std::cout << "done setting metered to " << meteredInt << "\n";
-          call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
+          asyncCall(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
           return true;
         }
       }

@@ -212,8 +212,8 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   wifiMeteredToggle->setEnabled(false);
   QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     wifi->setCurrentNetworkMetered(state);
+    wifiMeteredToggle->setValue(state ? "Metered" : "Unmetered");
     std::cout << "Set Wi-Fi metered to " << state << std::endl;
-    refresh();
   });
   list->addItem(wifiMeteredToggle);
 
