@@ -7,19 +7,12 @@ import binascii
 import requests
 import serial
 import subprocess
-from dataclasses import dataclass
 
 
-@dataclass
-class Profile:
-  iccid: str
-  isdp_aid: str
-  nickname: str
-  enabled: bool
-  provider: str
+class LPAError(RuntimeError):
+  pass
 
-
-class LPAError(Exception):
+class LPAProfileNotFoundError(LPAError):
   pass
 
 
@@ -35,41 +28,46 @@ class LPA2:
     """
     List all profiles on the eUICC.
     """
-    raw = self._invoke('profile', 'list')[-1] # only one message
+    msgs = self._invoke('profile', 'list')
+    self.validate_successful(msgs)
 
     profiles = []
-    for profile in raw['payload']['data']:
-      profiles.append(Profile(
-        iccid=profile['iccid'],
-        isdp_aid=profile['isdpAid'],
-        nickname=profile['profileNickname'],
-        enabled=profile['profileState'] == 'enabled',
-        provider=profile['serviceProviderName'],
-      ))
+    for profile in msgs[-1]['payload']['data']:
+      profiles.append({
+        'iccid': profile['iccid'],
+        'isdp_aid': profile['isdpAid'],
+        'nickname': profile['profileNickname'],
+        'enabled': profile['profileState'] == 'enabled',
+        'provider': profile['serviceProviderName'],
+      })
 
     return profiles
 
-  def validate_successful(self, msgs: list[dict]) -> None:
-    """
-    Validate that the last message is a success notification.
-    """
-    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
-
-  def profile_exists(self, iccid: str) -> bool:
-    """
-    Check if a profile exists on the eUICC.
-    """
-    return any(p.iccid == iccid for p in self.list_profiles())
-
-  def get_active_profile(self):
+  def get_active_profile(self) -> dict | None:
     """
     Get the active profile on the eUICC.
     """
     profiles = self.list_profiles()
     for profile in profiles:
-      if profile.enabled:
+      if profile['enabled']:
         return profile
     return None
+
+  def list_notifications(self) -> list[dict]:
+    """
+    List notifications from the LPA.
+    """
+    msgs = self._invoke('notification', 'list')
+    self.validate_successful(msgs)
+    notifications = []
+    for notification in msgs[-1]['payload']['data']:
+      notifications.append({
+        "sequence_number": notification['seqNumber'],
+        "profile_management_operation": notification['profileManagementOperation'],
+        "notification_address": notification['notificationAddress'],
+        "iccid": notification['iccid'],
+      })
+    return notifications
 
   def process_notifications(self) -> None:
     """
@@ -79,18 +77,16 @@ class LPA2:
 
   def enable_profile(self, iccid: str) -> None:
     """
-    Enable the profile on the eUICC.
+    Enable the profile on the eUICC. Disables active profile if necessary.
     """
-    if not self.profile_exists(iccid):
-      raise LPAError(f'profile {iccid} does not exist')
-
+    self.validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is None:
       raise LPAError('no profile enabled')
-    if latest.iccid == iccid:
+    if latest['iccid'] == iccid:
       raise LPAError(f'profile {iccid} is already enabled')
     else:
-      self.disable_profile(latest.iccid)
+      self.disable_profile(latest['iccid'])
 
     self.validate_successful(self._invoke('profile', 'enable', iccid))
     self.process_notifications()
@@ -99,13 +95,11 @@ class LPA2:
     """
     Disable the profile on the eUICC.
     """
-    if not self.profile_exists(iccid):
-      raise LPAError(f'profile {iccid} does not exist')
-
+    self.validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is None:
       raise LPAError('no profile enabled')
-    if latest.iccid != iccid:
+    if latest['iccid'] != iccid:
       raise LPAError(f'profile {iccid} is not enabled')
 
     self.validate_successful(self._invoke('profile', 'disable', iccid))
@@ -115,20 +109,11 @@ class LPA2:
     """
     Delete the profile on the eUICC.
     """
-    if not self.profile_exists(iccid):
-      raise LPAError(f'profile {iccid} does not exist')
-
+    self.validate_profile_exists(iccid)
+    latest = self.get_active_profile()
+    if latest is not None and latest['iccid'] == iccid:
+      self.disable_profile(iccid)
     self.validate_successful(self._invoke('profile', 'delete', iccid))
-    self.process_notifications()
-
-  def nickname_profile(self, iccid: str, nickname: str) -> None:
-    """
-    Set the nickname of the profile on the eUICC.
-    """
-    if not self.profile_exists(iccid):
-      raise LPAError(f'profile {iccid} does not exist')
-
-    self.validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
     self.process_notifications()
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
@@ -143,6 +128,26 @@ class LPA2:
     if nickname:
       self.nickname_profile(new_profile['payload']['data']['iccid'], nickname)
     self.process_notifications()
+
+  def nickname_profile(self, iccid: str, nickname: str) -> None:
+    """
+    Set the nickname of the profile on the eUICC.
+    """
+    self.validate_profile_exists(iccid)
+    self.validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
+
+  def validate_profile_exists(self, iccid: str) -> dict:
+    """
+    Validate that the profile exists on the eUICC.
+    """
+    if not any(p['iccid'] == iccid for p in self.list_profiles()):
+      raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
+
+  def validate_successful(self, msgs: list[dict]) -> None:
+    """
+    Validate that the last message is a success notification.
+    """
+    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
 
   def _invoke(self, *cmd: str):
     print(f"invoking lpac {' '.join(list(cmd))}")
