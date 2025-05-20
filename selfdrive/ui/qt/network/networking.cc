@@ -176,7 +176,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Metered toggle
   const bool metered = params.getBool("GsmMetered");
-  cellularMeteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
+  cellularMeteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered cellular connection"), "", metered);
   QObject::connect(cellularMeteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
     params.putBool("GsmMetered", state);
     wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
@@ -207,7 +207,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Wi-Fi metered toggle
   std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
-  wifiMeteredToggle = new ToggleControl(tr("Metered Wi-Fi Network"), tr("Prevent large data uploads when on a metered connection"), "", false);
+  wifiMeteredToggle = new ToggleControl(tr("Metered Wi-Fi Network"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
   wifiMeteredToggle->setEnabled(false);
   QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     std::cout << "Set Wi-Fi metered to " << state << std::endl;
@@ -238,13 +238,11 @@ void AdvancedNetworking::refresh() {
   ipLabel->setText(wifi->ipv4_address);
   tetheringToggle->setEnabled(true);
 
-  // TODO: which?!
-//  wifiMeteredToggle->setEnabled(wifi->currentNetworkType() == NetworkType::WIFI);
   if (wifi->isTetheringEnabled()) {
     wifiMeteredToggle->setEnabled(false);
     wifiMeteredToggle->setValue("Unsupported while tethering");
-    wifiMeteredToggle->setToggled(false);
-  } else if (wifi->ipv4_address != "") {  // TODO: ~check type~ fix type
+    wifiMeteredToggle->setToggled(true);
+  } else if (wifi->ipv4_address != "") {
     bool metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
     wifiMeteredToggle->setValue(metered ? "Metered" : "Unmetered");
