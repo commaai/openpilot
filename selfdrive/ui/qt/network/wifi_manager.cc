@@ -448,7 +448,6 @@ std::optional<QDBusPendingCall> WifiManager::setCurrentNetworkMetered(bool meter
 //    call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));
 //    return true;
 //  }
-  return false;
 }
 
 void WifiManager::updateGsmSettings(bool roaming, QString apn, bool metered) {
