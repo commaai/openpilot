@@ -29,7 +29,7 @@ class LPA2:
     self.env['LPAC_APDU'] = 'qmi'
     self.env['QMI_DEVICE'] = '/dev/cdc-wdm0'
 
-    self.timeout_sec = 30
+    self.timeout_sec = 45
 
   def list_profiles(self):
     """
