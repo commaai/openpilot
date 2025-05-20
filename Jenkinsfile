@@ -268,6 +268,7 @@ node {
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
           step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
+          // lpac becomes brittle when running in parallel
           step("test esim", "pytest -n1 system/hardware/tici/tests/test_esim.py"),
           step("test qcomgpsd", "pytest system/qcomgpsd/tests/test_qcomgpsd.py", [diffPaths: ["system/qcomgpsd/"]]),
         ])
