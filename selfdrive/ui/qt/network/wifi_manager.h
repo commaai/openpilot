@@ -55,7 +55,7 @@ public:
   std::optional<QDBusPendingCall> activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
   bool currentNetworkMetered();
-  bool setCurrentNetworkMetered(bool metered);
+  std::optional<QDBusPendingCall> setCurrentNetworkMetered(bool metered);
   void updateGsmSettings(bool roaming, QString apn, bool metered);
   void connect(const Network &ssid, const bool is_hidden = false, const QString &password = {}, const QString &username = {});
 

@@ -396,7 +396,7 @@ bool WifiManager::currentNetworkMetered() {
   return type != NetworkType::NONE && type != NetworkType::WIFI && type != NetworkType::ETHERNET;
 }
 
-bool WifiManager::setCurrentNetworkMetered(bool metered) {
+std::optional<QDBusPendingCall> WifiManager::setCurrentNetworkMetered(bool metered) {
 //  auto primary_conn = call<QDBusObjectPath>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "PrimaryConnection");
 //  std::cout << "Primary connection: " << primary_conn.path() << "\n";
 //  QDBusObjectPath settingsConnPath = call<QDBusObjectPath>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Connection");
@@ -417,13 +417,12 @@ bool WifiManager::setCurrentNetworkMetered(bool metered) {
           settings["connection"]["metered"] = meteredInt;
 
           std::cout << "done setting metered to " << meteredInt << "\n";
-          asyncCall(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
-          return true;
+          return asyncCall(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
         }
       }
     }
   }
-  return false;
+  return std::nullopt;
 
 ////  NetworkType type = currentNetworkType();
 //  std::cout << "Setting metered to " << metered << " for type " << (int)type << "\n";
