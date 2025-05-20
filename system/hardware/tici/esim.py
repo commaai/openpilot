@@ -43,6 +43,13 @@ class LPA:
 
     return profiles
 
+  def profile_exists(self, iccid: str) -> bool:
+    """
+    Check if a profile exists on the eUICC.
+    """
+    profiles = self.list_profiles()
+    return any(profile.iccid == iccid for profile in profiles)
+
   def get_active_profile(self):
     """
     Get the active profile on the eUICC.
@@ -64,12 +71,11 @@ class LPA:
     """
     Enable the profile on the eUICC.
     """
+    self.validate_profile(iccid)
     latest = self.get_active_profile()
-    if latest is None:
-      raise LPAError('no profile enabled')
-    if latest.iccid == iccid:
+    if latest is not None and latest.iccid == iccid:
       raise LPAError(f'profile {iccid} is already enabled')
-    else:
+    elif latest is not None:
       self.disable_profile(latest.iccid)
 
     msgs = self._invoke('profile', 'enable', iccid)
@@ -80,9 +86,10 @@ class LPA:
     """
     Disable the profile on the eUICC.
     """
+    self.validate_profile(iccid)
     latest = self.get_active_profile()
     if latest is None:
-      raise LPAError('no profile enabled')
+      return
     if latest.iccid != iccid:
       raise LPAError(f'profile {iccid} is not enabled')
 
@@ -91,8 +98,16 @@ class LPA:
     self.process_notifications()
 
 
+  def validate_profile(self, iccid: str) -> None:
+    """
+    Validate the profile on the eUICC.
+    """
+    if not self.profile_exists(iccid):
+      raise LPAError(f'profile {iccid} does not exist')
+
+
   def _invoke(self, *cmd: str):
-    print(f"invoking lpac {' '.join(list(cmd))}")
+    print(f"-> lpac {' '.join(list(cmd))}")
     ret = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
     try:
       out, err = ret.communicate(timeout=self.timeout_sec)
