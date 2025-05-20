@@ -11,6 +11,8 @@ if __name__ == "__main__":
   Params().put("CarParams", CP.to_bytes())
 
   procs = ['camerad', 'ui', 'modeld', 'calibrationd', 'plannerd', 'dmonitoringmodeld', 'dmonitoringd']
+  if HARDWARE.get_device_type() == 'pc':
+    procs = ['webcamerad', 'ui', 'modeld', 'calibrationd', 'plannerd']
   for p in procs:
     managed_processes[p].start()
 
