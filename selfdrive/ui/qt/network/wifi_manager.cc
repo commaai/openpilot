@@ -360,6 +360,7 @@ void WifiManager::activateModemConnection(const QDBusObjectPath &path) {
 
 // function matches tici/hardware.py
 NetworkType WifiManager::currentNetworkType() {
+  // TODO: shows type 2 (CELL) while on wifi?! don't use this
   auto primary_conn = call<QDBusObjectPath>(NM_DBUS_PATH, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE, "PrimaryConnection");
   auto primary_type = call<QString>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
 
@@ -383,8 +384,7 @@ bool WifiManager::currentNetworkMetered() {
 //  auto primary_type = call<QString>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
 //  auto primary_devices = call<QDBusObjectPath>(primary_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Devices");
 
-  NetworkType type = currentNetworkType();
-  if (type == NetworkType::WIFI) {
+  if (ipv4_address != "") {
     int metered_prop = call<int>(adapter, NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_DEVICE, "Metered");
     std::cout << "Metered property: " << metered_prop << "\n";
     if (metered_prop == NM_METERED_YES || metered_prop == NM_METERED_GUESS_YES) {
@@ -392,6 +392,7 @@ bool WifiManager::currentNetworkMetered() {
     }
   }
 
+  NetworkType type = currentNetworkType();
   return type != NetworkType::NONE && type != NetworkType::WIFI && type != NetworkType::ETHERNET;
 }
 
@@ -402,11 +403,14 @@ bool WifiManager::setCurrentNetworkMetered(bool metered) {
 
 
   NetworkType type = currentNetworkType();
-  if (type == NetworkType::WIFI && !isTetheringEnabled()) {  // note: already checks tethering
+  std::cout << "Setting metered to " << metered << " for type " << (int)type << "\n";
+  std::cout << "tethering: " << isTetheringEnabled() << "\n";
+  if (ipv4_address != "" && !isTetheringEnabled()) {  // note: already checks tethering
     Connection settings = getConnectionSettings(settingsConnPath);
     int meteredInt = metered ? NM_METERED_YES : NM_METERED_NO;
     settings["connection"]["metered"] = meteredInt;
 
+    std::cout << "done setting metered to " << meteredInt << "\n";
     call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
     return true;
   }
