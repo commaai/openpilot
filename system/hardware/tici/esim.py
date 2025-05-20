@@ -23,7 +23,7 @@ class LPAError(Exception):
   pass
 
 
-class LPAC:
+class LPA2:
   def __init__(self):
     self.env = os.environ.copy()
     self.env['LPAC_APDU'] = 'qmi'
@@ -125,12 +125,28 @@ class LPAC:
     self.validate_successful(msgs)
     self.process_notifications()
 
-  def download_profile(self, qr: str, nickname: str) -> None:
+  def nickname_profile(self, iccid: str, nickname: str) -> None:
+    """
+    Set the nickname of the profile on the eUICC.
+    """
+    if not self.profile_exists(iccid):
+      raise LPAError(f'profile {iccid} does not exist')
+
+    msgs = self._invoke('profile', 'nickname', iccid, nickname)
+    self.validate_successful(msgs)
+    self.process_notifications()
+
+  def download_profile(self, qr: str, nickname: str | None = None) -> None:
     """
     Download the profile from the eUICC.
     """
-    msgs = self._invoke('profile', 'download', qr)
+    msgs = self._invoke('profile', 'download', '-a', qr)
     self.validate_successful(msgs)
+    new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
+    if new_profile is None:
+      raise LPAError('no new profile found')
+    if nickname:
+      self.nickname_profile(new_profile['payload']['data']['iccid'], nickname)
     self.process_notifications()
 
 
@@ -270,7 +286,8 @@ if __name__ == "__main__":
     elif sys.argv[1] == 'delete':
       lpa.delete_profile(sys.argv[2])
     elif sys.argv[1] == 'download':
-      lpa.download(sys.argv[2])
+      assert len(sys.argv) == 4, 'expected profile nickname'
+      lpa.download_profile(sys.argv[2], sys.argv[3])
     else:
       raise Exception(f"invalid command: {sys.argv[1]}")
 
