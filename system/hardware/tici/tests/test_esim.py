@@ -1,5 +1,4 @@
 import pytest
-import time
 
 from openpilot.system.hardware import TICI
 from openpilot.system.hardware.tici.esim import LPA2, LPAProfileNotFoundError

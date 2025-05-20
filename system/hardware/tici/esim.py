@@ -24,7 +24,7 @@ class LPA2:
 
     self.timeout_sec = 45
 
-  def list_profiles(self):
+  def list_profiles(self) -> list[dict[str, str]]:
     """
     List all profiles on the eUICC.
     """
@@ -43,7 +43,7 @@ class LPA2:
 
     return profiles
 
-  def get_active_profile(self) -> dict | None:
+  def get_active_profile(self) -> dict[str, str] | None:
     """
     Get the active profile on the eUICC.
     """
@@ -53,7 +53,7 @@ class LPA2:
         return profile
     return None
 
-  def list_notifications(self) -> list[dict]:
+  def list_notifications(self) -> list[dict[str, str]]:
     """
     List notifications from the LPA.
     """
@@ -136,7 +136,7 @@ class LPA2:
     self.validate_profile_exists(iccid)
     self.validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
-  def validate_profile_exists(self, iccid: str) -> dict:
+  def validate_profile_exists(self, iccid: str) -> None:
     """
     Validate that the profile exists on the eUICC.
     """
