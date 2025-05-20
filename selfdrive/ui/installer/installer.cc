@@ -32,6 +32,9 @@ const std::string CACHE_PATH = "/data/openpilot.cache";
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
 
+const char* FONT_PATH = "/usr/share/fonts/Inter-Regular.woff2";
+Font font;
+
 void run(const char* cmd) {
   int err = std::system(cmd);
   assert(err == 0);
@@ -40,13 +43,13 @@ void run(const char* cmd) {
 void renderProgress(int progress) {
   BeginDrawing();
     ClearBackground(BLACK);
-    DrawText("Installing...", 150, 290, 90, WHITE);
+    DrawTextEx(font, "Installing...", (Vector2){150, 290}, 90, 0, WHITE);
     Rectangle bar = {150, 500, (float)GetScreenWidth() - 300, 72};
     DrawRectangleRec(bar, (Color){41, 41, 41, 255});
     progress = std::clamp(progress, 0, 100);
     bar.width *= progress / 100.0f;
     DrawRectangleRec(bar, (Color){70, 91, 234, 255});
-    DrawText((std::to_string(progress) + "%").c_str(), 150, 600, 70, WHITE);
+    DrawTextEx(font, (std::to_string(progress) + "%").c_str(), (Vector2){150, 600}, 70, 0, WHITE);
   EndDrawing();
 }
 
@@ -172,9 +175,11 @@ void cloneFinished(int exitCode) {
 
 int main(int argc, char *argv[]) {
   InitWindow(2160, 1080, "Installer");
+  font = LoadFontEx(FONT_PATH, 120, NULL, 0);
   renderProgress(0);
   int result = doInstall();
   cloneFinished(result);
   CloseWindow();
+  UnloadFont(font);
   return 0;
 }
