@@ -44,7 +44,7 @@ KEYBOARD_LAYOUTS = {
   "specials": [
     ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
     ["_", "\\", "|", "~", "<", ">"],
-    [NUMERIC_KEY, ".", ",", "!", "'", BACKSPACE_KEY],
+    [NUMERIC_KEY, ".", ",", "?", "!", "'", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
 }
