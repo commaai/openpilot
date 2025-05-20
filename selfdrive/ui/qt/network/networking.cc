@@ -207,21 +207,14 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Wi-Fi metered toggle
   std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
-  wifiMeteredToggle = new ToggleControl(tr("Meter Wi-Fi Network"), tr("Prevent large data uploads when on a metered connection"), "", false);
-  wifiMeteredToggle->setTitle(tr("Meter Wi-Fi Network"));
+  wifiMeteredToggle = new ToggleControl(tr("Metered Wi-Fi Network"), tr("Prevent large data uploads when on a metered connection"), "", false);
   wifiMeteredToggle->setValue("Disconnected");
   wifiMeteredToggle->setEnabled(false);
   QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     wifi->setCurrentNetworkMetered(state);
-    refresh();
     std::cout << "Set Wi-Fi metered to " << state << std::endl;
+    refresh();
   });
-//  wifiMeteredToggle = new ToggleControl("LongitudinalPersonality", tr("Meter Wi-Fi Network"),
-//                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
-//                                             "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
-//                                             "your steering wheel distance button."),
-//                                          "../assets/icons/speed_limit.png",
-//                                          longi_button_texts);
   list->addItem(wifiMeteredToggle);
 
   main_layout->addWidget(new ScrollView(list, this));

@@ -404,10 +404,10 @@ bool WifiManager::setCurrentNetworkMetered(bool metered) {
   NetworkType type = currentNetworkType();
   if (type == NetworkType::WIFI && !isTetheringEnabled()) {  // note: already checks tethering
     Connection settings = getConnectionSettings(settingsConnPath);
-    int meteredInt = metered ? NM_METERED_UNKNOWN : NM_METERED_NO;
+    int meteredInt = metered ? NM_METERED_YES : NM_METERED_NO;
     settings["connection"]["metered"] = meteredInt;
 
-    call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));
+    call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
     return true;
   }
   return false;
