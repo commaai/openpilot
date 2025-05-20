@@ -13,7 +13,11 @@ from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
-from openpilot.common.params import Params
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  # Params/Cythonized modules are not available in zipapp
+  Params = None
 from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
@@ -81,9 +85,10 @@ class WifiManager:
     self.scan_task: asyncio.Task | None = None
     # Set tethering ssid as "weedle" + first 4 characters of a dongle id
     self._tethering_ssid = "weedle"
-    dongle_id = Params().get("DongleId", encoding="utf-8")
-    if dongle_id:
-      self._tethering_ssid += "-" + dongle_id[:4]
+    if Params is not None:
+      dongle_id = Params().get("DongleId", encoding="utf-8")
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
@@ -591,7 +596,8 @@ class WifiManager:
     if flags == 0 and not (wpa_flags or rsn_flags):
       return SecurityType.OPEN
     if rsn_flags & 0x200:  # SAE (WPA3 Personal)
-      return SecurityType.WPA3
+      # TODO: support WPA3
+      return SecurityType.UNSUPPORTED
     if rsn_flags:  # RSN indicates WPA2 or higher
       return SecurityType.WPA2
     if wpa_flags:  # WPA flags indicate WPA

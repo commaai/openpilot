@@ -34,6 +34,7 @@ def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel")
   gui_text_box(
     text_rect,
     message,
+    font_size=88,
     alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
     alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
   )

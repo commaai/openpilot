@@ -3,7 +3,7 @@ import os
 import time
 import pyray as rl
 from enum import IntEnum
-from openpilot.common.basedir import BASEDIR
+from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 
@@ -15,22 +15,25 @@ FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
 DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
+SCALE = float(os.getenv("SCALE", "1.0"))
 
 DEFAULT_TEXT_SIZE = 60
-DEFAULT_TEXT_COLOR = rl.Color(200, 200, 200, 255)
-ASSETS_DIR = os.path.join(BASEDIR, "selfdrive/assets")
-FONT_DIR = os.path.join(BASEDIR, "selfdrive/assets/fonts")
+DEFAULT_TEXT_COLOR = rl.WHITE
+
+ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
+FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
 class FontWeight(IntEnum):
-  BLACK = 0
-  BOLD = 1
-  EXTRA_BOLD = 2
-  EXTRA_LIGHT = 3
+  THIN = 0
+  EXTRA_LIGHT = 1
+  LIGHT = 2
+  NORMAL = 3
   MEDIUM = 4
-  NORMAL = 5
-  SEMI_BOLD = 6
-  THIN = 7
+  SEMI_BOLD = 5
+  BOLD = 6
+  EXTRA_BOLD = 7
+  BLACK = 8
 
 
 class GuiApplication:
@@ -38,6 +41,10 @@ class GuiApplication:
     self._fonts: dict[FontWeight, rl.Font] = {}
     self._width = width
     self._height = height
+    self._scale = SCALE
+    self._scaled_width = int(self._width * self._scale)
+    self._scaled_height = int(self._height * self._scale)
+    self._render_texture: rl.RenderTexture | None = None
     self._textures: dict[str, rl.Texture] = {}
     self._target_fps: int = DEFAULT_FPS
     self._last_fps_log_time: float = time.monotonic()
@@ -61,24 +68,28 @@ class GuiApplication:
       flags |= rl.ConfigFlags.FLAG_VSYNC_HINT
     rl.set_config_flags(flags)
 
-    rl.init_window(self._width, self._height, title)
+    rl.init_window(self._scaled_width, self._scaled_height, title)
+    if self._scale != 1.0:
+      rl.set_mouse_scale(1 / self._scale, 1 / self._scale)
+      self._render_texture = rl.load_render_texture(self._width, self._height)
+      rl.set_texture_filter(self._render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
     rl.set_target_fps(fps)
 
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
 
-
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
     if cache_key in self._textures:
       return self._textures[cache_key]
 
-    texture_obj = self._load_texture_from_image(os.path.join(ASSETS_DIR, asset_path), width, height, alpha_premultiply, keep_aspect_ratio)
+    with as_file(ASSETS_DIR.joinpath(asset_path)) as fspath:
+      texture_obj = self._load_texture_from_image(fspath.as_posix(), width, height, alpha_premultiply, keep_aspect_ratio)
     self._textures[cache_key] = texture_obj
     return texture_obj
 
-  def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply = False, keep_aspect_ratio=True):
+  def _load_texture_from_image(self, image_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     """Load and resize a texture, storing it for later automatic unloading."""
     image = rl.load_image(image_path)
 
@@ -121,15 +132,31 @@ class GuiApplication:
       rl.unload_font(font)
     self._fonts = {}
 
+    if self._render_texture is not None:
+      rl.unload_render_texture(self._render_texture)
+      self._render_texture = None
+
     rl.close_window()
 
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
-        rl.begin_drawing()
-        rl.clear_background(rl.BLACK)
+        if self._render_texture:
+          rl.begin_texture_mode(self._render_texture)
+          rl.clear_background(rl.BLACK)
+        else:
+          rl.begin_drawing()
+          rl.clear_background(rl.BLACK)
 
         yield
+
+        if self._render_texture:
+          rl.end_texture_mode()
+          rl.begin_drawing()
+          rl.clear_background(rl.BLACK)
+          src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
+          dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
+          rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
         if DEBUG_FPS:
           rl.draw_fps(10, 10)
@@ -139,7 +166,7 @@ class GuiApplication:
     except KeyboardInterrupt:
       pass
 
-  def font(self, font_weight: FontWeight=FontWeight.NORMAL):
+  def font(self, font_weight: FontWeight = FontWeight.NORMAL):
     return self._fonts[font_weight]
 
   @property
@@ -152,20 +179,22 @@ class GuiApplication:
 
   def _load_fonts(self):
     font_files = (
-      "Inter-Black.ttf",
+      "Inter-Thin.ttf",
+      "Inter-ExtraLight.ttf",
+      "Inter-Light.ttf",
+      "Inter-Regular.ttf",
+      "Inter-Medium.ttf",
+      "Inter-SemiBold.ttf",
       "Inter-Bold.ttf",
       "Inter-ExtraBold.ttf",
-      "Inter-ExtraLight.ttf",
-      "Inter-Medium.ttf",
-      "Inter-Regular.ttf",
-      "Inter-SemiBold.ttf",
-      "Inter-Thin.ttf"
-      )
+      "Inter-Black.ttf",
+    )
 
     for index, font_file in enumerate(font_files):
-      font = rl.load_font_ex(os.path.join(FONT_DIR, font_file), 120, None, 0)
-      rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-      self._fonts[index] = font
+      with as_file(FONT_DIR.joinpath(font_file)) as fspath:
+        font = rl.load_font_ex(fspath.as_posix(), 120, None, 0)
+        rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
+        self._fonts[index] = font
 
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
