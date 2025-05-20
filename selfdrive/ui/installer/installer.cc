@@ -42,10 +42,10 @@ void renderProgress(int progress) {
     ClearBackground(BLACK);
     DrawText("Installing...", 150, 290, 90, WHITE);
     Rectangle bar = {150, 500, (float)GetScreenWidth() - 300, 72};
-    DrawRectangleRounded(bar, 0.5f, 10, GRAY);
+    DrawRectangleRounded(bar, 0.25f, 10, (Color){ 41, 41, 41, 255 });
     progress = std::clamp(progress, 0, 100);
     bar.width *= progress / 100.0f;
-    DrawRectangleRounded(bar, 0.5f, 10, (Color){ 70, 91, 234, 255 });
+    DrawRectangleRounded(bar, 0.25f, 10, (Color){ 70, 91, 234, 255 });
     DrawText((std::to_string(progress) + "%").c_str(), 150, 600, 70, WHITE);
   EndDrawing();
 }
