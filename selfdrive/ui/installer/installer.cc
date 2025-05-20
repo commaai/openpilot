@@ -93,6 +93,7 @@ int cachedFetch(const std::string &cache) {
 
 int executeGitCommand(const std::string &cmd) {
   static const std::array stages = {
+    // prefix, weight in percentage
     std::pair{"Receiving objects: ", 91},
     std::pair{"Resolving deltas: ", 2},
     std::pair{"Updating files: ", 7},
