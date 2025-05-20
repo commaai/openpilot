@@ -1,50 +1,18 @@
-#!/usr/bin/env python3
-
-import importlib
-import shutil
-import sys
-import tempfile
-import zipapp
-from argparse import ArgumentParser
-from pathlib import Path
-
-from openpilot.common.basedir import BASEDIR
-
-
-DIRS = ['cereal', 'openpilot']
-EXTS = ['.png', '.py', '.ttf', '.capnp']
-INTERPRETER = '/usr/bin/env python3'
-
-
-def copy(src, dest):
-  if any(src.endswith(ext) for ext in EXTS):
-    shutil.copy2(src, dest, follow_symlinks=True)
-
-
-if __name__ == '__main__':
-  parser = ArgumentParser(prog='pack.py', description="package script into a portable executable", epilog='comma.ai')
-  parser.add_argument('-e', '--entrypoint', help="function to call in module, default is 'main'", default='main')
-  parser.add_argument('-o', '--output', help='output file')
-  parser.add_argument('module', help="the module to target, e.g. 'openpilot.system.ui.spinner'")
-  args = parser.parse_args()
-
-  if not args.output:
-    args.output = args.module
-
-  try:
-    mod = importlib.import_module(args.module)
-  except ModuleNotFoundError:
-    print(f'{args.module} not found, typo?')
-    sys.exit(1)
-
-  if not hasattr(mod, args.entrypoint):
-    print(f'{args.module} does not have a {args.entrypoint}() function, typo?')
-    sys.exit(1)
-
-  with tempfile.TemporaryDirectory() as tmp:
-    for directory in DIRS:
-      shutil.copytree(BASEDIR + '/' + directory, tmp + '/' + directory, symlinks=False, dirs_exist_ok=True, copy_function=copy)
-    entry = f'{args.module}:{args.entrypoint}'
-    zipapp.create_archive(tmp, target=args.output, interpreter=INTERPRETER, main=entry)
-
-  print(f'created executable {Path(args.output).resolve()}')
+$(cat release/pack.py | awk '{
+    if (NR == 35) {
+        print "# Define a whitelist of allowed modules"
+        print "ALLOWED_MODULES = {"
+        print "    # Add all legitimate modules that can be imported"
+        print "    # Example: \"selfdrive.car.honda.interface\": \"selfdrive.car.honda.interface\","
+        print "    # Customize this list based on your actual requirements"
+        print "}"
+        print ""
+        print "# Check if module_name is in the whitelist before importing"
+        print "if module_name in ALLOWED_MODULES:"
+        print "    module = importlib.import_module(module_name)"
+        print "else:"
+        print "    raise ImportError(f\"Importing module \'{module_name}\' is not allowed for security reasons\")"
+    } else {
+        print $0
+    }
+}')
