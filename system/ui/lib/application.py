@@ -190,12 +190,23 @@ class GuiApplication:
       "Inter-Black.ttf",
     )
 
+    # Create a character set from our keyboard layouts
+    from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+    all_chars = set()
+    for layout in KEYBOARD_LAYOUTS.values():
+      all_chars.update(key for row in layout for key in row)
+    all_chars = "".join(all_chars)
+
+    codepoint_count = rl.ffi.new("int *", 1)
+    codepoints = rl.load_codepoints(all_chars, codepoint_count)
+
     for index, font_file in enumerate(font_files):
       with as_file(FONT_DIR.joinpath(font_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 120, None, 0)
+        font = rl.load_font_ex(fspath.as_posix(), 120, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[index] = font
 
+    rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
 
   def _set_styles(self):
