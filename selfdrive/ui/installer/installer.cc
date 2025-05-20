@@ -94,9 +94,9 @@ int cachedFetch(const std::string &cache) {
 int executeGitCommand(const std::string &cmd) {
   static const std::array stages = {
     // prefix, weight in percentage
-    std::pair{std::string("Receiving objects: "), 91},
-    std::pair{std::string("Resolving deltas: "), 2},
-    std::pair{std::string("Updating files: "), 7},
+    std::pair{"Receiving objects: ", 91},
+    std::pair{"Resolving deltas: ", 2},
+    std::pair{"Updating files: ", 7},
   };
 
   FILE *pipe = popen(cmd.c_str(), "r");
@@ -107,10 +107,10 @@ int executeGitCommand(const std::string &cmd) {
     std::string line(buffer);
     int base = 0;
     for (const auto &[text, weight] : stages) {
-      if (line.rfind(text, 0) == 0) {
+      if (line.find(text) != std::string::npos) {
         size_t percentPos = line.find("%");
-        if (percentPos != std::string::npos) {
-          int percent = std::stoi(line.substr(text.size(), percentPos - text.size()));
+        if (percentPos != std::string::npos && percentPos >= 3) {
+          int percent = std::stoi(line.substr(percentPos - 3, 3));
           int progress = base + int(percent / 100. * weight);
           renderProgress(progress);
         }
