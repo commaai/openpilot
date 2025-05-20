@@ -149,7 +149,6 @@ class LPA2:
       self.nickname_profile(new_profile['payload']['data']['iccid'], nickname)
     self.process_notifications()
 
-
   def _invoke(self, *cmd: str):
     print(f"invoking lpac {' '.join(list(cmd))}")
     ret = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
