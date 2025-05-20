@@ -43,7 +43,7 @@ KEYBOARD_LAYOUTS = {
   ],
   "specials": [
     ["[", "]", "{", "}", "#", "%", "^", "*", "+", "="],
-    ["_", "\\", "|", "~", "<", ">", "€", "£", "¥", "•"],
+    ["_", "\\", "|", "~", "<", ">"],
     [NUMERIC_KEY, ".", ",", "?", "!", "'", BACKSPACE_KEY],
     [ABC_KEY, SPACE_KEY, ".", ENTER_KEY],
   ],
@@ -112,6 +112,10 @@ class Keyboard:
 
         new_width = (key_width * 3 + h_space * 2) if key == SPACE_KEY else (key_width * 2 + h_space if key == ENTER_KEY else key_width)
         key_rect = rl.Rectangle(start_x, row_y_start + row * (key_height + v_space), new_width, key_height)
+        if (key_rect.x + key_rect.width) > (rect.x + rect.width):
+          key_rect.width = rect.x + rect.width - key_rect.x
+          new_width = key_rect.width
+
         start_x += new_width
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
