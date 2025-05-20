@@ -75,8 +75,7 @@ class LPA2:
     """
     Process notifications from the LPA, typically to activate/deactivate the profile with the carrier.
     """
-    msgs = self._invoke('notification', 'process', '-a', '-r')
-    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
+    self.validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
   def enable_profile(self, iccid: str) -> None:
     """
@@ -93,8 +92,7 @@ class LPA2:
     else:
       self.disable_profile(latest.iccid)
 
-    msgs = self._invoke('profile', 'enable', iccid)
-    self.validate_successful(msgs)
+    self.validate_successful(self._invoke('profile', 'enable', iccid))
     self.process_notifications()
 
   def disable_profile(self, iccid: str) -> None:
@@ -110,8 +108,7 @@ class LPA2:
     if latest.iccid != iccid:
       raise LPAError(f'profile {iccid} is not enabled')
 
-    msgs = self._invoke('profile', 'disable', iccid)
-    self.validate_successful(msgs)
+    self.validate_successful(self._invoke('profile', 'disable', iccid))
     self.process_notifications()
 
   def delete_profile(self, iccid: str) -> None:
@@ -121,8 +118,7 @@ class LPA2:
     if not self.profile_exists(iccid):
       raise LPAError(f'profile {iccid} does not exist')
 
-    msgs = self._invoke('profile', 'delete', iccid)
-    self.validate_successful(msgs)
+    self.validate_successful(self._invoke('profile', 'delete', iccid))
     self.process_notifications()
 
   def nickname_profile(self, iccid: str, nickname: str) -> None:
@@ -132,8 +128,7 @@ class LPA2:
     if not self.profile_exists(iccid):
       raise LPAError(f'profile {iccid} does not exist')
 
-    msgs = self._invoke('profile', 'nickname', iccid, nickname)
-    self.validate_successful(msgs)
+    self.validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
     self.process_notifications()
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
