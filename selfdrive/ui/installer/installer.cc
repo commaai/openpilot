@@ -45,12 +45,12 @@ void renderProgress(int progress) {
   BeginDrawing();
     ClearBackground(BLACK);
     DrawTextEx(font, "Installing...", (Vector2){150, 290}, 110, 0, WHITE);
-    Rectangle bar = {150, 500, (float)GetScreenWidth() - 300, 72};
+    Rectangle bar = {150, 570, (float)GetScreenWidth() - 300, 72};
     DrawRectangleRec(bar, (Color){41, 41, 41, 255});
     progress = std::clamp(progress, 0, 100);
     bar.width *= progress / 100.0f;
     DrawRectangleRec(bar, (Color){70, 91, 234, 255});
-    DrawTextEx(font, (std::to_string(progress) + "%").c_str(), (Vector2){150, 600}, 90, 0, WHITE);
+    DrawTextEx(font, (std::to_string(progress) + "%").c_str(), (Vector2){150, 670}, 85, 0, WHITE);
   EndDrawing();
 }
 
