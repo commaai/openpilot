@@ -54,7 +54,6 @@ class TestEsim:
     except LPAProfileNotFoundError:
       pass
     assert not self._profile_exists(self.TEST_ICCID, self.TEST_NICKNAME)
-    lpa = LPA2()
     lpa.process_notifications()
     assert len(lpa.list_notifications()) == 0
 
