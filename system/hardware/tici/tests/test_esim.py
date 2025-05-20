@@ -3,8 +3,10 @@ import pytest
 from openpilot.system.hardware import TICI
 from openpilot.system.hardware.tici.esim import LPA2, LPAProfileNotFoundError
 
+# https://euicc-manual.osmocom.org/docs/rsp/known-test-profile
 TEST_ACTIVATION_CODE = 'LPA:1$rsp.truphone.com$QRF-BETTERROAMING-PMRDGIR2EARDEIT5'
 TEST_ICCID = '8944476500001944011'
+
 TEST_NICKNAME = 'test_profile'
 
 def cleanup():
@@ -18,9 +20,6 @@ def cleanup():
   assert len(lpa.list_notifications()) == 0
 
 class TestEsim:
-  """
-  https://euicc-manual.osmocom.org/docs/rsp/known-test-profile
-  """
 
   @classmethod
   def setup_class(cls):
