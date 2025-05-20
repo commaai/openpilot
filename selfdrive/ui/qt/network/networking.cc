@@ -183,6 +183,24 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   list->addItem(cellularMeteredToggle);
 
+  // Wi-Fi metered toggle
+  std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
+  wifiMeteredToggle = new ToggleControl(tr("Metered Wi-Fi Network"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
+  wifiMeteredToggle->setEnabled(false);
+  QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
+    std::cout << "Set Wi-Fi metered to " << state << std::endl;
+    wifiMeteredToggle->setEnabled(false);
+    auto pending_call = wifi->setCurrentNetworkMetered(state);
+    if (pending_call) {
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
+        refresh();
+        watcher->deleteLater();
+      });
+    }
+  });
+  list->addItem(wifiMeteredToggle);
+
   // Hidden Network
   hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
   connect(hiddenNetworkButton, &ButtonControl::clicked, [=]() {
@@ -205,25 +223,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   // Set initial config
   wifi->updateGsmSettings(roamingEnabled, QString::fromStdString(params.get("GsmApn")), metered);
 
-  // Wi-Fi metered toggle
-  std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
-  wifiMeteredToggle = new ToggleControl(tr("Metered Wi-Fi Network"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
-  wifiMeteredToggle->setEnabled(false);
-  QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
-    std::cout << "Set Wi-Fi metered to " << state << std::endl;
-    wifiMeteredToggle->setValue(state ? "Metered" : "Unmetered");
-    wifiMeteredToggle->setEnabled(false);
-    auto pending_call = wifi->setCurrentNetworkMetered(state);
-    if (pending_call) {
-      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
-      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
-        refresh();
-        watcher->deleteLater();
-      });
-    }
-  });
-  list->addItem(wifiMeteredToggle);
-
   main_layout->addWidget(new ScrollView(list, this));
   main_layout->addStretch(1);
 }
@@ -231,7 +230,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 void AdvancedNetworking::setGsmVisible(bool visible) {
   roamingToggle->setVisible(visible);
   editApnButton->setVisible(visible);
-  cellularMeteredToggle->setVisible(visible);
+//  cellularMeteredToggle->setVisible(visible);
 }
 
 void AdvancedNetworking::refresh() {
@@ -245,7 +244,7 @@ void AdvancedNetworking::refresh() {
   } else if (wifi->ipv4_address != "") {
     bool metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
-    wifiMeteredToggle->setValue(metered ? "Metered" : "Unmetered");
+    wifiMeteredToggle->setValue("");
     wifiMeteredToggle->setToggled(metered);
   } else {
     wifiMeteredToggle->setEnabled(false);
