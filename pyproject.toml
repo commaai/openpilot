@@ -60,20 +60,20 @@ dependencies = [
   # logreader
   "zstandard",
 
-  # submodule dependencies
-  "pandacan",
-  "opendbc",
-  "tinygrad",
-  "teleoprtc",
-  "rednose",
+  # TODO: move these submodules into just python deps
+  #"pandacan",
+  #"opendbc",
+  #"tinygrad",
+  #"teleoprtc",
+  #"rednose",
 ]
 
-[tool.uv.sources]
-pandacan = { path = "panda/" }
-opendbc = { path = "opendbc_repo/" }
-tinygrad = { path = "tinygrad_repo/" }
-teleoprtc = { path = "teleoprtc_repo/" }
-rednose = { path = "rednose_repo/" }
+#[tool.uv.sources]
+#pandacan = { path = "panda/" }
+#opendbc = { path = "opendbc_repo/" }
+#tinygrad = { path = "tinygrad_repo/" }
+#teleoprtc = { path = "teleoprtc_repo/" }
+#rednose = { path = "rednose_repo/" }
 
 [project.optional-dependencies]
 docs = [
