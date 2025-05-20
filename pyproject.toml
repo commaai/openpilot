@@ -13,7 +13,6 @@ dependencies = [
   "sounddevice",  # micd + soundd
   "pyserial",     # pigeond + qcomgpsd
   "requests",     # many one-off uses
-  "sympy",        # rednose + friends
   "crcmod",       # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
 
@@ -30,9 +29,6 @@ dependencies = [
   # body / webrtcd
   "aiohttp",
   "aiortc",
-  # aiortc does not put an upper bound on pyopenssl and is now incompatible
-  # with the latest release
-  "pyopenssl < 24.3.0",
   "pyaudio",
 
   # modeld
@@ -42,7 +38,7 @@ dependencies = [
   # logging
   "pyzmq",
   "sentry-sdk",
-  "xattr", # used in place of 'os.getxattr' for macos compatibility
+  "xattr", # used in place of 'os.getxattr' for macOS compatibility
 
   # athena
   "PyJWT",
