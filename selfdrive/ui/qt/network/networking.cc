@@ -230,7 +230,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 void AdvancedNetworking::setGsmVisible(bool visible) {
   roamingToggle->setVisible(visible);
   editApnButton->setVisible(visible);
-//  cellularMeteredToggle->setVisible(visible);
+  cellularMeteredToggle->setVisible(visible);
 }
 
 void AdvancedNetworking::refresh() {
