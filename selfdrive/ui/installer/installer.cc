@@ -108,10 +108,10 @@ int executeGitCommand(const std::string &cmd) {
     int base = 0;
     for (const auto &[text, weight] : stages) {
       if (line.find(text) != std::string::npos) {
-        size_t percentPos = line.find('%');
+        size_t percentPos = line.find("%");
         if (percentPos != std::string::npos && percentPos >= 3) {
           int percent = std::stoi(line.substr(percentPos - 3, 3));
-          int progress = base + (percent / 100.0f) * weight;
+          int progress = base + int(percent / 100. * weight);
           renderProgress(progress);
         }
         break;
