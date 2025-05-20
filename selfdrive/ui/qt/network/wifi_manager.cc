@@ -163,10 +163,6 @@ QString WifiManager::getIp4Address() {
   return "";
 }
 
-//void WifiManager::getConnectionMetered() {
-//
-//}
-
 SecurityType WifiManager::getSecurityType(const QVariantMap &properties) {
   int sflag = properties["Flags"].toUInt();
   int wpaflag = properties["WpaFlags"].toUInt();

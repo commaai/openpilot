@@ -42,7 +42,6 @@ public:
   QMap<QString, Network> seenNetworks;
   QMap<QDBusObjectPath, QString> knownConnections;
   QString ipv4_address;
-//  bool metered = false;
   bool tethering_on = false;
   bool ipv4_forward = false;
 
