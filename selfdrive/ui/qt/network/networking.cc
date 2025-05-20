@@ -239,7 +239,7 @@ void AdvancedNetworking::refresh() {
 
   if (wifi->isTetheringEnabled()) {
     wifiMeteredToggle->setEnabled(false);
-    wifiMeteredToggle->setValue("Unsupported while tethering");
+    wifiMeteredToggle->setValue("");
     wifiMeteredToggle->setToggled(true);
   } else if (wifi->ipv4_address != "") {
     bool metered = wifi->currentNetworkMetered();
