@@ -201,7 +201,6 @@ class GuiApplication:
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
-    print(f"Loading {codepoint_count[0]} unique glyphs")
 
     for index, font_file in enumerate(font_files):
       with as_file(FONT_DIR.joinpath(font_file)) as fspath:
