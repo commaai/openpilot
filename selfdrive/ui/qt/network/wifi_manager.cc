@@ -405,23 +405,25 @@ bool WifiManager::setCurrentNetworkMetered(bool metered) {
 //  std::cout << "Primary type: " << primary_type.toStdString() << "\n";
 
   for (const auto &p : getActiveConnections()) {
-    QDBusObjectPath settingsConnPath = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Connection");
     QString type = call<QString>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
     if (type == "802-11-wireless") {
       std::cout << "Setting metered to " << metered << " for type " << type.toStdString() << "\n";
       std::cout << "tethering: " << isTetheringEnabled() << "\n";
       if (!isTetheringEnabled()) {
-        Connection settings = getConnectionSettings(settingsConnPath);
-        int meteredInt = metered ? NM_METERED_YES : NM_METERED_NO;
-        settings["connection"]["metered"] = meteredInt;
+        QDBusObjectPath settingsConnPath = call<QDBusObjectPath>(p.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Connection");
+        if (!settingsConnPath.path().isEmpty()) {
+          Connection settings = getConnectionSettings(settingsConnPath);
+          int meteredInt = metered ? NM_METERED_YES : NM_METERED_NO;
+          settings["connection"]["metered"] = meteredInt;
 
-        std::cout << "done setting metered to " << meteredInt << "\n";
-        call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
-        return true;
+          std::cout << "done setting metered to " << meteredInt << "\n";
+          call(settingsConnPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
+          return true;
+        }
       }
-      return false;
     }
   }
+  return false;
 
 ////  NetworkType type = currentNetworkType();
 //  std::cout << "Setting metered to " << metered << " for type " << (int)type << "\n";
