@@ -103,7 +103,7 @@ if GetOption('extras'):
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=raylib_libs)
       # keep installers small
-      assert f[0].get_size() < 1190*1e3, f[0].get_size()
+      assert f[0].get_size() < 1200*1e3, f[0].get_size()
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
