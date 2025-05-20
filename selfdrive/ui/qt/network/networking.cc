@@ -185,7 +185,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 
   // Wi-Fi metered toggle
   std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
-  wifiMeteredToggle = new ToggleControl(tr("Metered Wi-Fi Network"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
+  wifiMeteredToggle = new ToggleControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
   wifiMeteredToggle->setEnabled(false);
   QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     std::cout << "Set Wi-Fi metered to " << state << std::endl;
