@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import jinja2
+from jinja2 import Environment
 import os
 
 from cereal import car
@@ -13,7 +14,7 @@ FW_VERSIONS = get_interface_attr('FW_VERSIONS')
 FINGERPRINTS = get_interface_attr('FINGERPRINTS')
 ECU_NAME = {v: k for k, v in Ecu.schema.enumerants.items()}
 
-FINGERPRINTS_PY_TEMPLATE = jinja2.Template("""
+FINGERPRINTS_PY_TEMPLATE = jinja2.Environment(autoescape=True).from_string("""
 {%- if FINGERPRINTS[brand] %}
 # ruff: noqa: E501
 {% endif %}
