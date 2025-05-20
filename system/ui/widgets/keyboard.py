@@ -140,7 +140,7 @@ class Keyboard:
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
         result = -1
 
-         # Check for backspace key press-and-hold
+        # Check for backspace key press-and-hold
         mouse_pos = rl.get_mouse_position()
         mouse_over_key = rl.check_collision_point_rec(mouse_pos, key_rect)
 
