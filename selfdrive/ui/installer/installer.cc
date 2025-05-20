@@ -45,7 +45,7 @@ void renderProgress(int progress) {
     DrawRectangleRounded(bar, 0.5f, 10, GRAY);
     progress = std::clamp(progress, 0, 100);
     bar.width *= progress / 100.0f;
-    DrawRectangleRounded(bar, 0.5f, 10, RAYWHITE);
+    DrawRectangleRounded(bar, 0.5f, 10, (Color){ 70, 91, 234, 255 });
     DrawText((std::to_string(progress) + "%").c_str(), 150, 600, 70, WHITE);
   EndDrawing();
 }
