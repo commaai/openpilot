@@ -95,15 +95,17 @@ if GetOption('extras'):
 
     cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
                               "ld -r -b binary -o $TARGET $SOURCE")
+    inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
+                               "ld -r -b binary -o $TARGET $SOURCE")
     for name, branch in installers:
       d = {'BRANCH': f"'\"{branch}\"'"}
       if "internal" in name:
         d['INTERNAL'] = "1"
 
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=raylib_libs)
+      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
       # keep installers small
-      assert f[0].get_size() < 1200*1e3, f[0].get_size()
+      assert f[0].get_size() < 1220*1e3, f[0].get_size()
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):

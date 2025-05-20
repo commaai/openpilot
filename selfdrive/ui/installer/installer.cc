@@ -31,8 +31,9 @@ const std::string CACHE_PATH = "/data/openpilot.cache";
 
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
+extern const uint8_t inter_ttf[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_start");
+extern const uint8_t inter_ttf_end[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_end");
 
-const char* FONT_PATH = "/usr/share/fonts/Inter-Regular.woff2";
 Font font;
 
 void run(const char* cmd) {
@@ -175,7 +176,8 @@ void cloneFinished(int exitCode) {
 
 int main(int argc, char *argv[]) {
   InitWindow(2160, 1080, "Installer");
-  font = LoadFontEx(FONT_PATH, 120, NULL, 0);
+  font = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, 120, NULL, 0);
+  SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
   renderProgress(0);
   int result = doInstall();
   cloneFinished(result);
