@@ -190,7 +190,8 @@ class WifiManagerUI:
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[NetworkInfo]):
-    self._networks = networks
+    if self.state.action == "idle":
+      self._networks = networks
 
   def _on_need_auth(self, ssid):
     match self.state:
@@ -206,9 +207,14 @@ class WifiManagerUI:
     if isinstance(self.state, StateConnecting):
       self.state = StateIdle()
 
-  def _on_forgotten(self):
+  def _on_forgotten(self, ssid):
     if isinstance(self.state, StateForgetting):
       self.state = StateIdle()
+      for network in self._networks:
+        if network.ssid == ssid:
+          network.is_saved = False
+          break
+
 
 
 def main():

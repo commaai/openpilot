@@ -463,7 +463,7 @@ class WifiManager:
       if path == p:
         del self.saved_connections[ssid]
         if self.callbacks.forgotten:
-          self.callbacks.forgotten()
+          self.callbacks.forgotten(ssid)
         # Update network list to reflect the removed saved connection
         asyncio.create_task(self._update_connection_status())
         break
