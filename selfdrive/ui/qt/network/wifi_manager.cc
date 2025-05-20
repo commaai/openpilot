@@ -398,7 +398,6 @@ std::optional<QDBusPendingCall> WifiManager::setCurrentNetworkMetered(bool meter
           int meteredInt = metered ? NM_METERED_YES : NM_METERED_NO;
           Connection settings = getConnectionSettings(conn);
           settings["connection"]["metered"] = meteredInt;
-          std::cout << "done\n";
           return asyncCall(conn.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
         }
       }

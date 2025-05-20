@@ -67,7 +67,6 @@ private:
   ButtonControl* hiddenNetworkButton;
   ToggleControl* cellularMeteredToggle;
   ToggleControl* wifiMeteredToggle;
-  MultiButtonControl* wifiMeteredToggle2;
   WifiManager* wifi = nullptr;
   Params params;
 

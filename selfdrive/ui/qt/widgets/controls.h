@@ -190,10 +190,10 @@ private:
   bool store_confirm = false;
 };
 
-class MultiButtonControl : public AbstractControl {
+class ButtonParamControl : public AbstractControl {
   Q_OBJECT
 public:
-  MultiButtonControl(const QString &title, const QString &desc, const QString &icon,
+  ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
                      const std::vector<QString> &button_texts, const int minimum_button_width = 225) : AbstractControl(title, desc, icon) {
     const QString style = R"(
       QPushButton {
@@ -211,34 +211,28 @@ public:
       QPushButton:checked:enabled {
         background-color: #33Ab4C;
       }
-      QPushButton:checked:disabled {
-        background-color: #9933Ab4C;
-      }
       QPushButton:disabled {
         color: #33E4E4E4;
       }
     )";
-    // TODO: none of these look good
-//      QPushButton:checked:disabled {
-//        background-color: #227722;
-//      }
-//      QPushButton:checked:disabled {
-//        background-color: #3333Ab4C;
-//      }
+    key = param.toStdString();
+    int value = atoi(params.get(key).c_str());
 
     button_group = new QButtonGroup(this);
     button_group->setExclusive(true);
     for (int i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setCheckable(true);
-      button->setChecked(i == 0);
+      button->setChecked(i == value);
       button->setStyleSheet(style);
       button->setMinimumWidth(minimum_button_width);
       hlayout->addWidget(button);
       button_group->addButton(button, i);
     }
 
-    QObject::connect(button_group, QOverload<int>::of(&QButtonGroup::buttonClicked), this, &MultiButtonControl::buttonClicked);
+    QObject::connect(button_group, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id) {
+      params.put(key, std::to_string(id));
+    });
   }
 
   void setEnabled(bool enable) {
@@ -249,29 +243,6 @@ public:
 
   void setCheckedButton(int id) {
     button_group->button(id)->setChecked(true);
-  }
-
-signals:
-  void buttonClicked(int id);
-
-protected:
-  QButtonGroup *button_group;
-};
-
-class ButtonParamControl : public MultiButtonControl {
-  Q_OBJECT
-public:
-  ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                     const std::vector<QString> &button_texts, const int minimum_button_width = 225) : MultiButtonControl(title, desc, icon, button_texts, minimum_button_width) {
-    key = param.toStdString();
-    int value = atoi(params.get(key).c_str());
-    if (value > 0 && value >= button_texts.size()) {
-      button_group->button(value)->setChecked(false);
-    }
-
-    QObject::connect(this, QOverload<int>::of(&MultiButtonControl::buttonClicked), [=](int id) {
-      params.put(key, std::to_string(id));
-    });
   }
 
   void refresh() {
@@ -286,6 +257,7 @@ public:
 private:
   std::string key;
   Params params;
+  QButtonGroup *button_group;
 };
 
 class ListWidget : public QWidget {

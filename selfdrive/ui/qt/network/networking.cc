@@ -184,6 +184,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(cellularMeteredToggle);
 
   // Wi-Fi metered toggle
+  std::vector<QString> longi_button_texts{tr("Unmetered"), tr("Default"), tr("Metered")};
   wifiMeteredToggle = new ToggleControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
   wifiMeteredToggle->setEnabled(false);
   QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
@@ -199,22 +200,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
     }
   });
   list->addItem(wifiMeteredToggle);
-
-  std::vector<QString> metered_button_texts{tr("unmetered"), tr("metered"), tr("default")};
-  wifiMeteredToggle2 = new MultiButtonControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", metered_button_texts);
-  QObject::connect(wifiMeteredToggle2, &MultiButtonControl::buttonClicked, [=](int id) {
-    std::cout << "Set Wi-Fi metered to " << id << std::endl;
-    wifiMeteredToggle2->setEnabled(false);
-    auto pending_call = wifi->setCurrentNetworkMetered(id == 1);
-    if (pending_call) {
-      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
-      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
-        refresh();
-        watcher->deleteLater();
-      });
-    }
-  });
-  list->addItem(wifiMeteredToggle2);
 
   // Hidden Network
   hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
@@ -256,22 +241,15 @@ void AdvancedNetworking::refresh() {
     wifiMeteredToggle->setEnabled(false);
     wifiMeteredToggle->setValue("");
     wifiMeteredToggle->setToggled(true);
-
-    wifiMeteredToggle2->setEnabled(false);
   } else if (wifi->ipv4_address != "") {
     bool metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
     wifiMeteredToggle->setValue("");
     wifiMeteredToggle->setToggled(metered);
-
-    wifiMeteredToggle2->setEnabled(true);
-    wifiMeteredToggle2->setCheckedButton(metered ? 1 : 0);
   } else {
     wifiMeteredToggle->setEnabled(false);
     wifiMeteredToggle->setValue("Disconnected");
     wifiMeteredToggle->setToggled(false);
-
-    wifiMeteredToggle2->setEnabled(false);
   }
 
   update();
