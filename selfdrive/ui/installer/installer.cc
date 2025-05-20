@@ -74,7 +74,6 @@ int doInstall() {
 
 int freshClone() {
   LOGD("Doing fresh clone");
-  // Create the git command with redirection of stderr to stdout (2>&1)
   std::string cmd = util::string_format("git clone --progress %s -b %s --depth=1 --recurse-submodules %s 2>&1",
                                         GIT_URL.c_str(), BRANCH_STR.c_str(), TMP_INSTALL_PATH);
   return executeGitCommand(cmd);
