@@ -381,7 +381,7 @@ function op_ui() {
     fi
     # Check if the file exists
     if [[ ! -x "$UI_BIN" ]]; then
-      echo -e "${BOLD}${RED}UI is not built. Please run 'op ui build' first.${NC}"
+      echo -e "${RED}UI is not built. Please run 'op ui build' first.${NC}"
       return 1
     fi
     # Launch the UI
