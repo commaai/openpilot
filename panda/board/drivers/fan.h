@@ -19,7 +19,7 @@ void fan_init(void) {
 
 // Call this at FAN_TICK_FREQ
 void fan_tick(void) {
-  const float FAN_I = 0.001f;
+  const float FAN_I = 6.5f;
   const uint8_t FAN_STALL_THRESHOLD_MAX = 8U;
 
   if (current_board->fan_max_rpm > 0U) {
@@ -33,7 +33,7 @@ void fan_tick(void) {
     if (current_board->fan_stall_recovery) {
       if (fan_state.target_rpm > 0U) {
         if (fan_rpm_fast == 0U) {
-          fan_state.stall_counter = MIN(fan_state.stall_counter + 1U, 255U);
+          fan_state.stall_counter = MIN(fan_state.stall_counter + 1U, 254U);
         } else {
           fan_state.stall_counter = 0U;
         }
@@ -74,10 +74,11 @@ void fan_tick(void) {
     if (fan_state.target_rpm == 0U) {
       fan_state.error_integral = 0.0f;
     } else {
-      float error = fan_state.target_rpm - fan_rpm_fast;
+      float error = (fan_state.target_rpm - fan_rpm_fast) / ((float) current_board->fan_max_rpm);
       fan_state.error_integral += FAN_I * error;
     }
-    fan_state.power = CLAMP(fan_state.error_integral, 0U, current_board->fan_max_pwm);
+    fan_state.error_integral = CLAMP(fan_state.error_integral, 0U, current_board->fan_max_pwm);
+    fan_state.power = fan_state.error_integral;
 
     // Set PWM and enable line
     pwm_set(TIM3, 3, fan_state.power);

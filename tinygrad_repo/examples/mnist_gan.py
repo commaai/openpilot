@@ -16,9 +16,9 @@ class LinearGen:
     self.l4 = Tensor.scaled_uniform(1024, 784)
 
   def forward(self, x):
-    x = x.dot(self.l1).leakyrelu(0.2)
-    x = x.dot(self.l2).leakyrelu(0.2)
-    x = x.dot(self.l3).leakyrelu(0.2)
+    x = x.dot(self.l1).leaky_relu(0.2)
+    x = x.dot(self.l2).leaky_relu(0.2)
+    x = x.dot(self.l3).leaky_relu(0.2)
     x = x.dot(self.l4).tanh()
     return x
 
@@ -31,9 +31,9 @@ class LinearDisc:
 
   def forward(self, x):
     # balance the discriminator inputs with const bias (.add(1))
-    x = x.dot(self.l1).add(1).leakyrelu(0.2).dropout(0.3)
-    x = x.dot(self.l2).leakyrelu(0.2).dropout(0.3)
-    x = x.dot(self.l3).leakyrelu(0.2).dropout(0.3)
+    x = x.dot(self.l1).add(1).leaky_relu(0.2).dropout(0.3)
+    x = x.dot(self.l2).leaky_relu(0.2).dropout(0.3)
+    x = x.dot(self.l3).leaky_relu(0.2).dropout(0.3)
     x = x.dot(self.l4).log_softmax()
     return x
 

@@ -1,13 +1,13 @@
 import unittest
 from tinygrad import Tensor
 from tinygrad.helpers import getenv, GlobalCounters
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import lower_schedule_item, ProgramSpec
 from tinygrad.renderer import Estimates
-from tinygrad.codegen.linearize import linearize_uop
-from tinygrad.ops import Ops, UOp
+from tinygrad.codegen import full_rewrite
+from tinygrad.uop.ops import Ops, UOp
 from tinygrad.dtype import dtypes
 from tinygrad.codegen.kernel import Kernel, Opt, OptOps, KernelOptError
+from tinygrad.device import Device
 
 def flops_mem(uops, ignore_indexing=False):
   est = Estimates.from_uops(uops, ignore_indexing)
@@ -16,7 +16,7 @@ def flops_mem(uops, ignore_indexing=False):
 # **************** new FlopCounter ****************
 
 def get_stats(x:Tensor):
-  si = create_schedule([x.lazydata])[-1]
+  si = x.schedule()[-1]
   ei = lower_schedule_item(si)
   return ei.prg.estimates.ops, ei.prg.estimates.mem
 
@@ -32,6 +32,7 @@ class TestMemoryCount(unittest.TestCase):
     _, mem = get_stats(a+3)
     self.assertEqual(mem, 1024*1024*2)  # 1 read + 1 write
 
+  @unittest.skip("depends on subbuffer working")
   def test_add_slice(self):
     a = Tensor.empty(1024, 1024, dtype=dtypes.uint8)[:512]
     _, mem = get_stats(a+3)
@@ -64,6 +65,15 @@ class TestMemoryCount(unittest.TestCase):
     a = Tensor.empty(1024, 1024, dtype=dtypes.uint8).realize()
     _, mem = get_stats(a.assign(a+a))
     self.assertEqual(mem, 1024*1024*2)  # 1 read + 1 write
+
+  @unittest.skipIf(Device.DEFAULT == "CPU", "test copy to CPU from other device")
+  def test_copyout(self):
+    a = Tensor.empty(32, dtype=dtypes.uint8).to("CPU")
+    _, mem = get_stats(a)
+    self.assertEqual(mem, 32*1)
+    a = Tensor.empty(32, dtype=dtypes.uint32).to("CPU")
+    _, mem = get_stats(a)
+    self.assertEqual(mem, 32*4)
 
 # NOTE: this still isn't testing unroll using the acc
 @unittest.skipUnless(getenv("PYTHON"), "only run test on emulated tensor cores")
@@ -111,16 +121,18 @@ class TestUOpsStats(unittest.TestCase):
     # NOTE; ops also include indexing ops
     assert expected_ops <= ops and ops <= expected_ops * 2
 
-  def test_simple_matmul(self):
-    a = Tensor.empty(1024,1024)
-    b = Tensor.empty(1024,1024)
+  def test_simple_matmul(self, M=1024, N=1024, K=1024):
+    a = Tensor.empty(M,N)
+    b = Tensor.empty(N,K)
     c = a@b
     ops, mem = get_stats(c)
-    expected_ops = c.numel() * 1024 * 2
+    expected_ops = c.numel() * N * 2
     required_mem = a.nbytes() + b.nbytes() + c.nbytes()
     assert expected_ops <= ops and ops <= expected_ops * 1.2
     # NOTE: it's hard to assert on the memory here, all depends on caching
     assert required_mem <= mem
+
+  def test_simple_matmul_8192(self): self.test_simple_matmul(8192, 8192, 8192)
 
   #MULACC should have the same stats as MUL + ADD
   def test_mulacc(self):
@@ -132,7 +144,7 @@ class TestUOpsStats(unittest.TestCase):
     u3 = UOp(Ops.CONST, dtypes.int, tuple(), 3)
     u4 = UOp(Ops.MUL, dtypes.int, (u1,u2))
     u5 = UOp(Ops.ADD, dtypes.int, (u4,u3))
-    uops = linearize_uop(u5.sink())
+    uops = full_rewrite(u5.sink())
 
     globl = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(), tuple())
     o1 = UOp(Ops.CONST, dtypes.int, tuple(), 1)
@@ -141,11 +153,11 @@ class TestUOpsStats(unittest.TestCase):
     u2 = UOp(Ops.LOAD, dtypes.int, (globl.index(o2),))
     u3 = UOp(Ops.CONST, dtypes.int, tuple(), 3)
     u4 = UOp(Ops.MULACC, dtypes.int, (u1,u2,u3))
-    uops_fma = linearize_uop(u4.sink())
+    uops_fma = full_rewrite(u4.sink())
 
     self.assertEqual(flops_mem(uops), flops_mem(uops_fma))
 
-N = 100
+N = 64
 @unittest.skipIf(getenv("PTX"), "wrong in PTX") # maybe?
 class TestStatsOptimized(unittest.TestCase):
   @classmethod
@@ -164,6 +176,14 @@ class TestStatsOptimized(unittest.TestCase):
     p = Kernel(self.ast_gemm).to_program()
     self.check_gemm(p)
     self.assertEqual(p.estimates.lds, 2*N*N*N*4 + 4*N*N)
+
+  def test_gemm_tc_unroll(self):
+    k = Kernel(self.ast_gemm)
+    if not k.apply_tensor_cores(): self.skipTest("no tensor cores")
+    k.apply_opt(Opt(OptOps.UNROLL, 0, 2))
+    p = k.to_program()
+    print(p.src)
+    self.check_gemm(p)
 
   # this is a good lesson about why UPCASTing is a good idea
 

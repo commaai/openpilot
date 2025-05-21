@@ -65,22 +65,6 @@ adc_channel_t sbu2_channels[] = {
   {.adc = ADC3, .channel = 11},
 };
 
-void board_v2_set_led(uint8_t color, bool enabled) {
-  switch (color) {
-    case LED_RED:
-      set_gpio_output(GPIOE, 4, !enabled);
-      break;
-     case LED_GREEN:
-      set_gpio_output(GPIOE, 3, !enabled);
-      break;
-    case LED_BLUE:
-      set_gpio_output(GPIOE, 2, !enabled);
-      break;
-    default:
-      break;
-  }
-}
-
 void board_v2_set_harness_orientation(uint8_t orientation) {
   switch (orientation) {
     case HARNESS_ORIENTATION_NONE:
@@ -252,11 +236,6 @@ uint16_t board_v2_get_sbu_mV(uint8_t channel, uint8_t sbu) {
 void board_v2_init(void) {
   common_init_gpio();
 
-  // Disable LEDs
-  board_v2_set_led(LED_RED, false);
-  board_v2_set_led(LED_GREEN, false);
-  board_v2_set_led(LED_BLUE, false);
-
   // Normal CAN mode
   board_v2_set_can_mode(CAN_MODE_NORMAL);
 
@@ -312,7 +291,8 @@ board board_v2 = {
   .has_sbu_sense = true,
   .avdd_mV = 3300U,
   .init = &board_v2_init,
-  .set_led = &board_v2_set_led,
+  .led_GPIO = {GPIOE, GPIOE, GPIOE},
+  .led_pin = {4, 3, 2},
   .board_tick = &board_v2_tick,
   .get_button = &board_v2_get_button,
   .set_panda_power = &board_v2_set_panda_power,

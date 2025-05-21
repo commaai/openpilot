@@ -1,7 +1,8 @@
 from tinygrad import Device
 from tinygrad.helpers import getenv, DEBUG, BEAM
-from tinygrad.engine.search import beam_search, time_linearizer, bufs_from_lin
-from extra.optimization.helpers import load_worlds, ast_str_to_lin
+from tinygrad.engine.search import beam_search, bufs_from_lin
+from tinygrad.codegen.heuristic import hand_coded_optimizations
+from extra.optimization.helpers import load_worlds, ast_str_to_lin, time_linearizer
 
 if __name__ == "__main__":
   filter_reduce = bool(getenv("FILTER_REDUCE"))
@@ -18,18 +19,16 @@ if __name__ == "__main__":
     def new_lin(): return ast_str_to_lin(ast, opts=dev.renderer)
 
     k = new_lin()
-    # k.required_optimizations()
 
-    if not (used_tensor_cores:=k.apply_tensor_cores(getenv("TC", 1))): k.hand_coded_optimizations()
+    if not (used_tensor_cores:=k.apply_tensor_cores(getenv("TC", 1))): k.apply_opts(hand_coded_optimizations(k))
 
     assert BEAM > 0
 
     lins = [(("tc" if used_tensor_cores else "hc"), k)]
     if used_tensor_cores:
       lins.append(("hc", new_lin()))
-      lins[-1][1].hand_coded_optimizations()
+      lins[-1][1].apply_opts(hand_coded_optimizations(lins[-1][1]))
     kb = new_lin()
-    # kb.required_optimizations()
     test_rawbuffers = bufs_from_lin(kb)    # allocate scratch buffers for optimization
     lins.append((f"beam{BEAM.value}", beam_search(kb, test_rawbuffers, BEAM.value, bool(getenv("BEAM_ESTIMATE", 1)))))
     timed = sorted([(nm, tk, time_linearizer(tk, test_rawbuffers, allow_test_size=False, clear_l2=True)) for nm, tk in lins], key=lambda x: x[2])

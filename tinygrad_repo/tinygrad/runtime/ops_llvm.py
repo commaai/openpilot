@@ -1,50 +1,75 @@
-from __future__ import annotations
-import ctypes, functools
-from tinygrad.device import Compiled, Compiler, MallocAllocator
-from tinygrad.helpers import cpu_time_execution, getenv, cpu_objdump
+import functools, ctypes, platform
+from tinygrad.device import Compiled, Compiler, MallocAllocator, CPUProgram
+from tinygrad.helpers import OSX, getenv, capstone_flatdump, DEBUG
 from tinygrad.renderer.llvmir import LLVMRenderer
-import llvmlite.binding as llvm
+import tinygrad.runtime.autogen.llvm as llvm
+from tinygrad.runtime.support.elf import jit_loader
+
+def cerr(): return ctypes.pointer(ctypes.pointer(ctypes.c_char()))
+
+def expect(x, err, ret=None):
+  if x: raise RuntimeError(llvm.string_cast(err.contents) if not isinstance(err, str) else err)
+  return ret
 
 class LLVMCompiler(Compiler):
-  def __init__(self, dev:LLVMDevice, opt:bool=False):
-    self.dev = dev
-    self.optimizer: llvm.passmanagers.ModulePassManager = llvm.create_module_pass_manager()
-    self.dev.target_machine.add_analysis_passes(self.optimizer)
-    if opt:
-      with llvm.create_pass_manager_builder() as builder:
-        builder.opt_level = 3; builder.size_level = 0; builder.loop_vectorize = True; builder.slp_vectorize = True  # noqa: E702
-        builder.populate(self.optimizer)
-    super().__init__("compile_llvm_opt" if opt else "compile_llvm")
+  jit = True
+  target_arch = {'arm64': 'AArch64', 'aarch64': 'AArch64', 'x86_64': 'X86', 'AMD64': 'X86'}[platform.machine()]
+  def __init__(self, processor:str, feats:str):
+    for component in ['Target', 'TargetInfo', 'TargetMC', 'AsmParser', 'AsmPrinter']: getattr(llvm, f'LLVMInitialize{self.target_arch}{component}')()
+
+    triple = {'AArch64': b'aarch64-none-unknown-elf', 'X86': b'x86_64-none-unknown-elf', 'AMDGPU': b'amdgcn-amd-amdhsa'}[self.target_arch]
+    target = expect(llvm.LLVMGetTargetFromTriple(triple, ctypes.pointer(tgt:=llvm.LLVMTargetRef()), err:=cerr()), err, tgt)
+    if DEBUG >= 3: print(f"LLVM init for {processor!r} with {feats!r}")
+    self.target_machine = llvm.LLVMCreateTargetMachine(target, triple, processor.encode(), feats.encode(),
+                                                       llvm.LLVMCodeGenLevelDefault, llvm.LLVMRelocPIC, llvm.LLVMCodeModelDefault)
+
+    self.pbo = llvm.LLVMCreatePassBuilderOptions()
+    if (opt:=bool(getenv("LLVMOPT", "1"))):
+      self.passes = b'default<O2>'
+      llvm.LLVMPassBuilderOptionsSetLoopUnrolling(self.pbo, True)
+      llvm.LLVMPassBuilderOptionsSetLoopVectorization(self.pbo, True)
+      llvm.LLVMPassBuilderOptionsSetSLPVectorization(self.pbo, True)
+      llvm.LLVMPassBuilderOptionsSetVerifyEach(self.pbo, True)
+    else:
+      self.passes = b'default<O0>'
+
+    self.diag_msgs: list[str] = []
+    @ctypes.CFUNCTYPE(None, llvm.LLVMDiagnosticInfoRef, ctypes.c_void_p)
+    def handle_diag(diag_ref, _arg):
+      severity = llvm.LLVMGetDiagInfoSeverity(diag_ref)
+      msg = ctypes.string_at(llvm.LLVMGetDiagInfoDescription(diag_ref)).decode()
+      if severity == llvm.LLVMDSError:
+        self.diag_msgs.append(msg)
+    self.handle_diag = handle_diag
+    llvm.LLVMContextSetDiagnosticHandler(llvm.LLVMGetGlobalContext(), handle_diag, None)
+    super().__init__(f"compile_llvm_{self.target_arch}{'_jit' if self.jit else ''}{'_opt' if opt else ''}")
+
+  def __del__(self): llvm.LLVMDisposePassBuilderOptions(self.pbo)
 
   def compile(self, src:str) -> bytes:
-    mod = llvm.parse_assembly(src)
-    mod.verify()
-    self.optimizer.run(mod)
-    return self.dev.target_machine.emit_object(mod)
+    self.diag_msgs.clear()
+    src_buf = llvm.LLVMCreateMemoryBufferWithMemoryRangeCopy(ctypes.create_string_buffer(src_bytes:=src.encode()), len(src_bytes), b'src')
+    mod = expect(llvm.LLVMParseIRInContext(llvm.LLVMGetGlobalContext(), src_buf, ctypes.pointer(m:=llvm.LLVMModuleRef()), err:=cerr()), err, m)
+    expect(llvm.LLVMVerifyModule(mod, llvm.LLVMReturnStatusAction, err:=cerr()), err)
+    expect(llvm.LLVMRunPasses(mod, self.passes, self.target_machine, self.pbo), 'failed to run passes')
+    if DEBUG >= 7: print(ctypes.string_at(llvm.LLVMPrintModuleToString(mod)).decode())
+    obj_buf = expect(llvm.LLVMTargetMachineEmitToMemoryBuffer(self.target_machine, mod, llvm.LLVMObjectFile, err:=cerr(),
+                                                              ctypes.pointer(buf:=llvm.LLVMMemoryBufferRef())), err, buf)
+    llvm.LLVMDisposeModule(mod)
+    obj = ctypes.string_at(llvm.LLVMGetBufferStart(obj_buf), llvm.LLVMGetBufferSize(obj_buf))
+    llvm.LLVMDisposeMemoryBuffer(obj_buf)
+    if self.diag_msgs: raise RuntimeError("llvm diagnostic: " + "\n".join(self.diag_msgs))
+    return jit_loader(obj) if self.jit else obj
 
-  def disassemble(self, lib:bytes): cpu_objdump(lib)
+  def disassemble(self, lib:bytes): capstone_flatdump(lib)
 
-class LLVMProgram:
-  def __init__(self, dev:LLVMDevice, name:str, lib:bytes):
-    self.name, self.lib = name, lib
-    dev.engine.add_object_file(llvm.object_file.ObjectFileRef.from_data(lib))
-    self.fxn = dev.engine.get_function_address(name)
-    assert self.fxn != 0, "LLVM failed to get function address"
-
-  def __call__(self, *bufs, vals:tuple[int, ...]=(), wait=False):
-    if not hasattr(self, 'cfunc'):
-      self.cfunc = ctypes.CFUNCTYPE(ctypes.c_int, *([ctypes.c_void_p]*len(bufs)), *([ctypes.c_int32]*len(vals)))(self.fxn)
-    return cpu_time_execution(lambda: self.cfunc(*bufs, *vals), enable=wait)
+class HostLLVMCompiler(LLVMCompiler):
+  def __init__(self):
+    # +reserve-x18 here does the same thing as -ffixed-x18 in ops_cpu.py, see comments there for why it's needed on arm osx
+    cpu, feats = ctypes.string_at(llvm.LLVMGetHostCPUName()), (b'+reserve-x18,' if OSX else b'') + ctypes.string_at(llvm.LLVMGetHostCPUFeatures())
+    super().__init__(cpu.decode(), feats.decode())
 
 class LLVMDevice(Compiled):
   def __init__(self, device:str):
-    llvm.initialize()
-    llvm.initialize_native_target()
-    llvm.initialize_native_asmprinter()
-    llvm.initialize_native_asmparser()
-    # this opt actually can change things. ex: opt=3 means no FMA, opt=2 means FMA
-    self.target_machine: llvm.targets.TargetMachine = llvm.Target.from_triple(llvm.get_process_triple()).create_target_machine(opt=2)
-    backing_mod = llvm.parse_assembly(str())
-    backing_mod.triple = llvm.get_process_triple()
-    self.engine: llvm.executionengine.ExecutionEngine = llvm.create_mcjit_compiler(backing_mod, self.target_machine)
-    super().__init__(device, MallocAllocator, LLVMRenderer(), LLVMCompiler(self, getenv("LLVMOPT")), functools.partial(LLVMProgram, self))
+    from tinygrad.runtime.graph.cpu import LLVMGraph
+    super().__init__(device, MallocAllocator, LLVMRenderer(), HostLLVMCompiler(), CPUProgram, functools.partial(LLVMGraph, self))

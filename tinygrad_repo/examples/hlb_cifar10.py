@@ -11,7 +11,7 @@ from tinygrad import nn, dtypes, Tensor, Device, GlobalCounters, TinyJit
 from tinygrad.nn.state import get_state_dict, get_parameters
 from tinygrad.nn import optim
 from tinygrad.helpers import Context, BEAM, WINO, getenv, colored, prod
-from tinygrad.multi import MultiLazyBuffer
+from extra.bench_log import BenchEvent, WallTimeEvent
 
 cifar_mean = [0.4913997551666284, 0.48215855929893703, 0.4465309133731618]
 cifar_std = [0.24703225141799082, 0.24348516474564, 0.26158783926049628]
@@ -35,8 +35,6 @@ class UnsyncedBatchNorm:
     self.num_batches_tracked = Tensor.zeros(1, dtype=dtypes.int, requires_grad=False)
 
   def __call__(self, x:Tensor):
-    if isinstance(x.lazydata, MultiLazyBuffer): assert x.lazydata.axis is None or x.lazydata.axis == 0 and len(x.lazydata.lbs) == self.num_devices
-
     xr = x.reshape(self.num_devices, -1, *x.shape[1:]).cast(dtypes.float32)
     batch_mean, batch_invstd = self.calc_stats(xr)
     ret = xr.batchnorm(
@@ -398,20 +396,23 @@ def train_cifar():
       if STEPS == 0 or i == STEPS: break
 
       GlobalCounters.reset()
-      X, Y = next(batcher)
-      if len(GPUS) > 1:
-        X.shard_(GPUS, axis=0)
-        Y.shard_(GPUS, axis=0)
 
-      with Context(BEAM=getenv("LATEBEAM", BEAM.value), WINO=getenv("LATEWINO", WINO.value)):
-        loss = train_step_jitted(model, optim.OptimizerGroup(opt_bias, opt_non_bias), [lr_sched_bias, lr_sched_non_bias], X, Y)
-        et = time.monotonic()
-        loss_cpu = loss.numpy()
-      # EMA for network weights
-      if getenv("EMA") and i > hyp['ema']['steps'] and (i+1) % hyp['ema']['every_n_steps'] == 0:
-        if model_ema is None:
-          model_ema = modelEMA(W, model)
-        model_ema.update(model, Tensor([projected_ema_decay_val*(i/STEPS)**hyp['ema']['decay_pow']]))
+      with WallTimeEvent(BenchEvent.STEP):
+        X, Y = next(batcher)
+        if len(GPUS) > 1:
+          X.shard_(GPUS, axis=0)
+          Y.shard_(GPUS, axis=0)
+
+        with Context(BEAM=getenv("LATEBEAM", BEAM.value), WINO=getenv("LATEWINO", WINO.value)):
+          loss = train_step_jitted(model, optim.OptimizerGroup(opt_bias, opt_non_bias), [lr_sched_bias, lr_sched_non_bias], X, Y)
+          et = time.monotonic()
+          loss_cpu = loss.numpy()
+        # EMA for network weights
+        if getenv("EMA") and i > hyp['ema']['steps'] and (i+1) % hyp['ema']['every_n_steps'] == 0:
+          if model_ema is None:
+            model_ema = modelEMA(W, model)
+          model_ema.update(model, Tensor([projected_ema_decay_val*(i/STEPS)**hyp['ema']['decay_pow']]))
+
       cl = time.monotonic()
       device_str = loss.device if isinstance(loss.device, str) else f"{loss.device[0]} * {len(loss.device)}"
       #  53  221.74 ms run,    2.22 ms python,  219.52 ms CL,  803.39 loss, 0.000807 LR, 4.66 GB used,   3042.49 GFLOPS,    674.65 GOPS
@@ -427,4 +428,5 @@ def train_cifar():
       raise ValueError(colored(f"{eval_acc_pct=} < {target}", "red"))
 
 if __name__ == "__main__":
-  train_cifar()
+  with WallTimeEvent(BenchEvent.FULL):
+    train_cifar()

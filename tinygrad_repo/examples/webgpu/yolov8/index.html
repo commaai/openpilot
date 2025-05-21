@@ -111,7 +111,7 @@
     </div>
     <script>
         let net = null;
-        const modelInputSize = 416;
+        const modelInputSize = 640;
         let lastCalledTime;
         let fps = 0, accumFps = 0, frameCounter = 0;
 
@@ -127,14 +127,22 @@
         const offscreenContext = offscreenCanvas.getContext('2d');
 
 
-        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-            navigator.mediaDevices.getUserMedia({ audio: false,  video: { facingMode: { ideal: "environment" }}}).then(function (stream) {
+        if (navigator.mediaDevices?.getUserMedia) {
+            const tryCamera = facing => navigator.mediaDevices.getUserMedia({ audio: false, video: { facingMode: { ideal: facing } } });
+            const handle = stream => {
                 video.srcObject = stream;
                 video.onloadedmetadata = function() {
                     canvas.width = video.clientWidth;
                     canvas.height = video.clientHeight;
-                }
-            });
+                };
+            };
+            tryCamera("environment").then(handle).catch(() => 
+                tryCamera("user").then(handle).catch(e => {
+                    wgpuError.textContent = "Error: Could not access camera."
+                    wgpuError.style.display = "block";
+                    loadingContainer.style.display = "none";
+                })
+            );
         }
 
         async function processFrame() {
@@ -176,10 +184,12 @@
             offscreenContext.clearRect(0, 0, modelInputSize, modelInputSize);
             offscreenContext.drawImage(video, offsetX, offsetY, targetWidth, targetHeight);
             const boxes = await detectObjectsOnFrame(offscreenContext);
-            drawBoxes(offscreenCanvas, boxes, targetWidth, targetHeight, offsetX, offsetY);
+            const validBoxes = [];
+            for (let i = 0; i < boxes.length; i += 6)
+                if (boxes[i + 4] > 0) validBoxes.push([boxes[i], boxes[i + 1], boxes[i + 2], boxes[i + 3], boxes[i + 5]]);
+            drawBoxes(offscreenCanvas, validBoxes, targetWidth, targetHeight, offsetX, offsetY);
             requestAnimationFrame(processFrame);
         }
-
         requestAnimationFrame(processFrame);
 
         function drawBoxes(offscreenCanvas, boxes, targetWidth, targetHeight, offsetX, offsetY) {
@@ -190,8 +200,8 @@
             const scaleX = canvas.width / targetWidth;
             const scaleY = canvas.height / targetHeight;
 
-            boxes.forEach(([x1, y1, x2, y2, label]) => {
-                const classIndex = yolo_classes.indexOf(label);
+            boxes.forEach(([x1, y1, x2, y2, classIndex]) => {
+                const label = yolo_classes[classIndex];
                 const color = classColors[classIndex];
                 ctx.strokeStyle = color;
                 ctx.fillStyle = color;
@@ -219,21 +229,13 @@
                 net = await yolov8.load(device, "./net.safetensors");
                 loadingContainer.style.display = "none";
             }
-            let start = performance.now();
-            const [input,img_width,img_height] = await prepareInput(offscreenContext);
-            console.log("Preprocess took: " + (performance.now() - start) + " ms");
-            start = performance.now();
+            const input = await prepareInput(offscreenContext);
             const output = await net(new Float32Array(input));
-            console.log("Inference took: " + (performance.now() - start) + " ms");
-            start = performance.now();
-            let out = processOutput(output[0],img_width,img_height);
-            console.log("Postprocess took: " + (performance.now() - start) + " ms");
-            return out;
+            return output[0];
         }
 
         async function prepareInput(offscreenContext) {
             return new Promise(resolve => {
-                const [img_width,img_height] = [modelInputSize, modelInputSize]
                 const imgData = offscreenContext.getImageData(0,0,modelInputSize,modelInputSize);
                 const pixels = imgData.data;
                 const red = [], green = [], blue = [];
@@ -244,67 +246,18 @@
                     blue.push(pixels[index+2]/255.0);
                 }
                 const input = [...red, ...green, ...blue];
-                resolve([input, img_width, img_height])
+                resolve(input)
             })
         }
 
         const getDevice = async () => {
             if (!navigator.gpu) return false;
             const adapter = await navigator.gpu.requestAdapter();
-            return await adapter.requestDevice();
+            return await adapter.requestDevice({
+                powerPreference: "high-performance"
+		    });
         };
         
-        function processOutput(output, img_width, img_height) {
-            let boxes = [];
-            const numPredictions = Math.pow(modelInputSize/32, 2) * 21;
-            for (let index=0;index<numPredictions;index++) {
-                const [class_id,prob] = [...Array(80).keys()]
-                    .map(col => [col, output[numPredictions*(col+4)+index]])
-                    .reduce((accum, item) => item[1]>accum[1] ? item : accum,[0,0]);
-
-                if (prob < 0.25) continue;
-                const label = yolo_classes[class_id];
-                const xc = output[index];
-                const yc = output[numPredictions+index];
-                const w = output[2*numPredictions+index];
-                const h = output[3*numPredictions+index];
-                const x1 = (xc-w/2)/modelInputSize*img_width;
-                const y1 = (yc-h/2)/modelInputSize*img_height;
-                const x2 = (xc+w/2)/modelInputSize*img_width;
-                const y2 = (yc+h/2)/modelInputSize*img_height;
-                boxes.push([x1,y1,x2,y2,label,prob]);
-            }
-
-            boxes = boxes.sort((box1,box2) => box2[5]-box1[5])
-            const result = [];
-            while (boxes.length>0) {
-                result.push(boxes[0]);
-                boxes = boxes.filter(box => iou(boxes[0],box)<0.7);
-            }
-            return result;
-        }
-
-        function iou(box1,box2) {
-            return intersection(box1,box2)/union(box1,box2);
-        }
-
-        function union(box1,box2) {
-            const [box1_x1,box1_y1,box1_x2,box1_y2] = box1;
-            const [box2_x1,box2_y1,box2_x2,box2_y2] = box2;
-            const box1_area = (box1_x2-box1_x1)*(box1_y2-box1_y1)
-            const box2_area = (box2_x2-box2_x1)*(box2_y2-box2_y1)
-            return box1_area + box2_area - intersection(box1,box2)
-        }
-
-        function intersection(box1,box2) {
-            const [box1_x1,box1_y1,box1_x2,box1_y2] = box1;
-            const [box2_x1,box2_y1,box2_x2,box2_y2] = box2;
-            const x1 = Math.max(box1_x1,box2_x1);
-            const y1 = Math.max(box1_y1,box2_y1);
-            const x2 = Math.min(box1_x2,box2_x2);
-            const y2 = Math.min(box1_y2,box2_y2);
-            return (x2-x1)*(y2-y1)
-        }
 
         const yolo_classes = [
             'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck', 'boat',

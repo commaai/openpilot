@@ -1,7 +1,7 @@
 import itertools
 import random
 from tinygrad import Variable, dtypes
-from tinygrad.ops import UOp
+from tinygrad.uop.ops import UOp
 from tinygrad.helpers import DEBUG
 random.seed(42)
 
@@ -42,7 +42,7 @@ def gt(expr, rng=None):
   return expr > rng, rng
 
 # NOTE: you have to replace these for this test to pass
-from tinygrad.ops import python_alu, Ops
+from tinygrad.uop.ops import python_alu, Ops
 python_alu[Ops.MOD] = lambda x,y: x%y
 python_alu[Ops.IDIV] = lambda x,y: x//y
 
@@ -70,7 +70,7 @@ if __name__ == "__main__":
       v = [v1,v2,v3]
       rn = 0
       for t,r in zip(tape, rngs): rn, _ = t(rn, r)
-      num = eval(expr.render())
+      num = eval(expr.render(simplify=False))
       if num != rn:
         unsimplified_num = eval(expr.render(simplify=False))
         assert unsimplified_num == rn, "UNSIMPLIFIED MISMATCH!"

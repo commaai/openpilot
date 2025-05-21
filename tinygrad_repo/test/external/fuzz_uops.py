@@ -3,11 +3,11 @@ from collections import defaultdict
 import numpy as np
 from dataclasses import replace
 from typing import DefaultDict, Dict, List, Tuple
-from tinygrad.ops import UOp, print_uops, Ops
+from tinygrad.uop.ops import UOp, print_uops, Ops
 from tinygrad.device import Buffer, Device
 from tinygrad.engine.realize import CompiledRunner
 from tinygrad.helpers import DEBUG, colored
-from tinygrad.ops import Variable
+from tinygrad.uop.ops import Variable
 from tinygrad.tensor import _to_np_dtype
 from test.external.fuzz_schedule import FUZZ_SCHEDULE_MAX_PATHS, find_all_toposorts
 
@@ -52,7 +52,7 @@ class UOpsFuzzerRunner(CompiledRunner):
       # setup prg
       uops = list(path)
       if DEBUG >= 5: print_uops(uops)
-      self.p = replace(self.p, name=(name:=f"{init_name}fuzz{i}"), src=Device[self.p.device].renderer.render(name, uops), uops=uops)
+      self.p = replace(self.p, name=(name:=f"{init_name}fuzz{i}"), src=Device[self.p.device].renderer.render(uops), uops=uops)
       if DEBUG >= 4: print(self.p.src)
       self.lib = Device[self.p.device].compiler.compile_cached(self.p.src)
       self.clprg = Device[self.p.device].runtime(name, self.lib)

@@ -52,7 +52,6 @@
 #include "drivers/timers.h"
 #include "stm32f4/board.h"
 #include "stm32f4/clock.h"
-#include "drivers/watchdog.h"
 
 #include "drivers/spi.h"
 #include "stm32f4/llspi.h"
@@ -73,7 +72,7 @@
 void early_gpio_float(void) {
   RCC->AHB1ENR = RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN;
 
-  GPIOA->MODER = 0; GPIOB->MODER = 0; GPIOC->MODER = 0;
+  GPIOB->MODER = 0; GPIOC->MODER = 0;
   GPIOA->ODR = 0; GPIOB->ODR = 0; GPIOC->ODR = 0;
   GPIOA->PUPDR = 0; GPIOB->PUPDR = 0; GPIOC->PUPDR = 0;
 }
