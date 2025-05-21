@@ -13,7 +13,7 @@ class InputBox:
     self._last_key_pressed = 0
     self._key_press_time = 0
     self._repeat_delay = 30
-    self._repeat_rate = 5
+    self._repeat_rate = 4
 
   @property
   def text(self):
@@ -62,13 +62,12 @@ class InputBox:
       return True
     return False
 
-  def render(self, rect, color=rl.LIGHTGRAY, border_color=rl.DARKGRAY, text_color=rl.BLACK, font_size=80):
+  def render(self, rect, color=rl.BLACK, border_color=rl.DARKGRAY, text_color=rl.WHITE, font_size=80):
     # Handle mouse input
     self._handle_mouse_input(rect, font_size)
 
     # Draw input box
     rl.draw_rectangle_rec(rect, color)
-    rl.draw_rectangle_lines_ex(rect, 1, border_color)
 
     # Process keyboard input
     self._handle_keyboard_input()
@@ -81,7 +80,7 @@ class InputBox:
 
     # Display text
     font = gui_app.font()
-    display_text = "•" * len(self._input_text) if self._password_mode else self._input_text
+    display_text = "*" * len(self._input_text) if self._password_mode else self._input_text
     padding = 10
     rl.draw_text_ex(
       font,
@@ -100,7 +99,7 @@ class InputBox:
 
       cursor_height = font_size + 4
       cursor_y = rect.y + rect.height / 2 - cursor_height / 2
-      rl.draw_line(int(cursor_x), int(cursor_y), int(cursor_x), int(cursor_y + cursor_height), rl.BLACK)
+      rl.draw_line(int(cursor_x), int(cursor_y), int(cursor_x), int(cursor_y + cursor_height), rl.LIGHTGRAY)
 
   def _handle_mouse_input(self, rect, font_size):
     """Handle mouse clicks to position cursor."""
@@ -120,22 +119,29 @@ class InputBox:
         self.set_cursor_position(0)
 
   def _handle_keyboard_input(self):
-    """Process keyboard input."""
-    key = rl.get_key_pressed()
-
-    # Handle key repeats
-    if key == self._last_key_pressed and key != 0:
-      self._key_press_time += 1
-      if self._key_press_time > self._repeat_delay and self._key_press_time % self._repeat_rate == 0:
-        # Process repeated key
-        pass
-      else:
-        return  # Skip processing until repeat triggers
-    else:
-      self._last_key_pressed = key
-      self._key_press_time = 0
-
     # Handle navigation keys
+    key = rl.get_key_pressed()
+    if key != 0:
+      self._process_key(key)
+      if key in (rl.KEY_LEFT, rl.KEY_RIGHT, rl.KEY_BACKSPACE, rl.KEY_DELETE):
+        self._last_key_pressed = key
+        self._key_press_time = 0
+
+    # Handle repeats for held keys
+    elif self._last_key_pressed != 0:
+      if rl.is_key_down(self._last_key_pressed):
+        self._key_press_time += 1
+        if self._key_press_time > self._repeat_delay and self._key_press_time % self._repeat_rate == 0:
+          self._process_key(self._last_key_pressed)
+      else:
+        self._last_key_pressed = 0
+
+    # Handle text input
+    char = rl.get_char_pressed()
+    if char != 0 and char >= 32:  # Filter out control characters
+      self.add_char_at_cursor(chr(char))
+
+  def _process_key(self, key):
     if key == rl.KEY_LEFT:
       if self._cursor_position > 0:
         self.set_cursor_position(self._cursor_position - 1)
@@ -150,8 +156,3 @@ class InputBox:
       self.set_cursor_position(0)
     elif key == rl.KEY_END:
       self.set_cursor_position(len(self._input_text))
-
-    # Handle text input
-    char = rl.get_char_pressed()
-    if char != 0 and char >= 32:  # Filter out control characters
-      self.add_char_at_cursor(chr(char))
