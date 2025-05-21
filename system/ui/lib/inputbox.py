@@ -115,7 +115,8 @@ class InputBox:
     padding = 10
 
     # Clip text within input box bounds
-    rl.begin_scissor_mode(int(rect.x + padding), int(rect.y), int(rect.width - padding * 2), int(rect.height))
+    buffer = 2
+    rl.begin_scissor_mode(int(rect.x + padding - buffer), int(rect.y), int(rect.width - padding * 2 + buffer * 2), int(rect.height))
     rl.draw_text_ex(
       font,
       display_text,
