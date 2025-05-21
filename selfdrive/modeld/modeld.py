@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 import os
-import platform
 from openpilot.system.hardware import TICI
 USBGPU = "USBGPU" in os.environ
 if USBGPU:
   os.environ['AMD'] = '1'
+  os.environ['AMD_IFACE'] = 'USB'
 elif TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
-# TODO: switch to Metal on macOS?
-elif platform.system() == "Darwin":
-  os.environ['METAL'] = '1'
 else:
-  os.environ['GPU'] = '1'
+  os.environ['LLVM'] = '1'
+  os.environ['JIT'] = '2'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
@@ -199,11 +197,12 @@ def main(demo=False):
     # also need to move the aux USB interrupts for good timings
     config_realtime_process(7, 54)
 
+  st = time.monotonic()
   cloudlog.warning("setting up CL context")
   cl_context = CLContext()
   cloudlog.warning("CL context ready; loading model")
   model = ModelState(cl_context)
-  cloudlog.warning("models loaded, modeld starting")
+  cloudlog.warning(f"models loaded in {time.monotonic() - st:.1f}s, modeld starting")
 
   # visionipc clients
   while True:
