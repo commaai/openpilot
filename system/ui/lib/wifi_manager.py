@@ -69,7 +69,7 @@ class NetworkInfo:
 class WifiManagerCallbacks:
   need_auth: Callable[[str], None] | None = None
   activated: Callable[[], None] | None = None
-  forgotten: Callable[[], None] | None = None
+  forgotten: Callable[[str], None] | None = None
   networks_updated: Callable[[list[NetworkInfo]], None] | None = None
 
 
