@@ -134,7 +134,9 @@ if __name__ == "__main__":
   import sys
 
   lpa = LPA()
-  print(lpa.list_profiles())
+  for p in lpa.list_profiles():
+    print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
+  print()
 
   if len(sys.argv) > 2:
     if sys.argv[1] == 'enable':
