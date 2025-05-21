@@ -191,7 +191,9 @@ class Segment:
   def events(self):
     if not self._events:
       try:
-        self._events = requests.get(f'{self.url}/events.json').json()
+        resp = requests.get(f'{self.url}/events.json')
+        resp.raise_for_status()
+        self._events = resp.json()
       except Exception as e:
         raise APIError(f'error getting events for segment {self._name}') from e
     return self._events
