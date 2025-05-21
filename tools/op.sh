@@ -331,6 +331,11 @@ function op_cabana() {
   op_run_command tools/cabana/cabana $@
 }
 
+function op_ui() {
+  op_before_cmd
+  op_run_command selfdrive/ui/ui $@
+}
+
 function op_sim() {
   op_before_cmd
   op_run_command exec tools/sim/run_bridge.py &
@@ -409,6 +414,7 @@ function op_default() {
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
+  echo -e "  ${BOLD}ui${NC}           Run the UI"
   echo -e "  ${BOLD}lint${NC}         Run the linter"
   echo -e "  ${BOLD}post-commit${NC}  Install the linter as a post-commit hook"
   echo -e "  ${BOLD}test${NC}         Run all unit tests from pytest"
@@ -456,6 +462,7 @@ function _op() {
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
     clip )          shift 1; op_clip "$@" ;;
+    ui )            shift 1; op_ui "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;
