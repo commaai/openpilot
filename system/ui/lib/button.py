@@ -68,19 +68,22 @@ def gui_button(
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
   mouse_over = is_enabled and rl.check_collision_point_rec(rl.get_mouse_position(), rect)
+  is_pressed = button_id in _pressed_buttons
 
   if mouse_over:
     if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      # Record that this button was pressed
+      # Only this button enters pressed state
       _pressed_buttons.add(button_id)
+      is_pressed = True
+
+    # Use pressed color when mouse is down over this button
+    if is_pressed and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
       bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[button_style]
-    elif rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[button_style]
-    elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      # Check if this button was previously pressed
-      if button_id in _pressed_buttons:
-        result = 1
-        _pressed_buttons.remove(button_id)
+
+    # Handle button click
+    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and is_pressed:
+      result = 1
+      _pressed_buttons.remove(button_id)
 
   # Clean up pressed state if mouse is released anywhere
   if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and button_id in _pressed_buttons:
