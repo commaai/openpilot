@@ -2,6 +2,7 @@
 
 import json
 import os
+import shutil
 import subprocess
 import time
 
@@ -20,6 +21,9 @@ class LPA:
     self.env['QMI_DEVICE'] = '/dev/cdc-wdm0'
 
     self.timeout_sec = 45
+
+    if shutil.which('lpac') is None:
+      raise LPAError('lpac not found, must be installed!')
 
   def list_profiles(self) -> list[dict[str, str]]:
     msgs = self._invoke('profile', 'list')
