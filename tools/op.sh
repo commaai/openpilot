@@ -366,21 +366,26 @@ function op_ui() {
     return 0
   fi
 
-
   if [[ "$1" == "build" ]]; then
     shift
     NO_VERIFY="1" op_build selfdrive/ui $@
   elif [[ "$1" == "test" ]]; then
     shift
     NO_VERIFY="1" op_test selfdrive/ui $@
-  elif [[ "$1" == "setup" ]]; then
-    shift
-    op_run_command selfdrive/ui/qt/setup/setup $@
-  elif [[ "$1" == "reset" ]]; then
-    shift
-    op_run_command selfdrive/ui/qt/setup/reset $@
   else
-    op_run_command selfdrive/ui/ui $@
+    # Get the UI binary to run
+    UI_BIN="selfdrive/ui/ui"
+    if [[ "$1" == "setup" || "$1" == "reset" ]]; then
+      UI_BIN="selfdrive/ui/qt/setup/$1"
+      shift
+    fi
+    # Check if the file exists
+    if [[ ! -x "$UI_BIN" ]]; then
+      echo -e "${BOLD}${RED}UI is not built. Please run 'op ui build' first.${NC}"
+      return 1
+    fi
+    # Launch the UI
+    op_run_command $UI_BIN $@
   fi
 }
 
