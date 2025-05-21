@@ -135,7 +135,7 @@ if __name__ == "__main__":
 
   lpa = LPA()
   profiles = lpa.list_profiles()
-  print(f'{len(profiles)} profiles:')
+  print(f'{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
   for p in profiles:
     print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
   print()
