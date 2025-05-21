@@ -7,6 +7,7 @@ import shutil
 import subprocess
 import time
 from dataclasses import dataclass
+from openpilot.system.hardware.tici.hardware import Tici
 
 @dataclass
 class Profile:
@@ -159,8 +160,12 @@ if __name__ == "__main__":
     print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
 
   if args.reboot:
+    print('restarting modem')
     subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
     subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
     subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
     while not os.path.exists('/dev/ttyUSB2'):
       time.sleep(1)
+    print('reconfiguring connection')
+    tici = Tici()
+    tici.configure_modem()
