@@ -25,9 +25,6 @@ class LPA2:
     self.timeout_sec = 45
 
   def list_profiles(self) -> list[dict[str, str]]:
-    """
-    List all profiles on the eUICC.
-    """
     msgs = self._invoke('profile', 'list')
     self.validate_successful(msgs)
 
@@ -44,9 +41,6 @@ class LPA2:
     return profiles
 
   def get_active_profile(self) -> dict[str, str] | None:
-    """
-    Get the active profile on the eUICC.
-    """
     profiles = self.list_profiles()
     for profile in profiles:
       if profile['enabled']:
@@ -60,9 +54,6 @@ class LPA2:
     self.validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
   def enable_profile(self, iccid: str) -> None:
-    """
-    Enable the profile on the eUICC. Disables active profile if necessary.
-    """
     self.validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is None:
@@ -76,9 +67,6 @@ class LPA2:
     self.process_notifications()
 
   def disable_profile(self, iccid: str) -> None:
-    """
-    Disable the profile on the eUICC.
-    """
     self.validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is None:
@@ -90,9 +78,6 @@ class LPA2:
     self.process_notifications()
 
   def delete_profile(self, iccid: str) -> None:
-    """
-    Delete the profile on the eUICC.
-    """
     self.validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is not None and latest['iccid'] == iccid:
@@ -101,9 +86,6 @@ class LPA2:
     self.process_notifications()
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
-    """
-    Download the profile from the eUICC.
-    """
     msgs = self._invoke('profile', 'download', '-a', qr)
     self.validate_successful(msgs)
     new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
@@ -114,27 +96,17 @@ class LPA2:
     self.process_notifications()
 
   def nickname_profile(self, iccid: str, nickname: str) -> None:
-    """
-    Set the nickname of the profile on the eUICC.
-    """
     self.validate_profile_exists(iccid)
     self.validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
   def validate_profile_exists(self, iccid: str) -> None:
-    """
-    Validate that the profile exists on the eUICC.
-    """
     if not any(p['iccid'] == iccid for p in self.list_profiles()):
       raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
 
   def validate_successful(self, msgs: list[dict]) -> None:
-    """
-    Validate that the last message is a success notification.
-    """
     assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
 
   def _invoke(self, *cmd: str):
-    print(f"invoking lpac {' '.join(list(cmd))}")
     ret = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
     try:
       out, err = ret.communicate(timeout=self.timeout_sec)
