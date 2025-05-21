@@ -3,14 +3,14 @@ from enum import IntEnum
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
-INERTIA_FRICTION = 0.92  # The rate at which the inertia slows down
-MIN_VELOCITY = 0.5  # Minimum velocity before stopping the inertia
-DRAG_THRESHOLD = 5  # Pixels of movement to consider it a drag, not a click
-BOUNCE_FACTOR = 0.2
-BOUNCE_RETURN_SPEED = 0.15
-MAX_BOUNCE_DISTANCE = 150
-FLICK_MULTIPLIER = 1.8
-VELOCITY_HISTORY_SIZE = 5
+INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
+MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
+DRAG_THRESHOLD = 5             # Pixels of movement to consider it a drag, not a click
+BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
+BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
+MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
+FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
+VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
 
 
 class ScrollState(IntEnum):
