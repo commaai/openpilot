@@ -42,12 +42,6 @@ class LPA2:
   def get_active_profile(self) -> dict[str, str] | None:
     return next((p for p in self.list_profiles() if p['enabled']), None)
 
-  def process_notifications(self) -> None:
-    """
-    Process notifications from the LPA, typically to activate/deactivate the profile with the carrier.
-    """
-    self.validate_successful(self._invoke('notification', 'process', '-a', '-r'))
-
   def enable_profile(self, iccid: str) -> None:
     self.validate_profile_exists(iccid)
     latest = self.get_active_profile()
@@ -93,6 +87,12 @@ class LPA2:
   def nickname_profile(self, iccid: str, nickname: str) -> None:
     self.validate_profile_exists(iccid)
     self.validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
+
+  def process_notifications(self) -> None:
+    """
+    Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
+    """
+    self.validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
   def validate_profile_exists(self, iccid: str) -> None:
     if not any(p['iccid'] == iccid for p in self.list_profiles()):
