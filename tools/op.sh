@@ -381,7 +381,7 @@ function op_ui() {
       CMD=$1; shift
       UI_BIN="$UI_DIR/qt/setup/$CMD"
       if [[ "$CMD" == "updater" ]]; then
-        # The updater requires 2 arguments
+        # The updater requires 2 arguments, so just check for that to avoid a confusing error otherwise
         if [[ "$#" -lt 2 ]]; then
           echo -e "${RED}Usage: op ui $CMD <update_path> <manifest_path>${NC}"
           return 1
