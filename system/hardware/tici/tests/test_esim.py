@@ -4,6 +4,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.hardware.tici.esim import LPA2, LPAProfileNotFoundError
 
 # https://euicc-manual.osmocom.org/docs/rsp/known-test-profile
+# iccid is always the same for the given activation code
 TEST_ACTIVATION_CODE = 'LPA:1$rsp.truphone.com$QRF-BETTERROAMING-PMRDGIR2EARDEIT5'
 TEST_ICCID = '8944476500001944011'
 
@@ -15,7 +16,6 @@ def cleanup():
     lpa.delete_profile(TEST_ICCID)
   except LPAProfileNotFoundError:
     pass
-  assert lpa.get_active_profile() is None
   lpa.process_notifications()
   assert len(lpa.list_notifications()) == 0
 
@@ -25,36 +25,27 @@ class TestEsim:
   def setup_class(cls):
     if not TICI:
       pytest.skip()
-      return
     cleanup()
 
   def teardown_class(self):
     cleanup()
 
-  def test_list_profiles(self):
+  def test_provision_enable_disable(self):
     lpa = LPA2()
-    profiles = lpa.list_profiles()
-    assert profiles is not None
+    current_active = lpa.get_active_profile()
 
-  def test_download_enable_disable_profile(self):
-    lpa = LPA2()
-    lpa.download_profile(self.TEST_ACTIVATION_CODE, self.TEST_NICKNAME)
-    assert self._profile_exists(lpa, self.TEST_ICCID, self.TEST_NICKNAME)
+    lpa.download_profile(TEST_ACTIVATION_CODE, TEST_NICKNAME)
+    assert any(p['iccid'] == TEST_ICCID and p['nickname'] == TEST_NICKNAME for p in lpa.list_profiles())
 
-    self._enable_profile(lpa)
-    self._disable_profile(lpa)
+    lpa.enable_profile(TEST_ICCID)
+    new_active = lpa.get_active_profile()
+    assert new_active is not None
+    assert new_active['iccid'] == TEST_ICCID
+    assert new_active['nickname'] == TEST_NICKNAME
 
-  def _enable_profile(self, lpa: LPA2):
-    lpa.enable_profile(self.TEST_ICCID)
-    current = lpa.get_active_profile()
-    assert current is not None
-    assert current['iccid'] == self.TEST_ICCID
+    lpa.disable_profile(TEST_ICCID)
+    new_active = lpa.get_active_profile()
+    assert new_active is None
 
-  def _disable_profile(self, lpa: LPA2):
-    lpa.disable_profile(self.TEST_ICCID)
-    current = lpa.get_active_profile()
-    assert current is None
-
-  def _profile_exists(self, lpa: LPA2, iccid: str, nickname: str) -> bool:
-    profiles = lpa.list_profiles()
-    return any(p['iccid'] == iccid and p['nickname'] == nickname for p in profiles)
+    if current_active:
+      lpa.enable_profile(current_active['iccid'])
