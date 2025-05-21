@@ -1,5 +1,6 @@
+import os
 import json
-Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
+Import('qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
 base_libs = [common, messaging, visionipc, transformations,
              'm', 'OpenCL', 'ssl', 'crypto', 'pthread'] + qt_env["LIBS"]
@@ -75,15 +76,8 @@ if GetOption('extras'):
 
   if arch != "Darwin":
     # build installers
-    raylib_env = env.Clone()
-    raylib_env['LIBPATH'] += [f'#third_party/raylib/{arch}/']
-    raylib_env['LINKFLAGS'].append('-Wl,-strip-debug')
-
-    raylib_libs = common + ["raylib"]
-    if arch == "larch64":
-      raylib_libs += ["GLESv2", "wayland-client", "wayland-egl", "EGL"]
-    else:
-      raylib_libs += ["GL"]
+    senv = qt_env.Clone()
+    senv['LINKFLAGS'].append('-Wl,-strip-debug')
 
     release = "release3"
     installers = [
@@ -93,19 +87,17 @@ if GetOption('extras'):
       ("openpilot_internal", "nightly-dev"),
     ]
 
-    cont = raylib_env.Command("installer/continue_openpilot.o", "installer/continue_openpilot.sh",
-                              "ld -r -b binary -o $TARGET $SOURCE")
-    inter = raylib_env.Command("installer/inter_ttf.o", "installer/inter-ascii.ttf",
-                               "ld -r -b binary -o $TARGET $SOURCE")
+    cont = senv.Command(f"installer/continue_openpilot.o", f"installer/continue_openpilot.sh",
+                        "ld -r -b binary -o $TARGET $SOURCE")
     for name, branch in installers:
       d = {'BRANCH': f"'\"{branch}\"'"}
       if "internal" in name:
         d['INTERNAL'] = "1"
 
-      obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
-      f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
+      obj = senv.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
+      f = senv.Program(f"installer/installers/installer_{name}", [obj, cont], LIBS=qt_libs)
       # keep installers small
-      assert f[0].get_size() < 1300*1e3, f[0].get_size()
+      assert f[0].get_size() < 370*1e3
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
