@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import copy
 import threading
 import time
 import uuid
@@ -12,6 +13,11 @@ from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  # Params/Cythonized modules are not available in zipapp
+  Params = None
 from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
@@ -28,6 +34,9 @@ NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
 NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
 
 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
+
+TETHERING_IP_ADDRESS = "192.168.43.1"
+DEFAULT_TETHERING_PASSWORD = "12345678"
 
 # NetworkManager device states
 class NMDeviceState(IntEnum):
@@ -52,14 +61,16 @@ class NetworkInfo:
   security_type: SecurityType
   path: str
   bssid: str
+  is_saved: bool = False
   # saved_path: str
 
 
 @dataclass
 class WifiManagerCallbacks:
-  need_auth: Callable[[], None] | None = None
+  need_auth: Callable[[str], None] | None = None
   activated: Callable[[], None] | None = None
   forgotten: Callable[[], None] | None = None
+  networks_updated: Callable[[list[NetworkInfo]], None] | None = None
 
 
 class WifiManager:
@@ -72,7 +83,14 @@ class WifiManager:
     self.saved_connections: dict[str, str] = {}
     self.active_ap_path: str = ""
     self.scan_task: asyncio.Task | None = None
+    # Set tethering ssid as "weedle" + first 4 characters of a dongle id
+    self._tethering_ssid = "weedle"
+    if Params is not None:
+      dongle_id = Params().get("DongleId", encoding="utf-8")
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
+    self._current_connection_ssid: str | None = None
 
   async def connect(self) -> None:
     """Connect to the DBus system bus."""
@@ -83,6 +101,7 @@ class WifiManager:
       await self._setup_signals(self.device_path)
 
       self.active_ap_path = await self.get_active_access_point()
+      await self.add_tethering_connection(self._tethering_ssid, DEFAULT_TETHERING_PASSWORD)
       self.saved_connections = await self._get_saved_connections()
       self.scan_task = asyncio.create_task(self._periodic_scan())
     except DBusError as e:
@@ -101,7 +120,7 @@ class WifiManager:
       except asyncio.CancelledError:
         pass
     if self.bus:
-      await self.bus.disconnect()
+      self.bus.disconnect()
 
   async def request_scan(self) -> None:
     try:
@@ -127,6 +146,12 @@ class WifiManager:
     try:
       nm_iface = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
       await nm_iface.call_delete()
+      if self._current_connection_ssid == ssid:
+        self._current_connection_ssid = None
+
+      if ssid in self.saved_connections:
+        del self.saved_connections[ssid]
+
       return True
     except DBusError as e:
       cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
@@ -147,6 +172,18 @@ class WifiManager:
   async def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False) -> None:
     """Connect to a selected Wi-Fi network."""
     try:
+      self._current_connection_ssid = ssid
+
+      if ssid in self.saved_connections:
+        # Forget old connection if new password provided
+        if password:
+          await self.forget_connection(ssid)
+          await asyncio.sleep(0.2)  # NetworkManager delay
+        else:
+          # Just activate existing connection
+          await self.activate_connection(ssid)
+          return
+
       connection = {
         'connection': {
           'type': Variant('s', '802-11-wireless'),
@@ -176,8 +213,8 @@ class WifiManager:
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
       await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
       await self._update_connection_status()
-
     except DBusError as e:
+      self._current_connection_ssid = None
       cloudlog.error(f"Error connecting to network: {e}")
 
   def is_saved(self, ssid: str) -> bool:
@@ -198,6 +235,160 @@ class WifiManager:
         return True
 
     return False
+
+  async def add_tethering_connection(self, ssid: str, password: str = "12345678") -> bool:
+    """Create a WiFi tethering connection."""
+    if len(password) < 8:
+      print("Tethering password must be at least 8 characters")
+      return False
+
+    try:
+      # First, check if a hotspot connection already exists
+      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
+      connection_paths = await settings_iface.call_list_connections()
+
+      # Look for an existing hotspot connection
+      for path in connection_paths:
+        try:
+          settings = await self._get_connection_settings(path)
+          conn_type = settings.get('connection', {}).get('type', Variant('s', '')).value
+          wifi_mode = settings.get('802-11-wireless', {}).get('mode', Variant('s', '')).value
+
+          if conn_type == '802-11-wireless' and wifi_mode == 'ap':
+            # Extract the SSID to check
+            connection_ssid = self._extract_ssid(settings)
+            if connection_ssid == ssid:
+              return True
+        except DBusError:
+          continue
+
+      connection = {
+        'connection': {
+          'id': Variant('s', 'Hotspot'),
+          'uuid': Variant('s', str(uuid.uuid4())),
+          'type': Variant('s', '802-11-wireless'),
+          'interface-name': Variant('s', 'wlan0'),
+          'autoconnect': Variant('b', False),
+        },
+        '802-11-wireless': {
+          'band': Variant('s', 'bg'),
+          'mode': Variant('s', 'ap'),
+          'ssid': Variant('ay', ssid.encode('utf-8')),
+        },
+        '802-11-wireless-security': {
+          'group': Variant('as', ['ccmp']),
+          'key-mgmt': Variant('s', 'wpa-psk'),
+          'pairwise': Variant('as', ['ccmp']),
+          'proto': Variant('as', ['rsn']),
+          'psk': Variant('s', password),
+        },
+        'ipv4': {
+          'method': Variant('s', 'shared'),
+          'address-data': Variant('aa{sv}', [{'address': Variant('s', TETHERING_IP_ADDRESS), 'prefix': Variant('u', 24)}]),
+          'gateway': Variant('s', TETHERING_IP_ADDRESS),
+          'never-default': Variant('b', True),
+        },
+        'ipv6': {
+          'method': Variant('s', 'ignore'),
+        },
+      }
+
+      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
+      new_connection = await settings_iface.call_add_connection(connection)
+      print(f"Added tethering connection with path: {new_connection}")
+      return True
+    except DBusError as e:
+      print(f"Failed to add tethering connection: {e}")
+      return False
+    except Exception as e:
+      print(f"Unexpected error adding tethering connection: {e}")
+      return False
+
+  async def get_tethering_password(self) -> str:
+    """Get the current tethering password."""
+    try:
+      hotspot_path = self.saved_connections.get(self._tethering_ssid)
+      if hotspot_path:
+        conn_iface = await self._get_interface(NM, hotspot_path, NM_CONNECTION_IFACE)
+        secrets = await conn_iface.call_get_secrets('802-11-wireless-security')
+        if secrets and '802-11-wireless-security' in secrets:
+          psk = secrets.get('802-11-wireless-security', {}).get('psk', Variant('s', '')).value
+          return str(psk) if psk is not None else ""
+      return ""
+    except DBusError as e:
+      print(f"Failed to get tethering password: {e}")
+      return ""
+    except Exception as e:
+      print(f"Unexpected error getting tethering password: {e}")
+      return ""
+
+  async def set_tethering_password(self, password: str) -> bool:
+    """Set the tethering password."""
+    if len(password) < 8:
+      cloudlog.error("Tethering password must be at least 8 characters")
+      return False
+
+    try:
+      hotspot_path = self.saved_connections.get(self._tethering_ssid)
+      if not hotspot_path:
+        print("No hotspot connection found")
+        return False
+
+      # Update the connection settings with new password
+      settings = await self._get_connection_settings(hotspot_path)
+      if '802-11-wireless-security' not in settings:
+        settings['802-11-wireless-security'] = {}
+      settings['802-11-wireless-security']['psk'] = Variant('s', password)
+
+      # Apply changes
+      conn_iface = await self._get_interface(NM, hotspot_path, NM_CONNECTION_IFACE)
+      await conn_iface.call_update(settings)
+
+      # Check if connection is active and restart if needed
+      is_active = False
+      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+      active_connections = await nm_iface.get_active_connections()
+
+      for conn_path in active_connections:
+        props_iface = await self._get_interface(NM, conn_path, NM_PROPERTIES_IFACE)
+        conn_id_path = await props_iface.call_get('org.freedesktop.NetworkManager.Connection.Active', 'Connection')
+        if conn_id_path.value == hotspot_path:
+          is_active = True
+          await nm_iface.call_deactivate_connection(conn_path)
+          break
+
+      if is_active:
+        await nm_iface.call_activate_connection(hotspot_path, self.device_path, "/")
+
+      print("Tethering password updated successfully")
+      return True
+    except DBusError as e:
+      print(f"Failed to set tethering password: {e}")
+      return False
+    except Exception as e:
+      print(f"Unexpected error setting tethering password: {e}")
+      return False
+
+  async def is_tethering_active(self) -> bool:
+    """Check if tethering is active for the specified SSID."""
+    try:
+      hotspot_path = self.saved_connections.get(self._tethering_ssid)
+      if not hotspot_path:
+        return False
+
+      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+      active_connections = await nm_iface.get_active_connections()
+
+      for conn_path in active_connections:
+        props_iface = await self._get_interface(NM, conn_path, NM_PROPERTIES_IFACE)
+        conn_id_path = await props_iface.call_get('org.freedesktop.NetworkManager.Connection.Active', 'Connection')
+
+        if conn_id_path.value == hotspot_path:
+          return True
+
+      return False
+    except Exception:
+      return False
 
   async def _periodic_scan(self):
     while self.running:
@@ -243,11 +434,22 @@ class WifiManager:
       if self.callbacks.activated:
         self.callbacks.activated()
       asyncio.create_task(self._update_connection_status())
+      self._current_connection_ssid = None
     elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
       for network in self.networks:
         network.is_connected = False
       if new_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self.callbacks.need_auth:
-        self.callbacks.need_auth()
+        if self._current_connection_ssid:
+          self.callbacks.need_auth(self._current_connection_ssid)
+        else:
+          # Try to find the network from active_ap_path
+          for network in self.networks:
+            if network.path == self.active_ap_path:
+              self.callbacks.need_auth(network.ssid)
+              break
+          else:
+            # Couldn't identify the network that needs auth
+            cloudlog.error("Network needs authentication but couldn't identify which one")
 
   def _on_new_connection(self, path: str) -> None:
     """Callback for NewConnection signal."""
@@ -262,6 +464,8 @@ class WifiManager:
         del self.saved_connections[ssid]
         if self.callbacks.forgotten:
           self.callbacks.forgotten()
+        # Update network list to reflect the removed saved connection
+        asyncio.create_task(self._update_connection_status())
         break
 
   async def _add_saved_connection(self, path: str) -> None:
@@ -270,6 +474,7 @@ class WifiManager:
       settings = await self._get_connection_settings(path)
       if ssid := self._extract_ssid(settings):
         self.saved_connections[ssid] = path
+        await self._update_connection_status()
     except DBusError as e:
       cloudlog.error(f"Failed to add connection {path}: {e}")
 
@@ -327,6 +532,7 @@ class WifiManager:
             path=ap_path,
             bssid=bssid,
             is_connected=self.active_ap_path == ap_path,
+            is_saved=ssid in self.saved_connections
           )
 
       except DBusError as e:
@@ -342,6 +548,9 @@ class WifiManager:
         network.ssid.lower(),
       ),
     )
+
+    if self.callbacks.networks_updated:
+      self.callbacks.networks_updated(copy.deepcopy(self.networks))
 
   async def _get_connection_settings(self, path):
     """Fetch connection settings for a specific connection path."""
@@ -387,7 +596,8 @@ class WifiManager:
     if flags == 0 and not (wpa_flags or rsn_flags):
       return SecurityType.OPEN
     if rsn_flags & 0x200:  # SAE (WPA3 Personal)
-      return SecurityType.WPA3
+      # TODO: support WPA3
+      return SecurityType.UNSUPPORTED
     if rsn_flags:  # RSN indicates WPA2 or higher
       return SecurityType.WPA2
     if wpa_flags:  # WPA flags indicate WPA
@@ -430,18 +640,15 @@ class WifiManagerWrapper:
 
   def shutdown(self) -> None:
     if self._running:
-      if self._manager is not None:
-        self._run_coroutine(self._manager.shutdown())
+      if self._manager is not None and self._loop:
+        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
+        shutdown_future.result(timeout=3.0)
+
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():
         self._thread.join(timeout=2.0)
       self._running = False
-
-  @property
-  def networks(self) -> list[NetworkInfo]:
-    """Get the current list of networks."""
-    return self._run_coroutine_sync(lambda manager: manager.networks.copy(), default=[])
 
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""
