@@ -134,7 +134,7 @@ if __name__ == "__main__":
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
   parser.add_argument('--enable', metavar='iccid', help='enable a profile by ICCID')
   parser.add_argument('--disable', metavar='iccid', help='disable a profile by ICCID')
-  parser.add_argument('--delete', metavar='iccid', help='delete a profile by ICCID')
+  parser.add_argument('--delete', metavar='iccid', help='delete a profile by ICCID (warning: this cannot be undone)')
   parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code')
   parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='nickname for the downloaded profile')
   args = parser.parse_args()
@@ -147,8 +147,13 @@ if __name__ == "__main__":
     lpa.disable_profile(args.disable)
     print('disabled profile, please restart device to apply changes')
   elif args.delete:
-    lpa.delete_profile(args.delete)
-    print('deleted profile, please restart device to apply changes')
+    confirm = input('are you sure you want to delete this profile? (y/N) ')
+    if confirm == 'y':
+      lpa.delete_profile(args.delete)
+      print('deleted profile, please restart device to apply changes')
+    else:
+      print('cancelled')
+      exit(0)
   elif args.download:
     lpa.download_profile(args.download[0], args.download[1])
   elif args.nickname:
