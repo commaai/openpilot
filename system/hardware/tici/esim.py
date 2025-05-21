@@ -138,6 +138,7 @@ if __name__ == "__main__":
   parser.add_argument('--delete', metavar='iccid', help='delete a profile by ICCID')
   parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code')
   parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='nickname for the downloaded profile')
+  parser.add_argument('--reboot', action='store_true', help='reboot the modem')
   args = parser.parse_args()
 
   lpa = LPA()
@@ -157,8 +158,7 @@ if __name__ == "__main__":
   for p in profiles:
     print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
 
-  if "RESTART" in os.environ:
-    print("restarting modem")
+  if args.reboot:
     subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
     subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
     subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
