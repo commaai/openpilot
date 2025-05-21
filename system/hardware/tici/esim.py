@@ -51,7 +51,7 @@ class LPA:
     latest = self.get_active_profile()
     if latest:
       if latest.iccid == iccid:
-        raise LPAError(f'profile {iccid} is already enabled')
+        return
       self.disable_profile(latest.iccid)
     self._validate_successful(self._invoke('profile', 'enable', iccid))
     self.process_notifications()
