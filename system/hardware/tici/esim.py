@@ -132,9 +132,9 @@ class LPA:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
-  parser.add_argument('--enable', metavar='iccid', help='enable a profile by ICCID')
-  parser.add_argument('--disable', metavar='iccid', help='disable a profile by ICCID')
-  parser.add_argument('--delete', metavar='iccid', help='delete a profile by ICCID (warning: this cannot be undone)')
+  parser.add_argument('--enable', metavar='iccid', help='enable profile; will disable current profile')
+  parser.add_argument('--disable', metavar='iccid', help='disable profile')
+  parser.add_argument('--delete', metavar='iccid', help='delete profile (warning: this cannot be undone)')
   parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code')
   parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='nickname for the downloaded profile')
   args = parser.parse_args()
@@ -158,6 +158,8 @@ if __name__ == "__main__":
     lpa.download_profile(args.download[0], args.download[1])
   elif args.nickname:
     lpa.nickname_profile(args.nickname[0], args.nickname[1])
+  else:
+    parser.print_usage()
 
   profiles = lpa.list_profiles()
   print(f'{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
