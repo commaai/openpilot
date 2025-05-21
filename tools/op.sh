@@ -12,6 +12,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 UNDERLINE='\033[4m'
 BOLD='\033[1m'
+ITALICS='\033[3m'
 NC='\033[0m'
 
 SHELL_NAME="$(basename ${SHELL})"
@@ -352,6 +353,38 @@ function op_clip() {
   op_run_command tools/clip/run.py $@
 }
 
+function op_ui() {
+  op_before_cmd
+  if [[ "$1" == "help" || "$1" == "--help" ]]; then
+    echo "Usage: op ui <command> [args]"
+    echo ""
+    echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
+    echo -e "  ${ITALICS}[none]${NC}     Run the UI at the main screen ${ITALICS}(default)${NC}"
+    echo -e "  ${BOLD}setup${NC}      Run the UI at the setup screen"
+    echo -e "  ${BOLD}reset${NC}      Run the UI at the reset screen"
+    echo -e "  ${BOLD}test${NC}       Run the UI tests"
+    echo -e "  ${BOLD}help${NC}       Show this help message"
+    return 0
+  fi
+  case "$1" in
+    setup)
+      shift
+      op_run_command selfdrive/ui/qt/setup/setup $@
+      ;;
+    reset)
+      shift
+      op_run_command selfdrive/ui/qt/setup/reset $@
+      ;;
+    test)
+      shift
+      op_run_command exec pytest selfdrive/ui $@
+      ;;
+    *)
+      op_run_command selfdrive/ui/ui $@
+      ;;
+  esac
+}
+
 function op_switch() {
   REMOTE="origin"
   if [ "$#" -gt 1 ]; then
@@ -440,6 +473,9 @@ function op_default() {
   echo ""
   echo "  op build -j4"
   echo "          Compile openpilot using 4 cores"
+  echo ""
+  echo "  op ui help"
+  echo "          Show info about the UI commands"
   echo ""
   echo "  op juggle --demo"
   echo "          Run PlotJuggler on the demo route"
