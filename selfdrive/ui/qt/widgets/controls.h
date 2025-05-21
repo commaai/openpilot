@@ -262,11 +262,13 @@ class ButtonParamControl : public MultiButtonControl {
   Q_OBJECT
 public:
   ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                     const std::vector<QString> &button_texts, const int minimum_button_width = 225) : MultiButtonControl(title, desc, icon, button_texts, minimum_button_width) {
+                     const std::vector<QString> &button_texts, const int minimum_button_width = 225) : MultiButtonControl(title, desc, icon,
+                                                                                                                          button_texts, minimum_button_width) {
     key = param.toStdString();
     int value = atoi(params.get(key).c_str());
-    if (value > 0 && value >= button_texts.size()) {
-      button_group->button(value)->setChecked(false);
+
+    if (value > 0 && value < button_group->buttons().size()) {
+      button_group->button(value)->setChecked(true);
     }
 
     QObject::connect(this, QOverload<int>::of(&MultiButtonControl::buttonClicked), [=](int id) {

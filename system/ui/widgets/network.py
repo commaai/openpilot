@@ -3,7 +3,7 @@ from typing import Literal
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
@@ -134,7 +134,7 @@ class WifiManagerUI:
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
-      rl.gui_label(status_text_rect, status_text)
+      gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
     else:
       # If the network is saved, show the "Forget" button
       if network.is_saved:
@@ -143,27 +143,30 @@ class WifiManagerUI:
           self.btn_width,
           80,
         )
-        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget") and clicked:
+        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget", button_style=ButtonStyle.ACTION) and clicked:
           self.state = StateShowForgetConfirm(network)
 
     self._draw_status_icon(security_icon_rect, network)
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
     if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), ssid_rect) and clicked:
-      if not network.is_saved:
+      if not network.is_saved and network.security_type != SecurityType.OPEN:
         self.state = StateNeedsAuth(network)
-      else:
+      elif not network.is_connected:
         self.connect_to_network(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
     """Draw the status icon based on network's connection state"""
-    icon_file = ""
+    icon_file = None
     if network.is_connected:
       icon_file = "icons/checkmark.png"
     elif network.security_type == SecurityType.UNSUPPORTED:
       icon_file = "icons/circled_slash.png"
-    else:
+    elif network.security_type != SecurityType.OPEN:
       icon_file = "icons/lock_closed.png"
+
+    if not icon_file:
+      return
 
     texture = gui_app.texture(icon_file, ICON_SIZE, ICON_SIZE)
     icon_rect = rl.Vector2(rect.x, rect.y + (ICON_SIZE - texture.height) / 2)
