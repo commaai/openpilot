@@ -218,13 +218,6 @@ public:
         color: #33E4E4E4;
       }
     )";
-    // TODO: none of these look good
-//      QPushButton:checked:disabled {
-//        background-color: #227722;
-//      }
-//      QPushButton:checked:disabled {
-//        background-color: #3333Ab4C;
-//      }
 
     button_group = new QButtonGroup(this);
     button_group->setExclusive(true);
