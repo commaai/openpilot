@@ -383,7 +383,7 @@ function op_ui() {
       if [[ "$CMD" == "updater" ]]; then
         # The updater requires 2 arguments
         if [[ "$#" -lt 2 ]]; then
-          echo -e "${RED}Usage: op ui updater <update_path> <manifest_path>${NC}"
+          echo -e "${RED}Usage: op ui $CMD <update_path> <manifest_path>${NC}"
           return 1
         fi
       fi
