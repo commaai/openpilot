@@ -145,10 +145,13 @@ if __name__ == "__main__":
   lpa = LPA()
   if args.enable:
     lpa.enable_profile(args.enable)
+    print('enabled profile, please restart device to apply changes')
   elif args.disable:
     lpa.disable_profile(args.disable)
+    print('disabled profile, please restart device to apply changes')
   elif args.delete:
     lpa.delete_profile(args.delete)
+    print('deleted profile, please restart device to apply changes')
   elif args.download:
     lpa.download_profile(args.download[0], args.download[1])
   elif args.nickname:
@@ -158,14 +161,3 @@ if __name__ == "__main__":
   print(f'{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
   for p in profiles:
     print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
-
-  if args.reboot:
-    print('restarting modem')
-    subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
-    subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
-    subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
-    while not os.path.exists('/dev/ttyUSB2'):
-      time.sleep(1)
-    print('reconfiguring connection')
-    tici = Tici()
-    tici.configure_modem()
