@@ -138,8 +138,8 @@ if __name__ == "__main__":
   parser.add_argument('--enable', metavar='iccid', help='enable profile; will disable current profile')
   parser.add_argument('--disable', metavar='iccid', help='disable profile')
   parser.add_argument('--delete', metavar='iccid', help='delete profile (warning: this cannot be undone)')
-  parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code')
-  parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='nickname for the downloaded profile')
+  parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code (format: LPA:1$rsp.truphone.com$QRF-SPEEDTEST)')
+  parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='update the nickname for a profile')
   args = parser.parse_args()
 
   lpa = LPA(interface=args.backend)
