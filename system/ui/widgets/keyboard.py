@@ -221,7 +221,7 @@ class Keyboard:
 
 if __name__ == "__main__":
   gui_app.init_window("Keyboard")
-  keyboard = Keyboard(min_text_size=8)
+  keyboard = Keyboard(min_text_size=8, show_password_toggle=True)
   for _ in gui_app.render():
     result = keyboard.render("Keyboard", "Type here")
     if result == 1:
