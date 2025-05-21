@@ -134,7 +134,7 @@ class LPA:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
-  parser.add_argument('--backend', choices=['qmi', 'at'], default='qmi', help='use the specified backend')
+  parser.add_argument('--backend', choices=['qmi', 'at'], default='qmi', help='use the specified backend, defaults to qmi')
   parser.add_argument('--enable', metavar='iccid', help='enable profile; will disable current profile')
   parser.add_argument('--disable', metavar='iccid', help='disable profile')
   parser.add_argument('--delete', metavar='iccid', help='delete profile (warning: this cannot be undone)')
