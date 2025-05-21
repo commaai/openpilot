@@ -356,8 +356,9 @@ function op_ui() {
     echo ""
     echo -e "${BOLD}${UNDERLINE}Commands [Display]:${NC}"
     echo -e "  ${ITALICS}[none]${NC}     Launch the UI at the main screen ${ITALICS}(default)${NC}"
-    echo -e "  ${BOLD}setup${NC}      Launch the UI at the setup screen"
-    echo -e "  ${BOLD}reset${NC}      Launch the UI at the reset screen"
+    echo -e "  ${BOLD}setup${NC}      Launch the UI at the setup device screen"
+    echo -e "  ${BOLD}reset${NC}      Launch the UI at the reset device screen"
+    echo -e "  ${BOLD}updater${NC}    Launch the UI at the update device screen"
     echo ""
     echo -e "${BOLD}${UNDERLINE}Commands [Utility]:${NC}"
     echo -e "  ${BOLD}build${NC}      Build the UI"
@@ -376,9 +377,16 @@ function op_ui() {
   else
     # Get the UI binary to run
     UI_BIN="$UI_DIR/ui"
-    if [[ "$1" == "setup" || "$1" == "reset" ]]; then
-      UI_BIN="$UI_DIR/qt/setup/$1"
-      shift
+    if [[ "$1" == "setup" || "$1" == "reset" || "$1" == "updater" ]]; then
+      CMD=$1; shift
+      UI_BIN="$UI_DIR/qt/setup/$CMD"
+      if [[ "$CMD" == "updater" ]]; then
+        # The updater requires 2 arguments
+        if [[ "$#" -lt 2 ]]; then
+          echo -e "${RED}Usage: op ui updater <update_path> <manifest_path>${NC}"
+          return 1
+        fi
+      fi
     fi
     # Check if the file exists
     if [[ ! -x "$UI_BIN" ]]; then
