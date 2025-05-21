@@ -17,7 +17,6 @@ def cleanup():
   except LPAProfileNotFoundError:
     pass
   lpa.process_notifications()
-  assert len(lpa.list_notifications()) == 0
 
 class TestEsim:
 

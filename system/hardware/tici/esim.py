@@ -53,22 +53,6 @@ class LPA2:
         return profile
     return None
 
-  def list_notifications(self) -> list[dict[str, str]]:
-    """
-    List notifications from the LPA.
-    """
-    msgs = self._invoke('notification', 'list')
-    self.validate_successful(msgs)
-    notifications = []
-    for notification in msgs[-1]['payload']['data']:
-      notifications.append({
-        "sequence_number": notification['seqNumber'],
-        "profile_management_operation": notification['profileManagementOperation'],
-        "notification_address": notification['notificationAddress'],
-        "iccid": notification['iccid'],
-      })
-    return notifications
-
   def process_notifications(self) -> None:
     """
     Process notifications from the LPA, typically to activate/deactivate the profile with the carrier.
