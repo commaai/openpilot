@@ -133,11 +133,11 @@ class LPA:
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
-  parser.add_argument('--enable', metavar='ICCID', help='Enable a profile by ICCID')
-  parser.add_argument('--disable', metavar='ICCID', help='Disable a profile by ICCID')
-  parser.add_argument('--delete', metavar='ICCID', help='Delete a profile by ICCID')
-  parser.add_argument('--download', metavar='QR', help='Download a profile using QR code')
-  parser.add_argument('--nickname', metavar='NAME', help='Nickname for the downloaded profile')
+  parser.add_argument('--enable', metavar='iccid', help='enable a profile by ICCID')
+  parser.add_argument('--disable', metavar='iccid', help='disable a profile by ICCID')
+  parser.add_argument('--delete', metavar='iccid', help='delete a profile by ICCID')
+  parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code')
+  parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='nickname for the downloaded profile')
   args = parser.parse_args()
 
   lpa = LPA()
@@ -154,7 +154,9 @@ if __name__ == "__main__":
   elif args.delete:
     lpa.delete_profile(args.delete)
   elif args.download:
-    lpa.download_profile(args.download, args.nickname)
+    lpa.download_profile(args.download[0], args.download[1])
+  elif args.nickname:
+    lpa.nickname_profile(args.nickname[0], args.nickname[1])
 
   if "RESTART" in os.environ:
     subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
