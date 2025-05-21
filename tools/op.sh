@@ -366,17 +366,18 @@ function op_ui() {
     return 0
   fi
 
+  UI_DIR=selfdrive/ui
   if [[ "$1" == "build" ]]; then
     shift
-    NO_VERIFY="1" op_build selfdrive/ui $@
+    NO_VERIFY="1" op_build $UI_DIR $@
   elif [[ "$1" == "test" ]]; then
     shift
-    NO_VERIFY="1" op_test selfdrive/ui $@
+    NO_VERIFY="1" op_test $UI_DIR $@
   else
     # Get the UI binary to run
-    UI_BIN="selfdrive/ui/ui"
+    UI_BIN="$UI_DIR/ui"
     if [[ "$1" == "setup" || "$1" == "reset" ]]; then
-      UI_BIN="selfdrive/ui/qt/setup/$1"
+      UI_BIN="$UI_DIR/qt/setup/$1"
       shift
     fi
     # Check if the file exists
