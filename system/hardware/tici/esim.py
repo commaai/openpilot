@@ -111,8 +111,9 @@ class LPA:
         assert 'code' in message['payload'], 'expected code in message payload'
         assert 'data' in message['payload'], 'expected data in message payload'
 
-        if message['payload']['code'] != 0:
-          raise LPAError(f"lpac {' '.join(cmd)} failed with code {message['payload']['code']}: <{message['payload']['message']}> {message['payload']['data']}")
+        msg_ret_code = message['payload']['code']
+        if msg_ret_code != 0:
+          raise LPAError(f"lpac {' '.join(cmd)} failed with code {msg_ret_code}: <{message['payload']['message']}> {message['payload']['data']}")
 
         messages.append(message)
 
