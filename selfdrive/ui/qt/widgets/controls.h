@@ -240,59 +240,22 @@ protected:
   QButtonGroup *button_group;
 };
 
-class ButtonParamControl : public AbstractControl {
+class ButtonParamControl : public MultiButtonControl {
   Q_OBJECT
 public:
   ButtonParamControl(const QString &param, const QString &title, const QString &desc, const QString &icon,
-                     const std::vector<QString> &button_texts, const int minimum_button_width = 225) : AbstractControl(title, desc, icon) {
-    const QString style = R"(
-      QPushButton {
-        border-radius: 50px;
-        font-size: 40px;
-        font-weight: 500;
-        height:100px;
-        padding: 0 25 0 25;
-        color: #E4E4E4;
-        background-color: #393939;
-      }
-      QPushButton:pressed {
-        background-color: #4a4a4a;
-      }
-      QPushButton:checked:enabled {
-        background-color: #33Ab4C;
-      }
-      QPushButton:disabled {
-        color: #33E4E4E4;
-      }
-    )";
+                     const std::vector<QString> &button_texts, const int minimum_button_width = 225) : MultiButtonControl(title, desc, icon,
+                                                                                                                          button_texts, minimum_button_width) {
     key = param.toStdString();
     int value = atoi(params.get(key).c_str());
 
-    button_group = new QButtonGroup(this);
-    button_group->setExclusive(true);
-    for (int i = 0; i < button_texts.size(); i++) {
-      QPushButton *button = new QPushButton(button_texts[i], this);
-      button->setCheckable(true);
-      button->setChecked(i == value);
-      button->setStyleSheet(style);
-      button->setMinimumWidth(minimum_button_width);
-      hlayout->addWidget(button);
-      button_group->addButton(button, i);
+    if (value > 0 && value < button_group->buttons().size()) {
+      button_group->button(value)->setChecked(true);
     }
 
-    QObject::connect(button_group, QOverload<int>::of(&QButtonGroup::buttonClicked), [=](int id) {
+    QObject::connect(this, QOverload<int>::of(&MultiButtonControl::buttonClicked), [=](int id) {
       params.put(key, std::to_string(id));
     });
-  }
-
-  void setEnabled(bool enable) {
-    for (auto btn : button_group->buttons()) {
-      btn->setEnabled(enable);
-    }
-  }
-
-  void setCheckedButton(int id) {
-    button_group->button(id)->setChecked(true);
   }
 
   void refresh() {
@@ -307,7 +270,6 @@ public:
 private:
   std::string key;
   Params params;
-  QButtonGroup *button_group;
 };
 
 class ListWidget : public QWidget {
