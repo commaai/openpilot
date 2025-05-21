@@ -355,6 +355,7 @@ function op_clip() {
 
 function op_ui() {
   op_before_cmd
+
   if [[ "$1" == "help" || "$1" == "--help" ]]; then
     echo "Usage: op ui <command> [args]"
     echo ""
@@ -366,23 +367,19 @@ function op_ui() {
     echo -e "  ${BOLD}help${NC}       Show this help message"
     return 0
   fi
-  case "$1" in
-    setup)
-      shift
-      op_run_command selfdrive/ui/qt/setup/setup $@
-      ;;
-    reset)
-      shift
-      op_run_command selfdrive/ui/qt/setup/reset $@
-      ;;
-    test)
-      shift
-      op_run_command exec pytest selfdrive/ui $@
-      ;;
-    *)
-      op_run_command selfdrive/ui/ui $@
-      ;;
-  esac
+
+  if [[ "$1" == "setup" ]]; then
+    shift
+    op_run_command selfdrive/ui/qt/setup/setup $@
+  elif [[ "$1" == "reset" ]]; then
+    shift
+    op_run_command selfdrive/ui/qt/setup/reset $@
+  elif [[ "$1" == "test" ]]; then
+    shift
+    op_run_command pytest selfdrive/ui $@
+  else
+    op_run_command selfdrive/ui/ui $@
+  fi
 }
 
 function op_switch() {
