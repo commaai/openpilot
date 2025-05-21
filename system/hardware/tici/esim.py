@@ -139,7 +139,6 @@ if __name__ == "__main__":
   parser.add_argument('--delete', metavar='iccid', help='delete a profile by ICCID')
   parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code')
   parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='nickname for the downloaded profile')
-  parser.add_argument('--reboot', action='store_true', help='reboot the modem')
   args = parser.parse_args()
 
   lpa = LPA()
