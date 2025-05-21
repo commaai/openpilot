@@ -32,7 +32,6 @@ class LPA2:
     for profile in msgs[-1]['payload']['data']:
       profiles.append({
         'iccid': profile['iccid'],
-        'isdp_aid': profile['isdpAid'],
         'nickname': profile['profileNickname'],
         'enabled': profile['profileState'] == 'enabled',
         'provider': profile['serviceProviderName'],
@@ -41,11 +40,7 @@ class LPA2:
     return profiles
 
   def get_active_profile(self) -> dict[str, str] | None:
-    profiles = self.list_profiles()
-    for profile in profiles:
-      if profile['enabled']:
-        return profile
-    return None
+    return next((p for p in self.list_profiles() if p['enabled']), None)
 
   def process_notifications(self) -> None:
     """
