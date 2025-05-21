@@ -189,23 +189,29 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
     std::cout << "Set Wi-Fi metered to " << state << std::endl;
     wifiMeteredToggle->setEnabled(false);
-    auto pending_call = wifi->setCurrentNetworkMetered(state);
-    if (pending_call) {
-      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
-      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
-        refresh();
-        watcher->deleteLater();
-      });
-    }
+//    auto pending_call = wifi->setCurrentNetworkMetered(state);
+//    if (pending_call) {
+//      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
+//      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
+//        refresh();
+//        watcher->deleteLater();
+//      });
+//    }
   });
   list->addItem(wifiMeteredToggle);
 
-  std::vector<QString> metered_button_texts{tr("unmetered"), tr("metered"), tr("default")};
+  std::vector<QString> metered_button_texts{tr("default"), tr("metered"), tr("unmetered")};
   wifiMeteredToggle2 = new MultiButtonControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", metered_button_texts);
   QObject::connect(wifiMeteredToggle2, &MultiButtonControl::buttonClicked, [=](int id) {
     std::cout << "Set Wi-Fi metered to " << id << std::endl;
     wifiMeteredToggle2->setEnabled(false);
-    auto pending_call = wifi->setCurrentNetworkMetered(id == 1);
+    MeteredType metered = MeteredType::UNKNOWN;
+    if (id == NM_METERED_YES) {
+      metered = MeteredType::YES;
+    } else if (id == NM_METERED_NO) {
+      metered = MeteredType::NO;
+    }
+    auto pending_call = wifi->setCurrentNetworkMetered(metered);
     if (pending_call) {
       QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
       QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
@@ -259,13 +265,13 @@ void AdvancedNetworking::refresh() {
 
     wifiMeteredToggle2->setEnabled(false);
   } else if (wifi->ipv4_address != "") {
-    bool metered = wifi->currentNetworkMetered();
+    MeteredType metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
     wifiMeteredToggle->setValue("");
-    wifiMeteredToggle->setToggled(metered);
+//    wifiMeteredToggle->setToggled(metered);
 
     wifiMeteredToggle2->setEnabled(true);
-    wifiMeteredToggle2->setCheckedButton(metered ? 1 : 0);
+    wifiMeteredToggle2->setCheckedButton(static_cast<int>(metered));
   } else {
     wifiMeteredToggle->setEnabled(false);
     wifiMeteredToggle->setValue("Disconnected");
