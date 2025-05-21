@@ -2,6 +2,9 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
 
 
+PASSWORD_MASK_CHAR = "•"
+
+
 class InputBox:
   def __init__(self, max_text_size=255, password_mode=False):
     self._max_text_size = max_text_size
@@ -49,7 +52,7 @@ class InputBox:
       return
 
     font = gui_app.font()
-    display_text = "*" * len(self._input_text) if self._password_mode else self._input_text
+    display_text = PASSWORD_MASK_CHAR * len(self._input_text) if self._password_mode else self._input_text
     padding = 10
 
     if self._cursor_position > 0:
@@ -111,7 +114,7 @@ class InputBox:
 
     # Display text
     font = gui_app.font()
-    display_text = "*" * len(self._input_text) if self._password_mode else self._input_text
+    display_text = PASSWORD_MASK_CHAR * len(self._input_text) if self._password_mode else self._input_text
     padding = 10
 
     # Clip text within input box bounds
@@ -148,7 +151,7 @@ class InputBox:
       # Calculate cursor position from click
       if len(self._input_text) > 0:
         font = gui_app.font()
-        display_text = "*" * len(self._input_text) if self._password_mode else self._input_text
+        display_text = PASSWORD_MASK_CHAR * len(self._input_text) if self._password_mode else self._input_text
 
         # Find the closest character position to the click
         relative_x = mouse_pos.x - (rect.x + 10) + self._text_offset
