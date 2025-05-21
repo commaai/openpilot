@@ -141,12 +141,6 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   lpa = LPA()
-  profiles = lpa.list_profiles()
-  print(f'{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
-  for p in profiles:
-    print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
-  print()
-
   if args.enable:
     lpa.enable_profile(args.enable)
   elif args.disable:
@@ -158,7 +152,13 @@ if __name__ == "__main__":
   elif args.nickname:
     lpa.nickname_profile(args.nickname[0], args.nickname[1])
 
+  profiles = lpa.list_profiles()
+  print(f'{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
+  for p in profiles:
+    print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
+
   if "RESTART" in os.environ:
+    print("restarting modem")
     subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
     subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
     subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
