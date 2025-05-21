@@ -159,7 +159,7 @@ if __name__ == "__main__":
   elif args.nickname:
     lpa.nickname_profile(args.nickname[0], args.nickname[1])
   else:
-    parser.print_usage()
+    parser.print_help()
 
   profiles = lpa.list_profiles()
   print(f'{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
