@@ -316,9 +316,9 @@ class LateralLagEstimator:
     return lag, corr
 
 
-def retrieve_initial_lag(params_reader: Params, CP: car.CarParams):
-  last_lag_data = params_reader.get("LiveDelay")
-  last_carparams_data = params_reader.get("CarParamsPrevRoute")
+def retrieve_initial_lag(params: Params, CP: car.CarParams):
+  last_lag_data = params.get("LiveDelay")
+  last_carparams_data = params.get("CarParamsPrevRoute")
 
   if last_lag_data is not None:
     try:
@@ -333,6 +333,7 @@ def retrieve_initial_lag(params_reader: Params, CP: car.CarParams):
         return lag, valid_blocks
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial lag: {e}")
+      params.remove("LiveDelay")
 
   return None
 
@@ -345,11 +346,11 @@ def main():
   pm = messaging.PubMaster(['liveDelay'])
   sm = messaging.SubMaster(['livePose', 'liveCalibration', 'carState', 'controlsState', 'carControl'], poll='livePose')
 
-  params_reader = Params()
-  CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
+  params = Params()
+  CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
   lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency)
-  if (initial_lag_params := retrieve_initial_lag(params_reader, CP)) is not None:
+  if (initial_lag_params := retrieve_initial_lag(params, CP)) is not None:
     lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)
 
@@ -370,4 +371,4 @@ def main():
       pm.send('liveDelay', lag_msg_dat)
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
-        params_reader.put_nonblocking("LiveDelay", lag_msg_dat)
+        params.put_nonblocking("LiveDelay", lag_msg_dat)
