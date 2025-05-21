@@ -337,11 +337,6 @@ function op_cabana() {
   op_run_command tools/cabana/cabana $@
 }
 
-function op_ui() {
-  op_before_cmd
-  op_run_command selfdrive/ui/ui $@
-}
-
 function op_sim() {
   op_before_cmd
   op_run_command exec tools/sim/run_bridge.py &
