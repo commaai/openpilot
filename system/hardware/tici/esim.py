@@ -6,6 +6,7 @@ import os
 import shutil
 import subprocess
 from dataclasses import dataclass
+from typing import Literal
 
 @dataclass
 class Profile:
@@ -22,10 +23,11 @@ class LPAProfileNotFoundError(LPAError):
 
 
 class LPA:
-  def __init__(self):
+  def __init__(self, interface: Literal['qmi', 'at'] = 'qmi'):
     self.env = os.environ.copy()
-    self.env['LPAC_APDU'] = 'qmi'
+    self.env['LPAC_APDU'] = interface
     self.env['QMI_DEVICE'] = '/dev/cdc-wdm0'
+    self.env['AT_DEVICE'] = '/dev/ttyUSB2'
 
     self.timeout_sec = 45
 
