@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import json
 import os
 import shutil
@@ -131,7 +132,13 @@ class LPA:
 
 
 if __name__ == "__main__":
-  import sys
+  parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
+  parser.add_argument('--enable', metavar='ICCID', help='Enable a profile by ICCID')
+  parser.add_argument('--disable', metavar='ICCID', help='Disable a profile by ICCID')
+  parser.add_argument('--delete', metavar='ICCID', help='Delete a profile by ICCID')
+  parser.add_argument('--download', metavar='QR', help='Download a profile using QR code')
+  parser.add_argument('--nickname', metavar='NAME', help='Nickname for the downloaded profile')
+  args = parser.parse_args()
 
   lpa = LPA()
   profiles = lpa.list_profiles()
@@ -140,18 +147,14 @@ if __name__ == "__main__":
     print(f'- {p.iccid} (nickname: {p.nickname or "no nickname"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
   print()
 
-  if len(sys.argv) > 2:
-    if sys.argv[1] == 'enable':
-      lpa.enable_profile(sys.argv[2])
-    elif sys.argv[1] == 'disable':
-      lpa.disable_profile(sys.argv[2])
-    elif sys.argv[1] == 'delete':
-      lpa.delete_profile(sys.argv[2])
-    elif sys.argv[1] == 'download':
-      assert len(sys.argv) == 4, 'expected profile nickname'
-      lpa.download_profile(sys.argv[2], sys.argv[3])
-    else:
-      raise Exception(f"invalid command: {sys.argv[1]}")
+  if args.enable:
+    lpa.enable_profile(args.enable)
+  elif args.disable:
+    lpa.disable_profile(args.disable)
+  elif args.delete:
+    lpa.delete_profile(args.delete)
+  elif args.download:
+    lpa.download_profile(args.download, args.nickname)
 
   if "RESTART" in os.environ:
     subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
