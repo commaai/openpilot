@@ -26,7 +26,8 @@ class TestEsim:
       pytest.skip()
     cleanup()
 
-  def teardown_class(self):
+  @classmethod
+  def teardown_class(cls):
     cleanup()
 
   def test_provision_enable_disable(self):
