@@ -359,24 +359,31 @@ function op_ui() {
   if [[ "$1" == "help" || "$1" == "--help" ]]; then
     echo "Usage: op ui <command> [args]"
     echo ""
-    echo -e "${BOLD}${UNDERLINE}Commands:${NC}"
-    echo -e "  ${ITALICS}[none]${NC}     Run the UI at the main screen ${ITALICS}(default)${NC}"
-    echo -e "  ${BOLD}setup${NC}      Run the UI at the setup screen"
-    echo -e "  ${BOLD}reset${NC}      Run the UI at the reset screen"
+    echo -e "${BOLD}${UNDERLINE}Commands [Display]:${NC}"
+    echo -e "  ${ITALICS}[none]${NC}     Launch the UI at the main screen ${ITALICS}(default)${NC}"
+    echo -e "  ${BOLD}setup${NC}      Launch the UI at the setup screen"
+    echo -e "  ${BOLD}reset${NC}      Launch the UI at the reset screen"
+    echo ""
+    echo -e "${BOLD}${UNDERLINE}Commands [Utility]:${NC}"
+    echo -e "  ${BOLD}build${NC}      Build the UI"
     echo -e "  ${BOLD}test${NC}       Run the UI tests"
     echo -e "  ${BOLD}help${NC}       Show this help message"
     return 0
   fi
 
-  if [[ "$1" == "setup" ]]; then
+
+  if [[ "$1" == "build" ]]; then
+    shift
+    NO_VERIFY="1" op_build selfdrive/ui $@
+  elif [[ "$1" == "test" ]]; then
+    shift
+    NO_VERIFY="1" op_test selfdrive/ui $@
+  elif [[ "$1" == "setup" ]]; then
     shift
     op_run_command selfdrive/ui/qt/setup/setup $@
   elif [[ "$1" == "reset" ]]; then
     shift
     op_run_command selfdrive/ui/qt/setup/reset $@
-  elif [[ "$1" == "test" ]]; then
-    shift
-    op_run_command pytest selfdrive/ui $@
   else
     op_run_command selfdrive/ui/ui $@
   fi
