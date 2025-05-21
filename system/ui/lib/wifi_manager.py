@@ -531,7 +531,7 @@ class WifiManager:
             security_type=self._get_security_type(flags, wpa_flags, rsn_flags),
             path=ap_path,
             bssid=bssid,
-            is_connected=self.active_ap_path == ap_path,
+            is_connected=self.active_ap_path == ap_path and self._current_connection_ssid != ssid,
             is_saved=ssid in self.saved_connections
           )
 
