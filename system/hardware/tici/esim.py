@@ -81,11 +81,11 @@ class LPA:
     self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
   def _invoke(self, *cmd: str):
-    ret = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), shell=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
+    proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
     try:
-      out, err = ret.communicate(timeout=self.timeout_sec)
+      out, err = proc.communicate(timeout=self.timeout_sec)
     except subprocess.TimeoutExpired as e:
-      ret.kill()
+      proc.kill()
       raise LPAError(f"lpac {cmd} timed out after {self.timeout_sec} seconds") from e
 
     messages = []
@@ -98,11 +98,10 @@ class LPA:
         assert message['type'] == 'lpa' or message['type'] == 'progress', 'expected lpa or progress message type'
         assert 'payload' in message, 'expected payload in message'
         assert 'code' in message['payload'], 'expected code in message payload'
+        assert 'data' in message['payload'], 'expected data in message payload'
 
         if message['payload']['code'] != 0:
           raise LPAError(f"lpac {' '.join(cmd)} failed with code {message['payload']['code']}: <{message['payload']['message']}> {message['payload']['data']}")
-
-        assert 'data' in message['payload'], 'expected data in message payload'
 
         messages.append(message)
 
