@@ -173,7 +173,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   list->addItem(editApnButton);
 
-  // Metered toggle
+  // Cellular metered toggle (prime lite or none)
   const bool metered = params.getBool("GsmMetered");
   cellularMeteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered cellular connection"), "", metered);
   QObject::connect(cellularMeteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
