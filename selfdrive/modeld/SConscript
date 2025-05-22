@@ -38,18 +38,35 @@ for model_name in ['driving_vision', 'driving_policy']:
   cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
   lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
 
-# Compile tinygrad model
-pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
-for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
-  if "USBGPU" in os.environ and not model_name.startswith("dmon"):
-    device_string = "AMD=1 AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
-  elif arch == 'larch64':
-    device_string = 'QCOM=1'
-  elif arch == 'Darwin':
-    device_string = 'CPU=1 IMAGE=0 JIT=2'
-  else:
-    device_string = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2'
-
+def tg_compile(flags, model_name):
+  pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
   fn = File(f"models/{model_name}").abspath
-  cmd = f'{pythonpath_string} {device_string} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
-  lenv.Command(fn + "_tinygrad.pkl", [fn + ".onnx"] + tinygrad_files, cmd)
+  return lenv.Command(
+    fn + "_tinygrad.pkl",
+    [fn + ".onnx"] + tinygrad_files,
+    f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
+  )
+
+# Compile small models
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  flags = {
+    'larch64': 'QCOM=1',
+    'Darwin': 'CPU=1 IMAGE=0 JIT=2',
+  }.get(arch, 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2')
+  tg_compile(flags, model_name)
+
+# Compile BIG model if USB GPU is available
+import subprocess
+from tinygrad import Device
+
+# because tg doesn't support multi-process
+devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True)
+if b"AMD" in devs:
+  del Device
+  print("USB GPU detected... building")
+  flags = "AMD=1 AMD_IFACE=USB AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
+  bp = tg_compile(flags, "big_driving_policy")
+  bv = tg_compile(flags, "big_driving_vision")
+  lenv.SideEffect('lock', [bp, bv])  # tg doesn't support multi-process so build serially
+else:
+  print("USB GPU not detected... skipping")
