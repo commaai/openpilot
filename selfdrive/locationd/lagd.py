@@ -313,7 +313,8 @@ class LateralLagEstimator:
 
     # to estimate lag certainty, gather all high-correlation candidates and see how spread they are
     # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
-    good_lag_candidate_indices = np.where(roi_ncc > np.quantile(roi_ncc, 0.9))[0]
+    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * 0.9
+    good_lag_candidate_indices = np.where(roi_ncc > ncc_thresh)[0]
     if len(good_lag_candidate_indices) == 0:
       index_std = max_lag_samples / 2
     else:
