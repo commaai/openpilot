@@ -2,20 +2,41 @@ import pyray as rl
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
 
+
+VERTEX_SHADER = """
+#version 300 es
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+in vec3 vertexNormal;
+in vec4 vertexColor;
+uniform mat4 mvp;
+out vec2 fragTexCoord;
+out vec4 fragColor;
+void main() {
+  fragTexCoord = vertexTexCoord;
+  fragColor = vertexColor;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
+}
+"""
+
 FRAME_FRAGMENT_SHADER = """
-#version 330 core
-in vec2 fragTexCoord; uniform sampler2D texture0, texture1; out vec4 fragColor;
+#version 300 es
+precision mediump float;
+in vec2 fragTexCoord;
+uniform sampler2D texture0;
+uniform sampler2D texture1;
+out vec4 fragColor;
 void main() {
   float y = texture(texture0, fragTexCoord).r;
   vec2 uv = texture(texture1, fragTexCoord).ra - 0.5;
   fragColor = vec4(y + 1.402*uv.y, y - 0.344*uv.x - 0.714*uv.y, y + 1.772*uv.x, 1.0);
-}"""
-
+}
+"""
 
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
     self.client = VisionIpcClient(name, stream_type, False)
-    self.shader = rl.load_shader_from_memory(rl.ffi.NULL, FRAME_FRAGMENT_SHADER)
+    self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
     self.texture_y: rl.Texture | None = None
     self.texture_uv: rl.Texture | None = None
     self.frame = None
