@@ -264,6 +264,7 @@ void AdvancedNetworking::refresh() {
     wifiMeteredToggle->setToggled(true);
 
     wifiMeteredToggle2->setEnabled(false);
+    wifiMeteredToggle2->setCheckedButton(0);
   } else if (wifi->ipv4_address != "") {
     MeteredType metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
@@ -278,6 +279,7 @@ void AdvancedNetworking::refresh() {
     wifiMeteredToggle->setToggled(false);
 
     wifiMeteredToggle2->setEnabled(false);
+    wifiMeteredToggle2->setCheckedButton(0);
   }
 
   update();
