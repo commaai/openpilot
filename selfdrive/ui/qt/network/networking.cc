@@ -173,14 +173,36 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   });
   list->addItem(editApnButton);
 
-  // Metered toggle
+  // Cellular metered toggle (prime lite or none)
   const bool metered = params.getBool("GsmMetered");
-  meteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered connection"), "", metered);
-  QObject::connect(meteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
+  cellularMeteredToggle = new ToggleControl(tr("Cellular Metered"), tr("Prevent large data uploads when on a metered cellular connection"), "", metered);
+  QObject::connect(cellularMeteredToggle, &SshToggle::toggleFlipped, [=](bool state) {
     params.putBool("GsmMetered", state);
     wifi->updateGsmSettings(params.getBool("GsmRoaming"), QString::fromStdString(params.get("GsmApn")), state);
   });
-  list->addItem(meteredToggle);
+  list->addItem(cellularMeteredToggle);
+
+  // Wi-Fi metered toggle
+  std::vector<QString> metered_button_texts{tr("default"), tr("metered"), tr("unmetered")};
+  wifiMeteredToggle = new MultiButtonControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", metered_button_texts);
+  QObject::connect(wifiMeteredToggle, &MultiButtonControl::buttonClicked, [=](int id) {
+    wifiMeteredToggle->setEnabled(false);
+    MeteredType metered = MeteredType::UNKNOWN;
+    if (id == NM_METERED_YES) {
+      metered = MeteredType::YES;
+    } else if (id == NM_METERED_NO) {
+      metered = MeteredType::NO;
+    }
+    auto pending_call = wifi->setCurrentNetworkMetered(metered);
+    if (pending_call) {
+      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
+      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
+        refresh();
+        watcher->deleteLater();
+      });
+    }
+  });
+  list->addItem(wifiMeteredToggle);
 
   // Hidden Network
   hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
@@ -211,18 +233,32 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
 void AdvancedNetworking::setGsmVisible(bool visible) {
   roamingToggle->setVisible(visible);
   editApnButton->setVisible(visible);
-  meteredToggle->setVisible(visible);
+  cellularMeteredToggle->setVisible(visible);
 }
 
 void AdvancedNetworking::refresh() {
   ipLabel->setText(wifi->ipv4_address);
   tetheringToggle->setEnabled(true);
+
+  if (wifi->isTetheringEnabled() || wifi->ipv4_address == "") {
+    wifiMeteredToggle->setEnabled(false);
+    wifiMeteredToggle->setCheckedButton(0);
+  } else if (wifi->ipv4_address != "") {
+    MeteredType metered = wifi->currentNetworkMetered();
+    wifiMeteredToggle->setEnabled(true);
+    wifiMeteredToggle->setCheckedButton(static_cast<int>(metered));
+  }
+
   update();
 }
 
 void AdvancedNetworking::toggleTethering(bool enabled) {
   wifi->setTetheringEnabled(enabled);
   tetheringToggle->setEnabled(false);
+  if (enabled) {
+    wifiMeteredToggle->setEnabled(false);
+    wifiMeteredToggle->setCheckedButton(0);
+  }
 }
 
 // WifiUI functions

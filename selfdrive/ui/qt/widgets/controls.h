@@ -204,6 +204,9 @@ public:
       QPushButton:checked:enabled {
         background-color: #33Ab4C;
       }
+      QPushButton:checked:disabled {
+        background-color: #9933Ab4C;
+      }
       QPushButton:disabled {
         color: #33E4E4E4;
       }
@@ -214,6 +217,7 @@ public:
     for (int i = 0; i < button_texts.size(); i++) {
       QPushButton *button = new QPushButton(button_texts[i], this);
       button->setCheckable(true);
+      button->setChecked(i == 0);
       button->setStyleSheet(style);
       button->setMinimumWidth(minimum_button_width);
       hlayout->addWidget(button);
