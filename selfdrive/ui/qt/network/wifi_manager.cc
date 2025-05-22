@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/network/wifi_manager.h"
 
 #include <utility>
-#include <iostream>
 
 #include "common/swaglog.h"
 #include "selfdrive/ui/qt/util.h"
@@ -383,7 +382,6 @@ MeteredType WifiManager::currentNetworkMetered() {
       if (!conn.path().isEmpty()) {
         Connection settings = getConnectionSettings(conn);
         int metered_prop = settings.value("connection").value("metered").toInt();
-        std::cout << "Metered property: " << metered_prop << "\n";
         if (metered_prop == NM_METERED_YES) {
           metered = MeteredType::YES;
         } else if (metered_prop == NM_METERED_NO) {
@@ -400,15 +398,11 @@ std::optional<QDBusPendingCall> WifiManager::setCurrentNetworkMetered(MeteredTyp
   for (const auto &active_conn : getActiveConnections()) {
     QString type = call<QString>(active_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Type");
     if (type == "802-11-wireless") {
-      std::cout << "Setting metered to " << (int)metered << " for type " << type.toStdString() << "\n";
-      std::cout << "tethering: " << isTetheringEnabled() << "\n";
       if (!isTetheringEnabled()) {
         QDBusObjectPath conn = call<QDBusObjectPath>(active_conn.path(), NM_DBUS_INTERFACE_PROPERTIES, "Get", NM_DBUS_INTERFACE_ACTIVE_CONNECTION, "Connection");
         if (!conn.path().isEmpty()) {
-//          int meteredInt = metered ? NM_METERED_YES : NM_METERED_NO;
           Connection settings = getConnectionSettings(conn);
           settings["connection"]["metered"] = static_cast<int>(metered);
-          std::cout << "done\n";
           return asyncCall(conn.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "Update", QVariant::fromValue(settings));
         }
       }
