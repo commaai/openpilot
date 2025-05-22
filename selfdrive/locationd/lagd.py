@@ -29,6 +29,7 @@ MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
 MIN_CONFIDENCE = 0.75
 CORR_BORDER_OFFSET = 5
+LAG_CANDIDATE_CORR_THRESHOLD = 0.9
 
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
@@ -320,7 +321,7 @@ class LateralLagEstimator:
 
     # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
     # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
-    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * 0.9 + roi_ncc.min()
+    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + roi_ncc.min()
     good_lag_candidate_mask = extended_roi_ncc >= ncc_thresh
     good_lag_candidate_edges = np.diff(good_lag_candidate_mask.astype(int), prepend=0, append=0)
     starts, ends =  np.where(good_lag_candidate_edges == 1)[0], np.where(good_lag_candidate_edges == -1)[0] - 1
