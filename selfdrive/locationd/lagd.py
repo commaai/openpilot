@@ -157,7 +157,7 @@ class LateralLagEstimator:
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
                window_sec: float = MOVING_WINDOW_SEC, okay_window_sec: float = MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec: float = MIN_RECOVERY_BUFFER_SEC,
                min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC,
-               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF):
+               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF, min_confidence: float = MIN_CONFIDENCE):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
@@ -169,6 +169,7 @@ class LateralLagEstimator:
     self.min_vego = min_vego
     self.min_yr = min_yr
     self.min_ncc = min_ncc
+    self.min_confidence = min_confidence
     self.max_lat_accel = max_lat_accel
     self.max_lat_accel_diff = max_lat_accel_diff
 
@@ -296,7 +297,7 @@ class LateralLagEstimator:
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
     delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
-    if corr < self.min_ncc or confidence < MIN_CONFIDENCE or not is_valid:
+    if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
       return
 
     self.block_avg.update(delay)
