@@ -23,8 +23,8 @@ def process_messages(mocker, estimator, lag_frames, n_frames, vego=20.0, rejecti
 
   for i in range(n_frames):
     t = i * estimator.dt
-    desired_la = np.cos(t) * 0.1
-    actual_la = np.cos(t - lag_frames * estimator.dt) * 0.1
+    desired_la = np.cos(10 * t) * 0.1
+    actual_la = np.cos(10 * (t - lag_frames * estimator.dt)) * 0.1
 
     # if sample is masked out, set it to desired value (no lag)
     rejected = random.uniform(0, 1) < rejection_threshold
@@ -107,7 +107,7 @@ class TestLagd:
     for lag_frames in range(5):
       with subtests.test(msg=f"lag_frames={lag_frames}"):
         mocked_CP = mocker.Mock(steerActuatorDelay=0.8)
-        estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_confidence=0.0)
+        estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
         process_messages(mocker, estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
         msg = estimator.get_msg(True)
         assert msg.liveDelay.status == 'estimated'
@@ -118,7 +118,7 @@ class TestLagd:
 
   def test_estimator_masking(self, mocker):
     mocked_CP, lag_frames = mocker.Mock(steerActuatorDelay=0.8), random.randint(1, 19)
-    estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1, min_confidence=0.0)
+    estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
     process_messages(mocker, estimator, lag_frames, (int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_SIZE) * 2, rejection_threshold=0.4)
     msg = estimator.get_msg(True)
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
