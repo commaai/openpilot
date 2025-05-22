@@ -184,27 +184,11 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   list->addItem(cellularMeteredToggle);
 
   // Wi-Fi metered toggle
-  wifiMeteredToggle = new ToggleControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", false);
-  wifiMeteredToggle->setEnabled(false);
-  QObject::connect(wifiMeteredToggle, &ToggleControl::toggleFlipped, [=](bool state) {
-    std::cout << "Set Wi-Fi metered to " << state << std::endl;
-    wifiMeteredToggle->setEnabled(false);
-//    auto pending_call = wifi->setCurrentNetworkMetered(state);
-//    if (pending_call) {
-//      QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(*pending_call);
-//      QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [=]() {
-//        refresh();
-//        watcher->deleteLater();
-//      });
-//    }
-  });
-  list->addItem(wifiMeteredToggle);
-
   std::vector<QString> metered_button_texts{tr("default"), tr("metered"), tr("unmetered")};
-  wifiMeteredToggle2 = new MultiButtonControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", metered_button_texts);
-  QObject::connect(wifiMeteredToggle2, &MultiButtonControl::buttonClicked, [=](int id) {
+  wifiMeteredToggle = new MultiButtonControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", metered_button_texts);
+  QObject::connect(wifiMeteredToggle, &MultiButtonControl::buttonClicked, [=](int id) {
     std::cout << "Set Wi-Fi metered to " << id << std::endl;
-    wifiMeteredToggle2->setEnabled(false);
+    wifiMeteredToggle->setEnabled(false);
     MeteredType metered = MeteredType::UNKNOWN;
     if (id == NM_METERED_YES) {
       metered = MeteredType::YES;
@@ -220,7 +204,7 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
       });
     }
   });
-  list->addItem(wifiMeteredToggle2);
+  list->addItem(wifiMeteredToggle);
 
   // Hidden Network
   hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
@@ -260,26 +244,14 @@ void AdvancedNetworking::refresh() {
 
   if (wifi->isTetheringEnabled()) {
     wifiMeteredToggle->setEnabled(false);
-    wifiMeteredToggle->setValue("");
-    wifiMeteredToggle->setToggled(true);
-
-    wifiMeteredToggle2->setEnabled(false);
-    wifiMeteredToggle2->setCheckedButton(0);
+    wifiMeteredToggle->setCheckedButton(0);
   } else if (wifi->ipv4_address != "") {
     MeteredType metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
-    wifiMeteredToggle->setValue("");
-//    wifiMeteredToggle->setToggled(metered);
-
-    wifiMeteredToggle2->setEnabled(true);
-    wifiMeteredToggle2->setCheckedButton(static_cast<int>(metered));
+    wifiMeteredToggle->setCheckedButton(static_cast<int>(metered));
   } else {
     wifiMeteredToggle->setEnabled(false);
-    wifiMeteredToggle->setValue("Disconnected");
-    wifiMeteredToggle->setToggled(false);
-
-    wifiMeteredToggle2->setEnabled(false);
-    wifiMeteredToggle2->setCheckedButton(0);
+    wifiMeteredToggle->setCheckedButton(0);
   }
 
   update();
@@ -289,9 +261,9 @@ void AdvancedNetworking::toggleTethering(bool enabled) {
   wifi->setTetheringEnabled(enabled);
   tetheringToggle->setEnabled(false);
   if (enabled) {
-    wifiMeteredToggle2->setEnabled(false);
+    wifiMeteredToggle->setEnabled(false);
+    wifiMeteredToggle->setCheckedButton(0);
   }
-  wifiMeteredToggle->setEnabled(!enabled);
 }
 
 // WifiUI functions
