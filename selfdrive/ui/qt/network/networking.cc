@@ -1,7 +1,6 @@
 #include "selfdrive/ui/qt/network/networking.h"
 
 #include <algorithm>
-#include <iostream>
 
 #include <QHBoxLayout>
 #include <QScrollBar>
@@ -187,7 +186,6 @@ AdvancedNetworking::AdvancedNetworking(QWidget* parent, WifiManager* wifi): QWid
   std::vector<QString> metered_button_texts{tr("default"), tr("metered"), tr("unmetered")};
   wifiMeteredToggle = new MultiButtonControl(tr("Wi-Fi Network Metered"), tr("Prevent large data uploads when on a metered Wi-FI connection"), "", metered_button_texts);
   QObject::connect(wifiMeteredToggle, &MultiButtonControl::buttonClicked, [=](int id) {
-    std::cout << "Set Wi-Fi metered to " << id << std::endl;
     wifiMeteredToggle->setEnabled(false);
     MeteredType metered = MeteredType::UNKNOWN;
     if (id == NM_METERED_YES) {
@@ -242,16 +240,13 @@ void AdvancedNetworking::refresh() {
   ipLabel->setText(wifi->ipv4_address);
   tetheringToggle->setEnabled(true);
 
-  if (wifi->isTetheringEnabled()) {
+  if (wifi->isTetheringEnabled() || wifi->ipv4_address == "") {
     wifiMeteredToggle->setEnabled(false);
     wifiMeteredToggle->setCheckedButton(0);
   } else if (wifi->ipv4_address != "") {
     MeteredType metered = wifi->currentNetworkMetered();
     wifiMeteredToggle->setEnabled(true);
     wifiMeteredToggle->setCheckedButton(static_cast<int>(metered));
-  } else {
-    wifiMeteredToggle->setEnabled(false);
-    wifiMeteredToggle->setCheckedButton(0);
   }
 
   update();
