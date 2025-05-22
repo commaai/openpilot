@@ -288,6 +288,9 @@ void AdvancedNetworking::refresh() {
 void AdvancedNetworking::toggleTethering(bool enabled) {
   wifi->setTetheringEnabled(enabled);
   tetheringToggle->setEnabled(false);
+  if (enabled) {
+    wifiMeteredToggle2->setEnabled(false);
+  }
   wifiMeteredToggle->setEnabled(!enabled);
 }
 
