@@ -27,6 +27,8 @@ MAX_LAG = 1.0
 MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
+MIN_CONFIDENCE = 0.75
+CORR_BORDER_OFFSET = 5
 
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
@@ -292,10 +294,8 @@ class LateralLagEstimator:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
-    delay, delay_std, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
-    if corr < self.min_ncc or delay_std > MAX_LAG_STD or not is_valid:
-      if delay_std > MAX_LAG_STD:
-        cloudlog.warning(f"Delay std too high: {delay_std:.3f}")
+    delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
+    if corr < self.min_ncc or confidence < MIN_CONFIDENCE or not is_valid:
       return
 
     self.block_avg.update(delay)
@@ -309,23 +309,26 @@ class LateralLagEstimator:
     ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
     # only consider lags from 0 to max_lag
-    roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
-
-    # to estimate lag certainty, gather all high-correlation candidates and see how spread they are
-    # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
-    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * 0.9
-    good_lag_candidate_indices = np.where(roi_ncc > ncc_thresh)[0]
-    if len(good_lag_candidate_indices) == 0:
-      index_std = max_lag_samples / 2
-    else:
-      index_std = float(np.std(good_lag_candidate_indices))
+    roi = np.s_[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
+    extended_roi = np.s_[roi.start - CORR_BORDER_OFFSET: roi.stop + CORR_BORDER_OFFSET]
+    roi_ncc = ncc[roi]
+    extended_roi_ncc = ncc[extended_roi]
 
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
     lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt
-    lag_std = index_std * dt
 
-    return lag, lag_std, corr
+    # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
+    # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
+    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * 0.9 + roi_ncc.min()
+    good_lag_candidate_mask = extended_roi_ncc >= ncc_thresh
+    good_lag_candidate_edges = np.diff(good_lag_candidate_mask.astype(int), prepend=0, append=0)
+    starts, ends =  np.where(good_lag_candidate_edges == 1)[0], np.where(good_lag_candidate_edges == -1)[0] - 1
+    run_idx = np.searchsorted(starts, max_corr_index + 5, side='right') - 1
+    width = ends[run_idx] - starts[run_idx] + 1
+    confidence = np.clip(1 - width * dt, 0, 1)
+
+    return lag, corr, confidence
 
 
 def retrieve_initial_lag(params: Params, CP: car.CarParams):
