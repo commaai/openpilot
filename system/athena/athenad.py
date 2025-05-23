@@ -545,6 +545,21 @@ def getNetworks():
 
 
 @dispatcher.add_method
+def getEsimProfiles():
+  return [asdict(p) for p in HARDWARE.get_sim_lpa().list_profiles()]
+
+
+@dispatcher.add_method
+def downloadEsimProfile(qr: str, profile_name: str):
+  HARDWARE.get_sim_lpa().download_profile(qr, profile_name)
+
+
+@dispatcher.add_method
+def switchEsimProfile(iccid: str):
+  HARDWARE.get_sim_lpa().switch_profile(iccid)
+
+
+@dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
   from openpilot.system.camerad.snapshot import jpeg_write, snapshot
   ret = snapshot()
