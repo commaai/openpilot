@@ -1,32 +1,40 @@
+import time
+from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
+
+KEY_FONT_SIZE = 96
+DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
+DELETE_REPEAT_DELAY = 0.5
+DELETE_REPEAT_INTERVAL = 0.07
 
 # Constants for special keys
 CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
-ENTER_KEY = "Enter"
+ENTER_KEY = "->"
 SPACE_KEY = "  "
-SHIFT_KEY = "↑"
-SHIFT_DOWN_KEY = "↓"
+SHIFT_INACTIVE_KEY = "SHIFT_OFF"
+SHIFT_ACTIVE_KEY = "SHIFT_ON"
+CAPS_LOCK_KEY = "CAPS"
 NUMERIC_KEY = "123"
 SYMBOL_KEY = "#+="
 ABC_KEY = "ABC"
 
 # Define keyboard layouts as a dictionary for easier access
-keyboard_layouts = {
+KEYBOARD_LAYOUTS = {
   "lowercase": [
     ["q", "w", "e", "r", "t", "y", "u", "i", "o", "p"],
     ["a", "s", "d", "f", "g", "h", "j", "k", "l"],
-    [SHIFT_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY],
+    [SHIFT_INACTIVE_KEY, "z", "x", "c", "v", "b", "n", "m", BACKSPACE_KEY],
     [NUMERIC_KEY, "/", "-", SPACE_KEY, ".", ENTER_KEY],
   ],
   "uppercase": [
     ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
     ["A", "S", "D", "F", "G", "H", "J", "K", "L"],
-    [SHIFT_DOWN_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY],
+    [SHIFT_ACTIVE_KEY, "Z", "X", "C", "V", "B", "N", "M", BACKSPACE_KEY],
     [NUMERIC_KEY, "/", "-", SPACE_KEY, ".", ENTER_KEY],
   ],
   "numbers": [
@@ -46,19 +54,29 @@ keyboard_layouts = {
 
 class Keyboard:
   def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
-    self._layout = keyboard_layouts["lowercase"]
+    self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
+    self._caps_lock = False
+    self._last_shift_press_time = 0
+
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
     self._input_box = InputBox(max_text_size)
     self._password_mode = password_mode
     self._show_password_toggle = show_password_toggle
 
+    # Backspace key repeat tracking
+    self._backspace_pressed: bool = False
+    self._backspace_press_time: float = 0.0
+    self._backspace_last_repeat:float = 0.0
+
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
-      BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 60, 60),
-      SHIFT_KEY: gui_app.texture("icons/shift.png", 60, 60),
-      SHIFT_DOWN_KEY: gui_app.texture("icons/arrow-down.png", 60, 60),
+      BACKSPACE_KEY: gui_app.texture("icons/backspace.png", 80, 80),
+      SHIFT_INACTIVE_KEY: gui_app.texture("icons/shift.png", 80, 80),
+      SHIFT_ACTIVE_KEY: gui_app.texture("icons/shift-fill.png", 80, 80),
+      CAPS_LOCK_KEY: gui_app.texture("icons/capslock-fill.png", 80, 80),
+      ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
   @property
@@ -66,7 +84,10 @@ class Keyboard:
     return self._input_box.text
 
   def clear(self):
+    self._layout_name = "lowercase"
+    self._caps_lock = False
     self._input_box.clear()
+    self._backspace_pressed = False
 
   def render(self, title: str, sub_title: str):
     rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
@@ -81,13 +102,30 @@ class Keyboard:
     input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - input_margin, 100)
     self._render_input_area(input_box_rect)
 
+    # Process backspace key repeat if it's held down
+    if not rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      self._backspace_pressed = False
+
+    if self._backspace_pressed:
+      current_time = time.monotonic()
+      time_since_press = current_time - self._backspace_press_time
+
+      # After initial delay, start repeating with shorter intervals
+      if time_since_press > DELETE_REPEAT_DELAY:
+        time_since_last_repeat = current_time - self._backspace_last_repeat
+        if time_since_last_repeat > DELETE_REPEAT_INTERVAL:
+          self._input_box.delete_char_before_cursor()
+          self._backspace_last_repeat = current_time
+
+    layout = KEYBOARD_LAYOUTS[self._layout_name]
+
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
     key_height = (rect.height - 300 - 3 * v_space) / 4
-    key_max_width = (rect.width - (len(self._layout[2]) - 1) * h_space) / len(self._layout[2])
+    key_max_width = (rect.width - (len(layout[2]) - 1) * h_space) / len(layout[2])
 
     # Iterate over the rows of keys in the current layout
-    for row, keys in enumerate(self._layout):
+    for row, keys in enumerate(layout):
       key_width = min((rect.width - (180 if row == 1 else 0) - h_space * (len(keys) - 1)) / len(keys), key_max_width)
       start_x = rect.x + (90 if row == 1 else 0)
 
@@ -101,11 +139,24 @@ class Keyboard:
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
         result = -1
+
+        # Check for backspace key press-and-hold
+        mouse_pos = rl.get_mouse_position()
+        mouse_over_key = rl.check_collision_point_rec(mouse_pos, key_rect)
+
+        if key == BACKSPACE_KEY and mouse_over_key:
+          if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+            self._backspace_pressed = True
+            self._backspace_press_time = time.monotonic()
+            self._backspace_last_repeat = time.monotonic()
+
         if key in self._key_icons:
+          if key == SHIFT_ACTIVE_KEY and self._caps_lock:
+            key = CAPS_LOCK_KEY
           texture = self._key_icons[key]
-          result = gui_button(key_rect, "", icon=texture, is_enabled=is_enabled)
+          result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
         else:
-          result = gui_button(key_rect, key, is_enabled=is_enabled)
+          result = gui_button(key_rect, key, KEY_FONT_SIZE, is_enabled=is_enabled)
 
         if result:
           if key == ENTER_KEY:
@@ -145,23 +196,32 @@ class Keyboard:
     )
 
   def handle_key_press(self, key):
-    if key in (SHIFT_DOWN_KEY, ABC_KEY):
-      self._layout = keyboard_layouts["lowercase"]
-    elif key == SHIFT_KEY:
-      self._layout = keyboard_layouts["uppercase"]
+    if key in (CAPS_LOCK_KEY, ABC_KEY):
+      self._caps_lock = False
+      self._layout_name = "lowercase"
+    elif key == SHIFT_INACTIVE_KEY:
+      self._last_shift_press_time = time.monotonic()
+      self._layout_name = "uppercase"
+    elif key == SHIFT_ACTIVE_KEY:
+      if time.monotonic() - self._last_shift_press_time < DOUBLE_CLICK_THRESHOLD:
+        self._caps_lock = True
+      else:
+        self._layout_name = "lowercase"
     elif key == NUMERIC_KEY:
-      self._layout = keyboard_layouts["numbers"]
+      self._layout_name = "numbers"
     elif key == SYMBOL_KEY:
-      self._layout = keyboard_layouts["specials"]
+      self._layout_name = "specials"
     elif key == BACKSPACE_KEY:
       self._input_box.delete_char_before_cursor()
     else:
       self._input_box.add_char_at_cursor(key)
+      if not self._caps_lock and self._layout_name == "uppercase":
+        self._layout_name = "lowercase"
 
 
 if __name__ == "__main__":
   gui_app.init_window("Keyboard")
-  keyboard = Keyboard(min_text_size=8)
+  keyboard = Keyboard(min_text_size=8, show_password_toggle=True)
   for _ in gui_app.render():
     result = keyboard.render("Keyboard", "Type here")
     if result == 1:

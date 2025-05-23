@@ -173,9 +173,6 @@ def main():
     model_output, gpu_execution_time = model.run(buf, calib, model_transform)
     t2 = time.perf_counter()
 
-    # run one more time, just for the load
-    model.run(buf, calib, model_transform)
-
     pm.send("driverStateV2", get_driverstate_packet(model_output, vipc_client.frame_id, vipc_client.timestamp_sof, t2 - t1, gpu_execution_time))
 
 
