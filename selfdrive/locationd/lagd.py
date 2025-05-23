@@ -16,17 +16,20 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose, fft_next
 BLOCK_SIZE = 100
 BLOCK_NUM = 50
 BLOCK_NUM_NEEDED = 5
-MOVING_WINDOW_SEC = 300.0
+MOVING_WINDOW_SEC = 60.0
 MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
-MIN_ABS_YAW_RATE = np.radians(1.0)
+MIN_ABS_YAW_RATE = 0.0
 MAX_YAW_RATE_SANITY_CHECK = 1.0
 MIN_NCC = 0.95
 MAX_LAG = 1.0
 MAX_LAG_STD = 0.1
 MAX_LAT_ACCEL = 2.0
 MAX_LAT_ACCEL_DIFF = 0.6
+MIN_CONFIDENCE = 0.7
+CORR_BORDER_OFFSET = 5
+LAG_CANDIDATE_CORR_THRESHOLD = 0.9
 
 
 def masked_normalized_cross_correlation(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, n: int):
@@ -154,7 +157,7 @@ class LateralLagEstimator:
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
                window_sec: float = MOVING_WINDOW_SEC, okay_window_sec: float = MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec: float = MIN_RECOVERY_BUFFER_SEC,
                min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC,
-               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF):
+               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF, min_confidence: float = MIN_CONFIDENCE):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
@@ -166,6 +169,7 @@ class LateralLagEstimator:
     self.min_vego = min_vego
     self.min_yr = min_yr
     self.min_ncc = min_ncc
+    self.min_confidence = min_confidence
     self.max_lat_accel = max_lat_accel
     self.max_lat_accel_diff = max_lat_accel_diff
 
@@ -292,14 +296,14 @@ class LateralLagEstimator:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
       is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
-    delay, corr = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
-    if corr < self.min_ncc or not is_valid:
+    delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
+    if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
       return
 
     self.block_avg.update(delay)
     self.last_estimate_t = self.t
 
-  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float]:
+  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
     max_lag_samples = int(max_lag / dt)
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
@@ -307,13 +311,26 @@ class LateralLagEstimator:
     ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
     # only consider lags from 0 to max_lag
-    roi_ncc = ncc[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
+    roi = np.s_[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
+    extended_roi = np.s_[roi.start - CORR_BORDER_OFFSET: roi.stop + CORR_BORDER_OFFSET]
+    roi_ncc = ncc[roi]
+    extended_roi_ncc = ncc[extended_roi]
 
     max_corr_index = np.argmax(roi_ncc)
     corr = roi_ncc[max_corr_index]
     lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt
 
-    return lag, corr
+    # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
+    # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
+    ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + roi_ncc.min()
+    good_lag_candidate_mask = extended_roi_ncc >= ncc_thresh
+    good_lag_candidate_edges = np.diff(good_lag_candidate_mask.astype(int), prepend=0, append=0)
+    starts, ends = np.where(good_lag_candidate_edges == 1)[0], np.where(good_lag_candidate_edges == -1)[0] - 1
+    run_idx = np.searchsorted(starts, max_corr_index + CORR_BORDER_OFFSET, side='right') - 1
+    width = ends[run_idx] - starts[run_idx] + 1
+    confidence = np.clip(1 - width * dt, 0, 1)
+
+    return lag, corr, confidence
 
 
 def retrieve_initial_lag(params: Params, CP: car.CarParams):
