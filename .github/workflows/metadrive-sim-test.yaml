@@ -1,9 +1,12 @@
 name: MetaDrive Sim Test
-
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - metadrive-ci
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   metadrive-sim:
