@@ -112,14 +112,6 @@ class CarSpecificEvents:
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
                                          pcm_enable=self.CP.pcmCruise)
 
-      # Low speed steer alert hysteresis logic
-      if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.vEgo < (self.CP.minSteerSpeed + 1.):
-        self.low_speed_alert = True
-      elif CS.vEgo > (self.CP.minSteerSpeed + 2.):
-        self.low_speed_alert = False
-      if self.low_speed_alert:
-        events.add(EventName.belowSteerSpeed)
-
       if self.CP.openpilotLongitudinalControl:
         if CS.vEgo < self.CP.minEnableSpeed + 0.5:
           events.add(EventName.belowEngageSpeed)
