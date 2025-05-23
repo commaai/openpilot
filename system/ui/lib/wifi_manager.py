@@ -71,6 +71,7 @@ class WifiManagerCallbacks:
   activated: Callable[[], None] | None = None
   forgotten: Callable[[str], None] | None = None
   networks_updated: Callable[[list[NetworkInfo]], None] | None = None
+  connection_failed: Callable[[str, str], None] | None = None  # Added for error feedback
 
 
 class WifiManager:
@@ -213,9 +214,12 @@ class WifiManager:
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
       await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
       await self._update_connection_status()
-    except DBusError as e:
+    except Exception as e:
       self._current_connection_ssid = None
       cloudlog.error(f"Error connecting to network: {e}")
+       # Notify UI of failure
+      if self.callbacks.connection_failed:
+        self.callbacks.connection_failed(ssid, str(e))
 
   def is_saved(self, ssid: str) -> bool:
     return ssid in self.saved_connections
@@ -425,8 +429,10 @@ class WifiManager:
     if 'LastScan' in changed:
       asyncio.create_task(self._get_available_networks())
     elif interface == NM_WIRELESS_IFACE and "ActiveAccessPoint" in changed:
-      self.active_ap_path = changed["ActiveAccessPoint"].value
-      asyncio.create_task(self._get_available_networks())
+      new_ap_path = changed["ActiveAccessPoint"].value
+      if self.active_ap_path != new_ap_path:
+        self.active_ap_path = new_ap_path
+        asyncio.create_task(self._get_available_networks())
 
   def _on_state_changed(self, new_state: int, old_state: int, reason: int):
     print(f"State changed: {old_state} -> {new_state}, reason: {reason}")
