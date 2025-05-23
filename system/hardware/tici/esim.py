@@ -62,7 +62,7 @@ class TiciLPA(LPABase):
     if latest:
       if latest.iccid == iccid:
         return
-      self._validate_successful(self._invoke('profile', 'disable', iccid))
+      self._validate_successful(self._invoke('profile', 'disable', latest.iccid))
     self._validate_successful(self._invoke('profile', 'enable', iccid))
     self._process_notifications()
 
