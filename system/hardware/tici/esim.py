@@ -22,8 +22,8 @@ class TiciLPA(LPABase):
       raise LPAError('lpac not found, must be installed!')
 
   def list_profiles(self) -> list[Profile]:
-    msgs = self.__invoke('profile', 'list')
-    self.__validate_successful(msgs)
+    msgs = self._invoke('profile', 'list')
+    self._validate_successful(msgs)
     return [Profile(
       iccid=p['iccid'],
       nickname=p['profileNickname'],
@@ -35,41 +35,41 @@ class TiciLPA(LPABase):
     return next((p for p in self.list_profiles() if p.enabled), None)
 
   def delete_profile(self, iccid: str) -> None:
-    self.__validate_profile_exists(iccid)
+    self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is not None and latest.iccid == iccid:
       raise LPAError('cannot delete active profile, switch to another profile first')
-    self.__validate_successful(self.__invoke('profile', 'delete', iccid))
-    self.__process_notifications()
+    self._validate_successful(self._invoke('profile', 'delete', iccid))
+    self._process_notifications()
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
-    msgs = self.__invoke('profile', 'download', '-a', qr)
-    self.__validate_successful(msgs)
+    msgs = self._invoke('profile', 'download', '-a', qr)
+    self._validate_successful(msgs)
     new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
     if new_profile is None:
       raise LPAError('no new profile found')
     if nickname:
       self.nickname_profile(new_profile['payload']['data']['iccid'], nickname)
-    self.__process_notifications()
+    self._process_notifications()
 
   def nickname_profile(self, iccid: str, nickname: str) -> None:
-    self.__validate_profile_exists(iccid)
-    self.__validate_successful(self.__invoke('profile', 'nickname', iccid, nickname))
+    self._validate_profile_exists(iccid)
+    self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
   def switch_profile(self, iccid: str) -> None:
-    self.__enable_profile(iccid)
+    self._enable_profile(iccid)
 
-  def __enable_profile(self, iccid: str) -> None:
-    self.__validate_profile_exists(iccid)
+  def _enable_profile(self, iccid: str) -> None:
+    self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest:
       if latest.iccid == iccid:
         return
-      self.__validate_successful(self.__invoke('profile', 'disable', iccid))
-    self.__validate_successful(self.__invoke('profile', 'enable', iccid))
-    self.__process_notifications()
+      self._validate_successful(self._invoke('profile', 'disable', iccid))
+    self._validate_successful(self._invoke('profile', 'enable', iccid))
+    self._process_notifications()
 
-  def __invoke(self, *cmd: str):
+  def _invoke(self, *cmd: str):
     proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
     try:
       out, err = proc.communicate(timeout=self.timeout_sec)
@@ -100,17 +100,17 @@ class TiciLPA(LPABase):
 
     return messages
 
-  def __process_notifications(self) -> None:
+  def _process_notifications(self) -> None:
     """
     Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
     """
-    self.__validate_successful(self.__invoke('notification', 'process', '-a', '-r'))
+    self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
-  def __validate_profile_exists(self, iccid: str) -> None:
+  def _validate_profile_exists(self, iccid: str) -> None:
     if not any(p.iccid == iccid for p in self.list_profiles()):
       raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
 
-  def __validate_successful(self, msgs: list[dict]) -> None:
+  def _validate_successful(self, msgs: list[dict]) -> None:
     assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
 
 
