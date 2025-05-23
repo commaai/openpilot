@@ -63,7 +63,11 @@ class WifiManagerUI:
     self.wifi_manager = wifi_manager
     self.wifi_manager.set_callbacks(
       WifiManagerCallbacks(
-        self._on_need_auth, self._on_activated, self._on_forgotten, self._on_network_updated, self._on_connection_failed
+        self._on_need_auth,
+        self._on_activated,
+        self._on_forgotten,
+        self._on_network_updated,
+        self._on_connection_failed
       )
     )
     self.wifi_manager.start()
@@ -202,27 +206,20 @@ class WifiManagerUI:
       self._networks = networks
 
   def _on_need_auth(self, ssid):
-    match self.state:
-      case StateConnecting(ssid):
-        self.state = StateNeedsAuth(ssid)
-      case _:
-        # Find network by SSID
-        network = next((n for n in self.wifi_manager.networks if n.ssid == ssid), None)
-        if network:
-          self.state = StateNeedsAuth(network)
+    with self._lock:
+      network = next((n for n in self._networks if n.ssid == ssid), None)
+      if network:
+        self.state = StateNeedsAuth(network)
 
   def _on_activated(self):
-    if isinstance(self.state, StateConnecting):
-      self.state = StateIdle()
+    with self._lock:
+      if isinstance(self.state, StateConnecting):
+        self.state = StateIdle()
 
   def _on_forgotten(self, ssid):
     with self._lock:
       if isinstance(self.state, StateForgetting):
         self.state = StateIdle()
-        for network in self._networks:
-          if network.ssid == ssid:
-            network.is_saved = False
-            break
 
   def _on_connection_failed(self, ssid):
     with self._lock:
