@@ -17,11 +17,12 @@ if __name__ == '__main__':
   lpa = HARDWARE.get_sim_lpa()
   if args.switch:
     lpa.switch_profile(args.switch)
+    print('switched profile, applying changes...')
+    HARDWARE.reboot_and_configure_modem()
   elif args.delete:
     confirm = input('are you sure you want to delete this profile? (y/N) ')
     if confirm == 'y':
       lpa.delete_profile(args.delete)
-      print('deleted profile, please restart device to apply changes')
     else:
       print('cancelled')
       exit(0)

@@ -207,8 +207,15 @@ class HardwareBase(ABC):
   def initialize_hardware(self):
     pass
 
+  def reboot_modem(self):
+    pass
+
   def configure_modem(self):
     pass
+
+  def reboot_and_configure_modem(self):
+    self.reboot_modem()
+    self.configure_modem()
 
   @abstractmethod
   def get_networks(self):

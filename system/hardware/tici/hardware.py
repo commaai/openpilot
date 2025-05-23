@@ -61,6 +61,8 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
+RESET_3GPP_COMMAND = ['mmcli', '-m', 'any', '--3gpp-set-initial-eps-bearer-settings="apn="']
+
 
 def sudo_write(val, path):
   try:
@@ -476,7 +478,7 @@ class Tici(HardwareBase):
 
     if self.get_device_type() in ("tici", "tizi"):
       # clear out old blue prime initial APN
-      os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
+      os.system(' '.join(RESET_3GPP_COMMAND))
 
       cmds += [
         # configure modem as data-centric
@@ -520,7 +522,7 @@ class Tici(HardwareBase):
 
     # eSIM prime
     dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
-    if sim_id.startswith('8985235') and not os.path.exists(dest):
+    if sim_id.startswith('8985235'):
       with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
         dat = f.read()
         dat = dat.replace("sim-id=", f"sim-id={sim_id}")
@@ -530,6 +532,13 @@ class Tici(HardwareBase):
         # needs to be root
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
+
+  def reboot_modem(self):
+    subprocess.check_call(['sudo', 'systemctl', 'restart', 'lte'])
+    while os.path.exists('/dev/cdc-wdm0'):
+      time.sleep(.1)
+    while subprocess.run(RESET_3GPP_COMMAND, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL).returncode:
+      time.sleep(1)
 
   def get_networks(self):
     r = {}
