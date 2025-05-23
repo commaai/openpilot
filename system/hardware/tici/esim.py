@@ -5,24 +5,11 @@ import json
 import os
 import shutil
 import subprocess
-from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, cast
 
-@dataclass
-class Profile:
-  iccid: str
-  nickname: str
-  enabled: bool
-  provider: str
+from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
-class LPAError(RuntimeError):
-  pass
-
-class LPAProfileNotFoundError(LPAError):
-  pass
-
-
-class LPA:
+class TiciLPA(LPABase):
   def __init__(self, interface: Literal['qmi', 'at'] = 'qmi'):
     self.env = os.environ.copy()
     self.env['LPAC_APDU'] = interface
@@ -35,8 +22,8 @@ class LPA:
       raise LPAError('lpac not found, must be installed!')
 
   def list_profiles(self) -> list[Profile]:
-    msgs = self._invoke('profile', 'list')
-    self._validate_successful(msgs)
+    msgs = self.__invoke('profile', 'list')
+    self.__validate_successful(msgs)
     return [Profile(
       iccid=p['iccid'],
       nickname=p['profileNickname'],
@@ -47,53 +34,42 @@ class LPA:
   def get_active_profile(self) -> Profile | None:
     return next((p for p in self.list_profiles() if p.enabled), None)
 
-  def enable_profile(self, iccid: str) -> None:
-    self._validate_profile_exists(iccid)
-    latest = self.get_active_profile()
-    if latest:
-      if latest.iccid == iccid:
-        return
-      self.disable_profile(latest.iccid)
-    self._validate_successful(self._invoke('profile', 'enable', iccid))
-    self.process_notifications()
-
-  def disable_profile(self, iccid: str) -> None:
-    self._validate_profile_exists(iccid)
-    latest = self.get_active_profile()
-    if latest is not None and latest.iccid != iccid:
-      return
-    self._validate_successful(self._invoke('profile', 'disable', iccid))
-    self.process_notifications()
-
   def delete_profile(self, iccid: str) -> None:
-    self._validate_profile_exists(iccid)
+    self.__validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is not None and latest.iccid == iccid:
-      self.disable_profile(iccid)
-    self._validate_successful(self._invoke('profile', 'delete', iccid))
-    self.process_notifications()
+      raise LPAError('cannot delete active profile, switch to another profile first')
+    self.__validate_successful(self.__invoke('profile', 'delete', iccid))
+    self.__process_notifications()
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
-    msgs = self._invoke('profile', 'download', '-a', qr)
-    self._validate_successful(msgs)
+    msgs = self.__invoke('profile', 'download', '-a', qr)
+    self.__validate_successful(msgs)
     new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
     if new_profile is None:
       raise LPAError('no new profile found')
     if nickname:
       self.nickname_profile(new_profile['payload']['data']['iccid'], nickname)
-    self.process_notifications()
+    self.__process_notifications()
 
   def nickname_profile(self, iccid: str, nickname: str) -> None:
-    self._validate_profile_exists(iccid)
-    self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
+    self.__validate_profile_exists(iccid)
+    self.__validate_successful(self.__invoke('profile', 'nickname', iccid, nickname))
 
-  def process_notifications(self) -> None:
-    """
-    Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
-    """
-    self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
+  def switch_profile(self, iccid: str) -> None:
+    self.__enable_profile(iccid)
 
-  def _invoke(self, *cmd: str):
+  def __enable_profile(self, iccid: str) -> None:
+    self.__validate_profile_exists(iccid)
+    latest = self.get_active_profile()
+    if latest:
+      if latest.iccid == iccid:
+        return
+      self.__validate_successful(self.__invoke('profile', 'disable', iccid))
+    self.__validate_successful(self.__invoke('profile', 'enable', iccid))
+    self.__process_notifications()
+
+  def __invoke(self, *cmd: str):
     proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
     try:
       out, err = proc.communicate(timeout=self.timeout_sec)
@@ -124,31 +100,32 @@ class LPA:
 
     return messages
 
-  def _validate_profile_exists(self, iccid: str) -> None:
+  def __process_notifications(self) -> None:
+    """
+    Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
+    """
+    self.__validate_successful(self.__invoke('notification', 'process', '-a', '-r'))
+
+  def __validate_profile_exists(self, iccid: str) -> None:
     if not any(p.iccid == iccid for p in self.list_profiles()):
       raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
 
-  def _validate_successful(self, msgs: list[dict]) -> None:
+  def __validate_successful(self, msgs: list[dict]) -> None:
     assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
 
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
   parser.add_argument('--backend', choices=['qmi', 'at'], default='qmi', help='use the specified backend, defaults to qmi')
-  parser.add_argument('--enable', metavar='iccid', help='enable profile; will disable current profile')
-  parser.add_argument('--disable', metavar='iccid', help='disable profile')
+  parser.add_argument('--switch', metavar='iccid', help='switch to profile')
   parser.add_argument('--delete', metavar='iccid', help='delete profile (warning: this cannot be undone)')
   parser.add_argument('--download', nargs=2, metavar=('qr', 'name'), help='download a profile using QR code (format: LPA:1$rsp.truphone.com$QRF-SPEEDTEST)')
   parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='update the nickname for a profile')
   args = parser.parse_args()
 
-  lpa = LPA(interface=args.backend)
-  if args.enable:
-    lpa.enable_profile(args.enable)
-    print('enabled profile, please restart device to apply changes')
-  elif args.disable:
-    lpa.disable_profile(args.disable)
-    print('disabled profile, please restart device to apply changes')
+  lpa = cast(LPABase, TiciLPA(interface=args.backend))
+  if args.switch:
+    lpa.switch_profile(args.switch)
   elif args.delete:
     confirm = input('are you sure you want to delete this profile? (y/N) ')
     if confirm == 'y':
