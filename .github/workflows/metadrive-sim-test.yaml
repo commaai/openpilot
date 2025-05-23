@@ -42,7 +42,8 @@ jobs:
           pytest tools/sim/tests/test_sim_bridge.py
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v3.1.3
+
         with:
           name: sim-logs
           path: |
