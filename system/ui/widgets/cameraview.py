@@ -70,11 +70,10 @@ class CameraView:
     # Initialize EGL if available
     if self.use_egl:
       self.setup_egl()
-      if self.use_egl:
-        # Create a placeholder texture for EGL image binding
-        temp_image = rl.gen_image_color(1, 1, rl.BLACK)
-        self.egl_texture = rl.load_texture_from_image(temp_image)
-        rl.unload_image(temp_image)
+      # Create a placeholder texture for EGL image binding
+      temp_image = rl.gen_image_color(1, 1, rl.BLACK)
+      self.egl_texture = rl.load_texture_from_image(temp_image)
+      rl.unload_image(temp_image)
 
   def setup_egl(self) -> None:
     if not self.use_egl:
