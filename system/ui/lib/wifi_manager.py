@@ -46,12 +46,14 @@ class NMDeviceState(IntEnum):
   IP_CONFIG = 70
   ACTIVATED = 100
 
+
 class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
   WPA2 = 2
   WPA3 = 3
   UNSUPPORTED = 4
+
 
 @dataclass
 class NetworkInfo:
@@ -91,6 +93,7 @@ class WifiManager:
         self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
+    self._ip_address: str = ""
 
   async def connect(self) -> None:
     """Connect to the DBus system bus."""
@@ -169,7 +172,21 @@ class WifiManager:
       cloudlog.error(f"Failed to activate connection {ssid}: {str(e)}")
       return False
 
-  async def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False) -> None:
+  async def disactivate_connection(self, ssid: str) -> bool:
+    connection_path = self.saved_connections.get(ssid)
+    if not connection_path:
+      return False
+    try:
+      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
+      await nm_iface.call_deactivate_connection(connection_path)
+      return True
+    except DBusError as e:
+      cloudlog.error(f"Failed to deactivate connection {ssid}: {str(e)}")
+      return False
+
+  async def connect_to_network(
+    self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False
+  ) -> None:
     """Connect to a selected Wi-Fi network."""
     try:
       self._current_connection_ssid = ssid
@@ -395,6 +412,7 @@ class WifiManager:
       try:
         await self.request_scan()
         await self._get_available_networks()
+        await self.update_ip_address()
         await asyncio.sleep(30)
       except asyncio.CancelledError:
         break
@@ -604,6 +622,40 @@ class WifiManager:
       return SecurityType.WPA
     return SecurityType.UNSUPPORTED
 
+  async def update_ip_address(self) -> None:
+    """
+    Query the first 802-11-wireless device's IPv4 address
+    """
+    try:
+      if not self.device_proxy:
+        return
+
+      props_iface = self.device_proxy.get_interface(NM_PROPERTIES_IFACE)
+      ip4config_path = await props_iface.call_get(NM_DEVICE_IFACE, 'Ip4Config')
+      ip4config_path = ip4config_path.value
+      if not ip4config_path or ip4config_path == "/":
+        self._ip_address = ""
+        return
+
+      # Get the Addresses property from the IP4Config object
+      ip4config_iface = await self._get_interface(NM, ip4config_path, NM_PROPERTIES_IFACE)
+      addresses = await ip4config_iface.call_get('org.freedesktop.NetworkManager.IP4Config', 'Addresses')
+      addresses = addresses.value  # List of [address, netmask, gateway]
+      if addresses and len(addresses) > 0 and len(addresses[0]) > 0:
+        # addresses[0][0] is the IPv4 address as an integer
+        ip_int = addresses[0][0]
+        self._ip_address = ".".join(str((ip_int >> (i * 8)) & 0xFF) for i in range(4))
+      else:
+        self._ip_address = ""
+    except Exception as e:
+      print(f"Failed to get Wi-Fi IP address: {e}")
+      self._ip_address = ""
+
+  @property
+  def ip_address(self) -> str:
+    """Return the last known Wi-Fi IPv4 address"""
+    return self._ip_address
+
 
 class WifiManagerWrapper:
   def __init__(self):
@@ -650,6 +702,11 @@ class WifiManagerWrapper:
         self._thread.join(timeout=2.0)
       self._running = False
 
+  @property
+  def ip_address(self) -> str:
+    """Get the current IP address."""
+    return self._manager.ip_address if self._manager else ""
+
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""
     return self._run_coroutine_sync(lambda manager: manager.is_saved(ssid), default=False)
@@ -678,11 +735,26 @@ class WifiManagerWrapper:
       return
     self._run_coroutine(self._manager.activate_connection(ssid))
 
+  def disactivate_connection(self, ssid: str):
+    """Deactivate an existing Wi-Fi connection."""
+    self._run_coroutine(self._manager.disactivate_connection(ssid))
+
   def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False):
     """Connect to a Wi-Fi network."""
     if not self._manager:
       return
     self._run_coroutine(self._manager.connect_to_network(ssid, password, bssid, is_hidden))
+
+  def add_tethering_connection(self, ssid: str, password: str):
+    self._run_coroutine(self._manager.add_tethering_connection(ssid, password))
+
+  def get_tethering_password(self) -> str:
+    """Get the current tethering password."""
+    return self._run_coroutine_sync(lambda manager: manager.get_tethering_password(), default="")
+
+  def set_tethering_password(self, password: str) -> bool:
+    """Set the tethering password."""
+    return self._run_coroutine_sync(lambda manager: manager.set_tethering_password(password), default=False)
 
   def _run_coroutine(self, coro):
     """Run a coroutine in the async thread."""
@@ -697,11 +769,21 @@ class WifiManagerWrapper:
       return default
     future = concurrent.futures.Future[T]()
 
+    async def async_wrapper(manager: WifiManager) -> None:
+        """Handle both coroutines and regular functions"""
+        try:
+            result = func(manager)
+            # If result is awaitable (coroutine), await it
+            if asyncio.iscoroutine(result):
+                result = await result
+            future.set_result(result)
+        except Exception as e:
+            future.set_exception(e)
+            cloudlog.exception(f"Error in _run_coroutine_sync: {e}")
+
     def wrapper(manager: WifiManager) -> None:
-      try:
-        future.set_result(func(manager))
-      except Exception as e:
-        future.set_exception(e)
+        """Schedule the async wrapper in the event loop"""
+        asyncio.create_task(async_wrapper(manager))
 
     try:
       self._loop.call_soon_threadsafe(wrapper, self._manager)
