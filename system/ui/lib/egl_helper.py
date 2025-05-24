@@ -83,6 +83,7 @@ def create_egl_image(
   if not HAS_EGL or egl_display == EGL_NO_DISPLAY or _ffi is None:
     return None
 
+  # Duplicate fd since EGL needs it
   dup_fd = os.dup(fd)
 
   # Create image attributes for EGL
@@ -117,9 +118,13 @@ def destroy_egl_image(egl_display, data: dict[str, Any]) -> None:
   if "egl_image" in data and data["egl_image"]:
     eglDestroyImageKHR(egl_display, data["egl_image"])
 
-  if "fd" in data and data["fd"] > 0:
-    os.close(data["fd"])
-
+  # Close the duplicated fd we created in create_egl_image()
+  # We need to handle OSError since the fd might already be closed
+  if "fd" in data and data["fd"]:
+    try:
+      os.close(data["fd"])
+    except OSError:
+      pass
 
 def bind_egl_image_to_texture(texture_id: int, egl_image) -> None:
   if not HAS_EGL or not egl_image:
