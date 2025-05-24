@@ -197,17 +197,9 @@ class CameraView:
     self._clear_textures()
 
     # Clean up EGL resources
-    if self.use_egl and self.egl_display:
-      for data in self.egl_textures.values():
-        if data["egl_image"]:
-          eglDestroyImageKHR(self.egl_display, data["egl_image"])
-        if data["fd"] > 0:
-          os.close(data["fd"])
-
-      # Clean up the single EGL texture
-      if self.egl_texture and self.egl_texture.id:
-        rl.unload_texture(self.egl_texture)
-        self.egl_texture = None
+    if self.use_egl and self.egl_texture and self.egl_texture.id:
+      rl.unload_texture(self.egl_texture)
+      self.egl_texture = None
 
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
@@ -312,6 +304,8 @@ class CameraView:
       for data in self.egl_textures.values():
         if data["egl_image"]:
           eglDestroyImageKHR(self.egl_display, data["egl_image"])
+        if data["fd"] > 0:
+          os.close(data["fd"])
       self.egl_textures = {}
 
 
