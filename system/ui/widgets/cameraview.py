@@ -1,87 +1,12 @@
-import os
 import pyray as rl
 from typing import Any
 from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.system.ui.lib.application import gui_app
-
-# Define EGL constants and functions using CFFI
-try:
-  import cffi
-
-  _ffi = cffi.FFI()
-  _ffi.cdef("""
-    typedef int EGLint;
-    typedef unsigned int EGLBoolean;
-    typedef unsigned int EGLenum;
-    typedef unsigned int GLenum;
-    typedef void *EGLConfig;
-    typedef void *EGLContext;
-    typedef void *EGLDisplay;
-    typedef void *EGLSurface;
-    typedef void *EGLClientBuffer;
-    typedef void *EGLImage;
-    typedef void *EGLImageKHR;
-    typedef void *GLeglImageOES;  // Added missing type definition
-
-    EGLDisplay eglGetCurrentDisplay(void);
-    EGLint eglGetError(void);
-
-    EGLImageKHR eglCreateImageKHR(EGLDisplay dpy, EGLContext ctx,
-                                EGLenum target, EGLClientBuffer buffer,
-                                const EGLint *attrib_list);
-    EGLBoolean eglDestroyImageKHR(EGLDisplay dpy, EGLImageKHR image);
-
-    void glEGLImageTargetTexture2DOES(GLenum target, GLeglImageOES image);
-    void glBindTexture(GLenum target, unsigned int texture);
-    void glActiveTexture(GLenum texture);
-    """)
-
-  # Load libraries
-  try:
-    _egl = _ffi.dlopen("libEGL.so")
-    _gles = _ffi.dlopen("libGLESv2.so")
-
-    # Define constants (normally in header files)
-    EGL_NO_CONTEXT = _ffi.cast("void *", 0)
-    EGL_NO_DISPLAY = _ffi.cast("void *", 0)
-    EGL_NO_IMAGE_KHR = _ffi.cast("void *", 0)
-    EGL_LINUX_DMA_BUF_EXT = 0x3270
-    EGL_WIDTH = 0x3057
-    EGL_HEIGHT = 0x3056
-    EGL_LINUX_DRM_FOURCC_EXT = 0x3271
-    EGL_DMA_BUF_PLANE0_FD_EXT = 0x3272
-    EGL_DMA_BUF_PLANE0_OFFSET_EXT = 0x3273
-    EGL_DMA_BUF_PLANE0_PITCH_EXT = 0x3274
-    EGL_DMA_BUF_PLANE1_FD_EXT = 0x3275
-    EGL_DMA_BUF_PLANE1_OFFSET_EXT = 0x3276
-    EGL_DMA_BUF_PLANE1_PITCH_EXT = 0x3277
-    EGL_NONE = 0x3038
-    TEXTURE_EXTERNAL_OES = 0x8D65
-
-    # OpenGL constants
-    GL_TEXTURE0 = 0x84C0
-    GL_TEXTURE_EXTERNAL_OES = TEXTURE_EXTERNAL_OES
-
-    # Set up function bindings
-    eglGetCurrentDisplay = _egl.eglGetCurrentDisplay
-    eglCreateImageKHR = _egl.eglCreateImageKHR
-    eglDestroyImageKHR = _egl.eglDestroyImageKHR
-    glEGLImageTargetTexture2DOES = _gles.glEGLImageTargetTexture2DOES
-    eglGetError = _egl.eglGetError
-    glBindTexture = _gles.glBindTexture
-    glActiveTexture = _gles.glActiveTexture
-
-    HAS_EGL = True
-  except (OSError, AttributeError) as e:
-    print(f"Failed to load EGL libraries: {e}")
-    HAS_EGL = False
-except ImportError:
-  print("CFFI not available, EGL support disabled")
-  HAS_EGL = False
-
-# DRM Format for NV12
-DRM_FORMAT_NV12 = 842094158  # value for the NV12 format in DRM
+from openpilot.system.ui.lib.egl_helper import (
+    HAS_EGL, create_egl_image, destroy_egl_image, bind_egl_image_to_texture,
+    eglGetCurrentDisplay, EGL_NO_DISPLAY
+)
 
 
 VERTEX_SHADER = """
@@ -100,7 +25,7 @@ void main() {
 }
 """
 
-
+# Choose fragment shader based on platform capabilities
 if TICI and HAS_EGL:
   FRAME_FRAGMENT_SHADER = """
     #version 300 es
@@ -129,7 +54,6 @@ else:
     }
     """
 
-
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
     self.client = VisionIpcClient(name, stream_type, False)
@@ -141,66 +65,35 @@ class CameraView:
     self.frame: VisionBuf | None = None
     self.use_egl = TICI and HAS_EGL
     self.egl_texture: rl.Texture | None = None  # Single texture for all EGL images
+    self.egl_display = None
 
-    # For EGL
+    # Initialize EGL if available
     if self.use_egl:
-      self.egl_display = None
       self.setup_egl()
+      if self.use_egl:
+        # Create a placeholder texture for EGL image binding
+        temp_image = rl.gen_image_color(1, 1, rl.BLACK)
+        self.egl_texture = rl.load_texture_from_image(temp_image)
+        rl.unload_image(temp_image)
 
-      # Create a single texture for EGL images
-      temp_image = rl.gen_image_color(1, 1, rl.BLACK)
-      self.egl_texture = rl.load_texture_from_image(temp_image)
-      rl.unload_image(temp_image)
-
-  def setup_egl(self):
+  def setup_egl(self) -> None:
     if not self.use_egl:
       return
 
-    # Get current EGL display
     self.egl_display = eglGetCurrentDisplay()
     if self.egl_display == EGL_NO_DISPLAY:
       print("Warning: No EGL display available, falling back to texture copy")
       self.use_egl = False
 
-  def create_egl_image(self, buffer_idx, width, height, stride, fd, uv_offset):
-    """Create EGL image from DMA buffer - more efficient version"""
-    if not self.use_egl or not self.egl_display:
-      return None
-
-    dup_fd = os.dup(fd)
-
-    # Create image attributes for EGL
-    img_attrs = [
-      EGL_WIDTH, width,
-      EGL_HEIGHT, height,
-      EGL_LINUX_DRM_FOURCC_EXT, DRM_FORMAT_NV12,
-      EGL_DMA_BUF_PLANE0_FD_EXT, dup_fd,
-      EGL_DMA_BUF_PLANE0_OFFSET_EXT, 0,
-      EGL_DMA_BUF_PLANE0_PITCH_EXT, stride,
-      EGL_DMA_BUF_PLANE1_FD_EXT, dup_fd,
-      EGL_DMA_BUF_PLANE1_OFFSET_EXT, uv_offset,
-      EGL_DMA_BUF_PLANE1_PITCH_EXT, stride,
-      EGL_NONE
-    ]
-
-    attr_array = _ffi.new("int[]", img_attrs)
-    egl_image = eglCreateImageKHR(self.egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, _ffi.NULL, attr_array)
-
-    if egl_image == EGL_NO_IMAGE_KHR:
-      print(f"Failed to create EGL image: {eglGetError()}")
-      os.close(dup_fd)
-      return None
-
-    return {"egl_image": egl_image, "fd": dup_fd}
-
-  def close(self):
+  def close(self) -> None:
     self._clear_textures()
 
-    # Clean up EGL resources
+    # Clean up EGL texture
     if self.use_egl and self.egl_texture and self.egl_texture.id:
       rl.unload_texture(self.egl_texture)
       self.egl_texture = None
 
+    # Clean up shader
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
@@ -228,15 +121,18 @@ class CameraView:
     else:
       self._render_textures(src_rect, dst_rect)
 
-  def _render_egl(self, src_rect, dst_rect):
-    """Render using EGL for direct buffer access - more efficient version"""
+  def _render_egl(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
+    """Render using EGL for direct buffer access"""
+    if self.frame is None or self.egl_texture is None:
+      return
+
     idx = self.frame.idx
 
     # Create or get EGL image
     if idx not in self.egl_textures:
-      self.egl_textures[idx] = self.create_egl_image(
-        idx, self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset
-      )
+      egl_data = create_egl_image(self.egl_display, self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset)
+      if egl_data:
+        self.egl_textures[idx] = egl_data
 
     # If we have a valid EGL image, render it
     if idx in self.egl_textures and self.egl_textures[idx]:
@@ -246,19 +142,17 @@ class CameraView:
       self.egl_texture.width = self.frame.width
       self.egl_texture.height = self.frame.height
 
-      # Activate texture and bind EGL image
-      glActiveTexture(GL_TEXTURE0)
-      glBindTexture(GL_TEXTURE_EXTERNAL_OES, self.egl_texture.id)
-      glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image)
+      # Bind the EGL image to our texture
+      bind_egl_image_to_texture(self.egl_texture.id, egl_image)
 
       # Render with shader
       rl.begin_shader_mode(self.shader)
       rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
       rl.end_shader_mode()
 
-  def _render_textures(self, src_rect, dst_rect):
+  def _render_textures(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using texture copies (fallback method)"""
-    if not self.texture_y or not self.texture_uv:
+    if not self.texture_y or not self.texture_uv or self.frame is None:
       return
 
     # Update textures with new frame data
@@ -282,6 +176,7 @@ class CameraView:
 
       self._clear_textures()
 
+      # Create textures for the fallback method
       if not self.use_egl:
         self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
           int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
@@ -299,13 +194,10 @@ class CameraView:
       rl.unload_texture(self.texture_uv)
       self.texture_uv = None
 
-    # Clean up EGL textures - more efficient version
+    # Clean up EGL resources
     if self.use_egl and self.egl_display:
       for data in self.egl_textures.values():
-        if data["egl_image"]:
-          eglDestroyImageKHR(self.egl_display, data["egl_image"])
-        if data["fd"] > 0:
-          os.close(data["fd"])
+        destroy_egl_image(self.egl_display, data)
       self.egl_textures = {}
 
 
