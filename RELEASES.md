@@ -1,13 +1,11 @@
-Version 0.9.9 (2025-05-15)
+Version 0.9.9 (2025-05-23)
 ========================
 * New driving model
-  * New training architecture supervised by MLSIM
-* Steering actuator delay is now learned online
+  * New training architecture using parts from MLSIM
+* Steering actuation delay is now learned online
+* Hyundai Nexo 2021 support thanks to sunnyhaibin!
 * Tesla Model 3 and Y support thanks to lukasloetkolben!
 * Lexus RC 2023 support thanks to nelsonjchen!
-* Coming soon
-  * New Honda models
-  * Bigger vision model
 
 Version 0.9.8 (2025-02-28)
 ========================
