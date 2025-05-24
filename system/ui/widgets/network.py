@@ -54,25 +54,25 @@ UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm 
 class WifiManagerUI:
   def __init__(self, wifi_manager: WifiManagerWrapper):
     self.state: UIState = StateIdle()
-    self.btn_width = 200
+    self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     self._networks: list[NetworkInfo] = []
-
+    self._lock = Lock()
     self.wifi_manager = wifi_manager
+
     self.wifi_manager.set_callbacks(
       WifiManagerCallbacks(
-        self._on_need_auth,
-        self._on_activated,
-        self._on_forgotten,
-        self._on_network_updated,
-        self._on_connection_failed
+        need_auth = self._on_need_auth,
+        activated = self._on_activated,
+        forgotten = self._on_forgotten,
+        networks_updated = self._on_network_updated,
+        connection_failed = self._on_connection_failed
       )
     )
     self.wifi_manager.start()
     self.wifi_manager.connect()
-    self._lock = Lock()
 
   def render(self, rect: rl.Rectangle):
     with self._lock:
@@ -221,7 +221,7 @@ class WifiManagerUI:
       if isinstance(self.state, StateForgetting):
         self.state = StateIdle()
 
-  def _on_connection_failed(self, ssid):
+  def _on_connection_failed(self, ssid: str, error: str):
     with self._lock:
       if isinstance(self.state, StateConnecting):
         self.state = StateIdle()
