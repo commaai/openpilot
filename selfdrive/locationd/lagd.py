@@ -16,7 +16,7 @@ from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose, fft_next
 BLOCK_SIZE = 100
 BLOCK_NUM = 50
 BLOCK_NUM_NEEDED = 5
-MOVING_WINDOW_SEC = 60.0
+MOVING_WINDOW_SEC = 120.0
 MIN_OKAY_WINDOW_SEC = 25.0
 MIN_RECOVERY_BUFFER_SEC = 2.0
 MIN_VEGO = 15.0
