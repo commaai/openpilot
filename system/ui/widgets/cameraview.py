@@ -59,13 +59,15 @@ class CameraView:
     self.client = VisionIpcClient(name, stream_type, False)
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
 
+    self.frame: VisionBuf | None = None
     self.texture_y: rl.Texture | None = None
     self.texture_uv: rl.Texture | None = None
-    self.egl_textures: dict[int, dict[str, Any]] = {}  # For EGL implementation
-    self.frame: VisionBuf | None = None
+
+    # EGL resources
     self.use_egl = TICI and HAS_EGL
-    self.egl_texture: rl.Texture | None = None  # Single texture for all EGL images
     self.egl_display = None
+    self.egl_images: dict[int, dict[str, Any]] = {}
+    self.egl_texture: rl.Texture | None = None
 
     # Initialize EGL if available
     if self.use_egl:
@@ -126,28 +128,29 @@ class CameraView:
       return
 
     idx = self.frame.idx
+    egl_data = self.egl_images.get(idx)
 
-    # Create or get EGL image
-    if idx not in self.egl_textures:
+    # Create EGL image if needed
+    if egl_data is None:
       egl_data = create_egl_image(self.egl_display, self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset)
       if egl_data:
-        self.egl_textures[idx] = egl_data
+        self.egl_images[idx] = egl_data
+      else:
+        return
 
-    # If we have a valid EGL image, render it
-    if idx in self.egl_textures and self.egl_textures[idx]:
-      egl_image = self.egl_textures[idx]["egl_image"]
+    egl_image = egl_data["egl_image"]
 
-      # Update texture dimensions to match current frame
-      self.egl_texture.width = self.frame.width
-      self.egl_texture.height = self.frame.height
+    # Update texture dimensions to match current frame
+    self.egl_texture.width = self.frame.width
+    self.egl_texture.height = self.frame.height
 
-      # Bind the EGL image to our texture
-      bind_egl_image_to_texture(self.egl_texture.id, egl_image)
+    # Bind the EGL image to our texture
+    bind_egl_image_to_texture(self.egl_texture.id, egl_image)
 
-      # Render with shader
-      rl.begin_shader_mode(self.shader)
-      rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
-      rl.end_shader_mode()
+    # Render with shader
+    rl.begin_shader_mode(self.shader)
+    rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+    rl.end_shader_mode()
 
   def _render_textures(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using texture copies (fallback method)"""
@@ -195,9 +198,9 @@ class CameraView:
 
     # Clean up EGL resources
     if self.use_egl and self.egl_display:
-      for data in self.egl_textures.values():
+      for data in self.egl_images.values():
         destroy_egl_image(self.egl_display, data)
-      self.egl_textures = {}
+      self.egl_images = {}
 
 
 if __name__ == "__main__":
