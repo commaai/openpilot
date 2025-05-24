@@ -124,7 +124,8 @@ def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interact
   if missing_rlogs != 0 and missing_qlogs == 0:
     if interactive:
       if input(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
-        return rlog_paths
+        cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, returning only valid rlogs...")
+        return [rlog if valid_file(rlog) else None for rlog in rlog_paths]
     else:
       cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, falling back to qlogs for those segments...")
 
@@ -209,6 +210,9 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> list[LogPath]:
   files = source(*args)
+  if args[1] == ReadMode.AUTO_INTERACTIVE:
+    # if any files are invalid, return the valid ones
+    files = [f for f in files if f is not None and file_exists(f)]
   assert len(files) > 0, "No files on source"
   assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
