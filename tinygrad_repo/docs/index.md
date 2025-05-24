@@ -42,7 +42,7 @@ There's nothing special about a "Module" class in tinygrad, it's just a normal c
 
 ### tinygrad is functional
 
-In tinygrad, you can do [`x.conv2d(w, b)`](tensor/ops.md/#tinygrad.Tensor.conv2d) or [`x.sparse_categorical_cross_entropy(y)`](tensor/ops.md/#tinygrad.Tensor.sparse_categorical_crossentropy). We do also have a [`Conv2D`](nn.md/#tinygrad.nn.Conv2d) class like PyTorch if you want a place to keep the state, but all stateless operations don't have classes.
+In tinygrad, you can do [`x.conv2d(w, b)`](tensor/ops.md/#tinygrad.Tensor.conv2d) or [`x.sparse_categorical_crossentropy(y)`](tensor/ops.md/#tinygrad.Tensor.sparse_categorical_crossentropy). We do also have a [`Conv2D`](nn.md/#tinygrad.nn.Conv2d) class like PyTorch if you want a place to keep the state, but all stateless operations don't have classes.
 
 ### tinygrad is lazy
 

@@ -15,19 +15,23 @@ class Footnote(Enum):
     "See <a href=\"https://www.notateslaapp.com/news/2173/how-to-check-if-your-tesla-has-hardware-4-ai4-or-hardware-3\">this page</a> for more information.",
     Column.MODEL)
 
+  SETUP = CarFootnote(
+    "See more setup details for <a href=\"https://github.com/commaai/openpilot/wiki/tesla\" target=\"_blank\">Tesla</a>.",
+    Column.MAKE, setup_note=True)
+
 
 @dataclass
 class TeslaCarDocsHW3(CarDocs):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.tesla_a]))
-  footnotes: list[Enum] = field(default_factory=lambda: [Footnote.HW_TYPE])
+  footnotes: list[Enum] = field(default_factory=lambda: [Footnote.HW_TYPE, Footnote.SETUP])
 
 
 @dataclass
 class TeslaCarDocsHW4(CarDocs):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.tesla_b]))
-  footnotes: list[Enum] = field(default_factory=lambda: [Footnote.HW_TYPE])
+  footnotes: list[Enum] = field(default_factory=lambda: [Footnote.HW_TYPE, Footnote.SETUP])
 
 
 @dataclass
@@ -39,9 +43,8 @@ class CAR(Platforms):
   TESLA_MODEL_3 = TeslaPlatformConfig(
     [
       # TODO: do we support 2017? It's HW3
-      # TODO: do we support 2025? It's HW4
       TeslaCarDocsHW3("Tesla Model 3 (with HW3) 2019-23"),
-      TeslaCarDocsHW4("Tesla Model 3 (with HW4) 2024"),
+      TeslaCarDocsHW4("Tesla Model 3 (with HW4) 2024-25"),
     ],
     CarSpecs(mass=1899., wheelbase=2.875, steerRatio=12.0),
   )
@@ -109,4 +112,4 @@ class TeslaFlags(IntFlag):
 
 DBC = CAR.create_dbc_map()
 
-STEER_THRESHOLD = 0.5
+STEER_THRESHOLD = 1

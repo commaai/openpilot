@@ -1,7 +1,29 @@
 #include <array>
+#include <cstdio>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 #include "opendbc/can/common.h"
+
+void pedal_setup_signal(Signal &sig, const std::string& dbc_name, int line_num) {
+  if (sig.name == "CHECKSUM_PEDAL") {
+    DBC_ASSERT(sig.size == 8, "INTERCEPTOR CHECKSUM is not 8 bits long");
+    sig.type = PEDAL_CHECKSUM;
+  } else if (sig.name == "COUNTER_PEDAL") {
+    DBC_ASSERT(sig.size == 4, "INTERCEPTOR COUNTER is not 4 bits long");
+    sig.type = COUNTER;
+  }
+}
+
+void tesla_setup_signal(Signal &sig, const std::string& dbc_name, int line_num) {
+  if (endswith(sig.name, "Counter")) {
+    sig.type = COUNTER;
+  } else if (endswith(sig.name, "Checksum")) {
+    sig.type = TESLA_CHECKSUM;
+    sig.calc_checksum = &tesla_checksum;
+  }
+}
 
 unsigned int honda_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
   int s = 0;
@@ -256,4 +278,17 @@ unsigned int fca_giorgio_checksum(uint32_t address, const Signal &sig, const std
     return crc ^ 0xA;
   }
 
+}
+
+unsigned int tesla_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d) {
+  uint8_t checksum = (address & 0xFF) + ((address >> 8) & 0xFF);
+  int checksum_byte = sig.start_bit / 8;
+
+  for (int i = 0; i < d.size(); i++) {
+    if (i != checksum_byte) {
+      checksum += d[i];
+    }
+  }
+
+  return checksum & 0xFF;
 }

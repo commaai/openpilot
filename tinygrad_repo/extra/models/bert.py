@@ -63,15 +63,17 @@ class BertForPretraining:
 
   def accuracy(self, prediction_logits:Tensor, seq_relationship_logits:Tensor, masked_lm_ids:Tensor, masked_lm_weights:Tensor, next_sentence_labels:Tensor):
     valid = masked_lm_ids != 0
-    masked_lm_predictions = prediction_logits.log_softmax(dtype=dtypes.float).argmax(-1)
-    masked_lm_accuracy = (masked_lm_predictions == masked_lm_ids) * valid
+    masked_lm_predictions = prediction_logits.argmax(-1)
+    masked_lm_correct = (masked_lm_predictions == masked_lm_ids) * valid
     masked_lm_loss = self.sparse_categorical_crossentropy(prediction_logits, masked_lm_ids, ignore_index=masked_lm_weights)
 
-    seq_relationship_predictions = seq_relationship_logits.log_softmax(dtype=dtypes.float).argmax(-1)
-    seq_relationship_accuracy = (seq_relationship_predictions == next_sentence_labels)
+    seq_relationship_predictions = seq_relationship_logits.argmax(-1)
+    seq_relationship_correct = (seq_relationship_predictions == next_sentence_labels)
     next_sentence_loss = seq_relationship_logits.binary_crossentropy_logits(next_sentence_labels)
 
-    return masked_lm_accuracy.sum() / valid.sum(), seq_relationship_accuracy.mean(), masked_lm_loss, next_sentence_loss
+    # NOTE: .float().sum() to prevent overflow with large BS since default acc of bool is in default_float
+    # TODO: is it okay that next_sentence_loss is half here?
+    return masked_lm_correct.float().sum() / valid.float().sum(), seq_relationship_correct.float().mean(), masked_lm_loss, next_sentence_loss.float()
 
   def load_from_pretrained(self, tf_weight_path:str=Path(__file__).parent.parent / "datasets" / "wiki"):
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Mute tf flag info

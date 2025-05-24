@@ -11,7 +11,7 @@ from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import LongitudinalMpc
 from openpilot.selfdrive.controls.lib.longitudinal_mpc_lib.long_mpc import T_IDXS as T_IDXS_MPC
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_speed_error
+from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_speed_error, get_accel_from_plan
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 from openpilot.common.swaglog import cloudlog
 
@@ -48,27 +48,11 @@ def limit_accel_in_turns(v_ego, angle_steers, a_target, CP):
   return [a_target[0], min(a_target[1], a_x_allowed)]
 
 
-def get_accel_from_plan(speeds, accels, action_t=DT_MDL, vEgoStopping=0.05):
-  if len(speeds) == CONTROL_N:
-    v_now = speeds[0]
-    a_now = accels[0]
-
-    v_target = np.interp(action_t, CONTROL_N_T_IDX, speeds)
-    a_target = 2 * (v_target - v_now) / (action_t) - a_now
-    v_target_1sec = np.interp(action_t + 1.0, CONTROL_N_T_IDX, speeds)
-  else:
-    v_target = 0.0
-    v_target_1sec = 0.0
-    a_target = 0.0
-  should_stop = (v_target < vEgoStopping and
-                 v_target_1sec < vEgoStopping)
-  return a_target, should_stop
-
-
 class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
     self.mpc = LongitudinalMpc(dt=dt)
+    self.mpc.mode = 'acc'
     self.fcw = False
     self.dt = dt
     self.allow_throttle = True
@@ -176,7 +160,7 @@ class LongitudinalPlanner:
     self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
     action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
-    output_a_target, self.output_should_stop = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory,
+    output_a_target, self.output_should_stop = get_accel_from_plan(self.v_desired_trajectory, self.a_desired_trajectory, CONTROL_N_T_IDX,
                                                                         action_t=action_t, vEgoStopping=self.CP.vEgoStopping)
 
     for idx in range(2):

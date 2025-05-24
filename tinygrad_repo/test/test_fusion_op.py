@@ -2,7 +2,6 @@ import unittest
 import time
 import numpy as np
 from tinygrad import Tensor, dtypes
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import lower_schedule_item, run_schedule
 
 class TestFusionOp(unittest.TestCase):
@@ -17,7 +16,7 @@ class TestFusionOp(unittest.TestCase):
   def test_expand_fuse(self):
     bt = Tensor(np.ones((10, 1)), dtype=dtypes.float32)
     out = (bt*2).expand(10,10).sum(1)
-    sched = create_schedule([out.lazydata])
+    sched = out.schedule()
     run_schedule(sched)
     outd = out.tolist()
     assert all(x == 20.0 for x in outd)
@@ -26,7 +25,7 @@ class TestFusionOp(unittest.TestCase):
     st = time.perf_counter()
     a = Tensor([1,2,3,4])
     for _ in range(24): a = a + a
-    sched = create_schedule([a.lazydata])
+    sched = a.schedule()
     ei = lower_schedule_item(sched[-1])
     self.assertLess(time.perf_counter()-st, 2.0)
     assert len(ei.prg.p.src.splitlines()) < 250
@@ -35,13 +34,13 @@ class TestFusionOp(unittest.TestCase):
     st = time.perf_counter()
     a = Tensor([1,2,3,4])
     for _ in range(24): a = a + a
-    sched1 = create_schedule([a.lazydata])
+    sched1 = a.schedule()
     b = Tensor([1,2,3,4])
     for _ in range(24): b = b + b
-    sched2 = create_schedule([b.lazydata])
+    sched2 = b.schedule()
     c = Tensor([1,2,3,4])
     for _ in range(23): c = c + c
-    sched3 = create_schedule([c.lazydata])
+    sched3 = c.schedule()
     self.assertEqual(sched1[-1].ast, sched2[-1].ast)
     with self.assertRaises(AssertionError): self.assertEqual(sched1[-1].ast, sched3[-1].ast)
     self.assertLess(time.perf_counter()-st, 2.0)
@@ -49,10 +48,10 @@ class TestFusionOp(unittest.TestCase):
   def test_recursive_pad(self):
     st = time.perf_counter()
     val = 1.0
-    a = Tensor(val).realize()
+    a = Tensor(val)
     for _ in range(24): a = Tensor.stack(a, a)[0]
-    r = a.item()
-    self.assertEqual(r, val)
+    sched = a.schedule()
+    self.assertEqual(len(sched), 1)
     self.assertLess(time.perf_counter()-st, 2.0)
 
   def test_recursive_reshape(self):

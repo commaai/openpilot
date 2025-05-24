@@ -10,6 +10,7 @@
 
 ## Movement (high level)
 
+::: tinygrad.Tensor.__getitem__
 ::: tinygrad.Tensor.gather
 ::: tinygrad.Tensor.cat
 ::: tinygrad.Tensor.stack
@@ -24,3 +25,5 @@
 ::: tinygrad.Tensor.transpose
 ::: tinygrad.Tensor.flatten
 ::: tinygrad.Tensor.unflatten
+::: tinygrad.Tensor.roll
+::: tinygrad.Tensor.rearrange

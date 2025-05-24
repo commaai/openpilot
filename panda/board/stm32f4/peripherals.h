@@ -9,6 +9,7 @@ static void gpio_usb_init(void) {
   GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
 }
 
+#ifdef ENABLE_SPI
 void gpio_spi_init(void) {
   // A4-A7: SPI
   set_gpio_alternate(GPIOA, 4, GPIO_AF5_SPI1);
@@ -17,12 +18,15 @@ void gpio_spi_init(void) {
   set_gpio_alternate(GPIOA, 7, GPIO_AF5_SPI1);
   register_set_bits(&(GPIOA->OSPEEDR), GPIO_OSPEEDER_OSPEEDR4 | GPIO_OSPEEDER_OSPEEDR5 | GPIO_OSPEEDER_OSPEEDR6 | GPIO_OSPEEDER_OSPEEDR7);
 }
+#endif
 
+#ifdef BOOTSTUB
 void gpio_usart2_init(void) {
   // A2,A3: USART 2 for debugging
   set_gpio_alternate(GPIOA, 2, GPIO_AF7_USART2);
   set_gpio_alternate(GPIOA, 3, GPIO_AF7_USART2);
 }
+#endif
 
 // Common GPIO initialization
 void common_init_gpio(void) {
@@ -45,12 +49,14 @@ void common_init_gpio(void) {
   set_gpio_alternate(GPIOB, 9, GPIO_AF8_CAN1);
 }
 
+#ifdef BOOTSTUB
 void flasher_peripherals_init(void) {
   RCC->AHB1ENR |= RCC_AHB1ENR_DMA2EN;
   RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
   RCC->AHB2ENR |= RCC_AHB2ENR_OTGFSEN;
   RCC->APB1ENR |= RCC_APB1ENR_USART2EN;
 }
+#endif
 
 // Peripheral initialization
 void peripherals_init(void) {

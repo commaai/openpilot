@@ -1,8 +1,10 @@
 #pragma once
 
+#include <cstring>
 #include <map>
 #include <set>
 #include <string>
+#include <sstream>
 #include <utility>
 #include <unordered_map>
 #include <vector>
@@ -19,6 +21,9 @@
 #define CAN_INVALID_CNT 5
 
 // Car specific functions
+void pedal_setup_signal(Signal &sig, const std::string& dbc_name, int line_num);
+void tesla_setup_signal(Signal &sig, const std::string& dbc_name, int line_num);
+
 unsigned int honda_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int toyota_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int subaru_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
@@ -28,6 +33,20 @@ unsigned int xor_checksum(uint32_t address, const Signal &sig, const std::vector
 unsigned int hkg_can_fd_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int fca_giorgio_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
 unsigned int pedal_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
+unsigned int tesla_checksum(uint32_t address, const Signal &sig, const std::vector<uint8_t> &d);
+
+#define DBC_ASSERT(condition, message)                             \
+  do {                                                             \
+    if (!(condition)) {                                            \
+      std::stringstream is;                                        \
+      is << "[" << dbc_name << ":" << line_num << "] " << message; \
+      throw std::runtime_error(is.str());                          \
+    }                                                              \
+  } while (false)
+
+inline bool endswith(const std::string& str, const char* suffix) {
+  return str.find(suffix, str.length() - strlen(suffix)) != std::string::npos;
+}
 
 struct CanFrame {
   long src;
@@ -91,7 +110,7 @@ protected:
 class CANPacker {
 private:
   const DBC *dbc = NULL;
-  std::map<std::pair<uint32_t, std::string>, Signal> signal_lookup;
+  std::unordered_map<uint32_t, std::unordered_map<std::string, Signal>> signal_lookup;
   std::map<uint32_t, uint32_t> counters;
 
 public:

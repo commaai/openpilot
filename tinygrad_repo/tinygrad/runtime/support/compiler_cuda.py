@@ -4,7 +4,7 @@ from tinygrad.helpers import to_char_p_p, colored, init_c_var, getenv
 import tinygrad.runtime.autogen.nvrtc as nvrtc
 from tinygrad.device import Compiler, CompileError
 
-PTX = getenv("PTX")  # this shouldn't be here, in fact, it shouldn't exist
+PTX, CUDA_PATH = getenv("PTX"), getenv("CUDA_PATH", "")  # PTX shouldn't be here, in fact, it shouldn't exist
 
 def _get_bytes(arg, get_str, get_sz, check) -> bytes:
   sz = init_c_var(ctypes.c_size_t(), lambda x: check(get_sz(arg, ctypes.byref(x))))
@@ -40,7 +40,8 @@ def cuda_disassemble(lib, arch):
 
 class CUDACompiler(Compiler):
   def __init__(self, arch:str, cache_key:str="cuda"):
-    self.arch, self.compile_options = arch, [f'--gpu-architecture={arch}', "-I/usr/local/cuda/include", "-I/usr/include", "-I/opt/cuda/include/"]
+    self.arch, self.compile_options = arch, [f'--gpu-architecture={arch}']
+    self.compile_options += [f"-I{CUDA_PATH}/include"] if CUDA_PATH else ["-I/usr/local/cuda/include", "-I/usr/include", "-I/opt/cuda/include"]
     nvrtc_check(nvrtc.nvrtcVersion((nvrtcMajor := ctypes.c_int()), (nvrtcMinor := ctypes.c_int())))
     if (nvrtcMajor.value, nvrtcMinor.value) >= (12, 4): self.compile_options.append("--minimal")
     super().__init__(f"compile_{cache_key}_{self.arch}")

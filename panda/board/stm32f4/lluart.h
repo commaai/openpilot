@@ -20,60 +20,8 @@ void uart_tx_ring(uart_ring *q){
   EXIT_CRITICAL();
 }
 
-static void uart_rx_ring(uart_ring *q){
-  ENTER_CRITICAL();
-
-  // Read out RX buffer
-  uint8_t c = q->uart->DR;  // This read after reading SR clears a bunch of interrupts
-
-  uint16_t next_w_ptr = (q->w_ptr_rx + 1U) % q->rx_fifo_size;
-
-  if ((next_w_ptr == q->r_ptr_rx) && q->overwrite) {
-    // overwrite mode: drop oldest byte
-    q->r_ptr_rx = (q->r_ptr_rx + 1U) % q->rx_fifo_size;
-  }
-
-  // Do not overwrite buffer data
-  if (next_w_ptr != q->r_ptr_rx) {
-    q->elems_rx[q->w_ptr_rx] = c;
-    q->w_ptr_rx = next_w_ptr;
-    if (q->callback != NULL) {
-      q->callback(q);
-    }
-  }
-
-  EXIT_CRITICAL();
-}
-
 // This read after reading SR clears all error interrupts. We don't want compiler warnings, nor optimizations
 #define UART_READ_DR(uart) volatile uint8_t t = (uart)->DR; UNUSED(t);
-
-static void uart_interrupt_handler(uart_ring *q) {
-  ENTER_CRITICAL();
-
-  // Read UART status. This is also the first step necessary in clearing most interrupts
-  uint32_t status = q->uart->SR;
-
-  // If RXNE is set, perform a read. This clears RXNE, ORE, IDLE, NF and FE
-  if((status & USART_SR_RXNE) != 0U){
-    uart_rx_ring(q);
-  }
-
-  // Detect errors and clear them
-  uint32_t err = (status & USART_SR_ORE) | (status & USART_SR_NE) | (status & USART_SR_FE) | (status & USART_SR_PE);
-  if(err != 0U){
-    #ifdef DEBUG_UART
-      print("Encountered UART error: "); puth(err); print("\n");
-    #endif
-    UART_READ_DR(q->uart)
-  }
-  // Send if necessary
-  uart_tx_ring(q);
-
-  EXIT_CRITICAL();
-}
-
-void USART2_IRQ_Handler(void) { uart_interrupt_handler(&uart_ring_debug); }
 
 // ***************************** Hardware setup *****************************
 

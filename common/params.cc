@@ -140,7 +140,7 @@ int Params::put(const char* key, const char* value, size_t value_size) {
     }
 
     // fsync to force persist the changes.
-    if ((result = fsync(tmp_fd)) < 0) break;
+    if ((result = HANDLE_EINTR(fsync(tmp_fd))) < 0) break;
 
     FileLock file_lock(params_path + "/.lock");
 

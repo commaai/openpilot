@@ -46,20 +46,9 @@ BO_ 506 BRAKE_COMMAND: 8 ADAS
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EBCM
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EBCM
 
-BO_ 597 ROUGH_WHEEL_SPEED: 8 VSA
- SG_ WHEEL_SPEED_FL : 7|8@0+ (1,0) [0|255] "mph" EON
- SG_ WHEEL_SPEED_FR : 15|8@0+ (1,0) [0|255] "mph" EON
- SG_ WHEEL_SPEED_RL : 23|8@0+ (1,0) [0|255] "mph" EON
- SG_ WHEEL_SPEED_RR : 31|8@0+ (1,0) [0|255] "mph" EON
- SG_ SET_TO_X55 : 39|8@0+ (1,0) [0|255] "" EON
- SG_ SET_TO_X55_2 : 47|8@0+ (1,0) [0|255] "" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
-
 BO_ 829 LKAS_HUD: 5 ADAS
  SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
  SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
- SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
  SG_ CAMERA_OVERHEAT : 15|1@0+ (1,0) [0|1] "" BDY
  SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
  SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY

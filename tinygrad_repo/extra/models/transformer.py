@@ -51,7 +51,7 @@ class Transformer:
     maxlen_eye = Tensor.eye(x.shape[1])
     maxlen_eye = maxlen_eye.unsqueeze(0).expand([bs, *maxlen_eye.shape])
 
-    onehot_feat = x.one_hot(self.syms)
+    onehot_feat = x.int().one_hot(self.syms)
 
     onehot = maxlen_eye.cat(onehot_feat, dim=2).flatten(end_dim=1)
 

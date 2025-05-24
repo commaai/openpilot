@@ -3,7 +3,7 @@ GRAPH=1
 JITGRAPH=1 (this restricts the graph...no need if we can select the schedules)
 GRAPHUOPS=1
 most uses of DEBUG >= 3
-https://tiny-tools-client.vercel.app/
+tiny-tools
 
 and a viewer for:
 SAVE_SCHEDULE=1

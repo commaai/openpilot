@@ -1,11 +1,11 @@
 import numpy as np
-import unittest, ctypes
+import functools, unittest, ctypes
 
 from tinygrad.device import Device, Buffer
 from tinygrad.tensor import Tensor, _to_np_dtype
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.helpers import Context, CI, dedup, from_mv
 from tinygrad.dtype import dtypes
+from tinygrad.engine.jit import MultiGraphRunner
 from tinygrad.engine.realize import ExecItem, BufferXfer, get_runner, CompiledRunner
 
 np.random.seed(1337)
@@ -19,9 +19,9 @@ def helper_exec_op(device, outbuf, inbufs):
     with Context(DEBUG=0):
       fst = [Tensor.randn(BUF_SIZE, dtype=dtypes.int).realize() for i in range(len(inbufs))]
       s = fst[0]
-      for i in range(1, len(inbufs)): s = s.xor(fst[i])
+      for i in range(1, len(inbufs)): s = s.bitwise_xor(fst[i])
 
-      si = create_schedule([s.lazydata])[-1]
+      si = s.schedule()[-1]
       prg = get_runner(device, si.ast)
     cached_prgs[(device, len(inbufs))] = prg
 
@@ -38,6 +38,10 @@ def helper_alloc_rawbuffer(device, fill=False):
       data = np.random.randint(-10000, 10000, size=rawbuf.size, dtype=_to_np_dtype(rawbuf.dtype))
       rawbuf.copyin(Tensor(data).realize().lazydata.base.realized.as_buffer())
   return rawbuf
+
+def helper_create_offset_rawbuffer(base, offset=0):
+  x = Buffer(base.device, base.size-offset, base.dtype, base=base, offset=offset)
+  return x.ensure_allocated()
 
 def helper_run_jit(jis, bufs, out_buffers):
   for rawbuf in out_buffers:
@@ -71,7 +75,6 @@ def helper_test_graphs(graph_impl, graphs, runs=RUN_CNT):
     for i in range(len(ground_thruth_bufs)): np.testing.assert_equal(ground_truth_np[i], test_bufs_np[i])
 
 @unittest.skipUnless(Device[Device.DEFAULT].graph is not None, "graph support required")
-@unittest.skipIf(CI and Device.DEFAULT=="METAL", "no ICB in CI, creation of graph fails")
 class TestGraph(unittest.TestCase):
   def test_order_2_writes_to_same_buf(self):
     d0 = Device.DEFAULT
@@ -103,8 +106,13 @@ class TestGraph(unittest.TestCase):
 
     helper_test_graphs(Device[d0].graph, graphs)
 
-  @unittest.skipUnless(Device.DEFAULT in {"CUDA", "NV", "AMD"}, "mutidevice graph required")
+  def skip_if_not_multigraph(self):
+    graph = g.func if isinstance(g:=Device[Device.DEFAULT].graph, functools.partial) else g
+    if not issubclass(graph, MultiGraphRunner): self.skipTest("graph is not supported (not MultiGraphRunner)")
+
   def test_order_copy_writed(self):
+    self.skip_if_not_multigraph()
+
     d0 = Device.DEFAULT
     b0 = [helper_alloc_rawbuffer(d0, fill=True) for _ in range(4)]
 
@@ -114,8 +122,9 @@ class TestGraph(unittest.TestCase):
 
     helper_test_graphs(Device[d0].graph, graphs)
 
-  @unittest.skipUnless(Device.DEFAULT in {"CUDA", "NV", "AMD"}, "mutidevice graph required")
   def test_order_copy_then_read(self):
+    self.skip_if_not_multigraph()
+
     d0 = Device.DEFAULT
     b0 = [helper_alloc_rawbuffer(d0, fill=True) for _ in range(4)]
 
@@ -144,8 +153,9 @@ class TestGraph(unittest.TestCase):
 
     helper_test_graphs(Device[d0].graph, graphs)
 
-  @unittest.skipUnless(Device.DEFAULT in {"CUDA", "NV", "AMD"}, "mutidevice graph required")
   def test_copies_2_devs(self):
+    self.skip_if_not_multigraph()
+
     d0, d1 = Device.DEFAULT, f"{Device.DEFAULT}:1"
     b0 = [helper_alloc_rawbuffer(d0, fill=True) for _ in range(3)]
     b1 = [helper_alloc_rawbuffer(d1, fill=True) for _ in range(1)]
@@ -156,8 +166,9 @@ class TestGraph(unittest.TestCase):
 
     helper_test_graphs(Device[d0].graph, graphs)
 
-  @unittest.skipUnless(Device.DEFAULT in {"CUDA", "NV", "AMD"}, "mutidevice graph required")
   def test_copies_after_graph_global(self):
+    self.skip_if_not_multigraph()
+
     d0, d1, d2, d3 = Device.DEFAULT, f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3"
     b0 = [helper_alloc_rawbuffer(d0, fill=True) for _ in range(8)]
     b1 = [helper_alloc_rawbuffer(d1, fill=True) for _ in range(6)]
@@ -203,8 +214,9 @@ class TestGraph(unittest.TestCase):
 
     helper_test_graphs(Device[d0].graph, graphs)
 
-  @unittest.skipUnless(Device.DEFAULT in {"CUDA", "NV", "AMD"}, "mutidevice graph required")
   def test_graph_after_copies_devs(self):
+    self.skip_if_not_multigraph()
+
     d0, d1, d2, d3 = Device.DEFAULT, f"{Device.DEFAULT}:1", f"{Device.DEFAULT}:2", f"{Device.DEFAULT}:3"
     b0 = [helper_alloc_rawbuffer(d0, fill=True) for _ in range(8)]
     b1 = [helper_alloc_rawbuffer(d1, fill=True) for _ in range(1)]
@@ -226,6 +238,21 @@ class TestGraph(unittest.TestCase):
       [helper_copy_op(d2, b0[1], b2[0]), helper_copy_op(d3, b0[2], b3[0])],
       [helper_exec_op(d0, b0[3], [b0[0], b0[2]]), helper_exec_op(d0, b0[4], [b0[3], b0[2]]),
        helper_exec_op(d0, b0[5], [b0[0], b0[2]])],
+    ]
+
+    helper_test_graphs(Device[d0].graph, graphs)
+
+  def test_graph_offset_bufs(self):
+    self.skip_if_not_multigraph()
+
+    d0 = Device.DEFAULT
+    if not hasattr(Device[d0].allocator, "_offset"): self.skipTest("device does not support _offset")
+
+    b0 = [helper_alloc_rawbuffer(d0, fill=True) for _ in range(1)]
+    b0 += [helper_create_offset_rawbuffer(b0[0]), helper_create_offset_rawbuffer(b0[0])]
+
+    graphs = [
+      [helper_copy_op(d0, b0[0], b0[2]), helper_exec_op(d0, b0[1], [b0[0], b0[2]])],
     ]
 
     helper_test_graphs(Device[d0].graph, graphs)

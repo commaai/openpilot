@@ -5,7 +5,7 @@ from tinygrad.device import Buffer
 from tinygrad.engine.realize import capturing, lower_schedule_item
 from tinygrad.helpers import DEBUG, MULTIOUTPUT, colored, getenv
 from tinygrad.engine.schedule import LBScheduleItem, _graph_schedule, ScheduleItem
-from tinygrad.ops import Ops, UOp
+from tinygrad.uop.ops import Ops, UOp
 from tinygrad.tensor import Tensor, _to_np_dtype
 
 ctx_vars = { MULTIOUTPUT: (0, 1) }
