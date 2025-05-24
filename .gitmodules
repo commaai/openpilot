@@ -3,7 +3,8 @@
   url = ../../commaai/panda.git
 [submodule "opendbc"]
   path = opendbc_repo
-  url = ../../commaai/opendbc.git
+  url = https://github.com/atawi44/opendbc.git
+  branch = IG19D
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git
