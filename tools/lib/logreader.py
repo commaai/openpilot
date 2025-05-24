@@ -120,7 +120,8 @@ def default_valid_file(fn: LogPath) -> bool:
 def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interactive: bool, valid_file: ValidFileCallable) -> list[LogPath]:
   # auto select logs based on availability
   missing_rlogs = [rlog is None or not valid_file(rlog) for rlog in rlog_paths].count(True)
-  if missing_rlogs != 0:
+  missing_qlogs = [qlog is None or not valid_file(qlog) for qlog in qlog_paths].count(True)
+  if missing_rlogs != 0 and missing_qlogs == 0:
     if interactive:
       if input(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
         return rlog_paths
