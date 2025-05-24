@@ -39,23 +39,27 @@ def migrated_segments(lr: LogIterable | LogReader, manager_states: bool = False,
     yield migrate_all(lr, **kwargs)
     return
 
-  total = len(lr.logreader_identifiers)
-  prev  = None                                 # previous segment list
-  for idx, seg in enumerate(lr.segments):
-    seg = list(seg)                            # materialise once
-    if prev is None:                           # first segment
-      prev = seg
-      # edge-case: route has exactly one segment
-      if total == 1:
-        yield migrate_all(prev, **kwargs)
-      continue
-    # Last segment can miss important messages like carParams so we need to combine the last and second last
-    if idx == total - 1:                       # last segment
-      prev.extend(seg)                         # merge last → prev
-      yield migrate_all(prev, **kwargs)
-    else:
-      yield migrate_all(prev, **kwargs)
-      prev = seg
+  iter_segments = lr.segments
+  try:
+    curr_seg = list(next(iter_segments))
+  except StopIteration:
+    return
+
+  for nxt_seg in iter_segments:
+    nxt_seg = list(nxt_seg)
+    if curr_seg:
+      curr_latest = max(m.logMonoTime for m in curr_seg)
+      # Find events in next segment with earlier timestamp
+      early = [m for m in nxt_seg if m.logMonoTime <= curr_latest]
+      # Remove those from next segment and add to current
+      if early:
+        nxt_seg[:] = [m for m in nxt_seg if m.logMonoTime > curr_latest]
+        curr_seg.extend(early)
+    yield migrate_all(curr_seg, **kwargs)
+    curr_seg = nxt_seg
+
+  if curr_seg:
+    yield migrate_all(curr_seg, **kwargs)
 
 
 def migrate_all(lr: LogIterable, manager_states: bool = False, panda_states: bool = False, camera_states: bool = False):
