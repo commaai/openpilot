@@ -33,6 +33,8 @@ try:
     EGLBoolean eglDestroyImageKHR(EGLDisplay dpy, EGLImageKHR image);
 
     void glEGLImageTargetTexture2DOES(GLenum target, GLeglImageOES image);
+    void glBindTexture(GLenum target, unsigned int texture);
+    void glActiveTexture(GLenum texture);
     """)
 
   # Load libraries
@@ -57,12 +59,18 @@ try:
     EGL_NONE = 0x3038
     TEXTURE_EXTERNAL_OES = 0x8D65
 
+    # OpenGL constants
+    GL_TEXTURE0 = 0x84C0
+    GL_TEXTURE_EXTERNAL_OES = TEXTURE_EXTERNAL_OES
+
     # Set up function bindings
     eglGetCurrentDisplay = _egl.eglGetCurrentDisplay
     eglCreateImageKHR = _egl.eglCreateImageKHR
     eglDestroyImageKHR = _egl.eglDestroyImageKHR
     glEGLImageTargetTexture2DOES = _gles.glEGLImageTargetTexture2DOES
     eglGetError = _egl.eglGetError
+    glBindTexture = _gles.glBindTexture
+    glActiveTexture = _gles.glActiveTexture
 
     HAS_EGL = True
   except (OSError, AttributeError) as e:
@@ -128,15 +136,21 @@ class CameraView:
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
 
     self.texture_y: rl.Texture | None = None
-    self.texture_uv: rl.Texture | None  = None
+    self.texture_uv: rl.Texture | None = None
     self.egl_textures: dict[int, dict[str, Any]] = {}  # For EGL implementation
-    self.frame: VisionBuf | None  = None
+    self.frame: VisionBuf | None = None
     self.use_egl = TICI and HAS_EGL
+    self.egl_texture: rl.Texture | None = None  # Single texture for all EGL images
 
     # For EGL
     if self.use_egl:
       self.egl_display = None
       self.setup_egl()
+
+      # Create a single texture for EGL images
+      temp_image = rl.gen_image_color(1, 1, rl.BLACK)
+      self.egl_texture = rl.load_texture_from_image(temp_image)
+      rl.unload_image(temp_image)
 
   def setup_egl(self):
     if not self.use_egl:
@@ -149,7 +163,7 @@ class CameraView:
       self.use_egl = False
 
   def create_egl_image(self, buffer_idx, width, height, stride, fd, uv_offset):
-    """Create EGL image from DMA buffer"""
+    """Create EGL image from DMA buffer - more efficient version"""
     if not self.use_egl or not self.egl_display:
       return None
 
@@ -167,8 +181,7 @@ class CameraView:
       EGL_DMA_BUF_PLANE1_OFFSET_EXT, uv_offset,
       EGL_DMA_BUF_PLANE1_PITCH_EXT, stride,
       EGL_NONE
-  ]
-
+    ]
 
     attr_array = _ffi.new("int[]", img_attrs)
     egl_image = eglCreateImageKHR(self.egl_display, EGL_NO_CONTEXT, EGL_LINUX_DMA_BUF_EXT, _ffi.NULL, attr_array)
@@ -178,26 +191,7 @@ class CameraView:
       os.close(dup_fd)
       return None
 
-    render_texture = rl.load_render_texture(width, height)
-
-    texture_id = render_texture.texture.id
-
-    # Bind the EGL image to texture
-    # rl.bind_texture(TEXTURE_EXTERNAL_OES, texture_id)
-    # rl.set_texture_filter(texture_id, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-    # rl.gl_bind_texture(texture_id)  # If available in PyRay
-    glEGLImageTargetTexture2DOES(TEXTURE_EXTERNAL_OES, egl_image)
-
-    texture = {
-      "id": texture_id,
-      "width": width,
-      "height": height,
-      "format": render_texture.texture.format,
-      "mipmaps": render_texture.texture.mipmaps,
-      "render_texture": render_texture,  # Store reference to prevent GC
-    }
-
-    return {"texture": texture, "egl_image": egl_image, "fd": dup_fd}
+    return {"egl_image": egl_image, "fd": dup_fd}
 
   def close(self):
     self._clear_textures()
@@ -209,8 +203,11 @@ class CameraView:
           eglDestroyImageKHR(self.egl_display, data["egl_image"])
         if data["fd"] > 0:
           os.close(data["fd"])
-        if data["texture"].id:
-          rl.UnloadTexture(data["texture"])
+
+      # Clean up the single EGL texture
+      if self.egl_texture and self.egl_texture.id:
+        rl.unload_texture(self.egl_texture)
+        self.egl_texture = None
 
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
@@ -240,34 +237,31 @@ class CameraView:
       self._render_textures(src_rect, dst_rect)
 
   def _render_egl(self, src_rect, dst_rect):
-    """Render using EGL for direct buffer access"""
+    """Render using EGL for direct buffer access - more efficient version"""
     idx = self.frame.idx
 
-    print(idx)
-
-    # Create or get EGL texture
+    # Create or get EGL image
     if idx not in self.egl_textures:
-      # print('create')
       self.egl_textures[idx] = self.create_egl_image(
         idx, self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset
       )
 
-    # If we have a valid EGL texture, render it
+    # If we have a valid EGL image, render it
     if idx in self.egl_textures and self.egl_textures[idx]:
-      tex_data = self.egl_textures[idx]["texture"]
       egl_image = self.egl_textures[idx]["egl_image"]
 
-      # Create a temporary texture object for drawing
-      texture = rl.Texture()
-      texture.id = tex_data["id"]
-      texture.width = tex_data["width"]
-      texture.height = tex_data["height"]
-      texture.mipmaps = tex_data["mipmaps"]
-      texture.format = tex_data["format"]
+      # Update texture dimensions to match current frame
+      self.egl_texture.width = self.frame.width
+      self.egl_texture.height = self.frame.height
 
-      glEGLImageTargetTexture2DOES(TEXTURE_EXTERNAL_OES, egl_image)
+      # Activate texture and bind EGL image
+      glActiveTexture(GL_TEXTURE0)
+      glBindTexture(GL_TEXTURE_EXTERNAL_OES, self.egl_texture.id)
+      glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_image)
+
+      # Render with shader
       rl.begin_shader_mode(self.shader)
-      rl.draw_texture_pro(texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
+      rl.draw_texture_pro(self.egl_texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
       rl.end_shader_mode()
 
   def _render_textures(self, src_rect, dst_rect):
@@ -323,15 +317,11 @@ class CameraView:
       rl.unload_texture(self.texture_uv)
       self.texture_uv = None
 
-    # Clean up EGL textures
+    # Clean up EGL textures - more efficient version
     if self.use_egl and self.egl_display:
       for data in self.egl_textures.values():
         if data["egl_image"]:
           eglDestroyImageKHR(self.egl_display, data["egl_image"])
-        if data["fd"] > 0:
-          os.close(data["fd"])
-        if data["texture"].id:
-          rl.UnloadTexture(data["texture"])
       self.egl_textures = {}
 
 
@@ -344,7 +334,9 @@ if __name__ == "__main__":
     for _ in gui_app.render():
       road_camera_view.render(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
       driver_camera_view.render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
-      wide_road_camera_view.render(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
+      wide_road_camera_view.render(
+        rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2)
+      )
   finally:
     road_camera_view.close()
     driver_camera_view.close()
