@@ -104,8 +104,6 @@ class CarSpecificEvents:
         events.add(EventName.belowEngageSpeed)
       if CS.cruiseState.standstill:
         events.add(EventName.resumeRequired)
-      if CS.vEgo < self.CP.minSteerSpeed:
-        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.brand == 'volkswagen':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
