@@ -2,9 +2,11 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <memory>
 #include <regex>
 #include <set>
 #include <sstream>
+#include <string>
 #include <vector>
 #include <mutex>
 #include <iterator>
@@ -20,15 +22,6 @@ std::regex sgm_regexp(R"(^SG_ (\w+) (\w+) *: (\d+)\|(\d+)@(\d+)([\+|\-]) \(([0-9
 std::regex val_regexp(R"(VAL_ (\w+) (\w+) (\s*[-+]?[0-9]+\s+\".+?\"[^;]*))");
 std::regex val_split_regexp{R"([\"]+)"};  // split on "
 
-#define DBC_ASSERT(condition, message)                             \
-  do {                                                             \
-    if (!(condition)) {                                            \
-      std::stringstream is;                                        \
-      is << "[" << dbc_name << ":" << line_num << "] " << message; \
-      throw std::runtime_error(is.str());                          \
-    }                                                              \
-  } while (false)
-
 inline bool startswith(const std::string& str, const char* prefix) {
   return str.find(prefix, 0) == 0;
 }
@@ -38,10 +31,6 @@ inline bool startswith(const std::string& str, std::initializer_list<const char*
     if (startswith(str, prefix)) return true;
   }
   return false;
-}
-
-inline bool endswith(const std::string& str, const char* suffix) {
-  return str.find(suffix, 0) == (str.length() - strlen(suffix));
 }
 
 inline std::string& trim(std::string& s, const char* t = " \t\n\r\f\v") {
@@ -57,9 +46,9 @@ ChecksumState* get_checksum(const std::string& dbc_name) {
     s = new ChecksumState({8, -1, 7, -1, false, TOYOTA_CHECKSUM, &toyota_checksum});
   } else if (startswith(dbc_name, "hyundai_canfd_generated")) {
     s = new ChecksumState({16, -1, 0, -1, true, HKG_CAN_FD_CHECKSUM, &hkg_can_fd_checksum});
-  } else if (startswith(dbc_name, {"vw_mqb_2010", "vw_mqbevo", "vw_meb"})) {
+  } else if (startswith(dbc_name, {"vw_mqb", "vw_mqbevo", "vw_meb"})) {
     s = new ChecksumState({8, 4, 0, 0, true, VOLKSWAGEN_MQB_MEB_CHECKSUM, &volkswagen_mqb_meb_checksum});
-  } else if (startswith(dbc_name, "vw_golf_mk4")) {
+  } else if (startswith(dbc_name, "vw_pq")) {
     s = new ChecksumState({8, 4, 0, -1, true, XOR_CHECKSUM, &xor_checksum});
   } else if (startswith(dbc_name, "subaru_global_")) {
     s = new ChecksumState({8, -1, 0, -1, true, SUBARU_CHECKSUM, &subaru_checksum});
@@ -69,35 +58,39 @@ ChecksumState* get_checksum(const std::string& dbc_name) {
     s = new ChecksumState({8, -1, 7, -1, false, FCA_GIORGIO_CHECKSUM, &fca_giorgio_checksum});
   } else if (startswith(dbc_name, "comma_body")) {
     s = new ChecksumState({8, 4, 7, 3, false, PEDAL_CHECKSUM, &pedal_checksum});
+  } else if (startswith(dbc_name, "tesla_model3_party")) {
+    s = new ChecksumState({8, -1, 0, -1, true, TESLA_CHECKSUM, &tesla_checksum, &tesla_setup_signal});
   }
   return s;
 }
 
 void set_signal_type(Signal& s, ChecksumState* chk, const std::string& dbc_name, int line_num) {
   s.calc_checksum = nullptr;
+  // FIXME: always assign COUNTER type without explicit ChecksumState
   if (chk) {
+    if (chk->setup_signal) {
+      chk->setup_signal(s, dbc_name, line_num);
+    }
+
+    pedal_setup_signal(s, dbc_name, line_num);
+
     if (s.name == "CHECKSUM") {
-      DBC_ASSERT(chk->checksum_size == -1 || s.size == chk->checksum_size, "CHECKSUM is not " << chk->checksum_size << " bits long");
-      DBC_ASSERT(chk->checksum_start_bit == -1 || (s.start_bit % 8) == chk->checksum_start_bit, " CHECKSUM starts at wrong bit");
-      DBC_ASSERT(s.is_little_endian == chk->little_endian, "CHECKSUM has wrong endianness");
-      DBC_ASSERT(chk->calc_checksum != nullptr, "CHECKSUM calculate function not supplied");
       s.type = chk->checksum_type;
       s.calc_checksum = chk->calc_checksum;
     } else if (s.name == "COUNTER") {
-      DBC_ASSERT(chk->counter_size == -1 || s.size == chk->counter_size, "COUNTER is not " << chk->counter_size << " bits long");
-      DBC_ASSERT(chk->counter_start_bit == -1 || (s.start_bit % 8) == chk->counter_start_bit, "COUNTER starts at wrong bit");
-      DBC_ASSERT(chk->little_endian == s.is_little_endian, "COUNTER has wrong endianness");
       s.type = COUNTER;
     }
-  }
 
-  // TODO: CAN packer/parser shouldn't know anything about interceptors or pedals
-  if (s.name == "CHECKSUM_PEDAL") {
-    DBC_ASSERT(s.size == 8, "INTERCEPTOR CHECKSUM is not 8 bits long");
-    s.type = PEDAL_CHECKSUM;
-  } else if (s.name == "COUNTER_PEDAL") {
-    DBC_ASSERT(s.size == 4, "INTERCEPTOR COUNTER is not 4 bits long");
-    s.type = COUNTER;
+    if (s.type > COUNTER) {
+      DBC_ASSERT(chk->checksum_size == -1 || s.size == chk->checksum_size, s.name << " is not " << chk->checksum_size << " bits long");
+      DBC_ASSERT(chk->checksum_start_bit == -1 || (s.start_bit % 8) == chk->checksum_start_bit, s.name << " starts at wrong bit");
+      DBC_ASSERT(chk->little_endian == s.is_little_endian, s.name << " has wrong endianness");
+      DBC_ASSERT(chk->calc_checksum != nullptr, "Checksum calculate function not supplied for " << s.name);
+    }  else if (s.type == COUNTER) {
+      DBC_ASSERT(chk->counter_size == -1 || s.size == chk->counter_size, s.name << " is not " << chk->counter_size << " bits long");
+      DBC_ASSERT(chk->counter_start_bit == -1 || (s.start_bit % 8) == chk->counter_start_bit, s.name << " starts at wrong bit");
+      DBC_ASSERT(chk->little_endian == s.is_little_endian, s.name << " has wrong endianness");
+    }
   }
 }
 

@@ -47,7 +47,7 @@ cd opendbc
 pip3 install -e .[testing,docs]  # install dependencies
 scons -j8                        # build with 8 cores
 pytest .                         # run the tests
-pre-commit run --all-files       # run the linter
+lefthook run lint                # run the linter
 ```
 
 [`examples/`](examples/) contains small example programs that can read state from the car and control the steering, gas, and brakes.
@@ -75,9 +75,9 @@ If you're not so lucky, start with a "developer harness" from comma.ai/shop and 
 
 ### Structure of a port
 
-Depending on , most of this basic structure will already be in place.
+Depending on the brand, most of this basic structure will already be in place.
 
-The entirery of a car port lives in `opendbc/car/<brand>/`:
+The entirety of a car port lives in `opendbc/car/<brand>/`:
 * `carstate.py`: parses out the relevant information from the CAN stream using the car's DBC file
 * `carcontroller.py`: outputs CAN messages to control the car
 * `<brand>can.py`: thin Python helpers around the DBC file to build CAN messages

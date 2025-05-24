@@ -1,4 +1,4 @@
-#include "safety.h"
+#include "opendbc/safety/safety.h"
 
 // this file is checked by cppcheck
 

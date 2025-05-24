@@ -20,7 +20,7 @@ source .venv/bin/activate
 
 Then, compile openpilot:
 ```bash
-scons -j8
+scons -j$(nproc)
 ```
 
 ## 2. Run replay
@@ -38,61 +38,77 @@ The openpilot UI should launch and show a replay of the demo route.
 
 If you have your own comma device, you can replace `--demo` with one of your own routes from comma connect.
 
+
 ## 3. Make the speed blue
 
-Search for “mph” with git grep in the `ui` folder.
+Now let’s update the speed display color in the UI.
+
+Search for the function responsible for rendering UI text:
 ```bash
-$ git grep "mph" selfdrive/ui/
-paint.cc:  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
+git grep "drawText" selfdrive/ui/qt/onroad/hud.cc
 ```
 
-The line right above contains the actual speed. Unfortunately, COLOR_BLUE isn’t defined, but a git grep of COLOR_WHITE shows it’s nvgRGBA(255, 255, 255, 255). Personally, I like a lighter blue, so I went with #8080FF.
+You’ll find the relevant code inside `selfdrive/ui/qt/onroad/hud.cc`, in this function:
+
+```cpp
+void HudRenderer::drawText(QPainter &p, int x, int y, const QString &text, int alpha) {
+  QRect real_rect = p.fontMetrics().boundingRect(text);
+  real_rect.moveCenter({x, y - real_rect.height() / 2});
+
+  p.setPen(QColor(0xff, 0xff, 0xff, alpha));  // <- this sets the speed text color
+  p.drawText(real_rect.x(), real_rect.bottom(), text);
+}
+```
+
+Change the `QColor(...)` line to make it **blue** instead of white. A nice soft blue is `#8080FF`, which translates to:
+
+```diff
+- p.setPen(QColor(0xff, 0xff, 0xff, alpha));
++ p.setPen(QColor(0x80, 0x80, 0xFF, alpha));
+```
+
+This change will tint all speed-related UI text to blue with the same transparency (`alpha`).
+
+---
+
+## 4. Rebuild the UI
+
+After making changes, rebuild Openpilot so your new UI is compiled:
 ```bash
-$ git diff
-diff --git a/selfdrive/ui/paint.cc b/selfdrive/ui/paint.cc
-index 821d95115..cc996eaa1 100644
---- a/selfdrive/ui/paint.cc
-+++ b/selfdrive/ui/paint.cc
-@@ -175,8 +175,8 @@ static void ui_draw_vision_speed(UIState *s) {
-   const float speed = std::max(0.0, (*s->sm)["carState"].getCarState().getVEgo() * (s->scene.is_metric ? 3.6 : 2.2369363));
-   const std::string speed_str = std::to_string((int)std::nearbyint(speed));
-   nvgTextAlign(s->vg, NVG_ALIGN_CENTER | NVG_ALIGN_BASELINE);
--  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, COLOR_WHITE, "sans-bold");
--  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, COLOR_WHITE_ALPHA(200), "sans-regular");
-+  ui_draw_text(s, s->fb_w/2, 210, speed_str.c_str(), 96 * 2.5, nvgRGBA(128, 128, 255, 255), "sans-bold");
-+  ui_draw_text(s, s->fb_w/2, 290, s->scene.is_metric ? "km/h" : "mph", 36 * 2.5, nvgRGBA(128, 128, 255, 200), "sans-regular");
- }
-
- static void ui_draw_vision_event(UIState *s) {
+scons -j$(nproc) && selfdrive/ui/ui
 ```
-
-
-## 4. Rebuild UI, and admire your work
-
-```
-scons -j8 && selfdrive/ui/ui
-```
-
 ![](https://blog.comma.ai/img/blue_speed_ui.png)
+
+You should now see the speed displayed in a nice blue shade during the demo replay.
+
+---
 
 ## 5. Push your fork to GitHub
 
-Click fork on GitHub. Then, push with:
+Click **"Fork"** on the [Openpilot GitHub repo](https://github.com/commaai/openpilot). Then push with:
 ```bash
 git remote rm origin
 git remote add origin git@github.com:<your-github-username>/openpilot.git
 git add .
-git commit -m "Make the speed blue."
+git commit -m "Make the speed display blue"
 git push --set-upstream origin master
 ```
 
-## 6. Run your fork on device in your car!
+---
 
-Uninstall openpilot from your device through the settings. Then, enter the URL for your very own installer:
+## 6. Run your fork on your comma device
+
+Uninstall Openpilot through the settings on your device.
+
+Then reinstall using your own GitHub-hosted fork:
 ```
 installer.comma.ai/<your-github-username>/master
 ```
 
-## 7. Admire your work IRL
+---
+
+## 7. Admire your work IRL 🚗💨
+
+You’ve now successfully modified Openpilot’s UI and deployed it to your own car!
 
 ![](https://blog.comma.ai/img/c3_blue_ui.jpg)

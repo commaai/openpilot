@@ -39,6 +39,11 @@ class TestView(unittest.TestCase):
     v = View.create(shape=(2,3,4), mask=((0,2),(0,3),(0,4)))
     self.assertTrue(v.contiguous)
 
+  def test_reshape_all_invalid(self):
+    v = View.create((4,5), mask=((0,0), (0,0))).reshape((20,))
+    self.assertIsNotNone(v)
+    self.assertEqual(v, View.create((20,), mask=((0,0),)))
+
 class TestMergeDims(unittest.TestCase):
   def test_contiguous(self):
     shape = (2, 3, 4)
@@ -169,6 +174,54 @@ class TestMergeViews(unittest.TestCase):
     v = v0 + v1
     self.assertIsNotNone(v)
     self.assertEqual(v, target)
+
+  def test_view_padded_area1(self):
+    # test_multinomial
+    v0 = View(shape=(2,), strides=(0,), offset=0, mask=((1, 2),), contiguous=False)
+    v1 = View(shape=(1,), strides=(0,), offset=0, mask=None, contiguous=True)
+    v = v0 + v1
+    self.assertIsNotNone(v)
+    self.assertEqual(v, View(shape=(1,), strides=(0,), offset=0, mask=((0, 0),), contiguous=False))
+
+  def test_view_padded_area2(self):
+    # test_pad_reflect_mode
+    v0 = View(shape=(1, 1, 10, 7), strides=(0, 0, 5, 1), offset=-15, mask=((0, 1), (0, 1), (3, 8), (0, 5)), contiguous=False)
+    v1 = View(shape=(0, 0, 0, 0), strides=(0, 0, 0, 0), offset=0, mask=None, contiguous=True)
+    v = v0 + v1
+    self.assertIsNotNone(v)
+    self.assertEqual(v, View(shape=(0, 0, 0, 0), strides=(0, 0, 0, 0), offset=0, mask=None, contiguous=True))
+
+  def test_view_padded_area3(self):
+    # test_roll
+    v0 = View(shape=(2, 4), strides=(0, 1), offset=4, mask=((0, 1), (0, 4)), contiguous=False)
+    v1 = View(shape=(1, 4), strides=(0, 1), offset=4, mask=None, contiguous=False)
+    v = v0 + v1
+    self.assertIsNotNone(v)
+    self.assertEqual(v, View(shape=(1, 4), strides=(0, 0), offset=0, mask=((0, 0), (0, 0)), contiguous=False))
+
+  def test_view_padded_area4(self):
+    # test_std_mean
+    v0 = View(shape=(2,), strides=(0,), offset=0, mask=((0, 1),), contiguous=False)
+    v1 = View(shape=(1, 1, 1), strides=(0, 0, 0), offset=1, mask=None, contiguous=False)
+    v = v0 + v1
+    self.assertIsNotNone(v)
+    self.assertEqual(v, View(shape=(1, 1, 1), strides=(0, 0, 0), offset=0, mask=((0, 0), (0, 0), (0, 0)), contiguous=False))
+
+  def test_empty_shape_view1(self):
+    # test_stack_slice
+    v0 = View(shape=(3, 5), strides=(0, 1), offset=0, mask=((0, 1), (0, 5)), contiguous=False)
+    v1 = View(shape=(), strides=(), offset=0, mask=None, contiguous=True)
+    v = v0 + v1
+    self.assertIsNotNone(v)
+    self.assertEqual(v, View(shape=(), strides=(), offset=0, mask=None, contiguous=True))
+
+  def test_empty_shape_view2(self):
+    # test_std_mean
+    v0 = View(shape=(2,), strides=(0,), offset=0, mask=((1, 2),), contiguous=False)
+    v1 = View(shape=(), strides=(), offset=0, mask=None, contiguous=True)
+    v = v0 + v1
+    # TODO: why is this different?
+    self.assertIsNone(v)
 
 if __name__ == '__main__':
   unittest.main()

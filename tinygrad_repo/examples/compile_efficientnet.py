@@ -15,9 +15,9 @@ if __name__ == "__main__":
   if getenv("WEBGPU"):
     safe_save(get_state_dict(model), (dirname / "net.safetensors").as_posix())
     load_state_dict(model, safe_load(str(dirname / "net.safetensors")))
-  mode = "clang" if getenv("CLANG", "") != "" else "webgpu" if getenv("WEBGPU", "") != "" else ""
+  mode = "clang" if getenv("CPU", "") != "" else "webgpu" if getenv("WEBGPU", "") != "" else ""
   prg, inp_sizes, out_sizes, state = export_model(model, mode, Tensor.randn(1,3,224,224))
-  if getenv("CLANG", "") == "":
+  if getenv("CPU", "") == "":
     ext = "js" if getenv("WEBGPU", "") != "" else "json"
     with open(dirname / f"net.{ext}", "w") as text_file:
       text_file.write(prg)
@@ -68,6 +68,6 @@ if __name__ == "__main__":
     else printf("%s\\n", lbls[best_idx]);
   }""")
 
-    # CLANG=1 python3 examples/compile_efficientnet.py | clang -O2 -lm -x c - -o recognize && DEBUG=1 time ./recognize docs/showcase/stable_diffusion_by_tinygrad.jpg
+    # CPU=1 python3 examples/compile_efficientnet.py | clang -O2 -lm -x c - -o recognize && DEBUG=1 time ./recognize docs/showcase/stable_diffusion_by_tinygrad.jpg
     # category : 281 (tabby, tabby cat) with 9.452788
     print('\n'.join(cprog))

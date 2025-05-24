@@ -24,11 +24,6 @@ BO_ 446 BRAKE_MODULE: 3 VSA
  SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
 
-BO_ 1302 ODOMETER: 8 XXX
- SG_ ODOMETER : 7|24@0+ (1,0) [0|16777215] "km" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
-
 CM_ SG_ 479 RELATED_TO_GAS "bits 7, 3, and 1 set to 1 when gas not applied";
 CM_ SG_ 479 GAS_BRAKE "Signed value, negative when braking and positive when applying gas";
 

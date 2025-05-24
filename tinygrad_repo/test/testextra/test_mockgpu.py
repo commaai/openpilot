@@ -5,7 +5,7 @@ import unittest, importlib
 class TestMockGPU(unittest.TestCase):
   # https://github.com/tinygrad/tinygrad/pull/7627
   def test_import_typing_extensions(self):
-    import extra.mockgpu.mockgpu # noqa: F401  # pylint: disable=unused-import
+    import test.mockgpu.mockgpu # noqa: F401  # pylint: disable=unused-import
     import typing_extensions
     importlib.reload(typing_extensions) # pytest imports typing_extension before mockgpu
 

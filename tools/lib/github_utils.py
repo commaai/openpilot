@@ -87,8 +87,8 @@ class GithubUtils:
   def comment_on_pr(self, comment, pr_branch, commenter="", overwrite=False):
     pr_number = self.get_pr_number(pr_branch)
     data = f'{{"body": "{comment}"}}'
+    github_path = f'issues/{pr_number}/comments'
     if overwrite:
-      github_path = f'issues/{pr_number}/comments'
       r = self.api_call(github_path)
       comments = [x['id'] for x in r.json() if x['user']['login'] == commenter]
       if comments:
@@ -96,7 +96,6 @@ class GithubUtils:
         self.api_call(github_path, data=data, method=HTTPMethod.PATCH)
         return
 
-    github_path=f'issues/{pr_number}/comments'
     self.api_call(github_path, data=data, method=HTTPMethod.POST)
 
   # upload files to github and comment them on the pr

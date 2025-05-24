@@ -1,11 +1,12 @@
 import random
 from tinygrad.helpers import getenv
-from tinygrad.engine.search import time_linearizer, beam_search, bufs_from_lin
-from extra.optimization.helpers import load_worlds, ast_str_to_lin
+from tinygrad.engine.search import beam_search, bufs_from_lin
+from tinygrad.codegen.heuristic import hand_coded_optimizations
+from extra.optimization.helpers import load_worlds, ast_str_to_lin, time_linearizer
 
 def optimize_kernel(k):
   # TODO: update this
-  return k.hand_coded_optimizations()
+  return hand_coded_optimizations(k)
 
 if __name__ == '__main__':
   hcopt_wins = beam_wins = tie = 0
@@ -19,7 +20,8 @@ if __name__ == '__main__':
     k = ast_str_to_lin(world)
     rawbufs = bufs_from_lin(k)
 
-    k_hcopt = optimize_kernel(k.copy())
+    k_hcopt = k.copy()
+    k_hcopt.apply_opts(optimize_kernel(k_hcopt))
     k_beam = beam_search(k.copy(), rawbufs, getenv("BEAM", 2))
 
     disable_cache = bool(getenv("NOCACHE", 0))

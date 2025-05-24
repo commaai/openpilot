@@ -1,6 +1,6 @@
 import unittest
-from tinygrad import Device, Tensor, TinyJit, Variable, dtypes
-from tinygrad.helpers import CI
+from tinygrad import Tensor, TinyJit, Variable, dtypes
+from tinygrad.helpers import Context
 import numpy as np
 
 class TestSetitem(unittest.TestCase):
@@ -25,6 +25,16 @@ class TestSetitem(unittest.TestCase):
       n = np.zeros(shp)
       n[slc] = val.numpy() if isinstance(val, Tensor) else val
       np.testing.assert_allclose(t.numpy(), n)
+
+  def test_padded_setitem(self):
+    t = Tensor.arange(10)
+    t[4:1:-2] = 11
+    self.assertListEqual(t.tolist(), [0, 1, 11, 3, 11, 5, 6, 7, 8, 9])
+
+  def test_setitem_inplace_mul(self):
+    t = Tensor.arange(10).realize()
+    t[:3] *= 10
+    self.assertListEqual(t.tolist(), [0, 10, 20, 3, 4, 5, 6, 7, 8, 9])
 
   def test_setitem_into_unrealized(self):
     t = Tensor.arange(4).reshape(2, 2)
@@ -70,7 +80,8 @@ class TestSetitem(unittest.TestCase):
     t[1] ^= 5
     np.testing.assert_allclose(t.numpy(), [[0, 1], [7, 6]])
 
-  @unittest.expectedFailure
+  #@unittest.expectedFailure
+  # update: passing after delete_forced_realize
   def test_setitem_consecutive_inplace_operator(self):
     t = Tensor.arange(4).reshape(2, 2).contiguous()
     t[1] += 2
@@ -121,30 +132,26 @@ class TestSetitem(unittest.TestCase):
       np.testing.assert_allclose(t.numpy(), n)
 
   def test_jit_setitem_variable_offset(self):
-    @TinyJit
-    def f(t:Tensor, a:Tensor, v:Variable):
-      t.shrink(((v,v+1), None)).assign(a).realize()
+    with Context(IGNORE_OOB=1):
+      @TinyJit
+      def f(t:Tensor, a:Tensor, v:Variable):
+        t.shrink(((v,v+1), None)).assign(a).realize()
 
-    t = Tensor.zeros(6, 6).contiguous().realize()
-    n = np.zeros((6, 6))
+      t = Tensor.zeros(6, 6).contiguous().realize()
+      n = np.zeros((6, 6))
 
-    for i in range(6):
-      v = Variable("v", 0, 6).bind(i)
-      a = Tensor.full((1, 6), fill_value=i+1, dtype=dtypes.float).contiguous()
-      n[i, :] = i+1
-      f(t, a, v)
-      np.testing.assert_allclose(t.numpy(), n)
-    np.testing.assert_allclose(t.numpy(), [[1,1,1,1,1,1],[2,2,2,2,2,2],[3,3,3,3,3,3],[4,4,4,4,4,4],[5,5,5,5,5,5],[6,6,6,6,6,6]])
+      for i in range(6):
+        v = Variable("v", 0, 6).bind(i)
+        a = Tensor.full((1, 6), fill_value=i+1, dtype=dtypes.float).contiguous()
+        n[i, :] = i+1
+        f(t, a, v)
+        np.testing.assert_allclose(t.numpy(), n)
+      np.testing.assert_allclose(t.numpy(), [[1,1,1,1,1,1],[2,2,2,2,2,2],[3,3,3,3,3,3],[4,4,4,4,4,4],[5,5,5,5,5,5],[6,6,6,6,6,6]])
 
   def test_setitem_overlapping_inplace1(self):
     t = Tensor([[3.0], [2.0], [1.0]]).contiguous()
     t[1:] = t[:-1]
-    if (Device.DEFAULT == "LLVM") or (CI and Device.DEFAULT == "AMD"):
-      # TODO: FIXME
-      with self.assertRaises(AssertionError):
-        self.assertEqual(t.tolist(), [[3.0], [3.0], [2.0]])
-    else:
-      self.assertEqual(t.tolist(), [[3.0], [3.0], [2.0]])
+    self.assertEqual(t.tolist(), [[3.0], [3.0], [2.0]])
 
   def test_setitem_overlapping_inplace2(self):
     t = Tensor([[3.0], [2.0], [1.0]]).contiguous()

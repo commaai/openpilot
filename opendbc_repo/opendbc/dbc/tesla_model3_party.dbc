@@ -111,6 +111,14 @@ BO_ 341 ESP_B: 8 PARTY
  SG_ ESP_wheelPulseCountFrR : 8|8@1+ (1,0) [0|254] "1"  app
  SG_ ESP_wheelPulseCountFrL : 0|8@1+ (1,0) [0|254] "1"  app
 
+BO_ 373 ESP_wheelSpeeds: 8 CH
+ SG_ ESP_wheelSpeedsChecksum : 56|8@1+ (1,0) [0|255] ""  das
+ SG_ ESP_wheelSpeedsCounter : 52|4@1+ (1,0) [0|15] ""  das
+ SG_ ESP_wheelSpeedReR : 39|13@1+ (0.04,0) [0|327.64] "km/h"  das
+ SG_ ESP_wheelSpeedReL : 26|13@1+ (0.04,0) [0|327.64] "km/h"  das
+ SG_ ESP_wheelSpeedFrR : 13|13@1+ (0.04,0) [0|327.64] "km/h"  das
+ SG_ ESP_wheelSpeedFrL : 0|13@1+ (0.04,0) [0|327.64] "km/h"  das
+
 BO_ 969 APS_status: 4 PARTY
  SG_ APS_statusCounter : 22|4@1+ (1,0) [0|15] ""  X
  SG_ APS_apbGpioState : 20|2@1+ (1,0) [0|3] ""  gtw
@@ -131,8 +139,8 @@ BO_ 925 IBST_status: 5 PARTY
  SG_ IBST_statusChecksum : 0|8@1+ (1,0) [0|255] ""  X
 
 BO_ 880 EPAS3S_sysStatus: 8 PARTY
- SG_ EPAS3S_sysStatusChecksum : 63|8@0+ (1,0) [0|255] ""  park
- SG_ EPAS3S_sysStatusCounter : 51|4@0+ (1,0) [0|15] ""  gtw
+ SG_ EPAS3S_sysStatusChecksum : 56|8@1+ (1,0) [0|255] ""  park
+ SG_ EPAS3S_sysStatusCounter : 48|4@1+ (1,0) [0|15] ""  gtw
  SG_ EPAS3S_eacStatus : 55|3@0+ (1,0) [0|7] ""  das
  SG_ EPAS3S_internalSAS : 37|14@0+ (0.1,-819.2) [-819.2|819] "deg"  das
  SG_ EPAS3S_handsOnLevel : 39|2@0+ (1,0) [0|3] ""  das
@@ -189,9 +197,13 @@ BO_ 599 DI_speed: 8 PARTY
  SG_ DI_speedCounter : 8|4@1+ (1,0) [0|15] ""  park
  SG_ DI_speedChecksum : 0|8@1+ (1,0) [0|255] ""  park
 
+BO_ 605 DAS_road: 6 XXX
+ SG_ DAS_stopLineDist : 16|8@1+ (0.5,0) [0|127.5] "m" XXX
+ SG_ DAS_trafficLightColor : 26|3@0+ (1,0) [0|7] "" XXX
+
 BO_ 1160 DAS_steeringControl: 4 PARTY
- SG_ DAS_steeringControlChecksum : 31|8@0+ (1,0) [0|255] ""  aps
- SG_ DAS_steeringControlCounter : 19|4@0+ (1,0) [0|15] ""  aps
+ SG_ DAS_steeringControlChecksum : 24|8@1+ (1,0) [0|255] ""  aps
+ SG_ DAS_steeringControlCounter : 16|4@1+ (1,0) [0|15] ""  aps
  SG_ DAS_steeringControlType : 23|2@0+ (1,0) [0|3] ""  aps
  SG_ DAS_steeringAngleRequest : 6|15@0+ (0.1,-1638.35) [-1638.35|1638.35] "deg"  aps
  SG_ DAS_steeringHapticRequest : 7|1@0+ (1,0) [0|1] ""  aps
@@ -224,18 +236,33 @@ BO_ 646 DI_state: 8 ETH
  SG_ DI_locStatusChecksum : 0|8@1+ (1,0) [0|0] ""  X
 
 BO_ 659 DAS_settings: 8 XXX
- SG_ DAS_autopilotEnabled : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAS_driverSteeringWeight : 1|2@0+ (1,0) [0|255] "" XXX
+ SG_ DAS_slipStart : 2|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAS_offRoadAssist : 3|2@1+ (1,0) [0|63] "" XXX
+ SG_ DAS_distanceUnits : 13|1@1+ (1,0) [0|255] "" XXX
+ SG_ DAS_aebEnabled : 18|1@0+ (1,0) [0|255] "" XXX
+ SG_ DAS_adaptiveHeadlights : 22|1@1+ (1,0) [0|31] "" XXX
+ SG_ DAS_autosteerEnabled2 : 24|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAS_fcwEnabled : 34|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAS_fcwSensitivity : 37|2@0+ (1,0) [0|63] "" XXX
+ SG_ DAS_autosteerEnabled : 38|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAS_obstacleAwareAcceleration : 42|1@0+ (1,0) [0|1] "" XXX
+ SG_ DAS_driverAccelerationMode : 44|1@1+ (1,0) [0|127] "" XXX
  SG_ DAS_settingCounter : 52|4@1+ (1,0) [0|15] "" XXX
- SG_ DAS_settingChecksum : 63|8@0+ (1,0) [0|255] "" XXX
+ SG_ DAS_settingChecksum : 56|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 785 UI_warning: 7 XXX
  SG_ buckleStatus : 13|1@0+ (1,0) [0|1] "" XXX
- SG_ scrollWheelRightTilt : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ scrollWheelPressed : 21|1@0+ (1,0) [0|1] "" XXX
  SG_ leftBlinkerOn : 22|1@0+ (1,0) [0|1] "" XXX
  SG_ rightBlinkerOn : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ leftBlinkerBlinking : 25|2@0+ (1,0) [0|3] "" XXX
+ SG_ rightBlinkerBlinking : 26|2@1+ (1,0) [0|15] "" XXX
  SG_ anyDoorOpen : 28|1@0+ (1,0) [0|1] "" XXX
  SG_ wiperSettings : 39|8@0+ (1,0) [0|255] "" XXX
  SG_ highBeam : 50|1@0+ (1,0) [0|1] "" XXX
+ SG_ UI_warningCounter : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ UI_warningChecksum : 0|8@1+ (1,0) [0|255] "" XXX
 
 BO_ 923 DAS_status: 8 PARTY
  SG_ DAS_statusChecksum : 56|8@1+ (1,0) [0|255] ""  aps
@@ -266,11 +293,12 @@ BO_ 923 DAS_status: 8 PARTY
  SG_ DAS_autopilotState : 0|4@1+ (1,0) [0|15] ""  aps
 
 
+CM_ BO_ 605 "Bytes change when toggling between FSD and AP, as well as Traffic Light and Stop Sign Control in TACC";
 
-
-
-
-
+CM_ SG_ 659 DAS_autosteerEnabled "1 if Autosteer or FSD is enabled, 0 otherwise";
+CM_ SG_ 785 leftBlinkerOn "only describes stalk position if half pressed without auto-cancel blinkers. otherwise acts as expected";
+CM_ SG_ 785 rightBlinkerOn "only describes stalk position if half pressed without auto-cancel blinkers. otherwise acts as expected";
+CM_ SG_ 785 scrollWheelPressed "captures either scroll wheel left, right or down press";
 
 VAL_ 545 VCFRONT_uiAudioLVState 1 "LV_ON" 2 "LV_GOING_DOWN" 3 "LV_FAULT" 0 "LV_OFF" ;
 VAL_ 545 VCFRONT_uiHiCurrentLVState 1 "LV_ON" 2 "LV_GOING_DOWN" 3 "LV_FAULT" 0 "LV_OFF" ;
@@ -331,6 +359,7 @@ VAL_ 280 DI_immobilizerState 2 "DI_IMM_STATE_AUTHENTICATING" 0 "DI_IMM_STATE_INI
 VAL_ 280 DI_gear 1 "DI_GEAR_P" 0 "DI_GEAR_INVALID" 7 "DI_GEAR_SNA" 2 "DI_GEAR_R" 3 "DI_GEAR_N" 4 "DI_GEAR_D" ;
 VAL_ 280 DI_brakePedalState 2 "INVALID" 0 "OFF" 1 "ON" ;
 VAL_ 280 DI_systemState 5 "DI_SYS_ENABLE" 1 "DI_SYS_IDLE" 2 "DI_SYS_STANDBY" 0 "DI_SYS_UNAVAILABLE" 3 "DI_SYS_FAULT" 4 "DI_SYS_ABORT" ;
+VAL_ 605 DAS_trafficLightColor 0 "NONE" 1 "RED" 2 "GREEN" 3 "YELLOW" ;
 VAL_ 697 DAS_accelMax 511 "SNA" ;
 VAL_ 697 DAS_accelMin 511 "SNA" ;
 VAL_ 697 DAS_jerkMax 255 "SNA" ;
@@ -385,8 +414,15 @@ VAL_ 646 DI_parkBrakeState 0 "UNAVAILABLE" 1 "RELEASED" 2 "REQUESTED" 3 "APPLIED
 VAL_ 646 DI_autoparkState 0 "UNAVAILABLE" 1 "STANDBY" 2 "STARTED" 3 "ACTIVE" 4 "COMPLETE" 5 "PAUSED" 6 "ABORTED" 7 "RESUMED" 8 "UNPARK_COMPLETE" 9 "SELFPARK_STARTED" 15 "SNA" ;
 VAL_ 646 DI_speedUnits 0 "MPH" 1 "KPH" ;
 VAL_ 646 DI_cruiseState 0 "UNAVAILABLE" 1 "STANDBY" 2 "ENABLED" 3 "STANDSTILL" 4 "OVERRIDE" 5 "FAULT" 6 "PRE_FAULT" 7 "PRE_CANCEL" ;
+VAL_ 659 DAS_driverSteeringWeight 0 "light" 1 "standard" 2 "heavy";
+VAL_ 659 DAS_offRoadAssist 0 "disabled" 3 "enabled";
+VAL_ 659 DAS_distanceUnits 1 "miles" 0 "kilometers";
+VAL_ 659 DAS_fcwSensitivity 0 "early" 1 "medium" 2 "late" 3 "off";
+VAL_ 659 DAS_driverAccelerationMode 0 "chill" 1 "standard";
 VAL_ 785 buckleStatus 1 "LATCHED" 0 "UNLATCHED" ;
 VAL_ 785 anyDoorOpen 1 "OPEN" 0 "CLOSED" ;
+VAL_ 785 leftBlinkerBlinking 0 "off" 1 "blinking, off" 2 "blinking, on";
+VAL_ 785 rightBlinkerBlinking 0 "off" 1 "blinking, off" 2 "blinking, on";
 VAL_ 923 DAS_autoLaneChangeState 5 "ALC_UNAVAILABLE_VEHICLE_SPEED" 17 "ALC_ABORT_POOR_VIEW_RANGE" 23 "ALC_BLOCKED_VEH_TTC_AND_USS_L" 0 "ALC_UNAVAILABLE_DISABLED" 26 "ALC_BLOCKED_LANE_TYPE_L" 29 "ALC_ABORT_TIMEOUT" 9 "ALC_IN_PROGRESS_L" 4 "ALC_UNAVAILABLE_EXITING_HIGHWAY" 22 "ALC_BLOCKED_VEH_TTC_L" 12 "ALC_WAITING_FOR_SIDE_OBST_TO_PASS_R" 18 "ALC_ABORT_LC_HEALTH_BAD" 28 "ALC_WAITING_HANDS_ON" 8 "ALC_AVAILABLE_BOTH" 11 "ALC_WAITING_FOR_SIDE_OBST_TO_PASS_L" 3 "ALC_UNAVAILABLE_TP_FOLLOW" 2 "ALC_UNAVAILABLE_SONICS_INVALID" 21 "ALC_UNAVAILABLE_SOLID_LANE_LINE" 24 "ALC_BLOCKED_VEH_TTC_R" 1 "ALC_UNAVAILABLE_NO_LANES" 25 "ALC_BLOCKED_VEH_TTC_AND_USS_R" 30 "ALC_ABORT_MISSION_PLAN_INVALID" 27 "ALC_BLOCKED_LANE_TYPE_R" 19 "ALC_ABORT_BLINKER_TURNED_OFF" 31 "ALC_SNA" 13 "ALC_WAITING_FOR_FWD_OBST_TO_PASS_L" 16 "ALC_ABORT_SIDE_OBSTACLE_PRESENT_R" 6 "ALC_AVAILABLE_ONLY_L" 20 "ALC_ABORT_OTHER_REASON" 15 "ALC_ABORT_SIDE_OBSTACLE_PRESENT_L" 7 "ALC_AVAILABLE_ONLY_R" 14 "ALC_WAITING_FOR_FWD_OBST_TO_PASS_R" 10 "ALC_IN_PROGRESS_R" ;
 VAL_ 923 DAS_autopilotHandsOnState 8 "LC_HANDS_ON_SUSPENDED" 15 "LC_HANDS_ON_SNA" 7 "LC_HANDS_ON_REQD_STRUCK_OUT" 3 "LC_HANDS_ON_REQD_VISUAL" 4 "LC_HANDS_ON_REQD_CHIME_1" 6 "LC_HANDS_ON_REQD_SLOWING" 1 "LC_HANDS_ON_REQD_DETECTED" 2 "LC_HANDS_ON_REQD_NOT_DETECTED" 5 "LC_HANDS_ON_REQD_CHIME_2" 0 "LC_HANDS_ON_NOT_REQD" ;
 VAL_ 923 DAS_fleetSpeedState 0 "FLEETSPEED_UNAVAILABLE" 1 "FLEETSPEED_AVAILABLE" 2 "FLEETSPEED_ACTIVE" 3 "FLEETSPEED_HOLD" ;
@@ -404,6 +440,3 @@ VAL_ 923 DAS_fusedSpeedLimit 31 "NONE" 0 "UNKNOWN_SNA" ;
 VAL_ 923 DAS_blindSpotRearRight 3 "SNA" 0 "NO_WARNING" 1 "WARNING_LEVEL_1" 2 "WARNING_LEVEL_2" ;
 VAL_ 923 DAS_blindSpotRearLeft 3 "SNA" 0 "NO_WARNING" 1 "WARNING_LEVEL_1" 2 "WARNING_LEVEL_2" ;
 VAL_ 923 DAS_autopilotState 15 "SNA" 8 "ABORTING" 3 "ACTIVE_NOMINAL" 0 "DISABLED" 4 "ACTIVE_RESTRICTED" 5 "ACTIVE_NAV" 14 "FAULT" 1 "UNAVAILABLE" 9 "ABORTED" 2 "AVAILABLE" ;
-
-
-

@@ -10,13 +10,27 @@ def gui_label(
   color: rl.Color = DEFAULT_TEXT_COLOR,
   font_weight: FontWeight = FontWeight.NORMAL,
   alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
+  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+  elide_right: bool = True
 ):
-  # Set font based on the provided weight
   font = gui_app.font(font_weight)
-
-  # Measure text size
   text_size = rl.measure_text_ex(font, text, font_size, 0)
+  display_text = text
+
+  # Elide text to fit within the rectangle
+  if elide_right and text_size.x > rect.width:
+    ellipsis = "..."
+    left, right = 0, len(text)
+    while left < right:
+      mid = (left + right) // 2
+      candidate = text[:mid] + ellipsis
+      candidate_size = rl.measure_text_ex(font, candidate, font_size, 0)
+      if candidate_size.x <= rect.width:
+        left = mid + 1
+      else:
+        right = mid
+    display_text = text[: left - 1] + ellipsis if left > 0 else ellipsis
+    text_size = rl.measure_text_ex(font, display_text, font_size, 0)
 
   # Calculate horizontal position based on alignment
   text_x = rect.x + {
@@ -33,7 +47,7 @@ def gui_label(
   }.get(alignment_vertical, 0)
 
   # Draw the text in the specified rectangle
-  rl.draw_text_ex(font, text, rl.Vector2(text_x, text_y), font_size, 0, color)
+  rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
 
 
 def gui_text_box(

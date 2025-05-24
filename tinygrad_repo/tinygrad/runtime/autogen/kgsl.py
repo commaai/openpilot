@@ -129,7 +129,7 @@ else:
 import fcntl, functools
 
 def _do_ioctl(__idir, __base, __nr, __user_struct, __fd, __payload=None, **kwargs):
-  ret = fcntl.ioctl(__fd, (__idir<<30) | (ctypes.sizeof(made := (__payload or __user_struct(**kwargs)))<<16) | (__base<<8) | __nr, made)
+  ret = __fd.ioctl((__idir<<30) | (ctypes.sizeof(made := (__payload or __user_struct(**kwargs)))<<16) | (__base<<8) | __nr, made)
   if ret != 0: raise RuntimeError(f"ioctl returned {ret}")
   return made
 

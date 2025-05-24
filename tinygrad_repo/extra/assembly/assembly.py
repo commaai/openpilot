@@ -1,9 +1,9 @@
 from typing import Tuple, List, NamedTuple, Any, Dict, Optional, Union, DefaultDict, cast
 from tinygrad.codegen.kernel import Ops, MemOp, UOp
-from tinygrad.ops import BinaryOps, UnaryOps
+from tinygrad.uop.ops import BinaryOps, UnaryOps
 from tinygrad.dtype import DType, dtypes
 from tinygrad.helpers import DEBUG
-from tinygrad.ops import Variable, NumNode, MulNode, DivNode, ModNode, LtNode, SumNode, AndNode
+from tinygrad.uop.ops import Variable, NumNode, MulNode, DivNode, ModNode, LtNode, SumNode, AndNode
 import functools
 import math
 from collections import defaultdict

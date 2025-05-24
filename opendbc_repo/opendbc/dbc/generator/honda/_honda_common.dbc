@@ -61,6 +61,17 @@ BO_ 490 VEHICLE_DYNAMICS: 8 VSA
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
+BO_ 597 ROUGH_WHEEL_SPEED: 8 VSA
+ SG_ WHEEL_SPEED_FL : 7|8@0+ (1,0) [0|255] "kph" EON
+ SG_ WHEEL_SPEED_FR : 15|8@0+ (1,0) [0|255] "kph" EON
+ SG_ WHEEL_SPEED_RL : 23|8@0+ (1,0) [0|255] "kph" EON
+ SG_ WHEEL_SPEED_RR : 31|8@0+ (1,0) [0|255] "kph" EON
+ SG_ SET_TO_X55 : 39|8@0+ (1,0) [0|255] "" EON
+ SG_ SET_TO_X55_2 : 47|8@0+ (1,0) [0|255] "" EON
+ SG_ LONG_COUNTER : 55|8@0+ (1,0) [0|255] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
 BO_ 773 SEATBELT_STATUS: 7 BDY
  SG_ SEATBELT_DRIVER_LAMP : 7|1@0+ (1,0) [0|1] "" EON
  SG_ SEATBELT_PASS_UNLATCHED : 10|1@0+ (1,0) [0|1] "" EON
@@ -145,6 +156,11 @@ BO_ 1029 DOORS_STATUS: 8 BDY
  SG_ TRUNK_OPEN : 41|1@0+ (1,0) [0|1] "" EON
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" EON
+
+BO_ 1302 ODOMETER: 8 XXX
+ SG_ ODOMETER : 7|24@0+ (1,0) [0|16777215] "km" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
 CM_ SG_ 304 "Seems to be platform-agnostic";
 CM_ SG_ 316 "Should exist on Nidec";

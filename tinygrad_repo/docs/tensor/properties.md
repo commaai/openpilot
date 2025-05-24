@@ -25,6 +25,7 @@
 ::: tinygrad.Tensor.replace
 ::: tinygrad.Tensor.assign
 ::: tinygrad.Tensor.detach
+::: tinygrad.Tensor.clone
 ::: tinygrad.Tensor.to
 ::: tinygrad.Tensor.to_
 ::: tinygrad.Tensor.shard

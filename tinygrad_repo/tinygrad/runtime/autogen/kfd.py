@@ -10,10 +10,11 @@ import ctypes, os
 
 
 
-import fcntl, functools
+import functools
+from tinygrad.runtime.support.hcq import FileIOInterface
 
-def _do_ioctl(__idir, __base, __nr, __user_struct, __fd, **kwargs):
-  ret = fcntl.ioctl(__fd, (__idir<<30) | (ctypes.sizeof(made := __user_struct(**kwargs))<<16) | (__base<<8) | __nr, made)
+def _do_ioctl(__idir, __base, __nr, __user_struct, __fd:FileIOInterface, **kwargs):
+  ret = __fd.ioctl((__idir<<30) | (ctypes.sizeof(made := __user_struct(**kwargs))<<16) | (__base<<8) | __nr, made)
   if ret != 0: raise RuntimeError(f"ioctl returned {ret}")
   return made
 
