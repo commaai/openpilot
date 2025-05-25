@@ -3,6 +3,8 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
 
 
+CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
+
 VERTEX_SHADER = """
 #version 300 es
 in vec3 vertexPosition;
@@ -36,6 +38,7 @@ void main() {
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
     self.client = VisionIpcClient(name, stream_type, False)
+    self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
     self.texture_y: rl.Texture | None = None
     self.texture_uv: rl.Texture | None = None
@@ -76,6 +79,14 @@ class CameraView:
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
       self.frame = None
+
+      # Throttle connection attempts
+      current_time = rl.get_time()
+      if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
+        return False
+
+      self.last_connection_attempt = current_time
+
       if not self.client.connect(False) or not self.client.num_buffers:
         return False
 
