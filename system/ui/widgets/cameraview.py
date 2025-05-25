@@ -88,6 +88,26 @@ class CameraView:
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
+  def calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+    if not self.frame:
+      return rl.Matrix()
+
+    # Calculate aspect ratios
+    widget_aspect_ratio = rect.width / rect.height
+    frame_aspect_ratio = self.frame.width / self.frame.height
+
+    # Calculate scaling factors to maintain aspect ratio
+    zx = min(frame_aspect_ratio / widget_aspect_ratio, 1.0)
+    zy = min(widget_aspect_ratio / frame_aspect_ratio, 1.0)
+
+    # Create the transformation matrix
+    matrix = rl.Matrix()
+    matrix.m0 = zx
+    matrix.m5 = zy
+    matrix.m10 = 1.0
+    matrix.m15 = 1.0
+    return matrix
+
   def render(self, rect: rl.Rectangle):
     if not self._ensure_connection():
       return
@@ -100,12 +120,16 @@ class CameraView:
     if not self.frame:
       return
 
-    # Calculate scaling to maintain aspect ratio
-    scale = min(rect.width / self.frame.width, rect.height / self.frame.height)
-    x_offset = rect.x + (rect.width - (self.frame.width * scale)) / 2
-    y_offset = rect.y + (rect.height - (self.frame.height * scale)) / 2
+    transform = self.calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
-    dst_rect = rl.Rectangle(x_offset, y_offset, self.frame.width * scale, self.frame.height * scale)
+
+    scale_x = rect.width * transform.m0
+    scale_y = rect.height * transform.m5
+
+    x_offset = rect.x + (rect.width - scale_x) / 2
+    y_offset = rect.y + (rect.height - scale_y) / 2
+
+    dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
     # Render with appropriate method
     if TICI:
