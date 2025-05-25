@@ -1,12 +1,8 @@
 import pyray as rl
-from typing import Any
 from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.egl_helper import (
-    HAS_EGL, create_egl_image, destroy_egl_image, bind_egl_image_to_texture,
-    eglGetCurrentDisplay, EGL_NO_DISPLAY
-)
+from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 
 
 VERTEX_SHADER = """
@@ -26,7 +22,7 @@ void main() {
 """
 
 # Choose fragment shader based on platform capabilities
-if TICI and HAS_EGL:
+if TICI:
   FRAME_FRAGMENT_SHADER = """
     #version 300 es
     #extension GL_OES_EGL_image_external_essl3 : enable
@@ -64,33 +60,24 @@ class CameraView:
     self.texture_uv: rl.Texture | None = None
 
     # EGL resources
-    self.use_egl = TICI and HAS_EGL
-    self.egl_display = None
-    self.egl_images: dict[int, dict[str, Any]] = {}
+    self.egl_images: dict[int, EGLImage] = {}
     self.egl_texture: rl.Texture | None = None
 
-    # Initialize EGL if available
-    if self.use_egl:
-      self.setup_egl()
-      # Create a placeholder texture for EGL image binding
+    # Initialize EGL for zero-copy rendering on TICI
+    if TICI:
+      if not init_egl():
+        raise RuntimeError("Failed to initialize EGL")
+
+      # Create a 1x1 pixel placeholder texture for EGL image binding
       temp_image = rl.gen_image_color(1, 1, rl.BLACK)
       self.egl_texture = rl.load_texture_from_image(temp_image)
       rl.unload_image(temp_image)
-
-  def setup_egl(self) -> None:
-    if not self.use_egl:
-      return
-
-    self.egl_display = eglGetCurrentDisplay()
-    if self.egl_display == EGL_NO_DISPLAY:
-      print("Warning: No EGL display available, falling back to texture copy")
-      self.use_egl = False
 
   def close(self) -> None:
     self._clear_textures()
 
     # Clean up EGL texture
-    if self.use_egl and self.egl_texture and self.egl_texture.id:
+    if TICI and self.egl_texture:
       rl.unload_texture(self.egl_texture)
       self.egl_texture = None
 
@@ -102,6 +89,7 @@ class CameraView:
     if not self._ensure_connection():
       return
 
+    # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
     if buffer:
       self.frame = buffer
@@ -117,7 +105,7 @@ class CameraView:
     dst_rect = rl.Rectangle(x_offset, y_offset, self.frame.width * scale, self.frame.height * scale)
 
     # Render with appropriate method
-    if self.use_egl:
+    if TICI:
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
@@ -128,17 +116,15 @@ class CameraView:
       return
 
     idx = self.frame.idx
-    egl_data = self.egl_images.get(idx)
+    egl_image = self.egl_images.get(idx)
 
     # Create EGL image if needed
-    if egl_data is None:
-      egl_data = create_egl_image(self.egl_display, self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset)
-      if egl_data:
-        self.egl_images[idx] = egl_data
+    if egl_image is None:
+      egl_image = create_egl_image(self.frame.width, self.frame.height, self.frame.stride, self.frame.fd, self.frame.uv_offset)
+      if egl_image:
+        self.egl_images[idx] = egl_image
       else:
         return
-
-    egl_image = egl_data["egl_image"]
 
     # Update texture dimensions to match current frame
     self.egl_texture.width = self.frame.width
@@ -153,7 +139,7 @@ class CameraView:
     rl.end_shader_mode()
 
   def _render_textures(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
-    """Render using texture copies (fallback method)"""
+    """Render using texture copies"""
     if not self.texture_y or not self.texture_uv or self.frame is None:
       return
 
@@ -178,8 +164,7 @@ class CameraView:
 
       self._clear_textures()
 
-      # Create textures for the fallback method
-      if not self.use_egl:
+      if not TICI:
         self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
           int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
         self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
@@ -197,9 +182,9 @@ class CameraView:
       self.texture_uv = None
 
     # Clean up EGL resources
-    if self.use_egl and self.egl_display:
+    if TICI:
       for data in self.egl_images.values():
-        destroy_egl_image(self.egl_display, data)
+        destroy_egl_image(data)
       self.egl_images = {}
 
 
