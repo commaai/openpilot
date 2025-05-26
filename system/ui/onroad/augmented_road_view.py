@@ -25,6 +25,10 @@ class AugmentedRoadView(CameraView):
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
+    self._last_calib_time: float = 0
+    self._last_recect_dims = (0.0, 0.0)
+    self._cacheed_matrix: np.ndarray | None = None
+
   def render(self, rect):
     # Update calibration before rendering
     self._update_calibration()
@@ -61,35 +65,54 @@ class AugmentedRoadView(CameraView):
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+    # Check if we can use cached matrix
+    calib_time = self.sm.recv_frame.get('liveCalibration', 0)
+    current_dims = (rect.width, rect.height)
+    if (self._last_calib_time == calib_time and
+        self._last_recect_dims == current_dims and
+        self._cacheed_matrix is not None):
+      return self._cacheed_matrix
+
+    # Get camera configuration
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
     intrinsic = device_camera.ecam.intrinsics if self.is_wide_camera else device_camera.fcam.intrinsics
     calibration = self.view_from_wide_calib if self.is_wide_camera else self.view_from_calib
     zoom = 2.0 if self.is_wide_camera else 1.1
 
-    # Calculate transforms
+    # Calculate transforms for vanishing point
     inf_point = np.array([1000.0, 0.0, 0.0])
     calib_transform = intrinsic @ calibration
-    Kep = calib_transform @ inf_point
+    kep = calib_transform @ inf_point
 
-    # Calculate offsets
-    w, h = rect.width, rect.height
+    # Calculate center points and dimensions
+    w, h = current_dims
     cx, cy = intrinsic[0, 2], intrinsic[1, 2]
 
-    # Calculate offsets with clamping
-    max_x_offset = cx * zoom - w / 2 - 5
-    max_y_offset = cy * zoom - h / 2 - 5
+    # Calculate max allowed offsets with margins
+    margin = 5
+    max_x_offset = cx * zoom - w / 2 - margin
+    max_y_offset = cy * zoom - h / 2 - margin
 
-    if Kep[2] != 0:
-      x_offset = np.clip((Kep[0] / Kep[2] - cx) * zoom, -max_x_offset, max_x_offset)
-      y_offset = np.clip((Kep[1] / Kep[2] - cy) * zoom, -max_y_offset, max_y_offset)
-    else:
+    # Calculate and clamp offsets to prevent out-of-bounds issues
+    try:
+      if abs(kep[2]) > 1e-6:
+        x_offset = np.clip((kep[0] / kep[2] - cx) * zoom, -max_x_offset, max_x_offset)
+        y_offset = np.clip((kep[1] / kep[2] - cy) * zoom, -max_y_offset, max_y_offset)
+      else:
+        x_offset, y_offset = 0, 0
+    except (ZeroDivisionError, OverflowError):
       x_offset, y_offset = 0, 0
 
-    return np.array([
+    # Update cache values
+    self._last_calib_time = calib_time
+    self._last_recect_dims = current_dims
+    self._cacheed_matrix = np.array([
       [zoom * 2 * cx / w, 0, -x_offset / w * 2],
       [0, zoom * 2 * cy / h, -y_offset / h * 2],
       [0, 0, 1.0]
     ])
+
+    return self._cacheed_matrix
 
 
 if __name__ == "__main__":
