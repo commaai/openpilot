@@ -55,6 +55,7 @@ else:
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
     self.client = VisionIpcClient(name, stream_type, False)
+    self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
 
@@ -95,6 +96,7 @@ class CameraView:
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
     if buffer:
+      self._texture_needs_update = True
       self.frame = buffer
 
     if not self.frame:
@@ -147,11 +149,13 @@ class CameraView:
       return
 
     # Update textures with new frame data
-    y_data = self.frame.data[: self.frame.uv_offset]
-    uv_data = self.frame.data[self.frame.uv_offset :]
+    if self._texture_needs_update:
+      y_data = self.frame.data[: self.frame.uv_offset]
+      uv_data = self.frame.data[self.frame.uv_offset :]
 
-    rl.update_texture(self.texture_y, rl.ffi.cast("void *", y_data.ctypes.data))
-    rl.update_texture(self.texture_uv, rl.ffi.cast("void *", uv_data.ctypes.data))
+      rl.update_texture(self.texture_y, rl.ffi.cast("void *", y_data.ctypes.data))
+      rl.update_texture(self.texture_uv, rl.ffi.cast("void *", uv_data.ctypes.data))
+      self._texture_needs_update = False
 
     # Render with shader
     rl.begin_shader_mode(self.shader)
