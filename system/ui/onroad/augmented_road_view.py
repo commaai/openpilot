@@ -26,8 +26,8 @@ class AugmentedRoadView(CameraView):
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
     self._last_calib_time: float = 0
-    self._last_recect_dims = (0.0, 0.0)
-    self._cacheed_matrix: np.ndarray | None = None
+    self._last_rect_dims = (0.0, 0.0)
+    self._cached_matrix: np.ndarray | None = None
 
   def render(self, rect):
     # Update calibration before rendering
@@ -69,9 +69,9 @@ class AugmentedRoadView(CameraView):
     calib_time = self.sm.recv_frame.get('liveCalibration', 0)
     current_dims = (rect.width, rect.height)
     if (self._last_calib_time == calib_time and
-        self._last_recect_dims == current_dims and
-        self._cacheed_matrix is not None):
-      return self._cacheed_matrix
+        self._last_rect_dims == current_dims and
+        self._cached_matrix is not None):
+      return self._cached_matrix
 
     # Get camera configuration
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
@@ -105,14 +105,14 @@ class AugmentedRoadView(CameraView):
 
     # Update cache values
     self._last_calib_time = calib_time
-    self._last_recect_dims = current_dims
-    self._cacheed_matrix = np.array([
+    self._last_rect_dims = current_dims
+    self._cached_matrix = np.array([
       [zoom * 2 * cx / w, 0, -x_offset / w * 2],
       [0, zoom * 2 * cy / h, -y_offset / h * 2],
       [0, 0, 1.0]
     ])
 
-    return self._cacheed_matrix
+    return self._cached_matrix
 
 
 if __name__ == "__main__":
