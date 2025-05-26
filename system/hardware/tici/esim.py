@@ -54,15 +54,10 @@ class TiciLPA(LPABase):
     self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
   def switch_profile(self, iccid: str) -> None:
-    self._enable_profile(iccid)
-
-  def _enable_profile(self, iccid: str) -> None:
     self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
-    if latest:
-      if latest.iccid == iccid:
-        return
-      self._validate_successful(self._invoke('profile', 'disable', latest.iccid))
+    if latest and latest.iccid == iccid:
+      return
     self._validate_successful(self._invoke('profile', 'enable', iccid))
     self._process_notifications()
 
