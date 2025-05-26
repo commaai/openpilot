@@ -1,3 +1,4 @@
+import numpy as np
 import pyray as rl
 from openpilot.system.ui.widgets.cameraview import CameraView
 from msgq.visionipc import VisionStreamType
@@ -13,7 +14,7 @@ class DriverCameraView(CameraView):
 
     # TODO: Add additional rendering logic
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     driver_view_ratio = 2.0
 
     # Get stream dimensions
@@ -28,12 +29,11 @@ class DriverCameraView(CameraView):
     yscale = stream_height * driver_view_ratio / stream_width
     xscale = yscale * rect.height / rect.width * stream_width / stream_height
 
-    # Create transformation matrix
-    matrix = rl.Matrix()
-    matrix.m0 = xscale
-    matrix.m5 = yscale
-    matrix.m10 = 1.0
-    return matrix
+    return np.array([
+      [xscale, 0.0, 0.0],
+      [0.0, yscale, 0.0],
+      [0.0, 0.0, 1.0]
+    ])
 
 
 if __name__ == "__main__":

@@ -1,4 +1,6 @@
+import numpy as np
 import pyray as rl
+
 from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.system.ui.lib.application import gui_app
@@ -88,9 +90,9 @@ class CameraView:
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     if not self.frame:
-      return rl.Matrix()
+      return np.eye(3)
 
     # Calculate aspect ratios
     widget_aspect_ratio = rect.width / rect.height
@@ -100,13 +102,11 @@ class CameraView:
     zx = min(frame_aspect_ratio / widget_aspect_ratio, 1.0)
     zy = min(widget_aspect_ratio / frame_aspect_ratio, 1.0)
 
-    # Create the transformation matrix
-    matrix = rl.Matrix()
-    matrix.m0 = zx
-    matrix.m5 = zy
-    matrix.m10 = 1.0
-    matrix.m15 = 1.0
-    return matrix
+    return np.array([
+        [zx, 0.0, 0.0],
+        [0.0, zy, 0.0],
+        [0.0, 0.0, 1.0]
+    ])
 
   def render(self, rect: rl.Rectangle):
     if not self._ensure_connection():
@@ -123,11 +123,15 @@ class CameraView:
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
 
-    scale_x = rect.width * transform.m0
-    scale_y = rect.height * transform.m5
+    # Calculate scale
+    scale_x = rect.width * transform[0, 0]  # zx
+    scale_y = rect.height * transform[1, 1]  # zy
 
+    # Calculate base position (centered)
     x_offset = rect.x + (rect.width - scale_x) / 2
     y_offset = rect.y + (rect.height - scale_y) / 2
+    x_offset += transform[0, 2] * rect.width / 2
+    y_offset += transform[1, 2] * rect.height / 2
 
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 

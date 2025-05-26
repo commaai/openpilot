@@ -60,7 +60,7 @@ class AugmentedRoadView(CameraView):
       wide_from_device = rot_from_euler(calib.wideFromDeviceEuler)
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
     intrinsic = device_camera.ecam.intrinsics if self.is_wide_camera else device_camera.fcam.intrinsics
     calibration = self.view_from_wide_calib if self.is_wide_camera else self.view_from_calib
@@ -85,14 +85,11 @@ class AugmentedRoadView(CameraView):
     else:
       x_offset, y_offset = 0, 0
 
-    # Create transform matrix
-    matrix = rl.Matrix()
-    matrix.m0 = zoom * 2 * cx / w
-    matrix.m5 = zoom * 2 * cy / h
-    matrix.m3 = -x_offset / w * 2
-    matrix.m7 = -y_offset / h * 2
-    matrix.m10 = matrix.m15 = 1.0
-    return matrix
+    return np.array([
+      [zoom * 2 * cx / w, 0, -x_offset / w * 2],
+      [0, zoom * 2 * cy / h, -y_offset / h * 2],
+      [0, 0, 1.0]
+    ])
 
 
 if __name__ == "__main__":
