@@ -88,23 +88,23 @@
     </message>
     <message>
         <source>default</source>
-        <translation type="unfinished"></translation>
+        <translation>padrão</translation>
     </message>
     <message>
         <source>metered</source>
-        <translation type="unfinished"></translation>
+        <translation>limitada</translation>
     </message>
     <message>
         <source>unmetered</source>
-        <translation type="unfinished"></translation>
+        <translation>ilimitada</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>Rede Wi-Fi com Franquia</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-FI connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Previna o envio de grandes volumes de dados em conexões Wi-Fi com franquia de limite de dados</translation>
     </message>
 </context>
 <context>
