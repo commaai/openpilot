@@ -1,58 +1,75 @@
-import pyray as rl
 import numpy as np
-from openpilot.system.ui.widgets.cameraview import CameraView
+import pyray as rl
+
+from cereal import messaging, log
 from msgq.visionipc import VisionStreamType
+from openpilot.system.ui.widgets.cameraview import CameraView
 from openpilot.system.ui.lib.application import gui_app
-from cereal import messaging
+from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
+from openpilot.common.transformations.orientation import rot_from_euler
 
 
-VIEW_FROM_DEVICE = np.array([
-    [0.0, 1.0, 0.0],
-    [0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0]
-])
+CALIBRATED = log.LiveCalibrationData.Status.calibrated
+DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
-FCAM_INTRINSIC_MATRIX = np.array([
-    [2648.0, 0.0, 964.0],
-    [0.0, 2648.0, 604.0],
-    [0.0, 0.0, 1.0]
-])
-
-ECAM_INTRINSIC_MATRIX = np.array([
-    [567.0, 0.0, 964.0],
-    [0.0, 567.0, 604.0],
-    [0.0, 0.0, 1.0]
-])
 
 class AugmentedRoadView(CameraView):
   def __init__(self, sm: messaging.SubMaster, stream_type: VisionStreamType):
     super().__init__("camerad", stream_type)
-    self.stream_type = stream_type
+
     self.sm = sm
-
-    self.view_from_calib = VIEW_FROM_DEVICE.copy()
-    self.view_from_wide_calib = VIEW_FROM_DEVICE.copy()
-
+    self.stream_type = stream_type
     self.is_wide_camera = stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
 
+    self.device_camera: DeviceCameraConfig | None = None
+    self.view_from_calib = view_frame_from_device_frame.copy()
+    self.view_from_wide_calib = view_frame_from_device_frame.copy()
+
   def render(self, rect):
+    # Update calibration before rendering
+    self._update_calibration()
+
+    # Render the base camera view
     super().render(rect)
 
     # TODO: Add road visualization overlays like:
     # - Lane lines and road edges
     # - Path prediction
     # - Lead vehicle indicators
+    # - Additional features
 
-  def calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
-    self._update_calibration()
+  def _update_calibration(self):
+    # Update device camera if not already set
+    if not self.device_camera and sm.seen['roadCameraState'] and sm.seen['deviceState']:
+      self.device_camera = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
 
-    intrinsic = ECAM_INTRINSIC_MATRIX if self.is_wide_camera else FCAM_INTRINSIC_MATRIX
+    # Check if live calibration data is available and valid
+    if not (sm.updated["liveCalibration"] and sm.valid['liveCalibration']):
+      return
+
+    calib = self.sm['liveCalibration']
+    if len(calib.rpyCalib) != 3 or calib.calStatus != CALIBRATED:
+      return
+
+    # Update view_from_calib matrix
+    device_from_calib = rot_from_euler(calib.rpyCalib)
+    self.view_from_calib = view_frame_from_device_frame @ device_from_calib
+
+    # Update wide calibration if available
+    if hasattr(calib, 'wideFromDeviceEuler') and len(calib.wideFromDeviceEuler) == 3:
+      wide_from_device = rot_from_euler(calib.wideFromDeviceEuler)
+      self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
+
+  def _calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+    device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
+    intrinsic = device_camera.ecam.intrinsics if self.is_wide_camera else device_camera.fcam.intrinsics
     calibration = self.view_from_wide_calib if self.is_wide_camera else self.view_from_calib
     zoom = 2.0 if self.is_wide_camera else 1.1
 
     # Calculate transforms
+    inf_point = np.array([1000.0, 0.0, 0.0])
     calib_transform = intrinsic @ calibration
-    Kep = calib_transform @ np.array([1000.0, 0.0, 0.0])
+    Kep = calib_transform @ inf_point
 
     # Calculate offsets
     w, h = rect.width, rect.height
@@ -77,39 +94,10 @@ class AugmentedRoadView(CameraView):
     matrix.m10 = matrix.m15 = 1.0
     return matrix
 
-  def _update_calibration(self):
-    if self.sm.valid['liveCalibration']:
-      calib = self.sm['liveCalibration']
-      if hasattr(calib, 'rpyCalib') and len(calib.rpyCalib) == 3 and calib.calStatus == 'CALIBRATED':
-        device_from_calib = self._list2rot(calib.rpyCalib)
-        self.view_from_calib = VIEW_FROM_DEVICE @ device_from_calib
-
-        if hasattr(calib, 'wideFromDeviceEuler') and len(calib.wideFromDeviceEuler) == 3:
-          wide_from_device = self._list2rot(calib.wideFromDeviceEuler)
-          self.view_from_wide_calib = VIEW_FROM_DEVICE @ wide_from_device @ device_from_calib
-
-  def _list2rot(self, rpy):
-    """Convert roll, pitch, yaw to rotation matrix"""
-    roll, pitch, yaw = rpy
-
-    cp, sp = np.cos(pitch), np.sin(pitch)
-    cy, sy = np.cos(yaw), np.sin(yaw)
-    cr, sr = np.cos(roll), np.sin(roll)
-
-    rot = np.array(
-      [
-        [cy * cp, cy * sp * sr - sy * cr, cy * sp * cr + sy * sr],
-        [sy * cp, sy * sp * sr + cy * cr, sy * sp * cr - cy * sr],
-        [-sp, cp * sr, cp * cr],
-      ]
-    )
-
-    return rot
-
 
 if __name__ == "__main__":
   gui_app.init_window("OnRoad Camera View")
-  sm = messaging.SubMaster(['liveCalibration'])
+  sm = messaging.SubMaster(['deviceState', 'liveCalibration', 'roadCameraState'])
   road_camera_view = AugmentedRoadView(sm, VisionStreamType.VISION_STREAM_ROAD)
   try:
     for _ in gui_app.render():

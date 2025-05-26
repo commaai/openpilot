@@ -88,7 +88,7 @@ class CameraView:
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
 
-  def calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+  def _calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
     if not self.frame:
       return rl.Matrix()
 
@@ -120,7 +120,7 @@ class CameraView:
     if not self.frame:
       return
 
-    transform = self.calc_frame_matrix(rect)
+    transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
 
     scale_x = rect.width * transform.m0

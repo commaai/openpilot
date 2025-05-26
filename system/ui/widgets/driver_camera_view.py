@@ -13,7 +13,7 @@ class DriverCameraView(CameraView):
 
     # TODO: Add additional rendering logic
 
-  def calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
+  def _calc_frame_matrix(self, rect: rl.Rectangle) -> rl.Matrix:
     driver_view_ratio = 2.0
 
     # Get stream dimensions
