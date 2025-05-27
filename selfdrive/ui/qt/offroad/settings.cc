@@ -89,7 +89,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggle->setEnabled(!locked);
 
     if (needs_restart && !locked) {
-      QObject::connect(uiState(), &UIState::engagedChanged, [=](bool engaged) {
+      QObject::connect(uiState(), &UIState::engagedChanged, [toggle](bool engaged) {
         toggle->setEnabled(!engaged);
       });
 
