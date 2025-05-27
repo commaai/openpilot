@@ -43,34 +43,6 @@ vec4 getGradientColor(vec2 pos) {
   return gradientColors[gradientColorCount-1];
 }
 
-float distanceToEdge(vec2 p) {
-  float minDist = 1000.0;
-
-  for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
-    vec2 edge0 = points[j];
-    vec2 edge1 = points[i];
-
-    if (edge0 == edge1) continue;
-
-    vec2 v1 = p - edge0;
-    vec2 v2 = edge1 - edge0;
-    float l2 = dot(v2, v2);
-
-    if (l2 < 0.0001) {
-      float dist = length(v1);
-      minDist = min(minDist, dist);
-      continue;
-    }
-
-    float t = max(0.0, min(1.0, dot(v1, v2) / l2));
-    vec2 projection = edge0 + t * v2;
-    float dist = length(p - projection);
-    minDist = min(minDist, dist);
-  }
-
-  return minDist;
-}
-
 bool isPointInsidePolygon(vec2 p) {
   if (pointCount < 3) return false;
 
@@ -91,7 +63,7 @@ bool isPointInsidePolygon(vec2 p) {
 
   bool inside = false;
   for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
-    if (points[i] == points[j]) continue;
+    if (distance(points[i], points[j]) < 0.0001) continue;
 
     float dy = points[j].y - points[i].y;
     if (abs(dy) < 0.0001) continue;
@@ -106,14 +78,50 @@ bool isPointInsidePolygon(vec2 p) {
   return inside;
 }
 
+float distanceToEdge(vec2 p) {
+  float minDist = 1000.0;
+
+  for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
+    vec2 edge0 = points[j];
+    vec2 edge1 = points[i];
+
+    if (distance(edge0, edge1) < 0.0001) continue;
+
+    vec2 v1 = p - edge0;
+    vec2 v2 = edge1 - edge0;
+    float l2 = dot(v2, v2);
+
+    if (l2 < 0.0001) {
+      float dist = length(v1);
+      minDist = min(minDist, dist);
+      continue;
+    }
+
+    float t = clamp(dot(v1, v2) / l2, 0.0, 1.0);
+    vec2 projection = edge0 + t * v2;
+    float dist = length(p - projection);
+    minDist = min(minDist, dist);
+  }
+
+  return minDist;
+}
+
+float signedDistanceToPolygon(vec2 p) {
+  float dist = distanceToEdge(p);
+  bool inside = isPointInsidePolygon(p);
+  return inside ? dist : -dist;
+}
+
 void main() {
   vec2 pixel = fragTexCoord * resolution;
-  bool inside = isPointInsidePolygon(pixel);
-  float dist = distanceToEdge(pixel);
-  float aaWidth = 1.0;
-  float alpha = inside ?
-      min(1.0, dist / aaWidth) :
-      max(0.0, 1.0 - dist / aaWidth);
+
+  float signedDist = signedDistanceToPolygon(pixel);
+
+  vec2 pixelGrad = vec2(dFdx(pixel.x), dFdy(pixel.y));
+  float pixelSize = length(pixelGrad);
+  float aaWidth = max(0.5, pixelSize * 1.0);
+
+  float alpha = smoothstep(-aaWidth, aaWidth, signedDist);
 
   if (alpha > 0.0) {
     vec4 color;
