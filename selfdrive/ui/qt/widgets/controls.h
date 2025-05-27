@@ -150,6 +150,10 @@ public:
     store_confirm = _store_confirm;
   }
 
+  void setNotifyParam(const QString &_notify_param) {
+    notify_param = _notify_param;
+  }
+
   void setActiveIcon(const QString &icon) {
     active_icon_pixmap = QPixmap(icon).scaledToWidth(80, Qt::SmoothTransformation);
   }
@@ -181,6 +185,7 @@ private:
   QPixmap active_icon_pixmap;
   bool confirm = false;
   bool store_confirm = false;
+  QString notify_param;
 };
 
 class MultiButtonControl : public AbstractControl {

@@ -106,6 +106,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"SshEnabled", PERSISTENT},
     {"TermsVersion", PERSISTENT},
     {"TrainingVersion", PERSISTENT},
+    {"ToggleRestart", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION | CLEAR_ON_ONROAD_TRANSITION},
     {"UbloxAvailable", PERSISTENT},
     {"UpdateAvailable", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"UpdateFailedCount", CLEAR_ON_MANAGER_START},
