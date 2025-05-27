@@ -4,6 +4,7 @@ import numpy as np
 import pyray as rl
 from cereal import messaging, car
 from openpilot.common.params import Params
+from openpilot.system.ui.lib.shader_polygon import draw_polygon
 
 
 CLIP_MARGIN = 500
@@ -145,29 +146,29 @@ class ModelRenderer:
 
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
-    for i in range(4):
+    for i, vertices in enumerate(self._lane_line_vertices):
       # Skip if no vertices
-      if not self._lane_line_vertices[i]:
+      if vertices.size == 0:
         continue
 
       # Draw lane line
       alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
       color = rl.Color(255, 255, 255, int(alpha * 255))
-      self._draw_polygon(self._lane_line_vertices[i], color)
+      draw_polygon(vertices, color)
 
-    for i in range(2):
+    for i, vertices in enumerate(self._road_edge_vertices):
       # Skip if no vertices
-      if not self._road_edge_vertices[i]:
+      if vertices.size == 0:
         continue
 
       # Draw road edge
       alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
       color = rl.Color(255, 0, 0, int(alpha * 255))
-      self._draw_polygon(self._road_edge_vertices[i], color)
+      draw_polygon(vertices, color)
 
   def _draw_path(self, sm, model, height):
     """Draw the path polygon with gradient based on acceleration"""
-    if not self._track_vertices:
+    if self._track_vertices.size == 0:
       return
 
     if self._experimental_mode:
@@ -175,16 +176,29 @@ class ModelRenderer:
       acceleration = model.acceleration.x
       max_len = min(len(self._track_vertices) // 2, len(acceleration))
 
-      # Create gradient colors for path sections
-      for i in range(max_len):
+      # Find midpoint index for polygon
+      mid_point = len(self._track_vertices) // 2
+
+      # For acceleration-based coloring, process segments separately
+      left_side = self._track_vertices[:mid_point]
+      right_side = self._track_vertices[mid_point:][::-1]  # Reverse for proper winding
+
+      # Create segments for gradient coloring
+      segment_colors = []
+      gradient_stops = []
+
+      for i in range(max_len - 1):
+        if i >= len(left_side) - 1 or i >= len(right_side) - 1:
+          break
+
         track_idx = max_len - i - 1  # flip idx to start from bottom right
-        track_y = self._track_vertices[track_idx][1]
+
         # Skip points out of frame
-        if track_y < 0 or track_y > height:
+        if left_side[track_idx][1] < 0 or left_side[track_idx][1] > height:
           continue
 
         # Calculate color based on acceleration
-        lin_grad_point = (height - track_y) / height
+        lin_grad_point = (height - left_side[track_idx][1]) / height
 
         # speed up: 120, slow down: 0
         path_hue = max(min(60 + acceleration[i] * 35, 120), 0)
@@ -197,12 +211,24 @@ class ModelRenderer:
         # Use HSL to RGB conversion
         color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
 
-        # TODO: This is simplified - a full implementation would create a gradient fill
-        segment = self._track_vertices[track_idx : track_idx + 2] + self._track_vertices[-track_idx - 2 : -track_idx]
-        self._draw_polygon(segment, color)
+        # Create quad segment
+        gradient_stops.append(lin_grad_point)
+        segment_colors.append(color)
 
-        # Skip a point, unless next is last
-        i += 1 if i + 2 < max_len else 0
+      if len(segment_colors) < 2:
+        self.draw_complex_polygon(self._track_vertices, rl.Color(255, 255, 255, 30))
+        return
+
+      # Create gradient specification
+      gradient = {
+        'start': (0.0, 1.0),  # Bottom of path
+        'end': (0.0, 0.0),  # Top of path
+        'colors': segment_colors,
+        'stops': gradient_stops,
+      }
+
+      # Draw the entire path with a single gradient fill
+      draw_polygon(self._track_vertices, gradient=gradient)
     else:
       # Draw with throttle/no throttle gradient
       allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
@@ -226,7 +252,14 @@ class ModelRenderer:
         self._blend_colors(begin_colors[2], end_colors[2], self._blend_factor),
       ]
 
-      self._draw_polygon(self._track_vertices, colors[0])
+      gradient = {
+            'start': (0.0, 1.0),  # Bottom of path
+            'end': (0.0, 0.0),    # Top of path
+            'colors': colors,
+            'stops': [0.0, 1.0]
+        }
+      # Draw path with gradient
+      draw_polygon(self._track_vertices, gradient=gradient)
 
   def _draw_lead(self, lead_data, vd, rect):
     """Draw lead vehicle indicator"""
@@ -284,14 +317,14 @@ class ModelRenderer:
 
     return (x, y)
 
-  def _map_line_to_polygon(self, line, y_off, z_off, max_idx, allow_invert=True):
+  def _map_line_to_polygon(self, line, y_off, z_off, max_idx, allow_invert=True)-> np.ndarray:
     """Convert a 3D line to a 2D polygon for drawing"""
     line_x = line.x
     line_y = line.y
     line_z = line.z
 
-    left_points = []
-    right_points = []
+    left_points: list[tuple[float, float]] = []
+    right_points: list[tuple[float, float]] = []
 
     for i in range(max_idx + 1):
       # Skip points with negative x (behind camera)
@@ -309,23 +342,7 @@ class ModelRenderer:
         left_points.append(left)
         right_points.append(right)
 
-    if not left_points:
-      return []
-
-    return left_points + right_points[::-1]
-
-  def _draw_polygon(self, points, color):
-    # TODO: Enhance polygon drawing to support even-odd fill rule efficiently, as Raylib lacks native support.
-    #       Use a faster triangulation algorithm (e.g., ear clipping) or GPU shader for
-    #       efficient rendering of lane lines, road edges, and path polygons.
-    if len(points) <= 8:
-      rl.draw_triangle_fan(points, len(points), color)
-    else:
-      for i in range(1, len(points) - 1):
-        rl.draw_triangle(points[0], points[i], points[i + 1], color)
-
-    for i in range(len(points)):
-      rl.draw_line_ex(points[i], points[(i + 1) % len(points)], 1.5, color)
+    return np.array(left_points + right_points[::-1], dtype=np.float32)
 
   @staticmethod
   def _map_val(x, x0, x1, y0, y1):

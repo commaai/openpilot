@@ -221,7 +221,7 @@ class ShaderState:
     self.initialized = False
 
 
-def draw_polygon(points: np.ndarray, color: rl.Color | None =None, gradient=None):
+def draw_polygon(points: np.ndarray, color=None, gradient=None):
   """
   Draw a complex polygon using shader-based even-odd fill rule
 
