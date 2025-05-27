@@ -197,7 +197,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   should_start_prev = False
   in_car = False
   engaged_prev = False
-  offroad_cycle_counter = 0  # offroad_cycle_counter?
+  offroad_cycle_count = 0
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -215,11 +215,10 @@ def hardware_thread(end_event, hw_queue) -> None:
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     # handle requests to cycle system started state
-    offroad_cycle_counter += 1
     if params.get_bool("OnroadCycleRequested"):
       params.put_bool("OnroadCycleRequested", False)
-      offroad_cycle_counter = 0
-    onroad_conditions["onroad_allowed"] = offroad_cycle_counter > ONROAD_CYCLE_TIME / DT_HW
+      offroad_cycle_count = sm.frame
+    onroad_conditions["onroad_allowed"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
@@ -241,7 +240,7 @@ def hardware_thread(end_event, hw_queue) -> None:
         cloudlog.error("panda timed out onroad")
 
     # Run at 2Hz, plus either edge of ignition
-    ign_edge = (started_ts is not None) != onroad_conditions["ignition"]
+    ign_edge = (started_ts is not None) != all(onroad_conditions.values())
     if (sm.frame % round(SERVICE_LIST['pandaStates'].frequency * DT_HW) != 0) and not ign_edge:
       continue
 
