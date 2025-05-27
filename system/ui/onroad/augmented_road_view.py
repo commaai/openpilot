@@ -3,6 +3,7 @@ import pyray as rl
 
 from cereal import messaging, log
 from msgq.visionipc import VisionStreamType
+from openpilot.system.ui.onroad.model_renderer import ModelRenderer
 from openpilot.system.ui.widgets.cameraview import CameraView
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
@@ -29,6 +30,8 @@ class AugmentedRoadView(CameraView):
     self._last_rect_dims = (0.0, 0.0)
     self._cached_matrix: np.ndarray | None = None
 
+    self.model_renderer = ModelRenderer()
+
   def render(self, rect):
     # Update calibration before rendering
     self._update_calibration()
@@ -41,6 +44,7 @@ class AugmentedRoadView(CameraView):
     # - Path prediction
     # - Lead vehicle indicators
     # - Additional features
+    self.model_renderer.draw(rect, self.sm)
 
   def _update_calibration(self):
     # Update device camera if not already set
@@ -112,12 +116,21 @@ class AugmentedRoadView(CameraView):
       [0, 0, 1.0]
     ])
 
+    video_transform = np.array([
+        [zoom, 0.0, (w / 2 - x_offset) - (cx * zoom)],
+        [0.0, zoom, (h / 2 - y_offset) - (cy * zoom)],
+        [0.0, 0.0, 1.0]
+    ])
+    self.model_renderer.set_transform(video_transform @ calib_transform)
+
     return self._cached_matrix
 
 
 if __name__ == "__main__":
   gui_app.init_window("OnRoad Camera View")
-  sm = messaging.SubMaster(['deviceState', 'liveCalibration', 'roadCameraState'])
+  sm = messaging.SubMaster(["modelV2", "controlsState", "liveCalibration", "radarState", "deviceState",
+    "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
+    "roadCameraState", "wideRoadCameraState", "managerState", "selfdriveState", "longitudinalPlan"])
   road_camera_view = AugmentedRoadView(sm, VisionStreamType.VISION_STREAM_ROAD)
   try:
     for _ in gui_app.render():
