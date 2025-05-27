@@ -31,14 +31,14 @@ class ModelRenderer:
     self._experimental_mode = False
     self._blend_factor = 1.0
     self._prev_allow_throttle = True
-    self._lane_line_probs = [0.0] * 4
-    self._road_edge_stds = [0.0] * 2
+    self._lane_line_probs = np.zeros(4, dtype=np.float32)
+    self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._path_offset_z = 1.22
 
     # Initialize empty polygon vertices
-    self._track_vertices = []
-    self._lane_line_vertices = [[] for _ in range(4)]
-    self._road_edge_vertices = [[] for _ in range(2)]
+    self._track_vertices = np.empty((0, 2), dtype=np.float32)
+    self._lane_line_vertices = [np.empty((0, 2), dtype=np.float32) for _ in range(4)]
+    self._road_edge_vertices = [np.empty((0, 2), dtype=np.float32) for _ in range(2)]
     self._lead_vertices = [None, None]
 
     # Transform matrix (3x3 for car space to screen space)
@@ -216,7 +216,7 @@ class ModelRenderer:
         segment_colors.append(color)
 
       if len(segment_colors) < 2:
-        self.draw_complex_polygon(self._track_vertices, rl.Color(255, 255, 255, 30))
+        draw_polygon(self._track_vertices, rl.Color(255, 255, 255, 30))
         return
 
       # Create gradient specification
@@ -341,6 +341,9 @@ class ModelRenderer:
 
         left_points.append(left)
         right_points.append(right)
+
+    if not left_points or not right_points:
+      return np.empty((0, 2), dtype=np.float32)
 
     return np.array(left_points + right_points[::-1], dtype=np.float32)
 

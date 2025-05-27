@@ -15,7 +15,7 @@ uniform int pointCount;
 uniform vec4 fillColor;
 uniform vec2 resolution;
 
-uniform bool useGradient;
+uniform int useGradient;
 uniform vec2 gradientStart;
 uniform vec2 gradientEnd;
 uniform vec4 gradientColors[8];
@@ -23,24 +23,30 @@ uniform float gradientStops[8];
 uniform int gradientColorCount;
 
 vec4 getGradientColor(vec2 pos) {
-  vec2 gradientDir = gradientEnd - gradientStart;
-  float gradientLength = length(gradientDir);
+    vec2 gradientDir = gradientEnd - gradientStart;
+    float gradientLength = length(gradientDir);
 
-  if (gradientLength < 0.001) return gradientColors[0];
+    if (gradientLength < 0.001) return gradientColors[0];
 
-  vec2 normalizedDir = gradientDir / gradientLength;
-  vec2 pointVec = pos - gradientStart;
-  float projection = dot(pointVec, normalizedDir);
-  float t = clamp(projection / gradientLength, 0.0, 1.0);
+    float t = clamp(dot(pos - gradientStart, gradientDir) / (gradientLength * gradientLength), 0.0, 1.0);
 
-  for (int i = 0; i < gradientColorCount - 1; i++) {
-    if (t >= gradientStops[i] && t <= gradientStops[i+1]) {
-      float segmentT = (t - gradientStops[i]) / (gradientStops[i+1] - gradientStops[i]);
-      return mix(gradientColors[i], gradientColors[i+1], segmentT);
+    // Binary search for better performance with many stops
+    int left = 0;
+    int right = gradientColorCount - 1;
+
+    while (left < right - 1) {
+        int mid = (left + right) / 2;
+        if (t <= gradientStops[mid]) {
+            right = mid;
+        } else {
+            left = mid;
+        }
     }
-  }
 
-  return gradientColors[gradientColorCount-1];
+    if (left == right) return gradientColors[left];
+
+    float segmentT = (t - gradientStops[left]) / (gradientStops[right] - gradientStops[left]);
+    return mix(gradientColors[left], gradientColors[right], segmentT);
 }
 
 float distanceToEdge(vec2 p) {
@@ -265,11 +271,7 @@ def draw_polygon(points: np.ndarray, color=None, gradient=None):
   rl.set_shader_value(state.shader, state.locations['resolution'], resolution_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
 
   # Set points
-  points_ptr = rl.ffi.new("float[]", len(transformed_points) * 2)
-  flat_points = transformed_points.flatten()
-  if not flat_points.flags['C_CONTIGUOUS']:
-    flat_points = np.ascontiguousarray(flat_points)
-
+  flat_points = np.ascontiguousarray(transformed_points.flatten().astype(np.float32))
   points_ptr = rl.ffi.cast("float *", flat_points.ctypes.data)
   rl.set_shader_value_v(
     state.shader, state.locations['points'], points_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2, len(transformed_points)
