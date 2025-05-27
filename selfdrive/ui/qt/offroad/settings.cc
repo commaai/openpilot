@@ -85,9 +85,12 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   for (auto &[param, title, desc, icon, needs_restart] : toggle_defs) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
-    if (needs_restart) {
-      QObject::connect(uiState(), &UIState::engagedChanged, [toggle](bool engaged) {
-        toggle.setEnabled(!engaged);
+    bool locked = params.getBool((param + "Lock").toStdString());
+    toggle->setEnabled(!locked);
+
+    if (needs_restart && !locked) {
+      QObject::connect(uiState(), &UIState::engagedChanged, [=](bool engaged) {
+        toggle->setEnabled(!engaged);
       });
 
       QObject::connect(toggle, &ParamControl::toggleFlipped, [=](bool state) {
@@ -95,9 +98,6 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
         params.putBool("OnroadCycleRequested", true);
       });
     }
-
-    bool locked = params.getBool((param + "Lock").toStdString());
-    toggle->setEnabled(!locked);
 
     addItem(toggle);
     toggles[param.toStdString()] = toggle;
