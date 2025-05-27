@@ -226,8 +226,6 @@ class ModelRenderer:
         'colors': segment_colors,
         'stops': gradient_stops,
       }
-
-      # Draw the entire path with a single gradient fill
       draw_polygon(self._track_vertices, gradient=gradient)
     else:
       # Draw with throttle/no throttle gradient
@@ -253,12 +251,11 @@ class ModelRenderer:
       ]
 
       gradient = {
-            'start': (0.0, 1.0),  # Bottom of path
-            'end': (0.0, 0.0),    # Top of path
-            'colors': colors,
-            'stops': [0.0, 1.0]
-        }
-      # Draw path with gradient
+        'start': (0.0, 1.0),  # Bottom of path
+        'end': (0.0, 0.0),  # Top of path
+        'colors': colors,
+        'stops': [0.0, 1.0],
+      }
       draw_polygon(self._track_vertices, gradient=gradient)
 
   def _draw_lead(self, lead_data, vd, rect):

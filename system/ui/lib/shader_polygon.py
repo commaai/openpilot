@@ -15,7 +15,7 @@ uniform int pointCount;
 uniform vec4 fillColor;
 uniform vec2 resolution;
 
-uniform int useGradient;
+uniform bool useGradient;
 uniform vec2 gradientStart;
 uniform vec2 gradientEnd;
 uniform vec4 gradientColors[8];
@@ -23,30 +23,24 @@ uniform float gradientStops[8];
 uniform int gradientColorCount;
 
 vec4 getGradientColor(vec2 pos) {
-    vec2 gradientDir = gradientEnd - gradientStart;
-    float gradientLength = length(gradientDir);
+  vec2 gradientDir = gradientEnd - gradientStart;
+  float gradientLength = length(gradientDir);
 
-    if (gradientLength < 0.001) return gradientColors[0];
+  if (gradientLength < 0.001) return gradientColors[0];
 
-    float t = clamp(dot(pos - gradientStart, gradientDir) / (gradientLength * gradientLength), 0.0, 1.0);
+  vec2 normalizedDir = gradientDir / gradientLength;
+  vec2 pointVec = pos - gradientStart;
+  float projection = dot(pointVec, normalizedDir);
+  float t = clamp(projection / gradientLength, 0.0, 1.0);
 
-    // Binary search for better performance with many stops
-    int left = 0;
-    int right = gradientColorCount - 1;
-
-    while (left < right - 1) {
-        int mid = (left + right) / 2;
-        if (t <= gradientStops[mid]) {
-            right = mid;
-        } else {
-            left = mid;
-        }
+  for (int i = 0; i < gradientColorCount - 1; i++) {
+    if (t >= gradientStops[i] && t <= gradientStops[i+1]) {
+      float segmentT = (t - gradientStops[i]) / (gradientStops[i+1] - gradientStops[i]);
+      return mix(gradientColors[i], gradientColors[i+1], segmentT);
     }
+  }
 
-    if (left == right) return gradientColors[left];
-
-    float segmentT = (t - gradientStops[left]) / (gradientStops[right] - gradientStops[left]);
-    return mix(gradientColors[left], gradientColors[right], segmentT);
+  return gradientColors[gradientColorCount-1];
 }
 
 float distanceToEdge(vec2 p) {
@@ -69,9 +63,7 @@ float distanceToEdge(vec2 p) {
     }
 
     float t = max(0.0, min(1.0, dot(v1, v2) / l2));
-
     vec2 projection = edge0 + t * v2;
-
     float dist = length(p - projection);
     minDist = min(minDist, dist);
   }
@@ -116,13 +108,9 @@ bool isPointInsidePolygon(vec2 p) {
 
 void main() {
   vec2 pixel = fragTexCoord * resolution;
-
   bool inside = isPointInsidePolygon(pixel);
-
   float dist = distanceToEdge(pixel);
-
   float aaWidth = 1.0;
-
   float alpha = inside ?
       min(1.0, dist / aaWidth) :
       max(0.0, 1.0 - dist / aaWidth);
@@ -134,7 +122,6 @@ void main() {
     } else {
       color = fillColor;
     }
-
     finalColor = vec4(color.rgb, color.a * alpha);
   } else {
     finalColor = vec4(0.0, 0.0, 0.0, 0.0);
@@ -151,8 +138,8 @@ out vec2 fragTexCoord;
 uniform mat4 mvp;
 
 void main() {
-    fragTexCoord = vertexTexCoord;
-    gl_Position = mvp * vec4(vertexPosition, 1.0);
+  fragTexCoord = vertexTexCoord;
+  gl_Position = mvp * vec4(vertexPosition, 1.0);
 }
 """
 
