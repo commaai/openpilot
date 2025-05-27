@@ -378,6 +378,26 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QObject::connect(device, &DevicePanel::showDriverView, this, &SettingsWindow::showDriverView);
 
   TogglesPanel *toggles = new TogglesPanel(this);
+
+  auto mainWidget = new QWidget(this);
+  auto mainLayout = new QVBoxLayout(mainWidget);
+  auto topBtn = new QPushButton("Apply", this);
+  mainLayout->addWidget(topBtn);
+
+  auto content = new QWidget;
+  auto contentLay = new QVBoxLayout(content);
+  contentLay->setContentsMargins(0,0,0,0);
+  contentLay->addWidget(toggles);
+  contentLay->addStretch();
+
+  auto scroll = new QScrollArea(this);
+  scroll->setFrameShape(QFrame::NoFrame);
+  scroll->setWidgetResizable(true);
+  scroll->setWidget(content);
+
+  mainLayout->addWidget(scroll, /* stretch=*/1);
+
+//  mainLayout->addWidget(toggles);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
 
   auto networking = new Networking(this);
@@ -386,7 +406,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
   QList<QPair<QString, QWidget *>> panels = {
     {tr("Device"), device},
     {tr("Network"), networking},
-    {tr("Toggles"), toggles},
+    {tr("Toggles"), mainWidget},
     {tr("Software"), new SoftwarePanel(this)},
     {tr("Firehose"), new FirehosePanel(this)},
     {tr("Developer"), new DeveloperPanel(this)},
