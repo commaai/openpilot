@@ -12,13 +12,6 @@ from openpilot.common.timeout import Timeout
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.manager.process_config import managed_processes
 
-BMX = {
-  ('bmx055', 'acceleration'),
-  ('bmx055', 'gyroUncalibrated'),
-  ('bmx055', 'magneticUncalibrated'),
-  ('bmx055', 'temperature'),
-}
-
 LSM = {
   ('lsm6ds3', 'acceleration'),
   ('lsm6ds3', 'gyroUncalibrated'),
@@ -30,17 +23,9 @@ MMC = {
   ('mmc5603nj', 'magneticUncalibrated'),
 }
 
-SENSOR_CONFIGURATIONS: list[set] = [
-  BMX | LSM,
-  MMC | LSM,
-  BMX | LSM_C,
-  MMC| LSM_C,
-]
-if HARDWARE.get_device_type() == "mici":
-  SENSOR_CONFIGURATIONS = [
-    LSM,
-    LSM_C,
-  ]
+SENSOR_CONFIGURATIONS: list[set] = {
+  "tizi": [MMC | LSM, MMC | LSM_C],
+}.get(HARDWARE.get_device_type(), [LSM, LSM_C])
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
