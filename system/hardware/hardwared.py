@@ -34,6 +34,7 @@ CURRENT_TAU = 15.   # 15s time constant
 TEMP_TAU = 5.   # 5s time constant
 DISCONNECT_TIMEOUT = 5.  # wait 5 seconds before going offroad after disconnect so you get an alert
 PANDA_STATES_TIMEOUT = round(1000 / SERVICE_LIST['pandaStates'].frequency * 1.5)  # 1.5x the expected pandaState frequency
+ONROAD_CYCLE_TIME = 1  # seconds
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
@@ -170,6 +171,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   onroad_conditions: dict[str, bool] = {
     "ignition": False,
+    "onroad_allowed": True,
   }
   startup_conditions: dict[str, bool] = {}
   startup_conditions_prev: dict[str, bool] = {}
@@ -195,6 +197,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   should_start_prev = False
   in_car = False
   engaged_prev = False
+  offroad_cycle_counter = 0  # offroad_cycle_counter?
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -210,6 +213,13 @@ def hardware_thread(end_event, hw_queue) -> None:
     pandaStates = sm['pandaStates']
     peripheralState = sm['peripheralState']
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
+
+    # handle requests to cycle system started state
+    offroad_cycle_counter += 1
+    if params.get_bool("OnroadCycleRequested"):
+      params.put_bool("OnroadCycleRequested", False)
+      offroad_cycle_counter = 0
+    onroad_conditions["onroad_allowed"] = offroad_cycle_counter > ONROAD_CYCLE_TIME / DT_HW
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
