@@ -42,12 +42,6 @@ ALL_SENSORS = {
     SensorConfig("temperature", 0, 60),
   },
 
-  Sensor.bmx055: {
-    SensorConfig("acceleration", 5, 15),
-    SensorConfig("gyroUncalibrated", 0, .2),
-    SensorConfig("magneticUncalibrated", 0, 300),
-    SensorConfig("temperature", 0, 60),
-  },
 
   Sensor.mmc5603nj: {
     SensorConfig("magneticUncalibrated", 0, 300),
