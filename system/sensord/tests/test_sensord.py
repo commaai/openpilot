@@ -24,8 +24,10 @@ MMC = {
 }
 
 SENSOR_CONFIGURATIONS: list[set] = {
+  "mici": [LSM, LSM_C],
   "tizi": [MMC | LSM, MMC | LSM_C],
-}.get(HARDWARE.get_device_type(), [LSM, LSM_C])
+  "tici": [LSM, LSM_C, MMC | LSM, MMC | LSM_C],
+}.get(HARDWARE.get_device_type(), None)
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
@@ -41,7 +43,6 @@ ALL_SENSORS = {
     SensorConfig("gyroUncalibrated", 0, .2),
     SensorConfig("temperature", 0, 60),
   },
-
 
   Sensor.mmc5603nj: {
     SensorConfig("magneticUncalibrated", 0, 300),
