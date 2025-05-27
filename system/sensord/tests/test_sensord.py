@@ -27,7 +27,7 @@ SENSOR_CONFIGURATIONS: list[set] = {
   "mici": [LSM, LSM_C],
   "tizi": [MMC | LSM, MMC | LSM_C],
   "tici": [LSM, LSM_C, MMC | LSM, MMC | LSM_C],
-}.get(HARDWARE.get_device_type(), None)
+}.get(HARDWARE.get_device_type(), [])
 
 Sensor = log.SensorEventData.SensorSource
 SensorConfig = namedtuple('SensorConfig', ['type', 'sanity_min', 'sanity_max'])
