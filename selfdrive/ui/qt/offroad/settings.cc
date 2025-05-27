@@ -86,6 +86,10 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     auto toggle = new ParamControl(param, title, desc, icon, this);
 
     if (needs_restart) {
+      QObject::connect(uiState(), &UIState::engagedChanged, [toggle](bool engaged) {
+        toggle.setEnabled(!engaged);
+      });
+
       QObject::connect(toggle, &ParamControl::toggleFlipped, [=](bool state) {
         qDebug() << "put OnroadCycleRequested bool";
         params.putBool("OnroadCycleRequested", true);
