@@ -103,7 +103,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered Wi-FI connection</source>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -388,13 +388,6 @@ Firehoseモードを有効にすると、学習データを最大限アップロ
         <translation>
             <numerusform>%n文字以上にして下さい！</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>インストール中...</translation>
     </message>
 </context>
 <context>
