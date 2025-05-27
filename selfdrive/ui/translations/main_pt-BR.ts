@@ -103,8 +103,8 @@
         <translation>Rede Wi-Fi com Franquia</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered Wi-FI connection</source>
-        <translation>Previna o envio de grandes volumes de dados em conexões Wi-Fi com franquia de limite de dados</translation>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -390,13 +390,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
             <numerusform>Necessita no mínimo %n caractere!</numerusform>
             <numerusform>Necessita no mínimo %n caracteres!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Instalando...</translation>
     </message>
 </context>
 <context>

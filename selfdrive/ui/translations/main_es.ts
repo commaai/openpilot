@@ -103,7 +103,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered Wi-FI connection</source>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -390,13 +390,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
             <numerusform>¡Necesita mínimo %n caracter!</numerusform>
             <numerusform>¡Necesita mínimo %n caracteres!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Instalando...</translation>
     </message>
 </context>
 <context>

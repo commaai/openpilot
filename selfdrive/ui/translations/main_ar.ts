@@ -103,7 +103,7 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered Wi-FI connection</source>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -398,13 +398,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
             <numerusform>تحتاج إلى %n أحرف على الأقل!</numerusform>
             <numerusform>تحتاج إلى %n حرف على الأقل!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>جارٍ التثبيت...</translation>
     </message>
 </context>
 <context>
