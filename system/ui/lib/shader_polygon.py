@@ -23,110 +23,93 @@ uniform float gradientStops[8];
 uniform int gradientColorCount;
 
 vec4 getGradientColor(vec2 pos) {
-  vec2 gradientDir = gradientEnd - gradientStart;
-  float gradientLength = length(gradientDir);
+    vec2 dir = gradientEnd - gradientStart;
+    float len = length(dir);
+    if (len < 0.001) return gradientColors[0];
 
-  if (gradientLength < 0.001) return gradientColors[0];
+    float t = clamp(dot(pos - gradientStart, dir) / (len * len), 0.0, 1.0);
 
-  vec2 normalizedDir = gradientDir / gradientLength;
-  vec2 pointVec = pos - gradientStart;
-  float projection = dot(pointVec, normalizedDir);
-  float t = clamp(projection / gradientLength, 0.0, 1.0);
-
-  for (int i = 0; i < gradientColorCount - 1; i++) {
-    if (t >= gradientStops[i] && t <= gradientStops[i+1]) {
-      float segmentT = (t - gradientStops[i]) / (gradientStops[i+1] - gradientStops[i]);
-      return mix(gradientColors[i], gradientColors[i+1], segmentT);
+    if (gradientColorCount == 2) {
+        return mix(gradientColors[0], gradientColors[1], t);
     }
-  }
 
-  return gradientColors[gradientColorCount-1];
+    int low = 0;
+    int high = gradientColorCount - 1;
+    while (low < high) {
+        int mid = (low + high) / 2;
+        if (t > gradientStops[mid]) low = mid + 1;
+        else high = mid;
+    }
+
+    if (low == 0) return gradientColors[0];
+    if (low == gradientColorCount) return gradientColors[gradientColorCount - 1];
+
+    float segmentT = (t - gradientStops[low - 1]) / (gradientStops[low] - gradientStops[low - 1]);
+    return mix(gradientColors[low - 1], gradientColors[low], segmentT);
 }
 
 float distanceToEdge(vec2 p) {
-  float minDist = 1000.0;
+    float minDist = resolution.x;
 
-  for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
-    vec2 edge0 = points[j];
-    vec2 edge1 = points[i];
+    for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
+        vec2 edge0 = points[j];
+        vec2 edge1 = points[i];
 
-    if (edge0 == edge1) continue;
+        vec2 v2 = edge1 - edge0;
+        float l2 = dot(v2, v2);
+        if (l2 < 0.0001) continue;
 
-    vec2 v1 = p - edge0;
-    vec2 v2 = edge1 - edge0;
-    float l2 = dot(v2, v2);
-
-    if (l2 < 0.0001) {
-      float dist = length(v1);
-      minDist = min(minDist, dist);
-      continue;
+        vec2 v1 = p - edge0;
+        float t = clamp(dot(v1, v2) / l2, 0.0, 1.0);
+        minDist = min(minDist, length(v1 - t * v2));
     }
 
-    float t = max(0.0, min(1.0, dot(v1, v2) / l2));
-    vec2 projection = edge0 + t * v2;
-    float dist = length(p - projection);
-    minDist = min(minDist, dist);
-  }
-
-  return minDist;
+    return minDist;
 }
 
 bool isPointInsidePolygon(vec2 p) {
-  if (pointCount < 3) return false;
+    if (pointCount < 3) return false;
 
-  if (pointCount == 3) {
-    vec2 v0 = points[0];
-    vec2 v1 = points[1];
-    vec2 v2 = points[2];
+    if (pointCount == 3) {
+        vec2 v0 = points[0], v1 = points[1], v2 = points[2];
+        float d = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
+        if (abs(d) < 0.0001) return false;
 
-    float d = (v1.y - v2.y) * (v0.x - v2.x) + (v2.x - v1.x) * (v0.y - v2.y);
-    if (abs(d) < 0.0001) return false;
-
-    float a = ((v1.y - v2.y) * (p.x - v2.x) + (v2.x - v1.x) * (p.y - v2.y)) / d;
-    float b = ((v2.y - v0.y) * (p.x - v2.x) + (v0.x - v2.x) * (p.y - v2.y)) / d;
-    float c = 1.0 - a - b;
-
-    return (a >= 0.0 && b >= 0.0 && c >= 0.0);
-  }
-
-  bool inside = false;
-  for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
-    if (points[i] == points[j]) continue;
-
-    float dy = points[j].y - points[i].y;
-    if (abs(dy) < 0.0001) continue;
-
-    if (((points[i].y > p.y) != (points[j].y > p.y))) {
-      float x_intersect = points[i].x + (points[j].x - points[i].x) * (p.y - points[i].y) / dy;
-      if (p.x < x_intersect) {
-        inside = !inside;
-      }
+        float a = ((v1.y - v2.y) * (p.x - v2.x) + (v2.x - v1.x) * (p.y - v2.y)) / d;
+        float b = ((v2.y - v0.y) * (p.x - v2.x) + (v0.x - v2.x) * (p.y - v2.y)) / d;
+        float c = 1.0 - a - b;
+        return a >= 0.0 && b >= 0.0 && c >= 0.0;
     }
-  }
-  return inside;
+
+    bool inside = false;
+    for (int i = 0, j = pointCount - 1; i < pointCount; j = i++) {
+        vec2 pi = points[i], pj = points[j];
+        float dy = pj.y - pi.y;
+        if (abs(dy) < 1e-4 || pi == pj) continue;
+
+        if ((pi.y > p.y) != (pj.y > p.y)) {
+            float x_intersect = pi.x + (pj.x - pi.x) * (p.y - pi.y) / dy;
+            if (p.x < x_intersect) inside = !inside;
+        }
+    }
+    return inside;
 }
 
 void main() {
-  vec2 pixel = fragTexCoord * resolution;
-  bool inside = isPointInsidePolygon(pixel);
-  float dist = distanceToEdge(pixel);
-  float aaWidth = 1.0;
-  float alpha = inside ?
-      min(1.0, dist / aaWidth) :
-      max(0.0, 1.0 - dist / aaWidth);
+    vec2 pixel = fragTexCoord * resolution;
+    bool inside = isPointInsidePolygon(pixel);
+    float dist = distanceToEdge(pixel);
+    float aaWidth = 2.0 / min(resolution.x, resolution.y);
+    float alpha = inside ? min(1.0, dist / aaWidth) : max(0.0, 1.0 - dist / aaWidth);
 
-  if (alpha > 0.0) {
-    vec4 color;
-    if (useGradient) {
-      color = getGradientColor(fragTexCoord);
-    } else {
-      color = fillColor;
+    if (alpha == 0.0) {
+        discard;
     }
+
+    vec4 color = useGradient ? getGradientColor(pixel) : fillColor;
     finalColor = vec4(color.rgb, color.a * alpha);
-  } else {
-    finalColor = vec4(0.0, 0.0, 0.0, 0.0);
-  }
 }
+
 """
 
 # Default vertex shader
