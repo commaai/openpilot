@@ -1,4 +1,5 @@
 import pyray as rl
+import numpy as np
 from typing import Any
 
 
@@ -220,7 +221,7 @@ class ShaderState:
     self.initialized = False
 
 
-def draw_polygon(points, color=None, gradient=None):
+def draw_polygon(points: np.ndarray, color: rl.Color | None =None, gradient=None):
   """
   Draw a complex polygon using shader-based even-odd fill rule
 
@@ -246,44 +247,45 @@ def draw_polygon(points, color=None, gradient=None):
     state.initialize()
 
   # Find bounding box
-  min_x = min(p[0] for p in points)
-  max_x = max(p[0] for p in points)
-  min_y = min(p[1] for p in points)
-  max_y = max(p[1] for p in points)
+  min_xy = np.min(points, axis=0)
+  min_x, min_y = min_xy
+  max_x, max_y = np.max(points, axis=0)
 
   width = max(1, max_x - min_x)
   height = max(1, max_y - min_y)
 
   # Transform points to shader space
-  transformed_points = [(p[0] - min_x, p[1] - min_y) for p in points]
+  transformed_points = points - min_xy
 
   # Set basic shader uniforms using cached locations
   point_count_ptr = rl.ffi.new("int[]", [len(transformed_points)])
-  rl.set_shader_value(state.shader, state.locations['pointCount'], point_count_ptr, rl.SHADER_UNIFORM_INT)
+  rl.set_shader_value(state.shader, state.locations['pointCount'], point_count_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
 
   resolution_ptr = rl.ffi.new("float[]", [width, height])
-  rl.set_shader_value(state.shader, state.locations['resolution'], resolution_ptr, rl.SHADER_UNIFORM_VEC2)
+  rl.set_shader_value(state.shader, state.locations['resolution'], resolution_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
 
   # Set points
   points_ptr = rl.ffi.new("float[]", len(transformed_points) * 2)
-  for i, p in enumerate(transformed_points):
-    points_ptr[i * 2] = float(p[0])
-    points_ptr[i * 2 + 1] = float(p[1])
+  flat_points = transformed_points.flatten()
+  if not flat_points.flags['C_CONTIGUOUS']:
+    flat_points = np.ascontiguousarray(flat_points)
+
+  points_ptr = rl.ffi.cast("float *", flat_points.ctypes.data)
   rl.set_shader_value_v(
-    state.shader, state.locations['points'], points_ptr, rl.SHADER_UNIFORM_VEC2, len(transformed_points)
+    state.shader, state.locations['points'], points_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2, len(transformed_points)
   )
 
   # Set gradient or solid color based on what was provided
   if gradient:
     # Enable gradient
     use_gradient_ptr = rl.ffi.new("int[]", [1])
-    rl.set_shader_value(state.shader, state.locations['useGradient'], use_gradient_ptr, rl.SHADER_UNIFORM_INT)
+    rl.set_shader_value(state.shader, state.locations['useGradient'], use_gradient_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
 
     # Set gradient start/end
     start_ptr = rl.ffi.new("float[]", [gradient['start'][0], gradient['start'][1]])
     end_ptr = rl.ffi.new("float[]", [gradient['end'][0], gradient['end'][1]])
-    rl.set_shader_value(state.shader, state.locations['gradientStart'], start_ptr, rl.SHADER_UNIFORM_VEC2)
-    rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_ptr, rl.SHADER_UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientStart'], start_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
 
     # Set gradient colors
     colors = gradient['colors']
@@ -295,7 +297,7 @@ def draw_polygon(points, color=None, gradient=None):
       colors_ptr[i * 4 + 2] = c.b / 255.0
       colors_ptr[i * 4 + 3] = c.a / 255.0
     rl.set_shader_value_v(
-      state.shader, state.locations['gradientColors'], colors_ptr, rl.SHADER_UNIFORM_VEC4, color_count
+      state.shader, state.locations['gradientColors'], colors_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4, color_count
     )
 
     # Set gradient stops
@@ -304,22 +306,22 @@ def draw_polygon(points, color=None, gradient=None):
     for i, s in enumerate(stops[:color_count]):
       stops_ptr[i] = s
     rl.set_shader_value_v(
-      state.shader, state.locations['gradientStops'], stops_ptr, rl.SHADER_UNIFORM_FLOAT, color_count
+      state.shader, state.locations['gradientStops'], stops_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT, color_count
     )
 
     # Set color count
     color_count_ptr = rl.ffi.new("int[]", [color_count])
-    rl.set_shader_value(state.shader, state.locations['gradientColorCount'], color_count_ptr, rl.SHADER_UNIFORM_INT)
+    rl.set_shader_value(state.shader, state.locations['gradientColorCount'], color_count_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
   else:
     # Disable gradient
     use_gradient_ptr = rl.ffi.new("int[]", [0])
-    rl.set_shader_value(state.shader, state.locations['useGradient'], use_gradient_ptr, rl.SHADER_UNIFORM_INT)
+    rl.set_shader_value(state.shader, state.locations['useGradient'], use_gradient_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
 
     # Set solid color
     if color is None:
       color = rl.WHITE
     fill_color_ptr = rl.ffi.new("float[]", [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0])
-    rl.set_shader_value(state.shader, state.locations['fillColor'], fill_color_ptr, rl.SHADER_UNIFORM_VEC4)
+    rl.set_shader_value(state.shader, state.locations['fillColor'], fill_color_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4)
 
   # Draw with shader
   rl.begin_shader_mode(state.shader)
