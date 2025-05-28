@@ -254,7 +254,7 @@ class ModelRenderer:
         'start': (0.0, 1.0),  # Bottom of path
         'end': (0.0, 0.0),  # Top of path
         'colors': colors,
-        'stops': [0.0, 1.0],
+        'stops': [0.0, 0.5, 1.0],
       }
       draw_polygon(self._track_vertices, gradient=gradient)
 
