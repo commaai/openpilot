@@ -210,19 +210,12 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (!uiState()->engaged()) {
-      if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
-        if (!uiState()->engaged()) {
-          params.remove("CalibrationParams");
-          params.remove("LiveTorqueParameters");
-          params.remove("LiveParameters");
-          params.remove("LiveParametersV2");
-          params.remove("LiveDelay");
-          params.putBool("OnroadCycleRequested", true);
-        }
-      }
-    } else {
-      ConfirmationDialog::alert(tr("Disengage to Reset Calibration"), this);
+    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
+      params.remove("CalibrationParams");
+      params.remove("LiveTorqueParameters");
+      params.remove("LiveParameters");
+      params.remove("LiveParametersV2");
+      params.remove("LiveDelay");
     }
   });
   addItem(resetCalibBtn);
@@ -262,7 +255,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
-      if (btn != pair_device && btn != resetCalibBtn) {
+      if (btn != pair_device) {
         btn->setEnabled(offroad);
       }
     }
@@ -316,7 +309,6 @@ void DevicePanel::updateCalibDescription() {
       qInfo() << "invalid CalibrationParams";
     }
   }
-  desc += tr(" Resetting calibration while disengaged will restart openpilot.");
   qobject_cast<ButtonControl *>(sender())->setDescription(desc);
 }
 
