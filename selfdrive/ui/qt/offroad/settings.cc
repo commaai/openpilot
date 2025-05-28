@@ -212,6 +212,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (!uiState()->engaged()) {
       if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
+        // Check engaged again in case it changed while the dialog was open
         if (!uiState()->engaged()) {
           params.remove("CalibrationParams");
           params.remove("LiveTorqueParameters");
