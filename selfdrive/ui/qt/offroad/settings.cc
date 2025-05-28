@@ -89,7 +89,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggle->setEnabled(!locked);
 
     if (needs_restart && !locked) {
-      toggle->setDescription(toggle->getDescription() + " " + tr("Changing this setting will restart openpilot if the car is powered on."));
+      toggle->setDescription(toggle->getDescription() + tr(" Changing this setting will restart openpilot if the car is powered on."));
 
       QObject::connect(uiState(), &UIState::engagedChanged, [toggle](bool engaged) {
         toggle->setEnabled(!engaged);
@@ -210,12 +210,20 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
-    if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
-      params.remove("CalibrationParams");
-      params.remove("LiveTorqueParameters");
-      params.remove("LiveParameters");
-      params.remove("LiveParametersV2");
-      params.remove("LiveDelay");
+    if (!uiState()->engaged()) {
+      if (ConfirmationDialog::confirm(tr("Are you sure you want to reset calibration?"), tr("Reset"), this)) {
+        // Check engaged again in case it changed while the dialog was open
+        if (!uiState()->engaged()) {
+          params.remove("CalibrationParams");
+          params.remove("LiveTorqueParameters");
+          params.remove("LiveParameters");
+          params.remove("LiveParametersV2");
+          params.remove("LiveDelay");
+          params.putBool("OnroadCycleRequested", true);
+        }
+      }
+    } else {
+      ConfirmationDialog::alert(tr("Disengage to Reset Calibration"), this);
     }
   });
   addItem(resetCalibBtn);
@@ -255,7 +263,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
     for (auto btn : findChildren<ButtonControl *>()) {
-      if (btn != pair_device) {
+      if (btn != pair_device && btn != resetCalibBtn) {
         btn->setEnabled(offroad);
       }
     }
@@ -309,6 +317,7 @@ void DevicePanel::updateCalibDescription() {
       qInfo() << "invalid CalibrationParams";
     }
   }
+  desc += tr(" Resetting calibration will restart openpilot if the car is powered on.");
   qobject_cast<ButtonControl *>(sender())->setDescription(desc);
 }
 
