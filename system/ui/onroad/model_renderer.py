@@ -4,13 +4,15 @@ import numpy as np
 import pyray as rl
 from cereal import messaging, car
 from openpilot.common.params import Params
+from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 
 
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
-
+PATH_COLOR_TRANSITION_DURATION = 0.5  # Seconds for color transition animation
+PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * DEFAULT_FPS)
 
 THROTTLE_COLORS = [
   rl.Color(25, 235, 99, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -238,22 +240,17 @@ class ModelRenderer:
 
       # Update blend factor
       if self._blend_factor < 1.0:
-        self._blend_factor = min(self._blend_factor + 0.1, 1.0)
+        self._blend_factor = min(self._blend_factor + PATH_BLEND_INCREMENT, 1.0)
 
       begin_colors = NO_THROTTLE_COLORS if allow_throttle else THROTTLE_COLORS
       end_colors = THROTTLE_COLORS if allow_throttle else NO_THROTTLE_COLORS
 
       # Blend colors based on transition
-      colors = [
-        self._blend_colors(begin_colors[0], end_colors[0], self._blend_factor),
-        self._blend_colors(begin_colors[1], end_colors[1], self._blend_factor),
-        self._blend_colors(begin_colors[2], end_colors[2], self._blend_factor),
-      ]
-
+      blended_colors = self._blend_colors(begin_colors, end_colors, self._blend_factor)
       gradient = {
         'start': (0.0, 1.0),  # Bottom of path
         'end': (0.0, 0.0),  # Top of path
-        'colors': colors,
+        'colors': blended_colors,
         'stops': [0.0, 0.5, 1.0],
       }
       draw_polygon(self._track_vertices, gradient=gradient)
@@ -364,14 +361,16 @@ class ModelRenderer:
     return rl.Color(r_val, g_val, b_val, a_val)
 
   @staticmethod
-  def _blend_colors(start: rl.Color, end: rl.Color, t: float) -> rl.Color:
-    """Blend between two colors with factor t"""
+  def _blend_colors(begin_colors, end_colors, t):
     if t >= 1.0:
-      return end
+      return end_colors
+    if t <= 0.0:
+      return begin_colors
 
-    return rl.Color(
-      int((1.0 - t) * start.r + t * end.r),
-      int((1.0 - t) * start.g + t * end.g),
-      int((1.0 - t) * start.b + t * end.b),
-      int((1.0 - t) * start.a + t * end.a),
-    )
+    inv_t = 1.0 - t
+    return [rl.Color(
+      int(inv_t * start.r + t * end.r),
+      int(inv_t * start.g + t * end.g),
+      int(inv_t * start.b + t * end.b),
+      int(inv_t * start.a + t * end.a)
+    ) for start, end in zip(begin_colors, end_colors, strict=True)]
