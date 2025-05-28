@@ -13,15 +13,15 @@ MAX_DRAW_DISTANCE = 100.0
 
 
 THROTTLE_COLORS = [
-  rl.Color(0, 231, 130, 102),  # Green with alpha 0.4
-  rl.Color(112, 247, 35, 89),  # Lime with alpha 0.35
-  rl.Color(112, 247, 35, 0),   # Transparent lime
+  rl.Color(25, 235, 99, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
+  rl.Color(92, 255, 32, 89),    # HSLF(112/360, 1.0, 0.68, 0.35)
+  rl.Color(92, 255, 32, 0),     # HSLF(112/360, 1.0, 0.68, 0.0)
 ]
 
 NO_THROTTLE_COLORS = [
-  rl.Color(242, 242, 242, 102),  # Light gray with alpha 0.4
-  rl.Color(242, 242, 242, 89),   # Light gray with alpha 0.35
-  rl.Color(242, 242, 242, 0),    # Transparent light gray
+  rl.Color(242, 242, 242, 102), # HSLF(148/360, 0.0, 0.95, 0.4)
+  rl.Color(242, 242, 242, 89),  # HSLF(112/360, 0.0, 0.95, 0.35)
+  rl.Color(242, 242, 242, 0),   # HSLF(112/360, 0.0, 0.95, 0.0)
 ]
 
 
@@ -254,7 +254,7 @@ class ModelRenderer:
         'start': (0.0, 1.0),  # Bottom of path
         'end': (0.0, 0.0),  # Top of path
         'colors': colors,
-        'stops': [0.0, 1.0],
+        'stops': [0.0, 0.5, 1.0],
       }
       draw_polygon(self._track_vertices, gradient=gradient)
 
@@ -364,14 +364,14 @@ class ModelRenderer:
     return rl.Color(r_val, g_val, b_val, a_val)
 
   @staticmethod
-  def _blend_colors(start, end, t):
+  def _blend_colors(start: rl.Color, end: rl.Color, t: float) -> rl.Color:
     """Blend between two colors with factor t"""
     if t >= 1.0:
       return end
 
     return rl.Color(
-      int((1 - t) * start.r + t * end.r),
-      int((1 - t) * start.g + t * end.g),
-      int((1 - t) * start.b + t * end.b),
-      int((1 - t) * start.a + t * end.a),
+      int((1.0 - t) * start.r + t * end.r),
+      int((1.0 - t) * start.g + t * end.g),
+      int((1.0 - t) * start.b + t * end.b),
+      int((1.0 - t) * start.a + t * end.a),
     )
