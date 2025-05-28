@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from threading import Lock
 from typing import Literal
 
 import pyray as rl
@@ -53,48 +54,59 @@ UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm 
 class WifiManagerUI:
   def __init__(self, wifi_manager: WifiManagerWrapper):
     self.state: UIState = StateIdle()
-    self.btn_width = 200
+    self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     self._networks: list[NetworkInfo] = []
-
+    self._lock = Lock()
     self.wifi_manager = wifi_manager
-    self.wifi_manager.set_callbacks(WifiManagerCallbacks(self._on_need_auth, self._on_activated, self._on_forgotten, self._on_network_updated))
+
+    self.wifi_manager.set_callbacks(
+      WifiManagerCallbacks(
+        need_auth = self._on_need_auth,
+        activated = self._on_activated,
+        forgotten = self._on_forgotten,
+        networks_updated = self._on_network_updated,
+        connection_failed = self._on_connection_failed
+      )
+    )
     self.wifi_manager.start()
     self.wifi_manager.connect()
 
   def render(self, rect: rl.Rectangle):
-    if not self._networks:
-      gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-      return
+    with self._lock:
+      if not self._networks:
+        gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+        return
 
-    match self.state:
-      case StateNeedsAuth(network):
-        result = self.keyboard.render("Enter password", f"for {network.ssid}")
-        if result == 1:
-          password = self.keyboard.text
-          self.keyboard.clear()
+      match self.state:
+        case StateNeedsAuth(network):
+          result = self.keyboard.render("Enter password", f"for {network.ssid}")
+          if result == 1:
+            password = self.keyboard.text
+            self.keyboard.clear()
 
-          if len(password) >= MIN_PASSWORD_LENGTH:
-            self.connect_to_network(network, password)
-        elif result == 0:
-          self.state = StateIdle()
+            if len(password) >= MIN_PASSWORD_LENGTH:
+              self.connect_to_network(network, password)
+          elif result == 0:
+            self.state = StateIdle()
 
-      case StateShowForgetConfirm(network):
-        result = confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
-        if result == 1:
-          self.forget_network(network)
-        elif result == 0:
-          self.state = StateIdle()
+        case StateShowForgetConfirm(network):
+          result = confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
+          if result == 1:
+            self.forget_network(network)
+          elif result == 0:
+            self.state = StateIdle()
 
-      case _:
-        self._draw_network_list(rect)
+        case _:
+          self._draw_network_list(rect)
 
   @property
   def require_full_screen(self) -> bool:
     """Check if the WiFi UI requires exclusive full-screen rendering."""
-    return isinstance(self.state, (StateNeedsAuth, StateShowForgetConfirm))
+    with self._lock:
+      return isinstance(self.state, (StateNeedsAuth, StateShowForgetConfirm))
 
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
@@ -190,25 +202,30 @@ class WifiManagerUI:
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[NetworkInfo]):
-    self._networks = networks
+    with self._lock:
+      self._networks = networks
 
   def _on_need_auth(self, ssid):
-    match self.state:
-      case StateConnecting(ssid):
-        self.state = StateNeedsAuth(ssid)
-      case _:
-        # Find network by SSID
-        network = next((n for n in self.wifi_manager.networks if n.ssid == ssid), None)
-        if network:
-          self.state = StateNeedsAuth(network)
+    with self._lock:
+      network = next((n for n in self._networks if n.ssid == ssid), None)
+      if network:
+        self.state = StateNeedsAuth(network)
 
   def _on_activated(self):
-    if isinstance(self.state, StateConnecting):
-      self.state = StateIdle()
+    with self._lock:
+      if isinstance(self.state, StateConnecting):
+        self.state = StateIdle()
 
-  def _on_forgotten(self):
-    if isinstance(self.state, StateForgetting):
-      self.state = StateIdle()
+  def _on_forgotten(self, ssid):
+    with self._lock:
+      if isinstance(self.state, StateForgetting):
+        self.state = StateIdle()
+
+  def _on_connection_failed(self, ssid: str, error: str):
+    with self._lock:
+      if isinstance(self.state, StateConnecting):
+        self.state = StateIdle()
+
 
 
 def main():
