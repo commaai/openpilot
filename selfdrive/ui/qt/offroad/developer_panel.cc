@@ -27,7 +27,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(longManeuverToggle);
 
-  experimentalLongitudinalToggle = new ParamControl(
+  alphaLongitudinalToggle = new ParamControl(
     "AlphaLongitudinalEnabled",
     tr("openpilot Longitudinal Control (Alpha)"),
     QString("<b>%1</b><br><br>%2")
@@ -36,40 +36,43 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
               "Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.")),
     ""
   );
-  experimentalLongitudinalToggle->setConfirmation(true, false);
-  QObject::connect(experimentalLongitudinalToggle, &ParamControl::toggleFlipped, [=]() {
+  alphaLongitudinalToggle->setConfirmation(true, false);
+  QObject::connect(alphaLongitudinalToggle, &ParamControl::toggleFlipped, [=]() {
     updateToggles(offroad);
     params.putBool("OnroadCycleRequested", true);
   });
-  addItem(experimentalLongitudinalToggle);
+  addItem(alphaLongitudinalToggle);
 
   // Joystick and longitudinal maneuvers should be hidden on release branches
   is_release = params.getBool("IsReleaseBranch");
 
-  // Toggles should be not available to change in onroad state
-  QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
+  // Update toggles on offroad transition and engaged state change
+  QObject::connect(uiState(), &UIState::offroadTransition, [=](bool offroad) {
+    updateToggles(offroad, engaged);
+  });
   QObject::connect(uiState(), &UIState::engagedChanged, [=](bool engaged) {
-    joystickToggle->setEnabled(!engaged);
-    longManeuverToggle->setEnabled(!engaged);
-    experimentalLongitudinalToggle->setEnabled(!engaged);
+    updateToggles(offroad, engaged);
   });
 }
 
-void DeveloperPanel::updateToggles(bool _offroad) {
+void DeveloperPanel::updateToggles(bool _offroad, bool _engaged) {
   for (auto btn : findChildren<ParamControl *>()) {
     btn->setVisible(!is_release);
 
     /*
-     * experimentalLongitudinalToggle should be toggelable when:
+     * alphaLongitudinalToggle should be toggelable when:
      * - visible, and
      * - during onroad & offroad states
+     * - not engaged
      */
-    if (btn != joystickToggle && btn != longManeuverToggle && btn != experimentalLongitudinalToggle) {
+    if (btn != joystickToggle && btn != longManeuverToggle && btn != alphaLongitudinalToggle) {
       btn->setEnabled(_offroad);
+    } else {
+      btn->setEnabled(!_engaged);
     }
   }
 
-  // longManeuverToggle and experimentalLongitudinalToggle should not be toggleable if the car does not have longitudinal control
+  // longManeuverToggle and alphaLongitudinalToggle should not be toggleable if the car does not have longitudinal control
   auto cp_bytes = params.get("CarParamsPersistent");
   if (!cp_bytes.empty()) {
     AlignedBuffer aligned_buf;
@@ -78,24 +81,25 @@ void DeveloperPanel::updateToggles(bool _offroad) {
 
     if (!true || is_release) {
       params.remove("AlphaLongitudinalEnabled");
-      experimentalLongitudinalToggle->setEnabled(false);
+      alphaLongitudinalToggle->setEnabled(false);
     }
 
     /*
-     * experimentalLongitudinalToggle should be visible when:
+     * alphaLongitudinalToggle should be visible when:
      * - is not a release branch, and
      * - the car supports experimental longitudinal control (alpha)
      */
-    experimentalLongitudinalToggle->setVisible(true && !is_release);
+    alphaLongitudinalToggle->setVisible(true && !is_release);
 
     longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
   } else {
     longManeuverToggle->setEnabled(false);
-    experimentalLongitudinalToggle->setVisible(false);
+    alphaLongitudinalToggle->setVisible(false);
   }
-  experimentalLongitudinalToggle->refresh();
+  alphaLongitudinalToggle->refresh();
 
   offroad = _offroad;
+  engaged = _engaged;
 }
 
 void DeveloperPanel::showEvent(QShowEvent *event) {
