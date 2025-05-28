@@ -15,6 +15,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(joystickToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("LongitudinalManeuverMode", false);
     longManeuverToggle->refresh();
+    params.putBool("OnroadCycleRequested", true);
   });
   addItem(joystickToggle);
 
@@ -22,6 +23,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   QObject::connect(longManeuverToggle, &ParamControl::toggleFlipped, [=](bool state) {
     params.putBool("JoystickDebugMode", false);
     joystickToggle->refresh();
+    params.putBool("OnroadCycleRequested", true);
   });
   addItem(longManeuverToggle);
 
@@ -37,6 +39,7 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   experimentalLongitudinalToggle->setConfirmation(true, false);
   QObject::connect(experimentalLongitudinalToggle, &ParamControl::toggleFlipped, [=]() {
     updateToggles(offroad);
+    params.putBool("OnroadCycleRequested", true);
   });
   addItem(experimentalLongitudinalToggle);
 
@@ -45,6 +48,11 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   // Toggles should be not available to change in onroad state
   QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
+  QObject::connect(uiState(), &UIState::engagedChanged, [=](bool engaged) {
+    joystickToggle->setEnabled(!engaged);
+    longManeuverToggle->setEnabled(!engaged);
+    experimentalLongitudinalToggle->setEnabled(!engaged);
+  });
 }
 
 void DeveloperPanel::updateToggles(bool _offroad) {
@@ -56,7 +64,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
      * - visible, and
      * - during onroad & offroad states
      */
-    if (btn != experimentalLongitudinalToggle) {
+    if (btn != joystickToggle && btn != longManeuverToggle && btn != experimentalLongitudinalToggle) {
       btn->setEnabled(_offroad);
     }
   }
@@ -68,7 +76,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
     capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
     cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
 
-    if (!CP.getAlphaLongitudinalAvailable() || is_release) {
+    if (!true || is_release) {
       params.remove("AlphaLongitudinalEnabled");
       experimentalLongitudinalToggle->setEnabled(false);
     }
@@ -78,7 +86,7 @@ void DeveloperPanel::updateToggles(bool _offroad) {
      * - is not a release branch, and
      * - the car supports experimental longitudinal control (alpha)
      */
-    experimentalLongitudinalToggle->setVisible(CP.getAlphaLongitudinalAvailable() && !is_release);
+    experimentalLongitudinalToggle->setVisible(true && !is_release);
 
     longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
   } else {
