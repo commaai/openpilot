@@ -197,7 +197,6 @@ def hardware_thread(end_event, hw_queue) -> None:
   should_start_prev = False
   in_car = False
   engaged_prev = False
-  offroad_cycle_count = 0
 
   params = Params()
   power_monitor = PowerMonitoring()
@@ -215,10 +214,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     # handle requests to cycle system started state
-    # if params.get_bool("OnroadCycleRequested"):
-    #   params.put_bool("OnroadCycleRequested", False)
-    #   offroad_cycle_count = sm.frame
-    # onroad_conditions["onroad_allowed"] = (sm.frame - offroad_cycle_count) >= ONROAD_CYCLE_TIME * SERVICE_LIST['pandaStates'].frequency
     onroad_conditions["onroad_allowed"] = not params.get_bool("OnroadCycleRequested")
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
