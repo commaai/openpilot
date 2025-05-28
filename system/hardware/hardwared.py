@@ -170,7 +170,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   onroad_conditions: dict[str, bool] = {
     "ignition": False,
-    "onroad_allowed": True,
+    "not_onroad_cycle": True,
   }
   startup_conditions: dict[str, bool] = {}
   startup_conditions_prev: dict[str, bool] = {}
@@ -213,7 +213,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     peripheral_panda_present = peripheralState.pandaType != log.PandaState.PandaType.unknown
 
     # handle requests to cycle system started state
-    onroad_conditions["onroad_allowed"] = not params.get_bool("OnroadCycleRequested")
+    onroad_conditions["not_onroad_cycle"] = not params.get_bool("OnroadCycleRequested")
 
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
