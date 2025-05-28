@@ -15,9 +15,9 @@ PATH_COLOR_TRANSITION_DURATION = 0.5  # Seconds for color transition animation
 PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * DEFAULT_FPS)
 
 THROTTLE_COLORS = [
-  rl.Color(25, 235, 99, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
-  rl.Color(92, 255, 32, 89),    # HSLF(112/360, 1.0, 0.68, 0.35)
-  rl.Color(92, 255, 32, 0),     # HSLF(112/360, 1.0, 0.68, 0.0)
+  rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
+  rl.Color(114, 255, 92, 89),    # HSLF(112/360, 1.0, 0.68, 0.35)
+  rl.Color(114, 255, 92, 0),     # HSLF(112/360, 1.0, 0.68, 0.0)
 ]
 
 NO_THROTTLE_COLORS = [
