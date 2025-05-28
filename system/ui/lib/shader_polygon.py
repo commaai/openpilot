@@ -152,8 +152,14 @@ void main() {
 """
 
 
+UNIFORM_INT = rl.ShaderUniformDataType.SHADER_UNIFORM_INT
+UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
+UNIFORM_VEC2 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2
+UNIFORM_VEC4 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4
+
+
 class ShaderState:
-  _instance: Any  = None
+  _instance: Any = None
 
   @classmethod
   def get_instance(cls):
@@ -183,6 +189,19 @@ class ShaderState:
       'gradientColorCount': None,
       'mvp': None,
     }
+
+    # Pre-allocated FFI objects
+    self.point_count_ptr = rl.ffi.new("int[]", [0])
+    self.resolution_ptr = rl.ffi.new("float[]", [0.0, 0.0])
+    self.fill_color_ptr = rl.ffi.new("float[]", [0.0, 0.0, 0.0, 0.0])
+    self.use_gradient_ptr = rl.ffi.new("int[]", [0])
+    self.gradient_start_ptr = rl.ffi.new("float[]", [0.0, 0.0])
+    self.gradient_end_ptr = rl.ffi.new("float[]", [0.0, 0.0])
+    self.color_count_ptr = rl.ffi.new("int[]", [0])
+
+    # Pre-allocate gradient arrays (max 8 colors)
+    self.gradient_colors_ptr = rl.ffi.new("float[]", 32)  # 8 colors * 4 components
+    self.gradient_stops_ptr = rl.ffi.new("float[]", 8)
 
   def initialize(self):
     if self.initialized:
@@ -222,12 +241,46 @@ class ShaderState:
     self.initialized = False
 
 
+def _configure_shader_color(state, color, gradient):
+  """Configure shader uniforms for solid color or gradient rendering"""
+  state.use_gradient_ptr[0] = 1 if gradient else 0
+  rl.set_shader_value(state.shader, state.locations['useGradient'], state.use_gradient_ptr, UNIFORM_INT)
+
+  if gradient:
+    # Set gradient start/end
+    state.gradient_start_ptr[0:2] = gradient['start']
+    state.gradient_end_ptr[0:2] = gradient['end']
+    rl.set_shader_value(state.shader, state.locations['gradientStart'], state.gradient_start_ptr, UNIFORM_VEC2)
+    rl.set_shader_value(state.shader, state.locations['gradientEnd'], state.gradient_end_ptr, UNIFORM_VEC2)
+
+    # Set gradient colors
+    colors = gradient['colors']
+    color_count = min(len(colors), 8)  # Max 8 colors
+    for i, c in enumerate(colors[:color_count]):
+      base_idx = i * 4
+      state.gradient_colors_ptr[base_idx:base_idx+4] = [c.r / 255.0, c.g / 255.0, c.b / 255.0, c.a / 255.0]
+    rl.set_shader_value_v(state.shader, state.locations['gradientColors'], state.gradient_colors_ptr, UNIFORM_VEC4, color_count)
+
+    # Set gradient stops
+    stops = gradient.get('stops', [i / (color_count - 1) for i in range(color_count)])
+    state.gradient_stops_ptr[0:color_count] = stops[:color_count]
+    rl.set_shader_value_v(state.shader, state.locations['gradientStops'], state.gradient_stops_ptr, UNIFORM_FLOAT, color_count)
+
+    # Set color count
+    state.color_count_ptr[0] = color_count
+    rl.set_shader_value(state.shader, state.locations['gradientColorCount'], state.color_count_ptr, UNIFORM_INT)
+  else:
+    color = color or rl.WHITE  # Default to white if no color provided
+    state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
+    rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
+
+
 def draw_polygon(points: np.ndarray, color=None, gradient=None):
   """
   Draw a complex polygon using shader-based even-odd fill rule
 
   Args:
-      points: List of (x,y) points defining the polygon
+      points: numpy array of (x,y) points defining the polygon
       color: Solid fill color (rl.Color)
       gradient: Dict with gradient parameters:
           {
@@ -240,92 +293,41 @@ def draw_polygon(points: np.ndarray, color=None, gradient=None):
   if len(points) < 3:
     return
 
-  # Get shader state singleton
   state = ShaderState.get_instance()
-
-  # Initialize shader if not already done
   if not state.initialized:
     state.initialize()
 
   # Find bounding box
   min_xy = np.min(points, axis=0)
-  min_x, min_y = min_xy
-  max_x, max_y = np.max(points, axis=0)
+  max_xy = np.max(points, axis=0)
 
-  width = max(1, max_x - min_x)
-  height = max(1, max_y - min_y)
+  width = max(1, max_xy[0] - min_xy[0])
+  height = max(1, max_xy[1] - min_xy[1])
 
   # Transform points to shader space
   transformed_points = points - min_xy
 
-  # Set basic shader uniforms using cached locations
-  point_count_ptr = rl.ffi.new("int[]", [len(transformed_points)])
-  rl.set_shader_value(state.shader, state.locations['pointCount'], point_count_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
+  state.point_count_ptr[0] = len(transformed_points)
+  rl.set_shader_value(state.shader, state.locations['pointCount'], state.point_count_ptr, UNIFORM_INT)
 
-  resolution_ptr = rl.ffi.new("float[]", [width, height])
-  rl.set_shader_value(state.shader, state.locations['resolution'], resolution_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
+  state.resolution_ptr[0:2] = [width, height]
+  rl.set_shader_value(state.shader, state.locations['resolution'], state.resolution_ptr, UNIFORM_VEC2)
+
 
   # Set points
   flat_points = np.ascontiguousarray(transformed_points.flatten().astype(np.float32))
   points_ptr = rl.ffi.cast("float *", flat_points.ctypes.data)
-  rl.set_shader_value_v(
-    state.shader, state.locations['points'], points_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2, len(transformed_points)
-  )
+  rl.set_shader_value_v(state.shader, state.locations['points'], points_ptr, UNIFORM_VEC2, len(transformed_points))
 
-  # Set gradient or solid color based on what was provided
-  if gradient:
-    # Enable gradient
-    use_gradient_ptr = rl.ffi.new("int[]", [1])
-    rl.set_shader_value(state.shader, state.locations['useGradient'], use_gradient_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
-
-    # Set gradient start/end
-    start_ptr = rl.ffi.new("float[]", [gradient['start'][0], gradient['start'][1]])
-    end_ptr = rl.ffi.new("float[]", [gradient['end'][0], gradient['end'][1]])
-    rl.set_shader_value(state.shader, state.locations['gradientStart'], start_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
-    rl.set_shader_value(state.shader, state.locations['gradientEnd'], end_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2)
-
-    # Set gradient colors
-    colors = gradient['colors']
-    color_count = min(len(colors), 8)  # Max 8 colors
-    colors_ptr = rl.ffi.new("float[]", color_count * 4)
-    for i, c in enumerate(colors[:color_count]):
-      colors_ptr[i * 4] = c.r / 255.0
-      colors_ptr[i * 4 + 1] = c.g / 255.0
-      colors_ptr[i * 4 + 2] = c.b / 255.0
-      colors_ptr[i * 4 + 3] = c.a / 255.0
-    rl.set_shader_value_v(
-      state.shader, state.locations['gradientColors'], colors_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4, color_count
-    )
-
-    # Set gradient stops
-    stops = gradient.get('stops', [i / (color_count - 1) for i in range(color_count)])
-    stops_ptr = rl.ffi.new("float[]", color_count)
-    for i, s in enumerate(stops[:color_count]):
-      stops_ptr[i] = s
-    rl.set_shader_value_v(
-      state.shader, state.locations['gradientStops'], stops_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT, color_count
-    )
-
-    # Set color count
-    color_count_ptr = rl.ffi.new("int[]", [color_count])
-    rl.set_shader_value(state.shader, state.locations['gradientColorCount'], color_count_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
-  else:
-    # Disable gradient
-    use_gradient_ptr = rl.ffi.new("int[]", [0])
-    rl.set_shader_value(state.shader, state.locations['useGradient'], use_gradient_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_INT)
-
-    # Set solid color
-    if color is None:
-      color = rl.WHITE
-    fill_color_ptr = rl.ffi.new("float[]", [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0])
-    rl.set_shader_value(state.shader, state.locations['fillColor'], fill_color_ptr, rl.ShaderUniformDataType.SHADER_UNIFORM_VEC4)
+  # Configure color/gradient uniforms
+  _configure_shader_color(state, color, gradient)
 
   # Draw with shader
   rl.begin_shader_mode(state.shader)
   rl.draw_texture_pro(
     state.white_texture,
     rl.Rectangle(0, 0, 2, 2),
-    rl.Rectangle(int(min_x), int(min_y), int(width), int(height)),
+    rl.Rectangle(int(min_xy[0]), int(min_xy[1]), int(width), int(height)),
     rl.Vector2(0, 0),
     0.0,
     rl.WHITE,
