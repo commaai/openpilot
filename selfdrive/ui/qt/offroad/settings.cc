@@ -89,7 +89,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggle->setEnabled(!locked);
 
     if (needs_restart && !locked) {
-      toggle->setDescription(toggle->getDescription() + " " + tr("Changing this setting will restart openpilot."));
+      toggle->setDescription(toggle->getDescription() + " " + tr("Changing this setting will restart openpilot if the car is powered on."));
 
       QObject::connect(uiState(), &UIState::engagedChanged, [toggle](bool engaged) {
         toggle->setEnabled(!engaged);
