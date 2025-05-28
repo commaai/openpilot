@@ -316,7 +316,7 @@ void DevicePanel::updateCalibDescription() {
       qInfo() << "invalid CalibrationParams";
     }
   }
-  desc += tr(" Resetting calibration while disengaged will restart openpilot.");
+  desc += tr(" Resetting calibration will restart openpilot if the car is powered on.");
   qobject_cast<ButtonControl *>(sender())->setDescription(desc);
 }
 
