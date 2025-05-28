@@ -80,6 +80,8 @@ class Car:
 
     self.can_callbacks = can_comm_callbacks(self.can_sock, self.pm.sock['sendcan'])
 
+    is_release = self.params.get_bool("IsReleaseBranch")
+
     if CI is None:
       # wait for one pandaState and one CAN packet
       print("Waiting for CAN messages...")
@@ -116,7 +118,7 @@ class Car:
       safety_config.safetyModel = structs.CarParams.SafetyModel.noOutput
       self.CP.safetyConfigs = [safety_config]
 
-    if self.CP.secOcRequired and not self.params.get_bool("IsReleaseBranch"):
+    if self.CP.secOcRequired and not is_release:
       # Copy user key if available
       try:
         with open("/cache/params/SecOCKey") as f:
