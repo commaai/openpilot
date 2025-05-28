@@ -45,7 +45,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),
       "../assets/icons/warning.png",
-      true,  // TODO: it should read live!
+      false,
     },
     {
       "AlwaysOnDM",
