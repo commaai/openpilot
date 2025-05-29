@@ -24,7 +24,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
-      if: ${{ github.event_name != 'workflow_dispatch' }}
+      if: ${{ github.event_name == 'schedule' }}
       uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
       with:
         ref: master
