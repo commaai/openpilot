@@ -180,29 +180,20 @@ class ModelRenderer:
       acceleration = model.acceleration.x
       max_len = min(len(self._track_vertices) // 2, len(acceleration))
 
-      # Find midpoint index for polygon
-      mid_point = len(self._track_vertices) // 2
-
-      # For acceleration-based coloring, process segments separately
-      left_side = self._track_vertices[:mid_point]
-      right_side = self._track_vertices[mid_point:][::-1]  # Reverse for proper winding
-
       # Create segments for gradient coloring
       segment_colors = []
       gradient_stops = []
 
-      for i in range(max_len - 1):
-        if i >= len(left_side) - 1 or i >= len(right_side) - 1:
-          break
-
+      i = 0
+      while i < max_len:
         track_idx = max_len - i - 1  # flip idx to start from bottom right
-
-        # Skip points out of frame
-        if left_side[track_idx][1] < 0 or left_side[track_idx][1] > height:
+        track_y = self._track_vertices[track_idx][1]
+        if  track_y < 0 or track_y > height:
+          i += 1
           continue
 
         # Calculate color based on acceleration
-        lin_grad_point = (height - left_side[track_idx][1]) / height
+        lin_grad_point = (height - track_y) / height
 
         # speed up: 120, slow down: 0
         path_hue = max(min(60 + acceleration[i] * 35, 120), 0)
@@ -218,6 +209,9 @@ class ModelRenderer:
         # Create quad segment
         gradient_stops.append(lin_grad_point)
         segment_colors.append(color)
+
+        # Skip a point, unless next is last
+        i += 1 + (1 if (i + 2) < max_len else 0)
 
       if len(segment_colors) < 2:
         draw_polygon(self._rect, self._track_vertices, rl.Color(255, 255, 255, 30))
@@ -345,8 +339,10 @@ class ModelRenderer:
 
   @staticmethod
   def _map_val(x, x0, x1, y0, y1):
-    """Map value x from range [x0, x1] to range [y0, y1]"""
-    return y0 + (y1 - y0) * ((x - x0) / (x1 - x0)) if x1 != x0 else y0
+    x = max(x0, min(x, x1))
+    ra = x1 - x0
+    rb = y1 - y0
+    return (x - x0) * rb / ra + y0 if ra != 0 else y0
 
   @staticmethod
   def _hsla_to_color(h, s, l, a):
