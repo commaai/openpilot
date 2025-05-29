@@ -359,6 +359,17 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
   return NormalPermanentAlert(f"Driving Personality: {personality}", duration=1.5)
 
 
+def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  text = "Toggle stock LKAS on or off to engage"
+  if CP.brand == "tesla":
+    text = "Enable Traffic Aware Cruise to Engage"
+  elif CP.brand == "mazda":
+    text = "Enable Adaptive Cruise to Engage"
+  elif CP.brand == "nissan":
+    text = "Enable Adaptive Cruise to Engage"
+  return NormalPermanentAlert("Invalid LKAS setting",
+                              "Toggle stock LKAS on or off to engage")
+
 
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   # ********** events with no alerts **********
@@ -412,8 +423,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.invalidLkasSetting: {
-    ET.PERMANENT: NormalPermanentAlert("Invalid LKAS setting",
-                                       "Toggle stock LKAS on or off to engage"),
+    # ET.PERMANENT: NormalPermanentAlert("Invalid LKAS setting",
+    #                                    "Toggle stock LKAS on or off to engage"),
+    ET.PERMANENT: invalid_lkas_setting_alert,
     ET.NO_ENTRY: NoEntryAlert("Invalid LKAS setting"),
   },
 
