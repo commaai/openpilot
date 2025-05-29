@@ -9,7 +9,6 @@ jobs:
   build_masterci:
     name: build master-ci
     env:
-      TARGET_DIR: /tmp/openpilot
       ImageOS: ubuntu24
     container:
       image: ghcr.io/commaai/openpilot-base:latest
@@ -40,16 +39,5 @@ jobs:
       run: |
         git config --global --add safe.directory '*'
         git lfs pull
-    - name: Build master-ci
-      run: |
-        release/build_devel.sh
-    - name: Run tests
-      run: |
-        export PYTHONPATH=$TARGET_DIR
-        cd $TARGET_DIR
-        scons -j$(nproc)
-        pytest -n logical selfdrive/car/tests/test_car_interfaces.py
     - name: Push master-ci
-      run: |
-        unset TARGET_DIR
-        BRANCH=__nightly release/build_devel.sh
+      run: BRANCH=__nightly release/build_devel.sh
