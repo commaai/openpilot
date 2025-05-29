@@ -47,6 +47,7 @@ class ModelRenderer:
     self._car_space_transform = np.zeros((3, 3))
     self._transform_dirty = True
     self._clip_region = None
+    self._rect = None
 
     # Get longitudinal control setting from car parameters
     car_params = Params().get("CarParams")
@@ -64,6 +65,7 @@ class ModelRenderer:
       return
 
     # Set up clipping region
+    self._rect = rect
     self._clip_region = rl.Rectangle(
       rect.x - CLIP_MARGIN, rect.y - CLIP_MARGIN, rect.width + 2 * CLIP_MARGIN, rect.height + 2 * CLIP_MARGIN
     )
@@ -156,7 +158,7 @@ class ModelRenderer:
       # Draw lane line
       alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
       color = rl.Color(255, 255, 255, int(alpha * 255))
-      draw_polygon(vertices, color)
+      draw_polygon(self._rect, vertices, color)
 
     for i, vertices in enumerate(self._road_edge_vertices):
       # Skip if no vertices
@@ -166,7 +168,7 @@ class ModelRenderer:
       # Draw road edge
       alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
       color = rl.Color(255, 0, 0, int(alpha * 255))
-      draw_polygon(vertices, color)
+      draw_polygon(self._rect, vertices, color)
 
   def _draw_path(self, sm, model, height):
     """Draw the path polygon with gradient based on acceleration"""
@@ -218,7 +220,7 @@ class ModelRenderer:
         segment_colors.append(color)
 
       if len(segment_colors) < 2:
-        draw_polygon(self._track_vertices, rl.Color(255, 255, 255, 30))
+        draw_polygon(self._rect, self._track_vertices, rl.Color(255, 255, 255, 30))
         return
 
       # Create gradient specification
@@ -228,7 +230,7 @@ class ModelRenderer:
         'colors': segment_colors,
         'stops': gradient_stops,
       }
-      draw_polygon(self._track_vertices, gradient=gradient)
+      draw_polygon(self._rect, self._track_vertices, gradient=gradient)
     else:
       # Draw with throttle/no throttle gradient
       allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
@@ -253,7 +255,7 @@ class ModelRenderer:
         'colors': blended_colors,
         'stops': [0.0, 0.5, 1.0],
       }
-      draw_polygon(self._track_vertices, gradient=gradient)
+      draw_polygon(self._rect, self._track_vertices, gradient=gradient)
 
   def _draw_lead(self, lead_data, vd, rect):
     """Draw lead vehicle indicator"""
