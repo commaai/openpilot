@@ -5,12 +5,6 @@ from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 
 # https://content.arduino.cc/assets/st_imu_lsm6ds3_datasheet.pdf
 class LSM6DS3_Temp(I2CSensor):
-  def __init__(self, bus: int, gpio_nr: int = 0, shared_gpio: bool = False):
-    super().__init__(bus, gpio_nr, shared_gpio)
-    self.source = log.SensorEventData.SensorSource.lsm6ds3
-    self.scale = 256.0  # 16-bit resolution, 256 LSB/°C
-    self.offset = 25.0  # 0°C = 25.0°C
-
   @property
   def device_address(self) -> int:
     return 0x6A  # Default I2C address for LSM6DS3
@@ -25,8 +19,10 @@ class LSM6DS3_Temp(I2CSensor):
 
   def init(self):
     chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
-    if chip_id == 0x6A:
+    if chip_id == self.LSM6DS3TRC_ACCEL_CHIP_ID:
       self.source = log.SensorEventData.SensorSource.lsm6ds3trc
+    else:
+      self.source = log.SensorEventData.SensorSource.lsm6ds3
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     event = log.SensorEventData.new_message()

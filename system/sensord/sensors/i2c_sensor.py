@@ -10,6 +10,7 @@ class I2CSensor:
     self.gpio_nr = gpio_nr
     self.shared_gpio = shared_gpio
     self.gpio_handler: GPIOHandler | None = None
+    self.source = log.SensorEventData.SensorSource.velodyne  # unknown
 
   def __del__(self):
     if self.gpio_handler is not None:

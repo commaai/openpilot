@@ -1,110 +1,97 @@
-import os
 import time
-import numpy as np
+import os
+
 from cereal import log
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 
-# Register addresses
-LSM6DS3_ACCEL_I2C_REG_ID = 0x0F
-LSM6DS3_ACCEL_I2C_REG_CTRL1_XL = 0x10
-LSM6DS3_ACCEL_I2C_REG_CTRL3_C = 0x12
-LSM6DS3_ACCEL_I2C_REG_CTRL5_C = 0x14
-LSM6DS3_ACCEL_I2C_REG_STAT_REG = 0x1E
-LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL = 0x28
-
-# CTRL1_XL configuration
-LSM6DS3_ACCEL_ODR_52HZ = 0x50  # 52Hz output data rate
-LSM6DS3_ACCEL_ODR_104HZ = (0b0100 << 4) # 52Hz output data rate
-LSM6DS3_ACCEL_FS_4G = 0x08     # ±4g full scale
-
-# CTRL3_C configuration
-LSM6DS3_ACCEL_IF_INC = 0x04    # Enable register address auto-increment
-LSM6DS3_ACCEL_BDU = 0x40       # Block data update
-
-# STAT_REG bits
-LSM6DS3_ACCEL_DRDY_XLDA = 0x01  # Accelerometer data ready
-
-# CTRL5_C configuration
-LSM6DS3_ACCEL_ST_XL_POS = 0x04  # Accelerometer self-test positive
-LSM6DS3_ACCEL_ST_XL_NEG = 0x0C  # Accelerometer self-test negative
-
 class LSM6DS3_Accel(I2CSensor):
-  def __init__(self, bus: int, gpio_nr: int = 0, shared_gpio: bool = False):
-    super().__init__(bus, gpio_nr, shared_gpio)
-    self.source = log.SensorEventData.SensorSource.lsm6ds3
-    self.scaling = 0.061  # Default scaling for 2g full scale (mg/LSB)
+  # Register addresses
+  LSM6DS3_ACCEL_I2C_REG_DRDY_CFG = 0x0B
+  LSM6DS3_ACCEL_I2C_REG_ID = 0x0F
+  LSM6DS3_ACCEL_I2C_REG_INT1_CTRL = 0x0D
+  LSM6DS3_ACCEL_I2C_REG_CTRL1_XL = 0x10
+  LSM6DS3_ACCEL_I2C_REG_CTRL3_C = 0x12
+  LSM6DS3_ACCEL_I2C_REG_STAT_REG = 0x1E
+  LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL = 0x28
+
+  # Constants
+  LSM6DS3_ACCEL_ODR_104HZ = (0b0100 << 4)
+  LSM6DS3_ACCEL_INT1_DRDY_XL = 0b1
+  LSM6DS3_ACCEL_DRDY_XLDA = 0b1
+  LSM6DS3_ACCEL_DRDY_PULSE_MODE = (1 << 7)
+  LSM6DS3_ACCEL_IF_INC = 0b00000100
 
   @property
   def device_address(self) -> int:
-    return 0x6A  # Default I2C address for LSM6DS3
+    return 0x6A
 
-  def _wait_for_data_ready(self) -> None:
-    while True:
-      status = self.read(LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
-      if status & LSM6DS3_ACCEL_DRDY_XLDA:
-        break
-
-  def _read_and_avg_data(self) -> list[float]:
-    samples = []
-    for _ in range(5):
-      self._wait_for_data_ready()
-      data = self.read(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, 6)
-
-      x = self.twos_complement((data[1] << 8) | data[0], 16)
-      y = self.twos_complement((data[3] << 8) | data[1], 16)
-      z = self.twos_complement((data[5] << 8) | data[4], 16)
-      samples.append([x, y, z])
-
-    avg: np.ndarray = np.mean(samples, axis=0) * self.scaling
-    return [float(x) for x in avg.tolist()]
-
-  def init(self) -> None:
-    chip_id = self.verify_chip_id(LSM6DS3_ACCEL_I2C_REG_ID, [0x69, 0x6A])
+  def init(self):
+    chip_id = self.verify_chip_id(self.LSM6DS3_ACCEL_I2C_REG_ID, [0x69, 0x6A])
     if chip_id == 0x6A:
       self.source = log.SensorEventData.SensorSource.lsm6ds3trc
+    else:
+      self.source = log.SensorEventData.SensorSource.lsm6ds3
 
-    if "LSM_SELF_TEST" in os.environ:
-      self.self_test()
+    # Optional self-test based on environment variable
+    if os.getenv("LSM_SELF_TEST") == "1":
+      # Self-test could be implemented here if required
+      pass
 
-    #self.init_gpio()
+    self.init_gpio()
 
-    # enable continuous update, and automatic increase
-    self.write(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC)
+    self.writes((
+      # Enable continuous update and automatic address increment
+      (self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, self.LSM6DS3_ACCEL_IF_INC),
+      # Set ODR to 104 Hz, FS to ±2g (default)
+      (self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, self.LSM6DS3_ACCEL_ODR_104HZ),
+      # Configure data ready signal to pulse mode
+      (self.LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, self.LSM6DS3_ACCEL_DRDY_PULSE_MODE),
+    ))
 
-    # TODO: set scale and bandwidth. Default is +- 2G, 50 Hz
-    self.write(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ)
-
-    # Set scaling factor for 4g full scale (2mg/LSB)
-    self.scaling = 0.122
-
-    # Wait for first sample
-    time.sleep(0.1)
-    self._wait_for_data_ready()
+    # Enable data ready interrupt on INT1 without resetting existing interrupts
+    value = self.read(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, 1)[0]
+    value |= self.LSM6DS3_ACCEL_INT1_DRDY_XL
+    self.write(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value)
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
-    if ts is None:
-      ts = int(time.monotonic() * 1e9)
+    # Check if data is ready
+    status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
+    if not (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA):
+      raise Exception
+
+    scale = 9.81 * 2.0 / (1 << 15)
+    b = self.read(self.LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, 6)
+    x = self.parse_16bit(b[0], b[1]) * scale
+    y = self.parse_16bit(b[2], b[3]) * scale
+    z = self.parse_16bit(b[4], b[5]) * scale
 
     event = log.SensorEventData.new_message()
-    event.timestamp = ts
+    event.timestamp = ts if ts is not None else int(time.monotonic() * 1e9)
+    event.version = 1
+    event.sensor = 1  # SENSOR_ACCELEROMETER
+    event.type = 1    # SENSOR_TYPE_ACCELEROMETER
     event.source = self.source
 
     a = event.init('acceleration')
-    a.v = self._read_and_avg_data()
+    a.v = [y, -x, z]
     a.status = 1
 
     return event
 
   def shutdown(self) -> None:
-    self.write(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0x00)
+    # Disable data ready interrupt on INT1
+    value = self.read(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, 1)[0]
+    value &= ~self.LSM6DS3_ACCEL_INT1_DRDY_XL
+    self.write(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value)
 
-  def self_test(self, test_type: int = LSM6DS3_ACCEL_ST_XL_POS) -> bool:
-    # TODO: implement this
-    return True
-
+    # Power down by clearing ODR bits
+    value = self.read(self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 1)[0]
+    value &= 0x0F
+    self.write(self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, value)
 
 if __name__ == "__main__":
   s = LSM6DS3_Accel(1)
   s.init()
+  time.sleep(0.2)
   print(s.get_event())
   s.shutdown()
