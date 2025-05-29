@@ -63,10 +63,6 @@
         <translation>Plano de Dados Limitado</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Evite grandes uploads de dados quando estiver em uma conexão limitada</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>Rede Oculta</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>para &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation>padrão</translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation>limitada</translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation>ilimitada</translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation>Rede Wi-Fi com Franquia</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -370,13 +390,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
             <numerusform>Necessita no mínimo %n caractere!</numerusform>
             <numerusform>Necessita no mínimo %n caracteres!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Instalando...</translation>
     </message>
 </context>
 <context>

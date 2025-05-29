@@ -1,12 +1,13 @@
 import os
 import re
+import requests
 from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
 from itertools import chain
 
 from openpilot.tools.lib.auth_config import get_token
-from openpilot.tools.lib.api import CommaApi
+from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
 QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
@@ -19,14 +20,21 @@ ECAMERA_FILENAMES = ['ecamera.hevc']
 
 class Route:
   def __init__(self, name, data_dir=None):
+    self._metadata = None
     self._name = RouteName(name)
     self.files = None
-    self.metadata = None
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
     else:
       self._segments = self._get_segments_remote()
     self.max_seg_number = self._segments[-1].name.segment_num
+
+  @property
+  def metadata(self):
+    if not self._metadata:
+      api = CommaApi(get_token())
+      self._metadata = api.get('v1/route/' + self.name.canonical_name)
+    return self._metadata
 
   @property
   def name(self):
@@ -60,12 +68,6 @@ class Route:
     qcamera_path_by_seg_num = {s.name.segment_num: s.qcamera_path for s in self._segments}
     return [qcamera_path_by_seg_num.get(i, None) for i in range(self.max_seg_number + 1)]
 
-  def get_metadata(self):
-    if not self.metadata:
-      api = CommaApi(get_token())
-      self.metadata = api.get('v1/route/' + self.name.canonical_name)
-    return self.metadata
-
   # TODO: refactor this, it's super repetitive
   def _get_segments_remote(self):
     api = CommaApi(get_token())
@@ -85,6 +87,7 @@ class Route:
           url if fn in DCAMERA_FILENAMES else segments[segment_name].dcamera_path,
           url if fn in ECAMERA_FILENAMES else segments[segment_name].ecamera_path,
           url if fn in QCAMERA_FILENAMES else segments[segment_name].qcamera_path,
+          self.metadata['url'],
         )
       else:
         segments[segment_name] = Segment(
@@ -95,6 +98,7 @@ class Route:
           url if fn in DCAMERA_FILENAMES else None,
           url if fn in ECAMERA_FILENAMES else None,
           url if fn in QCAMERA_FILENAMES else None,
+          self.metadata['url'],
         )
 
     return sorted(segments.values(), key=lambda seg: seg.name.segment_num)
@@ -160,7 +164,7 @@ class Route:
       except StopIteration:
         qcamera_path = None
 
-      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path))
+      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, self.metadata['url']))
 
     if len(segments) == 0:
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
@@ -168,8 +172,10 @@ class Route:
 
 
 class Segment:
-  def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path):
+  def __init__(self, name, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, url):
+    self._events = None
     self._name = SegmentName(name)
+    self.url = f'{url}/{self._name.segment_num}'
     self.log_path = log_path
     self.qlog_path = qlog_path
     self.camera_path = camera_path
@@ -180,6 +186,17 @@ class Segment:
   @property
   def name(self):
     return self._name
+
+  @property
+  def events(self):
+    if not self._events:
+      try:
+        resp = requests.get(f'{self.url}/events.json')
+        resp.raise_for_status()
+        self._events = resp.json()
+      except Exception as e:
+        raise APIError(f'error getting events for segment {self._name}') from e
+    return self._events
 
 
 class RouteName:
