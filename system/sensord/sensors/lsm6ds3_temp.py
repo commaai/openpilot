@@ -27,7 +27,7 @@ class LSM6DS3_Temp(I2CSensor):
     return 0x6A  # Default I2C address for LSM6DS3
 
   def _read_temperature(self) -> float:
-    data = self.read_register(LSM6DS3_TEMP_I2C_REG_OUT_TEMP_L, 2)
+    data = self.read(LSM6DS3_TEMP_I2C_REG_OUT_TEMP_L, 2)
     temp_raw = self.twos_complement((data[1] << 8) | data[0], 16)
     return temp_raw / self.scale + self.offset
 
@@ -40,10 +40,10 @@ class LSM6DS3_Temp(I2CSensor):
     # Configure sensor
     try:
       # Enable auto-increment
-      self.write_register(LSM6DS3_TEMP_I2C_REG_CTRL3_C, LSM6DS3_TEMP_IF_INC)
+      self.write(LSM6DS3_TEMP_I2C_REG_CTRL3_C, LSM6DS3_TEMP_IF_INC)
 
       # Configure accelerometer (required for temperature sensor)
-      self.write_register(LSM6DS3_TEMP_I2C_REG_CTRL1_XL, LSM6DS3_TEMP_ODR_52HZ)
+      self.write(LSM6DS3_TEMP_I2C_REG_CTRL1_XL, LSM6DS3_TEMP_ODR_52HZ)
 
       # Wait for first sample
       time.sleep(0.1)
@@ -70,7 +70,7 @@ class LSM6DS3_Temp(I2CSensor):
 
   def shutdown(self) -> None:
     try:
-      self.write_register(LSM6DS3_TEMP_I2C_REG_CTRL1_XL, 0x00)
+      self.write(LSM6DS3_TEMP_I2C_REG_CTRL1_XL, 0x00)
     except Exception:
       cloudlog.exception("Error shutting down LSM6DS3 temperature sensor")
 

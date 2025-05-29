@@ -36,7 +36,7 @@ class LSM6DS3_Gyro(I2CSensor):
   def _wait_for_data_ready(self) -> None:
     """Wait for gyroscope data to be ready"""
     while True:
-      status = self.read_register(LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
+      status = self.read(LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
       if status & LSM6DS3_GYRO_DRDY_G:
         break
 
@@ -44,7 +44,7 @@ class LSM6DS3_Gyro(I2CSensor):
     samples = []
     for _ in range(5):
       self._wait_for_data_ready()
-      data = self.read_register(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, 6)
+      data = self.read(LSM6DS3_GYRO_I2C_REG_OUTX_L_G, 6)
       x = self.twos_complement((data[1] << 8) | data[0], 16)
       y = self.twos_complement((data[3] << 8) | data[2], 16)
       z = self.twos_complement((data[5] << 8) | data[4], 16)
@@ -61,11 +61,11 @@ class LSM6DS3_Gyro(I2CSensor):
     # Configure sensor
     try:
       # Enable block data update and auto-increment
-      self.write_register(LSM6DS3_GYRO_I2C_REG_CTRL3_C,
+      self.write(LSM6DS3_GYRO_I2C_REG_CTRL3_C,
                         LSM6DS3_GYRO_IF_INC | LSM6DS3_GYRO_BDU)
 
       # Configure gyroscope (52Hz, 2000 dps)
-      self.write_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G,
+      self.write(LSM6DS3_GYRO_I2C_REG_CTRL2_G,
                         LSM6DS3_GYRO_ODR_52HZ | LSM6DS3_GYRO_FS_2000DPS)
 
       # Set scaling factor for 2000 dps (70 mdps/LSB)
@@ -96,7 +96,7 @@ class LSM6DS3_Gyro(I2CSensor):
 
   def shutdown(self) -> None:
     try:
-      self.write_register(LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0x00)
+      self.write(LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0x00)
     except Exception:
       cloudlog.exception("Error shutting down LSM6DS3 gyroscope")
 

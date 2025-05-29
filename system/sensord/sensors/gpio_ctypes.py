@@ -72,7 +72,7 @@ class GPIOChip:
         except Exception as e:
             self._cleanup()
             raise e
-    
+
     def __exit__(
         self,
         exc_type: type[BaseException] | None,
@@ -80,7 +80,7 @@ class GPIOChip:
         exc_tb: object | None,
     ) -> None:
         self._cleanup()
-    
+
     def _cleanup(self) -> None:
         if self.gpio_map is not None and self.gpio_map != -1:
             munmap(self.gpio_map, self.gpio_size)
@@ -93,15 +93,15 @@ class GPIOChip:
         """Read GPIO value"""
         if self.gpio_map is None:
             raise RuntimeError("GPIO not initialized")
-        
+
         # Calculate register offset for GPIO data in
         # This is a simplified version - actual register layout depends on the hardware
         reg_offset = 0x134  # GPIO_DATAIN_0 register offset (adjust for your hardware)
         reg_addr = self.gpio_map + reg_offset
-        
+
         # Read the register value
         reg_value = cast(reg_addr, POINTER(c_uint32)).contents.value
-        
+
         # Check if the bit for our GPIO is set
         return (reg_value >> self.gpio_nr) & 0x1
 
@@ -114,7 +114,7 @@ class GPIOHandler:
         self.gpio_chip = GPIOChip(self.gpio_nr)
         self.gpio_chip.__enter__()
         return self
-    
+
     def __exit__(
         self,
         exc_type: type[BaseException] | None,
@@ -124,7 +124,7 @@ class GPIOHandler:
         if self.gpio_chip is not None:
             self.gpio_chip.__exit__(exc_type, exc_val, exc_tb)
             self.gpio_chip = None
-            
+
     def get_value(self) -> int:
         if self.gpio_chip is None:
             with GPIOChip(self.gpio_nr) as chip:

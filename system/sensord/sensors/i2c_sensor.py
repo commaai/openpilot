@@ -1,3 +1,4 @@
+import time
 import smbus2
 
 from cereal import log
@@ -16,21 +17,46 @@ class I2CSensor:
       self.gpio_handler = None
     self.bus.close()
 
-  def twos_complement(self, val: int, bits: int) -> int:
+  # *** helpers ***
+  @staticmethod
+  def wait():
+    # a standard small sleep
+    time.sleep(0.005)
+
+  @staticmethod
+  def twos_complement(val: int, bits: int) -> int:
     if (val & (1 << (bits - 1))) != 0:
         val = val - (1 << bits)
     return val
+
+  @staticmethod
+  def parse_12bit(lsb: int, msb: int) -> int:
+    combined = (msb << 8) | (lsb & 0xF0)
+    return combined >> 4
+
+  @staticmethod
+  def parse_16bit(lsb: int, msb: int) -> int:
+    return (msb << 8) | lsb
+
+  @staticmethod
+  def parse_20bit(b2: int, b1: int, b0: int) -> int:
+    combined = (b0 << 16) | (b1 << 8) | b2
+    return combined >> 4
 
   @property
   def device_address(self) -> int:
     """Abstract property that must be implemented by subclasses"""
     raise NotImplementedError
 
-  def read_register(self, register_address: int, length: int) -> bytes:
+  def read(self, register_address: int, length: int) -> bytes:
     return bytes(self.bus.read_i2c_block_data(self.device_address, register_address, length))
 
-  def write_register(self, register_address: int, data: int) -> None:
+  def write(self, register_address: int, data: int) -> None:
     self.bus.write_byte_data(self.device_address, register_address, data)
+
+  def writes(self, writes: tuple[int, int]) -> None:
+    for addr, data in writes:
+      self.write(addr, data)
 
   def init_gpio(self) -> None:
     """Initialize GPIO for sensor interrupt if needed"""
@@ -59,7 +85,7 @@ class I2CSensor:
       return False
 
   def verify_chip_id(self, address: int, expected_ids: list[int]) -> int:
-    chip_id = self.read_register(address, 1)[0]
+    chip_id = self.read(address, 1)[0]
     assert chip_id in expected_ids
     return chip_id
 

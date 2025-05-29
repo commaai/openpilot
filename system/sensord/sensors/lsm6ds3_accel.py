@@ -40,7 +40,7 @@ class LSM6DS3_Accel(I2CSensor):
 
   def _wait_for_data_ready(self) -> None:
     while True:
-      status = self.read_register(LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
+      status = self.read(LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
       if status & LSM6DS3_ACCEL_DRDY_XLDA:
         break
 
@@ -48,7 +48,7 @@ class LSM6DS3_Accel(I2CSensor):
     samples = []
     for _ in range(5):
       self._wait_for_data_ready()
-      data = self.read_register(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, 6)
+      data = self.read(LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, 6)
 
       x = self.twos_complement((data[1] << 8) | data[0], 16)
       y = self.twos_complement((data[3] << 8) | data[1], 16)
@@ -69,10 +69,10 @@ class LSM6DS3_Accel(I2CSensor):
     #self.init_gpio()
 
     # enable continuous update, and automatic increase
-    self.write_register(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC)
+    self.write(LSM6DS3_ACCEL_I2C_REG_CTRL3_C, LSM6DS3_ACCEL_IF_INC)
 
     # TODO: set scale and bandwidth. Default is +- 2G, 50 Hz
-    self.write_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ)
+    self.write(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, LSM6DS3_ACCEL_ODR_104HZ)
 
     # Set scaling factor for 4g full scale (2mg/LSB)
     self.scaling = 0.122
@@ -96,7 +96,7 @@ class LSM6DS3_Accel(I2CSensor):
     return event
 
   def shutdown(self) -> None:
-    self.write_register(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0x00)
+    self.write(LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 0x00)
 
   def self_test(self, test_type: int = LSM6DS3_ACCEL_ST_XL_POS) -> bool:
     # TODO: implement this
