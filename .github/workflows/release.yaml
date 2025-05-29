@@ -1,15 +1,16 @@
 name: release
 on:
-  schedule:
-    - cron: '0 9 * * *'
-  workflow_dispatch:
+  push:
+  #schedule:
+  #  - cron: '0 9 * * *'
+  #workflow_dispatch:
 
 jobs:
   build_masterci:
     name: build master-ci
     env:
       TARGET_DIR: /tmp/openpilot
-      ImageOS: ubuntu20
+      ImageOS: ubuntu24
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-latest
