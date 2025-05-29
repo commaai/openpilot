@@ -313,8 +313,7 @@ class ModelRenderer:
     line_y = line.y
     line_z = line.z
 
-    left_points: list[tuple[float, float]] = []
-    right_points: list[tuple[float, float]] = []
+    points = []
 
     for i in range(max_idx + 1):
       # Skip points with negative x (behind camera)
@@ -326,16 +325,16 @@ class ModelRenderer:
 
       if left and right:
         # Check for inversion when going over hills
-        if not allow_invert and left_points and left[1] > left_points[-1][1]:
+        if not allow_invert and points and left[1] > points[-1][1]:
           continue
 
-        left_points.append(left)
-        right_points.append(right)
+        points.append(left)
+        points.insert(0, right)
 
-    if not left_points or not right_points:
+    if not points:
       return np.empty((0, 2), dtype=np.float32)
 
-    return np.array(left_points + right_points[::-1], dtype=np.float32)
+    return np.array(points, dtype=np.float32)
 
   @staticmethod
   def _map_val(x, x0, x1, y0, y1):
