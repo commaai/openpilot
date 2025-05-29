@@ -98,7 +98,7 @@ QWidget * Setup::low_voltage() {
   main_layout->addLayout(inner_layout);
 
   QLabel *triangle = new QLabel();
-  triangle->setPixmap(QPixmap(ASSET_PATH + "offroad/icon_warning.png"));
+  triangle->setPixmap(QPixmap(ASSET_PATH + "icons/warning.png"));
   inner_layout->addWidget(triangle, 0, Qt::AlignTop | Qt::AlignLeft);
   inner_layout->addSpacing(80);
 
@@ -159,7 +159,7 @@ QWidget * Setup::getting_started() {
   vlayout->addStretch();
 
   QPushButton *btn = new QPushButton();
-  btn->setIcon(QIcon(":/img_continue_triangle.svg"));
+  btn->setIcon(QIcon(":/images/button_continue_triangle.svg"));
   btn->setIconSize(QSize(54, 106));
   btn->setFixedSize(310, 1080);
   btn->setProperty("primary", true);
@@ -251,7 +251,7 @@ QWidget * radio_button(QString title, QButtonGroup *group) {
   )");
 
   // checkmark icon
-  QPixmap pix(":/img_circled_check.svg");
+  QPixmap pix(":/icons/circled_check.svg");
   btn->setIcon(pix);
   btn->setIconSize(QSize(0, 0));
   btn->setLayoutDirection(Qt::RightToLeft);

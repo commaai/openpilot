@@ -2,9 +2,13 @@ import platform
 
 CC = 'gcc'
 system = platform.system()
-if system == 'Darwin':
-  # gcc installed by homebrew has version suffix (e.g. gcc-12) in order to be
-  # distinguishable from system one - which acts as a symlink to clang
+mac_ver = platform.mac_ver()
+
+# gcc installed by homebrew has version suffix (e.g. gcc-12) in order to be
+# distinguishable from system one - which acts as a symlink to clang
+# clang works on macOS 15 and greater but has issues on earlier macOS versions.
+# see: https://github.com/commaai/openpilot/issues/35093
+if system == 'Darwin' and mac_ver[0] and mac_ver[0] < '15':
   CC += '-13'
 
 env = Environment(
@@ -18,8 +22,9 @@ env = Environment(
     '-std=gnu11',
     '-Wfatal-errors',
     '-Wno-pointer-to-int-cast',
+    '-DCANFD',
   ],
-  CPPPATH=[".", "../../board/", "../../"],
+  CPPPATH=["#", "../../board/"],
 )
 if system == "Darwin":
   env.PrependENVPath('PATH', '/opt/homebrew/bin')

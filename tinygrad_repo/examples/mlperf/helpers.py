@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import unicodedata
 from typing import Optional
+import math
 import numpy as np
 from tinygrad.nn import state
 from tinygrad.tensor import Tensor, dtypes
@@ -195,20 +196,18 @@ def get_bert_qa_prediction(features, example, start_end_logits):
   return "empty"
 
 def get_mlperf_bert_config():
-  """Config is BERT-large"""
-  return {
-    "attention_probs_dropout_prob": 0.1,
-    "hidden_dropout_prob": 0.1,
-    "hidden_size": 1024,
-    "intermediate_size": 4096,
-    "max_position_embeddings": 512,
-    "num_attention_heads": 16,
-    "num_hidden_layers": 24,
-    "type_vocab_size": 2,
-    "vocab_size": 30522
-  }
+  """benchmark is BERT-large"""
+  ret = {"attention_probs_dropout_prob": 0.1, "hidden_dropout_prob": 0.1, "vocab_size": 30522, "type_vocab_size": 2, "max_position_embeddings": 512}
 
-def get_mlperf_bert_model(checkpoint_path:Optional[str]=None):
+  match (bert_size:=getenv("BERT_SIZE", "large")):
+    case "large": ret.update({"hidden_size": 1024, "intermediate_size": 4096, "num_attention_heads": 16, "num_hidden_layers": 24})
+    case "tiny": ret.update({"hidden_size": 128, "intermediate_size": 512, "num_attention_heads": 2, "num_hidden_layers": 2})
+    case _: raise RuntimeError(f"unhandled {bert_size=}")
+
+  if (bert_layers:=getenv("BERT_LAYERS")): ret["num_hidden_layers"] = bert_layers
+  return ret
+
+def get_mlperf_bert_model():
   from extra.models import bert
   from examples.mlperf.initializers import LinearBert, EmbeddingBert, LayerNormBert
 
@@ -220,21 +219,138 @@ def get_mlperf_bert_model(checkpoint_path:Optional[str]=None):
   config = get_mlperf_bert_config()
   if getenv("DISABLE_DROPOUT", 0):
     config["hidden_dropout_prob"] = config["attention_probs_dropout_prob"] = 0.0
-  model = BertForPretraining(**config)
-  return model.load_from_pretrained(checkpoint_path) if checkpoint_path else model
+  return BertForPretraining(**config)
 
-def get_data_bert(GPUS:list[str], it):
-  data: dict[str, Tensor] = next(it)
-  for key in data.keys(): data[key].shard_(GPUS, axis=0)
-  return data
-
-def get_fake_data_bert(GPUS:list[str], BS:int):
+def get_fake_data_bert(BS:int):
   return {
-    "input_ids": Tensor.empty((BS, 512), dtype=dtypes.float32).contiguous().shard_(GPUS, axis=0),
-    "input_mask": Tensor.empty((BS, 512), dtype=dtypes.default_float).contiguous().shard_(GPUS, axis=0),
-    "segment_ids": Tensor.empty((BS, 512), dtype=dtypes.float32).contiguous().shard_(GPUS, axis=0),
-    "masked_lm_positions": Tensor.empty((BS, 76), dtype=dtypes.float32).contiguous().shard_(GPUS, axis=0),
-    "masked_lm_ids": Tensor.empty((BS, 76), dtype=dtypes.float32).contiguous().shard_(GPUS, axis=0),
-    "masked_lm_weights": Tensor.empty((BS, 76), dtype=dtypes.float32).contiguous().shard_(GPUS, axis=0),
-    "next_sentence_labels": Tensor.empty((BS, 1), dtype=dtypes.float32).contiguous().shard_(GPUS, axis=0),
+    "input_ids": Tensor.empty((BS, 512), dtype=dtypes.int32, device="CPU"),
+    "input_mask": Tensor.empty((BS, 512), dtype=dtypes.int32, device="CPU"),
+    "segment_ids": Tensor.empty((BS, 512), dtype=dtypes.int32, device="CPU"),
+    "masked_lm_positions": Tensor.empty((BS, 76), dtype=dtypes.int32, device="CPU"),
+    "masked_lm_ids": Tensor.empty((BS, 76), dtype=dtypes.int32, device="CPU"),
+    "masked_lm_weights": Tensor.empty((BS, 76), dtype=dtypes.float32, device="CPU"),
+    "next_sentence_labels": Tensor.empty((BS, 1), dtype=dtypes.int32, device="CPU"),
   }
+
+def find_matches(match_quality_matrix:np.ndarray, high_threshold:float=0.5, low_threshold:float=0.4, allow_low_quality_matches:bool=False) -> np.ndarray:
+  BELOW_LOW_THRESHOLD, BETWEEN_THRESHOLDS = -1, -2
+
+  def _set_low_quality_matches_(matches:np.ndarray, all_matches:np.ndarray, match_quality_matrix:np.ndarray):
+    highest_quality_foreach_gt = np.max(match_quality_matrix, axis=1)
+    pred_inds_to_update = np.nonzero(match_quality_matrix == highest_quality_foreach_gt[:, None])[1]
+    matches[pred_inds_to_update] = all_matches[pred_inds_to_update]
+
+  assert low_threshold <= high_threshold
+
+  matched_vals, matches = match_quality_matrix.max(axis=0), match_quality_matrix.argmax(axis=0)
+  all_matches = np.copy(matches) if allow_low_quality_matches else None
+  below_low_threshold = matched_vals < low_threshold
+  between_thresholds = (matched_vals >= low_threshold) & (matched_vals < high_threshold)
+  matches[below_low_threshold] = BELOW_LOW_THRESHOLD
+  matches[between_thresholds] = BETWEEN_THRESHOLDS
+
+  if allow_low_quality_matches:
+    assert all_matches is not None
+    _set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+
+  return matches
+
+def box_iou(boxes1:np.ndarray, boxes2:np.ndarray) -> np.ndarray:
+  def _box_area(boxes:np.ndarray) -> np.ndarray: return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
+
+  def _box_inter_union(boxes1:np.ndarray, boxes2:np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    area1, area2 = _box_area(boxes1), _box_area(boxes2)
+    lt, rb = np.maximum(boxes1[:, None, :2], boxes2[:, :2]), np.minimum(boxes1[:, None, 2:], boxes2[:, 2:])
+    wh = np.clip(rb - lt, a_min=0, a_max=None)
+    inter = wh[:, :, 0] * wh[:, :, 1]
+    union = area1[:, None] + area2 - inter
+    return inter, union
+
+  inter, union = _box_inter_union(boxes1, boxes2)
+  return inter / union
+
+def generate_anchors(input_size:tuple[int, int], scales:Optional[tuple[Tensor, ...]]=None, aspect_ratios:Optional[tuple[Tensor, ...]]=None) -> list[np.ndarray]:
+  def _compute_grid_sizes(input_size:tuple[int, int]) -> np.ndarray:
+    return np.ceil(np.array(input_size)[None, :] / 2 ** np.arange(3, 8)[:, None])
+
+  scales = tuple((i, int(i * 2 ** (1/3)), int(i * 2 ** (2/3))) for i in 2 ** np.arange(5, 10)) if scales is None else scales
+  aspect_ratios = ((0.5, 1.0, 2.0),) * len(scales) if aspect_ratios is None else aspect_ratios
+  aspect_ratios = tuple(ar for ar in aspect_ratios)
+  grid_sizes = _compute_grid_sizes(input_size)
+
+  assert len(scales) == len(aspect_ratios) == len(grid_sizes), "scales, aspect_ratios, and grid_sizes must have the same length"
+
+  anchors = []
+  for s, ar, gs in zip(scales, aspect_ratios, grid_sizes):
+    s, ar = np.array(s), np.array(ar)
+    h_ratios = np.sqrt(ar)
+    w_ratios = 1 / h_ratios
+    ws = (w_ratios[:, None] * s[None, :]).reshape(-1)
+    hs = (h_ratios[:, None] * s[None, :]).reshape(-1)
+    base_anchors = (np.stack([-ws, -hs, ws, hs], axis=1) / 2).round()
+    stride_h, stride_w = input_size[0] // gs[0], input_size[1] // gs[1]
+    shifts_x, shifts_y = np.meshgrid(np.arange(gs[1]) * stride_w, np.arange(gs[0]) * stride_h)
+    shifts_x, shifts_y = shifts_x.reshape(-1), shifts_y.reshape(-1)
+    shifts = np.stack([shifts_x, shifts_y, shifts_x, shifts_y], axis=1, dtype=np.float32)
+    anchors.append((shifts[:, None] + base_anchors[None, :]).reshape(-1, 4))
+
+  return anchors
+
+
+class BoxCoder(object):
+  def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16), apply_to_remove=True):
+    self.weights = weights
+    self.bbox_xform_clip = bbox_xform_clip
+    self.apply_to_remove = apply_to_remove
+
+  def encode(self, reference_boxes, proposals):
+    TO_REMOVE = self.apply_to_remove  # TODO remove
+    ex_widths = proposals[..., 2] - proposals[..., 0] + TO_REMOVE
+    ex_heights = proposals[..., 3] - proposals[..., 1] + TO_REMOVE
+    ex_ctr_x = proposals[..., 0] + 0.5 * ex_widths
+    ex_ctr_y = proposals[..., 1] + 0.5 * ex_heights
+
+    gt_widths = reference_boxes[..., 2] - reference_boxes[..., 0] + TO_REMOVE
+    gt_heights = reference_boxes[..., 3] - reference_boxes[..., 1] + TO_REMOVE
+    gt_ctr_x = reference_boxes[..., 0] + 0.5 * gt_widths
+    gt_ctr_y = reference_boxes[..., 1] + 0.5 * gt_heights
+
+    wx, wy, ww, wh = self.weights
+    targets_dx = wx * (gt_ctr_x - ex_ctr_x) / ex_widths
+    targets_dy = wy * (gt_ctr_y - ex_ctr_y) / ex_heights
+    targets_dw = ww * Tensor.log(gt_widths / ex_widths)
+    targets_dh = wh * Tensor.log(gt_heights / ex_heights)
+
+    targets = Tensor.stack(targets_dx, targets_dy, targets_dw, targets_dh, dim=-1)
+    return targets
+
+  def decode(self, rel_codes, boxes):
+    boxes = boxes.cast(rel_codes.dtype)
+    rel_codes = rel_codes
+
+    TO_REMOVE = self.apply_to_remove  # TODO remove
+    widths = boxes[:, 2] - boxes[:, 0] + TO_REMOVE
+    heights = boxes[:, 3] - boxes[:, 1] + TO_REMOVE
+    ctr_x = boxes[:, 0] + 0.5 * widths
+    ctr_y = boxes[:, 1] + 0.5 * heights
+
+    wx, wy, ww, wh = self.weights
+    dx = rel_codes[:, 0::4] / wx
+    dy = rel_codes[:, 1::4] / wy
+    dw = rel_codes[:, 2::4] / ww
+    dh = rel_codes[:, 3::4] / wh
+
+    # Prevent sending too large values into Tensor.exp()
+    dw = dw.clip(min_=dw.min(), max_=self.bbox_xform_clip)
+    dh = dh.clip(min_=dh.min(), max_=self.bbox_xform_clip)
+
+    pred_ctr_x = dx * widths[:, None] + ctr_x[:, None]
+    pred_ctr_y = dy * heights[:, None] + ctr_y[:, None]
+    pred_w = dw.exp() * widths[:, None]
+    pred_h = dh.exp() * heights[:, None]
+    x = pred_ctr_x - 0.5 * pred_w
+    y = pred_ctr_y - 0.5 * pred_h
+    w = pred_ctr_x + 0.5 * pred_w - 1
+    h = pred_ctr_y + 0.5 * pred_h - 1
+    pred_boxes = Tensor.stack(x, y, w, h).permute(1,2,0).reshape(rel_codes.shape[0], rel_codes.shape[1])
+    return pred_boxes

@@ -1,21 +1,20 @@
-import time, logging, difflib
-from typing import Callable, Optional, Tuple
+import time, struct
+from typing import Any, Callable, Optional
 import numpy as np
-from tinygrad import Tensor, dtypes
-from tinygrad.ops import UOp, Ops, sint
+from tinygrad import Tensor, dtypes, Device
+from tinygrad.uop.ops import UOp, Ops, sint
 from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.tensor import _to_np_dtype
 from tinygrad.engine.realize import Runner
 from tinygrad.dtype import ConstType, DType
 from tinygrad.nn.state import get_parameters
-from tinygrad.helpers import T, getenv, colored
-from tinygrad.codegen.linearize import linearize_uop
-from tinygrad.codegen.uopgraph import full_graph_rewrite
-from tinygrad.runtime.ops_python import PythonProgram, PythonRenderer, PythonCompiler, PythonAllocator
+from tinygrad.helpers import T, unwrap, CI
+from tinygrad.codegen import full_rewrite
+from tinygrad.runtime.ops_python import PythonProgram, PythonRenderer, PythonCompiler
 
 def derandomize_model(model):
   for p in get_parameters(model):
-    p.lazydata = Tensor.empty(p.shape, device=p.device, dtype=p.dtype).lazydata
+    p.replace(Tensor.empty(p.shape, device=p.device, dtype=p.dtype))
     p.realize()
 
 def assert_jit_cache_len(fxn, expected_len):
@@ -40,30 +39,33 @@ def rand_for_dtype(dt:DType, size:int):
     return np.random.choice([True, False], size=size)
   return np.random.uniform(-10, 10, size=size).astype(_to_np_dtype(dt))
 
-def print_diff(s0, s1, unified=getenv("UNIFIED_DIFF",1)):
-  if not logging.getLogger().hasHandlers(): logging.basicConfig(level=logging.INFO, format="%(message)s")
-  if unified:
-    lines = list(difflib.unified_diff(str(s0).splitlines(), str(s1).splitlines()))
-    diff = "\n".join(colored(line, "red" if line.startswith("-") else "green" if line.startswith("+") else None) for line in lines)
-  else:
-    import ocdiff
-    diff = ocdiff.console_diff(str(s0), str(s1))
-  logging.info(diff)
-
-def ast_const(dtype:DType, val:ConstType, shape:Tuple[sint, ...]=(), st:Optional[ShapeTracker]=None, st_src:Optional[Tuple[UOp]]=None) -> UOp:
+def ast_const(dtype:DType, val:ConstType, shape:tuple[sint, ...]=(), st:Optional[ShapeTracker]=None, st_src:Optional[tuple[UOp]]=None) -> UOp:
   if st_src is None:
     st_src = (st.to_uop() if st is not None else ShapeTracker.from_shape(()).reshape((1,)*len(shape)).expand(shape).to_uop(),)
-  return UOp(Ops.VALID, dtypes.bool, st_src).where(UOp.const(dtype, val), UOp.const(dtype, 0))
+  st = unwrap(st_src[0].st)
+  if all(v.mask is None for v in st.views): return UOp.const(dtype, val).replace(src=(st.to_uop(),))
+  return UOp.const(dtype, val).valid(st)
 
-def timeit(fxn:Callable[..., T], *args, **kwargs) -> Tuple[T, float]:
+def timeit(fxn:Callable[..., T], *args, **kwargs) -> tuple[T, float]:
   st = time.perf_counter_ns()
   ret = fxn(*args, **kwargs)
   return ret, (time.perf_counter_ns()-st)*1e-6
 
-def eval_uop(uop:UOp):
+def eval_uop(uop:UOp, inputs:list[tuple[DType, list[Any]]]|None=None):
+  allocator = Device['PYTHON'].allocator
+  bufs = []
+  for buf_dt, data in inputs or []:
+    bufs.append(buf:=allocator.alloc(len(data) * buf_dt.itemsize))
+    allocator._copyin(buf, memoryview(struct.pack(str(len(data)) + buf_dt.fmt, *data)))
   g = UOp(Ops.DEFINE_GLOBAL, uop.dtype.ptr(), arg=0, src=())
-  rw = full_graph_rewrite(UOp.store(g.index(UOp.const(dtypes.int, 0)), uop).sink(), PythonRenderer)
-  prog = PythonProgram("run", PythonCompiler().compile(PythonRenderer().render("run", linearize_uop(rw))))
-  buf = PythonAllocator().alloc(uop.dtype.itemsize)
-  prog(buf)
-  return buf.cast(uop.dtype.fmt).tolist()[0]
+  lst = full_rewrite(UOp.store(g.index(UOp.const(dtypes.int, 0)), uop).sink(), PythonRenderer)
+  prog = PythonProgram("run", PythonCompiler().compile(PythonRenderer().render(lst)))
+  prog(out_buf:=allocator.alloc(uop.dtype.itemsize), *bufs)
+  return out_buf.cast(uop.dtype.fmt).tolist()[0]
+
+def not_support_multi_device():
+  # GPU and CUDA don't support multi device if in CI
+  return CI and REAL_DEV in ("GPU", "CUDA")
+
+# NOTE: This will open REMOTE if it's the default device
+REAL_DEV = (Device.DEFAULT if Device.DEFAULT != "REMOTE" else Device['REMOTE'].properties.real_device)

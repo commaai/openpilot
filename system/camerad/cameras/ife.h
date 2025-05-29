@@ -105,7 +105,7 @@ int build_update(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std:
 }
 
 
-int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches) {
+int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo *s, std::vector<uint32_t> &patches, uint32_t out_width, uint32_t out_height) {
   uint8_t *start = dst;
 
   // start with the every frame config
@@ -185,12 +185,12 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   // output size/scaling
   dst += write_cont(dst, 0xa3c, {
     0x00000003,
-    ((s->frame_width - 1) << 16) | (s->frame_width - 1),
+    ((out_width - 1) << 16) | (s->frame_width - 1),
     0x30036666,
     0x00000000,
     0x00000000,
     s->frame_width - 1,
-    ((s->frame_height - 1) << 16) | (s->frame_height - 1),
+    ((out_height - 1) << 16) | (s->frame_height - 1),
     0x30036666,
     0x00000000,
     0x00000000,
@@ -198,12 +198,12 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
   });
   dst += write_cont(dst, 0xa68, {
     0x00000003,
-    ((s->frame_width/2 - 1) << 16) | (s->frame_width - 1),
+    ((out_width / 2 - 1) << 16) | (s->frame_width - 1),
     0x3006cccc,
     0x00000000,
     0x00000000,
     s->frame_width - 1,
-    ((s->frame_height/2 - 1) << 16) | (s->frame_height - 1),
+    ((out_height / 2 - 1) << 16) | (s->frame_height - 1),
     0x3006cccc,
     0x00000000,
     0x00000000,
@@ -212,12 +212,12 @@ int build_initial_config(uint8_t *dst, const CameraConfig cam, const SensorInfo 
 
   // cropping
   dst += write_cont(dst, 0xe10, {
-    s->frame_height - 1,
-    s->frame_width - 1,
+    out_height - 1,
+    out_width - 1,
   });
   dst += write_cont(dst, 0xe30, {
-    s->frame_height/2 - 1,
-    s->frame_width - 1,
+    out_height / 2 - 1,
+    out_width - 1,
   });
   dst += write_cont(dst, 0xe18, {
     0x0ff00000,

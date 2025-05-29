@@ -3,12 +3,13 @@
 # Stability-AI/generative-models | MIT     | https://github.com/Stability-AI/generative-models/blob/fbdc58cab9f4ee2be7a5e1f2e2787ecd9311942f/LICENSE-CODE
 # mlfoundations/open_clip        | MIT     | https://github.com/mlfoundations/open_clip/blob/58e4e39aaabc6040839b0d2a7e8bf20979e4558a/LICENSE
 
-from tinygrad import Tensor, TinyJit, dtypes
+from tinygrad import Tensor, TinyJit, dtypes, GlobalCounters
 from tinygrad.nn import Conv2d, GroupNorm
-from tinygrad.nn.state import safe_load, load_state_dict
-from tinygrad.helpers import fetch, trange, colored, Timing, GlobalCounters
+from tinygrad.nn.state import safe_load, load_state_dict, get_state_dict
+from tinygrad.helpers import fetch, trange, colored, Timing
 from extra.models.clip import Embedder, FrozenClosedClipEmbedder, FrozenOpenClipEmbedder
 from extra.models.unet import UNetModel, Upsample, Downsample, timestep_embedding
+from extra.bench_log import BenchEvent, WallTimeEvent
 from examples.stable_diffusion import ResnetBlock, Mid
 import numpy as np
 
@@ -345,18 +346,19 @@ class DPMPP2MSampler:
     old_denoised = None
     for i in trange(num_sigmas - 1):
       with Timing("step in ", enabled=timing, on_exit=lambda _: f", using {GlobalCounters.mem_used/1e9:.2f} GB"):
-        x, old_denoised = self.sampler_step(
-          old_denoised=old_denoised,
-          prev_sigma=(None if i==0 else sigmas[i-1].expand(x.shape[0])),
-          sigma=sigmas[i].expand(x.shape[0]),
-          next_sigma=sigmas[i+1].expand(x.shape[0]),
-          denoiser=denoiser,
-          x=x,
-          c=c,
-          uc=uc,
-        )
-        x.realize()
-        old_denoised.realize()
+        GlobalCounters.reset()
+        with WallTimeEvent(BenchEvent.STEP):
+          x, old_denoised = self.sampler_step(
+            old_denoised=old_denoised,
+            prev_sigma=(None if i==0 else sigmas[i-1].expand(x.shape[0])),
+            sigma=sigmas[i].expand(x.shape[0]),
+            next_sigma=sigmas[i+1].expand(x.shape[0]),
+            denoiser=denoiser,
+            x=x,
+            c=c,
+            uc=uc,
+          )
+          x.realize(old_denoised)
 
     return x
 
@@ -384,7 +386,13 @@ if __name__ == "__main__":
 
   default_weight_url = 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors'
   weights = args.weights if args.weights else fetch(default_weight_url, 'sd_xl_base_1.0.safetensors')
-  load_state_dict(model, safe_load(weights), strict=False)
+  loaded_weights = load_state_dict(model, safe_load(weights), strict=False, verbose=False, realize=False)
+
+  start_mem_used = GlobalCounters.mem_used
+  with Timing("loaded weights in ", lambda et_ns: f", {(B:=(GlobalCounters.mem_used-start_mem_used))/1e9:.2f} GB loaded at {B/et_ns:.2f} GB/s"):
+    with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
+      Tensor.realize(*loaded_weights)
+    del loaded_weights
 
   N = 1
   C = 4
@@ -395,8 +403,7 @@ if __name__ == "__main__":
 
   c, uc = model.create_conditioning([args.prompt], args.width, args.height)
   del model.conditioner
-  for v in c .values(): v.realize()
-  for v in uc.values(): v.realize()
+  Tensor.realize(*c.values(), *uc.values())
   print("created batch")
 
   # https://github.com/Stability-AI/generative-models/blob/fbdc58cab9f4ee2be7a5e1f2e2787ecd9311942f/sgm/inference/helpers.py#L101

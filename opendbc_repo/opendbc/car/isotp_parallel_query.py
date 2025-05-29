@@ -42,13 +42,13 @@ class IsoTpParallelQuery:
     self.can_send([msg])
 
   def _can_rx(self, addr, sub_addr=None):
-    """Helper function to retrieve message with specified address and subadress from buffer"""
+    """Helper function to retrieve message with specified address and subaddress from buffer"""
     keep_msgs = []
 
     if sub_addr is None:
       msgs = self.msg_buffer[addr]
     else:
-      # Filter based on subadress
+      # Filter based on subaddress
       msgs = []
       for m in self.msg_buffer[addr]:
         first_byte = m[1][0]

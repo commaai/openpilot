@@ -1,115 +1,106 @@
-#!/usr/bin/env python3
+import json
 import os
-import math
-import time
-import binascii
-import requests
-import serial
+import shutil
 import subprocess
+from typing import Literal
 
+from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
 
-def post(url, payload):
-  print()
-  print("POST to", url)
-  r = requests.post(
-    url,
-    data=payload,
-    verify=False,
-    headers={
-      "Content-Type": "application/json",
-      "X-Admin-Protocol": "gsma/rsp/v2.2.0",
-      "charset": "utf-8",
-      "User-Agent": "gsma-rsp-lpad",
-    },
-  )
-  print("resp", r)
-  print("resp text", repr(r.text))
-  print()
-  r.raise_for_status()
+class TiciLPA(LPABase):
+  def __init__(self, interface: Literal['qmi', 'at'] = 'qmi'):
+    self.env = os.environ.copy()
+    self.env['LPAC_APDU'] = interface
+    self.env['QMI_DEVICE'] = '/dev/cdc-wdm0'
+    self.env['AT_DEVICE'] = '/dev/ttyUSB2'
 
-  ret = f"HTTP/1.1 {r.status_code}"
-  ret += ''.join(f"{k}: {v}" for k, v in r.headers.items() if k != 'Connection')
-  return ret.encode() + r.content
+    self.timeout_sec = 45
 
+    if shutil.which('lpac') is None:
+      raise LPAError('lpac not found, must be installed!')
 
-class LPA:
-  def __init__(self):
-    self.dev = serial.Serial('/dev/ttyUSB2', baudrate=57600, timeout=1, bytesize=8)
-    self.dev.reset_input_buffer()
-    self.dev.reset_output_buffer()
-    assert "OK" in self.at("AT")
+  def list_profiles(self) -> list[Profile]:
+    msgs = self._invoke('profile', 'list')
+    self._validate_successful(msgs)
+    return [Profile(
+      iccid=p['iccid'],
+      nickname=p['profileNickname'],
+      enabled=p['profileState'] == 'enabled',
+      provider=p['serviceProviderName']
+    ) for p in msgs[-1]['payload']['data']]
 
-  def at(self, cmd):
-    print(f"==> {cmd}")
-    self.dev.write(cmd.encode() + b'\r\n')
+  def get_active_profile(self) -> Profile | None:
+    return next((p for p in self.list_profiles() if p.enabled), None)
 
-    r = b""
-    cnt = 0
-    while b"OK" not in r and b"ERROR" not in r and cnt < 20:
-      r += self.dev.read(8192).strip()
-      cnt += 1
-    r = r.decode()
-    print(f"<== {repr(r)}")
-    return r
+  def delete_profile(self, iccid: str) -> None:
+    self._validate_profile_exists(iccid)
+    latest = self.get_active_profile()
+    if latest is not None and latest.iccid == iccid:
+      raise LPAError('cannot delete active profile, switch to another profile first')
+    self._validate_successful(self._invoke('profile', 'delete', iccid))
+    self._process_notifications()
 
-  def download_ota(self, qr):
-    return self.at(f'AT+QESIM="ota","{qr}"')
+  def download_profile(self, qr: str, nickname: str | None = None) -> None:
+    msgs = self._invoke('profile', 'download', '-a', qr)
+    self._validate_successful(msgs)
+    new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
+    if new_profile is None:
+      raise LPAError('no new profile found')
+    if nickname:
+      self.nickname_profile(new_profile['payload']['data']['iccid'], nickname)
+    self._process_notifications()
 
-  def download(self, qr):
-    smdp = qr.split('$')[1]
-    out = self.at(f'AT+QESIM="download","{qr}"')
-    for _ in range(5):
-      line = out.split("+QESIM: ")[1].split("\r\n\r\nOK")[0]
+  def nickname_profile(self, iccid: str, nickname: str) -> None:
+    self._validate_profile_exists(iccid)
+    self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
-      parts = [x.strip().strip('"') for x in line.split(',', maxsplit=4)]
-      print(repr(parts))
-      trans, ret, url, payloadlen, payload = parts
-      assert trans == "trans" and ret == "0"
-      assert len(payload) == int(payloadlen)
+  def switch_profile(self, iccid: str) -> None:
+    self._validate_profile_exists(iccid)
+    latest = self.get_active_profile()
+    if latest and latest.iccid == iccid:
+      return
+    self._validate_successful(self._invoke('profile', 'enable', iccid))
+    self._process_notifications()
 
-      r = post(f"https://{smdp}/{url}", payload)
-      to_send = binascii.hexlify(r).decode()
+  def _invoke(self, *cmd: str):
+    proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
+    try:
+      out, err = proc.communicate(timeout=self.timeout_sec)
+    except subprocess.TimeoutExpired as e:
+      proc.kill()
+      raise LPAError(f"lpac {cmd} timed out after {self.timeout_sec} seconds") from e
 
-      chunk_len = 1400
-      for i in range(math.ceil(len(to_send) / chunk_len)):
-        state = 1 if (i+1)*chunk_len < len(to_send) else 0
-        data = to_send[i * chunk_len : (i+1)*chunk_len]
-        out = self.at(f'AT+QESIM="trans",{len(to_send)},{state},{i},{len(data)},"{data}"')
-        assert "OK" in out
+    messages = []
+    for line in out.decode().strip().splitlines():
+      if line.startswith('{'):
+        message = json.loads(line)
 
-      if '+QESIM:"download",1' in out:
-        raise Exception("profile install failed")
-      elif '+QESIM:"download",0' in out:
-        print("done, successfully loaded")
-        break
+        # lpac response format validations
+        assert 'type' in message, 'expected type in message'
+        assert message['type'] == 'lpa' or message['type'] == 'progress', 'expected lpa or progress message type'
+        assert 'payload' in message, 'expected payload in message'
+        assert 'code' in message['payload'], 'expected code in message payload'
+        assert 'data' in message['payload'], 'expected data in message payload'
 
-  def enable(self, iccid):
-    self.at(f'AT+QESIM="enable","{iccid}"')
+        msg_ret_code = message['payload']['code']
+        if msg_ret_code != 0:
+          raise LPAError(f"lpac {' '.join(cmd)} failed with code {msg_ret_code}: <{message['payload']['message']}> {message['payload']['data']}")
 
-  def disable(self, iccid):
-    self.at(f'AT+QESIM="disable","{iccid}"')
+        messages.append(message)
 
-  def delete(self, iccid):
-    self.at(f'AT+QESIM="delete","{iccid}"')
+    if len(messages) == 0:
+      raise LPAError(f"lpac {cmd} returned no messages")
 
-  def list_profiles(self):
-    out = self.at('AT+QESIM="list"')
-    return out.strip().splitlines()[1:]
+    return messages
 
+  def _process_notifications(self) -> None:
+    """
+    Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
+    """
+    self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
-if __name__ == "__main__":
-  import sys
+  def _validate_profile_exists(self, iccid: str) -> None:
+    if not any(p.iccid == iccid for p in self.list_profiles()):
+      raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
 
-  if "RESTART" in os.environ:
-    subprocess.check_call("sudo systemctl stop ModemManager", shell=True)
-    subprocess.check_call("/usr/comma/lte/lte.sh stop_blocking", shell=True)
-    subprocess.check_call("/usr/comma/lte/lte.sh start", shell=True)
-    while not os.path.exists('/dev/ttyUSB2'):
-      time.sleep(1)
-    time.sleep(3)
-
-  lpa = LPA()
-  print(lpa.list_profiles())
-  if len(sys.argv) > 1:
-    lpa.download(sys.argv[1])
-    print(lpa.list_profiles())
+  def _validate_successful(self, msgs: list[dict]) -> None:
+    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'

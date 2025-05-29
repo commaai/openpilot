@@ -64,6 +64,7 @@ def generate_report(proposed, master, tmp, commit):
   ModelV2_Plots = zl([
                      (lambda x: get_idx_if_non_empty(x.velocity.x, 0), "velocity.x"),
                      (lambda x: get_idx_if_non_empty(x.action.desiredCurvature), "desiredCurvature"),
+                     (lambda x: get_idx_if_non_empty(x.action.desiredAcceleration), "desiredAcceleration"),
                      (lambda x: get_idx_if_non_empty(x.leadsV3[0].x, 0), "leadsV3.x"),
                      (lambda x: get_idx_if_non_empty(x.laneLines[1].y, 0), "laneLines.y"),
                      (lambda x: get_idx_if_non_empty(x.meta.desireState, 3), "desireState.laneChangeLeft"),
@@ -122,7 +123,7 @@ def comment_replay_report(proposed, master, full_logs):
     diff_plots = create_table("Model Replay Differences", diff_files, link, open_table=True)
     all_plots = create_table("All Model Replay Plots", files, link)
     comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
-    GITHUB.comment_on_pr(comment, PR_BRANCH)
+    GITHUB.comment_on_pr(comment, PR_BRANCH, "commaci-public", True)
 
 def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
   all_msgs = []

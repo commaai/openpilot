@@ -4,13 +4,18 @@ set -e
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 : "${CPPCHECK_DIR:=$DIR/cppcheck/}"
 
+# skip if we're running in parallel with test_mutation.py
+if [ ! -z "$OPENDBC_ROOT" ]; then
+  exit 0
+fi
+
 if [ ! -d "$CPPCHECK_DIR" ]; then
   git clone https://github.com/danmar/cppcheck.git $CPPCHECK_DIR
 fi
 
 cd $CPPCHECK_DIR
 
-VERS="2.16.0"
+VERS="2.17.1"
 git fetch --all --tags --force
 git checkout $VERS
 

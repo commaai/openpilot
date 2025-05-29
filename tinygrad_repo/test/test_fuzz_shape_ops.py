@@ -38,7 +38,7 @@ def apply(tor, ten, tor_fn, ten_fn=None):
   except: ten, ok = None, not ok  # noqa: E722
   return tor, ten, ok
 
-@unittest.skipIf(CI and Device.DEFAULT == "CLANG", "slow")
+@unittest.skipIf(CI and Device.DEFAULT in ("CPU", "NV"), "slow")
 class TestShapeOps(unittest.TestCase):
   @settings.get_profile(__file__)
   @given(st_shape(), st_int32, st.one_of(st_int32, st.lists(st_int32)))

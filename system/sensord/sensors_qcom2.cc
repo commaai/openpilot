@@ -14,10 +14,6 @@
 #include "common/swaglog.h"
 #include "common/timing.h"
 #include "common/util.h"
-#include "system/sensord/sensors/bmx055_accel.h"
-#include "system/sensord/sensors/bmx055_gyro.h"
-#include "system/sensord/sensors/bmx055_magn.h"
-#include "system/sensord/sensors/bmx055_temp.h"
 #include "system/sensord/sensors/constants.h"
 #include "system/sensord/sensors/lsm6ds3_accel.h"
 #include "system/sensord/sensors/lsm6ds3_gyro.h"
@@ -117,11 +113,6 @@ void polling_loop(Sensor *sensor, std::string msg_name) {
 int sensor_loop(I2CBus *i2c_bus_imu) {
   // Sensor init
   std::vector<std::tuple<Sensor *, std::string>> sensors_init = {
-    {new BMX055_Accel(i2c_bus_imu), "accelerometer2"},
-    {new BMX055_Gyro(i2c_bus_imu), "gyroscope2"},
-    {new BMX055_Magn(i2c_bus_imu), "magnetometer"},
-    {new BMX055_Temp(i2c_bus_imu), "temperatureSensor2"},
-
     {new LSM6DS3_Accel(i2c_bus_imu, GPIO_LSM_INT), "accelerometer"},
     {new LSM6DS3_Gyro(i2c_bus_imu, GPIO_LSM_INT, true), "gyroscope"},
     {new LSM6DS3_Temp(i2c_bus_imu), "temperatureSensor"},

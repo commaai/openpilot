@@ -94,6 +94,41 @@ class TestProgressBar(unittest.TestCase):
 
   @patch('sys.stderr', new_callable=StringIO)
   @patch('shutil.get_terminal_size')
+  def test_unit_scale_exact(self, mock_terminal_size, mock_stderr):
+    unit_scale = True
+    ncols = 80
+    mock_terminal_size.return_value = namedtuple(field_names='columns', typename='terminal_size')(ncols)
+    mock_stderr.truncate(0)
+
+    total = 10
+    with patch('time.perf_counter', side_effect=[0]+list(range(100))):  # one more 0 for the init call
+      # compare bars at each iteration (only when tinytqdm bar has been updated)
+      for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=1e9):
+        tinytqdm_output = mock_stderr.getvalue().split("\r")[-1].rstrip()
+        elapsed = n
+        tqdm_output = tqdm.format_meter(n=n, total=total, elapsed=elapsed, ncols=ncols, prefix="Test", unit_scale=unit_scale)
+        self._compare_bars(tinytqdm_output, tqdm_output)
+        if n > 5: break
+
+    total = 10
+    k=0.001000001
+    # regression test for
+    # E   AssertionError: ' 1.00/10.0  1000it/s]' != ' 1.00/10.0  1.00kit/s]'
+    # E   -  1.00/10.0  1000it/s]
+    # E   ?                ^
+    # E   +  1.00/10.0  1.00kit/s]
+    # E   ?              +  ^
+    with patch('time.perf_counter', side_effect=[0, *[i*k for i in range(100)]]):  # one more 0 for the init call
+      # compare bars at each iteration (only when tinytqdm bar has been updated)
+      for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=1e9):
+        tinytqdm_output = mock_stderr.getvalue().split("\r")[-1].rstrip()
+        elapsed = n*k
+        tqdm_output = tqdm.format_meter(n=n, total=total, elapsed=elapsed, ncols=ncols, prefix="Test", unit_scale=unit_scale)
+        self._compare_bars(tinytqdm_output, tqdm_output)
+        if n > 5: break
+
+  @patch('sys.stderr', new_callable=StringIO)
+  @patch('shutil.get_terminal_size')
   def test_set_description(self, mock_terminal_size, mock_stderr):
     for _ in range(10):
       total, ncols = random.randint(5, 30), random.randint(*NCOLS_RANGE)

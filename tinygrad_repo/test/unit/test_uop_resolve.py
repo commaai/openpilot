@@ -1,6 +1,6 @@
 import unittest
 from tinygrad.dtype import dtypes
-from tinygrad.ops import UOp, resolve
+from tinygrad.uop.ops import UOp, resolve
 
 class TestUOpResolve(unittest.TestCase):
   def test_simple_int(self):
