@@ -362,13 +362,12 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
 def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   text = "Toggle stock LKAS on or off to engage"
   if CP.brand == "tesla":
-    text = "Enable Traffic Aware Cruise to Engage"
+    text = "Switch to Traffic Aware Cruise to engage"
   elif CP.brand == "mazda":
-    text = "Enable Adaptive Cruise to Engage"
+    text = "LKAS Disabled: Enable stock LKAS to engage"
   elif CP.brand == "nissan":
-    text = "Enable Adaptive Cruise to Engage"
-  return NormalPermanentAlert("Invalid LKAS setting",
-                              "Toggle stock LKAS on or off to engage")
+    text = "LKAS Enabled: Disable stock LKAS to engage"
+  return NormalPermanentAlert("Invalid LKAS setting", text)
 
 
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
