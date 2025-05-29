@@ -422,8 +422,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.invalidLkasSetting: {
-    # ET.PERMANENT: NormalPermanentAlert("Invalid LKAS setting",
-    #                                    "Toggle stock LKAS on or off to engage"),
     ET.PERMANENT: invalid_lkas_setting_alert,
     ET.NO_ENTRY: NoEntryAlert("Invalid LKAS setting"),
   },
