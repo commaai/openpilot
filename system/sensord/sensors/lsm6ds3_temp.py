@@ -19,7 +19,7 @@ class LSM6DS3_Temp(I2CSensor):
 
   def init(self):
     chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
-    if chip_id == self.LSM6DS3TRC_ACCEL_CHIP_ID:
+    if chip_id == 0x6A:
       self.source = log.SensorEventData.SensorSource.lsm6ds3trc
     else:
       self.source = log.SensorEventData.SensorSource.lsm6ds3

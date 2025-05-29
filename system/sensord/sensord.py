@@ -5,6 +5,7 @@ import threading
 import select
 
 import cereal.messaging as messaging
+from cereal.services import SERVICE_LIST
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
@@ -14,84 +15,72 @@ from openpilot.system.sensord.sensors.lsm6ds3_gyro import LSM6DS3_Gyro
 from openpilot.system.sensord.sensors.lsm6ds3_temp import LSM6DS3_Temp
 from openpilot.system.sensord.sensors.mmc5603nj_magn import MMC5603NJ_Magn
 
-# Constants
 I2C_BUS_IMU = 1
 GPIO_LSM_INT = 0  # Update this with actual GPIO number if needed
 
 def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
-  pm = messaging.PubMaster([msg_name for sensor, msg_name in sensors if sensor.gpio_line is not None])
+  pm = messaging.PubMaster([service for sensor, service in sensors if sensor.gpio_nr is not None])
 
-  gpio_fd: int | None = None
-  for sensor, _ in sensors:
-    if sensor.gpio_line is not None:
-      gpio_fd = sensor.gpio_line.fd()
-      break
-  assert gpio_fd is not None
+  #gpio_fd: int | None = None
+  #for sensor, _ in sensors:
+  #  if sensor.gpio_nr is not None:
+  #    gpio_fd = sensor.gpio_line.fd()
+  #    break
+  #assert gpio_fd is not None
 
-  poller = select.poll()
-  poller.register(gpio_fd, select.POLLIN | select.POLLPRI)
+  #poller = select.poll()
+  #poller.register(gpio_fd, select.POLLIN | select.POLLPRI)
   while not event.is_set():
-    events = poller.poll(100)
-
-    for _, evt in events:
-      if not (evt & (select.POLLIN | select.POLLPRI)):
-        cloudlog.error("Unexpected poll event: %d", evt)
+    #events = poller.poll(100)
+    time.sleep(1./104)
+    for sensor, service in sensors:
+      if sensor.gpio_nr is None:
         continue
 
-      for sensor, msg_name in sensors:
-        if sensor.gpio_line is None:
-          continue
+      try:
+        pm.send(service, sensor.get_event())
+      except Exception:
+        cloudlog.exception(f"Error processing {service}")
 
-        try:
-          event = sensor.get_event()
-          if event is not None:
-            pm.send(msg_name, event)
-        except Exception:
-          cloudlog.exception(f"Error processing {msg_name}")
-
-def polling_loop(sensor: I2CSensor, msg_name: str, frequency: float, event: threading.Event) -> None:
-  pm = messaging.PubMaster([msg_name])
-  rk = Ratekeeper(frequency, print_delay_threshold=None)
+def polling_loop(sensor: I2CSensor, service: str, event: threading.Event) -> None:
+  pm = messaging.PubMaster([service])
+  rk = Ratekeeper(SERVICE_LIST[service].frequency, print_delay_threshold=None)
   while not event.is_set():
     try:
       sensor_event = sensor.get_event()
       if sensor_event is not None:
-        pm.send(msg_name, sensor_event)
+        pm.send(service, sensor_event)
       rk.keep_time()
     except Exception:
-      cloudlog.exception(f"Error in {msg_name} polling loop")
+      cloudlog.exception(f"Error in {service} polling loop")
 
 def main() -> None:
-  exit_event = threading.Event()
-
   config_realtime_process([1, ], 1)
 
+  exit_event = threading.Event()
   sensors_cfg = [
-    #(LSM6DS3_Accel(I2C_BUS_IMU, GPIO_LSM_INT), "accelerometer"),
-    #(LSM6DS3_Gyro(I2C_BUS_IMU, GPIO_LSM_INT, True), "gyroscope"),
-    (LSM6DS3_Accel(I2C_BUS_IMU), "accelerometer"),
-    (LSM6DS3_Gyro(I2C_BUS_IMU), "gyroscope"),
+    (LSM6DS3_Accel(I2C_BUS_IMU, GPIO_LSM_INT), "accelerometer"),
+    (LSM6DS3_Gyro(I2C_BUS_IMU, GPIO_LSM_INT, True), "gyroscope"),
     (LSM6DS3_Temp(I2C_BUS_IMU), "temperatureSensor"),
     (MMC5603NJ_Magn(I2C_BUS_IMU), "magnetometer"),
   ]
 
   # Initialize sensors
   threads = []
-
-  for sensor, msg_name in sensors_cfg:
+  for sensor, service in sensors_cfg:
     try:
       sensor.init()
-      if sensor.gpio_line is None:
+      if sensor.gpio_nr is None:
         # Start polling thread for sensors without interrupts
         t = threading.Thread(
           target=polling_loop,
-          args=(sensor, msg_name, 100, exit_event),
+          args=(sensor, service, exit_event),
           daemon=True
         )
         t.start()
         threads.append(t)
     except Exception:
-      cloudlog.exception(f"Error initializing {msg_name} sensor")
+      cloudlog.exception(f"Error initializing {service} sensor")
 
   # Configure IRQ affinity (simplified)
   try:

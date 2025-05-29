@@ -25,12 +25,6 @@ class I2CSensor:
     time.sleep(0.005)
 
   @staticmethod
-  def twos_complement(val: int, bits: int) -> int:
-    if (val & (1 << (bits - 1))) != 0:
-        val = val - (1 << bits)
-    return val
-
-  @staticmethod
   def parse_12bit(lsb: int, msb: int) -> int:
     combined = (msb << 8) | (lsb & 0xF0)
     return combined >> 4
@@ -43,11 +37,6 @@ class I2CSensor:
   def parse_20bit(b2: int, b1: int, b0: int) -> int:
     combined = (b0 << 16) | (b1 << 8) | b2
     return combined >> 4
-
-  @property
-  def device_address(self) -> int:
-    """Abstract property that must be implemented by subclasses"""
-    raise NotImplementedError
 
   def read(self, register_address: int, length: int) -> bytes:
     return bytes(self.bus.read_i2c_block_data(self.device_address, register_address, length))
@@ -91,6 +80,10 @@ class I2CSensor:
     return chip_id
 
   # Abstract methods that must be implemented by subclasses
+  @property
+  def device_address(self) -> int:
+    raise NotImplementedError
+
   def init(self):
     raise NotImplementedError
 
