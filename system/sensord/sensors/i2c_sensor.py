@@ -90,7 +90,7 @@ class I2CSensor:
     return chip_id
 
   # Abstract methods that must be implemented by subclasses
-  def init(self) -> bool:
+  def init(self):
     raise NotImplementedError
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
