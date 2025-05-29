@@ -313,7 +313,7 @@ class ModelRenderer:
     line_y = line.y
     line_z = line.z
 
-    points = []
+    points: list = []
 
     for i in range(max_idx + 1):
       # Skip points with negative x (behind camera)
