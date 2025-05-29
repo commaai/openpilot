@@ -362,7 +362,7 @@ def personality_changed_alert(CP: car.CarParams, CS: car.CarState, sm: messaging
 def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   text = "Toggle stock LKAS on or off to engage"
   if CP.brand == "tesla":
-    text = "Switch to Traffic Aware Cruise Control to engage"
+    text = "Switch to Traffic-Aware Cruise Control to engage"
   elif CP.brand == "mazda":
     text = "Enable your car's LKAS to engage"
   elif CP.brand == "nissan":
