@@ -555,7 +555,7 @@ def downloadEsimProfile(qr: str, profile_name: str):
 
 
 @dispatcher.add_method
-def switchEsimProfile(iccid: str):
+def setEsimProfile(iccid: str):
   HARDWARE.get_sim_lpa().switch_profile(iccid)
   HARDWARE.reboot_modem()
 
