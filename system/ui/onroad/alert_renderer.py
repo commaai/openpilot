@@ -187,7 +187,7 @@ class AlertRenderer:
     elif alert_size == AlertSize.mid:
       # Main text (title)
       font_size1 = 88
-      text1_width = rl.measure_text_ex(self.font_bold, self.alert.text1, font_size1, 0).x
+      text1_width = self._measure_text(self.font_bold, self.alert.text1, font_size1).x
       text1_y = center_y - 125  # Exact offset from C++
 
       rl.draw_text_ex(
@@ -196,7 +196,7 @@ class AlertRenderer:
 
       # Subtitle text
       font_size2 = 66
-      text2_width = rl.measure_text_ex(self.font_regular, self.alert.text2, font_size2, 0).x
+      text2_width = self._measure_text(self.font_regular, self.alert.text2, font_size2).x
       text2_y = center_y + 21  # Exact offset from C++
 
       rl.draw_text_ex(
@@ -215,7 +215,7 @@ class AlertRenderer:
 
       # Draw title text
       for i, line in enumerate(wrapped_text1):
-        line_width = rl.measure_text_ex(self.font_bold, line, font_size1, 0).x
+        line_width = self._measure_text(self.font_bold, line, font_size1).x
         line_y = text1_y + i * font_size1
         rl.draw_text_ex(self.font_bold, line, rl.Vector2(center_x - line_width / 2, line_y), font_size1, 0, rl.WHITE)
 
@@ -228,7 +228,7 @@ class AlertRenderer:
 
       # Draw subtitle text
       for i, line in enumerate(wrapped_text2):
-        line_width = rl.measure_text_ex(self.font_regular, line, font_size2, 0).x
+        line_width = self._measure_text(self.font_regular, line, font_size2).x
         line_y = text2_y + i * font_size2
         rl.draw_text_ex(self.font_regular, line, rl.Vector2(center_x - line_width / 2, line_y), font_size2, 0, rl.WHITE)
 
@@ -240,7 +240,7 @@ class AlertRenderer:
 
     for word in words:
       test_line = current_line + " " + word if current_line else word
-      text_width = rl.measure_text_ex(font, test_line, font_size, 0).x
+      text_width = self._measure_text(font, test_line, font_size).x
 
       if text_width <= max_width:
         current_line = test_line

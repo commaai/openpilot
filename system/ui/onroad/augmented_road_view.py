@@ -81,8 +81,9 @@ class AugmentedRoadView(CameraView):
     # - Additional features
     self.model_renderer.draw(self._content_rect, self.sm)
     self._hud_renderer.draw(self._content_rect, self.sm)
+    self.alert_renderer.draw(self._content_rect, self.sm)
     self.driver_state_renderer.draw(self._content_rect, self.sm)
-    self.alert_renderer.draw(self.__content_rect, self.sm)
+    self.driver_state_renderer.draw(self._content_rect, self.sm)
 
     # End clipping region
     rl.end_scissor_mode()
