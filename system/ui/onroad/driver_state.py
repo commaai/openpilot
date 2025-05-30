@@ -1,5 +1,6 @@
 import numpy as np
 import pyray as rl
+from dataclasses import dataclass
 from openpilot.system.ui.lib.application import gui_app
 
 # Default 3D coordinates for face keypoints as a NumPy array
@@ -42,8 +43,12 @@ class DriverStateRenderer:
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
     self.driver_pose_coss = np.zeros(3, dtype=np.float32)
     self.face_keypoints_transformed = np.zeros((DEFAULT_FACE_KPTS_3D.shape[0], 2), dtype=np.float32)
+    self.position_x: float = 0.0
+    self.position_y: float = 0.0
+    self.h_arc_data = None
+    self.v_arc_data = None
 
-    # Pre-allocate Vector2 arrays for drawing
+    # Pre-allocate drawing arrays
     self.face_lines = [rl.Vector2(0, 0) for _ in range(len(DEFAULT_FACE_KPTS_3D))]
     self.h_arc_lines = [rl.Vector2(0, 0) for _ in range(37)]  # 37 points for horizontal arc
     self.v_arc_lines = [rl.Vector2(0, 0) for _ in range(37)]  # 37 points for vertical arc
@@ -58,12 +63,7 @@ class DriverStateRenderer:
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
   def draw(self, rect, sm):
-    """Draw the driver monitoring visualization"""
-
-    is_visible = (
-      sm.seen['driverStateV2'] and sm.seen["driverMonitoringState"] and sm["selfdriveState"].alertSize == 0
-    )
-    if not is_visible:
+    if not self._is_visible():
       return
 
     self._update_state(sm, rect)
@@ -95,6 +95,12 @@ class DriverStateRenderer:
 
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
+
+  def _is_visible(self, sm) -> bool:
+    """Check if the visualization should be rendered."""
+    return (sm.seen['driverStateV2'] and
+            sm.seen['driverMonitoringState'] and
+            sm['selfdriveState'].alertSize == 0)
 
   def _update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
