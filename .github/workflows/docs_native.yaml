@@ -1,0 +1,71 @@
+name: docs (native)
+
+on:
+  push:
+    branches:
+      - master
+      - ci-setup-optimization-test  # Added for testing
+  pull_request:
+  workflow_call:
+    inputs:
+      run_number:
+        default: '1'
+        required: true
+        type: string
+concurrency:
+  group: docs-tests-ci-run-${{ inputs.run_number }}-${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.run_id || github.head_ref || github.ref }}-${{ github.workflow }}-${{ github.event_name }}
+  cancel-in-progress: true
+
+env:
+  NATIVE_RUN: ./tools/native_run.sh
+
+jobs:
+  docs:
+    name: build docs (native)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: commaai/timeout@v1
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    # Native setup (replaces Docker setup)
+    - uses: ./.github/workflows/setup-with-retry-native
+
+    # Build
+    - name: Build docs
+      run: |
+        # Native execution with proper environment
+        ${{ env.NATIVE_RUN }} "pip install mkdocs && mkdocs build"
+
+    # Push to docs.comma.ai
+    - uses: actions/checkout@v4
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      with:
+        path: openpilot-docs
+        ssh-key: ${{ secrets.OPENPILOT_DOCS_KEY }}
+        repository: commaai/openpilot-docs
+    - name: Push
+      if: github.ref == 'refs/heads/master' && github.repository == 'commaai/openpilot'
+      run: |
+        set -x
+
+        source release/identity.sh
+
+        cd openpilot-docs
+        git checkout --orphan tmp
+        git rm -rf .
+
+        # copy over docs
+        cp -r ../docs_site/ docs/
+
+        # GitHub pages config
+        touch docs/.nojekyll
+        echo -n docs.comma.ai > docs/CNAME
+
+        git add -f .
+        git commit -m "build docs"
+
+        # docs live in different repo to not bloat openpilot's full clone size
+        git push -f origin tmp:gh-pages
