@@ -2,20 +2,13 @@ import time
 import smbus2
 
 from cereal import log
-from openpilot.system.sensord.sensors.gpio_ctypes import GPIOHandler, export_gpio, set_gpio_direction
 
 class I2CSensor:
-  def __init__(self, bus: int, gpio_nr: int = 0, shared_gpio: bool = False) -> None:
+  def __init__(self, bus: int) -> None:
     self.bus = smbus2.SMBus(bus)
-    self.gpio_nr = gpio_nr
-    self.shared_gpio = shared_gpio
-    self.gpio_handler: GPIOHandler | None = None
     self.source = log.SensorEventData.SensorSource.velodyne  # unknown
 
   def __del__(self):
-    if self.gpio_handler is not None:
-      self.gpio_handler.__exit__(None, None, None)
-      self.gpio_handler = None
     self.bus.close()
 
   def read(self, register_address: int, length: int) -> bytes:
@@ -27,28 +20,6 @@ class I2CSensor:
   def writes(self, writes: tuple[int, int]) -> None:
     for addr, data in writes:
       self.write(addr, data)
-
-  def init_gpio(self) -> None:
-    try:
-      # Export and configure the GPIO
-      export_gpio(self.gpio_nr)
-      set_gpio_direction(self.gpio_nr, "in")
-
-      # Create GPIO handler
-      if self.gpio_handler is None:
-        self.gpio_handler = GPIOHandler(self.gpio_nr)
-    except Exception as e:
-      print(f"Failed to initialize GPIO {self.gpio_nr}: {e}")
-      self.gpio_handler = None
-
-  def has_interrupt_occurred(self) -> bool:
-    if self.gpio_nr <= 0 or self.gpio_handler is None:
-      return False
-    try:
-      return bool(self.gpio_handler.get_value())
-    except Exception as e:
-      print(f"Error reading GPIO {self.gpio_nr}: {e}")
-      return False
 
   def verify_chip_id(self, address: int, expected_ids: list[int]) -> int:
     chip_id = self.read(address, 1)[0]

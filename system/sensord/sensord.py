@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+import select
 import threading
 
 import cereal.messaging as messaging
@@ -8,6 +9,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.system.sensord.gpiochip import gpiochip_get_ro_value_fd
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 from openpilot.system.sensord.sensors.lsm6ds3_accel import LSM6DS3_Accel
 from openpilot.system.sensord.sensors.lsm6ds3_gyro import LSM6DS3_Gyro
@@ -15,33 +17,29 @@ from openpilot.system.sensord.sensors.lsm6ds3_temp import LSM6DS3_Temp
 from openpilot.system.sensord.sensors.mmc5603nj_magn import MMC5603NJ_Magn
 
 I2C_BUS_IMU = 1
-GPIO_LSM_INT = 0  # Update this with actual GPIO number if needed
 
 def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
-  pm = messaging.PubMaster([service for sensor, service in sensors if sensor.gpio_nr is not None])
+  pm = messaging.PubMaster([service for sensor, service, interrupt in sensors if interrupt])
 
-  #gpio_fd: int | None = None
-  #for sensor, _ in sensors:
-  #  if sensor.gpio_nr is not None:
-  #    gpio_fd = sensor.gpio_line.fd()
-  #    break
-  #assert gpio_fd is not None
+  # Requesting both edges as the data ready pulse from the lsm6ds sensor is
+  # very short (75us) and is mostly detected as falling edge instead of rising.
+  # So if it is detected as rising the following falling edge is skipped.
 
-  #poller = select.poll()
-  #poller.register(gpio_fd, select.POLLIN | select.POLLPRI)
+  fd = gpiochip_get_ro_value_fd("sensord", 0, 84)
+
+  poller = select.poll()
+  poller.register(fd, select.POLLIN | select.POLLPRI)
   while not event.is_set():
-    #events = poller.poll(100)
-    time.sleep(1./104)
-    for sensor, service in sensors:
-      if sensor.gpio_nr is None:
-        continue
-
-      try:
-        msg = messaging.new_message(service)
-        setattr(msg, service, sensor.get_event())
-        pm.send(service, msg)
-      except Exception:
-        cloudlog.exception(f"Error processing {service}")
+    events = poller.poll(100)
+    for sensor, service, interrupt in sensors:
+      if interrupt:
+        try:
+          msg = messaging.new_message(service)
+          setattr(msg, service, sensor.get_event())
+          pm.send(service, msg)
+        except Exception:
+          continue
+          cloudlog.exception(f"Error processing {service}")
 
 def polling_loop(sensor: I2CSensor, service: str, event: threading.Event) -> None:
   pm = messaging.PubMaster([service])
@@ -62,18 +60,18 @@ def main() -> None:
 
   exit_event = threading.Event()
   sensors_cfg = [
-    (LSM6DS3_Accel(I2C_BUS_IMU, GPIO_LSM_INT), "accelerometer"),
-    (LSM6DS3_Gyro(I2C_BUS_IMU, GPIO_LSM_INT, True), "gyroscope"),
-    (LSM6DS3_Temp(I2C_BUS_IMU), "temperatureSensor"),
-    (MMC5603NJ_Magn(I2C_BUS_IMU), "magnetometer"),
+    (LSM6DS3_Accel(I2C_BUS_IMU), "accelerometer", True),
+    (LSM6DS3_Gyro(I2C_BUS_IMU), "gyroscope", True),
+    (LSM6DS3_Temp(I2C_BUS_IMU), "temperatureSensor", False),
+    (MMC5603NJ_Magn(I2C_BUS_IMU), "magnetometer", False),
   ]
 
   # Initialize sensors
   threads = []
-  for sensor, service in sensors_cfg:
+  for sensor, service, interrupt in sensors_cfg:
     try:
       sensor.init()
-      if sensor.gpio_nr is None:
+      if not interrupt:
         # Start polling thread for sensors without interrupts
         t = threading.Thread(
           target=polling_loop,
@@ -112,7 +110,7 @@ def main() -> None:
       if t.is_alive():
         t.join()
 
-    for sensor, _ in sensors_cfg:
+    for sensor, _, _ in sensors_cfg:
       try:
         sensor.shutdown()
       except Exception:
