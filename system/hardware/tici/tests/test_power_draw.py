@@ -33,7 +33,7 @@ class Proc:
 PROCS = [
   Proc(['camerad'], 1.75, msgs=['roadCameraState', 'wideRoadCameraState', 'driverCameraState']),
   Proc(['modeld'], 1.12, atol=0.2, msgs=['modelV2']),
-  Proc(['dmonitoringmodeld'], 1.4, msgs=['driverStateV2']),
+  Proc(['dmonitoringmodeld'], 0.6, msgs=['driverStateV2']),
   Proc(['encoderd'], 0.23, msgs=[]),
 ]
 
@@ -56,10 +56,10 @@ class TestPowerDraw:
   def valid_msg_count(self, proc, msg_counts):
     msgs_received = sum(msg_counts[msg] for msg in proc.msgs)
     msgs_expected = self.get_expected_messages(proc)
-    return np.core.numeric.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
+    return np.isclose(msgs_expected, msgs_received, rtol=.02, atol=2)
 
   def valid_power_draw(self, proc, used):
-    return np.core.numeric.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
+    return np.isclose(used, proc.power, rtol=proc.rtol, atol=proc.atol)
 
   def tabulate_msg_counts(self, msgs_and_power):
     msg_counts = defaultdict(int)

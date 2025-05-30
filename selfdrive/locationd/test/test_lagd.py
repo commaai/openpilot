@@ -23,8 +23,8 @@ def process_messages(mocker, estimator, lag_frames, n_frames, vego=20.0, rejecti
 
   for i in range(n_frames):
     t = i * estimator.dt
-    desired_la = np.cos(t) * 0.1
-    actual_la = np.cos(t - lag_frames * estimator.dt) * 0.1
+    desired_la = np.cos(10 * t) * 0.1
+    actual_la = np.cos(10 * (t - lag_frames * estimator.dt)) * 0.1
 
     # if sample is masked out, set it to desired value (no lag)
     rejected = random.uniform(0, 1) < rejection_threshold
