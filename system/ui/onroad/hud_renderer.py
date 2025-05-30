@@ -8,7 +8,9 @@ SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371
 UI_HEADER_HEIGHT = 300
 UI_BORDER_SIZE = 30
-WHEEL_ICON_SIZE = 192
+BTN_SIZE = 192
+WHEEL_ICON_SIZE = (BTN_SIZE / 4) * 3
+
 
 # Global Color Definitions
 COLOR_WHITE = rl.WHITE
@@ -174,13 +176,10 @@ class HudRenderer:
 
   def _draw_wheel_icon(self, rect):
     """Draw the steering wheel icon with status-based background color"""
-    center_x = int(rect.x + rect.width - UI_BORDER_SIZE - WHEEL_ICON_SIZE / 2)
-    center_y = int(rect.y + UI_BORDER_SIZE + WHEEL_ICON_SIZE / 2)
+    center_x = int(rect.x + rect.width - UI_BORDER_SIZE - BTN_SIZE / 2)
+    center_y = int(rect.y + UI_BORDER_SIZE + BTN_SIZE / 2)
 
-    bg_colors = [COLOR_DISENGAGED_BG, COLOR_OVERRIDE_BG, COLOR_ENGAGED_BG]
-    bg_color = bg_colors[min(self.status, 2)]
-
-    rl.draw_circle(center_x, center_y, WHEEL_ICON_SIZE / 2, bg_color)
+    rl.draw_circle(center_x, center_y, BTN_SIZE / 2, rl.Color(0, 0, 0, 166))
 
     opacity = 0.7 if self.status == 0 else 1.0
     img_pos = rl.Vector2(center_x - self._wheel_texture.width / 2, center_y - self._wheel_texture.height / 2)
