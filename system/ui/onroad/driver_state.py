@@ -36,6 +36,7 @@ class DriverStateRenderer:
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
+    self.state_updated = False
     self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
@@ -60,8 +61,8 @@ class DriverStateRenderer:
   def update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
     if  not sm.updated["driverMonitoringState"]:
-      if rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
-         rect.width != self.last_rect.width or rect.height != self.last_rect.height:
+      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
+         rect.width != self.last_rect.width or rect.height != self.last_rect.height):
         self.pre_calculate_drawing_elements(rect)
       return
 
@@ -112,7 +113,7 @@ class DriverStateRenderer:
 
     # Pre-calculate all drawing elements
     self.pre_calculate_drawing_elements(rect)
-
+    self.state_updated = True
 
   def draw(self, rect, sm):
     """Draw the driver monitoring visualization"""
