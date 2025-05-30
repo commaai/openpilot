@@ -32,7 +32,6 @@ class DriverStateRenderer:
   def __init__(self):
     # Initial state with NumPy arrays
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D.copy()
-    self.is_visible = False
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
@@ -58,7 +57,46 @@ class DriverStateRenderer:
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def update_state(self, sm, rect):
+  def draw(self, rect, sm):
+    """Draw the driver monitoring visualization"""
+
+    is_visible = (
+      sm.seen['driverStateV2'] and sm.seen["driverMonitoringState"] and sm["selfdriveState"].alertSize == 0
+    )
+    if not is_visible:
+      return
+
+    self._update_state(sm, rect)
+    if not self.state_updated:
+      return
+
+    # Set opacity based on active state
+    opacity = 0.65 if self.is_active else 0.2
+
+    # Draw background circle
+    rl.draw_circle(int(self.position_x), int(self.position_y), BTN_SIZE // 2, rl.Color(0, 0, 0, 70))
+
+    # Draw face icon
+    icon_pos = rl.Vector2(self.position_x - self.dm_img.width // 2, self.position_y - self.dm_img.height // 2)
+    rl.draw_texture_v(self.dm_img, icon_pos, rl.Color(255, 255, 255, int(255 * opacity)))
+
+    # Draw face outline
+    self.white_color.a = int(255 * opacity)
+    rl.draw_spline_linear(self.face_lines, len(self.face_lines), 5.2, self.white_color)
+
+    # Set arc color based on engaged state
+    engaged = True
+    self.arc_color = self.engaged_color if engaged else self.disengaged_color
+    self.arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
+
+    # Draw tracking arcs if pre-calculated
+    if self.h_arc_data:
+      rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data["thickness"], self.arc_color)
+
+    if self.v_arc_data:
+      rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
+
+  def _update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
     if  not sm.updated["driverMonitoringState"]:
       if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
@@ -112,49 +150,10 @@ class DriverStateRenderer:
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self.pre_calculate_drawing_elements(rect)
+    self._pre_calculate_drawing_elements(rect)
     self.state_updated = True
 
-  def draw(self, rect, sm):
-    """Draw the driver monitoring visualization"""
-
-    self.is_visible = (
-      sm.seen['driverStateV2'] and sm.seen["driverMonitoringState"] and sm["selfdriveState"].alertSize == 0
-    )
-    if not self.is_visible or not sm.updated["driverMonitoringState"]:
-      return
-
-    self.update_state(sm, rect)
-    if not self.is_visible:
-      return
-
-    # Set opacity based on active state
-    opacity = 0.65 if self.is_active else 0.2
-
-    # Draw background circle
-    rl.draw_circle(int(self.position_x), int(self.position_y), BTN_SIZE // 2, rl.Color(0, 0, 0, 70))
-
-    # Draw face icon
-    icon_pos = rl.Vector2(self.position_x - self.dm_img.width // 2, self.position_y - self.dm_img.height // 2)
-    rl.draw_texture_v(self.dm_img, icon_pos, rl.Color(255, 255, 255, int(255 * opacity)))
-
-    # Draw face outline
-    self.white_color.a = int(255 * opacity)
-    rl.draw_spline_linear(self.face_lines, len(self.face_lines), 5.2, self.white_color)
-
-    # Set arc color based on engaged state
-    engaged = True
-    self.arc_color = self.engaged_color if engaged else self.disengaged_color
-    self.arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
-
-    # Draw tracking arcs if pre-calculated
-    if self.h_arc_data:
-      rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data["thickness"], self.arc_color)
-
-    if self.v_arc_data:
-      rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
-
-  def pre_calculate_drawing_elements(self, rect):
+  def _pre_calculate_drawing_elements(self, rect):
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
     width, height = rect.width, rect.height
