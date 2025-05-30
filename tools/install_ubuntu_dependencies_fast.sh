@@ -21,6 +21,12 @@ fi
 function install_ubuntu_fast_requirements() {
   echo "Installing Ubuntu dependencies (optimized for CI)..."
 
+  # Use dpkg-query to check if critical packages are installed
+  if dpkg-query -W clang build-essential python3-dev &>/dev/null && [ "$CI" == "1" ]; then
+    echo "Critical packages already installed, skipping full install..."
+    return 0
+  fi
+
   # Skip update if packages were recently updated (for CI caching)
   if [ ! -f "/var/lib/apt/lists/lock" ] || [ ! "$(find /var/lib/apt/lists -name '*.ubuntu.com_*' -mtime -1 2>/dev/null)" ]; then
     echo "Updating package lists..."
@@ -29,10 +35,15 @@ function install_ubuntu_fast_requirements() {
     echo "Package lists are recent, skipping update..."
   fi
 
-  # Install packages with optimizations for CI
+  # Install packages with optimizations for CI - parallel downloads
+  export DEBIAN_FRONTEND=noninteractive
   $SUDO apt-get install -y --no-install-recommends \
     --allow-change-held-packages \
     --allow-unauthenticated \
+    -o Dpkg::Options::="--force-confdef" \
+    -o Dpkg::Options::="--force-confold" \
+    -o APT::Install-Suggests=false \
+    -o APT::Install-Recommends=false \
     ca-certificates \
     clang \
     build-essential \

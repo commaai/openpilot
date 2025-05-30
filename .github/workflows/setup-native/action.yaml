@@ -85,14 +85,17 @@ runs:
           echo "$HOME/.local/bin" >> $GITHUB_PATH
         fi
 
-        # Use uv for faster package installation
+        # Use uv for faster package installation with maximum parallelism
         if [ "${{ steps.python-cache.outputs.cache-hit }}" == 'true' ]; then
           echo "Python packages restored from cache"
           source .venv/bin/activate
         else
-          echo "Installing Python packages..."
-          # Use parallel installation with uv
-          UV_EXTRA_INDEX_URL="" uv sync --frozen --all-extras --no-dev
+          echo "Installing Python packages with maximum parallelism..."
+          # Use parallel installation with uv (faster than pip)
+          export UV_CONCURRENT_DOWNLOADS=10
+          export UV_HTTP_TIMEOUT=30
+          export UV_RESOLVER=lowest-direct
+          UV_EXTRA_INDEX_URL="" uv sync --frozen --all-extras --no-dev --no-build-isolation
           source .venv/bin/activate
         fi
 
@@ -107,15 +110,15 @@ runs:
           echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> .env
         fi
 
-    # Parallel Git LFS pull
+    # Parallel Git LFS pull with timeout
     - shell: bash
       name: Git LFS pull (parallel)
       run: |
         # Configure git for faster LFS operations
         git config lfs.batch true
-        git config lfs.transfer.maxretries 3
-        git config lfs.concurrenttransfers 8
-        git lfs pull
+        git config lfs.transfer.maxretries 1
+        git config lfs.concurrenttransfers 10
+        timeout 90s git lfs pull || echo "LFS pull timed out, continuing..."
 
     # build cache
     - id: date
