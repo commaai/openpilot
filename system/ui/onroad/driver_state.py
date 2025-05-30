@@ -187,10 +187,5 @@ class DriverStateRenderer:
     y_coords = center_y + np.sin(angles) * radius_y
 
     # Draw connected line segments to form the arc
-    for i in range(len(angles) - 1):
-      rl.draw_line_ex(
-        rl.Vector2(x_coords[i], y_coords[i]),
-        rl.Vector2(x_coords[i + 1], y_coords[i + 1]),
-        thickness,
-        color,
-      )
+    lines = [rl.Vector2(x_coords[i], y_coords[i]) for i in range(len(angles))]
+    rl.draw_spline_linear(lines, len(lines), thickness, color)
