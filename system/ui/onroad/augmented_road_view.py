@@ -72,14 +72,13 @@ class AugmentedRoadView(CameraView):
     # Render the base camera view
     super().render(rect)
 
-    # TODO: Add road visualization overlays like:
-    # - Lane lines and road edges
-    # - Path prediction
-    # - Lead vehicle indicators
-    # - Additional features
+    # Draw all UI overlays
     self.model_renderer.draw(self._content_rect, self.sm)
     self._hud_renderer.draw(self._content_rect, self.sm)
     self.driver_state_renderer.draw(self._content_rect, self.sm)
+
+    # Custom UI extension point - add custom overlays here
+    # Use self._content_rect for positioning within camera bounds
 
     # End clipping region
     rl.end_scissor_mode()
