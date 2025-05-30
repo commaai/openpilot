@@ -61,11 +61,11 @@ class AlertRenderer:
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert:
     """Generate the current alert based on selfdrive state."""
-    if not sm.valid.get('selfdriveState', False):
+    if not sm.valid['selfdriveState']:
       return Alert()
 
     ss = sm['selfdriveState']
-    selfdrive_frame = sm.recv_frame.get('selfdriveState', 0)
+    selfdrive_frame = sm.recv_frame['selfdriveState']
     alert_status = self._get_enum_value(ss.alertStatus, log.SelfdriveState.AlertStatus)
 
     # Return current alert if selfdrive state is recent
@@ -79,7 +79,7 @@ class AlertRenderer:
       )
 
     # Handle selfdrive timeout
-    ss_missing = (np.uint64(rl.get_time() * 1e9) - sm.recv_time.get('selfdriveState', 0)) / 1e9
+    ss_missing = (np.uint64(rl.get_time() * 1e9) - sm.recv_time['selfdriveState']) / 1e9
     if selfdrive_frame < self.started_frame:
       return Alert(
         text1="openpilot Unavailable",
@@ -109,7 +109,7 @@ class AlertRenderer:
 
   def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
     """Render the alert within the specified rectangle."""
-    self.update_state(sm, sm.recv_frame.get('selfdriveState', 0))
+    self.update_state(sm, sm.recv_frame['selfdriveState'])
     alert_size = self._get_enum_value(self.alert.size, log.SelfdriveState.AlertSize)
     if alert_size == log.SelfdriveState.AlertSize.none:
       return

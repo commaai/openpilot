@@ -122,7 +122,7 @@ class AugmentedRoadView(CameraView):
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     # Check if we can use cached matrix
-    calib_time = self.sm.recv_frame.get('liveCalibration', 0)
+    calib_time = self.sm.recv_frame['liveCalibration']
     current_dims = (self._content_rect.width, self._content_rect.height)
     if (self._last_calib_time == calib_time and
         self._last_rect_dims == current_dims and
