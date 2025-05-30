@@ -4,6 +4,7 @@ from enum import Enum
 
 from cereal import messaging, log
 from msgq.visionipc import VisionStreamType
+from openpilot.system.ui.onroad.alert_renderer import AlertRenderer
 from openpilot.system.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.system.ui.onroad.hud_renderer import HudRenderer
 from openpilot.system.ui.onroad.model_renderer import ModelRenderer
@@ -43,6 +44,7 @@ class AugmentedRoadView(CameraView):
 
     self.model_renderer = ModelRenderer()
     self._hud_renderer = HudRenderer()
+    self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
   def render(self, rect):
@@ -75,6 +77,7 @@ class AugmentedRoadView(CameraView):
     # Draw all UI overlays
     self.model_renderer.draw(self._content_rect, self.sm)
     self._hud_renderer.draw(self._content_rect, self.sm)
+    self.alert_renderer.draw(self._content_rect, self.sm)
     self.driver_state_renderer.draw(self._content_rect, self.sm)
 
     # Custom UI extension point - add custom overlays here
@@ -118,7 +121,7 @@ class AugmentedRoadView(CameraView):
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     # Check if we can use cached matrix
-    calib_time = self.sm.recv_frame.get('liveCalibration', 0)
+    calib_time = self.sm.recv_frame['liveCalibration']
     current_dims = (self._content_rect.width, self._content_rect.height)
     if (self._last_calib_time == calib_time and
         self._last_rect_dims == current_dims and
