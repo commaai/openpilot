@@ -27,6 +27,12 @@ COLOR_HEADER_GRADIENT_START = rl.Color(0, 0, 0, 114)
 COLOR_HEADER_GRADIENT_END = rl.Color(0, 0, 0, 0)
 
 
+CURRENT_SPEED_FONT_SIZE = 176
+SPEED_UNIT_FONT_SIZE = 66
+MAX_SPEED_FONT_SIZE = 40
+SET_SPEED_FONT_SIZE = 90
+
+
 class HudRenderer:
   def __init__(self):
     self.is_metric = False
@@ -42,8 +48,6 @@ class HudRenderer:
     self._font_semi_bold = gui_app.font(FontWeight.SEMI_BOLD)
     self._font_bold = gui_app.font(FontWeight.BOLD)
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
-
-
 
   def _update_state(self, sm):
     """Update HUD state based on car state and controls state"""
@@ -139,65 +143,48 @@ class HudRenderer:
 
     # Draw "MAX" text
     max_text = "MAX"
-    max_text_width = self._measure_text(max_text, self._font_semi_bold, 40).x
+    max_text_width = self._measure_text(max_text, self._font_semi_bold, MAX_SPEED_FONT_SIZE).x
     max_x = x + (set_speed_width - max_text_width) / 2
-    rl.draw_text_ex(self._font_semi_bold, max_text, rl.Vector2(max_x, y + 27), 40, 0, max_color)
+    rl.draw_text_ex(self._font_semi_bold, max_text, rl.Vector2(max_x, y + 27), MAX_SPEED_FONT_SIZE, 0, max_color)
 
     # Draw set speed value
     set_speed_text = "–" if not self.is_cruise_set else str(round(self.set_speed))
-    speed_text_width = self._measure_text(set_speed_text, self._font_bold, 90).x
+    speed_text_width = self._measure_text(set_speed_text, self._font_bold, SET_SPEED_FONT_SIZE).x
     speed_x = x + (set_speed_width - speed_text_width) / 2
-    rl.draw_text_ex(self._font_bold, set_speed_text, rl.Vector2(speed_x, y + 77), 90, 0, set_speed_color)
+    rl.draw_text_ex(
+      self._font_bold, set_speed_text, rl.Vector2(speed_x, y + 77), SET_SPEED_FONT_SIZE, 0, set_speed_color
+    )
 
   def _draw_current_speed(self, rect):
     """Draw the current vehicle speed"""
     speed_text = str(round(self.speed))
-    speed_text_width = self._measure_text(speed_text, self._font_bold, 176).x
+    speed_text_size = self._measure_text(speed_text, self._font_bold, CURRENT_SPEED_FONT_SIZE)
 
     # Position speed text in center of rect
-    speed_x = rect.x + rect.width / 2 - speed_text_width / 2
-    speed_y = rect.y + 210 - 88
-
-    rl.draw_text_ex(self._font_bold, speed_text, rl.Vector2(speed_x, speed_y), 176, 0, COLOR_WHITE)
+    speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
+    rl.draw_text_ex(self._font_bold, speed_text, speed_pos, CURRENT_SPEED_FONT_SIZE, 0, COLOR_WHITE)
 
     # Draw speed unit
     unit_text = "km/h" if self.is_metric else "mph"
-    unit_text_width = self._measure_text(unit_text, self._font_medium, 66).x
+    unit_text_size = self._measure_text(unit_text, self._font_medium, SPEED_UNIT_FONT_SIZE)
 
     # Position unit text in center of rect
-    unit_x = rect.x + rect.width / 2 - unit_text_width / 2
-    unit_y = rect.y + 290 - 33
-
-    rl.draw_text_ex(self._font_medium, unit_text, rl.Vector2(unit_x, unit_y), 66, 0, COLOR_WHITE_TRANSLUCENT)
+    unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
+    rl.draw_text_ex(self._font_medium, unit_text, unit_pos, SPEED_UNIT_FONT_SIZE, 0, COLOR_WHITE_TRANSLUCENT)
 
   def _draw_wheel_icon(self, rect):
-    """Draw the steering wheel icon that indicates driving status"""
-    # Position in top-right corner with padding
-    center_x = int(rect.x + rect.width - (UI_BORDER_SIZE + WHEEL_ICON_SIZE // 2))
-    center_y = int(rect.y + UI_BORDER_SIZE + WHEEL_ICON_SIZE // 2)
+    """Draw the steering wheel icon with status-based background color"""
+    center_x = int(rect.x + rect.width - UI_BORDER_SIZE - WHEEL_ICON_SIZE / 2)
+    center_y = int(rect.y + UI_BORDER_SIZE + WHEEL_ICON_SIZE / 2)
 
-    # Choose background color based on status
-    if self.status == 0:  # Disengaged
-      bg_color = COLOR_DISENGAGED_BG
-    elif self.status == 1:  # Override
-      bg_color = COLOR_OVERRIDE_BG
-    else:  # Engaged
-      bg_color = COLOR_ENGAGED_BG
+    bg_colors = [COLOR_DISENGAGED_BG, COLOR_OVERRIDE_BG, COLOR_ENGAGED_BG]
+    bg_color = bg_colors[min(self.status, 2)]
 
-    # Draw circular background
     rl.draw_circle(center_x, center_y, WHEEL_ICON_SIZE / 2, bg_color)
 
-    # Calculate position for wheel texture
-    img_width = self._wheel_texture.width
-    img_height = self._wheel_texture.height
-    img_x = center_x - img_width / 2
-    img_y = center_y - img_height / 2
-
-    # Reduce opacity when disengaged
     opacity = 0.7 if self.status == 0 else 1.0
-    color = rl.Color(255, 255, 255, int(255 * opacity))
-
-    rl.draw_texture_v(self._wheel_texture, rl.Vector2(img_x, img_y), color)
+    img_pos = rl.Vector2(center_x - self._wheel_texture.width / 2, center_y - self._wheel_texture.height / 2)
+    rl.draw_texture_v(self._wheel_texture, img_pos, rl.Color(255, 255, 255, int(255 * opacity)))
 
   def _measure_text(self, text: str, font: rl.Font, font_size: int) -> rl.Vector2:
     """Get text metrics for a given text and font weight with caching"""
