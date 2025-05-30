@@ -36,7 +36,7 @@ class DriverStateRenderer:
     self.driver_pose_diff = np.zeros(3)
     self.driver_pose_sins = np.zeros(3)
     self.driver_pose_coss = np.zeros(3)
-    self.face_outline: list[rl.Vector2] = []
+    self.face_keypoints_transformed = np.zeros((DEFAULT_FACE_KPTS_3D.shape[0], 2))
 
     # Load the driver face icon
     self.dm_img = gui_app.texture("icons/driver_face.png", IMG_SIZE, IMG_SIZE)
@@ -95,6 +95,10 @@ class DriverStateRenderer:
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D @ r_xyz.T
     self.face_kpts_draw[:, 2] = self.face_kpts_draw[:, 2] * (1.0 - self.dm_fade_state) + 8 * self.dm_fade_state
 
+    # Pre-calculate the transformed keypoints
+    kp_depth = (self.face_kpts_draw[:, 2] - 8) / 120.0 + 1.0
+    self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
+
   def draw(self, rect, sm):
     """Draw the driver monitoring visualization"""
     # Update state and exit if not visible
@@ -120,11 +124,10 @@ class DriverStateRenderer:
     icon_pos = rl.Vector2(x - self.dm_img.width // 2, y - self.dm_img.height // 2)
     rl.draw_texture_v(self.dm_img, icon_pos, rl.Color(255, 255, 255, int(255 * opacity)))
 
-    # Calculate transformed keypoints for drawing
-    kp = (self.face_kpts_draw[:, 2] - 8) / 120.0 + 1.0
-    keypoints = self.face_kpts_draw[:, :2] * kp[:, None] + np.array([x, y])
-    # Draw face outline
-    lines = [rl.Vector2(int(keypoints[i][0]), int(keypoints[i][1])) for i in range(len(keypoints))]
+    # Draw face keypoints
+    positioned_keypoints = self.face_keypoints_transformed + np.array([x, y])
+    lines = [rl.Vector2(int(positioned_keypoints[i][0]), int(positioned_keypoints[i][1]))
+             for i in range(len(positioned_keypoints))]
     white_color = rl.Color(255, 255, 255, int(255 * opacity))
     rl.draw_spline_linear(lines, len(lines), 5.2, white_color)
 
