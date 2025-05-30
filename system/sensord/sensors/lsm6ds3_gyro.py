@@ -5,16 +5,13 @@ from cereal import log
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 
 class LSM6DS3_Gyro(I2CSensor):
-  # Register addresses
   LSM6DS3_GYRO_I2C_REG_DRDY_CFG = 0x0B
-  LSM6DS3_GYRO_I2C_REG_ID = 0x0F
   LSM6DS3_GYRO_I2C_REG_INT1_CTRL = 0x0D
   LSM6DS3_GYRO_I2C_REG_CTRL2_G = 0x11
   LSM6DS3_GYRO_I2C_REG_CTRL5_C = 0x14
   LSM6DS3_GYRO_I2C_REG_STAT_REG = 0x1E
   LSM6DS3_GYRO_I2C_REG_OUTX_L_G = 0x22
 
-  # Constants
   LSM6DS3_GYRO_CHIP_ID = 0x69
   LSM6DS3TRC_GYRO_CHIP_ID = 0x6A
   LSM6DS3_GYRO_ODR_104HZ = (0b0100 << 4)
@@ -33,7 +30,7 @@ class LSM6DS3_Gyro(I2CSensor):
     return 0x6A
 
   def init(self):
-    chip_id = self.verify_chip_id(self.LSM6DS3_GYRO_I2C_REG_ID, [0x69, 0x6A])
+    chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
     if chip_id == 0x6A:
       self.source = log.SensorEventData.SensorSource.lsm6ds3trc
     else:
@@ -56,14 +53,14 @@ class LSM6DS3_Gyro(I2CSensor):
 
     # Check if gyroscope data is ready
     status_reg = self.read(self.LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
-    if not (status_reg & self.LSM6DS3_GYRO_DRDY_GDA):
+    if (status_reg & self.LSM6DS3_GYRO_DRDY_GDA) == 0:
       raise Exception
 
     # Read 6 bytes (X, Y, Z low and high)
     b = self.read(self.LSM6DS3_GYRO_I2C_REG_OUTX_L_G, 6)
-    x = math.radians(self.parse_16bit(b[0], b[1]))
-    y = math.radians(self.parse_16bit(b[2], b[3]))
-    z = math.radians(self.parse_16bit(b[4], b[5]))
+    x = self.parse_16bit(b[0], b[1])
+    y = self.parse_16bit(b[2], b[3])
+    z = self.parse_16bit(b[4], b[5])
 
     # Scale to rad/s for ±250 dps range
     scale = (8.75 / 1000.0) * (math.pi / 180.0)
@@ -96,5 +93,5 @@ class LSM6DS3_Gyro(I2CSensor):
 if __name__ == "__main__":
   s = LSM6DS3_Gyro(1)
   s.init()
-  print(s.get_event())
+  print(s.get_event(0))
   s.shutdown()
