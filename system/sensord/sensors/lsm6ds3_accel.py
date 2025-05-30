@@ -52,6 +52,8 @@ class LSM6DS3_Accel(I2CSensor):
     self.write(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value)
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
+    assert ts is not None  # must come from the IRQ event
+
     # Check if data is ready
     status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
     if not (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA):
@@ -64,7 +66,7 @@ class LSM6DS3_Accel(I2CSensor):
     z = self.parse_16bit(b[4], b[5]) * scale
 
     event = log.SensorEventData.new_message()
-    event.timestamp = ts if ts is not None else int(time.monotonic() * 1e9)
+    event.timestamp = ts
     event.version = 1
     event.sensor = 1  # SENSOR_ACCELEROMETER
     event.type = 1    # SENSOR_TYPE_ACCELEROMETER

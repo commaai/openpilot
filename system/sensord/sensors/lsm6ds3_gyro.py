@@ -52,6 +52,8 @@ class LSM6DS3_Gyro(I2CSensor):
     self.write(self.LSM6DS3_GYRO_I2C_REG_INT1_CTRL, value)
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
+    assert ts is not None  # must come from the IRQ event
+
     # Check if gyroscope data is ready
     status_reg = self.read(self.LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
     if not (status_reg & self.LSM6DS3_GYRO_DRDY_GDA):
@@ -68,7 +70,7 @@ class LSM6DS3_Gyro(I2CSensor):
     xyz = [y * scale, -x * scale, z * scale]
 
     event = log.SensorEventData.new_message()
-    event.timestamp = ts if ts is not None else int(time.monotonic() * 1e9)
+    event.timestamp = ts
     event.version = 2
     event.sensor = 5  # SENSOR_GYRO_UNCALIBRATED
     event.type = 16   # SENSOR_TYPE_GYROSCOPE_UNCALIBRATED

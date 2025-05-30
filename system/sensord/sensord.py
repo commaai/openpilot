@@ -34,21 +34,39 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
   if os.path.exists(irq_path):
     sudo_write('1\n', irq_path)
 
+  offset = time.time_ns() - time.monotonic_ns()
+
   poller = select.poll()
   poller.register(fd, select.POLLIN | select.POLLPRI)
   while not event.is_set():
-    poller.poll(100)
+    events = poller.poll(100)
+    if not events:
+      cloudlog.error("poll timed out")
+      continue
+    if not (events[0][1] & (select.POLLIN | select.POLLPRI)):
+      cloudlog.error("no poll events set")
+      continue
+
+    cur_offset = time.time_ns() - time.monotonic_ns()
+    diff = abs(cur_offset - offset)
+    if diff > 10 * 1e6:  # ms
+      cloudlog.warning(f"time jumped: {cur_offset} {offset}")
+      offset = cur_offset
+      continue
+
+    ts = time.time_ns() - cur_offset
     for sensor, service, interrupt in sensors:
       if interrupt:
         try:
           msg = messaging.new_message(service)
-          setattr(msg, service, sensor.get_event())
+          setattr(msg, service, sensor.get_event(ts))
           if not sensor.is_data_valid():
             continue
           pm.send(service, msg)
         except Exception:
           continue
           cloudlog.exception(f"Error processing {service}")
+
 
 def polling_loop(sensor: I2CSensor, service: str, event: threading.Event) -> None:
   pm = messaging.PubMaster([service])
