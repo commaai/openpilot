@@ -34,9 +34,3 @@ class LSM6DS3_Temp(I2CSensor):
 
   def shutdown(self) -> None:
     pass
-
-if __name__ == "__main__":
-  s = LSM6DS3_Temp(1)
-  s.init()
-  print(s.get_event())
-  s.shutdown()

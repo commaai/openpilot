@@ -38,7 +38,7 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
   poller = select.poll()
   poller.register(fd, select.POLLIN | select.POLLPRI)
   while not event.is_set():
-    events = poller.poll(100)
+    poller.poll(100)
     for sensor, service, interrupt in sensors:
       if interrupt:
         try:

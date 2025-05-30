@@ -3,21 +3,18 @@ import time
 from cereal import log
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 
-# https://www.mouser.com/datasheet/2/821/Memsic_09102019_MMC5603NJ_Datasheet_Rev.B-1635324.pdf
+# https://www.mouser.com/datasheet/2/821/Memsic_09102019_Datasheet_Rev.B-1635324.pdf
 
 # Register addresses
-MMC5603NJ_I2C_REG_ODR = 0x1A
-MMC5603NJ_I2C_REG_INTERNAL_0 = 0x1B
-MMC5603NJ_I2C_REG_INTERNAL_1 = 0x1C
+REG_ODR = 0x1A
+REG_INTERNAL_0 = 0x1B
+REG_INTERNAL_1 = 0x1C
 
 # Control register settings
-MMC5603NJ_CMM_FREQ_EN = (1 << 7)
-MMC5603NJ_AUTO_SR_EN  = (1 << 5)
-MMC5603NJ_SET         = (1 << 3)
-MMC5603NJ_RESET       = (1 << 4)
-
-# Status register bits
-MMC5603NJ_STATUS_MEAS_M_DONE = 0x01
+CMM_FREQ_EN = (1 << 7)
+AUTO_SR_EN  = (1 << 5)
+SET         = (1 << 3)
+RESET       = (1 << 4)
 
 class MMC5603NJ_Magn(I2CSensor):
   @property
@@ -27,15 +24,15 @@ class MMC5603NJ_Magn(I2CSensor):
   def init(self):
     self.verify_chip_id(0x39, [0x10, ])
     self.writes((
-      (MMC5603NJ_I2C_REG_ODR, 0),
+      (REG_ODR, 0),
 
       # Set BW to 0b01 for 1-150 Hz operation
-      (MMC5603NJ_I2C_REG_INTERNAL_1, 0b01),
+      (REG_INTERNAL_1, 0b01),
     ))
 
   def _read_data(self) -> list[float]:
     # start measurement
-    self.write(MMC5603NJ_I2C_REG_INTERNAL_0, 0b01)
+    self.write(REG_INTERNAL_0, 0b01)
     self.wait()
 
     # read out XYZ
@@ -51,11 +48,11 @@ class MMC5603NJ_Magn(I2CSensor):
     st = int(time.monotonic() * 1e9)
 
     # SET - RESET cycle
-    self.write(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_SET)
+    self.write(REG_INTERNAL_0, SET)
     self.wait()
     xyz = self._read_data()
 
-    self.write(MMC5603NJ_I2C_REG_INTERNAL_0, MMC5603NJ_RESET)
+    self.write(REG_INTERNAL_0, RESET)
     self.wait()
     reset_xyz = self._read_data()
 
@@ -76,18 +73,11 @@ class MMC5603NJ_Magn(I2CSensor):
     return event
 
   def shutdown(self) -> None:
-    v = self.read(MMC5603NJ_I2C_REG_INTERNAL_0, 1)[0]
+    v = self.read(REG_INTERNAL_0, 1)[0]
     self.writes((
       # disable auto-reset of measurements
-      (MMC5603NJ_I2C_REG_INTERNAL_0, (v & (~(MMC5603NJ_CMM_FREQ_EN | MMC5603NJ_AUTO_SR_EN)))),
+      (REG_INTERNAL_0, (v & (~(CMM_FREQ_EN | AUTO_SR_EN)))),
 
       # disable continuous mode
-      (MMC5603NJ_I2C_REG_ODR, 0),
+      (REG_ODR, 0),
     ))
-
-
-if __name__ == "__main__":
-  s = MMC5603NJ_Magn(1)
-  s.init()
-  print(s.get_event())
-  s.shutdown()

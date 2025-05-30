@@ -31,7 +31,7 @@ class I2CSensor:
   def device_address(self) -> int:
     raise NotImplementedError
 
-  def init(self):
+  def init(self) -> None:
     raise NotImplementedError
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
@@ -48,11 +48,6 @@ class I2CSensor:
   def wait():
     # a standard small sleep
     time.sleep(0.005)
-
-  @staticmethod
-  def parse_12bit(lsb: int, msb: int) -> int:
-    combined = (msb << 8) | (lsb & 0xF0)
-    return combined >> 4
 
   @staticmethod
   def parse_16bit(lsb: int, msb: int) -> int:
