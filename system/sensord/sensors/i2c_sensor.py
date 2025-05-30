@@ -5,7 +5,10 @@ from collections.abc import Iterable
 
 from cereal import log
 
-class I2CSensor:
+class Sensor:
+  class SensorException(Exception): pass
+  class DataNotReady(SensorException): pass
+
   def __init__(self, bus: int) -> None:
     self.bus = smbus2.SMBus(bus)
     self.source = log.SensorEventData.SensorSource.velodyne  # unknown

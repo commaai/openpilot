@@ -1,10 +1,10 @@
 import time
 
 from cereal import log
-from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
+from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
 # https://content.arduino.cc/assets/st_imu_lsm6ds3_datasheet.pdf
-class LSM6DS3_Temp(I2CSensor):
+class LSM6DS3_Temp(Sensor):
   @property
   def device_address(self) -> int:
     return 0x6A  # Default I2C address for LSM6DS3

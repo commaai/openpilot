@@ -1,9 +1,9 @@
 import math
 
 from cereal import log
-from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
+from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
-class LSM6DS3_Gyro(I2CSensor):
+class LSM6DS3_Gyro(Sensor):
   LSM6DS3_GYRO_I2C_REG_DRDY_CFG = 0x0B
   LSM6DS3_GYRO_I2C_REG_INT1_CTRL = 0x0D
   LSM6DS3_GYRO_I2C_REG_CTRL2_G = 0x11
@@ -44,7 +44,7 @@ class LSM6DS3_Gyro(I2CSensor):
     # Check if gyroscope data is ready
     status_reg = self.read(self.LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
     if (status_reg & self.LSM6DS3_GYRO_DRDY_GDA) == 0:
-      raise Exception
+      raise self.DataNotReady
 
     # Read 6 bytes (X, Y, Z low and high)
     b = self.read(self.LSM6DS3_GYRO_I2C_REG_OUTX_L_G, 6)

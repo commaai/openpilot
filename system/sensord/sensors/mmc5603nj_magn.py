@@ -1,7 +1,7 @@
 import time
 
 from cereal import log
-from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
+from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
 # https://www.mouser.com/datasheet/2/821/Memsic_09102019_Datasheet_Rev.B-1635324.pdf
 
@@ -16,7 +16,7 @@ AUTO_SR_EN  = (1 << 5)
 SET         = (1 << 3)
 RESET       = (1 << 4)
 
-class MMC5603NJ_Magn(I2CSensor):
+class MMC5603NJ_Magn(Sensor):
   @property
   def device_address(self) -> int:
     return 0x30

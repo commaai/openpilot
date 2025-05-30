@@ -1,9 +1,9 @@
 import time
 
 from cereal import log
-from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
+from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
-class LSM6DS3_Accel(I2CSensor):
+class LSM6DS3_Accel(Sensor):
   # Register addresses
   LSM6DS3_ACCEL_I2C_REG_DRDY_CFG = 0x0B
   LSM6DS3_ACCEL_I2C_REG_INT1_CTRL = 0x0D
@@ -47,10 +47,10 @@ class LSM6DS3_Accel(I2CSensor):
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     assert ts is not None  # must come from the IRQ event
 
-    # Check if data is ready
+    # Check if data is ready since IRQ is shared with gyro
     status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
     if (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA) == 0:
-      raise Exception
+      raise self.DataNotReady
 
     scale = 9.81 * 2.0 / (1 << 15)
     b = self.read(self.LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, 6)
