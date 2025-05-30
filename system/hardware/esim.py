@@ -4,6 +4,26 @@ import argparse
 import time
 from openpilot.system.hardware import HARDWARE
 
+def print_profiles():
+  attempts = 3
+  fetched = False
+  while not fetched and attempts > 0:
+    try:
+      lpa = HARDWARE.get_sim_lpa()
+      profiles = lpa.list_profiles()
+      fetched = True
+    except Exception:
+      time.sleep(.1)
+      attempts -= 1
+
+  if not fetched:
+    print('failed to fetch profiles, please try again')
+    return
+
+  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
+  for p in profiles:
+    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
+
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
@@ -36,10 +56,5 @@ if __name__ == '__main__':
 
   if mutated:
     HARDWARE.reboot_modem()
-    # eUICC needs a small delay post-reboot before querying profiles
-    time.sleep(.5)
 
-  profiles = lpa.list_profiles()
-  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
-  for p in profiles:
-    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
+  print_profiles()
