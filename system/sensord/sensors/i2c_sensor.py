@@ -7,6 +7,7 @@ class I2CSensor:
   def __init__(self, bus: int) -> None:
     self.bus = smbus2.SMBus(bus)
     self.source = log.SensorEventData.SensorSource.velodyne  # unknown
+    self.start_ts = 0
 
   def __del__(self):
     self.bus.close()
@@ -40,8 +41,12 @@ class I2CSensor:
   def shutdown(self) -> None:
     raise NotImplementedError
 
-  def is_data_valid(self, ts: int) -> bool:
-    return True
+  def is_data_valid(self) -> bool:
+    if self.start_ts == 0:
+      self.start_ts = time.monotonic()
+
+    # unclear whether we need this...
+    return (time.monotonic() - self.start_ts) > 0.5
 
   # *** helpers ***
   @staticmethod

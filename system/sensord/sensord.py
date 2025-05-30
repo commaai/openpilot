@@ -25,10 +25,9 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
   # very short (75us) and is mostly detected as falling edge instead of rising.
   # So if it is detected as rising the following falling edge is skipped.
-
   fd = gpiochip_get_ro_value_fd("sensord", 0, 84)
 
-  # Configure IRQ affinity (simplified)
+  # Configure IRQ affinity
   irq_path = "/proc/irq/336/smp_affinity_list"
   if not os.path.exists(irq_path):
     irq_path = "/proc/irq/335/smp_affinity_list"
@@ -44,6 +43,8 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
         try:
           msg = messaging.new_message(service)
           setattr(msg, service, sensor.get_event())
+          if not sensor.is_data_valid():
+            continue
           pm.send(service, msg)
         except Exception:
           continue
@@ -53,20 +54,19 @@ def polling_loop(sensor: I2CSensor, service: str, event: threading.Event) -> Non
   pm = messaging.PubMaster([service])
   rk = Ratekeeper(SERVICE_LIST[service].frequency, print_delay_threshold=None)
   while not event.is_set():
+    msg = messaging.new_message(service)
     try:
-      sensor_event = sensor.get_event()
-      if sensor_event is not None:
-        msg = messaging.new_message(service)
-        setattr(msg, service, sensor.get_event())
-        pm.send(service, msg)
-      rk.keep_time()
+      setattr(msg, service, sensor.get_event())
+      if not sensor.is_data_valid():
+        continue
+      pm.send(service, msg)
     except Exception:
       cloudlog.exception(f"Error in {service} polling loop")
+    rk.keep_time()
 
 def main() -> None:
   config_realtime_process([1, ], 1)
 
-  exit_event = threading.Event()
   sensors_cfg = [
     (LSM6DS3_Accel(I2C_BUS_IMU), "accelerometer", True),
     (LSM6DS3_Gyro(I2C_BUS_IMU), "gyroscope", True),
@@ -75,34 +75,32 @@ def main() -> None:
   ]
 
   # Initialize sensors
-  threads = []
+  exit_event = threading.Event()
+  threads = [
+    threading.Thread(target=interrupt_loop, args=(sensors_cfg, exit_event), daemon=True)
+  ]
   for sensor, service, interrupt in sensors_cfg:
     try:
       sensor.init()
       if not interrupt:
         # Start polling thread for sensors without interrupts
-        t = threading.Thread(
+        threads.append(threading.Thread(
           target=polling_loop,
           args=(sensor, service, exit_event),
           daemon=True
-        )
-        t.start()
-        threads.append(t)
+        ))
     except Exception:
       cloudlog.exception(f"Error initializing {service} sensor")
 
-  # Run interrupt loop
-  t = threading.Thread(target=interrupt_loop, args=(sensors_cfg, exit_event), daemon=True)
-  t.start()
-  threads.append(t)
-
   try:
+    for t in threads:
+      t.start()
     while any(t.is_alive() for t in threads):
       time.sleep(1)
   except KeyboardInterrupt:
-    exit_event.set()
+    pass
   finally:
-    cloudlog.warning("cleaning up")
+    exit_event.set()
     for t in threads:
       if t.is_alive():
         t.join()
