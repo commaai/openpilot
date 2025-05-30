@@ -111,7 +111,7 @@ class ModelRenderer:
 
     # Draw elements
     self._draw_lane_lines()
-    self._draw_path(sm, model, rect.height)
+    self._draw_path(sm)
 
     # Draw lead vehicles if available
     if render_lead_indicator and radar_state:
@@ -233,7 +233,7 @@ class ModelRenderer:
       color = rl.Color(255, 0, 0, int(alpha * 255))
       draw_polygon(self._rect, road_edge.projected_points, color)
 
-  def _draw_path(self, sm, model, height):
+  def _draw_path(self, sm):
     """Draw path with dynamic coloring based on mode and throttle state."""
     if not self._path.projected_points.size:
       return
