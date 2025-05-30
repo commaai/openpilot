@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - native-setup-optimization
+      - ci-setup-optimization-test
   pull_request:
     paths:
       - '.github/workflows/setup-native/**'
@@ -35,7 +36,7 @@ jobs:
         echo "Starting native setup at $(date)"
         start_time=$(date +%s)
 
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
 
     - name: Calculate setup time
       run: |
@@ -103,7 +104,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
     - name: Build with SCons
       timeout-minutes: 5
       run: |

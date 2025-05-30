@@ -15,7 +15,7 @@ runs:
   using: "composite"
   steps:
     - id: setup1
-      uses: ./.github/workflows/setup-native
+      uses: ./.github/workflows/setup-native/
       continue-on-error: true
       with:
         is_retried: true
@@ -24,7 +24,7 @@ runs:
       run: sleep ${{ inputs.sleep_time }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup-native
+      uses: ./.github/workflows/setup-native/
       continue-on-error: true
       with:
         is_retried: true
@@ -33,6 +33,6 @@ runs:
       run: sleep ${{ inputs.sleep_time }}
     - id: setup3
       if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup-native
+      uses: ./.github/workflows/setup-native/
       with:
         is_retried: true

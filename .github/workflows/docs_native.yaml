@@ -31,7 +31,7 @@ jobs:
         submodules: true
 
     # Native setup (replaces Docker setup)
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
 
     # Build
     - name: Build docs

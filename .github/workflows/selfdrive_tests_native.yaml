@@ -5,6 +5,7 @@ on:
     branches:
       - master
       - native-setup-optimization
+      - ci-setup-optimization-test
   pull_request:
     paths:
       - '.github/workflows/setup-native/**'
@@ -41,7 +42,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }}
       run: |
@@ -64,8 +65,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-native
-    - uses: ./.github/workflows/compile-openpilot
+    - uses: ./.github/workflows/setup-with-retry-native/
+    - uses: ./.github/workflows/compile-openpilot/
       timeout-minutes: 30
 
   static_analysis:
@@ -77,7 +78,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
     - name: Static analysis
       timeout-minutes: 1
       run: ${{ env.NATIVE_RUN }} "scripts/lint/lint.sh"
@@ -89,7 +90,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
     - name: Build openpilot
       run: ${{ env.NATIVE_RUN }} "scons -j$(nproc)"
     - name: Run unit tests
@@ -113,7 +114,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v4
@@ -156,7 +157,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/setup-with-retry-native/
     - name: Cache test routes
       id: routes-cache
       uses: actions/cache@v4
