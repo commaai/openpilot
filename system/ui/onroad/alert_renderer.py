@@ -3,6 +3,8 @@ import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.ui_state import ui_state
+
 
 # Constants
 ALERT_COLORS = {
@@ -43,7 +45,6 @@ class AlertRenderer:
   def __init__(self):
     """Initialize the alert renderer."""
     self.alert: Alert = Alert()
-    self.started_frame: int = 0
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self.font_metrics_cache: dict[tuple[str, int, str], rl.Vector2] = {}
@@ -52,9 +53,8 @@ class AlertRenderer:
     """Reset the alert to its default state."""
     self.alert = Alert()
 
-  def update_state(self, sm: messaging.SubMaster, started_frame: int) -> None:
+  def update_state(self, sm: messaging.SubMaster) -> None:
     """Update alert state based on SubMaster data."""
-    self.started_frame = started_frame
     new_alert = self.get_alert(sm)
     if not self.alert.is_equal(new_alert):
       self.alert = new_alert
@@ -69,7 +69,7 @@ class AlertRenderer:
     alert_status = self._get_enum_value(ss.alertStatus, log.SelfdriveState.AlertStatus)
 
     # Return current alert if selfdrive state is recent
-    if selfdrive_frame >= self.started_frame:
+    if selfdrive_frame >= ui_state.started_frame:
       return Alert(
         text1=ss.alertText1,
         text2=ss.alertText2,
@@ -80,7 +80,7 @@ class AlertRenderer:
 
     # Handle selfdrive timeout
     ss_missing = (np.uint64(rl.get_time() * 1e9) - sm.recv_time['selfdriveState']) / 1e9
-    if selfdrive_frame < self.started_frame:
+    if selfdrive_frame < ui_state.started_frame:
       return Alert(
         text1="openpilot Unavailable",
         text2="Waiting to start",
@@ -109,7 +109,7 @@ class AlertRenderer:
 
   def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
     """Render the alert within the specified rectangle."""
-    self.update_state(sm, sm.recv_frame['selfdriveState'])
+    self.update_state(sm)
     alert_size = self._get_enum_value(self.alert.size, log.SelfdriveState.AlertSize)
     if alert_size == log.SelfdriveState.AlertSize.none:
       return
