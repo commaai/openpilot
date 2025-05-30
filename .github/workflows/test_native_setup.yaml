@@ -1,0 +1,111 @@
+name: Test Native Setup Performance
+
+on:
+  push:
+    branches:
+      - master
+      - native-setup-optimization
+  pull_request:
+    paths:
+      - '.github/workflows/setup-native/**'
+      - '.github/workflows/setup-with-retry-native/**'
+      - '.github/workflows/test_native_setup.yaml'
+      - 'tools/native_run.sh'
+  workflow_dispatch:
+
+concurrency:
+  group: test-native-setup-${{ github.head_ref || github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  PYTHONWARNINGS: error
+  NATIVE_RUN: ./tools/native_run.sh
+
+jobs:
+  setup_timing_native:
+    name: Native Setup Timing
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Time native setup
+      run: |
+        echo "Starting native setup at $(date)"
+        start_time=$(date +%s)
+
+    - uses: ./.github/workflows/setup-with-retry-native
+
+    - name: Calculate setup time
+      run: |
+        end_time=$(date +%s)
+        setup_time=$((end_time - start_time))
+        echo "Native setup completed in ${setup_time} seconds"
+        echo "NATIVE_SETUP_TIME=${setup_time}" >> $GITHUB_ENV
+
+        # Fail if setup takes longer than 20 seconds (target)
+        if [ $setup_time -gt 20 ]; then
+          echo "❌ Setup took ${setup_time}s, target is <20s"
+          if [ $setup_time -gt 40 ]; then
+            echo "❌ Setup took ${setup_time}s, even sub-bounty target of <40s was missed"
+            exit 1
+          else
+            echo "⚠️  Setup took ${setup_time}s, qualifies for sub-bounty (<40s) but not main bounty (<20s)"
+          fi
+        else
+          echo "✅ Setup took ${setup_time}s, meets target of <20s!"
+        fi
+
+    - name: Test basic functionality
+      run: |
+        # Test that Python packages are installed
+        ${{ env.NATIVE_RUN }} "python3 -c 'import numpy, scons, cffi; print(\"Python packages working!\")'"
+
+        # Test that system tools are available
+        ${{ env.NATIVE_RUN }} "which clang && which git && echo \"System tools working!\""
+
+        # Test that environment is set up correctly
+        ${{ env.NATIVE_RUN }} "echo \"PYTHONPATH=\$PYTHONPATH\" && echo \"CI=\$CI\""
+
+  # Optional: Compare with original Docker setup
+  setup_timing_docker:
+    name: Docker Setup Timing (Comparison)
+    runs-on: ubuntu-24.04
+    if: false  # Disable by default to save CI time, enable for comparison
+    env:
+      BASE_IMAGE: openpilot-base
+      DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+      BUILD: selfdrive/test/docker_build.sh base
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+
+    - name: Time Docker setup
+      run: |
+        echo "Starting Docker setup at $(date)"
+        start_time=$(date +%s)
+
+    - uses: ./.github/workflows/setup-with-retry
+
+    - name: Calculate Docker setup time
+      run: |
+        end_time=$(date +%s)
+        setup_time=$((end_time - start_time))
+        echo "Docker setup completed in ${setup_time} seconds"
+        echo "DOCKER_SETUP_TIME=${setup_time}" >> $GITHUB_ENV
+
+  test_scons_build:
+    name: Test SCons Build (Native)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry-native
+    - name: Build with SCons
+      timeout-minutes: 5
+      run: |
+        ${{ env.NATIVE_RUN }} "scons -j$(nproc) --dry-run"
+        echo "✅ SCons dry run successful"

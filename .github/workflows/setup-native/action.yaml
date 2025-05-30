@@ -1,0 +1,151 @@
+name: 'openpilot native env setup'
+description: 'Setup openpilot environment natively without Docker, with aggressive caching'
+
+inputs:
+  is_retried:
+    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    required: false
+    default: 'false'
+
+runs:
+  using: "composite"
+  steps:
+    # assert that this action is retried using the setup-with-retry
+    - shell: bash
+      if: ${{ inputs.is_retried == 'false' }}
+      run: |
+        echo "You should not run this action directly. Use setup-with-retry instead"
+        exit 1
+
+    - shell: bash
+      name: No retries!
+      run: |
+        if [ "${{ github.run_attempt }}" -gt 1 ]; then
+          echo -e "\033[0;31m##################################################"
+          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
+          echo -e "\033[0;31m##################################################\033[0m"
+          exit 1
+        fi
+
+    # Cache APT packages - this is key for speed
+    - shell: bash
+      run: echo "APT_CACHE_KEY=$(sha256sum tools/install_ubuntu_dependencies_fast.sh | cut -d' ' -f1)" >> $GITHUB_ENV
+    - name: Cache APT packages
+      id: apt-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          /var/cache/apt/archives
+          /var/lib/apt/lists
+        key: apt-native-ubuntu-24.04-${{ env.APT_CACHE_KEY }}
+        restore-keys: |
+          apt-native-ubuntu-24.04-
+
+    # Make fast installer executable
+    - shell: bash
+      run: chmod +x tools/install_ubuntu_dependencies_fast.sh
+
+    # Install system dependencies natively with optimizations
+    - shell: bash
+      name: Install Ubuntu dependencies (optimized)
+      run: |
+        # Set CI flag for optimized installation
+        export CI=1
+
+        # Only update if cache miss or if we're missing critical packages
+        if [ "${{ steps.apt-cache.outputs.cache-hit }}" != 'true' ] || ! command -v clang &> /dev/null; then
+          echo "Installing dependencies..."
+          ./tools/install_ubuntu_dependencies_fast.sh
+        else
+          echo "Dependencies already cached and available"
+        fi
+
+    # Cache Python dependencies with uv
+    - shell: bash
+      run: echo "PYTHON_CACHE_KEY=$(sha256sum pyproject.toml uv.lock | sha256sum | cut -d' ' -f1)" >> $GITHUB_ENV
+    - name: Cache Python packages
+      id: python-cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/uv
+          .venv
+        key: python-native-${{ runner.os }}-${{ env.PYTHON_CACHE_KEY }}
+        restore-keys: |
+          python-native-${{ runner.os }}-
+
+    # Install Python dependencies with aggressive optimization
+    - shell: bash
+      name: Install Python dependencies (optimized)
+      run: |
+        # Install uv if not present (fastest Python package manager)
+        if ! command -v uv &> /dev/null; then
+          echo "Installing uv..."
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
+        fi
+
+        # Use uv for faster package installation
+        if [ "${{ steps.python-cache.outputs.cache-hit }}" == 'true' ]; then
+          echo "Python packages restored from cache"
+          source .venv/bin/activate
+        else
+          echo "Installing Python packages..."
+          # Use parallel installation with uv
+          UV_EXTRA_INDEX_URL="" uv sync --frozen --all-extras --no-dev
+          source .venv/bin/activate
+        fi
+
+        echo "VIRTUAL_ENV=$PWD/.venv" >> $GITHUB_ENV
+        echo "$PWD/.venv/bin" >> $GITHUB_PATH
+
+        # Create .env file
+        echo "PYTHONPATH=$PWD" > .env
+        if [[ "$RUNNER_OS" == "macOS" ]]; then
+          echo "# msgq doesn't work on mac" >> .env
+          echo "export ZMQ=1" >> .env
+          echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> .env
+        fi
+
+    # Parallel Git LFS pull
+    - shell: bash
+      name: Git LFS pull (parallel)
+      run: |
+        # Configure git for faster LFS operations
+        git config lfs.batch true
+        git config lfs.transfer.maxretries 3
+        git config lfs.concurrenttransfers 8
+        git lfs pull
+
+    # build cache
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - shell: bash
+      run: echo "$CACHE_COMMIT_DATE"
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/scons_cache
+        key: scons-native-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-native-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-native-${{ runner.arch }}
+
+    # Set environment variables for running tests natively
+    - shell: bash
+      name: Set native environment
+      run: |
+        echo "CI=1" >> $GITHUB_ENV
+        echo "PYTHONWARNINGS=error" >> $GITHUB_ENV
+        echo "FILEREADER_CACHE=1" >> $GITHUB_ENV
+        echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+        echo "OPENPILOT_PREFIX=$PWD" >> $GITHUB_ENV
+        echo "SCONS_CACHE_DIR=$PWD/.ci_cache/scons_cache" >> $GITHUB_ENV
+
+        # Create cache directories
+        mkdir -p .ci_cache/scons_cache
+        mkdir -p .ci_cache/comma_download_cache
+        mkdir -p .ci_cache/openpilot_cache
+
+        echo "✅ Native environment setup completed"

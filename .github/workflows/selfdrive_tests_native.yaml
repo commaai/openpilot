@@ -1,0 +1,180 @@
+name: selfdrive (native optimized)
+
+on:
+  push:
+    branches:
+      - master
+      - native-setup-optimization
+  pull_request:
+    paths:
+      - '.github/workflows/setup-native/**'
+      - '.github/workflows/setup-with-retry-native/**'
+      - '.github/workflows/selfdrive_tests_native.yaml'
+  workflow_dispatch:
+
+concurrency:
+  group: selfdrive-tests-native-${{ github.head_ref || github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+env:
+  PYTHONWARNINGS: error
+  # Native execution helper replaces Docker RUN
+  NATIVE_RUN: ./tools/native_run.sh
+  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
+
+jobs:
+  build_release:
+    name: build release (native)
+    runs-on: ubuntu-24.04
+    env:
+      STRIPPED_DIR: /tmp/releasepilot
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Getting LFS files
+      uses: nick-fields/retry@7152eba30c6575329ac0576536151aca5a72780e
+      with:
+        timeout_minutes: 2
+        max_attempts: 3
+        command: git lfs pull
+    - name: Build devel
+      timeout-minutes: 1
+      run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
+    - uses: ./.github/workflows/setup-with-retry-native
+    - name: Build openpilot and run checks
+      timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }}
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.NATIVE_RUN }} "python3 system/manager/build.py"
+    - name: Run tests
+      timeout-minutes: 1
+      run: |
+        cd $STRIPPED_DIR
+        ${{ env.NATIVE_RUN }} "release/check-dirty.sh"
+    - name: Check submodules
+      if: github.repository == 'commaai/openpilot'
+      timeout-minutes: 3
+      run: release/check-submodules.sh
+
+  build:
+    name: build (native)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry-native
+    - uses: ./.github/workflows/compile-openpilot
+      timeout-minutes: 30
+
+  static_analysis:
+    name: static analysis (native)
+    runs-on: ubuntu-24.04
+    env:
+      PYTHONWARNINGS: default
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry-native
+    - name: Static analysis
+      timeout-minutes: 1
+      run: ${{ env.NATIVE_RUN }} "scripts/lint/lint.sh"
+
+  unit_tests:
+    name: unit tests (native)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry-native
+    - name: Build openpilot
+      run: ${{ env.NATIVE_RUN }} "scons -j$(nproc)"
+    - name: Run unit tests
+      timeout-minutes: 20
+      run: |
+        ${{ env.NATIVE_RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+                        ./selfdrive/ui/tests/create_test_translations.sh && \
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v4
+      with:
+        name: ${{ github.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  process_replay:
+    name: process replay (native)
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry-native
+    - name: Cache test routes
+      id: dependency-cache
+      uses: actions/cache@v4
+      with:
+        path: .ci_cache/comma_download_cache
+        key: proc-replay-${{ hashFiles('selfdrive/test/process_replay/ref_commit', 'selfdrive/test/process_replay/test_processes.py') }}
+    - name: Build openpilot
+      run: ${{ env.NATIVE_RUN }} "scons -j$(nproc)"
+    - name: Run replay
+      timeout-minutes: 20
+      run: |
+        ${{ env.NATIVE_RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        coverage combine && \
+                        coverage xml"
+    - name: Print diff
+      id: print-diff
+      if: always()
+      run: cat selfdrive/test/process_replay/diff.txt
+    - uses: actions/upload-artifact@v4
+      if: always()
+      continue-on-error: true
+      with:
+        name: process_replay_diff.txt
+        path: selfdrive/test/process_replay/diff.txt
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v4
+      with:
+        name: ${{ github.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  test_cars:
+    name: cars (native)
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        job: [0, 1, 2, 3]
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - uses: ./.github/workflows/setup-with-retry-native
+    - name: Cache test routes
+      id: routes-cache
+      uses: actions/cache@v4
+      with:
+        path: .ci_cache/comma_download_cache
+        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: Build openpilot
+      run: ${{ env.NATIVE_RUN }} "scons -j$(nproc)"
+    - name: Test car models
+      timeout-minutes: 6
+      run: |
+        ${{ env.NATIVE_RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py"
+      env:
+        NUM_JOBS: 4
+        JOB_ID: ${{ matrix.job }}
+    - name: "Upload coverage to Codecov"
+      uses: codecov/codecov-action@v4
+      with:
+        name: ${{ github.job }}-${{ matrix.job }}
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
