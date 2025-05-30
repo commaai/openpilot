@@ -10,10 +10,7 @@ class LSM6DS3_Temp(I2CSensor):
     return 0x6A  # Default I2C address for LSM6DS3
 
   def _read_temperature(self) -> float:
-    scale = {
-      log.SensorEventData.SensorSource.lsm6ds3: 16.0,
-      log.SensorEventData.SensorSource.lsm6ds3trc: 256.0,
-    }.get(self.source)
+    scale = 16.0 if log.SensorEventData.SensorSource.lsm6ds3 else 256.0
     data = self.read(0x20, 2)
     return 25 + (self.parse_16bit(data[0], data[1]) / scale)
 

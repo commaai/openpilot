@@ -20,7 +20,7 @@ from openpilot.system.sensord.sensors.mmc5603nj_magn import MMC5603NJ_Magn
 
 I2C_BUS_IMU = 1
 
-def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
+def interrupt_loop(sensors: list[tuple[I2CSensor, str, bool]], event) -> None:
   pm = messaging.PubMaster([service for sensor, service, interrupt in sensors if interrupt])
 
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
@@ -67,7 +67,6 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
             continue
           pm.send(service, msg)
         except Exception:
-          continue
           cloudlog.exception(f"Error processing {service}")
 
 

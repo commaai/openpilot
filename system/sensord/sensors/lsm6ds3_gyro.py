@@ -1,4 +1,3 @@
-import time
 import math
 
 from cereal import log

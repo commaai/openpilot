@@ -1,5 +1,4 @@
 import time
-import os
 
 from cereal import log
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor

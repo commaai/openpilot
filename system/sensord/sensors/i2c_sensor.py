@@ -1,6 +1,7 @@
 import time
 import smbus2
 import ctypes
+from collections.abc import Iterable
 
 from cereal import log
 
@@ -8,7 +9,7 @@ class I2CSensor:
   def __init__(self, bus: int) -> None:
     self.bus = smbus2.SMBus(bus)
     self.source = log.SensorEventData.SensorSource.velodyne  # unknown
-    self.start_ts = 0
+    self.start_ts = 0.
 
   def __del__(self):
     self.bus.close()
@@ -19,7 +20,7 @@ class I2CSensor:
   def write(self, addr: int, data: int) -> None:
     self.bus.write_byte_data(self.device_address, addr, data)
 
-  def writes(self, writes: tuple[int, int]) -> None:
+  def writes(self, writes: Iterable[tuple[int, int]]) -> None:
     for addr, data in writes:
       self.write(addr, data)
 
@@ -62,4 +63,4 @@ class I2CSensor:
   @staticmethod
   def parse_20bit(b2: int, b1: int, b0: int) -> int:
     combined = (b0 << 16) | (b1 << 8) | b2
-    return ctypes.c_int32(combined).value / (1 << 4)
+    return int(ctypes.c_int32(combined).value / (1 << 4))

@@ -1,7 +1,7 @@
 import os
 import subprocess
 
-def sudo_write(val, path):
+def sudo_write(val: str, path: str) -> None:
   try:
     with open(path, 'w') as f:
       f.write(str(val))
