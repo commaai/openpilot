@@ -5,6 +5,7 @@ from cereal import messaging, log
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_text_box
+from openpilot.system.ui.lib.ui_state import ui_state
 
 
 ALERT_MARGIN = 40

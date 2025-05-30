@@ -6,8 +6,9 @@ from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.ui_state import ui_state, DEFAULT_FPS
 
-DEFAULT_FPS = 60
+
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
@@ -148,6 +149,7 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
+        ui_state.update()
         yield
 
         if self._render_texture:
