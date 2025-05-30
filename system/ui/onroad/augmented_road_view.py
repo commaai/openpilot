@@ -76,7 +76,7 @@ class AugmentedRoadView(CameraView):
     # - Lead vehicle indicators
     # - Additional features
     self.model_renderer.draw(self._content_rect, self.sm)
-    self.driver_state_renderer.draw(rect, self.sm)
+    self.driver_state_renderer.draw(self._content_rect, self.sm)
 
     # End clipping region
     rl.end_scissor_mode()
