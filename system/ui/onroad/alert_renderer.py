@@ -129,7 +129,8 @@ class AlertRenderer:
     alert_status = self._get_enum_value(self.alert.status, log.SelfdriveState.AlertStatus)
     color = ALERT_COLORS.get(alert_status, ALERT_COLORS[log.SelfdriveState.AlertStatus.normal])
     if alert_size != log.SelfdriveState.AlertSize.full:
-      rl.draw_rectangle_rounded(alert_rect, radius / alert_rect.width, 10, color)
+      roundness = radius / (min(alert_rect.width, alert_rect.height) / 2)
+      rl.draw_rectangle_rounded(alert_rect, roundness, 10, color)
     else:
       rl.draw_rectangle_rec(alert_rect, color)
 
