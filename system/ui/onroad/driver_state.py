@@ -102,7 +102,7 @@ class DriverStateRenderer:
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
-  def _is_visible(self, sm) -> bool:
+  def _is_visible(self, sm):
     """Check if the visualization should be rendered."""
     return (sm.seen['driverStateV2'] and
             sm.seen['driverMonitoringState'] and
