@@ -1,4 +1,5 @@
 name: 'openpilot env setup'
+description: 'Setup openpilot environment with Docker and caching'
 
 inputs:
   is_retried:
@@ -37,7 +38,7 @@ runs:
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
-      uses: ./.github/workflows/auto-cache
+      uses: ./.github/workflows/auto-cache/
       with:
         path: .ci_cache/scons_cache
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}

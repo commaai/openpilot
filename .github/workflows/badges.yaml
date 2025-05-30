@@ -20,7 +20,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Push badges
       run: |
         ${{ env.RUN }} "scons -j$(nproc) && python3 selfdrive/ui/translations/create_badges.py"

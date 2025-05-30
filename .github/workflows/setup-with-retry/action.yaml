@@ -1,4 +1,5 @@
 name: 'openpilot env setup, with retry on failure'
+description: 'Setup openpilot environment with retry support for handling transient failures'
 
 inputs:
   docker_hub_pat:
@@ -8,30 +9,30 @@ inputs:
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
-    default: 30
+    default: '30'
 
 runs:
   using: "composite"
   steps:
     - id: setup1
-      uses: ./.github/workflows/setup
+      uses: ./.github/workflows/setup/
       continue-on-error: true
       with:
-        is_retried: true
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
     - if: steps.setup1.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup
+      uses: ./.github/workflows/setup/
       continue-on-error: true
       with:
-        is_retried: true
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
     - if: steps.setup2.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
     - id: setup3
       if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup
+      uses: ./.github/workflows/setup/
       with:
-        is_retried: true
+        docker_hub_pat: ${{ inputs.docker_hub_pat }}
