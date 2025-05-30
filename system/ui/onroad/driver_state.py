@@ -24,10 +24,17 @@ ARC_LENGTH = 133
 ARC_THICKNESS_DEFAULT = 6.7
 ARC_THICKNESS_EXTEND = 12.0
 
-
 SCALES_POS = np.array([0.9, 0.4, 0.4], dtype=np.float32)
 SCALES_NEG = np.array([0.7, 0.4, 0.4], dtype=np.float32)
 
+@dataclass
+class ArcData:
+  """Data structure for arc rendering parameters."""
+  x: float
+  y: float
+  width: float
+  height: float
+  thickness: float
 
 class DriverStateRenderer:
   def __init__(self):
@@ -63,7 +70,7 @@ class DriverStateRenderer:
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
   def draw(self, rect, sm):
-    if not self._is_visible():
+    if not self._is_visible(sm):
       return
 
     self._update_state(sm, rect)
@@ -89,12 +96,11 @@ class DriverStateRenderer:
     self.arc_color = self.engaged_color if engaged else self.disengaged_color
     self.arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
 
-    # Draw tracking arcs if pre-calculated
+    # Draw arcs
     if self.h_arc_data:
-      rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data["thickness"], self.arc_color)
-
+      rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data.thickness, self.arc_color)
     if self.v_arc_data:
-      rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
+      rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
   def _is_visible(self, sm) -> bool:
     """Check if the visualization should be rendered."""
@@ -177,60 +183,56 @@ class DriverStateRenderer:
     delta_x = -self.driver_pose_sins[1] * ARC_LENGTH / 2.0  # Horizontal movement
     delta_y = -self.driver_pose_sins[0] * ARC_LENGTH / 2.0  # Vertical movement
 
-    # Pre-calculate horizontal arc
+    # Horizontal arc
     h_width = abs(delta_x)
-    if h_width > 0:
-      h_thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, self.driver_pose_diff[1] * 5.0)
-      h_start_angle = 90 if self.driver_pose_sins[1] > 0 else -90
-      h_x = min(self.position_x + delta_x, self.position_x)
-      h_y = self.position_y - ARC_LENGTH / 2
+    self.h_arc_data = self._calculate_arc_data(
+        delta_x, h_width, self.position_x, self.position_y - ARC_LENGTH / 2,
+        self.driver_pose_sins[1], self.driver_pose_diff[1], is_horizontal=True
+    )
 
-      self.h_arc_data = {"x": h_x, "y": h_y, "width": h_width, "height": ARC_LENGTH, "thickness": h_thickness}
-
-      # Pre-calculate arc points
-      start_rad = np.deg2rad(h_start_angle)
-      end_rad = np.deg2rad(h_start_angle + 180)
-      angles = np.linspace(start_rad, end_rad, 37)
-
-      center_x = h_x + h_width / 2
-      center_y = h_y + ARC_LENGTH / 2
-      radius_x = h_width / 2
-      radius_y = ARC_LENGTH / 2
-
-      x_coords = center_x + np.cos(angles) * radius_x
-      y_coords = center_y + np.sin(angles) * radius_y
-
-      for i in range(len(angles)):
-        self.h_arc_lines[i].x = x_coords[i]
-        self.h_arc_lines[i].y = y_coords[i]
-    else:
-      self.h_arc_data = None
-
-    # Pre-calculate vertical arc
+    # Vertical arc
     v_height = abs(delta_y)
-    if v_height > 0:
-      v_thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, self.driver_pose_diff[0] * 5.0)
-      v_start_angle = 0 if self.driver_pose_sins[0] > 0 else 180
-      v_x = self.position_x - ARC_LENGTH / 2
-      v_y = min(self.position_y + delta_y, self.position_y)
+    self.v_arc_data = self._calculate_arc_data(
+        delta_y, v_height, self.position_x - ARC_LENGTH / 2, self.position_y,
+        self.driver_pose_sins[0], self.driver_pose_diff[0], is_horizontal=False
+    )
 
-      self.v_arc_data = {"x": v_x, "y": v_y, "width": ARC_LENGTH, "height": v_height, "thickness": v_thickness}
+  def _calculate_arc_data(
+    self, delta: float, size: float, x: float, y: float, sin_val: float, diff_val: float, is_horizontal: bool
+  ):
+    """Calculate arc data and pre-compute arc points."""
+    if size <= 0:
+      return None
 
-      # Pre-calculate arc points
-      start_rad = np.deg2rad(v_start_angle)
-      end_rad = np.deg2rad(v_start_angle + 180)
-      angles = np.linspace(start_rad, end_rad, 37)
+    thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, diff_val * 5.0)
+    start_angle = (90 if sin_val > 0 else -90) if is_horizontal else (0 if sin_val > 0 else 180)
+    x = min(x + delta, x) if is_horizontal else x
+    y = y if is_horizontal else min(y + delta, y)
 
-      center_x = v_x + ARC_LENGTH / 2
-      center_y = v_y + v_height / 2
-      radius_x = ARC_LENGTH / 2
-      radius_y = v_height / 2
+    arc_data = ArcData(
+      x=x,
+      y=y,
+      width=size if is_horizontal else ARC_LENGTH,
+      height=ARC_LENGTH if is_horizontal else size,
+      thickness=thickness,
+    )
 
-      x_coords = center_x + np.cos(angles) * radius_x
-      y_coords = center_y + np.sin(angles) * radius_y
+    # Pre-calculate arc points
+    start_rad = np.deg2rad(start_angle)
+    end_rad = np.deg2rad(start_angle + 180)
+    angles = np.linspace(start_rad, end_rad, 37)
 
-      for i in range(len(angles)):
-        self.v_arc_lines[i].x = x_coords[i]
-        self.v_arc_lines[i].y = y_coords[i]
-    else:
-      self.v_arc_data = None
+    center_x = x + arc_data.width / 2
+    center_y = y + arc_data.height / 2
+    radius_x = arc_data.width / 2
+    radius_y = arc_data.height / 2
+
+    x_coords = center_x + np.cos(angles) * radius_x
+    y_coords = center_y + np.sin(angles) * radius_y
+
+    arc_lines = self.h_arc_lines if is_horizontal else self.v_arc_lines
+    for i, (x_coord, y_coord) in enumerate(zip(x_coords, y_coords, strict=True)):
+      arc_lines[i].x = x_coord
+      arc_lines[i].y = y_coord
+
+    return arc_data
