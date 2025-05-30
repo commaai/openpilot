@@ -36,6 +36,7 @@ class DriverStateRenderer:
     self.driver_pose_diff = np.zeros(3)
     self.driver_pose_sins = np.zeros(3)
     self.driver_pose_coss = np.zeros(3)
+    self.face_outline: list[rl.Vector2] = []
 
     # Load the driver face icon
     self.dm_img = gui_app.texture("icons/driver_face.png", IMG_SIZE, IMG_SIZE)
@@ -122,16 +123,10 @@ class DriverStateRenderer:
     # Calculate transformed keypoints for drawing
     kp = (self.face_kpts_draw[:, 2] - 8) / 120.0 + 1.0
     keypoints = self.face_kpts_draw[:, :2] * kp[:, None] + np.array([x, y])
-
     # Draw face outline
+    lines = [rl.Vector2(int(keypoints[i][0]), int(keypoints[i][1])) for i in range(len(keypoints))]
     white_color = rl.Color(255, 255, 255, int(255 * opacity))
-    for i in range(len(keypoints) - 1):
-      rl.draw_line_ex(
-        rl.Vector2(keypoints[i][0], keypoints[i][1]),
-        rl.Vector2(keypoints[i + 1][0], keypoints[i + 1][1]),
-        5.2,  # line thickness
-        white_color,
-      )
+    rl.draw_spline_linear(lines, len(lines), 5.2, white_color)
 
     # Get arc color based on engaged state (hardcoded to True for now)
     engaged = True
