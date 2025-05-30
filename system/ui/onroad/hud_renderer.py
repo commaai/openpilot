@@ -39,6 +39,12 @@ class HudRenderer:
     self.font_metrics_cache = {}
     self._wheel_texture = gui_app.texture("icons/chffr_wheel.png", WHEEL_ICON_SIZE, WHEEL_ICON_SIZE)
 
+    self._font_semi_bold = gui_app.font(FontWeight.SEMI_BOLD)
+    self._font_bold = gui_app.font(FontWeight.BOLD)
+    self._font_medium = gui_app.font(FontWeight.MEDIUM)
+
+
+
   def _update_state(self, sm):
     """Update HUD state based on car state and controls state"""
     self.is_metric = True  # scene.is_metric
@@ -133,40 +139,36 @@ class HudRenderer:
 
     # Draw "MAX" text
     max_text = "MAX"
-    font = gui_app.font(FontWeight.SEMI_BOLD)
-    max_text_width = self._measure_text(max_text, font, 40).x
+    max_text_width = self._measure_text(max_text, self._font_semi_bold, 40).x
     max_x = x + (set_speed_width - max_text_width) / 2
-    rl.draw_text_ex(font, max_text, rl.Vector2(max_x, y + 27), 40, 0, max_color)
+    rl.draw_text_ex(self._font_semi_bold, max_text, rl.Vector2(max_x, y + 27), 40, 0, max_color)
 
     # Draw set speed value
     set_speed_text = "–" if not self.is_cruise_set else str(round(self.set_speed))
-    font = gui_app.font(FontWeight.BOLD)
-    speed_text_width = self._measure_text(set_speed_text, font, 90).x
+    speed_text_width = self._measure_text(set_speed_text, self._font_bold, 90).x
     speed_x = x + (set_speed_width - speed_text_width) / 2
-    rl.draw_text_ex(font, set_speed_text, rl.Vector2(speed_x, y + 77), 90, 0, set_speed_color)
+    rl.draw_text_ex(self._font_bold, set_speed_text, rl.Vector2(speed_x, y + 77), 90, 0, set_speed_color)
 
   def _draw_current_speed(self, rect):
     """Draw the current vehicle speed"""
     speed_text = str(round(self.speed))
-    font = gui_app.font(FontWeight.BOLD)
-    speed_text_width = self._measure_text(speed_text, font, 176).x
+    speed_text_width = self._measure_text(speed_text, self._font_bold, 176).x
 
     # Position speed text in center of rect
     speed_x = rect.x + rect.width / 2 - speed_text_width / 2
     speed_y = rect.y + 210 - 88
 
-    rl.draw_text_ex(font, speed_text, rl.Vector2(speed_x, speed_y), 176, 0, COLOR_WHITE)
+    rl.draw_text_ex(self._font_bold, speed_text, rl.Vector2(speed_x, speed_y), 176, 0, COLOR_WHITE)
 
     # Draw speed unit
     unit_text = "km/h" if self.is_metric else "mph"
-    font = gui_app.font(FontWeight.MEDIUM)
-    unit_text_width = self._measure_text(unit_text, font, 66).x
+    unit_text_width = self._measure_text(unit_text, self._font_medium, 66).x
 
     # Position unit text in center of rect
     unit_x = rect.x + rect.width / 2 - unit_text_width / 2
     unit_y = rect.y + 290 - 33
 
-    rl.draw_text_ex(font, unit_text, rl.Vector2(unit_x, unit_y), 66, 0, COLOR_WHITE_TRANSLUCENT)
+    rl.draw_text_ex(self._font_medium, unit_text, rl.Vector2(unit_x, unit_y), 66, 0, COLOR_WHITE_TRANSLUCENT)
 
   def _draw_wheel_icon(self, rect):
     """Draw the steering wheel icon that indicates driving status"""
