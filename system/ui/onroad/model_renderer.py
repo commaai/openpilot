@@ -173,7 +173,9 @@ class ModelRenderer:
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
     )
 
-  def _update_experimental_gradient(self, model, height):
+    self._update_experimental_gradient(self._rect.height)
+
+  def _update_experimental_gradient(self, height):
     """Pre-calculate experimental mode gradient colors"""
     if not self._experimental_mode:
       return
@@ -324,43 +326,60 @@ class ModelRenderer:
   def _map_line_to_polygon(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int, allow_invert: bool = True) -> np.ndarray:
     """Convert 3D line to 2D polygon for rendering."""
     if line.shape[0] == 0:
-      return np.empty((0, 2), dtype=np.float32)
+        return np.empty((0, 2), dtype=np.float32)
 
-    points = line[: min(max_idx + 1, line.shape[0])][line[: min(max_idx + 1, line.shape[0]), 0] >= 0]
+    # Slice points and filter non-negative x-coordinates
+    points = line[:max_idx + 1][line[:max_idx + 1, 0] >= 0]
     if points.shape[0] == 0:
-      return np.empty((0, 2), dtype=np.float32)
+        return np.empty((0, 2), dtype=np.float32)
 
-    left_3d = np.stack([points[:, 0], points[:, 1] - y_off, points[:, 2] + z_off], axis=1)
-    right_3d = np.stack([points[:, 0], points[:, 1] + y_off, points[:, 2] + z_off], axis=1)
+    # Create left and right 3D points in one array
+    n_points = points.shape[0]
+    points_3d = np.empty((n_points * 2, 3), dtype=np.float32)
+    points_3d[:n_points, 0] = points_3d[n_points:, 0] = points[:, 0]
+    points_3d[:n_points, 1] = points[:, 1] - y_off
+    points_3d[n_points:, 1] = points[:, 1] + y_off
+    points_3d[:n_points, 2] = points_3d[n_points:, 2] = points[:, 2] + z_off
 
-    left_proj = self._car_space_transform @ left_3d.T
-    right_proj = self._car_space_transform @ right_3d.T
-    valid_z = (np.abs(left_proj[2]) > 1e-6) & (np.abs(right_proj[2]) > 1e-6)
+    # Single matrix multiplication for projections
+    proj = self._car_space_transform @ points_3d.T
+    valid_z = np.abs(proj[2]) > 1e-6
     if not np.any(valid_z):
-      return np.empty((0, 2), dtype=np.float32)
+        return np.empty((0, 2), dtype=np.float32)
 
-    left_screen = np.stack([left_proj[0, valid_z]/left_proj[2, valid_z], left_proj[1, valid_z]/left_proj[2, valid_z]], axis=1)
-    right_screen = np.stack([right_proj[0, valid_z]/right_proj[2, valid_z], right_proj[1, valid_z]/right_proj[2, valid_z]], axis=1)
+    # Compute screen coordinates
+    screen = proj[:2, valid_z] / proj[2, valid_z][None, :]
+    left_screen = screen[:, :n_points].T
+    right_screen = screen[:, n_points:].T
+
+    # Ensure consistent shapes by re-aligning valid points
+    valid_points = np.minimum(left_screen.shape[0], right_screen.shape[0])
+    if valid_points == 0:
+        return np.empty((0, 2), dtype=np.float32)
+    left_screen = left_screen[:valid_points]
+    right_screen = right_screen[:valid_points]
 
     if self._clip_region:
-      clip = self._clip_region
-      bounds_mask = (
-        (left_screen[:, 0] >= clip.x) & (left_screen[:, 0] <= clip.x + clip.width) &
-        (left_screen[:, 1] >= clip.y) & (left_screen[:, 1] <= clip.y + clip.height) &
-        (right_screen[:, 0] >= clip.x) & (right_screen[:, 0] <= clip.x + clip.width) &
-        (right_screen[:, 1] >= clip.y) & (right_screen[:, 1] <= clip.y + clip.height)
-      )
-      if not np.any(bounds_mask):
-        return np.empty((0, 2), dtype=np.float32)
-      left_screen, right_screen = left_screen[bounds_mask], right_screen[bounds_mask]
+        clip = self._clip_region
+        bounds_mask = (
+            (left_screen[:, 0] >= clip.x) & (left_screen[:, 0] <= clip.x + clip.width) &
+            (left_screen[:, 1] >= clip.y) & (left_screen[:, 1] <= clip.y + clip.height) &
+            (right_screen[:, 0] >= clip.x) & (right_screen[:, 0] <= clip.x + clip.width) &
+            (right_screen[:, 1] >= clip.y) & (right_screen[:, 1] <= clip.y + clip.height)
+        )
+        if not np.any(bounds_mask):
+            return np.empty((0, 2), dtype=np.float32)
+        left_screen = left_screen[bounds_mask]
+        right_screen = right_screen[bounds_mask]
 
     if not allow_invert and left_screen.shape[0] > 1:
-      keep = np.concatenate([[True], np.diff(left_screen[:, 1]) < 0])
-      left_screen, right_screen = left_screen[keep], right_screen[keep]
-      if left_screen.shape[0] == 0:
-        return np.empty((0, 2), dtype=np.float32)
+        keep = np.concatenate(([True], np.diff(left_screen[:, 1]) < 0))
+        left_screen = left_screen[keep]
+        right_screen = right_screen[keep]
+        if left_screen.shape[0] == 0:
+            return np.empty((0, 2), dtype=np.float32)
 
-    return np.vstack([left_screen, right_screen[::-1]]).astype(np.float32)
+    return np.vstack((left_screen, right_screen[::-1])).astype(np.float32)
 
   @staticmethod
   def _map_val(x, x0, x1, y0, y1):
