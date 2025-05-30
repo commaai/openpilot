@@ -4,6 +4,7 @@ from enum import Enum
 
 from cereal import messaging, log
 from msgq.visionipc import VisionStreamType
+from openpilot.system.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.system.ui.onroad.model_renderer import ModelRenderer
 from openpilot.system.ui.widgets.cameraview import CameraView
 from openpilot.system.ui.lib.application import gui_app
@@ -40,6 +41,7 @@ class AugmentedRoadView(CameraView):
     self._content_rect = rl.Rectangle()
 
     self.model_renderer = ModelRenderer()
+    self.driver_state_renderer = DriverStateRenderer()
 
   def render(self, rect):
     # Update calibration before rendering
@@ -74,6 +76,7 @@ class AugmentedRoadView(CameraView):
     # - Lead vehicle indicators
     # - Additional features
     self.model_renderer.draw(self._content_rect, self.sm)
+    self.driver_state_renderer.draw(self._content_rect, self.sm)
 
     # End clipping region
     rl.end_scissor_mode()
