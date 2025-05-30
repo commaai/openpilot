@@ -12,11 +12,11 @@ class I2CSensor:
   def __del__(self):
     self.bus.close()
 
-  def read(self, register_address: int, length: int) -> bytes:
-    return bytes(self.bus.read_i2c_block_data(self.device_address, register_address, length))
+  def read(self, addr: int, length: int) -> bytes:
+    return bytes(self.bus.read_i2c_block_data(self.device_address, addr, length))
 
-  def write(self, register_address: int, data: int) -> None:
-    self.bus.write_byte_data(self.device_address, register_address, data)
+  def write(self, addr: int, data: int) -> None:
+    self.bus.write_byte_data(self.device_address, addr, data)
 
   def writes(self, writes: tuple[int, int]) -> None:
     for addr, data in writes:
@@ -56,7 +56,7 @@ class I2CSensor:
 
   @staticmethod
   def parse_16bit(lsb: int, msb: int) -> int:
-    return (msb << 8) | lsb
+    return (int(msb) << 8) | int(lsb)
 
   @staticmethod
   def parse_20bit(b2: int, b1: int, b0: int) -> int:

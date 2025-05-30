@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import time
+import ctypes
 import select
 import threading
 
@@ -9,7 +10,7 @@ from cereal.services import SERVICE_LIST
 from openpilot.common.util import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.gpio import gpiochip_get_ro_value_fd
+from openpilot.common.gpio import gpiochip_get_ro_value_fd, gpioevent_data
 
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 from openpilot.system.sensord.sensors.lsm6ds3_accel import LSM6DS3_Accel
@@ -47,14 +48,16 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
       cloudlog.error("no poll events set")
       continue
 
+    dat = os.read(fd, ctypes.sizeof(gpioevent_data))
+    evd = gpioevent_data.from_buffer_copy(dat)
+
     cur_offset = time.time_ns() - time.monotonic_ns()
-    diff = abs(cur_offset - offset)
-    if diff > 10 * 1e6:  # ms
+    if abs(cur_offset - offset) > 10 * 1e6:  # ms
       cloudlog.warning(f"time jumped: {cur_offset} {offset}")
       offset = cur_offset
       continue
 
-    ts = time.time_ns() - cur_offset
+    ts = evd.timestamp - cur_offset
     for sensor, service, interrupt in sensors:
       if interrupt:
         try:

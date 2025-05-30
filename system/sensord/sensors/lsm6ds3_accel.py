@@ -7,7 +7,6 @@ from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 class LSM6DS3_Accel(I2CSensor):
   # Register addresses
   LSM6DS3_ACCEL_I2C_REG_DRDY_CFG = 0x0B
-  LSM6DS3_ACCEL_I2C_REG_ID = 0x0F
   LSM6DS3_ACCEL_I2C_REG_INT1_CTRL = 0x0D
   LSM6DS3_ACCEL_I2C_REG_CTRL1_XL = 0x10
   LSM6DS3_ACCEL_I2C_REG_CTRL3_C = 0x12
@@ -26,17 +25,14 @@ class LSM6DS3_Accel(I2CSensor):
     return 0x6A
 
   def init(self):
-    chip_id = self.verify_chip_id(self.LSM6DS3_ACCEL_I2C_REG_ID, [0x69, 0x6A])
+    chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
     if chip_id == 0x6A:
       self.source = log.SensorEventData.SensorSource.lsm6ds3trc
     else:
       self.source = log.SensorEventData.SensorSource.lsm6ds3
 
-    # Optional self-test based on environment variable
-    if os.getenv("LSM_SELF_TEST") == "1":
-      # Self-test could be implemented here if required
-      pass
-
+    int1 = self.read(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, 1)[0]
+    int1 |= self.LSM6DS3_ACCEL_INT1_DRDY_XL
     self.writes((
       # Enable continuous update and automatic address increment
       (self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, self.LSM6DS3_ACCEL_IF_INC),
@@ -44,19 +40,17 @@ class LSM6DS3_Accel(I2CSensor):
       (self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, self.LSM6DS3_ACCEL_ODR_104HZ),
       # Configure data ready signal to pulse mode
       (self.LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, self.LSM6DS3_ACCEL_DRDY_PULSE_MODE),
+      # Enable data ready interrupt on INT1 without resetting existing interrupts
+      (self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, int1),
     ))
 
-    # Enable data ready interrupt on INT1 without resetting existing interrupts
-    value = self.read(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, 1)[0]
-    value |= self.LSM6DS3_ACCEL_INT1_DRDY_XL
-    self.write(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, value)
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     assert ts is not None  # must come from the IRQ event
 
     # Check if data is ready
     status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
-    if not (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA):
+    if (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA) == 0:
       raise Exception
 
     scale = 9.81 * 2.0 / (1 << 15)
@@ -90,8 +84,11 @@ class LSM6DS3_Accel(I2CSensor):
     self.write(self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, value)
 
 if __name__ == "__main__":
+  import numpy as np
   s = LSM6DS3_Accel(1)
   s.init()
   time.sleep(0.2)
-  print(s.get_event())
+  e = s.get_event(0)
+  print(e)
+  print(np.linalg.norm(e.acceleration.v))
   s.shutdown()

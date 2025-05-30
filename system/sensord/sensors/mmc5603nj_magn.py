@@ -30,9 +30,9 @@ class MMC5603NJ_Magn(I2CSensor):
       (REG_INTERNAL_1, 0b01),
     ))
 
-  def _read_data(self) -> list[float]:
+  def _read_data(self, cycle) -> list[float]:
     # start measurement
-    self.write(REG_INTERNAL_0, 0b01)
+    self.write(REG_INTERNAL_0, cycle)
     self.wait()
 
     # read out XYZ
@@ -45,22 +45,15 @@ class MMC5603NJ_Magn(I2CSensor):
     ]
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
-    st = int(time.monotonic() * 1e9)
+    ts = time.monotonic_ns()
 
     # SET - RESET cycle
-    self.write(REG_INTERNAL_0, SET)
-    self.wait()
-    xyz = self._read_data()
-
-    self.write(REG_INTERNAL_0, RESET)
-    self.wait()
-    reset_xyz = self._read_data()
-
+    xyz = self._read_data(SET)
+    reset_xyz = self._read_data(RESET)
     vals = [*xyz, *reset_xyz]
-    assert not any(int(v) == -32 for v in vals)
 
     event = log.SensorEventData.new_message()
-    event.timestamp = st
+    event.timestamp = ts
     event.version = 1
     event.sensor = 3 # SENSOR_MAGNETOMETER_UNCALIBRATED
     event.type = 14  # SENSOR_TYPE_MAGNETIC_FIELD_UNCALIBRATED
@@ -68,7 +61,7 @@ class MMC5603NJ_Magn(I2CSensor):
 
     m = event.init('magneticUncalibrated')
     m.v = vals
-    m.status = 1
+    m.status = int(all(int(v) != -32 for v in vals))
 
     return event
 
