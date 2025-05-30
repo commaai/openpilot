@@ -126,7 +126,7 @@ class DriverStateRenderer:
 
     # Draw face keypoints
     positioned_keypoints = self.face_keypoints_transformed + np.array([x, y])
-    lines = [rl.Vector2(int(positioned_keypoints[i][0]), int(positioned_keypoints[i][1]))
+    lines = [rl.Vector2(positioned_keypoints[i][0], positioned_keypoints[i][1])
              for i in range(len(positioned_keypoints))]
     white_color = rl.Color(255, 255, 255, int(255 * opacity))
     rl.draw_spline_linear(lines, len(lines), 5.2, white_color)
