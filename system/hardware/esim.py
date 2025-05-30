@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import subprocess
 import time
 
 from openpilot.system.hardware import HARDWARE
@@ -11,7 +12,8 @@ def reboot_modem_and_wait():
   to ensure the modem is ready to receive commands
   """
   HARDWARE.reboot_modem()
-  time.sleep(1)
+  while subprocess.run(['mmcli', '-m', 'any', '--3gpp-set-initial-eps-bearer-settings="apn="']).returncode != 0:
+    time.sleep(.1)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
