@@ -18,26 +18,6 @@ class I2CSensor:
       self.gpio_handler = None
     self.bus.close()
 
-  # *** helpers ***
-  @staticmethod
-  def wait():
-    # a standard small sleep
-    time.sleep(0.005)
-
-  @staticmethod
-  def parse_12bit(lsb: int, msb: int) -> int:
-    combined = (msb << 8) | (lsb & 0xF0)
-    return combined >> 4
-
-  @staticmethod
-  def parse_16bit(lsb: int, msb: int) -> int:
-    return (msb << 8) | lsb
-
-  @staticmethod
-  def parse_20bit(b2: int, b1: int, b0: int) -> int:
-    combined = (b0 << 16) | (b1 << 8) | b2
-    return combined >> 4
-
   def read(self, register_address: int, length: int) -> bytes:
     return bytes(self.bus.read_i2c_block_data(self.device_address, register_address, length))
 
@@ -49,10 +29,6 @@ class I2CSensor:
       self.write(addr, data)
 
   def init_gpio(self) -> None:
-    """Initialize GPIO for sensor interrupt if needed"""
-    if self.gpio_nr <= 0:
-      return
-
     try:
       # Export and configure the GPIO
       export_gpio(self.gpio_nr)
@@ -95,3 +71,23 @@ class I2CSensor:
 
   def is_data_valid(self, ts: int) -> bool:
     return True
+
+  # *** helpers ***
+  @staticmethod
+  def wait():
+    # a standard small sleep
+    time.sleep(0.005)
+
+  @staticmethod
+  def parse_12bit(lsb: int, msb: int) -> int:
+    combined = (msb << 8) | (lsb & 0xF0)
+    return combined >> 4
+
+  @staticmethod
+  def parse_16bit(lsb: int, msb: int) -> int:
+    return (msb << 8) | lsb
+
+  @staticmethod
+  def parse_20bit(b2: int, b1: int, b0: int) -> int:
+    combined = (b0 << 16) | (b1 << 8) | b2
+    return combined >> 4

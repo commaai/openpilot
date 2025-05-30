@@ -2,7 +2,6 @@
 import os
 import time
 import threading
-import select
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
@@ -38,7 +37,9 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
         continue
 
       try:
-        pm.send(service, sensor.get_event())
+        msg = messaging.new_message(service)
+        setattr(msg, service, sensor.get_event())
+        pm.send(service, msg)
       except Exception:
         cloudlog.exception(f"Error processing {service}")
 
@@ -49,7 +50,9 @@ def polling_loop(sensor: I2CSensor, service: str, event: threading.Event) -> Non
     try:
       sensor_event = sensor.get_event()
       if sensor_event is not None:
-        pm.send(service, sensor_event)
+        msg = messaging.new_message(service)
+        setattr(msg, service, sensor.get_event())
+        pm.send(service, msg)
       rk.keep_time()
     except Exception:
       cloudlog.exception(f"Error in {service} polling loop")
