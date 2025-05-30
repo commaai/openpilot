@@ -37,6 +37,7 @@ class DriverStateRenderer:
     self.is_rhd = False
     self.dm_fade_state = 0.0
     self.state_updated = False
+    self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
@@ -50,8 +51,6 @@ class DriverStateRenderer:
 
     # Load the driver face icon
     self.dm_img = gui_app.texture("icons/driver_face.png", IMG_SIZE, IMG_SIZE)
-    self.render_texture = rl.load_render_texture(BTN_SIZE, BTN_SIZE)
-    rl.set_texture_filter(self.render_texture.texture, rl.TextureFilter.TEXTURE_FILTER_ANISOTROPIC_8X)
 
     # Colors
     self.white_color = rl.Color(255, 255, 255, 255)
@@ -62,6 +61,9 @@ class DriverStateRenderer:
   def update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
     if  not sm.updated["driverMonitoringState"]:
+      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
+         rect.width != self.last_rect.width or rect.height != self.last_rect.height):
+        self.pre_calculate_drawing_elements(rect)
       return
 
     # Get monitoring state
@@ -110,8 +112,7 @@ class DriverStateRenderer:
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self.pre_calculate_drawing_elements()
-    self._draw_render_texture()
+    self.pre_calculate_drawing_elements(rect)
     self.state_updated = True
 
   def draw(self, rect, sm):
@@ -120,7 +121,6 @@ class DriverStateRenderer:
     self.is_visible = (
       sm.seen['driverStateV2'] and sm.seen["driverMonitoringState"] and sm["selfdriveState"].alertSize == 0
     )
-
     if not self.is_visible or not sm.updated["driverMonitoringState"]:
       return
 
@@ -128,84 +128,42 @@ class DriverStateRenderer:
     if not self.is_visible:
       return
 
-    x = rect.x + (rect.width - (UI_BORDER_SIZE + BTN_SIZE) if self.is_rhd else UI_BORDER_SIZE)
-    y = rect.y + rect.height - (UI_BORDER_SIZE + BTN_SIZE)
-
+    # Set opacity based on active state
     opacity = 0.65 if self.is_active else 0.2
+
     # Draw background circle
-    rl.draw_circle(int(x + BTN_SIZE//2), int(y + BTN_SIZE//2), BTN_SIZE // 2, rl.Color(0, 0, 0, int(opacity * 255)))
+    rl.draw_circle(int(self.position_x), int(self.position_y), BTN_SIZE // 2, rl.Color(0, 0, 0, 70))
 
-    rl.draw_texture_pro(
-      self.render_texture.texture,
-      rl.Rectangle(0, BTN_SIZE, BTN_SIZE, -BTN_SIZE),  # Y flipped (negative height)
-      rl.Rectangle(x, y, BTN_SIZE, BTN_SIZE),
-      rl.Vector2(0, 0),
-      0.0,
-      rl.WHITE,
-    )
+    # Draw face icon
+    icon_pos = rl.Vector2(self.position_x - self.dm_img.width // 2, self.position_y - self.dm_img.height // 2)
+    rl.draw_texture_v(self.dm_img, icon_pos, rl.Color(255, 255, 255, int(255 * opacity)))
 
-  def _draw_render_texture(self):
-    rl.begin_texture_mode(self.render_texture)
-    rl.clear_background(rl.Color(0, 0, 0, 0))  # Transparent background
+    # Draw face outline
+    self.white_color.a = int(255 * opacity)
+    rl.draw_spline_linear(self.face_lines, len(self.face_lines), 5.2, self.white_color)
 
-    # Center coordinates in texture
-    center_x, center_y = BTN_SIZE // 2, BTN_SIZE // 2
-
-    # Draw face icon - centered in texture
-    icon_pos = rl.Vector2(center_x - self.dm_img.width // 2, center_y - self.dm_img.height // 2)
-    rl.draw_texture_v(self.dm_img, icon_pos, rl.WHITE)  # Draw at full opacity in texture
-
-    # Adjust face lines to be centered in texture
-    face_offset_x = center_x - self.position_x
-    face_offset_y = center_y - self.position_y
-
-    # Create temporary face lines centered in texture
-    temp_face_lines = []
-    for i in range(len(self.face_lines)):
-      v = rl.Vector2(self.face_lines[i].x + face_offset_x, self.face_lines[i].y + face_offset_y)
-      temp_face_lines.append(v)
-
-    # Draw face outline - always white in texture
-    rl.draw_spline_linear(temp_face_lines, len(temp_face_lines), 5.2, rl.WHITE)
-
-    # Set arc color (always at full opacity in texture)
-    self.arc_color = self.engaged_color if True else self.disengaged_color
+    # Set arc color based on engaged state
+    engaged = True
+    self.arc_color = self.engaged_color if engaged else self.disengaged_color
+    self.arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
 
     # Draw tracking arcs if pre-calculated
     if self.h_arc_data:
-      # Create temporary arc lines centered in texture
-      temp_h_arc_lines = []
-      for i in range(len(self.h_arc_lines)):
-        v = rl.Vector2(self.h_arc_lines[i].x + face_offset_x, self.h_arc_lines[i].y + face_offset_y)
-        temp_h_arc_lines.append(v)
-
-      rl.draw_spline_linear(temp_h_arc_lines, len(temp_h_arc_lines), self.h_arc_data["thickness"], self.arc_color)
+      rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data["thickness"], self.arc_color)
 
     if self.v_arc_data:
-      # Create temporary arc lines centered in texture
-      temp_v_arc_lines = []
-      for i in range(len(self.v_arc_lines)):
-        v = rl.Vector2(self.v_arc_lines[i].x + face_offset_x, self.v_arc_lines[i].y + face_offset_y)
-        temp_v_arc_lines.append(v)
+      rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
 
-      rl.draw_spline_linear(temp_v_arc_lines, len(temp_v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
+  def pre_calculate_drawing_elements(self, rect):
+    """Pre-calculate all drawing elements based on the current rectangle"""
+    # Calculate icon position (bottom-left or bottom-right)
+    width, height = rect.width, rect.height
+    offset = UI_BORDER_SIZE + BTN_SIZE // 2
+    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = rect.y + height - offset
 
-    rl.end_texture_mode()
-
-  def pre_calculate_drawing_elements(self):
-    """Pre-calculate all drawing elements for rendering to texture"""
-    # For texture rendering, we'll use texture center as our reference point
-    center_x = BTN_SIZE / 2
-    center_y = BTN_SIZE / 2
-
-    # Store original screen position for final texture placement
-    offset = BTN_SIZE // 2
-    self.position_x = BTN_SIZE - offset if self.is_rhd else offset
-    self.position_y = BTN_SIZE - offset
-
-    # Pre-calculate the face lines positions - centered in texture
-    # No need to offset by screen position since we're drawing directly in the texture
-    positioned_keypoints = self.face_keypoints_transformed + np.array([center_x, center_y])
+    # Pre-calculate the face lines positions
+    positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])
     for i in range(len(positioned_keypoints)):
       self.face_lines[i].x = positioned_keypoints[i][0]
       self.face_lines[i].y = positioned_keypoints[i][1]
@@ -214,13 +172,13 @@ class DriverStateRenderer:
     delta_x = -self.driver_pose_sins[1] * ARC_LENGTH / 2.0  # Horizontal movement
     delta_y = -self.driver_pose_sins[0] * ARC_LENGTH / 2.0  # Vertical movement
 
-    # Pre-calculate horizontal arc - centered in texture
+    # Pre-calculate horizontal arc
     h_width = abs(delta_x)
     if h_width > 0:
       h_thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, self.driver_pose_diff[1] * 5.0)
       h_start_angle = 90 if self.driver_pose_sins[1] > 0 else -90
-      h_x = min(center_x + delta_x, center_x)
-      h_y = center_y - ARC_LENGTH / 2
+      h_x = min(self.position_x + delta_x, self.position_x)
+      h_y = self.position_y - ARC_LENGTH / 2
 
       self.h_arc_data = {"x": h_x, "y": h_y, "width": h_width, "height": ARC_LENGTH, "thickness": h_thickness}
 
@@ -229,13 +187,13 @@ class DriverStateRenderer:
       end_rad = np.deg2rad(h_start_angle + 180)
       angles = np.linspace(start_rad, end_rad, 37)
 
-      arc_center_x = h_x + h_width / 2
-      arc_center_y = h_y + ARC_LENGTH / 2
+      center_x = h_x + h_width / 2
+      center_y = h_y + ARC_LENGTH / 2
       radius_x = h_width / 2
       radius_y = ARC_LENGTH / 2
 
-      x_coords = arc_center_x + np.cos(angles) * radius_x
-      y_coords = arc_center_y + np.sin(angles) * radius_y
+      x_coords = center_x + np.cos(angles) * radius_x
+      y_coords = center_y + np.sin(angles) * radius_y
 
       for i in range(len(angles)):
         self.h_arc_lines[i].x = x_coords[i]
@@ -243,13 +201,13 @@ class DriverStateRenderer:
     else:
       self.h_arc_data = None
 
-    # Pre-calculate vertical arc - centered in texture
+    # Pre-calculate vertical arc
     v_height = abs(delta_y)
     if v_height > 0:
       v_thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, self.driver_pose_diff[0] * 5.0)
       v_start_angle = 0 if self.driver_pose_sins[0] > 0 else 180
-      v_x = center_x - ARC_LENGTH / 2
-      v_y = min(center_y + delta_y, center_y)
+      v_x = self.position_x - ARC_LENGTH / 2
+      v_y = min(self.position_y + delta_y, self.position_y)
 
       self.v_arc_data = {"x": v_x, "y": v_y, "width": ARC_LENGTH, "height": v_height, "thickness": v_thickness}
 
@@ -258,13 +216,13 @@ class DriverStateRenderer:
       end_rad = np.deg2rad(v_start_angle + 180)
       angles = np.linspace(start_rad, end_rad, 37)
 
-      arc_center_x = v_x + ARC_LENGTH / 2
-      arc_center_y = v_y + v_height / 2
+      center_x = v_x + ARC_LENGTH / 2
+      center_y = v_y + v_height / 2
       radius_x = ARC_LENGTH / 2
       radius_y = v_height / 2
 
-      x_coords = arc_center_x + np.cos(angles) * radius_x
-      y_coords = arc_center_y + np.sin(angles) * radius_y
+      x_coords = center_x + np.cos(angles) * radius_x
+      y_coords = center_y + np.sin(angles) * radius_y
 
       for i in range(len(angles)):
         self.v_arc_lines[i].x = x_coords[i]
