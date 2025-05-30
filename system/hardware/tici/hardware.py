@@ -517,7 +517,7 @@ class Tici(HardwareBase):
       except Exception:
         pass
 
-    # we use the lte connection built into AGNOS. cleanup old esim connection if it exists
+    # we use the lte connection built into AGNOS. cleanup esim connection if it exists
     dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
     if os.path.exists(dest):
       os.system(f"sudo nmcli con delete {dest}")
