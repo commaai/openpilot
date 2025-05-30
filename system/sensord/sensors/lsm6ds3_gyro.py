@@ -39,8 +39,6 @@ class LSM6DS3_Gyro(I2CSensor):
     else:
       self.source = log.SensorEventData.SensorSource.lsm6ds3
 
-    self.init_gpio()
-
     self.writes((
       # TODO: set scale. Default is +- 250 deg/s
       (self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, self.LSM6DS3_GYRO_ODR_104HZ),

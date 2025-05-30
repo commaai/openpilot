@@ -6,10 +6,11 @@ import threading
 
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
+from openpilot.common.util import sudo_write
 from openpilot.common.realtime import config_realtime_process, Ratekeeper
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.gpio import gpiochip_get_ro_value_fd
 
-from openpilot.system.sensord.gpiochip import gpiochip_get_ro_value_fd
 from openpilot.system.sensord.sensors.i2c_sensor import I2CSensor
 from openpilot.system.sensord.sensors.lsm6ds3_accel import LSM6DS3_Accel
 from openpilot.system.sensord.sensors.lsm6ds3_gyro import LSM6DS3_Gyro
@@ -26,6 +27,13 @@ def interrupt_loop(sensors: list[tuple[I2CSensor, str]], event) -> None:
   # So if it is detected as rising the following falling edge is skipped.
 
   fd = gpiochip_get_ro_value_fd("sensord", 0, 84)
+
+  # Configure IRQ affinity (simplified)
+  irq_path = "/proc/irq/336/smp_affinity_list"
+  if not os.path.exists(irq_path):
+    irq_path = "/proc/irq/335/smp_affinity_list"
+  if os.path.exists(irq_path):
+    sudo_write('1\n', irq_path)
 
   poller = select.poll()
   poller.register(fd, select.POLLIN | select.POLLPRI)
@@ -82,17 +90,6 @@ def main() -> None:
         threads.append(t)
     except Exception:
       cloudlog.exception(f"Error initializing {service} sensor")
-
-  # Configure IRQ affinity (simplified)
-  try:
-    irq_path = "/proc/irq/336/smp_affinity_list"
-    if not os.path.exists(irq_path):
-      irq_path = "/proc/irq/335/smp_affinity_list"
-    if os.path.exists(irq_path):
-      with open(irq_path, 'w', encoding='utf-8') as f:
-        f.write('1\n')
-  except Exception:
-    cloudlog.exception("Failed to set IRQ affinity")
 
   # Run interrupt loop
   t = threading.Thread(target=interrupt_loop, args=(sensors_cfg, exit_event), daemon=True)

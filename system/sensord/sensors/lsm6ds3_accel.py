@@ -37,8 +37,6 @@ class LSM6DS3_Accel(I2CSensor):
       # Self-test could be implemented here if required
       pass
 
-    self.init_gpio()
-
     self.writes((
       # Enable continuous update and automatic address increment
       (self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, self.LSM6DS3_ACCEL_IF_INC),
