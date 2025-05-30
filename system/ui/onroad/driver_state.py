@@ -64,9 +64,8 @@ class DriverStateRenderer:
 
     # Get driver orientation data from appropriate camera
     driverstate = sm["driverStateV2"]
-    driver_orient = (
-      driverstate.rightDriverData.faceOrientation if self.is_rhd else driverstate.leftDriverData.faceOrientation
-    )
+    driver_data = driverstate.rightDriverData if self.is_rhd else driverstate.leftDriverData
+    driver_orient = driver_data.faceOrientation
 
     # Update pose values with scaling and smoothing
     driver_orient = np.array(driver_orient)
