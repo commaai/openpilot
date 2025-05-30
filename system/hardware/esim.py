@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import subprocess
 import time
 from openpilot.system.hardware import HARDWARE
 
@@ -37,8 +36,8 @@ if __name__ == '__main__':
 
   if mutated:
     HARDWARE.reboot_modem()
-    while subprocess.run(['mmcli', '-i', 'any']).returncode != 0:
-      time.sleep(.1)
+    # eUICC needs a small delay post-reboot before querying profiles
+    time.sleep(.5)
 
   profiles = lpa.list_profiles()
   print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
