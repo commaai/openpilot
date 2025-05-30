@@ -48,12 +48,19 @@ class ModelRenderer:
     self._path = ModelPoints()
     self._lane_lines = [ModelPoints() for _ in range(4)]
     self._road_edges = [ModelPoints() for _ in range(2)]
+    self._acceleration_x = np.empty((0,), dtype=np.float32)
 
     # Transform matrix (3x3 for car space to screen space)
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
     self._clip_region = None
     self._rect = None
+    self._exp_gradient = {
+      'start': (0.0, 1.0),  # Bottom of path
+      'end': (0.0, 0.0),  # Top of path
+      'colors': [],
+      'stops': [],
+    }
 
     # Get longitudinal control setting from car parameters
     if car_params := Params().get("CarParams"):
@@ -128,6 +135,7 @@ class ModelRenderer:
 
     self._lane_line_probs = np.array(model.laneLineProbs, dtype=np.float32)
     self._road_edge_stds = np.array(model.roadEdgeStds, dtype=np.float32)
+    self._acceleration_x = np.array(model.acceleration.x, dtype=np.float32)
 
   def _update_leads(self, radar_state, pos_x_array):
     """Update positions of lead vehicles"""
@@ -165,6 +173,48 @@ class ModelRenderer:
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
     )
 
+  def _update_experimental_gradient(self, model, height):
+    """Pre-calculate experimental mode gradient colors"""
+    if not self._experimental_mode:
+      return
+
+    max_len = min(len(self._path.projected_points) // 2, len(self._acceleration_x))
+
+    segment_colors = []
+    gradient_stops = []
+
+    i = 0
+    while i < max_len:
+      track_idx = max_len - i - 1  # flip idx to start from bottom right
+      track_y = self._path.projected_points[track_idx][1]
+      if track_y < 0 or track_y > height:
+        i += 1
+        continue
+
+      # Calculate color based on acceleration
+      lin_grad_point = (height - track_y) / height
+
+      # speed up: 120, slow down: 0
+      path_hue = max(min(60 + self._acceleration_x[i] * 35, 120), 0)
+      path_hue = int(path_hue * 100 + 0.5) / 100
+
+      saturation = min(abs(self._acceleration_x[i] * 1.5), 1)
+      lightness = self._map_val(saturation, 0.0, 1.0, 0.95, 0.62)
+      alpha = self._map_val(lin_grad_point, 0.75 / 2.0, 0.75, 0.4, 0.0)
+
+      # Use HSL to RGB conversion
+      color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
+
+      gradient_stops.append(lin_grad_point)
+      segment_colors.append(color)
+
+      # Skip a point, unless next is last
+      i += 1 + (1 if (i + 2) < max_len else 0)
+
+    # Store the gradient in the path object
+    self._exp_gradient['colors'] = segment_colors
+    self._exp_gradient['stops'] = gradient_stops
+
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
     for i, lane_line in enumerate(self._lane_lines):
@@ -190,54 +240,10 @@ class ModelRenderer:
 
     if self._experimental_mode:
       # Draw with acceleration coloring
-      acceleration = model.acceleration.x
-      max_len = min(len(self._path.projected_points) // 2, len(acceleration))
-
-      # Create segments for gradient coloring
-      segment_colors = []
-      gradient_stops = []
-
-      i = 0
-      while i < max_len:
-        track_idx = max_len - i - 1  # flip idx to start from bottom right
-        track_y = self._path.projected_points[track_idx][1]
-        if  track_y < 0 or track_y > height:
-          i += 1
-          continue
-
-        # Calculate color based on acceleration
-        lin_grad_point = (height - track_y) / height
-
-        # speed up: 120, slow down: 0
-        path_hue = max(min(60 + acceleration[i] * 35, 120), 0)
-        path_hue = int(path_hue * 100 + 0.5) / 100
-
-        saturation = min(abs(acceleration[i] * 1.5), 1)
-        lightness = self._map_val(saturation, 0.0, 1.0, 0.95, 0.62)
-        alpha = self._map_val(lin_grad_point, 0.75 / 2.0, 0.75, 0.4, 0.0)
-
-        # Use HSL to RGB conversion
-        color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
-
-        # Create quad segment
-        gradient_stops.append(lin_grad_point)
-        segment_colors.append(color)
-
-        # Skip a point, unless next is last
-        i += 1 + (1 if (i + 2) < max_len else 0)
-
-      if len(segment_colors) < 2:
+      if len(self._exp_gradient['colors']) > 2:
+        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
+      else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
-        return
-
-      # Create gradient specification
-      gradient = {
-        'start': (0.0, 1.0),  # Bottom of path
-        'end': (0.0, 0.0),  # Top of path
-        'colors': segment_colors,
-        'stops': gradient_stops,
-      }
-      draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
     else:
       # Draw with throttle/no throttle gradient
       allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
@@ -349,7 +355,7 @@ class ModelRenderer:
       left_screen, right_screen = left_screen[bounds_mask], right_screen[bounds_mask]
 
     if not allow_invert and left_screen.shape[0] > 1:
-      keep = np.concatenate([[True], np.diff(left_screen[:, 1]) <= 0])
+      keep = np.concatenate([[True], np.diff(left_screen[:, 1]) < 0])
       left_screen, right_screen = left_screen[keep], right_screen[keep]
       if left_screen.shape[0] == 0:
         return np.empty((0, 2), dtype=np.float32)
