@@ -1,5 +1,6 @@
 import asyncio
 import concurrent.futures
+import copy
 import threading
 import time
 import uuid
@@ -56,6 +57,7 @@ class NetworkInfo:
   security_type: SecurityType
   path: str
   bssid: str
+  is_saved: bool = False
   # saved_path: str
 
 
@@ -64,6 +66,7 @@ class WifiManagerCallbacks:
   need_auth: Callable[[str], None] | None = None
   activated: Callable[[], None] | None = None
   forgotten: Callable[[], None] | None = None
+  networks_updated: Callable[[list[NetworkInfo]], None] | None = None
 
 
 class WifiManager:
@@ -76,7 +79,11 @@ class WifiManager:
     self.saved_connections: dict[str, str] = {}
     self.active_ap_path: str = ""
     self.scan_task: asyncio.Task | None = None
-    self._tethering_ssid = "weedle-" + Params().get("DongleId", encoding="utf-8")
+    # Set tethering ssid as "weedle" + first 4 characters of a dongle id
+    self._tethering_ssid = "weedle"
+    dongle_id = Params().get("DongleId", encoding="utf-8")
+    if dongle_id:
+      self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
@@ -452,6 +459,8 @@ class WifiManager:
         del self.saved_connections[ssid]
         if self.callbacks.forgotten:
           self.callbacks.forgotten()
+        # Update network list to reflect the removed saved connection
+        asyncio.create_task(self._update_connection_status())
         break
 
   async def _add_saved_connection(self, path: str) -> None:
@@ -460,6 +469,7 @@ class WifiManager:
       settings = await self._get_connection_settings(path)
       if ssid := self._extract_ssid(settings):
         self.saved_connections[ssid] = path
+        await self._update_connection_status()
     except DBusError as e:
       cloudlog.error(f"Failed to add connection {path}: {e}")
 
@@ -517,6 +527,7 @@ class WifiManager:
             path=ap_path,
             bssid=bssid,
             is_connected=self.active_ap_path == ap_path,
+            is_saved=ssid in self.saved_connections
           )
 
       except DBusError as e:
@@ -532,6 +543,9 @@ class WifiManager:
         network.ssid.lower(),
       ),
     )
+
+    if self.callbacks.networks_updated:
+      self.callbacks.networks_updated(copy.deepcopy(self.networks))
 
   async def _get_connection_settings(self, path):
     """Fetch connection settings for a specific connection path."""
@@ -627,11 +641,6 @@ class WifiManagerWrapper:
       if self._thread and self._thread.is_alive():
         self._thread.join(timeout=2.0)
       self._running = False
-
-  @property
-  def networks(self) -> list[NetworkInfo]:
-    """Get the current list of networks."""
-    return self._run_coroutine_sync(lambda manager: manager.networks.copy(), default=[])
 
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""

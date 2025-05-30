@@ -1,8 +1,11 @@
 import pyray as rl
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
 
 # Constants for special keys
+CONTENT_MARGIN = 50
 BACKSPACE_KEY = "<-"
 ENTER_KEY = "Enter"
 SPACE_KEY = "  "
@@ -42,30 +45,29 @@ keyboard_layouts = {
 
 
 class Keyboard:
-  def __init__(self, max_text_size: int = 255):
+  def __init__(self, max_text_size: int = 255, min_text_size: int = 0):
     self._layout = keyboard_layouts["lowercase"]
     self._max_text_size = max_text_size
-    self._string_pointer = rl.ffi.new("char[]", max_text_size)
-    self._input_text = ""
-    self._clear()
+    self._min_text_size = min_text_size
+    self._input_box = InputBox(max_text_size)
 
   @property
   def text(self):
-    result = rl.ffi.string(self._string_pointer).decode("utf-8")
-    self._clear()
-    return result
+    return self._input_box.text
 
-  def render(self, rect, title, sub_title):
+  def clear(self):
+    self._input_box.clear()
+
+  def render(self, title: str, sub_title: str):
+    rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
     gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90)
     gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, rl.GRAY)
     if gui_button(rl.Rectangle(rect.x + rect.width - 300, rect.y, 300, 100), "Cancel"):
-      self._clear()
+      self.clear()
       return 0
 
     # Text box for input
-    self._sync_string_pointer()
-    rl.gui_text_box(rl.Rectangle(rect.x, rect.y + 160, rect.width, 100), self._string_pointer, self._max_text_size, True)
-    self._input_text = rl.ffi.string(self._string_pointer).decode("utf-8")
+    self._input_box.render(rl.Rectangle(rect.x, rect.y + 160, rect.width, 100))
     h_space, v_space = 15, 15
     row_y_start = rect.y + 300  # Starting Y position for the first row
     key_height = (rect.height - 300 - 3 * v_space) / 4
@@ -84,7 +86,8 @@ class Keyboard:
         key_rect = rl.Rectangle(start_x, row_y_start + row * (key_height + v_space), new_width, key_height)
         start_x += new_width
 
-        if gui_button(key_rect, key):
+        is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
+        if gui_button(key_rect, key, is_enabled=is_enabled):
           if key == ENTER_KEY:
             return 1
           else:
@@ -101,18 +104,21 @@ class Keyboard:
       self._layout = keyboard_layouts["numbers"]
     elif key == SYMBOL_KEY:
       self._layout = keyboard_layouts["specials"]
-    elif key == BACKSPACE_KEY and len(self._input_text) > 0:
-      self._input_text = self._input_text[:-1]
-    elif key != BACKSPACE_KEY and len(self._input_text) < self._max_text_size:
-      self._input_text += key
+    elif key == BACKSPACE_KEY:
+      self._input_box.delete_char_before_cursor()
+    else:
+      self._input_box.add_char_at_cursor(key)
 
-  def _clear(self):
-    self._input_text = ''
-    self._string_pointer[0] = b'\0'
 
-  def _sync_string_pointer(self):
-    """Sync the C-string pointer with the internal Python string."""
-    encoded = self._input_text.encode("utf-8")[:self._max_text_size - 1]  # Leave room for the null terminator
-    buffer = rl.ffi.buffer(self._string_pointer)
-    buffer[:len(encoded)] = encoded
-    self._string_pointer[len(encoded)] = b'\0'  # Null terminator
+if __name__ == "__main__":
+  gui_app.init_window("Keyboard")
+  keyboard = Keyboard(min_text_size=8)
+  for _ in gui_app.render():
+    result = keyboard.render("Keyboard", "Type here")
+    if result == 1:
+      print(f"You typed: {keyboard.text}")
+      gui_app.request_close()
+    elif result == 0:
+      print("Canceled")
+      gui_app.request_close()
+  gui_app.close()

@@ -10,6 +10,12 @@ class ButtonStyle(IntEnum):
   TRANSPARENT = 3  # For buttons with transparent background and border
 
 
+class TextAlignment(IntEnum):
+  LEFT = 0
+  CENTER = 1
+  RIGHT = 2
+
+
 DEFAULT_BUTTON_FONT_SIZE = 60
 BUTTON_ENABLED_TEXT_COLOR = rl.Color(228, 228, 228, 255)
 BUTTON_DISABLED_TEXT_COLOR = rl.Color(228, 228, 228, 51)
@@ -38,6 +44,8 @@ def gui_button(
   button_style: ButtonStyle = ButtonStyle.NORMAL,
   is_enabled: bool = True,
   border_radius: int = 10,  # Corner rounding in pixels
+  text_alignment: TextAlignment = TextAlignment.CENTER,
+  text_padding: int = 20,  # Padding for left/right alignment
 ) -> int:
   result = 0
 
@@ -58,11 +66,16 @@ def gui_button(
     rl.draw_rectangle_rounded_lines_ex(rect, roundness, 20, 2, rl.WHITE)
 
   font = gui_app.font(font_weight)
-  # Center text in the button
   text_size = rl.measure_text_ex(font, text, font_size, 0)
-  text_pos = rl.Vector2(
-    rect.x + (rect.width - text_size.x) // 2, rect.y + (rect.height - text_size.y) // 2
-  )
+  text_pos = rl.Vector2(0, rect.y + (rect.height - text_size.y) // 2)  # Vertical centering
+
+  # Horizontal alignment
+  if text_alignment == TextAlignment.LEFT:
+    text_pos.x = rect.x + text_padding
+  elif text_alignment == TextAlignment.CENTER:
+    text_pos.x = rect.x + (rect.width - text_size.x) // 2
+  elif text_alignment == TextAlignment.RIGHT:
+    text_pos.x = rect.x + rect.width - text_size.x - text_padding
 
   # Draw the button text
   text_color = BUTTON_ENABLED_TEXT_COLOR if is_enabled else BUTTON_DISABLED_TEXT_COLOR

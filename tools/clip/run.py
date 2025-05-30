@@ -28,6 +28,7 @@ RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
 PROC_WAIT_SECONDS = 30
 
+OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
 UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
 
@@ -165,17 +166,37 @@ def clip(data_dir: str | None, quality: Literal['low', 'high'], prefix: str, rou
   # TODO: evaluate creating fn that inspects /tmp/.X11-unix and creates unused display to avoid possibility of collision
   display = f':{randint(99, 999)}'
 
+  box_style = 'box=1:boxcolor=black@0.33:boxborderw=7'
   meta_text = get_meta_text(route)
   overlays = [
-    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile=Inter.tff:fontcolor=white:fontsize=18:box=1:boxcolor=black@0.33:boxborderw=7:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'"
+    # metadata overlay
+    f"drawtext=text='{escape_ffmpeg_text(meta_text)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=15:{box_style}:x=(w-text_w)/2:y=5.5:enable='between(t,1,5)'",
+    # route time overlay
+    f"drawtext=text='%{{eif\\:floor(({start}+t)/60)\\:d\\:2}}\\:%{{eif\\:mod({start}+t\\,60)\\:d\\:2}}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=24:{box_style}:x=w-text_w-38:y=38"
   ]
   if title:
-    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile=Inter.tff:fontcolor=white:fontsize=32:box=1:boxcolor=black@0.33:boxborderw=10:x=(w-text_w)/2:y=53")
+    overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
 
   ffmpeg_cmd = [
-    'ffmpeg', '-y', '-video_size', RESOLUTION, '-framerate', str(FRAMERATE), '-f', 'x11grab', '-draw_mouse', '0',
-    '-i', display, '-c:v', 'libx264', '-maxrate', f'{bit_rate_kbps}k', '-bufsize', f'{bit_rate_kbps*2}k', '-crf', '23',
-    '-filter:v', ','.join(overlays), '-preset', 'ultrafast', '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-f', 'mp4', '-t', str(duration), out
+    'ffmpeg', '-y',
+    '-video_size', RESOLUTION,
+    '-framerate', str(FRAMERATE),
+    '-f', 'x11grab',
+    '-rtbufsize', '100M',
+    '-draw_mouse', '0',
+    '-i', display,
+    '-c:v', 'libx264',
+    '-maxrate', f'{bit_rate_kbps}k',
+    '-bufsize', f'{bit_rate_kbps*2}k',
+    '-crf', '23',
+    '-filter:v', ','.join(overlays),
+    '-preset', 'ultrafast',
+    '-tune', 'zerolatency',
+    '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart',
+    '-f', 'mp4',
+    '-t', str(duration),
+    out,
   ]
 
   replay_cmd = [REPLAY, '-c', '1', '-s', str(begin_at), '--prefix', prefix]
