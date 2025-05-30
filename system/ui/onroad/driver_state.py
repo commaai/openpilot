@@ -13,7 +13,7 @@ DEFAULT_FACE_KPTS_3D = np.array([
     [36.53, 6.40, 8.00], [36.53, -21.03, 8.00], [34.47, -32.00, 8.00], [32.42, -37.49, 8.00],
     [30.36, -40.91, 8.00], [24.19, -46.40, 8.00], [18.02, -49.14, 8.00], [6.36, -51.20, 8.00],
     [-5.98, -51.20, 8.00],
-])
+], dtype=np.float32)
 
 # UI constants
 UI_BORDER_SIZE = 30
@@ -24,6 +24,10 @@ ARC_THICKNESS_DEFAULT = 6.7
 ARC_THICKNESS_EXTEND = 12.0
 
 
+SCALES_POS = np.array([0.9, 0.4, 0.4], dtype=np.float32)
+SCALES_NEG = np.array([0.7, 0.4, 0.4], dtype=np.float32)
+
+
 class DriverStateRenderer:
   def __init__(self):
     # Initial state with NumPy arrays
@@ -32,11 +36,11 @@ class DriverStateRenderer:
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.driver_pose_vals = np.zeros(3)
-    self.driver_pose_diff = np.zeros(3)
-    self.driver_pose_sins = np.zeros(3)
-    self.driver_pose_coss = np.zeros(3)
-    self.face_keypoints_transformed = np.zeros((DEFAULT_FACE_KPTS_3D.shape[0], 2))
+    self.driver_pose_vals = np.zeros(3, dtype=np.float32)
+    self.driver_pose_diff = np.zeros(3, dtype=np.float32)
+    self.driver_pose_sins = np.zeros(3, dtype=np.float32)
+    self.driver_pose_coss = np.zeros(3, dtype=np.float32)
+    self.face_keypoints_transformed = np.zeros((DEFAULT_FACE_KPTS_3D.shape[0], 2), dtype=np.float32)
 
     # Load the driver face icon
     self.dm_img = gui_app.texture("icons/driver_face.png", IMG_SIZE, IMG_SIZE)
@@ -70,7 +74,7 @@ class DriverStateRenderer:
 
     # Update pose values with scaling and smoothing
     driver_orient = np.array(driver_orient)
-    scales = np.where(driver_orient < 0, [0.7, 0.4, 0.4], [0.9, 0.4, 0.4])
+    scales = np.where(driver_orient < 0, SCALES_NEG, SCALES_POS)
     v_this = driver_orient * scales
     self.driver_pose_diff = np.abs(self.driver_pose_vals - v_this)
     self.driver_pose_vals = 0.8 * v_this + 0.2 * self.driver_pose_vals  # Smooth changes
