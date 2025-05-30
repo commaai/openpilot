@@ -113,7 +113,7 @@ class DriverStateRenderer:
     if  not sm.updated["driverMonitoringState"]:
       if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
          rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self.pre_calculate_drawing_elements(rect)
+        self._pre_calculate_drawing_elements(rect)
       return
 
     # Get monitoring state
