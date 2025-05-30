@@ -36,6 +36,7 @@ class HudRenderer:
     self.set_speed = SET_SPEED_NA
     self.speed = 0.0
     self.v_ego_cluster_seen = False
+    self.font_metrics_cache = {}
     self._wheel_texture = gui_app.texture("icons/chffr_wheel.png", WHEEL_ICON_SIZE, WHEEL_ICON_SIZE)
 
   def _update_state(self, sm):
@@ -113,7 +114,7 @@ class HudRenderer:
       rl.Rectangle(x, y, set_speed_width, set_speed_height),
       0.2,  # roundness
       30,  # segments
-      2,  # thickness
+      6,  # thickness
       COLOR_BORDER_TRANSLUCENT,
     )
 
@@ -132,24 +133,23 @@ class HudRenderer:
 
     # Draw "MAX" text
     max_text = "MAX"
-    font = gui_app.font(FontWeight.MEDIUM)
-    max_text_width = rl.measure_text_ex(font, max_text, 40, 0).x
+    font = gui_app.font(FontWeight.SEMI_BOLD)
+    max_text_width = self._measure_text(max_text, font, 40).x
     max_x = x + (set_speed_width - max_text_width) / 2
     rl.draw_text_ex(font, max_text, rl.Vector2(max_x, y + 27), 40, 0, max_color)
 
     # Draw set speed value
     set_speed_text = "–" if not self.is_cruise_set else str(round(self.set_speed))
     font = gui_app.font(FontWeight.BOLD)
-    speed_text_width = rl.measure_text_ex(font, set_speed_text, 90, 0).x
+    speed_text_width = self._measure_text(set_speed_text, font, 90).x
     speed_x = x + (set_speed_width - speed_text_width) / 2
     rl.draw_text_ex(font, set_speed_text, rl.Vector2(speed_x, y + 77), 90, 0, set_speed_color)
 
   def _draw_current_speed(self, rect):
     """Draw the current vehicle speed"""
-    # Draw speed value
     speed_text = str(round(self.speed))
     font = gui_app.font(FontWeight.BOLD)
-    speed_text_width = rl.measure_text_ex(font, speed_text, 176, 0).x
+    speed_text_width = self._measure_text(speed_text, font, 176).x
 
     # Position speed text in center of rect
     speed_x = rect.x + rect.width / 2 - speed_text_width / 2
@@ -160,7 +160,7 @@ class HudRenderer:
     # Draw speed unit
     unit_text = "km/h" if self.is_metric else "mph"
     font = gui_app.font(FontWeight.MEDIUM)
-    unit_text_width = rl.measure_text_ex(font, unit_text, 66, 0).x
+    unit_text_width = self._measure_text(unit_text, font, 66).x
 
     # Position unit text in center of rect
     unit_x = rect.x + rect.width / 2 - unit_text_width / 2
@@ -196,3 +196,12 @@ class HudRenderer:
     color = rl.Color(255, 255, 255, int(255 * opacity))
 
     rl.draw_texture_v(self._wheel_texture, rl.Vector2(img_x, img_y), color)
+
+  def _measure_text(self, text: str, font: rl.Font, font_size: int) -> rl.Vector2:
+    """Get text metrics for a given text and font weight with caching"""
+    key = (text, font_size)
+    if key not in self.font_metrics_cache:
+      metrics = rl.measure_text_ex(font, text, font_size, 0)
+      self.font_metrics_cache[key] = metrics
+
+    return self.font_metrics_cache[key]
