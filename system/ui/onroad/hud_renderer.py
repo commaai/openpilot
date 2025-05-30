@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from cereal.messaging import SubMaster
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.common.conversions import Conversions as CV
+from openpilot.common.params import Params
 from enum import IntEnum
 
 # Constants
@@ -76,7 +77,7 @@ class HudRenderer:
 
   def _update_state(self, sm: SubMaster) -> None:
     """Update HUD state based on car state and controls state."""
-    self.is_metric = True
+    self.is_metric = Params().get_bool('IsMetric')
     self.status = HudStatus.DISENGAGED
 
     if not sm.valid['carState']:
