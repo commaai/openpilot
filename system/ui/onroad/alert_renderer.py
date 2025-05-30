@@ -1,6 +1,5 @@
 import numpy as np
 import pyray as rl
-from enum import IntEnum
 from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.system.ui.lib.application import DEFAULT_FPS
@@ -44,7 +43,7 @@ class AlertRenderer:
     self.started_frame = 0
     self.font_regular = gui_app.font(FontWeight.NORMAL)
     self.font_bold = gui_app.font(FontWeight.BOLD)
-    self.font_metrics_cache = {}
+    self.font_metrics_cache: dict[tuple[str, int], rl.Vector2] = {}
 
   def clear(self):
     """Reset the alert"""
@@ -211,7 +210,7 @@ class AlertRenderer:
 
       # Handle text wrapping for title
       wrapped_text1 = self._wrap_text(self.alert.text1, rect.width - 100, font_size1, self.font_bold)
-      text1_height = self._get_text_height(wrapped_text1, font_size1, self.font_bold)
+      # text1_height = self._get_text_height(wrapped_text1, font_size1, self.font_bold)
 
       # Draw title text
       for i, line in enumerate(wrapped_text1):
