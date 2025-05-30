@@ -32,6 +32,12 @@ class ModelPoints:
   raw_points: np.ndarray = field(default_factory=lambda: np.empty((0, 3), dtype=np.float32))
   projected_points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
 
+@dataclass
+class LeadVehicle:
+  glow: list[float] = field(default_factory=list)
+  chevron: list[float] = field(default_factory=list)
+  fill_alpha: int = 0
+
 
 class ModelRenderer:
   def __init__(self):
@@ -41,7 +47,7 @@ class ModelRenderer:
     self._prev_allow_throttle = True
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
-    self._lead_vertices = [None, None]
+    self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._path_offset_z = 1.22
 
     # Initialize ModelPoints objects
@@ -113,15 +119,8 @@ class ModelRenderer:
     self._draw_lane_lines()
     self._draw_path(sm)
 
-    # Draw lead vehicles if available
     if render_lead_indicator and radar_state:
-      lead_two = radar_state.leadTwo
-
-      if lead_one and lead_one.status:
-        self._draw_lead(lead_one, self._lead_vertices[0], rect)
-
-      if lead_two and lead_two.status and lead_one and (abs(lead_one.dRel - lead_two.dRel) > 3.0):
-        self._draw_lead(lead_two, self._lead_vertices[1], rect)
+      self._draw_lead_indicator()
 
   def _update_raw_points(self, model):
     """Update raw 3D points from model data"""
@@ -139,14 +138,16 @@ class ModelRenderer:
 
   def _update_leads(self, radar_state, pos_x_array):
     """Update positions of lead vehicles"""
+    self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     leads = [radar_state.leadOne, radar_state.leadTwo]
     for i, lead_data in enumerate(leads):
       if lead_data and lead_data.status:
-        d_rel = lead_data.dRel
-        y_rel = lead_data.yRel
+        d_rel, y_rel, v_rel = lead_data.dRel, lead_data.yRel, lead_data.vRel
         idx = self._get_path_length_idx(pos_x_array, d_rel)
         z = self._path.raw_points[idx, 2] if idx < len(self._path.raw_points) else 0.0
-        self._lead_vertices[i] = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
+        point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
+        if point:
+          self._lead_vehicles[i] = self._update_lead_vehicle(d_rel, v_rel, point, self._rect)
 
   def _update_model(self, lead, pos_x_array):
     """Update model visualization data based on model message"""
@@ -160,7 +161,7 @@ class ModelRenderer:
       )
 
     # Update road edges using raw points
-    for i, road_edge in enumerate(self._road_edges):
+    for road_edge in self._road_edges:
       road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx)
 
     # Update path using raw points
@@ -217,6 +218,30 @@ class ModelRenderer:
     self._exp_gradient['colors'] = segment_colors
     self._exp_gradient['stops'] = gradient_stops
 
+  def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
+    speed_buff, lead_buff = 10.0, 40.0
+
+    # Calculate fill alpha
+    fill_alpha = 0
+    if d_rel < lead_buff:
+      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
+      if v_rel < 0:
+        fill_alpha += 255 * (-1 * (v_rel / speed_buff))
+      fill_alpha = min(fill_alpha, 255)
+
+    # Calculate size and position
+    sz = np.clip((25 * 30) / (d_rel / 3 + 30), 15.0, 30.0) * 2.35
+    x = np.clip(point[0], 0.0, rect.width - sz / 2)
+    y = min(point[1], rect.height - sz * 0.6)
+
+    g_xo = sz / 5
+    g_yo = sz / 10
+
+    glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
+    chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
+
+    return LeadVehicle(glow=glow,chevron=chevron, fill_alpha=int(fill_alpha))
+
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
     for i, lane_line in enumerate(self._lane_lines):
@@ -272,34 +297,14 @@ class ModelRenderer:
       }
       draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
 
-  def _draw_lead(self, lead_data, vd, rect):
-    """Draw lead vehicle indicator"""
-    speed_buff, lead_buff = 10.0, 40.0
-    d_rel, v_rel = lead_data.dRel, lead_data.vRel
+  def _draw_lead_indicator(self):
+    # Draw lead vehicles if available
+    for lead in self._lead_vehicles:
+      if not lead.glow or not lead.chevron:
+        continue
 
-    # Calculate fill alpha
-    fill_alpha = 0
-    if d_rel < lead_buff:
-      fill_alpha = 255 * (1.0 - (d_rel / lead_buff))
-      if v_rel < 0:
-        fill_alpha += 255 * (-1 * (v_rel / speed_buff))
-      fill_alpha = min(fill_alpha, 255)
-
-    # Calculate size and position
-    sz = np.clip((25 * 30) / (d_rel / 3 + 30), 15.0, 30.0) * 2.35
-    x = np.clip(vd[0], 0.0, rect.width - sz / 2)
-    y = min(vd[1], rect.height - sz * 0.6)
-
-    g_xo = sz / 5
-    g_yo = sz / 10
-
-    # Draw glow
-    glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
-    rl.draw_triangle_fan(glow, len(glow), rl.Color(218, 202, 37, 255))
-
-    # Draw chevron
-    chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
-    rl.draw_triangle_fan(chevron, len(chevron), rl.Color(201, 34, 49, int(fill_alpha)))
+      rl.draw_triangle_fan(lead.glow, len(lead.glow), rl.Color(218, 202, 37, 255))
+      rl.draw_triangle_fan(lead.chevron, len(lead.chevron), rl.Color(201, 34, 49, lead.fill_alpha))
 
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:
