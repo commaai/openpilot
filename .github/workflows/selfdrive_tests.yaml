@@ -32,9 +32,9 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -53,7 +53,7 @@ jobs:
     - name: Build devel
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
@@ -70,9 +70,9 @@ jobs:
       run: release/check-submodules.sh
 
   build:
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -85,8 +85,8 @@ jobs:
       run: |
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
-    - uses: ./.github/workflows/setup-with-retry
-    - uses: ./.github/workflows/compile-openpilot
+    - uses: ./.github/workflows/setup-with-retry/
+    - uses: ./.github/workflows/compile-openpilot/
       timeout-minutes: 30
 
   build_mac:
@@ -98,7 +98,7 @@ jobs:
         submodules: true
     - run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
     - name: Homebrew cache
-      uses: ./.github/workflows/auto-cache
+      uses: ./.github/workflows/auto-cache/
       with:
         path: ~/Library/Caches/Homebrew
         key: brew-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
@@ -112,7 +112,7 @@ jobs:
         PYTHONWARNINGS: default
     - run: git lfs pull
     - name: Getting scons cache
-      uses: ./.github/workflows/auto-cache
+      uses: ./.github/workflows/auto-cache/
       with:
         path: /tmp/scons_cache
         key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
@@ -124,9 +124,9 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -136,16 +136,16 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Static analysis
       timeout-minutes: 1
       run: ${{ env.RUN }} "scripts/lint/lint.sh"
 
   unit_tests:
     name: unit tests
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -153,7 +153,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
@@ -173,9 +173,9 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -183,7 +183,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v4
@@ -229,9 +229,9 @@ jobs:
 
   test_cars:
     name: cars
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -243,7 +243,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Cache test routes
       id: routes-cache
       uses: actions/cache@v4
@@ -278,7 +278,7 @@ jobs:
           submodules: true
           ref: ${{ github.event.pull_request.base.ref }}
       - run: git lfs pull
-      - uses: ./.github/workflows/setup-with-retry
+      - uses: ./.github/workflows/setup-with-retry/
       - name: Get base car info
         run: |
           ${{ env.RUN }} "scons -j$(nproc) && python3 selfdrive/debug/dump_car_docs.py --path /tmp/openpilot_cache/base_car_docs"
@@ -324,9 +324,9 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -335,7 +335,7 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - uses: ./.github/workflows/setup-with-retry
+    - uses: ./.github/workflows/setup-with-retry/
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
@@ -349,9 +349,9 @@ jobs:
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -360,7 +360,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
-      - uses: ./.github/workflows/setup-with-retry
+      - uses: ./.github/workflows/setup-with-retry/
       - name: caching frames
         id: frames-cache
         uses: actions/cache@v4

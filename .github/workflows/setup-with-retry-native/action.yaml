@@ -1,9 +1,9 @@
-name: 'openpilot env setup, with retry on failure'
-description: 'Setup openpilot environment with retry support for handling transient failures'
+name: 'openpilot native env setup, with retry on failure'
+description: 'Setup openpilot environment natively with retry support, optimized for speed'
 
 inputs:
   docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    description: 'Auth token for Docker Hub, required for BuildJet jobs (unused in native setup)'
     required: false
     default: ''
   sleep_time:
@@ -15,24 +15,24 @@ runs:
   using: "composite"
   steps:
     - id: setup1
-      uses: ./.github/workflows/setup/
+      uses: ./.github/workflows/setup-native/
       continue-on-error: true
       with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        is_retried: true
     - if: steps.setup1.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
     - id: setup2
       if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup/
+      uses: ./.github/workflows/setup-native/
       continue-on-error: true
       with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        is_retried: true
     - if: steps.setup2.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
     - id: setup3
       if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup/
+      uses: ./.github/workflows/setup-native/
       with:
-        docker_hub_pat: ${{ inputs.docker_hub_pat }}
+        is_retried: true
