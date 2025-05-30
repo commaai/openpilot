@@ -2,20 +2,22 @@ import numpy as np
 import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
-from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
-
-# Alert sizes
-AlertSize = log.SelfdriveState.AlertSize
-AlertStatus = log.SelfdriveState.AlertStatus
-
-
+# Constants
 ALERT_COLORS = {
-  AlertStatus.normal: rl.Color(0x81, 0x86, 0x8C, 255),  # Gray
-  AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 255),  # Orange
-  AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 255),  # Red
+  log.SelfdriveState.AlertStatus.normal: rl.Color(0, 0, 0, 150),  # Black
+  log.SelfdriveState.AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 100),  # Orange
+  log.SelfdriveState.AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 150),  # Red
 }
+
+ALERT_HEIGHTS = {
+  log.SelfdriveState.AlertSize.small: 271,
+  log.SelfdriveState.AlertSize.mid: 420,
+}
+
+SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
+SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
 
 @dataclass
@@ -23,11 +25,11 @@ class Alert:
   text1: str = ""
   text2: str = ""
   alert_type: str = ""
-  size: log.SelfdriveState.AlertSize = AlertSize.none
-  status: log.SelfdriveState.AlertStatus = AlertStatus.normal
+  size: log.SelfdriveState.AlertSize = log.SelfdriveState.AlertSize.none
+  status: log.SelfdriveState.AlertStatus = log.SelfdriveState.AlertStatus.normal
 
-  def is_equal(self, other):
-    """Check if alerts are equal"""
+  def is_equal(self, other: 'Alert') -> bool:
+    """Check if two alerts are equal."""
     return (
       self.text1 == other.text1
       and self.text2 == other.text2
@@ -39,141 +41,110 @@ class Alert:
 
 class AlertRenderer:
   def __init__(self):
+    """Initialize the alert renderer."""
+    self.alert: Alert = Alert()
+    self.started_frame: int = 0
+    self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
+    self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
+    self.font_metrics_cache: dict[tuple[str, int, str], rl.Vector2] = {}
+
+  def clear(self) -> None:
+    """Reset the alert to its default state."""
     self.alert = Alert()
-    self.started_frame = 0
-    self.font_regular = gui_app.font(FontWeight.NORMAL)
-    self.font_bold = gui_app.font(FontWeight.BOLD)
-    self.font_metrics_cache: dict[tuple[str, int], rl.Vector2] = {}
 
-  def clear(self):
-    """Reset the alert"""
-    self.alert = Alert()
+  def update_state(self, sm: messaging.SubMaster, started_frame: int) -> None:
+    """Update alert state based on SubMaster data."""
+    self.started_frame = started_frame
+    new_alert = self.get_alert(sm)
+    if not self.alert.is_equal(new_alert):
+      self.alert = new_alert
 
-  def update_state(self, sm, started_frame):
-    """Update alert state based on SubMaster data"""
-    a = self.get_alert(sm, started_frame)
-    if not self.alert.is_equal(a):
-      self.alert = a
+  def get_alert(self, sm: messaging.SubMaster) -> Alert:
+    """Generate the current alert based on selfdrive state."""
+    if not sm.valid.get('selfdriveState', False):
+      return Alert()
 
-  def get_alert(self, sm, started_frame):
-    """Get the current alert based on selfdrive state"""
-    # Default empty alert
-    started_frame = 0
-    a = Alert()
-
-    if not sm.valid['selfdriveState']:
-      return a
-
-    # Get selfdrive state
     ss = sm['selfdriveState']
-    selfdrive_frame = sm.recv_frame['selfdriveState']
+    selfdrive_frame = sm.recv_frame.get('selfdriveState', 0)
+    alert_status = self._get_enum_value(ss.alertStatus, log.SelfdriveState.AlertStatus)
 
-    # Don't show old alerts
-    alert_status = ss.alertStatus
-    status_value = int(alert_status) if isinstance(alert_status, int) else alert_status.raw
-    if True:  # selfdrive_frame >= started_frame:
-      a = Alert(
+    # Return current alert if selfdrive state is recent
+    if selfdrive_frame >= self.started_frame:
+      return Alert(
         text1=ss.alertText1,
         text2=ss.alertText2,
         alert_type=ss.alertType,
-        size=ss.alertSize,
-        status=status_value,
+        size=self._get_enum_value(ss.alertSize, log.SelfdriveState.AlertSize),
+        status=alert_status,
       )
 
     # Handle selfdrive timeout
-    if not sm.updated['selfdriveState'] and (sm.frame - started_frame) > 5 * DEFAULT_FPS:
-      SELFDRIVE_STATE_TIMEOUT = 5
-      ss_missing = (np.uint64(rl.get_time() * 1e9) - sm.recv_time['selfdriveState']) / 1e9
-
-      if selfdrive_frame < started_frame:
-        # Car started but selfdrive not seen
-        a = Alert(
-          text1="openpilot Unavailable",
-          text2="Waiting to start",
-          alert_type="selfdriveWaiting",
-          size=AlertSize.mid,
-          status=AlertStatus.normal,
+    ss_missing = (np.uint64(rl.get_time() * 1e9) - sm.recv_time.get('selfdriveState', 0)) / 1e9
+    if selfdrive_frame < self.started_frame:
+      return Alert(
+        text1="openpilot Unavailable",
+        text2="Waiting to start",
+        alert_type="selfdriveWaiting",
+        size=log.SelfdriveState.AlertSize.mid,
+        status=log.SelfdriveState.AlertStatus.normal,
+      )
+    elif ss_missing > SELFDRIVE_STATE_TIMEOUT:
+      if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
+        return Alert(
+          text1="TAKE CONTROL IMMEDIATELY",
+          text2="System Unresponsive",
+          alert_type="selfdriveUnresponsive",
+          size=log.SelfdriveState.AlertSize.full,
+          status=log.SelfdriveState.AlertStatus.critical,
         )
-      elif ss_missing > SELFDRIVE_STATE_TIMEOUT:
-        # Selfdrive lagging or died
-        if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < 10:
-          a = Alert(
-            text1="TAKE CONTROL IMMEDIATELY",
-            text2="System Unresponsive",
-            alert_type="selfdriveUnresponsive",
-            size=AlertSize.full,
-            status=AlertStatus.critical,
-          )
-        else:
-          a = Alert(
-            text1="System Unresponsive",
-            text2="Reboot Device",
-            alert_type="selfdriveUnresponsivePermanent",
-            size=AlertSize.mid,
-            status=AlertStatus.normal,
-          )
+      return Alert(
+        text1="System Unresponsive",
+        text2="Reboot Device",
+        alert_type="selfdriveUnresponsivePermanent",
+        size=log.SelfdriveState.AlertSize.mid,
+        status=log.SelfdriveState.AlertStatus.normal,
+      )
 
-    return a
+    return Alert()
 
-  def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster):
-    """Draw the alert within the specified rectangle"""
-    self.update_state(sm, sm.recv_frame['selfdriveState'])
-
-    # Convert capnp enum to Python enum if needed
-    alert_size = self.alert.size
-    if hasattr(alert_size, 'raw'):
-      alert_size = alert_size.raw
-
-    if alert_size == AlertSize.none:
+  def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
+    """Render the alert within the specified rectangle."""
+    self.update_state(sm, sm.recv_frame.get('selfdriveState', 0))
+    alert_size = self._get_enum_value(self.alert.size, log.SelfdriveState.AlertSize)
+    if alert_size == log.SelfdriveState.AlertSize.none:
       return
 
-    # Match C++ alert height calculations exactly
-    alert_heights = {AlertSize.small: 271, AlertSize.mid: 420, AlertSize.full: rect.height}
-    h = alert_heights.get(alert_size, 0)
-
-    # Calculate margins and radius
-    margin = 40
-    radius = 30
-
-    if alert_size == AlertSize.full:
-      margin = 0
-      radius = 0
-
-    # Create alert rectangle within the provided rectangle
+    # Calculate alert rectangle
+    margin = 0 if alert_size == log.SelfdriveState.AlertSize.full else 40
+    radius = 0 if alert_size == log.SelfdriveState.AlertSize.full else 30
+    height = ALERT_HEIGHTS.get(alert_size, rect.height)
     alert_rect = rl.Rectangle(
-      rect.x + margin, rect.y + rect.height - h + margin, rect.width - margin * 2, h - margin * 2
+      rect.x + margin,
+      rect.y + rect.height - height + margin,
+      rect.width - margin * 2,
+      height - margin * 2,
     )
 
-    # Get alert status
-    alert_status = self.alert.status
-    if hasattr(alert_status, 'raw'):
-      alert_status = alert_status.raw
+    # Draw background
+    alert_status = self._get_enum_value(self.alert.status, log.SelfdriveState.AlertStatus)
+    color = ALERT_COLORS.get(alert_status, ALERT_COLORS[log.SelfdriveState.AlertStatus.normal])
+    if alert_size != log.SelfdriveState.AlertSize.full:
+      rl.draw_rectangle_rounded(alert_rect, radius / alert_rect.width, 10, color)
+    else:
+      rl.draw_rectangle_rec(alert_rect, color)
 
-    # Draw background with gradient
-    color = ALERT_COLORS.get(alert_status, ALERT_COLORS[AlertStatus.normal])
-
-    # Draw main background
-    rl.draw_rectangle_rounded(alert_rect, radius / alert_rect.width, 10, color)
-
-    # Draw gradient overlay - match C++ gradient exactly
-    rl.draw_rectangle_gradient_v(
-      int(alert_rect.x),
-      int(alert_rect.y),
-      int(alert_rect.width),
-      int(alert_rect.height),
-      rl.Color(0, 0, 0, 13),  # 0.05 alpha at top (0.05 * 255 = ~13)
-      rl.Color(0, 0, 0, 89),  # 0.35 alpha at bottom (0.35 * 255 = ~89)
-    )
-
-    # Center point for text positioning
+    # Draw text
     center_x = rect.x + rect.width / 2
     center_y = alert_rect.y + alert_rect.height / 2
+    self._draw_text(alert_size, alert_rect, center_x, center_y)
 
-    # Match C++ text rendering precisely
-    if alert_size == AlertSize.small:
+  def _draw_text(
+    self, alert_size: log.SelfdriveState.AlertSize, alert_rect: rl.Rectangle, center_x: float, center_y: float
+  ) -> None:
+    """Draw text based on alert size."""
+    if alert_size == log.SelfdriveState.AlertSize.small:
       font_size = 74
-      text_width = self._measure_text(self.font_bold, self.alert.text1, font_size).x
-      # Center text exactly as in C++
+      text_width = self._measure_text(self.font_bold, self.alert.text1, font_size, 'bold').x
       rl.draw_text_ex(
         self.font_bold,
         self.alert.text1,
@@ -182,86 +153,81 @@ class AlertRenderer:
         0,
         rl.WHITE,
       )
-
-    elif alert_size == AlertSize.mid:
-      # Main text (title)
+    elif alert_size == log.SelfdriveState.AlertSize.mid:
       font_size1 = 88
-      text1_width = self._measure_text(self.font_bold, self.alert.text1, font_size1).x
-      text1_y = center_y - 125  # Exact offset from C++
-
+      text1_width = self._measure_text(self.font_bold, self.alert.text1, font_size1, 'bold').x
       rl.draw_text_ex(
-        self.font_bold, self.alert.text1, rl.Vector2(center_x - text1_width / 2, text1_y), font_size1, 0, rl.WHITE
+        self.font_bold,
+        self.alert.text1,
+        rl.Vector2(center_x - text1_width / 2, center_y - 125),
+        font_size1,
+        0,
+        rl.WHITE,
       )
-
-      # Subtitle text
       font_size2 = 66
-      text2_width = self._measure_text(self.font_regular, self.alert.text2, font_size2).x
-      text2_y = center_y + 21  # Exact offset from C++
-
+      text2_width = self._measure_text(self.font_regular, self.alert.text2, font_size2, 'regular').x
       rl.draw_text_ex(
-        self.font_regular, self.alert.text2, rl.Vector2(center_x - text2_width / 2, text2_y), font_size2, 0, rl.WHITE
+        self.font_regular,
+        self.alert.text2,
+        rl.Vector2(center_x - text2_width / 2, center_y + 21),
+        font_size2,
+        0,
+        rl.WHITE,
       )
-
-    elif alert_size == AlertSize.full:
-      # Determine font size based on text length
+    elif alert_size == log.SelfdriveState.AlertSize.full:
       is_long = len(self.alert.text1) > 15
       font_size1 = 132 if is_long else 177
-      text1_y = alert_rect.y + (240 if is_long else 270)  # Match C++ positioning
-
-      # Handle text wrapping for title
-      wrapped_text1 = self._wrap_text(self.alert.text1, rect.width - 100, font_size1, self.font_bold)
-      # text1_height = self._get_text_height(wrapped_text1, font_size1, self.font_bold)
-
-      # Draw title text
+      text1_y = alert_rect.y + (240 if is_long else 270)
+      wrapped_text1 = self._wrap_text(self.alert.text1, alert_rect.width - 100, font_size1, self.font_bold)
       for i, line in enumerate(wrapped_text1):
-        line_width = self._measure_text(self.font_bold, line, font_size1).x
-        line_y = text1_y + i * font_size1
-        rl.draw_text_ex(self.font_bold, line, rl.Vector2(center_x - line_width / 2, line_y), font_size1, 0, rl.WHITE)
-
-      # Subtitle
+        line_width = self._measure_text(self.font_bold, line, font_size1, 'bold').x
+        rl.draw_text_ex(
+          self.font_bold,
+          line,
+          rl.Vector2(center_x - line_width / 2, text1_y + i * font_size1),
+          font_size1,
+          0,
+          rl.WHITE,
+        )
       font_size2 = 88
-      text2_y = rect.y + rect.height - (361 if is_long else 420)  # Match C++ positioning
-
-      # Handle text wrapping for subtitle
-      wrapped_text2 = self._wrap_text(self.alert.text2, rect.width - 100, font_size2, self.font_regular)
-
-      # Draw subtitle text
+      text2_y = alert_rect.y + alert_rect.height - (361 if is_long else 420)
+      wrapped_text2 = self._wrap_text(self.alert.text2, alert_rect.width - 100, font_size2, self.font_regular)
       for i, line in enumerate(wrapped_text2):
-        line_width = self._measure_text(self.font_regular, line, font_size2).x
-        line_y = text2_y + i * font_size2
-        rl.draw_text_ex(self.font_regular, line, rl.Vector2(center_x - line_width / 2, line_y), font_size2, 0, rl.WHITE)
+        line_width = self._measure_text(self.font_regular, line, font_size2, 'regular').x
+        rl.draw_text_ex(
+          self.font_regular,
+          line,
+          rl.Vector2(center_x - line_width / 2, text2_y + i * font_size2),
+          font_size2,
+          0,
+          rl.WHITE,
+        )
 
-  def _wrap_text(self, text, max_width, font_size, font):
-    """Wrap text to fit within max width"""
+  def _wrap_text(self, text: str, max_width: float, font_size: int, font: rl.Font) -> list[str]:
+    """Wrap text to fit within max width."""
     words = text.split()
     lines = []
     current_line = ""
-
     for word in words:
-      test_line = current_line + " " + word if current_line else word
-      text_width = self._measure_text(font, test_line, font_size).x
-
-      if text_width <= max_width:
+      test_line = f"{current_line} {word}" if current_line else word
+      if self._measure_text(font, test_line, font_size, 'bold' if font == self.font_bold else 'regular').x <= max_width:
         current_line = test_line
       else:
         if current_line:
           lines.append(current_line)
         current_line = word
-
     if current_line:
       lines.append(current_line)
-
     return lines
 
-  def _get_text_height(self, lines, font_size, font):
-    """Calculate total height of wrapped text"""
-    return len(lines) * font_size
-
-  def _measure_text(self, font: rl.Font, text: str, font_size: int) -> rl.Vector2:
-    """Get text metrics for a given text and font weight with caching"""
-    key = (text, font_size)
+  def _measure_text(self, font: rl.Font, text: str, font_size: int, font_type: str) -> rl.Vector2:
+    """Measure text dimensions with caching."""
+    key = (text, font_size, font_type)
     if key not in self.font_metrics_cache:
-      metrics = rl.measure_text_ex(font, text, font_size, 0)
-      self.font_metrics_cache[key] = metrics
-
+      self.font_metrics_cache[key] = rl.measure_text_ex(font, text, font_size, 0)
     return self.font_metrics_cache[key]
+
+  @staticmethod
+  def _get_enum_value(enum_value, enum_type: type):
+    """Safely convert capnp enum to Python enum value."""
+    return enum_value.raw if hasattr(enum_value, 'raw') else enum_value
