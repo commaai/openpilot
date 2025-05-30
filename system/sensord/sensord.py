@@ -48,7 +48,7 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
       cloudlog.error("no poll events set")
       continue
 
-    dat = os.read(fd, ctypes.sizeof(gpioevent_data))
+    dat = os.read(fd, ctypes.sizeof(gpioevent_data)*16)
     evd = gpioevent_data.from_buffer_copy(dat)
 
     cur_offset = time.time_ns() - time.monotonic_ns()
@@ -61,10 +61,11 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
     for sensor, service, interrupt in sensors:
       if interrupt:
         try:
-          msg = messaging.new_message(service)
-          setattr(msg, service, sensor.get_event(ts))
+          evt = sensor.get_event(ts)
           if not sensor.is_data_valid():
             continue
+          msg = messaging.new_message(service)
+          setattr(msg, service, evt)
           pm.send(service, msg)
         except Sensor.DataNotReady:
           pass
@@ -76,11 +77,12 @@ def polling_loop(sensor: Sensor, service: str, event: threading.Event) -> None:
   pm = messaging.PubMaster([service])
   rk = Ratekeeper(SERVICE_LIST[service].frequency, print_delay_threshold=None)
   while not event.is_set():
-    msg = messaging.new_message(service)
     try:
-      setattr(msg, service, sensor.get_event())
+      evt = sensor.get_event()
       if not sensor.is_data_valid():
         continue
+      msg = messaging.new_message(service)
+      setattr(msg, service, evt)
       pm.send(service, msg)
     except Exception:
       cloudlog.exception(f"Error in {service} polling loop")
