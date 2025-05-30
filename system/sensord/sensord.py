@@ -21,6 +21,7 @@ from openpilot.system.sensord.sensors.mmc5603nj_magn import MMC5603NJ_Magn
 I2C_BUS_IMU = 1
 
 def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
+  cloudlog.warning(f"sensord_debug IRQ init")
   pm = messaging.PubMaster([service for sensor, service, interrupt in sensors if interrupt])
 
   # Requesting both edges as the data ready pulse from the lsm6ds sensor is
@@ -39,6 +40,7 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
 
   poller = select.poll()
   poller.register(fd, select.POLLIN | select.POLLPRI)
+  cloudlog.warning(f"sensord_debug IRQ start")
   while not event.is_set():
     events = poller.poll(100)
     if not events:
@@ -63,6 +65,7 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
         try:
           evt = sensor.get_event(ts)
           if not sensor.is_data_valid():
+            cloudlog.warning(f"sensord_debug {service} invalid")
             continue
           msg = messaging.new_message(service)
           setattr(msg, service, evt)
@@ -80,6 +83,7 @@ def polling_loop(sensor: Sensor, service: str, event: threading.Event) -> None:
     try:
       evt = sensor.get_event()
       if not sensor.is_data_valid():
+        cloudlog.warning(f"sensord_debug {service} invalid")
         continue
       msg = messaging.new_message(service)
       setattr(msg, service, evt)
@@ -89,7 +93,8 @@ def polling_loop(sensor: Sensor, service: str, event: threading.Event) -> None:
     rk.keep_time()
 
 def main() -> None:
-  config_realtime_process([1, 2, 3], 1)
+  cloudlog.warning("sensord_debug init")
+  config_realtime_process([1, ], 1)
 
   sensors_cfg = [
     (LSM6DS3_Accel(I2C_BUS_IMU), "accelerometer", True),
@@ -105,6 +110,7 @@ def main() -> None:
   ]
   for sensor, service, interrupt in sensors_cfg:
     try:
+      cloudlog.warning("sensord_debug init " + service)
       sensor.init()
       if not interrupt:
         # Start polling thread for sensors without interrupts
@@ -117,6 +123,7 @@ def main() -> None:
       cloudlog.exception(f"Error initializing {service} sensor")
 
   try:
+    cloudlog.warning("sensord_debug start threads")
     for t in threads:
       t.start()
     while any(t.is_alive() for t in threads):
