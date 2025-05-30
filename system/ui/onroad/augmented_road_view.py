@@ -171,7 +171,7 @@ class AugmentedRoadView(CameraView):
         [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
         [0.0, 0.0, 1.0]
     ])
-    self._model_renderer.set_transform(video_transform @ calib_transform)
+    self.model_renderer.set_transform(video_transform @ calib_transform)
 
     return self._cached_matrix
 
