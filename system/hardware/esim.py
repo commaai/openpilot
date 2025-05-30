@@ -4,12 +4,6 @@ import argparse
 
 from openpilot.system.hardware import HARDWARE
 
-def print_profiles():
-  lpa = HARDWARE.get_sim_lpa()
-  profiles = lpa.list_profiles()
-  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
-  for p in profiles:
-    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
@@ -39,4 +33,7 @@ if __name__ == '__main__':
   else:
     parser.print_help()
 
-  print_profiles()
+  profiles = lpa.list_profiles()
+  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
+  for p in profiles:
+    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
