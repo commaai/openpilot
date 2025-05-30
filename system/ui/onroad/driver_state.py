@@ -36,26 +36,33 @@ class DriverStateRenderer:
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
+    self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
     self.driver_pose_coss = np.zeros(3, dtype=np.float32)
     self.face_keypoints_transformed = np.zeros((DEFAULT_FACE_KPTS_3D.shape[0], 2), dtype=np.float32)
 
+    # Pre-allocate Vector2 arrays for drawing
+    self.face_lines = [rl.Vector2(0, 0) for _ in range(len(DEFAULT_FACE_KPTS_3D))]
+    self.h_arc_lines = [rl.Vector2(0, 0) for _ in range(37)]  # 37 points for horizontal arc
+    self.v_arc_lines = [rl.Vector2(0, 0) for _ in range(37)]  # 37 points for vertical arc
+
     # Load the driver face icon
     self.dm_img = gui_app.texture("icons/driver_face.png", IMG_SIZE, IMG_SIZE)
 
     # Colors
+    self.white_color = rl.Color(255, 255, 255, 255)
+    self.arc_color = rl.Color(26, 242, 66, 255)
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def update_state(self, sm):
+  def update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
-    # Quick exit if driver state isn't available
-    self.is_visible = (
-      sm.seen['driverStateV2'] and sm.seen["driverMonitoringState"] and sm["selfdriveState"].alertSize == 0
-    )
-    if not self.is_visible or not sm.updated["driverMonitoringState"]:
+    if  not sm.updated["driverMonitoringState"]:
+      if rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
+         rect.width != self.last_rect.width or rect.height != self.last_rect.height:
+        self.pre_calculate_drawing_elements(rect)
       return
 
     # Get monitoring state
@@ -103,89 +110,121 @@ class DriverStateRenderer:
     kp_depth = (self.face_kpts_draw[:, 2] - 8) / 120.0 + 1.0
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
+    # Pre-calculate all drawing elements
+    self.pre_calculate_drawing_elements(rect)
+
+
   def draw(self, rect, sm):
     """Draw the driver monitoring visualization"""
-    # Update state and exit if not visible
-    self.update_state(sm)
-    if not self.is_visible:
+
+    self.is_visible = (
+      sm.seen['driverStateV2'] and sm.seen["driverMonitoringState"] and sm["selfdriveState"].alertSize == 0
+    )
+    if not self.is_visible or not sm.updated["driverMonitoringState"]:
       return
 
-    # Get drawing dimensions
-    width, height = rect.width, rect.height
-
-    # Calculate icon position (bottom-left or bottom-right)
-    offset = UI_BORDER_SIZE + BTN_SIZE // 2
-    x = rect.x + (width - offset if self.is_rhd else offset)
-    y = rect.y + height - offset
+    self.update_state(sm, rect)
+    if not self.is_visible:
+      return
 
     # Set opacity based on active state
     opacity = 0.65 if self.is_active else 0.2
 
     # Draw background circle
-    rl.draw_circle(int(x), int(y), BTN_SIZE // 2, rl.Color(0, 0, 0, 70))
+    rl.draw_circle(int(self.position_x), int(self.position_y), BTN_SIZE // 2, rl.Color(0, 0, 0, 70))
 
     # Draw face icon
-    icon_pos = rl.Vector2(x - self.dm_img.width // 2, y - self.dm_img.height // 2)
+    icon_pos = rl.Vector2(self.position_x - self.dm_img.width // 2, self.position_y - self.dm_img.height // 2)
     rl.draw_texture_v(self.dm_img, icon_pos, rl.Color(255, 255, 255, int(255 * opacity)))
 
-    # Draw face keypoints
-    positioned_keypoints = self.face_keypoints_transformed + np.array([x, y])
-    lines = [rl.Vector2(positioned_keypoints[i][0], positioned_keypoints[i][1])
-             for i in range(len(positioned_keypoints))]
-    white_color = rl.Color(255, 255, 255, int(255 * opacity))
-    rl.draw_spline_linear(lines, len(lines), 5.2, white_color)
+    # Draw face outline
+    self.white_color.a = int(255 * opacity)
+    rl.draw_spline_linear(self.face_lines, len(self.face_lines), 5.2, self.white_color)
 
-    # Get arc color based on engaged state (hardcoded to True for now)
+    # Set arc color based on engaged state
     engaged = True
-    arc_color = self.engaged_color if engaged else self.disengaged_color
-    arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
+    self.arc_color = self.engaged_color if engaged else self.disengaged_color
+    self.arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
 
-    # Draw tracking arcs if head is rotated
-    self.draw_tracking_arcs(x, y, arc_color)
+    # Draw tracking arcs if pre-calculated
+    if self.h_arc_data:
+      rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data["thickness"], self.arc_color)
 
-  def draw_tracking_arcs(self, x, y, color):
-    """Draw horizontal and vertical tracking arcs showing head rotation"""
+    if self.v_arc_data:
+      rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data["thickness"], self.arc_color)
+
+  def pre_calculate_drawing_elements(self, rect):
+    """Pre-calculate all drawing elements based on the current rectangle"""
+    # Calculate icon position (bottom-left or bottom-right)
+    width, height = rect.width, rect.height
+    offset = UI_BORDER_SIZE + BTN_SIZE // 2
+    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = rect.y + height - offset
+
+    # Pre-calculate the face lines positions
+    positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])
+    for i in range(len(positioned_keypoints)):
+      self.face_lines[i].x = positioned_keypoints[i][0]
+      self.face_lines[i].y = positioned_keypoints[i][1]
+
     # Calculate arc dimensions based on head rotation
     delta_x = -self.driver_pose_sins[1] * ARC_LENGTH / 2.0  # Horizontal movement
     delta_y = -self.driver_pose_sins[0] * ARC_LENGTH / 2.0  # Vertical movement
 
-    # Draw horizontal tracking arc (if head is turned left/right)
+    # Pre-calculate horizontal arc
     h_width = abs(delta_x)
     if h_width > 0:
       h_thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, self.driver_pose_diff[1] * 5.0)
       h_start_angle = 90 if self.driver_pose_sins[1] > 0 else -90
-      h_x = min(x + delta_x, x)
-      h_y = y - ARC_LENGTH / 2
+      h_x = min(self.position_x + delta_x, self.position_x)
+      h_y = self.position_y - ARC_LENGTH / 2
 
-      self.draw_arc(h_x, h_y, h_width, ARC_LENGTH, h_start_angle, 180, h_thickness, color)
+      self.h_arc_data = {"x": h_x, "y": h_y, "width": h_width, "height": ARC_LENGTH, "thickness": h_thickness}
 
-    # Draw vertical tracking arc (if head is tilted up/down)
+      # Pre-calculate arc points
+      start_rad = np.deg2rad(h_start_angle)
+      end_rad = np.deg2rad(h_start_angle + 180)
+      angles = np.linspace(start_rad, end_rad, 37)
+
+      center_x = h_x + h_width / 2
+      center_y = h_y + ARC_LENGTH / 2
+      radius_x = h_width / 2
+      radius_y = ARC_LENGTH / 2
+
+      x_coords = center_x + np.cos(angles) * radius_x
+      y_coords = center_y + np.sin(angles) * radius_y
+
+      for i in range(len(angles)):
+        self.h_arc_lines[i].x = x_coords[i]
+        self.h_arc_lines[i].y = y_coords[i]
+    else:
+      self.h_arc_data = None
+
+    # Pre-calculate vertical arc
     v_height = abs(delta_y)
     if v_height > 0:
       v_thickness = ARC_THICKNESS_DEFAULT + ARC_THICKNESS_EXTEND * min(1.0, self.driver_pose_diff[0] * 5.0)
       v_start_angle = 0 if self.driver_pose_sins[0] > 0 else 180
-      v_x = x - ARC_LENGTH / 2
-      v_y = min(y + delta_y, y)
+      v_x = self.position_x - ARC_LENGTH / 2
+      v_y = min(self.position_y + delta_y, self.position_y)
 
-      self.draw_arc(v_x, v_y, ARC_LENGTH, v_height, v_start_angle, 180, v_thickness, color)
+      self.v_arc_data = {"x": v_x, "y": v_y, "width": ARC_LENGTH, "height": v_height, "thickness": v_thickness}
 
-  def draw_arc(self, x, y, width, height, start_angle, arc_angle, thickness, color):
-    """Draw an arc with specified thickness using line segments"""
-    # Convert angles to radians and generate angles with NumPy
-    start_rad = np.deg2rad(start_angle)
-    end_rad = np.deg2rad(start_angle + arc_angle)
-    angles = np.linspace(start_rad, end_rad, 37)  # 37 points for 5-degree steps
+      # Pre-calculate arc points
+      start_rad = np.deg2rad(v_start_angle)
+      end_rad = np.deg2rad(v_start_angle + 180)
+      angles = np.linspace(start_rad, end_rad, 37)
 
-    # Calculate ellipse center and radii
-    center_x = x + width / 2
-    center_y = y + height / 2
-    radius_x = width / 2
-    radius_y = height / 2
+      center_x = v_x + ARC_LENGTH / 2
+      center_y = v_y + v_height / 2
+      radius_x = ARC_LENGTH / 2
+      radius_y = v_height / 2
 
-    # Compute arc points using vectorized operations
-    x_coords = center_x + np.cos(angles) * radius_x
-    y_coords = center_y + np.sin(angles) * radius_y
+      x_coords = center_x + np.cos(angles) * radius_x
+      y_coords = center_y + np.sin(angles) * radius_y
 
-    # Draw connected line segments to form the arc
-    lines = [rl.Vector2(x_coords[i], y_coords[i]) for i in range(len(angles))]
-    rl.draw_spline_linear(lines, len(lines), thickness, color)
+      for i in range(len(angles)):
+        self.v_arc_lines[i].x = x_coords[i]
+        self.v_arc_lines[i].y = y_coords[i]
+    else:
+      self.v_arc_data = None
