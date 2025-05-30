@@ -1,19 +1,15 @@
 #!/usr/bin/env python3
 
 import argparse
-import subprocess
-import time
 
 from openpilot.system.hardware import HARDWARE
 
-def reboot_modem_and_wait():
-  """
-  since we're calling the modem right after, we need to wait a bit
-  to ensure the modem is ready to receive commands
-  """
-  HARDWARE.reboot_modem()
-  while subprocess.run(['mmcli', '-m', 'any', '--3gpp-set-initial-eps-bearer-settings="apn="']).returncode != 0:
-    time.sleep(.1)
+def print_profiles():
+  lpa = HARDWARE.get_sim_lpa()
+  profiles = lpa.list_profiles()
+  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
+  for p in profiles:
+    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
@@ -27,12 +23,12 @@ if __name__ == '__main__':
   lpa = HARDWARE.get_sim_lpa()
   if args.switch:
     lpa.switch_profile(args.switch)
-    reboot_modem_and_wait()
+    HARDWARE.reboot_modem()
   elif args.delete:
     confirm = input('are you sure you want to delete this profile? (y/N) ')
     if confirm == 'y':
       lpa.delete_profile(args.delete)
-      reboot_modem_and_wait()
+      HARDWARE.reboot_modem()
     else:
       print('cancelled')
       exit(0)
@@ -43,7 +39,4 @@ if __name__ == '__main__':
   else:
     parser.print_help()
 
-  profiles = lpa.list_profiles()
-  print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')
-  for p in profiles:
-    print(f'- {p.iccid} (nickname: {p.nickname or "<none provided>"}) (provider: {p.provider}) - {"enabled" if p.enabled else "disabled"}')
+  print_profiles()
