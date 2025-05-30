@@ -1,9 +1,9 @@
+import pyray as rl
 from enum import Enum
 from cereal import messaging, log
 from openpilot.common.params import Params, UnknownKeyName
 
-DEFAULT_FPS = 60
-PANDA_STALE_FRAMES = 5 * DEFAULT_FPS  # 5 seconds
+
 UI_BORDER_SIZE = 30
 
 
@@ -80,7 +80,7 @@ class UIState:
         # Check ignition status across all pandas
         if self.panda_type != log.PandaState.PandaType.unknown:
           self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
-    elif self.sm.frame - self.sm.recv_frame["pandaStates"] > PANDA_STALE_FRAMES:
+    elif self.sm.frame - self.sm.recv_frame["pandaStates"] > 5 * rl.get_fps():
       self.panda_type = log.PandaState.PandaType.unknown
 
     # Handle wide road camera state updates

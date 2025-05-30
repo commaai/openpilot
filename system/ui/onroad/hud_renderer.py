@@ -126,11 +126,12 @@ class HudRenderer:
     set_speed_color = COLORS.dark_grey
     if self.is_cruise_set:
       set_speed_color = COLORS.white
-      max_color = {
-        UIStatus.DISENGAGED: COLORS.disengaged,
-        UIStatus.OVERRIDE: COLORS.override,
-        UIStatus.ENGAGED: COLORS.engaged,
-      }.get(ui_state.status, COLORS.grey)
+      if ui_state.status == UIStatus.ENGAGED:
+        max_color = COLORS.engaged
+      elif ui_state.status == UIStatus.DISENGAGED:
+        max_color = COLORS.disengaged
+      elif ui_state.status == UIStatus.OVERRIDE:
+        max_color = COLORS.override
 
     max_text = "MAX"
     max_text_width = self._measure_text(max_text, self._font_semi_bold, FONT_SIZES.max_speed, 'semi_bold').x
