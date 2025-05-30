@@ -331,12 +331,12 @@ class ModelRenderer:
   def _map_line_to_polygon(self, line: np.ndarray, y_off: float, z_off: float, max_idx: int, allow_invert: bool = True) -> np.ndarray:
     """Convert 3D line to 2D polygon for rendering."""
     if line.shape[0] == 0:
-        return np.empty((0, 2), dtype=np.float32)
+      return np.empty((0, 2), dtype=np.float32)
 
     # Slice points and filter non-negative x-coordinates
     points = line[:max_idx + 1][line[:max_idx + 1, 0] >= 0]
     if points.shape[0] == 0:
-        return np.empty((0, 2), dtype=np.float32)
+      return np.empty((0, 2), dtype=np.float32)
 
     # Create left and right 3D points in one array
     n_points = points.shape[0]
@@ -350,7 +350,7 @@ class ModelRenderer:
     proj = self._car_space_transform @ points_3d.T
     valid_z = np.abs(proj[2]) > 1e-6
     if not np.any(valid_z):
-        return np.empty((0, 2), dtype=np.float32)
+      return np.empty((0, 2), dtype=np.float32)
 
     # Compute screen coordinates
     screen = proj[:2, valid_z] / proj[2, valid_z][None, :]
@@ -360,29 +360,29 @@ class ModelRenderer:
     # Ensure consistent shapes by re-aligning valid points
     valid_points = np.minimum(left_screen.shape[0], right_screen.shape[0])
     if valid_points == 0:
-        return np.empty((0, 2), dtype=np.float32)
+      return np.empty((0, 2), dtype=np.float32)
     left_screen = left_screen[:valid_points]
     right_screen = right_screen[:valid_points]
 
     if self._clip_region:
-        clip = self._clip_region
-        bounds_mask = (
-            (left_screen[:, 0] >= clip.x) & (left_screen[:, 0] <= clip.x + clip.width) &
-            (left_screen[:, 1] >= clip.y) & (left_screen[:, 1] <= clip.y + clip.height) &
-            (right_screen[:, 0] >= clip.x) & (right_screen[:, 0] <= clip.x + clip.width) &
-            (right_screen[:, 1] >= clip.y) & (right_screen[:, 1] <= clip.y + clip.height)
-        )
-        if not np.any(bounds_mask):
-            return np.empty((0, 2), dtype=np.float32)
-        left_screen = left_screen[bounds_mask]
-        right_screen = right_screen[bounds_mask]
+      clip = self._clip_region
+      bounds_mask = (
+        (left_screen[:, 0] >= clip.x) & (left_screen[:, 0] <= clip.x + clip.width) &
+        (left_screen[:, 1] >= clip.y) & (left_screen[:, 1] <= clip.y + clip.height) &
+        (right_screen[:, 0] >= clip.x) & (right_screen[:, 0] <= clip.x + clip.width) &
+        (right_screen[:, 1] >= clip.y) & (right_screen[:, 1] <= clip.y + clip.height)
+      )
+      if not np.any(bounds_mask):
+        return np.empty((0, 2), dtype=np.float32)
+      left_screen = left_screen[bounds_mask]
+      right_screen = right_screen[bounds_mask]
 
     if not allow_invert and left_screen.shape[0] > 1:
-        keep = np.concatenate(([True], np.diff(left_screen[:, 1]) < 0))
-        left_screen = left_screen[keep]
-        right_screen = right_screen[keep]
-        if left_screen.shape[0] == 0:
-            return np.empty((0, 2), dtype=np.float32)
+      keep = np.concatenate(([True], np.diff(left_screen[:, 1]) < 0))
+      left_screen = left_screen[keep]
+      right_screen = right_screen[keep]
+      if left_screen.shape[0] == 0:
+        return np.empty((0, 2), dtype=np.float32)
 
     return np.vstack((left_screen, right_screen[::-1])).astype(np.float32)
 
