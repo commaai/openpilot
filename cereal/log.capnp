@@ -2275,6 +2275,10 @@ struct LiveTorqueParametersData {
   latAccelFactorFiltered @4 :Float32;
   latAccelOffsetFiltered @5 :Float32;
   frictionCoefficientFiltered @6 :Float32;
+  sigmoidSharpnessRaw @13 :Float32;
+  sigmoidTorqueGainRaw @14 :Float32;
+  sigmoidSharpnessFiltered @15 :Float32;
+  sigmoidTorqueGainFiltered @16 :Float32;
   totalBucketPoints @7 :Float32;
   decay @8 :Float32;
   maxResets @9 :Float32;
