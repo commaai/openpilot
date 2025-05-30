@@ -29,49 +29,6 @@ class LSM6DS3_Gyro(Sensor):
   def device_address(self) -> int:
     return 0x6A
 
-  def _wait_for_data_ready(self):
-    while True:
-      drdy = self.read(self.LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
-      if drdy & self.LSM6DS3_GYRO_DRDY_GDA:
-        break
-
-  def _read_and_avg_data(self) -> list[float]:
-    out_buf = [0.0, 0.0, 0.0]
-    for _ in range(5):
-      self._wait_for_data_ready()
-      b = self.read(self.LSM6DS3_GYRO_I2C_REG_OUTX_L_G, 6)
-      for j in range(3):
-        val = self.parse_16bit(b[j*2], b[j*2+1]) * 70.0  # mdps/LSB for 2000 dps
-        out_buf[j] += val
-    return [x / 5.0 for x in out_buf]
-
-  def self_test(self, test_type: int):
-    # Set ODR to 208Hz, FS to 2000dps
-    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, self.LSM6DS3_GYRO_ODR_208HZ | self.LSM6DS3_GYRO_FS_2000dps)
-
-    # Wait for stable output
-    time.sleep(0.15)
-    self._wait_for_data_ready()
-    val_st_off = self._read_and_avg_data()
-
-    # Enable self-test
-    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL5_C, test_type)
-
-    # Wait for stable output
-    time.sleep(0.05)
-    self._wait_for_data_ready()
-    val_st_on = self._read_and_avg_data()
-
-    # Disable sensor and self-test
-    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0)
-    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL5_C, 0)
-
-    # Calculate differences and check limits
-    test_val = [abs(on - off) for on, off in zip(val_st_on, val_st_off, strict=False)]
-    for val in test_val:
-      if val < self.LSM6DS3_GYRO_MIN_ST_LIMIT_mdps or val > self.LSM6DS3_GYRO_MAX_ST_LIMIT_mdps:
-        raise Exception(f"Gyroscope self-test failed for test type {test_type}")
-
   def init(self):
     chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
     if chip_id == 0x6A:
@@ -131,6 +88,50 @@ class LSM6DS3_Gyro(Sensor):
     value = self.read(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, 1)[0]
     value &= 0x0F
     self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, value)
+
+  # *** self-test stuff ***
+  def _wait_for_data_ready(self):
+    while True:
+      drdy = self.read(self.LSM6DS3_GYRO_I2C_REG_STAT_REG, 1)[0]
+      if drdy & self.LSM6DS3_GYRO_DRDY_GDA:
+        break
+
+  def _read_and_avg_data(self) -> list[float]:
+    out_buf = [0.0, 0.0, 0.0]
+    for _ in range(5):
+      self._wait_for_data_ready()
+      b = self.read(self.LSM6DS3_GYRO_I2C_REG_OUTX_L_G, 6)
+      for j in range(3):
+        val = self.parse_16bit(b[j*2], b[j*2+1]) * 70.0  # mdps/LSB for 2000 dps
+        out_buf[j] += val
+    return [x / 5.0 for x in out_buf]
+
+  def self_test(self, test_type: int):
+    # Set ODR to 208Hz, FS to 2000dps
+    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, self.LSM6DS3_GYRO_ODR_208HZ | self.LSM6DS3_GYRO_FS_2000dps)
+
+    # Wait for stable output
+    time.sleep(0.15)
+    self._wait_for_data_ready()
+    val_st_off = self._read_and_avg_data()
+
+    # Enable self-test
+    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL5_C, test_type)
+
+    # Wait for stable output
+    time.sleep(0.05)
+    self._wait_for_data_ready()
+    val_st_on = self._read_and_avg_data()
+
+    # Disable sensor and self-test
+    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL2_G, 0)
+    self.write(self.LSM6DS3_GYRO_I2C_REG_CTRL5_C, 0)
+
+    # Calculate differences and check limits
+    test_val = [abs(on - off) for on, off in zip(val_st_on, val_st_off, strict=False)]
+    for val in test_val:
+      if val < self.LSM6DS3_GYRO_MIN_ST_LIMIT_mdps or val > self.LSM6DS3_GYRO_MAX_ST_LIMIT_mdps:
+        raise Exception(f"Gyroscope self-test failed for test type {test_type}")
 
 if __name__ == "__main__":
   s = LSM6DS3_Gyro(1)
