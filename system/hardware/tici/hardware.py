@@ -518,18 +518,19 @@ class Tici(HardwareBase):
       except Exception:
         pass
 
-    # eSIM prime
+    # we use the lte connection built into AGNOS. cleanup old esim connection if it exists
     dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
-    if sim_id.startswith('8985235') and not os.path.exists(dest):
-      with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
-        dat = f.read()
-        dat = dat.replace("sim-id=", f"sim-id={sim_id}")
-        tf.write(dat)
-        tf.flush()
+    if os.path.exists(dest):
+      os.system(f"sudo nmcli con delete {dest}")
+      self.reboot_modem()
 
-        # needs to be root
-        os.system(f"sudo cp {tf.name} {dest}")
-      os.system(f"sudo nmcli con load {dest}")
+  def reboot_modem(self):
+    modem = self.get_modem()
+    for state in (0, 1):
+      try:
+        modem.Command(f'AT+CFUN={state}', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      except Exception:
+        pass
 
   def get_networks(self):
     r = {}
