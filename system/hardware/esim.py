@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
 
 import argparse
+import time
 
 from openpilot.system.hardware import HARDWARE
 
+def reboot_modem_and_wait():
+  """
+  since we're calling the modem right after, we need to wait a bit
+  to ensure the modem is ready to receive commands
+  """
+  HARDWARE.reboot_modem()
+  time.sleep(1)
 
 if __name__ == '__main__':
   parser = argparse.ArgumentParser(prog='esim.py', description='manage eSIM profiles on your comma device', epilog='comma.ai')
@@ -17,11 +25,12 @@ if __name__ == '__main__':
   lpa = HARDWARE.get_sim_lpa()
   if args.switch:
     lpa.switch_profile(args.switch)
+    reboot_modem_and_wait()
   elif args.delete:
     confirm = input('are you sure you want to delete this profile? (y/N) ')
     if confirm == 'y':
       lpa.delete_profile(args.delete)
-      print('deleted profile, please restart device to apply changes')
+      reboot_modem_and_wait()
     else:
       print('cancelled')
       exit(0)
