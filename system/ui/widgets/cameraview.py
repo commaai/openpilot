@@ -1,3 +1,4 @@
+import platform
 import numpy as np
 import pyray as rl
 
@@ -9,8 +10,17 @@ from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 
-VERTEX_SHADER = """
+VERSION = """
 #version 300 es
+precision mediump float;
+"""
+if platform.system() == "Darwin":
+  VERSION = """
+    #version 330 core
+  """
+
+
+VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 in vec3 vertexNormal;
@@ -40,9 +50,7 @@ if TICI:
     }
     """
 else:
-  FRAME_FRAGMENT_SHADER = """
-    #version 300 es
-    precision mediump float;
+  FRAME_FRAGMENT_SHADER = VERSION + """
     in vec2 fragTexCoord;
     uniform sampler2D texture0;
     uniform sampler2D texture1;
@@ -60,6 +68,7 @@ class CameraView:
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
+    assert self.shader.id > 0
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
 
     self.frame: VisionBuf | None = None
