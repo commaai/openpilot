@@ -339,6 +339,8 @@ struct SensorEventData {
   sensor @1 :Int32;
   type @2 :Int32;
   timestamp @3 :Int64;
+  # Timestamp from the IMU registers
+  imuTimestamp @16 :Int64;
   uncalibratedDEPRECATED @10 :Bool;
 
   union {
