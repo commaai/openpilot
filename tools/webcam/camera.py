@@ -21,12 +21,16 @@ class Camera:
     return frame.reformat(format='nv12').to_ndarray()
 
   def read_frames(self):
-    while True:
-      sts , frame = self.cap.read()
-      if not sts:
-        break
-      # Rotate the frame 180 degrees (flip both axes)
-      frame = cv.flip(frame, -1)
-      yuv = Camera.bgr2nv12(frame)
-      yield yuv.data.tobytes()
+    try:
+      while True:
+        sts , frame = self.cap.read()
+        if not sts:
+          print ("cv no sts")
+          break
+        # Rotate the frame 180 degrees (flip both axes)
+        frame = cv.flip(frame, -1)
+        yuv = Camera.bgr2nv12(frame)
+        yield yuv.data.tobytes()
+    except cv.error as error:
+      print(f"cv error: {error}")
     self.cap.release()
