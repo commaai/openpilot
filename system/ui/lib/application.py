@@ -7,6 +7,7 @@ from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
 
+
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
@@ -34,6 +35,16 @@ class FontWeight(IntEnum):
   BOLD = 6
   EXTRA_BOLD = 7
   BLACK = 8
+
+
+def _get_ui_state():
+  """Safely import and return ui_state, or None if unavailable."""
+  try:
+    from openpilot.system.ui.lib.ui_state import ui_state
+
+    return ui_state
+  except ImportError:
+    return None
 
 
 class GuiApplication:
@@ -139,6 +150,7 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
+    ui_state = _get_ui_state()
     try:
       while not (self._window_close_requested or rl.window_should_close()):
         if self._render_texture:
@@ -147,6 +159,9 @@ class GuiApplication:
         else:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
+
+        if ui_state is not None:
+          ui_state.update()
 
         yield
 
