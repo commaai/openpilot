@@ -105,13 +105,13 @@ class ModelRenderer:
       if model_updated:
         self._update_raw_points(model)
 
-      pos_x_array = self._path.raw_points[:, 0]
-      if pos_x_array.size == 0:
+      path_x_array = self._path.raw_points[:, 0]
+      if path_x_array.size == 0:
         return
 
-      self._update_model(lead_one, pos_x_array)
+      self._update_model(lead_one, path_x_array)
       if render_lead_indicator:
-        self._update_leads(radar_state, pos_x_array)
+        self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
 
 
@@ -136,23 +136,23 @@ class ModelRenderer:
     self._road_edge_stds = np.array(model.roadEdgeStds, dtype=np.float32)
     self._acceleration_x = np.array(model.acceleration.x, dtype=np.float32)
 
-  def _update_leads(self, radar_state, pos_x_array):
+  def _update_leads(self, radar_state, path_x_array):
     """Update positions of lead vehicles"""
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     leads = [radar_state.leadOne, radar_state.leadTwo]
     for i, lead_data in enumerate(leads):
       if lead_data and lead_data.status:
         d_rel, y_rel, v_rel = lead_data.dRel, lead_data.yRel, lead_data.vRel
-        idx = self._get_path_length_idx(pos_x_array, d_rel)
+        idx = self._get_path_length_idx(path_x_array, d_rel)
         z = self._path.raw_points[idx, 2] if idx < len(self._path.raw_points) else 0.0
         point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
         if point:
           self._lead_vehicles[i] = self._update_lead_vehicle(d_rel, v_rel, point, self._rect)
 
-  def _update_model(self, lead, pos_x_array):
+  def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
-    max_distance = np.clip(pos_x_array[-1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE)
-    max_idx = self._get_path_length_idx(pos_x_array, max_distance)
+    max_distance = np.clip(path_x_array[-1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE)
+    max_idx = self._get_path_length_idx(self._lane_lines[0].raw_points[:, 0], max_distance)
 
     # Update lane lines using raw points
     for i, lane_line in enumerate(self._lane_lines):
@@ -168,8 +168,8 @@ class ModelRenderer:
     if lead and lead.status:
       lead_d = lead.dRel * 2.0
       max_distance = np.clip(lead_d - min(lead_d * 0.35, 10.0), 0.0, max_distance)
-      max_idx = self._get_path_length_idx(pos_x_array, max_distance)
 
+    max_idx = self._get_path_length_idx(path_x_array, max_distance)
     self._path.projected_points = self._map_line_to_polygon(
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
     )
@@ -309,8 +309,10 @@ class ModelRenderer:
   @staticmethod
   def _get_path_length_idx(pos_x_array: np.ndarray, path_height: float) -> int:
     """Get the index corresponding to the given path height"""
-    idx = np.searchsorted(pos_x_array, path_height, side='right')
-    return int(np.clip(idx - 1, 0, len(pos_x_array) - 1))
+    if len(pos_x_array) == 0:
+      return 0
+    indices = np.where(pos_x_array <= path_height)[0]
+    return indices[-1] if indices.size > 0 else 0
 
   def _map_to_screen(self, in_x, in_y, in_z):
     """Project a point in car space to screen space"""
