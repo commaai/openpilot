@@ -11,6 +11,7 @@
 #include "common/util.h"
 
 #include "system/loggerd/logger.h"
+#include "system/loggerd/video_writer.h"
 
 constexpr int MAIN_FPS = 20;
 const int MAIN_BITRATE = 1e7;
@@ -147,3 +148,75 @@ const LogCameraInfo stream_driver_camera_info{
 
 const LogCameraInfo cameras_logged[] = {road_camera_info, wide_road_camera_info, driver_camera_info};
 const LogCameraInfo stream_cameras_logged[] = {stream_road_camera_info, stream_wide_road_camera_info, stream_driver_camera_info};
+
+struct LoggerdState {
+  LoggerState logger;
+  std::atomic<double> last_camera_seen_tms{0.0};
+  std::atomic<int> ready_to_rotate{0};  // count of encoders ready to rotate
+  int max_waiting = 0;
+  double last_rotate_tms = 0.;      // last rotate time in ms
+};
+
+
+class RemoteEncoder {
+public:
+  std::unique_ptr<VideoWriter> writer;
+  int encoder_segment_offset = 0;
+  int current_segment = -1;
+  std::vector<Message *> q;
+  int dropped_frames = 0;
+  bool recording = false;
+  bool marked_ready_to_rotate = false;
+  bool seen_first_packet = false;
+
+  bool syncSegment(LoggerdState *s, const std::string &name, int encoder_segment, int logger_segment) {
+    if (!seen_first_packet) {
+      seen_first_packet = true;
+      encoder_segment_offset = encoder_segment - logger_segment;
+      LOGD("%s: has encoderd offset %d", name.c_str(), encoder_segment_offset);
+    }
+
+    // Calculate adjusted segment based on offset
+    int adjusted_segment = encoder_segment - encoder_segment_offset;
+
+    // Case 1: Segments are synchronized
+    if (adjusted_segment == logger_segment) {
+      if (current_segment != logger_segment) {
+        // New segment detected; reset writer if recording
+        if (recording) {
+          writer.reset();
+          recording = false;
+        }
+        current_segment = logger_segment;
+      }
+      marked_ready_to_rotate = false;
+      return true;
+    }
+
+    // Case 2: Encoder is ahead (newer segment)
+    if (adjusted_segment > logger_segment) {
+      int segment_gap = adjusted_segment - logger_segment;
+      if (segment_gap > 1) {
+        LOGE("%s: encoder jumped ahead by %d segments (adj=%d, log=%d), adjusting offset",
+             name.c_str(), segment_gap, adjusted_segment, logger_segment);
+        encoder_segment_offset += segment_gap - 1;
+      }
+
+      if (!marked_ready_to_rotate) {
+        marked_ready_to_rotate = true;
+        ++s->ready_to_rotate;
+        LOGD("rotate %d -> %d ready %d/%d for %s",
+             logger_segment, adjusted_segment,
+             s->ready_to_rotate.load(), s->max_waiting, name.c_str());
+      }
+
+    }
+    // Case 3: Encoder is behind (older segment)
+    else {
+      LOGE("%s: encoderd packet has a older segment!!! idx.getSegmentNum():%d s->logger.segment():%d encoder_segment_offset:%d",
+           name.c_str(), encoder_segment, logger_segment, encoder_segment_offset);
+      encoder_segment_offset = encoder_segment - logger_segment;
+    }
+    return false;
+  }
+};
