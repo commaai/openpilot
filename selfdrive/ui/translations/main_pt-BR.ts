@@ -84,7 +84,7 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Previna o envio de grandes volumes de dados em conexões de celular com franquia de limite de dados</translation>
     </message>
     <message>
         <source>default</source>
@@ -104,7 +104,7 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Previna o envio de grandes volumes de dados em conexões Wi-Fi com franquia de limite de dados</translation>
     </message>
 </context>
 <context>
