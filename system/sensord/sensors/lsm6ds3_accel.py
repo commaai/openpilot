@@ -10,14 +10,20 @@ class LSM6DS3_Accel(Sensor):
   LSM6DS3_ACCEL_I2C_REG_CTRL1_XL  = 0x10
   LSM6DS3_ACCEL_I2C_REG_CTRL3_C   = 0x12
   LSM6DS3_ACCEL_I2C_REG_CTRL5_C   = 0x14
+  LSM6DS3_ACCEL_I2C_REG_CTRL10_C  = 0x19
   LSM6DS3_ACCEL_I2C_REG_STAT_REG  = 0x1E
   LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL = 0x28
+  LSM6DS3_ACCEL_I2C_REG_TIMESTAMP0 = 0x40
+  LSM6DS3_ACCEL_I2C_REG_WAKE_UP_DUR = 0x5C
 
   LSM6DS3_ACCEL_ODR_104HZ       = (0b0100 << 4)
   LSM6DS3_ACCEL_INT1_DRDY_XL    = 0b1
   LSM6DS3_ACCEL_DRDY_XLDA       = 0b1
   LSM6DS3_ACCEL_DRDY_PULSE_MODE = (1 << 7)
   LSM6DS3_ACCEL_IF_INC          = 0b00000100
+
+  LSM6DS3_ACCEL_TIMESTAMP_EN    = (1 << 5)
+  LSM6DS3_ACCEL_TIMER_HR        = (1 << 7)
 
   LSM6DS3_ACCEL_ODR_52HZ        = (0b0011 << 4)
   LSM6DS3_ACCEL_FS_4G           = (0b10 << 2)
@@ -56,6 +62,14 @@ class LSM6DS3_Accel(Sensor):
       # Enable data ready interrupt on INT1 without resetting existing interrupts
       (self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, int1),
     ))
+    # enable timestamp generation
+    val = self.read(self.LSM6DS3_ACCEL_I2C_REG_CTRL10_C, 1)[0]
+    val |= self.LSM6DS3_ACCEL_TIMESTAMP_EN
+    self.write(self.LSM6DS3_ACCEL_I2C_REG_CTRL10_C, val)
+    # highest timestamp resolution
+    val = self.read(self.LSM6DS3_ACCEL_I2C_REG_WAKE_UP_DUR, 1)[0]
+    val |= self.LSM6DS3_ACCEL_TIMER_HR
+    self.write(self.LSM6DS3_ACCEL_I2C_REG_WAKE_UP_DUR, val)
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     assert ts is not None  # must come from the IRQ event
@@ -71,8 +85,12 @@ class LSM6DS3_Accel(Sensor):
     y = self.parse_16bit(b[2], b[3]) * scale
     z = self.parse_16bit(b[4], b[5]) * scale
 
+    ts_b = self.read(self.LSM6DS3_ACCEL_I2C_REG_TIMESTAMP0, 3)
+    imu_ts = ts_b[0] | (ts_b[1] << 8) | (ts_b[2] << 16)
+
     event = log.SensorEventData.new_message()
     event.timestamp = ts
+    event.imuTimestamp = imu_ts
     event.version = 1
     event.sensor = 1  # SENSOR_ACCELEROMETER
     event.type = 1    # SENSOR_TYPE_ACCELEROMETER
