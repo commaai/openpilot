@@ -1,8 +1,12 @@
 import numpy as np
 import pyray as rl
+from enum import Enum
 
 from cereal import messaging, log
 from msgq.visionipc import VisionStreamType
+from openpilot.system.ui.onroad.alert_renderer import AlertRenderer
+from openpilot.system.ui.onroad.driver_state import DriverStateRenderer
+from openpilot.system.ui.onroad.hud_renderer import HudRenderer
 from openpilot.system.ui.onroad.model_renderer import ModelRenderer
 from openpilot.system.ui.widgets.cameraview import CameraView
 from openpilot.system.ui.lib.application import gui_app
@@ -10,8 +14,15 @@ from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCamera
 from openpilot.common.transformations.orientation import rot_from_euler
 
 
+OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.LiveCalibrationData.Status.calibrated
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
+UI_BORDER_SIZE = 30
+
+class BorderStatus(Enum):
+  DISENGAGED = rl.Color(0x17, 0x33, 0x49, 0xc8) # Blue for disengaged state
+  OVERRIDE = rl.Color(0x91, 0x9b, 0x95, 0xf1)   # Gray for override state
+  ENGAGED = rl.Color(0x17, 0x86, 0x44, 0xf1)    # Green for engaged state
 
 
 class AugmentedRoadView(CameraView):
@@ -29,22 +40,62 @@ class AugmentedRoadView(CameraView):
     self._last_calib_time: float = 0
     self._last_rect_dims = (0.0, 0.0)
     self._cached_matrix: np.ndarray | None = None
+    self._content_rect = rl.Rectangle()
 
     self.model_renderer = ModelRenderer()
+    self._hud_renderer = HudRenderer()
+    self.alert_renderer = AlertRenderer()
+    self.driver_state_renderer = DriverStateRenderer()
 
   def render(self, rect):
     # Update calibration before rendering
     self._update_calibration()
 
+    # Create inner content area with border padding
+    self._content_rect = rl.Rectangle(
+      rect.x + UI_BORDER_SIZE,
+      rect.y + UI_BORDER_SIZE,
+      rect.width - 2 * UI_BORDER_SIZE,
+      rect.height - 2 * UI_BORDER_SIZE,
+    )
+
+    # Draw colored border based on driving state
+    self._draw_border(rect)
+
+    # Enable scissor mode to clip all rendering within content rectangle boundaries
+    # This creates a rendering viewport that prevents graphics from drawing outside the border
+    rl.begin_scissor_mode(
+      int(self._content_rect.x),
+      int(self._content_rect.y),
+      int(self._content_rect.width),
+      int(self._content_rect.height)
+    )
+
     # Render the base camera view
     super().render(rect)
 
-    # TODO: Add road visualization overlays like:
-    # - Lane lines and road edges
-    # - Path prediction
-    # - Lead vehicle indicators
-    # - Additional features
-    self.model_renderer.draw(rect, self.sm)
+    # Draw all UI overlays
+    self.model_renderer.draw(self._content_rect, self.sm)
+    self._hud_renderer.draw(self._content_rect, self.sm)
+    self.alert_renderer.draw(self._content_rect, self.sm)
+    self.driver_state_renderer.draw(self._content_rect, self.sm)
+
+    # Custom UI extension point - add custom overlays here
+    # Use self._content_rect for positioning within camera bounds
+
+    # End clipping region
+    rl.end_scissor_mode()
+
+  def _draw_border(self, rect: rl.Rectangle):
+    state = self.sm["selfdriveState"]
+    if state.state in (OpState.preEnabled, OpState.overriding):
+      status = BorderStatus.OVERRIDE
+    elif state.enabled:
+      status = BorderStatus.ENGAGED
+    else:
+      status = BorderStatus.DISENGAGED
+
+    rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, status.value)
 
   def _update_calibration(self):
     # Update device camera if not already set
@@ -70,8 +121,8 @@ class AugmentedRoadView(CameraView):
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     # Check if we can use cached matrix
-    calib_time = self.sm.recv_frame.get('liveCalibration', 0)
-    current_dims = (rect.width, rect.height)
+    calib_time = self.sm.recv_frame['liveCalibration']
+    current_dims = (self._content_rect.width, self._content_rect.height)
     if (self._last_calib_time == calib_time and
         self._last_rect_dims == current_dims and
         self._cached_matrix is not None):
@@ -89,7 +140,8 @@ class AugmentedRoadView(CameraView):
     kep = calib_transform @ inf_point
 
     # Calculate center points and dimensions
-    w, h = current_dims
+    x, y = self._content_rect.x, self._content_rect.y
+    w, h = self._content_rect.width, self._content_rect.height
     cx, cy = intrinsic[0, 2], intrinsic[1, 2]
 
     # Calculate max allowed offsets with margins
@@ -117,8 +169,8 @@ class AugmentedRoadView(CameraView):
     ])
 
     video_transform = np.array([
-        [zoom, 0.0, (w / 2 - x_offset) - (cx * zoom)],
-        [0.0, zoom, (h / 2 - y_offset) - (cy * zoom)],
+        [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
+        [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
         [0.0, 0.0, 1.0]
     ])
     self.model_renderer.set_transform(video_transform @ calib_transform)

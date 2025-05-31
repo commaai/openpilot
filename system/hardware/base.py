@@ -210,6 +210,9 @@ class HardwareBase(ABC):
   def configure_modem(self):
     pass
 
+  def reboot_modem(self):
+    pass
+
   @abstractmethod
   def get_networks(self):
     pass
