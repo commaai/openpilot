@@ -30,9 +30,6 @@ class AugmentedRoadView(CameraView):
     super().__init__("camerad", stream_type)
 
     self.sm = sm
-    self.stream_type = stream_type
-    self.is_wide_camera = stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
-
     self.device_camera: DeviceCameraConfig | None = None
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
@@ -130,9 +127,10 @@ class AugmentedRoadView(CameraView):
 
     # Get camera configuration
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
-    intrinsic = device_camera.ecam.intrinsics if self.is_wide_camera else device_camera.fcam.intrinsics
-    calibration = self.view_from_wide_calib if self.is_wide_camera else self.view_from_calib
-    zoom = 2.0 if self.is_wide_camera else 1.1
+    is_wide_camera = self.stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
+    intrinsic = device_camera.ecam.intrinsics if is_wide_camera else device_camera.fcam.intrinsics
+    calibration = self.view_from_wide_calib if is_wide_camera else self.view_from_calib
+    zoom = 2.0 if is_wide_camera else 1.1
 
     # Calculate transforms for vanishing point
     inf_point = np.array([1000.0, 0.0, 0.0])
@@ -184,9 +182,13 @@ if __name__ == "__main__":
     "pandaStates", "carParams", "driverMonitoringState", "carState", "driverStateV2",
     "roadCameraState", "wideRoadCameraState", "managerState", "selfdriveState", "longitudinalPlan"])
   road_camera_view = AugmentedRoadView(sm, VisionStreamType.VISION_STREAM_ROAD)
+  print("***press space to switch camera view***")
   try:
     for _ in gui_app.render():
       sm.update(0)
+      if rl.is_key_released(rl.KeyboardKey.KEY_SPACE):
+        is_wide = road_camera_view.stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
+        road_camera_view.switch_stream(VisionStreamType.VISION_STREAM_ROAD if is_wide else VisionStreamType.VISION_STREAM_WIDE_ROAD)
       road_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     road_camera_view.close()

@@ -3,6 +3,7 @@ import pyray as rl
 
 from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
+from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 
@@ -57,6 +58,9 @@ else:
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
     self.client = VisionIpcClient(name, stream_type, False)
+    self._name = name
+    self._stream_type = stream_type
+
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
@@ -80,6 +84,18 @@ class CameraView:
       self.egl_texture = rl.load_texture_from_image(temp_image)
       rl.unload_image(temp_image)
 
+  def switch_stream(self, stream_type: VisionStreamType) -> None:
+    if self._stream_type != stream_type:
+      cloudlog.debug(f'switching stream from {self._stream_type} to {stream_type}')
+      self._clear_textures()
+      self.frame = None
+      self._stream_type = stream_type
+      self.client = VisionIpcClient(self._name, stream_type, False)
+
+  @property
+  def stream_type(self) -> VisionStreamType:
+    return self._stream_type
+
   def close(self) -> None:
     self._clear_textures()
 
@@ -91,6 +107,8 @@ class CameraView:
     # Clean up shader
     if self.shader and self.shader.id:
       rl.unload_shader(self.shader)
+
+    self.client = None
 
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     if not self.frame:
@@ -201,12 +219,12 @@ class CameraView:
       current_time = rl.get_time()
       if current_time - self.last_connection_attempt < CONNECTION_RETRY_INTERVAL:
         return False
-
       self.last_connection_attempt = current_time
 
       if not self.client.connect(False) or not self.client.num_buffers:
         return False
 
+      cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
       self._clear_textures()
 
       if not TICI:
