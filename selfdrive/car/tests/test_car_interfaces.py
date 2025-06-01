@@ -32,7 +32,7 @@ class TestCarInterfaces:
     # --- Get params and construct interface ---
     args = get_fuzzy_car_interface_args(data.draw)
     car_params = CarInterface.get_params(
-      car_name, args['fingerprints'], args['car_fw'],
+      car_name, args['fingerprints'], False, args['car_fw'],
       alpha_long=args['alpha_long'], is_release=False, docs=False
     ).as_reader()
     CI = CarInterface(car_params)
