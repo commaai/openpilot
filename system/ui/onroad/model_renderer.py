@@ -140,10 +140,13 @@ class ModelRenderer:
     """Update positions of lead vehicles"""
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     leads = [radar_state.leadOne, radar_state.leadTwo]
+
     for i, lead_data in enumerate(leads):
       if lead_data and lead_data.status:
         d_rel, y_rel, v_rel = lead_data.dRel, lead_data.yRel, lead_data.vRel
         idx = self._get_path_length_idx(path_x_array, d_rel)
+
+         # Get z-coordinate from path at the lead vehicle position
         z = self._path.raw_points[idx, 2] if idx < len(self._path.raw_points) else 0.0
         point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
         if point:
@@ -336,7 +339,8 @@ class ModelRenderer:
       return np.empty((0, 2), dtype=np.float32)
 
     # Slice points and filter non-negative x-coordinates
-    points = line[:max_idx + 1][line[:max_idx + 1, 0] >= 0]
+    points = line[:max_idx + 1]
+    points = points[points[:, 0] >= 0]
     if points.shape[0] == 0:
       return np.empty((0, 2), dtype=np.float32)
 
@@ -397,8 +401,13 @@ class ModelRenderer:
 
   @staticmethod
   def _hsla_to_color(h, s, l, a):
-    r, g, b = [max(0, min(255, int(v * 255))) for v in colorsys.hls_to_rgb(h, l, s)]
-    return rl.Color(r, g, b, max(0, min(255, int(a * 255))))
+    rgb = colorsys.hls_to_rgb(h, l, s)
+    return rl.Color(
+        int(rgb[0] * 255),
+        int(rgb[1] * 255),
+        int(rgb[2] * 255),
+        int(a * 255)
+    )
 
   @staticmethod
   def _blend_colors(begin_colors, end_colors, t):
