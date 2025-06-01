@@ -8,6 +8,7 @@ from enum import IntEnum
 # Constants
 SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371
+CRUISE_DISABLED_CHAR = '–'
 
 
 @dataclass(frozen=True)
@@ -153,7 +154,7 @@ class HudRenderer:
       max_color,
     )
 
-    set_speed_text = "–" if not self.is_cruise_set else str(round(self.set_speed))
+    set_speed_text = CRUISE_DISABLED_CHAR if not self.is_cruise_set else str(round(self.set_speed))
     speed_text_width = self._measure_text(set_speed_text, self._font_bold, FONT_SIZES.set_speed, 'bold').x
     rl.draw_text_ex(
       self._font_bold,
