@@ -27,6 +27,9 @@ ARC_THICKNESS_EXTEND = 12.0
 SCALES_POS = np.array([0.9, 0.4, 0.4], dtype=np.float32)
 SCALES_NEG = np.array([0.7, 0.4, 0.4], dtype=np.float32)
 
+ARC_POINT_COUNT = 37  # Number of points in the arc
+ARC_ANGLES = np.linspace(0.0, np.pi, ARC_POINT_COUNT, dtype=np.float32)
+
 @dataclass
 class ArcData:
   """Data structure for arc rendering parameters."""
@@ -57,8 +60,8 @@ class DriverStateRenderer:
 
     # Pre-allocate drawing arrays
     self.face_lines = [rl.Vector2(0, 0) for _ in range(len(DEFAULT_FACE_KPTS_3D))]
-    self.h_arc_lines = [rl.Vector2(0, 0) for _ in range(37)]  # 37 points for horizontal arc
-    self.v_arc_lines = [rl.Vector2(0, 0) for _ in range(37)]  # 37 points for vertical arc
+    self.h_arc_lines = [rl.Vector2(0, 0) for _ in range(ARC_POINT_COUNT)]
+    self.v_arc_lines = [rl.Vector2(0, 0) for _ in range(ARC_POINT_COUNT)]
 
     # Load the driver face icon
     self.dm_img = gui_app.texture("icons/driver_face.png", IMG_SIZE, IMG_SIZE)
@@ -218,9 +221,7 @@ class DriverStateRenderer:
     )
 
     # Pre-calculate arc points
-    start_rad = np.deg2rad(start_angle)
-    end_rad = np.deg2rad(start_angle + 180)
-    angles = np.linspace(start_rad, end_rad, 37)
+    angles = ARC_ANGLES + np.deg2rad(start_angle)
 
     center_x = x + arc_data.width / 2
     center_y = y + arc_data.height / 2
