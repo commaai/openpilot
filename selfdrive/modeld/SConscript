@@ -68,6 +68,8 @@ if b"QCOM" in devs:
   flags = 'QCOM=1'
 elif b"METAL" in devs:
   flags = 'METAL=1 IMAGE=0 NOLOCALS=0'
+elif b"CUDA" in devs:
+  flags = 'CUDA=1 IMAGE=0'
 elif b"GPU" in devs:
   flags = 'GPU=1'
 elif b"LLVM" in devs:
