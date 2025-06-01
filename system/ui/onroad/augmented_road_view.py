@@ -29,7 +29,6 @@ class AugmentedRoadView(CameraView):
   def __init__(self, stream_type: VisionStreamType):
     super().__init__("camerad", stream_type)
 
-    self.sm = sm
     self.device_camera: DeviceCameraConfig | None = None
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()

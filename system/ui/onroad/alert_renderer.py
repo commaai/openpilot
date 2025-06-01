@@ -62,8 +62,8 @@ ALERT_CRITICAL_REBOOT = Alert(
 
 class AlertRenderer:
   def __init__(self):
-    # TODO: use ui_state to determine when to start
-    self.started_frame: int = 0
+    """Initialize the alert renderer."""
+    self.alert: Alert = Alert()
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self.font_metrics_cache: dict[tuple[str, int, str], rl.Vector2] = {}
@@ -73,7 +73,7 @@ class AlertRenderer:
     ss = sm['selfdriveState']
 
     # Check if waiting to start
-    if sm.recv_frame['selfdriveState'] < self.started_frame:
+    if sm.recv_frame['selfdriveState'] < ui_state.started_frame:
       return ALERT_STARTUP_PENDING
 
     # Handle selfdrive timeout
