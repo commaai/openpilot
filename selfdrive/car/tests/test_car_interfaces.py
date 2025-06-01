@@ -33,10 +33,9 @@ class TestCarInterfaces:
     args = get_fuzzy_car_interface_args(data.draw)
     car_params = CarInterface.get_params(
       car_name, args['fingerprints'], args['car_fw'],
-      alpha_long=args['alpha_long'], docs=False
+      alpha_long=args['alpha_long'], docs=False, is_release=True
     ).as_reader()
     CI = CarInterface(car_params)
-   
     assert car_params.mass > 1
     assert car_params.wheelbase > 0
     assert car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7
