@@ -1,14 +1,15 @@
-import numpy as np
+import time
 import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
+from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
 # Constants
 ALERT_COLORS = {
-  log.SelfdriveState.AlertStatus.normal: rl.Color(0, 0, 0, 150),  # Black
-  log.SelfdriveState.AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 100),  # Orange
-  log.SelfdriveState.AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 150),  # Red
+  log.SelfdriveState.AlertStatus.normal: rl.Color(0, 0, 0, 220),  # Black
+  log.SelfdriveState.AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 220),  # Orange
+  log.SelfdriveState.AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 220),  # Red
 }
 
 ALERT_HEIGHTS = {
@@ -16,6 +17,7 @@ ALERT_HEIGHTS = {
   log.SelfdriveState.AlertSize.mid: 420,
 }
 
+ALERT_BORDER_RADIUS = 30
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
@@ -28,95 +30,80 @@ class Alert:
   size: log.SelfdriveState.AlertSize = log.SelfdriveState.AlertSize.none
   status: log.SelfdriveState.AlertStatus = log.SelfdriveState.AlertStatus.normal
 
-  def is_equal(self, other: 'Alert') -> bool:
-    """Check if two alerts are equal."""
-    return (
-      self.text1 == other.text1
-      and self.text2 == other.text2
-      and self.alert_type == other.alert_type
-      and self.size == other.size
-      and self.status == other.status
-    )
+
+# Pre-defined alert instances
+ALERT_STARTUP_PENDING = Alert(
+  text1="openpilot Unavailable",
+  text2="Waiting to start",
+  alert_type="selfdriveWaiting",
+  size=log.SelfdriveState.AlertSize.mid,
+  status=log.SelfdriveState.AlertStatus.normal,
+)
+
+ALERT_CRITICAL_TIMEOUT = Alert(
+  text1="TAKE CONTROL IMMEDIATELY",
+  text2="System Unresponsive",
+  alert_type="selfdriveUnresponsive",
+  size=log.SelfdriveState.AlertSize.full,
+  status=log.SelfdriveState.AlertStatus.critical,
+)
+
+ALERT_CRITICAL_REBOOT = Alert(
+  text1="System Unresponsive",
+  text2="Reboot Device",
+  alert_type="selfdriveUnresponsivePermanent",
+  size=log.SelfdriveState.AlertSize.full,
+  status=log.SelfdriveState.AlertStatus.critical,
+)
 
 
 class AlertRenderer:
   def __init__(self):
     """Initialize the alert renderer."""
     self.alert: Alert = Alert()
+    # TODO: use ui_state to determine when to start
     self.started_frame: int = 0
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self.font_metrics_cache: dict[tuple[str, int, str], rl.Vector2] = {}
 
-  def clear(self) -> None:
-    """Reset the alert to its default state."""
-    self.alert = Alert()
-
-  def update_state(self, sm: messaging.SubMaster, started_frame: int) -> None:
+  def update_state(self, sm: messaging.SubMaster) -> None:
     """Update alert state based on SubMaster data."""
-    self.started_frame = started_frame
-    new_alert = self.get_alert(sm)
-    if not self.alert.is_equal(new_alert):
-      self.alert = new_alert
+    self.alert = self.get_alert(sm)
 
   def get_alert(self, sm: messaging.SubMaster) -> Alert:
     """Generate the current alert based on selfdrive state."""
-    if not sm.valid['selfdriveState']:
-      return Alert()
-
     ss = sm['selfdriveState']
-    selfdrive_frame = sm.recv_frame['selfdriveState']
-    alert_status = self._get_enum_value(ss.alertStatus, log.SelfdriveState.AlertStatus)
 
-    # Return current alert if selfdrive state is recent
-    if selfdrive_frame >= self.started_frame:
-      return Alert(
+    # Check if waiting to start
+    if sm.recv_frame['selfdriveState'] < self.started_frame:
+      return ALERT_STARTUP_PENDING
+
+    # Handle selfdrive timeout
+    ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
+    if TICI:
+      if ss_missing > SELFDRIVE_STATE_TIMEOUT:
+        if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
+          return ALERT_CRITICAL_TIMEOUT
+        return ALERT_CRITICAL_REBOOT
+
+    # Return current alert from selfdrive state
+    return Alert(
         text1=ss.alertText1,
         text2=ss.alertText2,
         alert_type=ss.alertType,
         size=self._get_enum_value(ss.alertSize, log.SelfdriveState.AlertSize),
-        status=alert_status,
-      )
-
-    # Handle selfdrive timeout
-    ss_missing = (np.uint64(rl.get_time() * 1e9) - sm.recv_time['selfdriveState']) / 1e9
-    if selfdrive_frame < self.started_frame:
-      return Alert(
-        text1="openpilot Unavailable",
-        text2="Waiting to start",
-        alert_type="selfdriveWaiting",
-        size=log.SelfdriveState.AlertSize.mid,
-        status=log.SelfdriveState.AlertStatus.normal,
-      )
-    elif ss_missing > SELFDRIVE_STATE_TIMEOUT:
-      if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
-        return Alert(
-          text1="TAKE CONTROL IMMEDIATELY",
-          text2="System Unresponsive",
-          alert_type="selfdriveUnresponsive",
-          size=log.SelfdriveState.AlertSize.full,
-          status=log.SelfdriveState.AlertStatus.critical,
-        )
-      return Alert(
-        text1="System Unresponsive",
-        text2="Reboot Device",
-        alert_type="selfdriveUnresponsivePermanent",
-        size=log.SelfdriveState.AlertSize.mid,
-        status=log.SelfdriveState.AlertStatus.normal,
-      )
-
-    return Alert()
+        status=self._get_enum_value(ss.alertStatus, log.SelfdriveState.AlertStatus))
 
   def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
     """Render the alert within the specified rectangle."""
-    self.update_state(sm, sm.recv_frame['selfdriveState'])
+    self.update_state(sm)
     alert_size = self._get_enum_value(self.alert.size, log.SelfdriveState.AlertSize)
     if alert_size == log.SelfdriveState.AlertSize.none:
       return
 
     # Calculate alert rectangle
     margin = 0 if alert_size == log.SelfdriveState.AlertSize.full else 40
-    radius = 0 if alert_size == log.SelfdriveState.AlertSize.full else 30
     height = ALERT_HEIGHTS.get(alert_size, rect.height)
     alert_rect = rl.Rectangle(
       rect.x + margin,
@@ -129,7 +116,7 @@ class AlertRenderer:
     alert_status = self._get_enum_value(self.alert.status, log.SelfdriveState.AlertStatus)
     color = ALERT_COLORS.get(alert_status, ALERT_COLORS[log.SelfdriveState.AlertStatus.normal])
     if alert_size != log.SelfdriveState.AlertSize.full:
-      roundness = radius / (min(alert_rect.width, alert_rect.height) / 2)
+      roundness = ALERT_BORDER_RADIUS / (min(alert_rect.width, alert_rect.height) / 2)
       rl.draw_rectangle_rounded(alert_rect, roundness, 10, color)
     else:
       rl.draw_rectangle_rec(alert_rect, color)
