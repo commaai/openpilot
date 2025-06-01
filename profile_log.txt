@@ -1,26 +1,12 @@
 ============================= test session starts ==============================
 platform linux -- Python 3.12.3, pytest-8.3.5, pluggy-1.6.0
-Using --randomly-seed=1784375198
+Using --randomly-seed=2553001717
 rootdir: /home/sharish/openpilot
 configfile: pyproject.toml
 plugins: cpp-2.6.0, subtests-0.14.1, repeat-0.9.4, xdist-3.6.1, asyncio-0.26.0, randomly-3.16.0, hypothesis-6.47.5, timeout-2.4.0, cov-6.1.1, mock-3.14.0
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=function, asyncio_default_test_loop_scope=function
 created: 8/8 workers
-8 workers [226 items]
+8 workers [0 items]
 
-........................................................................ [ 31%]
-........................................................................ [ 63%]
-........................................................................ [ 95%]
-..........                                                               [100%]
-============================= slowest 10 durations =============================
-0.58s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_034_FORD_MAVERICK_MK1
-0.58s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_032_FORD_F_150_LIGHTNING_MK1
-0.58s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_031_FORD_FOCUS_MK4
-0.54s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_033_FORD_F_150_MK14
-0.53s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_035_FORD_MUSTANG_MACH_E_MK1
-0.52s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_036_FORD_RANGER_MK2
-0.50s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_029_FORD_ESCAPE_MK4_5
-0.50s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_027_FORD_BRONCO_SPORT_MK1
-0.48s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_028_FORD_ESCAPE_MK4
-0.47s call     selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_interfaces_030_FORD_EXPLORER_MK6
-============================= 226 passed in 11.55s =============================
+
+============================ no tests ran in 0.78s =============================

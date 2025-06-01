@@ -2,7 +2,7 @@ import capnp
 import hypothesis.strategies as st
 from typing import Any
 from collections.abc import Callable
-from functools import cache, lru_cache
+from functools import cache
 
 from cereal import log
 
@@ -79,4 +79,3 @@ class FuzzyGenerator:
   def get_random_event_msg(cls, draw: DrawType, events: list[str], real_floats: bool = False) -> list[dict[str, Any]]:
     fg = cls(draw, real_floats=real_floats)
     return [draw(fg.generate_struct(log.Event.schema, e)) for e in sorted(events)]
-

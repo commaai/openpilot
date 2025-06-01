@@ -1,4 +1,4 @@
-import math
+
 from hypothesis import given, settings, Phase, strategies as st
 from parameterized import parameterized
 from cereal import car
