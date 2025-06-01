@@ -192,10 +192,12 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+    from openpilot.system.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
+    all_chars += CRUISE_DISABLED_CHAR
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
