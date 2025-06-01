@@ -14,6 +14,8 @@ MAX_DRAW_DISTANCE = 100.0
 PATH_COLOR_TRANSITION_DURATION = 0.5  # Seconds for color transition animation
 PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * DEFAULT_FPS)
 
+MAX_POINTS = 192
+
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
   rl.Color(114, 255, 92, 89),    # HSLF(112/360, 1.0, 0.68, 0.35)
@@ -61,6 +63,11 @@ class ModelRenderer:
     self._transform_dirty = True
     self._clip_region = None
     self._rect = None
+
+    # Pre-allocated arrays for polygon conversion
+    self._temp_points_3d = np.empty((MAX_POINTS * 2, 3), dtype=np.float32)
+    self._temp_proj = np.empty((3, MAX_POINTS * 2), dtype=np.float32)
+
     self._exp_gradient = {
       'start': (0.0, 1.0),  # Bottom of path
       'end': (0.0, 0.0),  # Top of path
@@ -346,7 +353,7 @@ class ModelRenderer:
 
     # Create left and right 3D points in one array
     n_points = points.shape[0]
-    points_3d = np.empty((n_points * 2, 3), dtype=np.float32)
+    points_3d = self._temp_points_3d[:n_points * 2]
     points_3d[:n_points, 0] = points_3d[n_points:, 0] = points[:, 0]
     points_3d[:n_points, 1] = points[:, 1] - y_off
     points_3d[n_points:, 1] = points[:, 1] + y_off
