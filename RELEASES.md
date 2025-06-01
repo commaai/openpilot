@@ -3,6 +3,8 @@ Version 0.9.9 (2025-05-23)
 * New driving model
   * New training architecture using parts from MLSIM
 * Steering actuation delay is now learned online
+* Ford Escape 2023-24 support thanks to incognitojam!
+* Ford Kuga 2024 support thanks to incognitojam!
 * Hyundai Nexo 2021 support thanks to sunnyhaibin!
 * Tesla Model 3 and Y support thanks to lukasloetkolben!
 * Lexus RC 2023 support thanks to nelsonjchen!

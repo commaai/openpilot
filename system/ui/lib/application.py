@@ -202,7 +202,7 @@ class GuiApplication:
 
     for index, font_file in enumerate(font_files):
       with as_file(FONT_DIR.joinpath(font_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 120, codepoints, codepoint_count[0])
+        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[index] = font
 

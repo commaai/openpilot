@@ -36,8 +36,7 @@ class TestCarInterfaces:
       alpha_long=args['alpha_long'], docs=False
     ).as_reader()
     CI = CarInterface(car_params)
-
-    # --- Param sanity checks ---
+   
     assert car_params.mass > 1
     assert car_params.wheelbase > 0
     assert car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7
