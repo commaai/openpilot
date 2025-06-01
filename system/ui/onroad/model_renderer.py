@@ -14,7 +14,7 @@ MAX_DRAW_DISTANCE = 100.0
 PATH_COLOR_TRANSITION_DURATION = 0.5  # Seconds for color transition animation
 PATH_BLEND_INCREMENT = 1.0 / (PATH_COLOR_TRANSITION_DURATION * DEFAULT_FPS)
 
-MAX_POINTS = 192
+MAX_POINTS = 200
 
 THROTTLE_COLORS = [
   rl.Color(13, 248, 122, 102),   # HSLF(148/360, 0.94, 0.51, 0.4)
@@ -153,7 +153,7 @@ class ModelRenderer:
         d_rel, y_rel, v_rel = lead_data.dRel, lead_data.yRel, lead_data.vRel
         idx = self._get_path_length_idx(path_x_array, d_rel)
 
-         # Get z-coordinate from path at the lead vehicle position
+        # Get z-coordinate from path at the lead vehicle position
         z = self._path.raw_points[idx, 2] if idx < len(self._path.raw_points) else 0.0
         point = self._map_to_screen(d_rel, -y_rel, z + self._path_offset_z)
         if point:
@@ -360,7 +360,8 @@ class ModelRenderer:
     points_3d[:n_points, 2] = points_3d[n_points:, 2] = points[:, 2] + z_off
 
     # Single matrix multiplication for projections
-    proj = self._car_space_transform @ points_3d.T
+    proj = np.ascontiguousarray(self._temp_proj[:, :n_points * 2])  # Slice the pre-allocated array
+    np.dot(self._car_space_transform, points_3d.T, out=proj)
     valid_z = np.abs(proj[2]) > 1e-6
     if not np.any(valid_z):
       return np.empty((0, 2), dtype=np.float32)

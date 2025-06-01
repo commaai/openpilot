@@ -47,7 +47,7 @@ class AugmentedRoadView(CameraView):
   def render(self, rect):
     # Update calibration before rendering
     self._update_calibration()
-    self._calc_frame_matrix(rect)
+
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
       rect.x + UI_BORDER_SIZE,
