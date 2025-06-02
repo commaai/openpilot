@@ -7,11 +7,8 @@ import tempfile
 from itertools import zip_longest
 
 import matplotlib.pyplot as plt
-<<<<<<< HEAD
 import numpy as np
 from tabulate import tabulate
-=======
->>>>>>> parent of 847a5ce1f (ci: faster model_replay (#34036))
 
 from openpilot.common.git import get_commit
 from openpilot.system.hardware import PC
