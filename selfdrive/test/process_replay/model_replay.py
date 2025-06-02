@@ -132,7 +132,6 @@ def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
     if msg.which() in frs_types:
       cam_state_counts[msg.which()] += 1
     if any(cam_state_counts[state]  >= start_frame for state in frs_types):
-      print(cam_state_counts)
       all_msgs.append(msg)
     if all(cam_state_counts[state] == end_frame for state in frs_types):
       break
