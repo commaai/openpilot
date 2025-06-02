@@ -3,11 +3,11 @@ import pyray as rl
 
 from cereal import log
 from msgq.visionipc import VisionStreamType
-from openpilot.system.ui.lib.ui_state import ui_state, UIStatus, UI_BORDER_SIZE
-from openpilot.system.ui.onroad.alert_renderer import AlertRenderer
-from openpilot.system.ui.onroad.driver_state import DriverStateRenderer
-from openpilot.system.ui.onroad.hud_renderer import HudRenderer
-from openpilot.system.ui.onroad.model_renderer import ModelRenderer
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, UI_BORDER_SIZE
+from openpilot.selfdrive.ui.onroad.alert_renderer import AlertRenderer
+from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
+from openpilot.selfdrive.ui.onroad.hud_renderer import HudRenderer
+from openpilot.selfdrive.ui.onroad.model_renderer import ModelRenderer
 from openpilot.system.ui.widgets.cameraview import CameraView
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
