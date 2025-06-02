@@ -200,7 +200,7 @@ if __name__ == "__main__":
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
   # load logs
-  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.bz2")))
+  lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.zst")))
   frs = {
     'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), readahead=True),
     'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), readahead=True),
