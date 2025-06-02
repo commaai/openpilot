@@ -1,8 +1,8 @@
 import numpy as np
 import pyray as rl
 from cereal import messaging
-from openpilot.system.ui.widgets.cameraview import CameraView
 from msgq.visionipc import VisionStreamType
+from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_label
