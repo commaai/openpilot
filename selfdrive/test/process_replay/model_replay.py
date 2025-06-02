@@ -217,6 +217,10 @@ if __name__ == "__main__":
     try:
       all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
       cmp_log = []
+      model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
+      cmp_log += all_logs[model_start_index:model_start_index + END_FRAME*3]
+      dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
+      cmp_log += all_logs[dmon_start_index:dmon_start_index + END_FRAME]
 
       ignore = [
         'logMonoTime',
