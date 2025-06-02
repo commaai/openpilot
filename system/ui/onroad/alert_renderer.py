@@ -62,8 +62,6 @@ ALERT_CRITICAL_REBOOT = Alert(
 
 class AlertRenderer:
   def __init__(self):
-    """Initialize the alert renderer."""
-    self.alert: Alert = Alert()
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self.font_metrics_cache: dict[tuple[str, int, str], rl.Vector2] = {}
