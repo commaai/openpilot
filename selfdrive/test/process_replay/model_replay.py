@@ -38,7 +38,7 @@ EXEC_TIMINGS = [
 ]
 
 def get_log_fn(test_route, ref="master"):
-  return f"{test_route}_model_tici_{ref}.bz2"
+  return f"{test_route}_model_tici_{ref}.zst"
 
 def plot(proposed, master, title, tmp):
   proposed = list(proposed)
