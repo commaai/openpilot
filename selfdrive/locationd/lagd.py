@@ -173,6 +173,9 @@ class LateralLagEstimator:
     self.max_lat_accel = max_lat_accel
     self.max_lat_accel_diff = max_lat_accel_diff
 
+    # TODO: remove me, lagd is in shadow mode on release
+    self.is_release = Params().get_bool("IsReleaseBranch")
+
     self.t = 0.0
     self.lat_active = False
     self.steering_pressed = False
@@ -212,6 +215,9 @@ class LateralLagEstimator:
       else:
         liveDelay.status = log.LiveDelayData.Status.estimated
     else:
+      liveDelay.status = log.LiveDelayData.Status.unestimated
+
+    if self.is_release:
       liveDelay.status = log.LiveDelayData.Status.unestimated
 
     if liveDelay.status == log.LiveDelayData.Status.estimated:
