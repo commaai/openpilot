@@ -3,8 +3,8 @@ import pyray as rl
 from cereal import messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
-from openpilot.system.ui.layouts.home import HomeLayout
+from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
+from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.system.ui.onroad.augmented_road_view import AugmentedRoadView
 
 
