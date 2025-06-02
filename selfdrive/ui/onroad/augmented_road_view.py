@@ -26,7 +26,7 @@ BORDER_COLORS = {
 
 
 class AugmentedRoadView(CameraView):
-  def __init__(self, stream_type: VisionStreamType):
+  def __init__(self, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
     super().__init__("camerad", stream_type)
 
     self.device_camera: DeviceCameraConfig | None = None
