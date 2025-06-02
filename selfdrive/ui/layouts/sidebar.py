@@ -1,5 +1,6 @@
 import pyray as rl
 import time
+from typing import Callable
 from cereal import log
 from dataclasses import dataclass
 from openpilot.system.ui.lib.ui_state import ui_state
@@ -50,9 +51,6 @@ class MetricData:
 
 class Sidebar:
   def __init__(self):
-    self.flag_pressed = False
-    self.settings_pressed = False
-
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0
 
@@ -66,6 +64,14 @@ class Sidebar:
     self._font_regular = gui_app.font(FontWeight.NORMAL)
     self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
+     # Callbacks
+    self._on_settings_click: Callable | None = None
+    self._on_flag_click: Callable | None = None
+
+  def set_callbacks(self, on_settings: Callable | None = None, on_flag: Callable | None = None):
+    self._on_settings_click = on_settings
+    self._on_flag_click = on_flag
+
   def render(self, rect: rl.Rectangle):
     self.update_state()
 
@@ -75,6 +81,8 @@ class Sidebar:
     self._draw_buttons(rect)
     self._draw_network_indicator(rect)
     self._draw_metrics(rect)
+
+    self._handle_mouse_release()
 
   def update_state(self):
     sm = ui_state.sm
@@ -122,42 +130,32 @@ class Sidebar:
     else:
       self._panda_status = MetricData("NO", "PANDA", Colors.DANGER)
 
-  def handle_mouse_press(self, mouse_pos: rl.Vector2):
-    if rl.check_collision_point_rec(mouse_pos, HOME_BTN):
-      if ui_state.started:
-        self.flag_pressed = True
-        return "flag"
-      else:
-        return "home"
-    elif rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
-      self.settings_pressed = True
-      return "settings"
+  def _handle_mouse_release(self):
+    if not rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      return
 
-    return None
-
-  def handle_mouse_release(self, mouse_pos: rl.Vector2):
-    action = None
-
-    if self.flag_pressed:
-      self.flag_pressed = False
-      if rl.check_collision_point_rec(mouse_pos, HOME_BTN):
-        action = "send_flag"
-
-    if self.settings_pressed:
-      self.settings_pressed = False
-      if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
-        action = "open_settings"
-
-    return action
+    mouse_pos = rl.get_mouse_position()
+    if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
+      if self._on_settings_click:
+        self._on_settings_click()
+    elif rl.check_collision_point_rec(mouse_pos, HOME_BTN) and ui_state.started:
+      if self._on_flag_click:
+        self._on_flag_click()
 
   def _draw_buttons(self, rect: rl.Rectangle):
-    # Settings button
-    opacity = 0.65 if self.settings_pressed else 1.0
+    mouse_pos = rl.get_mouse_position()
+    mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
+
+    # Settings button
+    settings_down = mouse_down and rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN)
+    opacity = 0.65 if settings_down else 1.0
     tint = rl.Color(255, 255, 255, int(255 * opacity))
     rl.draw_texture(self._settings_img, int(SETTINGS_BTN.x), int(SETTINGS_BTN.y), tint)
+
     # Home/Flag button
-    opacity = 0.65 if ui_state.started and self.flag_pressed else 1.0
+    flag_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, HOME_BTN)
+    opacity = 0.65 if ui_state.started and flag_pressed else 1.0
     button_img = self._flag_img if ui_state.started else self._home_img
 
     tint = rl.Color(255, 255, 255, int(255 * opacity))

@@ -1,27 +1,47 @@
 #!/usr/bin/env python3
 import pyray as rl
+from enum import IntEnum
 from msgq.visionipc import VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
+from openpilot.selfdrive.ui.layouts.settings.main import SettingsLayout
 from openpilot.system.ui.lib.ui_state import ui_state
 from openpilot.system.ui.onroad.augmented_road_view import AugmentedRoadView
 
 
+class UIMode(IntEnum):
+  HOME = 0
+  SETTINGS = 1
+  ONROAD = 2
+
+
 class UI:
   def __init__(self):
-    self._sidbar = Sidebar()
+    self._sidebar = Sidebar()
     self._sidebar_visible = True
+    self._current_mode = UIMode.HOME
 
     self._home_layout = HomeLayout()
+    self._settings_layout = SettingsLayout()
     self._augmented_road_view = AugmentedRoadView()
+
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
     self._content_rect = rl.Rectangle(0, 0, 0, 0)
+
+    # Set calbacks
+    self._setup_callbacks()
 
   def render(self, rect):
     self._update_layout_rects(rect)
     self._handle_input()
     self._render_main_content()
+
+  def _setup_callbacks(self):
+    self._sidebar.set_callbacks(
+      on_settings=self._on_settings_clicked,
+      on_flag=self._on_flag_clicked
+    )
 
   def _update_layout_rects(self, rect):
     self._sidebar_rect = rl.Rectangle(
@@ -39,13 +59,23 @@ class UI:
       rect.height
     )
 
-  def _render_main_content(self):
-    if self._sidebar_visible:
-      self._sidbar.render(self._sidebar_rect)
+  def _on_settings_clicked(self):
+    self._current_mode = UIMode.SETTINGS
 
-    if ui_state.started:
+  def _on_flag_clicked(self):
+    pass
+
+  def _render_main_content(self):
+    # Render sidebar
+    if self._sidebar_visible:
+      self._sidebar.render(self._sidebar_rect)
+
+    # Render content based on current mode
+    if self._current_mode == UIMode.SETTINGS:
+      self._settings_layout.render(self._content_rect)
+    elif self._current_mode == UIMode.ONROAD:
       self._augmented_road_view.render(self._content_rect)
-    else:
+    else:  # HOME mode
       self._home_layout.render(self._content_rect)
 
   def _handle_input(self):
