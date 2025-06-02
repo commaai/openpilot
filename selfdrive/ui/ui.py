@@ -5,8 +5,8 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.main import SettingsLayout
-from openpilot.system.ui.lib.ui_state import ui_state
-from openpilot.system.ui.onroad.augmented_road_view import AugmentedRoadView
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 
 
 class UIMode(IntEnum):
@@ -21,6 +21,7 @@ class UI:
     self._sidebar_visible = True
     self._current_mode = UIMode.HOME
     self._prev_onroad = False
+    self._window_size = None
 
     # Initialize layouts
     self._layouts = {
@@ -32,7 +33,7 @@ class UI:
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
     self._content_rect = rl.Rectangle(0, 0, 0, 0)
 
-    # Set calbacks
+    # Set callbacks
     self._setup_callbacks()
 
   def render(self, rect):
@@ -49,20 +50,23 @@ class UI:
     )
 
   def _update_layout_rects(self, rect):
-    self._sidebar_rect = rl.Rectangle(
-      rect.x,
-      rect.y,
-      SIDEBAR_WIDTH,
-      rect.height
-    )
+    if self._window_size != (rect.width, rect.height):
+      self._window_size = (rect.width, rect.height)
 
-    x_offset = SIDEBAR_WIDTH if self._sidebar_visible else 0
-    self._content_rect = rl.Rectangle(
-      rect.y + x_offset,
-      rect.y,
-      rect.width - x_offset,
-      rect.height
-    )
+      self._sidebar_rect = rl.Rectangle(
+        rect.x,
+        rect.y,
+        SIDEBAR_WIDTH,
+        rect.height
+      )
+
+      x_offset = SIDEBAR_WIDTH if self._sidebar_visible else 0
+      self._content_rect = rl.Rectangle(
+        rect.y + x_offset,
+        rect.y,
+        rect.width - x_offset,
+        rect.height
+      )
 
   def _on_settings_clicked(self):
     self._current_mode = UIMode.SETTINGS

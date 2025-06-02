@@ -1,9 +1,9 @@
 import pyray as rl
 import time
-from typing import Callable
+from collections.abc import Callable
 from cereal import log
 from dataclasses import dataclass
-from openpilot.system.ui.lib.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
 SIDEBAR_WIDTH = 300
