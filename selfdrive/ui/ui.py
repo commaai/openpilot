@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import pyray as rl
 from enum import IntEnum
-from msgq.visionipc import VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
@@ -37,6 +36,8 @@ class UI:
     self._setup_callbacks()
 
   def render(self, rect):
+    ui_state.update()
+
     self._update_layout_rects(rect)
     self._handle_input()
     self._render_main_content()
@@ -97,7 +98,6 @@ def main():
   gui_app.init_window("UI")
   ui = UI()
   for _ in gui_app.render():
-    ui_state.update()
     ui.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
 
