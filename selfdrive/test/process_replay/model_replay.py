@@ -128,7 +128,7 @@ def comment_replay_report(proposed, master, full_logs):
 def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
   all_msgs = []
   cam_state_counts = defaultdict(int)
-  for msg in sorted(logs, key=lambda m: m.logMonoTime):    
+  for msg in sorted(logs, key=lambda m: m.logMonoTime):
     if msg.which() in frs_types:
       cam_state_counts[msg.which()] += 1
     if any(cam_state_counts[state]  >= start_frame for state in frs_types):
