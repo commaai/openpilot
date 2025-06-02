@@ -175,6 +175,7 @@ if __name__ == "__main__":
   print("***press space to switch camera view***")
   try:
     for _ in gui_app.render():
+      ui_state.update()
       if rl.is_key_released(rl.KeyboardKey.KEY_SPACE):
         is_wide = road_camera_view.stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
         road_camera_view.switch_stream(VisionStreamType.VISION_STREAM_ROAD if is_wide else VisionStreamType.VISION_STREAM_WIDE_ROAD)

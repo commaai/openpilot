@@ -36,16 +36,6 @@ class FontWeight(IntEnum):
   BLACK = 8
 
 
-def _get_ui_state():
-  """Safely import and return ui_state, or None if unavailable."""
-  try:
-    from openpilot.selfdrive.ui.ui_state import ui_state
-
-    return ui_state
-  except ImportError:
-    return None
-
-
 class GuiApplication:
   def __init__(self, width: int, height: int):
     self._fonts: dict[FontWeight, rl.Font] = {}
@@ -149,7 +139,6 @@ class GuiApplication:
     rl.close_window()
 
   def render(self):
-    ui_state = _get_ui_state()
     try:
       while not (self._window_close_requested or rl.window_should_close()):
         if self._render_texture:
@@ -158,9 +147,6 @@ class GuiApplication:
         else:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
-
-        if ui_state is not None:
-          ui_state.update()
 
         yield
 
