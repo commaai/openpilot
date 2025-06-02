@@ -24,7 +24,6 @@ SEGMENT = 4
 START_FRAME = 120
 END_FRAME = 180
 
-NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
 DATA_TOKEN = os.getenv("CI_ARTIFACTS_TOKEN","")
@@ -210,8 +209,7 @@ if __name__ == "__main__":
 
   log_msgs = []
   # run replays
-  if not NO_MODEL:
-    log_msgs += model_replay(lr, frs)
+  log_msgs += model_replay(lr, frs)
 
   # get diff
   failed = False
@@ -220,13 +218,6 @@ if __name__ == "__main__":
     try:
       all_logs = list(LogReader(GITHUB.get_file_url(MODEL_REPLAY_BUCKET, log_fn)))
       cmp_log = []
-
-      # logs are ordered based on type: modelV2, drivingModelData, driverStateV2
-      if not NO_MODEL:
-        model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
-        cmp_log += all_logs[model_start_index:model_start_index + MAX_FRAMES*3]
-        dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-        cmp_log += all_logs[dmon_start_index:dmon_start_index + MAX_FRAMES]
 
       ignore = [
         'logMonoTime',
