@@ -91,7 +91,6 @@ class AugmentedRoadView(CameraView):
     rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
 
   def _update_calibration(self):
-    sm = self.sm
     # Update device camera if not already set
     sm = ui_state.sm
     if not self.device_camera and sm.seen['roadCameraState'] and sm.seen['deviceState']:

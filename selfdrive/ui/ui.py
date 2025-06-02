@@ -5,35 +5,36 @@ from msgq.visionipc import VisionStreamType
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
+from openpilot.system.ui.lib.ui_state import ui_state
 from openpilot.system.ui.onroad.augmented_road_view import AugmentedRoadView
 
 
 class UI:
-  def __init__(self, sm):
+  def __init__(self):
     self._sidbar = Sidebar()
     self._sidebar_visible = True
-    self._is_onroad = True
 
     self._home_layout = HomeLayout()
-    self._augmented_road_view = AugmentedRoadView(sm, VisionStreamType.VISION_STREAM_ROAD)
+    self._augmented_road_view = AugmentedRoadView(VisionStreamType.VISION_STREAM_ROAD)
 
     self._sidebar_rect = rl.Rectangle(0, 0, SIDEBAR_WIDTH, gui_app.height)
     self._content_rect = rl.Rectangle(SIDEBAR_WIDTH, 0, gui_app.width - SIDEBAR_WIDTH, gui_app.height)
 
-  def render(self, sm, rect):
-    self._render_main_content(sm, rect)
-
+  def render(self, rect):
     if rl.is_mouse_button_pressed(rl.MOUSE_BUTTON_LEFT):
       self._handle_mouse_click(rl.get_mouse_position())
 
-  def _render_main_content(self, sm, rect):
-    if self._sidebar_visible:
-      self._sidbar.draw(sm, self._sidebar_rect)
+    self._render_main_content()
 
-    if self._is_onroad:
+
+  def _render_main_content(self):
+    if self._sidebar_visible:
+      self._sidbar.render(self._sidebar_rect)
+
+    if ui_state.started:
       self._augmented_road_view.render(self._content_rect)
     else:
-      self._home_layout.render(self._content_rect, sm)
+      self._home_layout.render(self._content_rect)
 
   def _handle_mouse_click(self, pos: rl.Vector2):
     if rl.check_collision_point_rec(pos, self._content_rect):
@@ -47,30 +48,10 @@ class UI:
 
 def main():
   gui_app.init_window("UI")
-  # TODO: remove this after singlon ui_state has been implemented
-  sm = messaging.SubMaster(
-    [
-      "modelV2",
-      "controlsState",
-      "liveCalibration",
-      "radarState",
-      "deviceState",
-      "pandaStates",
-      "carParams",
-      "driverMonitoringState",
-      "carState",
-      "driverStateV2",
-      "roadCameraState",
-      "wideRoadCameraState",
-      "managerState",
-      "selfdriveState",
-      "longitudinalPlan",
-    ]
-  )
-  ui = UI(sm)
+  ui = UI()
   for _ in gui_app.render():
-    sm.update(0)
-    ui.render(sm, rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    ui_state.update()
+    ui.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
 
 if __name__ == "__main__":

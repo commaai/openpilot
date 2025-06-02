@@ -6,7 +6,7 @@ class HomeLayout:
   def __init__(self):
     pass
 
-  def render(self, rect: rl.Rectangle, sm):
+  def render(self, rect: rl.Rectangle):
     gui_text_box(
       rect,
       "Demo Home Layout",

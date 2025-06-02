@@ -2,7 +2,7 @@ import pyray as rl
 import time
 from cereal import log
 from dataclasses import dataclass
-from cereal import messaging
+from openpilot.system.ui.lib.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
 SIDEBAR_WIDTH = 300
@@ -50,7 +50,6 @@ class MetricData:
 
 class Sidebar:
   def __init__(self):
-    self.onroad = False
     self.flag_pressed = False
     self.settings_pressed = False
 
@@ -67,9 +66,8 @@ class Sidebar:
     self._font_regular = gui_app.font(FontWeight.NORMAL)
     self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
-  def draw(self, sm, rect: rl.Rectangle):
-    self.sm = sm
-    self.update_state(sm)
+  def render(self, rect: rl.Rectangle):
+    self.update_state()
 
     # Background
     rl.draw_rectangle_rec(rect, Colors.SIDEBAR_BG)
@@ -78,7 +76,8 @@ class Sidebar:
     self._draw_network_indicator(rect)
     self._draw_metrics(rect)
 
-  def update_state(self, sm: messaging.SubMaster):
+  def update_state(self):
+    sm = ui_state.sm
     if not sm.updated['deviceState']:
       return
 
@@ -125,7 +124,7 @@ class Sidebar:
 
   def handle_mouse_press(self, mouse_pos: rl.Vector2):
     if rl.check_collision_point_rec(mouse_pos, HOME_BTN):
-      if self.onroad:
+      if ui_state.started:
         self.flag_pressed = True
         return "flag"
       else:
@@ -151,9 +150,6 @@ class Sidebar:
 
     return action
 
-  def set_onroad(self, onroad: bool):
-    self.onroad = onroad
-
   def _draw_buttons(self, rect: rl.Rectangle):
     # Settings button
     opacity = 0.65 if self.settings_pressed else 1.0
@@ -161,8 +157,8 @@ class Sidebar:
     tint = rl.Color(255, 255, 255, int(255 * opacity))
     rl.draw_texture(self._settings_img, int(SETTINGS_BTN.x), int(SETTINGS_BTN.y), tint)
     # Home/Flag button
-    opacity = 0.65 if self.onroad and self.flag_pressed else 1.0
-    button_img = self._flag_img if self.onroad else self._home_img
+    opacity = 0.65 if ui_state.started and self.flag_pressed else 1.0
+    button_img = self._flag_img if ui_state.started else self._home_img
 
     tint = rl.Color(255, 255, 255, int(255 * opacity))
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
