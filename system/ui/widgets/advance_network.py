@@ -31,9 +31,9 @@ class AdvanceNetwork:
     self._manager = manager
     self._wifi_manager = wifi_manager
     self._scroll_panel = None
-    self._tethering_toggle = Toggle(0, 0, initial_state=True)
-    self._roaming_toggle = Toggle(0, 0)
-    self._cellular_toggle = Toggle(0, 0)
+    self._tethering_toggle = Toggle(initial_state=True)
+    self._roaming_toggle = Toggle()
+    self._cellular_toggle = Toggle()
     self._keyboard = Keyboard(max_text_size=64, min_text_size=8)
 
     self._items = [
