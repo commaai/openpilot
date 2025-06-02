@@ -21,7 +21,8 @@ from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
 SEGMENT = 4
-MAX_FRAMES = 100
+START_FRAME = 120
+END_FRAME = 180
 
 NO_MODEL = "NO_MODEL" in os.environ
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
@@ -125,16 +126,16 @@ def comment_replay_report(proposed, master, full_logs):
     comment = f"ref for commit {commit}: {link}/{log_name}" + diff_plots + all_plots
     GITHUB.comment_on_pr(comment, PR_BRANCH, "commaci-public", True)
 
-def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
+def trim_logs(logs, start_frame, end_frame, frs_types, include_all_types):
   all_msgs = []
   cam_state_counts = defaultdict(int)
-  # keep adding messages until cam states are equal to MAX_FRAMES
-  for msg in sorted(logs, key=lambda m: m.logMonoTime):
-    all_msgs.append(msg)
+  for msg in sorted(logs, key=lambda m: m.logMonoTime):    
     if msg.which() in frs_types:
       cam_state_counts[msg.which()] += 1
-
-    if all(cam_state_counts[state] == max_frames for state in frs_types):
+    if any(cam_state_counts[state]  >= start_frame for state in frs_types):
+      print(cam_state_counts)
+      all_msgs.append(msg)
+    if all(cam_state_counts[state] == end_frame for state in frs_types):
       break
 
   if len(include_all_types) != 0:
@@ -146,9 +147,9 @@ def trim_logs_to_max_frames(logs, max_frames, frs_types, include_all_types):
 
 def model_replay(lr, frs):
   # modeld is using frame pairs
-  modeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"roadCameraState", "wideRoadCameraState"},
-                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl"})
-  dmodeld_logs = trim_logs_to_max_frames(lr, MAX_FRAMES, {"driverCameraState"}, {"driverEncodeIdx", "carParams"})
+  modeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"roadCameraState", "wideRoadCameraState"},
+                                                                         {"roadEncodeIdx", "wideRoadEncodeIdx", "carParams", "carState", "carControl", "can"})
+  dmodeld_logs = trim_logs(lr, START_FRAME, END_FRAME, {"driverCameraState"}, {"driverEncodeIdx", "carParams", "can"})
 
   if not SEND_EXTRA_INPUTS:
     modeld_logs = [msg for msg in modeld_logs if msg.which() != 'liveCalibration']
