@@ -39,7 +39,7 @@ class FontWeight(IntEnum):
 def _get_ui_state():
   """Safely import and return ui_state, or None if unavailable."""
   try:
-    from openpilot.system.ui.lib.ui_state import ui_state
+    from openpilot.selfdrive.ui.ui_state import ui_state
 
     return ui_state
   except ImportError:
@@ -206,7 +206,7 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-    from openpilot.system.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
+    from openpilot.selfdrive.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
