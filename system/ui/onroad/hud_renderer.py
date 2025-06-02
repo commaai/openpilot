@@ -1,9 +1,9 @@
 import pyray as rl
 from dataclasses import dataclass
 from cereal.messaging import SubMaster
+from openpilot.system.ui.lib.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.common.conversions import Conversions as CV
-from enum import IntEnum
 
 # Constants
 SET_SPEED_NA = 255
@@ -53,17 +53,9 @@ FONT_SIZES = FontSizes()
 COLORS = Colors()
 
 
-class HudStatus(IntEnum):
-  DISENGAGED = 0
-  OVERRIDE = 1
-  ENGAGED = 2
-
-
 class HudRenderer:
   def __init__(self):
     """Initialize the HUD renderer."""
-    self.is_metric: bool = False
-    self.status: HudStatus = HudStatus.DISENGAGED
     self.is_cruise_set: bool = False
     self.is_cruise_available: bool = False
     self.set_speed: float = SET_SPEED_NA
@@ -77,10 +69,7 @@ class HudRenderer:
 
   def _update_state(self, sm: SubMaster) -> None:
     """Update HUD state based on car state and controls state."""
-    self.is_metric = True
-    self.status = HudStatus.DISENGAGED
-
-    if not sm.valid['carState']:
+    if sm.recv_frame["carState"] < ui_state.started_frame:
       self.is_cruise_set = False
       self.set_speed = SET_SPEED_NA
       self.speed = 0.0
@@ -96,13 +85,13 @@ class HudRenderer:
     self.is_cruise_set = 0 < self.set_speed < SET_SPEED_NA
     self.is_cruise_available = self.set_speed != -1
 
-    if self.is_cruise_set and not self.is_metric:
+    if self.is_cruise_set and not ui_state.is_metric:
       self.set_speed *= KM_TO_MILE
 
     v_ego_cluster = car_state.vEgoCluster
     self.v_ego_cluster_seen = self.v_ego_cluster_seen or v_ego_cluster != 0.0
     v_ego = v_ego_cluster if self.v_ego_cluster_seen else car_state.vEgo
-    speed_conversion = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
+    speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
   def draw(self, rect: rl.Rectangle, sm: SubMaster) -> None:
@@ -125,7 +114,7 @@ class HudRenderer:
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
-    set_speed_width = UI_CONFIG.set_speed_width_metric if self.is_metric else UI_CONFIG.set_speed_width_imperial
+    set_speed_width = UI_CONFIG.set_speed_width_metric if ui_state.is_metric else UI_CONFIG.set_speed_width_imperial
     x = rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - set_speed_width) // 2
     y = rect.y + 45
 
@@ -137,11 +126,12 @@ class HudRenderer:
     set_speed_color = COLORS.dark_grey
     if self.is_cruise_set:
       set_speed_color = COLORS.white
-      max_color = {
-        HudStatus.DISENGAGED: COLORS.disengaged,
-        HudStatus.OVERRIDE: COLORS.override,
-        HudStatus.ENGAGED: COLORS.engaged,
-      }.get(self.status, COLORS.grey)
+      if ui_state.status == UIStatus.ENGAGED:
+        max_color = COLORS.engaged
+      elif ui_state.status == UIStatus.DISENGAGED:
+        max_color = COLORS.disengaged
+      elif ui_state.status == UIStatus.OVERRIDE:
+        max_color = COLORS.override
 
     max_text = "MAX"
     max_text_width = self._measure_text(max_text, self._font_semi_bold, FONT_SIZES.max_speed, 'semi_bold').x
@@ -172,7 +162,7 @@ class HudRenderer:
     speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
     rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
 
-    unit_text = "km/h" if self.is_metric else "mph"
+    unit_text = "km/h" if ui_state.is_metric else "mph"
     unit_text_size = self._measure_text(unit_text, self._font_medium, FONT_SIZES.speed_unit, 'medium')
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
@@ -183,7 +173,7 @@ class HudRenderer:
     center_y = int(rect.y + UI_CONFIG.border_size + UI_CONFIG.button_size / 2)
     rl.draw_circle(center_x, center_y, UI_CONFIG.button_size / 2, COLORS.black_translucent)
 
-    opacity = 0.7 if self.status == HudStatus.DISENGAGED else 1.0
+    opacity = 0.7 if ui_state.status == UIStatus.DISENGAGED else 1.0
     img_pos = rl.Vector2(center_x - self._wheel_texture.width / 2, center_y - self._wheel_texture.height / 2)
     rl.draw_texture_v(self._wheel_texture, img_pos, rl.Color(255, 255, 255, int(255 * opacity)))
 

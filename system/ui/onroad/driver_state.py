@@ -2,6 +2,8 @@ import numpy as np
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.ui_state import ui_state, UI_BORDER_SIZE
+
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
@@ -17,7 +19,6 @@ DEFAULT_FACE_KPTS_3D = np.array([
 ], dtype=np.float32)
 
 # UI constants
-UI_BORDER_SIZE = 30
 BTN_SIZE = 192
 IMG_SIZE = 144
 ARC_LENGTH = 133
@@ -95,8 +96,7 @@ class DriverStateRenderer:
     rl.draw_spline_linear(self.face_lines, len(self.face_lines), 5.2, self.white_color)
 
     # Set arc color based on engaged state
-    engaged = True
-    self.arc_color = self.engaged_color if engaged else self.disengaged_color
+    self.arc_color = self.engaged_color if ui_state.engaged else self.disengaged_color
     self.arc_color.a = int(0.4 * 255 * (1.0 - self.dm_fade_state))  # Fade out when inactive
 
     # Draw arcs
@@ -107,7 +107,7 @@ class DriverStateRenderer:
 
   def _is_visible(self, sm):
     """Check if the visualization should be rendered."""
-    return (sm.seen['driverStateV2'] and
+    return (sm.recv_frame['driverStateV2'] > ui_state.started_frame and
             sm.seen['driverMonitoringState'] and
             sm['selfdriveState'].alertSize == 0)
 

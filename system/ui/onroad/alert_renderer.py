@@ -5,6 +5,7 @@ from cereal import messaging, log
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_text_box
+from openpilot.system.ui.lib.ui_state import ui_state
 
 
 ALERT_MARGIN = 40
@@ -61,8 +62,6 @@ ALERT_CRITICAL_REBOOT = Alert(
 
 class AlertRenderer:
   def __init__(self):
-    # TODO: use ui_state to determine when to start
-    self.started_frame: int = 0
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self.font_metrics_cache: dict[tuple[str, int, str], rl.Vector2] = {}
@@ -72,7 +71,7 @@ class AlertRenderer:
     ss = sm['selfdriveState']
 
     # Check if waiting to start
-    if sm.recv_frame['selfdriveState'] < self.started_frame:
+    if sm.recv_frame['selfdriveState'] < ui_state.started_frame:
       return ALERT_STARTUP_PENDING
 
     # Handle selfdrive timeout

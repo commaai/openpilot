@@ -5,6 +5,7 @@ from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import DEFAULT_FPS
+from openpilot.system.ui.lib.ui_state import ui_state
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 
 
@@ -86,7 +87,8 @@ class ModelRenderer:
 
   def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster):
     # Check if data is up-to-date
-    if not sm.valid['modelV2'] or not sm.valid['liveCalibration']:
+    if (sm.recv_frame["liveCalibration"] < ui_state.started_frame or
+        sm.recv_frame["modelV2"] < ui_state.started_frame):
       return
 
     # Set up clipping region
