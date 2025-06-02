@@ -21,6 +21,7 @@ class UI:
     self._sidebar = Sidebar()
     self._sidebar_visible = True
     self._current_mode = UIMode.HOME
+    self._prev_onroad = False
 
     self._home_layout = HomeLayout()
     self._settings_layout = SettingsLayout()
@@ -61,6 +62,7 @@ class UI:
 
   def _on_settings_clicked(self):
     self._current_mode = UIMode.SETTINGS
+    self._sidebar_visible = False
 
   def _on_flag_clicked(self):
     pass
@@ -69,6 +71,13 @@ class UI:
     # Render sidebar
     if self._sidebar_visible:
       self._sidebar.render(self._sidebar_rect)
+
+    if ui_state.started != self._prev_onroad:
+      self._prev_onroad = ui_state.started
+      if ui_state.started:
+        self._current_mode = UIMode.ONROAD
+      else:
+        self._current_mode = UIMode.HOME
 
     # Render content based on current mode
     if self._current_mode == UIMode.SETTINGS:
@@ -79,10 +88,12 @@ class UI:
       self._home_layout.render(self._content_rect)
 
   def _handle_input(self):
+    if self._current_mode != UIMode.ONROAD or not rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      return
+
     mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if rl.check_collision_point_rec(mouse_pos, self._content_rect):
-        self._sidebar_visible = not self._sidebar_visible
+    if rl.check_collision_point_rec(mouse_pos, self._content_rect):
+      self._sidebar_visible = not self._sidebar_visible
 
 
 def main():
