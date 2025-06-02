@@ -23,9 +23,12 @@ class UI:
     self._current_mode = UIMode.HOME
     self._prev_onroad = False
 
-    self._home_layout = HomeLayout()
-    self._settings_layout = SettingsLayout()
-    self._augmented_road_view = AugmentedRoadView()
+    # Initialize layouts
+    self._layouts = {
+      UIMode.HOME: HomeLayout(),
+      UIMode.SETTINGS: SettingsLayout(),
+      UIMode.ONROAD: AugmentedRoadView()
+    }
 
     self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
     self._content_rect = rl.Rectangle(0, 0, 0, 0)
@@ -79,13 +82,7 @@ class UI:
       else:
         self._current_mode = UIMode.HOME
 
-    # Render content based on current mode
-    if self._current_mode == UIMode.SETTINGS:
-      self._settings_layout.render(self._content_rect)
-    elif self._current_mode == UIMode.ONROAD:
-      self._augmented_road_view.render(self._content_rect)
-    else:  # HOME mode
-      self._home_layout.render(self._content_rect)
+    self._layouts[self._current_mode].render(self._content_rect)
 
   def _handle_input(self):
     if self._current_mode != UIMode.ONROAD or not rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
