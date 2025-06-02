@@ -56,7 +56,8 @@ def gui_text_box(
   font_size: int = DEFAULT_TEXT_SIZE,
   color: rl.Color = DEFAULT_TEXT_COLOR,
   alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP
+  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+  font_weight: FontWeight = FontWeight.NORMAL,
 ):
   styles = [
     (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(color)),
@@ -66,6 +67,12 @@ def gui_text_box(
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, alignment_vertical),
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD)
   ]
+  if font_weight != FontWeight.NORMAL:
+    rl.gui_set_font(gui_app.font(font_weight))
 
   with GuiStyleContext(styles):
     rl.gui_label(rect, text)
+
+  if font_weight != FontWeight.NORMAL:
+    rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
+
