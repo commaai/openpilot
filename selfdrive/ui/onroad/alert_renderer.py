@@ -3,7 +3,7 @@ import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEBUG_FPS
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
 from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -73,7 +73,7 @@ class AlertRenderer:
     # Check if selfdriveState messages have stopped arriving
     if not sm.updated['selfdriveState']:
       recv_frame = sm.recv_frame['selfdriveState']
-      if (sm.frame - recv_frame) > 5 * DEBUG_FPS:
+      if (sm.frame - recv_frame) > 5 * DEFAULT_FPS:
         # Check if waiting to start
         if recv_frame < ui_state.started_frame:
           return ALERT_STARTUP_PENDING
