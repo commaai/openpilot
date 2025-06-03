@@ -16,11 +16,7 @@ MAX_ERR_FRAMES = 1
 DT = 0.05
 
 
-def process_messages(mocker, estimator, lag_frames, n_frames, vego=20.0, rejection_threshold=0.0):
-  class ZeroMock(mocker.Mock):
-    def __getattr__(self, *args):
-      return 0
-
+def process_messages(estimator, lag_frames, n_frames, vego=20.0, rejection_threshold=0.0):
   for i in range(n_frames):
     t = i * estimator.dt
     desired_la = np.cos(10 * t) * 0.1
@@ -34,30 +30,13 @@ def process_messages(mocker, estimator, lag_frames, n_frames, vego=20.0, rejecti
     desired_cuvature = float(desired_la / (vego ** 2))
     actual_yr = float(actual_la / vego)
     msgs = [
-      # (t, "carControl", mocker.Mock(latActive=not rejected)),
       (t, "carControl", car.CarControl(latActive=not rejected)),
-      # (t, "carState", mocker.Mock(vEgo=vego, steeringPressed=False)),
       (t, "carState", car.CarState(vEgo=vego, steeringPressed=False)),
-      # (t, "controlsState", mocker.Mock(desiredCurvature=desired_cuvature,
-      #                                  lateralControlState=mocker.Mock(which=mocker.Mock(return_value='debugControlState'), debugControlState=ZeroMock()))),
       (t, "controlsState", log.ControlsState(desiredCurvature=desired_cuvature)),
-      # (t, "livePose", mocker.Mock(orientationNED=ZeroMock(),
-      #                           velocityDevice=ZeroMock(),
-      #                           accelerationDevice=ZeroMock(),
-      #                           angularVelocityDevice=ZeroMock(z=actual_yr, valid=True),
-      #                           posenetOK=True, inputsOK=True)),
       (t, "livePose", log.LivePose(angularVelocityDevice=log.LivePose.XYZMeasurement(z=actual_yr, valid=True),
                                    posenetOK=True, inputsOK=True)),
-      # (t, "liveCalibration", mocker.Mock(rpyCalib=[0, 0, 0], calStatus=log.LiveCalibrationData.Status.calibrated)),
       (t, "liveCalibration", log.LiveCalibrationData(rpyCalib=[0, 0, 0], calStatus=log.LiveCalibrationData.Status.calibrated)),
     ]
-    # lp = mocker.Mock(orientationNED=ZeroMock(),
-    #                             velocityDevice=ZeroMock(),
-    #                             accelerationDevice=ZeroMock(),
-    #                             angularVelocityDevice=ZeroMock(z=actual_yr, valid=True),
-    #                             posenetOK=True, inputsOK=True)
-    # raise Exception("test")
-    # print(msgs)
     for t, w, m in msgs:
       estimator.handle_log(t, w, m)
     estimator.update_points()
