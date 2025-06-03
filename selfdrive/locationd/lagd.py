@@ -289,38 +289,29 @@ class LateralLagEstimator:
     if not self.points_enough() or not self.points_valid():
       return
 
-    # Check if any new valid points exist since last estimate
-    times = self.points.times
-    if self.last_estimate_t and times[-1] <= self.last_estimate_t:
-      return
+    times, desired, actual, okay = self.points.get()
+    # check if there are any new valid data points since the last update
+    is_valid = True
+    if self.last_estimate_t != 0 and times[0] <= self.last_estimate_t:
+      new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
+      is_valid = not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
-    # Check if any new 'okay' points exist after the last estimate
-    if self.last_estimate_t:
-      for i in range(len(times)-1, -1, -1):
-        if times[i] <= self.last_estimate_t:
-          break
-        if self.points.okay[i]:
-          break
-      else:
-        return
-
-    # Expensive part below only reached if valid
-    times_np, desired, actual, okay = self.points.get()
     delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
-    if corr < self.min_ncc or confidence < self.min_confidence:
+    if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
       return
 
     self.block_avg.update(delay)
     self.last_estimate_t = self.t
 
   @staticmethod
-  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
+  def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
     max_lag_samples = int(max_lag / dt)
-    padded_size = self._fft_size if hasattr(self, '_fft_size') else fft_next_good_size(len(expected_sig) + max_lag_samples)
+    padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
 
     ncc = masked_normalized_cross_correlation(expected_sig, actual_sig, mask, padded_size)
 
+    # only consider lags from 0 to max_lag
     roi = np.s_[len(expected_sig) - 1: len(expected_sig) - 1 + max_lag_samples]
     extended_roi = np.s_[roi.start - CORR_BORDER_OFFSET: roi.stop + CORR_BORDER_OFFSET]
     roi_ncc = ncc[roi]
@@ -330,6 +321,8 @@ class LateralLagEstimator:
     corr = roi_ncc[max_corr_index]
     lag = parabolic_peak_interp(roi_ncc, max_corr_index) * dt
 
+    # to estimate lag confidence, gather all high-correlation candidates and see how spread they are
+    # if e.g. 0.8 and 0.4 are both viable, this is an ambiguous case
     ncc_thresh = (roi_ncc.max() - roi_ncc.min()) * LAG_CANDIDATE_CORR_THRESHOLD + roi_ncc.min()
     good_lag_candidate_mask = extended_roi_ncc >= ncc_thresh
     good_lag_candidate_edges = np.diff(good_lag_candidate_mask.astype(int), prepend=0, append=0)
