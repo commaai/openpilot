@@ -208,15 +208,12 @@ class LateralLagEstimator:
     liveDelay = msg.liveDelay
 
     valid_mean_lag, valid_std, current_mean_lag, current_std = self.block_avg.get()
-    if self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
+    if self.enabled and self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
       if valid_std > MAX_LAG_STD:
         liveDelay.status = log.LiveDelayData.Status.invalid
       else:
         liveDelay.status = log.LiveDelayData.Status.estimated
     else:
-      liveDelay.status = log.LiveDelayData.Status.unestimated
-
-    if not self.enabled:
       liveDelay.status = log.LiveDelayData.Status.unestimated
 
     if liveDelay.status == log.LiveDelayData.Status.estimated:
