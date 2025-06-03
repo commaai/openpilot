@@ -286,15 +286,15 @@ class LateralLagEstimator:
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
   def update_estimate(self):
-    if not self.points_enough():
+    if not self.points_enough() or not self.points_valid():
       return
 
     times, desired, actual, okay = self.points.get()
     # check if there are any new valid data points since the last update
-    is_valid = self.points_valid()
+    is_valid = True
     if self.last_estimate_t != 0 and times[0] <= self.last_estimate_t:
       new_values_start_idx = next(-i for i, t in enumerate(reversed(times)) if t <= self.last_estimate_t)
-      is_valid = is_valid and not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
+      is_valid = not (new_values_start_idx == 0 or not np.any(okay[new_values_start_idx:]))
 
     delay, corr, confidence = self.actuator_delay(desired, actual, okay, self.dt, MAX_LAG)
     if corr < self.min_ncc or confidence < self.min_confidence or not is_valid:
@@ -303,7 +303,8 @@ class LateralLagEstimator:
     self.block_avg.update(delay)
     self.last_estimate_t = self.t
 
-  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
+  @staticmethod
+  def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
     max_lag_samples = int(max_lag / dt)
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)
