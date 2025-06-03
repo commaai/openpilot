@@ -44,6 +44,10 @@ class AugmentedRoadView(CameraView):
     self.driver_state_renderer = DriverStateRenderer()
 
   def render(self, rect):
+    # Only render when system is started to avoid invalid data access
+    if not ui_state.started:
+      return
+
     # Update calibration before rendering
     self._update_calibration()
 
