@@ -95,11 +95,11 @@ class TestLagd:
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, estimator.initial_lag)
     assert msg.liveDelay.validBlocks == 0
 
-  def test_estimator_basics(self, mocker, subtests):
+  def test_estimator_basics(self, subtests):
     for lag_frames in range(5):
       with subtests.test(msg=f"lag_frames={lag_frames}"):
-        mocked_CP = mocker.Mock(steerActuatorDelay=0.8)
-        estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
+        CP = car.CarParams(steerActuatorDelay=0.8)
+        estimator = LateralLagEstimator(CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0)
         process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
         msg = estimator.get_msg(True)
         assert msg.liveDelay.status == 'estimated'
