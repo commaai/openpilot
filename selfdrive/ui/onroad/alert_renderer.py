@@ -3,7 +3,7 @@ import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEBUG_FPS
 from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.selfdrive.ui.ui_state import ui_state
 
@@ -70,17 +70,21 @@ class AlertRenderer:
     """Generate the current alert based on selfdrive state."""
     ss = sm['selfdriveState']
 
-    # Check if waiting to start
-    if sm.recv_frame['selfdriveState'] < ui_state.started_frame:
-      return ALERT_STARTUP_PENDING
+    # Check if selfdriveState messages have stopped arriving
+    if not sm.updated['selfdriveState']:
+      recv_frame = sm.recv_frame['selfdriveState']
+      if (sm.frame - recv_frame) > 5 * DEBUG_FPS:
+        # Check if waiting to start
+        if recv_frame < ui_state.started_frame:
+          return ALERT_STARTUP_PENDING
 
-    # Handle selfdrive timeout
-    if TICI:
-      ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
-      if ss_missing > SELFDRIVE_STATE_TIMEOUT:
-        if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
-          return ALERT_CRITICAL_TIMEOUT
-        return ALERT_CRITICAL_REBOOT
+        # Handle selfdrive timeout
+        if TICI:
+          ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
+          if ss_missing > SELFDRIVE_STATE_TIMEOUT:
+            if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
+              return ALERT_CRITICAL_TIMEOUT
+            return ALERT_CRITICAL_REBOOT
 
     # No alert if size is none
     if ss.alertSize == 0:
