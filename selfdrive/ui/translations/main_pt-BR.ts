@@ -308,11 +308,11 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>Desacione para Resetar a Calibração</translation>
     </message>
     <message>
         <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> Resetar a calibração fará com que o openpilot reinicie se o carro estiver ligado.</translation>
     </message>
 </context>
 <context>
@@ -1130,11 +1130,11 @@ Isso pode levar até um minuto.</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>Use o sistema openpilot para controle de cruzeiro adaptativo e assistência ao motorista de manutenção de faixa. Sua atenção é necessária o tempo todo para usar esse recurso.</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> Alterar esta configuração fará com que o openpilot reinicie se o carro estiver ligado.</translation>
     </message>
 </context>
 <context>

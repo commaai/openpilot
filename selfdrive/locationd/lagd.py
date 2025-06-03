@@ -305,7 +305,8 @@ class LateralLagEstimator:
     self.block_avg.update(delay)
     self.last_estimate_t = self.t
 
-  def actuator_delay(self, expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
+  @staticmethod
+  def actuator_delay(expected_sig: np.ndarray, actual_sig: np.ndarray, mask: np.ndarray, dt: float, max_lag: float) -> tuple[float, float, float]:
     assert len(expected_sig) == len(actual_sig)
     max_lag_samples = int(max_lag / dt)
     padded_size = fft_next_good_size(len(expected_sig) + max_lag_samples)

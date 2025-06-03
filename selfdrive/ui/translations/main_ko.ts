@@ -60,7 +60,7 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation>데이터 요금제</translation>
+        <translation>모바일 데이터 종량제</translation>
     </message>
     <message>
         <source>Hidden Network</source>
@@ -84,27 +84,27 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation type="unfinished"></translation>
+        <translation>모바일 데이터 종량제 사용 시 대용량 데이터 업로드 방지</translation>
     </message>
     <message>
         <source>default</source>
-        <translation type="unfinished"></translation>
+        <translation>기본</translation>
     </message>
     <message>
         <source>metered</source>
-        <translation type="unfinished"></translation>
+        <translation>종량제</translation>
     </message>
     <message>
         <source>unmetered</source>
-        <translation type="unfinished"></translation>
+        <translation>무제한</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>제한된 Wi-Fi 네트워크</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
-        <translation type="unfinished"></translation>
+        <translation>제한된 Wi-Fi 사용 시 대용량 데이터 업로드 방지</translation>
     </message>
 </context>
 <context>
@@ -248,7 +248,7 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>오픈파일럿 장치는 좌우 4°, 위로 5°, 아래로 9° 이내 각도로 장착되어야 합니다. 오픈파일럿은 지속적으로 자동 보정되며 재설정은 거의 필요하지 않습니다.</translation>
+        <translation>오픈파일럿 장치는 좌우 4°, 위로 5°, 아래로 9° 이내의 각도로 장착되어야 합니다. 오픈파일럿은 지속적으로 자동 보정되며 재설정은 거의 필요하지 않습니다.</translation>
     </message>
     <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
@@ -308,11 +308,11 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>캘리브레이션을 재설정하려면 해제하세요</translation>
     </message>
     <message>
         <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> 차량이 전원이 켜진 경우 캘리브레이션 재설정이 오픈파일럿을 재시작합니다.</translation>
     </message>
 </context>
 <context>
@@ -1125,11 +1125,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>ACC 및 차선 유지 지원을 위해 오픈파일럿 시스템을 사용하십시오. 이 기능을 사용하려면 항상주의를 기울여야합니다.</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> 이 설정을 변경하면 차량이 재가동된후 오픈파일럿이 시작됩니다.</translation>
     </message>
 </context>
 <context>
