@@ -1,8 +1,8 @@
 import pyray as rl
 import time
+from dataclasses import dataclass
 from collections.abc import Callable
 from cereal import log
-from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
@@ -31,6 +31,8 @@ class Colors:
 
   # UI elements
   METRIC_BORDER = rl.Color(255, 255, 255, 85)
+  BUTTON_NORMAL = rl.Color(255, 255, 255, 255)
+  BUTTON_PRESSED = rl.Color(255, 255, 255, 166)
 
 NETWORK_TYPES = {
   NetworkType.none: "Offline",
@@ -42,12 +44,17 @@ NETWORK_TYPES = {
   NetworkType.ethernet: "Ethernet",
 }
 
-@dataclass
+
+@dataclass(slots=True)
 class MetricData:
   label: str
   value: str
   color: rl.Color
 
+  def update(self, label: str, value: str, color: rl.Color):
+    self.label = label
+    self.value = value
+    self.color = color
 
 class Sidebar:
   def __init__(self):
@@ -94,7 +101,7 @@ class Sidebar:
     self._update_network_status(device_state)
     self._update_temperature_status(device_state)
     self._update_connection_status(device_state)
-    self._update_panda_status(sm)
+    self._update_panda_status()
 
   def _update_network_status(self, device_state):
     self._net_type = NETWORK_TYPES.get(device_state.networkType.raw, "Unknown")
@@ -105,30 +112,26 @@ class Sidebar:
     thermal_status = device_state.thermalStatus
 
     if thermal_status == ThermalStatus.green:
-      self._temp_status = MetricData("TEMP", "GOOD", Colors.GOOD)
+      self._temp_status.update("TEMP", "GOOD", Colors.GOOD)
     elif thermal_status == ThermalStatus.yellow:
-      self._temp_status = MetricData("TEMP", "OK", Colors.WARNING)
+      self._temp_status.update("TEMP", "OK", Colors.WARNING)
     else:
-      self._temp_status = MetricData("TEMP", "HIGH", Colors.DANGER)
+      self._temp_status.update("TEMP", "HIGH", Colors.DANGER)
 
   def _update_connection_status(self, device_state):
     last_ping = device_state.lastAthenaPingTime
     if last_ping == 0:
-      self._connect_status = MetricData("CONNECT", "OFFLINE", Colors.WARNING)
+      self._connect_status.update("CONNECT", "OFFLINE", Colors.WARNING)
     elif time.monotonic_ns() - last_ping < 80_000_000_000:  # 80 seconds in nanoseconds
-      self._connect_status = MetricData("CONNECT", "ONLINE", Colors.GOOD)
+      self._connect_status.update("CONNECT", "ONLINE", Colors.GOOD)
     else:
-      self._connect_status = MetricData("CONNECT", "ERROR", Colors.DANGER)
+      self._connect_status.update("CONNECT", "ERROR", Colors.DANGER)
 
-  def _update_panda_status(self, sm):
-    if sm.valid['pandaStates'] and len(sm['pandaStates']) > 0:
-      panda_state = sm['pandaStates'][0]
-      if hasattr(panda_state, 'pandaType') and panda_state.pandaType != 0:  # UNKNOWN
-        self._panda_status = MetricData("VEHICLE", "ONLINE", Colors.GOOD)
-      else:
-        self._panda_status = MetricData("NO", "PANDA", Colors.DANGER)
+  def _update_panda_status(self):
+    if ui_state.panda_type == log.PandaState.PandaType.UNKNOWN:
+      self._panda_status.update("NO", "PANDA", Colors.DANGER)
     else:
-      self._panda_status = MetricData("NO", "PANDA", Colors.DANGER)
+      self._panda_status.update("VEHICLE", "ONLINE", Colors.GOOD)
 
   def _handle_mouse_release(self):
     if not rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
@@ -149,16 +152,14 @@ class Sidebar:
 
     # Settings button
     settings_down = mouse_down and rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN)
-    opacity = 0.65 if settings_down else 1.0
-    tint = rl.Color(255, 255, 255, int(255 * opacity))
+    tint = Colors.BUTTON_PRESSED if settings_down else Colors.BUTTON_NORMAL
     rl.draw_texture(self._settings_img, int(SETTINGS_BTN.x), int(SETTINGS_BTN.y), tint)
 
     # Home/Flag button
     flag_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, HOME_BTN)
-    opacity = 0.65 if ui_state.started and flag_pressed else 1.0
     button_img = self._flag_img if ui_state.started else self._home_img
 
-    tint = rl.Color(255, 255, 255, int(255 * opacity))
+    tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
 
   def _draw_network_indicator(self, rect: rl.Rectangle):
