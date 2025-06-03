@@ -4,7 +4,6 @@ from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.params import Params
 
 # Constants
 SET_SPEED_NA = 255
@@ -62,17 +61,8 @@ class HudRenderer:
     self.set_speed: float = SET_SPEED_NA
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
-    self._experimental_mode: bool = False
-    self._engageable: bool = False
-
     self.font_metrics_cache: dict[[str, int, str], rl.Vector2] = {}
-
-    self._white_color: rl.Color = rl.Color(255, 255, 255, 255)
     self._wheel_texture: rl.Texture = gui_app.texture('icons/chffr_wheel.png', UI_CONFIG.wheel_icon_size, UI_CONFIG.wheel_icon_size)
-    self._experimental_texture: rl.Texture = gui_app.texture('icons/experimental.png', UI_CONFIG.wheel_icon_size, UI_CONFIG.wheel_icon_size)
-    self._wheel_rect: rl.Rectangle = rl.Rectangle(0, 0, UI_CONFIG.button_size, UI_CONFIG.button_size)
-    self._params = Params()
-
     self._font_semi_bold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
@@ -104,15 +94,9 @@ class HudRenderer:
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-    selfdrive_state = sm["selfdriveState"]
-    self._experimental_mode = selfdrive_state.experimentalMode
-    self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
-
   def draw(self, rect: rl.Rectangle, sm: SubMaster) -> None:
     """Render HUD elements to the screen."""
     self._update_state(sm)
-
-    # Draw the header background
     rl.draw_rectangle_gradient_v(
       int(rect.x),
       int(rect.y),
@@ -126,17 +110,7 @@ class HudRenderer:
       self._draw_set_speed(rect)
 
     self._draw_current_speed(rect)
-
-    self._wheel_rect.x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
-    self._wheel_rect.y = rect.y + UI_CONFIG.border_size
-    self._handle_click()
-    self._draw_wheel_icon()
-
-  def _handle_click(self) -> None:
-    if (rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and
-        rl.check_collision_point_rec(rl.get_mouse_position(), self._wheel_rect)):
-      if self._experimental_toggle_allowed():
-        self._params.putBool("ExperimentalMode", not self._experimental_mode)
+    self._draw_wheel_icon(rect)
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
@@ -193,18 +167,15 @@ class HudRenderer:
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
 
-  def _draw_wheel_icon(self) -> None:
+  def _draw_wheel_icon(self, rect: rl.Rectangle) -> None:
     """Draw the steering wheel icon with status-based opacity."""
-    center_x = int(self._wheel_rect.x + self._wheel_rect.width // 2)
-    center_y = int(self._wheel_rect.y + self._wheel_rect.height // 2)
-
-    mouse_down = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
-                  rl.check_collision_point_rec(rl.get_mouse_position(), self._wheel_rect))
-    self._white_color.a = 180 if (mouse_down or not self._engageable) else 255
-    texture = self._experimental_texture if self._experimental_mode else self._wheel_texture
-
+    center_x = int(rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size / 2)
+    center_y = int(rect.y + UI_CONFIG.border_size + UI_CONFIG.button_size / 2)
     rl.draw_circle(center_x, center_y, UI_CONFIG.button_size / 2, COLORS.black_translucent)
-    rl.draw_texture(texture, center_x - texture.width // 2, center_y - texture.height // 2, self._white_color)
+
+    opacity = 0.7 if ui_state.status == UIStatus.DISENGAGED else 1.0
+    img_pos = rl.Vector2(center_x - self._wheel_texture.width / 2, center_y - self._wheel_texture.height / 2)
+    rl.draw_texture_v(self._wheel_texture, img_pos, rl.Color(255, 255, 255, int(255 * opacity)))
 
   def _measure_text(self, text: str, font: rl.Font, font_size: int, font_type: str) -> rl.Vector2:
     """Measure text dimensions with caching."""
@@ -212,13 +183,3 @@ class HudRenderer:
     if key not in self.font_metrics_cache:
       self.font_metrics_cache[key] = rl.measure_text_ex(font, text, font_size, 0)
     return self.font_metrics_cache[key]
-
-  def _experimental_toggle_allowed(self):
-    if not self._params.get_bool("ExperimentalModeConfirmed"):
-      return False
-
-    car_params = ui_state.sm["carParams"]
-    if car_params.alphaLongitudinalAvailable:
-      return self._params.get_bool("AlphaLongitudinalEnabled")
-    else:
-      return car_params.openpilotLongitudinalControl
