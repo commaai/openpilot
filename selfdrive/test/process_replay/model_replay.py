@@ -258,10 +258,10 @@ if __name__ == "__main__":
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
-      if "CI" in os.environ:
-        comment_replay_report(log_msgs, cmp_log, log_msgs)
-        failed = False
-        print(diff_long)
+      #if "CI" in os.environ:
+      #  comment_replay_report(log_msgs, cmp_log, log_msgs)
+      #  failed = False
+      #  print(diff_long)
       print('-------------\n'*5)
       print(diff_short)
       with open("model_diff.txt", "w") as f:
