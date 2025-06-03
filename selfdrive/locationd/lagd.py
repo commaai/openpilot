@@ -369,7 +369,7 @@ def main():
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
   # TODO: remove me, lagd is in shadow mode on release
-  is_release = Params().get_bool("IsReleaseBranch")
+  is_release = params.get_bool("IsReleaseBranch")
 
   lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency, enabled=not is_release)
   if (initial_lag_params := retrieve_initial_lag(params, CP)) is not None:
