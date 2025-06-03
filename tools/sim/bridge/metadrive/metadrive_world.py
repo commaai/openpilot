@@ -9,7 +9,7 @@ from multiprocessing import Pipe, Array
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState, World
+from openpilot.tools.sim.lib.common import SimulatorState,World,IMUState
 from openpilot.tools.sim.lib.camerad import W, H
 
 
@@ -90,7 +90,14 @@ class MetaDriveWorld(World):
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
       state.valid = True
+      current_time = time.monotonic()
+      dt = current_time - self.last_update_time
+      IMUState.update_imu_state(state.imu, md_vehicle.velocity, self.last_velocity,
+                     md_vehicle.bearing, self.last_bearing, dt)
 
+      self.last_velocity = md_vehicle.velocity
+      self.last_bearing = md_vehicle.bearing
+      self.last_update_time = current_time
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
         self.first_engage = time.monotonic()

@@ -33,30 +33,28 @@ class IMUState:
         self.gyroscope = vec3(0, 0, 0)
         self.bearing = 0.0  # in degrees
 
-def update_imu_state(imu_state, current_vel, last_vel, current_bearing_deg, last_bearing_deg, dt):
-    # Calculate linear acceleration vector
-    accel_x = (current_vel.x - last_vel.x) / dt
-    accel_y = (current_vel.y - last_vel.y) / dt
-    accel_z = 0.0
+    def update_imu_state(imu_state, current_vel, last_vel, current_bearing_deg, last_bearing_deg, dt):
+      # Calculate linear acceleration vector
+      accel_x = (current_vel.x - last_vel.x) / dt
+      accel_y = (current_vel.y - last_vel.y) / dt
+      accel_z = 0.0
 
-    imu_state.accelerometer = vec3(accel_x, accel_y, accel_z)
+      imu_state.accelerometer = vec3(accel_x, accel_y, accel_z)
 
-    # Calculate gyro_z as rate of change of bearing
-    # Make sure to wrap angle difference properly between -180 and 180 degrees to avoid jumps
-    delta_bearing = current_bearing_deg - last_bearing_deg
-    if delta_bearing > 180:
+      # Calculate gyro_z as rate of change of bearing
+      # Make sure to wrap angle difference properly between -180 and 180 degrees to avoid jumps
+      delta_bearing = current_bearing_deg - last_bearing_deg
+      if delta_bearing > 180:
         delta_bearing -= 360
-    elif delta_bearing < -180:
+      elif delta_bearing < -180:
         delta_bearing += 360
 
-    gyro_z = delta_bearing / dt  # degrees per second
+      gyro_z = delta_bearing / dt  # degrees per second
 
-    imu_state.gyroscope = vec3(0.0, 0.0, gyro_z)
+      imu_state.gyroscope = vec3(0.0, 0.0, gyro_z)
 
-    # Update bearing in IMUState
-    imu_state.bearing = current_bearing_deg
-
-
+      # Update bearing in IMUState
+      imu_state.bearing = current_bearing_deg
 
 class SimulatorState:
   def __init__(self):
