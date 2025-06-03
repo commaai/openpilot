@@ -21,8 +21,8 @@ from openpilot.tools.lib.github_utils import GithubUtils
 
 TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
 SEGMENT = 4
-START_FRAME = 120
-END_FRAME = 180
+START_FRAME = 0
+END_FRAME = 60
 
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
@@ -220,7 +220,7 @@ if __name__ == "__main__":
       model_start_index = next(i for i, m in enumerate(all_logs) if m.which() in ("modelV2", "drivingModelData", "cameraOdometry"))
       cmp_log += all_logs[model_start_index+START_FRAME*3:model_start_index + END_FRAME*3]
       dmon_start_index = next(i for i, m in enumerate(all_logs) if m.which() == "driverStateV2")
-      cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME+1]
+      cmp_log += all_logs[dmon_start_index+START_FRAME:dmon_start_index + END_FRAME]
 
       ignore = [
         'logMonoTime',
@@ -258,10 +258,10 @@ if __name__ == "__main__":
       results[TEST_ROUTE]["models"] = compare_logs(cmp_log, log_msgs, tolerance=tolerance, ignore_fields=ignore)
       diff_short, diff_long, failed = format_diff(results, log_paths, 'master')
 
-      #if "CI" in os.environ:
-      #  comment_replay_report(log_msgs, cmp_log, log_msgs)
-      #  failed = False
-      #  print(diff_long)
+      if "CI" in os.environ:
+        comment_replay_report(log_msgs, cmp_log, log_msgs)
+        failed = False
+        print(diff_long)
       print('-------------\n'*5)
       print(diff_short)
       with open("model_diff.txt", "w") as f:
