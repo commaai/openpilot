@@ -128,7 +128,7 @@ class Sidebar:
       self._connect_status.update("CONNECT", "ERROR", Colors.DANGER)
 
   def _update_panda_status(self):
-    if ui_state.panda_type == log.PandaState.PandaType.UNKNOWN:
+    if ui_state.panda_type == log.PandaState.PandaType.unknown:
       self._panda_status.update("NO", "PANDA", Colors.DANGER)
     else:
       self._panda_status.update("VEHICLE", "ONLINE", Colors.GOOD)
