@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.common.conversions import Conversions as CV
 
 # Constants
@@ -61,7 +62,6 @@ class HudRenderer:
     self.set_speed: float = SET_SPEED_NA
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
-    self.font_metrics_cache: dict[[str, int, str], rl.Vector2] = {}
     self._wheel_texture: rl.Texture = gui_app.texture('icons/chffr_wheel.png', UI_CONFIG.wheel_icon_size, UI_CONFIG.wheel_icon_size)
     self._font_semi_bold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
@@ -134,7 +134,7 @@ class HudRenderer:
         max_color = COLORS.override
 
     max_text = "MAX"
-    max_text_width = self._measure_text(max_text, self._font_semi_bold, FONT_SIZES.max_speed, 'semi_bold').x
+    max_text_width = measure_text_cached(self._font_semi_bold, max_text, FONT_SIZES.max_speed).x
     rl.draw_text_ex(
       self._font_semi_bold,
       max_text,
@@ -145,7 +145,7 @@ class HudRenderer:
     )
 
     set_speed_text = CRUISE_DISABLED_CHAR if not self.is_cruise_set else str(round(self.set_speed))
-    speed_text_width = self._measure_text(set_speed_text, self._font_bold, FONT_SIZES.set_speed, 'bold').x
+    speed_text_width = measure_text_cached(self._font_bold, set_speed_text, FONT_SIZES.set_speed).x
     rl.draw_text_ex(
       self._font_bold,
       set_speed_text,
@@ -158,12 +158,12 @@ class HudRenderer:
   def _draw_current_speed(self, rect: rl.Rectangle) -> None:
     """Draw the current vehicle speed and unit."""
     speed_text = str(round(self.speed))
-    speed_text_size = self._measure_text(speed_text, self._font_bold, FONT_SIZES.current_speed, 'bold')
+    speed_text_size = measure_text_cached(self._font_bold, speed_text, FONT_SIZES.current_speed)
     speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
     rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
 
     unit_text = "km/h" if ui_state.is_metric else "mph"
-    unit_text_size = self._measure_text(unit_text, self._font_medium, FONT_SIZES.speed_unit, 'medium')
+    unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
 
@@ -176,10 +176,3 @@ class HudRenderer:
     opacity = 0.7 if ui_state.status == UIStatus.DISENGAGED else 1.0
     img_pos = rl.Vector2(center_x - self._wheel_texture.width / 2, center_y - self._wheel_texture.height / 2)
     rl.draw_texture_v(self._wheel_texture, img_pos, rl.Color(255, 255, 255, int(255 * opacity)))
-
-  def _measure_text(self, text: str, font: rl.Font, font_size: int, font_type: str) -> rl.Vector2:
-    """Measure text dimensions with caching."""
-    key = (text, font_size, font_type)
-    if key not in self.font_metrics_cache:
-      self.font_metrics_cache[key] = rl.measure_text_ex(font, text, font_size, 0)
-    return self.font_metrics_cache[key]
