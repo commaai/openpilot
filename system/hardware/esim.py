@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-
+import time
 from openpilot.system.hardware import HARDWARE
 
 
@@ -14,14 +14,16 @@ if __name__ == '__main__':
   parser.add_argument('--nickname', nargs=2, metavar=('iccid', 'name'), help='update the nickname for a profile')
   args = parser.parse_args()
 
+  mutated = False
   lpa = HARDWARE.get_sim_lpa()
   if args.switch:
     lpa.switch_profile(args.switch)
+    mutated = True
   elif args.delete:
     confirm = input('are you sure you want to delete this profile? (y/N) ')
     if confirm == 'y':
       lpa.delete_profile(args.delete)
-      print('deleted profile, please restart device to apply changes')
+      mutated = True
     else:
       print('cancelled')
       exit(0)
@@ -31,6 +33,11 @@ if __name__ == '__main__':
     lpa.nickname_profile(args.nickname[0], args.nickname[1])
   else:
     parser.print_help()
+
+  if mutated:
+    HARDWARE.reboot_modem()
+    # eUICC needs a small delay post-reboot before querying profiles
+    time.sleep(.5)
 
   profiles = lpa.list_profiles()
   print(f'\n{len(profiles)} profile{"s" if len(profiles) > 1 else ""}:')

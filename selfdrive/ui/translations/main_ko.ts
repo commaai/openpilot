@@ -306,6 +306,14 @@
         <source>PAIR</source>
         <translation>동기화</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -1016,10 +1024,6 @@ This may take up to a minute.</source>
         <translation>오픈파일럿 사용</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>오픈파일럿 시스템을 사용하여 어댑티브 크루즈 컨트롤과 차로 유지 보조 기능을 활용하십시오. 이 기능을 사용할 때에는 항상 주의를 기울여야 합니다. 설정 변경은 차량을 재시동해야 적용됩니다.</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>차선 이탈 경고 활성화</translation>
     </message>
@@ -1118,6 +1122,14 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>오픈파일럿이 활성화되지 않은 경우에도 드라이버 모니터링을 활성화합니다.</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
