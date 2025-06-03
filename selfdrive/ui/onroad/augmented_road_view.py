@@ -45,8 +45,7 @@ class AugmentedRoadView(CameraView):
 
   def render(self, rect):
     # Only render when system is started to avoid invalid data access
-    if not ui_state.started or not self.frame:
-      rl.draw_rectangle_rec(rect, BORDER_COLORS[UIStatus.DISENGAGED])
+    if not ui_state.started:
       return
 
     # Update calibration before rendering
