@@ -5,6 +5,7 @@ from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 SIDEBAR_WIDTH = 300
 METRIC_HEIGHT = 126
@@ -199,7 +200,7 @@ class Sidebar:
 
     # Draw text
     text = f"{metric.label}\n{metric.value}"
-    text_size = rl.measure_text_ex(self._font_bold, text, 35, 0)
+    text_size = measure_text_cached(self._font_bold, text, 35)
     text_pos = rl.Vector2(
       metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
       metric_rect.y + (metric_rect.height - text_size.y) / 2

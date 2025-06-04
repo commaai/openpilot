@@ -35,6 +35,7 @@ class MainLayout:
     self._current_callback = None
 
     self._update_layout_rects(rect)
+    self._handle_onroad_transition()
     self._render_main_content()
     self._handle_input()
 
@@ -47,7 +48,7 @@ class MainLayout:
       on_flag=lambda: setattr(self, '_current_callback', self._on_flag_clicked),
     )
     self._layouts[MainState.SETTINGS].set_callbacks(
-      on_close=lambda: setattr(self, '_current_callback', self._on_settings_closed)
+      on_close=lambda: setattr(self, '_current_callback', self._set_mode_for_state)
     )
 
   def _update_layout_rects(self, rect):
@@ -57,13 +58,23 @@ class MainLayout:
     x_offset = SIDEBAR_WIDTH if self._sidebar_visible else 0
     self._content_rect = rl.Rectangle(rect.y + x_offset, rect.y, rect.width - x_offset, rect.height)
 
+  def _handle_onroad_transition(self):
+    if ui_state.started != self._prev_onroad:
+      self._prev_onroad = ui_state.started
+
+      self._set_mode_for_state()
+
+  def _set_mode_for_state(self):
+    if ui_state.started:
+      self._current_mode = MainState.ONROAD
+      self._sidebar_visible = False
+    else:
+      self._current_mode = MainState.HOME
+      self._sidebar_visible = True
+
   def _on_settings_clicked(self):
     self._current_mode = MainState.SETTINGS
     self._sidebar_visible = False
-
-  def _on_settings_closed(self):
-    self._current_mode = MainState.HOME if not ui_state.started else MainState.ONROAD
-    self._sidebar_visible = True
 
   def _on_flag_clicked(self):
     pass
@@ -72,13 +83,6 @@ class MainLayout:
     # Render sidebar
     if self._sidebar_visible:
       self._sidebar.render(self._sidebar_rect)
-
-    if ui_state.started != self._prev_onroad:
-      self._prev_onroad = ui_state.started
-      if ui_state.started:
-        self._current_mode = MainState.ONROAD
-      else:
-        self._current_mode = MainState.HOME
 
     content_rect = self._content_rect if self._sidebar_visible else self._window_rect
     self._layouts[self._current_mode].render(content_rect)

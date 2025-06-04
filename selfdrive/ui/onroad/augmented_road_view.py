@@ -30,6 +30,7 @@ BORDER_COLORS = {
 class AugmentedRoadView(CameraView):
   def __init__(self, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
     super().__init__("camerad", stream_type)
+    self._set_placeholder_color(BORDER_COLORS[UIStatus.DISENGAGED])
 
     self.device_camera: DeviceCameraConfig | None = None
     self.view_from_calib = view_frame_from_device_frame.copy()

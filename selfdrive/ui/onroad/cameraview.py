@@ -82,6 +82,8 @@ class CameraView:
     self.egl_images: dict[int, EGLImage] = {}
     self.egl_texture: rl.Texture | None = None
 
+    self._placeholder_color : rl.Color | None = None
+
     # Initialize EGL for zero-copy rendering on TICI
     if TICI:
       if not init_egl():
@@ -91,6 +93,10 @@ class CameraView:
       temp_image = rl.gen_image_color(1, 1, rl.BLACK)
       self.egl_texture = rl.load_texture_from_image(temp_image)
       rl.unload_image(temp_image)
+
+  def _set_placeholder_color(self, color: rl.Color):
+    """Set a placeholder color to be drawn when no frame is available."""
+    self._placeholder_color = color
 
   def switch_stream(self, stream_type: VisionStreamType) -> None:
     if self._stream_type == stream_type:
@@ -149,6 +155,7 @@ class CameraView:
       self._handle_switch()
 
     if not self._ensure_connection():
+      self._draw_placeholder(rect)
       return
 
     # Try to get a new buffer without blocking
@@ -158,6 +165,7 @@ class CameraView:
       self.frame = buffer
 
     if not self.frame:
+      self._draw_placeholder(rect)
       return
 
     transform = self._calc_frame_matrix(rect)
@@ -181,6 +189,10 @@ class CameraView:
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
+
+  def _draw_placeholder(self, rect: rl.Rectangle):
+    if self._placeholder_color:
+      rl.draw_rectangle_rec(rect, self._placeholder_color)
 
   def _render_egl(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using EGL for direct buffer access"""
