@@ -11,7 +11,6 @@ class Camera:
     self.cur_frame_id = 0
 
     self.container = av.open(camera_id)
-    assert self.container.streams.video, f"Can't open video stream for camera {camera_id}"
     self.video_stream = self.container.streams.video[0]
     self.W = self.video_stream.codec_context.width
     self.H = self.video_stream.codec_context.height
