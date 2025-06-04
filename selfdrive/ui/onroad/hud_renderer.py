@@ -205,13 +205,6 @@ class HudRenderer:
     rl.draw_circle(center_x, center_y, UI_CONFIG.button_size / 2, COLORS.black_translucent)
     rl.draw_texture(texture, center_x - texture.width // 2, center_y - texture.height // 2, self._white_color)
 
-  def _measure_text(self, text: str, font: rl.Font, font_size: int, font_type: str) -> rl.Vector2:
-    """Measure text dimensions with caching."""
-    key = (text, font_size, font_type)
-    if key not in self.font_metrics_cache:
-      self.font_metrics_cache[key] = rl.measure_text_ex(font, text, font_size, 0)
-    return self.font_metrics_cache[key]
-
   def _experimental_toggle_allowed(self):
     if not self._params.get_bool("ExperimentalModeConfirmed"):
       return False
