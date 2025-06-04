@@ -1,3 +1,4 @@
+import time
 import pyray as rl
 from dataclasses import dataclass
 from cereal.messaging import SubMaster
@@ -11,6 +12,7 @@ from openpilot.common.params import Params
 SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
+STETE_HOLD_DURATION = 2.0  # seconds to hold state after click
 
 
 @dataclass(frozen=True)
@@ -64,6 +66,8 @@ class HudRenderer:
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
     self._experimental_mode: bool = False
+    self._held_experimental_mode: bool | None = None
+    self._state_hold_end_time: float | None = None
     self._engageable: bool = False
 
     self._white_color: rl.Color = rl.Color(255, 255, 255, 255)
@@ -135,7 +139,12 @@ class HudRenderer:
     if (rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and
         rl.check_collision_point_rec(rl.get_mouse_position(), self._wheel_rect)):
       if self._experimental_toggle_allowed():
-        self._params.put_bool("ExperimentalMode", not self._experimental_mode)
+        new_mode = not self._experimental_mode
+        self._params.put_bool("ExperimentalMode", new_mode)
+
+        # Hold the new state temporarily
+        self._held_experimental_mode = new_mode
+        self._state_hold_end_time = time.time() + self._state_hold_duration
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
@@ -200,10 +209,27 @@ class HudRenderer:
     mouse_down = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
                   rl.check_collision_point_rec(rl.get_mouse_position(), self._wheel_rect))
     self._white_color.a = 180 if (mouse_down or not self._engageable) else 255
-    texture = self._experimental_texture if self._experimental_mode else self._wheel_texture
+    texture = self._experimental_texture if self._get_experimental_mode_with_hold() else self._wheel_texture
 
     rl.draw_circle(center_x, center_y, UI_CONFIG.button_size / 2, COLORS.black_translucent)
     rl.draw_texture(texture, center_x - texture.width // 2, center_y - texture.height // 2, self._white_color)
+
+  def _get_experimental_mode_with_hold(self) -> bool:
+    current_time = time.time()
+    # Check if we're still in the hold period
+    if (
+      self._state_hold_end_time is not None
+      and current_time < self._state_hold_end_time
+      and self._held_experimental_mode is not None
+    ):
+      return self._held_experimental_mode
+
+    # Hold period expired or no hold active - clear hold and use SM state
+    if self._state_hold_end_time is not None and current_time >= self._state_hold_end_time:
+      self._state_hold_end_time = None
+      self._held_experimental_mode = None
+
+    return self._experimental_mode
 
   def _experimental_toggle_allowed(self):
     if not self._params.get_bool("ExperimentalModeConfirmed"):
