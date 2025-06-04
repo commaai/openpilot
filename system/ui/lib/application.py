@@ -13,7 +13,7 @@ FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
-DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
+SHOW_FPS = os.getenv("SHOW_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 SCALE = float(os.getenv("SCALE", "1.0"))
 
@@ -158,7 +158,7 @@ class GuiApplication:
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
-        if DEBUG_FPS:
+        if SHOW_FPS:
           rl.draw_fps(10, 10)
 
         rl.end_drawing()
