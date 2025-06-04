@@ -28,7 +28,11 @@ class TogglesLayout:
         self._params.get_bool("OpenpilotEnabledToggle"),
         icon="chffr_wheel.png",
       ),
-      toggle_item("Experimental Mode", self._params.get_bool("ExperimentalMode"), icon="experimental_white.png"),
+      toggle_item(
+        "Experimental Mode",
+        initial_state=self._params.get_bool("ExperimentalMode"),
+        icon="experimental_white.png",
+      ),
       toggle_item(
         "Disengage on Accelerator Pedal",
         DESCRIPTIONS["DisengageOnAccelerator"],
