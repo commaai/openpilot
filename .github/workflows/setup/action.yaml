@@ -1,56 +1,87 @@
-name: 'openpilot env setup'
+name: 'Setup openpilot Environment without Docker'
+description: 'Installs apt and Python dependencies with caching.'
 
 inputs:
-  is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+  python-version:
+    description: 'Python version to use'
     required: false
-    default: 'false'
+    default: '3.8' # Or your project's default Python version
 
 runs:
   using: "composite"
   steps:
-    # assert that this action is retried using the setup-with-retry
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
-      run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
-
-    - shell: bash
-      name: No retries!
-      run: |
-        if [ "${{ github.run_attempt }}" -gt 1 ]; then
-          echo -e "\033[0;31m##################################################"
-          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
-          echo -e "\033[0;31m##################################################\033[0m"
-          exit 1
-        fi
-
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
-      run: git lfs pull
-
-    # build cache
-    - id: date
+    - name: Harden Runner
       shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
+      run: |
+        # Optional: Remove tools not needed to free up disk space and reduce attack surface
+        # Be careful with this, only remove what you're sure isn't needed by any job
+        # sudo rm -rf /usr/share/dotnet
+        # sudo rm -rf /opt/ghc
+        # sudo rm -rf "/usr/local/share/boost"
+        # sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+        echo "Runner hardened (optional step)."
+
+    - name: Cache apt packages
+      id: cache-apt
+      uses: actions/cache@v4
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        path: |
+          /var/cache/apt/archives
+          /var/lib/apt/lists
+        key: ${{ runner.os }}-apt-${{ hashFiles('.github/workflows/setup/apt-requirements.txt') }}
         restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
+          ${{ runner.os }}-apt-
+
+    - name: Install apt packages
       shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
       run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
+        echo "Updating apt lists and installing packages..."
+        sudo apt-get update -q
+        # Read packages from apt-requirements.txt and install them
+        # Using xargs to pass arguments from file, handling potential empty lines
+        # The tr command removes carriage returns if the file has CRLF endings
+        # The grep filters out empty lines or lines with only whitespace
+        tr -d '\r' < .github/workflows/setup/apt-requirements.txt | grep -v "^\s*$" | \
+          xargs sudo apt-get install -y --no-install-recommends
+        echo "Apt packages installed."
+
+    - name: Setup Python ${{ inputs.python-version }}
+      id: setup-python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Cache Python Virtual Environment
+      id: cache-venv
+      uses: actions/cache@v4
+      with:
+        path: ./.venv # Cache the entire virtual environment directory
+        key: ${{ runner.os }}-venv-${{ inputs.python-version }}-${{ hashFiles('**/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-venv-${{ inputs.python-version }}-
+
+    - name: Create Virtual Environment and Install Dependencies (if cache miss)
+      if: steps.cache-venv.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        echo "Cache miss for virtual environment. Creating and installing dependencies."
+        python -m venv ./.venv
+        source ./.venv/bin/activate
+        pip install --upgrade pip wheel
+        pip install -r requirements.txt
+        echo "Virtual environment created and dependencies installed."
+    
+    - name: Add venv to GITHUB_PATH
+      shell: bash
+      run: |
+        echo "Adding .venv/bin to GITHUB_PATH"
+        echo "$GITHUB_WORKSPACE/.venv/bin" >> $GITHUB_PATH
+
+    # - name: Verify venv (Optional debugging step)
+    #   shell: bash
+    #   run: |
+    #     which python
+    #     python --version
+    #     which pip
+    #     pip --version
+    #     pip list
