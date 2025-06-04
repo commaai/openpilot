@@ -195,8 +195,7 @@ class ModelState:
     self.full_prev_desired_curv[0,-1,:] = policy_outputs_dict['desired_curvature'][0, :]
     self.numpy_inputs['prev_desired_curv'][:] = self.full_prev_desired_curv[0, self.temporal_idxs]
 
-    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict}
-    combined_outputs_dict.update(misc_outputs_dict)
+    combined_outputs_dict = {**vision_outputs_dict, **policy_outputs_dict, **misc_outputs_dict}
     if SEND_RAW_PRED:
       combined_outputs_dict['raw_pred'] = np.concatenate([self.vision_output.copy(), self.policy_output.copy(), self.misc_output.copy()])
 
