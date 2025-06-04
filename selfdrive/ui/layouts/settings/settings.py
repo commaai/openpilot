@@ -9,6 +9,7 @@ from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_text_box
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 # Import individual panels
 
@@ -95,7 +96,7 @@ class SettingsLayout:
 
     close_color = CLOSE_BTN_PRESSED if self._close_btn_pressed else CLOSE_BTN_COLOR
     rl.draw_rectangle_rounded(close_btn_rect, 0.5, 20, close_color)
-    close_text_size = rl.measure_text_ex(self._font_bold, SETTINGS_CLOSE_TEXT, 140, 0)
+    close_text_size = measure_text_cached(self._font_bold, SETTINGS_CLOSE_TEXT, 140)
     close_text_pos = rl.Vector2(
       close_btn_rect.x + (close_btn_rect.width - close_text_size.x) / 2,
       close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2 - 20,
@@ -123,7 +124,7 @@ class SettingsLayout:
       text_color = TEXT_SELECTED if is_selected else TEXT_NORMAL
 
       # Draw button text (right-aligned)
-      text_size = rl.measure_text_ex(self._font_medium, panel_info.name, 65, 0)
+      text_size = measure_text_cached(self._font_medium, panel_info.name, 65)
       text_pos = rl.Vector2(
         button_rect.x + button_rect.width - text_size.x, button_rect.y + (button_rect.height - text_size.y) / 2
       )
