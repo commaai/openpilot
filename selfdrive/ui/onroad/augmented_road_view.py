@@ -16,6 +16,8 @@ from openpilot.common.transformations.orientation import rot_from_euler
 
 OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.LiveCalibrationData.Status.calibrated
+ROAD_CAM = VisionStreamType.VISION_STREAM_ROAD
+WIDE_CAM = VisionStreamType.VISION_STREAM_WIDE_ROAD
 DEFAULT_DEVICE_CAMERA = DEVICE_CAMERAS["tici", "ar0231"]
 
 BORDER_COLORS = {
@@ -35,6 +37,7 @@ class AugmentedRoadView(CameraView):
 
     self._last_calib_time: float = 0
     self._last_rect_dims = (0.0, 0.0)
+    self._last_stream_type = stream_type
     self._cached_matrix: np.ndarray | None = None
     self._content_rect = rl.Rectangle()
 
@@ -119,6 +122,7 @@ class AugmentedRoadView(CameraView):
     current_dims = (self._content_rect.width, self._content_rect.height)
     if (self._last_calib_time == calib_time and
         self._last_rect_dims == current_dims and
+        self._last_stream_type == self.stream_type and
         self._cached_matrix is not None):
       return self._cached_matrix
 
@@ -154,9 +158,10 @@ class AugmentedRoadView(CameraView):
     except (ZeroDivisionError, OverflowError):
       x_offset, y_offset = 0, 0
 
-    # Update cache values
+    # Cache the computed transformation matrix to avoid recalculations
     self._last_calib_time = calib_time
     self._last_rect_dims = current_dims
+    self._last_stream_type = self.stream_type
     self._cached_matrix = np.array([
       [zoom * 2 * cx / w, 0, -x_offset / w * 2],
       [0, zoom * 2 * cy / h, -y_offset / h * 2],
@@ -175,14 +180,15 @@ class AugmentedRoadView(CameraView):
 
 if __name__ == "__main__":
   gui_app.init_window("OnRoad Camera View")
-  road_camera_view = AugmentedRoadView(VisionStreamType.VISION_STREAM_ROAD)
+  road_camera_view = AugmentedRoadView(ROAD_CAM)
   print("***press space to switch camera view***")
   try:
     for _ in gui_app.render():
       ui_state.update()
       if rl.is_key_released(rl.KeyboardKey.KEY_SPACE):
-        is_wide = road_camera_view.stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
-        road_camera_view.switch_stream(VisionStreamType.VISION_STREAM_ROAD if is_wide else VisionStreamType.VISION_STREAM_WIDE_ROAD)
+        if WIDE_CAM in road_camera_view.available_streams:
+          stream = ROAD_CAM if road_camera_view.stream_type == WIDE_CAM else WIDE_CAM
+          road_camera_view.switch_stream(stream)
       road_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     road_camera_view.close()
