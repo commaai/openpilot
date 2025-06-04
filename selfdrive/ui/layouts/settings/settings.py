@@ -23,7 +23,6 @@ PANEL_MARGIN = 50
 SCROLL_SPEED = 30
 
 # Colors
-SIDEBAR_COLOR = rl.BLACK
 PANEL_COLOR = rl.Color(41, 41, 41, 255)
 CLOSE_BTN_COLOR = rl.Color(41, 41, 41, 255)
 CLOSE_BTN_PRESSED = rl.Color(59, 59, 59, 255)
@@ -86,8 +85,6 @@ class SettingsLayout(Widget):
       self.handle_mouse_release(rl.get_mouse_position())
 
   def _draw_sidebar(self, rect: rl.Rectangle):
-    rl.draw_rectangle_rec(rect, SIDEBAR_COLOR)
-
     # Close button
     close_btn_rect = rl.Rectangle(
       rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE

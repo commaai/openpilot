@@ -1,5 +1,6 @@
 from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.common.params import Params
 from openpilot.system.hardware import TICI
 
@@ -24,16 +25,16 @@ class DeviceLayout(Widget):
     items = [
       text_item("Dongle ID", dongle_id),
       text_item("Serial", serial),
-      button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], self._on_pair_device),
-      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], self._on_driver_camera),
-      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], self._on_reset_calibration),
-      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
+      button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._on_pair_device),
+      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._on_driver_camera, enabled=ui_state.is_offroad),
+      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._on_reset_calibration),
+      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], callback=self._on_review_training_guide, enabled=ui_state.is_offroad),
     ]
 
     if TICI:
       items.append(button_item("Regulatory", "VIEW", callback=self._on_regulatory))
 
-    items.append(button_item("Change Language", "CHANGE", callback=self._on_change_language))
+    items.append(button_item("Change Language", "CHANGE", callback=self._on_change_language, enabled=ui_state.is_offroad))
 
     self._list_widget = ListView(items)
 

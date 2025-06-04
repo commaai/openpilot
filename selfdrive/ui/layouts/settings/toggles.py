@@ -1,6 +1,7 @@
 from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.list_view import ListView, toggle_item
 from openpilot.common.params import Params
+from openpilot.selfdrive.ui.ui_state import ui_state
 
 # Description constants
 DESCRIPTIONS = {
@@ -22,12 +23,17 @@ DESCRIPTIONS = {
 class TogglesLayout(Widget):
   def __init__(self):
     self._params = Params()
+    items = self._init_items()
+    self._list_widget = ListView(items)
+
+  def _init_items(self):
     items = [
       toggle_item(
         "Enable openpilot",
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         self._params.get_bool("OpenpilotEnabledToggle"),
         icon="chffr_wheel.png",
+        enabled=ui_state.is_offroad,
       ),
       toggle_item(
         "Experimental Mode",
@@ -57,13 +63,13 @@ class TogglesLayout(Widget):
         DESCRIPTIONS["RecordFront"],
         self._params.get_bool("RecordFront"),
         icon="monitoring.png",
+        enabled=ui_state.is_offroad,
       ),
       toggle_item(
         "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
       ),
     ]
-
-    self._list_widget = ListView(items)
+    return items
 
   def render(self, rect):
     self._list_widget.render(rect)
