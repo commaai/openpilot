@@ -57,7 +57,7 @@ else:
 
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
-    self.client = VisionIpcClient(name, stream_type, False)
+    self.client = VisionIpcClient(name, stream_type, conflate=True)
     self._name = name
     self._stream_type = stream_type
 
@@ -90,7 +90,7 @@ class CameraView:
       self._clear_textures()
       self.frame = None
       self._stream_type = stream_type
-      self.client = VisionIpcClient(self._name, stream_type, False)
+      self.client = VisionIpcClient(self._name, stream_type, conflate=True)
 
   @property
   def stream_type(self) -> VisionStreamType:
