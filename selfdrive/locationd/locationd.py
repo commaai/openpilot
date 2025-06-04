@@ -15,6 +15,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from openpilot.system.hardware import PC
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -145,6 +146,32 @@ class LocationEstimator:
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
 
+      if PC:
+        sensor_time = t
+        # accel
+        meas = np.array([msg.aEgo, 0, -9.81])
+        if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
+          return HandleLogResult.INPUT_INVALID
+        acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+        if acc_res is not None:
+          _, new_x, _, new_P, _, _, (acc_err,), _, _ = acc_res
+          self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
+          self.observations[ObservationKind.PHONE_ACCEL] = meas
+
+        # GYRO
+        meas = np.array([0, 0, -msg.yawRate])
+        gyro_bias = self.kf.x[States.GYRO_BIAS]
+        gyro_camodo_yawrate_err = np.abs((meas[2] - gyro_bias[2]) - self.camodo_yawrate_distribution[0])
+        gyro_camodo_yawrate_err_threshold = YAWRATE_CROSS_ERR_CHECK_FACTOR * self.camodo_yawrate_distribution[1]
+        gyro_valid = gyro_camodo_yawrate_err < gyro_camodo_yawrate_err_threshold
+        if np.linalg.norm(meas) >= ROTATION_SANITY_CHECK or not gyro_valid:
+            return HandleLogResult.INPUT_INVALID
+        gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+        if gyro_res is not None:
+          _, new_x, _, new_P, _, _, (gyro_err,), _, _ = gyro_res
+          self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(gyro_err)
+          self.observations[ObservationKind.PHONE_GYRO] = meas
+
     elif which == "liveCalibration":
       # Note that we use this message during calibration
       if len(msg.rpyCalib) > 0:
@@ -270,7 +297,10 @@ def main():
   estimator = LocationEstimator(DEBUG)
 
   filter_initialized = False
-  critcal_services = ["accelerometer", "gyroscope", "cameraOdometry"]
+  if not PC:
+    critcal_services = ["accelerometer", "gyroscope", "cameraOdometry"]
+  else:
+    critcal_services = ["cameraOdometry"]
   observation_input_invalid = defaultdict(int)
 
   input_invalid_limit = {s: round(INPUT_INVALID_LIMIT * (SERVICE_LIST[s].frequency / 20.)) for s in critcal_services}
@@ -288,13 +318,15 @@ def main():
   while True:
     sm.update()
 
-    acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
+    if not PC:
+      acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
 
     if filter_initialized:
       msgs = []
-      for msg in acc_msgs + gyro_msgs:
-        t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
-        msgs.append((t, valid, which, data))
+      if not PC:
+        for msg in acc_msgs + gyro_msgs:
+          t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
+          msgs.append((t, valid, which, data))
       for which, updated in sm.updated.items():
         if not updated:
           continue
@@ -317,12 +349,18 @@ def main():
           elif res == HandleLogResult.SUCCESS:
             observation_input_invalid[which] *= input_invalid_decay[which]
     else:
-      filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      if not PC:
+        filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      else:
+        filter_initialized= sm.all_checks()
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < input_invalid_threshold[s] for s in critcal_services)
       inputs_valid = sm.all_valid() and critical_service_inputs_valid
-      sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      if not PC:
+        sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION or PC)
+      else:
+        sensors_valid = True
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
       pm.send("livePose", msg)
