@@ -7,6 +7,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 
 
 CLIP_MARGIN = 500
@@ -51,7 +52,7 @@ class ModelRenderer:
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
-    self._path_offset_z = 1.22
+    self._path_offset_z = HEIGHT_INIT[0]
 
     # Initialize ModelPoints objects
     self._path = ModelPoints()
@@ -99,7 +100,10 @@ class ModelRenderer:
 
     # Update state
     self._experimental_mode = sm['selfdriveState'].experimentalMode
-    self._path_offset_z = sm['liveCalibration'].height[0]
+
+    live_calib = sm['liveCalibration']
+    self._path_offset_z = live_calib.height[0] if live_calib.height else HEIGHT_INIT[0]
+
     if sm.updated['carParams']:
       self._longitudinal_control = sm['carParams'].openpilotLongitudinalControl
 
