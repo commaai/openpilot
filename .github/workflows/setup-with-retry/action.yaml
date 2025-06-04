@@ -1,10 +1,14 @@
 name: 'openpilot env setup, with retry on failure'
 
 inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+  # docker_hub_pat: # This input is likely no longer needed for the setup itself
+  #   description: 'Auth token for Docker Hub, required for BuildJet jobs'
+  #   required: false
+  #   default: ''
+  python-version: # Pass python version if you want it configurable
+    description: 'Python version for the setup'
     required: false
-    default: ''
+    default: '3.8'
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
@@ -14,24 +18,32 @@ runs:
   using: "composite"
   steps:
     - id: setup1
-      uses: ./.github/workflows/setup
-      continue-on-error: true
+      uses: ./.github/workflows/setup # This now refers to the action.yml in the setup directory
       with:
-        is_retried: true
+        python-version: ${{ inputs.python-version }}
+      continue-on-error: true
+      # is_retried: true # This input's original purpose in your internal setup script is unknown.
+                      # If it was used by the Docker setup logic, you might need to adapt or remove it.
+
     - if: steps.setup1.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
+
     - id: setup2
       if: steps.setup1.outcome == 'failure'
       uses: ./.github/workflows/setup
-      continue-on-error: true
       with:
-        is_retried: true
+        python-version: ${{ inputs.python-version }}
+      continue-on-error: true
+      # is_retried: true
+
     - if: steps.setup2.outcome == 'failure'
       shell: bash
       run: sleep ${{ inputs.sleep_time }}
+
     - id: setup3
       if: steps.setup2.outcome == 'failure'
       uses: ./.github/workflows/setup
       with:
-        is_retried: true
+        python-version: ${{ inputs.python-version }}
+      # is_retried: true
