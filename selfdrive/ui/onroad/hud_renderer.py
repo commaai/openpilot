@@ -1,18 +1,16 @@
-import time
 import pyray as rl
 from dataclasses import dataclass
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.common.conversions import Conversions as CV
-from openpilot.common.params import Params
 
 # Constants
 SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371
 CRUISE_DISABLED_CHAR = '–'
-STETE_HOLD_DURATION = 2.0  # seconds to hold state after click
 
 
 @dataclass(frozen=True)
@@ -65,20 +63,12 @@ class HudRenderer:
     self.set_speed: float = SET_SPEED_NA
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
-    self._experimental_mode: bool = False
-    self._held_experimental_mode: bool | None = None
-    self._state_hold_end_time: float | None = None
-    self._engageable: bool = False
-
-    self._white_color: rl.Color = rl.Color(255, 255, 255, 255)
-    self._wheel_texture: rl.Texture = gui_app.texture('icons/chffr_wheel.png', UI_CONFIG.wheel_icon_size, UI_CONFIG.wheel_icon_size)
-    self._experimental_texture: rl.Texture = gui_app.texture('icons/experimental.png', UI_CONFIG.wheel_icon_size, UI_CONFIG.wheel_icon_size)
-    self._wheel_rect: rl.Rectangle = rl.Rectangle(0, 0, UI_CONFIG.button_size, UI_CONFIG.button_size)
-    self._params = Params()
 
     self._font_semi_bold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
+
+    self._exp_button = ExpButton(UI_CONFIG.button_size, UI_CONFIG.wheel_icon_size)
 
   def _update_state(self, sm: SubMaster) -> None:
     """Update HUD state based on car state and controls state."""
@@ -107,9 +97,7 @@ class HudRenderer:
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-    selfdrive_state = sm["selfdriveState"]
-    self._experimental_mode = selfdrive_state.experimentalMode
-    self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
+    self._exp_button.update_state(sm)
 
   def draw(self, rect: rl.Rectangle, sm: SubMaster) -> None:
     """Render HUD elements to the screen."""
@@ -130,21 +118,12 @@ class HudRenderer:
 
     self._draw_current_speed(rect)
 
-    self._wheel_rect.x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
-    self._wheel_rect.y = rect.y + UI_CONFIG.border_size
-    self._handle_click()
-    self._draw_wheel_icon()
+    button_x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
+    button_y = rect.y + UI_CONFIG.border_size
+    self._exp_button.draw(button_x, button_y)
 
-  def _handle_click(self) -> None:
-    if (rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and
-        rl.check_collision_point_rec(rl.get_mouse_position(), self._wheel_rect)):
-      if self._experimental_toggle_allowed():
-        new_mode = not self._experimental_mode
-        self._params.put_bool("ExperimentalMode", new_mode)
-
-        # Hold the new state temporarily
-        self._held_experimental_mode = new_mode
-        self._state_hold_end_time = time.time() + self._state_hold_duration
+  def handle_mouse_event(self) -> bool:
+    return bool(self._exp_button.handle_mouse_event())
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
@@ -200,43 +179,3 @@ class HudRenderer:
     unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
-
-  def _draw_wheel_icon(self) -> None:
-    """Draw the steering wheel icon with status-based opacity."""
-    center_x = int(self._wheel_rect.x + self._wheel_rect.width // 2)
-    center_y = int(self._wheel_rect.y + self._wheel_rect.height // 2)
-
-    mouse_down = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
-                  rl.check_collision_point_rec(rl.get_mouse_position(), self._wheel_rect))
-    self._white_color.a = 180 if (mouse_down or not self._engageable) else 255
-    texture = self._experimental_texture if self._get_experimental_mode_with_hold() else self._wheel_texture
-
-    rl.draw_circle(center_x, center_y, UI_CONFIG.button_size / 2, COLORS.black_translucent)
-    rl.draw_texture(texture, center_x - texture.width // 2, center_y - texture.height // 2, self._white_color)
-
-  def _get_experimental_mode_with_hold(self) -> bool:
-    current_time = time.time()
-    # Check if we're still in the hold period
-    if (
-      self._state_hold_end_time is not None
-      and current_time < self._state_hold_end_time
-      and self._held_experimental_mode is not None
-    ):
-      return self._held_experimental_mode
-
-    # Hold period expired or no hold active - clear hold and use SM state
-    if self._state_hold_end_time is not None and current_time >= self._state_hold_end_time:
-      self._state_hold_end_time = None
-      self._held_experimental_mode = None
-
-    return self._experimental_mode
-
-  def _experimental_toggle_allowed(self):
-    if not self._params.get_bool("ExperimentalModeConfirmed"):
-      return False
-
-    car_params = ui_state.sm["carParams"]
-    if car_params.alphaLongitudinalAvailable:
-      return self._params.get_bool("AlphaLongitudinalEnabled")
-    else:
-      return car_params.openpilotLongitudinalControl
