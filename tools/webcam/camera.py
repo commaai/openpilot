@@ -1,4 +1,6 @@
-import av
+# TODO: remove the cv2 dependency, it's only used here
+import cv2 as cv
+import numpy as np
 
 class Camera:
   def __init__(self, cam_type_state, stream_type, camera_id):
@@ -10,19 +12,23 @@ class Camera:
     self.stream_type = stream_type
     self.cur_frame_id = 0
 
-    self.container = av.open(camera_id)
-    self.video_stream = self.container.streams.video[0]
-    self.W = self.video_stream.codec_context.width
-    self.H = self.video_stream.codec_context.height
+    self.cap = cv.VideoCapture(camera_id)
+    self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
+    self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
 
   @classmethod
   def bgr2nv12(self, bgr):
-    frame = av.VideoFrame.from_ndarray(bgr, format='bgr24')
-    return frame.reformat(format='nv12').to_ndarray()
+    yuv = cv.cvtColor(bgr, cv.COLOR_BGR2YUV_I420)
+    uv_row_cnt = yuv.shape[0] // 3
+    uv_plane = np.transpose(yuv[uv_row_cnt * 2:].reshape(2, -1), [1, 0])
+    yuv[uv_row_cnt * 2:] = uv_plane.reshape(uv_row_cnt, -1)
+    return yuv
 
   def read_frames(self):
-    for frame in self.container.decode(self.video_stream):
-      img = frame.to_rgb().to_ndarray()[:,:, ::-1] # convert to bgr24
-      yuv = Camera.bgr2nv12(img)
+    while True:
+      sts , frame = self.cap.read()
+      if not sts:
+        break
+      yuv = Camera.bgr2nv12(frame)
       yield yuv.data.tobytes()
-    self.container.close()
+    self.cap.release()
