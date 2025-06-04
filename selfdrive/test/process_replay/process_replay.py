@@ -362,7 +362,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), cached_params=cached_params).CP
+    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
   params.put("CarParams", CP.to_bytes())
 

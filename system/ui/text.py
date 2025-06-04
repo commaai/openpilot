@@ -88,4 +88,4 @@ class TextWindow(BaseWindow[TextWindowRenderer]):
 
 if __name__ == "__main__":
   with TextWindow(DEMO_TEXT):
-    time.sleep(5)
+    time.sleep(30)

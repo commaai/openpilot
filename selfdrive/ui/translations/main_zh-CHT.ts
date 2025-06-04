@@ -63,10 +63,6 @@
         <translation>行動網路</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>防止使用行動網路上傳大量的數據</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>隱藏的網路</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>給 &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -286,6 +306,14 @@
         <source>PAIR</source>
         <translation>配對</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -368,13 +396,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>
             <numerusform>需要至少 %n 個字元！</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>安裝中…</translation>
     </message>
 </context>
 <context>
@@ -1003,10 +1024,6 @@ This may take up to a minute.</source>
         <translation>啟用 openpilot</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>使用 openpilot 的主動式巡航和車道保持功能，開啟後您需要持續集中注意力，設定變更在重新啟動車輛後生效。</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>啟用車道偏離警告</translation>
     </message>
@@ -1105,6 +1122,14 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>即使在openpilot未激活時也啟用駕駛監控。</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -1,45 +1,49 @@
 import pyray as rl
 
-ON_COLOR = rl.GREEN
+ON_COLOR = rl.Color(0, 255, 0, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
 KNOB_COLOR = rl.WHITE
+WIDTH, HEIGHT = 160, 80
 BG_HEIGHT = 60
-KNOB_HEIGHT = 80
-WIDTH = 160
+ANIMATION_SPEED = 8.0
 
 
 class Toggle:
   def __init__(self, x, y, initial_state=False):
     self._state = initial_state
-    self._rect = rl.Rectangle(x, y, WIDTH, KNOB_HEIGHT)
+    self._rect = rl.Rectangle(x, y, WIDTH, HEIGHT)
+    self._progress = 1.0 if initial_state else 0.0
+    self._target = self._progress
 
   def handle_input(self):
     if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON):
-      mouse_pos = rl.get_mouse_position()
-      if rl.check_collision_point_rec(mouse_pos, self._rect):
+      if rl.check_collision_point_rec(rl.get_mouse_position(), self._rect):
         self._state = not self._state
+        self._target = 1.0 if self._state else 0.0
 
   def get_state(self):
     return self._state
 
+  def update(self):
+    if abs(self._progress - self._target) > 0.01:
+      delta = rl.get_frame_time() * ANIMATION_SPEED
+      self._progress += delta if self._progress < self._target else -delta
+      self._progress = max(0.0, min(1.0, self._progress))
+
   def render(self):
-    self._draw_background()
-    self._draw_knob()
+    self. update()
+    # Draw background
+    bg_rect = rl.Rectangle(self._rect.x + 5, self._rect.y + 10, WIDTH - 10, BG_HEIGHT)
+    bg_color = self._blend_color(OFF_COLOR, ON_COLOR, self._progress)
+    rl.draw_rectangle_rounded(bg_rect, 1.0, 10, bg_color)
 
-  def _draw_background(self):
-    bg_rect = rl.Rectangle(
-      self._rect.x + 5,
-      self._rect.y + (KNOB_HEIGHT - BG_HEIGHT) / 2,
-      self._rect.width - 10,
-      BG_HEIGHT,
-    )
-    rl.draw_rectangle_rounded(bg_rect, 1.0, 10, ON_COLOR if self._state else OFF_COLOR)
+    # Draw knob
+    knob_x = self._rect.x + HEIGHT / 2 + (WIDTH - HEIGHT) * self._progress
+    knob_y = self._rect.y + HEIGHT / 2
+    rl.draw_circle(int(knob_x), int(knob_y), HEIGHT / 2, KNOB_COLOR)
 
-  def _draw_knob(self):
-    knob_radius = KNOB_HEIGHT / 2
-    knob_x = self._rect.x + knob_radius if not self._state else self._rect.x + self._rect.width - knob_radius
-    knob_y = self._rect.y + knob_radius
-    rl.draw_circle(int(knob_x), int(knob_y), knob_radius, KNOB_COLOR)
+  def _blend_color(self, c1, c2, t):
+    return rl.Color(int(c1.r + (c2.r - c1.r) * t), int(c1.g + (c2.g - c1.g) * t), int(c1.b + (c2.b - c1.b) * t), 255)
 
 
 if __name__ == "__main__":
@@ -50,4 +54,3 @@ if __name__ == "__main__":
   for _ in gui_app.render():
     toggle.handle_input()
     toggle.render()
-

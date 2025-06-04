@@ -63,10 +63,6 @@
         <translation>Connexion cellulaire limitée</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Éviter les transferts de données importants sur une connexion limitée</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>Réseau Caché</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>pour &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -286,6 +306,14 @@
         <source>PAIR</source>
         <translation>ASSOCIER</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -368,13 +396,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
             <numerusform>Besoin d&apos;au moins %n caractère !</numerusform>
             <numerusform>Besoin d&apos;au moins %n caractères !</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Installation...</translation>
     </message>
 </context>
 <context>
@@ -1006,10 +1027,6 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
         <translation>Activer openpilot</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Utilisez le système openpilot pour le régulateur de vitesse adaptatif et l&apos;assistance au maintien de voie. Votre attention est requise en permanence pour utiliser cette fonctionnalité. La modification de ce paramètre prend effet lorsque la voiture est éteinte.</translation>
-    </message>
-    <message>
         <source>Experimental Mode</source>
         <translation>Mode expérimental</translation>
     </message>
@@ -1108,6 +1125,14 @@ Cela peut prendre jusqu&apos;à une minute.</translation>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>Activer la surveillance conducteur lorsque openpilot n&apos;est pas actif.</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

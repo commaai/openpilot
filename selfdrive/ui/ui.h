@@ -81,6 +81,7 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
+  void engagedChanged(bool engaged);
 
 private slots:
   void update();
@@ -88,6 +89,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
+  bool engaged_prev = false;
 };
 
 UIState *uiState();

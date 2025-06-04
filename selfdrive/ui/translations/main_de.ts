@@ -63,10 +63,6 @@
         <translation>Getaktete Verbindung</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Hochladen großer Dateien über getaktete Verbindungen unterbinden</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>Verborgenes Netzwerk</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>für &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -286,6 +306,14 @@
         <source>PAIR</source>
         <translation>KOPPELN</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -370,13 +398,6 @@ Der Firehose-Modus ermöglicht es dir, deine Trainingsdaten-Uploads zu maximiere
             <numerusform>Mindestens %n Buchstabe benötigt!</numerusform>
             <numerusform>Mindestens %n Buchstaben benötigt!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Installiere...</translation>
     </message>
 </context>
 <context>
@@ -1010,10 +1031,6 @@ Dies kann bis zu einer Minute dauern.</translation>
         <translation>Openpilot aktivieren</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Benutze das Openpilot System als adaptiven Tempomaten und Spurhalteassistenten. Deine Aufmerksamkeit ist jederzeit erforderlich, um diese Funktion zu nutzen. Diese Einstellung wird übernommen, wenn das Auto aus ist.</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>Spurverlassenswarnungen aktivieren</translation>
     </message>
@@ -1112,6 +1129,14 @@ Dies kann bis zu einer Minute dauern.</translation>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>Fahrerüberwachung auch aktivieren, wenn openpilot nicht aktiv ist.</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
