@@ -10,6 +10,7 @@ from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 
 # Import individual panels
 
@@ -51,8 +52,6 @@ class SettingsLayout:
   def __init__(self):
     self._params = Params()
     self._current_panel = PanelType.DEVICE
-    self._close_btn_pressed = False
-    self._scroll_offset = 0.0
     self._max_scroll = 0.0
 
     # Panel configuration
@@ -61,7 +60,7 @@ class SettingsLayout:
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.FIREHOSE: PanelInfo("Firehose", None, rl.Rectangle(0, 0, 0, 0)),
-      PanelType.NETWORK: PanelInfo("Network", None, rl.Rectangle(0, 0, 0, 0)),
+      PanelType.NETWORK: PanelInfo("Network", NetworkLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayout(), rl.Rectangle(0, 0, 0, 0)),
     }
 
@@ -94,12 +93,15 @@ class SettingsLayout:
       rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
     )
 
-    close_color = CLOSE_BTN_PRESSED if self._close_btn_pressed else CLOSE_BTN_COLOR
-    rl.draw_rectangle_rounded(close_btn_rect, 0.5, 20, close_color)
-    close_text_size = measure_text_cached(self._font_bold, SETTINGS_CLOSE_TEXT, 140)
+    pressed = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
+               rl.check_collision_point_rec(rl.get_mouse_position(), close_btn_rect))
+    close_color = CLOSE_BTN_PRESSED if pressed else CLOSE_BTN_COLOR
+    rl.draw_rectangle_rounded(close_btn_rect, 1.0, 20, close_color)
+
+    close_text_size = rl.measure_text_ex(self._font_bold, SETTINGS_CLOSE_TEXT, 140, 0)
     close_text_pos = rl.Vector2(
       close_btn_rect.x + (close_btn_rect.width - close_text_size.x) / 2,
-      close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2 - 20,
+      close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2,
     )
     rl.draw_text_ex(self._font_bold, SETTINGS_CLOSE_TEXT, close_text_pos, 140, 0, TEXT_SELECTED)
 
@@ -122,7 +124,6 @@ class SettingsLayout:
       # Button styling
       is_selected = panel_type == self._current_panel
       text_color = TEXT_SELECTED if is_selected else TEXT_NORMAL
-
       # Draw button text (right-aligned)
       text_size = measure_text_cached(self._font_medium, panel_info.name, 65)
       text_pos = rl.Vector2(
@@ -156,7 +157,6 @@ class SettingsLayout:
   def handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
-      self._close_btn_pressed = True
       if self._close_callback:
         self._close_callback()
       return True
@@ -172,9 +172,6 @@ class SettingsLayout:
   def _switch_to_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:
       self._current_panel = panel_type
-      self._scroll_offset = 0.0  # Reset scroll when switching panels
-      self._transition_progress = 0.0
-      self._transitioning = True
 
   def set_current_panel(self, index: int, param: str = ""):
     panel_types = list(self._panels.keys())

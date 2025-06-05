@@ -57,9 +57,17 @@ else:
 
 class CameraView:
   def __init__(self, name: str, stream_type: VisionStreamType):
-    self.client = VisionIpcClient(name, stream_type, conflate=True)
     self._name = name
+    # Primary stream
+    self.client = VisionIpcClient(name, stream_type, conflate=True)
     self._stream_type = stream_type
+    self.available_streams: list[VisionStreamType] = []
+
+    # Target stream for switching
+    self._target_client: VisionIpcClient | None = None
+    self._target_stream_type: VisionStreamType | None = None
+    self._switching: bool = False
+
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
@@ -91,12 +99,20 @@ class CameraView:
     self._placeholder_color = color
 
   def switch_stream(self, stream_type: VisionStreamType) -> None:
-    if self._stream_type != stream_type:
-      cloudlog.debug(f'switching stream from {self._stream_type} to {stream_type}')
-      self._clear_textures()
-      self.frame = None
-      self._stream_type = stream_type
-      self.client = VisionIpcClient(self._name, stream_type, conflate=True)
+    if self._stream_type == stream_type:
+      return
+
+    if self._switching and self._target_stream_type == stream_type:
+      return
+
+    cloudlog.debug(f'Preparing switch from {self._stream_type} to {stream_type}')
+
+    if self._target_client:
+      del self._target_client
+
+    self._target_stream_type = stream_type
+    self._target_client = VisionIpcClient(self._name, stream_type, conflate=True)
+    self._switching = True
 
   @property
   def stream_type(self) -> VisionStreamType:
@@ -135,6 +151,9 @@ class CameraView:
     ])
 
   def render(self, rect: rl.Rectangle):
+    if self._switching:
+      self._handle_switch()
+
     if not self._ensure_connection():
       self._draw_placeholder(rect)
       return
@@ -226,6 +245,7 @@ class CameraView:
   def _ensure_connection(self) -> bool:
     if not self.client.is_connected():
       self.frame = None
+      self.available_streams.clear()
 
       # Throttle connection attempts
       current_time = rl.get_time()
@@ -237,15 +257,56 @@ class CameraView:
         return False
 
       cloudlog.debug(f"Connected to {self._name} stream: {self._stream_type}, buffers: {self.client.num_buffers}")
-      self._clear_textures()
+      self._initialize_textures()
+      self.available_streams = self.client.available_streams(self._name, block=False)
 
+    return True
+
+  def _handle_switch(self) -> None:
+    """Check if target stream is ready and switch immediately."""
+    if not self._target_client or not self._switching:
+        return
+
+    # Try to connect target if needed
+    if not self._target_client.is_connected():
+      if not self._target_client.connect(False) or not self._target_client.num_buffers:
+        return
+
+      cloudlog.debug(f"Target stream connected: {self._target_stream_type}")
+
+    # Check if target has frames ready
+    target_frame = self._target_client.recv(timeout_ms=0)
+    if target_frame:
+      self.frame = target_frame # Update current frame to target frame
+      self._complete_switch()
+
+  def _complete_switch(self) -> None:
+      """Instantly switch to target stream."""
+      cloudlog.debug(f"Switching to {self._target_stream_type}")
+      # Clean up current resources
+      if self.client:
+        del self.client
+
+      # Switch to target
+      self.client = self._target_client
+      self._stream_type = self._target_stream_type
+      self._texture_needs_update = True
+
+      # Reset state
+      self._target_client = None
+      self._target_stream_type = None
+      self._switching = False
+
+      # Initialize textures for new stream
+      self._initialize_textures()
+
+  def _initialize_textures(self):
+      self._clear_textures()
       if not TICI:
         self.texture_y = rl.load_texture_from_image(rl.Image(None, int(self.client.stride),
           int(self.client.height), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAYSCALE))
         self.texture_uv = rl.load_texture_from_image(rl.Image(None, int(self.client.stride // 2),
           int(self.client.height // 2), 1, rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_GRAY_ALPHA))
-
-    return True
 
   def _clear_textures(self):
     if self.texture_y and self.texture_y.id:

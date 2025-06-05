@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import pyray as rl
+from openpilot.common.watchdog import kick_watchdog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.ui.layouts.main import MainLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
+
 
 
 def main():
@@ -14,6 +16,8 @@ def main():
     #TODO handle brigntness and awake state here
 
     main_layout.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+
+    kick_watchdog()
 
 
 if __name__ == "__main__":
