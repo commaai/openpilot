@@ -98,7 +98,7 @@ class SettingsLayout:
     close_color = CLOSE_BTN_PRESSED if pressed else CLOSE_BTN_COLOR
     rl.draw_rectangle_rounded(close_btn_rect, 1.0, 20, close_color)
 
-    close_text_size = rl.measure_text_ex(self._font_bold, SETTINGS_CLOSE_TEXT, 140, 0)
+    close_text_size = measure_text_cached(self._font_bold, SETTINGS_CLOSE_TEXT, 140)
     close_text_pos = rl.Vector2(
       close_btn_rect.x + (close_btn_rect.width - close_text_size.x) / 2,
       close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2,
