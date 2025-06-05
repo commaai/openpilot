@@ -209,7 +209,7 @@ class BaseFrameReader:
   def close(self):
     pass
 
-  def get(self, num, count=1, pix_fmt="yuv420p"):
+  def get(self, num, count=1, pix_fmt="rgb24"):
     raise NotImplementedError
 
 
@@ -497,7 +497,7 @@ class GOPFrameReader(BaseFrameReader):
 
       return self.frame_cache[(num, pix_fmt)]
 
-  def get(self, num, count=1, pix_fmt="yuv420p"):
+  def get(self, num, count=1, pix_fmt="rgb24"):
     assert self.frame_count is not None
 
     if num + count > self.frame_count:
@@ -523,12 +523,12 @@ class StreamFrameReader(StreamGOPReader, GOPFrameReader):
     GOPFrameReader.__init__(self, readahead, readbehind)
 
 
-def GOPFrameIterator(gop_reader, pix_fmt):
+def GOPFrameIterator(gop_reader, pix_fmt='rgb24'):
   dec = VideoStreamDecompressor(gop_reader.fn, gop_reader.vid_fmt, gop_reader.w, gop_reader.h, pix_fmt)
   yield from dec.read()
 
 
-def FrameIterator(fn, pix_fmt, **kwargs):
+def FrameIterator(fn, pix_fmt='rgb24', **kwargs):
   fr = FrameReader(fn, **kwargs)
   if isinstance(fr, GOPReader):
     yield from GOPFrameIterator(fr, pix_fmt)
