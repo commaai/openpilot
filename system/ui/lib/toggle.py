@@ -1,6 +1,6 @@
 import pyray as rl
 
-ON_COLOR = rl.Color(0, 255, 0, 255)
+ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
 KNOB_COLOR = rl.WHITE
 WIDTH, HEIGHT = 160, 80
