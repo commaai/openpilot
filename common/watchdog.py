@@ -8,7 +8,7 @@ _LAST_KICK = 0.0
 
 def kick_watchdog():
   global _LAST_KICK
-  current_time = time.time()
+  current_time = time.monotonic()
 
   if current_time - _LAST_KICK < 1.0:
     return
