@@ -1,6 +1,7 @@
 import pyray as rl
 import time
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 
 PASSWORD_MASK_CHAR = "•"
@@ -60,7 +61,7 @@ class InputBox:
     padding = 10
 
     if self._cursor_position > 0:
-      cursor_x = rl.measure_text_ex(font, display_text[: self._cursor_position], self._font_size, 0).x
+      cursor_x = measure_text_cached(font, display_text[: self._cursor_position], self._font_size).x
     else:
       cursor_x = 0
 
@@ -141,7 +142,7 @@ class InputBox:
     if self._show_cursor:
       cursor_x = rect.x + padding
       if len(display_text) > 0 and self._cursor_position > 0:
-        cursor_x += rl.measure_text_ex(font, display_text[: self._cursor_position], font_size, 0).x
+        cursor_x += measure_text_cached(font, display_text[: self._cursor_position], font_size).x
 
       # Apply text offset to cursor position
       cursor_x -= self._text_offset
@@ -182,7 +183,7 @@ class InputBox:
         min_distance = float('inf')
 
         for i in range(len(self._input_text) + 1):
-          char_width = rl.measure_text_ex(font, display_text[:i], font_size, 0).x
+          char_width = measure_text_cached(font, display_text[:i], font_size).x
           distance = abs(relative_x - char_width)
           if distance < min_distance:
             min_distance = distance
