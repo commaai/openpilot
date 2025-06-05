@@ -12,6 +12,10 @@ blacklist = [
 
   "matlab.*.md",
 
+  # these auto-generated files are massive
+  "tinygrad_repo/extra/",
+  "tinygrad_repo/tinygrad/runtime/autogen/",
+
   # no LFS or submodules in release
   ".lfsconfig",
   ".gitattributes",
