@@ -1,6 +1,7 @@
 import pyray as rl
 from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 
 class ButtonStyle(IntEnum):
@@ -99,7 +100,7 @@ def gui_button(
 
   # Handle icon and text positioning
   font = gui_app.font(font_weight)
-  text_size = rl.measure_text_ex(font, text, font_size, 0)
+  text_size = measure_text_cached(font, text, font_size)
   text_pos = rl.Vector2(0, rect.y + (rect.height - text_size.y) // 2)  # Vertical centering
 
   # Draw icon if provided

@@ -3,6 +3,7 @@ import re
 import time
 import pyray as rl
 from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
@@ -33,7 +34,7 @@ def wrap_text(text, font_size, max_width):
     while len(words):
       word = words.pop(0)
       test_line = current_line + word + (words.pop(0) if words else "")
-      if rl.measure_text_ex(font, test_line, font_size, 0).x <= max_width:
+      if measure_text_cached(font, test_line, font_size).x <= max_width:
         current_line = test_line
       else:
         lines.append(current_line)

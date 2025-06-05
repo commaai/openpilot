@@ -4,6 +4,7 @@ import threading
 import time
 
 from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.window import BaseWindow
 from openpilot.system.ui.text import wrap_text
 
@@ -78,7 +79,7 @@ class SpinnerRenderer:
       rl.draw_rectangle_rounded(bar, 1, 10, rl.WHITE)
     elif wrapped_lines:
       for i, line in enumerate(wrapped_lines):
-        text_size = rl.measure_text_ex(gui_app.font(), line, FONT_SIZE, 0.0)
+        text_size = measure_text_cached(gui_app.font(), line, FONT_SIZE)
         rl.draw_text_ex(gui_app.font(), line, rl.Vector2(center.x - text_size.x / 2, y_pos + i * LINE_HEIGHT),
                         FONT_SIZE, 0.0, rl.WHITE)
 

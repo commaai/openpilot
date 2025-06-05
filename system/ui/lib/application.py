@@ -13,7 +13,7 @@ FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
-DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
+SHOW_FPS = os.getenv("SHOW_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 SCALE = float(os.getenv("SCALE", "1.0"))
 
@@ -158,7 +158,7 @@ class GuiApplication:
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
-        if DEBUG_FPS:
+        if SHOW_FPS:
           rl.draw_fps(10, 10)
 
         rl.end_drawing()
@@ -192,17 +192,19 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+    from openpilot.selfdrive.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
+    all_chars += CRUISE_DISABLED_CHAR
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
     for index, font_file in enumerate(font_files):
       with as_file(FONT_DIR.joinpath(font_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 120, codepoints, codepoint_count[0])
+        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[index] = font
 
