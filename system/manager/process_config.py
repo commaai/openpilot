@@ -70,13 +70,13 @@ procs = [
 
   NativeProcess("camerad", "system/camerad", ["./camerad"], driverview, enabled=not WEBCAM),
   PythonProcess("webcamerad", "tools.webcam.camerad", driverview, enabled=WEBCAM),
-  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad),
-  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad),
+  NativeProcess("logcatd", "system/logcatd", ["./logcatd"], only_onroad, enabled=not PC),
+  NativeProcess("proclogd", "system/proclogd", ["./proclogd"], only_onroad, enabled=not PC),
   PythonProcess("micd", "system.micd", iscar),
   PythonProcess("timed", "system.timed", always_run, enabled=not PC),
 
   PythonProcess("modeld", "selfdrive.modeld.modeld", only_onroad),
-  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=(WEBCAM or not PC)),
+  PythonProcess("dmonitoringmodeld", "selfdrive.modeld.dmonitoringmodeld", driverview, enabled=not PC),
 
   PythonProcess("sensord", "system.sensord.sensord", only_onroad, enabled=not PC),
   NativeProcess("ui", "selfdrive/ui", ["./ui"], always_run, watchdog_max_dt=(5 if not PC else None)),

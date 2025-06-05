@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+from pathlib import Path
 from openpilot.system.hardware import TICI
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
@@ -7,13 +8,15 @@ if TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  os.environ['LLVM'] = '1'
+  import json
+  with open(Path(__file__).parent / 'models/dmonitoringmodeld_flags.json') as f:
+    flags = json.load(f)
+    os.environ.update(flags)
 import math
 import time
 import pickle
 import ctypes
 import numpy as np
-from pathlib import Path
 from setproctitle import setproctitle
 
 from cereal import messaging

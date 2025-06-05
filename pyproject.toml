@@ -104,6 +104,7 @@ dev = [
   "dictdiffer",
   "lru-dict",
   "matplotlib",
+  "opencv-python",
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pygame",
