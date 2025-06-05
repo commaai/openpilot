@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
-import os, argparse
+import os, argparse, contextlib
 from typing import Optional, Union
-import tiktoken
+with contextlib.suppress(ImportError): import tiktoken
 from tinygrad import Tensor, TinyJit, Device, GlobalCounters, Variable, dtypes
-from tinygrad.ops import UOp
+from tinygrad.uop.ops import UOp
 from tinygrad.helpers import Timing, DEBUG, JIT, getenv, fetch, colored, trange
 from tinygrad.nn import Embedding, Linear, LayerNorm
 from tinygrad.nn.state import gguf_load, torch_load, load_state_dict, get_state_dict
+from extra.bench_log import BenchEvent, WallTimeEvent
 
 MAX_CONTEXT = getenv("MAX_CONTEXT", 128)
 HALF = getenv("HALF")
@@ -134,11 +135,12 @@ class GPT2:
     # lm head and wte are tied
     weights['lm_head.weight'] = weights['wte.weight']
 
-    load_state_dict(model, weights)
+    with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
+      load_state_dict(model, weights)
 
-    if HALF:
-      for l in get_state_dict(model).values():
-        l.replace(l.half().realize())
+      if HALF:
+        for l in get_state_dict(model).values():
+          l.replace(l.half().realize())
 
     return GPT2(model, tokenizer)
 
@@ -167,7 +169,8 @@ class GPT2:
       return key
     state_dict = { _remap_gguf_key(k): v for k, v in state_dict.items() }
     model = Transformer(**gpt2_params)
-    load_state_dict(model, state_dict)
+    with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
+      load_state_dict(model, state_dict)
     return GPT2(model, tiktoken.get_encoding("gpt2"))
 
   def __init__(self, model, tokenizer):
@@ -185,11 +188,12 @@ class GPT2:
       with Timing("ran model in ", on_exit=(lambda et: (f", {(GlobalCounters.time_sum_s-st)*1e3:.2f} ms on GPU" if DEBUG>=2 else "")+
                   f", {GlobalCounters.global_ops*1e-9:.2f} GOPS, {GlobalCounters.global_mem*1e-9:.2f} GB"+
                   (f", {GlobalCounters.global_mem*1e-9/(GlobalCounters.time_sum_s-st):.2f} GB/s" if DEBUG>=2 else "")) if DEBUG else None, enabled=timing):
-        if batch_size == 1 and len(toks[0][start_pos:]) == 1:
-          tokens = Variable("tokens", 0, VOCAB_SIZE).bind(toks[0][start_pos])
-        else:
-          tokens = Tensor([x[start_pos:] for x in toks])
-        tok = self.model(tokens, Variable("start_pos", 1 if start_pos else 0, MAX_CONTEXT).bind(start_pos), temperature).tolist()
+        with WallTimeEvent(BenchEvent.STEP):
+          if batch_size == 1 and len(toks[0][start_pos:]) == 1:
+            tokens = Variable("tokens", 0, VOCAB_SIZE).bind(toks[0][start_pos])
+          else:
+            tokens = Tensor([x[start_pos:] for x in toks])
+          tok = self.model(tokens, Variable("start_pos", 1 if start_pos else 0, MAX_CONTEXT-1).bind(start_pos), temperature).tolist()
       start_pos = len(toks[0])
       for i,t in enumerate(tok): toks[i].append(t)
     return [self.tokenizer.decode(x) for x in toks]

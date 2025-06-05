@@ -1,9 +1,9 @@
 import unittest, itertools
-from typing import Tuple
 
-from tinygrad.codegen.uopgraph import full_graph_rewrite, is_increasing
+from tinygrad.codegen import full_rewrite_to_sink
 from tinygrad.dtype import dtypes
-from tinygrad.ops import UOp, Ops, simplify_valid
+from tinygrad.uop.ops import UOp, Ops
+from tinygrad.codegen.symbolic import simplify_valid
 
 def get_gated_load_uop(valid:UOp, idx:UOp):
   return UOp(Ops.LOAD, dtypes.float, (
@@ -11,7 +11,7 @@ def get_gated_load_uop(valid:UOp, idx:UOp):
     UOp.const(dtypes.float, 0.0)
   ))
 
-def get_load_image_uop(image_shape:Tuple[int, ...], valid:UOp, idx:Tuple[UOp, UOp]):
+def get_load_image_uop(image_shape:tuple[int, ...], valid:UOp, idx:tuple[UOp, UOp]):
   return UOp(Ops.LOAD, dtypes.float.vec(4), (
     UOp(Ops.DEFINE_GLOBAL, dtypes.imagef(image_shape), arg=0).index(UOp(Ops.VECTORIZE, dtypes.int.vec(2), idx), valid),
     UOp(Ops.VECTORIZE, dtypes.float.vec(4), src=(UOp.const(dtypes.float, 0.0),) * 4)
@@ -19,7 +19,7 @@ def get_load_image_uop(image_shape:Tuple[int, ...], valid:UOp, idx:Tuple[UOp, UO
 
 def Special(expr, nmax): return UOp(Ops.SPECIAL, dtypes.int, (), (expr, nmax))
 def Variable(expr, nmin, nmax): return UOp.variable(expr, nmin, nmax)
-def Range(n, nmax): return UOp(Ops.RANGE, dtypes.int, arg=n, src=(UOp.const(dtypes.int, 0), UOp.const(dtypes.int, nmax),))
+def Range(n, nmax): return UOp(Ops.RANGE, dtypes.int, arg=n, src=(UOp.const(dtypes.int, nmax),))
 
 class TestHelpers(unittest.TestCase):
   def test_is_increasing(self):
@@ -34,19 +34,19 @@ class TestHelpers(unittest.TestCase):
     f2 = (idx2*2)+ridx1+((idx1+((ridx2+7)//8)+31)//32)+(-2)
     f3 = (idx2*2)+ridx1+(-1)
 
-    self.assertFalse(is_increasing(f0))
-    self.assertTrue(is_increasing(f1))
-    self.assertTrue(is_increasing(f2))
-    self.assertTrue(is_increasing(f3))
+    self.assertFalse(f0.is_increasing())
+    self.assertTrue(f1.is_increasing())
+    self.assertTrue(f2.is_increasing())
+    self.assertTrue(f3.is_increasing())
 
-    rng = UOp(Ops.RANGE, dtypes.int, arg=(2, True), src=(UOp(Ops.CONST, dtypes.int, arg=0, src=()), UOp(Ops.CONST, dtypes.int, arg=5, src=()),))
-    self.assertTrue(is_increasing(rng))
-    self.assertTrue(is_increasing(rng+2))
+    rng = UOp(Ops.RANGE, dtypes.int, arg=(2, True), src=(UOp(Ops.CONST, dtypes.int, arg=5, src=()),))
+    self.assertTrue(rng.is_increasing())
+    self.assertTrue((rng+2).is_increasing())
 
 class TestValidIdxSimplification(unittest.TestCase):
   def check(self, load, sidx, svalid):
-    load = full_graph_rewrite(load.sink()).src[0]
-    idx, valid = load.src[0].src[1], load.src[2]
+    load = full_rewrite_to_sink(load.sink()).src[0]
+    idx, valid = load.src[0].src[1], load.src[0].src[2]
     self.assertEqual(idx.render(simplify=False), sidx)
     self.assertEqual(valid.render(simplify=False), svalid)
 
@@ -99,6 +99,11 @@ class TestValidIdxSimplification(unittest.TestCase):
     for v in itertools.permutations([v0,v1,v2,v3]):
       self.assertEqual(simplify_valid(v[0]&v[1]&v[2]&v[3]).render(), "False")
 
+  def test_simplify_valid_from_div(self):
+    x = Variable("x", -100, 100)
+    valid = ((x<0)&((100%x).cast(dtypes.bool)))
+    self.assertIsNone(simplify_valid(valid))
+
   @unittest.expectedFailure  # TODO: fix
   def test_from_merge_views(self):
     # taken from test_merges_from_fuzzer1
@@ -124,16 +129,85 @@ class TestValidIdxSimplification(unittest.TestCase):
       "(((ridx0*2)+(ridx3*-1))+1)",
       "(ridx2<1)")
 
+  def test_load_in_valid(self):
+    # from FUSE_ARANGE=1 python test/test_ops.py TestOps.test_scatter_add
+    # can lead to OOB
+    ridx2 = Range(2, 4)
+    lidx0 = Special("lidx0", 3)
+    gidx0 = Special("gidx0", 2)
+    idx=(((lidx0+(gidx0*3))+(ridx2*5))+40)
+    valid = (lidx0+(gidx0*3)) < 5
+    val7 = get_gated_load_uop(valid, idx)
+    valid2 = valid & val7.cast(dtypes.bool).logical_not()
+    self.assertIsNone(simplify_valid(valid2))
+
+  def test_valid_becomes_const1(self):
+    # from DSP mobilenetv2
+    ridx0 = Range(0, 30)
+    ridx1 = Range(1, 7)
+    ridx2 = Range(2, 2)
+    alu11 = (ridx1+ridx2)
+    alu15 = ((alu11+1)//7)
+    idx = (alu15*-31)+(((((alu11+218)//224)+ridx0)%30)*1568)
+    valid = (ridx2<1)&(ridx1<6)
+    load = get_gated_load_uop(valid, idx)
+    self.check(load,
+      "(ridx0*1568)",
+      "((ridx2<1)&(ridx1<6))")
+
+  def test_valid_becomes_const1_z3(self):
+    from z3 import Ints, Solver, And, If, Not, unsat
+    ridx0, ridx1, ridx2, alu11, alu15 = Ints('ridx0 ridx1 ridx2 alu11 alu15')
+    alu11 = (ridx1+ridx2)
+    alu15 = ((alu11+1)/7)
+    idx = (alu15*-31)+(((((alu11+218)/224)+ridx0)%30)*1568)
+    valid = (ridx2<1)&(ridx1<6)
+    load = If(valid, idx, 0)
+
+    # correct simplification
+    s = Solver()
+    s.add(And(0<=ridx0, ridx0<30, 0<=ridx1, ridx1<7, 0<=ridx2, ridx2<2))
+    simplifed_idx = (ridx0*1568)
+    simplifed_load = If(valid, simplifed_idx, 0)
+    s.add(Not(load == simplifed_load))  # Check if they are NOT equivalent
+    assert s.check() == unsat, f"The expressions are not equivalent. {s.model()=}"
+
+    # new solver for a wrong simplified expression
+    s = Solver()
+    s.add(And(0<=ridx0, ridx0<30, 0<=ridx1, ridx1<7, 0<=ridx2, ridx2<2))
+    wrong_simplifed_idx = (ridx0*1567)+ridx1
+    wrong_simplifed_load = If(valid, wrong_simplifed_idx, 0)
+    s.add(Not(load == wrong_simplifed_load))  # Check if they are NOT equivalent
+    assert s.check() != unsat, "The expressions are equivalent??"
+    print("The expressions are not equivalent.")
+    print(s.model())
+
+  @unittest.expectedFailure  # TODO: improve uop_given_valid
+  def test_valid_becomes_const2(self):
+    ridx0 = Range(0, 4)
+    ridx1 = Range(1, 4)
+    ridx2 = Range(2, 4)
+    ridx3 = Range(3, 4)
+    idx= ((ridx0+ridx1+ridx2+ridx3+28)//30)
+    valid = ((ridx0+ridx1)<1).ne(True) & ((ridx2+ridx3)<1).ne(True)
+    load = get_gated_load_uop(valid, idx)
+    self.check(load,
+      "1",
+      "((((ridx0+ridx1)<1)!=True)&(((ridx2+ridx3)<1)!=True))")
+
 class TestImageSimplification(unittest.TestCase):
   def check(self, load, svalid, sidx0, sidx1):
-    load = full_graph_rewrite(load.sink()).src[0]
+    load = full_rewrite_to_sink(load.sink()).src[0]
     idx = load.src[0].src[1]
     self.assertEqual(idx.op, Ops.VECTORIZE)
     self.assertEqual(len(idx.src), 2)
     idx0, idx1 = idx.src[0], idx.src[1]
     self.assertEqual(idx0.render(simplify=False), sidx0)
     self.assertEqual(idx1.render(simplify=False), sidx1)
-    if svalid is not None: self.assertEqual(load.src[2].render(simplify=False), svalid)
+    if svalid is not None:
+      self.assertEqual(load.src[0].src[2].render(simplify=False), svalid)
+    else:
+      self.assertEqual(len(load.src[0].src), 2, "svalid is None but load still has a valid")
 
   def test_idx_gt_c(self):
     # (idx1 < c+1).ne(True) ? (..., idx1-1+c) : 0 can drop the valid
@@ -153,7 +227,7 @@ class TestImageSimplification(unittest.TestCase):
 
     valid = (gidx0<1).ne(True) & (gidx1<1).ne(True)
     load = get_load_image_uop(shape, valid, (gidx0, gidx1-1))
-    self.check(load, None, "gidx0", "(gidx1+-1)")
+    self.check(load, "((gidx0<1)!=True)", "gidx0", "(gidx1+-1)")
 
   def test_idx_lt_bound(self):
     # (idx1 < image_bound) ? (..., idx1) : 0 can drop the valid
@@ -192,7 +266,7 @@ class TestImageSimplification(unittest.TestCase):
 
     # empty -> invalid
     load = get_load_image_uop(shape, (gidx0<8) & (gidx0<8).ne(True), idx)
-    load = full_graph_rewrite(load.sink()).src[0]
+    load = full_rewrite_to_sink(load.sink()).src[0]
     self.assertEqual(load.op, Ops.VECTORIZE)
     self.assertEqual(load.dtype.count, 4)
 
@@ -323,6 +397,20 @@ class TestImageSimplification(unittest.TestCase):
 
     load = get_load_image_uop(shape, valid, idx)
     self.check(load, "(((idx0+(idx1*64))%192)<160)", "((idx0+((idx1//3)*16))+128)", "(((idx0+(idx1*64))%192)//16)")
+
+  def test_simplify6(self):
+    # from openpilot
+    # the valid implies the numerator of the div/mod is positive and can be simplified with floordiv rules
+    idx1 = Special("idx1", 16)
+    idx2 = Special("idx2", 64)
+    ridx3 = Range(3, 3)
+    ridx4 = Range(4, 3)
+    ridx5 = Range(5, 3)
+    alu0 = ((idx2*1536)+(ridx4*768)+ridx3+(idx1*24)+(ridx5*3)+-771)%768
+    alu1 = ((idx2*1536)+(ridx4*768)+ridx3+(idx1*24)+(ridx5*3)+-771)//768
+    valid = (((idx2+ridx4)<1)!=1)&(((idx1+ridx5)<1)!=1)
+    load = get_load_image_uop((128, 768, 4), valid, (alu0, alu1))
+    self.check(load, None, "((((idx1*24)+ridx3)+(ridx5*3))+-3)", "(((idx2*2)+ridx4)+-1)")
 
 if __name__ == '__main__':
   unittest.main()

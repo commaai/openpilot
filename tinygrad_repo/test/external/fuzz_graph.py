@@ -4,7 +4,6 @@ from tinygrad.device import Buffer, Device
 from tinygrad.helpers import Context, getenv, from_mv
 from tinygrad.dtype import dtypes
 from tinygrad.tensor import Tensor, _to_np_dtype
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import ExecItem, BufferXfer, get_runner
 from tinygrad.engine.jit import apply_graph_to_jit
 
@@ -17,9 +16,9 @@ def gen_prg(device, inputs_cnt):
   with Context(DEBUG=0):
     fst = [Tensor.randn(BUF_LEN, dtype=dtypes.int).realize() for i in range(inputs_cnt)]
     s = fst[0]
-    for i in range(1, inputs_cnt): s = s.xor(fst[i])
+    for i in range(1, inputs_cnt): s = s.bitwise_xor(fst[i])
 
-    si = create_schedule([s.lazydata])[-1]
+    si = s.schedule()[-1]
     prg = get_runner(device, si.ast)
   cached_prgs[(device, inputs_cnt)] = prg
   return prg
@@ -122,7 +121,7 @@ if __name__ == "__main__":
   np.random.seed(SEED)
 
   next_graph_id = 0
-  while True:
+  for i in range(getenv("ITERS", 1000)):
     print("Running graph", next_graph_id)
     jis, all_buffers, input_buffers = gen_graph()
     fuzz_graph(jis, all_buffers, input_buffers)

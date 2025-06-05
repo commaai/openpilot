@@ -63,28 +63,48 @@
         <translation>Getaktete Verbindung</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Hochladen großer Dateien über getaktete Verbindungen unterbinden</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
-        <translation type="unfinished"></translation>
+        <translation>Verborgenes Netzwerk</translation>
     </message>
     <message>
         <source>CONNECT</source>
-        <translation type="unfinished">CONNECT</translation>
+        <translation>VERBINDEN</translation>
     </message>
     <message>
         <source>Enter SSID</source>
-        <translation type="unfinished">SSID eingeben</translation>
+        <translation>SSID eingeben</translation>
     </message>
     <message>
         <source>Enter password</source>
-        <translation type="unfinished">Passwort eingeben</translation>
+        <translation>Passwort eingeben</translation>
     </message>
     <message>
         <source>for &quot;%1&quot;</source>
-        <translation type="unfinished">für &quot;%1&quot;</translation>
+        <translation>für &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -117,31 +137,31 @@
     <name>DeveloperPanel</name>
     <message>
         <source>Joystick Debug Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Joystick Debug-Modus</translation>
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Längsmanöver-Modus</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot Längsregelung (Alpha)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished"></translation>
+        <translation>WARNUNG: Die openpilot Längsregelung befindet sich für dieses Fahrzeug im Alpha-Stadium und deaktiviert das automatische Notbremsen (AEB).</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished"></translation>
+        <translation>Bei diesem Fahrzeug verwendet openpilot standardmäßig den eingebauten Tempomaten anstelle der openpilot Längsregelung. Aktiviere diese Option, um auf die openpilot Längsregelung umzuschalten. Es wird empfohlen, den experimentellen Modus zu aktivieren, wenn die openpilot Längsregelung (Alpha) aktiviert wird.</translation>
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>ADB aktivieren</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>ADB (Android Debug Bridge) ermöglicht die Verbindung zu deinem Gerät über USB oder Netzwerk. Siehe https://docs.comma.ai/how-to/connect-to-comma für weitere Informationen.</translation>
     </message>
 </context>
 <context>
@@ -280,10 +300,18 @@
     </message>
     <message>
         <source>Pair Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerät koppeln</translation>
     </message>
     <message>
         <source>PAIR</source>
+        <translation>KOPPELN</translation>
+    </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -309,36 +337,38 @@
     <name>FirehosePanel</name>
     <message>
         <source>🔥 Firehose Mode 🔥</source>
-        <translation type="unfinished"></translation>
+        <translation>🔥 Firehose-Modus 🔥</translation>
     </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot lernt das Fahren, indem es Menschen wie dir beim Fahren zuschaut.
+
+Der Firehose-Modus ermöglicht es dir, deine Trainingsdaten-Uploads zu maximieren, um die Fahrmodelle von openpilot zu verbessern. Mehr Daten bedeuten größere Modelle, was zu einem besseren Experimentellen Modus führt.</translation>
     </message>
     <message>
         <source>Firehose Mode: ACTIVE</source>
-        <translation type="unfinished"></translation>
+        <translation>Firehose-Modus: AKTIV</translation>
     </message>
     <message>
         <source>ACTIVE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to unmetered network</source>
-        <translation type="unfinished"></translation>
+        <translation>AKTIV</translation>
     </message>
     <message>
         <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
-        <translation type="unfinished"></translation>
+        <translation>Für maximale Effektivität bring dein Gerät jede Woche nach drinnen und verbinde es mit einem guten USB-C-Adapter und WLAN.&lt;br&gt;&lt;br&gt;Der Firehose-Modus funktioniert auch während der Fahrt, wenn das Gerät mit einem Hotspot oder einer ungedrosselten SIM-Karte verbunden ist.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Häufig gestellte Fragen&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Spielt es eine Rolle, wie oder wo ich fahre?&lt;/i&gt; Nein, fahre einfach wie gewohnt.&lt;br&gt;&lt;br&gt;&lt;i&gt;Werden im Firehose-Modus alle meine Segmente hochgeladen?&lt;/i&gt; Nein, wir wählen selektiv nur einen Teil deiner Segmente aus.&lt;br&gt;&lt;br&gt;&lt;i&gt;Welcher USB-C-Adapter ist gut?&lt;/i&gt; Jedes Schnellladegerät für Handy oder Laptop sollte ausreichen.&lt;br&gt;&lt;br&gt;&lt;i&gt;Spielt es eine Rolle, welche Software ich nutze?&lt;/i&gt; Ja, nur das offizielle Upstream‑openpilot (und bestimmte Forks) kann für das Training verwendet werden.</translation>
     </message>
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;b&gt;%n Segment&lt;/b&gt; deiner Fahrten ist bisher im Trainingsdatensatz.</numerusform>
+            <numerusform>&lt;b&gt;%n Segmente&lt;/b&gt; deiner Fahrten sind bisher im Trainingsdatensatz.</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
+        <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INAKTIV&lt;/span&gt;: Verbinde dich mit einem ungedrosselten Netzwerk</translation>
     </message>
 </context>
 <context>
@@ -368,13 +398,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
             <numerusform>Mindestens %n Buchstabe benötigt!</numerusform>
             <numerusform>Mindestens %n Buchstaben benötigt!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Installiere...</translation>
     </message>
 </context>
 <context>
@@ -411,48 +434,49 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <name>OffroadAlert</name>
     <message>
         <source>Immediately connect to the internet to check for updates. If you do not connect to the internet, openpilot won&apos;t engage in %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Stelle sofort eine Internetverbindung her, um nach Updates zu suchen. Wenn du keine Verbindung herstellst, kann openpilot in %1 nicht mehr aktiviert werden.</translation>
     </message>
     <message>
         <source>Connect to internet to check for updates. openpilot won&apos;t automatically start until it connects to internet to check for updates.</source>
-        <translation type="unfinished"></translation>
+        <translation>Verbinde dich mit dem Internet, um nach Updates zu suchen. openpilot startet nicht automatisch, bis eine Internetverbindung besteht und nach Updates gesucht wurde.</translation>
     </message>
     <message>
         <source>Unable to download updates
 %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Updates konnten nicht heruntergeladen werden
+%1</translation>
     </message>
     <message>
         <source>Taking camera snapshots. System won&apos;t start until finished.</source>
-        <translation type="unfinished"></translation>
+        <translation>Kamera-Snapshots werden aufgenommen. Das System startet erst, wenn dies abgeschlossen ist.</translation>
     </message>
     <message>
         <source>An update to your device&apos;s operating system is downloading in the background. You will be prompted to update when it&apos;s ready to install.</source>
-        <translation type="unfinished"></translation>
+        <translation>Ein Update für das Betriebssystem deines Geräts wird im Hintergrund heruntergeladen. Du wirst aufgefordert, das Update zu installieren, sobald es bereit ist.</translation>
     </message>
     <message>
         <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerät konnte nicht registriert werden. Es wird keine Verbindung zu den comma.ai-Servern herstellen oder Daten hochladen und erhält keinen Support von comma.ai. Wenn dies ein offizielles Gerät ist, besuche https://comma.ai/support.</translation>
     </message>
     <message>
         <source>NVMe drive not mounted.</source>
-        <translation type="unfinished"></translation>
+        <translation>NVMe-Laufwerk nicht gemounted.</translation>
     </message>
     <message>
         <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation type="unfinished"></translation>
+        <translation>Nicht unterstütztes NVMe-Laufwerk erkannt. Das Gerät kann dadurch deutlich mehr Strom verbrauchen und überhitzen.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot konnte dein Auto nicht identifizieren. Dein Auto wird entweder nicht unterstützt oder die Steuergeräte (ECUs) werden nicht erkannt. Bitte reiche einen Pull Request ein, um die Firmware-Versionen für das richtige Fahrzeug hinzuzufügen. Hilfe findest du auf discord.comma.ai.</translation>
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot hat eine Änderung der Montageposition des Geräts erkannt. Stelle sicher, dass das Gerät vollständig in der Halterung sitzt und die Halterung fest an der Windschutzscheibe befestigt ist.</translation>
     </message>
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerätetemperatur zu hoch. Das System kühlt ab, bevor es startet. Aktuelle interne Komponententemperatur: %1</translation>
     </message>
 </context>
 <context>
@@ -474,23 +498,23 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <name>OnroadAlerts</name>
     <message>
         <source>openpilot Unavailable</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot nicht verfügbar</translation>
     </message>
     <message>
         <source>TAKE CONTROL IMMEDIATELY</source>
-        <translation type="unfinished"></translation>
+        <translation>ÜBERNIMM SOFORT DIE KONTROLLE</translation>
     </message>
     <message>
         <source>Reboot Device</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerät neu starten</translation>
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>Warten auf Start</translation>
     </message>
     <message>
         <source>System Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>System reagiert nicht</translation>
     </message>
 </context>
 <context>
@@ -513,7 +537,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Please connect to Wi-Fi to complete initial pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>Bitte verbinde dich mit WLAN, um die Koppelung abzuschließen.</translation>
     </message>
 </context>
 <context>
@@ -547,15 +571,15 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>24/7 LTE connectivity</source>
-        <translation type="unfinished"></translation>
+        <translation>24/7 LTE-Verbindung</translation>
     </message>
     <message>
         <source>1 year of drive storage</source>
-        <translation type="unfinished"></translation>
+        <translation>Fahrdaten-Speicherung für 1 Jahr</translation>
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>Remote-Snapshots</translation>
     </message>
 </context>
 <context>
@@ -571,14 +595,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Reboot</source>
-        <translation>Neustart</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation>Verlassen</translation>
-    </message>
     <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
@@ -606,7 +622,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>now</source>
-        <translation type="unfinished"></translation>
+        <translation>jetzt</translation>
     </message>
 </context>
 <context>
@@ -637,16 +653,17 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Datenpartition konnte nicht gemounted werden. Die Partition ist möglicherweise beschädigt. Drücke Bestätigen, um das Gerät zu löschen und zurückzusetzen.</translation>
     </message>
     <message>
         <source>Resetting device...
 This may take up to a minute.</source>
-        <translation type="unfinished"></translation>
+        <translation>Gerät wird zurückgesetzt...
+Dies kann bis zu einer Minute dauern.</translation>
     </message>
     <message>
         <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
+        <translation>System-Reset ausgelöst. Drücke Bestätigen, um alle Inhalte und Einstellungen zu löschen. Drücke Abbrechen, um den Startvorgang fortzusetzen.</translation>
     </message>
 </context>
 <context>
@@ -673,11 +690,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Developer</source>
-        <translation type="unfinished"></translation>
+        <translation>Entwickler</translation>
     </message>
     <message>
         <source>Firehose</source>
-        <translation type="unfinished"></translation>
+        <translation>Firehose</translation>
     </message>
 </context>
 <context>
@@ -752,11 +769,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
+        <translation>Keine benutzerdefinierte Software unter dieser URL gefunden.</translation>
     </message>
     <message>
         <source>Something went wrong. Reboot the device.</source>
-        <translation type="unfinished"></translation>
+        <translation>Etwas ist schiefgelaufen. Starte das Gerät neu.</translation>
     </message>
     <message>
         <source>Select a language</source>
@@ -764,15 +781,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Choose Software to Install</source>
-        <translation type="unfinished"></translation>
+        <translation>Wähle die zu installierende Software</translation>
     </message>
     <message>
         <source>openpilot</source>
-        <translation type="unfinished">openpilot</translation>
+        <translation>openpilot</translation>
     </message>
     <message>
         <source>Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>Benutzerdefinierte Software</translation>
     </message>
 </context>
 <context>
@@ -923,23 +940,23 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>failed to check for update</source>
-        <translation type="unfinished"></translation>
+        <translation>Update-Prüfung fehlgeschlagen</translation>
     </message>
     <message>
         <source>up to date, last checked %1</source>
-        <translation type="unfinished"></translation>
+        <translation>Auf dem neuesten Stand, zuletzt geprüft am %1</translation>
     </message>
     <message>
         <source>DOWNLOAD</source>
-        <translation type="unfinished"></translation>
+        <translation>HERUNTERLADEN</translation>
     </message>
     <message>
         <source>update available</source>
-        <translation type="unfinished"></translation>
+        <translation>Update verfügbar</translation>
     </message>
     <message>
         <source>never</source>
-        <translation type="unfinished"></translation>
+        <translation>nie</translation>
     </message>
 </context>
 <context>
@@ -1000,11 +1017,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Welcome to openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Willkommen bei openpilot</translation>
     </message>
     <message>
         <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Du musst die Nutzungsbedingungen akzeptieren, um openpilot zu verwenden. Lies die aktuellen Bedingungen unter &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt;, bevor du fortfährst.</translation>
     </message>
 </context>
 <context>
@@ -1012,10 +1029,6 @@ This may take up to a minute.</source>
     <message>
         <source>Enable openpilot</source>
         <translation>Openpilot aktivieren</translation>
-    </message>
-    <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Benutze das Openpilot System als adaptiven Tempomaten und Spurhalteassistenten. Deine Aufmerksamkeit ist jederzeit erforderlich, um diese Funktion zu nutzen. Diese Einstellung wird übernommen, wenn das Auto aus ist.</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
@@ -1071,50 +1084,58 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Aggressive</source>
-        <translation type="unfinished"></translation>
+        <translation>Aggressiv</translation>
     </message>
     <message>
         <source>Standard</source>
-        <translation type="unfinished"></translation>
+        <translation>Standard</translation>
     </message>
     <message>
         <source>Relaxed</source>
-        <translation type="unfinished"></translation>
+        <translation>Entspannt</translation>
     </message>
     <message>
         <source>Driving Personality</source>
-        <translation type="unfinished"></translation>
+        <translation>Fahrstil</translation>
     </message>
     <message>
         <source>End-to-End Longitudinal Control</source>
-        <translation type="unfinished"></translation>
+        <translation>Ende-zu-Ende Längsregelung</translation>
     </message>
     <message>
         <source>openpilot longitudinal control may come in a future update.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die openpilot Längsregelung könnte in einem zukünftigen Update verfügbar sein.</translation>
     </message>
     <message>
         <source>An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.</source>
-        <translation type="unfinished"></translation>
+        <translation>Eine Alpha-Version der openpilot Längsregelung kann zusammen mit dem Experimentellen Modus auf non-stable Branches getestet werden.</translation>
     </message>
     <message>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>Aktiviere den Schalter für openpilot Längsregelung (Alpha), um den Experimentellen Modus zu erlauben.</translation>
     </message>
     <message>
         <source>Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with your steering wheel distance button.</source>
-        <translation type="unfinished"></translation>
+        <translation>Standard wird empfohlen. Im aggressiven Modus folgt openpilot vorausfahrenden Fahrzeugen enger und ist beim Gasgeben und Bremsen aggressiver. Im entspannten Modus hält openpilot mehr Abstand zu vorausfahrenden Fahrzeugen. Bei unterstützten Fahrzeugen kannst du mit der Abstandstaste am Lenkrad zwischen diesen Fahrstilen wechseln.</translation>
     </message>
     <message>
         <source>The driving visualization will transition to the road-facing wide-angle camera at low speeds to better show some turns. The Experimental mode logo will also be shown in the top right corner.</source>
-        <translation type="unfinished"></translation>
+        <translation>Die Fahrvisualisierung wechselt bei niedrigen Geschwindigkeiten auf die nach vorne gerichtete Weitwinkelkamera, um Kurven besser darzustellen. Das Logo des Experimentellen Modus wird außerdem oben rechts angezeigt.</translation>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>Dauerhaft aktive Fahrerüberwachung</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation>Fahrerüberwachung auch aktivieren, wenn openpilot nicht aktiv ist.</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1157,15 +1178,15 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Öffnen</translation>
     </message>
     <message>
         <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximiere deine Trainingsdaten-Uploads, um die Fahrmodelle von openpilot zu verbessern.</translation>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose-Modus &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>

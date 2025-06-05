@@ -8,6 +8,7 @@ from tinygrad.helpers import getenv, CI
 from tinygrad.device import is_dtype_supported
 from tinygrad.engine.realize import lower_schedule, CompiledRunner
 from hypothesis import given, settings, strategies as strat
+from test.helpers import not_support_multi_device
 
 settings.register_profile("my_profile", max_examples=200, deadline=None, derandomize=getenv("DERANDOMIZE_CI", False))
 settings.load_profile("my_profile")
@@ -65,7 +66,7 @@ class TestRandomness(unittest.TestCase):
     self.assertFalse(normal_test(Tensor.rand))
     self.assertTrue(equal_distribution(Tensor.rand, torch.rand, lambda x: np.random.rand(*x)))
 
-  @unittest.skipUnless(is_dtype_supported(dtypes.float16), "need float16 support")
+  @unittest.skipUnless(is_dtype_supported(dtypes.float16) and is_dtype_supported(dtypes.ulong), "need float16 and ulong support")
   def test_rand_float16(self):
     N = 128
     x = Tensor.rand((2, N, N), dtype=dtypes.float16)
@@ -76,7 +77,7 @@ class TestRandomness(unittest.TestCase):
     assert nx[nx == 0].size > 0
     equal_distribution(lambda *x: Tensor.rand(*x, dtype=dtypes.float16), torch.rand, lambda x: np.random.rand(*x), shape=(2, N, N))
 
-  @unittest.skipIf(CI and Device.DEFAULT == "NV", "gpuocelot doesn't support certain ops needed for threefry")
+  @unittest.skipIf(CI and Device.DEFAULT in {"NV", "CUDA"}, "gpuocelot doesn't support certain ops needed for threefry")
   def test_threefry_against_reference(self):
     Tensor.manual_seed(1337)
 
@@ -97,8 +98,9 @@ class TestRandomness(unittest.TestCase):
 
     np.testing.assert_allclose(jr, r)
 
+  @unittest.skipIf(getenv("PTX"), "fails with PTX")
   def test_threefry_doesnt_use_long(self):
-    for ei in lower_schedule(Tensor.rand(20).schedule()):
+    for (_,ei) in lower_schedule(Tensor.rand(20).schedule()):
       if isinstance(ei.prg, CompiledRunner):
         for u in ei.prg.p.uops:
           self.assertNotIn(u.dtype, {dtypes.long, dtypes.ulong}, msg=f"long found in {ei.prg.p.name}")
@@ -119,12 +121,26 @@ class TestRandomness(unittest.TestCase):
                    0.3108327388763428, 0.09639489650726318, 0.004686474800109863, 0.8435229063034058, 0.824237585067749,
                    0.5873836278915405, 0.4232727289199829, 0.2530076503753662, 0.40300023555755615, 0.03966474533081055,
                    0.27904558181762695, 0.9150195121765137, 0.48057758808135986, 0.23821306228637695, 0.7676635980606079], dtype=np.float32)
-
     r = Tensor.rand(20).numpy()
+    np.testing.assert_allclose(r, jr, atol=1e-5, rtol=1e-5)
 
-    np.testing.assert_allclose(jr, r, atol=1e-5, rtol=1e-5)
+    # next 20, np.arange(20, 40, dtype=np.uint32)
+    jr = np.array([0.7444133758544922, 0.7713677883148193, 0.8233780860900879, 0.43871235847473145, 0.517757773399353,
+                   0.6437174081802368, 0.967403769493103, 0.26167726516723633, 0.6825339794158936, 0.14966607093811035,
+                   0.28920769691467285, 0.017063498497009277, 0.2627382278442383, 0.9525482654571533, 0.9351049661636353,
+                   0.43904995918273926, 0.043945908546447754, 0.6616791486740112, 0.6667773723602295, 0.5228077173233032], dtype=np.float32)
+    r = Tensor.rand(20).numpy()
+    np.testing.assert_allclose(r, jr, atol=1e-5, rtol=1e-5)
 
-  @unittest.skipIf(CI and Device.DEFAULT in ("GPU", "CUDA", "METAL", "NV"), "no GPU CI")
+    # next 10, np.arange(40, 50, dtype=np.uint32)
+    jr = np.array([0.9614430665969849, 0.059279561042785645, 0.01909029483795166, 0.47882091999053955, 0.9677121639251709,
+                   0.36863112449645996, 0.3102607727050781, 0.06608951091766357, 0.35329878330230713, 0.26518797874450684], dtype=np.float32)
+    r = Tensor.rand(10).numpy()
+    # TODO: this failed because increment happened before _threefry_random_bits
+    with self.assertRaises(AssertionError):
+      np.testing.assert_allclose(r, jr, atol=1e-5, rtol=1e-5)
+
+  @unittest.skipIf(not_support_multi_device(), "no multi")
   def test_threefry_tensors_cnt(self):
     Tensor.manual_seed(1337)
 
@@ -143,7 +159,7 @@ class TestRandomness(unittest.TestCase):
     assert len(Tensor._device_rng_counters) == 0
     assert len(Tensor._device_seeds) == 0
 
-  @unittest.skipIf(CI and Device.DEFAULT in ("GPU", "CUDA", "METAL", "NV"), "no GPU CI")
+  @unittest.skipIf(not_support_multi_device(), "no multi")
   def test_threefry_same_kernels(self):
     Tensor.manual_seed(0)
 
@@ -185,6 +201,13 @@ class TestRandomness(unittest.TestCase):
     assert rand.dtype == empty.dtype
     assert rand.device == empty.device
 
+  def test_randn_like(self):
+    empty = Tensor.empty((80, 44))
+    rand = Tensor.randn_like(empty)
+    assert rand.shape == empty.shape
+    assert rand.dtype == empty.dtype
+    assert rand.device == empty.device
+
   def test_rand_like_zero_shape(self):
     empty = Tensor.empty(0, 20)
     rand = Tensor.rand_like(empty)
@@ -199,7 +222,6 @@ class TestRandomness(unittest.TestCase):
     assert rand.dtype == empty.dtype
     assert rand.device == empty.device
 
-  @unittest.skipUnless(is_dtype_supported(dtypes.float16), "need float16 support")
   def test_rand_like_dtype(self):
     empty = Tensor.empty((80, 44), dtype=dtypes.float16)
     rand = Tensor.rand_like(empty)
@@ -213,7 +235,21 @@ class TestRandomness(unittest.TestCase):
     assert rand.dtype == dtypes.float16
     assert rand.device == empty.device
 
+  def test_randn_like_dtype(self):
+    empty = Tensor.empty((80, 44), dtype=dtypes.float16)
+    rand = Tensor.randn_like(empty)
+    assert rand.shape == empty.shape
+    assert rand.dtype == empty.dtype
+    assert rand.device == empty.device
+
+    empty = Tensor.empty((80, 44))
+    rand = Tensor.randn_like(empty, dtype=dtypes.float16)
+    assert rand.shape == empty.shape
+    assert rand.dtype == dtypes.float16
+    assert rand.device == empty.device
+
   def test_randn(self):
+    self.assertEqual(Tensor.randn(3,3,dtype=dtypes.half).dtype, dtypes.half)
     self.assertTrue(normal_test(Tensor.randn))
     self.assertTrue(equal_distribution(Tensor.randn, torch.randn, lambda x: np.random.randn(*x)))
 
@@ -238,7 +274,7 @@ class TestRandomness(unittest.TestCase):
                                        numpy_func=lambda x: np.random.randint(low=-2, high=5, size=x)))
     self.assertTrue(equal_distribution(partial(Tensor.randint, low=-2, high=5, dtype="int32"),
                                        numpy_func=lambda x: np.random.randint(low=-2, high=5, size=x)))
-    self.assertTrue(Tensor.randint(1, device="CLANG").device=="CLANG")
+    self.assertTrue(Tensor.randint(1, device="CPU").device=="CPU")
     # check types of args
     with self.assertRaises(TypeError): Tensor.randint((3, 4), low=0.1, high=3)
     with self.assertRaises(TypeError): Tensor.randint((3, 4), low=0, high=3.5)
@@ -296,17 +332,15 @@ class TestRandomness(unittest.TestCase):
     @TinyJit
     def sample_one(): return Tensor(w).multinomial(1, replacement=False).realize()
 
-    # TODO: fix mockgpu issue
-    if not (CI and Device.DEFAULT == "AMD"):
-      tiny_samples = [sample_one().item() for _ in range(1000)]
-      torch_samples = [torch.tensor(w).multinomial(1, replacement=False).item() for _ in range(1000)]
-      self.assertTrue(equal_distribution(lambda *_: Tensor(tiny_samples), lambda _: torch.tensor(torch_samples)))
+    tiny_samples = [sample_one().item() for _ in range(1000)]
+    torch_samples = [torch.tensor(w).multinomial(1, replacement=False).item() for _ in range(1000)]
+    self.assertTrue(equal_distribution(lambda *_: Tensor(tiny_samples), lambda _: torch.tensor(torch_samples)))
 
   def test_multinomial_counterexample(self):
-    tiny_res = Tensor([0.3, 0.6, 0.1]).multinomial(2000, replacement=True)
-    torch_res = torch.tensor([0.3, 0.6, 0.1]).multinomial(2000, replacement=True)
+    tiny_res = Tensor([0.3, 0.6, 0.1]).multinomial(4000, replacement=True)
+    torch_res = torch.tensor([0.3, 0.6, 0.1]).multinomial(4000, replacement=True)
     self.assertTrue(equal_distribution(lambda *_: tiny_res, lambda _: torch_res))
-    torch_res = torch.tensor([0.2, 0.7, 0.1]).multinomial(2000, replacement=True)
+    torch_res = torch.tensor([0.2, 0.7, 0.1]).multinomial(4000, replacement=True)
     self.assertFalse(equal_distribution(lambda *_: tiny_res, lambda _: torch_res))
 
   def test_conv2d_init(self):

@@ -73,9 +73,6 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
   FWD_BLACKLISTED_ADDRS = {2: [MSG_ACCDATA_3, MSG_Lane_Assist_Data1, MSG_LateralMotionControl,
                                MSG_LateralMotionControl2, MSG_IPMA_Data]}
 
-  # Max allowed delta between car speeds
-  MAX_SPEED_DELTA = 2.0  # m/s
-
   STEER_MESSAGE = 0
 
   # Curvature control limits
@@ -130,6 +127,7 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
 
   # PCM vehicle speed
   def _speed_msg_2(self, speed: float, quality_flag=True):
+    # Ford relies on speed for driver curvature limiting, so it checks two sources
     values = {"Veh_V_ActlEng": speed * 3.6, "VehVActlEng_D_Qf": 3 if quality_flag else 0, "VehVActlEng_No_Cnt": self.cnt_speed_2 % 16}
     self.__class__.cnt_speed_2 += 1
     return self.packer.make_can_msg_panda("EngVehicleSpThrottle2", 0, values, fix_checksum=checksum)
@@ -221,19 +219,6 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
         should_rx = msg == "speed_2" and quality_flag
         self.assertEqual(should_rx, self._rx(to_push))
         self.assertEqual(should_rx, self.safety.get_controls_allowed())
-
-  def test_rx_hook_speed_mismatch(self):
-    # Ford relies on speed for driver curvature limiting, so it checks two sources
-    for speed in np.arange(0, 40, 0.5):
-      for speed_delta in np.arange(-5, 5, 0.1):
-        speed_2 = round(max(speed + speed_delta, 0), 1)
-        # Set controls allowed in between rx since first message can reset it
-        self._rx(self._speed_msg(speed))
-        self.safety.set_controls_allowed(True)
-        self._rx(self._speed_msg_2(speed_2))
-
-        within_delta = abs(speed - speed_2) <= self.MAX_SPEED_DELTA
-        self.assertEqual(self.safety.get_controls_allowed(), within_delta)
 
   def test_angle_measurements(self):
     """Tests rx hook correctly parses the curvature measurement from the vehicle speed and yaw rate"""

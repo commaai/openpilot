@@ -23,7 +23,7 @@ if __name__ == "__main__":
   for i in range(CNT):
     if i > 0 and getenv("RAND", 0) != 0:
       a, b = rand_input()
-    c = a.conv2d(b, padding=PADDING, acc_dtype=acc_dtype).realize()
+    c = a.conv2d(b, padding=PADDING, dtype=acc_dtype).realize()
 
   if COMP:
     import numpy as np, time, torch

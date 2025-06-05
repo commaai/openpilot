@@ -2,7 +2,6 @@
 import os
 import time
 import copy
-import json
 import heapq
 import signal
 from collections import Counter, OrderedDict
@@ -18,7 +17,6 @@ from cereal import car
 from cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from opendbc.car.car_helpers import get_car, interfaces
-from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
@@ -364,10 +362,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("ExperimentalLongitudinalEnabled"), cached_params=cached_params).CP
-
-    if not params.get_bool("DisengageOnAccelerator"):
-      CP.alternativeExperience |= ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS
+    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
   params.put("CarParams", CP.to_bytes())
 
@@ -463,7 +458,7 @@ CONFIGS = [
     proc_name="selfdrived",
     pubs=[
       "carState", "deviceState", "pandaStates", "peripheralState", "liveCalibration", "driverMonitoringState",
-      "longitudinalPlan", "livePose", "liveParameters", "radarState",
+      "longitudinalPlan", "livePose", "liveDelay", "liveParameters", "radarState",
       "modelV2", "driverCameraState", "roadCameraState", "wideRoadCameraState", "managerState",
       "liveTorqueParameters", "accelerometer", "gyroscope", "carOutput",
       "gpsLocationExternal", "gpsLocation", "controlsState", "carControl", "driverAssistance", "alertDebug",
@@ -517,9 +512,10 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="calibrationd",
-    pubs=["carState", "cameraOdometry", "carParams"],
+    pubs=["carState", "cameraOdometry"],
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
   ),
   ProcessConfig(
@@ -552,6 +548,15 @@ CONFIGS = [
     processing_time=0.004,
   ),
   ProcessConfig(
+    proc_name="lagd",
+    pubs=["livePose", "liveCalibration", "carState", "carControl", "controlsState"],
+    subs=["liveDelay"],
+    ignore=["logMonoTime"],
+    init_callback=get_car_params_callback,
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
+    tolerance=NUMPY_TOLERANCE,
+  ),
+  ProcessConfig(
     proc_name="ubloxd",
     pubs=["ubloxRaw"],
     subs=["ubloxGnss", "gpsLocationExternal"],
@@ -559,7 +564,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="torqued",
-    pubs=["livePose", "liveCalibration", "carState", "carControl", "carOutput"],
+    pubs=["livePose", "liveCalibration", "liveDelay", "carState", "carControl", "carOutput"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
@@ -568,7 +573,7 @@ CONFIGS = [
   ),
   ProcessConfig(
     proc_name="modeld",
-    pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "driverMonitoringState", "carState", "carControl"],
+    pubs=["deviceState", "roadCameraState", "wideRoadCameraState", "liveCalibration", "liveDelay", "driverMonitoringState", "carState", "carControl"],
     subs=["modelV2", "drivingModelData", "cameraOdometry"],
     ignore=["logMonoTime", "modelV2.frameDropPerc", "modelV2.modelExecutionTime", "drivingModelData.frameDropPerc", "drivingModelData.modelExecutionTime"],
     should_recv_callback=ModeldCameraSyncRcvCallback(),
@@ -628,9 +633,7 @@ def get_custom_params_from_lr(lr: LogIterable, initial_state: str = "first") -> 
   if len(live_calibration) > 0:
     custom_params["CalibrationParams"] = live_calibration[msg_index].as_builder().to_bytes()
   if len(live_parameters) > 0:
-    lp_dict = live_parameters[msg_index].to_dict()
-    lp_dict["carFingerprint"] = CP.carFingerprint
-    custom_params["LiveParameters"] = json.dumps(lp_dict)
+    custom_params["LiveParameters"] = live_parameters[msg_index].as_builder().to_bytes()
   if len(live_torque_parameters) > 0:
     custom_params["LiveTorqueParameters"] = live_torque_parameters[msg_index].as_builder().to_bytes()
 
@@ -762,15 +765,12 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     params_dict["IsRhdDetected"] = is_rhd
 
   if CP is not None:
-    if CP.alternativeExperience == ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS:
-      params_dict["DisengageOnAccelerator"] = False
-
     if fingerprint is None:
       if CP.fingerprintSource == "fw":
         params_dict["CarParamsCache"] = CP.as_builder().to_bytes()
 
     if CP.openpilotLongitudinalControl:
-      params_dict["ExperimentalLongitudinalEnabled"] = True
+      params_dict["AlphaLongitudinalEnabled"] = True
 
     if CP.notCar:
       params_dict["JoystickDebugMode"] = True

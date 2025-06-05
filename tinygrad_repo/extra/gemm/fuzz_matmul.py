@@ -22,7 +22,7 @@ if __name__ == "__main__":
       for K in range(K_START, K_STOP+1, K_STEP):
         print(f"testing {M=} {N=} {K=}")
         a, b = Tensor.rand(M, K, dtype=dtype_in).realize(), Tensor.rand(K, N, dtype=dtype_in).realize()
-        c = a.matmul(b, acc_dtype=acc_dtype).realize()
+        c = a.matmul(b, dtype=acc_dtype).realize()
         comp = a.numpy().astype(np.float32) @ b.numpy().astype(np.float32)
         nc = c.numpy()
         try:

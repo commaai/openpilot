@@ -28,16 +28,17 @@ BO_ 829 LKAS_HUD: 5 ADAS
  SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
  SG_ SET_ME_X41 : 6|7@0+ (1,0) [0|127] "" BDY
  SG_ BOH : 6|7@0+ (1,0) [0|127] "" BDY
+ SG_ CAMERA_OVERHEAT : 15|1@0+ (1,0) [0|1] "" BDY
  SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
  SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
  SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
  SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
  SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
- SG_ LDW_RIGHT : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ LANE_DEPARTURE_ALERT : 9|1@0+ (1,0) [0|1] "" BDY
  SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
- SG_ BOH_2 : 23|2@0+ (1,0) [0|4] "" BDY
+ SG_ LDW_ICON : 22|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
- SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 18|3@0+ (1,0) [0|7] "" BDY
  SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
  SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
@@ -50,5 +51,7 @@ CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
 CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
 CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";
 CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
+CM_ SG_ 829 CAM_TEMP_HIGH "Some Driver Assist Systems Cannot Operate: Camera Temperature Too High";
+CM_ SG_ 829 CAMERA_OVERHEAT "Lane Keeping Assist Cannot Operate: Camera Too Hot";
 
-VAL_ 829 BEEP 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";
+VAL_ 829 BEEP 5 "solid_beep" 4 "double_beep" 3 "single_beep" 2 "triple_beep" 1 "repeated_beep" 0 "no_beep";

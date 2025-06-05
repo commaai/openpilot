@@ -180,7 +180,7 @@ def create_dyn_state_matrices(u: float, VM: VehicleModel) -> tuple[np.ndarray, n
 
   Parameters in the vehicle model:
     cF: Tire stiffness Front [N/rad]
-    cR: Tire stiffness Front [N/rad]
+    cR: Tire stiffness Rear [N/rad]
     aF: Distance from CG to front wheels [m]
     aR: Distance from CG to rear wheels [m]
     m: Mass [kg]

@@ -35,7 +35,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         flash_unlock();
         resp[1] = 0xff;
       }
-      current_board->set_led(LED_GREEN, 1);
+      led_set(LED_GREEN, 1);
       unlocked = true;
       prog_ptr = (uint32_t *)APP_START_ADDRESS;
       break;
@@ -112,14 +112,14 @@ int comms_can_read(uint8_t *data, uint32_t max_len) {
 void refresh_can_tx_slots_available(void) {}
 
 void comms_endpoint2_write(const uint8_t *data, uint32_t len) {
-  current_board->set_led(LED_RED, 0);
+  led_set(LED_RED, 0);
   for (uint32_t i = 0; i < len/4; i++) {
     flash_write_word(prog_ptr, *(uint32_t*)(data+(i*4)));
 
     //*(uint64_t*)(&spi_tx_buf[0x30+(i*4)]) = *prog_ptr;
     prog_ptr++;
   }
-  current_board->set_led(LED_RED, 1);
+  led_set(LED_RED, 1);
 }
 
 
@@ -132,26 +132,28 @@ void soft_flasher_start(void) {
 
   gpio_usart2_init();
   gpio_usb_init();
+  led_init();
 
   // enable USB
   usb_init();
 
-  // enable SPI
+#ifdef ENABLE_SPI
   if (current_board->has_spi) {
     gpio_spi_init();
     spi_init();
   }
+#endif
 
   // green LED on for flashing
-  current_board->set_led(LED_GREEN, 1);
+  led_set(LED_GREEN, 1);
 
   enable_interrupts();
 
   for (;;) {
     // blink the green LED fast
-    current_board->set_led(LED_GREEN, 0);
+    led_set(LED_GREEN, 0);
     delay(500000);
-    current_board->set_led(LED_GREEN, 1);
+    led_set(LED_GREEN, 1);
     delay(500000);
   }
 }

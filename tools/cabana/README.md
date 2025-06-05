@@ -12,6 +12,8 @@ Options:
   -h, --help                     Displays help on commandline options.
   --help-all                     Displays help including Qt specific options.
   --demo                         use a demo route instead of providing your own
+  --auto                         Auto load the route from the best available source (no video):
+                                 internal, openpilotci, comma_api, car_segments, testing_closet
   --qcam                         load qcamera
   --ecam                         load wide road camera
   --msgq                         read can messages from msgq

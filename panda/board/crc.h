@@ -1,5 +1,6 @@
 #pragma once
 
+#if defined(ENABLE_SPI) || defined(BOOTSTUB)
 uint8_t crc_checksum(const uint8_t *dat, int len, const uint8_t poly) {
   uint8_t crc = 0xFFU;
   int i;
@@ -17,3 +18,4 @@ uint8_t crc_checksum(const uint8_t *dat, int len, const uint8_t poly) {
   }
   return crc;
 }
+#endif

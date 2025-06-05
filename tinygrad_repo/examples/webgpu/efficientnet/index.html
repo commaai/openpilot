@@ -18,10 +18,6 @@ canvas {  display: none; }
 </style>
 <title>tinygrad has WebGPU</title>
 <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/tinygrad/tinygrad/master/docs/logo.png">
-<script type="module">
-	import model from "../../net.js";
-	window.model = model;
-</script>
 </head>
 <body>
 <h1>WebGPU <a href="https://github.com/geohot/tinygrad">tinygrad</a> EfficientNet!</h1>
@@ -49,7 +45,10 @@ canvas {  display: none; }
 	const getDevice = async () => {
 		if (!navigator.gpu) error("WebGPU not supported.");
 		const adapter = await navigator.gpu.requestAdapter();
-		return await adapter.requestDevice();
+		return await adapter.requestDevice({
+			requiredFeatures: ["shader-f16"],
+			powerPreference: "high-performance"
+		});
 	};
 
 	const timer = async (func, label = "") => {
@@ -99,6 +98,7 @@ canvas {  display: none; }
 			resultText.innerHTML = "loading..."
 			labels = await getLabels();
 			const device = await getDevice();
+			const model = (await import("../../net.js")).default;
 			net = await timer(() => model.load(device, '../../net.safetensors'), "(compilation)");
 			resultText.innerHTML = "ready"
 		} catch (e) {

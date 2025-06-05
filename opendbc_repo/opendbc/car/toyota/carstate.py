@@ -141,6 +141,7 @@ class CarState(CarStateBase):
       cluster_set_speed = cp.vl["PCM_CRUISE_ALT"]["UI_SET_SPEED"]
     else:
       ret.accFaulted = cp.vl["PCM_CRUISE_2"]["ACC_FAULTED"] != 0
+      ret.carFaultedNonCritical = cp.vl["PCM_CRUISE_SM"]["TEMP_ACC_FAULTED"] != 0
       ret.cruiseState.available = cp.vl["PCM_CRUISE_2"]["MAIN_ON"] != 0
       ret.cruiseState.speed = cp.vl["PCM_CRUISE_2"]["SET_SPEED"] * CV.KPH_TO_MS
       cluster_set_speed = cp.vl["PCM_CRUISE_SM"]["UI_SET_SPEED"]

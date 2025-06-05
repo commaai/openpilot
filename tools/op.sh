@@ -52,12 +52,21 @@ function op_run_command() {
 # be default, assume openpilot dir is in current directory
 OPENPILOT_ROOT=$(pwd)
 function op_get_openpilot_dir() {
+  # First try traversing up the directory tree
   while [[ "$OPENPILOT_ROOT" != '/' ]];
   do
     if find "$OPENPILOT_ROOT/launch_openpilot.sh" -maxdepth 1 -mindepth 1 &> /dev/null; then
       return 0
     fi
     OPENPILOT_ROOT="$(readlink -f "$OPENPILOT_ROOT/"..)"
+  done
+
+  # Fallback to hardcoded directories if not found
+  for dir in "$HOME/openpilot" "/data/openpilot"; do
+    if [[ -f "$dir/launch_openpilot.sh" ]]; then
+      OPENPILOT_ROOT="$dir"
+      return 0
+    fi
   done
 }
 
@@ -245,7 +254,7 @@ function op_setup() {
 
 function op_auth() {
   op_before_cmd
-  op_run_command tools/lib/auth.py
+  op_run_command tools/lib/auth.py "$@"
 }
 
 function op_activate_venv() {
@@ -275,13 +284,18 @@ function op_venv() {
 
 function op_adb() {
   op_before_cmd
-  op_run_command tools/adb_shell.sh
+  op_run_command tools/scripts/adb_ssh.sh
 }
 
 function op_check() {
   VERBOSE=1
   op_before_cmd
   unset VERBOSE
+}
+
+function op_esim() {
+  op_before_cmd
+  op_run_command system/hardware/esim.py "$@"
 }
 
 function op_build() {
@@ -326,6 +340,11 @@ function op_sim() {
   op_before_cmd
   op_run_command exec tools/sim/run_bridge.py &
   op_run_command exec tools/sim/launch_openpilot.sh
+}
+
+function op_clip() {
+  op_before_cmd
+  op_run_command tools/clip/run.py $@
 }
 
 function op_switch() {
@@ -373,16 +392,12 @@ function op_default() {
   echo "  op is only a wrapper for existing scripts, tools, and commands."
   echo "  op will always show you what it will run on your system."
   echo ""
-  echo "  op will try to find your openpilot directory in the following order:"
-  echo "   1: use the directory specified with the --dir option"
-  echo "   2: use the current working directory"
-  echo "   3: go up the file tree non-recursively"
-  echo ""
   echo -e "${BOLD}${UNDERLINE}Usage:${NC} op [OPTIONS] <COMMAND>"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [System]:${NC}"
   echo -e "  ${BOLD}auth${NC}         Authenticate yourself for API use"
   echo -e "  ${BOLD}check${NC}        Check the development environment (git, os, python) to start using openpilot"
+  echo -e "  ${BOLD}esim${NC}         Manage eSIM profiles on your comma device"
   echo -e "  ${BOLD}venv${NC}         Activate the python virtual environment"
   echo -e "  ${BOLD}setup${NC}        Install openpilot dependencies"
   echo -e "  ${BOLD}build${NC}        Run the openpilot build system in the current working directory"
@@ -395,6 +410,7 @@ function op_default() {
   echo -e "  ${BOLD}juggle${NC}       Run PlotJuggler"
   echo -e "  ${BOLD}replay${NC}       Run Replay"
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
+  echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
@@ -438,6 +454,7 @@ function _op() {
     auth )          shift 1; op_auth "$@" ;;
     venv )          shift 1; op_venv "$@" ;;
     check )         shift 1; op_check "$@" ;;
+    esim )          shift 1; op_esim "$@" ;;
     setup )         shift 1; op_setup "$@" ;;
     build )         shift 1; op_build "$@" ;;
     juggle )        shift 1; op_juggle "$@" ;;
@@ -445,6 +462,7 @@ function _op() {
     lint )          shift 1; op_lint "$@" ;;
     test )          shift 1; op_test "$@" ;;
     replay )        shift 1; op_replay "$@" ;;
+    clip )          shift 1; op_clip "$@" ;;
     sim )           shift 1; op_sim "$@" ;;
     install )       shift 1; op_install "$@" ;;
     switch )        shift 1; op_switch "$@" ;;

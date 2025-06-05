@@ -1,9 +1,10 @@
 import unittest
 from tinygrad import Device, dtypes, Tensor
 from tinygrad.device import Buffer
-from tinygrad.ops import view_supported_devices
+from tinygrad.helpers import Context
+from test.helpers import REAL_DEV
 
-@unittest.skipIf(Device.DEFAULT not in view_supported_devices, "subbuffer not supported")
+@unittest.skipUnless(hasattr(Device[Device.DEFAULT].allocator, "_offset"), "subbuffer not supported")
 class TestSubBuffer(unittest.TestCase):
   def setUp(self):
     self.buf = Buffer(Device.DEFAULT, 10, dtypes.uint8).ensure_allocated()
@@ -35,17 +36,33 @@ class TestSubBuffer(unittest.TestCase):
 
   def test_subbuffer_used(self):
     t = Tensor.arange(0, 10, dtype=dtypes.uint8).realize()
-    # TODO: why does it needs contiguous
-    vt = t[2:4].contiguous().realize()
+    vt = t[2:4].realize()
     out = (vt + 100).tolist()
     assert out == [102, 103]
 
-  @unittest.skipIf(Device.DEFAULT not in {"CUDA", "NV", "AMD"}, "only NV, AMD, CUDA")
+  @unittest.skipIf(REAL_DEV not in {"CUDA", "NV", "AMD"}, "only NV, AMD, CUDA")
   def test_subbuffer_transfer(self):
     t = Tensor.arange(0, 10, dtype=dtypes.uint8).realize()
     vt = t[2:5].contiguous().realize()
     out = vt.to(f"{Device.DEFAULT}:1").realize().tolist()
     assert out == [2, 3, 4]
+
+  def test_subbuffer_deallocate(self):
+    with Context(LRU=0):
+      vbuf = self.buf.view(2, dtypes.uint8, offset=3).ensure_allocated()
+      self.buf.deallocate()
+      vbuf.deallocate()
+
+      # Allocate a fake one on the same place
+      _ = Buffer(Device.DEFAULT, 10, dtypes.uint8).ensure_allocated()
+
+      self.buf.ensure_allocated()
+      self.buf.copyin(memoryview(bytearray(range(10, 20))))
+
+      vbuf.ensure_allocated()
+
+      tst = vbuf.as_buffer().tolist()
+      assert tst == [13, 14]
 
 if __name__ == '__main__':
   unittest.main()

@@ -85,28 +85,27 @@ BO_ 272 ACM_SteeringControl: 8 ACM
  SG_ ACM_SteeringAngleRequest : 23|15@0+ (0.1,-1638.4) [-1638.4|1638.3] "deg" EPAS_P
 
 BO_ 288 ACM_lkaHbaCmd: 8 ACM
- SG_ ACM_lkaHbaCmd_Checksum : 7|8@0+ (1,0) [0|0] "" EPAS_P
- SG_ ACM_lkaHbaCmd_Counter : 11|4@0+ (1,0) [0|0] "" EPAS_P
- SG_ ACM_unkown1 : 12|1@0+ (1,0) [0|1] "" XXX
- SG_ ACM_unkown6 : 13|1@0+ (1,0) [0|1] "" XXX
- SG_ ACM_unkown5 : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACM_lkaHbaCmd_Checksum : 7|8@0+ (1,0) [0|255] "" EPAS_P
+ SG_ ACM_lkaHbaCmd_Counter : 11|4@0+ (1,0) [0|15] "" EPAS_P
+ SG_ ACM_lkaElkRequest : 14|3@0+ (1,0) [0|7] "" EPAS_P
  SG_ ACM_HapticRequest : 15|1@0+ (1,0) [0|1] "" EPAS_P
  SG_ ACM_lkaStrToqReq : 23|11@0+ (1,-1024) [-1024|1024] "" EPAS_P
  SG_ ACM_lkaSymbolState : 26|3@0+ (1,0) [0|7] "" EPAS_P
  SG_ ACM_lkaToiFlt : 27|1@0+ (1,0) [0|1] "" EPAS_P
  SG_ ACM_lkaActToi : 28|1@0+ (1,0) [0|1] "" EPAS_P
  SG_ ACM_hbaSysState : 34|3@0+ (1,0) [0|7] "" EPAS_P
- SG_ ACM_FailinfoAeb : 37|3@0+ (1,0) [0|7] "" EPAS_P
- SG_ ACM_unkown2 : 38|2@1+ (1,0) [0|3] "" XXX
- SG_ ACM_lkaRHWarning : 41|2@0+ (1,0) [0|3] "" EPAS_P
- SG_ ACM_lkaLHWarning : 43|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_hbaLamp : 35|1@0+ (1,0) [0|1] "" EPAS_P
+ SG_ ACM_slifOnOffState : 37|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_elkOnOffState : 39|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_ldwLHWarning : 43|3@0+ (1,0) [0|7] "" EPAS_P
  SG_ ACM_lkaLaneRecogState : 45|2@0+ (1,0) [0|3] "" EPAS_P
- SG_ ACM_hbaOpt : 46|1@0+ (1,0) [0|1] "" EPAS_P
- SG_ ACM_hbaLamp : 47|1@0+ (1,0) [0|1] "" EPAS_P
- SG_ ACM_unkown3 : 51|4@0+ (1,0) [0|15] "" XXX
+ SG_ ACM_hbaOnOffState : 47|2@0+ (1,0) [0|3] "" EPAS_P
+ SG_ ACM_ldwlkaOnOffState : 48|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_ldwWarnTimingState : 51|3@0+ (1,0) [0|7] "" EPAS_P
  SG_ ACM_lkaHandsoffSoundWarning : 53|2@0+ (1,0) [0|3] "" EPAS_P
  SG_ ACM_lkaHandsoffDisplayWarning : 55|2@0+ (1,0) [0|3] "" EPAS_P
- SG_ ACM_unkown4 : 56|8@1+ (1,0) [0|255] "" XXX
+ SG_ ACM_ldwRHWarning : 58|3@0+ (1,0) [0|7] "" EPAS_P
+ SG_ ACM_ldwWarnTypeState : 61|3@0+ (1,0) [0|7] "" EPAS_P
 
 BO_ 304 RCM_IMU_LatAccYaw: 8 RCM
  SG_ RCM_LateralAccelYaw_Checksum : 7|8@0+ (1,0) [0|25] "" ACM,ESP,VDM
@@ -176,23 +175,22 @@ BO_ 352 ACM_longitudinalRequest: 5 ACM
  SG_ ACM_longitudinalRequest_Checksum : 7|8@0+ (1,0) [0|255] "-" VDM
  SG_ ACM_longitudinalRequest_Counter : 11|4@0+ (1,0) [0|15] "-" VDM
  SG_ ACM_AccelerationRequest : 23|11@0+ (0.01,-10.24) [-10.24|10.23] "m/s^2" VDM
- SG_ ACM_VehicleHoldRequired : 24|1@0+ (1,0) [0|1] "" VDM
- SG_ ACM_PrndRequired : 27|3@0+ (1,0) [0|7] "" VDM
+ SG_ ACM_PrndRequest : 27|4@0+ (1,0) [0|7] "" VDM
  SG_ ACM_longInterfaceEnable : 37|2@0+ (1,0) [0|3] "" VDM
- SG_ ACM_AccelerationRequestType : 39|2@0+ (1,0) [0|3] "" VDM
+ SG_ ACM_VehicleHoldRequest : 39|2@0+ (1,0) [0|3] "" VDM
 
 BO_ 354 VDM_AdasSts: 8 VDM
  SG_ VDM_AdasStatus_Checksum : 7|8@0+ (1,0) [0|0] "" ACM
  SG_ VDM_AdasStatus_Counter : 11|4@0+ (1,0) [0|0] "" ACM
- SG_ VDM_AdasDecelLimit : 17|10@0+ (0.01,0) [0|10.23] "m/s^2" ACM
+ SG_ VDM_AdasDecelLimit : 17|10@0+ (0.01,0) [0|-10.23] "m/s^2" ACM
  SG_ VDM_AdasDriverAccelPriorityStatus : 19|2@0+ (1,0) [0|3] "" ACM
  SG_ VDM_AdasFaultStatus : 23|4@0+ (1,0) [0|15] "" ACM
  SG_ VDM_AdasAccelLimit : 33|10@0+ (0.01,0) [0|10.23] "m/s^2" ACM
  SG_ VDM_AdasDriverModeStatus : 36|3@0+ (1,0) [0|7] "" ACM
- SG_ VDM_AdasAccelRequest : 50|11@0+ (0.01,-10.24) [-10.24|10.23] "m/s^2" ACM
+ SG_ VDM_AdasUnkown1 : 50|8@0+ (1,0) [0|255] "" XXX
  SG_ VDM_AdasInterfaceStatus : 52|2@0+ (1,0) [0|3] "" ACM
- SG_ VDM_AdasAccelRequestAcknowledged : 54|2@0+ (1,0) [0|3] "" ACM
- SG_ VDM_AdasVehicleHoldStatus : 55|1@0+ (1,0) [0|1] "" ACM
+ SG_ VDM_AdasVehicleHoldStatus : 55|3@0+ (1,0) [0|7] "" ACM
+ SG_ VDM_UserAdasRequest : 58|3@0+ (1,0) [0|7] "" ACM
 
 BO_ 357 VDM_AdasStalk: 4 VDM
  SG_ VDM_AdasStalk_Checksum : 7|8@0+ (1,0) [0|255] "Unitless" ACM
@@ -328,6 +326,7 @@ BO_ 565 IndicatorLights: 8 XXX
  SG_ DriverDoor : 28|2@0+ (1,0) [0|3] "" XXX
  SG_ RearPassengerDoor : 38|2@0+ (1,0) [0|3] "" XXX
  SG_ TurnLightLeft : 40|2@0+ (1,0) [0|3] "" XXX
+ SG_ IgnitionOn : 48|1@0+ (1,0) [0|1] "" XXX
  SG_ TurnLightRight : 54|2@0+ (1,0) [0|3] "" XXX
 
 BO_ 592 VDM_EcasStatus: 8 VDM
@@ -609,14 +608,13 @@ CM_ SG_ 352 ACM_longitudinalRequest_Checksum "Checksum signal for frame";
 CM_ SG_ 352 ACM_longitudinalRequest_Counter "Message counter signal for frame";
 CM_ SG_ 352 ACM_AccelerationRequest "Acceleration Request command from the ACM";
 CM_ SG_ 352 ACM_VehicleHoldRequired "Vehicle hold request flag";
-CM_ SG_ 352 ACM_PrndRequired "Drive state Request command from the ACM";
+CM_ SG_ 352 ACM_PrndRequest "Gear state Request command from the ACM";
 CM_ SG_ 352 ACM_longInterfaceEnable "Acceleration Interface Enable Request from the ACM";
-CM_ SG_ 352 ACM_AccelerationRequestType "Acceleration Request type(positive/negative) from the ACM";
+CM_ SG_ 352 ACM_VehicleHoldRequest "Vehicle hold request from ACM";
 CM_ SG_ 354 VDM_AdasStatus_Checksum "VDM_AdasSts message j1850 checksum.";
 CM_ SG_ 354 VDM_AdasStatus_Counter "VDM_AdasSts message counter.";
 CM_ SG_ 354 VDM_AdasFaultStatus "Fault status of ADAS requests from VDM.";
 CM_ SG_ 354 VDM_AdasDriverModeStatus "Signal which describes who is commanding the torque - Human or ADAS";
-CM_ SG_ 354 VDM_AdasAccelRequestAcknowledged "An acknowleddge signal to the ADAS system to show that TQM is honoring their request";
 CM_ SG_ 432 ESP_Torque_Front_MinQ "Indication of whether signal with corresponding name is valid";
 CM_ SG_ 432 ESP_Torque_Front_MaxQ "Indication of whether signal with corresponding name is valid";
 CM_ SG_ 432 ESP_Torque_Front_Max "ESP intervention, ESP tractive torque limit per axle.";
@@ -828,14 +826,15 @@ VAL_ 288 ACM_lkaSymbolState 0 "ACM_LKASYMBOLSTATE_OFF" 1 "ACM_LKASYMBOLSTATE_WHI
 VAL_ 288 ACM_lkaToiFlt 0 "ACM_LKATOIFLT_NO_FAULT" 1 "ACM_LKATOIFLT_FAULT_PRESENT";
 VAL_ 288 ACM_lkaActToi 0 "ACM_LKAACTTOI_DE_ACTIVATE_TOI" 1 "ACM_LKAACTTOI_ACTIVATE_TOI";
 VAL_ 288 ACM_hbaSysState 0 "ACM_HBASYSSTATE_DEFAULT_DISABLE" 1 "ACM_HBASYSSTATE_HBA_ENABLE_HIGH_BEAM_OFF" 2 "ACM_HBASYSSTATE_HBA_ENABLE_HIGH_BEAM_ON" 7 "ACM_HBASYSSTATE_SYSTEM_FAIL";
-VAL_ 288 ACM_FailinfoAeb 0 "ACM_FAILINFOAEB_NORMAL" 1 "ACM_FAILINFOAEB_CAMERA_FAILURE" 2 "ACM_FAILINFOAEB_FRONT_RADAR_COM_ERR" 3 "ACM_FAILINFOAEB_CAMERA_BLOCKAGE" 4 "ACM_FAILINFOAEB_RESERVED_4" 5 "ACM_FAILINFOAEB_RESERVED_5" 6 "ACM_FAILINFOAEB_RESERVED_6";
-VAL_ 288 ACM_lkaRHWarning 0 "ACM_LKARHWARNING_NO_WARNING" 1 "ACM_LKARHWARNING_HAPTIC_WARNING_AND_DISPLAY" 2 "ACM_LKARHWARNING_ACOUSTIC_WARNING_AND_DISPLAY" 3 "ACM_LKARHWARNING_HAPTIC_ACOUSTIC_AND_DISPLAY";
-VAL_ 288 ACM_lkaLHWarning 0 "ACM_LKALHWARNING_NO_WARNING" 1 "ACM_LKALHWARNING_HAPTIC_WARNING_AND_DISPLAY" 2 "ACM_LKALHWARNING_ACOUSTIC_WARNING_AND_DISPLAY" 3 "ACM_LKALHWARNING_HAPTIC_ACOUSTIC_AND_DISPLAY";
+VAL_ 288 ACM_ldwRHWarning 0 "ACM_LKARHWARNING_NO_WARNING" 1 "ACM_LKARHWARNING_HAPTIC_WARNING_AND_DISPLAY" 2 "ACM_LKARHWARNING_ACOUSTIC_WARNING_AND_DISPLAY" 3 "ACM_LKARHWARNING_HAPTIC_ACOUSTIC_AND_DISPLAY";
+VAL_ 288 ACM_ldwLHWarning 0 "ACM_LKALHWARNING_NO_WARNING" 1 "ACM_LKALHWARNING_HAPTIC_WARNING_AND_DISPLAY" 2 "ACM_LKALHWARNING_ACOUSTIC_WARNING_AND_DISPLAY" 3 "ACM_LKALHWARNING_HAPTIC_ACOUSTIC_AND_DISPLAY";
 VAL_ 288 ACM_lkaLaneRecogState 0 "ACM_LKALANERECOGSTATE_NOT_RECOGNITION" 1 "ACM_LKALANERECOGSTATE_LEFT_LANE_RECOGNITION" 2 "ACM_LKALANERECOGSTATE_RIGHT_LANE_RECOGNITION" 3 "ACM_LKALANERECOGSTATE_FULL_LANE_RECOGNITION";
-VAL_ 288 ACM_hbaOpt 0 "ACM_HBAOPT_NONE_HBA_OPTION_DEFAULT" 1 "ACM_HBAOPT_HBA_SYSTEM_ENABLE";
 VAL_ 288 ACM_hbaLamp 0 "ACM_HBALAMP_HBA_INDICATOR_LAMP_OFF" 1 "ACM_HBALAMP_HBA_INDICATOR_LAMP_ON";
 VAL_ 288 ACM_lkaHandsoffSoundWarning 0 "ACM_LKAHANDSOFFSOUNDWARNING_NO_INFO" 1 "ACM_LKAHANDSOFFSOUNDWARNING_WARNING" 2 "ACM_LKAHANDSOFFSOUNDWARNING_RESERVED_2" 3 "ACM_LKAHANDSOFFSOUNDWARNING_RESERVED_3";
 VAL_ 288 ACM_lkaHandsoffDisplayWarning 0 "ACM_LKAHANDSOFFDISPLAYWARNING_NO_INFO" 1 "ACM_LKAHANDSOFFDISPLAYWARNING_WARNING" 2 "ACM_LKAHANDSOFFDISPLAYWARNING_RESERVED_2" 3 "ACM_LKAHANDSOFFDISPLAYWARNING_RESERVED_3";
+VAL_ 288 ACM_lkaElkRequest 0 "off" 1 "applying torque right for left departure" 2 "applying torque left for right departure";
+VAL_ 288 ACM_ldwlkaOnOffState 1 "LDW on" 2 "LKAS+LDW on" 3 "all off";
+VAL_ 288 ACM_elkOnOffState 1 "LKAS toggled on" 2 "LKAS toggled off";
 VAL_ 304 RCM_IMU_LatAcc_Stat_SensAvail 0 "RCM_IMU_LatAcc_Stat_SensAvail_InSpec" 1 "RCM_IMU_LatAcc_Stat_SensAvail_NotInSpec";
 VAL_ 304 RCM_IMU_LatAcc_Stat_Fail 0 "RCM_IMU_LatAcc_Stat_Fail_NotFailed" 1 "RCM_IMU_LatAcc_Stat_Fail_Failed";
 VAL_ 304 RCM_IMU_LatAcc_Stat_Init 0 "RCM_IMU_LatAcc_Stat_Init_Finished" 1 "RCM_IMU_LatAcc_Stat_Init_Running";
@@ -871,14 +870,13 @@ VAL_ 338 VDM_EspPartialModeRequest 0 "VDM_EspPartialModeRequest_Normal" 1 "VDM_E
 VAL_ 338 VDM_SteeringModeRequest 0 "VDM_SteeringModeRequest_Default" 1 "VDM_SteeringModeRequest_Normal" 2 "VDM_SteeringModeRequest_Sport" 3 "VDM_SteeringModeRequest_Comfort";
 VAL_ 338 VDM_EpasPowerMode 0 "VDM_EpasPowerMode_Drive_Off" 1 "VDM_EpasPowerMode_Drive_On" 2 "VDM_EpasPowerMode_Shutdown";
 VAL_ 352 ACM_VehicleHoldRequired 0 "ACM_VEHICLEHOLDREQ_NO_REQUEST" 1 "ACM_VEHICLEHOLDREQ_VEHICLE_HOLD_REQUEST";
-VAL_ 352 ACM_PrndRequired 0 "ACM_PRNDREQ_PARK" 1 "ACM_PRNDREQ_REVERSE" 2 "ACM_PRNDREQ_NEUTRAL" 3 "ACM_PRNDREQ_DRIVE" 4 "ACM_PRNDREQ_NOT_USED";
+VAL_ 352 ACM_PrndRequest 0 "ACM_PRNDREQ_NO_REQUEST" 1 "ACM_PRNDREQ_PARK" 2 "ACM_PRNDREQ_REVERSE" 3 "ACM_PRNDREQ_NEUTRAL" 4 "ACM_PRNDREQ_DRIVE";
 VAL_ 352 ACM_longInterfaceEnable 0 "ACM_LONGIFEN_INIT" 1 "ACM_LONGIFEN_LONGITUDINAL_INTERFACE_ENABLE" 2 "ACM_LONGIFEN_LONGITUDINAL_INTERFACE_DISABLE" 3 "ACM_LONGIFEN_SNA";
-VAL_ 352 ACM_AccelerationRequestType 0 "ACM_ACCELREQTYPE_INIT" 1 "ACM_ACCELREQTYPE_ACCEL_NEGATIVE" 2 "ACM_ACCELREQTYPE_ACCEL_POSITIVE" 3 "ACM_ACCELREQTYPE_SNA";
+VAL_ 352 ACM_VehicleHoldRequest 0 "NO_REQUEST" 1 "HOLD_REQUEST";
 VAL_ 354 VDM_AdasDriverAccelPriorityStatus 0 "VDM_AdasDriverAccelPriorityStatus_Driver" 1 "VDM_AdasDriverAccelPriorityStatus_Adas";
 VAL_ 354 VDM_AdasFaultStatus 0 "VDM_AdasFlaultStatus_No_Fault" 1 "VDM_AdasFaultStatus_Brk_Intv" 2 "VDM_AdasFlaultStatus_Cntr_Fault" 3 "VDM_AdasFlaultStatus_Imps_Cmd" 15 "VDM_AdasFlaultStatus_Sna";
 VAL_ 354 VDM_AdasDriverModeStatus 0 "VDM_AdasDriverModeStatus_Human" 1 "VDM_AdasDriverModeStatus_Adas" 2 "VDM_AdasDriverModeStatus_Reserved" 3 "VDM_AdasDriverModeStatus_Sna";
 VAL_ 354 VDM_AdasInterfaceStatus 0 "VDM_AdasInterfaceStatus_Unavailable" 1 "VDM_AdasInterfaceStatus_Available" 2 "VDM_AdasInterfaceStatus_Enabled" 3 "VDM_AdasInterfaceStatus_Faulted";
-VAL_ 354 VDM_AdasAccelRequestAcknowledged 0 "VDM_AdasAccelRequestAcknowledged_Not_Acknowledged" 1 "VDM_AdasAccelRequestAcknowledged_Acknowledged" 2 "VDM_AdasAccelRequestAcknowledged_Fault_Ignored" 3 "VDM_AdasAccelRequestAcknowledged_Sna";
 VAL_ 354 VDM_AdasVehicleHoldStatus 0 "VDM_AdasVehicleHoldStatus_NotHold" 1 "VDM_AdasVehicleHoldStatus_Hold";
 VAL_ 357 VDM_AdasStalkGapAdjust 0 "VDM_AdasStalkGapAdjust_No_Required" 1 "VDM_AdasStalkGapAdjust_GapDecrement" 2 "VDM_AdasStalkGapAdjust_GapIncrement";
 VAL_ 357 VDM_AdasStalkAccCancelRes 0 "VDM_AdasStalkAccCancelRes_NoRequired" 1 "VDM_AdasStalkAccCancelRes_Cancel" 2 "VDM_AdasStalkAccCancelRes_Resume";

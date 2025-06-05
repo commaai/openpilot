@@ -24,7 +24,7 @@ if __name__ == "__main__":
   for i in range(CNT):
     if i > 0 and getenv("RAND", 0) != 0:
       a, b = _rand(device)
-    c = a.matmul(b, acc_dtype=acc_dtype).realize()
+    c = a.matmul(b, dtype=acc_dtype).realize()
   nc = c.numpy()
   comp = a.numpy().astype(np.float32) @ b.numpy().astype(np.float32)
   np.testing.assert_allclose(nc, comp, atol=ATOL, rtol=RTOL)

@@ -12,15 +12,14 @@ class TestSubaruPreglobalSafety(common.PandaCarSafetyTest, common.DriverTorqueSt
   FLAGS = 0
   DBC = "subaru_outback_2015_generated"
   TX_MSGS = [[0x161, 0], [0x164, 0]]
-  RELAY_MALFUNCTION_ADDRS = {0: (0x164,)}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x164, 0x161)}
   FWD_BLACKLISTED_ADDRS = {2: [0x161, 0x164]}
 
   MAX_RATE_UP = 50
   MAX_RATE_DOWN = 70
-  MAX_TORQUE = 2047
+  MAX_TORQUE_LOOKUP = [0], [2047]
 
   MAX_RT_DELTA = 940
-  RT_INTERVAL = 250000
 
   DRIVER_TORQUE_ALLOWANCE = 75
   DRIVER_TORQUE_FACTOR = 10

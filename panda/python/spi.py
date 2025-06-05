@@ -103,7 +103,7 @@ class SpiDevice:
 
     with SPI_LOCK:
       if speed not in SPI_DEVICES:
-        SPI_DEVICES[speed] = spidev.SpiDev()  # pylint: disable=c-extension-no-member
+        SPI_DEVICES[speed] = spidev.SpiDev()
         SPI_DEVICES[speed].open(0, 0)
         SPI_DEVICES[speed].max_speed_hz = speed
       self._spidev = SPI_DEVICES[speed]

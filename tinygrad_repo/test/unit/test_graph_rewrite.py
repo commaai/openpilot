@@ -1,12 +1,12 @@
 import unittest, math
 from tinygrad import dtypes
 from tinygrad.helpers import all_same
-from tinygrad.ops import GroupOp, UOp, Ops, exec_alu
-from tinygrad.codegen.uopgraph import full_graph_rewrite
+from tinygrad.uop.ops import GroupOp, UOp, Ops, exec_alu
+from tinygrad.codegen import full_rewrite_to_sink
 
 # Helper function to apply the graph rewrite
 def apply_rewrite(expr):
-  return full_graph_rewrite(expr.sink()).src[0]
+  return full_rewrite_to_sink(expr.sink()).src[0]
 
 def evaluate_uop(uop, variables):
   if uop.op == Ops.CONST:
@@ -64,21 +64,21 @@ class TestFoldingAndReduction(unittest.TestCase):
   def test_full_graph_rewrite_reduction_with_unused_range(self):
     const1 = UOp.const(dtypes.int32, 15)
     const2 = UOp.const(dtypes.int32, 25)
-    rng = UOp.range(dtypes.int32, 0, 10, idx=0)
+    rng = UOp.range(dtypes.int32, 10, idx=0)
     optimized_sink = apply_rewrite((const1 + const2).reduce(Ops.ADD, rng))
     expected_sum = 10 * (15 + 25)
     self.assertEqual(optimized_sink.arg, expected_sum)
 
   @unittest.skip("currently failing")
   def test_full_graph_rewrite_range_reduction(self):
-    simple_range = UOp.range(dtypes.int32, 0, 5, idx=0)
+    simple_range = UOp.range(dtypes.int32, 5, idx=0)
     optimized_sink = apply_rewrite(simple_range.reduce(Ops.ADD, simple_range))
     expected_sum = sum(range(5))
     self.assertEqual(optimized_sink.arg, expected_sum)
 
   @unittest.skip("currently failing")
   def test_full_graph_rewrite_simple_reduction_folding(self):
-    simple_range = UOp.range(dtypes.int32, 0, 4, idx=0)
+    simple_range = UOp.range(dtypes.int32, 4, idx=0)
     add_uop = simple_range + UOp.const(dtypes.int32, 1)
     optimized_sink = apply_rewrite(add_uop.reduce(Ops.ADD, simple_range))
     expected_sum = sum(i + 1 for i in range(4))
@@ -86,8 +86,8 @@ class TestFoldingAndReduction(unittest.TestCase):
 
   @unittest.skip("currently failing")
   def test_full_graph_rewrite_nested_loop_collapse(self):
-    outer_range = UOp.range(dtypes.int32, 0, 8, 0)
-    inner_range = UOp.range(dtypes.int32, 0, 4, 1)
+    outer_range = UOp.range(dtypes.int32, 8, 0)
+    inner_range = UOp.range(dtypes.int32, 4, 1)
     expr = (outer_range * 10) + inner_range
     optimized_reduce_uop = apply_rewrite(expr.reduce(Ops.ADD, outer_range, inner_range))
     self.assertEqual(optimized_reduce_uop.op, Ops.CONST)
@@ -145,7 +145,7 @@ class TestModuloAndDivisionFolding(unittest.TestCase):
 
 class TestEdgeCasesAndSpecialOperations(unittest.TestCase):
   def test_full_graph_rewrite_transcendental_edge_cases(self):
-    optimized_sink = full_graph_rewrite(UOp.const(dtypes.float32, -1.0).log2().sink(UOp.const(dtypes.float32, 0.0).reciprocal()))
+    optimized_sink = full_rewrite_to_sink(UOp.const(dtypes.float32, -1.0).log2().sink(UOp.const(dtypes.float32, 0.0).reciprocal()))
     optimized_log2_neg, optimized_recip_zero = optimized_sink.src
     self.assertTrue(math.isnan(optimized_log2_neg.arg), f"Expected NaN for log2(-1.0), got {optimized_log2_neg.arg}")
     self.assertTrue(math.isinf(optimized_recip_zero.arg) and optimized_recip_zero.arg > 0,
@@ -154,14 +154,14 @@ class TestEdgeCasesAndSpecialOperations(unittest.TestCase):
   @unittest.skip("broken")
   def test_full_graph_rewrite_modulo_negative_dividend(self):
     x_var_uop = UOp.variable('x', -5, -1)
-    optimized_sink = full_graph_rewrite((x_var_uop % 3).sink())
+    optimized_sink = full_rewrite_to_sink((x_var_uop % 3).sink())
     for x_value in range(-5, 0):
       self.assertEqual(x_value % 3, evaluate_uop(optimized_sink.src[0], {'x': x_value}))
 
   @unittest.skip("broken")
   def test_full_graph_rewrite_division_negative_divisor(self):
     x_var_uop = UOp.variable('x', 1, 5)
-    optimized_sink = full_graph_rewrite((x_var_uop // -2).sink())
+    optimized_sink = full_rewrite_to_sink((x_var_uop // -2).sink())
     for x_value in range(1, 6):
       self.assertEqual(x_value // -2, evaluate_uop(optimized_sink.src[0], {'x': x_value}))
 
@@ -203,7 +203,8 @@ class TestGEPAndVectorizeRewrite(unittest.TestCase):
 
 
 import inspect
-from tinygrad.ops import graph_rewrite, _substitute, track_rewrites, symbolic_simple
+from tinygrad.uop.ops import graph_rewrite, _substitute, track_rewrites
+from tinygrad.codegen.symbolic import symbolic_simple
 
 class TestBottomUpRewrite(unittest.TestCase):
   def test_const_folding(self):
@@ -273,6 +274,7 @@ class TestSubstitute(unittest.TestCase):
     # NOTE: this would work if it had gone in the opposite order
     ret = substitute(ret, {a.sin():a.sqrt(), n1.sin():n1.sqrt()})
     self.assertIs(ret, a.sqrt().sqrt())
+
 
 if __name__ == '__main__':
   unittest.main()

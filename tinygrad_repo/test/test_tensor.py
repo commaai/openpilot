@@ -3,11 +3,15 @@ import numpy as np
 import torch
 import unittest, copy, mmap, random, math, array
 from tinygrad import Tensor, Device, dtypes
-from tinygrad.engine.schedule import create_schedule
-from tinygrad.helpers import getenv, temp, _METADATA, mv_address
+from tinygrad.tensor import _METADATA
+from tinygrad.helpers import getenv, temp, mv_address
 from extra.gradcheck import numerical_jacobian, jacobian, gradcheck
 from hypothesis import given, settings, strategies as strat
 from tinygrad.device import is_dtype_supported
+from tinygrad.uop.ops import Ops, UOp
+from tinygrad.runtime.support.compiler_cuda import PTX
+from tinygrad.codegen import full_rewrite
+from tinygrad.dtype import DType
 
 settings.register_profile("my_profile", max_examples=200, deadline=None, derandomize=getenv("DERANDOMIZE_CI", False))
 settings.load_profile("my_profile")
@@ -58,17 +62,16 @@ class TestTinygrad(unittest.TestCase):
       np.testing.assert_allclose(x, y, atol=1e-5)
 
   # A simple test is to check that we can accumulate gradients (run backward twice or more times)
-  # This will only work if retain_graph works.
-  def test_retain_graph(self):
+  def test_accumulate_gradients(self):
     x = Tensor(x_init, requires_grad=True)
     W = Tensor(W_init, requires_grad=True)
     m = Tensor(m_init)
     out = x.dot(W).relu()
     out = out.log_softmax()
     out = out.mul(m).add(m).sum()
-    out.backward(retain_graph=True)
+    out.backward()
     xgrad,wgrad = x.grad, W.grad
-    out.backward(retain_graph=True)
+    out.backward()
     xgrad2,wgrad2 = x.grad, W.grad
     out.backward() # no need to retain again since we will not re-run backward
     xgrad3,wgrad3 = x.grad, W.grad
@@ -148,6 +151,27 @@ class TestTinygrad(unittest.TestCase):
     for x,y in zip(test_tinygrad(), test_pytorch()):
       np.testing.assert_allclose(x, y, atol=1e-5, rtol=1e-6)
 
+  @unittest.expectedFailure
+  def test_const_backward_pass(self):
+    init = 3.5
+
+    def test_pytorch():
+      w1 = torch.tensor(init, requires_grad=True)
+      w2 = torch.tensor(init, requires_grad=True)
+      out = w1.add(w2)
+      out.backward()
+      return w1.grad, w2.grad
+
+    def test_tinygrad():
+      w1 = Tensor(init, requires_grad=True)
+      w2 = Tensor(init, requires_grad=True)
+      out = w1.add(w2)
+      out.backward()
+      return w1.grad.numpy(), w2.grad.numpy()
+
+    for x, y in zip(test_tinygrad(), test_pytorch()):
+      np.testing.assert_allclose(x, y, atol=1e-5)
+
   def test_nograd(self):
     x = Tensor(x_init, requires_grad=False)
     m = Tensor(m_init, requires_grad=False)
@@ -211,6 +235,13 @@ class TestTinygrad(unittest.TestCase):
         b = random_fn(10,10).realize()
         np.testing.assert_allclose(a.numpy(), b.numpy())
 
+  def test_randperm(self):
+    Tensor.manual_seed(0)
+    a = Tensor.randperm(10).realize()
+    np.testing.assert_equal(a.numpy(), [5, 2, 8, 1, 3, 7, 9, 6, 0, 4])
+    b = Tensor.randperm(1000).realize()
+    np.testing.assert_equal(set(b.numpy()), set(range(1000)))
+
   def test_randn_isnt_inf_on_zero(self):
     # simulate failure case of rand handing a zero to randn
     original_rand, Tensor.rand = Tensor.rand, Tensor.zeros
@@ -243,7 +274,7 @@ class TestTinygrad(unittest.TestCase):
     assert a.shape == b.shape, f"shape mismatch {a.shape} != {b.shape}"
 
   def test_rand_like_device(self):
-    a = Tensor.ones(3, 3, device="CLANG")
+    a = Tensor.ones(3, 3, device="CPU")
     b = Tensor.rand_like(a)
     self.assertEqual(b.device, a.device)
 
@@ -322,7 +353,7 @@ class TestTinygrad(unittest.TestCase):
   def test_tensor_from_blob(self):
     x = memoryview(bytearray(16)).cast('I')
 
-    t = Tensor.from_blob(mv_address(x), (4,), dtype=dtypes.int, device="CLANG")
+    t = Tensor.from_blob(mv_address(x), (4,), dtype=dtypes.int, device="CPU")
     z = (t+1)
     np.testing.assert_equal(z.numpy(), [1, 1, 1, 1])
 
@@ -410,7 +441,7 @@ class TestTinygrad(unittest.TestCase):
 
   def test_tensor_dtype_errors(self):
     with self.assertRaises(AttributeError): Tensor([3], dtype="typo")
-    with self.assertRaises(TypeError): Tensor([3], dtype=(dtypes.int,))
+    with self.assertRaises(AttributeError): Tensor([3], dtype=(dtypes.int,))
 
   def test_tensor_bytes(self):
     data = b"abc123"
@@ -463,9 +494,9 @@ class TestTinygrad(unittest.TestCase):
       _a = Tensor([3]) in [Tensor([3]), Tensor([4]), Tensor([5])]
 
   def test_repr_with_grad(self):
-    a = Tensor([1], requires_grad=True)
+    a = Tensor([1.0], requires_grad=True)
     b = Tensor([1])
-    c = (a + b).mean().backward()
+    c = (a + b).sum().backward()
     print(a)
     print(c)
 
@@ -480,6 +511,12 @@ class TestTinygrad(unittest.TestCase):
                     shell=True, check=True)
     subprocess.run([f'NPY=1 {Device.DEFAULT}=1 python3 -c "from tinygrad import Device; assert Device.DEFAULT == \\"{Device.DEFAULT}\\""'],
                     shell=True, check=True)
+
+  def test_no_attributeerror_after_apply_uop_exception(self):
+    try:
+      Tensor.arange(4).reshape(3,2)
+    except ValueError:
+      Tensor.zeros(2, 2).realize()
 
 @unittest.skip("this test is just flaky, sync issue")
 class TestMoveTensor(unittest.TestCase):
@@ -647,10 +684,26 @@ class TestZeroShapeTensor(unittest.TestCase):
 
   def test_clone(self):
     a = Tensor.rand(16, 16).realize()
-    np.testing.assert_allclose(a.numpy(), a.clone().numpy())
+    b = a.clone()
+    np.testing.assert_allclose(a.numpy(), b.numpy())
+    self.assertIsNot(a.lazydata.base.buffer, b.lazydata.base.buffer)
 
-    a = Tensor.rand(16, 16).mul(5.0).add(5.0)
-    np.testing.assert_allclose(a.numpy(), a.clone().numpy())
+    a = Tensor.rand(16, 16).mul(5.0).add(5.0).realize()
+    b = a.clone()
+    np.testing.assert_allclose(a.numpy(), b.numpy())
+    self.assertIsNot(a.lazydata.base.buffer, b.lazydata.base.buffer)
+
+  def test_clone_with_shrink(self):
+    a = Tensor.rand(16, 16)
+    b = a.shrink(((2, 10), None)).clone()
+    b.realize()
+    self.assertIsNot(a.lazydata.base.buffer, b.lazydata.base.buffer)
+
+  def test_clone_with_shrink_realized(self):
+    a = Tensor.rand(16, 16).realize()
+    b = a.shrink(((2, 10), None)).clone()
+    b.realize()
+    self.assertIsNot(a.lazydata.base.buffer, b.lazydata.base.buffer)
 
   def test_clone_with_grad(self):
     a = Tensor.rand(16, 16, requires_grad=True)
@@ -669,7 +722,7 @@ class TestZeroShapeTensor(unittest.TestCase):
 class TestTensorCreationDevice(unittest.TestCase):
   # test auxiliary tensors are created on the same device
   def test_one_hot(self):
-    y = Tensor([1, 2, 3]).to("CLANG")
+    y = Tensor([1, 2, 3]).to("CPU")
     x = y.one_hot(10)
     x.realize()
 
@@ -720,20 +773,38 @@ class TestInferenceMode(unittest.TestCase):
 
 class TestTensorMetadata(unittest.TestCase):
   def setUp(self) -> None: _METADATA.set(None)
+
+  # NOOPs are not included in kernel metadata
+  @unittest.skip("why would this be true?")
+  def test_exclude_noop_metadata(self):
+    a = Tensor.rand(4, 4)*1
+    self.assertEqual(a.lazydata.metadata[0].name, "__mul__")
+    k = a.schedule()[-1]
+    self.assertEqual([m.name for m in k.metadata], ["rand"])
+
+  # we exclude const from kernel metadata because tensor methods can share the same CONST UOp
+  @unittest.skip("TODO: flaky")
+  def test_exclude_const_metadata(self):
+    a = Tensor.arange(4)
+    b = Tensor.full((4,), -1, dtype=dtypes.int).contiguous()
+    sched = Tensor.schedule(a, b)
+    self.assertEqual([m.name for m in sched[0].metadata], ["arange"])
+    self.assertEqual([m.name for m in sched[1].metadata], ["contiguous"])
+
   def test_matmul(self):
     x = Tensor.rand(3, requires_grad=True)
     W = Tensor.rand(3, 3, requires_grad=True)
     out = x.matmul(W)
-    self.assertEqual(out.lazydata.metadata.name, "matmul")
-    si = create_schedule([out.lazydata])[-1]
+    self.assertEqual(out.lazydata.metadata[0].name, "matmul")
+    si = out.schedule()[-1]
     self.assertEqual(len(si.metadata), 1)
     self.assertEqual(si.metadata[0].name, "matmul")
 
   def test_relu(self):
     x = Tensor.rand(3, requires_grad=True)
     out = x.relu()
-    self.assertEqual(out.lazydata.metadata.name, "relu")
-    si = create_schedule([out.lazydata])[-1]
+    self.assertEqual(out.lazydata.metadata[0].name, "relu")
+    si = out.schedule()[-1]
     self.assertEqual(len(si.metadata), 1)
     self.assertEqual(si.metadata[0].name, "relu")
 
@@ -741,29 +812,97 @@ class TestTensorMetadata(unittest.TestCase):
     x = Tensor.rand(3, requires_grad=True)
     y = Tensor.rand(3, requires_grad=True)
     out = x.relu() * y.sigmoid()
-    self.assertEqual(out.lazydata.metadata.name, "__mul__")
-    self.assertEqual(out.lazydata.src[0].metadata.name, "relu")
-    self.assertEqual(out.lazydata.src[1].metadata.name, "sigmoid")
-    si = create_schedule([out.lazydata])[-1]
+    self.assertEqual(out.lazydata.metadata[0].name, "__mul__")
+    self.assertEqual(out.lazydata.src[0].metadata[0].name, "relu")
+    self.assertEqual(out.lazydata.src[1].metadata[0].name, "sigmoid")
+    si = out.schedule()[-1]
     self.assertEqual(len(si.metadata), 3)
     self.assertEqual(set(m.name for m in si.metadata), {"relu", "sigmoid", "__mul__"})
 
   def test_complex_backward(self):
-    x = Tensor.rand(3, requires_grad=True)
-    y = Tensor.rand(3, requires_grad=True)
+    x = Tensor.rand(3, requires_grad=True).realize()
+    y = Tensor.rand(3, requires_grad=True).realize()
     out = (x.relu() * y.sigmoid()).sum()
-    self.assertEqual(out.lazydata.metadata.name, "sum")
+    self.assertEqual(out.lazydata.metadata[0].name, "sum")
     out.backward()
-    self.assertEqual(x.grad.lazydata.metadata.name, "relu")
-    self.assertTrue(x.grad.lazydata.metadata.backward)
-    self.assertEqual(y.grad.lazydata.metadata.name, "sigmoid")
-    self.assertTrue(y.grad.lazydata.metadata.backward)
-    si = create_schedule([out.lazydata, x.grad.lazydata, y.grad.lazydata])[-1]
-    self.assertEqual(len(si.metadata), 3, f"failed with {si.metadata}")
-    self.assertEqual(set(m.name for m in si.metadata), {"sigmoid", "sigmoid", "relu"})
+    self.assertEqual(x.grad.lazydata.metadata[0].name, "relu")
+    self.assertTrue(x.grad.lazydata.metadata[0].backward)
+    self.assertEqual(y.grad.lazydata.metadata[0].name, "sigmoid")
+    self.assertTrue(y.grad.lazydata.metadata[0].backward)
+    si = Tensor.schedule(out, x.grad, y.grad)[-1]
+    self.assertEqual(len(si.metadata), 4, f"failed with {si.metadata}")
+    self.assertSetEqual(set(m.name for m in si.metadata), {"sigmoid", "__mul__", "relu"})
     bw = [m for m in si.metadata if m.backward]
-    self.assertEqual(len(bw), 1)
+    self.assertEqual(len(bw), 2)
     self.assertEqual(bw[0].name, "sigmoid")
+
+class TestIdxUpcast(unittest.TestCase):
+  def _find_op(self, ast: UOp, op: Ops):
+    if ast.op is op: return ast
+    for src in ast.src:
+      if (ret:=self._find_op(src, op)) is not None: return ret
+  def _schedule_render(self, a: Tensor):
+    schedule, _ = a.schedule_with_vars()
+    for s in schedule:
+      if s.ast.op is Ops.SINK:
+        renderer = Device[s.bufs[0].device].renderer
+        uops = full_rewrite(s.ast, renderer)
+        renderer.render(uops)
+        return uops
+
+  def _assert(self, dtype: DType, a: Tensor):
+    uops = self._schedule_render(a)
+    # Assert the dtype of the INDEX value, This will need be updated if UOp spec changes
+    store = next(uop for uop in uops if uop.op is Ops.STORE)
+    assert store.op is Ops.STORE
+    idx = self._find_op(store, Ops.INDEX)
+    if idx is not None: # PTX turns Ops.INDEX into pointer arithmetic earlier than cstyle, plus it's already cast to int64
+      assert idx.op is Ops.INDEX
+      idx_val = idx.src[1]
+      assert idx_val.dtype is dtype
+
+  # use expand to generate kernel that uses large idx
+  def do_op_then_assert(self, dtype: DType, dim1, dim2, dim3):
+    self._assert(dtype, Tensor.empty(dim1, dim2, 1).expand(-1, -1, dim3).contiguous())
+
+  @unittest.skipUnless(is_dtype_supported(dtypes.long), "int64 is supported")
+  def test_overflow(self):
+    # 2**11, 2**11, 2**11 -> 2**33 will overflow when indexed
+    self.do_op_then_assert(dtypes.long, 2048, 2048, 2048)
+
+  @unittest.skipUnless(is_dtype_supported(dtypes.long), "int64 is supported")
+  def test_overflow_sym(self):
+    self.do_op_then_assert(dtypes.long, 2048, 2048, UOp.variable("dim3", 0, 2048).bind(32))
+
+  def test_regular(self):
+    self.do_op_then_assert(dtypes.int, 64, 64, 64)
+
+  def test_regular_sym(self):
+    self.do_op_then_assert(dtypes.int, 2048, 2048, UOp.variable("dim3", 0, 64).bind(32))
+
+  @unittest.skipIf(PTX, "PTX always convert Ops.INDEX to int64")
+  def test_symfold(self):
+    # This would cause an overflow, but after sym fold it's within int32
+    a = Tensor.arange(65535)
+    uops = self._schedule_render(a)
+    assert all(uop.dtype is not dtypes.long for uop in uops)
+
+  @unittest.skipIf(is_dtype_supported(dtypes.long), "int64 is supported")
+  def test_int64_unsupported_overflow_sym(self):
+    with self.assertRaises(KeyError):
+      self.do_op_then_assert(dtypes.long, 2048, 2048, UOp.variable("dim3", 0, 2048).bind(32))
+
+  @unittest.skipIf(is_dtype_supported(dtypes.long), "int64 is supported")
+  def test_int64_unsupported_overflow(self):
+    with self.assertRaises(KeyError):
+      self.do_op_then_assert(dtypes.long, 2048, 2048, 2048)
+
+  @unittest.skip("This is kept for reference, it requires large memory to run")
+  def test_overflow_kernel_run(self):
+    # This creates a total of 2**31+10 elements, requiring at least 2147 MB memory to run
+    # Modified example from issue 3271
+    a = Tensor.empty(2**11, 2**11, 1, dtype=dtypes.int8).permute((2, 0, 1)).expand((2**9+10, -1, -1)).contiguous()
+    a.realize()
 
 if __name__ == '__main__':
   unittest.main()

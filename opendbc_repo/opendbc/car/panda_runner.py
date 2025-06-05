@@ -13,7 +13,7 @@ class PandaRunner(AbstractContextManager):
 
     # setup + fingerprinting
     self.p.set_safety_mode(CarParams.SafetyModel.elm327, 1)
-    self.CI = get_car(self._can_recv, self.p.can_send_many, self.p.set_obd, True)
+    self.CI = get_car(self._can_recv, self.p.can_send_many, self.p.set_obd, True, False)
     assert self.CI.CP.carFingerprint.lower() != "mock", "Unable to identify car. Check connections and ensure car is supported."
 
     safety_model = self.CI.CP.safetyConfigs[0].safetyModel

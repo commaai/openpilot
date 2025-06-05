@@ -15,8 +15,9 @@
 *.html
 *.gcda
 *.gcno
-
+*.dump
 uv.lock
+/dist/
 
 opendbc/can/build/
 opendbc/can/obj/

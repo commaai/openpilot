@@ -17,10 +17,6 @@ class Btn:
   SET = 3
   RESUME = 4
 
-HONDA_NIDEC = 0
-HONDA_BOSCH = 1
-
-
 # Honda safety has several different configurations tested here:
 #  * Nidec
 #    * normal (PCM-enable)
@@ -32,7 +28,6 @@ HONDA_BOSCH = 1
 
 
 class HondaButtonEnableBase(common.PandaCarSafetyTest):
-  # pylint: disable=no-member,abstract-method
 
   # override these inherited tests since we're using button enable
   def test_disable_control_allowed_from_cruise(self):
@@ -139,7 +134,6 @@ class HondaButtonEnableBase(common.PandaCarSafetyTest):
 
 
 class HondaPcmEnableBase(common.PandaCarSafetyTest):
-  # pylint: disable=no-member,abstract-method
 
   def test_buttons(self):
     """
@@ -249,6 +243,7 @@ class HondaBase(common.PandaCarSafetyTest):
 class TestHondaNidecSafetyBase(HondaBase):
   TX_MSGS = HONDA_N_COMMON_TX_MSGS
   FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0x194, 0x33D, 0x30C]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0xE4, 0x194, 0x33D, 0x30C)}
 
   PT_BUS = 0
   STEER_BUS = 0
@@ -374,7 +369,7 @@ class TestHondaBoschSafetyBase(HondaBase):
 
   TX_MSGS = [[0xE4, 0], [0xE5, 0], [0x296, 1], [0x33D, 0], [0x33DA, 0], [0x33DB, 0]]
   FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
-  RELAY_MALFUNCTION_ADDRS = {0: (0xE4,)}  # STEERING_CONTROL
+  RELAY_MALFUNCTION_ADDRS = {0: (0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB)}  # STEERING_CONTROL, BOSCH_SUPPLEMENTAL_1
 
   def setUp(self):
     self.packer = CANPackerPanda("honda_accord_2018_can_generated")
@@ -458,9 +453,9 @@ class TestHondaBoschLongSafety(HondaButtonEnableBase, TestHondaBoschSafetyBase):
 
   STEER_BUS = 1
   TX_MSGS = [[0xE4, 1], [0x1DF, 1], [0x1EF, 1], [0x1FA, 1], [0x30C, 1], [0x33D, 1], [0x33DA, 1], [0x33DB, 1], [0x39F, 1], [0x18DAB0F1, 1]]
-  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
+  FWD_BLACKLISTED_ADDRS = {}
   # 0x1DF is to test that radar is disabled
-  RELAY_MALFUNCTION_ADDRS = {1: (0xE4, 0x1DF)}  # STEERING_CONTROL, ACC_CONTROL
+  RELAY_MALFUNCTION_ADDRS = {1: (0xE4, 0x1DF, 0x33D, 0x33DA, 0x33DB)}  # STEERING_CONTROL, ACC_CONTROL
 
   def setUp(self):
     super().setUp()
@@ -510,7 +505,8 @@ class TestHondaBoschRadarlessSafetyBase(TestHondaBoschSafetyBase):
   BUTTONS_BUS = 2  # camera controls ACC, need to send buttons on bus 2
 
   TX_MSGS = [[0xE4, 0], [0x296, 2], [0x33D, 0]]
-  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB]}
+  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0x33D]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0xE4, 0x33D)}  # STEERING_CONTROL
 
   def setUp(self):
     self.packer = CANPackerPanda("honda_civic_ex_2022_can_generated")
@@ -545,7 +541,8 @@ class TestHondaBoschRadarlessLongSafety(common.LongitudinalAccelSafetyTest, Hond
     Covers the Honda Bosch Radarless safety mode with longitudinal control
   """
   TX_MSGS = [[0xE4, 0], [0x33D, 0], [0x1C8, 0], [0x30C, 0]]
-  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0xE5, 0x33D, 0x33DA, 0x33DB, 0x1C8, 0x30C]}
+  FWD_BLACKLISTED_ADDRS = {2: [0xE4, 0x33D, 0x1C8, 0x30C]}
+  RELAY_MALFUNCTION_ADDRS = {0: (0xE4, 0x1C8, 0x30C, 0x33D)}
 
   def setUp(self):
     super().setUp()

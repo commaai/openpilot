@@ -1,5 +1,5 @@
 import random, traceback, ctypes, argparse, os
-from typing import List, Tuple, DefaultDict, Any
+from typing import Any
 import numpy as np
 from collections import defaultdict
 from extra.optimization.helpers import load_worlds, ast_str_to_lin, kern_str_to_lin
@@ -25,7 +25,7 @@ from tinygrad.codegen.kernel import Opt, OptOps
 from tinygrad.engine.search import get_kernel_actions, bufs_from_lin
 from tinygrad.engine.realize import CompiledRunner
 from tinygrad.helpers import getenv, from_mv, prod, colored, Context, DEBUG, Timing
-from tinygrad.ops import UOp, Ops
+from tinygrad.uop.ops import UOp, Ops
 from tinygrad.device import is_dtype_supported
 
 def on_linearizer_will_run(): pass
@@ -50,10 +50,8 @@ if getenv("VALIDATE_HCQ"):
   else:
     print(colored("VALIDATE_HCQ options is ignored", 'red'))
 
-def tuplize_uops(uops:List[UOp]) -> Tuple:
+def tuplize_uops(uops:list[UOp]) -> tuple:
   return tuple([(x.op, x.dtype, tuple(uops.index(x) for x in x.src), x.arg) for x in uops])
-
-device = Device[Device.DEFAULT]
 
 def get_fuzz_rawbufs(lin):
   rawbufs = bufs_from_lin(lin)
@@ -89,9 +87,9 @@ def get_fuzz_rawbuf_like(old_rawbuf, zero=False, copy=False, size=None, force_de
       rawbuf.copyin(mv)
   return rawbuf
 
-def run_linearizer(lin: Kernel, rawbufs=None, var_vals=None) -> Tuple[str, Any]: # (error msg, run state)
+def run_linearizer(lin: Kernel, rawbufs=None, var_vals=None) -> tuple[str, Any]: # (error msg, run state)
   if rawbufs is None: rawbufs = bufs_from_lin(lin)
-  if var_vals is None: var_vals = {v: v.min for v in lin.ast[0].vars()}
+  if var_vals is None: var_vals = {v: v.min for v in lin.vars}
 
   # TODO: images needs required_optimization
   try:
@@ -134,7 +132,6 @@ def compare_linearizer(lin: Kernel, rawbufs=None, var_vals=None, ground_truth=No
 
   if ground_truth is None and not has_bf16:
     unoptimized = Kernel(lin.ast)
-    unoptimized.required_optimizations()
     if run_linearizer(unoptimized, rawbufs, var_vals)[0] != "PASS":
       return ("BASELINE_ERROR", rawbufs, var_vals, ground_truth, None)
     ground_truth = np.frombuffer(rawbufs[0].as_buffer(), _to_np_dtype(rawbufs[0].dtype)).copy()
@@ -169,7 +166,7 @@ def fuzz_linearizer(lin: Kernel, rtol=1e-2, atol=1e-2, opts_list=None):
   print(lin.colored_shape())
   seen_uops = {}
   last_lins = [lin]
-  failures:DefaultDict[str, List[Tuple[Tuple[UOp,...],List[Opt]]]] = defaultdict(list)
+  failures:defaultdict[str, list[tuple[tuple[UOp, ...], list[Opt]]]] = defaultdict(list)
   rawbufs, var_vals, ground_truth, validate_rawbufs = None, None, None, None
 
   FUZZ_ALL_ACTIONS = getenv("FUZZ_ALL_ACTIONS", 0)

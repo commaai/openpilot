@@ -1,12 +1,11 @@
 import random
-from typing import Tuple
 from tinygrad.helpers import getenv, DEBUG, colored, trange
 from tinygrad.shape.shapetracker import ShapeTracker
 from test.external.fuzz_shapetracker import shapetracker_ops
 from test.external.fuzz_shapetracker import do_permute, do_reshape_split_one, do_reshape_combine_two, do_flip, do_pad
 from test.unit.test_shapetracker_math import st_equal, MultiShapeTracker
 
-def fuzz_plus() -> Tuple[ShapeTracker, ShapeTracker]:
+def fuzz_plus() -> tuple[ShapeTracker, ShapeTracker]:
   m = MultiShapeTracker([ShapeTracker.from_shape((random.randint(1, 10), random.randint(1, 10), random.randint(1, 10)))])
   for _ in range(4): random.choice(shapetracker_ops)(m)
   backup = m.sts[0]
@@ -18,7 +17,7 @@ def fuzz_plus() -> Tuple[ShapeTracker, ShapeTracker]:
 # shrink and expand aren't invertible, and stride is only invertible in the flip case
 invertible_shapetracker_ops = [do_permute, do_reshape_split_one, do_reshape_combine_two, do_flip, do_pad]
 
-def fuzz_invert() -> Tuple[ShapeTracker, ShapeTracker]:
+def fuzz_invert() -> tuple[ShapeTracker, ShapeTracker]:
   start = ShapeTracker.from_shape((random.randint(1, 10), random.randint(1, 10), random.randint(1, 10)))
   m = MultiShapeTracker([start])
   for _ in range(8): random.choice(invertible_shapetracker_ops)(m)

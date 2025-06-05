@@ -73,7 +73,7 @@ void CameraState::init(VisionIpcServer *v, cl_device_id device_id, cl_context ct
 
   if (!camera.enabled) return;
 
-  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm;
+  fl_pix = camera.cc.focal_len / camera.sensor->pixel_size_mm / camera.sensor->out_scale;
   set_exposure_rect();
 
   dc_gain_weight = camera.sensor->dc_gain_min_weight;
@@ -107,10 +107,10 @@ void CameraState::set_exposure_rect() {
   float fl_ref = ae_target.second;
 
   ae_xywh = (Rect){
-    std::max(0, camera.buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::max(0, camera.buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.w), camera.buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
-    std::min((int)(fl_pix / fl_ref * xywh_ref.h), camera.buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
+    std::max(0, (int)camera.buf.out_img_width / 2 - (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::max(0, (int)camera.buf.out_img_height / 2 - (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y))),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.w), (int)camera.buf.out_img_width / 2 + (int)(fl_pix / fl_ref * xywh_ref.w / 2)),
+    std::min((int)(fl_pix / fl_ref * xywh_ref.h), (int)camera.buf.out_img_height / 2 + (int)(fl_pix / fl_ref * (h_ref / 2 - xywh_ref.y)))
   };
 }
 

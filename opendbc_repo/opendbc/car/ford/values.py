@@ -79,6 +79,11 @@ class FordCarDocs(CarDocs):
     else:
       self.car_parts = CarParts([Device.threex, harness])
 
+    if harness == CarHarness.ford_q4:
+      self.setup_video = "https://www.youtube.com/watch?v=uUGkH6C_EQU"
+
+    if CP.carFingerprint in (CAR.FORD_F_150_MK14, CAR.FORD_F_150_LIGHTNING_MK1, CAR.FORD_EXPEDITION_MK4):
+      self.setup_video = "https://www.youtube.com/watch?v=MewJc9LYp9M"
 
 @dataclass
 class FordPlatformConfig(PlatformConfig):
@@ -124,7 +129,15 @@ class CAR(Platforms):
   FORD_ESCAPE_MK4 = FordPlatformConfig(
     [
       FordCarDocs("Ford Escape 2020-22", hybrid=True, plug_in_hybrid=True),
-      FordCarDocs("Ford Kuga 2020-22", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
+      FordCarDocs("Ford Kuga 2020-23", "Adaptive Cruise Control with Lane Centering", hybrid=True, plug_in_hybrid=True),
+    ],
+    CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
+  )
+  FORD_ESCAPE_MK4_5 = FordCANFDPlatformConfig(
+    [
+      FordCarDocs("Ford Escape 2023-24", hybrid=True, plug_in_hybrid=True),
+      FordCarDocs("Ford Kuga Hybrid 2024", "All"),
+      FordCarDocs("Ford Kuga Plug-in Hybrid 2024", "All"),
     ],
     CarSpecs(mass=1750, wheelbase=2.71, steerRatio=16.7),
   )
@@ -134,6 +147,10 @@ class CAR(Platforms):
       FordCarDocs("Lincoln Aviator 2020-24", "Co-Pilot360 Plus", plug_in_hybrid=True),  # Hybrid: Grand Touring only
     ],
     CarSpecs(mass=2050, wheelbase=3.025, steerRatio=16.8),
+  )
+  FORD_EXPEDITION_MK4 = FordCANFDPlatformConfig(
+    [FordCarDocs("Ford Expedition 2022-24", "Co-Pilot360 Assist 2.0", hybrid=False)],
+    CarSpecs(mass=2000, wheelbase=3.69, steerRatio=17.0),
   )
   FORD_F_150_MK14 = FordCANFDPlatformConfig(
     [FordCarDocs("Ford F-150 2021-23", "Co-Pilot360 Assist 2.0", hybrid=True)],
@@ -155,11 +172,11 @@ class CAR(Platforms):
     CarSpecs(mass=1650, wheelbase=3.076, steerRatio=17.0),
   )
   FORD_MUSTANG_MACH_E_MK1 = FordCANFDPlatformConfig(
-    [FordCarDocs("Ford Mustang Mach-E 2021-23", "All")],
+    [FordCarDocs("Ford Mustang Mach-E 2021-23", "All", setup_video="https://www.youtube.com/watch?v=AR4_eTF3b_A")],
     CarSpecs(mass=2200, wheelbase=2.984, steerRatio=17.0),  # TODO: check steer ratio
   )
   FORD_RANGER_MK2 = FordCANFDPlatformConfig(
-    [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering")],
+    [FordCarDocs("Ford Ranger 2024", "Adaptive Cruise Control with Lane Centering", setup_video="https://www.youtube.com/watch?v=2oJlXCKYOy0")],
     CarSpecs(mass=2000, wheelbase=3.27, steerRatio=17.0),
   )
 

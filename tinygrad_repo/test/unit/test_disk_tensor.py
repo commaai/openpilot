@@ -3,14 +3,14 @@ import numpy as np
 from tinygrad import Tensor, Device, dtypes
 from tinygrad.dtype import DType
 from tinygrad.nn.state import safe_load, safe_save, get_state_dict, torch_load
-from tinygrad.helpers import Timing, fetch, temp, CI
+from tinygrad.helpers import Timing, fetch, temp, CI, OSX
 from tinygrad.device import is_dtype_supported
 
 def compare_weights_both(url):
   import torch
   fn = fetch(url)
   tg_weights = get_state_dict(torch_load(fn))
-  torch_weights = get_state_dict(torch.load(fn, map_location=torch.device('cpu'), weights_only=True), tensor_type=torch.Tensor)
+  torch_weights = get_state_dict(torch.load(fn, map_location=torch.device('cpu'), weights_only=False), tensor_type=torch.Tensor)
   assert list(tg_weights.keys()) == list(torch_weights.keys())
   for k in tg_weights:
     if tg_weights[k].dtype == dtypes.bfloat16: tg_weights[k] = torch_weights[k].float() # numpy doesn't support bfloat16
@@ -68,8 +68,8 @@ class TestRawDiskBuffer(unittest.TestCase):
     _test_bitcasted(t, dtypes.float32, 3.1415927)
     _test_bitcasted(t, dtypes.uint32, 0x40490FDB)
     # doesn't suport normal cast
-    with self.assertRaises(RuntimeError):
-      Tensor.empty((4,), dtype=dtypes.int16, device=f"disk:{tmp}").cast(dtypes.float16)
+    with self.assertRaises(NotImplementedError):
+      Tensor.empty((4,), dtype=dtypes.int16, device=f"disk:{tmp}").cast(dtypes.float16).realize()
 
     # Those two should be moved to test_dtype.py:test_shape_change_bitcast after bitcast works on non-disk
     with self.assertRaises(RuntimeError):
@@ -164,6 +164,7 @@ class TestSafetensors(unittest.TestCase):
   def test_save_all_dtypes(self):
     for dtype in dtypes.fields().values():
       if dtype in [dtypes.bfloat16]: continue # not supported in numpy
+      if dtype in [dtypes.double, *dtypes.fp8s] and Device.DEFAULT == "METAL": continue # not supported on METAL
       path = temp(f"ones.{dtype}.safetensors")
       ones = Tensor(np.random.rand(10,10), dtype=dtype)
       safe_save(get_state_dict(ones), path)
@@ -210,7 +211,7 @@ class TestSafetensors(unittest.TestCase):
 def helper_test_disk_tensor(fn, data, np_fxn, tinygrad_fxn=None):
   if tinygrad_fxn is None: tinygrad_fxn = np_fxn
   pathlib.Path(temp(fn)).unlink(missing_ok=True)
-  tinygrad_tensor = Tensor(data, device="CLANG").to(f"disk:{temp(fn)}")
+  tinygrad_tensor = Tensor(data, device="CPU").to(f"disk:{temp(fn)}")
   numpy_arr = np.array(data)
   tinygrad_fxn(tinygrad_tensor)
   np_fxn(numpy_arr)
@@ -250,7 +251,7 @@ class TestDiskTensor(unittest.TestCase):
   def test_write_ones(self):
     pathlib.Path(temp("dt_write_ones")).unlink(missing_ok=True)
 
-    out = Tensor.ones(10, 10, device="CLANG").contiguous()
+    out = Tensor.ones(10, 10, device="CPU").contiguous()
     outdisk = out.to(f"disk:{temp('dt_write_ones')}")
     print(outdisk)
     outdisk.realize()
@@ -264,6 +265,14 @@ class TestDiskTensor(unittest.TestCase):
     # test load alt
     reloaded = Tensor.empty(10, 10, device=f"disk:{temp('dt_write_ones')}")
     np.testing.assert_almost_equal(reloaded.numpy(), np.ones((10, 10)))
+
+  def test_simple_setitem(self):
+    pathlib.Path(temp(fn:="dt_simple_setitem")).unlink(missing_ok=True)
+    data = [[1],[2]]
+    src = Tensor(data)
+    dt = src.to(f"disk:{temp(fn)}")
+    dt[1] = [3]
+    self.assertEqual(dt.tolist(), [[1], [3]])
 
   def test_assign_slice(self):
     def assign(x,s,y): x[s] = y
@@ -288,15 +297,16 @@ class TestDiskTensor(unittest.TestCase):
   def test_bitcast(self):
     with open(temp('dt_bitcast'), "wb") as f: f.write(bytes(range(10,20)))
     t = Tensor.empty(5, dtype=dtypes.int16, device=f"disk:{temp('dt_bitcast')}")
-    ret = t.to("CLANG").bitcast(dtypes.uint16) + 1
+    ret = t.to("CPU").bitcast(dtypes.uint16) + 1
     assert ret.tolist() == [2827, 3341, 3855, 4369, 4883]
 
   def test_bitcast_view(self):
     with open(temp('dt_bitcast_view'), "wb") as f: f.write(bytes(range(10, 24)))
     t = Tensor.empty(3, dtype=dtypes.uint, device=f"disk:{temp('dt_bitcast_view')}").shrink([(0, 2)])
-    ret = t.bitcast(dtypes.uint16).to("CLANG") + 1
+    ret = t.bitcast(dtypes.uint16).to("CPU") + 1
     assert ret.tolist() == [2827, 3341, 3855, 4369]
 
+  @unittest.skipIf(OSX, "new LLVM has an issue on OSX")
   def test_bf16_disk_write_read(self):
     t = Tensor([10000, -1, -1000, -10000, 20], dtype=dtypes.float32)
     t.to(f"disk:{temp('dt_bf16_disk_write_read_f32')}").realize()
@@ -341,6 +351,11 @@ class TestDiskTensor(unittest.TestCase):
       on_dev = t.to(Device.DEFAULT).realize()
       np.testing.assert_equal(on_dev.numpy(), t.numpy())
 
+  @unittest.skipUnless(OSX, "seems to only be an issue on macOS with file size >2 GiB")
+  def test_copy_to_cpu_not_truncated(self):
+    with open((fn:=temp("dt_copy_to_cpu_not_truncated")), "wb") as f: f.write(b'\x01' * (size := int(2 * 1024**3)) + (test := b"test"))
+    x = Tensor.empty(size + len(test), dtype=dtypes.uint8, device=f"disk:{fn}").to("CPU").realize()
+    assert x[size:].data().tobytes() == test
 
 class TestPathTensor(unittest.TestCase):
   def setUp(self):
@@ -361,10 +376,10 @@ class TestPathTensor(unittest.TestCase):
     np.testing.assert_array_equal(t.numpy(), np.frombuffer(self.test_data, dtype=np.uint8))
 
   def test_path_tensor_with_device(self):
-    t = Tensor(self.test_file, device="CLANG")
+    t = Tensor(self.test_file, device="CPU")
     self.assertEqual(t.shape, (100,))
     self.assertEqual(t.dtype, dtypes.uint8)
-    self.assertEqual(t.device, "CLANG")
+    self.assertEqual(t.device, "CPU")
     np.testing.assert_array_equal(t.numpy(), np.frombuffer(self.test_data, dtype=np.uint8))
 
   def test_path_tensor_empty_file(self):
@@ -389,8 +404,8 @@ class TestPathTensor(unittest.TestCase):
 
   def test_path_tensor_copy_to_device(self):
     t = Tensor(self.test_file)
-    t_cpu = t.to("CLANG")
-    self.assertEqual(t_cpu.device, "CLANG")
+    t_cpu = t.to("CPU")
+    self.assertEqual(t_cpu.device, "CPU")
     np.testing.assert_array_equal(t_cpu.numpy(), np.frombuffer(self.test_data, dtype=np.uint8))
 
 if __name__ == "__main__":

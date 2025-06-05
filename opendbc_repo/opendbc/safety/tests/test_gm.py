@@ -16,14 +16,14 @@ class Buttons:
 
 
 class GmLongitudinalBase(common.PandaCarSafetyTest, common.LongitudinalGasBrakeSafetyTest):
-  # pylint: disable=no-member,abstract-method
 
-  RELAY_MALFUNCTION_ADDRS = {0: (0x180, 0x2CB)}  # ASCMLKASteeringCmd, ASCMGasRegenCmd
+  RELAY_MALFUNCTION_ADDRS = {0: (0x180, 0x2CB), 2: (0x184,)}  # ASCMLKASteeringCmd, ASCMGasRegenCmd, PSCMStatus
 
   MAX_POSSIBLE_BRAKE = 2 ** 12
   MAX_BRAKE = 400
 
-  MAX_POSSIBLE_GAS = 2 ** 12
+  MAX_POSSIBLE_GAS = 4000  # reasonably excessive limits, not signal max
+  MIN_POSSIBLE_GAS = -4000
 
   PCM_CRUISE = False  # openpilot can control the PCM state if longitudinal
 
@@ -74,15 +74,14 @@ class GmLongitudinalBase(common.PandaCarSafetyTest, common.LongitudinalGasBrakeS
 class TestGmSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueSteeringSafetyTest):
   STANDSTILL_THRESHOLD = 10 * 0.0311
   # Ensures ASCM is off on ASCM cars, and relay is not malfunctioning for camera-ACC cars
-  RELAY_MALFUNCTION_ADDRS = {0: (0x180,)}  # ASCMLKASteeringCmd
+  RELAY_MALFUNCTION_ADDRS = {0: (0x180,), 2: (0x184,)}  # ASCMLKASteeringCmd, PSCMStatus
   BUTTONS_BUS = 0  # rx or tx
   BRAKE_BUS = 0  # tx only
 
   MAX_RATE_UP = 10
   MAX_RATE_DOWN = 15
-  MAX_TORQUE = 300
+  MAX_TORQUE_LOOKUP = [0], [300]
   MAX_RT_DELTA = 128
-  RT_INTERVAL = 250000
   DRIVER_TORQUE_ALLOWANCE = 65
   DRIVER_TORQUE_FACTOR = 4
 
@@ -148,12 +147,13 @@ class TestGmAscmSafety(GmLongitudinalBase, TestGmSafetyBase):
              [0xA1, 1], [0x306, 1], [0x308, 1], [0x310, 1],  # obs bus
              [0x315, 2]]  # ch bus
   FWD_BLACKLISTED_ADDRS: dict[int, list[int]] = {}
+  RELAY_MALFUNCTION_ADDRS = {0: (0x180, 0x2CB)}  # ASCMLKASteeringCmd, ASCMGasRegenCmd
   FWD_BUS_LOOKUP: dict[int, int] = {}
   BRAKE_BUS = 2
 
-  MAX_GAS = 3072
-  MIN_GAS = 1404 # maximum regen
-  INACTIVE_GAS = 1404
+  MAX_GAS = 1018
+  MIN_GAS = -650  # maximum regen
+  INACTIVE_GAS = -650
 
   def setUp(self):
     self.packer = CANPackerPanda("gm_global_a_powertrain_generated")
@@ -209,11 +209,12 @@ class TestGmCameraLongitudinalSafety(GmLongitudinalBase, TestGmCameraSafetyBase)
   TX_MSGS = [[0x180, 0], [0x315, 0], [0x2CB, 0], [0x370, 0],  # pt bus
              [0x184, 2]]  # camera bus
   FWD_BLACKLISTED_ADDRS = {2: [0x180, 0x2CB, 0x370, 0x315], 0: [0x184]}  # block LKAS, ACC messages and PSCMStatus
+  RELAY_MALFUNCTION_ADDRS = {0: (0x180, 0x2CB, 0x370, 0x315), 2: (0x184,)}
   BUTTONS_BUS = 0  # rx only
 
-  MAX_GAS = 3400
-  MIN_GAS = 1514 # maximum regen
-  INACTIVE_GAS = 1554
+  MAX_GAS = 1346
+  MIN_GAS = -540  # maximum regen
+  INACTIVE_GAS = -500
 
   def setUp(self):
     self.packer = CANPackerPanda("gm_global_a_powertrain_generated")

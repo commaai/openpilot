@@ -96,8 +96,15 @@ class TestTranslations:
     match = re.search(r'_([a-zA-Z]{2,3})', self.file)
     assert match, f"{self.name} - could not parse language"
 
-    response = requests.get(f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}")
-    response.raise_for_status()
+    try:
+      response = requests.get(
+        f"https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/{match.group(1)}"
+      )
+      response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+      if e.response is not None and e.response.status_code == 429:
+        pytest.skip("word list rate limited")
+      raise
 
     banned_words = {line.strip() for line in response.text.splitlines()}
 

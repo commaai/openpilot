@@ -17,7 +17,7 @@ from tinygrad import Device
 print(Device.DEFAULT)
 ```
 
-You will see `CUDA` here on a GPU instance, or `CLANG` here on a CPU instance.
+You will see `CUDA` here on a GPU instance, or `CPU` here on a CPU instance.
 
 ## A simple model
 

@@ -58,10 +58,7 @@ class CLProgram:
       return float(end.value-start.value) * OSX_TIMING_RATIO * 1e-9
     return None
 
-class CLAllocator(LRUAllocator):
-  def __init__(self, dev:CLDevice):
-    self.dev = dev
-    super().__init__()
+class CLAllocator(LRUAllocator['CLDevice']):
   def _alloc(self, size:int, options:BufferSpec) -> tuple[ctypes._CData, BufferSpec]:
     if options.image is not None:
       return (checked(cl.clCreateImage2D(self.dev.context, cl.CL_MEM_READ_WRITE,

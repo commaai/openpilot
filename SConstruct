@@ -55,11 +55,6 @@ AddOption('--external-sconscript',
           dest='external_sconscript',
           help='add an external SConscript to the build')
 
-AddOption('--pc-thneed',
-          action='store_true',
-          dest='pc_thneed',
-          help='use thneed on pc')
-
 AddOption('--mutation',
           action='store_true',
           help='generate mutation-ready code')
@@ -288,12 +283,7 @@ else:
   elif arch != "Darwin":
     qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
-
-# compatibility for older SCons versions
-try:
-  qt_env.Tool('qt3')
-except SCons.Errors.UserError:
-  qt_env.Tool('qt')
+qt_env.Tool('qt3')
 
 qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
 qt_flags = [
@@ -352,14 +342,13 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
 ])
 if arch != "Darwin":
   SConscript([
-    'system/sensord/SConscript',
     'system/logcatd/SConscript',
+    'system/proclogd/SConscript',
   ])
 
 if arch == "larch64":
