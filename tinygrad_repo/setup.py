@@ -7,16 +7,27 @@ directory = Path(__file__).resolve().parent
 with open(directory / 'README.md', encoding='utf-8') as f:
   long_description = f.read()
 
+testing_minimal = [
+  "numpy",
+  "torch",
+  "pytest",
+  "pytest-xdist",
+  "hypothesis",
+  "z3-solver",
+  "ml_dtypes"
+]
+
 setup(name='tinygrad',
-      version='0.10.0',
+      version='0.10.3',
       description='You like pytorch? You like micrograd? You love tinygrad! <3',
       author='George Hotz',
       license='MIT',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      packages = ['tinygrad', 'tinygrad.runtime.autogen', 'tinygrad.codegen', 'tinygrad.nn', 'tinygrad.renderer', 'tinygrad.engine',
-                  'tinygrad.runtime', 'tinygrad.runtime.support', 'tinygrad.runtime.graph', 'tinygrad.shape'],
-      package_data = {'tinygrad': ['py.typed']},
+      packages = ['tinygrad', 'tinygrad.runtime.autogen', 'tinygrad.runtime.autogen.am', 'tinygrad.codegen', 'tinygrad.nn',
+                  'tinygrad.renderer', 'tinygrad.engine', 'tinygrad.viz', 'tinygrad.runtime', 'tinygrad.runtime.support',
+                  'tinygrad.runtime.support.am', 'tinygrad.runtime.graph', 'tinygrad.shape', 'tinygrad.uop'],
+      package_data = {'tinygrad': ['py.typed'], 'tinygrad.viz': ['index.html', 'perfetto.html', 'assets/**/*', 'lib/**/*']},
       classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License"
@@ -24,7 +35,6 @@ setup(name='tinygrad',
       install_requires=[],
       python_requires='>=3.10',
       extras_require={
-        'llvm': ["llvmlite"],
         'arm': ["unicorn"],
         'triton': ["triton-nightly>=2.1.0.dev20231014192330"],
         'linting': [
@@ -33,18 +43,20 @@ setup(name='tinygrad',
             "typing-extensions",
             "pre-commit",
             "ruff",
-            "types-tqdm",
-        ],
-        #'mlperf': ["mlperf-logging @ git+https://github.com/mlperf/logging.git@4.1.0-rc3"],
-        'testing': [
             "numpy",
-            "torch",
-            "jax",
+        ],
+        #'mlperf': ["mlperf-logging @ git+https://github.com/mlperf/logging.git@5.0.0-rc3"],
+        'testing_minimal': testing_minimal,
+        'testing_unit': testing_minimal + [
+            "tqdm",
+            "safetensors",
+            "tabulate",  # for sz.py
+        ],
+        'testing': testing_minimal + [
             "pillow",
-            "pytest",
-            "pytest-xdist",
-            "onnx==1.16.0",
+            "onnx==1.17.0",
             "onnx2torch",
+            "onnxruntime",
             "opencv-python",
             "tabulate",
             "tqdm",
@@ -55,12 +67,15 @@ setup(name='tinygrad',
             "blobfile",
             "librosa",
             "networkx",
-            "hypothesis",
             "nibabel",
             "bottle",
-            "ggml-python"
+            "ggml-python",
+            "capstone",
+            "pycocotools",
+            "boto3",
+            "pandas",
+            "influxdb3-python"
         ],
-        'webgpu': ["wgpu"],
         'docs': [
             "mkdocs",
             "mkdocs-material",
@@ -73,6 +88,6 @@ setup(name='tinygrad',
         'testing_tf': [
             "tensorflow==2.15.1",
             "tensorflow_addons",
-        ]
+        ],
       },
       include_package_data=True)

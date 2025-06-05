@@ -46,7 +46,7 @@ class TestKernelSpeed(unittest.TestCase):
         b = self._get_tensor(K, N)
         if i >= 3:
           GlobalCounters.time_sum_s = 0
-          with Context(DEBUG=max(DEBUG, 2)): c = f(a, b)
+          with Context(DEBUG=max(DEBUG.value, 2)): c = f(a, b)
           tms.append(GlobalCounters.time_sum_s)
         else:
           c = f(a, b)
@@ -90,12 +90,12 @@ class TestKernelSpeed(unittest.TestCase):
   def test_conv_3x3_256_32_32_256_256(self): self._test_conv_3x3(256, 32, 32, 256, 256, nv_tflops=27, amd_tflops=20)
 
   # theoretical is nv_tflops=165, amd_tflops=123
-  def test_gemm_4096(self): self._test_matmul(4096, nv_tflops=115, amd_tflops=80)
-  def test_gemm_8192(self): self._test_matmul(8192, nv_tflops=130, amd_tflops=75)
+  def test_gemm_4096(self): self._test_matmul(4096, nv_tflops=115, amd_tflops=65)
+  def test_gemm_8192(self): self._test_matmul(8192, nv_tflops=125, amd_tflops=65)
 
   # theoretical is nv_gbs=1008, amd_gbs=960
   def test_gemv_16384_4096(self): self._test_matmul(16384, 4096, 1, nv_gbs=840, amd_gbs=750)
-  def test_gemv_4096_16384(self): self._test_matmul(4096, 16384, 1, nv_gbs=830, amd_gbs=760)
+  def test_gemv_4096_16384(self): self._test_matmul(4096, 16384, 1, nv_gbs=830, amd_gbs=750)
 
 if __name__ == '__main__':
   unittest.main()

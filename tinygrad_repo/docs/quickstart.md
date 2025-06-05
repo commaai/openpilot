@@ -110,7 +110,7 @@ class TinyNet:
 
   def __call__(self, x):
     x = self.l1(x)
-    x = x.leakyrelu()
+    x = x.leaky_relu()
     x = self.l2(x)
     return x
 
@@ -118,7 +118,7 @@ net = TinyNet()
 ```
 
 We can see that the forward pass of our neural network is just the sequence of operations performed on the input tensor `x`.
-We can also see that functional operations like `leakyrelu` are not defined as classes and instead are just methods we can just call.
+We can also see that functional operations like `leaky_relu` are not defined as classes and instead are just methods we can just call.
 Finally, we just initialize an instance of our neural network, and we are ready to start training it.
 
 ## Training

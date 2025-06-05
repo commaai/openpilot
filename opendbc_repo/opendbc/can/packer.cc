@@ -3,7 +3,9 @@
 #include <cmath>
 #include <map>
 #include <stdexcept>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "opendbc/can/common.h"
 
@@ -34,7 +36,7 @@ CANPacker::CANPacker(const std::string& dbc_name) {
 
   for (const auto& msg : dbc->msgs) {
     for (const auto& sig : msg.sigs) {
-      signal_lookup[std::make_pair(msg.address, sig.name)] = sig;
+      signal_lookup[msg.address][sig.name] = sig;
     }
   }
 }
@@ -51,8 +53,8 @@ std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalP
   // set all values for all given signal/value pairs
   bool counter_set = false;
   for (const auto& sigval : signals) {
-    auto sig_it = signal_lookup.find(std::make_pair(address, sigval.name));
-    if (sig_it == signal_lookup.end()) {
+    auto sig_it = signal_lookup[address].find(sigval.name);
+    if (sig_it == signal_lookup[address].end()) {
       // TODO: do something more here. invalid flag like CANParser?
       LOGE("undefined signal %s - %d\n", sigval.name.c_str(), address);
       continue;
@@ -65,15 +67,18 @@ std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalP
     }
     set_value(ret, sig, ival);
 
-    if (sigval.name == "COUNTER") {
+    // FIXME: Type is only assigned if DBC has a ChecksumState
+    if (sig.type == COUNTER || sig.name == "COUNTER") {
       counters[address] = sigval.value;
       counter_set = true;
     }
   }
 
   // set message counter
-  auto sig_it_counter = signal_lookup.find(std::make_pair(address, "COUNTER"));
-  if (!counter_set && sig_it_counter != signal_lookup.end()) {
+  auto sig_it_counter = std::find_if(signal_lookup[address].begin(), signal_lookup[address].end(), [](const auto& pair) {
+    return pair.second.type == COUNTER || pair.first == "COUNTER";
+  });
+  if (!counter_set && sig_it_counter != signal_lookup[address].end()) {
     const auto& sig = sig_it_counter->second;
 
     if (counters.find(address) == counters.end()) {
@@ -84,8 +89,10 @@ std::vector<uint8_t> CANPacker::pack(uint32_t address, const std::vector<SignalP
   }
 
   // set message checksum
-  auto sig_it_checksum = signal_lookup.find(std::make_pair(address, "CHECKSUM"));
-  if (sig_it_checksum != signal_lookup.end()) {
+  auto sig_it_checksum = std::find_if(signal_lookup[address].begin(), signal_lookup[address].end(), [](const auto& pair) {
+    return pair.second.type > COUNTER;
+  });
+  if (sig_it_checksum != signal_lookup[address].end()) {
     const auto &sig = sig_it_checksum->second;
     if (sig.calc_checksum != nullptr) {
       unsigned int checksum = sig.calc_checksum(address, sig, ret);

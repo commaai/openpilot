@@ -148,8 +148,8 @@ class CAR(Platforms):
   )
   TOYOTA_CAMRY = PlatformConfig(
     [
-      ToyotaCarDocs("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
-      ToyotaCarDocs("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
+      ToyotaCarDocs("Toyota Camry 2018-20", video="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
+      ToyotaCarDocs("Toyota Camry Hybrid 2018-20", video="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
     ],
     CarSpecs(mass=3400. * CV.LB_TO_KG, wheelbase=2.82448, steerRatio=13.7, tireStiffnessFactor=0.7933),
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
@@ -187,9 +187,9 @@ class CAR(Platforms):
   # LSS2 Lexus UX Hybrid is same as a TSS2 Corolla Hybrid
   TOYOTA_COROLLA_TSS2 = ToyotaTSS2PlatformConfig(
     [
-      ToyotaCarDocs("Toyota Corolla 2020-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+      ToyotaCarDocs("Toyota Corolla 2020-22", video="https://www.youtube.com/watch?v=_66pXk0CBYA"),
       ToyotaCarDocs("Toyota Corolla Cross (Non-US only) 2020-23", min_enable_speed=7.5),
-      ToyotaCarDocs("Toyota Corolla Hatchback 2019-22", video_link="https://www.youtube.com/watch?v=_66pXk0CBYA"),
+      ToyotaCarDocs("Toyota Corolla Hatchback 2019-22", video="https://www.youtube.com/watch?v=_66pXk0CBYA"),
       # Hybrid platforms
       ToyotaCarDocs("Toyota Corolla Hybrid 2020-22"),
       ToyotaCarDocs("Toyota Corolla Hybrid (South America only) 2020-23", min_enable_speed=7.5),
@@ -200,7 +200,7 @@ class CAR(Platforms):
   )
   TOYOTA_HIGHLANDER = PlatformConfig(
     [
-      ToyotaCarDocs("Toyota Highlander 2017-19", video_link="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
+      ToyotaCarDocs("Toyota Highlander 2017-19", video="https://www.youtube.com/watch?v=0wS0wXSLzoo"),
       ToyotaCarDocs("Toyota Highlander Hybrid 2017-19"),
     ],
     CarSpecs(mass=4516. * CV.LB_TO_KG, wheelbase=2.8194, steerRatio=16.0, tireStiffnessFactor=0.8),
@@ -216,9 +216,9 @@ class CAR(Platforms):
   )
   TOYOTA_PRIUS = PlatformConfig(
     [
-      ToyotaCarDocs("Toyota Prius 2016", "Toyota Safety Sense P", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
-      ToyotaCarDocs("Toyota Prius 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
-      ToyotaCarDocs("Toyota Prius Prime 2017-20", video_link="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+      ToyotaCarDocs("Toyota Prius 2016", "Toyota Safety Sense P", video="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+      ToyotaCarDocs("Toyota Prius 2017-20", video="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
+      ToyotaCarDocs("Toyota Prius Prime 2017-20", video="https://www.youtube.com/watch?v=8zopPJI8XQ0"),
     ],
     CarSpecs(mass=3045. * CV.LB_TO_KG, wheelbase=2.7, steerRatio=15.74, tireStiffnessFactor=0.6371),
     dbc_dict('toyota_nodsu_pt_generated', 'toyota_adas'),
@@ -231,8 +231,8 @@ class CAR(Platforms):
   )
   TOYOTA_PRIUS_TSS2 = ToyotaTSS2PlatformConfig(
     [
-      ToyotaCarDocs("Toyota Prius 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
-      ToyotaCarDocs("Toyota Prius Prime 2021-22", video_link="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+      ToyotaCarDocs("Toyota Prius 2021-22", video="https://www.youtube.com/watch?v=J58TvCpUd4U"),
+      ToyotaCarDocs("Toyota Prius Prime 2021-22", video="https://www.youtube.com/watch?v=J58TvCpUd4U"),
     ],
     CarSpecs(mass=3115. * CV.LB_TO_KG, wheelbase=2.70002, steerRatio=13.4, tireStiffnessFactor=0.6371),
   )
@@ -246,8 +246,8 @@ class CAR(Platforms):
   )
   TOYOTA_RAV4H = PlatformConfig(
     [
-      ToyotaCarDocs("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video_link="https://youtu.be/LhT5VzJVfNI?t=26"),
-      ToyotaCarDocs("Toyota RAV4 Hybrid 2017-18", video_link="https://youtu.be/LhT5VzJVfNI?t=26")
+      ToyotaCarDocs("Toyota RAV4 Hybrid 2016", "Toyota Safety Sense P", video="https://youtu.be/LhT5VzJVfNI?t=26"),
+      ToyotaCarDocs("Toyota RAV4 Hybrid 2017-18", video="https://youtu.be/LhT5VzJVfNI?t=26")
     ],
     TOYOTA_RAV4.specs,
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
@@ -256,7 +256,7 @@ class CAR(Platforms):
   )
   TOYOTA_RAV4_TSS2 = ToyotaTSS2PlatformConfig(
     [
-      ToyotaCarDocs("Toyota RAV4 2019-21", video_link="https://www.youtube.com/watch?v=wJxjDd42gGA"),
+      ToyotaCarDocs("Toyota RAV4 2019-21", video="https://www.youtube.com/watch?v=wJxjDd42gGA"),
       ToyotaCarDocs("Toyota RAV4 Hybrid 2019-21"),
     ],
     CarSpecs(mass=3585. * CV.LB_TO_KG, wheelbase=2.68986, steerRatio=14.3, tireStiffnessFactor=0.7933),
@@ -264,15 +264,15 @@ class CAR(Platforms):
   TOYOTA_RAV4_TSS2_2022 = ToyotaTSS2PlatformConfig(
     [
       ToyotaCarDocs("Toyota RAV4 2022"),
-      ToyotaCarDocs("Toyota RAV4 Hybrid 2022", video_link="https://youtu.be/U0nH9cnrFB0"),
+      ToyotaCarDocs("Toyota RAV4 Hybrid 2022", video="https://youtu.be/U0nH9cnrFB0"),
     ],
     TOYOTA_RAV4_TSS2.specs,
     flags=ToyotaFlags.RADAR_ACC,
   )
   TOYOTA_RAV4_TSS2_2023 = ToyotaTSS2PlatformConfig(
     [
-      ToyotaCarDocs("Toyota RAV4 2023-24"),
-      ToyotaCarDocs("Toyota RAV4 Hybrid 2023-25", video_link="https://youtu.be/4eIsEq4L4Ng"),
+      ToyotaCarDocs("Toyota RAV4 2023-25"),
+      ToyotaCarDocs("Toyota RAV4 Hybrid 2023-25", video="https://youtu.be/4eIsEq4L4Ng"),
     ],
     TOYOTA_RAV4_TSS2.specs,
     flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
@@ -281,12 +281,17 @@ class CAR(Platforms):
     [ToyotaCarDocs("Toyota RAV4 Prime 2021-23", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=4372. * CV.LB_TO_KG, wheelbase=2.68, steerRatio=16.88, tireStiffnessFactor=0.5533),
   )
+  TOYOTA_YARIS = ToyotaSecOCPlatformConfig(
+    [ToyotaCarDocs("Toyota Yaris 2023 (Non-US only)", min_enable_speed=MIN_ACC_SPEED)],
+    CarSpecs(mass=1170, wheelbase=2.55, steerRatio=14.80, tireStiffnessFactor=0.5533),
+    flags=ToyotaFlags.RADAR_ACC,
+  )
   TOYOTA_MIRAI = ToyotaTSS2PlatformConfig( # TSS 2.5
     [ToyotaCarDocs("Toyota Mirai 2021")],
     CarSpecs(mass=4300. * CV.LB_TO_KG, wheelbase=2.91, steerRatio=14.8, tireStiffnessFactor=0.8),
   )
   TOYOTA_SIENNA = PlatformConfig(
-    [ToyotaCarDocs("Toyota Sienna 2018-20", video_link="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaCarDocs("Toyota Sienna 2018-20", video="https://www.youtube.com/watch?v=q1UPOo4Sh68", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=4590. * CV.LB_TO_KG, wheelbase=3.03, steerRatio=15.5, tireStiffnessFactor=0.444),
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.NO_STOP_TIMER,
@@ -313,7 +318,7 @@ class CAR(Platforms):
   LEXUS_ES_TSS2 = ToyotaTSS2PlatformConfig(
     [
       ToyotaCarDocs("Lexus ES 2019-24"),
-      ToyotaCarDocs("Lexus ES Hybrid 2019-25", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
+      ToyotaCarDocs("Lexus ES Hybrid 2019-25", video="https://youtu.be/BZ29osRVJeg?t=12"),
     ],
     LEXUS_ES.specs,
   )
@@ -351,6 +356,12 @@ class CAR(Platforms):
     LEXUS_IS.specs,
     dbc_dict('toyota_tnga_k_pt_generated', 'toyota_adas'),
     flags=ToyotaFlags.UNSUPPORTED_DSU,
+  )
+  LEXUS_RC_TSS2 = ToyotaTSS2PlatformConfig(
+    [
+      ToyotaCarDocs("Lexus RC 2023"),
+    ],
+    CarSpecs(mass=3986. * CV.LB_TO_KG, wheelbase=2.73, steerRatio=13.9, tireStiffnessFactor=0.444),
   )
   LEXUS_RX = PlatformConfig(
     [

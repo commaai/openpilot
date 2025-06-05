@@ -2,6 +2,7 @@ import random
 from extra.optimization.helpers import load_worlds, ast_str_to_lin
 from tinygrad.engine.search import actions
 from tinygrad.codegen.kernel import Kernel
+from tinygrad.codegen.heuristic import hand_coded_optimizations
 from tinygrad.helpers import tqdm
 
 tactions = set()
@@ -23,7 +24,7 @@ if __name__ == "__main__":
   for ast_str in tqdm(ast_strs):
     lin = ast_str_to_lin(ast_str)
     #if not lin.apply_tensor_cores():
-    lin.hand_coded_optimizations()
+    lin.apply_opts(hand_coded_optimizations(lin))
     test_rebuild(lin)
     # confirm linearize can be called twice
     uops1 = lin.linearize().uops

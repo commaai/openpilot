@@ -36,9 +36,9 @@ The `Allocator` class is responsible for managing memory on the device. There is
 
 ### Program
 
-The `Program` class is created for each loaded program. It is responsible for compiling and executing the program on the device. As an example, here is a `ClangProgram` implementation which loads program and runs it.
+The `Program` class is created for each loaded program. It is responsible for executing the program on the device. As an example, here is a `CPUProgram` implementation which loads program and runs it.
 
-::: tinygrad.runtime.ops_clang.ClangProgram
+::: tinygrad.runtime.ops_cpu.CPUProgram
     options:
         members: true
 

@@ -1,2 +1,2 @@
-from opendbc.can.parser_pyx import CANParser, CANDefine  # pylint: disable=no-name-in-module, import-error
+from opendbc.can.parser_pyx import CANParser, CANDefine
 assert CANParser, CANDefine

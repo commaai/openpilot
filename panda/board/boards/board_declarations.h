@@ -13,8 +13,6 @@ typedef enum {
 typedef void (*board_init)(void);
 typedef void (*board_init_bootloader)(void);
 typedef void (*board_enable_can_transceiver)(uint8_t transceiver, bool enabled);
-typedef void (*board_enable_can_transceivers)(bool enabled);
-typedef void (*board_set_led)(uint8_t color, bool enabled);
 typedef void (*board_set_can_mode)(uint8_t mode);
 typedef bool (*board_check_ignition)(void);
 typedef uint32_t (*board_read_voltage_mV)(void);
@@ -28,7 +26,9 @@ typedef void (*board_set_amp_enabled)(bool enabled);
 
 struct board {
   harness_configuration *harness_config;
-  const bool has_obd;
+  GPIO_TypeDef * const led_GPIO[3];
+  const uint8_t led_pin[3];
+  const uint8_t led_pwm_channels[3]; // leave at 0 to disable PWM
   const bool has_spi;
   const bool has_canfd;
   const uint16_t fan_max_rpm;
@@ -39,8 +39,6 @@ struct board {
   board_init init;
   board_init_bootloader init_bootloader;
   board_enable_can_transceiver enable_can_transceiver;
-  board_enable_can_transceivers enable_can_transceivers;
-  board_set_led set_led;
   board_set_can_mode set_can_mode;
   board_check_ignition check_ignition;
   board_read_voltage_mV read_voltage_mV;
@@ -66,11 +64,6 @@ struct board {
 #define HW_TYPE_RED_PANDA_V2 8U
 #define HW_TYPE_TRES 9U
 #define HW_TYPE_CUATRO 10U
-
-// LED colors
-#define LED_RED 0U
-#define LED_GREEN 1U
-#define LED_BLUE 2U
 
 // USB power modes (from cereal.log.health)
 #define USB_POWER_NONE 0U

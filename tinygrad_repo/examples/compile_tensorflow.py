@@ -1,14 +1,14 @@
 # An example to compile a small Tensorflow model to extremely portable C code
 
 import os, sys
-os.environ["CLANG"] = '1'
+os.environ["CPU"] = '1'
 os.environ["JIT"] = '2'
 
 import numpy as np
 import subprocess
 import tensorflow as tf
 import tf2onnx
-from extra.onnx import get_run_onnx
+from tinygrad.frontend.onnx import OnnxRunner
 from tinygrad.tensor import Tensor
 from extra.export_model import export_model_clang, compile_net, jit_model
 
@@ -25,7 +25,7 @@ class TinyOnnx:
   def __init__(self, keras_model):
     input_signature = [tf.TensorSpec([1,32], tf.float32, name='x')]
     onnx_model, _ = tf2onnx.convert.from_keras(keras_model, input_signature, opset=13)
-    self.run_onnx = get_run_onnx(onnx_model)
+    self.run_onnx = OnnxRunner(onnx_model)
 
   def forward(self, x):
     return self.run_onnx({"x": x}, debug=False)['predictions']

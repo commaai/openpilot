@@ -44,7 +44,7 @@ def load_model(model_path:Path, model_params:Dict[str, Union[int, float]]) -> Tr
   model.layers = updated_layers
 
   # load weights
-  weights = fix_bf16(convert_from_huggingface(load(str(model_path / "model.safetensors.index.json")), model, model_params["n_heads"], model_params["n_kv_heads"], permute_layers=False))
+  weights = fix_bf16(convert_from_huggingface(load(str(model_path / "model.safetensors.index.json")), model_params["n_layers"], model_params["n_heads"], model_params["n_kv_heads"], permute_layers=False))
 
   # replace weights in model
   load_state_dict(model, weights, strict=False, consume=True)

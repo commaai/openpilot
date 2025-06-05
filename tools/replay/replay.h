@@ -29,7 +29,7 @@ enum REPLAY_FLAGS {
 class Replay {
 public:
   Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block, SubMaster *sm = nullptr,
-         uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "");
+         uint32_t flags = REPLAY_FLAG_NONE, const std::string &data_dir = "", bool auto_source = false);
   ~Replay();
   bool load();
   RouteLoadError lastRouteError() const { return route().lastError(); }

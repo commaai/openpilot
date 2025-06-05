@@ -15,8 +15,8 @@ void notifyEvent(Callback &callback, Args &&...args) {
 }
 
 Replay::Replay(const std::string &route, std::vector<std::string> allow, std::vector<std::string> block,
-               SubMaster *sm, uint32_t flags, const std::string &data_dir)
-    : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(route, flags, data_dir)) {
+               SubMaster *sm, uint32_t flags, const std::string &data_dir, bool auto_source)
+    : sm_(sm), flags_(flags), seg_mgr_(std::make_unique<SegmentManager>(route, flags, data_dir, auto_source)) {
   std::signal(SIGUSR1, interrupt_sleep_handler);
 
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {

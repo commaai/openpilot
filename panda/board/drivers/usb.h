@@ -538,21 +538,26 @@ void usb_irqhandler(void) {
   }
 
   if ((gintsts & USB_OTG_GINTSTS_USBRST) != 0U) {
-    print("USB reset\n");
+    #ifdef DEBUG_USB
+      print("USB reset\n");
+    #endif
     usb_reset();
   }
 
   if ((gintsts & USB_OTG_GINTSTS_ENUMDNE) != 0U) {
-    print("enumeration done");
+    #ifdef DEBUG_USB
+      print("enumeration done\n");
+    #endif
     // Full speed, ENUMSPD
     //puth(USBx_DEVICE->DSTS);
-    print("\n");
   }
 
   if ((gintsts & USB_OTG_GINTSTS_OTGINT) != 0U) {
-    print("OTG int:");
-    puth(USBx->GOTGINT);
-    print("\n");
+    #ifdef DEBUG_USB
+      print("OTG int:");
+      puth(USBx->GOTGINT);
+      print("\n");
+    #endif
 
     // getting ADTOCHG
     //USBx->GOTGINT = USBx->GOTGINT;

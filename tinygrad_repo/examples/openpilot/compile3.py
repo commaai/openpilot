@@ -12,24 +12,20 @@ from tinygrad.engine.realize import CompiledRunner
 
 import onnx
 from onnx.helper import tensor_dtype_to_np_dtype
-from extra.onnx import get_run_onnx   # TODO: port to main tinygrad
+from tinygrad.frontend.onnx import OnnxRunner
 
 OPENPILOT_MODEL = sys.argv[1] if len(sys.argv) > 1 else "https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/supercombo.onnx"
 OUTPUT = sys.argv[2] if len(sys.argv) > 2 else "/tmp/openpilot.pkl"
 
 def compile(onnx_file):
   onnx_model = onnx.load(onnx_file)
-  Tensor.no_grad = True
-  Tensor.training = False
-
-  run_onnx = get_run_onnx(onnx_model)
+  run_onnx = OnnxRunner(onnx_model)
   print("loaded model")
 
   input_shapes = {inp.name:tuple(x.dim_value for x in inp.type.tensor_type.shape.dim) for inp in onnx_model.graph.input}
   input_types = {inp.name: tensor_dtype_to_np_dtype(inp.type.tensor_type.elem_type) for inp in onnx_model.graph.input}
   # Float inputs and outputs to tinyjits for openpilot are always float32
   input_types = {k:(np.float32 if v==np.float16 else v) for k,v in input_types.items()}
-  input_types = {k:np.uint8 if 'img' in k else v for k,v in input_types.items()}
   Tensor.manual_seed(100)
   new_inputs = {k:Tensor.randn(*shp, dtype=_from_np_dtype(input_types[k])).mul(8).realize() for k,shp in sorted(input_shapes.items())}
   new_inputs_numpy = {k:v.numpy() for k,v in new_inputs.items()}
@@ -103,26 +99,37 @@ def test_vs_compile(run, new_inputs, test_val=None):
     np.testing.assert_raises(AssertionError, np.testing.assert_array_equal, val, changed_val)
   return val
 
-def test_vs_onnx(new_inputs, test_val, onnx_file):
+def test_vs_onnx(new_inputs, test_val, onnx_file, ort=False):
   new_inputs_numpy = {k:v.numpy() for k,v in new_inputs.items()}
   onnx_model = onnx.load(onnx_file)
 
-  if getenv("ORT"):
+  timings = []
+  if ort:
     # test with onnxruntime
     import onnxruntime as ort
     onnx_session = ort.InferenceSession(onnx_file)
-    onnx_output = onnx_session.run([onnx_model.graph.output[0].name], {k:v.astype(np.float16) for k,v in new_inputs_numpy.items()})
+    for _ in range(1 if test_val is not None else 5):
+      st = time.perf_counter()
+      onnx_output = onnx_session.run([onnx_model.graph.output[0].name], {k:v.astype(np.float16) for k,v in new_inputs_numpy.items()})
+      timings.append(time.perf_counter() - st)
     new_torch_out = onnx_output[0]
-    print("got ort outputs")
   else:
     # test with torch
-    from test.models.test_onnx import run_onnx_torch
-    # NOTE: we have to correct the order here
-    new_torch_out = run_onnx_torch(onnx_model, {k.name:new_inputs_numpy[k.name] for k in onnx_model.graph.input}).numpy()
-    print("got torch outputs")
+    import torch
+    from onnx2torch import convert
+    inputs = {k.name:new_inputs_numpy[k.name] for k in onnx_model.graph.input}
+    torch_model = convert(onnx_model).float()
+    with torch.no_grad():
+      for _ in range(1 if test_val is not None else 5):
+        st = time.perf_counter()
+        torch_out = torch_model(*[torch.tensor(x) for x in inputs.values()])
+        timings.append(time.perf_counter() - st)
+      new_torch_out = torch_out.numpy()
 
-  np.testing.assert_allclose(new_torch_out.reshape(test_val.shape), test_val, atol=1e-4, rtol=1e-2)
-  print("test vs onnx passed")
+  if test_val is not None:
+    np.testing.assert_allclose(new_torch_out.reshape(test_val.shape), test_val, atol=1e-4, rtol=1e-2)
+    print("test vs onnx passed")
+  return timings
 
 if __name__ == "__main__":
   onnx_file = fetch(OPENPILOT_MODEL)
@@ -136,4 +143,12 @@ if __name__ == "__main__":
                 sorted(zip(pickle_loaded.captured.expected_names, pickle_loaded.captured.expected_st_vars_dtype_device))}
 
   test_val = test_vs_compile(pickle_loaded, new_inputs, test_val)
-  if not getenv("FLOAT16"): test_vs_onnx(new_inputs, test_val, onnx_file)
+  if getenv("BENCHMARK"):
+    for be in ["torch", "ort"]:
+      try:
+        timings = test_vs_onnx(new_inputs, None, onnx_file, be=="ort")
+        print(f"timing {be}: {min(timings)*1000:.2f} ms")
+      except Exception as e:
+        print(f"{be} fail with {e}")
+  if not getenv("FLOAT16"): test_vs_onnx(new_inputs, test_val, onnx_file, getenv("ORT"))
+
