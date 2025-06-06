@@ -167,7 +167,7 @@ class GuiApplication:
           elif callable(self._modal_overlay.overlay):
             result = self._modal_overlay.overlay()
           else:
-            assert False
+            raise Exception
 
           if result >= 0 and self._modal_overlay.callback is not None:
             # Execute callback with the result and clear the overlay
