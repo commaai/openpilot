@@ -82,31 +82,29 @@ class WifiManagerUI:
 
       match self.state:
         case StateNeedsAuth(network):
-          result = self.keyboard.render("Enter password", f"for {network.ssid}")
-          if result == 1:
-            password = self.keyboard.text
-            self.keyboard.clear()
-
-            if len(password) >= MIN_PASSWORD_LENGTH:
-              self.connect_to_network(network, password)
-          elif result == 0:
-            self.state = StateIdle()
-
+          self.keyboard.set_title("Enter password", f"for {network.ssid}")
+          gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
-          result = confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
-          if result == 1:
-            self.forget_network(network)
-          elif result == 0:
-            self.state = StateIdle()
-
+          gui_app.set_modal_overlay(lambda: confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget"),
+                                    callback=lambda result: self.on_forgot_confirm_finished(network, result))
         case _:
           self._draw_network_list(rect)
 
-  @property
-  def require_full_screen(self) -> bool:
-    """Check if the WiFi UI requires exclusive full-screen rendering."""
-    with self._lock:
-      return isinstance(self.state, (StateNeedsAuth, StateShowForgetConfirm))
+  def _on_password_entered(self, network: NetworkInfo, result: int):
+    if result == 1:
+      password = self.keyboard.text
+      self.keyboard.clear()
+
+      if len(password) >= MIN_PASSWORD_LENGTH:
+        self.connect_to_network(network, password)
+    elif result == 0:
+      self.state = StateIdle()
+
+  def on_forgot_confirm_finished(self, network, result: int):
+    if result == 1:
+      self.forget_network(network)
+    elif result == 0:
+      self.state = StateIdle()
 
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)

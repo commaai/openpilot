@@ -110,8 +110,6 @@ class Updater:
     # Draw the Wi-Fi manager UI
     wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, gui_app.width - MARGIN * 2 - 100, gui_app.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
     self.wifi_manager_ui.render(wifi_rect)
-    if self.wifi_manager_ui.require_full_screen:
-      return
 
     back_button_rect = rl.Rectangle(MARGIN, gui_app.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     if gui_button(back_button_rect, "Back"):
