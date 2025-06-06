@@ -86,7 +86,7 @@ class ModelRenderer:
     self._car_space_transform = transform.astype(np.float32)
     self._transform_dirty = True
 
-  def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster):
+  def render(self, rect: rl.Rectangle, sm: messaging.SubMaster):
     # Check if data is up-to-date
     if (sm.recv_frame["liveCalibration"] < ui_state.started_frame or
         sm.recv_frame["modelV2"] < ui_state.started_frame):

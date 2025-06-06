@@ -94,7 +94,7 @@ class HudRenderer:
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-  def draw(self, rect: rl.Rectangle, sm: SubMaster) -> None:
+  def render(self, rect: rl.Rectangle, sm: SubMaster) -> None:
     """Render HUD elements to the screen."""
     self._update_state(sm)
     rl.draw_rectangle_gradient_v(

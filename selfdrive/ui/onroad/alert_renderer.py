@@ -91,7 +91,7 @@ class AlertRenderer:
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
 
-  def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
+  def render(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
     alert = self.get_alert(sm)
     if not alert:
       return

@@ -78,10 +78,10 @@ class AugmentedRoadView(CameraView):
     super().render(rect)
 
     # Draw all UI overlays
-    self.model_renderer.draw(self._content_rect, ui_state.sm)
-    self._hud_renderer.draw(self._content_rect, ui_state.sm)
-    self.alert_renderer.draw(self._content_rect, ui_state.sm)
-    self.driver_state_renderer.draw(self._content_rect, ui_state.sm)
+    self.model_renderer.render(self._content_rect, ui_state.sm)
+    self._hud_renderer.render(self._content_rect, ui_state.sm)
+    self.alert_renderer.render(self._content_rect, ui_state.sm)
+    self.driver_state_renderer.render(self._content_rect, ui_state.sm)
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds

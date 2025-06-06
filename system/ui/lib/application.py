@@ -29,7 +29,7 @@ FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 class Widget(abc.ABC):
   @abc.abstractmethod
-  def render(self, rect: rl.Rectangle):
+  def render(self, rect: rl.Rectangle) -> bool | None:
     """Render the widget within the given rectangle."""
 
 
