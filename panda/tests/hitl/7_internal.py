@@ -44,7 +44,7 @@ def test_fan_cooldown(p):
   time.sleep(3)
   p.set_fan_power(0)
   for _ in range(5):
-    assert p.get_fan_rpm() <= 7000
+    assert p.get_fan_rpm() <= Panda.MAX_FAN_RPMs[bytes(p.get_type())]
     time.sleep(0.5)
 
 def test_fan_overshoot(p):

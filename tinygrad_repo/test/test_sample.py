@@ -1,7 +1,9 @@
 import unittest
 import numpy as np
-from tinygrad import Tensor, Variable
+from tinygrad import Tensor, Variable, Device
+from tinygrad.helpers import OSX
 
+@unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
 class TestSample(unittest.TestCase):
   def test_sample(self):
     X = Tensor.rand(10000, 50).realize()

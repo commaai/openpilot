@@ -4,17 +4,18 @@ from collections import defaultdict
 from typing import List, Tuple, DefaultDict
 from extra.optimization.helpers import load_worlds, ast_str_to_ast
 from tinygrad.helpers import prod, tqdm
-from tinygrad.ops import UOp, Ops
+from tinygrad.uop.ops import UOp, Ops
 from tinygrad.shape.shapetracker import ShapeTracker
-from tinygrad.ops import sym_infer, Node
+from tinygrad.uop.ops import sym_infer
+from tinygrad.tensor import Tensor
 
 class MovementOps(Enum): RESHAPE = auto(); PERMUTE = auto(); EXPAND = auto(); PAD = auto(); SHRINK = auto(); STRIDE = auto(); AS_STRIDED = auto() # noqa: E702
 
-def apply_mop(st: ShapeTracker, mop_arg: Tuple[MovementOps, Tuple]) -> ShapeTracker:
+def apply_mop(st: Tensor|ShapeTracker, mop_arg: Tuple[MovementOps, Tuple]) -> ShapeTracker:
   mop, arg = mop_arg
   if mop == MovementOps.RESHAPE:
     # shapetracker doesn't allow flattening with -1 but required for MovementOps.RESHAPE
-    if arg == (-1,): return st.reshape((prod(st.views[-1].shape),))
+    if arg == (-1,): return st.reshape((prod(st.shape),))
     return st.reshape(arg)
   if mop == MovementOps.PERMUTE: return st.permute(arg)
   if mop == MovementOps.EXPAND:
@@ -22,7 +23,9 @@ def apply_mop(st: ShapeTracker, mop_arg: Tuple[MovementOps, Tuple]) -> ShapeTrac
     return st.expand(arg)
   if mop == MovementOps.PAD: return st.pad(arg)
   if mop == MovementOps.SHRINK: return st.shrink(arg)
-  if mop == MovementOps.STRIDE: return st.stride(arg)
+  if mop == MovementOps.STRIDE:
+    assert all(x in [-1, 1] for x in arg)
+    return st.flip(tuple(i for i,x in enumerate(arg) if x == -1))
   raise ValueError("invalid mop")
 
 def make_scratch_st(st: ShapeTracker) -> ShapeTracker:
@@ -36,9 +39,9 @@ def to_movement_ops(st: ShapeTracker) -> List[Tuple[MovementOps, Tuple]]:
     offset = v.offset + sum(st*(s-1) for s,st in zip(real_shape, v.strides) if st<0)
     real_offset = offset + (sum(x*st for (x,_),st in zip(v.mask, v.strides)) if v.mask else 0)
     real_real_shape = [s for s,st in zip(real_shape, v.strides) if st]
-    strides: List[Node|int] = [abs(st) if isinstance(st,int) else st for st in v.strides if st]
+    strides: List[int] = [abs(st) if isinstance(st,int) else st for st in v.strides if st]
     buffer_size = sum((s-1)*st for s,st in zip(real_real_shape,strides)) + 1
-    if i: buffer_size = prod(st.views[i-1].shape) - real_offset
+    if i: buffer_size = prod(st.views[i-1].shape) - real_offset if real_shape else 1
     def sort_by_strides(shape, strides): return sorted(zip(shape, strides), key=lambda k: (k[1],-k[0]), reverse=True), sorted(range(len(strides)), key=lambda k: (strides[k],-real_real_shape[k]), reverse=True)
     ordered_shape_strides, order = sort_by_strides(real_real_shape, strides)
     to_apply.extend([(MovementOps.RESHAPE, (-1,)), (MovementOps.SHRINK, ((real_offset, real_offset+buffer_size),))])
@@ -80,9 +83,12 @@ def to_movement_ops(st: ShapeTracker) -> List[Tuple[MovementOps, Tuple]]:
     if scratch_st in seen:
       ret = seen[scratch_st][:]
     else:
-      ret.append(mop_arg)
+      if len(ret) and ret[-1][0] == MovementOps.RESHAPE and mop_arg[0] == MovementOps.RESHAPE:
+        ret[-1] = mop_arg
+      else:
+        if mop_arg == (MovementOps.RESHAPE, -1): mop_arg = (MovementOps.RESHAPE, (prod(st.shape),))
+        ret.append(mop_arg)
       seen[scratch_st] = ret[:]
-
   return ret
 
 def get_real_view(shape, strides, offset, mask):

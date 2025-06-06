@@ -61,13 +61,15 @@ def start_juggler(fn=None, dbc=None, layout=None, route_or_segment_name=None, pl
   env["BASEDIR"] = BASEDIR
   env["PATH"] = f"{INSTALL_DIR}:{os.getenv('PATH', '')}"
   if dbc:
+    if os.path.exists(dbc):
+      dbc = os.path.abspath(dbc)
     env["DBC_NAME"] = dbc
 
   extra_args = ""
   if fn is not None:
-    extra_args += f" -d {fn}"
+    extra_args += f" -d {os.path.abspath(fn)}"
   if layout is not None:
-    extra_args += f" -l {layout}"
+    extra_args += f" -l {os.path.abspath(layout)}"
   if route_or_segment_name is not None:
     extra_args += f" --window_title \"{route_or_segment_name}{f' ({platform})' if platform is not None else ''}\""
 

@@ -1,13 +1,13 @@
 #include <stdbool.h>
 
-#include "fake_stm.h"
-#include "can.h"
+#include "opendbc/safety/board/fake_stm.h"
+#include "opendbc/safety/board/can.h"
 
 //int safety_tx_hook(CANPacket_t *to_send) { return 1; }
 
-#include "faults.h"
-#include "safety.h"
-#include "drivers/can_common.h"
+#include "opendbc/safety/board/faults.h"
+#include "opendbc/safety/safety.h"
+#include "opendbc/safety/board/drivers/can_common.h"
 
 // libsafety stuff
-#include "safety_helpers.h"
+#include "opendbc/safety/tests/libsafety/safety_helpers.h"

@@ -93,7 +93,7 @@ class TestCanChecksums:
   def verify_volkswagen_mqb_crc(self, subtests, msg_name: str, msg_addr: int, test_messages: list[bytes], counter_field: str = 'COUNTER'):
     """Test AUTOSAR E2E Profile 2 CRCs"""
     assert len(test_messages) == 16  # All counter values must be tested
-    self.verify_checksum(subtests, "vw_mqb_2010", msg_name, msg_addr, test_messages, counter_field=counter_field)
+    self.verify_checksum(subtests, "vw_mqb", msg_name, msg_addr, test_messages, counter_field=counter_field)
 
   def test_volkswagen_mqb_crc_lwi_01(self, subtests):
     self.verify_volkswagen_mqb_crc(subtests, "LWI_01", 0x86, [

@@ -212,7 +212,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xdb: set OBD CAN multiplexing mode
     case 0xdb:
-      if (current_board->has_obd) {
+      if (current_board->harness_config->has_harness) {
         if (req->param1 == 1U) {
           // Enable OBD CAN
           current_board->set_can_mode(CAN_MODE_OBD_CAN2);
@@ -309,9 +309,9 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       can_loopback = req->param1 > 0U;
       can_init_all();
       break;
-    // **** 0xe6: set custom clock source period
+    // **** 0xe6: set custom clock source period and pulse length
     case 0xe6:
-      clock_source_set_period(req->param1);
+      clock_source_set_timer_params(req->param1, req->param2);
       break;
     // **** 0xe7: set power save state
     case 0xe7:

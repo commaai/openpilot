@@ -22,13 +22,12 @@ MSG_LDW_1 = 0x5BE             # TX by OP, Lane line recognition and text alerts
 class TestVolkswagenPqSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueSteeringSafetyTest):
   cruise_engaged = False
 
-  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1,)}
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1)}
 
   MAX_RATE_UP = 6
   MAX_RATE_DOWN = 10
-  MAX_TORQUE = 300
+  MAX_TORQUE_LOOKUP = [0], [300]
   MAX_RT_DELTA = 113
-  RT_INTERVAL = 250000
 
   DRIVER_TORQUE_ALLOWANCE = 80
   DRIVER_TORQUE_FACTOR = 3
@@ -116,7 +115,7 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
   FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1]}
 
   def setUp(self):
-    self.packer = CANPackerPanda("vw_golf_mk4")
+    self.packer = CANPackerPanda("vw_pq")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.volkswagenPq, 0)
     self.safety.init_tests()
@@ -134,10 +133,11 @@ class TestVolkswagenPqStockSafety(TestVolkswagenPqSafetyBase):
 class TestVolkswagenPqLongSafety(TestVolkswagenPqSafetyBase, common.LongitudinalAccelSafetyTest):
   TX_MSGS = [[MSG_HCA_1, 0], [MSG_LDW_1, 0], [MSG_ACC_SYSTEM, 0], [MSG_ACC_GRA_ANZEIGE, 0]]
   FWD_BLACKLISTED_ADDRS = {2: [MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE]}
+  RELAY_MALFUNCTION_ADDRS = {0: (MSG_HCA_1, MSG_LDW_1, MSG_ACC_SYSTEM, MSG_ACC_GRA_ANZEIGE)}
   INACTIVE_ACCEL = 3.01
 
   def setUp(self):
-    self.packer = CANPackerPanda("vw_golf_mk4")
+    self.packer = CANPackerPanda("vw_pq")
     self.safety = libsafety_py.libsafety
     self.safety.set_safety_hooks(CarParams.SafetyModel.volkswagenPq, VolkswagenSafetyFlags.LONG_CONTROL)
     self.safety.init_tests()

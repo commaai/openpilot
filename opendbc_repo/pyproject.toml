@@ -9,7 +9,7 @@ requires-python = ">=3.9,<3.13"  # pycapnp doesn't work with 3.13
 
 urls = { "homepage" = "https://github.com/commaai/opendbc" }
 
-# setuptools includes distutils which is needed by Cython and pre-commit.
+# setuptools includes distutils which is needed by Cython.
 # distutils was removed in python3.12 from the standard library.
 dependencies = [
   "scons",
@@ -25,7 +25,6 @@ dependencies = [
 [project.optional-dependencies]
 testing = [
   "cffi",
-  "ruff",
   "gcovr",
   "pytest",
   "pytest-coverage",
@@ -35,7 +34,14 @@ testing = [
   "pytest-subtests",
   "hypothesis==6.47.*",
   "parameterized>=0.8,<0.9",
-  "pre-commit",
+
+  # static analysis
+  "ruff",
+  "ty",
+  "lefthook",
+  "cpplint",
+  "cython-lint",
+  "codespell",
 ]
 docs = [
   "Jinja2",
@@ -119,3 +125,9 @@ flake8-implicit-str-concat.allow-multiline=false
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 # TODO: re-enable when all tests are converted to pytest
 #"unittest".msg = "Use pytest"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"opendbc.safety" = ["*.h", "board/*.h", "board/drivers/*.h", "modes/*.h"]

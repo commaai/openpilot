@@ -1,8 +1,46 @@
 import numpy as np
 from typing import Any
+from functools import cache
 
 from cereal import log
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot
+
+
+@cache
+def fft_next_good_size(n: int) -> int:
+    """
+    smallest composite of 2, 3, 5, 7, 11 that is >= n
+    inspired by pocketfft
+    """
+    if n <= 6:
+      return n
+    best, f2 = 2 * n, 1
+    while f2 < best:
+        f23 = f2
+        while f23 < best:
+            f235 = f23
+            while f235 < best:
+                f2357 = f235
+                while f2357 < best:
+                    f235711 = f2357
+                    while f235711 < best:
+                        best = f235711 if f235711 >= n else best
+                        f235711 *= 11
+                    f2357 *= 7
+                f235 *= 5
+            f23 *= 3
+        f2 *= 2
+    return best
+
+
+def parabolic_peak_interp(R, max_index):
+  if max_index == 0 or max_index == len(R) - 1:
+    return max_index
+
+  y_m1, y_0, y_p1 = R[max_index - 1], R[max_index], R[max_index + 1]
+  offset = 0.5 * (y_p1 - y_m1) / (2 * y_0 - y_p1 - y_m1)
+
+  return max_index + offset
 
 
 def rotate_cov(rot_matrix, cov_in):
