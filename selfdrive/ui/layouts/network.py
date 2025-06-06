@@ -11,9 +11,5 @@ class NetworkLayout:
   def render(self, rect: rl.Rectangle):
     self.wifi_ui.render(rect)
 
-  @property
-  def require_full_screen(self):
-    return self.wifi_ui.require_full_screen
-
   def shutdown(self):
     self.wifi_manager.shutdown()
