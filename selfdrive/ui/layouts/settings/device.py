@@ -1,7 +1,10 @@
 from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
+from openpilot.selfdrive.ui.onroad.driver_camera_view import DriverCameraView
 from openpilot.common.params import Params
 from openpilot.system.hardware import TICI
+from openpilot.system.ui.lib.application import gui_app
+
 
 # Description constants
 DESCRIPTIONS = {
@@ -26,7 +29,7 @@ class DeviceLayout(Widget):
       text_item("Dongle ID", dongle_id),
       text_item("Serial", serial),
       button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], self._on_pair_device),
-      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], self._on_driver_camera),
+      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._on_driver_camera),
       button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], self._on_reset_calibration),
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
     ]
@@ -37,12 +40,18 @@ class DeviceLayout(Widget):
     items.append(button_item("Change Language", "CHANGE", callback=self._on_change_language))
 
     self._list_widget = ListView(items)
+    self._driver_camera = DriverCameraView()
 
   def _render(self, rect):
     self._list_widget.render(rect)
 
+  def _on_driver_camera(self):
+    if not self._driver_camera:
+      self._driver_camera = DriverCameraView()
+
+    gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
+
   def _on_pair_device(self): pass
-  def _on_driver_camera(self): pass
   def _on_reset_calibration(self): pass
   def _on_review_training_guide(self): pass
   def _on_regulatory(self): pass
