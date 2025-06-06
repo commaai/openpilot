@@ -1,12 +1,15 @@
 import os
 import json
+
+from openpilot.common.basedir import BASEDIR
+from openpilot.common.params import Params
+from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
-from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
-from openpilot.common.params import Params
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
-from openpilot.system.hardware import TICI
-from openpilot.common.basedir import BASEDIR
+from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
 
 
 # Description constants
@@ -34,7 +37,7 @@ class DeviceLayout(Widget):
       text_item("Serial", serial),
       button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], self._on_pair_device),
       button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._on_driver_camera),
-      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], self._on_reset_calibration),
+      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._on_reset_calibration),
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
     ]
 
@@ -76,5 +79,29 @@ class DeviceLayout(Widget):
 
   def _on_pair_device(self): pass
   def _on_reset_calibration(self): pass
+
+  def _on_reset_calibration(self):
+    if ui_state.engaged:
+      gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Reset Calibration"))
+      return
+
+    gui_app.set_modal_overlay(
+      lambda: confirm_dialog("Are you sure you want to reset calibration?", "Reset"),
+      callback=self._reset_calibration,
+    )
+
+  def _reset_calibration(self):
+    if ui_state.engaged:
+      return
+
+    self._params.remove("CalibrationParams")
+    self._params.remove("LiveTorqueParameters")
+    self._params.remove("LiveParameters")
+    self._params.remove("LiveParametersV2")
+    self._params.remove("LiveDelay")
+    self._params.put_bool("OnroadCycleRequested", True)
+
+  def _on_pair_device(self): pass
+  def _on_driver_camera(self): pass
   def _on_review_training_guide(self): pass
   def _on_regulatory(self): pass
