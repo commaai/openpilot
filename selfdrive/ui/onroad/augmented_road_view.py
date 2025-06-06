@@ -13,7 +13,6 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 
-
 OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.LiveCalibrationData.Status.calibrated
 ROAD_CAM = VisionStreamType.VISION_STREAM_ROAD
@@ -170,9 +169,9 @@ class AugmentedRoadView(CameraView):
     ])
 
     video_transform = np.array([
-        [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
-        [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
-        [0.0, 0.0, 1.0]
+      [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
+      [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
+      [0.0, 0.0, 1.0]
     ])
     self.model_renderer.set_transform(video_transform @ calib_transform)
 

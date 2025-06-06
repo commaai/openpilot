@@ -101,5 +101,6 @@ def main():
 
     spinner.render()
 
+
 if __name__ == "__main__":
   main()

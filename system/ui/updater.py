@@ -12,7 +12,6 @@ from openpilot.system.ui.lib.label import gui_text_box, gui_label
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
 from openpilot.system.ui.widgets.network import WifiManagerUI
 
-
 # Constants
 MARGIN = 50
 BUTTON_HEIGHT = 160
@@ -60,7 +59,7 @@ class Updater:
     # TODO: just import it and run in a thread without a subprocess
     cmd = [self.updater, "--swap", self.manifest]
     self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   text=True, bufsize=1, universal_newlines=True)
+                                    text=True, bufsize=1, universal_newlines=True)
 
     for line in self.process.stdout:
       parts = line.strip().split(":")
@@ -85,7 +84,7 @@ class Updater:
 
     # Description
     desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
-                "The download size is approximately 1GB.")
+                 "The download size is approximately 1GB.")
 
     desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, gui_app.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)

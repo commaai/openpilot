@@ -76,7 +76,7 @@ class Reset:
 
       if self.reset_state != ResetState.FAILED:
         if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height),
-                       "Confirm", button_style=ButtonStyle.PRIMARY):
+                      "Confirm", button_style=ButtonStyle.PRIMARY):
           self.confirm()
 
     return True

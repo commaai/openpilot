@@ -8,7 +8,6 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR
 
-
 HEADER_HEIGHT = 80
 HEAD_BUTTON_FONT_SIZE = 40
 CONTENT_MARGIN = 40

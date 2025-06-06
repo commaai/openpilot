@@ -17,6 +17,7 @@ BUTTON_SIZE = rl.Vector2(310, 160)
 DEMO_TEXT = """This is a sample text that will be wrapped and scrolled if necessary.
             The text is long enough to demonstrate scrolling and word wrapping.""" * 30
 
+
 def wrap_text(text, font_size, max_width):
   lines = []
   font = gui_app.font()
@@ -71,6 +72,7 @@ class TextWindow:
       else:
         HARDWARE.reboot()
     return ret
+
 
 if __name__ == "__main__":
   text = sys.argv[1] if len(sys.argv) > 1 else DEMO_TEXT

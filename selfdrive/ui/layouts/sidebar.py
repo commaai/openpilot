@@ -18,6 +18,7 @@ HOME_BTN = rl.Rectangle(60, 860, 180, 180)
 ThermalStatus = log.DeviceState.ThermalStatus
 NetworkType = log.DeviceState.NetworkType
 
+
 # Color scheme
 class Colors:
   SIDEBAR_BG = rl.Color(57, 57, 57, 255)
@@ -34,6 +35,7 @@ class Colors:
   METRIC_BORDER = rl.Color(255, 255, 255, 85)
   BUTTON_NORMAL = rl.Color(255, 255, 255, 255)
   BUTTON_PRESSED = rl.Color(255, 255, 255, 166)
+
 
 NETWORK_TYPES = {
   NetworkType.none: "Offline",
@@ -57,6 +59,7 @@ class MetricData:
     self.value = value
     self.color = color
 
+
 class Sidebar:
   def __init__(self):
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
@@ -72,7 +75,7 @@ class Sidebar:
     self._font_regular = gui_app.font(FontWeight.NORMAL)
     self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
-     # Callbacks
+    # Callbacks
     self._on_settings_click: Callable | None = None
     self._on_flag_click: Callable | None = None
 
@@ -149,7 +152,6 @@ class Sidebar:
   def _draw_buttons(self, rect: rl.Rectangle):
     mouse_pos = rl.get_mouse_position()
     mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
-
 
     # Settings button
     settings_down = mouse_down and rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN)

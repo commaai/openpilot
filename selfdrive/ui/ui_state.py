@@ -3,7 +3,6 @@ from enum import Enum
 from cereal import messaging, log
 from openpilot.common.params import Params, UnknownKeyName
 
-
 UI_BORDER_SIZE = 30
 
 

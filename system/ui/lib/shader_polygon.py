@@ -124,7 +124,6 @@ void main() {
 }
 """
 
-
 UNIFORM_INT = rl.ShaderUniformDataType.SHADER_UNIFORM_INT
 UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
 UNIFORM_VEC2 = rl.ShaderUniformDataType.SHADER_UNIFORM_VEC2
@@ -243,6 +242,7 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
     color = color or rl.WHITE
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
+
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
   """
