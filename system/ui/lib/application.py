@@ -1,3 +1,4 @@
+import abc
 import atexit
 import os
 import time
@@ -24,6 +25,12 @@ DEFAULT_TEXT_COLOR = rl.WHITE
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
+
+
+class Widget(abc.ABC):
+  @abc.abstractmethod
+  def render(self, rect: rl.Rectangle):
+    """Render the widget within the given rectangle."""
 
 
 class FontWeight(IntEnum):
