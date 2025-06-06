@@ -4,18 +4,17 @@ from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
 from openpilot.system.ui.lib.application import gui_app
 
-
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
-    [-5.98, -51.20, 8.00], [-17.64, -49.14, 8.00], [-23.81, -46.40, 8.00], [-29.98, -40.91, 8.00],
-    [-32.04, -37.49, 8.00], [-34.10, -32.00, 8.00], [-36.16, -21.03, 8.00], [-36.16, 6.40, 8.00],
-    [-35.47, 10.51, 8.00], [-32.73, 19.43, 8.00], [-29.30, 26.29, 8.00], [-24.50, 33.83, 8.00],
-    [-19.01, 41.37, 8.00], [-14.21, 46.17, 8.00], [-12.16, 47.54, 8.00], [-4.61, 49.60, 8.00],
-    [4.99, 49.60, 8.00], [12.53, 47.54, 8.00], [14.59, 46.17, 8.00], [19.39, 41.37, 8.00],
-    [24.87, 33.83, 8.00], [29.67, 26.29, 8.00], [33.10, 19.43, 8.00], [35.84, 10.51, 8.00],
-    [36.53, 6.40, 8.00], [36.53, -21.03, 8.00], [34.47, -32.00, 8.00], [32.42, -37.49, 8.00],
-    [30.36, -40.91, 8.00], [24.19, -46.40, 8.00], [18.02, -49.14, 8.00], [6.36, -51.20, 8.00],
-    [-5.98, -51.20, 8.00],
+  [-5.98, -51.20, 8.00], [-17.64, -49.14, 8.00], [-23.81, -46.40, 8.00], [-29.98, -40.91, 8.00],
+  [-32.04, -37.49, 8.00], [-34.10, -32.00, 8.00], [-36.16, -21.03, 8.00], [-36.16, 6.40, 8.00],
+  [-35.47, 10.51, 8.00], [-32.73, 19.43, 8.00], [-29.30, 26.29, 8.00], [-24.50, 33.83, 8.00],
+  [-19.01, 41.37, 8.00], [-14.21, 46.17, 8.00], [-12.16, 47.54, 8.00], [-4.61, 49.60, 8.00],
+  [4.99, 49.60, 8.00], [12.53, 47.54, 8.00], [14.59, 46.17, 8.00], [19.39, 41.37, 8.00],
+  [24.87, 33.83, 8.00], [29.67, 26.29, 8.00], [33.10, 19.43, 8.00], [35.84, 10.51, 8.00],
+  [36.53, 6.40, 8.00], [36.53, -21.03, 8.00], [34.47, -32.00, 8.00], [32.42, -37.49, 8.00],
+  [30.36, -40.91, 8.00], [24.19, -46.40, 8.00], [18.02, -49.14, 8.00], [6.36, -51.20, 8.00],
+  [-5.98, -51.20, 8.00],
 ], dtype=np.float32)
 
 # UI constants
@@ -31,6 +30,7 @@ SCALES_NEG = np.array([0.7, 0.4, 0.4], dtype=np.float32)
 ARC_POINT_COUNT = 37  # Number of points in the arc
 ARC_ANGLES = np.linspace(0.0, np.pi, ARC_POINT_COUNT, dtype=np.float32)
 
+
 @dataclass
 class ArcData:
   """Data structure for arc rendering parameters."""
@@ -39,6 +39,7 @@ class ArcData:
   width: float
   height: float
   thickness: float
+
 
 class DriverStateRenderer:
   def __init__(self):
@@ -113,9 +114,9 @@ class DriverStateRenderer:
 
   def _update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
-    if  not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
-         rect.width != self.last_rect.width or rect.height != self.last_rect.height):
+    if not sm.updated["driverMonitoringState"]:
+      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
+                                 rect.width != self.last_rect.width or rect.height != self.last_rect.height):
         self._pre_calculate_drawing_elements(rect)
       return
 
@@ -189,15 +190,15 @@ class DriverStateRenderer:
     # Horizontal arc
     h_width = abs(delta_x)
     self.h_arc_data = self._calculate_arc_data(
-        delta_x, h_width, self.position_x, self.position_y - ARC_LENGTH / 2,
-        self.driver_pose_sins[1], self.driver_pose_diff[1], is_horizontal=True
+      delta_x, h_width, self.position_x, self.position_y - ARC_LENGTH / 2,
+      self.driver_pose_sins[1], self.driver_pose_diff[1], is_horizontal=True
     )
 
     # Vertical arc
     v_height = abs(delta_y)
     self.v_arc_data = self._calculate_arc_data(
-        delta_y, v_height, self.position_x - ARC_LENGTH / 2, self.position_y,
-        self.driver_pose_sins[0], self.driver_pose_diff[0], is_horizontal=False
+      delta_y, v_height, self.position_x - ARC_LENGTH / 2, self.position_y,
+      self.driver_pose_sins[0], self.driver_pose_diff[0], is_horizontal=False
     )
 
   def _calculate_arc_data(

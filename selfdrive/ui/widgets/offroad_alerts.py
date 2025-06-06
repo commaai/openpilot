@@ -10,6 +10,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 
+
 class AlertColors:
   HIGH_SEVERITY = rl.Color(226, 44, 44, 255)
   LOW_SEVERITY = rl.Color(41, 41, 41, 255)

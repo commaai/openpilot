@@ -69,7 +69,7 @@ class Keyboard:
     # Backspace key repeat tracking
     self._backspace_pressed: bool = False
     self._backspace_press_time: float = 0.0
-    self._backspace_last_repeat:float = 0.0
+    self._backspace_last_repeat: float = 0.0
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -91,7 +91,7 @@ class Keyboard:
     self._input_box.clear()
     self._backspace_pressed = False
 
-  def set_title(self, title: str, sub_title: str=""):
+  def set_title(self, title: str, sub_title: str = ""):
     self._title = title
     self._sub_title = sub_title
 

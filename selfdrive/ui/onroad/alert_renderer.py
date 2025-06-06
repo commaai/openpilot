@@ -8,7 +8,6 @@ from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.ui_state import ui_state
 
-
 ALERT_MARGIN = 40
 ALERT_PADDING = 60
 ALERT_LINE_SPACING = 45
@@ -20,7 +19,6 @@ ALERT_FONT_BIG = 88
 
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
-
 
 # Constants
 ALERT_COLORS = {
@@ -114,7 +112,7 @@ class AlertRenderer:
       return rect
 
     height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == log.SelfdriveState.AlertSize.small else
-             ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
+              ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
 
     return rl.Rectangle(
       rect.x + ALERT_MARGIN,

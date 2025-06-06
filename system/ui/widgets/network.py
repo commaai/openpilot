@@ -24,29 +24,35 @@ STRENGTH_ICONS = [
   "icons/wifi_strength_full.png",
 ]
 
+
 @dataclass
 class StateIdle:
   action: Literal["idle"] = "idle"
+
 
 @dataclass
 class StateConnecting:
   network: NetworkInfo
   action: Literal["connecting"] = "connecting"
 
+
 @dataclass
 class StateNeedsAuth:
   network: NetworkInfo
   action: Literal["needs_auth"] = "needs_auth"
+
 
 @dataclass
 class StateShowForgetConfirm:
   network: NetworkInfo
   action: Literal["show_forget_confirm"] = "show_forget_confirm"
 
+
 @dataclass
 class StateForgetting:
   network: NetworkInfo
   action: Literal["forgetting"] = "forgetting"
+
 
 UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm | StateForgetting
 
@@ -64,11 +70,11 @@ class WifiManagerUI:
 
     self.wifi_manager.set_callbacks(
       WifiManagerCallbacks(
-        need_auth = self._on_need_auth,
-        activated = self._on_activated,
-        forgotten = self._on_forgotten,
-        networks_updated = self._on_network_updated,
-        connection_failed = self._on_connection_failed
+        need_auth=self._on_need_auth,
+        activated=self._on_activated,
+        forgotten=self._on_forgotten,
+        networks_updated=self._on_network_updated,
+        connection_failed=self._on_connection_failed
       )
     )
     self.wifi_manager.start()
@@ -148,7 +154,8 @@ class WifiManagerUI:
     else:
       # If the network is saved, show the "Forget" button
       if network.is_saved:
-        forget_btn_rect = rl.Rectangle(security_icon_rect.x - self.btn_width - spacing,
+        forget_btn_rect = rl.Rectangle(
+          security_icon_rect.x - self.btn_width - spacing,
           rect.y + (ITEM_HEIGHT - 80) / 2,
           self.btn_width,
           80,
@@ -223,7 +230,6 @@ class WifiManagerUI:
     with self._lock:
       if isinstance(self.state, StateConnecting):
         self.state = StateIdle()
-
 
 
 def main():

@@ -11,7 +11,6 @@ from openpilot.system.ui.lib.button import gui_button
 from openpilot.system.ui.lib.toggle import Toggle
 from openpilot.system.ui.lib.toggle import WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
-
 LINE_PADDING = 40
 LINE_COLOR = rl.GRAY
 ITEM_PADDING = 20

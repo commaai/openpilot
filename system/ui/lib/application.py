@@ -43,6 +43,7 @@ class ModalOverlay:
   overlay: object = None
   callback: Callable | None = None
 
+
 class GuiApplication:
   def __init__(self, width: int, height: int):
     self._fonts: dict[FontWeight, rl.Font] = {}
@@ -58,7 +59,6 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
-
 
   def request_close(self):
     self._window_close_requested = True
@@ -167,7 +167,7 @@ class GuiApplication:
           elif callable(self._modal_overlay.overlay):
             result = self._modal_overlay.overlay()
           else:
-            assert(0)
+            raise Exception
 
           if result >= 0 and self._modal_overlay.callback is not None:
             # Execute callback with the result and clear the overlay

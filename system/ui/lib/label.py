@@ -76,4 +76,3 @@ def gui_text_box(
 
   if font_weight != FontWeight.NORMAL:
     rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
-

@@ -1,5 +1,6 @@
 from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
 
+
 class SoftwareLayout:
   def __init__(self):
     items = [

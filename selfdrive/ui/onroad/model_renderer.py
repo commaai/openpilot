@@ -9,7 +9,6 @@ from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 
-
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
 MAX_DRAW_DISTANCE = 100.0
@@ -35,6 +34,7 @@ NO_THROTTLE_COLORS = [
 class ModelPoints:
   raw_points: np.ndarray = field(default_factory=lambda: np.empty((0, 3), dtype=np.float32))
   projected_points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
+
 
 @dataclass
 class LeadVehicle:
@@ -126,7 +126,6 @@ class ModelRenderer:
       if render_lead_indicator:
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
-
 
     # Draw elements
     self._draw_lane_lines()
@@ -256,7 +255,7 @@ class ModelRenderer:
     glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
     chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
 
-    return LeadVehicle(glow=glow,chevron=chevron, fill_alpha=int(fill_alpha))
+    return LeadVehicle(glow=glow, chevron=chevron, fill_alpha=int(fill_alpha))
 
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
@@ -417,10 +416,10 @@ class ModelRenderer:
   def _hsla_to_color(h, s, l, a):
     rgb = colorsys.hls_to_rgb(h, l, s)
     return rl.Color(
-        int(rgb[0] * 255),
-        int(rgb[1] * 255),
-        int(rgb[2] * 255),
-        int(a * 255)
+      int(rgb[0] * 255),
+      int(rgb[1] * 255),
+      int(rgb[2] * 255),
+      int(a * 255)
     )
 
   @staticmethod
