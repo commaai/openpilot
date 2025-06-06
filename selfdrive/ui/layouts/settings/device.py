@@ -1,7 +1,12 @@
-from openpilot.system.ui.lib.application import Widget
+import os
+import json
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
 from openpilot.common.params import Params
+from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.hardware import TICI
+from openpilot.common.basedir import BASEDIR
+
 
 # Description constants
 DESCRIPTIONS = {
@@ -18,9 +23,10 @@ DESCRIPTIONS = {
 class DeviceLayout(Widget):
   def __init__(self):
     super().__init__()
-    params = Params()
-    dongle_id = params.get("DongleId", encoding="utf-8") or "N/A"
-    serial = params.get("HardwareSerial") or "N/A"
+
+    self._params = Params()
+    dongle_id = self._params.get("DongleId", encoding="utf-8") or "N/A"
+    serial = self._params.get("HardwareSerial") or "N/A"
 
     items = [
       text_item("Dongle ID", dongle_id),
@@ -37,13 +43,32 @@ class DeviceLayout(Widget):
     items.append(button_item("Change Language", "CHANGE", callback=self._on_change_language))
 
     self._list_widget = ListView(items)
+    self._select_language_dialog: MultiOptionDialog | None = None
 
   def _render(self, rect):
     self._list_widget.render(rect)
+
+  def _on_change_language(self):
+    try:
+      languages_file = os.path.join(BASEDIR, "selfdrive/ui/translations/languages.json")
+      with open(languages_file, encoding='utf-8') as f:
+        languages = json.load(f)
+
+      self._select_language_dialog = MultiOptionDialog("Select a language", languages)
+      gui_app.set_modal_overlay(self._select_language_dialog, callback=self._on_select_lang_dialog_closed)
+    except FileNotFoundError:
+      pass
+
+  def _on_select_lang_dialog_closed(self, result: int):
+    if result == 1 and self._select_language_dialog:
+      selected_language = self._select_language_dialog.selection
+      self._params.put("LanguageSetting", selected_language)
+
+    self._select_language_dialog = None
+
 
   def _on_pair_device(self): pass
   def _on_driver_camera(self): pass
   def _on_reset_calibration(self): pass
   def _on_review_training_guide(self): pass
   def _on_regulatory(self): pass
-  def _on_change_language(self): pass
