@@ -116,7 +116,6 @@ class Setup:
 
     if ret:
       self.state = SetupState.NETWORK_SETUP
-      self.wifi_manager.request_scan()
       self.start_network_check()
 
   def check_network_connectivity(self):
