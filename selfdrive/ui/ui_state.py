@@ -59,6 +59,12 @@ class UIState:
 
     self._update_params()
 
+  def is_onroad(self) -> bool:
+    return self.started
+
+  def is_offroad(self) -> bool:
+    return not self.started
+
   @property
   def engaged(self) -> bool:
     return self.started and self.sm["selfdriveState"].enabled
