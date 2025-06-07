@@ -42,7 +42,6 @@ class ExpButton(Widget):
       return True
     return False
 
-  # def draw(self, x: int, y: int) -> None:
   def _render(self, rect: rl.Rectangle) -> None:
     self._rect.x, self._rect.y = rect.x, rect.y
     center_x = int(self._rect.x + self._rect.width // 2)
