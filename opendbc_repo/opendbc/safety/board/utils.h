@@ -1,14 +1,14 @@
 // cppcheck-suppress-macro misra-c2012-1.2; allow __typeof__ extension
 #define MIN(a, b) ({ \
-  __typeof__ (a) _a = (a); \
-  __typeof__ (b) _b = (b); \
+  __typeof__(a) _a = (a); \
+  __typeof__(b) _b = (b); \
   (_a < _b) ? _a : _b; \
 })
 
 // cppcheck-suppress-macro misra-c2012-1.2; allow __typeof__ extension
 #define MAX(a, b) ({ \
-  __typeof__ (a) _a = (a); \
-  __typeof__ (b) _b = (b); \
+  __typeof__(a) _a = (a); \
+  __typeof__(b) _b = (b); \
   (_a > _b) ? _a : _b; \
 })
 
@@ -22,7 +22,7 @@
 
 // cppcheck-suppress-macro misra-c2012-1.2; allow __typeof__ extension
 #define ABS(a) ({ \
-  __typeof__ (a) _a = (a); \
+  __typeof__(a) _a = (a); \
   (_a > 0) ? _a : (-_a); \
 })
 
@@ -42,6 +42,6 @@
 
 // compute the time elapsed (in microseconds) from 2 counter samples
 // case where ts < ts_last is ok: overflow is properly re-casted into uint32_t
-uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last) {
+static inline uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last) {
   return ts - ts_last;
 }

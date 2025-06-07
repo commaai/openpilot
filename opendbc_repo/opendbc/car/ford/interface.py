@@ -26,21 +26,25 @@ class CarInterface(CarInterfaceBase):
     return CarControllerParams.ACCEL_MIN, np.interp(current_speed, ACCEL_MAX_BP, ACCEL_MAX_VALS)
 
   @staticmethod
-  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, experimental_long, docs) -> structs.CarParams:
+  def _get_params(ret: structs.CarParams, candidate, fingerprint, car_fw, alpha_long, is_release, docs) -> structs.CarParams:
     ret.brand = "ford"
 
-    ret.radarUnavailable = Bus.radar not in DBC[candidate]
     ret.steerControlType = structs.CarParams.SteerControlType.angle
     ret.steerActuatorDelay = 0.2
     ret.steerLimitTimer = 1.0
+    ret.steerAtStandstill = True
 
     ret.longitudinalTuning.kiBP = [0.]
     ret.longitudinalTuning.kiV = [0.5]
 
-    if not ret.radarUnavailable and DBC[candidate][Bus.radar] == RADAR.DELPHI_MRR:
+    # TODO: verify MRR_64 before it's used for longitudinal control
+    if DBC[candidate][Bus.radar] == RADAR.DELPHI_MRR:
       # average of 33.3 Hz radar timestep / 4 scan modes = 60 ms
       # MRR_Header_Timestamps->CAN_DET_TIME_SINCE_MEAS reports 61.3 ms
       ret.radarDelay = 0.06
+    elif DBC[candidate][Bus.radar] == RADAR.DELPHI_MRR_64:
+      # average of 20 Hz radar timestep / 4 scan modes = 100 ms
+      ret.radarDelay = 0.1
 
     CAN = CanBus(fingerprint=fingerprint)
     cfgs = [get_safety_config(structs.CarParams.SafetyModel.ford)]
@@ -48,8 +52,10 @@ class CarInterface(CarInterfaceBase):
       cfgs.insert(0, get_safety_config(structs.CarParams.SafetyModel.noOutput))
     ret.safetyConfigs = cfgs
 
-    ret.experimentalLongitudinalAvailable = ret.radarUnavailable
-    if experimental_long or not ret.radarUnavailable:
+    # For now continue to allow the user to still fall back to Ford Long
+    # for  CANFD platforms - in case radar is not fully reliable
+    ret.alphaLongitudinalAvailable = bool(ret.flags & FordFlags.CANFD)
+    if alpha_long or not bool(ret.flags & FordFlags.CANFD):
       ret.safetyConfigs[-1].safetyParam |= FordSafetyFlags.LONG_CONTROL.value
       ret.openpilotLongitudinalControl = True
 

@@ -22,6 +22,11 @@ enum class NetworkType {
   CELL,
   ETHERNET
 };
+enum class MeteredType {
+  UNKNOWN,
+  YES,
+  NO
+};
 
 typedef QMap<QString, QVariantMap> Connection;
 typedef QVector<QVariantMap> IpConfig;
@@ -53,6 +58,8 @@ public:
   bool isKnownConnection(const QString &ssid);
   std::optional<QDBusPendingCall> activateWifiConnection(const QString &ssid);
   NetworkType currentNetworkType();
+  MeteredType currentNetworkMetered();
+  std::optional<QDBusPendingCall> setCurrentNetworkMetered(MeteredType metered);
   void updateGsmSettings(bool roaming, QString apn, bool metered);
   void connect(const Network &ssid, const bool is_hidden = false, const QString &password = {}, const QString &username = {});
 

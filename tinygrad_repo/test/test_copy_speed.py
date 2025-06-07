@@ -24,7 +24,7 @@ class TestCopySpeed(unittest.TestCase):
     s.unlink()
 
   def testCopyCPUtoDefault(self):
-    t = Tensor.rand(N, N, device="clang").realize()
+    t = Tensor.ones(N, N, device="CPU").contiguous().realize()
     print(f"buffer: {t.nbytes()*1e-9:.2f} GB")
     for _ in range(3):
       with Timing("sync:  ", on_exit=lambda ns: f" @ {t.nbytes()/ns:.2f} GB/s"):
@@ -35,7 +35,7 @@ class TestCopySpeed(unittest.TestCase):
   def testCopyCPUtoDefaultFresh(self):
     print("fresh copy")
     for _ in range(3):
-      t = Tensor.rand(N, N, device="clang").realize()
+      t = Tensor.ones(N, N, device="CPU").contiguous().realize()
       with Timing("sync:  ", on_exit=lambda ns: f" @ {t.nbytes()/ns:.2f} GB/s"): # noqa: F821
         with Timing("queue: "):
           t.to(Device.DEFAULT).realize()
@@ -43,18 +43,18 @@ class TestCopySpeed(unittest.TestCase):
       del t
 
   def testCopyDefaulttoCPU(self):
-    t = Tensor.rand(N, N).realize()
+    t = Tensor.ones(N, N).contiguous().realize()
     print(f"buffer: {t.nbytes()*1e-9:.2f} GB")
     for _ in range(3):
       with Timing("sync:  ", on_exit=lambda ns: f" @ {t.nbytes()/ns:.2f} GB/s"):
-        t.to('clang').realize()
+        t.to('CPU').realize()
 
   @unittest.skipIf(CI, "CI doesn't have 6 GPUs")
   @unittest.skipIf(Device.DEFAULT != "GPU", "only test this on GPU")
   def testCopyCPUto6GPUs(self):
     from tinygrad.runtime.ops_gpu import CLDevice
     if len(CLDevice.device_ids) != 6: raise unittest.SkipTest("computer doesn't have 6 GPUs")
-    t = Tensor.rand(N, N, device="clang").realize()
+    t = Tensor.ones(N, N, device="CPU").contiguous().realize()
     print(f"buffer: {t.nbytes()*1e-9:.2f} GB")
     for _ in range(3):
       with Timing("sync:  ", on_exit=lambda ns: f" @ {t.nbytes()/ns:.2f} GB/s ({t.nbytes()*6/ns:.2f} GB/s total)"):

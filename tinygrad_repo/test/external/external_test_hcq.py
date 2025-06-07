@@ -2,7 +2,6 @@ import unittest, ctypes, struct, time, array
 from tinygrad import Device, Tensor, dtypes
 from tinygrad.helpers import to_mv, CI
 from tinygrad.device import Buffer, BufferSpec
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import get_runner
 
 def _time_queue(q, d):
@@ -21,7 +20,7 @@ class TestHCQ(unittest.TestCase):
     #TestHCQ.d1: AMDDevice = Device["AMD:1"]
     TestHCQ.a = Tensor([0.,1.], device=Device.DEFAULT).realize()
     TestHCQ.b = self.a + 1
-    si = create_schedule([self.b.lazydata])[-1]
+    si = self.b.schedule()[-1]
     TestHCQ.runner = get_runner(TestHCQ.d0.device, si.ast)
     TestHCQ.b.lazydata.buffer.allocate()
     # wow that's a lot of abstraction layers

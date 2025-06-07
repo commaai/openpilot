@@ -56,16 +56,14 @@ def create_gas_regen_command(packer, bus, throttle, idx, enabled, at_full_stop):
   values = {
     "GasRegenCmdActive": enabled,
     "RollingCounter": idx,
-    "GasRegenCmdActiveInv": 1 - enabled,
     "GasRegenCmd": throttle,
     "GasRegenFullStopActive": at_full_stop,
-    "GasRegenAlwaysOne": 1,
-    "GasRegenAlwaysOne2": 1,
-    "GasRegenAlwaysOne3": 1,
+    "GasRegenAccType": 1,
   }
 
   dat = packer.make_can_msg("ASCMGasRegenCmd", bus, values)[1]
-  values["GasRegenChecksum"] = (((0xff - dat[1]) & 0xff) << 16) | \
+  values["GasRegenChecksum"] = ((1 - enabled) << 24) | \
+                               (((0xff - dat[1]) & 0xff) << 16) | \
                                (((0xff - dat[2]) & 0xff) << 8) | \
                                ((0x100 - dat[3] - idx) & 0xff)
 

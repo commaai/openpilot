@@ -3,7 +3,7 @@ from typing import Tuple, Set, Dict
 from tinygrad import dtypes
 from tinygrad.codegen.assembly import AssemblyCodegen, Register
 from tinygrad.codegen.kernel import Ops
-from tinygrad.ops import BinaryOps, UnaryOps, TernaryOps
+from tinygrad.uop.ops import BinaryOps, UnaryOps, TernaryOps
 from tinygrad.runtime.ops_gpu import ROCM_LLVM_PATH
 
 # ugh, is this really needed?

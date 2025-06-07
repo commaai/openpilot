@@ -18,6 +18,6 @@ if __name__ == "__main__":
     params.put_bool("SshEnabled", True)
     params.put("GithubSshKeys", keys.text)
     params.put("GithubUsername", username)
-    print("Setup ssh keys successfully")
+    print("Set up ssh keys successfully")
   else:
     print("Error getting public keys from github")

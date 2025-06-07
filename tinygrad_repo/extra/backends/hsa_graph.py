@@ -3,7 +3,7 @@ from typing import List, Any, Dict, cast, Optional, Tuple
 from tinygrad.helpers import init_c_var, round_up
 from tinygrad.device import Buffer, BufferSpec
 from tinygrad.device import Compiled, Device
-from tinygrad.ops import Variable
+from tinygrad.uop.ops import Variable
 from tinygrad.runtime.ops_hsa import HSADevice, PROFILE, Profiler
 from tinygrad.engine.realize import ExecItem, BufferXfer, CompiledRunner
 from tinygrad.engine.jit import MultiGraphRunner, GraphException

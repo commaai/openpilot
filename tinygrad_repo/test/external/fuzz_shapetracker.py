@@ -38,17 +38,10 @@ def do_shrink(st):
   if DEBUG >= 1: print("st.shrink(", shrink, ")")
   st.shrink(shrink)
 
-def do_stride(st):
-  c = random.randint(0, len(st.shape)-1)
-  stride = tuple(random.choice([-2,-1,2]) if i==c else 1 for i in range(len(st.shape)))
-  if DEBUG >= 1: print("st.stride(", stride, ")")
-  st.stride(stride)
-
 def do_flip(st):
-  c = random.randint(0, len(st.shape)-1)
-  stride = tuple(-1 if i==c else 1 for i in range(len(st.shape)))
-  if DEBUG >= 1: print("st.stride(", stride, ")")
-  st.stride(stride)
+  flip = tuple(random.random() < 0.5 for _ in st.shape)
+  if DEBUG >= 1: print("st.flip(", flip, ")")
+  st.flip(flip)
 
 def do_expand(st):
   c = [i for i,s in enumerate(st.shape) if s==1]
@@ -58,7 +51,7 @@ def do_expand(st):
   if DEBUG >= 1: print("st.expand(", expand, ")")
   st.expand(expand)
 
-shapetracker_ops = [do_permute, do_pad, do_shrink, do_reshape_split_one, do_reshape_combine_two, do_stride, do_expand]
+shapetracker_ops = [do_permute, do_pad, do_shrink, do_reshape_split_one, do_reshape_combine_two, do_flip, do_expand]
 
 if __name__ == "__main__":
   random.seed(42)

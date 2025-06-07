@@ -145,10 +145,6 @@ void puth(unsigned int i) {
   puthx(i, 8U);
 }
 
-void puth2(unsigned int i) {
-  puthx(i, 2U);
-}
-
 #if defined(ENABLE_SPI) || defined(BOOTSTUB) || defined(DEBUG)
 void puth4(unsigned int i) {
   puthx(i, 4U);
@@ -160,7 +156,7 @@ void hexdump(const void *a, int l) {
   if (a != NULL) {
     for (int i=0; i < l; i++) {
       if ((i != 0) && ((i & 0xf) == 0)) print("\n");
-      puth2(((const unsigned char*)a)[i]);
+      puthx(((const unsigned char*)a)[i], 2U);
       print(" ");
     }
   }

@@ -42,10 +42,10 @@ class Synthesizer:
     if pad_length > -1:
       # Pad flow forward inputs to enable JIT
       assert pad_length > row_len, "pad length is too small"
-      y_mask = y_mask.pad(((0, 0), (0, 0), (0, pad_length - row_len)), 0).cast(z_p.dtype)
+      y_mask = y_mask.pad(((0, 0), (0, 0), (0, pad_length - row_len))).cast(z_p.dtype)
       # New y_mask tensor to remove sts mask
       y_mask = Tensor(y_mask.numpy(), device=y_mask.device, dtype=y_mask.dtype, requires_grad=y_mask.requires_grad)
-      z_p = z_p.squeeze(0).pad(((0, 0), (0, pad_length - z_p.shape[2])), 1).unsqueeze(0)
+      z_p = z_p.squeeze(0).pad(((0, 0), (0, pad_length - z_p.shape[2])), value=1).unsqueeze(0)
     z = self.flow.forward(z_p.realize(), y_mask.realize(), g=g.realize(), reverse=True)
     result_length = reduce(lambda x, y: x * y, self.dec.upsample_rates, row_len)
     o = self.dec.forward((z * y_mask)[:, :, :max_len], g=g)[:, :, :result_length]
@@ -114,7 +114,7 @@ class StochasticDurationPredictor:
     flows = flows[:-2] + [flows[-1]] # remove a useless vflow
     z = Tensor.randn(x.shape[0], 2, x.shape[2], dtype=x.dtype).to(device=x.device) * noise_scale
     for flow in flows: z = flow.forward(z, x_mask, g=x, reverse=reverse)
-    z0, z1 = split(z, [1, 1], 1)
+    z0, z1 = z.split([1, 1], 1)
     return z0.realize()
 
 class DurationPredictor:
@@ -147,7 +147,7 @@ class TextEncoder:
     x = x.transpose(1, -1)  # [b, t, h] -transpose-> [b, h, t]
     x_mask = sequence_mask(x_lengths, x.shape[2]).unsqueeze(1).cast(x.dtype)
     x = self.encoder.forward(x * x_mask, x_mask)
-    m, logs = split(self.proj(x) * x_mask, self.out_channels, dim=1)
+    m, logs = (self.proj(x) * x_mask).split(self.out_channels, dim=1)
     return x.realize(), m.realize(), logs.realize(), x_mask.realize()
 
 class ResidualCouplingBlock:
@@ -193,10 +193,10 @@ class Generator:
     x = self.conv_pre(x)
     if g is not None:  x = x + self.cond(g)
     for i in range(self.num_upsamples):
-      x = self.ups[i](x.leakyrelu(LRELU_SLOPE))
+      x = self.ups[i](x.leaky_relu(LRELU_SLOPE))
       xs = sum(self.resblocks[i * self.num_kernels + j].forward(x) for j in range(self.num_kernels))
       x = (xs / self.num_kernels).realize()
-    res = self.conv_post(x.leakyrelu()).tanh().realize()
+    res = self.conv_post(x.leaky_relu()).tanh().realize()
     return res
 
 class LayerNorm(nn.LayerNorm):
@@ -238,8 +238,8 @@ class ResBlock1:
     self.convs2 = [nn.Conv1d(channels, channels, kernel_size, 1, dilation=1, padding=get_padding(kernel_size, 1)) for _ in range(3)]
   def forward(self, x: Tensor, x_mask=None):
     for c1, c2 in zip(self.convs1, self.convs2):
-      xt = x.leakyrelu(LRELU_SLOPE)
-      xt = c1(xt if x_mask is None else xt * x_mask).leakyrelu(LRELU_SLOPE)
+      xt = x.leaky_relu(LRELU_SLOPE)
+      xt = c1(xt if x_mask is None else xt * x_mask).leaky_relu(LRELU_SLOPE)
       x = c2(xt if x_mask is None else xt * x_mask) + x
     return x if x_mask is None else x * x_mask
 
@@ -282,7 +282,7 @@ class ConvFlow:
     self.convs = DDSConv(filter_channels, kernel_size, n_layers, p_dropout=0.)
     self.proj = nn.Conv1d(filter_channels, self.half_channels * (num_bins * 3 - 1), 1)
   def forward(self, x, x_mask, g=None, reverse=False):
-    x0, x1 = split(x, [self.half_channels] * 2, 1)
+    x0, x1 = x.split([self.half_channels] * 2, 1)
     h = self.proj(self.convs.forward(self.pre(x0), x_mask, g=g)) * x_mask
     b, c, t = x0.shape
     h = h.reshape(b, c, -1, t).permute(0, 1, 3, 2) # [b, cx?, t] -> [b, c, t, ?]
@@ -302,10 +302,10 @@ class ResidualCouplingLayer:
     self.enc = WN(hidden_channels, kernel_size, dilation_rate, n_layers, p_dropout=p_dropout, gin_channels=gin_channels)
     self.post = nn.Conv1d(hidden_channels, self.half_channels * (2 - mean_only), 1)
   def forward(self, x, x_mask, g=None, reverse=False):
-    x0, x1 = split(x, [self.half_channels] * 2, 1)
+    x0, x1 = x.split([self.half_channels] * 2, 1)
     stats = self.post(self.enc.forward(self.pre(x0) * x_mask, x_mask, g=g)) * x_mask
     if not self.mean_only:
-      m, logs = split(stats, [self.half_channels] * 2, 1)
+      m, logs = stats.split([self.half_channels] * 2, 1)
     else:
       m = stats
       logs = Tensor.zeros_like(m)
@@ -420,7 +420,7 @@ def piecewise_rational_quadratic_transform(inputs, un_normalized_widths, un_norm
   return spline_fn(inputs=inputs, un_normalized_widths=un_normalized_widths, un_normalized_heights=un_normalized_heights, un_normalized_derivatives=un_normalized_derivatives, inverse=inverse, min_bin_width=min_bin_width, min_bin_height=min_bin_height, min_derivative=min_derivative, **spline_kwargs)
 def unconstrained_rational_quadratic_spline(inputs, un_normalized_widths, un_normalized_heights, un_normalized_derivatives, inverse=False, tails='linear', tail_bound=1., min_bin_width=DEFAULT_MIN_BIN_WIDTH, min_bin_height=DEFAULT_MIN_BIN_HEIGHT, min_derivative=DEFAULT_MIN_DERIVATIVE):
   if not tails == 'linear': raise RuntimeError('{} tails are not implemented.'.format(tails))
-  constant = np.log(np.exp(1 - min_derivative) - 1)
+  constant = np.log(np.exp(1 - min_derivative) - 1).item()
   un_normalized_derivatives = cat_lr(un_normalized_derivatives, constant, constant)
   output, log_abs_det = rational_quadratic_spline(inputs=inputs.squeeze(dim=0).squeeze(dim=0), unnormalized_widths=un_normalized_widths.squeeze(dim=0).squeeze(dim=0), unnormalized_heights=un_normalized_heights.squeeze(dim=0).squeeze(dim=0), unnormalized_derivatives=un_normalized_derivatives.squeeze(dim=0).squeeze(dim=0), inverse=inverse, left=-tail_bound, right=tail_bound, bottom=-tail_bound, top=tail_bound, min_bin_width=min_bin_width, min_bin_height=min_bin_height, min_derivative=min_derivative)
   return output.unsqueeze(dim=0).unsqueeze(dim=0), log_abs_det.unsqueeze(dim=0).unsqueeze(dim=0)
@@ -478,16 +478,7 @@ def get_shape(tensor):
   return tuple(shape)
 def convert_pad_shape(pad_shape): return tuple(tuple(x) for x in pad_shape)
 def get_padding(kernel_size, dilation=1): return int((kernel_size*dilation - dilation)/2)
-def split(tensor, split_sizes, dim=0):  # if split_sizes is an integer, convert it to a tuple of size split_sizes elements
-  if isinstance(split_sizes, int): split_sizes = (split_sizes,) * (tensor.shape[dim] // split_sizes)
-  assert sum(split_sizes) == tensor.shape[
-    dim], "Sum of split_sizes must equal the dimension size of tensor along the given dimension."
-  start, slices = 0, []
-  for size in split_sizes:
-    slice_range = [(start, start + size) if j == dim else None for j in range(len(tensor.shape))]
-    slices.append(slice_range)
-    start += size
-  return [tensor._slice(s) for s in slices]
+
 def gather(x, indices, axis):
   indices = (indices < 0).where(indices + x.shape[axis], indices).transpose(0, axis)
   permute_args = list(range(x.ndim))

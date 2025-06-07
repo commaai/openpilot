@@ -117,7 +117,7 @@ def tts(
   stn_tst = text_mapper.get_text(text_to_synthesize, hps.data.add_blank, hps.data.text_cleaners)
   init_shape = stn_tst.shape
   assert init_shape[0] < pad_length, "text is too long"
-  x_tst, x_tst_lengths = stn_tst.pad(((0, pad_length - init_shape[0]),), 1).unsqueeze(0), Tensor([init_shape[0]], dtype=dtypes.int64)
+  x_tst, x_tst_lengths = stn_tst.pad(((0, pad_length - init_shape[0]),), value=1).unsqueeze(0), Tensor([init_shape[0]], dtype=dtypes.int64)
   sid = Tensor([speaker_id], dtype=dtypes.int64) if model_has_multiple_speakers else None
 
   # Perform inference.

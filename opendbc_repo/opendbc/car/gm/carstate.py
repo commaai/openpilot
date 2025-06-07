@@ -158,6 +158,9 @@ class CarState(CarStateBase):
                               {1: ButtonType.gapAdjustCruise})
       ]
 
+    if ret.vEgo < self.CP.minSteerSpeed:
+      ret.lowSpeedAlert = True
+
     return ret
 
   @staticmethod

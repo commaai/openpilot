@@ -143,7 +143,7 @@ class Panda:
     HW_TYPE_UNO: 5100,
     HW_TYPE_DOS: 6500,
     HW_TYPE_TRES: 6600,
-    HW_TYPE_CUATRO: 6600,
+    HW_TYPE_CUATRO: 12500,
   }
 
   HARNESS_STATUS_NC = 0
@@ -860,8 +860,12 @@ class Panda:
   def set_green_led(self, enabled):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xf7, int(enabled), 0, b'')
 
-  def set_clock_source_period(self, period):
-    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe6, period, 0, b'')
+  # arr: timer period
+  # ccrN: channel N pulse length
+  def set_clock_source_timer_params(self, arr, ccr1, ccr2, ccr3):
+    param1 = ((ccr1 & 0xFF) << 8) | (ccr2 & 0xFF)
+    param2 = ((ccr3 & 0xFF) << 8) | (arr & 0xFF)
+    self._handle.controlWrite(Panda.REQUEST_OUT, 0xe6, param1, param2, b'')
 
   def force_relay_drive(self, intercept_relay_drive, ignition_relay_drive):
     self._handle.controlWrite(Panda.REQUEST_OUT, 0xc5, (int(intercept_relay_drive) | int(ignition_relay_drive) << 1), 0, b'')

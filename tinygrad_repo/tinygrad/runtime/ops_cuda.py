@@ -5,8 +5,9 @@ from tinygrad.device import Compiled, BufferSpec, LRUAllocator
 from tinygrad.renderer.cstyle import CUDARenderer
 from tinygrad.renderer.ptx import PTXRenderer
 from tinygrad.runtime.autogen import cuda
-from tinygrad.runtime.support.compiler_cuda import cuda_disassemble, pretty_ptx, CUDACompiler, PTXCompiler, PTX
+from tinygrad.runtime.support.compiler_cuda import pretty_ptx, CUDACompiler, PTXCompiler, PTX
 if getenv("IOCTL"): import extra.nv_gpu_driver.nv_ioctl  # noqa: F401  # pylint: disable=unused-import
+if MOCKGPU:=getenv("MOCKGPU"): from test.mockgpu.cuda import cuda # type: ignore # pylint: disable=reimported
 
 def check(status):
   if status != 0: raise RuntimeError(f"CUDA Error {status}, {ctypes.string_at(init_c_var(ctypes.POINTER(ctypes.c_char)(), lambda x: cuda.cuGetErrorString(status, ctypes.byref(x)))).decode()}")  # noqa: E501
@@ -33,14 +34,12 @@ class CUDAProgram:
   def __init__(self, dev:CUDADevice, name:str, lib:bytes, smem:int=0):
     self.dev, self.name, self.lib, self.smem = dev, name, lib, smem
     if DEBUG >= 5: print("\n".join([f"{i+1:>3} {line}" for i, line in enumerate(pretty_ptx(lib.decode('utf-8')).split("\n"))]))
-    if DEBUG >= 6: cuda_disassemble(lib, dev.arch)
 
     check(cuda.cuCtxSetCurrent(self.dev.context))
     self.module = cuda.CUmodule()
     status = cuda.cuModuleLoadData(ctypes.byref(self.module), lib)
     if status != 0:
       del self.module
-      cuda_disassemble(lib, dev.arch)
       raise RuntimeError(f"module load failed with status code {status}: {cuda.cudaError_enum__enumvalues[status]}")
     check(cuda.cuModuleGetFunction(ctypes.byref(prg := cuda.CUfunction()), self.module, name.encode("utf-8")))
     self.prg = prg
@@ -53,31 +52,32 @@ class CUDAProgram:
     check(cuda.cuCtxSetCurrent(self.dev.context))
     if not hasattr(self, "vargs"):
       self.c_args, self.vargs = encode_args(args, vals)
+
+      # HACK: For MOCKGPU send the args struct itself.
+      if MOCKGPU: self.vargs = self.c_args # type: ignore[assignment]
     else:
       for i in range(len(args)): self.c_args.__setattr__(f'f{i}', args[i])
       for i in range(len(vals)): self.c_args.__setattr__(f'v{i}', vals[i])
     return cu_time_execution(lambda: check(cuda.cuLaunchKernel(self.prg, *global_size, *local_size, self.smem, None, None, self.vargs)), enable=wait)
 
-class CUDAAllocator(LRUAllocator):
-  def __init__(self, device:CUDADevice):
-    self.device = device
-    super().__init__()
+class CUDAAllocator(LRUAllocator['CUDADevice']):
   def _alloc(self, size, options:BufferSpec):
-    check(cuda.cuCtxSetCurrent(self.device.context))
+    check(cuda.cuCtxSetCurrent(self.dev.context))
+    if options.external_ptr: return cuda.CUdeviceptr_v2(options.external_ptr)
     if options.host: return init_c_var(ctypes.c_void_p(), lambda x: check(cuda.cuMemHostAlloc(ctypes.byref(x), size, 0x01)))
     return init_c_var(cuda.CUdeviceptr(), lambda x: check(cuda.cuMemAlloc_v2(ctypes.byref(x), size)))
   def _free(self, opaque, options:BufferSpec):
     if options.host: check(cuda.cuMemFreeHost(opaque))
     else: check(cuda.cuMemFree_v2(opaque))
   def _copyin(self, dest, src:memoryview):
-    check(cuda.cuCtxSetCurrent(self.device.context))
+    check(cuda.cuCtxSetCurrent(self.dev.context))
     host_mem = self.alloc(len(src), BufferSpec(host=True))
-    self.device.pending_copyin.append((host_mem, len(src), BufferSpec(host=True)))
+    self.dev.pending_copyin.append((host_mem, len(src), BufferSpec(host=True)))
     ctypes.memmove(host_mem, from_mv(src), len(src))
     check(cuda.cuMemcpyHtoDAsync_v2(dest, host_mem, len(src), None))
   def _copyout(self, dest:memoryview, src):
     CUDADevice.synchronize_system()
-    check(cuda.cuCtxSetCurrent(self.device.context))
+    check(cuda.cuCtxSetCurrent(self.dev.context))
     check(cuda.cuMemcpyDtoH_v2(from_mv(dest), src, len(dest)))
   def _transfer(self, dest, src, sz:int, src_dev, dest_dev):
     check(cuda.cuCtxSetCurrent(src_dev.context))
@@ -114,7 +114,7 @@ class CUDADevice(Compiled):
 
     from tinygrad.runtime.graph.cuda import CUDAGraph
     super().__init__(device, CUDAAllocator(self), PTXRenderer(self.arch) if PTX else CUDARenderer(self.arch),
-                     PTXCompiler(self.arch) if PTX else CUDACompiler(self.arch), functools.partial(CUDAProgram, self), graph=CUDAGraph)
+                     PTXCompiler(self.arch) if PTX else CUDACompiler(self.arch), functools.partial(CUDAProgram, self), None if MOCKGPU else CUDAGraph)
 
   def synchronize(self):
     check(cuda.cuCtxSetCurrent(self.context))
