@@ -41,6 +41,7 @@ class SetupState(IntEnum):
 
 class Setup(Widget):
   def __init__(self):
+    super().__init__()
     self.state = SetupState.GETTING_STARTED
     self.network_check_thread = None
     self.network_connected = threading.Event()

@@ -59,6 +59,7 @@ UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm 
 
 class WifiManagerUI(Widget):
   def __init__(self, wifi_manager: WifiManagerWrapper):
+    super().__init__()
     self.state: UIState = StateIdle()
     self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()

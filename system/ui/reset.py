@@ -29,6 +29,7 @@ class ResetState(IntEnum):
 
 class Reset(Widget):
   def __init__(self, mode):
+    super().__init__()
     self.mode = mode
     self.reset_state = ResetState.NONE
 

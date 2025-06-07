@@ -8,6 +8,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 
 class MultiOptionDialog(Widget):
   def __init__(self, title, options, current=""):
+    super().__init__()
     self._title = title
     self._options = options
     self._current = current if current in options else ""

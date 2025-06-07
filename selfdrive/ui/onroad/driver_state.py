@@ -43,6 +43,7 @@ class ArcData:
 
 class DriverStateRenderer(Widget):
   def __init__(self):
+    super().__init__()
     # Initial state with NumPy arrays
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D.copy()
     self.is_active = False

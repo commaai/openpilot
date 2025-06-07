@@ -9,6 +9,7 @@ PASSWORD_MASK_DELAY = 1.5  # Seconds to show character before masking
 
 class InputBox(Widget):
   def __init__(self, max_text_size=255, password_mode=False):
+    super().__init__()
     self._max_text_size = max_text_size
     self._input_text = ""
     self._cursor_position = 0

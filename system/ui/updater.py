@@ -32,6 +32,7 @@ class Screen(IntEnum):
 
 class Updater(Widget):
   def __init__(self, updater_path, manifest_path):
+    super().__init__()
     self.updater = updater_path
     self.manifest = manifest_path
     self.current_screen = Screen.PROMPT

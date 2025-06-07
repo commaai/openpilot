@@ -94,8 +94,6 @@ class Sidebar(Widget):
     self._draw_network_indicator(rect)
     self._draw_metrics(rect)
 
-    # self._handle_mouse_release()
-
   def update_state(self):
     sm = ui_state.sm
     if not sm.updated['deviceState']:

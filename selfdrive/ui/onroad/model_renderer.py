@@ -45,6 +45,7 @@ class LeadVehicle:
 
 class ModelRenderer(Widget):
   def __init__(self):
+    super().__init__()
     self._longitudinal_control = False
     self._experimental_mode = False
     self._blend_factor = 1.0

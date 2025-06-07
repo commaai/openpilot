@@ -57,6 +57,7 @@ else:
 
 class CameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType):
+    super().__init__()
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)

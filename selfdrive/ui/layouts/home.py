@@ -26,6 +26,7 @@ class HomeLayoutState(IntEnum):
 
 class HomeLayout(Widget):
   def __init__(self):
+    super().__init__()
     self.params = Params()
 
     self.update_alert = UpdateAlert()
