@@ -43,7 +43,7 @@ class Widget(abc.ABC):
     if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
       if self._is_pressed and rl.check_collision_point_rec(mouse_pos, rect):
         self._handle_mouse_release(mouse_pos)
-        self._is_pressed = False
+      self._is_pressed = False
 
     return ret
 
