@@ -36,7 +36,7 @@ class Widget(abc.ABC):
     return False
 
   @abc.abstractmethod
-  def _render(self, rect: rl.Rectangle) -> None:
+  def _render(self, rect: rl.Rectangle) -> bool | int | None:
     """Render the widget within the given rectangle."""
 
   def render(self, rect: rl.Rectangle) -> bool | int | None:
@@ -54,7 +54,6 @@ class Widget(abc.ABC):
         self._is_pressed = False
 
     return ret
-
 
 
 class FontWeight(IntEnum):
