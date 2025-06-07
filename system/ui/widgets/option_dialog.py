@@ -20,7 +20,7 @@ class MultiOptionDialog(Widget):
   def selection(self):
     return self._selection
 
-  def render(self, rect):
+  def _render(self, rect):
     title_rect = rl.Rectangle(rect.x + self._padding, rect.y + self._padding, rect.width - 2 * self._padding, 70)
     gui_label(title_rect, self._title, 70)
 

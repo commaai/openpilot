@@ -44,7 +44,7 @@ class DeveloperLayout(Widget):
 
     self._list_widget = ListView(items)
 
-  def render(self, rect):
+  def _render(self, rect):
     self._list_widget.render(rect)
 
   def _on_enable_adb(self): pass

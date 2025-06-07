@@ -62,6 +62,7 @@ class MetricData:
 
 class Sidebar(Widget):
   def __init__(self):
+    super().__init__()
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0
 
@@ -83,7 +84,7 @@ class Sidebar(Widget):
     self._on_settings_click = on_settings
     self._on_flag_click = on_flag
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     self.update_state()
 
     # Background
@@ -93,7 +94,7 @@ class Sidebar(Widget):
     self._draw_network_indicator(rect)
     self._draw_metrics(rect)
 
-    self._handle_mouse_release()
+    # self._handle_mouse_release()
 
   def update_state(self):
     sm = ui_state.sm
@@ -137,11 +138,7 @@ class Sidebar(Widget):
     else:
       self._panda_status.update("VEHICLE", "ONLINE", Colors.GOOD)
 
-  def _handle_mouse_release(self):
-    if not rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      return
-
-    mouse_pos = rl.get_mouse_position()
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
     if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
       if self._on_settings_click:
         self._on_settings_click()

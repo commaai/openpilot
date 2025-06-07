@@ -89,7 +89,7 @@ class AbstractAlert(Widget, ABC):
 
     return False
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.width, 10, AlertColors.BACKGROUND)
 
     footer_height = AlertConstants.BUTTON_SIZE[1] + AlertConstants.SPACING

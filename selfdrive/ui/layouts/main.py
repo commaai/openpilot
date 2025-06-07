@@ -32,7 +32,7 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
-  def render(self, rect):
+  def _render(self, rect):
     self._current_callback = None
 
     self._update_layout_rects(rect)

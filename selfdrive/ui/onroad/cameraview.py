@@ -149,7 +149,7 @@ class CameraView(Widget):
       [0.0, 0.0, 1.0]
     ])
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self._switching:
       self._handle_switch()
 

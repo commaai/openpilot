@@ -37,7 +37,7 @@ class DeviceLayout(Widget):
 
     self._list_widget = ListView(items)
 
-  def render(self, rect):
+  def _render(self, rect):
     self._list_widget.render(rect)
 
   def _on_pair_device(self): pass

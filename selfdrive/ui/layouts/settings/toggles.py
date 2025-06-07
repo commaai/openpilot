@@ -65,5 +65,5 @@ class TogglesLayout(Widget):
 
     self._list_widget = ListView(items)
 
-  def render(self, rect):
+  def _render(self, rect):
     self._list_widget.render(rect)

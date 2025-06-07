@@ -73,7 +73,7 @@ class SettingsLayout(Widget):
   def set_callbacks(self, on_close: Callable):
     self._close_callback = on_close
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     # Calculate layout
     sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
     panel_rect = rl.Rectangle(rect.x + SIDEBAR_WIDTH, rect.y, rect.width - SIDEBAR_WIDTH, rect.height)
@@ -82,8 +82,8 @@ class SettingsLayout(Widget):
     self._draw_sidebar(sidebar_rect)
     self._draw_current_panel(panel_rect)
 
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      self.handle_mouse_release(rl.get_mouse_position())
+    # if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    #   self.handle_mouse_release(rl.get_mouse_position())
 
   def _draw_sidebar(self, rect: rl.Rectangle):
     rl.draw_rectangle_rec(rect, SIDEBAR_COLOR)
@@ -154,7 +154,7 @@ class SettingsLayout(Widget):
         alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
       )
 
-  def handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
       if self._close_callback:

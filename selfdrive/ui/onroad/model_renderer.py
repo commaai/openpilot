@@ -86,7 +86,7 @@ class ModelRenderer(Widget):
     self._car_space_transform = transform.astype(np.float32)
     self._transform_dirty = True
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     sm = ui_state.sm
 
     # Check if data is up-to-date

@@ -80,7 +80,7 @@ class WifiManagerUI(Widget):
     self.wifi_manager.start()
     self.wifi_manager.connect()
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     with self._lock:
       if not self._networks:
         gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)

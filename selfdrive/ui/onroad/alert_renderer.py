@@ -91,7 +91,7 @@ class AlertRenderer(Widget):
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
 
-  def render(self, rect: rl.Rectangle) -> None:
+  def _render(self, rect: rl.Rectangle) -> None:
     alert = self.get_alert(ui_state.sm)
     if not alert:
       return

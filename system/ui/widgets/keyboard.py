@@ -95,7 +95,7 @@ class Keyboard(Widget):
     self._title = title
     self._sub_title = sub_title
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
     gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
     gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)

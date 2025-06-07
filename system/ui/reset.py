@@ -54,7 +54,7 @@ class Reset(Widget):
     self.reset_state = ResetState.RESETTING
     threading.Timer(0.1, self._do_erase).start()
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
     gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
 

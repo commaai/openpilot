@@ -49,7 +49,7 @@ class AugmentedRoadView(CameraView):
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
-  def render(self, rect):
+  def _render(self, rect):
     # Only render when system is started to avoid invalid data access
     if not ui_state.started:
       return
@@ -80,7 +80,7 @@ class AugmentedRoadView(CameraView):
     )
 
     # Render the base camera view
-    super().render(rect)
+    super()._render(rect)
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)

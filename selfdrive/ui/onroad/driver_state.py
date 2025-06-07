@@ -74,7 +74,7 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def render(self, rect):
+  def _render(self, rect):
     if not self._is_visible(ui_state.sm):
       return
 
