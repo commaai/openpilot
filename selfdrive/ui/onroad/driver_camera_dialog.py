@@ -8,13 +8,16 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_label
 
 
-class DriverCameraView(CameraView):
-  def __init__(self, stream_type: VisionStreamType):
-    super().__init__("camerad", stream_type)
+class DriverCameraDialog(CameraView):
+  def __init__(self):
+    super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
 
   def _render(self, rect):
     super()._render(rect)
+
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      return 1
 
     if not self.frame:
       gui_label(
@@ -24,13 +27,15 @@ class DriverCameraView(CameraView):
         font_weight=FontWeight.BOLD,
         alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
       )
-      return
+      return -1
 
-    self._draw_face_detection(rect, ui_state.sm)
-    self.driver_state_renderer.draw(rect, ui_state.sm)
+    self._draw_face_detection(rect)
+    self.driver_state_renderer.render(rect)
 
-  def _draw_face_detection(self, rect: rl.Rectangle, sm) -> None:
-    driver_state = sm["driverStateV2"]
+    return -1
+
+  def _draw_face_detection(self, rect: rl.Rectangle) -> None:
+    driver_state = ui_state.sm["driverStateV2"]
     is_rhd = driver_state.wheelOnRightProb > 0.5
     driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
     face_detect = driver_data.faceProb > 0.7
@@ -84,7 +89,7 @@ class DriverCameraView(CameraView):
 if __name__ == "__main__":
   gui_app.init_window("Driver Camera View")
 
-  driver_camera_view = DriverCameraView(VisionStreamType.VISION_STREAM_DRIVER)
+  driver_camera_view = DriverCameraDialog()
   try:
     for _ in gui_app.render():
       ui_state.update()
