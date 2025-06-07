@@ -3,7 +3,7 @@ import pyray as rl
 import select
 import sys
 
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.text import wrap_text
 
@@ -22,7 +22,7 @@ def clamp(value, min_value, max_value):
   return max(min(value, max_value), min_value)
 
 
-class Spinner:
+class Spinner(Widget):
   def __init__(self):
     self._comma_texture = gui_app.texture("images/spinner_comma.png", TEXTURE_SIZE, TEXTURE_SIZE)
     self._spinner_texture = gui_app.texture("images/spinner_track.png", TEXTURE_SIZE, TEXTURE_SIZE, alpha_premultiply=True)
@@ -38,7 +38,7 @@ class Spinner:
       self._progress = None
       self._wrapped_lines = wrap_text(text, FONT_SIZE, gui_app.width - MARGIN_H)
 
-  def render(self):
+  def render(self, _: rl.Rectangle = None):
     if self._wrapped_lines:
       # Calculate total height required for spinner and text
       spacing = 50

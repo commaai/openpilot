@@ -1,3 +1,4 @@
+import abc
 import atexit
 import os
 import time
@@ -24,6 +25,12 @@ DEFAULT_TEXT_COLOR = rl.WHITE
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
+
+
+class Widget(abc.ABC):
+  @abc.abstractmethod
+  def render(self, rect: rl.Rectangle) -> bool | None:
+    """Render the widget within the given rectangle."""
 
 
 class FontWeight(IntEnum):
@@ -218,12 +225,11 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-    from openpilot.selfdrive.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += CRUISE_DISABLED_CHAR
+    all_chars += "-"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)

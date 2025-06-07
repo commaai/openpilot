@@ -3,7 +3,7 @@ from threading import Lock
 from typing import Literal
 
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
@@ -57,7 +57,7 @@ class StateForgetting:
 UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm | StateForgetting
 
 
-class WifiManagerUI:
+class WifiManagerUI(Widget):
   def __init__(self, wifi_manager: WifiManagerWrapper):
     self.state: UIState = StateIdle()
     self.btn_width: int = 200

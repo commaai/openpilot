@@ -3,7 +3,7 @@ import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS, Widget
 from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.ui_state import ui_state
@@ -59,7 +59,7 @@ ALERT_CRITICAL_REBOOT = Alert(
 )
 
 
-class AlertRenderer:
+class AlertRenderer(Widget):
   def __init__(self):
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
@@ -91,8 +91,8 @@ class AlertRenderer:
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
 
-  def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster) -> None:
-    alert = self.get_alert(sm)
+  def render(self, rect: rl.Rectangle) -> None:
+    alert = self.get_alert(ui_state.sm)
     if not alert:
       return
 

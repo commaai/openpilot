@@ -1,9 +1,10 @@
 import pyray as rl
+from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
 from openpilot.system.ui.widgets.network import WifiManagerUI
 
 
-class NetworkLayout:
+class NetworkLayout(Widget):
   def __init__(self):
     self.wifi_manager = WifiManagerWrapper()
     self.wifi_ui = WifiManagerUI(self.wifi_manager)

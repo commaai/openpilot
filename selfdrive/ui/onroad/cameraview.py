@@ -4,7 +4,7 @@ import pyray as rl
 from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
@@ -55,7 +55,7 @@ else:
     """
 
 
-class CameraView:
+class CameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType):
     self._name = name
     # Primary stream
