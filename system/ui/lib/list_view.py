@@ -2,7 +2,7 @@ import os
 import pyray as rl
 from dataclasses import dataclass
 from collections.abc import Callable
-from abc import ABC, abstractmethod
+from abc import ABC
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
