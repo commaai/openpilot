@@ -25,7 +25,7 @@ class Toggle(Widget):
     if not self._enabled:
       return 0
 
-    if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON):
+    if rl.is_mouse_button_released(rl.MOUSE_LEFT_BUTTON):
       if rl.check_collision_point_rec(rl.get_mouse_position(), self._rect):
         self._state = not self._state
         self._target = 1.0 if self._state else 0.0
