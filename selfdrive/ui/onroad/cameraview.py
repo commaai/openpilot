@@ -57,6 +57,7 @@ else:
 
 class CameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType):
+    super().__init__()
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
@@ -149,7 +150,7 @@ class CameraView(Widget):
       [0.0, 0.0, 1.0]
     ])
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self._switching:
       self._handle_switch()
 

@@ -13,8 +13,8 @@ class DriverCameraView(CameraView):
     super().__init__("camerad", stream_type)
     self.driver_state_renderer = DriverStateRenderer()
 
-  def render(self, rect):
-    super().render(rect)
+  def _render(self, rect):
+    super()._render(rect)
 
     if not self.frame:
       gui_label(

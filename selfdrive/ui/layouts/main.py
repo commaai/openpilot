@@ -16,12 +16,12 @@ class MainState(IntEnum):
 
 class MainLayout(Widget):
   def __init__(self):
+    super().__init__()
     self._sidebar = Sidebar()
     self._sidebar_visible = True
     self._current_mode = MainState.HOME
     self._prev_onroad = False
     self._window_rect = None
-    self._current_callback: callable | None = None
 
     # Initialize layouts
     self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
@@ -32,25 +32,16 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
-  def render(self, rect):
-    self._current_callback = None
-
+  def _render(self, rect):
     self._update_layout_rects(rect)
     self._handle_onroad_transition()
     self._render_main_content()
-    self._handle_input()
-
-    if self._current_callback:
-      self._current_callback()
 
   def _setup_callbacks(self):
-    self._sidebar.set_callbacks(
-      on_settings=lambda: setattr(self, '_current_callback', self._on_settings_clicked),
-      on_flag=lambda: setattr(self, '_current_callback', self._on_flag_clicked),
-    )
-    self._layouts[MainState.SETTINGS].set_callbacks(
-      on_close=lambda: setattr(self, '_current_callback', self._set_mode_for_state)
-    )
+    self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
+                                on_flag=self._on_flag_clicked)
+    self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
+    self._layouts[MainState.ONROAD].on_click = self._on_onrad_clicked
 
   def _update_layout_rects(self, rect):
     self._window_rect = rect
@@ -80,6 +71,9 @@ class MainLayout(Widget):
   def _on_flag_clicked(self):
     pass
 
+  def _on_onrad_clicked(self):
+    self._sidebar_visible = not self._sidebar_visible
+
   def _render_main_content(self):
     # Render sidebar
     if self._sidebar_visible:
@@ -87,11 +81,3 @@ class MainLayout(Widget):
 
     content_rect = self._content_rect if self._sidebar_visible else self._window_rect
     self._layouts[self._current_mode].render(content_rect)
-
-  def _handle_input(self):
-    if self._current_mode != MainState.ONROAD or not rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      return
-
-    mouse_pos = rl.get_mouse_position()
-    if rl.check_collision_point_rec(mouse_pos, self._content_rect):
-      self._sidebar_visible = not self._sidebar_visible

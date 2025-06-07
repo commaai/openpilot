@@ -43,6 +43,7 @@ class ArcData:
 
 class DriverStateRenderer(Widget):
   def __init__(self):
+    super().__init__()
     # Initial state with NumPy arrays
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D.copy()
     self.is_active = False
@@ -74,7 +75,7 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def render(self, rect):
+  def _render(self, rect):
     if not self._is_visible(ui_state.sm):
       return
 

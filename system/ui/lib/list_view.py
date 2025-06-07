@@ -55,7 +55,7 @@ class ToggleAction(ItemAction):
     self.toggle = Toggle(initial_state=initial_state)
     self.state = initial_state
 
-  def render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
     self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
     return False
@@ -77,7 +77,7 @@ class ButtonAction(ItemAction):
   def text(self):
     return _resolve_value(self._text, "Error")
 
-  def render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     return gui_button(
       rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
       self.text,
@@ -103,7 +103,7 @@ class TextAction(ItemAction):
   def text(self):
     return _resolve_value(self._text, "Error")
 
-  def render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     current_text = self.text
     text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)
 
@@ -167,14 +167,15 @@ class ListItem:
     return rl.Rectangle(right_x, right_y, right_width, ITEM_BASE_HEIGHT)
 
 
-class ListView:
+class ListView(Widget):
   def __init__(self, items: list[ListItem]):
+    super().__init__()
     self._items: list[ListItem] = items
     self.scroll_panel = GuiScrollPanel()
     self._font = gui_app.font(FontWeight.NORMAL)
     self._hovered_item: int = -1
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     total_height = self._update_item_rects(rect)
 
     # Update layout and handle scrolling

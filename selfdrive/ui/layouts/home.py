@@ -26,6 +26,7 @@ class HomeLayoutState(IntEnum):
 
 class HomeLayout(Widget):
   def __init__(self):
+    super().__init__()
     self.params = Params()
 
     self.update_alert = UpdateAlert()
@@ -58,7 +59,7 @@ class HomeLayout(Widget):
   def _set_state(self, state: HomeLayoutState):
     self.current_state = state
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     self._update_layout_rects(rect)
 
     current_time = time.time()

@@ -8,6 +8,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 
 class MultiOptionDialog(Widget):
   def __init__(self, title, options, current=""):
+    super().__init__()
     self._title = title
     self._options = options
     self._current = current if current in options else ""
@@ -20,7 +21,7 @@ class MultiOptionDialog(Widget):
   def selection(self):
     return self._selection
 
-  def render(self, rect):
+  def _render(self, rect):
     title_rect = rl.Rectangle(rect.x + self._padding, rect.y + self._padding, rect.width - 2 * self._padding, 70)
     gui_label(title_rect, self._title, 70)
 
@@ -77,6 +78,6 @@ if __name__ == "__main__":
 
   for _ in gui_app.render():
     result = dialog.render(rl.Rectangle(100, 100, 1024, 800))
-    if result >= 0:
+    if isinstance(result, int) and result >= 0:
       print(f"Selected: {dialog.selection}" if result > 0 else "Canceled")
       break

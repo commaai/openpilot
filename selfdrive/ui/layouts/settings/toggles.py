@@ -22,6 +22,7 @@ DESCRIPTIONS = {
 
 class TogglesLayout(Widget):
   def __init__(self):
+    super().__init__()
     self._params = Params()
     items = self._init_items()
     self._list_widget = ListView(items)
@@ -71,5 +72,5 @@ class TogglesLayout(Widget):
     ]
     return items
 
-  def render(self, rect):
+  def _render(self, rect):
     self._list_widget.render(rect)
