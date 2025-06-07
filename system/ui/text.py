@@ -55,7 +55,7 @@ class TextWindow(Widget):
     self._scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)
     self._scroll_panel._offset.y = -max(self._content_rect.height - self._textarea_rect.height, 0)
 
-  def render(self, _: rl.Rectangle = None):
+  def _render(self, rect: rl.Rectangle):
     scroll = self._scroll_panel.handle_scroll(self._textarea_rect, self._content_rect)
     rl.begin_scissor_mode(int(self._textarea_rect.x), int(self._textarea_rect.y), int(self._textarea_rect.width), int(self._textarea_rect.height))
     for i, line in enumerate(self._wrapped_lines):
@@ -80,4 +80,4 @@ if __name__ == "__main__":
   gui_app.init_window("Text Viewer")
   text_window = TextWindow(text)
   for _ in gui_app.render():
-    text_window.render()
+    text_window.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

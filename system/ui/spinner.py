@@ -39,7 +39,7 @@ class Spinner(Widget):
       self._progress = None
       self._wrapped_lines = wrap_text(text, FONT_SIZE, gui_app.width - MARGIN_H)
 
-  def render(self, _: rl.Rectangle = None):
+  def _render(self, _: rl.Rectangle = None):
     if self._wrapped_lines:
       # Calculate total height required for spinner and text
       spacing = 50

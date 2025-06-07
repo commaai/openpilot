@@ -39,7 +39,7 @@ class Widget(abc.ABC):
   def _render(self, rect: rl.Rectangle) -> None:
     """Render the widget within the given rectangle."""
 
-  def render(self, rect: rl.Rectangle) -> bool | None:
+  def render(self, rect: rl.Rectangle) -> bool | int | None:
     """Render the widget within the given rectangle."""
     ret = self._render(rect)
 

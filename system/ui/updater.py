@@ -138,7 +138,7 @@ class Updater(Widget):
         HARDWARE.reboot()
         return
 
-  def render(self, _: rl.Rectangle = None):
+  def _render(self, _: rl.Rectangle = None):
     if self.current_screen == Screen.PROMPT:
       self.render_prompt_screen()
     elif self.current_screen == Screen.WIFI:

@@ -78,6 +78,6 @@ if __name__ == "__main__":
 
   for _ in gui_app.render():
     result = dialog.render(rl.Rectangle(100, 100, 1024, 800))
-    if result >= 0:
+    if isinstance(result, int) and result >= 0:
       print(f"Selected: {dialog.selection}" if result > 0 else "Canceled")
       break
