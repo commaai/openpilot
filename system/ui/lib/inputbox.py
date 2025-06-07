@@ -171,7 +171,7 @@ class InputBox(Widget):
   def _handle_mouse_input(self, rect, font_size):
     """Handle mouse clicks to position cursor."""
     mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON) and rl.check_collision_point_rec(mouse_pos, rect):
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(mouse_pos, rect):
       # Calculate cursor position from click
       if len(self._input_text) > 0:
         font = gui_app.font()
