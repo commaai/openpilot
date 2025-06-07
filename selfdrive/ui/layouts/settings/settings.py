@@ -57,10 +57,10 @@ class SettingsLayout(Widget):
     # Panel configuration
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout(), rl.Rectangle(0, 0, 0, 0)),
+      PanelType.NETWORK: PanelInfo("Network", NetworkLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.FIREHOSE: PanelInfo("Firehose", None, rl.Rectangle(0, 0, 0, 0)),
-      PanelType.NETWORK: PanelInfo("Network", NetworkLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayout(), rl.Rectangle(0, 0, 0, 0)),
     }
 
