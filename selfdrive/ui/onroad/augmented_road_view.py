@@ -54,8 +54,7 @@ class AugmentedRoadView(CameraView):
     if not ui_state.started:
       return
 
-    sm = ui_state.sm
-    self._switch_stream_if_needed(sm)
+    self._switch_stream_if_needed(ui_state.sm)
 
     # Update calibration before rendering
     self._update_calibration()
@@ -84,10 +83,10 @@ class AugmentedRoadView(CameraView):
     super().render(rect)
 
     # Draw all UI overlays
-    self.model_renderer.draw(self._content_rect, sm)
-    self._hud_renderer.draw(self._content_rect, sm)
-    self.alert_renderer.draw(self._content_rect, sm)
-    self.driver_state_renderer.draw(self._content_rect, sm)
+    self.model_renderer.render(self._content_rect)
+    self._hud_renderer.render(self._content_rect)
+    self.alert_renderer.render(self._content_rect)
+    self.driver_state_renderer.render(self._content_rect)
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
