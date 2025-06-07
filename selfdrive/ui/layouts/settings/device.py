@@ -17,6 +17,7 @@ DESCRIPTIONS = {
 
 class DeviceLayout(Widget):
   def __init__(self):
+    super().__init__()
     params = Params()
     dongle_id = params.get("DongleId", encoding="utf-8") or "N/A"
     serial = params.get("HardwareSerial") or "N/A"
@@ -37,7 +38,7 @@ class DeviceLayout(Widget):
 
     self._list_widget = ListView(items)
 
-  def render(self, rect):
+  def _render(self, rect):
     self._list_widget.render(rect)
 
   def _on_pair_device(self): pass

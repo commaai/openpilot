@@ -45,6 +45,7 @@ class LeadVehicle:
 
 class ModelRenderer(Widget):
   def __init__(self):
+    super().__init__()
     self._longitudinal_control = False
     self._experimental_mode = False
     self._blend_factor = 1.0
@@ -86,7 +87,7 @@ class ModelRenderer(Widget):
     self._car_space_transform = transform.astype(np.float32)
     self._transform_dirty = True
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     sm = ui_state.sm
 
     # Check if data is up-to-date

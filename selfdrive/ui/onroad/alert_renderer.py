@@ -61,6 +61,7 @@ ALERT_CRITICAL_REBOOT = Alert(
 
 class AlertRenderer(Widget):
   def __init__(self):
+    super().__init__()
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
@@ -91,7 +92,7 @@ class AlertRenderer(Widget):
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
 
-  def render(self, rect: rl.Rectangle) -> None:
+  def _render(self, rect: rl.Rectangle) -> None:
     alert = self.get_alert(ui_state.sm)
     if not alert:
       return

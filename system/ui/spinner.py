@@ -24,6 +24,7 @@ def clamp(value, min_value, max_value):
 
 class Spinner(Widget):
   def __init__(self):
+    super().__init__()
     self._comma_texture = gui_app.texture("images/spinner_comma.png", TEXTURE_SIZE, TEXTURE_SIZE)
     self._spinner_texture = gui_app.texture("images/spinner_track.png", TEXTURE_SIZE, TEXTURE_SIZE, alpha_premultiply=True)
     self._rotation = 0.0
@@ -38,7 +39,7 @@ class Spinner(Widget):
       self._progress = None
       self._wrapped_lines = wrap_text(text, FONT_SIZE, gui_app.width - MARGIN_H)
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self._wrapped_lines:
       # Calculate total height required for spinner and text
       spacing = 50

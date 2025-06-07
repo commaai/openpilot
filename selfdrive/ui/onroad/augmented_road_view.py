@@ -52,7 +52,7 @@ class AugmentedRoadView(CameraView):
     # Callbacks
     self.on_click: Callable | None = None
 
-  def render(self, rect):
+  def _render(self, rect):
     # Only render when system is started to avoid invalid data access
     if not ui_state.started:
       return
@@ -83,7 +83,7 @@ class AugmentedRoadView(CameraView):
     )
 
     # Render the base camera view
-    super().render(rect)
+    super()._render(rect)
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)

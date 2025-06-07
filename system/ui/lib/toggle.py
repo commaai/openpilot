@@ -14,6 +14,7 @@ ANIMATION_SPEED = 8.0
 
 class Toggle(Widget):
   def __init__(self, initial_state=False):
+    super().__init__()
     self._state = initial_state
     self._enabled = True
     self._rect = rl.Rectangle(0, 0, WIDTH, HEIGHT)
@@ -50,7 +51,7 @@ class Toggle(Widget):
       self._progress += delta if self._progress < self._target else -delta
       self._progress = max(0.0, min(1.0, self._progress))
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     self._rect.x, self._rect.y = rect.x, rect.y
     self.update()
 
