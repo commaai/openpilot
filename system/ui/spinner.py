@@ -29,10 +29,6 @@ class Spinner(Widget):
     self._rotation = 0.0
     self._progress: int | None = None
     self._wrapped_lines: list[str] = []
-    self._rect = rl.Rectangle(0, 0, 0, 0)
-
-  def set_rect(self, rect: rl.Rectangle) -> None:
-    self._rect = rect
 
   def set_text(self, text: str) -> None:
     if text.isdigit():
@@ -40,10 +36,9 @@ class Spinner(Widget):
       self._wrapped_lines = []
     else:
       self._progress = None
-      self._wrapped_lines = wrap_text(text, FONT_SIZE, self._rect.width - MARGIN_H)
+      self._wrapped_lines = wrap_text(text, FONT_SIZE, gui_app.width - MARGIN_H)
 
   def render(self, rect: rl.Rectangle):
-    self._rect = rect
     if self._wrapped_lines:
       # Calculate total height required for spinner and text
       spacing = 50
@@ -99,7 +94,6 @@ def _read_stdin():
 def main():
   gui_app.init_window("Spinner")
   spinner = Spinner()
-  spinner.set_rect(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   for _ in gui_app.render():
     text_list = _read_stdin()
     if text_list:
