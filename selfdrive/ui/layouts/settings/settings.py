@@ -82,6 +82,8 @@ class SettingsLayout(Widget):
     self._draw_sidebar(sidebar_rect)
     self._draw_current_panel(panel_rect)
 
+    print(rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT), rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT), rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT))
+
     if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
       self.handle_mouse_release(rl.get_mouse_position())
 
