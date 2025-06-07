@@ -5,6 +5,7 @@ from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+from openpilot.system.ui.lib.application import Widget
 
 
 class MainState(IntEnum):
@@ -13,7 +14,7 @@ class MainState(IntEnum):
   ONROAD = 2
 
 
-class MainLayout:
+class MainLayout(Widget):
   def __init__(self):
     self._sidebar = Sidebar()
     self._sidebar_visible = True

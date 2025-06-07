@@ -8,7 +8,8 @@ from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
+
 
 class AlertColors:
   HIGH_SEVERITY = rl.Color(226, 44, 44, 255)
@@ -40,7 +41,7 @@ class AlertData:
   visible: bool = False
 
 
-class AbstractAlert(ABC):
+class AbstractAlert(Widget, ABC):
   def __init__(self, has_reboot_btn: bool = False):
     self.params = Params()
     self.has_reboot_btn = has_reboot_btn

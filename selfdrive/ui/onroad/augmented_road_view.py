@@ -13,7 +13,6 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.common.transformations.camera import DEVICE_CAMERAS, DeviceCameraConfig, view_frame_from_device_frame
 from openpilot.common.transformations.orientation import rot_from_euler
 
-
 OpState = log.SelfdriveState.OpenpilotState
 CALIBRATED = log.LiveCalibrationData.Status.calibrated
 ROAD_CAM = VisionStreamType.VISION_STREAM_ROAD
@@ -82,10 +81,10 @@ class AugmentedRoadView(CameraView):
     super().render(rect)
 
     # Draw all UI overlays
-    self.model_renderer.draw(self._content_rect, ui_state.sm)
-    self._hud_renderer.draw(self._content_rect, ui_state.sm)
-    self.alert_renderer.draw(self._content_rect, ui_state.sm)
-    self.driver_state_renderer.draw(self._content_rect, ui_state.sm)
+    self.model_renderer.render(self._content_rect)
+    self._hud_renderer.render(self._content_rect)
+    self.alert_renderer.render(self._content_rect)
+    self.driver_state_renderer.render(self._content_rect)
 
     # Custom UI extension point - add custom overlays here
     # Use self._content_rect for positioning within camera bounds
@@ -179,9 +178,9 @@ class AugmentedRoadView(CameraView):
     ])
 
     video_transform = np.array([
-        [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
-        [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
-        [0.0, 0.0, 1.0]
+      [zoom, 0.0, (w / 2 + x - x_offset) - (cx * zoom)],
+      [0.0, zoom, (h / 2 + y - y_offset) - (cy * zoom)],
+      [0.0, 0.0, 1.0]
     ])
     self.model_renderer.set_transform(video_transform @ calib_transform)
 

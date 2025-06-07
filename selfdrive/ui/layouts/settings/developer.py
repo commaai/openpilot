@@ -1,4 +1,5 @@
-from openpilot.system.ui.lib.list_view import ListView,  toggle_item
+from openpilot.system.ui.lib.application import Widget
+from openpilot.system.ui.lib.list_view import ListView, toggle_item
 from openpilot.common.params import Params
 
 # Description constants
@@ -11,7 +12,7 @@ DESCRIPTIONS = {
 }
 
 
-class DeveloperLayout:
+class DeveloperLayout(Widget):
   def __init__(self):
     self._params = Params()
     items = [

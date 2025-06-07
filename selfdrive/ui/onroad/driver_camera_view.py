@@ -1,9 +1,9 @@
 import numpy as np
 import pyray as rl
-from cereal import messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_label
 
@@ -13,7 +13,7 @@ class DriverCameraView(CameraView):
     super().__init__("camerad", stream_type)
     self.driver_state_renderer = DriverStateRenderer()
 
-  def render(self, rect, sm):
+  def render(self, rect):
     super().render(rect)
 
     if not self.frame:
@@ -26,8 +26,8 @@ class DriverCameraView(CameraView):
       )
       return
 
-    self._draw_face_detection(rect, sm)
-    self.driver_state_renderer.draw(rect, sm)
+    self._draw_face_detection(rect, ui_state.sm)
+    self.driver_state_renderer.draw(rect, ui_state.sm)
 
   def _draw_face_detection(self, rect: rl.Rectangle, sm) -> None:
     driver_state = sm["driverStateV2"]
@@ -83,12 +83,11 @@ class DriverCameraView(CameraView):
 
 if __name__ == "__main__":
   gui_app.init_window("Driver Camera View")
-  sm = messaging.SubMaster(["selfdriveState", "driverStateV2", "driverMonitoringState"])
 
   driver_camera_view = DriverCameraView(VisionStreamType.VISION_STREAM_DRIVER)
   try:
     for _ in gui_app.render():
-      sm.update()
-      driver_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height), sm)
+      ui_state.update()
+      driver_camera_view.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     driver_camera_view.close()

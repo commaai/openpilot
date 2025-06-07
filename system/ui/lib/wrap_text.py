@@ -1,6 +1,7 @@
 import pyray as rl
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 
+
 def _break_long_word(font: rl.Font, word: str, font_size: int, max_width: int) -> list[str]:
   if not word:
     return []

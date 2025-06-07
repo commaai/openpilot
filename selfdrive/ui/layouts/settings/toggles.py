@@ -1,3 +1,4 @@
+from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.list_view import ListView, toggle_item
 from openpilot.common.params import Params
 
@@ -10,7 +11,7 @@ DESCRIPTIONS = {
   "DisengageOnAccelerator": "When enabled, pressing the accelerator pedal will disengage openpilot.",
   "IsLdwEnabled": (
     "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
-     "without a turn signal activated while driving over 31 mph (50 km/h)."
+    "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
   "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
@@ -18,7 +19,7 @@ DESCRIPTIONS = {
 }
 
 
-class TogglesLayout:
+class TogglesLayout(Widget):
   def __init__(self):
     self._params = Params()
     items = [

@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.common.conversions import Conversions as CV
 
@@ -55,7 +55,7 @@ FONT_SIZES = FontSizes()
 COLORS = Colors()
 
 
-class HudRenderer:
+class HudRenderer(Widget):
   def __init__(self):
     """Initialize the HUD renderer."""
     self.is_cruise_set: bool = False
@@ -99,9 +99,9 @@ class HudRenderer:
 
     self._exp_button.update_state(sm)
 
-  def draw(self, rect: rl.Rectangle, sm: SubMaster) -> None:
+  def render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
-    self._update_state(sm)
+    self._update_state(ui_state.sm)
 
     # Draw the header background
     rl.draw_rectangle_gradient_v(

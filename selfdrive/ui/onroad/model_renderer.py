@@ -5,10 +5,9 @@ from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import DEFAULT_FPS
+from openpilot.system.ui.lib.application import DEFAULT_FPS, Widget
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
-
 
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
@@ -36,6 +35,7 @@ class ModelPoints:
   raw_points: np.ndarray = field(default_factory=lambda: np.empty((0, 3), dtype=np.float32))
   projected_points: np.ndarray = field(default_factory=lambda: np.empty((0, 2), dtype=np.float32))
 
+
 @dataclass
 class LeadVehicle:
   glow: list[float] = field(default_factory=list)
@@ -43,7 +43,7 @@ class LeadVehicle:
   fill_alpha: int = 0
 
 
-class ModelRenderer:
+class ModelRenderer(Widget):
   def __init__(self):
     self._longitudinal_control = False
     self._experimental_mode = False
@@ -86,7 +86,9 @@ class ModelRenderer:
     self._car_space_transform = transform.astype(np.float32)
     self._transform_dirty = True
 
-  def draw(self, rect: rl.Rectangle, sm: messaging.SubMaster):
+  def render(self, rect: rl.Rectangle):
+    sm = ui_state.sm
+
     # Check if data is up-to-date
     if (sm.recv_frame["liveCalibration"] < ui_state.started_frame or
         sm.recv_frame["modelV2"] < ui_state.started_frame):
@@ -126,7 +128,6 @@ class ModelRenderer:
       if render_lead_indicator:
         self._update_leads(radar_state, path_x_array)
       self._transform_dirty = False
-
 
     # Draw elements
     self._draw_lane_lines()
@@ -256,7 +257,7 @@ class ModelRenderer:
     glow = [(x + (sz * 1.35) + g_xo, y + sz + g_yo), (x, y - g_yo), (x - (sz * 1.35) - g_xo, y + sz + g_yo)]
     chevron = [(x + (sz * 1.25), y + sz), (x, y), (x - (sz * 1.25), y + sz)]
 
-    return LeadVehicle(glow=glow,chevron=chevron, fill_alpha=int(fill_alpha))
+    return LeadVehicle(glow=glow, chevron=chevron, fill_alpha=int(fill_alpha))
 
   def _draw_lane_lines(self):
     """Draw lane lines and road edges"""
@@ -417,10 +418,10 @@ class ModelRenderer:
   def _hsla_to_color(h, s, l, a):
     rgb = colorsys.hls_to_rgb(h, l, s)
     return rl.Color(
-        int(rgb[0] * 255),
-        int(rgb[1] * 255),
-        int(rgb[2] * 255),
-        int(a * 255)
+      int(rgb[0] * 255),
+      int(rgb[1] * 255),
+      int(rgb[2] * 255),
+      int(a * 255)
     )
 
   @staticmethod

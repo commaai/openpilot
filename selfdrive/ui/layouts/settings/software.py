@@ -1,6 +1,8 @@
+from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
 
-class SoftwareLayout:
+
+class SoftwareLayout(Widget):
   def __init__(self):
     items = [
       text_item("Current Version", ""),

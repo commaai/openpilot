@@ -1,14 +1,13 @@
 import pyray as rl
 import time
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-
 
 PASSWORD_MASK_CHAR = "•"
 PASSWORD_MASK_DELAY = 1.5  # Seconds to show character before masking
 
 
-class InputBox:
+class InputBox(Widget):
   def __init__(self, max_text_size=255, password_mode=False):
     self._max_text_size = max_text_size
     self._input_text = ""
@@ -23,7 +22,7 @@ class InputBox:
     self._text_offset = 0
     self._visible_width = 0
     self._last_char_time = 0  # Track when last character was added
-    self._masked_length = 0   # How many characters are currently masked
+    self._masked_length = 0  # How many characters are currently masked
 
   @property
   def text(self):
@@ -76,7 +75,7 @@ class InputBox:
   def add_char_at_cursor(self, char):
     """Add a character at the current cursor position."""
     if len(self._input_text) < self._max_text_size:
-      self._input_text = self._input_text[: self._cursor_position] + char + self._input_text[self._cursor_position :]
+      self._input_text = self._input_text[: self._cursor_position] + char + self._input_text[self._cursor_position:]
       self.set_cursor_position(self._cursor_position + 1)
 
       if self._password_mode:
@@ -88,7 +87,7 @@ class InputBox:
   def delete_char_before_cursor(self):
     """Delete the character before the cursor position (backspace)."""
     if self._cursor_position > 0:
-      self._input_text = self._input_text[: self._cursor_position - 1] + self._input_text[self._cursor_position :]
+      self._input_text = self._input_text[: self._cursor_position - 1] + self._input_text[self._cursor_position:]
       self.set_cursor_position(self._cursor_position - 1)
       return True
     return False
@@ -96,7 +95,7 @@ class InputBox:
   def delete_char_at_cursor(self):
     """Delete the character at the cursor position (delete)."""
     if self._cursor_position < len(self._input_text):
-      self._input_text = self._input_text[: self._cursor_position] + self._input_text[self._cursor_position + 1 :]
+      self._input_text = self._input_text[: self._cursor_position] + self._input_text[self._cursor_position + 1:]
       self.set_cursor_position(self._cursor_position)
       return True
     return False
@@ -164,7 +163,7 @@ class InputBox:
     if recent_edit and self._input_text:
       last_pos = max(0, self._cursor_position - 1)
       if last_pos < len(self._input_text):
-        return masked_text[:last_pos] + self._input_text[last_pos] + masked_text[last_pos + 1 :]
+        return masked_text[:last_pos] + self._input_text[last_pos] + masked_text[last_pos + 1:]
 
     return masked_text
 

@@ -4,13 +4,11 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from abc import ABC, abstractmethod
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.button import gui_button
-from openpilot.system.ui.lib.toggle import Toggle
-from openpilot.system.ui.lib.toggle import WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
-
+from openpilot.system.ui.lib.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
 LINE_PADDING = 40
 LINE_COLOR = rl.GRAY
@@ -32,14 +30,10 @@ BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
 
 
 # Abstract base class for right-side items
-class RightItem(ABC):
+class RightItem(Widget, ABC):
   def __init__(self, width: int = 100):
     self.width = width
     self.enabled = True
-
-  @abstractmethod
-  def draw(self, rect: rl.Rectangle) -> bool:
-    pass
 
   @abstractmethod
   def get_width(self) -> int:
@@ -53,7 +47,7 @@ class ToggleRightItem(RightItem):
     self.state = initial_state
     self.enabled = True
 
-  def draw(self, rect: rl.Rectangle) -> bool:
+  def render(self, rect: rl.Rectangle) -> bool:
     if self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT)):
       self.state = not self.state
       return True
@@ -79,7 +73,7 @@ class ButtonRightItem(RightItem):
     self.text = text
     self.enabled = True
 
-  def draw(self, rect: rl.Rectangle) -> bool:
+  def render(self, rect: rl.Rectangle) -> bool:
     return (
       gui_button(
         rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
@@ -109,7 +103,7 @@ class TextRightItem(RightItem):
     text_width = measure_text_cached(font, text, font_size).x
     super().__init__(int(text_width + 20))
 
-  def draw(self, rect: rl.Rectangle) -> bool:
+  def render(self, rect: rl.Rectangle) -> bool:
     font = gui_app.font(FontWeight.NORMAL)
     text_size = measure_text_cached(font, self.text, self.font_size)
 
@@ -270,7 +264,7 @@ class ListView:
       right_rect = item.get_right_item_rect(rect)
       # Adjust for scroll offset
       right_rect.y = right_rect.y
-      if item.right_item.draw(right_rect):
+      if item.right_item.render(right_rect):
         # Right item was clicked/activated
         if item.callback:
           item.callback()
