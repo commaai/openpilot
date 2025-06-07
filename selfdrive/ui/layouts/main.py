@@ -41,7 +41,7 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_flag_clicked)
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
-    self._layouts[MainState.ONROAD].on_click = self._on_onrad_clicked
+    self._layouts[MainState.ONROAD].set_callbacks(on_close=self._on_onrad_clicked)
 
   def _update_layout_rects(self, rect):
     self._window_rect = rect
