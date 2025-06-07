@@ -2,7 +2,7 @@ import numpy as np
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
@@ -41,7 +41,7 @@ class ArcData:
   thickness: float
 
 
-class DriverStateRenderer:
+class DriverStateRenderer(Widget):
   def __init__(self):
     # Initial state with NumPy arrays
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D.copy()
@@ -74,11 +74,11 @@ class DriverStateRenderer:
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def render(self, rect, sm):
-    if not self._is_visible(sm):
+  def render(self, rect):
+    if not self._is_visible(ui_state.sm):
       return
 
-    self._update_state(sm, rect)
+    self._update_state(ui_state.sm, rect)
     if not self.state_updated:
       return
 

@@ -4,6 +4,7 @@ from cereal import messaging
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_label
 
@@ -13,7 +14,7 @@ class DriverCameraView(CameraView):
     super().__init__("camerad", stream_type)
     self.driver_state_renderer = DriverStateRenderer()
 
-  def render(self, rect, sm):
+  def render(self, rect):
     super().render(rect)
 
     if not self.frame:
@@ -26,8 +27,8 @@ class DriverCameraView(CameraView):
       )
       return
 
-    self._draw_face_detection(rect, sm)
-    self.driver_state_renderer.draw(rect, sm)
+    self._draw_face_detection(rect, ui_state.sm)
+    self.driver_state_renderer.draw(rect, ui_state.sm)
 
   def _draw_face_detection(self, rect: rl.Rectangle, sm) -> None:
     driver_state = sm["driverStateV2"]

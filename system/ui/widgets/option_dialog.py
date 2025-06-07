@@ -5,7 +5,7 @@ from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 
 
-class MultiOptionDialog:
+class MultiOptionDialog(Widget):
   def __init__(self, title, options, current=""):
     self._title = title
     self._options = options

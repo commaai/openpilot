@@ -2,7 +2,7 @@ import pyray as rl
 from dataclasses import dataclass
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.common.conversions import Conversions as CV
 
@@ -54,7 +54,7 @@ FONT_SIZES = FontSizes()
 COLORS = Colors()
 
 
-class HudRenderer:
+class HudRenderer(Widget):
   def __init__(self):
     """Initialize the HUD renderer."""
     self.is_cruise_set: bool = False
@@ -94,9 +94,9 @@ class HudRenderer:
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-  def render(self, rect: rl.Rectangle, sm: SubMaster) -> None:
+  def render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
-    self._update_state(sm)
+    self._update_state(ui_state.sm)
     rl.draw_rectangle_gradient_v(
       int(rect.x),
       int(rect.y),

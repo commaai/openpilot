@@ -5,7 +5,7 @@ from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import DEFAULT_FPS
+from openpilot.system.ui.lib.application import DEFAULT_FPS, Widget
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 
@@ -43,7 +43,7 @@ class LeadVehicle:
   fill_alpha: int = 0
 
 
-class ModelRenderer:
+class ModelRenderer(Widget):
   def __init__(self):
     self._longitudinal_control = False
     self._experimental_mode = False
@@ -86,7 +86,9 @@ class ModelRenderer:
     self._car_space_transform = transform.astype(np.float32)
     self._transform_dirty = True
 
-  def render(self, rect: rl.Rectangle, sm: messaging.SubMaster):
+  def render(self, rect: rl.Rectangle):
+    sm = ui_state.sm
+
     # Check if data is up-to-date
     if (sm.recv_frame["liveCalibration"] < ui_state.started_frame or
         sm.recv_frame["modelV2"] < ui_state.started_frame):

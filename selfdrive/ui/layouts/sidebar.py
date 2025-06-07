@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 SIDEBAR_WIDTH = 300
@@ -60,7 +60,7 @@ class MetricData:
     self.color = color
 
 
-class Sidebar:
+class Sidebar(Widget):
   def __init__(self):
     self._net_type = NETWORK_TYPES.get(NetworkType.none)
     self._net_strength = 0
