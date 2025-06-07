@@ -38,15 +38,8 @@ class MainLayout(Widget):
     self._handle_input()
 
   def _setup_callbacks(self):
-    # self._sidebar.set_callbacks(
-    #   on_settings=lambda: setattr(self, '_current_callback', self._on_settings_clicked),
-    #   on_flag=lambda: setattr(self, '_current_callback', self._on_flag_clicked),
-    # )
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_flag_clicked)
-    # self._layouts[MainState.SETTINGS].set_callbacks(
-    #   on_close=lambda: setattr(self, '_current_callback', self._set_mode_for_state)
-    # )
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
 
   def _update_layout_rects(self, rect):
