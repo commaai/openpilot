@@ -41,6 +41,7 @@ class SetupState(IntEnum):
 
 class Setup(Widget):
   def __init__(self):
+    super().__init__()
     self.state = SetupState.GETTING_STARTED
     self.network_check_thread = None
     self.network_connected = threading.Event()
@@ -67,7 +68,7 @@ class Setup(Widget):
     except (FileNotFoundError, ValueError):
       self.state = SetupState.LOW_VOLTAGE
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self.state == SetupState.LOW_VOLTAGE:
       self.render_low_voltage(rect)
     elif self.state == SetupState.GETTING_STARTED:

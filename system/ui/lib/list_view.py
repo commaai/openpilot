@@ -32,6 +32,7 @@ BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
 # Abstract base class for right-side items
 class RightItem(Widget, ABC):
   def __init__(self, width: int = 100):
+    super().__init__()
     self.width = width
     self.enabled = True
 
@@ -47,7 +48,7 @@ class ToggleRightItem(RightItem):
     self.state = initial_state
     self.enabled = True
 
-  def render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     if self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT)):
       self.state = not self.state
       return True
@@ -73,7 +74,7 @@ class ButtonRightItem(RightItem):
     self.text = text
     self.enabled = True
 
-  def render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     return (
       gui_button(
         rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
@@ -103,7 +104,7 @@ class TextRightItem(RightItem):
     text_width = measure_text_cached(font, text, font_size).x
     super().__init__(int(text_width + 20))
 
-  def render(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     font = gui_app.font(FontWeight.NORMAL)
     text_size = measure_text_cached(font, self.text, self.font_size)
 
@@ -165,8 +166,9 @@ class ListItem:
     return rl.Rectangle(right_x, right_y, right_width, ITEM_BASE_HEIGHT)
 
 
-class ListView:
+class ListView(Widget):
   def __init__(self, items: list[ListItem]):
+    super().__init__()
     self._items: list[ListItem] = items
     self._last_dim: tuple[float, float] = (0, 0)
     self.scroll_panel = GuiScrollPanel()
@@ -183,7 +185,7 @@ class ListView:
   def invalid_height_cache(self):
     self._last_dim = (0, 0)
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self._last_dim != (rect.width, rect.height):
       self._update_item_rects(rect)
       self._last_dim = (rect.width, rect.height)

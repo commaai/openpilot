@@ -32,6 +32,7 @@ class Screen(IntEnum):
 
 class Updater(Widget):
   def __init__(self, updater_path, manifest_path):
+    super().__init__()
     self.updater = updater_path
     self.manifest = manifest_path
     self.current_screen = Screen.PROMPT
@@ -137,7 +138,7 @@ class Updater(Widget):
         HARDWARE.reboot()
         return
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self.current_screen == Screen.PROMPT:
       self.render_prompt_screen(rect)
     elif self.current_screen == Screen.WIFI:

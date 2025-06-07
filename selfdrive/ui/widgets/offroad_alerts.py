@@ -43,6 +43,7 @@ class AlertData:
 
 class AbstractAlert(Widget, ABC):
   def __init__(self, has_reboot_btn: bool = False):
+    super().__init__()
     self.params = Params()
     self.has_reboot_btn = has_reboot_btn
     self.dismiss_callback: Callable | None = None
@@ -89,7 +90,7 @@ class AbstractAlert(Widget, ABC):
 
     return False
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.width, 10, AlertColors.BACKGROUND)
 
     footer_height = AlertConstants.BUTTON_SIZE[1] + AlertConstants.SPACING
