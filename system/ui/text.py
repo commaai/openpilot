@@ -49,10 +49,10 @@ def wrap_text(text, font_size, max_width):
 class TextWindow(Widget):
   def __init__(self, text: str):
     self._scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)
-    self._update_layout_rects(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
+    self._update_layout(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
   def render(self, rect: rl.Rectangle):
-    self._update_layout_rects(rect)
+    self._update_layout(rect)
 
     scroll = self._scroll_panel.handle_scroll(self._textarea_rect, self._content_rect)
     rl.begin_scissor_mode(int(self._textarea_rect.x), int(self._textarea_rect.y), int(self._textarea_rect.width), int(self._textarea_rect.height))
@@ -72,7 +72,7 @@ class TextWindow(Widget):
         HARDWARE.reboot()
     return ret
 
-  def _update_layout_rects(self, rect: rl.Rectangle):
+  def _update_layout(self, rect: rl.Rectangle):
     self._textarea_rect = rl.Rectangle(MARGIN, MARGIN, rect.width - MARGIN * 2, rect.height - MARGIN * 2)
     self._wrapped_lines = wrap_text(text, FONT_SIZE, self._textarea_rect.width - 20)
     self._content_rect = rl.Rectangle(0, 0, self._textarea_rect.width - 20, len(self._wrapped_lines) * LINE_HEIGHT)
