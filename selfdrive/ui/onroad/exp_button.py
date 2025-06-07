@@ -2,12 +2,13 @@ import time
 import pyray as rl
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.common.params import Params
 
 
-class ExpButton:
+class ExpButton(Widget):
   def __init__(self, button_size: int, icon_size: int):
+    super().__init__()
     self._params = Params()
     self._experimental_mode: bool = False
     self._engageable: bool = False
@@ -41,13 +42,14 @@ class ExpButton:
       return True
     return False
 
-  def draw(self, x: int, y: int) -> None:
-    self._rect.x, self._rect.y = x, y
+  # def draw(self, x: int, y: int) -> None:
+  def _render(self, rect: rl.Rectangle) -> None:
+    self._rect.x, self._rect.y = rect.x, rect.y
     center_x = int(self._rect.x + self._rect.width // 2)
     center_y = int(self._rect.y + self._rect.height // 2)
 
     mouse_over = rl.check_collision_point_rec(rl.get_mouse_position(), self._rect)
-    mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._is_pressed
     self._white_color.a = 180 if (mouse_down and mouse_over) or not self._engageable else 255
 
     texture = self._txt_exp if self._held_or_actual_mode() else self._txt_wheel
