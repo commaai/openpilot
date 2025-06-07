@@ -49,10 +49,10 @@ class AugmentedRoadView(CameraView):
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
-  def _render(self, rect):
     # Callbacks
     self.on_click: Callable | None = None
 
+  def _render(self, rect):
     # Only render when system is started to avoid invalid data access
     if not ui_state.started:
       return
