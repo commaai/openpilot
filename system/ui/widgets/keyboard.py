@@ -1,7 +1,7 @@
 import time
 from typing import Literal
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
@@ -52,7 +52,7 @@ KEYBOARD_LAYOUTS = {
 }
 
 
-class Keyboard:
+class Keyboard(Widget):
   def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False

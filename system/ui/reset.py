@@ -6,7 +6,7 @@ import threading
 from enum import IntEnum
 
 from openpilot.system.hardware import PC
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label, gui_text_box
 
@@ -27,7 +27,7 @@ class ResetState(IntEnum):
   FAILED = 3
 
 
-class Reset:
+class Reset(Widget):
   def __init__(self, mode):
     self.mode = mode
     self.reset_state = ResetState.NONE

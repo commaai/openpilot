@@ -1,11 +1,12 @@
 import pyray as rl
 
+from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle, TextAlignment
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 
 
-class MultiOptionDialog:
+class MultiOptionDialog(Widget):
   def __init__(self, title, options, current=""):
     self._title = title
     self._options = options

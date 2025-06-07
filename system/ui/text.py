@@ -6,7 +6,7 @@ from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 
 MARGIN = 50
 SPACING = 40
@@ -46,7 +46,7 @@ def wrap_text(text, font_size, max_width):
   return lines
 
 
-class TextWindow:
+class TextWindow(Widget):
   def __init__(self, text: str):
     self._textarea_rect = rl.Rectangle(MARGIN, MARGIN, gui_app.width - MARGIN * 2, gui_app.height - MARGIN * 2)
     self._wrapped_lines = wrap_text(text, FONT_SIZE, self._textarea_rect.width - 20)
@@ -54,7 +54,7 @@ class TextWindow:
     self._scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)
     self._scroll_panel._offset.y = -max(self._content_rect.height - self._textarea_rect.height, 0)
 
-  def render(self):
+  def render(self, _: rl.Rectangle = None):
     scroll = self._scroll_panel.handle_scroll(self._textarea_rect, self._content_rect)
     rl.begin_scissor_mode(int(self._textarea_rect.x), int(self._textarea_rect.y), int(self._textarea_rect.width), int(self._textarea_rect.height))
     for i, line in enumerate(self._wrapped_lines):

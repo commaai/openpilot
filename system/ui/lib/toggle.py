@@ -1,4 +1,5 @@
 import pyray as rl
+from openpilot.system.ui.lib.application import Widget
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
@@ -11,7 +12,7 @@ BG_HEIGHT = 60
 ANIMATION_SPEED = 8.0
 
 
-class Toggle:
+class Toggle(Widget):
   def __init__(self, initial_state=False):
     self._state = initial_state
     self._enabled = True
