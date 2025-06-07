@@ -16,7 +16,7 @@ jobs:
     if: github.repository == 'commaai/openpilot'
     steps:
       - uses: actions/checkout@v4
-      - uses: ./.github/workflows/setup-with-retry
+      - uses: ./.github/workflows/setup-with-retry/
       - name: Update translations
         run: |
           ${{ env.RUN }} "python3 selfdrive/ui/update_translations.py --vanish"
