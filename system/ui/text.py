@@ -54,7 +54,7 @@ class TextWindow(Widget):
     self._scroll_panel = GuiScrollPanel(show_vertical_scroll_bar=True)
     self._scroll_panel._offset.y = -max(self._content_rect.height - self._textarea_rect.height, 0)
 
-  def render(self, _: rl.Rectangle = None):
+  def render(self, rect: rl.Rectangle):
     scroll = self._scroll_panel.handle_scroll(self._textarea_rect, self._content_rect)
     rl.begin_scissor_mode(int(self._textarea_rect.x), int(self._textarea_rect.y), int(self._textarea_rect.width), int(self._textarea_rect.height))
     for i, line in enumerate(self._wrapped_lines):
@@ -64,7 +64,7 @@ class TextWindow(Widget):
       rl.draw_text_ex(gui_app.font(), line, position, FONT_SIZE, 0, rl.WHITE)
     rl.end_scissor_mode()
 
-    button_bounds = rl.Rectangle(gui_app.width - MARGIN - BUTTON_SIZE.x - SPACING, gui_app.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
+    button_bounds = rl.Rectangle(rect.width - MARGIN - BUTTON_SIZE.x - SPACING, rect.height - MARGIN - BUTTON_SIZE.y, BUTTON_SIZE.x, BUTTON_SIZE.y)
     ret = gui_button(button_bounds, "Exit" if PC else "Reboot", button_style=ButtonStyle.TRANSPARENT)
     if ret:
       if PC:
@@ -79,4 +79,4 @@ if __name__ == "__main__":
   gui_app.init_window("Text Viewer")
   text_window = TextWindow(text)
   for _ in gui_app.render():
-    text_window.render()
+    text_window.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

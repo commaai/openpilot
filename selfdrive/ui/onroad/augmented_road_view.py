@@ -1,6 +1,6 @@
 import numpy as np
 import pyray as rl
-
+from collections.abc import Callable
 from cereal import log
 from msgq.visionipc import VisionStreamType
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus, UI_BORDER_SIZE
@@ -25,6 +25,9 @@ BORDER_COLORS = {
   UIStatus.ENGAGED: rl.Color(0x17, 0x86, 0x44, 0xF1),      # Green for engaged state
 }
 
+WIDE_CAM_MAX_SPEED = 10.0  # m/s (22 mph)
+ROAD_CAM_MIN_SPEED = 15.0  # m/s (34 mph)
+
 
 class AugmentedRoadView(CameraView):
   def __init__(self, stream_type: VisionStreamType = VisionStreamType.VISION_STREAM_ROAD):
@@ -46,10 +49,15 @@ class AugmentedRoadView(CameraView):
     self.alert_renderer = AlertRenderer()
     self.driver_state_renderer = DriverStateRenderer()
 
+    # Callbacks
+    self.on_click: Callable | None = None
+
   def render(self, rect):
     # Only render when system is started to avoid invalid data access
     if not ui_state.started:
       return
+
+    self._switch_stream_if_needed(ui_state.sm)
 
     # Update calibration before rendering
     self._update_calibration()
@@ -89,9 +97,31 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+    # Handle click events if no HUD interaction occurred
+    if not self._hud_renderer.handle_mouse_event():
+      if self.on_click and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+        if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
+          self.on_click()
+
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
     rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
+
+  def _switch_stream_if_needed(self, sm):
+    if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
+      v_ego = sm['carState'].vEgo
+      if v_ego < WIDE_CAM_MAX_SPEED:
+        target = WIDE_CAM
+      elif v_ego > ROAD_CAM_MIN_SPEED:
+        target = ROAD_CAM
+      else:
+        # Hysteresis zone - keep current stream
+        target = self.stream_type
+    else:
+      target = ROAD_CAM
+
+    if self.stream_type != target:
+      self.switch_stream(target)
 
   def _update_calibration(self):
     # Update device camera if not already set
@@ -128,7 +158,7 @@ class AugmentedRoadView(CameraView):
 
     # Get camera configuration
     device_camera = self.device_camera or DEFAULT_DEVICE_CAMERA
-    is_wide_camera = self.stream_type == VisionStreamType.VISION_STREAM_WIDE_ROAD
+    is_wide_camera = self.stream_type == WIDE_CAM
     intrinsic = device_camera.ecam.intrinsics if is_wide_camera else device_camera.fcam.intrinsics
     calibration = self.view_from_wide_calib if is_wide_camera else self.view_from_calib
     zoom = 2.0 if is_wide_camera else 1.1
