@@ -21,6 +21,7 @@ DESCRIPTIONS = {
 
 class TogglesLayout(Widget):
   def __init__(self):
+    super().__init__()
     self._params = Params()
     items = [
       toggle_item(

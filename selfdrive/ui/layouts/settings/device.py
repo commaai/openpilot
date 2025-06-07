@@ -17,6 +17,7 @@ DESCRIPTIONS = {
 
 class DeviceLayout(Widget):
   def __init__(self):
+    super().__init__()
     params = Params()
     dongle_id = params.get("DongleId", encoding="utf-8") or "N/A"
     serial = params.get("HardwareSerial") or "N/A"

@@ -50,6 +50,7 @@ class PanelInfo:
 
 class SettingsLayout(Widget):
   def __init__(self):
+    super().__init__()
     self._params = Params()
     self._current_panel = PanelType.DEVICE
     self._max_scroll = 0.0

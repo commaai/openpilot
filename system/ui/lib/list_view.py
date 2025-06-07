@@ -32,6 +32,7 @@ BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
 # Abstract base class for right-side items
 class RightItem(Widget, ABC):
   def __init__(self, width: int = 100):
+    super().__init__()
     self.width = width
     self.enabled = True
 
@@ -167,6 +168,7 @@ class ListItem:
 
 class ListView(Widget):
   def __init__(self, items: list[ListItem]):
+    super().__init__()
     self._items: list[ListItem] = items
     self._last_dim: tuple[float, float] = (0, 0)
     self.scroll_panel = GuiScrollPanel()

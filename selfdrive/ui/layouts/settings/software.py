@@ -4,6 +4,7 @@ from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
 
 class SoftwareLayout(Widget):
   def __init__(self):
+    super().__init__()
     items = [
       text_item("Current Version", ""),
       button_item("Download", "CHECK", callback=self._on_download_update),

@@ -14,6 +14,7 @@ ANIMATION_SPEED = 8.0
 
 class Toggle(Widget):
   def __init__(self, initial_state=False):
+    super().__init__()
     self._state = initial_state
     self._enabled = True
     self._rect = rl.Rectangle(0, 0, WIDTH, HEIGHT)
