@@ -83,9 +83,6 @@ class SettingsLayout(Widget):
     self._draw_sidebar(sidebar_rect)
     self._draw_current_panel(panel_rect)
 
-    print(rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT), rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT),
-          rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT))
-
   def _draw_sidebar(self, rect: rl.Rectangle):
     rl.draw_rectangle_rec(rect, SIDEBAR_COLOR)
 
