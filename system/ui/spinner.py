@@ -39,19 +39,19 @@ class Spinner(Widget):
       self._progress = None
       self._wrapped_lines = wrap_text(text, FONT_SIZE, gui_app.width - MARGIN_H)
 
-  def _render(self, _: rl.Rectangle = None):
+  def _render(self, rect: rl.Rectangle):
     if self._wrapped_lines:
       # Calculate total height required for spinner and text
       spacing = 50
       total_height = TEXTURE_SIZE + spacing + len(self._wrapped_lines) * LINE_HEIGHT
-      center_y = (gui_app.height - total_height) / 2.0 + TEXTURE_SIZE / 2.0
+      center_y = (rect.height - total_height) / 2.0 + TEXTURE_SIZE / 2.0
     else:
       # Center spinner vertically
       spacing = 150
-      center_y = gui_app.height / 2.0
+      center_y = rect.height / 2.0
     y_pos = center_y + TEXTURE_SIZE / 2.0 + spacing
 
-    center = rl.Vector2(gui_app.width / 2.0, center_y)
+    center = rl.Vector2(rect.width / 2.0, center_y)
     spinner_origin = rl.Vector2(TEXTURE_SIZE / 2.0, TEXTURE_SIZE / 2.0)
     comma_position = rl.Vector2(center.x - TEXTURE_SIZE / 2.0, center.y - TEXTURE_SIZE / 2.0)
 
@@ -100,7 +100,7 @@ def main():
     if text_list:
       spinner.set_text(text_list[-1])
 
-    spinner.render()
+    spinner.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
 
 
 if __name__ == "__main__":
