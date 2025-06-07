@@ -22,7 +22,6 @@ class MainLayout(Widget):
     self._current_mode = MainState.HOME
     self._prev_onroad = False
     self._window_rect = None
-    self._current_callback: callable | None = None
 
     # Initialize layouts
     self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
@@ -34,23 +33,14 @@ class MainLayout(Widget):
     self._setup_callbacks()
 
   def _render(self, rect):
-    self._current_callback = None
-
     self._update_layout_rects(rect)
     self._handle_onroad_transition()
     self._render_main_content()
 
-    if self._current_callback:
-      self._current_callback()
-
   def _setup_callbacks(self):
-    self._sidebar.set_callbacks(
-      on_settings=lambda: setattr(self, '_current_callback', self._on_settings_clicked),
-      on_flag=lambda: setattr(self, '_current_callback', self._on_flag_clicked),
-    )
-    self._layouts[MainState.SETTINGS].set_callbacks(
-      on_close=lambda: setattr(self, '_current_callback', self._set_mode_for_state)
-    )
+    self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
+                                on_flag=self._on_flag_clicked)
+    self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].on_click = self._on_onrad_clicked
 
   def _update_layout_rects(self, rect):
