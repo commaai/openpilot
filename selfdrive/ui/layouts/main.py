@@ -41,7 +41,7 @@ class MainLayout(Widget):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_flag_clicked)
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
-    self._layouts[MainState.ONROAD].set_callbacks(on_close=self._on_onrad_clicked)
+    self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
 
   def _update_layout_rects(self, rect):
     self._window_rect = rect
@@ -71,7 +71,7 @@ class MainLayout(Widget):
   def _on_flag_clicked(self):
     pass
 
-  def _on_onrad_clicked(self):
+  def _on_onroad_clicked(self):
     self._sidebar_visible = not self._sidebar_visible
 
   def _render_main_content(self):
