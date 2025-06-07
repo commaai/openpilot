@@ -38,12 +38,13 @@ def _resolve_value(value, default=""):
 # Abstract base class for right-side items
 class ItemAction(Widget, ABC):
   def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
+    super().__init__()
     self.width = width
-    self._enabled = enabled
+    self._enabled_source = enabled
 
   @property
   def enabled(self):
-    return _resolve_value(self._enabled, False)
+    return _resolve_value(self._enabled_source, False)
 
   def get_width(self) -> int:
     return self.width
@@ -71,11 +72,11 @@ class ToggleAction(ItemAction):
 class ButtonAction(ItemAction):
   def __init__(self, text: str | Callable[[], str], width: int = BUTTON_WIDTH, enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
-    self._text = text
+    self._text_source = text
 
   @property
   def text(self):
-    return _resolve_value(self._text, "Error")
+    return _resolve_value(self._text_source, "Error")
 
   def _render(self, rect: rl.Rectangle) -> bool:
     return gui_button(
@@ -91,7 +92,7 @@ class ButtonAction(ItemAction):
 
 class TextAction(ItemAction):
   def __init__(self, text: str | Callable[[], str], color: rl.Color = ITEM_TEXT_COLOR, enabled: bool | Callable[[], bool] = True):
-    self._text = text
+    self._text_source = text
     self.color = color
 
     self._font = gui_app.font(FontWeight.NORMAL)
@@ -101,7 +102,7 @@ class TextAction(ItemAction):
 
   @property
   def text(self):
-    return _resolve_value(self._text, "Error")
+    return _resolve_value(self._text_source, "Error")
 
   def _render(self, rect: rl.Rectangle) -> bool:
     current_text = self.text
