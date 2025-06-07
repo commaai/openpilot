@@ -43,6 +43,7 @@ class AlertData:
 
 class AbstractAlert(Widget, ABC):
   def __init__(self, has_reboot_btn: bool = False):
+    super().__init__()
     self.params = Params()
     self.has_reboot_btn = has_reboot_btn
     self.dismiss_callback: Callable | None = None
