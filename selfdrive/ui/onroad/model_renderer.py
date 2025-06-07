@@ -6,7 +6,7 @@ from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import DEFAULT_FPS, Widget
-from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.system.ui.lib.shader_polygon import draw_polygons_batch
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 
 CLIP_MARGIN = 500
@@ -54,6 +54,7 @@ class ModelRenderer(Widget):
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
     self._lead_vehicles = [LeadVehicle(), LeadVehicle()]
     self._path_offset_z = HEIGHT_INIT[0]
+    self._polygons = []
 
     # Initialize ModelPoints objects
     self._path = ModelPoints()
@@ -70,13 +71,6 @@ class ModelRenderer(Widget):
     # Pre-allocated arrays for polygon conversion
     self._temp_points_3d = np.empty((MAX_POINTS * 2, 3), dtype=np.float32)
     self._temp_proj = np.empty((3, MAX_POINTS * 2), dtype=np.float32)
-
-    self._exp_gradient = {
-      'start': (0.0, 1.0),  # Bottom of path
-      'end': (0.0, 0.0),  # Top of path
-      'colors': [],
-      'stops': [],
-    }
 
     # Get longitudinal control setting from car parameters
     if car_params := Params().get("CarParams"):
@@ -131,8 +125,7 @@ class ModelRenderer(Widget):
       self._transform_dirty = False
 
     # Draw elements
-    self._draw_lane_lines()
-    self._draw_path(sm)
+    draw_polygons_batch(self._rect, self._polygons)
 
     if render_lead_indicator and radar_state:
       self._draw_lead_indicator()
@@ -169,6 +162,7 @@ class ModelRenderer(Widget):
 
   def _update_model(self, lead, path_x_array):
     """Update model visualization data based on model message"""
+    self._polygons = []
     max_distance = np.clip(path_x_array[-1], MIN_DRAW_DISTANCE, MAX_DRAW_DISTANCE)
     max_idx = self._get_path_length_idx(self._lane_lines[0].raw_points[:, 0], max_distance)
 
@@ -177,11 +171,17 @@ class ModelRenderer(Widget):
       lane_line.projected_points = self._map_line_to_polygon(
         lane_line.raw_points, 0.025 * self._lane_line_probs[i], 0.0, max_idx
       )
+      alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
+      color = rl.Color(255, 255, 255, int(alpha * 255))
+      self._polygons.append(
+        {"points": lane_line.projected_points, "color":color})
 
     # Update road edges using raw points
-    for road_edge in self._road_edges:
+    for i, road_edge in enumerate(self._road_edges):
       road_edge.projected_points = self._map_line_to_polygon(road_edge.raw_points, 0.025, 0.0, max_idx)
-
+      alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
+      color = rl.Color(255, 0, 0, int(alpha * 255))
+      self._polygons.append({"points": road_edge.projected_points, "color": color})
     # Update path using raw points
     if lead and lead.status:
       lead_d = lead.dRel * 2.0
@@ -193,6 +193,7 @@ class ModelRenderer(Widget):
     )
 
     self._update_experimental_gradient(self._rect.height)
+    self._update_path_polygon()
 
   def _update_experimental_gradient(self, height):
     """Pre-calculate experimental mode gradient colors"""
@@ -233,8 +234,22 @@ class ModelRenderer(Widget):
       i += 1 + (1 if (i + 2) < max_len else 0)
 
     # Store the gradient in the path object
-    self._exp_gradient['colors'] = segment_colors
-    self._exp_gradient['stops'] = gradient_stops
+    if len(segment_colors) > 2:
+        self._polygons.append({
+          'gradient': {
+          'start': (0.0, 1.0),  # Bottom of path
+          'end': (0.0, 0.0),  # Top of path
+          'colors': segment_colors,
+          'stops': gradient_stops,
+          },
+          "points": self._path.projected_points,
+        })
+    else:
+      # draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
+      self._polygons.append({
+        "points": self._path.projected_points,
+        "color": rl.Color(255, 255, 255, 30),
+      })
 
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
     speed_buff, lead_buff = 10.0, 40.0
@@ -260,38 +275,10 @@ class ModelRenderer(Widget):
 
     return LeadVehicle(glow=glow, chevron=chevron, fill_alpha=int(fill_alpha))
 
-  def _draw_lane_lines(self):
-    """Draw lane lines and road edges"""
-    for i, lane_line in enumerate(self._lane_lines):
-      if lane_line.projected_points.size == 0:
-        continue
-
-      alpha = np.clip(self._lane_line_probs[i], 0.0, 0.7)
-      color = rl.Color(255, 255, 255, int(alpha * 255))
-      draw_polygon(self._rect, lane_line.projected_points, color)
-
-    for i, road_edge in enumerate(self._road_edges):
-      if road_edge.projected_points.size == 0:
-        continue
-
-      alpha = np.clip(1.0 - self._road_edge_stds[i], 0.0, 1.0)
-      color = rl.Color(255, 0, 0, int(alpha * 255))
-      draw_polygon(self._rect, road_edge.projected_points, color)
-
-  def _draw_path(self, sm):
-    """Draw path with dynamic coloring based on mode and throttle state."""
-    if not self._path.projected_points.size:
-      return
-
-    if self._experimental_mode:
-      # Draw with acceleration coloring
-      if len(self._exp_gradient['colors']) > 2:
-        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
-      else:
-        draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
-    else:
+  def _update_path_polygon(self):
+    if True:#not self._experimental_mode:
       # Draw with throttle/no throttle gradient
-      allow_throttle = sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
+      allow_throttle = ui_state.sm['longitudinalPlan'].allowThrottle or not self._longitudinal_control
 
       # Start transition if throttle state changes
       if allow_throttle != self._prev_allow_throttle:
@@ -305,15 +292,13 @@ class ModelRenderer(Widget):
       begin_colors = NO_THROTTLE_COLORS if allow_throttle else THROTTLE_COLORS
       end_colors = THROTTLE_COLORS if allow_throttle else NO_THROTTLE_COLORS
 
-      # Blend colors based on transition
-      blended_colors = self._blend_colors(begin_colors, end_colors, self._blend_factor)
       gradient = {
         'start': (0.0, 1.0),  # Bottom of path
         'end': (0.0, 0.0),  # Top of path
-        'colors': blended_colors,
+        'colors': self._blend_colors(begin_colors, end_colors, self._blend_factor),
         'stops': [0.0, 0.5, 1.0],
       }
-      draw_polygon(self._rect, self._path.projected_points, gradient=gradient)
+      self._polygons.append({'points': self._path.projected_points, 'gradient': gradient})
 
   def _draw_lead_indicator(self):
     # Draw lead vehicles if available
