@@ -2,11 +2,11 @@ import time
 import pyray as rl
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, Widget
 from openpilot.common.params import Params
 
 
-class ExpButton:
+class ExpButton(Widget):
   def __init__(self, button_size: int, icon_size: int):
     self._params = Params()
     self._experimental_mode: bool = False
@@ -41,8 +41,8 @@ class ExpButton:
       return True
     return False
 
-  def draw(self, x: int, y: int) -> None:
-    self._rect.x, self._rect.y = x, y
+  def render(self, rect: rl.Rectangle) -> None:
+    self._rect.x, self._rect.y = rect.x, rect.y
     center_x = int(self._rect.x + self._rect.width // 2)
     center_y = int(self._rect.y + self._rect.height // 2)
 
