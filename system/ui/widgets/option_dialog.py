@@ -1,83 +1,74 @@
 import pyray as rl
-
-from openpilot.system.ui.lib.application import Widget
+from openpilot.system.ui.lib.application import Widget, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle, TextAlignment
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+
+# Constants
+MARGIN = 50
+TITLE_HEIGHT = 70
+ITEM_HEIGHT = 120
+BUTTON_HEIGHT = 120
+SPACING = 20
 
 
 class MultiOptionDialog(Widget):
   def __init__(self, title, options, current=""):
     super().__init__()
-    self._title = title
-    self._options = options
-    self._current = current if current in options else ""
-    self._selection = self._current
-    self._option_height = 80
-    self._padding = 20
-    self.scroll_panel = GuiScrollPanel()
-
-  @property
-  def selection(self):
-    return self._selection
+    self.title = title
+    self.options = options
+    self.current = current
+    self.selection = current
+    self.scroll = GuiScrollPanel()
 
   def _render(self, rect):
-    title_rect = rl.Rectangle(rect.x + self._padding, rect.y + self._padding, rect.width - 2 * self._padding, 70)
-    gui_label(title_rect, self._title, 70)
+    x, y = rect.x + MARGIN, rect.y + MARGIN
+    w, h = rect.width - 2 * MARGIN, rect.height - 2 * MARGIN
 
-    options_y_start = rect.y + 120
-    options_height = len(self._options) * (self._option_height + 10)
-    options_rect = rl.Rectangle(rect.x + self._padding, options_y_start, rect.width - 2 * self._padding, options_height)
+    rl.draw_rectangle_rounded(rl.Rectangle(x, y, w, h), 0.02, 20, rl.Color(30, 30, 30, 255))
 
-    view_rect = rl.Rectangle(
-      rect.x + self._padding, options_y_start, rect.width - 2 * self._padding, rect.height - 200 - 2 * self._padding
-    )
+    # Content area
+    x += MARGIN
+    y += MARGIN
+    w -= 2 * MARGIN
+    h -= 2 * MARGIN
 
-    offset = self.scroll_panel.handle_scroll(view_rect, options_rect)
-    is_click_valid = self.scroll_panel.is_click_valid()
+    # Title
+    gui_label(rl.Rectangle(x, y, w, TITLE_HEIGHT), self.title, 50, font_weight=FontWeight.BOLD)
 
-    rl.begin_scissor_mode(int(view_rect.x), int(view_rect.y), int(view_rect.width), int(view_rect.height))
+    # Options area
+    options_y = y + TITLE_HEIGHT + SPACING
+    options_h = h - TITLE_HEIGHT - BUTTON_HEIGHT - 2 * SPACING
+    view_rect = rl.Rectangle(x, options_y, w, options_h)
+    content_h = len(self.options) * (ITEM_HEIGHT + 10)
+    content_rect = rl.Rectangle(x, options_y, w, content_h)
 
-    for i, option in enumerate(self._options):
-      y_pos = view_rect.y + i * (self._option_height + 10) + offset.y
-      item_rect = rl.Rectangle(view_rect.x, y_pos, view_rect.width, self._option_height)
+    # Scroll and render options
+    offset = self.scroll.handle_scroll(view_rect, content_rect)
+    valid_click = self.scroll.is_click_valid()
 
-      if not rl.check_collision_recs(item_rect, view_rect):
-        continue
+    rl.begin_scissor_mode(int(x), int(options_y), int(w), int(options_h))
+    for i, option in enumerate(self.options):
+      item_y = options_y + i * (ITEM_HEIGHT + 10) + offset.y
+      item_rect = rl.Rectangle(x, item_y, w, ITEM_HEIGHT)
 
-      is_selected = option == self._selection
-      button_style = ButtonStyle.PRIMARY if is_selected else ButtonStyle.NORMAL
+      if rl.check_collision_recs(item_rect, view_rect):
+        selected = option == self.selection
+        style = ButtonStyle.PRIMARY if selected else ButtonStyle.NORMAL
 
-      if gui_button(item_rect, option, button_style=button_style, text_alignment=TextAlignment.LEFT) and is_click_valid:
-        self._selection = option
-
+        if gui_button(item_rect, option, button_style=style, text_alignment=TextAlignment.LEFT) and valid_click:
+          self.selection = option
     rl.end_scissor_mode()
 
-    button_y = rect.y + rect.height - 80 - self._padding
-    button_width = (rect.width - 3 * self._padding) / 2
+    # Buttons
+    button_y = y + h - BUTTON_HEIGHT
+    button_w = (w - SPACING) / 2
 
-    cancel_rect = rl.Rectangle(rect.x + self._padding, button_y, button_width, 80)
-    if gui_button(cancel_rect, "Cancel"):
-      return 0  # Canceled
+    if gui_button(rl.Rectangle(x, button_y, button_w, BUTTON_HEIGHT), "Cancel"):
+      return 0
 
-    select_rect = rl.Rectangle(rect.x + 2 * self._padding + button_width, button_y, button_width, 80)
-    has_new_selection = self._selection != "" and self._selection != self._current
+    if gui_button(rl.Rectangle(x + button_w + SPACING, button_y, button_w, BUTTON_HEIGHT),
+                 "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
+      return 1
 
-    if gui_button(select_rect, "Select", is_enabled=has_new_selection, button_style=ButtonStyle.PRIMARY):
-      return 1  # Selected
-
-    return -1  # Still active
-
-
-if __name__ == "__main__":
-  from openpilot.system.ui.lib.application import gui_app
-
-  gui_app.init_window("Multi Option Dialog Example")
-  options = [f"Option {i}" for i in range(1, 11)]
-  dialog = MultiOptionDialog("Choose an option", options, options[0])
-
-  for _ in gui_app.render():
-    result = dialog.render(rl.Rectangle(100, 100, 1024, 800))
-    if isinstance(result, int) and result >= 0:
-      print(f"Selected: {dialog.selection}" if result > 0 else "Canceled")
-      break
+    return -1
