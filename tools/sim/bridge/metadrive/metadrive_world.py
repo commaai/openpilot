@@ -9,7 +9,7 @@ from multiprocessing import Pipe, Array
 from openpilot.tools.sim.bridge.common import QueueMessage, QueueMessageType
 from openpilot.tools.sim.bridge.metadrive.metadrive_process import (metadrive_process, metadrive_simulation_state,
                                                                     metadrive_vehicle_state)
-from openpilot.tools.sim.lib.common import SimulatorState,World
+from openpilot.tools.sim.lib.common import SimulatorState,World,IMUState
 from openpilot.tools.sim.lib.camerad import W, H
 
 
@@ -20,6 +20,10 @@ class MetaDriveWorld(World):
     self.camera_array = Array(ctypes.c_uint8, W*H*3)
     self.road_image = np.frombuffer(self.camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
     self.wide_camera_array = None
+    self.last_update_time = time.monotonic()
+    self.last_velocity = 0.0
+    self.last_bearing = 0.0
+
     if dual_camera:
       self.wide_camera_array = Array(ctypes.c_uint8, W*H*3)
       self.wide_road_image = np.frombuffer(self.wide_camera_array.get_obj(), dtype=np.uint8).reshape((H, W, 3))
@@ -90,6 +94,18 @@ class MetaDriveWorld(World):
       state.steering_angle = md_vehicle.steering_angle
       state.gps.from_xy(curr_pos)
       state.valid = True
+
+      # Calculate time difference since the last update
+      current_time = time.monotonic()
+      dt = current_time - self.last_update_time
+
+      # Update the simulated IMU state based on current velocity and bearing
+      IMUState.update_imu_state(state.imu, md_vehicle.velocity, self.last_velocity,
+                     md_vehicle.bearing, self.last_bearing, dt)
+      # Store current values for the next update
+      self.last_velocity = md_vehicle.velocity
+      self.last_bearing = md_vehicle.bearing
+      self.last_update_time = current_time
 
       is_engaged = state.is_engaged
       if is_engaged and self.first_engage is None:
