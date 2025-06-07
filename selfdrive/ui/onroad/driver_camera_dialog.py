@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_label
 
 
-class DriverCameraView(CameraView):
+class DriverCameraDialog(CameraView):
   def __init__(self):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
@@ -30,7 +30,7 @@ class DriverCameraView(CameraView):
       return -1
 
     self._draw_face_detection(rect)
-    self.driver_state_renderer.draw(rect)
+    self.driver_state_renderer.render(rect)
 
     return -1
 
@@ -89,7 +89,7 @@ class DriverCameraView(CameraView):
 if __name__ == "__main__":
   gui_app.init_window("Driver Camera View")
 
-  driver_camera_view = DriverCameraView()
+  driver_camera_view = DriverCameraDialog()
   try:
     for _ in gui_app.render():
       ui_state.update()

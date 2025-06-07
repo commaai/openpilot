@@ -1,6 +1,6 @@
 from openpilot.system.ui.lib.application import Widget
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
-from openpilot.selfdrive.ui.onroad.driver_camera_view import DriverCameraView
+from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.common.params import Params
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
@@ -40,14 +40,14 @@ class DeviceLayout(Widget):
     items.append(button_item("Change Language", "CHANGE", callback=self._on_change_language))
 
     self._list_widget = ListView(items)
-    self._driver_camera = DriverCameraView()
+    self._driver_camera: DriverCameraDialog | None = None
 
   def _render(self, rect):
     self._list_widget.render(rect)
 
   def _on_driver_camera(self):
     if not self._driver_camera:
-      self._driver_camera = DriverCameraView()
+      self._driver_camera = DriverCameraDialog()
 
     gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
 
