@@ -99,7 +99,7 @@ class GuiApplication:
     HARDWARE.set_display_power(True)
     HARDWARE.set_screen_brightness(65)
 
-    self._set_log_callback()
+    #self._set_log_callback()
     rl.set_trace_log_level(rl.TraceLogLevel.LOG_ALL)
 
     flags = rl.ConfigFlags.FLAG_MSAA_4X_HINT
@@ -140,6 +140,7 @@ class GuiApplication:
 
     # Resize with aspect ratio preservation if requested
     if keep_aspect_ratio:
+      print(image.width, image.height)
       orig_width = image.width
       orig_height = image.height
 

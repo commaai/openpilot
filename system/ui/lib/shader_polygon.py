@@ -1,13 +1,20 @@
+import platform
 import pyray as rl
 import numpy as np
 from typing import Any
 
 MAX_GRADIENT_COLORS = 15
 
-FRAGMENT_SHADER = """
+VERSION = """
 #version 300 es
 precision mediump float;
+"""
+if platform.system() == "Darwin":
+  VERSION = """
+    #version 330 core
+  """
 
+FRAGMENT_SHADER = VERSION + """
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
