@@ -118,8 +118,7 @@ void main() {
 """
 
 # Default vertex shader
-VERTEX_SHADER = """
-#version 300 es
+VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 out vec2 fragTexCoord;

@@ -80,7 +80,6 @@ class CameraView(Widget):
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
     self.shader = rl.load_shader_from_memory(VERTEX_SHADER, FRAME_FRAGMENT_SHADER)
-    assert self.shader.id > 0
     self._texture1_loc: int = rl.get_shader_location(self.shader, "texture1") if not TICI else -1
 
     self.frame: VisionBuf | None = None
