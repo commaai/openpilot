@@ -1,3 +1,4 @@
+import platform
 import numpy as np
 import pyray as rl
 
@@ -9,8 +10,17 @@ from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 
-VERTEX_SHADER = """
+VERSION = """
 #version 300 es
+precision mediump float;
+"""
+if platform.system() == "Darwin":
+  VERSION = """
+    #version 330 core
+  """
+
+
+VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 in vec3 vertexNormal;
@@ -40,9 +50,7 @@ if TICI:
     }
     """
 else:
-  FRAME_FRAGMENT_SHADER = """
-    #version 300 es
-    precision mediump float;
+  FRAME_FRAGMENT_SHADER = VERSION + """
     in vec2 fragTexCoord;
     uniform sampler2D texture0;
     uniform sampler2D texture1;
