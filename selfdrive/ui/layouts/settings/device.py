@@ -114,7 +114,6 @@ class DeviceLayout(Widget):
   def _perform_reboot(self, result: int):
     if not ui_state.engaged and result == DialogResult.CONFIRM:
       self._params.put_bool_nonblocking("DoReboot", True)
-      return
 
   def _power_off_prompt(self):
     if ui_state.engaged:
