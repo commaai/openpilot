@@ -345,7 +345,7 @@
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
         <translation>openpilotは人間であるあなたの運転から学び、AI学習します。
 
-Firehoseモードを有効にすると、学習データを最大限アップロードし、openpilotの運転モデルを向上させることができます。より多くのデータはより大きなモデルとなり、Experimentalモードの精度を向上させます。</translation>
+Firehoseモードを有効にすると学習データを最大限アップロードし、openpilotの運転モデルを改善することができます。より多くのデータはより大きなモデルとなり、Experimentalモードの精度を向上させます。</translation>
     </message>
     <message>
         <source>Firehose Mode: ACTIVE</source>
