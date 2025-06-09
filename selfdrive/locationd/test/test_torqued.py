@@ -1,5 +1,3 @@
-import numpy as np
-
 from cereal import car
 from openpilot.selfdrive.locationd.torqued import TorqueEstimator
 
