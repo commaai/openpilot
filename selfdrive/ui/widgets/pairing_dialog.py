@@ -47,7 +47,7 @@ class PairingDialog:
       rl_image.width = pil_img.width
       rl_image.height = pil_img.height
       rl_image.mipmaps = 1
-      rl_image.format = rl.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+      rl_image.format = rl.PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
 
       self.qr_texture = rl.load_texture_from_image(rl_image)
     except Exception as e:
@@ -75,8 +75,8 @@ class PairingDialog:
 
     mouse_pos = rl.get_mouse_position()
     is_hover = rl.check_collision_point_rec(mouse_pos, close_rect)
-    is_pressed = rl.is_mouse_button_down(rl.MOUSE_BUTTON_LEFT)
-    is_released = rl.is_mouse_button_released(rl.MOUSE_BUTTON_LEFT)
+    is_pressed = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    is_released = rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     color = rl.Color(180, 180, 180, 150) if (is_hover and is_pressed) else rl.WHITE
     rl.draw_texture(close_icon, int(content_rect.x), int(y), color)
