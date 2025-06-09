@@ -2,6 +2,7 @@ import pyray as rl
 from enum import Enum
 from cereal import messaging, log
 from openpilot.common.params import Params, UnknownKeyName
+from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 
 UI_BORDER_SIZE = 30
 
@@ -42,6 +43,8 @@ class UIState:
         "longitudinalPlan",
       ]
     )
+
+    self.prime_state = PrimeState()
 
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
