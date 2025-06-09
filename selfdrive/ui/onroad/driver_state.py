@@ -110,8 +110,7 @@ class DriverStateRenderer(Widget):
   def _is_visible(self, sm):
     """Check if the visualization should be rendered."""
     return (sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-            sm.seen['driverMonitoringState'] and
-            sm['selfdriveState'].alertSize == 0)
+            sm.seen['driverMonitoringState'])
 
   def _update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
