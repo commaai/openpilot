@@ -308,11 +308,11 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>キャリブレーションをリセットするには運転支援を解除して下さい。</translation>
     </message>
     <message>
         <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> キャリブレーションをリセットすると車の電源が入っている場合は openpilot が再起動します。</translation>
     </message>
 </context>
 <context>
@@ -1125,11 +1125,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilotシステムを使用してアダプティブクルーズコントロールおよび車線維持支援を行います。システム使用中は常にドライバーが事故を起こさないように注意を払ってください。</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation>この設定を変更すると車の電源が入っている場合はopenpilotが再起動します。</translation>
     </message>
 </context>
 <context>
