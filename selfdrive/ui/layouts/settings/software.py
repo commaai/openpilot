@@ -1,5 +1,5 @@
 from openpilot.common.params import Params
-from openpilot.system.ui.lib.application import gui_app, Widget
+from openpilot.system.ui.lib.application import gui_app, Widget, DialogResult
 from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
@@ -31,7 +31,7 @@ class SoftwareLayout(Widget):
 
   def _on_uninstall(self):
      def handle_uninstall_confirmation(result):
-      if result == 1:  # Confirmed
+      if result == DialogResult.CONFIRM:
         self._params.put_bool("DoUninstall", True)
 
      gui_app.set_modal_overlay(
