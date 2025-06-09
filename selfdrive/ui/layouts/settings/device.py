@@ -6,7 +6,7 @@ from openpilot.common.params import Params
 from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app, Widget
+from openpilot.system.ui.lib.application import gui_app, Widget, DialogResult
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
@@ -91,7 +91,7 @@ class DeviceLayout(Widget):
     )
 
   def _reset_calibration(self, result: int):
-    if ui_state.engaged or result != 1:
+    if ui_state.engaged or result != DialogResult.CONFIRM:
       return
 
     self._params.remove("CalibrationParams")
