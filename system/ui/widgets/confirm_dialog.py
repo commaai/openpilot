@@ -64,5 +64,5 @@ def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel")
   return result
 
 
-def alert_dialog(message: str, button_text: str = "OK") -> int:
+def alert_dialog(message: str, button_text: str = "OK") -> DialogResult:
   return confirm_dialog(message, button_text, cancel_text="")

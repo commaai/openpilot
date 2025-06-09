@@ -77,9 +77,6 @@ class DeviceLayout(Widget):
 
     gui_app.set_modal_overlay(self._driver_camera, callback=lambda result: setattr(self, '_driver_camera', None))
 
-  def _on_pair_device(self): pass
-  def _on_reset_calibration(self): pass
-
   def _on_reset_calibration(self):
     if ui_state.engaged:
       gui_app.set_modal_overlay(lambda: alert_dialog("Disengage to Reset Calibration"))
@@ -102,6 +99,5 @@ class DeviceLayout(Widget):
     self._params.put_bool("OnroadCycleRequested", True)
 
   def _on_pair_device(self): pass
-  def _on_driver_camera(self): pass
   def _on_review_training_guide(self): pass
   def _on_regulatory(self): pass
