@@ -72,18 +72,20 @@ class AlertRenderer(Widget):
     # Check if selfdriveState messages have stopped arriving
     if not sm.updated['selfdriveState']:
       recv_frame = sm.recv_frame['selfdriveState']
-      if (sm.frame - recv_frame) > 5 * DEFAULT_FPS:
-        # Check if waiting to start
-        if recv_frame < ui_state.started_frame:
-          return ALERT_STARTUP_PENDING
+      time_since_onroad = (sm.frame - ui_state.started_frame) / DEFAULT_FPS
 
-        # Handle selfdrive timeout
-        if TICI:
-          ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
-          if ss_missing > SELFDRIVE_STATE_TIMEOUT:
-            if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
-              return ALERT_CRITICAL_TIMEOUT
-            return ALERT_CRITICAL_REBOOT
+      # 1. Never received selfdriveState since going onroad
+      waiting_for_startup = recv_frame < ui_state.started_frame
+      if waiting_for_startup and time_since_onroad > 5:
+        return ALERT_STARTUP_PENDING
+
+      # 2. Lost communication with selfdriveState after receiving it
+      if TICI and not waiting_for_startup:
+        ss_missing = time.monotonic() - sm.recv_time['selfdriveState']
+        if ss_missing > SELFDRIVE_STATE_TIMEOUT:
+          if ss.enabled and (ss_missing - SELFDRIVE_STATE_TIMEOUT) < SELFDRIVE_UNRESPONSIVE_TIMEOUT:
+            return ALERT_CRITICAL_TIMEOUT
+          return ALERT_CRITICAL_REBOOT
 
     # No alert if size is none
     if ss.alertSize == 0:
@@ -92,10 +94,10 @@ class AlertRenderer(Widget):
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
 
-  def _render(self, rect: rl.Rectangle) -> None:
+  def _render(self, rect: rl.Rectangle) -> bool:
     alert = self.get_alert(ui_state.sm)
     if not alert:
-      return
+      return False
 
     alert_rect = self._get_alert_rect(rect, alert.size)
     self._draw_background(alert_rect, alert)
@@ -107,6 +109,7 @@ class AlertRenderer(Widget):
       alert_rect.height - 2 * ALERT_PADDING
     )
     self._draw_text(text_rect, alert)
+    return True
 
   def _get_alert_rect(self, rect: rl.Rectangle, size: int) -> rl.Rectangle:
     if size == log.SelfdriveState.AlertSize.full:
