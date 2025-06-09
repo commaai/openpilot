@@ -4,7 +4,7 @@ from collections.abc import Callable
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
-from openpilot.selfdrive.ui.widgets.prime import PrimeAdWidget
+from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, Widget
@@ -48,7 +48,7 @@ class HomeLayout(Widget):
     self.update_notif_rect = rl.Rectangle(0, 0, 200, HEADER_HEIGHT - 10)
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
 
-    self._prime_ad_widget = PrimeAdWidget()
+    self._prime_ad_widget = PrimeWidget()
 
     self._setup_callbacks()
 
@@ -173,7 +173,6 @@ class HomeLayout(Widget):
     self.offroad_alert.render(self.content_rect)
 
   def _render_left_column(self):
-    rl.draw_rectangle_rounded(self.left_column_rect, 0.02, 10, PRIME_BG_COLOR)
     self._prime_ad_widget.render(self.left_column_rect)
 
   def _render_right_column(self):
