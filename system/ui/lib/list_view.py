@@ -222,12 +222,15 @@ class ListView(Widget):
   def _render(self, rect: rl.Rectangle):
     total_height = self._update_item_rects(rect)
 
+    # Update layout and handle scrolling
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, total_height)
     scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
 
+    # Handle mouse interaction
     if self.scroll_panel.is_click_valid():
       self._handle_mouse_interaction(rect, scroll_offset)
 
+    # Set scissor mode for clipping
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
 
     for i, item in enumerate(self._items):
@@ -271,7 +274,7 @@ class ListView(Widget):
       item_height = item.get_item_height(self._font, content_width)
       item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height)
       current_y += item_height
-    return current_y
+    return current_y  # total height of all items
 
   def _render_item(self, item: ListItem, y: int):
     content_x = item.rect.x + ITEM_PADDING
@@ -307,6 +310,7 @@ class ListView(Widget):
       right_rect = item.get_right_item_rect(item.rect)
       right_rect.y = y
       if item.action_item.render(right_rect) and item.action_item.enabled:
+        # Right item was clicked/activated
         if item.callback:
           item.callback()
 
@@ -324,6 +328,7 @@ class ListView(Widget):
         continue
 
       if item.rect:
+        # Check if mouse is within this item's bounds in content space
         if (
           mouse_pos.x >= rect.x
           and mouse_pos.x <= rect.x + rect.width
@@ -335,15 +340,18 @@ class ListView(Widget):
             self._hovered_item = i
             break
 
-    # Handle click
+    # Handle click on main item (not right item)
     if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._hovered_item >= 0:
       item = self._items[self._hovered_item]
 
+      # Check if click was on right item area
       if item.action_item and item.rect:
+        # Use the same coordinate system as in _render_item
         adjusted_rect = rl.Rectangle(item.rect.x, item.rect.y + scroll_offset.y, item.rect.width, item.rect.height)
         right_rect = item.get_right_item_rect(adjusted_rect)
 
         if rl.check_collision_point_rec(mouse_pos, right_rect):
+          # Click was on right item, don't toggle description
           return
 
       # Toggle description visibility if item has description
