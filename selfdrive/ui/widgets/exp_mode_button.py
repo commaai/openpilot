@@ -30,7 +30,7 @@ class ExperimentalModeButton(Widget):
   def _draw_gradient_background(self, rect):
     start_color, end_color = self._get_gradient_colors()
     rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), int(rect.width), int(rect.height),
-                                start_color, end_color)
+                                 start_color, end_color)
 
   def _handle_interaction(self, rect):
     mouse_pos = rl.get_mouse_position()
@@ -59,7 +59,7 @@ class ExperimentalModeButton(Widget):
     # Draw text label (left aligned)
     text = "EXPERIMENTAL MODE ON" if self.experimental_mode else "CHILL MODE ON"
     text_x = rect.x + self.horizontal_padding
-    text_y = rect.y + rect.height / 2 - 45//2  # Center vertically
+    text_y = rect.y + rect.height / 2 - 45 // 2  # Center vertically
 
     rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), text, rl.Vector2(int(text_x), int(text_y)), 45, 0, rl.Color(0, 0, 0, 255))
 

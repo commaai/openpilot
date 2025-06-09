@@ -30,11 +30,11 @@ class SoftwareLayout(Widget):
   def _on_select_branch(self): pass
 
   def _on_uninstall(self):
-     def handle_uninstall_confirmation(result):
+    def handle_uninstall_confirmation(result):
       if result == DialogResult.CONFIRM:
         self._params.put_bool("DoUninstall", True)
 
-     gui_app.set_modal_overlay(
+    gui_app.set_modal_overlay(
       lambda: confirm_dialog("Are you sure you want to uninstall?", "Uninstall"),
       callback=handle_uninstall_confirmation,
     )
