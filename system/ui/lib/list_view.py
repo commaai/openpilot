@@ -346,6 +346,7 @@ class ListView(Widget):
         if rl.check_collision_point_rec(mouse_pos, right_rect):
           return
 
+      # Toggle description visibility if item has description
       if item.description:
         item.description_visible = not item.description_visible
 
