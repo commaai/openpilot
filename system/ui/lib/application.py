@@ -27,6 +27,12 @@ ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
+class DialogResult(IntEnum):
+  CANCEL = 0
+  CONFIRM = 1
+  NO_ACTION = -1
+
+
 class Widget(abc.ABC):
   def __init__(self):
     self._is_pressed = False
