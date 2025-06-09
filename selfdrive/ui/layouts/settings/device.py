@@ -129,7 +129,6 @@ class DeviceLayout(Widget):
   def _perform_power_off(self, result: int):
     if not ui_state.engaged and result == DialogResult.CONFIRM:
       self._params.put_bool_nonblocking("DoShutdown", True)
-      return
 
   def _pair_device(self):
     if not self._pair_device_dialog:
