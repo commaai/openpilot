@@ -126,7 +126,7 @@ class PairingDialog:
       text_x = rect.x + circle_radius * 2 + 40
       text_width = rect.width - (circle_radius * 2 + 40)
 
-      wrapped = wrap_text(font, text, 47, text_width)
+      wrapped = wrap_text(font, text, 47, int(text_width))
       text_height = len(wrapped) * 47
       circle_y = y + text_height // 2
 
