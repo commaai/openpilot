@@ -36,6 +36,7 @@ def _resolve_value(value, default=""):
     return value()
   return value if value is not None else default
 
+
 # Abstract base class for right-side items
 class ItemAction(Widget, ABC):
   def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
@@ -203,7 +204,7 @@ class ListItem:
     right_width = self.action_item.get_width()
     if right_width == 0:  # Full width action (like DualButtonAction)
       return rl.Rectangle(item_rect.x + ITEM_PADDING, item_rect.y,
-                         item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
+                          item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
 
     right_x = item_rect.x + item_rect.width - right_width
     right_y = item_rect.y
@@ -353,11 +354,13 @@ class ListView(Widget):
 def simple_item(title: str, callback: Callable | None = None, visible: bool | Callable[[], bool] = True) -> ListItem:
   return ListItem(title=title, callback=callback, visible=visible)
 
+
 def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True,
                 visible: bool | Callable[[], bool] = True) -> ListItem:
   action = ToggleAction(initial_state=initial_state, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback, visible=visible)
+
 
 def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
                 callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
@@ -365,11 +368,13 @@ def button_item(title: str, button_text: str | Callable[[], str], description: s
   action = ButtonAction(text=button_text, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
 
+
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
               callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
               visible: bool | Callable[[], bool] = True) -> ListItem:
   action = TextAction(text=value, color=rl.Color(170, 170, 170, 255), enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+
 
 def dual_button_item(left_text: str, right_text: str, left_callback: Callable = None, right_callback: Callable = None,
                      description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True,
