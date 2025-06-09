@@ -1,6 +1,7 @@
 import pyray as rl
 import qrcode
 import numpy as np
+import time
 
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
@@ -13,10 +14,12 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 class PairingDialog:
   """Dialog for device pairing with QR code."""
 
+  QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
+
   def __init__(self):
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
-    self._generate_qr_code()
+    self.last_qr_generation = 0
 
   def _get_pairing_url(self) -> str:
     try:
@@ -51,8 +54,15 @@ class PairingDialog:
       cloudlog.warning(f"QR code generation failed: {e}")
       self.qr_texture = None
 
+  def _check_qr_refresh(self) -> None:
+    current_time = time.time()
+    if current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
+      self._generate_qr_code()
+
   def render(self, rect: rl.Rectangle) -> int:
     rl.clear_background(rl.Color(224, 224, 224, 255))
+
+    self._check_qr_refresh()
 
     margin = 70
     content_rect = rl.Rectangle(rect.x + margin, rect.y + margin, rect.width - 2 * margin, rect.height - 2 * margin)
