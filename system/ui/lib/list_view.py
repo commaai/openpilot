@@ -10,7 +10,6 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
-
 ITEM_BASE_HEIGHT = 170
 LINE_PADDING = 40
 LINE_COLOR = rl.GRAY
@@ -30,6 +29,7 @@ BUTTON_FONT_SIZE = 35
 BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
 
 TEXT_PADDING = 20
+
 
 def _resolve_value(value, default=""):
   return value() if callable(value) else (value or default)
@@ -191,7 +191,7 @@ class ListView(Widget):
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
 
     for i, item in enumerate(self._items):
-      y = int(item.rect.y  + scroll_offset.y)
+      y = int(item.rect.y + scroll_offset.y)
       if y + item.rect.height <= rect.y or y >= rect.y + rect.height:
         continue
 
@@ -245,7 +245,7 @@ class ListView(Widget):
       item_height = item.get_item_height(self._font, content_width)
       item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height)
       current_y += item_height
-    return current_y # total height of all items
+    return current_y  # total height of all items
 
   def _handle_mouse_interaction(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
     mouse_pos = rl.get_mouse_position()
@@ -293,15 +293,18 @@ class ListView(Widget):
 def simple_item(title: str, callback: Callable | None = None) -> ListItem:
   return ListItem(title=title, callback=callback)
 
+
 def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ToggleAction(initial_state=initial_state, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback)
 
+
 def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
                 callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ButtonAction(text=button_text, enabled=enabled)
   return ListItem(title=title, description=description, action_item=action, callback=callback)
+
 
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
               callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:

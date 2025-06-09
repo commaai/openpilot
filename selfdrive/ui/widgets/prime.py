@@ -12,9 +12,6 @@ class PrimeWidget(Widget):
 
   PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
 
-  def __init__(self):
-    super().__init__()
-
   def _render(self, rect):
     if ui_state.prime_state.is_prime():
       self._render_for_prime_user(rect)

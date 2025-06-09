@@ -64,7 +64,7 @@ class MultiOptionDialog(Widget):
       return 0
 
     if gui_button(rl.Rectangle(content_rect.x + button_w + BUTTON_SPACING, button_y, button_w, BUTTON_HEIGHT),
-                 "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
+                  "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
       return 1
 
     return -1

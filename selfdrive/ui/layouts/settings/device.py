@@ -11,7 +11,6 @@ from openpilot.system.ui.lib.list_view import ListView, text_item, button_item
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
 
-
 # Description constants
 DESCRIPTIONS = {
   'pair_device': "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
