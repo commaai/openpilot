@@ -5,10 +5,10 @@ from collections.abc import Callable
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
+from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
-from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 
@@ -61,7 +61,7 @@ class SettingsLayout(Widget):
       PanelType.NETWORK: PanelInfo("Network", NetworkLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout(), rl.Rectangle(0, 0, 0, 0)),
-      PanelType.FIREHOSE: PanelInfo("Firehose", None, rl.Rectangle(0, 0, 0, 0)),
+      PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout(), rl.Rectangle(0, 0, 0, 0)),
       PanelType.DEVELOPER: PanelInfo("Developer", DeveloperLayout(), rl.Rectangle(0, 0, 0, 0)),
     }
 
@@ -142,15 +142,6 @@ class SettingsLayout(Widget):
     panel = self._panels[self._current_panel]
     if panel.instance:
       panel.instance.render(content_rect)
-    else:
-      gui_text_box(
-        content_rect,
-        f"Demo {self._panels[self._current_panel].name} Panel",
-        font_size=170,
-        color=rl.WHITE,
-        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-        alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-      )
 
   def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
     # Check close button
