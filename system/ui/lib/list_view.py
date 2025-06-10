@@ -149,6 +149,59 @@ class DualButtonAction(ItemAction):
     return False
 
 
+class MultipleButtonAction(ItemAction):
+  def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
+    super().__init__(width=len(buttons) * (button_width + 20), enabled=True)
+    self.buttons = buttons
+    self.button_width = button_width
+    self.selected_button = selected_index
+    self.callback = callback
+    self._font = gui_app.font(FontWeight.MEDIUM)
+
+  def _render(self, rect: rl.Rectangle) -> bool:
+    spacing = 20
+    button_y = rect.y + (rect.height - 100) / 2
+    clicked = -1
+
+    for i, text in enumerate(self.buttons):
+      button_x = rect.x + i * (self.button_width + spacing)
+      button_rect = rl.Rectangle(button_x, button_y, self.button_width, 100)
+
+      # Check button state
+      mouse_pos = rl.get_mouse_position()
+      is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect)
+      is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
+      is_selected = i == self.selected_button
+
+      # Button colors
+      if is_selected:
+        bg_color = rl.Color(51, 171, 76, 255)  # Green
+      elif is_pressed:
+        bg_color = rl.Color(74, 74, 74, 255)  # Dark gray
+      else:
+        bg_color = rl.Color(57, 57, 57, 255)  # Gray
+
+      # Draw button
+      rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)
+
+      # Draw text
+      text_size = measure_text_cached(self._font, text, 40)
+      text_x = button_x + (self.button_width - text_size.x) / 2
+      text_y = button_y + (100 - text_size.y) / 2
+      rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
+
+      # Handle click
+      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+        clicked = i
+
+    if clicked >= 0:
+      self.selected_button = clicked
+      if self.callback:
+        self.callback(clicked)
+      return True
+    return False
+
+
 @dataclass
 class ListItem:
   title: str
@@ -391,3 +444,7 @@ def dual_button_item(left_text: str, right_text: str, left_callback: Callable = 
                      visible: bool | Callable[[], bool] = True) -> ListItem:
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
   return ListItem(title="", description=description, action_item=action, visible=visible)
+
+def multiple_button_item(title: str, description: str, buttons: list[str], selected_index: int, button_width: int = BUTTON_WIDTH, callback: Callable = None):
+  action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
+  return ListItem(title=title, description=description, action_item=action)
