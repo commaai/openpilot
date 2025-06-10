@@ -209,6 +209,7 @@ class ProcessContainer:
     streams_metas = available_streams(all_msgs)
     for meta in streams_metas:
       if meta.camera_state in self.cfg.vision_pubs:
+        assert frs[meta.camera_state].pix_fmt == 'nv12'
         frame_size = (frs[meta.camera_state].w, frs[meta.camera_state].h)
         vipc_server.create_buffers(meta.stream, 2, *frame_size)
     vipc_server.start_listener()
@@ -296,7 +297,7 @@ class ProcessContainer:
             camera_state = getattr(m, m.which())
             camera_meta = meta_from_camera_state(m.which())
             assert frs is not None
-            img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
+            img = frs[m.which()].get(camera_state.frameId)[0]
             self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []

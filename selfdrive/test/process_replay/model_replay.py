@@ -201,9 +201,9 @@ if __name__ == "__main__":
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.zst")))
   frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc")),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc")),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"))
+    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc", pix_fmt='nv12')),
+    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc", pix_fmt='nv12')),
+    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc", pix_fmt='nv12'))
   }
 
   log_msgs = []

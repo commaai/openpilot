@@ -105,7 +105,7 @@ class FfmpegDecoder:
     yield from frames[skip_frames::frame_skip]
 
 
-  def get_gop_start(self, frame_idx: int) -> int:
+  def get_gop_start(self, frame_idx: int):
     return self.iframes[np.searchsorted(self.iframes, frame_idx, side="right") - 1]
 
   def get_iterator(self, start_fidx: int = 0, end_fidx: Optional[int] = None,
