@@ -298,10 +298,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void DevicePanel::updateCalibDescription() {
-//  QString desc = tr("openpilot continuously calibrates the device's orientation and learns your vehicle's steering response. Resetting is rarely required.");
-  QString desc = tr("");
-
-  desc += tr("\nopenpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
+  QString desc = tr("\nopenpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
   std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -332,7 +329,6 @@ void DevicePanel::updateCalibDescription() {
       qInfo() << "invalid LiveDelay";
     }
   }
-
   if (lag_perc < 100) {
     desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
   } else {
