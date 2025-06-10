@@ -295,7 +295,7 @@ function op_check() {
 
 function op_esim() {
   op_before_cmd
-  op_run_command system/hardware/tici/esim.py "$@"
+  op_run_command system/hardware/esim.py "$@"
 }
 
 function op_build() {
