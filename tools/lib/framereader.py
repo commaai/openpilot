@@ -99,11 +99,8 @@ class FfmpegDecoder:
       f_e += 1
     return f_b, f_e, self.index[f_b, 1], self.index[f_e, 1]
 
-  def _decode_gop(self, raw: bytes, skip_frames: int = 0,
-                  frame_skip: int = 1) -> Iterator[np.ndarray]:
-    frames = decompress_video_data(raw, self.w, self.h, self.pix_fmt)
-    yield from frames[skip_frames::frame_skip]
-
+  def _decode_gop(self, raw: bytes) -> Iterator[np.ndarray]:
+    yield from decompress_video_data(raw, self.w, self.h, self.pix_fmt)
 
   def get_gop_start(self, frame_idx: int):
     return self.iframes[np.searchsorted(self.iframes, frame_idx, side="right") - 1]
@@ -111,21 +108,18 @@ class FfmpegDecoder:
   def get_iterator(self, start_fidx: int = 0, end_fidx: int|None = None,
                    frame_skip: int = 1) -> Iterator[tuple[int, np.ndarray]]:
     end_fidx = end_fidx or self.frame_count
-    cur = start_fidx
-    while cur < end_fidx:
-      # figure out GOP that covers `cur`
+    while fidx < end_fidx:
       f_b, f_e, off_b, off_e = self._gop_bounds(cur)
       with FileReader(self.fn) as f:
         f.seek(off_b)
         raw = self.prefix + f.read(off_e - off_b)
       # number of frames to discard inside this GOP before the wanted one
-      skip = max(0, cur - f_b)
-      for i, frm in enumerate(self._decode_gop(raw, skip, frame_skip)):
-        fidx = f_b + skip + i * frame_skip
+      for i, frm in enumerate(decompress_video_data(raw, self.w, self.h, self.pix_fmt)):
+        fidx = f_b + i
         if fidx >= end_fidx:
           return
-        yield fidx, frm
-      cur = f_e
+        elif fidx >= frame_start and (fidx - frame_start) % frame_skip == 0:
+          yield fidx, frm
 
 def FrameIterator(fn: str, index_data: dict|None=None,
                         pix_fmt: str = "rgb24",
@@ -144,7 +138,6 @@ class FrameReader:
     self.pix_fmt = pix_fmt
 
     self.it: Iterator[tuple[int, np.ndarray]] | None = None
-    self.it_start_gop = -1         # start frame number of GOP currently iterated
     self.fidx = -1
 
   def get(self, fidx:int) -> list[np.ndarray]:
