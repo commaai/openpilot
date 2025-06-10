@@ -53,14 +53,18 @@ class ItemAction(Widget, ABC):
 
 
 class ToggleAction(ItemAction):
-  def __init__(self, initial_state: bool = False, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, initial_state: bool = False, callback: Callable | None = None, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
     self.toggle = Toggle(initial_state=initial_state)
     self.state = initial_state
+    self._callback: Callable | None = callback
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
-    self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
+    result = self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
+    if result == 1 and self._callback is not None:
+      self._callback(self.toggle.get_state())
+      return True
     return False
 
   def set_state(self, state: bool):
@@ -72,24 +76,29 @@ class ToggleAction(ItemAction):
 
 
 class ButtonAction(ItemAction):
-  def __init__(self, text: str | Callable[[], str], width: int = BUTTON_WIDTH, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, text: str | Callable[[], str], callback: Callable | None = None, width: int = BUTTON_WIDTH,
+               enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
     self._text_source = text
+    self._callback: Callable | None = callback
 
   @property
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    return gui_button(
+    if gui_button(
       rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
       self.text,
       border_radius=BUTTON_BORDER_RADIUS,
       font_weight=BUTTON_FONT_WEIGHT,
       font_size=BUTTON_FONT_SIZE,
       button_style=ButtonStyle.LIST_ACTION,
-      is_enabled=self.enabled,
-    ) == 1
+      is_enabled=self.enabled) == 1:
+      if self._callback is not None:
+        self._callback()
+      return True
+    return False
 
 
 class TextAction(ItemAction):
@@ -155,7 +164,6 @@ class ListItem:
   description: str | Callable[[], str] | None = None
   description_visible: bool = False
   rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
-  callback: Callable | None = None
   action_item: ItemAction | None = None
   visible: bool | Callable[[], bool] = True
 
@@ -309,10 +317,7 @@ class ListView(Widget):
     if item.action_item:
       right_rect = item.get_right_item_rect(item.rect)
       right_rect.y = y
-      if item.action_item.render(right_rect) and item.action_item.enabled:
-        # Right item was clicked/activated
-        if item.callback:
-          item.callback()
+      item.action_item.render(right_rect)
 
   def _handle_mouse_interaction(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
     mouse_pos = rl.get_mouse_position()
@@ -360,29 +365,25 @@ class ListView(Widget):
 
 
 # Factory functions
-def simple_item(title: str, callback: Callable | None = None, visible: bool | Callable[[], bool] = True) -> ListItem:
-  return ListItem(title=title, callback=callback, visible=visible)
-
-
 def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
                 callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True,
                 visible: bool | Callable[[], bool] = True) -> ListItem:
-  action = ToggleAction(initial_state=initial_state, enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback, visible=visible)
+  action = ToggleAction(initial_state=initial_state, callback=callback, enabled=enabled)
+  return ListItem(title=title, description=description, action_item=action, icon=icon, visible=visible)
 
 
 def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
                 callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
                 visible: bool | Callable[[], bool] = True) -> ListItem:
-  action = ButtonAction(text=button_text, enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+  action = ButtonAction(text=button_text, callback=callback, enabled=enabled)
+  return ListItem(title=title, description=description, action_item=action, visible=visible)
 
 
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
               callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
               visible: bool | Callable[[], bool] = True) -> ListItem:
   action = TextAction(text=value, color=rl.Color(170, 170, 170, 255), enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+  return ListItem(title=title, description=description, action_item=action, visible=visible)
 
 
 def dual_button_item(left_text: str, right_text: str, left_callback: Callable = None, right_callback: Callable = None,

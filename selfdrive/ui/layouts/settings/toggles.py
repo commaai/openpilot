@@ -23,48 +23,30 @@ class TogglesLayout(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
-    items = [
-      toggle_item(
-        "Enable openpilot",
-        DESCRIPTIONS["OpenpilotEnabledToggle"],
-        self._params.get_bool("OpenpilotEnabledToggle"),
-        icon="chffr_wheel.png",
-      ),
-      toggle_item(
-        "Experimental Mode",
-        initial_state=self._params.get_bool("ExperimentalMode"),
-        icon="experimental_white.png",
-      ),
-      toggle_item(
-        "Disengage on Accelerator Pedal",
-        DESCRIPTIONS["DisengageOnAccelerator"],
-        self._params.get_bool("DisengageOnAccelerator"),
-        icon="disengage_on_accelerator.png",
-      ),
-      toggle_item(
-        "Enable Lane Departure Warnings",
-        DESCRIPTIONS["IsLdwEnabled"],
-        self._params.get_bool("IsLdwEnabled"),
-        icon="warning.png",
-      ),
-      toggle_item(
-        "Always-On Driver Monitoring",
-        DESCRIPTIONS["AlwaysOnDM"],
-        self._params.get_bool("AlwaysOnDM"),
-        icon="monitoring.png",
-      ),
-      toggle_item(
-        "Record and Upload Driver Camera",
-        DESCRIPTIONS["RecordFront"],
-        self._params.get_bool("RecordFront"),
-        icon="monitoring.png",
-      ),
-      toggle_item(
-        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
-      ),
-    ]
 
+    items = self._initialize_items()
     self._list_widget = ListView(items)
+
+  def _initialize_items(self):
+    def _param_toggle(title, param_name, icon):
+      return toggle_item(
+        title,
+        DESCRIPTIONS.get(param_name, ""),
+        icon=icon,
+        initial_state=self._params.get_bool(param_name),
+        callback=lambda state: self._params.put_bool(param_name, state),
+      )
+
+    items = [
+      _param_toggle("Enable openpilot", "OpenpilotEnabledToggle", "chffr_wheel.png"),
+      toggle_item("Experimental Mode", "", icon="experimental_white.png"),
+      _param_toggle("Disengage on Accelerator Pedal", "DisengageOnAccelerator", "disengage_on_accelerator.png"),
+      _param_toggle("Enable Lane Departure Warnings", "IsLdwEnabled", "warning.png"),
+      _param_toggle("Always-On Driver Monitoring", "AlwaysOnDM", "monitoring.png"),
+      _param_toggle("Record and Upload Driver Camera", "RecordFront", "monitoring.png"),
+      _param_toggle("Use Metric System", "IsMetric", "monitoring.png"),
+    ]
+    return items
 
   def _render(self, rect):
     self._list_widget.render(rect)
