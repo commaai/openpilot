@@ -40,7 +40,7 @@
     </message>
     <message>
         <source>IP Address</source>
-        <translation>IP地址</translation>
+        <translation>IP 地址</translation>
     </message>
     <message>
         <source>Enable Roaming</source>
@@ -48,11 +48,11 @@
     </message>
     <message>
         <source>APN Setting</source>
-        <translation>APN设置</translation>
+        <translation>APN 设置</translation>
     </message>
     <message>
         <source>Enter APN</source>
-        <translation>输入APN</translation>
+        <translation>输入 APN</translation>
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
@@ -84,27 +84,27 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation type="unfinished"></translation>
+        <translation>在按流量计费的移动网络上，防止上传大数据</translation>
     </message>
     <message>
         <source>default</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>metered</source>
-        <translation type="unfinished"></translation>
+        <translation>按流量计费</translation>
     </message>
     <message>
         <source>unmetered</source>
-        <translation type="unfinished"></translation>
+        <translation>不按流量计费</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>按流量计费的 WLAN 网络</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
-        <translation type="unfinished"></translation>
+        <translation>在按流量计费的 WLAN 网络上，防止上传大数据</translation>
     </message>
 </context>
 <context>
@@ -308,11 +308,11 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>解除以重置校准</translation>
     </message>
     <message>
         <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果车辆电源已开启，重置校准会重新启动 openpilot。</translation>
     </message>
 </context>
 <context>
@@ -1125,11 +1125,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 系统提供“自适应巡航”和“车道保持”驾驶辅助功能。使用此功能时，您需要时刻保持专注。</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation>如果车辆已通电，更改此设置将会重新启动 openpilot。</translation>
     </message>
 </context>
 <context>

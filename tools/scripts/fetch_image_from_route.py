@@ -37,7 +37,7 @@ fr = FrameReader(segments[segment])
 if frame >= fr.frame_count:
   raise Exception("frame {frame} not found, got {fr.frame_count} frames")
 
-im = Image.fromarray(fr.get(frame, count=1, pix_fmt="rgb24")[0])
+im = Image.fromarray(fr.get(frame)[0])
 fn = f"uxxx_{route.replace('|', '_')}_{segment}_{frame}.png"
 im.save(fn)
 print(f"saved {fn}")
