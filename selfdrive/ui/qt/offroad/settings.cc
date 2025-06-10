@@ -323,8 +323,7 @@ void DevicePanel::updateCalibDescription() {
     try {
       AlignedBuffer aligned_buf;
       capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
-      auto lag = cmsg.getRoot<cereal::Event>().getLiveDelay();
-      lag_perc = lag.getCalPerc();
+      lag_perc = cmsg.getRoot<cereal::Event>().getLiveDelay().getCalPerc();
     } catch (kj::Exception) {
       qInfo() << "invalid LiveDelay";
     }
