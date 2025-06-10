@@ -109,7 +109,6 @@ class Points:
     self.okay.append(okay)
     self.desired.append(desired)
     self.actual.append(actual)
-    print(len(self.times), len(self.desired), len(self.actual), len(self.okay), self.num_okay, okay)
 
   def get(self) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     return np.array(self.times), np.array(self.desired), np.array(self.actual), np.array(self.okay)
@@ -230,12 +229,7 @@ class LateralLagEstimator:
       liveDelay.lateralDelayEstimateStd = 0.0
 
     liveDelay.validBlocks = self.block_avg.valid_blocks
-    print(self.block_avg.valid_blocks, self.block_avg.idx, self.block_avg.block_size, self.min_valid_block_count)
-    print()
-    # progress_blocks = self.block_avg.valid_blocks + self.block_avg.idx / self.block_avg.block_size
-    # liveDelay.calPerc = min(100 * progress_blocks / self.min_valid_block_count, 100)
     liveDelay.calPerc = min(100 * (self.block_avg.valid_blocks * self.block_size + self.block_avg.idx) // (self.min_valid_block_count * self.block_size), 100)
-    print(f"LiveDelay calPerc: {liveDelay.calPerc}%")#, "lateralDelay:", liveDelay.lateralDelay, "lateralDelayEstimate:", liveDelay.lateralDelayEstimate)
     if debug:
       liveDelay.points = self.block_avg.values.flatten().tolist()
 
@@ -291,10 +285,6 @@ class LateralLagEstimator:
     )
     okay = self.lat_active and not self.steering_pressed and not self.steering_saturated and \
            fast and turning and has_recovered and calib_valid and sensors_valid and la_valid
-    if not okay:
-      print('has_recovered', has_recovered, 'okay', okay)
-
-    # print(la_desired, la_actual_pose)
 
     self.points.update(self.t, la_desired, la_actual_pose, okay)
 
@@ -355,7 +345,6 @@ def retrieve_initial_lag(params: Params, CP: car.CarParams):
     try:
       with log.Event.from_bytes(last_lag_data) as last_lag_msg, car.CarParams.from_bytes(last_carparams_data) as last_CP:
         ld = last_lag_msg.liveDelay
-        print(last_CP.carFingerprint, CP.carFingerprint)
         if last_CP.carFingerprint != CP.carFingerprint:
           raise Exception("Car model mismatch")
 
@@ -400,7 +389,6 @@ def main():
 
     # 4Hz driven by livePose
     if sm.frame % 5 == 0:
-      print('hjeere')
       lag_learner.update_estimate()
       lag_msg = lag_learner.get_msg(sm.all_checks(), DEBUG)
       lag_msg_dat = lag_msg.to_bytes()
