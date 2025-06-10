@@ -1245,7 +1245,7 @@ name = "opencv-python-headless"
 version = "4.11.0.86"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/36/2f/5b2b3ba52c864848885ba988f24b7f105052f68da9ab0e693cc7c25b0b30/opencv-python-headless-4.11.0.86.tar.gz", hash = "sha256:996eb282ca4b43ec6a3972414de0e2331f5d9cda2b41091a49739c19fb843798", size = 95177929, upload-time = "2025-01-16T13:53:40.22Z" }
 wheels = [
@@ -1308,6 +1308,7 @@ dev = [
     { name = "dictdiffer" },
     { name = "lru-dict" },
     { name = "matplotlib" },
+    { name = "opencv-python-headless" },
     { name = "parameterized" },
     { name = "pyautogui" },
     { name = "pygame" },
@@ -1378,6 +1379,7 @@ requires-dist = [
     { name = "natsort", marker = "extra == 'docs'" },
     { name = "numpy", specifier = ">=2.0,<2.2" },
     { name = "onnx", specifier = ">=1.14.0" },
+    { name = "opencv-python-headless", marker = "extra == 'dev'" },
     { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8,<0.9" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
