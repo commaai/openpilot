@@ -334,7 +334,9 @@ void DevicePanel::updateCalibDescription() {
   }
 
   if (lag_perc < 100) {
-    desc += tr("\n\n- Learning the vehicle's steering lag: %1% complete.").arg(lag_perc);
+    desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
+  } else {
+    desc += tr("\n\nSteering lag calibration is complete.");
   }
 
   std::string torque_bytes = params.get("LiveTorqueParameters");
@@ -343,15 +345,15 @@ void DevicePanel::updateCalibDescription() {
       AlignedBuffer aligned_buf;
       capnp::FlatArrayMessageReader cmsg(aligned_buf.align(torque_bytes.data(), torque_bytes.size()));
       auto torque = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
-
       // don't add for non-torque cars
       if (torque.getUseParams()) {
         int torque_perc = torque.getCalPerc();
         if (torque_perc < 100) {
-          desc += tr("\n- Learning the vehicle's steering response: %1% complete.").arg(torque_perc);
+          desc += tr(" Steering torque response calibration is %1% complete.").arg(torque_perc);
+        } else {
+          desc += tr(" Steering torque response calibration is complete.");
         }
       }
-
     } catch (kj::Exception) {
       qInfo() << "invalid LiveTorqueParameters";
     }
