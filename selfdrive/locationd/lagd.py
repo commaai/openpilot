@@ -394,8 +394,8 @@ def main():
       lag_msg_dat = lag_msg.to_bytes()
       pm.send('liveDelay', lag_msg_dat)
 
-      # if sm.frame % 1200 == 0: # cache every 60 seconds
-      params.put_nonblocking("LiveDelay", lag_msg_dat)
+      if sm.frame % 1200 == 0: # cache every 60 seconds
+        params.put_nonblocking("LiveDelay", lag_msg_dat)
 
 
 if __name__ == "__main__":
