@@ -2282,9 +2282,6 @@ struct LiveTorqueParametersData {
   version @11 :Int32;
   useParams @12 :Bool;
   calPerc @13 :Int8;
-  calPerc2 @14 :Int8;
-  calPerc3 @15 :Int8;
-  calPerc4 @16 :Int8;
 }
 
 struct LiveDelayData {
