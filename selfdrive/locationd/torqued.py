@@ -249,7 +249,11 @@ class TorqueEstimator(ParameterEstimator):
         bucket_progresses.append(min(len(v) / min_pts, 1.0))
     cal_perc = int(np.mean(bucket_progresses) * 100) if bucket_progresses else 0
     # liveTorqueParameters.calPerc = min(cal_perc, 100)
-    liveTorqueParameters.calPerc = self.filtered_points.get_valid_percent()
+    valid_perc = self.filtered_points.get_valid_percent()
+    liveTorqueParameters.calPerc = valid_perc[0]
+    liveTorqueParameters.calPerc2 = valid_perc[1]
+    liveTorqueParameters.calPerc3 = valid_perc[2]
+    liveTorqueParameters.calPerc4 = valid_perc[3]
     return msg
 
 
