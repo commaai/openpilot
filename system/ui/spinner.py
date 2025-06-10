@@ -3,8 +3,9 @@ import pyray as rl
 import select
 import sys
 
-from openpilot.system.ui.lib.application import gui_app, Widget
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.widget import Widget
 from openpilot.system.ui.text import wrap_text
 
 # Constants

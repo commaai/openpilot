@@ -1,6 +1,7 @@
 from openpilot.common.params import Params
-from openpilot.system.ui.lib.application import gui_app, Widget, DialogResult
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
+from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
 

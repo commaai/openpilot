@@ -1,7 +1,9 @@
 import pyray as rl
 import time
-from openpilot.system.ui.lib.application import gui_app, Widget
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.widget import Widget
+
 
 PASSWORD_MASK_CHAR = "•"
 PASSWORD_MASK_DELAY = 1.5  # Seconds to show character before masking

@@ -5,9 +5,11 @@ from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import DEFAULT_FPS, Widget
+from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.system.ui.lib.widget import Widget
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
+
 
 CLIP_MARGIN = 500
 MIN_DRAW_DISTANCE = 10.0
