@@ -82,6 +82,11 @@ class PointBuckets:
     total_points_valid = self.__len__() >= self.min_points_total
     return individual_buckets_valid and total_points_valid
 
+  def get_valid_percent(self) -> int:
+    total_points_perc = self.__len__() / self.min_points_total * 100
+    individual_buckets_perc = min([len(v) / min_pts * 100 for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True)])
+    return int(min(total_points_perc, individual_buckets_perc, 100))
+
   def is_calculable(self) -> bool:
     return all(len(v) > 0 for v in self.buckets.values())
 

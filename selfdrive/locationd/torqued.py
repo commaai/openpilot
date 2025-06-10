@@ -97,12 +97,15 @@ class TorqueEstimator(ParameterEstimator):
     params = Params()
     params_cache = params.get("CarParamsPrevRoute")
     torque_cache = params.get("LiveTorqueParameters")
+    print(torque_cache, params_cache)
     if params_cache is not None and torque_cache is not None:
       try:
         with log.Event.from_bytes(torque_cache) as log_evt:
           cache_ltp = log_evt.liveTorqueParameters
+          print('cache_ltp', cache_ltp)
         with car.CarParams.from_bytes(params_cache) as msg:
           cache_CP = msg
+        print('restore key', self.get_restore_key(cache_CP, cache_ltp.version), self.get_restore_key(CP, VERSION))
         if self.get_restore_key(cache_CP, cache_ltp.version) == self.get_restore_key(CP, VERSION):
           if cache_ltp.liveValid:
             initial_params = {
@@ -195,6 +198,7 @@ class TorqueEstimator(ParameterEstimator):
         steer = np.interp(t, self.raw_points['carOutput_t'], self.raw_points['steer_torque']).item()
         lateral_acc = (vego * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY).item()
         if all(lat_active) and not any(steer_override) and (vego > MIN_VEL) and (abs(steer) > STEER_MIN_THRESHOLD):
+          # print('valid')
           if abs(lateral_acc) <= LAT_ACC_THRESHOLD:
             self.filtered_points.add_point(steer, lateral_acc)
 
@@ -229,6 +233,8 @@ class TorqueEstimator(ParameterEstimator):
     if with_points:
       liveTorqueParameters.points = self.filtered_points.get_points()[:, [0, 2]].tolist()
 
+    print(liveTorqueParameters.latAccelFactorRaw, len(self.filtered_points))
+
     liveTorqueParameters.latAccelFactorFiltered = float(self.filtered_params['latAccelFactor'].x)
     liveTorqueParameters.latAccelOffsetFiltered = float(self.filtered_params['latAccelOffset'].x)
     liveTorqueParameters.frictionCoefficientFiltered = float(self.filtered_params['frictionCoefficient'].x)
@@ -237,12 +243,13 @@ class TorqueEstimator(ParameterEstimator):
     liveTorqueParameters.maxResets = self.resets
 
     bucket_progresses = []
-    for b, req in zip(self.filtered_points.buckets.values(),
-                      self.filtered_points.buckets_min_points.values()):
-      if req > 0:
-        bucket_progresses.append(min(len(b) / req, 1.0))
+    # all(len(v) >= min_pts for v, min_pts in zip(self.buckets.values(), self.buckets_min_points.values(), strict=True))
+    for v, min_pts in zip(self.filtered_points.buckets.values(), self.filtered_points.buckets_min_points.values(), strict=True):
+      if min_pts > 0:
+        bucket_progresses.append(min(len(v) / min_pts, 1.0))
     cal_perc = int(np.mean(bucket_progresses) * 100) if bucket_progresses else 0
-    liveTorqueParameters.calPerc = min(cal_perc, 100)
+    # liveTorqueParameters.calPerc = min(cal_perc, 100)
+    liveTorqueParameters.calPerc = self.filtered_points.get_valid_percent()
     return msg
 
 
@@ -268,7 +275,7 @@ def main(demo=False):
       pm.send('liveTorqueParameters', estimator.get_msg(valid=sm.all_checks()))
 
     # Cache points every 60 seconds while onroad
-    if sm.frame % 240 == 0:
+    if sm.frame % 50 == 0:
       msg = estimator.get_msg(valid=sm.all_checks(), with_points=True)
       params.put_nonblocking("LiveTorqueParameters", msg.to_bytes())
 
