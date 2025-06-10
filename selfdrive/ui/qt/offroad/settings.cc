@@ -330,10 +330,11 @@ void DevicePanel::updateCalibDescription() {
         qInfo() << "invalid LiveDelay";
       }
     }
+    desc += "\n\n";
     if (lag_perc < 100) {
-      desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
+      desc += tr("Steering lag calibration is %1% complete.").arg(lag_perc);
     } else {
-      desc += tr("\n\nSteering lag calibration is complete.");
+      desc += tr("Steering lag calibration is complete.");
     }
   }
 
