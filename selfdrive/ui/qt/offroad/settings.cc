@@ -329,8 +329,12 @@ void DevicePanel::updateCalibDescription() {
       qInfo() << "invalid LiveDelay";
     }
   }
+  if (lag_perc < 100) {
+    desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
+  } else {
+    desc += tr("\n\nSteering lag calibration is complete.");
+  }
 
-  int torque_perc = -1;
   std::string torque_bytes = params.get("LiveTorqueParameters");
   if (!torque_bytes.empty()) {
     try {
@@ -339,28 +343,15 @@ void DevicePanel::updateCalibDescription() {
       auto torque = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
       // don't add for non-torque cars
       if (torque.getUseParams()) {
-        torque_perc = torque.getCalPerc();
+        int torque_perc = torque.getCalPerc();
+        if (torque_perc < 100) {
+          desc += tr(" Steering torque response calibration is %1% complete.").arg(torque_perc);
+        } else {
+          desc += tr(" Steering torque response calibration is complete.");
+        }
       }
     } catch (kj::Exception) {
       qInfo() << "invalid LiveTorqueParameters";
-    }
-  }
-
-  if (lag_perc == 100 && torque_perc == 100) {
-    desc += tr("\n\nAll steering calibration is complete.");
-  } else {
-    if (lag_perc < 100) {
-      desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
-    } else {
-      desc += tr("\n\nSteering lag calibration is complete.");
-    }
-
-    if (torque_perc != -1) {
-      if (torque_perc < 100) {
-        desc += tr(" Steering torque response calibration is %1% complete.").arg(torque_perc);
-      } else {
-        desc += tr(" Steering torque response calibration is complete.");
-      }
     }
   }
 
