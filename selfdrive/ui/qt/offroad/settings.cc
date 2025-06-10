@@ -207,7 +207,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
+  resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (!uiState()->engaged()) {
@@ -361,7 +361,7 @@ void DevicePanel::updateCalibDescription() {
 
   desc += tr("\n\nopenpilot is continuously calibrating, resetting is rarely required. "
              "Resetting calibration will restart openpilot if the car is powered on.");
-  qobject_cast<ButtonControl *>(sender())->setDescription(desc);
+  resetCalibBtn->setDescription(desc);
 }
 
 void DevicePanel::reboot() {
