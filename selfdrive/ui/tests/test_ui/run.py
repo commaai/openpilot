@@ -283,9 +283,9 @@ def create_screenshots():
       driver_img = frames[2]
   else:
     with open(frames_cache, 'wb') as f:
-      road_img = FrameReader(route.camera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
-      wide_road_img = FrameReader(route.ecamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
-      driver_img = FrameReader(route.dcamera_paths()[segnum]).get(0, pix_fmt="nv12")[0]
+      road_img = FrameReader(route.camera_paths()[segnum], pix_fmt="nv12").get(0)[0]
+      wide_road_img = FrameReader(route.ecamera_paths()[segnum], pix_fmt="nv12").get(0)[0]
+      driver_img = FrameReader(route.dcamera_paths()[segnum], pix_fmt="nv12").get(0)[0]
       pickle.dump([road_img, wide_road_img, driver_img], f)
 
   STREAMS.append((VisionStreamType.VISION_STREAM_ROAD, cam.fcam, road_img.flatten().tobytes()))
