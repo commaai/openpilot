@@ -4,7 +4,6 @@ from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.system.ui.lib.widget import DialogResult
 
-
 DIALOG_WIDTH = 1520
 DIALOG_HEIGHT = 600
 BUTTON_HEIGHT = 160

@@ -8,7 +8,6 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.common.conversions import Conversions as CV
 from openpilot.system.ui.lib.widget import Widget
 
-
 # Constants
 SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371

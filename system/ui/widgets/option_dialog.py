@@ -5,7 +5,6 @@ from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.widget import Widget
 
-
 # Constants
 MARGIN = 50
 TITLE_FONT_SIZE = 70

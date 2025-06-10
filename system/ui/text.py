@@ -9,7 +9,6 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.widget import Widget
 
-
 MARGIN = 50
 SPACING = 40
 FONT_SIZE = 72

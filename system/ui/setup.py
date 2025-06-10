@@ -16,7 +16,6 @@ from openpilot.system.ui.lib.widget import Widget
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 from openpilot.system.ui.widgets.keyboard import Keyboard
 
-
 NetworkType = log.DeviceState.NetworkType
 
 MARGIN = 50

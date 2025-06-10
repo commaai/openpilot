@@ -7,7 +7,6 @@ from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.widget import Widget
 
-
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
 DELETE_REPEAT_DELAY = 0.5
