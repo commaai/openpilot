@@ -207,7 +207,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
+  resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (!uiState()->engaged()) {
@@ -220,6 +220,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
           params.remove("LiveParametersV2");
           params.remove("LiveDelay");
           params.putBool("OnroadCycleRequested", true);
+          updateCalibDescription();
         }
       }
     } else {
@@ -318,7 +319,7 @@ void DevicePanel::updateCalibDescription() {
     }
   }
   desc += tr(" Resetting calibration will restart openpilot if the car is powered on.");
-  qobject_cast<ButtonControl *>(sender())->setDescription(desc);
+  resetCalibBtn->setDescription(desc);
 }
 
 void DevicePanel::reboot() {
