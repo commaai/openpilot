@@ -141,10 +141,11 @@ class FrameReader:
     self.iframes = self.decoder.iframes
     self._cache: LRU[int, np.ndarray] = LRU(cache_size)
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count
+    self.pix_fmt = pix_fmt
 
     self.it: Optional[Iterator[tuple[int, np.ndarray]]] = None
     self.it_start_gop = -1         # start frame number of GOP currently iterated
-    self.last_fidx = -1
+    self.fidx = -1
 
   def get(self, fidx:int) -> list[np.ndarray]:
     if fidx in self._cache:  # If frame is cached, return it
