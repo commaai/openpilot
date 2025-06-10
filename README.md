@@ -1,3 +1,6 @@
+<h2>BMW E-series - <a href="https://github.com/dzid26/openpilot-for-BMW-E8x-E9x/wiki">Wiki</a></h2>
+
+
 <div align="center" style="text-align: center;">
 
 <h1>openpilot</h1>

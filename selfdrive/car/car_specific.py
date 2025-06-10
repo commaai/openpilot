@@ -1,7 +1,8 @@
 from collections import deque
 from cereal import car, log
 import cereal.messaging as messaging
-from opendbc.car import DT_CTRL, structs
+from opendbc.car import DT_CTRL, structs, create_button_events
+from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import MAX_CTRL_SPEED
 from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 from opendbc.car.hyundai.interface import ENABLE_BUTTONS as HYUNDAI_ENABLE_BUTTONS
@@ -151,6 +152,39 @@ class CarSpecificEvents:
       if self.low_speed_alert:
         events.add(EventName.belowSteerSpeed)
 
+    elif self.CP.brand == 'bmw':
+      # events
+      events = self.create_common_events(CS, CS_prev, pcm_enable=True)
+
+      # *** cruise control units detection ***
+      # when cruise is enabled the car sets cruiseState.speed = vEgo, so we can detect the ratio
+      # with resume this wouldn't work, but op will not engage on first resume anyway
+      if CS.is_metric is None and CC.enabled and CS.vEgo > 0:
+        # note, when is_metric is None, cruiseState.speed is already scaled by CV.MPH_TO_MS by default
+        speed_ratio = CS.cruiseState.speed / CS.vEgo  # 1 if imperial, 1.6 if metric
+        if 0.8 < speed_ratio < 1.2:
+          CS.is_metric = False
+        elif 0.8 * CV.MPH_TO_KPH < speed_ratio < 1.2 * CV.MPH_TO_KPH:
+          CS.is_metric = True
+        else:
+          events.add(EventName.accFaulted)
+
+
+      CS.buttonEvents = [
+        *create_button_events(CS.cruise_stalk_speed > 0, CS.prev_cruise_stalk_speed > 0, {1: ButtonType.accelCruise}),
+        *create_button_events(CS.cruise_stalk_speed < 0, CS.prev_cruise_stalk_speed < 0, {1: ButtonType.decelCruise}),
+        *create_button_events(CS.cruise_stalk_cancel, CS.prev_cruise_stalk_cancel, {1: ButtonType.cancel}),
+        *create_button_events(CS.other_buttons, not CS.other_buttons, {1: ButtonType.altButton1}),
+        *create_button_events(CS.cruise_stalk_resume, CS.prev_cruise_stalk_resume, {
+          1: ButtonType.resumeCruise if not CC.enabled else ButtonType.gapAdjustCruise}) # repurpose resume button to adjust driver personality when engaged
+        ]
+
+      if CS.vEgoCluster < self.CP.minEnableSpeed:
+        events.add(EventName.belowEngageSpeed)
+        if CC.actuators.accel > 0.2:
+            events.add(EventName.speedTooLow) # can't restart cruise anymore
+
+      CS.events = events.to_msg()
     else:
       events = self.create_common_events(CS, CS_prev)
 
