@@ -396,7 +396,3 @@ def main():
 
       if sm.frame % 1200 == 0: # cache every 60 seconds
         params.put_nonblocking("LiveDelay", lag_msg_dat)
-
-
-if __name__ == "__main__":
-  main()
