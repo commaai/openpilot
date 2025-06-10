@@ -220,6 +220,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
           params.remove("LiveParametersV2");
           params.remove("LiveDelay");
           params.putBool("OnroadCycleRequested", true);
+          updateCalibDescription();
         }
       }
     } else {
@@ -297,10 +298,10 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void DevicePanel::updateCalibDescription() {
-//  QString desc = tr("openpilot continuously calibrates the device's orientation and steering response. Resetting is rarely required.");
-  QString desc = tr("openpilot continuously calibrates device orientation and learns how your car responds to steering commands. Resetting is rarely required.");
+//  QString desc = tr("openpilot continuously calibrates the device's orientation and learns your vehicle's steering response. Resetting is rarely required.");
+  QString desc = tr("");
 
-  desc += tr("\n\nopenpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
+  desc += tr("\nopenpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
   std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -319,55 +320,49 @@ void DevicePanel::updateCalibDescription() {
     }
   }
 
-//  desc += tr("\n\nopenpilot also learns how your car responds to steering inputs while it is engaged.");
-
-  std::string lagd_bytes = params.get("LiveDelay");
-  int lagd_perc = 0;
-  if (!lagd_bytes.empty()) {
+  int lag_perc = 0;
+  std::string lag_bytes = params.get("LiveDelay");
+  if (!lag_bytes.empty()) {
     try {
       AlignedBuffer aligned_buf;
-      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lagd_bytes.data(), lagd_bytes.size()));
-      auto lagd = cmsg.getRoot<cereal::Event>().getLiveDelay();
-      lagd_perc = lagd.getCalPerc();
-//      desc += tr("\n\nopenpilot continually learns how your vehicle responds to commands. Steering delay learning is %1% complete.")
-//                  .arg(lagd.getCalPerc());
-////      if (lagd.calibPerc() > 0) {
-////        desc += tr(" The current delay is %1 ms.").arg(lagd.getLagMs());
-////      }
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
+      auto lag = cmsg.getRoot<cereal::Event>().getLiveDelay();
+      lag_perc = lag.getCalPerc();
     } catch (kj::Exception) {
       qInfo() << "invalid LiveDelay";
     }
   }
 
-//  desc += tr("\n\nopenpilot continually adapts to your vehicle's  responds to commands.");
-
-  if (lagd_perc < 100) {
-    desc += tr("\nSteering lag learning is %1% complete.").arg(lagd_perc);
+  if (lag_perc < 100) {
+    desc += tr("\n\n- Learning the vehicle's steering lag: %1% complete.").arg(lag_perc);
   } else {
-    desc += tr("\nSteering lag learning is complete.");
+    desc += tr("\n\n- Vehicle's steering lag learning complete.");
   }
 
-  std::string torqued_bytes = params.get("LiveTorqueParameters");
-  int torqued_perc = 0;
-  if (!torqued_bytes.empty()) {
+  std::string torque_bytes = params.get("LiveTorqueParameters");
+  if (!torque_bytes.empty()) {
     try {
       AlignedBuffer aligned_buf;
-      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(torqued_bytes.data(), torqued_bytes.size()));
-      auto torqued = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
-      torqued_perc = torqued.getCalPerc();
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(torque_bytes.data(), torque_bytes.size()));
+      auto torque = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
+
+      // don't add for non-torque cars
+      if (torque.getUseParams()) {
+        int torque_perc = 100;//torque.getCalPerc();
+        if (torque_perc < 100) {
+          desc += tr("\n- Learning the vehicle's steering response: %1% complete.").arg(torque_perc);
+        } else {
+          desc += tr("\n- Vehicle's steering response learning complete.");
+        }
+      }
+
     } catch (kj::Exception) {
       qInfo() << "invalid LiveTorqueParameters";
     }
   }
 
-  if (torqued_perc < 100) {
-    desc += tr("\nSteering torque learning is %1% complete.").arg(torqued_perc);
-  } else {
-    desc += tr("\nSteering torque learning is complete.");
-  }
-
-//  desc += tr("\n\nopenpilot is continuously calibrating, resetting is rarely required.");
-  desc += tr("\nResetting calibration will restart openpilot if the car is powered on.");
+  desc += tr("\n\nopenpilot is continuously calibrating, resetting is rarely required. "
+             "Resetting calibration will restart openpilot if the car is powered on.");
   qobject_cast<ButtonControl *>(sender())->setDescription(desc);
 }
 
