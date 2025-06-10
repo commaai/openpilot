@@ -4,7 +4,6 @@ from dataclasses import dataclass
 from typing import Any
 from openpilot.common.swaglog import cloudlog
 
-
 # EGL constants
 EGL_LINUX_DMA_BUF_EXT = 0x3270
 EGL_WIDTH = 0x3057
@@ -22,6 +21,7 @@ GL_TEXTURE_EXTERNAL_OES = 0x8D65
 
 # DRM Format for NV12
 DRM_FORMAT_NV12 = 842094158
+
 
 @dataclass
 class EGLImage:

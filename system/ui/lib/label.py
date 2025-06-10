@@ -1,5 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 
 
@@ -14,7 +15,7 @@ def gui_label(
   elide_right: bool = True
 ):
   font = gui_app.font(font_weight)
-  text_size = rl.measure_text_ex(font, text, font_size, 0)
+  text_size = measure_text_cached(font, text, font_size)
   display_text = text
 
   # Elide text to fit within the rectangle
@@ -24,13 +25,13 @@ def gui_label(
     while left < right:
       mid = (left + right) // 2
       candidate = text[:mid] + ellipsis
-      candidate_size = rl.measure_text_ex(font, candidate, font_size, 0)
+      candidate_size = measure_text_cached(font, candidate, font_size)
       if candidate_size.x <= rect.width:
         left = mid + 1
       else:
         right = mid
     display_text = text[: left - 1] + ellipsis if left > 0 else ellipsis
-    text_size = rl.measure_text_ex(font, display_text, font_size, 0)
+    text_size = measure_text_cached(font, display_text, font_size)
 
   # Calculate horizontal position based on alignment
   text_x = rect.x + {
@@ -75,4 +76,3 @@ def gui_text_box(
 
   if font_weight != FontWeight.NORMAL:
     rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
-

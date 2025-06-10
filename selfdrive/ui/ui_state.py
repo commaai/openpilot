@@ -2,7 +2,7 @@ import pyray as rl
 from enum import Enum
 from cereal import messaging, log
 from openpilot.common.params import Params, UnknownKeyName
-
+from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 
 UI_BORDER_SIZE = 30
 
@@ -44,6 +44,8 @@ class UIState:
       ]
     )
 
+    self.prime_state = PrimeState()
+
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
     self.started_frame: int = 0
@@ -63,6 +65,12 @@ class UIState:
   @property
   def engaged(self) -> bool:
     return self.started and self.sm["selfdriveState"].enabled
+
+  def is_onroad(self) -> bool:
+    return self.started
+
+  def is_offroad(self) -> bool:
+    return not self.started
 
   def update(self) -> None:
     self.sm.update(0)

@@ -1,7 +1,10 @@
+import abc
 import atexit
 import os
 import time
 import pyray as rl
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -24,6 +27,41 @@ ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
+class DialogResult(IntEnum):
+  CANCEL = 0
+  CONFIRM = 1
+  NO_ACTION = -1
+
+
+class Widget(abc.ABC):
+  def __init__(self):
+    self._is_pressed = False
+
+  def render(self, rect: rl.Rectangle) -> bool | int | None:
+    ret = self._render(rect)
+
+    # Keep track of whether mouse down started within the widget's rectangle
+    mouse_pos = rl.get_mouse_position()
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if rl.check_collision_point_rec(mouse_pos, rect):
+        self._is_pressed = True
+
+    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if self._is_pressed and rl.check_collision_point_rec(mouse_pos, rect):
+        self._handle_mouse_release(mouse_pos)
+      self._is_pressed = False
+
+    return ret
+
+  @abc.abstractmethod
+  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+    """Render the widget within the given rectangle."""
+
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+    """Handle mouse release events, if applicable."""
+    return False
+
+
 class FontWeight(IntEnum):
   THIN = 0
   EXTRA_LIGHT = 1
@@ -34,6 +72,12 @@ class FontWeight(IntEnum):
   BOLD = 6
   EXTRA_BOLD = 7
   BLACK = 8
+
+
+@dataclass
+class ModalOverlay:
+  overlay: object = None
+  callback: Callable | None = None
 
 
 class GuiApplication:
@@ -50,6 +94,7 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
+    self._modal_overlay = ModalOverlay()
 
   def request_close(self):
     self._window_close_requested = True
@@ -78,6 +123,9 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+
+  def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -148,7 +196,23 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        yield
+        # Handle modal overlay rendering and input processing
+        if self._modal_overlay.overlay:
+          if hasattr(self._modal_overlay.overlay, 'render'):
+            result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+          elif callable(self._modal_overlay.overlay):
+            result = self._modal_overlay.overlay()
+          else:
+            raise Exception
+
+          if result >= 0:
+            # Execute callback with the result and clear the overlay
+            if self._modal_overlay.callback is not None:
+              self._modal_overlay.callback(result)
+
+            self._modal_overlay = ModalOverlay()
+        else:
+          yield
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -192,12 +256,11 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-    from openpilot.selfdrive.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += CRUISE_DISABLED_CHAR
+    all_chars += "-✓"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
