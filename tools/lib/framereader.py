@@ -108,8 +108,9 @@ class FfmpegDecoder:
   def get_iterator(self, start_fidx: int = 0, end_fidx: int|None = None,
                    frame_skip: int = 1) -> Iterator[tuple[int, np.ndarray]]:
     end_fidx = end_fidx or self.frame_count
+    fidx = start_fidx
     while fidx < end_fidx:
-      f_b, f_e, off_b, off_e = self._gop_bounds(cur)
+      f_b, f_e, off_b, off_e = self._gop_bounds(fidx)
       with FileReader(self.fn) as f:
         f.seek(off_b)
         raw = self.prefix + f.read(off_e - off_b)
@@ -118,8 +119,9 @@ class FfmpegDecoder:
         fidx = f_b + i
         if fidx >= end_fidx:
           return
-        elif fidx >= frame_start and (fidx - frame_start) % frame_skip == 0:
+        elif fidx >= start_fidx and (fidx - start_fidx) % frame_skip == 0:
           yield fidx, frm
+      fidx += 1
 
 def FrameIterator(fn: str, index_data: dict|None=None,
                         pix_fmt: str = "rgb24",
