@@ -1,7 +1,7 @@
 import os
 import subprocess
 import json
-from typing import Iterator, Optional
+from collections.abc import Iterator
 
 import numpy as np
 from lru import LRU
@@ -61,7 +61,7 @@ def ffprobe(fn, fmt=None):
     raise DataUnreadableError(fn) from e
   return json.loads(ffprobe_output)
 
-def get_index_data(fn: str, index_data: Optional[dict] = None):
+def get_index_data(fn: str, index_data: dict|None = None):
   if index_data is None:
     index_data = get_video_index(fn)
     if index_data is None:
@@ -82,7 +82,7 @@ def get_video_index(fn):
 
 
 class FfmpegDecoder:
-  def __init__(self, fn: str, index_data: Optional[dict] = None,
+  def __init__(self, fn: str, index_data: dict|None = None,
                pix_fmt: str = "rgb24"):
     self.fn = fn
     self.index, self.prefix, self.w, self.h = get_index_data(fn, index_data)
@@ -108,7 +108,7 @@ class FfmpegDecoder:
   def get_gop_start(self, frame_idx: int):
     return self.iframes[np.searchsorted(self.iframes, frame_idx, side="right") - 1]
 
-  def get_iterator(self, start_fidx: int = 0, end_fidx: Optional[int] = None,
+  def get_iterator(self, start_fidx: int = 0, end_fidx: int|None = None,
                    frame_skip: int = 1) -> Iterator[tuple[int, np.ndarray]]:
     end_fidx = end_fidx or self.frame_count
     cur = start_fidx
@@ -127,15 +127,15 @@ class FfmpegDecoder:
         yield fidx, frm
       cur = f_e
 
-def FrameIterator(fn: str, index_data:Optional[dict]=None,
-                        pix_fmt: str = "rgb24", 
+def FrameIterator(fn: str, index_data: dict|None=None,
+                        pix_fmt: str = "rgb24",
                         start_fidx:int=0, end_fidx=None, frame_skip:int=1) -> Iterator[np.ndarray]:
   dec = FfmpegDecoder(fn, pix_fmt=pix_fmt, index_data=index_data)
   for _, frame in dec.get_iterator(start_fidx=start_fidx, end_fidx=end_fidx, frame_skip=frame_skip):
     yield frame
 
 class FrameReader:
-  def __init__(self, fn: str, index_data: Optional[dict] = None,
+  def __init__(self, fn: str, index_data: dict|None = None,
                cache_size: int = 30, pix_fmt: str = "rgb24"):
     self.decoder = FfmpegDecoder(fn, index_data, pix_fmt)
     self.iframes = self.decoder.iframes
@@ -143,7 +143,7 @@ class FrameReader:
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count
     self.pix_fmt = pix_fmt
 
-    self.it: Optional[Iterator[tuple[int, np.ndarray]]] = None
+    self.it: Iterator[tuple[int, np.ndarray]] | None = None
     self.it_start_gop = -1         # start frame number of GOP currently iterated
     self.fidx = -1
 

@@ -3,14 +3,12 @@ import os
 import argparse
 import time
 import capnp
-import numpy as np
 
 from typing import Any
 from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, check_most_messages_valid, get_custom_params_from_lr
-from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
 from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
