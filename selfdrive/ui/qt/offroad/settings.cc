@@ -335,8 +335,6 @@ void DevicePanel::updateCalibDescription() {
 
   if (lag_perc < 100) {
     desc += tr("\n\n- Learning the vehicle's steering lag: %1% complete.").arg(lag_perc);
-  } else {
-    desc += tr("\n\n- Vehicle's steering lag learning complete.");
   }
 
   std::string torque_bytes = params.get("LiveTorqueParameters");
@@ -348,11 +346,9 @@ void DevicePanel::updateCalibDescription() {
 
       // don't add for non-torque cars
       if (torque.getUseParams()) {
-        int torque_perc = 100;//torque.getCalPerc();
+        int torque_perc = torque.getCalPerc();
         if (torque_perc < 100) {
           desc += tr("\n- Learning the vehicle's steering response: %1% complete.").arg(torque_perc);
-        } else {
-          desc += tr("\n- Vehicle's steering response learning complete.");
         }
       }
 
