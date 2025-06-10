@@ -2,7 +2,6 @@ from cereal import car, log
 import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import MAX_CTRL_SPEED
-from opendbc.car.volkswagen.values import CarControllerParams as VWCarControllerParams
 
 from openpilot.selfdrive.selfdrived.events import Events
 
@@ -105,20 +104,10 @@ class CarSpecificEvents:
         events.add(EventName.belowEngageSpeed)
       if CS.cruiseState.standstill:
         events.add(EventName.resumeRequired)
-      if CS.vEgo < self.CP.minSteerSpeed:
-        events.add(EventName.belowSteerSpeed)
 
     elif self.CP.brand == 'volkswagen':
       events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.eco, GearShifter.sport, GearShifter.manumatic],
                                          pcm_enable=self.CP.pcmCruise)
-
-      # Low speed steer alert hysteresis logic
-      if (self.CP.minSteerSpeed - 1e-3) > VWCarControllerParams.DEFAULT_MIN_STEER_SPEED and CS.vEgo < (self.CP.minSteerSpeed + 1.):
-        self.low_speed_alert = True
-      elif CS.vEgo > (self.CP.minSteerSpeed + 2.):
-        self.low_speed_alert = False
-      if self.low_speed_alert:
-        events.add(EventName.belowSteerSpeed)
 
       if self.CP.openpilotLongitudinalControl:
         if CS.vEgo < self.CP.minEnableSpeed + 0.5:

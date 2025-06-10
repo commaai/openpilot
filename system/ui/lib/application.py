@@ -1,7 +1,10 @@
+import abc
 import atexit
 import os
 import time
 import pyray as rl
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -13,7 +16,7 @@ FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
-DEBUG_FPS = os.getenv("DEBUG_FPS") == '1'
+SHOW_FPS = os.getenv("SHOW_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 SCALE = float(os.getenv("SCALE", "1.0"))
 
@@ -22,6 +25,35 @@ DEFAULT_TEXT_COLOR = rl.WHITE
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
+
+
+class Widget(abc.ABC):
+  def __init__(self):
+    self._is_pressed = False
+
+  def render(self, rect: rl.Rectangle) -> bool | int | None:
+    ret = self._render(rect)
+
+    # Keep track of whether mouse down started within the widget's rectangle
+    mouse_pos = rl.get_mouse_position()
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if rl.check_collision_point_rec(mouse_pos, rect):
+        self._is_pressed = True
+
+    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if self._is_pressed and rl.check_collision_point_rec(mouse_pos, rect):
+        self._handle_mouse_release(mouse_pos)
+      self._is_pressed = False
+
+    return ret
+
+  @abc.abstractmethod
+  def _render(self, rect: rl.Rectangle) -> bool | int | None:
+    """Render the widget within the given rectangle."""
+
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+    """Handle mouse release events, if applicable."""
+    return False
 
 
 class FontWeight(IntEnum):
@@ -34,6 +66,12 @@ class FontWeight(IntEnum):
   BOLD = 6
   EXTRA_BOLD = 7
   BLACK = 8
+
+
+@dataclass
+class ModalOverlay:
+  overlay: object = None
+  callback: Callable | None = None
 
 
 class GuiApplication:
@@ -50,6 +88,7 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
+    self._modal_overlay = ModalOverlay()
 
   def request_close(self):
     self._window_close_requested = True
@@ -78,6 +117,9 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+
+  def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -148,7 +190,21 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        yield
+        # Handle modal overlay rendering and input processing
+        if self._modal_overlay.overlay:
+          if hasattr(self._modal_overlay.overlay, 'render'):
+            result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+          elif callable(self._modal_overlay.overlay):
+            result = self._modal_overlay.overlay()
+          else:
+            raise Exception
+
+          if result >= 0 and self._modal_overlay.callback is not None:
+            # Execute callback with the result and clear the overlay
+            self._modal_overlay.callback(result)
+            self._modal_overlay = ModalOverlay()
+        else:
+          yield
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -158,7 +214,7 @@ class GuiApplication:
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
 
-        if DEBUG_FPS:
+        if SHOW_FPS:
           rl.draw_fps(10, 10)
 
         rl.end_drawing()
@@ -196,13 +252,14 @@ class GuiApplication:
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
+    all_chars += "-"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
     for index, font_file in enumerate(font_files):
       with as_file(FONT_DIR.joinpath(font_file)) as fspath:
-        font = rl.load_font_ex(fspath.as_posix(), 120, codepoints, codepoint_count[0])
+        font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
         self._fonts[index] = font
 

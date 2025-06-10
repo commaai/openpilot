@@ -7,6 +7,7 @@ from pathlib import Path
 from datetime import datetime, timedelta, UTC
 from openpilot.common.api import api_get
 from openpilot.common.params import Params
+from openpilot.common.spinner import Spinner
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, PC
 from openpilot.system.hardware.hw import Paths
@@ -44,7 +45,6 @@ def register(show_spinner=False) -> str | None:
     cloudlog.warning(f"missing public key: {pubkey}")
   elif dongle_id is None:
     if show_spinner:
-      from openpilot.system.ui.spinner import Spinner
       spinner = Spinner()
       spinner.update("registering device")
 

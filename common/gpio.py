@@ -1,4 +1,6 @@
 import os
+import fcntl
+import ctypes
 from functools import cache
 
 def gpio_init(pin: int, output: bool) -> None:
@@ -52,3 +54,36 @@ def get_irqs_for_action(action: str) -> list[str]:
       if irq.isdigit() and action in get_irq_action(irq):
         ret.append(irq)
   return ret
+
+# *** gpiochip ***
+
+class gpioevent_data(ctypes.Structure):
+  _fields_ = [
+    ("timestamp", ctypes.c_uint64),
+    ("id", ctypes.c_uint32),
+  ]
+
+class gpioevent_request(ctypes.Structure):
+  _fields_ = [
+    ("lineoffset", ctypes.c_uint32),
+    ("handleflags", ctypes.c_uint32),
+    ("eventflags", ctypes.c_uint32),
+    ("label", ctypes.c_char * 32),
+    ("fd", ctypes.c_int)
+  ]
+
+def gpiochip_get_ro_value_fd(label: str, gpiochip_id: int, pin: int) -> int:
+  GPIOEVENT_REQUEST_BOTH_EDGES = 0x3
+  GPIOHANDLE_REQUEST_INPUT = 0x1
+  GPIO_GET_LINEEVENT_IOCTL = 0xc030b404
+
+  rq = gpioevent_request()
+  rq.lineoffset = pin
+  rq.handleflags = GPIOHANDLE_REQUEST_INPUT
+  rq.eventflags = GPIOEVENT_REQUEST_BOTH_EDGES
+  rq.label = label.encode('utf-8')[:31] + b'\0'
+
+  fd = os.open(f"/dev/gpiochip{gpiochip_id}", os.O_RDONLY)
+  fcntl.ioctl(fd, GPIO_GET_LINEEVENT_IOCTL, rq)
+  os.close(fd)
+  return int(rq.fd)
