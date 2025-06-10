@@ -5,8 +5,9 @@ from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import DEFAULT_FPS, Widget
+from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.system.ui.lib.widget import Widget
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 
 CLIP_MARGIN = 500
@@ -383,12 +384,12 @@ class ModelRenderer(Widget):
 
     # Filter points within clip region
     left_in_clip = (
-        (left_screen[0] >= x_min) & (left_screen[0] <= x_max) &
-        (left_screen[1] >= y_min) & (left_screen[1] <= y_max)
+      (left_screen[0] >= x_min) & (left_screen[0] <= x_max) &
+      (left_screen[1] >= y_min) & (left_screen[1] <= y_max)
     )
     right_in_clip = (
-        (right_screen[0] >= x_min) & (right_screen[0] <= x_max) &
-        (right_screen[1] >= y_min) & (right_screen[1] <= y_max)
+      (right_screen[0] >= x_min) & (right_screen[0] <= x_max) &
+      (right_screen[1] >= y_min) & (right_screen[1] <= y_max)
     )
     both_in_clip = left_in_clip & right_in_clip
 
@@ -401,12 +402,12 @@ class ModelRenderer(Widget):
 
     # Handle Y-coordinate inversion on hills
     if not allow_invert and left_screen.shape[1] > 1:
-        y = left_screen[1, :]  # y-coordinates
-        keep = y == np.minimum.accumulate(y)
-        if not np.any(keep):
-            return np.empty((0, 2), dtype=np.float32)
-        left_screen = left_screen[:, keep]
-        right_screen = right_screen[:, keep]
+      y = left_screen[1, :]  # y-coordinates
+      keep = y == np.minimum.accumulate(y)
+      if not np.any(keep):
+        return np.empty((0, 2), dtype=np.float32)
+      left_screen = left_screen[:, keep]
+      right_screen = right_screen[:, keep]
 
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
 

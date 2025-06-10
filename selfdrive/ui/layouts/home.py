@@ -8,7 +8,8 @@ from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButto
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR, Widget
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.lib.widget import Widget
 
 HEADER_HEIGHT = 80
 HEAD_BUTTON_FONT_SIZE = 40

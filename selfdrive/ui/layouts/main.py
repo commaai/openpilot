@@ -5,7 +5,7 @@ from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
-from openpilot.system.ui.lib.application import Widget
+from openpilot.system.ui.lib.widget import Widget
 
 
 class MainState(IntEnum):

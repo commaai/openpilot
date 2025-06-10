@@ -2,7 +2,8 @@ import time
 import pyray as rl
 from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, Widget
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
 
 

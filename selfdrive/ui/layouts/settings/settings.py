@@ -8,9 +8,10 @@ from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
-from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.layouts.network import NetworkLayout
+from openpilot.system.ui.lib.widget import Widget
 
 # Import individual panels
 
