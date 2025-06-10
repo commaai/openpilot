@@ -22,8 +22,8 @@ class Camera:
 
   def read_frames(self):
     while True:
-      sts , frame = self.cap.read()
-      if not sts:
+      ret, frame = self.cap.read()
+      if not ret:
         break
       yuv = Camera.bgr2nv12(frame)
       yield yuv.data.tobytes()
