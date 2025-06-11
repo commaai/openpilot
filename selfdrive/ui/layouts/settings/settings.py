@@ -154,19 +154,14 @@ class SettingsLayout(Widget):
     # Check navigation buttons
     for panel_type, panel_info in self._panels.items():
       if rl.check_collision_point_rec(mouse_pos, panel_info.button_rect):
-        self._switch_to_panel(panel_type)
+        self.set_current_panel(panel_type)
         return True
 
     return False
 
-  def _switch_to_panel(self, panel_type: PanelType):
+  def set_current_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:
       self._current_panel = panel_type
-
-  def set_current_panel(self, index: int, param: str = ""):
-    panel_types = list(self._panels.keys())
-    if 0 <= index < len(panel_types):
-      self._switch_to_panel(panel_types[index])
 
   def close_settings(self):
     if self._close_callback:
