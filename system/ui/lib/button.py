@@ -71,7 +71,7 @@ def gui_button(
 
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
-  if is_enabled and gui_app.mouse.check_down(rect):
+  if is_enabled and gui_app.mouse.is_held_down_in(rect):
     bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[button_style]
 
   # Draw the button with rounded corners
@@ -120,7 +120,7 @@ def gui_button(
     color = BUTTON_TEXT_COLOR[button_style] if is_enabled else BUTTON_DISABLED_TEXT_COLOR
     rl.draw_text_ex(font, text, text_pos, font_size, 0, color)
 
-  if is_enabled and gui_app.mouse.check_clicked(rect):
+  if is_enabled and gui_app.mouse.is_clicked_in(rect):
     gui_app.mouse.consumed = True
     return 1
   return 0

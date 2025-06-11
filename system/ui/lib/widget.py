@@ -43,7 +43,7 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Check if mouse was clicked within the widget's rectangle
-    if gui_app.mouse.check_clicked(rect):
+    if gui_app.mouse.is_clicked_in(self._rect):
       result = self._on_mouse_clicked(gui_app.mouse)
       # If the event was handled, mark the mouse input as consumed
       if result:

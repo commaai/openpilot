@@ -33,7 +33,7 @@ class ExpButton(Widget):
     self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
 
   def _on_mouse_clicked(self, mouse: MouseState) -> bool:
-    if mouse.check_clicked(self._rect):
+    if mouse.is_clicked_in(self._rect):
       if self._is_toggle_allowed():
         new_mode = not self._experimental_mode
         self._params.put_bool("ExperimentalMode", new_mode)
@@ -48,7 +48,7 @@ class ExpButton(Widget):
     center_x = int(self._rect.x + self._rect.width // 2)
     center_y = int(self._rect.y + self._rect.height // 2)
 
-    is_down = gui_app.mouse.check_down(self._rect)
+    is_down = gui_app.mouse.is_held_down_in(self._rect)
     self._white_color.a = 180 if is_down or not self._engageable else 255
 
     texture = self._txt_exp if self._held_or_actual_mode() else self._txt_wheel

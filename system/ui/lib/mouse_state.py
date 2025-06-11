@@ -40,15 +40,15 @@ class MouseState:
   def consumed(self, value: bool):
     self._consumed = value
 
-  def check_pressed(self, rect: rl.Rectangle) -> bool:
+  def is_pressed_in(self, rect: rl.Rectangle) -> bool:
     """Check if mouse was pressed inside the given rectangle."""
     return self.pressed and rl.check_collision_point_rec(self._position, rect)
 
-  def check_released(self, rect: rl.Rectangle) -> bool:
+  def is_released_in(self, rect: rl.Rectangle) -> bool:
     """Check if mouse was released inside the given rectangle."""
     return self.released and rl.check_collision_point_rec(self._position, rect)
 
-  def check_clicked(self, rect: rl.Rectangle) -> bool:
+  def is_clicked_in(self, rect: rl.Rectangle) -> bool:
     """
     Check for a click inside the rectangle:
     Mouse was pressed and released inside the same rect.
@@ -59,6 +59,15 @@ class MouseState:
       and rl.check_collision_point_rec(self._position, rect)
     )
 
-  def check_down(self, rect: rl.Rectangle) -> bool:
+  def consume_clicked_in(self, rect: rl.Rectangle) -> bool:
+    if self.is_clicked_in(rect):
+      self._consumed = True
+      return True
+    return False
+
+  def is_held_down_in(self, rect: rl.Rectangle) -> bool:
     """Check if mouse is currently held down after being pressed in the rectangle."""
     return self._is_down and not self._consumed and rl.check_collision_point_rec(self._pressed_pos, rect)
+
+  def consume_event(self) -> None:
+    self._consumed = True

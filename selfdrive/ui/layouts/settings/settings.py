@@ -87,7 +87,7 @@ class SettingsLayout(Widget):
       rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
     )
 
-    pressed = gui_app.mouse.check_down(close_btn_rect)
+    pressed = gui_app.mouse.is_held_down_in(close_btn_rect)
     close_color = CLOSE_BTN_PRESSED if pressed else CLOSE_BTN_COLOR
     rl.draw_rectangle_rounded(close_btn_rect, 1.0, 20, close_color)
 
@@ -133,14 +133,14 @@ class SettingsLayout(Widget):
 
   def _on_mouse_clicked(self, mouse: MouseState) -> bool:
     # Check close button
-    if mouse.check_clicked(self._close_btn_rect):
+    if mouse.is_clicked_in(self._close_btn_rect):
       if self._close_callback:
         self._close_callback()
       return True
 
     # Check navigation buttons
     for panel_type, panel_info in self._panels.items():
-      if mouse.check_clicked(panel_info.button_rect):
+      if mouse.is_clicked_in(panel_info.button_rect):
         self.set_current_panel(panel_type)
         return True
 

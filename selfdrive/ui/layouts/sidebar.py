@@ -136,11 +136,11 @@ class Sidebar(Widget):
       self._panda_status.update("VEHICLE", "ONLINE", Colors.GOOD)
 
   def _on_mouse_clicked(self, mouse: MouseState) -> bool:
-    if mouse.check_clicked(SETTINGS_BTN):
+    if mouse.is_clicked_in(SETTINGS_BTN):
       if self._on_settings_click:
         self._on_settings_click()
       return True
-    elif mouse.check_clicked(HOME_BTN) and ui_state.started:
+    elif mouse.is_clicked_in(HOME_BTN) and ui_state.started:
       if self._on_flag_click:
         self._on_flag_click()
       return True
@@ -149,12 +149,12 @@ class Sidebar(Widget):
 
   def _draw_buttons(self, rect: rl.Rectangle):
     # Settings button
-    settings_down = gui_app.mouse.check_down(SETTINGS_BTN)
+    settings_down = gui_app.mouse.is_held_down_in(SETTINGS_BTN)
     tint = Colors.BUTTON_PRESSED if settings_down else Colors.BUTTON_NORMAL
     rl.draw_texture(self._settings_img, int(SETTINGS_BTN.x), int(SETTINGS_BTN.y), tint)
 
     # Home/Flag button
-    flag_pressed = gui_app.mouse.check_down(HOME_BTN)
+    flag_pressed = gui_app.mouse.is_held_down_in(HOME_BTN)
     button_img = self._flag_img if ui_state.started else self._home_img
 
     tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL

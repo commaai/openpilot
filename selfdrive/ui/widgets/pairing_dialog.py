@@ -77,7 +77,7 @@ class PairingDialog(Widget):
     close_icon = gui_app.texture("icons/close.png", close_size, close_size)
     self._close_button = rl.Rectangle(content_rect.x, y, close_size, close_size)
 
-    is_down = gui_app.mouse.check_down(self._close_button)
+    is_down = gui_app.mouse.is_held_down_in(self._close_button)
     color = rl.Color(180, 180, 180, 150) if is_down else rl.WHITE
     rl.draw_texture(close_icon, int(content_rect.x), int(y), color)
 
@@ -106,7 +106,7 @@ class PairingDialog(Widget):
     self._render_qr_code(rl.Rectangle(qr_x, qr_y, qr_size, qr_size))
 
   def _on_mouse_clicked(self, mouse: MouseState) -> bool:
-    if mouse.check_clicked(self._close_button):
+    if mouse.is_clicked_in(self._close_button):
       gui_app.close_dialog(DialogResult.CANCEL)
       return True
     return False
