@@ -2,7 +2,7 @@ import time
 import pyray as rl
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.widget import Widget, MouseState
 from openpilot.common.params import Params
 
 
@@ -32,10 +32,9 @@ class ExpButton(Widget):
     self._experimental_mode = selfdrive_state.experimentalMode
     self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
 
-  def handle_mouse_event(self) -> bool:
-    if rl.check_collision_point_rec(rl.get_mouse_position(), self._rect):
-      if (rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and
-          self._is_toggle_allowed()):
+  def _on_mouse_clicked(self, mouse: MouseState) -> bool:
+    if mouse.check_clicked(self._rect):
+      if self._is_toggle_allowed():
         new_mode = not self._experimental_mode
         self._params.put_bool("ExperimentalMode", new_mode)
 
