@@ -159,23 +159,28 @@ class CameraView(Widget):
       [0.0, 0.0, 1.0]
     ])
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle) -> bool:
+    """Render camera view in rectangle, returns True if frame was rendered."""
     if self._switching:
       self._handle_switch()
 
     if not self._ensure_connection():
       self._draw_placeholder(rect)
-      return
+      return False
 
     # Try to get a new buffer without blocking
     buffer = self.client.recv(timeout_ms=0)
     if buffer:
       self._texture_needs_update = True
       self.frame = buffer
+    elif not gui_app.auto_clear_background:
+      # No need to redraw - previous frame remains visible when background isn't auto-cleared
+      return False
 
     if not self.frame:
       self._draw_placeholder(rect)
-      return
+      return False
+
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
@@ -198,6 +203,8 @@ class CameraView(Widget):
       self._render_egl(src_rect, dst_rect)
     else:
       self._render_textures(src_rect, dst_rect)
+
+    return True
 
   def _draw_placeholder(self, rect: rl.Rectangle):
     if self._placeholder_color:

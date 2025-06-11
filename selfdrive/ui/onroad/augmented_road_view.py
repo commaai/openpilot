@@ -60,6 +60,12 @@ class AugmentedRoadView(CameraView):
     if not ui_state.started:
       return
 
+    # Handle click events if no HUD interaction occurred
+    if not self._hud_renderer.handle_mouse_event():
+      if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+        if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
+          self._click_callback()
+
     self._switch_stream_if_needed(ui_state.sm)
 
     # Update calibration before rendering
@@ -85,8 +91,10 @@ class AugmentedRoadView(CameraView):
       int(self._content_rect.height)
     )
 
-    # Render the base camera view
-    super()._render(rect)
+    # Draw the camera image as the background, aligned using calibration.
+    # If CameraView didn't produce a new frame, skip drawing overlays to save CPU/GPU.
+    if not super()._render(rect):
+      return
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
@@ -99,12 +107,6 @@ class AugmentedRoadView(CameraView):
 
     # End clipping region
     rl.end_scissor_mode()
-
-    # Handle click events if no HUD interaction occurred
-    if not self._hud_renderer.handle_mouse_event():
-      if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-        if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
-          self._click_callback()
 
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
