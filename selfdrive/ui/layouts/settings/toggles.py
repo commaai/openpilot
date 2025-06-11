@@ -53,6 +53,7 @@ class TogglesLayout(Widget):
         button_width=255,
         callback=self._set_longitudinal_personality,
         selected_index=int(self._params.get("LongitudinalPersonality") or 0),
+        icon="speed_limit.png"
       ),
       toggle_item(
         "Enable Lane Departure Warnings",
