@@ -2535,7 +2535,7 @@ class AcadosOcpOptions:
     @property
     def eps_sufficient_descent(self):
         """
-        Factor for sufficient descent (Armijo) conditon, see line_search_use_sufficient_descent.
+        Factor for sufficient descent (Armijo) condition, see line_search_use_sufficient_descent.
         Type: float,
         default: 1e-4.
         """
