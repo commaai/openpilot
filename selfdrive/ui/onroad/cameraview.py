@@ -173,14 +173,14 @@ class CameraView(Widget):
     if buffer:
       self._texture_needs_update = True
       self.frame = buffer
-    elif not gui_app.auto_clear_background:
-      # No need to redraw - previous frame remains visible when background isn't auto-cleared
-      return False
 
     if not self.frame:
       self._draw_placeholder(rect)
       return False
 
+    # If no new frame and background isn't auto-cleared, skip redraw
+    if not buffer and not gui_app.auto_clear_background:
+      return False
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
