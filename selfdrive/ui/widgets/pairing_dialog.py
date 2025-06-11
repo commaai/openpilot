@@ -58,6 +58,7 @@ class PairingDialog:
     current_time = time.time()
     if current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
       self._generate_qr_code()
+      self.last_qr_generation = current_time
 
   def render(self, rect: rl.Rectangle) -> int:
     rl.clear_background(rl.Color(224, 224, 224, 255))
