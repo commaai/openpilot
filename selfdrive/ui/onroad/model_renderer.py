@@ -47,6 +47,8 @@ class LeadVehicle:
 class ModelRenderer(Widget):
   def __init__(self):
     super().__init__()
+
+    self._last_model_frame = -1
     self._longitudinal_control = False
     self._experimental_mode = False
     self._blend_factor = 1.0
@@ -102,7 +104,11 @@ class ModelRenderer(Widget):
     live_calib = sm['liveCalibration']
     self._path_offset_z = live_calib.height[0] if live_calib.height else HEIGHT_INIT[0]
 
-    if sm.updated['carParams']:
+    model_updated = sm.recv_frame["modelV2"] != self._last_model_frame
+    if model_updated:
+      self._last_model_frame = sm.recv_frame["modelV2"]
+
+    if sm.valid['carParams']:
       self._longitudinal_control = sm['carParams'].openpilotLongitudinalControl
 
     model = sm['modelV2']
@@ -111,8 +117,7 @@ class ModelRenderer(Widget):
     render_lead_indicator = self._longitudinal_control and radar_state is not None
 
     # Update model data when needed
-    model_updated = sm.updated['modelV2']
-    if model_updated or sm.updated['radarState'] or self._transform_dirty:
+    if model_updated or self._transform_dirty:
       if model_updated:
         self._update_raw_points(model)
 
