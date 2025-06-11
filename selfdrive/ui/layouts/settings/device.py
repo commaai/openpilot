@@ -12,6 +12,8 @@ from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
+
 
 # Description constants
 DESCRIPTIONS = {
@@ -33,6 +35,7 @@ class DeviceLayout(Widget):
     self._select_language_dialog: MultiOptionDialog | None = None
     self._driver_camera: DriverCameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
+    self._fcc_dialog: HtmlRenderer | None = None
 
     items = self._initialize_items()
     self._list_widget = ListView(items)
@@ -135,5 +138,13 @@ class DeviceLayout(Widget):
       self._pair_device_dialog = PairingDialog()
     gui_app.set_modal_overlay(self._pair_device_dialog, callback=lambda result: setattr(self, '_pair_device_dialog', None))
 
+
+  def _on_regulatory(self):
+    if not self._fcc_dialog:
+      self._fcc_dialog = HtmlRenderer(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+
+    gui_app.set_modal_overlay(self._fcc_dialog,
+      callback=lambda result: setattr(self, '_fcc_dialog', None),
+    )
+
   def _on_review_training_guide(self): pass
-  def _on_regulatory(self): pass
