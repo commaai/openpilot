@@ -1,6 +1,7 @@
 import pyray as rl
 from enum import IntEnum
 
+
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
 INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down

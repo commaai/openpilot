@@ -6,7 +6,7 @@ from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.widget import Widget, MouseState
 
 SIDEBAR_WIDTH = 300
 METRIC_HEIGHT = 126
@@ -135,25 +135,26 @@ class Sidebar(Widget):
     else:
       self._panda_status.update("VEHICLE", "ONLINE", Colors.GOOD)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
-    if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
+  def _on_mouse_clicked(self, mouse: MouseState) -> bool:
+    if mouse.check_clicked(SETTINGS_BTN):
       if self._on_settings_click:
         self._on_settings_click()
-    elif rl.check_collision_point_rec(mouse_pos, HOME_BTN) and ui_state.started:
+      return True
+    elif mouse.check_clicked(HOME_BTN) and ui_state.started:
       if self._on_flag_click:
         self._on_flag_click()
+      return True
+
+    return False
 
   def _draw_buttons(self, rect: rl.Rectangle):
-    mouse_pos = rl.get_mouse_position()
-    mouse_down = self._is_pressed and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
-
     # Settings button
-    settings_down = mouse_down and rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN)
+    settings_down = gui_app.mouse.check_down(SETTINGS_BTN)
     tint = Colors.BUTTON_PRESSED if settings_down else Colors.BUTTON_NORMAL
     rl.draw_texture(self._settings_img, int(SETTINGS_BTN.x), int(SETTINGS_BTN.y), tint)
 
     # Home/Flag button
-    flag_pressed = mouse_down and rl.check_collision_point_rec(mouse_pos, HOME_BTN)
+    flag_pressed = gui_app.mouse.check_down(HOME_BTN)
     button_img = self._flag_img if ui_state.started else self._home_img
 
     tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL

@@ -6,12 +6,14 @@ import time
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
-from openpilot.system.ui.lib.application import FontWeight, gui_app
+from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.mouse_state import MouseState
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.widget import Widget, DialogResult
 
 
-class PairingDialog:
+class PairingDialog(Widget):
   """Dialog for device pairing with QR code."""
 
   QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
@@ -20,6 +22,7 @@ class PairingDialog:
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
     self.last_qr_generation = 0
+    self._close_button: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
 
   def _get_pairing_url(self) -> str:
     try:
@@ -60,7 +63,7 @@ class PairingDialog:
       self._generate_qr_code()
       self.last_qr_generation = current_time
 
-  def render(self, rect: rl.Rectangle) -> int:
+  def _render(self, rect: rl.Rectangle) -> None:
     rl.clear_background(rl.Color(224, 224, 224, 255))
 
     self._check_qr_refresh()
@@ -72,18 +75,11 @@ class PairingDialog:
     # Close button
     close_size = 80
     close_icon = gui_app.texture("icons/close.png", close_size, close_size)
-    close_rect = rl.Rectangle(content_rect.x, y, close_size, close_size)
+    self._close_button = rl.Rectangle(content_rect.x, y, close_size, close_size)
 
-    mouse_pos = rl.get_mouse_position()
-    is_hover = rl.check_collision_point_rec(mouse_pos, close_rect)
-    is_pressed = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
-    is_released = rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-
-    color = rl.Color(180, 180, 180, 150) if (is_hover and is_pressed) else rl.WHITE
+    is_down = gui_app.mouse.check_down(self._close_button)
+    color = rl.Color(180, 180, 180, 150) if is_down else rl.WHITE
     rl.draw_texture(close_icon, int(content_rect.x), int(y), color)
-
-    if (is_hover and is_released) or rl.is_key_pressed(rl.KeyboardKey.KEY_ESCAPE):
-      return 1
 
     y += close_size + 40
 
@@ -109,7 +105,11 @@ class PairingDialog:
     qr_y = content_rect.y
     self._render_qr_code(rl.Rectangle(qr_x, qr_y, qr_size, qr_size))
 
-    return -1
+  def _on_mouse_clicked(self, mouse: MouseState) -> bool:
+    if mouse.check_clicked(self._close_button):
+      gui_app.close_dialog(DialogResult.CANCEL)
+      return True
+    return False
 
   def _render_instructions(self, rect: rl.Rectangle) -> None:
     instructions = [

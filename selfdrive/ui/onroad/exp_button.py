@@ -49,9 +49,8 @@ class ExpButton(Widget):
     center_x = int(self._rect.x + self._rect.width // 2)
     center_y = int(self._rect.y + self._rect.height // 2)
 
-    mouse_over = rl.check_collision_point_rec(rl.get_mouse_position(), self._rect)
-    mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._is_pressed
-    self._white_color.a = 180 if (mouse_down and mouse_over) or not self._engageable else 255
+    is_down = gui_app.mouse.check_down(self._rect)
+    self._white_color.a = 180 if is_down or not self._engageable else 255
 
     texture = self._txt_exp if self._held_or_actual_mode() else self._txt_wheel
     rl.draw_circle(center_x, center_y, self._rect.width / 2, self._black_bg)

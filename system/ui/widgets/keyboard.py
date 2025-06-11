@@ -5,7 +5,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.widget import Widget, DialogResult
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
@@ -103,7 +103,8 @@ class Keyboard(Widget):
     gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
     if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
       self.clear()
-      return 0
+      gui_app.close_dialog(DialogResult.CANCEL)
+      return
 
     # Draw input box and password toggle
     input_margin = 25
@@ -168,11 +169,10 @@ class Keyboard(Widget):
 
         if result:
           if key == ENTER_KEY:
-            return 1
+            gui_app.close_dialog(DialogResult.CONFIRM)
+            return
           else:
             self.handle_key_press(key)
-
-    return -1
 
   def _render_input_area(self, input_rect: rl.Rectangle):
     if self._show_password_toggle:
@@ -225,18 +225,3 @@ class Keyboard(Widget):
       self._input_box.add_char_at_cursor(key)
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
-
-
-if __name__ == "__main__":
-  gui_app.init_window("Keyboard")
-  keyboard = Keyboard(min_text_size=8, show_password_toggle=True)
-  for _ in gui_app.render():
-    keyboard.set_title("Keyboard Input", "Type your text below")
-    result = keyboard.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
-    if result == 1:
-      print(f"You typed: {keyboard.text}")
-      gui_app.request_close()
-    elif result == 0:
-      print("Canceled")
-      gui_app.request_close()
-  gui_app.close()

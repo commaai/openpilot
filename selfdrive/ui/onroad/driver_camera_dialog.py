@@ -6,6 +6,8 @@ from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.mouse_state import MouseState
+from openpilot.system.ui.lib.widget import DialogResult
 
 
 class DriverCameraDialog(CameraView):
@@ -16,9 +18,6 @@ class DriverCameraDialog(CameraView):
   def _render(self, rect):
     super()._render(rect)
 
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      return 1
-
     if not self.frame:
       gui_label(
         rect,
@@ -27,12 +26,14 @@ class DriverCameraDialog(CameraView):
         font_weight=FontWeight.BOLD,
         alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
       )
-      return -1
+      return
 
     self._draw_face_detection(rect)
     self.driver_state_renderer.render(rect)
 
-    return -1
+  def _on_mouse_clicked(self, mouse: MouseState) -> bool:
+    gui_app.close_dialog(DialogResult.NO_ACTION)
+    return True
 
   def _draw_face_detection(self, rect: rl.Rectangle) -> None:
     driver_state = ui_state.sm["driverStateV2"]

@@ -10,7 +10,7 @@ from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.layouts.network import NetworkLayout
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.widget import Widget, MouseState
 
 # Import individual panels
 
@@ -70,7 +70,7 @@ class SettingsLayout(Widget):
   def set_callbacks(self, on_close: Callable):
     self._close_callback = on_close
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle) -> None:
     # Calculate layout
     sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
     panel_rect = rl.Rectangle(rect.x + SIDEBAR_WIDTH, rect.y, rect.width - SIDEBAR_WIDTH, rect.height)
@@ -87,8 +87,7 @@ class SettingsLayout(Widget):
       rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
     )
 
-    pressed = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
-               rl.check_collision_point_rec(rl.get_mouse_position(), close_btn_rect))
+    pressed = gui_app.mouse.check_down(close_btn_rect)
     close_color = CLOSE_BTN_PRESSED if pressed else CLOSE_BTN_COLOR
     rl.draw_rectangle_rounded(close_btn_rect, 1.0, 20, close_color)
 
@@ -132,16 +131,16 @@ class SettingsLayout(Widget):
     if panel.instance:
       panel.instance.render(content_rect)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _on_mouse_clicked(self, mouse: MouseState) -> bool:
     # Check close button
-    if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
+    if mouse.check_clicked(self._close_btn_rect):
       if self._close_callback:
         self._close_callback()
       return True
 
     # Check navigation buttons
     for panel_type, panel_info in self._panels.items():
-      if rl.check_collision_point_rec(mouse_pos, panel_info.button_rect):
+      if mouse.check_clicked(panel_info.button_rect):
         self.set_current_panel(panel_type)
         return True
 

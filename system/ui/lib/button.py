@@ -51,9 +51,6 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.LIST_ACTION: rl.Color(74, 74, 74, 74),
 }
 
-_pressed_buttons: set[str] = set()  # Track mouse press state globally
-
-
 def gui_button(
   rect: rl.Rectangle,
   text: str,
@@ -66,9 +63,6 @@ def gui_button(
   text_padding: int = 20,  # Padding for left/right alignment
   icon=None,
 ) -> int:
-  button_id = f"{rect.x}_{rect.y}_{rect.width}_{rect.height}"
-  result = 0
-
   if button_style in (ButtonStyle.PRIMARY, ButtonStyle.DANGER) and not is_enabled:
     button_style = ButtonStyle.NORMAL
 
@@ -77,27 +71,8 @@ def gui_button(
 
   # Set background color based on button type
   bg_color = BUTTON_BACKGROUND_COLORS[button_style]
-  mouse_over = is_enabled and rl.check_collision_point_rec(rl.get_mouse_position(), rect)
-  is_pressed = button_id in _pressed_buttons
-
-  if mouse_over:
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      # Only this button enters pressed state
-      _pressed_buttons.add(button_id)
-      is_pressed = True
-
-    # Use pressed color when mouse is down over this button
-    if is_pressed and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[button_style]
-
-    # Handle button click
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and is_pressed:
-      result = 1
-      _pressed_buttons.remove(button_id)
-
-  # Clean up pressed state if mouse is released anywhere
-  if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and button_id in _pressed_buttons:
-    _pressed_buttons.remove(button_id)
+  if is_enabled and gui_app.mouse.check_down(rect):
+    bg_color = BUTTON_PRESSED_BACKGROUND_COLORS[button_style]
 
   # Draw the button with rounded corners
   roundness = border_radius / (min(rect.width, rect.height) / 2)
@@ -145,4 +120,8 @@ def gui_button(
     color = BUTTON_TEXT_COLOR[button_style] if is_enabled else BUTTON_DISABLED_TEXT_COLOR
     rl.draw_text_ex(font, text, text_pos, font_size, 0, color)
 
-  return result
+  if is_enabled and gui_app.mouse.check_clicked(rect):
+    gui_app.mouse.consumed = True
+    return 1
+  return 0
+
