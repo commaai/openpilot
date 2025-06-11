@@ -38,7 +38,7 @@ from ..utils import casadi_length, idx_perm_to_ipiv, is_empty
 def reformulate_with_LOS(acados_ocp, gnsf, print_info):
 
     ## Description:
-    # This function takes an intitial transcription of the implicit ODE model
+    # This function takes an initial transcription of the implicit ODE model
     # "model" into "gnsf" and reformulates "gnsf" with a linear output system
     # (LOS), containing as many states of the model as possible.
     # Therefore it might be that the state vector and the implicit function
