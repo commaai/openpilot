@@ -359,7 +359,7 @@ def set_up_imported_gnsf_model(acados_ocp):
     # if not casadi_version == dump_casadi_version:
     #     print("WARNING: GNSF model was dumped with another CasADi version.\n"
     #             + "This might yield errors. Please use the same version for compatibility, serialize version: "
-    #             + dump_casadi_version + " current Python CasADi verison: " + casadi_version)
+    #             + dump_casadi_version + " current Python CasADi version: " + casadi_version)
     #     input("Press any key to attempt to continue...")
 
     # load model
