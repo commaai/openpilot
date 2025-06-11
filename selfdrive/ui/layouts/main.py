@@ -6,6 +6,7 @@ from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.widget import Widget
 
 
@@ -82,6 +83,10 @@ class MainLayout(Widget):
     self._sidebar.set_visible(not self._sidebar.is_visible)
 
   def _render_main_content(self):
+    # Disable auto background clear during ONROAD mode to optimize rendering.
+    # Enable it in other modes to avoid visual artifacts.
+    gui_app.set_auto_clear_background(self._current_mode != MainState.ONROAD)
+
     # Render sidebar
     if self._sidebar.is_visible:
       self._sidebar.render(self._sidebar_rect)

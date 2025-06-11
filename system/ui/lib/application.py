@@ -59,6 +59,7 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+    self._auto_clear_background = True
 
   def request_close(self):
     self._window_close_requested = True
@@ -87,6 +88,18 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+
+  @property
+  def auto_clear_background(self) -> bool:
+    """Check if automatic background clearing is enabled."""
+    return self._auto_clear_background
+
+  def set_auto_clear_background(self, auto_fill: bool):
+    """Enable or disable automatic background clearing."""
+    if auto_fill != self._auto_clear_background:
+      self._auto_clear_background = auto_fill
+      if auto_fill:
+        rl.clear_background(rl.BLACK)
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
@@ -155,9 +168,10 @@ class GuiApplication:
       while not (self._window_close_requested or rl.window_should_close()):
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
-          rl.clear_background(rl.BLACK)
         else:
           rl.begin_drawing()
+
+        if self._auto_clear_background:
           rl.clear_background(rl.BLACK)
 
         # Handle modal overlay rendering and input processing
@@ -181,7 +195,8 @@ class GuiApplication:
         if self._render_texture:
           rl.end_texture_mode()
           rl.begin_drawing()
-          rl.clear_background(rl.BLACK)
+          if self._auto_clear_background:
+            rl.clear_background(rl.BLACK)
           src_rect = rl.Rectangle(0, 0, float(self._width), -float(self._height))
           dst_rect = rl.Rectangle(0, 0, float(self._scaled_width), float(self._scaled_height))
           rl.draw_texture_pro(self._render_texture.texture, src_rect, dst_rect, rl.Vector2(0, 0), 0.0, rl.WHITE)
