@@ -21,7 +21,6 @@ class MainLayout(Widget):
     self._sidebar_visible = True
     self._current_mode = MainState.HOME
     self._prev_onroad = False
-    self._window_rect = None
 
     # Initialize layouts
     self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
@@ -45,7 +44,6 @@ class MainLayout(Widget):
     self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
 
   def _update_layout_rects(self, rect):
-    self._window_rect = rect
     self._sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
 
     x_offset = SIDEBAR_WIDTH if self._sidebar_visible else 0
@@ -85,5 +83,5 @@ class MainLayout(Widget):
     if self._sidebar_visible:
       self._sidebar.render(self._sidebar_rect)
 
-    content_rect = self._content_rect if self._sidebar_visible else self._window_rect
+    content_rect = self._content_rect if self._sidebar_visible else self._rect
     self._layouts[self._current_mode].render(content_rect)
