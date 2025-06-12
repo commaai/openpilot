@@ -59,9 +59,9 @@ class ToggleAction(ItemAction):
     self.toggle = Toggle(initial_state=initial_state)
     self.state = initial_state
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     self.toggle.set_enabled(self.enabled)
-    self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
+    self.toggle.render(rl.Rectangle(self._rect.x, self._rect.y + (self._rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
     return False
 
   def set_state(self, state: bool):
@@ -81,9 +81,9 @@ class ButtonAction(ItemAction):
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     return gui_button(
-      rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
+      rl.Rectangle(self._rect.x, self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
       self.text,
       border_radius=BUTTON_BORDER_RADIUS,
       font_weight=BUTTON_FONT_WEIGHT,
@@ -107,12 +107,12 @@ class TextAction(ItemAction):
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     current_text = self.text
     text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)
 
-    text_x = rect.x + (rect.width - text_size.x) / 2
-    text_y = rect.y + (rect.height - text_size.y) / 2
+    text_x = self._rect.x + (self._rect.width - text_size.x) / 2
+    text_y = self._rect.y + (self._rect.height - text_size.y) / 2
     rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
     return False
 
@@ -128,14 +128,14 @@ class DualButtonAction(ItemAction):
     self.left_text, self.right_text = left_text, right_text
     self.left_callback, self.right_callback = left_callback, right_callback
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     button_spacing = 30
     button_height = 120
-    button_width = (rect.width - button_spacing) / 2
-    button_y = rect.y + (rect.height - button_height) / 2
+    button_width = (self._rect.width - button_spacing) / 2
+    button_y = self._rect.y + (self._rect.height - button_height) / 2
 
-    left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
-    right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
+    left_rect = rl.Rectangle(self._rect.x, button_y, button_width, button_height)
+    right_rect = rl.Rectangle(self._rect.x + button_width + button_spacing, button_y, button_width, button_height)
 
     left_clicked = gui_button(left_rect, self.left_text, button_style=ButtonStyle.LIST_ACTION) == 1
     right_clicked = gui_button(right_rect, self.right_text, button_style=ButtonStyle.DANGER) == 1
@@ -158,13 +158,13 @@ class MultipleButtonAction(ItemAction):
     self.callback = callback
     self._font = gui_app.font(FontWeight.MEDIUM)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     spacing = 20
-    button_y = rect.y + (rect.height - 100) / 2
+    button_y = self._rect.y + (self._rect.height - 100) / 2
     clicked = -1
 
     for i, text in enumerate(self.buttons):
-      button_x = rect.x + i * (self.button_width + spacing)
+      button_x = self._rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, 100)
 
       # Check button state
@@ -273,26 +273,26 @@ class ListView(Widget):
     self._font = gui_app.font(FontWeight.NORMAL)
     self._hovered_item = -1
 
-  def _render(self, rect: rl.Rectangle):
-    total_height = self._update_item_rects(rect)
+  def _render(self):
+    total_height = self._update_item_rects()
 
     # Update layout and handle scrolling
-    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, total_height)
-    scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
+    content_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, total_height)
+    scroll_offset = self.scroll_panel.handle_scroll(self._rect, content_rect)
 
     # Handle mouse interaction
     if self.scroll_panel.is_click_valid():
-      self._handle_mouse_interaction(rect, scroll_offset)
+      self._handle_mouse_interaction(scroll_offset)
 
     # Set scissor mode for clipping
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
 
     for i, item in enumerate(self._items):
       if not item.is_visible:
         continue
 
       y = int(item.rect.y + scroll_offset.y)
-      if y + item.rect.height <= rect.y or y >= rect.y + rect.height:
+      if y + item.rect.height <= self._rect.y or y >= self._rect.y + self._rect.height:
         continue
 
       self._render_item(item, y)
@@ -317,16 +317,16 @@ class ListView(Widget):
         return i
     return None
 
-  def _update_item_rects(self, container_rect: rl.Rectangle) -> float:
+  def _update_item_rects(self) -> float:
     current_y = 0.0
     for item in self._items:
       if not item.is_visible:
-        item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, 0)
+        item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, 0)
         continue
 
-      content_width = item.get_content_width(int(container_rect.width - ITEM_PADDING * 2))
+      content_width = item.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
       item_height = item.get_item_height(self._font, content_width)
-      item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height)
+      item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, item_height)
       current_y += item_height
     return current_y  # total height of all items
 
@@ -368,14 +368,14 @@ class ListView(Widget):
         if item.callback:
           item.callback()
 
-  def _handle_mouse_interaction(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
+  def _handle_mouse_interaction(self, scroll_offset: rl.Vector2):
     mouse_pos = rl.get_mouse_position()
 
     self._hovered_item = -1
-    if not rl.check_collision_point_rec(mouse_pos, rect):
+    if not rl.check_collision_point_rec(mouse_pos, self._rect):
       return
 
-    content_mouse_y = mouse_pos.y - rect.y - scroll_offset.y
+    content_mouse_y = mouse_pos.y - self._rect.y - scroll_offset.y
 
     for i, item in enumerate(self._items):
       if not item.is_visible:
@@ -384,13 +384,13 @@ class ListView(Widget):
       if item.rect:
         # Check if mouse is within this item's bounds in content space
         if (
-          mouse_pos.x >= rect.x
-          and mouse_pos.x <= rect.x + rect.width
+          mouse_pos.x >= self._rect.x
+          and mouse_pos.x <= self._rect.x + self._rect.width
           and content_mouse_y >= item.rect.y
           and content_mouse_y <= item.rect.y + item.rect.height
         ):
           item_screen_y = item.rect.y + scroll_offset.y
-          if item_screen_y < rect.height and item_screen_y + item.rect.height > 0:
+          if item_screen_y < self._rect.height and item_screen_y + item.rect.height > 0:
             self._hovered_item = i
             break
 

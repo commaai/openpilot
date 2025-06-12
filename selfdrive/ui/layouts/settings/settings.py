@@ -70,10 +70,10 @@ class SettingsLayout(Widget):
   def set_callbacks(self, on_close: Callable):
     self._close_callback = on_close
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     # Calculate layout
-    sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
-    panel_rect = rl.Rectangle(rect.x + SIDEBAR_WIDTH, rect.y, rect.width - SIDEBAR_WIDTH, rect.height)
+    sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
+    panel_rect = rl.Rectangle(self._rect.x + SIDEBAR_WIDTH, self._rect.y, self._rect.width - SIDEBAR_WIDTH, self._rect.height)
 
     # Draw components
     self._draw_sidebar(sidebar_rect)
@@ -84,7 +84,7 @@ class SettingsLayout(Widget):
 
     # Close button
     close_btn_rect = rl.Rectangle(
-      rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
+      self._rect.x + (self._rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
     )
 
     pressed = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
