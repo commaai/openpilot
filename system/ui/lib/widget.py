@@ -2,20 +2,12 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
-from typing import TypeVar
 
 
 class DialogResult(IntEnum):
   CANCEL = 0
   CONFIRM = 1
   NO_ACTION = -1
-
-
-T = TypeVar("T")
-
-
-def _resolve_value(value: T | Callable[[], T]) -> T:
-  return value() if callable(value) else value
 
 
 class Widget(abc.ABC):
@@ -26,7 +18,7 @@ class Widget(abc.ABC):
 
   @property
   def is_visible(self) -> bool:
-    return _resolve_value(self._is_visible)
+    return self._is_visible() if callable(self._is_visible) else self._is_visible
 
   def set_visible(self, visible: bool | Callable[[], bool]) -> None:
     self._is_visible = visible
