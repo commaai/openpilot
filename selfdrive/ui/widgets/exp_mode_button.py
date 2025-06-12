@@ -27,9 +27,9 @@ class ExperimentalModeButton(Widget):
     else:
       return rl.Color(20, 255, 171, alpha), rl.Color(35, 149, 255, alpha)
 
-  def _draw_gradient_background(self, rect):
+  def _draw_gradient_background(self):
     start_color, end_color = self._get_gradient_colors()
-    rl.draw_rectangle_gradient_h(int(rect.x), int(rect.y), int(rect.width), int(rect.height),
+    rl.draw_rectangle_gradient_h(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height),
                                  start_color, end_color)
 
   def _handle_interaction(self):
@@ -48,7 +48,7 @@ class ExperimentalModeButton(Widget):
     rl.draw_rectangle_rounded(self._rect, 0.08, 20, rl.Color(255, 255, 255, 255))
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
-    self._draw_gradient_background(self._rect)
+    self._draw_gradient_background()
     rl.end_scissor_mode()
 
     # Draw vertical separator line

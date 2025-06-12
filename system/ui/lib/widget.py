@@ -18,20 +18,8 @@ class Widget(abc.ABC):
     self._rect = rect
 
   @property
-  def height2(self) -> int:
-    return self._rect.height if self._rect else 0
-
-  @property
-  def width2(self) -> int:
-    return self._rect.width if self._rect else 0
-
-  @property
-  def x2(self) -> int:
-    return self._rect.x if self._rect else 0
-
-  @property
-  def y2(self) -> int:
-    return self._rect.y if self._rect else 0
+  def rect(self) -> rl.Rectangle:
+    return self._rect
 
   def render(self, rect: type(rl.Rectangle) | None = None) -> bool | int | None:
     if rect is not None:
