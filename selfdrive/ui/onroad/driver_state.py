@@ -76,10 +76,10 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def _render(self, rect):
-    if not self._is_visible(ui_state.sm):
-      return
+    self.set_visible(lambda: (ui_state.sm.recv_frame['driverStateV2'] > ui_state.started_frame and
+                              ui_state.sm.seen['driverMonitoringState']))
 
+  def _render(self, rect):
     self._update_state(ui_state.sm, rect)
     if not self.state_updated:
       return
@@ -107,11 +107,6 @@ class DriverStateRenderer(Widget):
       rl.draw_spline_linear(self.h_arc_lines, len(self.h_arc_lines), self.h_arc_data.thickness, self.arc_color)
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
-
-  def _is_visible(self, sm):
-    """Check if the visualization should be rendered."""
-    return (sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-            sm.seen['driverMonitoringState'])
 
   def _update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
