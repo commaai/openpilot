@@ -24,11 +24,8 @@ class Widget(abc.ABC):
     self._is_visible = visible
 
   def set_rect(self, rect: rl.Rectangle) -> None:
-    prev_rect = self._rect
     self._rect = rect
-    if (rect.x != prev_rect.x or rect.y != prev_rect.y or
-        rect.width != prev_rect.width or rect.height != prev_rect.height):
-      self._update_layout_rects()
+    self._update_layout_rects()
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:

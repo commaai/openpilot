@@ -84,7 +84,6 @@ class HomeLayout(Widget):
       self._render_alerts_view()
 
   def _update_layout_rects(self):
-    print('hi2')
     self.header_rect = rl.Rectangle(
       self._rect.x + CONTENT_MARGIN, self._rect.y + CONTENT_MARGIN, self._rect.width - 2 * CONTENT_MARGIN, HEADER_HEIGHT
     )
