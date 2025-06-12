@@ -28,7 +28,7 @@ if __name__ == "__main__":
       Opt(op=OptOps.LOCAL, axis=1, amt=2),
       Opt(op=OptOps.LOCAL, axis=0, amt=2),
     ]
-  for opt in opts: k.apply_opt(opt)
+  k.apply_opts(opts)
   prg = k.to_program()
   new_src = prg.src
   # can mod source here

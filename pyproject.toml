@@ -26,7 +26,7 @@ dependencies = [
   "pycapnp",
   "Cython",
   "setuptools",
-  "numpy < 2.0.0",
+  "numpy >=2.0, <2.2", # Linting issues with mypy in 2.2
 
   # body / webrtcd
   "aiohttp",
@@ -47,6 +47,7 @@ dependencies = [
   # logging
   "pyzmq",
   "sentry-sdk",
+  "xattr", # used in place of 'os.getxattr' for macos compatibility
 
   # athena
   "PyJWT",
@@ -122,7 +123,7 @@ tools = [
 ]
 
 [project.urls]
-Homepage = "https://comma.ai"
+Homepage = "https://github.com/commaai/openpilot"
 
 [build-system]
 requires = ["hatchling"]
@@ -168,9 +169,9 @@ testpaths = [
 [tool.codespell]
 quiet-level = 3
 # if you've got a short variable name that's getting flagged, add it here
-ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl"
+ignore-words-list = "bu,ro,te,ue,alo,hda,ois,nam,nams,ned,som,parm,setts,inout,warmup,bumb,nd,sie,preints,whit,indexIn,ws,uint,grey,deque,stdio,amin,BA,LITE,atEnd,UIs,errorString,arange,FocusIn,od,tim,relA,hist,copyable,jupyter,thead,TGE,abl,lite"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
-skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*"
+skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, ./opendbc/*, ./opendbc_repo/*, ./rednose/*, ./rednose_repo/*, ./teleoprtc/*, ./teleoprtc_repo/*, *.ts, uv.lock, *.onnx, ./cereal/gen/*, */c_generated_code/*, docs/assets/*"
 
 [tool.mypy]
 python_version = "3.11"

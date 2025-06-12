@@ -2,13 +2,12 @@
 import os
 if "NOOPT" not in os.environ: os.environ["NOOPT"] = "1"
 from tinygrad import Device, nn, Tensor, dtypes, Variable
-Device.DEFAULT = "CLANG"
+Device.DEFAULT = "CPU"
 from train_gpt2 import GPT, GPTConfig
 from tinygrad.helpers import dedup, to_function_name, flatten, getenv, GlobalCounters, ansilen, to_function_name
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.engine.realize import get_kernel, run_schedule
 from tinygrad.engine.memory import memory_planner
-from tinygrad.ops import Ops
+from tinygrad.uop.ops import Ops
 
 TIMING = getenv("TIMING")
 
@@ -26,7 +25,7 @@ if __name__ == "__main__":
   Tensor.training = True
   optimizer = nn.optim.Adam(nn.state.get_parameters(model), lr=1e-4)
   warmup_count = getenv("WARMUP", 3)
-  for i in range(warmup_count):  # TODO: why does it take three and not two to stablize
+  for i in range(warmup_count):  # TODO: why does it take three and not two to stabilize
     GlobalCounters.reset()
     X = Tensor.empty(4, 64, dtype=dtypes.int).reshape(B, T)
     Y = Tensor.empty(4, 64, dtype=dtypes.int).reshape(B, T)
@@ -37,16 +36,16 @@ if __name__ == "__main__":
       tensors = optimizer.schedule_step()
     else:
       tensors = []
-    sched = create_schedule([loss.lazydata] + [x.lazydata for x in tensors])
+    sched = loss.schedule(*tensors)
     print(f"calls {i}:", len(sched))
     #run_schedule(sched[:])
   sched = memory_planner(sched)
   ast_dedup = dedup([si.ast for si in sched if si.ast.op is Ops.SINK])
   srcs = {}
   for ast in ast_dedup:
-    k = get_kernel(Device["CLANG"].renderer, ast)
+    k = get_kernel(Device["CPU"].renderer, ast)
     k.linearize()
-    src = Device["CLANG"].renderer.render(to_function_name(k.name), k.uops)
+    src = Device["CPU"].renderer.render(to_function_name(k.name), k.uops)
     srcs[ast] = (k.name, src)
   print("functions:", len(srcs))
   used_buffers = dedup(flatten([si.bufs for si in sched]))

@@ -5,6 +5,7 @@ import sys
 import threading
 from enum import IntEnum
 
+from openpilot.system.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label, gui_text_box
@@ -31,7 +32,10 @@ class Reset:
     self.mode = mode
     self.reset_state = ResetState.NONE
 
-  def do_reset(self):
+  def _do_erase(self):
+    if PC:
+      return
+
     # Best effort to wipe NVME
     os.system(f"sudo umount {NVME}")
     os.system(f"yes | sudo mkfs.ext4 {NVME}")
@@ -48,7 +52,7 @@ class Reset:
 
   def start_reset(self):
     self.reset_state = ResetState.RESETTING
-    threading.Timer(0.1, self.do_reset).start()
+    threading.Timer(0.1, self._do_erase).start()
 
   def render(self, rect: rl.Rectangle):
     label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)

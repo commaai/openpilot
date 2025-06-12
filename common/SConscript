@@ -4,13 +4,9 @@ common_libs = [
   'params.cc',
   'swaglog.cc',
   'util.cc',
-  'i2c.cc',
   'watchdog.cc',
   'ratekeeper.cc'
 ]
-
-if arch != "Darwin":
-  common_libs.append('gpio.cc')
 
 _common = env.Library('common', common_libs, LIBS="json11")
 

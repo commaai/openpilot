@@ -1,0 +1,15 @@
+name: Run process replay tests
+description: Verify process replay compared to master
+runs:
+  using: "composite"
+  steps:
+    - name: Run process replay tests
+      shell: bash
+      run: |
+        export PR_TITLE=$(jq -r .pull_request.title "$GITHUB_EVENT_PATH")
+        export CURRENT_SHA=${{ github.event.pull_request && github.event.pull_request.head.sha || github.sha }}
+        git fetch origin $CURRENT_SHA
+        export COMMIT_MESSAGE=$(git show -s --format=%B "$CURRENT_SHA")
+        export CURRENT_HEAD=$(git rev-parse HEAD)
+        cp test/external/process_replay/process_replay.py ./process_replay.py && git fetch origin master && git -c advice.detachedHead=false checkout origin/master && PYTHONPATH=. python3 process_replay.py
+        git checkout $CURRENT_HEAD  # restore to branch

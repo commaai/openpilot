@@ -7,6 +7,7 @@ from tinygrad import nn, Tensor, dtypes
 from tinygrad.tensor import _to_np_dtype
 from tinygrad.helpers import get_child, fetch
 from tinygrad.nn.state import torch_load
+from examples.mlperf.helpers import BoxCoder
 from extra.models.resnet import ResNet
 from extra.models.retinanet import nms as _box_nms
 
@@ -501,64 +502,6 @@ class RPNHead:
       logits.append(self.cls_logits(t))
       bbox_reg.append(self.bbox_pred(t))
     return logits, bbox_reg
-
-
-class BoxCoder(object):
-  def __init__(self, weights, bbox_xform_clip=math.log(1000. / 16)):
-    self.weights = weights
-    self.bbox_xform_clip = bbox_xform_clip
-
-  def encode(self, reference_boxes, proposals):
-    TO_REMOVE = 1  # TODO remove
-    ex_widths = proposals[:, 2] - proposals[:, 0] + TO_REMOVE
-    ex_heights = proposals[:, 3] - proposals[:, 1] + TO_REMOVE
-    ex_ctr_x = proposals[:, 0] + 0.5 * ex_widths
-    ex_ctr_y = proposals[:, 1] + 0.5 * ex_heights
-
-    gt_widths = reference_boxes[:, 2] - reference_boxes[:, 0] + TO_REMOVE
-    gt_heights = reference_boxes[:, 3] - reference_boxes[:, 1] + TO_REMOVE
-    gt_ctr_x = reference_boxes[:, 0] + 0.5 * gt_widths
-    gt_ctr_y = reference_boxes[:, 1] + 0.5 * gt_heights
-
-    wx, wy, ww, wh = self.weights
-    targets_dx = wx * (gt_ctr_x - ex_ctr_x) / ex_widths
-    targets_dy = wy * (gt_ctr_y - ex_ctr_y) / ex_heights
-    targets_dw = ww * Tensor.log(gt_widths / ex_widths)
-    targets_dh = wh * Tensor.log(gt_heights / ex_heights)
-
-    targets = Tensor.stack(targets_dx, targets_dy, targets_dw, targets_dh, dim=1)
-    return targets
-
-  def decode(self, rel_codes, boxes):
-    boxes = boxes.cast(rel_codes.dtype)
-    rel_codes = rel_codes
-
-    TO_REMOVE = 1  # TODO remove
-    widths = boxes[:, 2] - boxes[:, 0] + TO_REMOVE
-    heights = boxes[:, 3] - boxes[:, 1] + TO_REMOVE
-    ctr_x = boxes[:, 0] + 0.5 * widths
-    ctr_y = boxes[:, 1] + 0.5 * heights
-
-    wx, wy, ww, wh = self.weights
-    dx = rel_codes[:, 0::4] / wx
-    dy = rel_codes[:, 1::4] / wy
-    dw = rel_codes[:, 2::4] / ww
-    dh = rel_codes[:, 3::4] / wh
-
-    # Prevent sending too large values into Tensor.exp()
-    dw = dw.clip(min_=dw.min(), max_=self.bbox_xform_clip)
-    dh = dh.clip(min_=dh.min(), max_=self.bbox_xform_clip)
-
-    pred_ctr_x = dx * widths[:, None] + ctr_x[:, None]
-    pred_ctr_y = dy * heights[:, None] + ctr_y[:, None]
-    pred_w = dw.exp() * widths[:, None]
-    pred_h = dh.exp() * heights[:, None]
-    x = pred_ctr_x - 0.5 * pred_w
-    y = pred_ctr_y - 0.5 * pred_h
-    w = pred_ctr_x + 0.5 * pred_w - 1
-    h = pred_ctr_y + 0.5 * pred_h - 1
-    pred_boxes = Tensor.stack(x, y, w, h).permute(1,2,0).reshape(rel_codes.shape[0], rel_codes.shape[1])
-    return pred_boxes
 
 
 def boxlist_nms(boxlist, nms_thresh, max_proposals=-1, score_field="scores"):
@@ -1166,7 +1109,7 @@ class Mask:
 
   def __call__(self, features, proposals, targets=None):
     x = self.feature_extractor(features, proposals)
-    if x:
+    if x is not None:
       mask_logits = self.predictor(x)
       if not Tensor.training:
         result = self.post_processor(mask_logits, proposals)

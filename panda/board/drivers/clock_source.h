@@ -1,10 +1,15 @@
 #include "clock_source_declarations.h"
 
-void clock_source_set_period(uint8_t period) {
-  register_set(&(TIM1->ARR), ((period*10U) - 1U), 0xFFFFU);
+void clock_source_set_timer_params(uint16_t param1, uint16_t param2) {
+  // Pulse length of each channel
+  register_set(&(TIM1->CCR1), (((param1 & 0xFF00U) >> 8U)*10U), 0xFFFFU);
+  register_set(&(TIM1->CCR2), ((param1 & 0x00FFU)*10U), 0xFFFFU);
+  register_set(&(TIM1->CCR3), (((param2 & 0xFF00U) >> 8U)*10U), 0xFFFFU);
+  // Timer period
+  register_set(&(TIM1->ARR),  (((param2 & 0x00FFU)*10U) - 1U), 0xFFFFU);
 }
 
-void clock_source_init(void) {
+void clock_source_init(bool enable_channel1) {
   // Setup timer
   register_set(&(TIM1->PSC), ((APB2_TIMER_FREQ*100U)-1U), 0xFFFFU);           // Tick on 0.1 ms
   register_set(&(TIM1->ARR), ((CLOCK_SOURCE_PERIOD_MS*10U) - 1U), 0xFFFFU);   // Period
@@ -21,11 +26,14 @@ void clock_source_init(void) {
   NVIC_DisableIRQ(TIM1_CC_IRQn);
 
   // Set GPIO as timer channels
+  if (enable_channel1) {
+    set_gpio_alternate(GPIOA, 8, GPIO_AF1_TIM1);
+  }
   set_gpio_alternate(GPIOB, 14, GPIO_AF1_TIM1);
   set_gpio_alternate(GPIOB, 15, GPIO_AF1_TIM1);
 
   // Set PWM mode
-  register_set(&(TIM1->CCMR1), (0b110UL << TIM_CCMR1_OC2M_Pos), 0xFFFFU);
+  register_set(&(TIM1->CCMR1), (0b110UL << TIM_CCMR1_OC1M_Pos) | (0b110UL << TIM_CCMR1_OC2M_Pos), 0xFFFFU);
   register_set(&(TIM1->CCMR2), (0b110UL << TIM_CCMR2_OC3M_Pos), 0xFFFFU);
 
   // Enable output

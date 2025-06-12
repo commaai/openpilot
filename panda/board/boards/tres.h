@@ -9,7 +9,7 @@
 static bool tres_ir_enabled;
 static bool tres_fan_enabled;
 static void tres_update_fan_ir_power(void) {
-  red_chiplet_set_fan_or_usb_load_switch(tres_ir_enabled || tres_fan_enabled);
+  set_gpio_output(GPIOD, 3, tres_ir_enabled || tres_fan_enabled);
 }
 
 static void tres_set_ir_power(uint8_t percentage){
@@ -29,6 +29,67 @@ static void tres_set_fan_enabled(bool enabled) {
   tres_update_fan_ir_power();
 }
 
+static void tres_enable_can_transceiver(uint8_t transceiver, bool enabled) {
+  switch (transceiver) {
+    case 1U:
+      set_gpio_output(GPIOG, 11, !enabled);
+      break;
+    case 2U:
+      set_gpio_output(GPIOB, 10, !enabled);
+      break;
+    case 3U:
+      set_gpio_output(GPIOD, 7, !enabled);
+      break;
+    case 4U:
+      set_gpio_output(GPIOB, 11, !enabled);
+      break;
+    default:
+      break;
+  }
+}
+
+static void tres_set_can_mode(uint8_t mode) {
+  current_board->enable_can_transceiver(2U, false);
+  current_board->enable_can_transceiver(4U, false);
+  switch (mode) {
+    case CAN_MODE_NORMAL:
+    case CAN_MODE_OBD_CAN2:
+      if ((bool)(mode == CAN_MODE_NORMAL) != (bool)(harness.status == HARNESS_STATUS_FLIPPED)) {
+        // B12,B13: disable normal mode
+        set_gpio_pullup(GPIOB, 12, PULL_NONE);
+        set_gpio_mode(GPIOB, 12, MODE_ANALOG);
+
+        set_gpio_pullup(GPIOB, 13, PULL_NONE);
+        set_gpio_mode(GPIOB, 13, MODE_ANALOG);
+
+        // B5,B6: FDCAN2 mode
+        set_gpio_pullup(GPIOB, 5, PULL_NONE);
+        set_gpio_alternate(GPIOB, 5, GPIO_AF9_FDCAN2);
+
+        set_gpio_pullup(GPIOB, 6, PULL_NONE);
+        set_gpio_alternate(GPIOB, 6, GPIO_AF9_FDCAN2);
+        current_board->enable_can_transceiver(2U, true);
+      } else {
+        // B5,B6: disable normal mode
+        set_gpio_pullup(GPIOB, 5, PULL_NONE);
+        set_gpio_mode(GPIOB, 5, MODE_ANALOG);
+
+        set_gpio_pullup(GPIOB, 6, PULL_NONE);
+        set_gpio_mode(GPIOB, 6, MODE_ANALOG);
+        // B12,B13: FDCAN2 mode
+        set_gpio_pullup(GPIOB, 12, PULL_NONE);
+        set_gpio_alternate(GPIOB, 12, GPIO_AF9_FDCAN2);
+
+        set_gpio_pullup(GPIOB, 13, PULL_NONE);
+        set_gpio_alternate(GPIOB, 13, GPIO_AF9_FDCAN2);
+        current_board->enable_can_transceiver(4U, true);
+      }
+      break;
+    default:
+      break;
+  }
+}
+
 static bool tres_read_som_gpio (void) {
   return (get_gpio_input(GPIOC, 2) != 0);
 }
@@ -39,7 +100,7 @@ static void tres_init(void) {
   register_set_bits(&(PWR->CR3), PWR_CR3_USB33DEN);
   while ((PWR->CR3 & PWR_CR3_USB33RDY) == 0U);
 
-  red_chiplet_init();
+  common_init_gpio();
 
   // C2: SOM GPIO used as input (fan control at boot)
   set_gpio_mode(GPIOC, 2, MODE_INPUT);
@@ -53,9 +114,6 @@ static void tres_init(void) {
   // SOM debugging UART
   gpio_uart7_init();
   uart_init(&uart_ring_som_debug, 115200);
-
-  // SPI init
-  gpio_spi_init();
 
   // fan setup
   set_gpio_alternate(GPIOC, 8, GPIO_AF2_TIM3);
@@ -71,12 +129,25 @@ static void tres_init(void) {
   register_set_bits(&(GPIOC->OTYPER), GPIO_OTYPER_OT10 | GPIO_OTYPER_OT11); // open drain
 
   // Clock source
-  clock_source_init();
+  clock_source_init(false);
 }
 
+static harness_configuration tres_harness_config = {
+  .has_harness = true,
+  .GPIO_SBU1 = GPIOC,
+  .GPIO_SBU2 = GPIOA,
+  .GPIO_relay_SBU1 = GPIOA,
+  .GPIO_relay_SBU2 = GPIOA,
+  .pin_SBU1 = 4,
+  .pin_SBU2 = 1,
+  .pin_relay_SBU1 = 8,
+  .pin_relay_SBU2 = 3,
+  .adc_channel_SBU1 = 4, // ADC12_INP4
+  .adc_channel_SBU2 = 17 // ADC1_INP17
+};
+
 board board_tres = {
-  .harness_config = &red_chiplet_harness_config,
-  .has_obd = true,
+  .harness_config = &tres_harness_config,
   .has_spi = true,
   .has_canfd = true,
   .fan_max_rpm = 6600U,
@@ -86,10 +157,10 @@ board board_tres = {
   .fan_enable_cooldown_time = 3U,
   .init = tres_init,
   .init_bootloader = unused_init_bootloader,
-  .enable_can_transceiver = red_chiplet_enable_can_transceiver,
-  .enable_can_transceivers = red_chiplet_enable_can_transceivers,
-  .set_led = red_set_led,
-  .set_can_mode = red_chiplet_set_can_mode,
+  .enable_can_transceiver = tres_enable_can_transceiver,
+  .led_GPIO = {GPIOE, GPIOE, GPIOE},
+  .led_pin = {4, 3, 2},
+  .set_can_mode = tres_set_can_mode,
   .check_ignition = red_check_ignition,
   .read_voltage_mV = red_read_voltage_mV,
   .read_current_mA = unused_read_current,

@@ -14,6 +14,7 @@ from examples.hlb_cifar10 import SpeedyResNet, hyp
 from examples.llama import Transformer as LLaMaTransformer
 from examples.stable_diffusion import UNetModel, unet_params
 from extra.models.unet import ResBlock
+from extra.models.bert import BertForPretraining
 
 global_mem_used = 0
 def helper_test(nm, gen, model, max_memory_allowed, max_kernels_allowed, all_jitted=False):
@@ -33,7 +34,7 @@ def helper_test(nm, gen, model, max_memory_allowed, max_kernels_allowed, all_jit
     kernels_used = len(model.jit_cache) if hasattr(model, "jit_cache") else None
     print(f"{nm}: used {mem_used/1e9:.2f} GB and {kernels_used} kernels in {min(tms)/1e6:.2f} ms")
     assert mem_used/1e9 < max_memory_allowed, f"{nm} used more than {max_memory_allowed:.2f} GB - {mem_used/1e9:.2} GB used"
-    assert not kernels_used or kernels_used <= max_kernels_allowed, f"{nm} used more than {max_kernels_allowed} kernels"
+    assert not kernels_used or kernels_used <= max_kernels_allowed, f"{nm} used more than {max_kernels_allowed} kernels, it used {kernels_used}"
     if all_jitted:
       assert kernels_used > 0 and kernels_used == GlobalCounters.kernel_count or (kernels_used <= GlobalCounters.kernel_count and getattr(Device[Device.DEFAULT], "graph", None)), f"only {kernels_used} out of {GlobalCounters.kernel_count} were jitted"  # noqa: E501
 
@@ -48,7 +49,7 @@ class TestRealWorld(unittest.TestCase):
   def tearDown(self):
     dtypes.default_float = self.old_float
 
-  @unittest.skipIf(CI and Device.DEFAULT == "CLANG", "slow, covered by METAL")
+  @unittest.skipIf(CI and Device.DEFAULT == "CPU", "slow, covered by METAL")
   @unittest.skipUnless(is_dtype_supported(dtypes.float16), "need dtypes.float16")
   def test_stable_diffusion(self):
     params = unet_params
@@ -60,7 +61,7 @@ class TestRealWorld(unittest.TestCase):
     derandomize_model(model)
     @TinyJit
     def test(t, t2): return model(t, Tensor([801]), t2).realize()
-    helper_test("test_sd", lambda: (Tensor.randn(1, 4, 64, 64),Tensor.randn(1, 77, params["ctx_dim"])), test, 18.0, 513)
+    helper_test("test_sd", lambda: (Tensor.randn(1, 4, 64, 64),Tensor.randn(1, 77, params["ctx_dim"])), test, 18.0, 515)
 
   def test_unet_resblock(self):
     model = [ResBlock(16, 24, 16) for _ in range(4)]
@@ -95,7 +96,7 @@ class TestRealWorld(unittest.TestCase):
       with Context(JIT=0): return model(t, v).realize()
     helper_test("test_gpt2", lambda: (Tensor([[1,]]),Variable("pos", 1, 100).bind(1)), test, 0.23 if CI else 0.9, 137 if CI else 396, all_jitted=True)
 
-  @unittest.skipIf(CI and Device.DEFAULT == "CLANG", "slow")
+  @unittest.skipIf(CI and Device.DEFAULT == "CPU", "slow")
   def test_train_mnist(self):
     from examples.beautiful_mnist import Model
     with Tensor.train():
@@ -111,9 +112,9 @@ class TestRealWorld(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
-      helper_test("train_mnist", lambda: (Tensor.randn(BS, 1, 28, 28),), train, 0.07, 63)
+      helper_test("train_mnist", lambda: (Tensor.randn(BS, 1, 28, 28),), train, 0.07, 93)
 
-  @unittest.skipIf(CI and Device.DEFAULT in {"CLANG", "GPU", "LLVM"}, "slow")
+  @unittest.skipIf(CI and Device.DEFAULT in {"CPU", "GPU", "LLVM"}, "slow")
   def test_train_cifar(self):
     with Tensor.train():
       model = SpeedyResNet(Tensor.ones((12,3,2,2)))
@@ -128,7 +129,7 @@ class TestRealWorld(unittest.TestCase):
         loss.backward()
         optimizer.step()
 
-      helper_test("train_cifar", lambda: (Tensor.randn(BS, 3, 32, 32),), train, (1.0/48)*BS, 123)
+      helper_test("train_cifar", lambda: (Tensor.randn(BS, 3, 32, 32),), train, (1.0/48)*BS, 126)
 
   @unittest.skipUnless(is_dtype_supported(dtypes.float16), "need dtypes.float16")
   def test_train_cifar_hyp(self):
@@ -142,6 +143,33 @@ class TestRealWorld(unittest.TestCase):
       lr_scheduler = OneCycleLR(optimizer, max_lr=hyp['opt']['bias_lr'], pct_start=pct_start, div_factor=initial_div_factor,
                                 final_div_factor=1./(initial_div_factor*final_lr_ratio), total_steps=4)
       assert not np.isnan(lr_scheduler.min_lr), "lr too small or initial_div_facotr too big for half"
+
+  def test_bert(self):
+    with Tensor.train():
+      args_tiny = {"attention_probs_dropout_prob": 0.0, "hidden_dropout_prob": 0.0, "vocab_size": 30522, "type_vocab_size": 2,
+                  "max_position_embeddings": 512, "hidden_size": 128, "intermediate_size": 512, "num_attention_heads": 2, "num_hidden_layers": 2}
+      model = BertForPretraining(**args_tiny)
+      optimizer = optim.LAMB(get_parameters(model))
+
+      @TinyJit
+      def train(input_ids:Tensor, segment_ids:Tensor, attention_mask:Tensor,
+                masked_positions:Tensor, masked_lm_ids:Tensor, masked_lm_weights:Tensor, next_sentence_labels:Tensor):
+        lm_logits, seq_relationship_logits = model(input_ids, attention_mask, masked_positions, segment_ids)
+        loss = model.loss(lm_logits, seq_relationship_logits, masked_lm_ids, masked_lm_weights, next_sentence_labels)
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+      from examples.mlperf.helpers import get_fake_data_bert
+      data = get_fake_data_bert(BS=4)
+      for v in data.values(): v.to_(Device.DEFAULT)
+
+      helper_test("train_bert", lambda: (data["input_ids"], data["segment_ids"], data["input_mask"], data["masked_lm_positions"], \
+          data["masked_lm_ids"], data["masked_lm_weights"], data["next_sentence_labels"]), train, 0.25, 346)
+
+  def test_bert_fuse_arange(self):
+    with Context(FUSE_ARANGE=1):
+      self.test_bert()
 
 if __name__ == '__main__':
   unittest.main()

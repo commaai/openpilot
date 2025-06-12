@@ -28,7 +28,7 @@ class Keyboard:
     key = self.kb.getch().lower()
     self.cancel = False
     if key == 'r':
-      self.axes_values = {ax: 0. for ax in self.axes_values}
+      self.axes_values = dict.fromkeys(self.axes_values, 0.)
     elif key == 'c':
       self.cancel = True
     elif key in self.axes_map:
@@ -65,7 +65,7 @@ class Joystick:
     try:
       joystick_event = get_gamepad()[0]
     except (OSError, UnpluggedError):
-      self.axes_values = {ax: 0. for ax in self.axes_values}
+      self.axes_values = dict.fromkeys(self.axes_values, 0.)
       return False
 
     event = (joystick_event.code, joystick_event.state)

@@ -63,10 +63,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation type="unfinished"></translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation type="unfinished">için &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -286,6 +306,14 @@
         <source>PAIR</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -326,10 +354,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to unmetered network</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -338,6 +362,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation type="unfinished">
             <numerusform></numerusform>
         </translation>
+    </message>
+    <message>
+        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -366,13 +394,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>
             <numerusform>En az %n karakter gerekli!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Yükleniyor...</translation>
     </message>
 </context>
 <context>
@@ -569,14 +590,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Reboot</source>
-        <translation>Yeniden başlat</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation>Çık</translation>
-    </message>
     <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
@@ -1007,10 +1020,6 @@ This may take up to a minute.</source>
         <translation>openpilot&apos;u aktifleştir</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Ayarlanabilir hız sabitleyici ve şeritte kalma yardımı için openpilot sistemini kullanın. Bu özelliği kullanırken her zaman dikkatli olmanız gerekiyor. Bu ayarın değiştirilmesi için araç kapatılıp açılması gerekiyor.</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>Şerit ihlali uyarı alın</translation>
     </message>
@@ -1108,6 +1117,14 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

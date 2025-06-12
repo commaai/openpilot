@@ -33,7 +33,6 @@ void putch(const char a);
 void print(const char *a);
 void puthx(uint32_t i, uint8_t len);
 void puth(unsigned int i);
-void puth2(unsigned int i);
 #if defined(ENABLE_SPI) || defined(BOOTSTUB) || defined(DEBUG)
 void puth4(unsigned int i);
 #endif

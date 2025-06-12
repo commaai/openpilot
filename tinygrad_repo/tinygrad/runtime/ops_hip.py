@@ -1,14 +1,23 @@
-from __future__ import annotations
 import ctypes, functools
 from tinygrad.helpers import init_c_var, from_mv, init_c_struct_t, getenv
 from tinygrad.device import Compiled, LRUAllocator, BufferSpec
 from tinygrad.runtime.autogen import hip
-from tinygrad.runtime.support.compiler_hip import AMDCompiler
+from tinygrad.runtime.support.compiler_amd import HIPCompiler
 from tinygrad.renderer.cstyle import HIPRenderer
 if getenv("IOCTL"): import extra.hip_gpu_driver.hip_ioctl  # noqa: F401 # pylint: disable=unused-import
 
 def check(status):
   if status != 0: raise RuntimeError(f"HIP Error {status}, {ctypes.string_at(hip.hipGetErrorString(status)).decode()}")
+
+class HIPDevice(Compiled):
+  def __init__(self, device:str=""):
+    self.device_id = int(device.split(":")[1]) if ":" in device else 0
+    self.arch = init_c_var(hip.hipDeviceProp_t(), lambda x: check(hip.hipGetDeviceProperties(x, self.device_id))).gcnArchName.decode()
+    self.time_event_st, self.time_event_en = [init_c_var(hip.hipEvent_t(), lambda x: hip.hipEventCreate(ctypes.byref(x), 0)) for _ in range(2)]
+    super().__init__(device, HIPAllocator(self), HIPRenderer(self.arch), HIPCompiler(self.arch), functools.partial(HIPProgram, self))
+  def synchronize(self):
+    check(hip.hipSetDevice(self.device_id))
+    check(hip.hipDeviceSynchronize())
 
 class HIPProgram:
   def __init__(self, dev:HIPDevice, name:str, lib:bytes):
@@ -41,10 +50,7 @@ class HIPProgram:
       check(hip.hipEventElapsedTime(ctypes.byref(ret := ctypes.c_float()), self.dev.time_event_st, self.dev.time_event_en))
       return ret.value * 1e-3
 
-class HIPAllocator(LRUAllocator):
-  def __init__(self, dev:HIPDevice):
-    self.dev = dev
-    super().__init__()
+class HIPAllocator(LRUAllocator[HIPDevice]):
   def _alloc(self, size:int, options:BufferSpec):
     check(hip.hipSetDevice(self.dev.device_id))
     return init_c_var(hip.hipDeviceptr_t(), lambda x: check(hip.hipMalloc(ctypes.byref(x), size)))
@@ -55,13 +61,3 @@ class HIPAllocator(LRUAllocator):
   def _copyout(self, dest:memoryview, src):
     self.dev.synchronize()
     check(hip.hipMemcpy(from_mv(dest), src, len(dest), hip.hipMemcpyDeviceToHost))
-
-class HIPDevice(Compiled):
-  def __init__(self, device:str=""):
-    self.device_id = int(device.split(":")[1]) if ":" in device else 0
-    self.arch = init_c_var(hip.hipDeviceProp_t(), lambda x: check(hip.hipGetDeviceProperties(x, self.device_id))).gcnArchName.decode()
-    self.time_event_st, self.time_event_en = [init_c_var(hip.hipEvent_t(), lambda x: hip.hipEventCreate(ctypes.byref(x), 0)) for _ in range(2)]
-    super().__init__(device, HIPAllocator(self), HIPRenderer(), AMDCompiler(self.arch), functools.partial(HIPProgram, self))
-  def synchronize(self):
-    check(hip.hipSetDevice(self.device_id))
-    check(hip.hipDeviceSynchronize())

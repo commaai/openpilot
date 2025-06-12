@@ -245,6 +245,265 @@ try:
 except AttributeError:
     pass
 _SYSCALL_H = 1 # macro
+_STRING_H = 1 # macro
+__GLIBC_INTERNAL_STARTING_HEADER_IMPLEMENTATION = True # macro
+__need_NULL = True # macro
+try:
+    memcpy = _libraries['libc'].memcpy
+    memcpy.restype = ctypes.POINTER(None)
+    memcpy.argtypes = [ctypes.POINTER(None), ctypes.POINTER(None), size_t]
+except AttributeError:
+    pass
+try:
+    memmove = _libraries['libc'].memmove
+    memmove.restype = ctypes.POINTER(None)
+    memmove.argtypes = [ctypes.POINTER(None), ctypes.POINTER(None), size_t]
+except AttributeError:
+    pass
+try:
+    memccpy = _libraries['libc'].memccpy
+    memccpy.restype = ctypes.POINTER(None)
+    memccpy.argtypes = [ctypes.POINTER(None), ctypes.POINTER(None), ctypes.c_int32, size_t]
+except AttributeError:
+    pass
+try:
+    memset = _libraries['libc'].memset
+    memset.restype = ctypes.POINTER(None)
+    memset.argtypes = [ctypes.POINTER(None), ctypes.c_int32, size_t]
+except AttributeError:
+    pass
+try:
+    memcmp = _libraries['libc'].memcmp
+    memcmp.restype = ctypes.c_int32
+    memcmp.argtypes = [ctypes.POINTER(None), ctypes.POINTER(None), size_t]
+except AttributeError:
+    pass
+try:
+    __memcmpeq = _libraries['libc'].__memcmpeq
+    __memcmpeq.restype = ctypes.c_int32
+    __memcmpeq.argtypes = [ctypes.POINTER(None), ctypes.POINTER(None), size_t]
+except AttributeError:
+    pass
+try:
+    memchr = _libraries['libc'].memchr
+    memchr.restype = ctypes.POINTER(None)
+    memchr.argtypes = [ctypes.POINTER(None), ctypes.c_int32, size_t]
+except AttributeError:
+    pass
+try:
+    strcpy = _libraries['libc'].strcpy
+    strcpy.restype = ctypes.POINTER(ctypes.c_char)
+    strcpy.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strncpy = _libraries['libc'].strncpy
+    strncpy.restype = ctypes.POINTER(ctypes.c_char)
+    strncpy.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    strcat = _libraries['libc'].strcat
+    strcat.restype = ctypes.POINTER(ctypes.c_char)
+    strcat.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strncat = _libraries['libc'].strncat
+    strncat.restype = ctypes.POINTER(ctypes.c_char)
+    strncat.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    strcmp = _libraries['libc'].strcmp
+    strcmp.restype = ctypes.c_int32
+    strcmp.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strncmp = _libraries['libc'].strncmp
+    strncmp.restype = ctypes.c_int32
+    strncmp.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    strcoll = _libraries['libc'].strcoll
+    strcoll.restype = ctypes.c_int32
+    strcoll.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strxfrm = _libraries['libc'].strxfrm
+    strxfrm.restype = ctypes.c_uint64
+    strxfrm.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+class struct___locale_struct(Structure):
+    pass
+
+class struct___locale_data(Structure):
+    pass
+
+struct___locale_struct._pack_ = 1 # source:False
+struct___locale_struct._fields_ = [
+    ('__locales', ctypes.POINTER(struct___locale_data) * 13),
+    ('__ctype_b', ctypes.POINTER(ctypes.c_uint16)),
+    ('__ctype_tolower', ctypes.POINTER(ctypes.c_int32)),
+    ('__ctype_toupper', ctypes.POINTER(ctypes.c_int32)),
+    ('__names', ctypes.POINTER(ctypes.c_char) * 13),
+]
+
+locale_t = ctypes.POINTER(struct___locale_struct)
+try:
+    strcoll_l = _libraries['libc'].strcoll_l
+    strcoll_l.restype = ctypes.c_int32
+    strcoll_l.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), locale_t]
+except AttributeError:
+    pass
+try:
+    strxfrm_l = _libraries['libc'].strxfrm_l
+    strxfrm_l.restype = size_t
+    strxfrm_l.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t, locale_t]
+except AttributeError:
+    pass
+try:
+    strdup = _libraries['libc'].strdup
+    strdup.restype = ctypes.POINTER(ctypes.c_char)
+    strdup.argtypes = [ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strndup = _libraries['libc'].strndup
+    strndup.restype = ctypes.POINTER(ctypes.c_char)
+    strndup.argtypes = [ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    strchr = _libraries['libc'].strchr
+    strchr.restype = ctypes.POINTER(ctypes.c_char)
+    strchr.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.c_int32]
+except AttributeError:
+    pass
+try:
+    strrchr = _libraries['libc'].strrchr
+    strrchr.restype = ctypes.POINTER(ctypes.c_char)
+    strrchr.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.c_int32]
+except AttributeError:
+    pass
+try:
+    strcspn = _libraries['libc'].strcspn
+    strcspn.restype = ctypes.c_uint64
+    strcspn.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strspn = _libraries['libc'].strspn
+    strspn.restype = ctypes.c_uint64
+    strspn.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strpbrk = _libraries['libc'].strpbrk
+    strpbrk.restype = ctypes.POINTER(ctypes.c_char)
+    strpbrk.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strstr = _libraries['libc'].strstr
+    strstr.restype = ctypes.POINTER(ctypes.c_char)
+    strstr.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strtok = _libraries['libc'].strtok
+    strtok.restype = ctypes.POINTER(ctypes.c_char)
+    strtok.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    __strtok_r = _libraries['libc'].__strtok_r
+    __strtok_r.restype = ctypes.POINTER(ctypes.c_char)
+    __strtok_r.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.POINTER(ctypes.c_char))]
+except AttributeError:
+    pass
+try:
+    strtok_r = _libraries['libc'].strtok_r
+    strtok_r.restype = ctypes.POINTER(ctypes.c_char)
+    strtok_r.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.POINTER(ctypes.c_char))]
+except AttributeError:
+    pass
+try:
+    strlen = _libraries['libc'].strlen
+    strlen.restype = ctypes.c_uint64
+    strlen.argtypes = [ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strnlen = _libraries['libc'].strnlen
+    strnlen.restype = size_t
+    strnlen.argtypes = [ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    strerror = _libraries['libc'].strerror
+    strerror.restype = ctypes.POINTER(ctypes.c_char)
+    strerror.argtypes = [ctypes.c_int32]
+except AttributeError:
+    pass
+try:
+    strerror_r = _libraries['libc'].strerror_r
+    strerror_r.restype = ctypes.c_int32
+    strerror_r.argtypes = [ctypes.c_int32, ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    strerror_l = _libraries['libc'].strerror_l
+    strerror_l.restype = ctypes.POINTER(ctypes.c_char)
+    strerror_l.argtypes = [ctypes.c_int32, locale_t]
+except AttributeError:
+    pass
+try:
+    explicit_bzero = _libraries['libc'].explicit_bzero
+    explicit_bzero.restype = None
+    explicit_bzero.argtypes = [ctypes.POINTER(None), size_t]
+except AttributeError:
+    pass
+try:
+    strsep = _libraries['libc'].strsep
+    strsep.restype = ctypes.POINTER(ctypes.c_char)
+    strsep.argtypes = [ctypes.POINTER(ctypes.POINTER(ctypes.c_char)), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    strsignal = _libraries['libc'].strsignal
+    strsignal.restype = ctypes.POINTER(ctypes.c_char)
+    strsignal.argtypes = [ctypes.c_int32]
+except AttributeError:
+    pass
+try:
+    __stpcpy = _libraries['libc'].__stpcpy
+    __stpcpy.restype = ctypes.POINTER(ctypes.c_char)
+    __stpcpy.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    stpcpy = _libraries['libc'].stpcpy
+    stpcpy.restype = ctypes.POINTER(ctypes.c_char)
+    stpcpy.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
+    __stpncpy = _libraries['libc'].__stpncpy
+    __stpncpy.restype = ctypes.POINTER(ctypes.c_char)
+    __stpncpy.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
+try:
+    stpncpy = _libraries['libc'].stpncpy
+    stpncpy.restype = ctypes.POINTER(ctypes.c_char)
+    stpncpy.argtypes = [ctypes.POINTER(ctypes.c_char), ctypes.POINTER(ctypes.c_char), size_t]
+except AttributeError:
+    pass
 _ELF_H = 1 # macro
 EI_NIDENT = (16) # macro
 EI_MAG0 = 0 # macro
@@ -3726,7 +3985,6 @@ STDIN_FILENO = 0 # macro
 STDOUT_FILENO = 1 # macro
 STDERR_FILENO = 2 # macro
 __ssize_t_defined = True # macro
-__need_NULL = True # macro
 __gid_t_defined = True # macro
 __uid_t_defined = True # macro
 __useconds_t_defined = True # macro
@@ -4401,6 +4659,55 @@ try:
     getentropy.argtypes = [ctypes.POINTER(None), size_t]
 except AttributeError:
     pass
+__ASM_GENERIC_MMAN_COMMON_H = True # macro
+PROT_READ = 0x1 # macro
+PROT_WRITE = 0x2 # macro
+PROT_EXEC = 0x4 # macro
+PROT_SEM = 0x8 # macro
+PROT_NONE = 0x0 # macro
+PROT_GROWSDOWN = 0x01000000 # macro
+PROT_GROWSUP = 0x02000000 # macro
+MAP_TYPE = 0x0f # macro
+MAP_FIXED = 0x10 # macro
+MAP_ANONYMOUS = 0x20 # macro
+MAP_POPULATE = 0x008000 # macro
+MAP_NONBLOCK = 0x010000 # macro
+MAP_STACK = 0x020000 # macro
+MAP_HUGETLB = 0x040000 # macro
+MAP_SYNC = 0x080000 # macro
+MAP_FIXED_NOREPLACE = 0x100000 # macro
+MAP_UNINITIALIZED = 0x4000000 # macro
+MLOCK_ONFAULT = 0x01 # macro
+MS_ASYNC = 1 # macro
+MS_INVALIDATE = 2 # macro
+MS_SYNC = 4 # macro
+MADV_NORMAL = 0 # macro
+MADV_RANDOM = 1 # macro
+MADV_SEQUENTIAL = 2 # macro
+MADV_WILLNEED = 3 # macro
+MADV_DONTNEED = 4 # macro
+MADV_FREE = 8 # macro
+MADV_REMOVE = 9 # macro
+MADV_DONTFORK = 10 # macro
+MADV_DOFORK = 11 # macro
+MADV_HWPOISON = 100 # macro
+MADV_SOFT_OFFLINE = 101 # macro
+MADV_MERGEABLE = 12 # macro
+MADV_UNMERGEABLE = 13 # macro
+MADV_HUGEPAGE = 14 # macro
+MADV_NOHUGEPAGE = 15 # macro
+MADV_DONTDUMP = 16 # macro
+MADV_DODUMP = 17 # macro
+MADV_WIPEONFORK = 18 # macro
+MADV_KEEPONFORK = 19 # macro
+MADV_COLD = 20 # macro
+MADV_PAGEOUT = 21 # macro
+MADV_POPULATE_READ = 22 # macro
+MADV_POPULATE_WRITE = 23 # macro
+MAP_FILE = 0 # macro
+PKEY_DISABLE_ACCESS = 0x1 # macro
+PKEY_DISABLE_WRITE = 0x2 # macro
+PKEY_ACCESS_MASK = (0x1|0x2) # macro
 __all__ = \
     ['AT_BASE', 'AT_BASE_PLATFORM', 'AT_CLKTCK', 'AT_DCACHEBSIZE',
     'AT_EGID', 'AT_ENTRY', 'AT_EUID', 'AT_EXECFD', 'AT_EXECFN',
@@ -4596,20 +4903,31 @@ __all__ = \
     'LITUSE_ALPHA_TLS_GD', 'LITUSE_ALPHA_TLS_LDM', 'LL_DELAY_LOAD',
     'LL_DELTA', 'LL_EXACT_MATCH', 'LL_EXPORTS', 'LL_IGNORE_INT_VER',
     'LL_NONE', 'LL_REQUIRE_MINOR', 'L_INCR', 'L_SET', 'L_XTND',
-    'MIPS_AFL_ASE_DSP', 'MIPS_AFL_ASE_DSPR2', 'MIPS_AFL_ASE_EVA',
-    'MIPS_AFL_ASE_MASK', 'MIPS_AFL_ASE_MCU', 'MIPS_AFL_ASE_MDMX',
-    'MIPS_AFL_ASE_MICROMIPS', 'MIPS_AFL_ASE_MIPS16',
-    'MIPS_AFL_ASE_MIPS3D', 'MIPS_AFL_ASE_MSA', 'MIPS_AFL_ASE_MT',
-    'MIPS_AFL_ASE_SMARTMIPS', 'MIPS_AFL_ASE_VIRT', 'MIPS_AFL_ASE_XPA',
-    'MIPS_AFL_EXT_10000', 'MIPS_AFL_EXT_3900', 'MIPS_AFL_EXT_4010',
-    'MIPS_AFL_EXT_4100', 'MIPS_AFL_EXT_4111', 'MIPS_AFL_EXT_4120',
-    'MIPS_AFL_EXT_4650', 'MIPS_AFL_EXT_5400', 'MIPS_AFL_EXT_5500',
-    'MIPS_AFL_EXT_5900', 'MIPS_AFL_EXT_LOONGSON_2E',
-    'MIPS_AFL_EXT_LOONGSON_2F', 'MIPS_AFL_EXT_LOONGSON_3A',
-    'MIPS_AFL_EXT_OCTEON', 'MIPS_AFL_EXT_OCTEON2',
-    'MIPS_AFL_EXT_OCTEONP', 'MIPS_AFL_EXT_SB1', 'MIPS_AFL_EXT_XLR',
+    'MADV_COLD', 'MADV_DODUMP', 'MADV_DOFORK', 'MADV_DONTDUMP',
+    'MADV_DONTFORK', 'MADV_DONTNEED', 'MADV_FREE', 'MADV_HUGEPAGE',
+    'MADV_HWPOISON', 'MADV_KEEPONFORK', 'MADV_MERGEABLE',
+    'MADV_NOHUGEPAGE', 'MADV_NORMAL', 'MADV_PAGEOUT',
+    'MADV_POPULATE_READ', 'MADV_POPULATE_WRITE', 'MADV_RANDOM',
+    'MADV_REMOVE', 'MADV_SEQUENTIAL', 'MADV_SOFT_OFFLINE',
+    'MADV_UNMERGEABLE', 'MADV_WILLNEED', 'MADV_WIPEONFORK',
+    'MAP_ANONYMOUS', 'MAP_FILE', 'MAP_FIXED', 'MAP_FIXED_NOREPLACE',
+    'MAP_HUGETLB', 'MAP_NONBLOCK', 'MAP_POPULATE', 'MAP_STACK',
+    'MAP_SYNC', 'MAP_TYPE', 'MAP_UNINITIALIZED', 'MIPS_AFL_ASE_DSP',
+    'MIPS_AFL_ASE_DSPR2', 'MIPS_AFL_ASE_EVA', 'MIPS_AFL_ASE_MASK',
+    'MIPS_AFL_ASE_MCU', 'MIPS_AFL_ASE_MDMX', 'MIPS_AFL_ASE_MICROMIPS',
+    'MIPS_AFL_ASE_MIPS16', 'MIPS_AFL_ASE_MIPS3D', 'MIPS_AFL_ASE_MSA',
+    'MIPS_AFL_ASE_MT', 'MIPS_AFL_ASE_SMARTMIPS', 'MIPS_AFL_ASE_VIRT',
+    'MIPS_AFL_ASE_XPA', 'MIPS_AFL_EXT_10000', 'MIPS_AFL_EXT_3900',
+    'MIPS_AFL_EXT_4010', 'MIPS_AFL_EXT_4100', 'MIPS_AFL_EXT_4111',
+    'MIPS_AFL_EXT_4120', 'MIPS_AFL_EXT_4650', 'MIPS_AFL_EXT_5400',
+    'MIPS_AFL_EXT_5500', 'MIPS_AFL_EXT_5900',
+    'MIPS_AFL_EXT_LOONGSON_2E', 'MIPS_AFL_EXT_LOONGSON_2F',
+    'MIPS_AFL_EXT_LOONGSON_3A', 'MIPS_AFL_EXT_OCTEON',
+    'MIPS_AFL_EXT_OCTEON2', 'MIPS_AFL_EXT_OCTEONP',
+    'MIPS_AFL_EXT_SB1', 'MIPS_AFL_EXT_XLR',
     'MIPS_AFL_FLAGS1_ODDSPREG', 'MIPS_AFL_REG_128', 'MIPS_AFL_REG_32',
-    'MIPS_AFL_REG_64', 'MIPS_AFL_REG_NONE',
+    'MIPS_AFL_REG_64', 'MIPS_AFL_REG_NONE', 'MLOCK_ONFAULT',
+    'MS_ASYNC', 'MS_INVALIDATE', 'MS_SYNC',
     'NOTE_GNU_PROPERTY_SECTION_NAME', 'NT_386_IOPERM', 'NT_386_TLS',
     'NT_ARM_HW_BREAK', 'NT_ARM_HW_WATCH', 'NT_ARM_PACA_KEYS',
     'NT_ARM_PACG_KEYS', 'NT_ARM_PAC_ENABLED_KEYS', 'NT_ARM_PAC_MASK',
@@ -4644,9 +4962,12 @@ __all__ = \
     'PF_HP_FAR_SHARED', 'PF_HP_LAZYSWAP', 'PF_HP_MODIFY',
     'PF_HP_NEAR_SHARED', 'PF_HP_PAGE_SIZE', 'PF_HP_SBP',
     'PF_IA_64_NORECOV', 'PF_MASKOS', 'PF_MASKPROC', 'PF_MIPS_LOCAL',
-    'PF_PARISC_SBP', 'PF_R', 'PF_W', 'PF_X', 'PN_XNUM',
+    'PF_PARISC_SBP', 'PF_R', 'PF_W', 'PF_X', 'PKEY_ACCESS_MASK',
+    'PKEY_DISABLE_ACCESS', 'PKEY_DISABLE_WRITE', 'PN_XNUM',
     'PPC64_OPT_LOCALENTRY', 'PPC64_OPT_MULTI_TOC', 'PPC64_OPT_TLS',
-    'PPC_OPT_TLS', 'PT_ARM_EXIDX', 'PT_DYNAMIC', 'PT_GNU_EH_FRAME',
+    'PPC_OPT_TLS', 'PROT_EXEC', 'PROT_GROWSDOWN', 'PROT_GROWSUP',
+    'PROT_NONE', 'PROT_READ', 'PROT_SEM', 'PROT_WRITE',
+    'PT_ARM_EXIDX', 'PT_DYNAMIC', 'PT_GNU_EH_FRAME',
     'PT_GNU_PROPERTY', 'PT_GNU_RELRO', 'PT_GNU_STACK', 'PT_HIOS',
     'PT_HIPROC', 'PT_HISUNW', 'PT_HP_CORE_COMM', 'PT_HP_CORE_KERNEL',
     'PT_HP_CORE_LOADABLE', 'PT_HP_CORE_MMF', 'PT_HP_CORE_NONE',
@@ -5404,59 +5725,71 @@ __all__ = \
     'Val_GNU_MIPS_ABI_FP_SOFT', 'Val_GNU_MIPS_ABI_FP_XX', 'W_OK',
     'X_OK', '_ELF_H', '_POSIX2_C_BIND', '_POSIX2_C_DEV',
     '_POSIX2_C_VERSION', '_POSIX2_LOCALEDEF', '_POSIX2_SW_DEV',
-    '_POSIX2_VERSION', '_POSIX_VERSION', '_SYSCALL_H', '_SYS_MMAN_H',
-    '_UNISTD_H', '_XOPEN_ENH_I18N', '_XOPEN_LEGACY', '_XOPEN_UNIX',
-    '_XOPEN_VERSION', '_XOPEN_XCU_VERSION', '_XOPEN_XPG2',
-    '_XOPEN_XPG3', '_XOPEN_XPG4', '__POSIX2_THIS_VERSION',
-    '__environ', '__getpgid', '__gid_t', '__gid_t_defined',
-    '__intptr_t_defined', '__mode_t_defined', '__need_NULL',
-    '__need_size_t', '__off_t', '__off_t_defined', '__pid_t',
-    '__pid_t_defined', '__socklen_t_defined', '__ssize_t_defined',
-    '__uid_t', '__uid_t_defined', '__useconds_t',
-    '__useconds_t_defined', '_exit', 'access', 'acct', 'alarm', 'brk',
-    'c__Ea_Val_GNU_MIPS_ABI_FP_ANY', 'chdir', 'chown', 'chroot',
-    'close', 'closefrom', 'confstr', 'crypt', 'daemon', 'dup', 'dup2',
-    'endusershell', 'execl', 'execle', 'execlp', 'execv', 'execve',
-    'execvp', 'faccessat', 'fchdir', 'fchown', 'fchownat',
-    'fdatasync', 'fexecve', 'fork', 'fpathconf', 'fsync', 'ftruncate',
-    'getcwd', 'getdomainname', 'getdtablesize', 'getegid',
-    'getentropy', 'geteuid', 'getgid', 'getgroups', 'gethostid',
-    'gethostname', 'getlogin', 'getlogin_r', 'getpagesize', 'getpass',
-    'getpgid', 'getpgrp', 'getpid', 'getppid', 'getsid', 'getuid',
-    'getusershell', 'getwd', 'gid_t', 'intptr_t', 'isatty', 'lchown',
-    'link', 'linkat', 'lockf', 'lseek', 'madvise', 'mincore', 'mlock',
-    'mlockall', 'mmap', 'mode_t', 'mprotect', 'msync', 'munlock',
-    'munlockall', 'munmap', 'nice', 'off_t', 'pathconf', 'pause',
-    'pid_t', 'pipe', 'posix_madvise', 'pread', 'profil', 'pwrite',
-    'read', 'readlink', 'readlinkat', 'revoke', 'rmdir', 'sbrk',
-    'setdomainname', 'setegid', 'seteuid', 'setgid', 'sethostid',
-    'sethostname', 'setlogin', 'setpgid', 'setpgrp', 'setregid',
-    'setreuid', 'setsid', 'setuid', 'setusershell', 'shm_open',
-    'shm_unlink', 'size_t', 'sleep', 'socklen_t', 'ssize_t',
-    'struct_c__SA_Elf32_Chdr', 'struct_c__SA_Elf32_Dyn',
-    'struct_c__SA_Elf32_Ehdr', 'struct_c__SA_Elf32_Lib',
-    'struct_c__SA_Elf32_Move', 'struct_c__SA_Elf32_Nhdr',
-    'struct_c__SA_Elf32_Phdr', 'struct_c__SA_Elf32_RegInfo',
-    'struct_c__SA_Elf32_Rel', 'struct_c__SA_Elf32_Rela',
-    'struct_c__SA_Elf32_Shdr', 'struct_c__SA_Elf32_Sym',
-    'struct_c__SA_Elf32_Syminfo', 'struct_c__SA_Elf32_Verdaux',
-    'struct_c__SA_Elf32_Verdef', 'struct_c__SA_Elf32_Vernaux',
-    'struct_c__SA_Elf32_Verneed', 'struct_c__SA_Elf32_auxv_t',
-    'struct_c__SA_Elf64_Chdr', 'struct_c__SA_Elf64_Dyn',
-    'struct_c__SA_Elf64_Ehdr', 'struct_c__SA_Elf64_Lib',
-    'struct_c__SA_Elf64_Move', 'struct_c__SA_Elf64_Nhdr',
-    'struct_c__SA_Elf64_Phdr', 'struct_c__SA_Elf64_Rel',
-    'struct_c__SA_Elf64_Rela', 'struct_c__SA_Elf64_Shdr',
-    'struct_c__SA_Elf64_Sym', 'struct_c__SA_Elf64_Syminfo',
-    'struct_c__SA_Elf64_Verdaux', 'struct_c__SA_Elf64_Verdef',
-    'struct_c__SA_Elf64_Vernaux', 'struct_c__SA_Elf64_Verneed',
-    'struct_c__SA_Elf64_auxv_t', 'struct_c__SA_Elf_MIPS_ABIFlags_v0',
-    'struct_c__SA_Elf_Options', 'struct_c__SA_Elf_Options_Hw',
+    '_POSIX2_VERSION', '_POSIX_VERSION', '_STRING_H', '_SYSCALL_H',
+    '_SYS_MMAN_H', '_UNISTD_H', '_XOPEN_ENH_I18N', '_XOPEN_LEGACY',
+    '_XOPEN_UNIX', '_XOPEN_VERSION', '_XOPEN_XCU_VERSION',
+    '_XOPEN_XPG2', '_XOPEN_XPG3', '_XOPEN_XPG4',
+    '__ASM_GENERIC_MMAN_COMMON_H',
+    '__GLIBC_INTERNAL_STARTING_HEADER_IMPLEMENTATION',
+    '__POSIX2_THIS_VERSION', '__environ', '__getpgid', '__gid_t',
+    '__gid_t_defined', '__intptr_t_defined', '__memcmpeq',
+    '__mode_t_defined', '__need_NULL', '__need_size_t', '__off_t',
+    '__off_t_defined', '__pid_t', '__pid_t_defined',
+    '__socklen_t_defined', '__ssize_t_defined', '__stpcpy',
+    '__stpncpy', '__strtok_r', '__uid_t', '__uid_t_defined',
+    '__useconds_t', '__useconds_t_defined', '_exit', 'access', 'acct',
+    'alarm', 'brk', 'c__Ea_Val_GNU_MIPS_ABI_FP_ANY', 'chdir', 'chown',
+    'chroot', 'close', 'closefrom', 'confstr', 'crypt', 'daemon',
+    'dup', 'dup2', 'endusershell', 'execl', 'execle', 'execlp',
+    'execv', 'execve', 'execvp', 'explicit_bzero', 'faccessat',
+    'fchdir', 'fchown', 'fchownat', 'fdatasync', 'fexecve', 'fork',
+    'fpathconf', 'fsync', 'ftruncate', 'getcwd', 'getdomainname',
+    'getdtablesize', 'getegid', 'getentropy', 'geteuid', 'getgid',
+    'getgroups', 'gethostid', 'gethostname', 'getlogin', 'getlogin_r',
+    'getpagesize', 'getpass', 'getpgid', 'getpgrp', 'getpid',
+    'getppid', 'getsid', 'getuid', 'getusershell', 'getwd', 'gid_t',
+    'intptr_t', 'isatty', 'lchown', 'link', 'linkat', 'locale_t',
+    'lockf', 'lseek', 'madvise', 'memccpy', 'memchr', 'memcmp',
+    'memcpy', 'memmove', 'memset', 'mincore', 'mlock', 'mlockall',
+    'mmap', 'mode_t', 'mprotect', 'msync', 'munlock', 'munlockall',
+    'munmap', 'nice', 'off_t', 'pathconf', 'pause', 'pid_t', 'pipe',
+    'posix_madvise', 'pread', 'profil', 'pwrite', 'read', 'readlink',
+    'readlinkat', 'revoke', 'rmdir', 'sbrk', 'setdomainname',
+    'setegid', 'seteuid', 'setgid', 'sethostid', 'sethostname',
+    'setlogin', 'setpgid', 'setpgrp', 'setregid', 'setreuid',
+    'setsid', 'setuid', 'setusershell', 'shm_open', 'shm_unlink',
+    'size_t', 'sleep', 'socklen_t', 'ssize_t', 'stpcpy', 'stpncpy',
+    'strcat', 'strchr', 'strcmp', 'strcoll', 'strcoll_l', 'strcpy',
+    'strcspn', 'strdup', 'strerror', 'strerror_l', 'strerror_r',
+    'strlen', 'strncat', 'strncmp', 'strncpy', 'strndup', 'strnlen',
+    'strpbrk', 'strrchr', 'strsep', 'strsignal', 'strspn', 'strstr',
+    'strtok', 'strtok_r', 'struct___locale_data',
+    'struct___locale_struct', 'struct_c__SA_Elf32_Chdr',
+    'struct_c__SA_Elf32_Dyn', 'struct_c__SA_Elf32_Ehdr',
+    'struct_c__SA_Elf32_Lib', 'struct_c__SA_Elf32_Move',
+    'struct_c__SA_Elf32_Nhdr', 'struct_c__SA_Elf32_Phdr',
+    'struct_c__SA_Elf32_RegInfo', 'struct_c__SA_Elf32_Rel',
+    'struct_c__SA_Elf32_Rela', 'struct_c__SA_Elf32_Shdr',
+    'struct_c__SA_Elf32_Sym', 'struct_c__SA_Elf32_Syminfo',
+    'struct_c__SA_Elf32_Verdaux', 'struct_c__SA_Elf32_Verdef',
+    'struct_c__SA_Elf32_Vernaux', 'struct_c__SA_Elf32_Verneed',
+    'struct_c__SA_Elf32_auxv_t', 'struct_c__SA_Elf64_Chdr',
+    'struct_c__SA_Elf64_Dyn', 'struct_c__SA_Elf64_Ehdr',
+    'struct_c__SA_Elf64_Lib', 'struct_c__SA_Elf64_Move',
+    'struct_c__SA_Elf64_Nhdr', 'struct_c__SA_Elf64_Phdr',
+    'struct_c__SA_Elf64_Rel', 'struct_c__SA_Elf64_Rela',
+    'struct_c__SA_Elf64_Shdr', 'struct_c__SA_Elf64_Sym',
+    'struct_c__SA_Elf64_Syminfo', 'struct_c__SA_Elf64_Verdaux',
+    'struct_c__SA_Elf64_Verdef', 'struct_c__SA_Elf64_Vernaux',
+    'struct_c__SA_Elf64_Verneed', 'struct_c__SA_Elf64_auxv_t',
+    'struct_c__SA_Elf_MIPS_ABIFlags_v0', 'struct_c__SA_Elf_Options',
+    'struct_c__SA_Elf_Options_Hw',
     'struct_c__UA_Elf32_gptab_gt_entry',
-    'struct_c__UA_Elf32_gptab_gt_header', 'symlink', 'symlinkat',
-    'sync', 'syscall', 'sysconf', 'tcgetpgrp', 'tcsetpgrp',
-    'truncate', 'ttyname', 'ttyname_r', 'ttyslot', 'ualarm', 'uid_t',
-    'union_c__SA_Elf32_Dyn_d_un', 'union_c__SA_Elf32_auxv_t_a_un',
-    'union_c__SA_Elf64_Dyn_d_un', 'union_c__SA_Elf64_auxv_t_a_un',
-    'union_c__UA_Elf32_gptab', 'unlink', 'unlinkat', 'useconds_t',
-    'usleep', 'vfork', 'vhangup', 'write']
+    'struct_c__UA_Elf32_gptab_gt_header', 'strxfrm', 'strxfrm_l',
+    'symlink', 'symlinkat', 'sync', 'syscall', 'sysconf', 'tcgetpgrp',
+    'tcsetpgrp', 'truncate', 'ttyname', 'ttyname_r', 'ttyslot',
+    'ualarm', 'uid_t', 'union_c__SA_Elf32_Dyn_d_un',
+    'union_c__SA_Elf32_auxv_t_a_un', 'union_c__SA_Elf64_Dyn_d_un',
+    'union_c__SA_Elf64_auxv_t_a_un', 'union_c__UA_Elf32_gptab',
+    'unlink', 'unlinkat', 'useconds_t', 'usleep', 'vfork', 'vhangup',
+    'write']

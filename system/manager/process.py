@@ -96,7 +96,6 @@ class ManagerProcess(ABC):
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
       with open(fn, "rb") as f:
-        # TODO: why can't pylint find struct.unpack?
         self.last_watchdog_time = struct.unpack('Q', f.read())[0]
     except Exception:
       pass
