@@ -41,7 +41,7 @@ class MainLayout(Widget):
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
 
-  def _update_layout_rects(self):
+  def _update_layout(self):
     self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
 
     x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0

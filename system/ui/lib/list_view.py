@@ -275,7 +275,7 @@ class ListView(Widget):
     self._total_height = 0
 
   def _render(self, rect: rl.Rectangle):
-    self._update_layout_rects()
+    self._update_layout()
 
     # Update layout and handle scrolling
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, self._total_height)
@@ -318,7 +318,7 @@ class ListView(Widget):
         return i
     return None
 
-  def _update_layout_rects(self):
+  def _update_layout(self):
     current_y = 0.0
     for item in self._items:
       if not item.is_visible:
