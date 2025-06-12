@@ -1,7 +1,7 @@
-from openpilot.system.ui.lib.list_view import ListView, ToggleItem
-from openpilot.common.params import Params
-from openpilot.selfdrive.ui.widgets.ssh_key import SshKeyItem
+from openpilot.system.ui.lib.list_view import ListView, toggle_item
 from openpilot.system.ui.lib.widget import Widget
+from openpilot.common.params import Params
+from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
 
 # Description constants
 DESCRIPTIONS = {
@@ -16,33 +16,34 @@ DESCRIPTIONS = {
   ),
 }
 
+
 class DeveloperLayout(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
     items = [
-      ToggleItem(
+      toggle_item(
         "Enable ADB",
-        DESCRIPTIONS["enable_adb"],
+        description=DESCRIPTIONS["enable_adb"],
         initial_state=self._params.get_bool("AdbEnabled"),
         callback=self._on_enable_adb,
       ),
-      SshKeyItem("SSH Key", description=DESCRIPTIONS["ssh_key"]),
-      ToggleItem(
+      ssh_key_item("SSH Key", description=DESCRIPTIONS["ssh_key"]),
+      toggle_item(
         "Joystick Debug Mode",
-        DESCRIPTIONS["joystick_debug_mode"],
+        description=DESCRIPTIONS["joystick_debug_mode"],
         initial_state=self._params.get_bool("JoystickDebugMode"),
         callback=self._on_joystick_debug_mode,
       ),
-      ToggleItem(
+      toggle_item(
         "Longitudinal Maneuver Mode",
-        "",
+        description="",
         initial_state=self._params.get_bool("LongitudinalManeuverMode"),
         callback=self._on_long_maneuver_mode,
       ),
-      ToggleItem(
+      toggle_item(
         "openpilot Longitudinal Control (Alpha)",
-        "",
+        description="",
         initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
         callback=self._on_alpha_long_enabled,
       ),
@@ -53,7 +54,7 @@ class DeveloperLayout(Widget):
   def _render(self, rect):
     self._list_widget.render(rect)
 
-  def _on_enable_adb(self, state): pass
-  def _on_joystick_debug_mode(self, state): pass
-  def _on_long_maneuver_mode(self, state): pass
-  def _on_alpha_long_enabled(self, state): pass
+  def _on_enable_adb(self): pass
+  def _on_joystick_debug_mode(self): pass
+  def _on_long_maneuver_mode(self): pass
+  def _on_alpha_long_enabled(self): pass

@@ -1,6 +1,8 @@
+import os
 import pyray as rl
+from dataclasses import dataclass
 from collections.abc import Callable
-from abc import ABC, abstractmethod
+from abc import ABC
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -9,269 +11,154 @@ from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 from openpilot.system.ui.lib.widget import Widget
 
-LINE_PADDING = 40
 ITEM_BASE_HEIGHT = 170
+LINE_PADDING = 40
+LINE_COLOR = rl.GRAY
 ITEM_PADDING = 20
+ITEM_SPACING = 80
 ITEM_TEXT_FONT_SIZE = 50
 ITEM_TEXT_COLOR = rl.WHITE
 ITEM_DESC_TEXT_COLOR = rl.Color(128, 128, 128, 255)
 ITEM_DESC_FONT_SIZE = 40
 ITEM_DESC_V_OFFSET = 140
+RIGHT_ITEM_PADDING = 20
 ICON_SIZE = 80
 BUTTON_WIDTH = 250
 BUTTON_HEIGHT = 100
+BUTTON_BORDER_RADIUS = 50
 BUTTON_FONT_SIZE = 35
+BUTTON_FONT_WEIGHT = FontWeight.MEDIUM
+
+TEXT_PADDING = 20
 
 
-# Type Aliases for Clarity
-StrSrc = str | Callable[[], str] | None
-BoolSrc = bool | Callable[[], bool]
-
-
-def _get_value(value, default=""):
+def _resolve_value(value, default=""):
   if callable(value):
     return value()
   return value if value is not None else default
 
 
-class ListItem(Widget, ABC):
-  def __init__(self, title, description: StrSrc=None, enabled: BoolSrc=True, visible: BoolSrc=True, icon=None):
+# Abstract base class for right-side items
+class ItemAction(Widget, ABC):
+  def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
     super().__init__()
-    self.title = title
-    self._icon = icon
-    self.description = description
-    self.show_desc = False
-
+    self.width = width
     self._enabled_source = enabled
-    self._visible_source = visible
-    self._font = gui_app.font(FontWeight.NORMAL)
-
-    # Cached properties for performance
-    self._prev_max_width: int = 0
-    self._wrapped_description: str | None = None
-    self._prev_description: str | None = None
-    self._description_height: float = 0
 
   @property
   def enabled(self):
-    return _get_value(self._enabled_source, True)
+    return _resolve_value(self._enabled_source, False)
 
-  @property
-  def is_visible(self):
-    return _get_value(self._visible_source, True)
-
-  def set_visible(self, visible: bool):
-    self._visible_source = visible
-
-  def set_enabled(self, enabled: bool):
-    self._enabled_source = enabled
-
-  def get_desc(self):
-    return _get_value(self.description, "")
-
-  def set_icon(self, icon: str):
-    self._icon = icon
-
-  def set_desc(self, description: StrSrc):
-    self.description = description
-    current_description = self.get_desc()
-    if current_description != self._prev_description:
-      self._update_description_cache(self._prev_max_width, current_description)
-
-  def _update_description_cache(self, max_width: int, current_description: str):
-    """Update the cached description wrapping"""
-    self._prev_max_width = max_width
-    self._prev_description = current_description
-    content_width = max_width - ITEM_PADDING * 2
-
-    # Account for icon width
-    if self._icon:
-      content_width -= ICON_SIZE + ITEM_PADDING
-
-    wrapped_lines = wrap_text(self._font, current_description, ITEM_DESC_FONT_SIZE, content_width)
-    self._wrapped_description = "\n".join(wrapped_lines)
-    self._description_height = len(wrapped_lines) * ITEM_DESC_FONT_SIZE + 10
-
-  def _get_height(self, max_width: int) -> float:
-    if not self.is_visible:
-      return 0
-
-    if not self.show_desc:
-      return ITEM_BASE_HEIGHT
-
-    current_description = self.get_desc()
-    if not current_description:
-      return ITEM_BASE_HEIGHT
-
-    if current_description != self._prev_description or max_width != self._prev_max_width:
-      self._update_description_cache(max_width, current_description)
-
-    return ITEM_BASE_HEIGHT + self._description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
-
-  def _render(self, rect: rl.Rectangle):
-    # Handle click on title/description area for toggling description
-    if self.description and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      mouse_pos = rl.get_mouse_position()
-
-      text_area_width = rect.width - self.get_action_width() - ITEM_PADDING
-      text_area = rl.Rectangle(rect.x, rect.y, text_area_width, rect.height)
-      if rl.check_collision_point_rec(mouse_pos, text_area):
-        self.show_desc = not self.show_desc
-
-    # Render title and description
-    x = rect.x + ITEM_PADDING
-
-    # Draw icon if present
-    if self._icon:
-      icon_texture = gui_app.texture(f"icons/{self._icon}", ICON_SIZE, ICON_SIZE)
-      rl.draw_texture(icon_texture, int(x), int(rect.y + (ITEM_BASE_HEIGHT - ICON_SIZE) // 2), rl.WHITE)
-      x += ICON_SIZE + ITEM_PADDING
-
-    text_size = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE)
-    title_y = rect.y + (ITEM_BASE_HEIGHT - text_size.y) // 2
-    rl.draw_text_ex(self._font, self.title, (x, title_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
-
-    # Draw description if visible
-    if self.show_desc and self._wrapped_description:
-      rl.draw_text_ex(self._font, self._wrapped_description, (x, rect.y + ITEM_DESC_V_OFFSET),
-                      ITEM_DESC_FONT_SIZE, 0, ITEM_DESC_TEXT_COLOR)
-
-    # Render action if needed
-    action_width = self.get_action_width()
-    action_rect = rl.Rectangle(rect.x + rect.width - action_width, rect.y, action_width, ITEM_BASE_HEIGHT)
-    self.render_action(action_rect)
-
-  @abstractmethod
-  def get_action_width(self) -> int:
-    """Return the width needed for the action part (right side)"""
-
-  @abstractmethod
-  def render_action(self, rect: rl.Rectangle):
-    """Render the action part"""
+  def get_width(self) -> int:
+    return self.width
 
 
-class ToggleItem(ListItem):
-  def __init__(self, title: str, description: StrSrc = None, initial_state: bool=False, callback=None, active_icon=None, **kwargs):
-    super().__init__(title, description, **kwargs)
+class ToggleAction(ItemAction):
+  def __init__(self, initial_state: bool = False, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True):
+    super().__init__(width, enabled)
     self.toggle = Toggle(initial_state=initial_state)
-    self.callback = callback
-    self._inactive_icon = kwargs.get('icon', None)
-    self._active_icon = active_icon
-    if self._active_icon and initial_state:
-      self.set_icon(self._active_icon)
+    self.state = initial_state
 
-  def get_action_width(self) -> int:
-    return TOGGLE_WIDTH
-
-  def render_action(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
-    toggle_rect = rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) // 2,
-                               TOGGLE_WIDTH, TOGGLE_HEIGHT)
-
-    if self.toggle.render(toggle_rect):
-      if self._active_icon and self._inactive_icon:
-        self.set_icon(self._active_icon if self.toggle.get_state() else self._inactive_icon)
-
-      if self.callback:
-        self.callback(self)
+    self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
+    return False
 
   def set_state(self, state: bool):
+    self.state = state
     self.toggle.set_state(state)
 
-  def get_state(self):
-    return self.toggle.get_state()
+  def get_state(self) -> bool:
+    return self.state
 
 
-class ButtonItem(ListItem):
-  def __init__(self, title: str, button_text, description=None, callback=None, **kwargs):
-    super().__init__(title, description, **kwargs)
-    self._button_text_src = button_text
-    self._callback = callback
+class ButtonAction(ItemAction):
+  def __init__(self, text: str | Callable[[], str], width: int = BUTTON_WIDTH, enabled: bool | Callable[[], bool] = True):
+    super().__init__(width, enabled)
+    self._text_source = text
 
-  def get_button_text(self):
-    return _get_value(self._button_text_src, "Error")
+  @property
+  def text(self):
+    return _resolve_value(self._text_source, "Error")
 
-  def get_action_width(self) -> int:
-    return BUTTON_WIDTH
-
-  def render_action(self, rect: rl.Rectangle):
-    button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) // 2, BUTTON_WIDTH, BUTTON_HEIGHT)
-    if gui_button(button_rect, self.get_button_text(), border_radius=BUTTON_HEIGHT // 2,
-                  font_size=BUTTON_FONT_SIZE, button_style=ButtonStyle.LIST_ACTION, is_enabled=self.enabled):
-      if self._callback:
-        self._callback()
-
-
-class TextItem(ListItem):
-  def __init__(self, title: str, value: str | Callable[[], str], **kwargs):
-    super().__init__(title, **kwargs)
-    self._value_src = value
-    self.color = rl.Color(170, 170, 170, 255)
-
-  def get_value(self):
-    return _get_value(self._value_src, "")
-
-  def get_action_width(self) -> int:
-    return int(measure_text_cached(self._font, self.get_value(), ITEM_TEXT_FONT_SIZE).x + ITEM_PADDING)
-
-  def render_action(self, rect: rl.Rectangle):
-    value = self.get_value()
-    text_size = measure_text_cached(self._font, value, ITEM_TEXT_FONT_SIZE)
-    x = rect.x + (rect.width - text_size.x) // 2
-    y = rect.y + (rect.height - text_size.y) // 2
-    rl.draw_text_ex(self._font, value, rl.Vector2(x, y), ITEM_TEXT_FONT_SIZE, 0, self.color)
+  def _render(self, rect: rl.Rectangle) -> bool:
+    return gui_button(
+      rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
+      self.text,
+      border_radius=BUTTON_BORDER_RADIUS,
+      font_weight=BUTTON_FONT_WEIGHT,
+      font_size=BUTTON_FONT_SIZE,
+      button_style=ButtonStyle.LIST_ACTION,
+      is_enabled=self.enabled,
+    ) == 1
 
 
-class DualButtonItem(Widget):
-  def __init__(self, left_text: str, right_text: str, left_callback: Callable, right_callback: Callable):
-    super().__init__()
-    self.left_text = left_text
-    self.right_text = right_text
-    self.left_callback = left_callback
-    self.right_callback = right_callback
-    self._button_spacing = 30
-    self._button_height = 120
+class TextAction(ItemAction):
+  def __init__(self, text: str | Callable[[], str], color: rl.Color = ITEM_TEXT_COLOR, enabled: bool | Callable[[], bool] = True):
+    self._text_source = text
+    self.color = color
 
-  def _get_height(self, max_width: int) -> float:
-    return ITEM_BASE_HEIGHT
+    self._font = gui_app.font(FontWeight.NORMAL)
+    initial_text = _resolve_value(text, "")
+    text_width = measure_text_cached(self._font, initial_text, ITEM_TEXT_FONT_SIZE).x
+    super().__init__(int(text_width + TEXT_PADDING), enabled)
 
-  def _render(self, rect: rl.Rectangle):
-    button_width = (rect.width - self._button_spacing) / 2
-    button_y = rect.y + (rect.height - self._button_height) / 2
+  @property
+  def text(self):
+    return _resolve_value(self._text_source, "Error")
 
-    left_rect = rl.Rectangle(rect.x, button_y, button_width, self._button_height)
-    right_rect = rl.Rectangle(rect.x + button_width + self._button_spacing, button_y, button_width, self._button_height)
+  def _render(self, rect: rl.Rectangle) -> bool:
+    current_text = self.text
+    text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)
 
-    left_clicked = gui_button(left_rect, self.left_text, button_style=ButtonStyle.LIST_ACTION)
-    right_clicked = gui_button(right_rect, self.right_text, button_style=ButtonStyle.DANGER)
+    text_x = rect.x + (rect.width - text_size.x) / 2
+    text_y = rect.y + (rect.height - text_size.y) / 2
+    rl.draw_text_ex(self._font, current_text, rl.Vector2(text_x, text_y), ITEM_TEXT_FONT_SIZE, 0, self.color)
+    return False
 
-    if left_clicked and self.left_callback is not None:
+  def get_width(self) -> int:
+    text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
+    return int(text_width + TEXT_PADDING)
+
+
+class DualButtonAction(ItemAction):
+  def __init__(self, left_text: str, right_text: str, left_callback: Callable = None,
+               right_callback: Callable = None, enabled: bool | Callable[[], bool] = True):
+    super().__init__(width=0, enabled=enabled)  # Width 0 means use full width
+    self.left_text, self.right_text = left_text, right_text
+    self.left_callback, self.right_callback = left_callback, right_callback
+
+  def _render(self, rect: rl.Rectangle) -> bool:
+    button_spacing = 30
+    button_height = 120
+    button_width = (rect.width - button_spacing) / 2
+    button_y = rect.y + (rect.height - button_height) / 2
+
+    left_rect = rl.Rectangle(rect.x, button_y, button_width, button_height)
+    right_rect = rl.Rectangle(rect.x + button_width + button_spacing, button_y, button_width, button_height)
+
+    left_clicked = gui_button(left_rect, self.left_text, button_style=ButtonStyle.LIST_ACTION) == 1
+    right_clicked = gui_button(right_rect, self.right_text, button_style=ButtonStyle.DANGER) == 1
+
+    if left_clicked and self.left_callback:
       self.left_callback()
-    if right_clicked and self.right_callback is not None:
+      return True
+    if right_clicked and self.right_callback:
       self.right_callback()
+      return True
+    return False
 
 
-class MultipleButtonItem(ListItem):
-  def __init__(self, title: str, description: str, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None, **kwargs):
-    super().__init__(title, description, **kwargs)
+class MultipleButtonAction(ItemAction):
+  def __init__(self, buttons: list[str], button_width: int, selected_index: int = 0, callback: Callable = None):
+    super().__init__(width=len(buttons) * (button_width + 20), enabled=True)
     self.buttons = buttons
     self.button_width = button_width
-    self.selected_index = selected_index
+    self.selected_button = selected_index
     self.callback = callback
     self._font = gui_app.font(FontWeight.MEDIUM)
-    self._colors = {
-      'normal': rl.Color(57, 57, 57, 255),  # Gray
-      'hovered': rl.Color(74, 74, 74, 255),  # Dark gray
-      'selected': rl.Color(51, 171, 76, 255),  # Green
-      'disabled': rl.Color(153, 51, 171, 76),  # #9933Ab4C - Semi-transparent
-      'text': rl.Color(228, 228, 228, 255),  # Light gray
-      'text_disabled': rl.Color(51, 228, 228, 228),  # #33E4E4E4 - Semi-transparent
-    }
 
-  def get_action_width(self) -> int:
-    return self.button_width * len(self.buttons) + (len(self.buttons) - 1) * 20
-
-  def render_action(self, rect: rl.Rectangle) -> bool:
+  def _render(self, rect: rl.Rectangle) -> bool:
     spacing = 20
     button_y = rect.y + (rect.height - 100) / 2
     clicked = -1
@@ -284,13 +171,15 @@ class MultipleButtonItem(ListItem):
       mouse_pos = rl.get_mouse_position()
       is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect)
       is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
-      is_selected = i == self.selected_index
+      is_selected = i == self.selected_button
 
-      bg_color = (self._colors['disabled'] if not self.enabled and is_selected else
-                  self._colors['selected'] if is_selected else
-                  self._colors['hovered'] if is_pressed and self.enabled else
-                  self._colors['normal'])
-      text_color = self._colors['text_disabled'] if not self.enabled else self._colors['text']
+      # Button colors
+      if is_selected:
+        bg_color = rl.Color(51, 171, 76, 255)  # Green
+      elif is_pressed:
+        bg_color = rl.Color(74, 74, 74, 255)  # Dark gray
+      else:
+        bg_color = rl.Color(57, 57, 57, 255)  # Gray
 
       # Draw button
       rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)
@@ -299,56 +188,265 @@ class MultipleButtonItem(ListItem):
       text_size = measure_text_cached(self._font, text, 40)
       text_x = button_x + (self.button_width - text_size.x) / 2
       text_y = button_y + (100 - text_size.y) / 2
-      rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, text_color)
+      rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
 
-      # Handle click only if enabled
-      if self.enabled and is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      # Handle click
+      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
         clicked = i
 
     if clicked >= 0:
-      self.selected_index = clicked
+      self.selected_button = clicked
       if self.callback:
         self.callback(clicked)
       return True
     return False
 
 
+@dataclass
+class ListItem:
+  title: str
+  icon: str | None = None
+  description: str | Callable[[], str] | None = None
+  description_visible: bool = False
+  rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
+  callback: Callable | None = None
+  action_item: ItemAction | None = None
+  visible: bool | Callable[[], bool] = True
+
+  # Cached properties for performance
+  _prev_max_width: int = 0
+  _wrapped_description: str | None = None
+  _prev_description: str | None = None
+  _description_height: float = 0
+
+  @property
+  def is_visible(self) -> bool:
+    return bool(_resolve_value(self.visible, True))
+
+  def get_description(self):
+    return _resolve_value(self.description, None)
+
+  def get_item_height(self, font: rl.Font, max_width: int) -> float:
+    if not self.is_visible:
+      return 0
+
+    current_description = self.get_description()
+    if self.description_visible and current_description:
+      if (
+        not self._wrapped_description
+        or current_description != self._prev_description
+        or max_width != self._prev_max_width
+      ):
+        self._prev_max_width = max_width
+        self._prev_description = current_description
+
+        wrapped_lines = wrap_text(font, current_description, ITEM_DESC_FONT_SIZE, max_width)
+        self._wrapped_description = "\n".join(wrapped_lines)
+        self._description_height = len(wrapped_lines) * ITEM_DESC_FONT_SIZE + 10
+      return ITEM_BASE_HEIGHT + self._description_height - (ITEM_BASE_HEIGHT - ITEM_DESC_V_OFFSET) + ITEM_PADDING
+    return ITEM_BASE_HEIGHT
+
+  def get_content_width(self, total_width: int) -> int:
+    if self.action_item and self.action_item.get_width() > 0:
+      return total_width - self.action_item.get_width() - RIGHT_ITEM_PADDING
+    return total_width
+
+  def get_right_item_rect(self, item_rect: rl.Rectangle) -> rl.Rectangle:
+    if not self.action_item:
+      return rl.Rectangle(0, 0, 0, 0)
+
+    right_width = self.action_item.get_width()
+    if right_width == 0:  # Full width action (like DualButtonAction)
+      return rl.Rectangle(item_rect.x + ITEM_PADDING, item_rect.y,
+                          item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
+
+    right_x = item_rect.x + item_rect.width - right_width
+    right_y = item_rect.y
+    return rl.Rectangle(right_x, right_y, right_width, ITEM_BASE_HEIGHT)
+
+
 class ListView(Widget):
   def __init__(self, items: list[ListItem]):
     super().__init__()
-    self.items = items
+    self._items = items
     self.scroll_panel = GuiScrollPanel()
+    self._font = gui_app.font(FontWeight.NORMAL)
+    self._hovered_item = -1
 
   def _render(self, rect: rl.Rectangle):
-    total_height = sum(item._get_height(int(rect.width)) for item in self.items if item.is_visible)
+    total_height = self._update_item_rects(rect)
 
-    # Handle scrolling
+    # Update layout and handle scrolling
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, total_height)
     scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
+
+    # Handle mouse interaction
+    if self.scroll_panel.is_click_valid():
+      self._handle_mouse_interaction(rect, scroll_offset)
 
     # Set scissor mode for clipping
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
 
-    y = rect.y + scroll_offset.y
-    for i, item in enumerate(self.items):
+    for i, item in enumerate(self._items):
       if not item.is_visible:
         continue
 
-      item_height = item._get_height(int(rect.width))
-
-      # Skip if outside viewport
-      if y + item_height < rect.y or y > rect.y + rect.height:
-        y += item_height
+      y = int(item.rect.y + scroll_offset.y)
+      if y + item.rect.height <= rect.y or y >= rect.y + rect.height:
         continue
 
-      # Render item
-      item.render(rl.Rectangle(rect.x, y, rect.width, item_height))
+      self._render_item(item, y)
 
       # Draw separator line
-      if i < len(self.items) - 1:
-        line_y = int(y + item_height - 1)
-        rl.draw_line(int(rect.x + ITEM_PADDING), line_y, int(rect.x + rect.width - ITEM_PADDING), line_y, rl.GRAY)
-
-      y += item_height
+      next_visible_item = self._get_next_visible_item(i)
+      if next_visible_item is not None:
+        line_y = int(y + item.rect.height - 1)
+        rl.draw_line(
+          int(item.rect.x) + LINE_PADDING,
+          line_y,
+          int(item.rect.x + item.rect.width) - LINE_PADDING * 2,
+          line_y,
+          LINE_COLOR,
+        )
 
     rl.end_scissor_mode()
+
+  def _get_next_visible_item(self, current_index: int) -> int | None:
+    for i in range(current_index + 1, len(self._items)):
+      if self._items[i].is_visible:
+        return i
+    return None
+
+  def _update_item_rects(self, container_rect: rl.Rectangle) -> float:
+    current_y = 0.0
+    for item in self._items:
+      if not item.is_visible:
+        item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, 0)
+        continue
+
+      content_width = item.get_content_width(int(container_rect.width - ITEM_PADDING * 2))
+      item_height = item.get_item_height(self._font, content_width)
+      item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height)
+      current_y += item_height
+    return current_y  # total height of all items
+
+  def _render_item(self, item: ListItem, y: int):
+    content_x = item.rect.x + ITEM_PADDING
+    text_x = content_x
+
+    # Only draw title and icon for items that have them
+    if item.title:
+      # Draw icon if present
+      if item.icon:
+        icon_texture = gui_app.texture(os.path.join("icons", item.icon), ICON_SIZE, ICON_SIZE)
+        rl.draw_texture(icon_texture, int(content_x), int(y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
+        text_x += ICON_SIZE + ITEM_PADDING
+
+      # Draw main text
+      text_size = measure_text_cached(self._font, item.title, ITEM_TEXT_FONT_SIZE)
+      item_y = y + (ITEM_BASE_HEIGHT - text_size.y) // 2
+      rl.draw_text_ex(self._font, item.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
+
+    # Draw description if visible
+    current_description = item.get_description()
+    if item.description_visible and current_description and item._wrapped_description:
+      rl.draw_text_ex(
+        self._font,
+        item._wrapped_description,
+        rl.Vector2(text_x, y + ITEM_DESC_V_OFFSET),
+        ITEM_DESC_FONT_SIZE,
+        0,
+        ITEM_DESC_TEXT_COLOR,
+      )
+
+    # Draw right item if present
+    if item.action_item:
+      right_rect = item.get_right_item_rect(item.rect)
+      right_rect.y = y
+      if item.action_item.render(right_rect) and item.action_item.enabled:
+        # Right item was clicked/activated
+        if item.callback:
+          item.callback()
+
+  def _handle_mouse_interaction(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
+    mouse_pos = rl.get_mouse_position()
+
+    self._hovered_item = -1
+    if not rl.check_collision_point_rec(mouse_pos, rect):
+      return
+
+    content_mouse_y = mouse_pos.y - rect.y - scroll_offset.y
+
+    for i, item in enumerate(self._items):
+      if not item.is_visible:
+        continue
+
+      if item.rect:
+        # Check if mouse is within this item's bounds in content space
+        if (
+          mouse_pos.x >= rect.x
+          and mouse_pos.x <= rect.x + rect.width
+          and content_mouse_y >= item.rect.y
+          and content_mouse_y <= item.rect.y + item.rect.height
+        ):
+          item_screen_y = item.rect.y + scroll_offset.y
+          if item_screen_y < rect.height and item_screen_y + item.rect.height > 0:
+            self._hovered_item = i
+            break
+
+    # Handle click on main item (not right item)
+    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._hovered_item >= 0:
+      item = self._items[self._hovered_item]
+
+      # Check if click was on right item area
+      if item.action_item and item.rect:
+        # Use the same coordinate system as in _render_item
+        adjusted_rect = rl.Rectangle(item.rect.x, item.rect.y + scroll_offset.y, item.rect.width, item.rect.height)
+        right_rect = item.get_right_item_rect(adjusted_rect)
+
+        if rl.check_collision_point_rec(mouse_pos, right_rect):
+          # Click was on right item, don't toggle description
+          return
+
+      # Toggle description visibility if item has description
+      if item.description:
+        item.description_visible = not item.description_visible
+
+
+# Factory functions
+def simple_item(title: str, callback: Callable | None = None, visible: bool | Callable[[], bool] = True) -> ListItem:
+  return ListItem(title=title, callback=callback, visible=visible)
+
+
+def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
+                callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True,
+                visible: bool | Callable[[], bool] = True) -> ListItem:
+  action = ToggleAction(initial_state=initial_state, enabled=enabled)
+  return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback, visible=visible)
+
+
+def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
+                callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
+                visible: bool | Callable[[], bool] = True) -> ListItem:
+  action = ButtonAction(text=button_text, enabled=enabled)
+  return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+
+
+def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
+              callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
+              visible: bool | Callable[[], bool] = True) -> ListItem:
+  action = TextAction(text=value, color=rl.Color(170, 170, 170, 255), enabled=enabled)
+  return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+
+
+def dual_button_item(left_text: str, right_text: str, left_callback: Callable = None, right_callback: Callable = None,
+                     description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True,
+                     visible: bool | Callable[[], bool] = True) -> ListItem:
+  action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
+  return ListItem(title="", description=description, action_item=action, visible=visible)
+
+
+def multiple_button_item(title: str, description: str, buttons: list[str], selected_index: int,
+                         button_width: int = BUTTON_WIDTH, callback: Callable = None, icon: str = ""):
+  action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
+  return ListItem(title=title, description=description, icon=icon, action_item=action)

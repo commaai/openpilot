@@ -7,7 +7,7 @@ from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialo
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.list_view import ListView, TextItem, ButtonItem, DualButtonItem
+from openpilot.system.ui.lib.list_view import ListView, text_item, button_item, dual_button_item
 from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
@@ -44,15 +44,15 @@ class DeviceLayout(Widget):
     serial = self._params.get("HardwareSerial") or "N/A"
 
     items = [
-      TextItem("Dongle ID", dongle_id),
-      TextItem("Serial", serial),
-      ButtonItem("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
-      ButtonItem("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
-      ButtonItem("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
-      ButtonItem("Regulatory", "VIEW", callback=self._on_regulatory, visible=TICI),
-      ButtonItem("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
-      ButtonItem("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
-      DualButtonItem("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
+      text_item("Dongle ID", dongle_id),
+      text_item("Serial", serial),
+      button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
+      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
+      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
+      button_item("Regulatory", "VIEW", callback=self._on_regulatory, visible=TICI),
+      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
+      button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
+      dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
     ]
     return items
 

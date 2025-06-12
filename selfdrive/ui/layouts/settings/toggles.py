@@ -1,4 +1,4 @@
-from openpilot.system.ui.lib.list_view import ListView, MultipleButtonItem, ToggleItem
+from openpilot.system.ui.lib.list_view import ListView, multiple_button_item, toggle_item
 from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
 
@@ -29,24 +29,24 @@ class TogglesLayout(Widget):
     super().__init__()
     self._params = Params()
     items = [
-      ToggleItem(
+      toggle_item(
         "Enable openpilot",
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         self._params.get_bool("OpenpilotEnabledToggle"),
         icon="chffr_wheel.png",
       ),
-      ToggleItem(
+      toggle_item(
         "Experimental Mode",
         initial_state=self._params.get_bool("ExperimentalMode"),
         icon="experimental_white.png",
       ),
-      ToggleItem(
+      toggle_item(
         "Disengage on Accelerator Pedal",
         DESCRIPTIONS["DisengageOnAccelerator"],
         self._params.get_bool("DisengageOnAccelerator"),
         icon="disengage_on_accelerator.png",
       ),
-      MultipleButtonItem(
+      multiple_button_item(
         "Driving Personality",
         DESCRIPTIONS["LongitudinalPersonality"],
         buttons=["Aggressive", "Standard", "Relaxed"],
@@ -55,25 +55,25 @@ class TogglesLayout(Widget):
         selected_index=int(self._params.get("LongitudinalPersonality") or 0),
         icon="speed_limit.png"
       ),
-      ToggleItem(
+      toggle_item(
         "Enable Lane Departure Warnings",
         DESCRIPTIONS["IsLdwEnabled"],
         self._params.get_bool("IsLdwEnabled"),
         icon="warning.png",
       ),
-      ToggleItem(
+      toggle_item(
         "Always-On Driver Monitoring",
         DESCRIPTIONS["AlwaysOnDM"],
         self._params.get_bool("AlwaysOnDM"),
         icon="monitoring.png",
       ),
-      ToggleItem(
+      toggle_item(
         "Record and Upload Driver Camera",
         DESCRIPTIONS["RecordFront"],
         self._params.get_bool("RecordFront"),
         icon="monitoring.png",
       ),
-      ToggleItem(
+      toggle_item(
         "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
       ),
     ]
