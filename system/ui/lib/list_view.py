@@ -203,22 +203,21 @@ class MultipleButtonAction(ItemAction):
 
 
 @dataclass
-class ListItem(Widget):
+class ListItem:
   title: str
   icon: str | None = None
   description: str | Callable[[], str] | None = None
   description_visible: bool = False
+  rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
   callback: Callable | None = None
   action_item: ItemAction | None = None
+  visible: bool | Callable[[], bool] = True
 
   # Cached properties for performance
   _prev_max_width: int = 0
   _wrapped_description: str | None = None
   _prev_description: str | None = None
   _description_height: float = 0
-
-  def _render(self, _):
-    """Rendering is done by parent ListView."""
 
   @property
   def is_visible(self) -> bool:
@@ -322,12 +321,12 @@ class ListView(Widget):
     current_y = 0.0
     for item in self._items:
       if not item.is_visible:
-        item.set_rect(rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, 0))
+        item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, 0)
         continue
 
       content_width = item.get_content_width(int(container_rect.width - ITEM_PADDING * 2))
       item_height = item.get_item_height(self._font, content_width)
-      item.set_rect(rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height))
+      item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height)
       current_y += item_height
     return current_y  # total height of all items
 
