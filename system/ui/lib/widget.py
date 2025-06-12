@@ -1,6 +1,7 @@
 import abc
 import pyray as rl
 from enum import IntEnum
+from typing import Callable, TypeVar
 
 
 class DialogResult(IntEnum):
@@ -9,10 +10,28 @@ class DialogResult(IntEnum):
   NO_ACTION = -1
 
 
+T = TypeVar("T")
+
+
+def _resolve_value(value: T | Callable[[], T], default: T = ""):
+  if callable(value):
+    return value()
+  return value if value is not None else default
+
+
 class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
+    self._is_visible: bool | Callable[[], bool] = True
+
+  @property
+  def is_visible(self) -> bool:
+    print('Widget.is_visible called')
+    return _resolve_value(self._is_visible, True)
+
+  def set_visible(self, visible: bool | Callable[[], bool]) -> None:
+    self._is_visible = visible
 
   def set_rect(self, rect: rl.Rectangle) -> None:
     self._rect = rect
@@ -20,6 +39,9 @@ class Widget(abc.ABC):
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
+
+    if not self.is_visible:
+      return None
 
     ret = self._render(self._rect)
 

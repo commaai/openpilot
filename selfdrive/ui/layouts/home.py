@@ -51,6 +51,7 @@ class HomeLayout(Widget):
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
 
     self._prime_widget = PrimeWidget()
+    self._prime_widget.set_visible(lambda: round(time.time()) % 2 == 0)  # Show prime widget every other second
     self._setup_widget = SetupWidget()
 
     self._exp_mode_button = ExperimentalModeButton()
