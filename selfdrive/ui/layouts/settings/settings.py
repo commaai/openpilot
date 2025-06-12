@@ -115,12 +115,13 @@ class SettingsLayout(Widget):
       # Draw button text (right-aligned)
       text_size = measure_text_cached(self._font_medium, panel_info.name, 65)
       text_pos = rl.Vector2(
-        button_rect.x + button_rect.width - text_size.x, y + (button_rect.height - text_size.y) / 2
+        button_rect.x + button_rect.width - text_size.x, button_rect.y + (button_rect.height - text_size.y) / 2
       )
       rl.draw_text_ex(self._font_medium, panel_info.name, text_pos, 65, 0, text_color)
 
       # Store button rect for click detection
       panel_info.button_rect = button_rect
+
       y += NAV_BTN_HEIGHT + button_spacing
 
   def _draw_current_panel(self, rect: rl.Rectangle):
