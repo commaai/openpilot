@@ -27,7 +27,6 @@ class Widget(abc.ABC):
 
   @property
   def is_visible(self) -> bool:
-    print('Widget.is_visible called')
     return _resolve_value(self._is_visible, True)
 
   def set_visible(self, visible: bool | Callable[[], bool]) -> None:
