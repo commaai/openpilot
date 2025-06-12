@@ -1,7 +1,8 @@
 import abc
 import pyray as rl
 from enum import IntEnum
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar, cast
 
 
 class DialogResult(IntEnum):
@@ -13,10 +14,10 @@ class DialogResult(IntEnum):
 T = TypeVar("T")
 
 
-def _resolve_value(value: T | Callable[[], T], default: T = ""):
+def _resolve_value(value: T | Callable[[], T], default: T | str = "") -> T:
   if callable(value):
     return value()
-  return value if value is not None else default
+  return value if value is not None else cast(T, default)
 
 
 class Widget(abc.ABC):
