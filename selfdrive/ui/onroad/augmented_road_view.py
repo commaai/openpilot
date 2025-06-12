@@ -99,6 +99,8 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+  def render(self, rect: rl.Rectangle):
+    self._render(rect)
     # Handle click events if no HUD interaction occurred
     if not self._hud_renderer.handle_mouse_event():
       if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
