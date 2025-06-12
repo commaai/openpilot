@@ -298,7 +298,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void DevicePanel::updateCalibDescription() {
-  QString desc = tr("\nopenpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
+  QString desc = tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
   std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -359,7 +359,8 @@ void DevicePanel::updateCalibDescription() {
     }
   }
 
-  desc += tr("\n\nopenpilot is continuously calibrating, resetting is rarely required. "
+  desc += "\n\n";
+  desc += tr("openpilot is continuously calibrating, resetting is rarely required. "
              "Resetting calibration will restart openpilot if the car is powered on.");
   resetCalibBtn->setDescription(desc);
 }
