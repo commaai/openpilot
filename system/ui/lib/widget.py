@@ -17,6 +17,10 @@ class Widget(abc.ABC):
     self._is_visible: bool | Callable[[], bool] = True
 
   @property
+  def rect(self) -> rl.Rectangle:
+    return self._rect
+
+  @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
 

@@ -49,11 +49,12 @@ class DeviceLayout(Widget):
       button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
       button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
-      button_item("Regulatory", "VIEW", callback=self._on_regulatory, visible=TICI),
+      regulatory := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
       button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
       dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
     ]
+    regulatory.set_visible(TICI)
     return items
 
   def _render(self, rect):
