@@ -132,6 +132,8 @@ class SettingsLayout(Widget):
     # rl.draw_rectangle_rounded(content_rect, 0.03, 30, PANEL_COLOR)
     panel = self._panels[self._current_panel]
     if panel.instance:
+      if panel.name == "Device":
+        print('rendering device with rect', content_rect)
       panel.instance.render(content_rect)
 
   def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:

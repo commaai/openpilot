@@ -57,6 +57,7 @@ class DeviceLayout(Widget):
     return items
 
   def _render(self, rect):
+    print('device got rect', rect)
     self._list_widget.render(rect)
 
   def _show_language_selection(self):

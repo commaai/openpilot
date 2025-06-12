@@ -33,6 +33,7 @@ class Widget(abc.ABC):
     if not self.is_visible:
       return None
 
+    print('rect', rect)
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
     ret = self._render(self._rect)
     rl.end_scissor_mode()

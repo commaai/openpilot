@@ -274,6 +274,8 @@ class ListView(Widget):
     self._hovered_item = -1
 
   def _render(self, rect: rl.Rectangle):
+    if rect is None:
+      print(self.__class__.__name__, "render called with None rect")
     total_height = self._update_item_rects(rect)
 
     # Update layout and handle scrolling
@@ -283,6 +285,9 @@ class ListView(Widget):
     # Handle mouse interaction
     if self.scroll_panel.is_click_valid():
       self._handle_mouse_interaction(rect, scroll_offset)
+
+    # # Set scissor mode for clipping
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
 
     for i, item in enumerate(self._items):
       if not item.is_visible:
@@ -305,6 +310,8 @@ class ListView(Widget):
           line_y,
           LINE_COLOR,
         )
+
+    rl.end_scissor_mode()
 
   def _get_next_visible_item(self, current_index: int) -> int | None:
     for i in range(current_index + 1, len(self._items)):
