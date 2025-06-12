@@ -12,7 +12,6 @@ class DialogResult(IntEnum):
 
 class Widget(abc.ABC):
   def __init__(self):
-    self._prev_rect = rl.Rectangle(0, 0, 0, 0)
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
     self._is_visible: bool | Callable[[], bool] = True
@@ -25,8 +24,11 @@ class Widget(abc.ABC):
     self._is_visible = visible
 
   def set_rect(self, rect: rl.Rectangle) -> None:
+    prev_rect = self._rect
     self._rect = rect
-    self._update_layout_rects()
+    if (rect.x != prev_rect.x or rect.y != prev_rect.y or
+        rect.width != prev_rect.width or rect.height != prev_rect.height):
+      self._update_layout_rects()
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
@@ -54,9 +56,9 @@ class Widget(abc.ABC):
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
     """Render the widget within the given rectangle."""
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
-    """Handle mouse release events, if applicable."""
-    return False
-
   def _update_layout_rects(self) -> None:
-    """Update the layout rectangles on change."""
+    """Optionally update any layout rects on Widget rect change."""
+
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+    """Optionally handle mouse release events."""
+    return False
