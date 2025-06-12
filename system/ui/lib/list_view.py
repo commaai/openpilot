@@ -445,6 +445,7 @@ def dual_button_item(left_text: str, right_text: str, left_callback: Callable = 
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
   return ListItem(title="", description=description, action_item=action, visible=visible)
 
+
 def multiple_button_item(title: str, description: str, buttons: list[str], selected_index: int,
                          button_width: int = BUTTON_WIDTH, callback: Callable = None, icon: str = ""):
   action = MultipleButtonAction(buttons, button_width, selected_index, callback=callback)
