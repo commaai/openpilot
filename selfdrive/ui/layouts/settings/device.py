@@ -12,14 +12,15 @@ from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
+from openpilot.system.ui.widgets.html_render import HtmlRenderer
 
 # Description constants
 DESCRIPTIONS = {
   'pair_device': "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.",
   'driver_camera': "Preview the driver facing camera to ensure that driver monitoring has good visibility. (vehicle must be off)",
   'reset_calibration': (
-    "openpilot requires the device to be mounted within 4° left or right and within 5° " +
-    "up or 9° down. openpilot is continuously calibrating, resetting is rarely required."
+      "openpilot requires the device to be mounted within 4° left or right and within 5° " +
+      "up or 9° down. openpilot is continuously calibrating, resetting is rarely required."
   ),
   'review_guide': "Review the rules, features, and limitations of openpilot",
 }
@@ -33,6 +34,7 @@ class DeviceLayout(Widget):
     self._select_language_dialog: MultiOptionDialog | None = None
     self._driver_camera: DriverCameraDialog | None = None
     self._pair_device_dialog: PairingDialog | None = None
+    self._fcc_dialog: HtmlRenderer | None = None
 
     items = self._initialize_items()
     self._list_widget = ListView(items)
@@ -135,5 +137,12 @@ class DeviceLayout(Widget):
       self._pair_device_dialog = PairingDialog()
     gui_app.set_modal_overlay(self._pair_device_dialog, callback=lambda result: setattr(self, '_pair_device_dialog', None))
 
+  def _on_regulatory(self):
+    if not self._fcc_dialog:
+      self._fcc_dialog = HtmlRenderer(os.path.join(BASEDIR, "selfdrive/assets/offroad/fcc.html"))
+
+    gui_app.set_modal_overlay(self._fcc_dialog,
+      callback=lambda result: setattr(self, '_fcc_dialog', None),
+    )
+
   def _on_review_training_guide(self): pass
-  def _on_regulatory(self): pass
