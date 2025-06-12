@@ -272,12 +272,13 @@ class ListView(Widget):
     self.scroll_panel = GuiScrollPanel()
     self._font = gui_app.font(FontWeight.NORMAL)
     self._hovered_item = -1
+    self._total_height = 0
 
   def _render(self, rect: rl.Rectangle):
-    total_height = self._update_item_rects(rect)
+    self._update_layout_rects()
 
     # Update layout and handle scrolling
-    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, total_height)
+    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, self._total_height)
     scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
 
     # Handle mouse interaction
@@ -317,18 +318,18 @@ class ListView(Widget):
         return i
     return None
 
-  def _update_item_rects(self, container_rect: rl.Rectangle) -> float:
+  def _update_layout_rects(self):
     current_y = 0.0
     for item in self._items:
       if not item.is_visible:
-        item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, 0)
+        item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, 0)
         continue
 
-      content_width = item.get_content_width(int(container_rect.width - ITEM_PADDING * 2))
+      content_width = item.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
       item_height = item.get_item_height(self._font, content_width)
-      item.rect = rl.Rectangle(container_rect.x, container_rect.y + current_y, container_rect.width, item_height)
+      item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, item_height)
       current_y += item_height
-    return current_y  # total height of all items
+    self._total_height = current_y  # total height of all items
 
   def _render_item(self, item: ListItem, y: int):
     content_x = item.rect.x + ITEM_PADDING

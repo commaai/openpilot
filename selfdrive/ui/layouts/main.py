@@ -30,8 +30,7 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
-  def _render(self, rect):
-    self._update_layout_rects(rect)
+  def _render(self, _):
     self._handle_onroad_transition()
     self._render_main_content()
 
@@ -42,11 +41,11 @@ class MainLayout(Widget):
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
 
-  def _update_layout_rects(self, rect):
-    self._sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
+  def _update_layout_rects(self):
+    self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
 
     x_offset = SIDEBAR_WIDTH if self._sidebar.is_visible else 0
-    self._content_rect = rl.Rectangle(rect.y + x_offset, rect.y, rect.width - x_offset, rect.height)
+    self._content_rect = rl.Rectangle(self._rect.y + x_offset, self._rect.y, self._rect.width - x_offset, self._rect.height)
 
   def _handle_onroad_transition(self):
     if ui_state.started != self._prev_onroad:
