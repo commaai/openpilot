@@ -55,7 +55,7 @@ class AugmentedRoadView(CameraView):
   def set_callbacks(self, on_click: Callable | None = None):
     self._click_callback = on_click
 
-  def _render(self, rect):
+  def _render(self):
     # Only render when system is started to avoid invalid data access
     if not ui_state.started:
       return
@@ -67,14 +67,14 @@ class AugmentedRoadView(CameraView):
 
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
-      rect.x + UI_BORDER_SIZE,
-      rect.y + UI_BORDER_SIZE,
-      rect.width - 2 * UI_BORDER_SIZE,
-      rect.height - 2 * UI_BORDER_SIZE,
+      self._rect.x + UI_BORDER_SIZE,
+      self._rect.y + UI_BORDER_SIZE,
+      self._rect.width - 2 * UI_BORDER_SIZE,
+      self._rect.height - 2 * UI_BORDER_SIZE,
     )
 
     # Draw colored border based on driving state
-    self._draw_border(rect)
+    self._draw_border()
 
     # Enable scissor mode to clip all rendering within content rectangle boundaries
     # This creates a rendering viewport that prevents graphics from drawing outside the border
@@ -86,7 +86,7 @@ class AugmentedRoadView(CameraView):
     )
 
     # Render the base camera view
-    super()._render(rect)
+    super()._render()  # TODO?
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
@@ -106,9 +106,9 @@ class AugmentedRoadView(CameraView):
         if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
           self._click_callback()
 
-  def _draw_border(self, rect: rl.Rectangle):
+  def _draw_border(self):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
-    rl.draw_rectangle_lines_ex(rect, UI_BORDER_SIZE, border_color)
+    rl.draw_rectangle_lines_ex(self._rect, UI_BORDER_SIZE, border_color)
 
   def _switch_stream_if_needed(self, sm):
     if sm['selfdriveState'].experimentalMode and WIDE_CAM in self.available_streams:
@@ -149,7 +149,7 @@ class AugmentedRoadView(CameraView):
       wide_from_device = rot_from_euler(calib.wideFromDeviceEuler)
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+  def _calc_frame_matrix(self) -> np.ndarray:
     # Check if we can use cached matrix
     calib_time = ui_state.sm.recv_frame['liveCalibration']
     current_dims = (self._content_rect.width, self._content_rect.height)

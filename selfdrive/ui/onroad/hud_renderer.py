@@ -101,37 +101,37 @@ class HudRenderer(Widget):
 
     self._exp_button.update_state(sm)
 
-  def _render(self, rect: rl.Rectangle) -> None:
+  def _render(self) -> None:
     """Render HUD elements to the screen."""
     self._update_state(ui_state.sm)
 
     # Draw the header background
     rl.draw_rectangle_gradient_v(
-      int(rect.x),
-      int(rect.y),
-      int(rect.width),
+      int(self._rect.x),
+      int(self._rect.y),
+      int(self._rect.width),
       UI_CONFIG.header_height,
       COLORS.header_gradient_start,
       COLORS.header_gradient_end,
     )
 
     if self.is_cruise_available:
-      self._draw_set_speed(rect)
+      self._draw_set_speed()
 
-    self._draw_current_speed(rect)
+    self._draw_current_speed()
 
-    button_x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
-    button_y = rect.y + UI_CONFIG.border_size
+    button_x = self._rect.x + self._rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
+    button_y = self._rect.y + UI_CONFIG.border_size
     self._exp_button.render(rl.Rectangle(button_x, button_y, UI_CONFIG.button_size, UI_CONFIG.button_size))
 
   def handle_mouse_event(self) -> bool:
     return bool(self._exp_button.handle_mouse_event())
 
-  def _draw_set_speed(self, rect: rl.Rectangle) -> None:
+  def _draw_set_speed(self) -> None:
     """Draw the MAX speed indicator box."""
     set_speed_width = UI_CONFIG.set_speed_width_metric if ui_state.is_metric else UI_CONFIG.set_speed_width_imperial
-    x = rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - set_speed_width) // 2
-    y = rect.y + 45
+    x = self._rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - set_speed_width) // 2
+    y = self._rect.y + 45
 
     set_speed_rect = rl.Rectangle(x, y, set_speed_width, UI_CONFIG.set_speed_height)
     rl.draw_rectangle_rounded(set_speed_rect, 0.2, 30, COLORS.black_translucent)
@@ -170,14 +170,14 @@ class HudRenderer(Widget):
       set_speed_color,
     )
 
-  def _draw_current_speed(self, rect: rl.Rectangle) -> None:
+  def _draw_current_speed(self) -> None:
     """Draw the current vehicle speed and unit."""
     speed_text = str(round(self.speed))
     speed_text_size = measure_text_cached(self._font_bold, speed_text, FONT_SIZES.current_speed)
-    speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
+    speed_pos = rl.Vector2(self._rect.x + self._rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
     rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
 
     unit_text = "km/h" if ui_state.is_metric else "mph"
     unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
-    unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
+    unit_pos = rl.Vector2(self._rect.x + self._rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)

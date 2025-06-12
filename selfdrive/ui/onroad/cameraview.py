@@ -141,12 +141,12 @@ class CameraView(Widget):
 
     self.client = None
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+  def _calc_frame_matrix(self) -> np.ndarray:
     if not self.frame:
       return np.eye(3)
 
     # Calculate aspect ratios
-    widget_aspect_ratio = rect.width / rect.height
+    widget_aspect_ratio = self._rect.width / self._rect.height
     frame_aspect_ratio = self.frame.width / self.frame.height
 
     # Calculate scaling factors to maintain aspect ratio
@@ -159,12 +159,12 @@ class CameraView(Widget):
       [0.0, 0.0, 1.0]
     ])
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     if self._switching:
       self._handle_switch()
 
     if not self._ensure_connection():
-      self._draw_placeholder(rect)
+      self._draw_placeholder()
       return
 
     # Try to get a new buffer without blocking
@@ -174,22 +174,22 @@ class CameraView(Widget):
       self.frame = buffer
 
     if not self.frame:
-      self._draw_placeholder(rect)
+      self._draw_placeholder()
       return
 
-    transform = self._calc_frame_matrix(rect)
+    transform = self._calc_frame_matrix()
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
 
     # Calculate scale
-    scale_x = rect.width * transform[0, 0]  # zx
-    scale_y = rect.height * transform[1, 1]  # zy
+    scale_x = self._rect.width * transform[0, 0]  # zx
+    scale_y = self._rect.height * transform[1, 1]  # zy
 
     # Calculate base position (centered)
-    x_offset = rect.x + (rect.width - scale_x) / 2
-    y_offset = rect.y + (rect.height - scale_y) / 2
+    x_offset = self._rect.x + (self._rect.width - scale_x) / 2
+    y_offset = self._rect.y + (self._rect.height - scale_y) / 2
 
-    x_offset += transform[0, 2] * rect.width / 2
-    y_offset += transform[1, 2] * rect.height / 2
+    x_offset += transform[0, 2] * self._rect.width / 2
+    y_offset += transform[1, 2] * self._rect.height / 2
 
     dst_rect = rl.Rectangle(x_offset, y_offset, scale_x, scale_y)
 
@@ -199,9 +199,9 @@ class CameraView(Widget):
     else:
       self._render_textures(src_rect, dst_rect)
 
-  def _draw_placeholder(self, rect: rl.Rectangle):
+  def _draw_placeholder(self):
     if self._placeholder_color:
-      rl.draw_rectangle_rec(rect, self._placeholder_color)
+      rl.draw_rectangle_rec(self._rect, self._placeholder_color)
 
   def _render_egl(self, src_rect: rl.Rectangle, dst_rect: rl.Rectangle) -> None:
     """Render using EGL for direct buffer access"""

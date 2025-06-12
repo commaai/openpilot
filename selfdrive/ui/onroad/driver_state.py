@@ -76,11 +76,11 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def _render(self, rect):
+  def _render(self):
     if not self._is_visible(ui_state.sm):
       return
 
-    self._update_state(ui_state.sm, rect)
+    self._update_state(ui_state.sm)
     if not self.state_updated:
       return
 
@@ -113,12 +113,12 @@ class DriverStateRenderer(Widget):
     return (sm.recv_frame['driverStateV2'] > ui_state.started_frame and
             sm.seen['driverMonitoringState'])
 
-  def _update_state(self, sm, rect):
+  def _update_state(self, sm):
     """Update the driver monitoring state based on model data"""
     if not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
-                                 rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements(rect)
+      if self.state_updated and (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
+                                 self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
+        self._pre_calculate_drawing_elements()
       return
 
     # Get monitoring state
@@ -167,16 +167,16 @@ class DriverStateRenderer(Widget):
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self._pre_calculate_drawing_elements(rect)
+    self._pre_calculate_drawing_elements()
     self.state_updated = True
 
-  def _pre_calculate_drawing_elements(self, rect):
+  def _pre_calculate_drawing_elements(self):
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
-    width, height = rect.width, rect.height
+    width, height = self._rect.width, self._rect.height
     offset = UI_BORDER_SIZE + BTN_SIZE // 2
-    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
-    self.position_y = rect.y + height - offset
+    self.position_x = self._rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = self._rect.y + height - offset
 
     # Pre-calculate the face lines positions
     positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])

@@ -17,12 +17,11 @@ class Toggle(Widget):
     super().__init__()
     self._state = initial_state
     self._enabled = True
-    self.set_rect(rl.Rectangle(0, 0, WIDTH, HEIGHT))
     self._progress = 1.0 if initial_state else 0.0
     self._target = self._progress
 
   def set_rect(self, rect: rl.Rectangle):
-    self._rect.x, self._rect.y = rect.x, rect.y
+    self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
 
   def handle_input(self):
     if not self._enabled:

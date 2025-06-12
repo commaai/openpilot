@@ -95,12 +95,12 @@ class AlertRenderer(Widget):
     # Return current alert
     return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     alert = self.get_alert(ui_state.sm)
     if not alert:
       return False
 
-    alert_rect = self._get_alert_rect(rect, alert.size)
+    alert_rect = self._get_alert_rect(alert.size)
     self._draw_background(alert_rect, alert)
 
     text_rect = rl.Rectangle(
@@ -112,17 +112,17 @@ class AlertRenderer(Widget):
     self._draw_text(text_rect, alert)
     return True
 
-  def _get_alert_rect(self, rect: rl.Rectangle, size: int) -> rl.Rectangle:
+  def _get_alert_rect(self, size: int) -> rl.Rectangle:
     if size == log.SelfdriveState.AlertSize.full:
-      return rect
+      return self._rect
 
     height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == log.SelfdriveState.AlertSize.small else
               ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
 
     return rl.Rectangle(
-      rect.x + ALERT_MARGIN,
-      rect.y + rect.height - ALERT_MARGIN - height,
-      rect.width - 2 * ALERT_MARGIN,
+      self._rect.x + ALERT_MARGIN,
+      self._rect.y + self._rect.height - ALERT_MARGIN - height,
+      self._rect.width - 2 * ALERT_MARGIN,
       height
     )
 
