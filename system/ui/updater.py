@@ -79,21 +79,21 @@ class Updater(Widget):
       self.progress_text = "Update failed"
       self.show_reboot_button = True
 
-  def render_prompt_screen(self, rect: rl.Rectangle):
+  def render_prompt_screen(self):
     # Title
-    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(MARGIN + 50, 250, self._rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
     gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
 
     # Description
     desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
                  "The download size is approximately 1GB.")
 
-    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, self._rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
 
     # Buttons at the bottom
-    button_y = rect.height - MARGIN - BUTTON_HEIGHT
-    button_width = (rect.width - MARGIN * 3) // 2
+    button_y = self._rect.height - MARGIN - BUTTON_HEIGHT
+    button_width = (self._rect.width - MARGIN * 3) // 2
 
     # WiFi button
     wifi_button_rect = rl.Rectangle(MARGIN, button_y, button_width, BUTTON_HEIGHT)
@@ -107,22 +107,22 @@ class Updater(Widget):
       self.install_update()
       return  # Return to avoid further processing after action
 
-  def render_wifi_screen(self, rect: rl.Rectangle):
+  def render_wifi_screen(self):
     # Draw the Wi-Fi manager UI
-    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, rect.width - MARGIN * 2 - 100, rect.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
+    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, self._rect.width - MARGIN * 2 - 100, self._rect.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
     self.wifi_manager_ui.render(wifi_rect)
 
-    back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+    back_button_rect = rl.Rectangle(MARGIN, self._rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     if gui_button(back_button_rect, "Back"):
       self.current_screen = Screen.PROMPT
       return  # Return to avoid processing other interactions after screen change
 
   def render_progress_screen(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, 100)
+    title_rect = rl.Rectangle(MARGIN + 100, 330, self._rect.width - MARGIN * 2 - 200, 100)
     gui_label(title_rect, self.progress_text, 90, font_weight=FontWeight.SEMI_BOLD)
 
     # Progress bar
-    bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, rect.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
+    bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, self._rect.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
     rl.draw_rectangle_rounded(bar_rect, 0.5, 10, PROGRESS_BG_COLOR)
 
     # Calculate the width of the progress chunk
@@ -133,19 +133,19 @@ class Updater(Widget):
 
     # Show reboot button if needed
     if self.show_reboot_button:
-      reboot_rect = rl.Rectangle(MARGIN + 100, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+      reboot_rect = rl.Rectangle(MARGIN + 100, self._rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
       if gui_button(reboot_rect, "Reboot"):
         # Return True to signal main loop to exit before rebooting
         HARDWARE.reboot()
         return
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     if self.current_screen == Screen.PROMPT:
-      self.render_prompt_screen(rect)
+      self.render_prompt_screen()
     elif self.current_screen == Screen.WIFI:
-      self.render_wifi_screen(rect)
+      self.render_wifi_screen()
     elif self.current_screen == Screen.PROGRESS:
-      self.render_progress_screen(rect)
+      self.render_progress_screen()
 
 
 def main():

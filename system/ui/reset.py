@@ -56,28 +56,28 @@ class Reset(Widget):
     self.reset_state = ResetState.RESETTING
     threading.Timer(0.1, self._do_erase).start()
 
-  def _render(self, rect: rl.Rectangle):
-    label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
+  def _render(self):
+    label_rect = rl.Rectangle(self._rect.x + 140, self._rect.y, self._rect.width - 280, 100)
     gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
 
-    text_rect = rl.Rectangle(rect.x + 140, rect.y + 140, rect.width - 280, rect.height - 90 - 100)
+    text_rect = rl.Rectangle(self._rect.x + 140, self._rect.y + 140, self._rect.width - 280, self._rect.height - 90 - 100)
     gui_text_box(text_rect, self.get_body_text(), 90)
 
     button_height = 160
     button_spacing = 50
-    button_top = rect.y + rect.height - button_height
-    button_width = (rect.width - button_spacing) / 2.0
+    button_top = self._rect.y + self._rect.height - button_height
+    button_width = (self._rect.width - button_spacing) / 2.0
 
     if self.reset_state != ResetState.RESETTING:
       if self.mode == ResetMode.RECOVER or self.reset_state == ResetState.FAILED:
-        if gui_button(rl.Rectangle(rect.x, button_top, button_width, button_height), "Reboot"):
+        if gui_button(rl.Rectangle(self._rect.x, button_top, button_width, button_height), "Reboot"):
           os.system("sudo reboot")
       elif self.mode == ResetMode.USER_RESET:
-        if gui_button(rl.Rectangle(rect.x, button_top, button_width, button_height), "Cancel"):
+        if gui_button(rl.Rectangle(self._rect.x, button_top, button_width, button_height), "Cancel"):
           return False
 
       if self.reset_state != ResetState.FAILED:
-        if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height),
+        if gui_button(rl.Rectangle(self._rect.x + button_width + 50, button_top, button_width, button_height),
                       "Confirm", button_style=ButtonStyle.PRIMARY):
           self.confirm()
 

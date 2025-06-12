@@ -103,9 +103,9 @@ class HtmlRenderer(Widget):
 
     self.elements.append(element)
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     margin = 50
-    content_rect = rl.Rectangle(rect.x + margin, rect.y + margin, rect.width - (margin * 2), rect.height - (margin * 2))
+    content_rect = rl.Rectangle(self._rect.x + margin, self._rect.y + margin, self._rect.width - (margin * 2), self._rect.height - (margin * 2))
 
     button_height = 160
     button_spacing = 20
@@ -121,7 +121,7 @@ class HtmlRenderer(Widget):
     self._render_content(scrollable_rect, scroll_offset.y)
     rl.end_scissor_mode()
 
-    button_width = (rect.width - 3 * 50) // 3
+    button_width = (self._rect.width - 3 * 50) // 3
     button_x = content_rect.x + (content_rect.width - button_width) / 2
     button_y = content_rect.y + content_rect.height - button_height
     button_rect = rl.Rectangle(button_x, button_y, button_width, button_height)

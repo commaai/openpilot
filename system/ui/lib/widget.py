@@ -11,21 +11,17 @@ class DialogResult(IntEnum):
 
 class Widget(abc.ABC):
   def __init__(self):
-    self._rect = rl.Rectangle(0, 0, 0, 0)
+    self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
 
   def set_rect(self, rect: rl.Rectangle):
     self._rect = rect
 
-  def render(self, rect: type(rl.Rectangle) | None = None) -> bool | int | None:
+  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
 
-    try:
-      ret = self._render()  # this is good
-    except:
-      ret = self._render(rl.Rectangle(0, 0, 0, 0))
-      print('Widget using rect passed in! remove it:', self.__class__.__name__)
+    ret = self._render()  # this is good
 
     # Keep track of whether mouse down started within the widget's rectangle
     mouse_pos = rl.get_mouse_position()
@@ -41,7 +37,7 @@ class Widget(abc.ABC):
     return ret
 
   @abc.abstractmethod
-  def _render(self):
+  def _render(self) -> bool | int | None:
     """Render the widget within the given rectangle."""
 
   def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:

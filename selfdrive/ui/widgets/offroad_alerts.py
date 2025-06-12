@@ -91,16 +91,16 @@ class AbstractAlert(Widget, ABC):
 
     return False
 
-  def _render(self, rect: rl.Rectangle):
-    rl.draw_rectangle_rounded(rect, AlertConstants.BORDER_RADIUS / rect.width, 10, AlertColors.BACKGROUND)
+  def _render(self):
+    rl.draw_rectangle_rounded(self._rect, AlertConstants.BORDER_RADIUS / self._rect.width, 10, AlertColors.BACKGROUND)
 
     footer_height = AlertConstants.BUTTON_SIZE[1] + AlertConstants.SPACING
-    content_height = rect.height - 2 * AlertConstants.MARGIN - footer_height
+    content_height = self._rect.height - 2 * AlertConstants.MARGIN - footer_height
 
     self.content_rect = rl.Rectangle(
-      rect.x + AlertConstants.MARGIN,
-      rect.y + AlertConstants.MARGIN,
-      rect.width - 2 * AlertConstants.MARGIN,
+      self._rect.x + AlertConstants.MARGIN,
+      self._rect.y + AlertConstants.MARGIN,
+      self._rect.width - 2 * AlertConstants.MARGIN,
       content_height,
     )
     self.scroll_panel_rect = rl.Rectangle(
@@ -108,7 +108,7 @@ class AbstractAlert(Widget, ABC):
     )
 
     self._render_scrollable_content()
-    self._render_footer(rect)
+    self._render_footer()
 
   def _render_scrollable_content(self):
     content_total_height = self.get_content_height()
@@ -136,11 +136,11 @@ class AbstractAlert(Widget, ABC):
   def _render_content(self, content_rect: rl.Rectangle):
     pass
 
-  def _render_footer(self, rect: rl.Rectangle):
-    footer_y = rect.y + rect.height - AlertConstants.MARGIN - AlertConstants.BUTTON_SIZE[1]
+  def _render_footer(self):
+    footer_y = self._rect.y + self._rect.height - AlertConstants.MARGIN - AlertConstants.BUTTON_SIZE[1]
     font = gui_app.font(FontWeight.MEDIUM)
 
-    self.dismiss_btn_rect.x = rect.x + AlertConstants.MARGIN
+    self.dismiss_btn_rect.x = self._rect.x + AlertConstants.MARGIN
     self.dismiss_btn_rect.y = footer_y
     rl.draw_rectangle_rounded(self.dismiss_btn_rect, 0.3, 10, AlertColors.BUTTON)
 
@@ -153,7 +153,7 @@ class AbstractAlert(Widget, ABC):
     )
 
     if self.snooze_visible:
-      self.snooze_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.SNOOZE_BUTTON_SIZE[0]
+      self.snooze_btn_rect.x = self._rect.x + self._rect.width - AlertConstants.MARGIN - AlertConstants.SNOOZE_BUTTON_SIZE[0]
       self.snooze_btn_rect.y = footer_y
       rl.draw_rectangle_rounded(self.snooze_btn_rect, 0.3, 10, AlertColors.SNOOZE_BG)
 
@@ -164,7 +164,7 @@ class AbstractAlert(Widget, ABC):
       rl.draw_text_ex(font, text, rl.Vector2(int(text_x), int(text_y)), AlertConstants.FONT_SIZE, 0, AlertColors.TEXT)
 
     elif self.has_reboot_btn:
-      self.reboot_btn_rect.x = rect.x + rect.width - AlertConstants.MARGIN - AlertConstants.REBOOT_BUTTON_SIZE[0]
+      self.reboot_btn_rect.x = self._rect.x + self._rect.width - AlertConstants.MARGIN - AlertConstants.REBOOT_BUTTON_SIZE[0]
       self.reboot_btn_rect.y = footer_y
       rl.draw_rectangle_rounded(self.reboot_btn_rect, 0.3, 10, AlertColors.BUTTON)
 

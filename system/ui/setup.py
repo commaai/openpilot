@@ -69,48 +69,48 @@ class Setup(Widget):
     except (FileNotFoundError, ValueError):
       self.state = SetupState.LOW_VOLTAGE
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     if self.state == SetupState.LOW_VOLTAGE:
-      self.render_low_voltage(rect)
+      self.render_low_voltage()
     elif self.state == SetupState.GETTING_STARTED:
-      self.render_getting_started(rect)
+      self.render_getting_started()
     elif self.state == SetupState.NETWORK_SETUP:
-      self.render_network_setup(rect)
+      self.render_network_setup()
     elif self.state == SetupState.SOFTWARE_SELECTION:
-      self.render_software_selection(rect)
+      self.render_software_selection()
     elif self.state == SetupState.CUSTOM_URL:
       self.render_custom_url()
     elif self.state == SetupState.DOWNLOADING:
-      self.render_downloading(rect)
+      self.render_downloading()
     elif self.state == SetupState.DOWNLOAD_FAILED:
-      self.render_download_failed(rect)
+      self.render_download_failed()
 
-  def render_low_voltage(self, rect: rl.Rectangle):
-    rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
+  def render_low_voltage(self):
+    rl.draw_texture(self.warning, int(self._rect.x + 150), int(self._rect.y + 110), rl.WHITE)
 
-    title_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(self._rect.x + 150, self._rect.y + 110 + 150 + 100, self._rect.width - 500 - 150, TITLE_FONT_SIZE)
     gui_label(title_rect, "WARNING: Low Voltage", TITLE_FONT_SIZE, rl.Color(255, 89, 79, 255), FontWeight.MEDIUM)
 
-    body_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100 + TITLE_FONT_SIZE + 25, rect.width - 500 - 150, BODY_FONT_SIZE * 3)
+    body_rect = rl.Rectangle(self._rect.x + 150, self._rect.y + 110 + 150 + 100 + TITLE_FONT_SIZE + 25, self._rect.width - 500 - 150, BODY_FONT_SIZE * 3)
     gui_text_box(body_rect, "Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE)
 
-    button_width = (rect.width - MARGIN * 3) / 2
-    button_y = rect.height - MARGIN - BUTTON_HEIGHT
+    button_width = (self._rect.width - MARGIN * 3) / 2
+    button_y = self._rect.height - MARGIN - BUTTON_HEIGHT
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Power off"):
+    if gui_button(rl.Rectangle(self._rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Power off"):
       HARDWARE.shutdown()
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT), "Continue"):
+    if gui_button(rl.Rectangle(self._rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT), "Continue"):
       self.state = SetupState.GETTING_STARTED
 
   def render_getting_started(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + 280, self._rect.width - 265, TITLE_FONT_SIZE)
     gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
-    desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, BODY_FONT_SIZE * 3)
+    desc_rect = rl.Rectangle(self._rect.x + 165, self._rect.y + 280 + TITLE_FONT_SIZE + 90, self._rect.width - 500, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE)
 
-    btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
+    btn_rect = rl.Rectangle(self._rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, self._rect.height)
 
     ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
     triangle = gui_app.texture("images/button_continue_triangle.png", 54, int(btn_rect.height))
@@ -144,20 +144,20 @@ class Setup(Widget):
       self.stop_network_check_thread.set()
       self.network_check_thread.join()
 
-  def render_network_setup(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
+  def render_network_setup(self):
+    title_rect = rl.Rectangle(self._rect.x + MARGIN, self._rect.y + MARGIN, self._rect.width - MARGIN * 2, TITLE_FONT_SIZE)
     gui_label(title_rect, "Connect to Wi-Fi", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
-    wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN + 25, rect.width - MARGIN * 2,
-                             rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN * 3)
+    wifi_rect = rl.Rectangle(self._rect.x + MARGIN, self._rect.y + TITLE_FONT_SIZE + MARGIN + 25, self._rect.width - MARGIN * 2,
+                             self._rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN * 3)
     rl.draw_rectangle_rounded(wifi_rect, 0.05, 10, rl.Color(51, 51, 51, 255))
     wifi_content_rect = rl.Rectangle(wifi_rect.x + MARGIN, wifi_rect.y, wifi_rect.width - MARGIN * 2, wifi_rect.height)
     self.wifi_ui.render(wifi_content_rect)
 
-    button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
-    button_y = rect.height - BUTTON_HEIGHT - MARGIN
+    button_width = (self._rect.width - BUTTON_SPACING - MARGIN * 2) / 2
+    button_y = self._rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
+    if gui_button(rl.Rectangle(self._rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.GETTING_STARTED
 
     # Check network connectivity status
@@ -165,7 +165,7 @@ class Setup(Widget):
     continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
 
     if gui_button(
-      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
+      rl.Rectangle(self._rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       continue_text,
       button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
       is_enabled=continue_enabled,
@@ -173,14 +173,14 @@ class Setup(Widget):
       self.state = SetupState.SOFTWARE_SELECTION
       self.stop_network_check_thread.set()
 
-  def render_software_selection(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
+  def render_software_selection(self):
+    title_rect = rl.Rectangle(self._rect.x + MARGIN, self._rect.y + MARGIN, self._rect.width - MARGIN * 2, TITLE_FONT_SIZE)
     gui_label(title_rect, "Choose Software to Install", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
     radio_height = 230
     radio_spacing = 30
 
-    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
+    openpilot_rect = rl.Rectangle(self._rect.x + MARGIN, self._rect.y + TITLE_FONT_SIZE + MARGIN * 2, self._rect.width - MARGIN * 2, radio_height)
     openpilot_selected = self.selected_radio == "openpilot"
 
     rl.draw_rectangle_rounded(openpilot_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if openpilot_selected else rl.Color(79, 79, 79, 255))
@@ -191,7 +191,8 @@ class Setup(Widget):
                                  openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2)
       rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
 
-    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
+    custom_rect = rl.Rectangle(self._rect.x + MARGIN, self._rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing,
+                               self._rect.width - MARGIN * 2, radio_height)
     custom_selected = self.selected_radio == "custom"
 
     rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
@@ -208,15 +209,15 @@ class Setup(Widget):
       elif rl.check_collision_point_rec(mouse_pos, custom_rect):
         self.selected_radio = "custom"
 
-    button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
-    button_y = rect.height - BUTTON_HEIGHT - MARGIN
+    button_width = (self._rect.width - BUTTON_SPACING - MARGIN * 2) / 2
+    button_y = self._rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
+    if gui_button(rl.Rectangle(self._rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.NETWORK_SETUP
 
     continue_enabled = self.selected_radio is not None
     if gui_button(
-      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
+      rl.Rectangle(self._rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       "Continue",
       button_style=ButtonStyle.PRIMARY,
       is_enabled=continue_enabled,
@@ -227,28 +228,28 @@ class Setup(Widget):
         else:
           self.state = SetupState.CUSTOM_URL
 
-  def render_downloading(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE)
+  def render_downloading(self):
+    title_rect = rl.Rectangle(self._rect.x, self._rect.y + self._rect.height / 2 - TITLE_FONT_SIZE / 2, self._rect.width, TITLE_FONT_SIZE)
     gui_label(title_rect, "Downloading...", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
-  def render_download_failed(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE)
+  def render_download_failed(self):
+    title_rect = rl.Rectangle(self._rect.x + 117, self._rect.y + 185, self._rect.width - 117, TITLE_FONT_SIZE)
     gui_label(title_rect, "Download Failed", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
-    url_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67, rect.width - 117 - 100, 64)
+    url_rect = rl.Rectangle(self._rect.x + 117, self._rect.y + 185 + TITLE_FONT_SIZE + 67, self._rect.width - 117 - 100, 64)
     gui_label(url_rect, self.failed_url, 64, font_weight=FontWeight.NORMAL)
 
-    error_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48,
-                              rect.width - 117 - 100, rect.height - 185 + TITLE_FONT_SIZE + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2)
+    error_rect = rl.Rectangle(self._rect.x + 117, self._rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48,
+                              self._rect.width - 117 - 100, self._rect.height - 185 + TITLE_FONT_SIZE + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2)
     gui_text_box(error_rect, self.failed_reason, BODY_FONT_SIZE)
 
-    button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
-    button_y = rect.height - BUTTON_HEIGHT - MARGIN
+    button_width = (self._rect.width - BUTTON_SPACING - MARGIN * 2) / 2
+    button_y = self._rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Reboot device"):
+    if gui_button(rl.Rectangle(self._rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Reboot device"):
       HARDWARE.reboot()
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT), "Start over",
+    if gui_button(rl.Rectangle(self._rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT), "Start over",
                   button_style=ButtonStyle.PRIMARY):
       self.state = SetupState.GETTING_STARTED
 

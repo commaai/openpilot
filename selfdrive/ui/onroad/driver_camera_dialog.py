@@ -13,15 +13,15 @@ class DriverCameraDialog(CameraView):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
 
-  def _render(self, rect):
-    super()._render(rect)
+  def _render(self):
+    super()._render()  # TODO
 
     if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
       return 1
 
     if not self.frame:
       gui_label(
-        rect,
+        self._rect,
         "camera starting",
         font_size=100,
         font_weight=FontWeight.BOLD,
@@ -29,12 +29,12 @@ class DriverCameraDialog(CameraView):
       )
       return -1
 
-    self._draw_face_detection(rect)
-    self.driver_state_renderer.render(rect)
+    self._draw_face_detection()
+    self.driver_state_renderer.render(self._rect)  # TODO: ?
 
     return -1
 
-  def _draw_face_detection(self, rect: rl.Rectangle) -> None:
+  def _draw_face_detection(self) -> None:
     driver_state = ui_state.sm["driverStateV2"]
     is_rhd = driver_state.wheelOnRightProb > 0.5
     driver_data = driver_state.rightDriverData if is_rhd else driver_state.leftDriverData
@@ -64,7 +64,7 @@ class DriverCameraDialog(CameraView):
       line_color,
     )
 
-  def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+  def _calc_frame_matrix(self) -> np.ndarray:
     driver_view_ratio = 2.0
 
     # Get stream dimensions
@@ -77,7 +77,7 @@ class DriverCameraDialog(CameraView):
       stream_height = 1208
 
     yscale = stream_height * driver_view_ratio / stream_width
-    xscale = yscale * rect.height / rect.width * stream_width / stream_height
+    xscale = yscale * self._rect.height / self._rect.width * stream_width / stream_height
 
     return np.array([
       [xscale, 0.0, 0.0],
