@@ -57,7 +57,7 @@ class Widget(abc.ABC):
     return ret
 
   @abc.abstractmethod
-  def _render(self, rect: type(rl.Rectangle) | None):  # TODO: remove this rect
+  def _render(self):
     """Render the widget within the given rectangle."""
 
   def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:

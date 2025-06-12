@@ -85,15 +85,15 @@ class Sidebar(Widget):
     self._on_settings_click = on_settings
     self._on_flag_click = on_flag
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     self.update_state()
 
     # Background
-    rl.draw_rectangle_rec(rect, Colors.SIDEBAR_BG)
+    rl.draw_rectangle_rec(self._rect, Colors.SIDEBAR_BG)
 
-    self._draw_buttons(rect)
-    self._draw_network_indicator(rect)
-    self._draw_metrics(rect)
+    self._draw_buttons()
+    self._draw_network_indicator()
+    self._draw_metrics()
 
   def update_state(self):
     sm = ui_state.sm
@@ -145,7 +145,7 @@ class Sidebar(Widget):
       if self._on_flag_click:
         self._on_flag_click()
 
-  def _draw_buttons(self, rect: rl.Rectangle):
+  def _draw_buttons(self):
     mouse_pos = rl.get_mouse_position()
     mouse_down = self._is_pressed and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
@@ -161,10 +161,10 @@ class Sidebar(Widget):
     tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
 
-  def _draw_network_indicator(self, rect: rl.Rectangle):
+  def _draw_network_indicator(self):
     # Signal strength dots
-    x_start = rect.x + 58
-    y_pos = rect.y + 196
+    x_start = self._rect.x + 58
+    y_pos = self._rect.y + 196
     dot_size = 27
     dot_spacing = 37
 
@@ -175,18 +175,18 @@ class Sidebar(Widget):
       rl.draw_circle(x, y, dot_size // 2, color)
 
     # Network type text
-    text_y = rect.y + 247
-    text_pos = rl.Vector2(rect.x + 58, text_y)
+    text_y = self._rect.y + 247
+    text_pos = rl.Vector2(self._rect.x + 58, text_y)
     rl.draw_text_ex(self._font_regular, self._net_type, text_pos, 35, 0, Colors.WHITE)
 
-  def _draw_metrics(self, rect: rl.Rectangle):
+  def _draw_metrics(self):
     metrics = [(self._temp_status, 338), (self._panda_status, 496), (self._connect_status, 654)]
 
     for metric, y_offset in metrics:
-      self._draw_metric(rect, metric, rect.y + y_offset)
+      self._draw_metric(metric, self._rect.y + y_offset)
 
-  def _draw_metric(self, rect: rl.Rectangle, metric: MetricData, y: float):
-    metric_rect = rl.Rectangle(rect.x + METRIC_MARGIN, y, METRIC_WIDTH, METRIC_HEIGHT)
+  def _draw_metric(self, metric: MetricData, y: float):
+    metric_rect = rl.Rectangle(self._rect.x + METRIC_MARGIN, y, METRIC_WIDTH, METRIC_HEIGHT)
     # Draw colored left edge (clipped rounded rectangle)
     edge_rect = rl.Rectangle(metric_rect.x + 4, metric_rect.y + 4, 100, 118)
     rl.begin_scissor_mode(int(metric_rect.x + 4), int(metric_rect.y), 18, int(metric_rect.height))

@@ -17,20 +17,20 @@ class SetupWidget(Widget):
   def set_open_settings_callback(self, callback):
     self._open_settings_callback = callback
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     if ui_state.prime_state.get_type() == PrimeType.UNPAIRED:
-      self._render_registration(rect)
+      self._render_registration()
     else:
-      self._render_firehose_prompt(rect)
+      self._render_firehose_prompt()
 
-  def _render_registration(self, rect: rl.Rectangle):
+  def _render_registration(self):
     """Render registration prompt."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 590), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, 590), 0.02, 20, rl.Color(51, 51, 51, 255))
 
-    x = rect.x + 64
-    y = rect.y + 48
-    w = rect.width - 128
+    x = self._rect.x + 64
+    y = self._rect.y + 48
+    w = self._rect.width - 128
 
     # Title
     font = gui_app.font(FontWeight.BOLD)
@@ -49,15 +49,15 @@ class SetupWidget(Widget):
     if gui_button(button_rect, "Pair device", button_style=ButtonStyle.PRIMARY):
       self._show_pairing()
 
-  def _render_firehose_prompt(self, rect: rl.Rectangle):
+  def _render_firehose_prompt(self):
     """Render firehose prompt widget."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 450), 0.02, 20, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, 450), 0.02, 20, rl.Color(51, 51, 51, 255))
 
     # Content margins (56, 40, 56, 40)
-    x = rect.x + 56
-    y = rect.y + 40
-    w = rect.width - 112
+    x = self._rect.x + 56
+    y = self._rect.y + 40
+    w = self._rect.width - 112
     spacing = 42
 
     # Title with fire emojis
