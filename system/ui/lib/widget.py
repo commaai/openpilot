@@ -17,10 +17,6 @@ class Widget(abc.ABC):
   def set_rect(self, rect: rl.Rectangle):
     self._rect = rect
 
-  @property
-  def rect(self) -> rl.Rectangle:
-    return self._rect
-
   def render(self, rect: type(rl.Rectangle) | None = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)
