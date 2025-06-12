@@ -59,7 +59,7 @@ class Widget(abc.ABC):
     """Render the widget within the given rectangle."""
 
   def _update_state(self):
-    """Optionally update the widget's internal state. This is called before rendering."""
+    """Optionally update the widget's non-layout state. This is called before rendering."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
