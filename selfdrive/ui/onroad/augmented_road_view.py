@@ -85,6 +85,7 @@ class AugmentedRoadView(CameraView):
     # Draw the camera image as the background, aligned using calibration.
     # If CameraView didn't produce a new frame, skip drawing overlays to save CPU/GPU.
     if not super()._render(rect):
+      rl.end_scissor_mode()
       return
 
     # Draw all UI overlays
@@ -99,13 +100,14 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
-  def render(self, rect: rl.Rectangle):
+  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     self._render(rect)
     # Handle click events if no HUD interaction occurred
     if not self._hud_renderer.handle_mouse_event():
       if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
         if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
           self._click_callback()
+    return None
 
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
