@@ -1,4 +1,3 @@
-import pyray as rl
 from openpilot.system.ui.lib.list_view import ListView, toggle_item
 from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params

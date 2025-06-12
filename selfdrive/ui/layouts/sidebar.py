@@ -85,7 +85,7 @@ class Sidebar(Widget):
     self._on_settings_click = on_settings
     self._on_flag_click = on_flag
 
-  def _render(self, rect: type(rl.Rectangle) | None = None):
+  def _render(self, rect: rl.Rectangle):
     self.update_state()
 
     # Background
@@ -145,7 +145,7 @@ class Sidebar(Widget):
       if self._on_flag_click:
         self._on_flag_click()
 
-  def _draw_buttons(self, rect: type(rl.Rectangle) | None = None):
+  def _draw_buttons(self, rect: rl.Rectangle):
     mouse_pos = rl.get_mouse_position()
     mouse_down = self._is_pressed and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
@@ -161,7 +161,7 @@ class Sidebar(Widget):
     tint = Colors.BUTTON_PRESSED if (ui_state.started and flag_pressed) else Colors.BUTTON_NORMAL
     rl.draw_texture(button_img, int(HOME_BTN.x), int(HOME_BTN.y), tint)
 
-  def _draw_network_indicator(self, rect: type(rl.Rectangle) | None = None):
+  def _draw_network_indicator(self, rect: rl.Rectangle):
     # Signal strength dots
     x_start = rect.x + 58
     y_pos = rect.y + 196
@@ -179,7 +179,7 @@ class Sidebar(Widget):
     text_pos = rl.Vector2(rect.x + 58, text_y)
     rl.draw_text_ex(self._font_regular, self._net_type, text_pos, 35, 0, Colors.WHITE)
 
-  def _draw_metrics(self, rect: type(rl.Rectangle) | None = None):
+  def _draw_metrics(self, rect: rl.Rectangle):
     metrics = [(self._temp_status, 338), (self._panda_status, 496), (self._connect_status, 654)]
 
     for metric, y_offset in metrics:

@@ -1,4 +1,3 @@
-import pyray as rl
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.list_view import ListView, button_item, text_item

@@ -1,5 +1,4 @@
 from enum import IntEnum
-import pyray as rl
 import os
 import threading
 import time

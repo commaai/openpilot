@@ -40,7 +40,7 @@ def _resolve_value(value, default=""):
 
 # Abstract base class for right-side items
 class ItemAction(Widget, ABC):
-  def __init__(self, rect: type(rl.Rectangle) | None = None, width: int = 100, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
     super().__init__()
     self.width = width
     self._enabled_source = enabled
@@ -94,7 +94,7 @@ class ButtonAction(ItemAction):
 
 
 class TextAction(ItemAction):
-  def __init__(self, rect: type(rl.Rectangle) | None = None, text: str | Callable[[], str]="", color: rl.Color = ITEM_TEXT_COLOR, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, text: str | Callable[[], str], color: rl.Color = ITEM_TEXT_COLOR, enabled: bool | Callable[[], bool] = True):
     self._text_source = text
     self.color = color
 
@@ -273,7 +273,7 @@ class ListView(Widget):
     self._font = gui_app.font(FontWeight.NORMAL)
     self._hovered_item = -1
 
-  def _render(self):
+  def _render(self, rect: rl.Rectangle):
     total_height = self._update_item_rects(rect)
 
     # Update layout and handle scrolling
