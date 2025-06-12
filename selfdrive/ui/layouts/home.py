@@ -66,7 +66,7 @@ class HomeLayout(Widget):
   def _set_state(self, state: HomeLayoutState):
     self.current_state = state
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, rect: type(rl.Rectangle) | None = None):
     self._update_layout_rects(rect)
 
     current_time = time.time()
@@ -85,7 +85,7 @@ class HomeLayout(Widget):
     elif self.current_state == HomeLayoutState.ALERTS:
       self._render_alerts_view()
 
-  def _update_layout_rects(self, rect: rl.Rectangle):
+  def _update_layout_rects(self, rect: type(rl.Rectangle) | None = None):
     self.header_rect = rl.Rectangle(
       rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, HEADER_HEIGHT
     )

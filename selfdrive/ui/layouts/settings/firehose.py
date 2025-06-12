@@ -53,7 +53,7 @@ class FirehoseLayout(Widget):
     if self.update_thread and self.update_thread.is_alive():
       self.update_thread.join(timeout=1.0)
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, rect: type(rl.Rectangle) | None = None):
     # Calculate content dimensions
     content_width = rect.width - 80
     content_height = self._calculate_content_height(int(content_width))

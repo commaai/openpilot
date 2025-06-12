@@ -1,5 +1,6 @@
 import os
 import json
+import pyray as rl
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
@@ -56,8 +57,8 @@ class DeviceLayout(Widget):
     ]
     return items
 
-  def _render(self, rect):
-    self._list_widget.render(rect)
+  def _render(self):
+    self._list_widget.render()
 
   def _show_language_selection(self):
     try:
