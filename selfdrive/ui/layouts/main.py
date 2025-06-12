@@ -2,7 +2,7 @@ import pyray as rl
 from enum import IntEnum
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
-from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout
+from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.system.ui.lib.widget import Widget
@@ -40,6 +40,7 @@ class MainLayout(Widget):
   def _setup_callbacks(self):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
                                 on_flag=self._on_flag_clicked)
+    self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
 
@@ -63,6 +64,11 @@ class MainLayout(Widget):
     else:
       self._current_mode = MainState.HOME
       self._sidebar_visible = True
+
+  def open_settings(self, panel_type: PanelType):
+    self._layouts[MainState.SETTINGS].set_current_panel(panel_type)
+    self._current_mode = MainState.SETTINGS
+    self._sidebar_visible = False
 
   def _on_settings_clicked(self):
     self._current_mode = MainState.SETTINGS
