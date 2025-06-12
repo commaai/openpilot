@@ -37,7 +37,11 @@ class Widget(abc.ABC):
     if rect is not None:
       self.set_rect(rect)
 
-    ret = self._render(self._rect)
+    try:
+      ret = self._render()  # this is good
+    except:
+      ret = self._render(rl.Rectangle(0, 0, 0, 0))
+      print('Widget using rect passed in! remove it:', self.__class__.__name__)
 
     # Keep track of whether mouse down started within the widget's rectangle
     mouse_pos = rl.get_mouse_position()
