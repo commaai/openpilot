@@ -88,7 +88,8 @@ testing = [
   "pytest-cov",
   "pytest-cpp",
   "pytest-subtests",
-  "pytest-xdist @git+https://github.com/sshane/pytest-xdist@909e97b49d12401c10608f9d777bfc9dab8a4413",
+  # https://github.com/pytest-dev/pytest-xdist/issues/1215
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@909e97b49d12401c10608f9d777bfc9dab8a4413",
   "pytest-timeout",
   "pytest-randomly",
   "pytest-asyncio",
