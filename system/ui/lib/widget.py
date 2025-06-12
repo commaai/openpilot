@@ -14,7 +14,7 @@ class Widget(abc.ABC):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
 
-  def set_rect(self, rect: rl.Rectangle):
+  def set_rect(self, rect: rl.Rectangle) -> None:
     self._rect = rect
 
   def render(self, rect: rl.Rectangle) -> bool | int | None:

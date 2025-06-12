@@ -66,7 +66,6 @@ class ModelRenderer(Widget):
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
     self._clip_region = None
-    self._rect = None
 
     self._exp_gradient = {
       'start': (0.0, 1.0),  # Bottom of path
@@ -93,7 +92,6 @@ class ModelRenderer(Widget):
       return
 
     # Set up clipping region
-    self._rect = rect
     self._clip_region = rl.Rectangle(
       rect.x - CLIP_MARGIN, rect.y - CLIP_MARGIN, rect.width + 2 * CLIP_MARGIN, rect.height + 2 * CLIP_MARGIN
     )
