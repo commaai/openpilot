@@ -61,9 +61,9 @@ class FirehoseLayout(Widget):
 
     # Handle scrolling and render with clipping
     scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    # rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._render_content(rect, scroll_offset)
-    rl.end_scissor_mode()
+    # rl.end_scissor_mode()
 
   def _calculate_content_height(self, content_width: int) -> int:
     height = 80  # Top margin

@@ -119,7 +119,6 @@ class WifiManagerUI(Widget):
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
     clicked = self.scroll_panel.is_click_valid()
 
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):
       y_offset = rect.y + i * ITEM_HEIGHT + offset.y
       item_rect = rl.Rectangle(rect.x, y_offset, rect.width, ITEM_HEIGHT)
@@ -130,8 +129,6 @@ class WifiManagerUI(Widget):
       if i < len(self._networks) - 1:
         line_y = int(item_rect.y + item_rect.height - 1)
         rl.draw_line(int(item_rect.x), int(line_y), int(item_rect.x + item_rect.width), line_y, rl.LIGHTGRAY)
-
-    rl.end_scissor_mode()
 
   def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
     spacing = 50

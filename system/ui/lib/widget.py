@@ -33,7 +33,9 @@ class Widget(abc.ABC):
     if not self.is_visible:
       return None
 
+    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
     ret = self._render(self._rect)
+    rl.end_scissor_mode()
 
     # Keep track of whether mouse down started within the widget's rectangle
     mouse_pos = rl.get_mouse_position()

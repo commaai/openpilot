@@ -47,9 +47,7 @@ class ExperimentalModeButton(Widget):
 
     rl.draw_rectangle_rounded(rect, 0.08, 20, rl.Color(255, 255, 255, 255))
 
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._draw_gradient_background(rect)
-    rl.end_scissor_mode()
 
     # Draw vertical separator line
     line_x = rect.x + rect.width - self.img_width - (2 * self.horizontal_padding)

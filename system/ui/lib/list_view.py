@@ -284,9 +284,6 @@ class ListView(Widget):
     if self.scroll_panel.is_click_valid():
       self._handle_mouse_interaction(rect, scroll_offset)
 
-    # Set scissor mode for clipping
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-
     for i, item in enumerate(self._items):
       if not item.is_visible:
         continue
@@ -308,8 +305,6 @@ class ListView(Widget):
           line_y,
           LINE_COLOR,
         )
-
-    rl.end_scissor_mode()
 
   def _get_next_visible_item(self, current_index: int) -> int | None:
     for i in range(current_index + 1, len(self._items)):
