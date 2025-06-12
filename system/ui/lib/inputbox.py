@@ -102,16 +102,16 @@ class InputBox(Widget):
       return True
     return False
 
-  def _render(self, rect, color=rl.BLACK, border_color=rl.DARKGRAY, text_color=rl.WHITE, font_size=80):
+  def _render(self, color=rl.BLACK, border_color=rl.DARKGRAY, text_color=rl.WHITE, font_size=80):
     # Store dimensions for text offset calculations
-    self._visible_width = rect.width
+    self._visible_width = self._rect.width
     self._font_size = font_size
 
     # Handle mouse input
-    self._handle_mouse_input(rect, font_size)
+    self._handle_mouse_input(font_size)
 
     # Draw input box
-    rl.draw_rectangle_rec(rect, color)
+    rl.draw_rectangle_rec(self._rect, color)
 
     # Process keyboard input
     self._handle_keyboard_input()
@@ -129,11 +129,11 @@ class InputBox(Widget):
 
     # Clip text within input box bounds
     buffer = 2
-    rl.begin_scissor_mode(int(rect.x + padding - buffer), int(rect.y), int(rect.width - padding * 2 + buffer * 2), int(rect.height))
+    rl.begin_scissor_mode(int(self._rect.x + padding - buffer), int(self._rect.y), int(self._rect.width - padding * 2 + buffer * 2), int(self._rect.height))
     rl.draw_text_ex(
       font,
       display_text,
-      rl.Vector2(int(rect.x + padding - self._text_offset), int(rect.y + rect.height / 2 - font_size / 2)),
+      rl.Vector2(int(self._rect.x + padding - self._text_offset), int(self._rect.y + self._rect.height / 2 - font_size / 2)),
       font_size,
       0,
       text_color,
@@ -141,7 +141,7 @@ class InputBox(Widget):
 
     # Draw cursor
     if self._show_cursor:
-      cursor_x = rect.x + padding
+      cursor_x = self._rect.x + padding
       if len(display_text) > 0 and self._cursor_position > 0:
         cursor_x += measure_text_cached(font, display_text[: self._cursor_position], font_size).x
 
@@ -149,7 +149,7 @@ class InputBox(Widget):
       cursor_x -= self._text_offset
 
       cursor_height = font_size + 4
-      cursor_y = rect.y + rect.height / 2 - cursor_height / 2
+      cursor_y = self._rect.y + self._rect.height / 2 - cursor_height / 2
       rl.draw_line(int(cursor_x), int(cursor_y), int(cursor_x), int(cursor_y + cursor_height), rl.WHITE)
 
     rl.end_scissor_mode()
@@ -169,17 +169,17 @@ class InputBox(Widget):
 
     return masked_text
 
-  def _handle_mouse_input(self, rect, font_size):
+  def _handle_mouse_input(self, font_size):
     """Handle mouse clicks to position cursor."""
     mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(mouse_pos, rect):
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(mouse_pos, self._rect):
       # Calculate cursor position from click
       if len(self._input_text) > 0:
         font = gui_app.font()
         display_text = self._get_display_text()
 
         # Find the closest character position to the click
-        relative_x = mouse_pos.x - (rect.x + 10) + self._text_offset
+        relative_x = mouse_pos.x - (self._rect.x + 10) + self._text_offset
         best_pos = 0
         min_distance = float('inf')
 

@@ -24,8 +24,8 @@ class MultiOptionDialog(Widget):
     self.selection = current
     self.scroll = GuiScrollPanel()
 
-  def _render(self, rect):
-    dialog_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - 2 * MARGIN, rect.height - 2 * MARGIN)
+  def _render(self):
+    dialog_rect = rl.Rectangle(self._rect.x + MARGIN, self._rect.y + MARGIN, self._rect.width - 2 * MARGIN, self._rect.height - 2 * MARGIN)
     rl.draw_rectangle_rounded(dialog_rect, 0.02, 20, rl.Color(30, 30, 30, 255))
 
     content_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y + MARGIN,

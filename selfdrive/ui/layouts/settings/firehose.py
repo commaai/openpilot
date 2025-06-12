@@ -53,16 +53,16 @@ class FirehoseLayout(Widget):
     if self.update_thread and self.update_thread.is_alive():
       self.update_thread.join(timeout=1.0)
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     # Calculate content dimensions
-    content_width = rect.width - 80
+    content_width = self._rect.width - 80
     content_height = self._calculate_content_height(int(content_width))
-    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, content_height)
+    content_rect = rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, content_height)
 
     # Handle scrolling and render with clipping
-    scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-    self._render_content(rect, scroll_offset)
+    scroll_offset = self.scroll_panel.handle_scroll(self._rect, content_rect)
+    rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y), int(self._rect.width), int(self._rect.height))
+    self._render_content(scroll_offset)
     rl.end_scissor_mode()
 
   def _calculate_content_height(self, content_width: int) -> int:
@@ -95,10 +95,10 @@ class FirehoseLayout(Widget):
 
     return height
 
-  def _render_content(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
-    x = int(rect.x + 40)
-    y = int(rect.y + 40 + scroll_offset.y)
-    w = int(rect.width - 80)
+  def _render_content(self, scroll_offset: rl.Vector2):
+    x = int(self._rect.x + 40)
+    y = int(self._rect.y + 40 + scroll_offset.y)
+    w = int(self._rect.width - 80)
 
     # Title
     title_font = gui_app.font(FontWeight.MEDIUM)

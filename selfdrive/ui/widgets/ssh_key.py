@@ -45,7 +45,7 @@ class SshKeyAction(ItemAction):
     self._username = self._params.get("GithubUsername", "")
     self._state = SshKeyActionState.REMOVE if self._params.get("GithubSshKeys") else SshKeyActionState.ADD
 
-  def _render(self, rect: rl.Rectangle) -> bool:
+  def _render(self) -> bool:
     # Show error dialog if there's an error
     if self._error_message:
       message = copy.copy(self._error_message)
@@ -59,7 +59,7 @@ class SshKeyAction(ItemAction):
       rl.draw_text_ex(
         self._text_font,
         self._username,
-        (rect.x + rect.width - BUTTON_WIDTH - text_size.x - 30, rect.y + (rect.height - text_size.y) / 2),
+        (self._rect.x + self._rect.width - BUTTON_WIDTH - text_size.x - 30, self._rect.y + (self._rect.height - text_size.y) / 2),
         BUTTON_FONT_SIZE,
         1.0,
         rl.WHITE,
@@ -68,7 +68,7 @@ class SshKeyAction(ItemAction):
     # Draw button
     if gui_button(
       rl.Rectangle(
-        rect.x + rect.width - BUTTON_WIDTH, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
+        self._rect.x + self._rect.width - BUTTON_WIDTH, self._rect.y + (self._rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT
       ),
       self._state.value,
       is_enabled=self._state != SshKeyActionState.LOADING,

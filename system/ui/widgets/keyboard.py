@@ -83,6 +83,9 @@ class Keyboard(Widget):
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
+  def set_rect(self, rect: rl.Rectangle):
+    self._rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
+
   @property
   def text(self):
     return self._input_box.text
@@ -97,17 +100,16 @@ class Keyboard(Widget):
     self._title = title
     self._sub_title = sub_title
 
-  def _render(self, rect: rl.Rectangle):
-    rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
-    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
-    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
-    if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
+  def _render(self):
+    gui_label(rl.Rectangle(self._rect.x, self._rect.y, self._rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
+    gui_label(rl.Rectangle(self._rect.x, self._rect.y + 95, self._rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
+    if gui_button(rl.Rectangle(self._rect.x + self._rect.width - 386, self._rect.y, 386, 125), "Cancel"):
       self.clear()
       return 0
 
     # Draw input box and password toggle
     input_margin = 25
-    input_box_rect = rl.Rectangle(rect.x + input_margin, rect.y + 160, rect.width - input_margin, 100)
+    input_box_rect = rl.Rectangle(self._rect.x + input_margin, self._rect.y + 160, self._rect.width - input_margin, 100)
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
@@ -128,14 +130,14 @@ class Keyboard(Widget):
     layout = KEYBOARD_LAYOUTS[self._layout_name]
 
     h_space, v_space = 15, 15
-    row_y_start = rect.y + 300  # Starting Y position for the first row
-    key_height = (rect.height - 300 - 3 * v_space) / 4
-    key_max_width = (rect.width - (len(layout[2]) - 1) * h_space) / len(layout[2])
+    row_y_start = self._rect.y + 300  # Starting Y position for the first row
+    key_height = (self._rect.height - 300 - 3 * v_space) / 4
+    key_max_width = (self._rect.width - (len(layout[2]) - 1) * h_space) / len(layout[2])
 
     # Iterate over the rows of keys in the current layout
     for row, keys in enumerate(layout):
-      key_width = min((rect.width - (180 if row == 1 else 0) - h_space * (len(keys) - 1)) / len(keys), key_max_width)
-      start_x = rect.x + (90 if row == 1 else 0)
+      key_width = min((self._rect.width - (180 if row == 1 else 0) - h_space * (len(keys) - 1)) / len(keys), key_max_width)
+      start_x = self._rect.x + (90 if row == 1 else 0)
 
       for i, key in enumerate(keys):
         if i > 0:

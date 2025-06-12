@@ -82,10 +82,10 @@ class WifiManagerUI(Widget):
     self.wifi_manager.start()
     self.wifi_manager.connect()
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self):
     with self._lock:
       if not self._networks:
-        gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+        gui_label(self._rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
         return
 
       match self.state:
@@ -96,7 +96,7 @@ class WifiManagerUI(Widget):
           gui_app.set_modal_overlay(lambda: confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget"),
                                     callback=lambda result: self.on_forgot_confirm_finished(network, result))
         case _:
-          self._draw_network_list(rect)
+          self._draw_network_list(self._rect)
 
   def _on_password_entered(self, network: NetworkInfo, result: int):
     if result == 1:

@@ -23,8 +23,8 @@ class SoftwareLayout(Widget):
     ]
     return items
 
-  def _render(self, rect):
-    self._list_widget.render(rect)
+  def _render(self):
+    self._list_widget.render(self._rect)
 
   def _on_download_update(self): pass
   def _on_install_update(self): pass

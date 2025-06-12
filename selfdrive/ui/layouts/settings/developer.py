@@ -51,8 +51,8 @@ class DeveloperLayout(Widget):
 
     self._list_widget = ListView(items)
 
-  def _render(self, rect):
-    self._list_widget.render(rect)
+  def _render(self):
+    self._list_widget.render(self._rect)
 
   def _on_enable_adb(self): pass
   def _on_joystick_debug_mode(self): pass

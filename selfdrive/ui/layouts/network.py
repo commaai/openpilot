@@ -10,8 +10,8 @@ class NetworkLayout(Widget):
     self.wifi_manager = WifiManagerWrapper()
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
 
-  def _render(self, rect: rl.Rectangle):
-    self.wifi_ui.render(rect)
+  def _render(self):
+    self.wifi_ui.render(self._rect)
 
   def shutdown(self):
     self.wifi_manager.shutdown()
