@@ -108,12 +108,13 @@ class DriverStateRenderer(Widget):
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
-  def _update_state(self, sm, rect):
+  def _update_state(self):
     """Update the driver monitoring state based on model data"""
+    sm = ui_state.sm
     if not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
-                                 rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements(rect)
+      if self.state_updated and (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
+                                 self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
+        self._pre_calculate_drawing_elements(self._rect)
       return
 
     # Get monitoring state
@@ -162,7 +163,7 @@ class DriverStateRenderer(Widget):
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self._pre_calculate_drawing_elements(rect)
+    self._pre_calculate_drawing_elements(self._rect)
     self.state_updated = True
 
   def _pre_calculate_drawing_elements(self, rect):

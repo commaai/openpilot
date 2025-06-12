@@ -34,6 +34,8 @@ class Widget(abc.ABC):
     if rect is not None:
       self.set_rect(rect)
 
+    self._update_state()
+
     if not self.is_visible:
       return None
 
@@ -55,6 +57,9 @@ class Widget(abc.ABC):
   @abc.abstractmethod
   def _render(self, rect: rl.Rectangle) -> bool | int | None:
     """Render the widget within the given rectangle."""
+
+  def _update_state(self):
+    """Optionally update the widget's internal state. This is called before rendering."""
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
