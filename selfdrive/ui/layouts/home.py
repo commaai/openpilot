@@ -193,6 +193,7 @@ class HomeLayout(Widget):
     self._setup_widget.render(setup_rect)
 
   def _refresh(self):
+    # TODO: implement _update_state with a timer
     self.update_available = self.update_alert.refresh()
     self.alert_count = self.offroad_alert.refresh()
     self._update_state_priority(self.update_available, self.alert_count > 0)
