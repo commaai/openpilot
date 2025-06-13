@@ -51,11 +51,9 @@ class FirehoseLayout(Widget):
 
   def _get_segment_count(self) -> int:
     stats = self.params.get(self.PARAM_KEY, encoding='utf8')
-    if not stats:
-      return 0
     try:
       return int(json.loads(stats).get("firehose", 0))
-    except (json.JSONDecodeError, TypeError, ValueError):
+    except Exception:
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
 
@@ -166,9 +164,9 @@ class FirehoseLayout(Widget):
       if response.status_code == 200:
         data = response.json()
         self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, str(self.segment_count))
+        self.params.put(self.PARAM_KEY, json.dumps(data))
     except Exception as e:
-      cloudlog.debug(f"Failed to fetch firehose stats: {e}")
+      cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def _update_loop(self):
     while self.running:
