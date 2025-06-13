@@ -16,6 +16,7 @@ DESCRIPTIONS = {
   ),
 }
 
+
 class DeveloperLayout(Widget):
   def __init__(self):
     super().__init__()
