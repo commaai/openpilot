@@ -7,6 +7,7 @@ from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.list_view import ListView
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.widget import Widget
@@ -30,6 +31,22 @@ INSTRUCTIONS = (
 )
 
 
+class Text(Widget):
+  def __init__(self, text: str, font_size: int = 40, color: rl.Color = rl.WHITE):
+    super().__init__()
+    self.text = text
+    self.font_size = font_size
+    self.color = color
+
+  def _render(self, rect: rl.Rectangle):
+    font = gui_app.font(FontWeight.NORMAL)
+    wrapped_text = wrap_text(font, self.text, self.font_size, int(rect.width))
+    y_offset = rect.y + (rect.height - len(wrapped_text) * self.font_size) // 2
+    for line in wrapped_text:
+      rl.draw_text_ex(font, line, rl.Vector2(rect.x + 20, y_offset), self.font_size, 0, self.color)
+      y_offset += self.font_size
+
+
 class FirehoseLayout(Widget):
   PARAM_KEY = "ApiCache_FirehoseStats"
   GREEN = rl.Color(46, 204, 113, 255)
@@ -43,6 +60,12 @@ class FirehoseLayout(Widget):
     self.params = Params()
     self.segment_count = self._get_segment_count()
     self.scroll_panel = GuiScrollPanel()
+    title = Text(TITLE, font_size=100, color=rl.WHITE)
+    content = Text(DESCRIPTION, font_size=100, color=rl.WHITE)
+    self.list_view = ListView([
+      title,
+      content
+    ])
 
     self.running = True
     self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
@@ -63,16 +86,18 @@ class FirehoseLayout(Widget):
       self.update_thread.join(timeout=1.0)
 
   def _render(self, rect: rl.Rectangle):
-    # Calculate content dimensions
-    content_width = rect.width - 80
-    content_height = self._calculate_content_height(int(content_width))
-    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, content_height)
+    self.list_view.render(rect)
 
-    # Handle scrolling and render with clipping
-    scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-    self._render_content(rect, scroll_offset)
-    rl.end_scissor_mode()
+    # # Calculate content dimensions
+    # content_width = rect.width - 80
+    # content_height = self._calculate_content_height(int(content_width))
+    # content_rect = rl.Rectangle(rect.x, rect.y, rect.width, content_height)
+    #
+    # # Handle scrolling and render with clipping
+    # scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
+    # rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    # self._render_content(rect, scroll_offset)
+    # rl.end_scissor_mode()
 
   def _calculate_content_height(self, content_width: int) -> int:
     height = 80  # Top margin
