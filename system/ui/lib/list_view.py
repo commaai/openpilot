@@ -315,7 +315,7 @@ class ListView(Widget):
     self.scroll_panel = GuiScrollPanel()
 
   def _render(self, rect: rl.Rectangle):
-    total_height = sum(item._get_height(int(rect.width)) for item in self.items if item.is_visible)
+    total_height = sum(item._get_height(int(rect.width)) for item in self.items)
 
     # Handle scrolling
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, total_height)
