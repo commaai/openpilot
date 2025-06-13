@@ -18,7 +18,7 @@ SETTINGS_CLOSE_TEXT = "X"
 # Constants
 SIDEBAR_WIDTH = 500
 CLOSE_BTN_SIZE = 200
-NAV_BTN_HEIGHT = 80
+NAV_BTN_HEIGHT = 110
 PANEL_MARGIN = 50
 
 # Colors
@@ -104,8 +104,6 @@ class SettingsLayout(Widget):
 
     # Navigation buttons
     y = rect.y + 300
-    button_spacing = 20
-
     for panel_type, panel_info in self._panels.items():
       button_rect = rl.Rectangle(rect.x + 50, y, rect.width - 150, NAV_BTN_HEIGHT)
 
@@ -121,7 +119,7 @@ class SettingsLayout(Widget):
 
       # Store button rect for click detection
       panel_info.button_rect = button_rect
-      y += NAV_BTN_HEIGHT + button_spacing
+      y += NAV_BTN_HEIGHT
 
   def _draw_current_panel(self, rect: rl.Rectangle):
     rl.draw_rectangle_rounded(
