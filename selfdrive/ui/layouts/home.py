@@ -67,11 +67,6 @@ class HomeLayout(Widget):
     self.current_state = state
 
   def _render(self, rect: rl.Rectangle):
-    current_time = time.time()
-    if current_time - self.last_refresh >= REFRESH_INTERVAL:
-      self._refresh()
-      self.last_refresh = current_time
-
     self._handle_input()
     self._render_header()
 
@@ -192,7 +187,13 @@ class HomeLayout(Widget):
     )
     self._setup_widget.render(setup_rect)
 
-  def _refresh(self):
+  def _update_state(self):
+    current_time = time.time()
+    if current_time - self.last_refresh < REFRESH_INTERVAL:
+      return
+    self.last_refresh = current_time
+    print('update state home')
+
     self.update_available = self.update_alert.refresh()
     self.alert_count = self.offroad_alert.refresh()
     self._update_state_priority(self.update_available, self.alert_count > 0)
