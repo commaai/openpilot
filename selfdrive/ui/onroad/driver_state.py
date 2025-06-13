@@ -154,15 +154,15 @@ class DriverStateRenderer(Widget):
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self._pre_calculate_drawing_elements(self._rect)
+    self._pre_calculate_drawing_elements()
 
-  def _pre_calculate_drawing_elements(self, rect):
+  def _pre_calculate_drawing_elements(self):
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
-    width, height = rect.width, rect.height
+    width, height = self._rect.width, self._rect.height
     offset = UI_BORDER_SIZE + BTN_SIZE // 2
-    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
-    self.position_y = rect.y + height - offset
+    self.position_x = self._rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = self._rect.y + height - offset
 
     # Pre-calculate the face lines positions
     positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])
