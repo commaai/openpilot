@@ -1,4 +1,5 @@
 import pyray as rl
+import json
 import time
 import threading
 
@@ -40,13 +41,21 @@ class FirehoseLayout(Widget):
   def __init__(self):
     super().__init__()
     self.params = Params()
-    self.segment_count = int(self.params.get(self.PARAM_KEY, encoding='utf8') or 0)
+    self.segment_count = self._get_segment_count()
     self.scroll_panel = GuiScrollPanel()
 
     self.running = True
     self.update_thread = threading.Thread(target=self._update_loop, daemon=True)
     self.update_thread.start()
     self.last_update_time = 0
+
+  def _get_segment_count(self) -> int:
+    stats = self.params.get(self.PARAM_KEY, encoding='utf8')
+    try:
+      return int(json.loads(stats).get("firehose", 0))
+    except json.JSONDecodeError:
+      cloudlog.error(f"Failed to decode firehose stats: {stats}")
+      return 0
 
   def __del__(self):
     self.running = False
