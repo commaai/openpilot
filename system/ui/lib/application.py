@@ -2,6 +2,8 @@ import atexit
 import os
 import time
 import pyray as rl
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -36,6 +38,12 @@ class FontWeight(IntEnum):
   BLACK = 8
 
 
+@dataclass
+class ModalOverlay:
+  overlay: object = None
+  callback: Callable | None = None
+
+
 class GuiApplication:
   def __init__(self, width: int, height: int):
     self._fonts: dict[FontWeight, rl.Font] = {}
@@ -50,6 +58,7 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
+    self._modal_overlay = ModalOverlay()
 
   def request_close(self):
     self._window_close_requested = True
@@ -78,6 +87,9 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+
+  def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -148,7 +160,23 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        yield
+        # Handle modal overlay rendering and input processing
+        if self._modal_overlay.overlay:
+          if hasattr(self._modal_overlay.overlay, 'render'):
+            result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+          elif callable(self._modal_overlay.overlay):
+            result = self._modal_overlay.overlay()
+          else:
+            raise Exception
+
+          if result >= 0:
+            # Execute callback with the result and clear the overlay
+            if self._modal_overlay.callback is not None:
+              self._modal_overlay.callback(result)
+
+            self._modal_overlay = ModalOverlay()
+        else:
+          yield
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -192,12 +220,11 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-    from openpilot.selfdrive.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += CRUISE_DISABLED_CHAR
+    all_chars += "–✓"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
