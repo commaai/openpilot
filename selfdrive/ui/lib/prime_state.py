@@ -56,7 +56,7 @@ class PrimeState:
         prime_type = data.get("prime_type", 0)
         self.set_type(PrimeType(prime_type) if is_paired else PrimeType.UNPAIRED)
     except Exception as e:
-      print(f"Failed to fetch prime status: {e}")
+      cloudlog.error(f"Failed to fetch prime status: {e}")
 
   def set_type(self, prime_type: PrimeType) -> None:
     with self._lock:
