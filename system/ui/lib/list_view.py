@@ -1,6 +1,7 @@
 import pyray as rl
 from collections.abc import Callable
 from abc import ABC, abstractmethod
+from typing import TypeVar
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -26,9 +27,10 @@ BUTTON_FONT_SIZE = 35
 # Type Aliases for Clarity
 StrSrc = str | Callable[[], str] | None
 BoolSrc = bool | Callable[[], bool]
+T = TypeVar("T")
 
 
-def _get_value(value, default=""):
+def _get_value(value: T | Callable[[], T], default: T) -> T:
   if callable(value):
     return value()
   return value if value is not None else default
