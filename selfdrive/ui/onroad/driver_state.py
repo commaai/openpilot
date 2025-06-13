@@ -109,11 +109,13 @@ class DriverStateRenderer(Widget):
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
   def _update_state(self, sm, rect):
+    print('update state')
     """Update the driver monitoring state based on model data"""
+    print(sm.updated["driverMonitoringState"])
     if not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
-                                 rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements(rect)
+      # if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
+      #                            rect.width != self.last_rect.width or rect.height != self.last_rect.height):
+      #   self._pre_calculate_drawing_elements(rect)
       return
 
     # Get monitoring state
@@ -166,6 +168,7 @@ class DriverStateRenderer(Widget):
     self.state_updated = True
 
   def _pre_calculate_drawing_elements(self, rect):
+    print('_pre_calculate_drawing_elements')
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
     width, height = rect.width, rect.height
