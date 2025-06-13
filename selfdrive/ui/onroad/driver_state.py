@@ -110,6 +110,7 @@ class DriverStateRenderer(Widget):
       if (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
           self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
         self._pre_calculate_drawing_elements()
+        self.last_rect = self._rect
       return
 
     # Get monitoring state
