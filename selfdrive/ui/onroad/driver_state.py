@@ -51,7 +51,6 @@ class DriverStateRenderer(Widget):
     self.is_rhd = False
     self.dm_fade_state = 0.0
     self.state_updated = False
-    self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
@@ -111,9 +110,6 @@ class DriverStateRenderer(Widget):
   def _update_state(self, sm, rect):
     """Update the driver monitoring state based on model data"""
     if not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
-                                 rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements(rect)
       return
 
     # Get monitoring state
