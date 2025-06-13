@@ -1,6 +1,5 @@
 import pyray as rl
 from dataclasses import dataclass
-from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
 from openpilot.system.ui.lib.application import gui_app, FontWeight
