@@ -169,7 +169,6 @@ class HomeLayout(Widget):
     self._render_right_column()
 
   def _render_update_view(self):
-    # TODO: why function?
     self.update_alert.render(self.content_rect)
 
   def _render_alerts_view(self):
