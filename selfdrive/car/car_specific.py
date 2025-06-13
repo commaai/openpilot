@@ -78,7 +78,7 @@ class CarSpecificEvents:
         events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'toyota':
-      events = self.create_common_events(CS, CS_prev)
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.brake])
 
       if self.CP.openpilotLongitudinalControl:
         if CS.cruiseState.standstill and not CS.brakePressed:
