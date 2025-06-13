@@ -67,8 +67,7 @@ class MainLayout(Widget):
     self._sidebar.set_visible(False)
 
   def _on_settings_clicked(self):
-    self._current_mode = MainState.SETTINGS
-    self._sidebar.set_visible(False)
+    self.open_settings(PanelType.DEVICE)
 
   def _on_flag_clicked(self):
     pass
