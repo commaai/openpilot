@@ -50,7 +50,6 @@ class DriverStateRenderer(Widget):
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.state_updated = False
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
@@ -79,10 +78,6 @@ class DriverStateRenderer(Widget):
                               ui_state.sm.seen['driverMonitoringState']))
 
   def _render(self, rect):
-    self._update_state(ui_state.sm, rect)
-    if not self.state_updated:
-      return
-
     # Set opacity based on active state
     opacity = 0.65 if self.is_active else 0.2
 
@@ -160,7 +155,6 @@ class DriverStateRenderer(Widget):
 
     # Pre-calculate all drawing elements
     self._pre_calculate_drawing_elements(self._rect)
-    self.state_updated = True
 
   def _pre_calculate_drawing_elements(self, rect):
     """Pre-calculate all drawing elements based on the current rectangle"""
