@@ -36,7 +36,7 @@ class FirehoseLayout(Widget):
   RED = rl.Color(231, 76, 60, 255)
   GRAY = rl.Color(68, 68, 68, 255)
   LIGHT_GRAY = rl.Color(228, 228, 228, 255)
-  UPDATE_INTERVAL = 30  # seconds
+  UPDATE_INTERVAL = 5  # seconds
 
   def __init__(self):
     super().__init__()
@@ -51,11 +51,12 @@ class FirehoseLayout(Widget):
 
   def _get_segment_count(self) -> int:
     stats = self.params.get(self.PARAM_KEY, encoding='utf8')
+    print('got stats from params', stats)
     if not stats:
       return 0
     try:
       return int(json.loads(stats).get("firehose", 0))
-    except (json.JSONDecodeError, TypeError, ValueError):
+    except Exception:
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
 
@@ -163,14 +164,17 @@ class FirehoseLayout(Widget):
       dongle_id = self.params.get("DongleId", encoding='utf8') or ""
       identity_token = Api(dongle_id).get_token()
       response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
+      print(response.status_code, response.text)
       if response.status_code == 200:
         data = response.json()
         self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, str(self.segment_count))
+        print('putting', data, 'into param', self.PARAM_KEY)
+        self.params.put(self.PARAM_KEY, json.dumps(data))
     except Exception as e:
-      cloudlog.debug(f"Failed to fetch firehose stats: {e}")
+      cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
   def _update_loop(self):
+    print('hello')
     while self.running:
       if not ui_state.started:
         self._fetch_firehose_stats()
