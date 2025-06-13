@@ -56,10 +56,6 @@ class ListItem(Widget, ABC):
   def enabled(self):
     return _get_value(self._enabled_source, True)
 
-  @property
-  def is_visible(self):
-    return _get_value(self._visible_source, True)
-
   def set_enabled(self, enabled: bool):
     self._enabled_source = enabled
 
