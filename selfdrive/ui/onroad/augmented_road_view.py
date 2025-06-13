@@ -38,7 +38,7 @@ class AugmentedRoadView(CameraView):
     self.view_from_calib = view_frame_from_device_frame.copy()
     self.view_from_wide_calib = view_frame_from_device_frame.copy()
 
-    self._last_calib_time: float = 0
+    self._last_calib_frame: int = 0
     self._last_rect_dims = (0.0, 0.0)
     self._last_stream_type = stream_type
     self._cached_matrix: np.ndarray | None = None
@@ -62,9 +62,6 @@ class AugmentedRoadView(CameraView):
 
     self._switch_stream_if_needed(ui_state.sm)
 
-    # Update calibration before rendering
-    self._update_calibration()
-
     # Create inner content area with border padding
     self._content_rect = rl.Rectangle(
       rect.x + UI_BORDER_SIZE,
@@ -85,8 +82,11 @@ class AugmentedRoadView(CameraView):
       int(self._content_rect.height)
     )
 
-    # Render the base camera view
-    super()._render(rect)
+    # Draw the camera image as the background, aligned using calibration.
+    # If CameraView didn't produce a new frame, skip drawing overlays to save CPU/GPU.
+    if not super()._render(rect):
+      rl.end_scissor_mode()
+      return
 
     # Draw all UI overlays
     self.model_renderer.render(self._content_rect)
@@ -100,11 +100,14 @@ class AugmentedRoadView(CameraView):
     # End clipping region
     rl.end_scissor_mode()
 
+  def render(self, rect: rl.Rectangle = None) -> bool | int | None:
+    self._render(rect)
     # Handle click events if no HUD interaction occurred
     if not self._hud_renderer.handle_mouse_event():
       if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
         if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
           self._click_callback()
+    return None
 
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
@@ -126,19 +129,21 @@ class AugmentedRoadView(CameraView):
     if self.stream_type != target:
       self.switch_stream(target)
 
-  def _update_calibration(self):
+  def _update_calibration(self) -> bool:
     # Update device camera if not already set
     sm = ui_state.sm
     if not self.device_camera and sm.seen['roadCameraState'] and sm.seen['deviceState']:
       self.device_camera = DEVICE_CAMERAS[(str(sm['deviceState'].deviceType), str(sm['roadCameraState'].sensor))]
 
     # Check if live calibration data is available and valid
-    if not (sm.updated["liveCalibration"] and sm.valid['liveCalibration']):
-      return
+    recv_frame = sm.recv_frame['liveCalibration']
+    if self._last_calib_frame == recv_frame or not sm.valid['liveCalibration']:
+      return False
+    self._last_calib_frame = recv_frame
 
     calib = sm['liveCalibration']
     if len(calib.rpyCalib) != 3 or calib.calStatus != CALIBRATED:
-      return
+      return False
 
     # Update view_from_calib matrix
     device_from_calib = rot_from_euler(calib.rpyCalib)
@@ -149,14 +154,15 @@ class AugmentedRoadView(CameraView):
       wide_from_device = rot_from_euler(calib.wideFromDeviceEuler)
       self.view_from_wide_calib = view_frame_from_device_frame @ wide_from_device @ device_from_calib
 
+    return True
+
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
+    calib_updated = self._update_calibration()
+
     # Check if we can use cached matrix
-    calib_time = ui_state.sm.recv_frame['liveCalibration']
     current_dims = (self._content_rect.width, self._content_rect.height)
-    if (self._last_calib_time == calib_time and
-        self._last_rect_dims == current_dims and
-        self._last_stream_type == self.stream_type and
-        self._cached_matrix is not None):
+    if (not calib_updated and self._last_rect_dims == current_dims and
+        self._last_stream_type == self.stream_type and self._cached_matrix is not None):
       return self._cached_matrix
 
     # Get camera configuration
@@ -192,7 +198,6 @@ class AugmentedRoadView(CameraView):
       x_offset, y_offset = 0, 0
 
     # Cache the computed transformation matrix to avoid recalculations
-    self._last_calib_time = calib_time
     self._last_rect_dims = current_dims
     self._last_stream_type = self.stream_type
     self._cached_matrix = np.array([

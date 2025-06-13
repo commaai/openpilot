@@ -45,6 +45,9 @@ class ArcData:
 class DriverStateRenderer(Widget):
   def __init__(self):
     super().__init__()
+
+    self._last_driver_state_frame = -1
+
     # Initial state with NumPy arrays
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D.copy()
     self.is_active = False
@@ -105,8 +108,10 @@ class DriverStateRenderer(Widget):
   def _update_state(self):
     """Update the driver monitoring state based on model data"""
     sm = ui_state.sm
-    if not sm.updated["driverMonitoringState"]:
+    frame_updated = sm.recv_frame["driverStateV2"] != self._last_driver_state_frame
+    if not frame_updated:
       return
+    self._last_driver_state_frame = sm.recv_frame["driverStateV2"]
 
     # Get monitoring state
     dm_state = sm["driverMonitoringState"]

@@ -63,6 +63,9 @@ ALERT_CRITICAL_REBOOT = Alert(
 class AlertRenderer(Widget):
   def __init__(self):
     super().__init__()
+
+    self._last_recv_frame = -1
+
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
@@ -70,9 +73,13 @@ class AlertRenderer(Widget):
     """Generate the current alert based on selfdrive state."""
     ss = sm['selfdriveState']
 
+    recv_frame = sm.recv_frame['selfdriveState']
+    frame_updated = recv_frame != self._last_recv_frame
+    if frame_updated:
+      self._last_recv_frame = recv_frame
+
     # Check if selfdriveState messages have stopped arriving
-    if not sm.updated['selfdriveState']:
-      recv_frame = sm.recv_frame['selfdriveState']
+    if not frame_updated:
       time_since_onroad = (sm.frame - ui_state.started_frame) / DEFAULT_FPS
 
       # 1. Never received selfdriveState since going onroad
