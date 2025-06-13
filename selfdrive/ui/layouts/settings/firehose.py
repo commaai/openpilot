@@ -51,10 +51,12 @@ class FirehoseLayout(Widget):
 
   def _get_segment_count(self) -> int:
     stats = self.params.get(self.PARAM_KEY, encoding='utf8')
+    if not stats:
+      return 0
     try:
       return int(json.loads(stats).get("firehose", 0))
-    except json.JSONDecodeError:
-      cloudlog.error(f"Failed to decode firehose stats: {stats}")
+    except (json.JSONDecodeError, TypeError, ValueError):
+      cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
 
   def __del__(self):
