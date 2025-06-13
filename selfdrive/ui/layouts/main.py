@@ -1,5 +1,6 @@
 import pyray as rl
 from enum import IntEnum
+import cereal.messaging as messaging
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
@@ -17,6 +18,9 @@ class MainState(IntEnum):
 class MainLayout(Widget):
   def __init__(self):
     super().__init__()
+
+    self._pm = messaging.PubMaster(['userFlag'])
+
     self._sidebar = Sidebar()
     self._current_mode = MainState.HOME
     self._prev_onroad = False
@@ -70,7 +74,9 @@ class MainLayout(Widget):
     self.open_settings(PanelType.DEVICE)
 
   def _on_flag_clicked(self):
-    pass
+    user_flag = messaging.new_message('userFlag')
+    user_flag.valid = True
+    self._pm.send('userFlag', user_flag)
 
   def _on_onroad_clicked(self):
     self._sidebar.set_visible(not self._sidebar.is_visible)
