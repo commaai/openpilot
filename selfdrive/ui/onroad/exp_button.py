@@ -1,6 +1,5 @@
 import time
 import pyray as rl
-from cereal.messaging import SubMaster
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.widget import Widget
@@ -28,8 +27,8 @@ class ExpButton(Widget):
   def set_rect(self, rect: rl.Rectangle) -> None:
     self._rect.x, self._rect.y = rect.x, rect.y
 
-  def update_state(self, sm: SubMaster) -> None:
-    selfdrive_state = sm["selfdriveState"]
+  def _update_state(self) -> None:
+    selfdrive_state = ui_state.sm["selfdriveState"]
     self._experimental_mode = selfdrive_state.experimentalMode
     self._engageable = selfdrive_state.engageable or selfdrive_state.enabled
 

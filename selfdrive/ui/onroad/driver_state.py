@@ -50,7 +50,6 @@ class DriverStateRenderer(Widget):
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.state_updated = False
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
     self.driver_pose_sins = np.zeros(3, dtype=np.float32)
@@ -79,10 +78,6 @@ class DriverStateRenderer(Widget):
                               ui_state.sm.seen['driverMonitoringState']))
 
   def _render(self, rect):
-    self._update_state(ui_state.sm, rect)
-    if not self.state_updated:
-      return
-
     # Set opacity based on active state
     opacity = 0.65 if self.is_active else 0.2
 
@@ -107,8 +102,9 @@ class DriverStateRenderer(Widget):
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
-  def _update_state(self, sm, rect):
+  def _update_state(self):
     """Update the driver monitoring state based on model data"""
+    sm = ui_state.sm
     if not sm.updated["driverMonitoringState"]:
       return
 
@@ -158,16 +154,15 @@ class DriverStateRenderer(Widget):
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self._pre_calculate_drawing_elements(rect)
-    self.state_updated = True
+    self._pre_calculate_drawing_elements()
 
-  def _pre_calculate_drawing_elements(self, rect):
+  def _pre_calculate_drawing_elements(self):
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
-    width, height = rect.width, rect.height
+    width, height = self._rect.width, self._rect.height
     offset = UI_BORDER_SIZE + BTN_SIZE // 2
-    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
-    self.position_y = rect.y + height - offset
+    self.position_x = self._rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = self._rect.y + height - offset
 
     # Pre-calculate the face lines positions
     positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])
