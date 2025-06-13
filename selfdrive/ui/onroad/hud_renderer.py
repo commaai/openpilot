@@ -72,8 +72,9 @@ class HudRenderer(Widget):
 
     self._exp_button = ExpButton(UI_CONFIG.button_size, UI_CONFIG.wheel_icon_size)
 
-  def _update_state(self, sm: SubMaster) -> None:
+  def _update_state(self) -> None:
     """Update HUD state based on car state and controls state."""
+    sm = ui_state.sm
     if sm.recv_frame["carState"] < ui_state.started_frame:
       self.is_cruise_set = False
       self.set_speed = SET_SPEED_NA
@@ -99,12 +100,8 @@ class HudRenderer(Widget):
     speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-    self._exp_button.update_state(sm)
-
   def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
-    self._update_state(ui_state.sm)
-
     # Draw the header background
     rl.draw_rectangle_gradient_v(
       int(rect.x),
