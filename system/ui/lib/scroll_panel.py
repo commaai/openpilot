@@ -124,6 +124,11 @@ class GuiScrollPanel:
             avg_velocity = weighted_velocity / total_weight
             self._velocity_y = avg_velocity * FLICK_MULTIPLIER
 
+        if self._is_dragging:
+          gui_app.mouse.consume_event()
+
+        self._is_dragging = False
+
         # Check bounds
         if self._offset.y > 0 or self._offset.y < -max_scroll_y:
           self._scroll_state = ScrollState.BOUNCING
