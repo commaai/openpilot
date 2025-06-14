@@ -5,21 +5,23 @@ from openpilot.system.ui.lib.application import gui_app
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
-INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
-MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
-DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
-BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
-BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
-MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
-FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
-VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
+INERTIA_FRICTION = 0.92  # The rate at which the inertia slows down
+MIN_VELOCITY = 0.5  # Minimum velocity before stopping the inertia
+DRAG_THRESHOLD = 12  # Pixels of movement to consider it a drag, not a click
+BOUNCE_FACTOR = 0.2  # Elastic bounce when scrolling past boundaries
+BOUNCE_RETURN_SPEED = 0.15  # How quickly it returns from the bounce
+MAX_BOUNCE_DISTANCE = 150  # Maximum distance for bounce effect
+FLICK_MULTIPLIER = 1.8  # Multiplier for flick gestures
+VELOCITY_HISTORY_SIZE = 5  # Track velocity over multiple frames for smoother motion
 
 
 class ScrollState(IntEnum):
   IDLE = 0
-  DRAGGING_CONTENT = 1
-  DRAGGING_SCROLLBAR = 2
-  BOUNCING = 3
+  POTENTIAL_DRAG = 1  # Waiting to see if movement exceeds threshold
+  DRAGGING_CONTENT = 2
+  DRAGGING_SCROLLBAR = 3
+  BOUNCING = 4
+  INERTIA = 5  # Scrolling due to inertia after release
 
 
 class GuiScrollPanel:
@@ -38,11 +40,13 @@ class GuiScrollPanel:
     self._last_drag_time: float = 0.0
     self._content_rect: rl.Rectangle | None = None
     self._bounds_rect: rl.Rectangle | None = None
+    self._mouse_consumed_this_frame = False
 
   def handle_scroll(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
     # Store rectangles for reference
     self._content_rect = content
     self._bounds_rect = bounds
+    self._mouse_consumed_this_frame = False
 
     # Calculate time delta
     current_time = rl.get_time()
@@ -55,15 +59,21 @@ class GuiScrollPanel:
     mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
 
-    # Start dragging on mouse press
+    # Start potential drag on mouse press
     if gui_app.mouse.is_pressed_in(bounds):
-      if self._scroll_state == ScrollState.IDLE or self._scroll_state == ScrollState.BOUNCING:
-        self._scroll_state = ScrollState.DRAGGING_CONTENT
+      if self._scroll_state in (ScrollState.IDLE, ScrollState.BOUNCING, ScrollState.INERTIA):
+        # Check if clicking on scrollbar
         if self._show_vertical_scroll_bar:
           scrollbar_width = rl.gui_get_style(rl.GuiControl.LISTVIEW, rl.GuiListViewProperty.SCROLLBAR_WIDTH)
           scrollbar_x = bounds.x + bounds.width - scrollbar_width
           if mouse_pos.x >= scrollbar_x:
             self._scroll_state = ScrollState.DRAGGING_SCROLLBAR
+            gui_app.mouse.consume_event()  # Always consume scrollbar interactions
+            self._mouse_consumed_this_frame = True
+          else:
+            self._scroll_state = ScrollState.POTENTIAL_DRAG  # Wait for threshold
+        else:
+          self._scroll_state = ScrollState.POTENTIAL_DRAG  # Wait for threshold
 
         self._last_mouse_y = mouse_pos.y
         self._start_mouse_y = mouse_pos.y
@@ -73,8 +83,30 @@ class GuiScrollPanel:
         self._bounce_offset = 0.0
         self._is_dragging = False
 
+    # Handle potential drag (waiting for threshold)
+    elif self._scroll_state == ScrollState.POTENTIAL_DRAG:
+      if gui_app.mouse.is_held_down_in(bounds):
+        total_drag_distance = abs(mouse_pos.y - self._start_mouse_y)
+
+        if total_drag_distance > DRAG_THRESHOLD:
+          # Threshold exceeded - start actual dragging
+          self._scroll_state = ScrollState.DRAGGING_CONTENT
+          self._is_dragging = True
+          gui_app.mouse.consume_event()
+          self._mouse_consumed_this_frame = True
+        # If threshold not met, stay in POTENTIAL_DRAG (don't consume)
+
+        # Update mouse position for velocity tracking
+        self._last_mouse_y = mouse_pos.y
+
+      elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+        # Released before threshold - this was a click, not a drag
+        self._scroll_state = ScrollState.IDLE
+        self._is_dragging = False
+        # Don't consume - allow click to propagate
+
     # Handle active dragging
-    if self._scroll_state == ScrollState.DRAGGING_CONTENT or self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
+    elif self._scroll_state in (ScrollState.DRAGGING_CONTENT, ScrollState.DRAGGING_SCROLLBAR):
       if gui_app.mouse.is_held_down_in(bounds):
         delta_y = mouse_pos.y - self._last_mouse_y
 
@@ -89,32 +121,29 @@ class GuiScrollPanel:
 
         self._last_drag_time = current_time
 
-        # Detect actual dragging
-        total_drag = abs(mouse_pos.y - self._start_mouse_y)
-        if total_drag > DRAG_THRESHOLD:
-          self._is_dragging = True
-
         if self._scroll_state == ScrollState.DRAGGING_CONTENT:
-          # Only consume if we're actually dragging (past threshold)
-          if self._is_dragging:
-            gui_app.mouse.consume_event()
+          # Always consume during active dragging
+          gui_app.mouse.consume_event()
+          self._mouse_consumed_this_frame = True
 
           # Add resistance at boundaries
           if (self._offset.y > 0 and delta_y > 0) or (self._offset.y < -max_scroll_y and delta_y < 0):
             delta_y *= BOUNCE_FACTOR
 
           self._offset.y += delta_y
+
         elif self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
-            # Always consume for scrollbar dragging
-            gui_app.mouse.consume_event()
-            scroll_ratio = content.height / bounds.height
-            self._offset.y -= delta_y * scroll_ratio
+          # Always consume for scrollbar dragging
+          gui_app.mouse.consume_event()
+          self._mouse_consumed_this_frame = True
+          scroll_ratio = content.height / bounds.height if bounds.height > 0 else 1.0
+          self._offset.y -= delta_y * scroll_ratio
 
         self._last_mouse_y = mouse_pos.y
 
       elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-        # Calculate flick velocity
-        if self._velocity_history:
+        # Calculate flick velocity from history
+        if self._velocity_history and self._is_dragging:
           total_weight = 0
           weighted_velocity = 0.0
 
@@ -127,20 +156,25 @@ class GuiScrollPanel:
             avg_velocity = weighted_velocity / total_weight
             self._velocity_y = avg_velocity * FLICK_MULTIPLIER
 
+        # Consume mouse release if it was actual dragging
         if self._is_dragging:
           gui_app.mouse.consume_event()
+          self._mouse_consumed_this_frame = True
 
         self._is_dragging = False
 
-        # Check bounds
+        # Determine next state
         if self._offset.y > 0 or self._offset.y < -max_scroll_y:
           self._scroll_state = ScrollState.BOUNCING
+        elif abs(self._velocity_y) > MIN_VELOCITY:
+          self._scroll_state = ScrollState.INERTIA
         else:
           self._scroll_state = ScrollState.IDLE
 
     # Handle mouse wheel
     wheel_move = rl.get_mouse_wheel_move()
     if wheel_move != 0:
+      # Stop any current inertia
       self._velocity_y = 0.0
 
       if self._show_vertical_scroll_bar:
@@ -149,38 +183,46 @@ class GuiScrollPanel:
       else:
         self._offset.y += wheel_move * MOUSE_WHEEL_SCROLL_SPEED
 
+      # Check if we need to bounce
       if self._offset.y > 0 or self._offset.y < -max_scroll_y:
         self._scroll_state = ScrollState.BOUNCING
+      else:
+        self._scroll_state = ScrollState.IDLE
 
     # Apply inertia (continue scrolling after mouse release)
-    if self._scroll_state == ScrollState.IDLE:
+    if self._scroll_state == ScrollState.INERTIA:
       if abs(self._velocity_y) > MIN_VELOCITY:
         self._offset.y += self._velocity_y
         self._velocity_y *= INERTIA_FRICTION
 
+        # Check bounds
         if self._offset.y > 0 or self._offset.y < -max_scroll_y:
           self._scroll_state = ScrollState.BOUNCING
       else:
         self._velocity_y = 0.0
+        self._scroll_state = ScrollState.IDLE
 
     # Handle bouncing effect
     elif self._scroll_state == ScrollState.BOUNCING:
+      # Calculate target position within bounds
       target_y = 0.0
       if self._offset.y < -max_scroll_y:
         target_y = -max_scroll_y
 
+      # Apply bounce physics
       distance = target_y - self._offset.y
       bounce_step = distance * BOUNCE_RETURN_SPEED
       self._offset.y += bounce_step
-      self._velocity_y *= INERTIA_FRICTION * 0.8
+      self._velocity_y *= INERTIA_FRICTION * 0.8  # Reduce velocity during bounce
 
+      # Check if bounce is complete
       if abs(distance) < 0.5 and abs(self._velocity_y) < MIN_VELOCITY:
         self._offset.y = target_y
         self._velocity_y = 0.0
         self._scroll_state = ScrollState.IDLE
 
-    # Limit bounce distance
-    if self._scroll_state != ScrollState.DRAGGING_CONTENT:
+    # Enforce maximum bounce distance (except during active dragging)
+    if self._scroll_state not in (ScrollState.DRAGGING_CONTENT, ScrollState.POTENTIAL_DRAG):
       if self._offset.y > MAX_BOUNCE_DISTANCE:
         self._offset.y = MAX_BOUNCE_DISTANCE
       elif self._offset.y < -(max_scroll_y + MAX_BOUNCE_DISTANCE):
@@ -189,10 +231,11 @@ class GuiScrollPanel:
     return self._offset
 
   def is_click_valid(self) -> bool:
-    # Check if this is a click rather than a drag
+    """Check if the current mouse release should be treated as a click"""
     return (
-      self._scroll_state == ScrollState.IDLE
-      and not self._is_dragging
+      not self._is_dragging
+      and not self._mouse_consumed_this_frame
+      and self._scroll_state in (ScrollState.IDLE, ScrollState.INERTIA, ScrollState.BOUNCING)
       and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
     )
 
