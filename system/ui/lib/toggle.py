@@ -1,5 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.application import gui_app
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
@@ -27,11 +28,10 @@ class Toggle(Widget):
     if not self._enabled:
       return 0
 
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if rl.check_collision_point_rec(rl.get_mouse_position(), self._rect):
-        self._state = not self._state
-        self._target = 1.0 if self._state else 0.0
-        return 1
+    if gui_app.mouse.consume_clicked_int(self._rect):
+      self._state = not self._state
+      self._target = 1.0 if self._state else 0.0
+      return 1
     return 0
 
   def get_state(self):
