@@ -97,7 +97,7 @@ class GuiScrollPanel:
           self._is_dragging = True
 
         if self._scroll_state == ScrollState.DRAGGING_CONTENT:
-          gui_app.muse.consume_event()
+          gui_app.mouse.consume_event()
           # Add resistance at boundaries
           if (self._offset.y > 0 and delta_y > 0) or (self._offset.y < -max_scroll_y and delta_y < 0):
             delta_y *= BOUNCE_FACTOR
