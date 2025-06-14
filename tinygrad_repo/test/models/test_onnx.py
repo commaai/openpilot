@@ -7,7 +7,7 @@ try:
   import onnx
 except ModuleNotFoundError:
   raise unittest.SkipTest("onnx not installed, skipping onnx test")
-from extra.onnx import get_run_onnx
+from tinygrad.frontend.onnx import OnnxRunner, onnx_load
 from tinygrad.tensor import Tensor
 from tinygrad.helpers import CI, fetch, temp
 
@@ -25,8 +25,8 @@ np.random.seed(1337)
 
 class TestOnnxModel(unittest.TestCase):
   def test_benchmark_openpilot_model(self):
-    onnx_model = onnx.load(fetch(OPENPILOT_MODEL))
-    run_onnx = get_run_onnx(onnx_model)
+    onnx_model = onnx_load(fetch(OPENPILOT_MODEL))
+    run_onnx = OnnxRunner(onnx_model)
     def get_inputs():
       np_inputs = {
         "input_imgs": np.random.randn(*(1, 12, 128, 256)),
@@ -69,8 +69,8 @@ class TestOnnxModel(unittest.TestCase):
       ps.print_stats(30)
 
   def test_openpilot_model(self):
-    onnx_model = onnx.load(fetch(OPENPILOT_MODEL))
-    run_onnx = get_run_onnx(onnx_model)
+    onnx_model = onnx_load(fetch(OPENPILOT_MODEL))
+    run_onnx = OnnxRunner(onnx_model)
     print("got run_onnx")
     inputs = {
       "input_imgs": np.random.randn(*(1, 12, 128, 256)),
@@ -93,11 +93,10 @@ class TestOnnxModel(unittest.TestCase):
     et = time.monotonic()
     print(f"ran openpilot model in {(et-st)*1000.0:.2f} ms, waited {(mt2-mt)*1000.0:.2f} ms for realize, {(et-mt2)*1000.0:.2f} ms for GPU queue")
 
-    Tensor.no_grad = True
+    onnx_model = onnx.load(fetch(OPENPILOT_MODEL))
     torch_out = run_onnx_torch(onnx_model, inputs).numpy()
-    Tensor.no_grad = False
     print(tinygrad_out, torch_out)
-    np.testing.assert_allclose(torch_out, tinygrad_out, atol=1e-4, rtol=1e-2)
+    np.testing.assert_allclose(tinygrad_out, torch_out, atol=1e-4, rtol=1e-2)
 
   @unittest.skip("slow")
   def test_efficientnet(self):
@@ -121,10 +120,10 @@ class TestOnnxModel(unittest.TestCase):
       input_name, input_new)
 
   def _test_model(self, fn, input_name, input_new, debug=False):
-    onnx_model = onnx.load(fn)
+    onnx_model = onnx_load(fn)
     print("onnx loaded")
     from test.models.test_efficientnet import chicken_img, car_img, preprocess, _LABELS
-    run_onnx = get_run_onnx(onnx_model)
+    run_onnx = OnnxRunner(onnx_model)
 
     def run(img):
       inputs = {input_name: preprocess(img, new=input_new)}

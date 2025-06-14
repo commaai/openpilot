@@ -1,9 +1,25 @@
 import unittest
-from tinygrad import Tensor, GlobalCounters, dtypes
-from tinygrad.ops import Ops
+import numpy as np
+from tinygrad import Tensor, GlobalCounters, dtypes, Context, nn
+from tinygrad.uop.ops import Ops
 from tinygrad.helpers import Timing, CI, Profiling, WINO, DEBUG, getenv
 from tinygrad.codegen.kernel import Kernel
-from tinygrad.engine.schedule import create_schedule
+from tinygrad.codegen.heuristic import hand_coded_optimizations
+
+class TestWinogradClose(unittest.TestCase):
+  def test_close(self):
+    inp = Tensor.rand(1, 16, 16, 16)
+    conv = nn.Conv2d(16, 16, 3)
+    conv(inp).realize() # warmup
+    GlobalCounters.reset()
+    print("non winograd")
+    with Context(WINO=0):
+      cmp = conv(inp).realize() # warmup
+    GlobalCounters.reset()
+    print("winograd")
+    with Context(WINO=1):
+      test = conv(inp).realize()
+    np.testing.assert_allclose(cmp.numpy(), test.numpy(), atol=1e-5)
 
 class TestWinograd(unittest.TestCase):
   def setUp(self):
@@ -20,14 +36,14 @@ class TestWinograd(unittest.TestCase):
       out = Tensor.conv2d(x, w)
 
     with Timing("scheduling: "):
-      sched = create_schedule([out.lazydata])
+      sched = out.schedule()
 
     for i,s in enumerate(sched):
       if s.ast.op is not Ops.SINK: continue
-      ops = s.ast.toposort
+      ops = s.ast.toposort()
       with Timing(f"linearize {i} with {len(ops):4d} ops: "):
         l = Kernel(s.ast)
-        l.hand_coded_optimizations()
+        l.apply_opts(hand_coded_optimizations(l))
         l.linearize()
       assert len(l.sts) <= 256  # just the current value to prevent regression
       if DEBUG >= 2: print(f"{len(l.sts):4d} shapetrackers with max {max(len(x.views) for x in l.sts)} views")

@@ -20,8 +20,11 @@
 
 ::: tinygrad.Tensor.manual_seed
 ::: tinygrad.Tensor.rand
+::: tinygrad.Tensor.rand_like
 ::: tinygrad.Tensor.randn
+::: tinygrad.Tensor.randn_like
 ::: tinygrad.Tensor.randint
+::: tinygrad.Tensor.randperm
 ::: tinygrad.Tensor.normal
 ::: tinygrad.Tensor.uniform
 ::: tinygrad.Tensor.scaled_uniform

@@ -24,6 +24,6 @@ class TestSimpleKalman:
     self.kf.set_x([[1.0], [1.0]])
     assert self.kf.x == [[1.0], [1.0]]
 
-  def update_returns_state(self):
+  def test_update_returns_state(self):
     x = self.kf.update(100)
-    assert x == self.kf.x
+    assert x == [i[0] for i in self.kf.x]

@@ -1,6 +1,6 @@
 import gc
 from tinygrad.helpers import prod
-from tinygrad.ops import UOp
+from tinygrad.uop.ops import UOp
 from tinygrad.device import Buffer
 from tinygrad import Tensor, GlobalCounters
 

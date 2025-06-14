@@ -17,7 +17,6 @@ class CarState(CarStateBase):
 
     self.crz_btns_counter = 0
     self.acc_active_last = False
-    self.low_speed_alert = False
     self.lkas_allowed_speed = False
 
     self.distance_button = 0

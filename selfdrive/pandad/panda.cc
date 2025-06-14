@@ -66,6 +66,25 @@ void Panda::set_alternative_experience(uint16_t alternative_experience) {
   handle->control_write(0xdf, alternative_experience, 0);
 }
 
+std::string Panda::serial_read(int port_number) {
+  std::string ret;
+  char buffer[USBPACKET_MAX_SIZE] = {};
+
+  while (true) {
+    int bytes_read = handle->control_read(0xe0, port_number, 0, (unsigned char *)buffer, USBPACKET_MAX_SIZE);
+    if (bytes_read <= 0) {
+      break;
+    }
+    ret.append(buffer, bytes_read);
+  }
+
+  return ret;
+}
+
+void Panda::set_uart_baud(int uart, int rate) {
+  handle->control_write(0xe4, uart, int(rate / 300));
+}
+
 cereal::PandaState::PandaType Panda::get_hw_type() {
   unsigned char hw_query[1] = {0};
 

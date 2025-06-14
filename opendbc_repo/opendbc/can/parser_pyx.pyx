@@ -63,7 +63,7 @@ cdef class CANParser:
 
     cdef string cpp_dbc_name
     if isinstance(dbc_name, str):
-      cpp_dbc_name = (<str>dbc_name).encode('utf-8')
+      cpp_dbc_name = (<str>dbc_name).encode("utf-8")
     else:
       cpp_dbc_name = dbc_name  # Assume bytes
     cdef int cpp_bus = bus

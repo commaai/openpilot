@@ -6,14 +6,14 @@ def time_tensor_numpy(out:Tensor):
   times = []
   for _ in range(5):
     st = time.perf_counter()
-    out.lazydata.base.realized.as_buffer(allow_zero_copy=True)
+    out.uop.base.realized.as_buffer(allow_zero_copy=True)
     et = time.perf_counter() - st
     times.append(et)
   return min(times)
 
 N = 4096
 class TestZeroCopy(unittest.TestCase):
-  @unittest.skipIf(Device.DEFAULT not in {"CLANG", "LLVM", "METAL"}, "device isn't zero copy")
+  @unittest.skipIf(Device.DEFAULT not in {"CPU", "LLVM", "METAL"}, "device isn't zero copy")
   def test_zero_copy_from_default_to_cpu(self):
     demo = Tensor.rand(1).realize()
     t1 = time_tensor_numpy(demo)

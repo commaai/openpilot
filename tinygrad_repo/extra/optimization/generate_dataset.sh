@@ -2,7 +2,7 @@
 export PAGE_SIZE=1
 export PYTHONPATH=.
 export LOGOPS=/tmp/ops
-export RUN_PROCESS_REPLAY=1
+export CAPTURE_PROCESS_REPLAY=1
 rm $LOGOPS
 test/external/process_replay/reset.py
 

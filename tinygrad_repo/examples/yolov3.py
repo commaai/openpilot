@@ -228,7 +228,7 @@ class Darknet:
           module.append(BatchNorm2d(filters, eps=1e-05, track_running_stats=True))
         # LeakyReLU activation
         if activation == "leaky":
-          module.append(lambda x: x.leakyrelu(0.1))
+          module.append(lambda x: x.leaky_relu(0.1))
       elif module_type == "maxpool":
         size, stride = int(x["size"]), int(x["stride"])
         module.append(lambda x: x.max_pool2d(kernel_size=(size, size), stride=stride))
