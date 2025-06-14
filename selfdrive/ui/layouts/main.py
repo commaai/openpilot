@@ -4,6 +4,7 @@ import cereal.messaging as messaging
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
+from openpilot.selfdrive.ui.lib.device_state import DeviceState
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.system.ui.lib.widget import Widget
@@ -16,10 +17,11 @@ class MainState(IntEnum):
 
 
 class MainLayout(Widget):
-  def __init__(self):
+  def __init__(self, device_state: DeviceState):
     super().__init__()
 
     self._pm = messaging.PubMaster(['userFlag'])
+    self._device_state = device_state
 
     self._sidebar = Sidebar()
     self._current_mode = MainState.HOME
@@ -36,6 +38,7 @@ class MainLayout(Widget):
 
   def _render(self, _):
     self._handle_onroad_transition()
+    self._handle_device_state_change()
     self._render_main_content()
 
   def _setup_callbacks(self):
@@ -57,6 +60,10 @@ class MainLayout(Widget):
 
       self._set_mode_for_state()
 
+  def _handle_device_state_change(self):
+    if self._current_mode == MainState.SETTINGS and not self._device_state.has_user_activity():
+      self._set_mode_for_state()
+
   def _set_mode_for_state(self):
     if ui_state.started:
       self._current_mode = MainState.ONROAD
@@ -66,7 +73,9 @@ class MainLayout(Widget):
       self._sidebar.set_visible(True)
 
   def open_settings(self, panel_type: PanelType):
-    self._layouts[MainState.SETTINGS].set_current_panel(panel_type)
+    settings_layout = self._layouts[MainState.SETTINGS]
+    assert isinstance(settings_layout, SettingsLayout)
+    settings_layout.set_current_panel(panel_type)
     self._current_mode = MainState.SETTINGS
     self._sidebar.set_visible(False)
 
