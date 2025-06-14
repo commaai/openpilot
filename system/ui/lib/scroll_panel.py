@@ -1,5 +1,6 @@
 import pyray as rl
 from enum import IntEnum
+from openpilot.system.ui.lib.application import gui_app
 
 
 # Scroll constants for smooth scrolling behavior
@@ -55,7 +56,7 @@ class GuiScrollPanel:
     max_scroll_y = max(content.height - bounds.height, 0)
 
     # Start dragging on mouse press
-    if rl.check_collision_point_rec(mouse_pos, bounds) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    if gui_app.mouse.is_pressed_in(bounds):
       if self._scroll_state == ScrollState.IDLE or self._scroll_state == ScrollState.BOUNCING:
         self._scroll_state = ScrollState.DRAGGING_CONTENT
         if self._show_vertical_scroll_bar:
@@ -74,7 +75,7 @@ class GuiScrollPanel:
 
     # Handle active dragging
     if self._scroll_state == ScrollState.DRAGGING_CONTENT or self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
-      if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if gui_app.mouse.is_held_down_in(bounds):
         delta_y = mouse_pos.y - self._last_mouse_y
 
         # Track velocity for inertia
@@ -91,9 +92,12 @@ class GuiScrollPanel:
         # Detect actual dragging
         total_drag = abs(mouse_pos.y - self._start_mouse_y)
         if total_drag > DRAG_THRESHOLD:
+          #consume the mouse event to prevent propagation
+          gui_app.mouse.consume_event()
           self._is_dragging = True
 
         if self._scroll_state == ScrollState.DRAGGING_CONTENT:
+          gui_app.muse.consume_event()
           # Add resistance at boundaries
           if (self._offset.y > 0 and delta_y > 0) or (self._offset.y < -max_scroll_y and delta_y < 0):
             delta_y *= BOUNCE_FACTOR
