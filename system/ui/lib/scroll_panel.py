@@ -92,20 +92,23 @@ class GuiScrollPanel:
         # Detect actual dragging
         total_drag = abs(mouse_pos.y - self._start_mouse_y)
         if total_drag > DRAG_THRESHOLD:
-          #consume the mouse event to prevent propagation
-          gui_app.mouse.consume_event()
           self._is_dragging = True
 
         if self._scroll_state == ScrollState.DRAGGING_CONTENT:
-          gui_app.mouse.consume_event()
+          # Only consume if we're actually dragging (past threshold)
+          if self._is_dragging:
+            gui_app.mouse.consume_event()
+
           # Add resistance at boundaries
           if (self._offset.y > 0 and delta_y > 0) or (self._offset.y < -max_scroll_y and delta_y < 0):
             delta_y *= BOUNCE_FACTOR
 
           self._offset.y += delta_y
         elif self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
-          scroll_ratio = content.height / bounds.height
-          self._offset.y -= delta_y * scroll_ratio
+            # Always consume for scrollbar dragging
+            gui_app.mouse.consume_event()
+            scroll_ratio = content.height / bounds.height
+            self._offset.y -= delta_y * scroll_ratio
 
         self._last_mouse_y = mouse_pos.y
 
