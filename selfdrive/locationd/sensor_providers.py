@@ -13,11 +13,11 @@ class SensorReading:
 
 class ISensorProvider(ABC):
   @abstractmethod
-  def get_accelerometer_reading(self, msg_data: dict, t: float) -> Optional[SensorReading]:
+  def get_accelerometer_reading(self, msg_data: dict, t: float) -> SensorReading | None:
     pass
 
   @abstractmethod
-  def get_gyroscope_reading(self, msg_data: dict, t: float) -> Optional[SensorReading]:
+  def get_gyroscope_reading(self, msg_data: dict, t: float) -> SensorReading | None:
     pass
 
   @abstractmethod
@@ -32,7 +32,7 @@ class ISensorProvider(ABC):
 class HardwareSensorProvider(ISensorProvider):
   """Provides sensor data from dedicated IMU hardware"""
 
-  def get_accelerometer_reading(self, msg_data: dict, t: float) -> Optional[SensorReading]:
+  def get_accelerometer_reading(self, msg_data: dict, t: float) -> SensorReading | None:
     if 'accelerometer' not in msg_data:
       return None
     msg = msg_data['accelerometer']
@@ -42,7 +42,7 @@ class HardwareSensorProvider(ISensorProvider):
     meas = np.array([-v[2], -v[1], -v[0]])
     return SensorReading(meas, sensor_time, msg.valid)
 
-  def get_gyroscope_reading(self, msg_data: dict, t: float) -> Optional[SensorReading]:
+  def get_gyroscope_reading(self, msg_data: dict, t: float) -> SensorReading | None:
     if 'gyroscope' not in msg_data:
       return None
     msg = msg_data['gyroscope']
@@ -62,7 +62,7 @@ class HardwareSensorProvider(ISensorProvider):
 class CarStateSensorProvider(ISensorProvider):
   """Provides fallback sensor data from vehicle CAN bus"""
 
-  def get_accelerometer_reading(self, msg_data: dict, t: float) -> Optional[SensorReading]:
+  def get_accelerometer_reading(self, msg_data: dict, t: float) -> SensorReading | None:
     if 'carState' not in msg_data:
       return None
     msg = msg_data['carState']
@@ -70,7 +70,7 @@ class CarStateSensorProvider(ISensorProvider):
     meas = np.array([msg.aEgo, 0, -9.81])
     return SensorReading(meas, t, msg.valid)
 
-  def get_gyroscope_reading(self, msg_data: dict, t: float) -> Optional[SensorReading]:
+  def get_gyroscope_reading(self, msg_data: dict, t: float) -> SensorReading | None:
     if 'carState' not in msg_data:
       return None
     msg = msg_data['carState']
