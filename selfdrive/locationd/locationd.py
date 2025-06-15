@@ -154,6 +154,10 @@ class LocationEstimator:
     if which in ["accelerometer", "gyroscope", "carState"]:
       # For hardware sensors, validate source and timing first
       if which in ["accelerometer", "gyroscope"]:
+        # Only process hardware sensor messages if provider requires them
+        if not self.sensor_provider.requires_hardware_sensors():
+          return HandleLogResult.SUCCESS
+
         if which == "accelerometer" and msg.which() != "acceleration":
           return HandleLogResult.SUCCESS
         if which == "gyroscope" and msg.which() != "gyroUncalibrated":
@@ -165,13 +169,20 @@ class LocationEstimator:
         if not self._validate_sensor_source(msg.source):
           return HandleLogResult.SENSOR_SOURCE_INVALID
 
-      # Update car speed if carState
-      if which == "carState":
+        # Use unified sensor handling for hardware sensors
+        msg_data = {which: msg}
+        return self._handle_sensor_data(t, msg_data)
+
+      elif which == "carState":
+        # Update car speed
         self.car_speed = abs(msg.vEgo)
 
-      # Use unified sensor handling
-      msg_data = {which: msg}
-      return self._handle_sensor_data(t, msg_data)
+        # Only process carState for sensor data if provider doesn't require hardware sensors
+        if not self.sensor_provider.requires_hardware_sensors():
+          msg_data = {which: msg}
+          return self._handle_sensor_data(t, msg_data)
+
+        return HandleLogResult.SUCCESS
 
     elif which == "liveCalibration":
       # Note that we use this message during calibration
