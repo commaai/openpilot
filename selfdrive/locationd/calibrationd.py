@@ -11,7 +11,7 @@ import capnp
 import numpy as np
 from typing import NoReturn
 
-from cereal import log
+from cereal import log, car
 import cereal.messaging as messaging
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
@@ -258,15 +258,17 @@ def main() -> NoReturn:
   config_realtime_process([0, 1, 2, 3], 5)
 
   pm = messaging.PubMaster(['liveCalibration'])
-  sm = messaging.SubMaster(['cameraOdometry', 'carState', 'carParams'], poll='cameraOdometry')
+  sm = messaging.SubMaster(['cameraOdometry', 'carState'], poll='cameraOdometry')
+
+  params_reader = Params()
+  CP = messaging.log_from_bytes(params_reader.get("CarParams", block=True), car.CarParams)
 
   calibrator = Calibrator(param_put=True)
+  calibrator.not_car = CP.notCar
 
   while 1:
     timeout = 0 if sm.frame == -1 else 100
     sm.update(timeout)
-
-    calibrator.not_car = sm['carParams'].notCar
 
     if sm.updated['cameraOdometry']:
       calibrator.handle_v_ego(sm['carState'].vEgo)

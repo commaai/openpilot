@@ -11,6 +11,8 @@
 #include <QVBoxLayout>
 #include <QtConcurrent>
 
+#include "tools/cabana/tools/routeinfo.h"
+
 const int MIN_VIDEO_HEIGHT = 100;
 const int THUMBNAIL_MARGIN = 3;
 
@@ -100,9 +102,12 @@ void VideoWidget::createPlaybackController() {
 
   if (!can->liveStreaming()) {
     toolbar->addAction(utils::icon("repeat"), tr("Loop playback"), this, &VideoWidget::loopPlaybackClicked);
+    createSpeedDropdown(toolbar);
+    toolbar->addSeparator();
+    toolbar->addAction(utils::icon("info-circle"), tr("View route details"), this, &VideoWidget::showRouteInfo);
+  } else {
+    createSpeedDropdown(toolbar);
   }
-
-  createSpeedDropdown(toolbar);
 }
 
 void VideoWidget::createSpeedDropdown(QToolBar *toolbar) {
@@ -228,6 +233,12 @@ void VideoWidget::showThumbnail(double seconds) {
   slider->thumbnail_dispaly_time = seconds;
   cam_widget->update();
   slider->update();
+}
+
+void VideoWidget::showRouteInfo() {
+  RouteInfoDlg *route_info = new RouteInfoDlg(this);
+  route_info->setAttribute(Qt::WA_DeleteOnClose);
+  route_info->show();
 }
 
 bool VideoWidget::eventFilter(QObject *obj, QEvent *event) {

@@ -37,7 +37,7 @@ if __name__ == "__main__":
   print("mmapped", hex(res))
   to_mv(res, 0x10)[1] = 0xaa
 
-  from tinygrad.runtime.ops_clang import ClangCompiler
+  from tinygrad.runtime.ops_dsp import ClangCompiler
   cc = ClangCompiler(args=["--target=hexagon", "-mcpu=hexagonv65", "-fuse-ld=lld", "-nostdlib"])
 
   obj = cc.compile("""

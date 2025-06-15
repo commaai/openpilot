@@ -117,7 +117,7 @@ def tts(
   stn_tst = text_mapper.get_text(text_to_synthesize, hps.data.add_blank, hps.data.text_cleaners)
   init_shape = stn_tst.shape
   assert init_shape[0] < pad_length, "text is too long"
-  x_tst, x_tst_lengths = stn_tst.pad(((0, pad_length - init_shape[0]),), 1).unsqueeze(0), Tensor([init_shape[0]], dtype=dtypes.int64)
+  x_tst, x_tst_lengths = stn_tst.pad(((0, pad_length - init_shape[0]),), value=1).unsqueeze(0), Tensor([init_shape[0]], dtype=dtypes.int64)
   sid = Tensor([speaker_id], dtype=dtypes.int64) if model_has_multiple_speakers else None
 
   # Perform inference.
@@ -159,7 +159,6 @@ def init_vits(
   text_mapper = TextMapper(apply_cleaners=True, symbols=symbols)
 
   # Load the model.
-  Tensor.no_grad = True
   if seed is not None:
     Tensor.manual_seed(seed)
     np.random.seed(seed)
@@ -221,7 +220,6 @@ def mp_output_stream(q: mp.Queue, counter: mp.Value, num_channels: int, sample_r
 if __name__ == "__main__":
   import nltk
   nltk.download("punkt")
-  Tensor.no_grad = True
   # Parse CLI arguments
   parser = argparse.ArgumentParser("Have a tiny conversation with tinygrad")
 

@@ -1,5 +1,5 @@
-from extra.optimization.helpers import load_worlds, ast_str_to_lin
-from tinygrad.engine.search import bufs_from_lin, time_linearizer, get_kernel_actions
+from extra.optimization.helpers import load_worlds, ast_str_to_lin, time_linearizer
+from tinygrad.engine.search import bufs_from_lin, get_kernel_actions
 
 if __name__ == "__main__":
   ast_strs = load_worlds()

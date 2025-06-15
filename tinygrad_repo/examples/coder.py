@@ -23,8 +23,6 @@ def create_fixed_tokenizer(output_file):
 # echo -en "write 2+2\nwrite hello world\ny\n" | TEMP=0 python3 examples/coder.py
 
 if __name__ == "__main__":
-  Tensor.no_grad = True
-
   # https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B/blob/main/config.json
   with Timing("create model: "):
     model = Transformer(4096, 14336, n_heads=32, n_layers=32, norm_eps=1e-5, vocab_size=32002, n_kv_heads=8, max_context=4096, jit=getenv("JIT", 1))
@@ -34,8 +32,8 @@ if __name__ == "__main__":
     part2 = nn.state.torch_load(fetch("https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B/resolve/main/pytorch_model-00002-of-00002.bin?download=true"))
 
   with Timing("weights -> model: "):
-    nn.state.load_state_dict(model, fix_bf16(convert_from_huggingface(part1, model, 32, 8)), strict=False)
-    nn.state.load_state_dict(model, fix_bf16(convert_from_huggingface(part2, model, 32, 8)), strict=False)
+    nn.state.load_state_dict(model, fix_bf16(convert_from_huggingface(part1, 32, 32, 8)), strict=False)
+    nn.state.load_state_dict(model, fix_bf16(convert_from_huggingface(part2, 32, 32, 8)), strict=False)
 
   if not os.path.isfile("/tmp/tokenizer.model"): create_fixed_tokenizer("/tmp/tokenizer.model")
   spp = SentencePieceProcessor(model_file="/tmp/tokenizer.model")

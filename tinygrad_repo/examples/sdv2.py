@@ -5,6 +5,7 @@ from examples.stable_diffusion import AutoencoderKL, get_alphas_cumprod
 from examples.sdxl import DPMPP2MSampler, append_dims, LegacyDDPMDiscretization
 from extra.models.unet import UNetModel
 from extra.models.clip import FrozenOpenClipEmbedder
+from extra.bench_log import BenchEvent, WallTimeEvent
 
 from typing import Dict
 import argparse, tempfile, os
@@ -106,7 +107,6 @@ if __name__ == "__main__":
   assert args.width  % F == 0, f"img_width must be multiple of {F}, got {args.width}"
   assert args.height % F == 0, f"img_height must be multiple of {F}, got {args.height}"
 
-  Tensor.no_grad = True
   if args.seed is not None:
     Tensor.manual_seed(args.seed)
 
@@ -117,12 +117,14 @@ if __name__ == "__main__":
   if not weights_fn:
     weights_url = args.weights_url if args.weights_url else default_weights_url
     weights_fn  = fetch(weights_url, os.path.basename(str(weights_url)))
-  load_state_dict(model, safe_load(weights_fn), strict=False)
 
-  if args.fp16:
-    for k,v in get_state_dict(model).items():
-      if k.startswith("model"):
-        v.replace(v.cast(dtypes.float16).realize())
+  with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
+    load_state_dict(model, safe_load(weights_fn), strict=False)
+
+    if args.fp16:
+      for k,v in get_state_dict(model).items():
+        if k.startswith("model"):
+          v.replace(v.cast(dtypes.float16).realize())
 
   c  = { "crossattn": model.cond_stage_model(args.prompt) }
   uc = { "crossattn": model.cond_stage_model("") }

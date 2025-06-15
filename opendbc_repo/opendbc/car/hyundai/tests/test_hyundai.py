@@ -51,7 +51,7 @@ class TestHyundaiFingerprint:
       if lka_steering:
         cam_can = CanBus(None, fingerprint).CAM
         fingerprint[cam_can] = [0x50, 0x110]  # LKA steering messages
-      CP = CarInterface.get_params(CAR.KIA_EV6, fingerprint, [], False, False)
+      CP = CarInterface.get_params(CAR.KIA_EV6, fingerprint, [], False, False, False)
       assert bool(CP.flags & HyundaiFlags.CANFD_LKA_STEERING) == lka_steering
 
     # radar available
@@ -59,14 +59,14 @@ class TestHyundaiFingerprint:
       fingerprint = gen_empty_fingerprint()
       if radar:
         fingerprint[1][RADAR_START_ADDR] = 8
-      CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False)
+      CP = CarInterface.get_params(CAR.HYUNDAI_SONATA, fingerprint, [], False, False, False)
       assert CP.radarUnavailable != radar
 
   def test_alternate_limits(self):
     # Alternate lateral control limits, for high torque cars, verify Panda safety mode flag is set
     fingerprint = gen_empty_fingerprint()
     for car_model in CAR:
-      CP = CarInterface.get_params(car_model, fingerprint, [], False, False)
+      CP = CarInterface.get_params(car_model, fingerprint, [], False, False, False)
       assert bool(CP.flags & HyundaiFlags.ALT_LIMITS) == bool(CP.safetyConfigs[-1].safetyParam & HyundaiSafetyFlags.ALT_LIMITS)
 
   def test_can_features(self):

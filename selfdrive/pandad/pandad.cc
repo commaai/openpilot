@@ -25,7 +25,7 @@
 // - If a panda connection is dropped, pandad will reconnect to all pandas
 // - If a panda is added, we will only reconnect when we are offroad
 // CAN buses:
-// - Each panda will have it's block of 4 buses. E.g.: the second panda will use
+// - Each panda will have its block of 4 buses. E.g.: the second panda will use
 //   bus numbers 4, 5, 6 and 7
 // - The internal panda will always be used for accessing the OBD2 port,
 //   and thus firmware queries
@@ -450,6 +450,19 @@ void pandad_run(std::vector<Panda *> &pandas) {
     // Send out peripheralState at 2Hz
     if (rk.frame() % 50 == 0) {
       send_peripheral_state(peripheral_panda, &pm);
+    }
+
+    // Forward logs from pandas to cloudlog if available
+    for (auto *panda : pandas) {
+      std::string log = panda->serial_read();
+      if (!log.empty()) {
+        if (log.find("Register 0x") != std::string::npos) {
+          // Log register divergent faults as errors
+          LOGE("%s", log.c_str());
+        } else {
+          LOGD("%s", log.c_str());
+        }
+      }
     }
 
     rk.keepTime();

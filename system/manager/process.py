@@ -16,9 +16,8 @@ import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.watchdog import WATCHDOG_FN
 
-WATCHDOG_FN = f"{Paths.shm_path()}/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 
@@ -96,7 +95,6 @@ class ManagerProcess(ABC):
     try:
       fn = WATCHDOG_FN + str(self.proc.pid)
       with open(fn, "rb") as f:
-        # TODO: why can't pylint find struct.unpack?
         self.last_watchdog_time = struct.unpack('Q', f.read())[0]
     except Exception:
       pass

@@ -89,7 +89,7 @@ class Uploader:
 
   def list_upload_files(self, metered: bool) -> Iterator[tuple[str, str, str]]:
     r = self.params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
-    requested_routes = [] if r is None else r.split(",")
+    requested_routes = [] if r is None else [route for route in r.split(",") if route]
 
     for logdir in listdir_by_creation(self.root):
       path = os.path.join(self.root, logdir)

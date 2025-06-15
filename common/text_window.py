@@ -8,9 +8,9 @@ from openpilot.common.basedir import BASEDIR
 class TextWindow:
   def __init__(self, text):
     try:
-      self.text_proc = subprocess.Popen(["./text", text],
+      self.text_proc = subprocess.Popen(["./text.py", text],
                                         stdin=subprocess.PIPE,
-                                        cwd=os.path.join(BASEDIR, "selfdrive", "ui"),
+                                        cwd=os.path.join(BASEDIR, "system", "ui"),
                                         close_fds=True)
     except OSError:
       self.text_proc = None

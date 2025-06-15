@@ -1,10 +1,9 @@
 import argparse
 from collections import defaultdict
-from extra.optimization.helpers import kern_str_to_lin
+from extra.optimization.helpers import kern_str_to_lin, time_linearizer
 from test.external.fuzz_linearizer import compare_linearizer
 from tinygrad.helpers import colored
 from tinygrad.codegen.kernel import Kernel
-from tinygrad.engine.search import time_linearizer
 
 # Use this with the LOGKERNS options to verify that all executed kernels are valid and evaluate to the same ground truth results
 
@@ -37,8 +36,7 @@ if __name__ == "__main__":
     with open(args.pkl, 'rb') as file:
       (ast, applied_opts,) = pickle.load(file)
       lin = Kernel(ast)
-      for opt in applied_opts:
-        lin.apply_opt(opt)
+      lin.apply_opts(applied_opts)
       test_lins = [lin]
 
   else:
@@ -53,7 +51,6 @@ if __name__ == "__main__":
     print(test_lin.ast)
     print(test_lin.applied_opts)
     unoptimized_lin = Kernel(test_lin.ast)
-    unoptimized_lin.required_optimizations()
     print(f"{unoptimized_lin.colored_shape()} -> {test_lin.colored_shape()}")
     (msg,rb,vv,gt) = compare_linearizer(test_lin, None, None, None, rtol=args.rtol, atol=args.atol)
     if msg != "PASS":

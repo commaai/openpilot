@@ -1,6 +1,0 @@
-.*.cmd
-*.ko
-.tmp_versions
-Module.symvers
-modules.order
-*.mod.c
