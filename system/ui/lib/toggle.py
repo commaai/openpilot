@@ -28,7 +28,7 @@ class Toggle(Widget):
     if not self._enabled:
       return 0
 
-    if gui_app.mouse.consume_clicked_int(self._rect):
+    if gui_app.mouse.consume_clicked_in(self._rect):
       self._state = not self._state
       self._target = 1.0 if self._state else 0.0
       return 1
