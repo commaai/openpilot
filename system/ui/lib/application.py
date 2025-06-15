@@ -8,6 +8,13 @@ from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.formatter import build_formatter
+
+try:
+  ffi, lib = build_formatter()
+except Exception:
+  ffi, lib = None, None
+
 
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -249,9 +256,26 @@ class GuiApplication:
     @rl.ffi.callback("void(int, char *, void *)")
     def trace_log_callback(log_level, text, args):
       try:
-        text_str = rl.ffi.string(text).decode('utf-8')
-      except (TypeError, UnicodeDecodeError):
-        text_str = str(text)
+        format_str = rl.ffi.string(text).decode('utf-8')
+
+        if ffi and lib:
+          # Try to format with vasprintf
+          try:
+            strp = ffi.new("char **")
+            result = lib.vasprintf(strp, text, args)
+
+            if result >= 0 and strp[0] != ffi.NULL:
+              text_str = ffi.string(strp[0]).decode('utf-8')
+              lib.free(strp[0])
+            else:
+              text_str = format_str  # Fallback to format string
+          except Exception:
+            text_str = format_str
+        else:
+          text_str = format_str
+
+      except Exception as e:
+        text_str = f"[Log decode error: {e}]"
 
       if log_level == rl.TraceLogLevel.LOG_ERROR:
         cloudlog.error(f"raylib: {text_str}")
