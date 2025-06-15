@@ -277,6 +277,7 @@ class GuiApplication:
       except Exception as e:
         text_str = f"[Log decode error: {e}]"
 
+      print(text_str)
       if log_level == rl.TraceLogLevel.LOG_ERROR:
         cloudlog.error(f"raylib: {text_str}")
       elif log_level == rl.TraceLogLevel.LOG_WARNING:

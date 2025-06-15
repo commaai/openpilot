@@ -25,7 +25,7 @@ def build_formatter():
     """,
   )
 
-  ffibuilder.compile(tmpdir=current_dir, verbose=False)
+  ffibuilder.compile(tmpdir="/tmp", target=current_dir + "/_format_string.so", verbose=False)
   from openpilot.system.ui.lib import _format_string
 
   return _format_string.ffi, _format_string.lib
