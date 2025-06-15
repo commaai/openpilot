@@ -65,7 +65,7 @@ DEVICE_CAMERAS = {
   ("unknown", "ar0231"): _ar_ox_config,
   ("unknown", "ox03c10"): _ar_ox_config,
 
-  # simulator (emulates a tici)
+  # simulator and comma zero
   ("pc", "unknown"): _pc_config,
 }
 prods = itertools.product(('tici', 'tizi', 'mici'), (('ar0231', _ar_ox_config), ('ox03c10', _ar_ox_config), ('os04c10', _os_config)))
