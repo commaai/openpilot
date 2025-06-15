@@ -15,6 +15,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.locationd.helpers import rotate_std
 from openpilot.selfdrive.locationd.models.pose_kf import PoseKalman, States
 from openpilot.selfdrive.locationd.models.constants import ObservationKind, GENERATED_DIR
+from openpilot.selfdrive.locationd.sensor_providers import get_sensor_provider
 
 ACCEL_SANITY_CHECK = 100.0  # m/s^2
 ROTATION_SANITY_CHECK = 10.0  # rad/s
@@ -58,6 +59,7 @@ class LocationEstimator:
     self.car_speed = 0.0
     self.camodo_yawrate_distribution = np.array([0.0, 10.0])  # mean, std
     self.device_from_calib = np.eye(3)
+    self.sensor_provider = get_sensor_provider()
 
     obs_kinds = [ObservationKind.PHONE_ACCEL, ObservationKind.PHONE_GYRO, ObservationKind.CAMERA_ODO_ROTATION, ObservationKind.CAMERA_ODO_TRANSLATION]
     self.observations = {kind: np.zeros(3, dtype=np.float32) for kind in obs_kinds}
@@ -94,56 +96,82 @@ class LocationEstimator:
       cloudlog.error("Non-finite values detected, kalman reset")
       self.reset(t)
 
-  def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
-    new_x, new_P = None, None
-    if which == "accelerometer" and msg.which() == "acceleration":
-      sensor_time = msg.timestamp * 1e-9
-
-      if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
+  def _handle_sensor_data(self, t: float, msg_data: dict) -> HandleLogResult:
+    """Unified sensor data handling using provider pattern"""
+    # Try to get accelerometer reading
+    accel_reading = self.sensor_provider.get_accelerometer_reading(msg_data, t)
+    if accel_reading and accel_reading.valid:
+      if not self._validate_timestamp(accel_reading.timestamp):
         return HandleLogResult.TIMING_INVALID
 
-      if not self._validate_sensor_source(msg.source):
-        return HandleLogResult.SENSOR_SOURCE_INVALID
-
-      v = msg.acceleration.v
-      meas = np.array([-v[2], -v[1], -v[0]])
-      if np.linalg.norm(meas) >= ACCEL_SANITY_CHECK:
+      if np.linalg.norm(accel_reading.measurement) >= ACCEL_SANITY_CHECK:
         return HandleLogResult.INPUT_INVALID
 
-      acc_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_ACCEL, meas)
+      acc_res = self.kf.predict_and_observe(
+        accel_reading.timestamp,
+        ObservationKind.PHONE_ACCEL,
+        accel_reading.measurement
+      )
       if acc_res is not None:
         _, new_x, _, new_P, _, _, (acc_err,), _, _ = acc_res
         self.observation_errors[ObservationKind.PHONE_ACCEL] = np.array(acc_err)
-        self.observations[ObservationKind.PHONE_ACCEL] = meas
+        self.observations[ObservationKind.PHONE_ACCEL] = accel_reading.measurement
 
-    elif which == "gyroscope" and msg.which() == "gyroUncalibrated":
-      sensor_time = msg.timestamp * 1e-9
-
-      if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
+    # Try to get gyroscope reading
+    gyro_reading = self.sensor_provider.get_gyroscope_reading(msg_data, t)
+    if gyro_reading and gyro_reading.valid:
+      if not self._validate_timestamp(gyro_reading.timestamp):
         return HandleLogResult.TIMING_INVALID
 
-      if not self._validate_sensor_source(msg.source):
-        return HandleLogResult.SENSOR_SOURCE_INVALID
+      if np.linalg.norm(gyro_reading.measurement) >= ROTATION_SANITY_CHECK:
+        return HandleLogResult.INPUT_INVALID
 
-      v = msg.gyroUncalibrated.v
-      meas = np.array([-v[2], -v[1], -v[0]])
-
+      # Gyro validation logic for carState provider
       gyro_bias = self.kf.x[States.GYRO_BIAS]
-      gyro_camodo_yawrate_err = np.abs((meas[2] - gyro_bias[2]) - self.camodo_yawrate_distribution[0])
+      gyro_camodo_yawrate_err = np.abs((gyro_reading.measurement[2] - gyro_bias[2]) - self.camodo_yawrate_distribution[0])
       gyro_camodo_yawrate_err_threshold = YAWRATE_CROSS_ERR_CHECK_FACTOR * self.camodo_yawrate_distribution[1]
       gyro_valid = gyro_camodo_yawrate_err < gyro_camodo_yawrate_err_threshold
 
-      if np.linalg.norm(meas) >= ROTATION_SANITY_CHECK or not gyro_valid:
+      if not gyro_valid:
         return HandleLogResult.INPUT_INVALID
 
-      gyro_res = self.kf.predict_and_observe(sensor_time, ObservationKind.PHONE_GYRO, meas)
+      gyro_res = self.kf.predict_and_observe(
+        gyro_reading.timestamp,
+        ObservationKind.PHONE_GYRO,
+        gyro_reading.measurement
+      )
       if gyro_res is not None:
         _, new_x, _, new_P, _, _, (gyro_err,), _, _ = gyro_res
         self.observation_errors[ObservationKind.PHONE_GYRO] = np.array(gyro_err)
-        self.observations[ObservationKind.PHONE_GYRO] = meas
+        self.observations[ObservationKind.PHONE_GYRO] = gyro_reading.measurement
 
-    elif which == "carState":
-      self.car_speed = abs(msg.vEgo)
+    return HandleLogResult.SUCCESS
+
+  def handle_log(self, t: float, which: str, msg: capnp._DynamicStructReader) -> HandleLogResult:
+    new_x, new_P = None, None
+
+    # Handle sensors using provider pattern
+    if which in ["accelerometer", "gyroscope", "carState"]:
+      # For hardware sensors, validate source and timing first
+      if which in ["accelerometer", "gyroscope"]:
+        if which == "accelerometer" and msg.which() != "acceleration":
+          return HandleLogResult.SUCCESS
+        if which == "gyroscope" and msg.which() != "gyroUncalibrated":
+          return HandleLogResult.SUCCESS
+
+        sensor_time = msg.timestamp * 1e-9
+        if not self._validate_sensor_time(sensor_time, t) or not self._validate_timestamp(sensor_time):
+          return HandleLogResult.TIMING_INVALID
+        if not self._validate_sensor_source(msg.source):
+          return HandleLogResult.SENSOR_SOURCE_INVALID
+
+      # Update car speed if carState
+      if which == "carState":
+        self.car_speed = abs(msg.vEgo)
+
+      # Use unified sensor handling
+      msg_data = {which: msg}
+      return self._handle_sensor_data(t, msg_data)
 
     elif which == "liveCalibration":
       # Note that we use this message during calibration
@@ -261,16 +289,21 @@ def main():
 
   pm = messaging.PubMaster(['livePose'])
   sm = messaging.SubMaster(['carState', 'liveCalibration', 'cameraOdometry'], poll='cameraOdometry')
-  # separate sensor sockets for efficiency
-  sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
-  sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
 
   params = Params()
-
   estimator = LocationEstimator(DEBUG)
+  sensor_provider = estimator.sensor_provider
+
+  # Dynamic service configuration based on sensor provider
+  critcal_services = sensor_provider.get_critical_services()
+
+  # Conditional socket setup for hardware sensors
+  sensor_sockets = []
+  sensor_alive, sensor_valid, sensor_recv_time = defaultdict(bool), defaultdict(bool), defaultdict(float)
+  if sensor_provider.requires_hardware_sensors():
+    sensor_sockets = [messaging.sub_sock(which, timeout=20) for which in ['accelerometer', 'gyroscope']]
 
   filter_initialized = False
-  critcal_services = ["accelerometer", "gyroscope", "cameraOdometry"]
   observation_input_invalid = defaultdict(int)
 
   input_invalid_limit = {s: round(INPUT_INVALID_LIMIT * (SERVICE_LIST[s].frequency / 20.)) for s in critcal_services}
@@ -288,13 +321,19 @@ def main():
   while True:
     sm.update()
 
-    acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
+    # Hardware sensor message handling
+    acc_msgs, gyro_msgs = [], []
+    if sensor_provider.requires_hardware_sensors():
+      acc_msgs, gyro_msgs = (messaging.drain_sock(sock) for sock in sensor_sockets)
 
     if filter_initialized:
       msgs = []
-      for msg in acc_msgs + gyro_msgs:
-        t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
-        msgs.append((t, valid, which, data))
+      # Add hardware sensor messages if available
+      if sensor_provider.requires_hardware_sensors():
+        for msg in acc_msgs + gyro_msgs:
+          t, valid, which, data = msg.logMonoTime, msg.valid, msg.which(), getattr(msg, msg.which())
+          msgs.append((t, valid, which, data))
+      # Add other service messages
       for which, updated in sm.updated.items():
         if not updated:
           continue
@@ -317,12 +356,18 @@ def main():
           elif res == HandleLogResult.SUCCESS:
             observation_input_invalid[which] *= input_invalid_decay[which]
     else:
-      filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      if sensor_provider.requires_hardware_sensors():
+        filter_initialized = sm.all_checks() and sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      else:
+        filter_initialized = sm.all_checks()
 
     if sm.updated["cameraOdometry"]:
       critical_service_inputs_valid = all(observation_input_invalid[s] < input_invalid_threshold[s] for s in critcal_services)
       inputs_valid = sm.all_valid() and critical_service_inputs_valid
-      sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      if sensor_provider.requires_hardware_sensors():
+        sensors_valid = sensor_all_checks(acc_msgs, gyro_msgs, sensor_valid, sensor_recv_time, sensor_alive, SIMULATION)
+      else:
+        sensors_valid = True
 
       msg = estimator.get_msg(sensors_valid, inputs_valid, filter_initialized)
       pm.send("livePose", msg)
