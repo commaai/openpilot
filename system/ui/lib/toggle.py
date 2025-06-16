@@ -20,10 +20,19 @@ class Toggle(Widget):
     self._progress = 1.0 if initial_state else 0.0
     self._target = self._progress
 
-  def set_rect(self, rect: rl.Rectangle):
-    self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
+  # def set_rect(self, rect: rl.Rectangle):
+  #   super().set_rect(rect)
+  #   self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
 
   def handle_input(self):
+    mouse_pos = rl.get_mouse_position()
+    if self._state:
+      print(mouse_pos.x, mouse_pos.y)
+      print(self._rect.x, self._rect.y, self._rect.width, self._rect.height)
+      print(self._last_rect.x, self._last_rect.y, self._last_rect.width, self._last_rect.height)
+      if self._rect_changed():
+        print("Rect changed:")
+        return 0
     if not self._enabled:
       return 0
 
@@ -53,7 +62,7 @@ class Toggle(Widget):
       self._progress += delta if self._progress < self._target else -delta
       self._progress = max(0.0, min(1.0, self._progress))
 
-  def _render(self, rect: rl.Rectangle):
+  def _render(self, _):
     self.update()
 
     if self._enabled:

@@ -13,8 +13,25 @@ class DialogResult(IntEnum):
 class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
+    self._last_rect = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
     self._is_visible: bool | Callable[[], bool] = True
+
+  def set_x(self, x: float) -> None:
+    self._rect.x = x
+
+  def set_y(self, y: float) -> None:
+    self._rect.y = y
+
+  def set_width(self, width: float) -> None:
+    self._rect.width = width
+
+  def set_height(self, height: float) -> None:
+    self._rect.height = height
+
+  def set_size(self, width: float, height: float) -> None:
+    self._rect.width = width
+    self._rect.height = height
 
   @property
   def is_visible(self) -> bool:
@@ -23,8 +40,16 @@ class Widget(abc.ABC):
   def set_visible(self, visible: bool | Callable[[], bool]) -> None:
     self._is_visible = visible
 
+  def _rect_changed(self) -> bool:
+    """Check if the rectangle has changed since the last render."""
+    return (self._rect.x != self._last_rect.x or
+            self._rect.y != self._last_rect.y or
+            self._rect.width != self._last_rect.width or
+            self._rect.height != self._last_rect.height)
+
   def set_rect(self, rect: rl.Rectangle) -> None:
     prev_rect = self._rect
+    self._last_rect = self._rect
     self._rect = rect
     if (rect.x != prev_rect.x or rect.y != prev_rect.y or
         rect.width != prev_rect.width or rect.height != prev_rect.height):

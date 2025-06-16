@@ -57,11 +57,14 @@ class ToggleAction(ItemAction):
   def __init__(self, initial_state: bool = False, width: int = TOGGLE_WIDTH, enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
     self.toggle = Toggle(initial_state=initial_state)
+    self.toggle.set_size(width, TOGGLE_HEIGHT)
     self.state = initial_state
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
-    self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self.width, TOGGLE_HEIGHT))
+    self.toggle.set_x(rect.x)
+    self.toggle.set_y(rect.y + (rect.height - TOGGLE_HEIGHT) / 2)
+    self.toggle.render()
     return False
 
   def set_state(self, state: bool):
