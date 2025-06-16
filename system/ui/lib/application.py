@@ -8,12 +8,7 @@ from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.formatter import build_formatter
-
-try:
-  ffi, lib = build_formatter()
-except Exception:
-  ffi, lib = None, None
+from openpilot.system.ui.lib.formatter import ffi, lib
 
 
 DEFAULT_FPS = 60
@@ -262,7 +257,7 @@ class GuiApplication:
           # Try to format with vasprintf
           try:
             strp = ffi.new("char **")
-            result = lib.vasprintf(strp, text, args)
+            result = lib.format_with_va_list(strp, text, args)
 
             if result >= 0 and strp[0] != ffi.NULL:
               text_str = ffi.string(strp[0]).decode('utf-8')
@@ -277,7 +272,6 @@ class GuiApplication:
       except Exception as e:
         text_str = f"[Log decode error: {e}]"
 
-      print(text_str)
       if log_level == rl.TraceLogLevel.LOG_ERROR:
         cloudlog.error(f"raylib: {text_str}")
       elif log_level == rl.TraceLogLevel.LOG_WARNING:
