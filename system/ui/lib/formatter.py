@@ -1,31 +1,36 @@
 import cffi
-import os
+import tempfile
+from pathlib import Path
 
 
-def build_formatter():
+def _get_formatter():
   try:
     from openpilot.system.ui.lib import _format_string
 
     return _format_string.ffi, _format_string.lib
   except ImportError:
-    pass
-
-  current_dir = os.path.dirname(os.path.abspath(__file__))
-  ffibuilder = cffi.FFI()
-  ffibuilder.cdef("""
-        int vasprintf(char **strp, const char *fmt, ...);
+    ffibuilder = cffi.FFI()
+    ffibuilder.cdef("""
         void free(void *ptr);
+        int format_with_va_list(char **strp, const char *fmt, void *ap);
     """)
-
-  ffibuilder.set_source(
-    "_format_string",
-    """
+    ffibuilder.set_source(
+      "_format_string",
+      """
         #include <stdio.h>
         #include <stdlib.h>
-    """,
-  )
+        #include <stdarg.h>
 
-  ffibuilder.compile(tmpdir="/tmp", target=current_dir + "/_format_string.so", verbose=False)
-  from openpilot.system.ui.lib import _format_string
+        int format_with_va_list(char **strp, const char *fmt, void *ap) {
+          return vasprintf(strp, fmt, *(va_list*)ap);
+        }
+      """,
+    )
+    target = Path(__file__).parent / "_format_string.so"
+    tmp_dir = tempfile.gettempdir()
+    ffibuilder.compile(tmpdir=tmp_dir, target=str(target), verbose=False)
+    from openpilot.system.ui.lib import _format_string
 
-  return _format_string.ffi, _format_string.lib
+    return _format_string.ffi, _format_string.lib
+
+ffi, lib = _get_formatter()
