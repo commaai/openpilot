@@ -2,7 +2,8 @@ import numpy as np
 import pyray as rl
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
-from openpilot.system.ui.lib.application import gui_app, Widget
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.widget import Widget
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
@@ -49,7 +50,6 @@ class DriverStateRenderer(Widget):
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.state_updated = False
     self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
@@ -75,14 +75,10 @@ class DriverStateRenderer(Widget):
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
+    self.set_visible(lambda: (ui_state.sm.recv_frame['driverStateV2'] > ui_state.started_frame and
+                              ui_state.sm.seen['driverMonitoringState']))
+
   def _render(self, rect):
-    if not self._is_visible(ui_state.sm):
-      return
-
-    self._update_state(ui_state.sm, rect)
-    if not self.state_updated:
-      return
-
     # Set opacity based on active state
     opacity = 0.65 if self.is_active else 0.2
 
@@ -107,18 +103,14 @@ class DriverStateRenderer(Widget):
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
-  def _is_visible(self, sm):
-    """Check if the visualization should be rendered."""
-    return (sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-            sm.seen['driverMonitoringState'] and
-            sm['selfdriveState'].alertSize == 0)
-
-  def _update_state(self, sm, rect):
+  def _update_state(self):
     """Update the driver monitoring state based on model data"""
+    sm = ui_state.sm
     if not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or
-                                 rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements(rect)
+      if (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
+          self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
+        self._pre_calculate_drawing_elements()
+        self.last_rect = self._rect
       return
 
     # Get monitoring state
@@ -167,16 +159,15 @@ class DriverStateRenderer(Widget):
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self._pre_calculate_drawing_elements(rect)
-    self.state_updated = True
+    self._pre_calculate_drawing_elements()
 
-  def _pre_calculate_drawing_elements(self, rect):
+  def _pre_calculate_drawing_elements(self):
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
-    width, height = rect.width, rect.height
+    width, height = self._rect.width, self._rect.height
     offset = UI_BORDER_SIZE + BTN_SIZE // 2
-    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
-    self.position_y = rect.y + height - offset
+    self.position_x = self._rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = self._rect.y + height - offset
 
     # Pre-calculate the face lines positions
     positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])

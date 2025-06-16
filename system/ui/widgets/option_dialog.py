@@ -1,8 +1,9 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import Widget, FontWeight
+from openpilot.system.ui.lib.application import FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle, TextAlignment
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.widget import Widget
 
 # Constants
 MARGIN = 50
@@ -64,7 +65,7 @@ class MultiOptionDialog(Widget):
       return 0
 
     if gui_button(rl.Rectangle(content_rect.x + button_w + BUTTON_SPACING, button_y, button_w, BUTTON_HEIGHT),
-                 "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
+                  "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
       return 1
 
     return -1

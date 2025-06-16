@@ -1,10 +1,11 @@
 import time
 from typing import Literal
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.widget import Widget
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds

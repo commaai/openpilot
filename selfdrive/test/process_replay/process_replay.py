@@ -27,7 +27,7 @@ from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.selfdrive.test.process_replay.capture import ProcessOutputCapture
 from openpilot.tools.lib.logreader import LogIterable
-from openpilot.tools.lib.framereader import BaseFrameReader
+from openpilot.tools.lib.framereader import FrameReader
 
 # Numpy gives different results based on CPU features after version 19
 NUMPY_TOLERANCE = 1e-7
@@ -209,6 +209,7 @@ class ProcessContainer:
     streams_metas = available_streams(all_msgs)
     for meta in streams_metas:
       if meta.camera_state in self.cfg.vision_pubs:
+        assert frs[meta.camera_state].pix_fmt == 'nv12'
         frame_size = (frs[meta.camera_state].w, frs[meta.camera_state].h)
         vipc_server.create_buffers(meta.stream, 2, *frame_size)
     vipc_server.start_listener()
@@ -224,7 +225,7 @@ class ProcessContainer:
 
   def start(
     self, params_config: dict[str, Any], environ_config: dict[str, Any],
-    all_msgs: LogIterable, frs: dict[str, BaseFrameReader] | None,
+    all_msgs: LogIterable, frs: dict[str, FrameReader] | None,
     fingerprint: str | None, capture_output: bool
   ):
     with self.prefix as p:
@@ -266,7 +267,7 @@ class ProcessContainer:
       self.prefix.clean_dirs()
       self._clean_env()
 
-  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, BaseFrameReader] | None) -> list[capnp._DynamicStructReader]:
+  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None) -> list[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
@@ -296,7 +297,7 @@ class ProcessContainer:
             camera_state = getattr(m, m.which())
             camera_meta = meta_from_camera_state(m.which())
             assert frs is not None
-            img = frs[m.which()].get(camera_state.frameId, pix_fmt="nv12")[0]
+            img = frs[m.which()].get(camera_state.frameId)[0]
             self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
@@ -652,7 +653,7 @@ def replay_process_with_name(name: str | Iterable[str], lr: LogIterable, *args, 
 
 
 def replay_process(
-  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] = None,
+  cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, FrameReader] = None,
   fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
   captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
 ) -> list[capnp._DynamicStructReader]:
@@ -680,7 +681,7 @@ def replay_process(
 
 
 def _replay_multi_process(
-  cfgs: list[ProcessConfig], lr: LogIterable, frs: dict[str, BaseFrameReader] | None, fingerprint: str | None,
+  cfgs: list[ProcessConfig], lr: LogIterable, frs: dict[str, FrameReader] | None, fingerprint: str | None,
   custom_params: dict[str, Any] | None, captured_output_store: dict[str, dict[str, str]] | None, disable_progress: bool
 ) -> list[capnp._DynamicStructReader]:
   if fingerprint is not None:

@@ -1,5 +1,5 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import Widget
+from openpilot.system.ui.lib.widget import Widget
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
@@ -17,9 +17,11 @@ class Toggle(Widget):
     super().__init__()
     self._state = initial_state
     self._enabled = True
-    self._rect = rl.Rectangle(0, 0, WIDTH, HEIGHT)
     self._progress = 1.0 if initial_state else 0.0
     self._target = self._progress
+
+  def set_rect(self, rect: rl.Rectangle):
+    self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
 
   def handle_input(self):
     if not self._enabled:
@@ -52,7 +54,6 @@ class Toggle(Widget):
       self._progress = max(0.0, min(1.0, self._progress))
 
   def _render(self, rect: rl.Rectangle):
-    self._rect.x, self._rect.y = rect.x, rect.y
     self.update()
 
     if self._enabled:

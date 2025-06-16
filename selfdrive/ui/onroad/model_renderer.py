@@ -5,8 +5,9 @@ from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import DEFAULT_FPS, Widget
+from openpilot.system.ui.lib.application import DEFAULT_FPS
 from openpilot.system.ui.lib.shader_polygon import draw_polygon
+from openpilot.system.ui.lib.widget import Widget
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 
 CLIP_MARGIN = 500
@@ -65,11 +66,6 @@ class ModelRenderer(Widget):
     self._car_space_transform = np.zeros((3, 3), dtype=np.float32)
     self._transform_dirty = True
     self._clip_region = None
-    self._rect = None
-
-    # Pre-allocated arrays for polygon conversion
-    self._temp_points_3d = np.empty((MAX_POINTS * 2, 3), dtype=np.float32)
-    self._temp_proj = np.empty((3, MAX_POINTS * 2), dtype=np.float32)
 
     self._exp_gradient = {
       'start': (0.0, 1.0),  # Bottom of path
@@ -96,7 +92,6 @@ class ModelRenderer(Widget):
       return
 
     # Set up clipping region
-    self._rect = rect
     self._clip_region = rl.Rectangle(
       rect.x - CLIP_MARGIN, rect.y - CLIP_MARGIN, rect.width + 2 * CLIP_MARGIN, rect.height + 2 * CLIP_MARGIN
     )
@@ -359,54 +354,60 @@ class ModelRenderer(Widget):
     if points.shape[0] == 0:
       return np.empty((0, 2), dtype=np.float32)
 
-    # Create left and right 3D points in one array
-    n_points = points.shape[0]
-    points_3d = self._temp_points_3d[:n_points * 2]
-    points_3d[:n_points, 0] = points_3d[n_points:, 0] = points[:, 0]
-    points_3d[:n_points, 1] = points[:, 1] - y_off
-    points_3d[n_points:, 1] = points[:, 1] + y_off
-    points_3d[:n_points, 2] = points_3d[n_points:, 2] = points[:, 2] + z_off
+    N = points.shape[0]
+    # Generate left and right 3D points in one array using broadcasting
+    offsets = np.array([[0, -y_off, z_off], [0, y_off, z_off]], dtype=np.float32)
+    points_3d = points[None, :, :] + offsets[:, None, :]  # Shape: 2xNx3
+    points_3d = points_3d.reshape(2 * N, 3)  # Shape: (2*N)x3
 
-    # Single matrix multiplication for projections
-    proj = np.ascontiguousarray(self._temp_proj[:, :n_points * 2])  # Slice the pre-allocated array
-    np.dot(self._car_space_transform, points_3d.T, out=proj)
-    valid_z = np.abs(proj[2]) > 1e-6
-    if not np.any(valid_z):
+    # Transform all points to projected space in one operation
+    proj = self._car_space_transform @ points_3d.T  # Shape: 3x(2*N)
+    proj = proj.reshape(3, 2, N)
+    left_proj = proj[:, 0, :]
+    right_proj = proj[:, 1, :]
+
+    # Filter points where z is sufficiently large
+    valid_proj = (np.abs(left_proj[2]) >= 1e-6) & (np.abs(right_proj[2]) >= 1e-6)
+    if not np.any(valid_proj):
       return np.empty((0, 2), dtype=np.float32)
 
     # Compute screen coordinates
-    screen = proj[:2, valid_z] / proj[2, valid_z][None, :]
-    left_screen = screen[:, :n_points].T
-    right_screen = screen[:, n_points:].T
+    left_screen = left_proj[:2, valid_proj] / left_proj[2, valid_proj][None, :]
+    right_screen = right_proj[:2, valid_proj] / right_proj[2, valid_proj][None, :]
 
-    # Ensure consistent shapes by re-aligning valid points
-    valid_points = np.minimum(left_screen.shape[0], right_screen.shape[0])
-    if valid_points == 0:
+    # Define clip region bounds
+    clip = self._clip_region
+    x_min, x_max = clip.x, clip.x + clip.width
+    y_min, y_max = clip.y, clip.y + clip.height
+
+    # Filter points within clip region
+    left_in_clip = (
+      (left_screen[0] >= x_min) & (left_screen[0] <= x_max) &
+      (left_screen[1] >= y_min) & (left_screen[1] <= y_max)
+    )
+    right_in_clip = (
+      (right_screen[0] >= x_min) & (right_screen[0] <= x_max) &
+      (right_screen[1] >= y_min) & (right_screen[1] <= y_max)
+    )
+    both_in_clip = left_in_clip & right_in_clip
+
+    if not np.any(both_in_clip):
       return np.empty((0, 2), dtype=np.float32)
-    left_screen = left_screen[:valid_points]
-    right_screen = right_screen[:valid_points]
 
-    if self._clip_region:
-      clip = self._clip_region
-      bounds_mask = (
-        (left_screen[:, 0] >= clip.x) & (left_screen[:, 0] <= clip.x + clip.width) &
-        (left_screen[:, 1] >= clip.y) & (left_screen[:, 1] <= clip.y + clip.height) &
-        (right_screen[:, 0] >= clip.x) & (right_screen[:, 0] <= clip.x + clip.width) &
-        (right_screen[:, 1] >= clip.y) & (right_screen[:, 1] <= clip.y + clip.height)
-      )
-      if not np.any(bounds_mask):
+    # Select valid and clipped points
+    left_screen = left_screen[:, both_in_clip]
+    right_screen = right_screen[:, both_in_clip]
+
+    # Handle Y-coordinate inversion on hills
+    if not allow_invert and left_screen.shape[1] > 1:
+      y = left_screen[1, :]  # y-coordinates
+      keep = y == np.minimum.accumulate(y)
+      if not np.any(keep):
         return np.empty((0, 2), dtype=np.float32)
-      left_screen = left_screen[bounds_mask]
-      right_screen = right_screen[bounds_mask]
+      left_screen = left_screen[:, keep]
+      right_screen = right_screen[:, keep]
 
-    if not allow_invert and left_screen.shape[0] > 1:
-      keep = np.concatenate(([True], np.diff(left_screen[:, 1]) < 0))
-      left_screen = left_screen[keep]
-      right_screen = right_screen[keep]
-      if left_screen.shape[0] == 0:
-        return np.empty((0, 2), dtype=np.float32)
-
-    return np.vstack((left_screen, right_screen[::-1])).astype(np.float32)
+    return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
 
   @staticmethod
   def _map_val(x, x0, x1, y0, y1):

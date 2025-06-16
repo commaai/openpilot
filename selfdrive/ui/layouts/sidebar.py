@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight, Widget
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.widget import Widget
 
 SIDEBAR_WIDTH = 300
 METRIC_HEIGHT = 126
@@ -85,8 +86,6 @@ class Sidebar(Widget):
     self._on_flag_click = on_flag
 
   def _render(self, rect: rl.Rectangle):
-    self.update_state()
-
     # Background
     rl.draw_rectangle_rec(rect, Colors.SIDEBAR_BG)
 
@@ -94,7 +93,7 @@ class Sidebar(Widget):
     self._draw_network_indicator(rect)
     self._draw_metrics(rect)
 
-  def update_state(self):
+  def _update_state(self):
     sm = ui_state.sm
     if not sm.updated['deviceState']:
       return
