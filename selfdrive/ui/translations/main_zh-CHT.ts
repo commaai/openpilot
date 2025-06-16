@@ -802,6 +802,16 @@ This may take up to a minute.</source>
         <source>Custom Software</source>
         <translation>自訂軟體</translation>
     </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
