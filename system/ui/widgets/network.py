@@ -90,7 +90,6 @@ class WifiManagerUI(Widget):
         self._scanning_label.render(rect)
         return
 
-
       match self.state:
         case StateNeedsAuth(network):
           self.keyboard.set_title("Enter password", f"for {network.ssid}")
@@ -142,7 +141,6 @@ class WifiManagerUI(Widget):
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    # gui_label(ssid_rect, network.ssid, 55)
     Label(network.ssid, font_size=55).render(ssid_rect)
 
     status_text = ""
@@ -156,7 +154,6 @@ class WifiManagerUI(Widget):
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
-      # gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       Label(status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER).render(status_text_rect)
     else:
       # If the network is saved, show the "Forget" button
