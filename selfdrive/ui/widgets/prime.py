@@ -2,13 +2,10 @@ import pyray as rl
 
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.label import gui_label, Label
+from openpilot.system.ui.lib.label import Label
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.widget import Widget
-
-
-
 
 
 class PrimeWidget(Widget):
@@ -19,7 +16,15 @@ class PrimeWidget(Widget):
   def __init__(self):
     super().__init__()
     self._upgrade_now = Label("Upgrade Now", font_size=75, font_weight=FontWeight.BOLD)
+    self._prime_features = Label("PRIME FEATURES:", font_size=41, font_weight=FontWeight.BOLD)
 
+    self._check_mark_label = Label("✓", font_size=50, color=rl.Color(70, 91, 234, 255))
+    self._feature_labels = [
+      Label("Remote access", font_size=50),
+      Label("24/7 LTE connectivity", font_size=50),
+      Label("1 year of drive storage", font_size=50),
+      Label("Remote snapshots", font_size=50),
+    ]
 
   def _render(self, rect):
     if ui_state.prime_state.is_prime() and False:
@@ -37,7 +42,6 @@ class PrimeWidget(Widget):
     w = rect.width - 160
 
     # Title
-    # gui_label(rl.Rectangle(x, y, w, 90), "Upgrade Now", 75, font_weight=FontWeight.BOLD)
     self._upgrade_now.render(rl.Rectangle(x, y, w, 90))
 
     # Description with wrapping
@@ -49,14 +53,15 @@ class PrimeWidget(Widget):
 
     # Features section
     features_y = desc_y + text_size.y + 50
-    gui_label(rl.Rectangle(x, features_y, w, 50), "PRIME FEATURES:", 41, font_weight=FontWeight.BOLD)
+    self._prime_features.render(rl.Rectangle(x, features_y, w, 50))
 
     # Feature list
-    features = ["Remote access", "24/7 LTE connectivity", "1 year of drive storage", "Remote snapshots"]
-    for i, feature in enumerate(features):
+    for i, feature_label in enumerate(self._feature_labels):
       item_y = features_y + 80 + i * 65
-      gui_label(rl.Rectangle(x, item_y, 50, 60), "✓", 50, color=rl.Color(70, 91, 234, 255))
-      gui_label(rl.Rectangle(x + 60, item_y, w - 60, 60), feature, 50)
+      # Draw check mark
+      self._check_mark_label.render(rl.Rectangle(x, item_y, 50, 60))
+      # Draw feature label
+      feature_label.render(rl.Rectangle(x + 60, item_y, w - 60, 60))
 
   def _render_for_prime_user(self, rect: rl.Rectangle):
     """Renders the prime user widget with subscription status."""

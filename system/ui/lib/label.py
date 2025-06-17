@@ -29,39 +29,39 @@ class Label(Widget):
   def _render(self, rect: rl.Rectangle):
     font = gui_app.font(self.font_weight)
     text_size = measure_text_cached(font, self.text, self.font_size)
-    display = self.text
+    display_text = self.text
 
-    # -------- elide if too wide ---------------------------------
+    # Elide text to fit within the rectangle
     if self.elide_right and text_size.x > rect.width:
       ellipsis = "..."
       left, right = 0, len(self.text)
       while left < right:
         mid = (left + right) // 2
         candidate = self.text[:mid] + ellipsis
-        if measure_text_cached(font, candidate, self.font_size).x <= rect.width:
+        candidate_size = measure_text_cached(font, candidate, self.font_size)
+        if candidate_size.x <= rect.width:
           left = mid + 1
         else:
           right = mid
-      display = (self.text[: left - 1] + ellipsis) if left > 0 else ellipsis
-      text_size = measure_text_cached(font, display, self.font_size)
+      display_text = self.text[: left - 1] + ellipsis if left > 0 else ellipsis
+      text_size = measure_text_cached(font, display_text, self.font_size)
 
-    # -------- horizontal alignment ------------------------------
+    # Calculate horizontal position based on alignment
     text_x = rect.x + {
       rl.GuiTextAlignment.TEXT_ALIGN_LEFT: 0,
       rl.GuiTextAlignment.TEXT_ALIGN_CENTER: (rect.width - text_size.x) / 2,
       rl.GuiTextAlignment.TEXT_ALIGN_RIGHT: rect.width - text_size.x,
     }.get(self.alignment, 0)
 
-    # -------- vertical alignment --------------------------------
+    # Calculate vertical position based on alignment
     text_y = rect.y + {
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP: 0,
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE: (rect.height - text_size.y) / 2,
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM: rect.height - text_size.y,
     }.get(self.alignment_vertical, 0)
 
-    rl.draw_text_ex(font, display,
-                    rl.Vector2(text_x, text_y),
-                    self.font_size, 0, self.color)
+    # Draw the text in the specified rectangle
+    rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), self.font_size, 0, self.color)
 
 
 def gui_label(
