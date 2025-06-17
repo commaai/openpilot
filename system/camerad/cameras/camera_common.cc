@@ -26,9 +26,6 @@ void CameraBuf::init(cl_device_id device_id, cl_context context, SpectraCamera *
     LOGD("allocated %d CL buffers", frame_buf_count);
   }
 
-  out_img_width = sensor->frame_width;
-  out_img_height = sensor->hdr_offset > 0 ? (sensor->frame_height - sensor->hdr_offset) / 2 : sensor->frame_height;
-
   // the encoder HW tells us the size it wants after setting it up.
   // TODO: VENUS_BUFFER_SIZE should give the size, but it's too small. dependent on encoder settings?
   size_t nv12_size = (out_img_width <= 1344 ? 2900 : 2346)*cam->stride;

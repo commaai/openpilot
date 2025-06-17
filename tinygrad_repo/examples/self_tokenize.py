@@ -1,4 +1,4 @@
-import os, pathlib
+import os, pathlib, argparse
 from examples.llama3 import Tokenizer
 from tabulate import tabulate
 from tinygrad import fetch
@@ -15,10 +15,19 @@ def read_code(base_path):
       if 'tinygrad/runtime/autogen' in path.replace('\\', '/'): continue
       fullpath = os.path.join(path, name)
       code = pathlib.Path(fullpath).read_text()
-      ret += [(fullpath.split("tinygrad/", 1)[1], code)]
+      ret.append(("### " + fullpath.split("tinygrad/", 1)[1], code))
   return ret
 
+def write_code_to_file(filename, code_list):
+  """Writes the combined code to a specified file."""
+  with open(filename, 'w') as f:
+    f.write('\n'.join(flatten(code_list)))
+
 if __name__ == "__main__":
+  parser = argparse.ArgumentParser(description="Analyze and optionally save tinygrad code.")
+  parser.add_argument("--output", help="Output file to write the combined code to.")
+  args = parser.parse_args()
+
   ret = read_code(".")
 
   table = []
@@ -33,3 +42,7 @@ if __name__ == "__main__":
 
   encoded = tokenizer.encode(code_str)
   print(f"code has {len(encoded)} tokens")
+
+  if args.output:
+    write_code_to_file(args.output, ret)
+    print(f"Combined code written to {args.output}")

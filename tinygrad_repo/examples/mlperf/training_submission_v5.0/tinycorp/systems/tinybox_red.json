@@ -28,10 +28,9 @@
   "accelerator_interconnect_topology": "",
   "cooling": "air",
   "hw_notes": "",
-  "framework": "tinygrad, commit b5546912e24e0a864b35924da4efa5d71cfe368b",
+  "framework": "tinygrad, branch mlperf_training_v5.0",
   "other_software_stack": {
-    "python": "3.10.12",
-    "ROCm": "6.1.3"
+    "python": "3.10.12"
   },
   "operating_system": "Ubuntu 22.04.4",
   "sw_notes": ""

@@ -84,7 +84,7 @@ static void BDMA_Channel0_IRQ_Handler(void) {
         sound_tx_buf[1U - playback_buf][i] = (1UL << 11);
       }
       register_clear_bits(&DMA1_Stream1->CR, DMA_SxCR_EN);
-      register_set(&DMA1_Stream1->CR, (1UL - playback_buf) << DMA_SxCR_CT_Pos, DMA_SxCR_CT_Msk);
+      DMA1_Stream1->CR = (DMA1_Stream1->CR & ~DMA_SxCR_CT_Msk) | ((1UL - playback_buf) << DMA_SxCR_CT_Pos);
       register_set_bits(&DMA1_Stream1->CR, DMA_SxCR_EN);
     }
     sound_idle_count = SOUND_IDLE_TIMEOUT;
@@ -105,6 +105,7 @@ void sound_init(void) {
   REGISTER_INTERRUPT(DMA1_Stream0_IRQn, DMA1_Stream0_IRQ_Handler, 128U, FAULT_INTERRUPT_RATE_SOUND_DMA)
 
   // Init DAC
+  DAC1->DHR12R1 = (1UL << 11);
   register_set(&DAC1->MCR, 0U, 0xFFFFFFFFU);
   register_set(&DAC1->CR, DAC_CR_TEN1 | (4U << DAC_CR_TSEL1_Pos) | DAC_CR_DMAEN1, 0xFFFFFFFFU);
   register_set_bits(&DAC1->CR, DAC_CR_EN1);
@@ -131,7 +132,6 @@ void sound_init(void) {
 
   // sync both SAIs
   register_set(&SAI4->GCR, (0b10UL << SAI_GCR_SYNCOUT_Pos), SAI_GCR_SYNCIN_Msk | SAI_GCR_SYNCOUT_Msk);
-  register_set(&SAI1->GCR, (3U << SAI_GCR_SYNCIN_Pos), SAI_GCR_SYNCIN_Msk | SAI_GCR_SYNCOUT_Msk);
 
   // stereo audio in
   register_set(&SAI4_Block_B->CR1, SAI_xCR1_DMAEN | (0b00UL << SAI_xCR1_SYNCEN_Pos) | (0b100U << SAI_xCR1_DS_Pos) | (0b11U << SAI_xCR1_MODE_Pos), 0x0FFB3FEFU);
@@ -157,7 +157,6 @@ void sound_init(void) {
   // init DFSDM for PDM mic
   register_set(&DFSDM1_Channel0->CHCFGR1, (76UL << DFSDM_CHCFGR1_CKOUTDIV_Pos) | DFSDM_CHCFGR1_CHEN, 0xC0FFF1EFU); // CH0 controls the clock
   register_set(&DFSDM1_Channel3->CHCFGR1, (0b01UL << DFSDM_CHCFGR1_SPICKSEL_Pos) | (0b00U << DFSDM_CHCFGR1_SITP_Pos) | DFSDM_CHCFGR1_CHEN, 0x0000F1EFU); // SITP determines sample edge
-  register_set(&DFSDM1_Channel3->CHCFGR2, (2U << DFSDM_CHCFGR2_DTRBS_Pos), 0xFFFFFFF7U);
   register_set(&DFSDM1_Filter0->FLTFCR, (0U << DFSDM_FLTFCR_IOSR_Pos) | (64UL << DFSDM_FLTFCR_FOSR_Pos) | (4UL << DFSDM_FLTFCR_FORD_Pos), 0xE3FF00FFU);
   register_set(&DFSDM1_Filter0->FLTCR1, DFSDM_FLTCR1_FAST | (3UL << DFSDM_FLTCR1_RCH_Pos) | DFSDM_FLTCR1_RDMAEN | DFSDM_FLTCR1_RCONT | DFSDM_FLTCR1_DFEN, 0x672E7F3BU);
 
@@ -166,7 +165,7 @@ void sound_init(void) {
   register_set(&DMA1_Stream0->M0AR, (uint32_t)mic_rx_buf[0], 0xFFFFFFFFU);
   register_set(&DMA1_Stream0->M1AR, (uint32_t)mic_rx_buf[1], 0xFFFFFFFFU);
   DMA1_Stream0->NDTR = MIC_RX_BUF_SIZE;
-  register_set(&DMA1_Stream0->CR, DMA_SxCR_DBM | (0b10UL << DMA_SxCR_MSIZE_Pos) | (0b10UL << DMA_SxCR_PSIZE_Pos) | DMA_SxCR_MINC | DMA_SxCR_CIRC | DMA_SxCR_TCIE, 0x01FFFFFFU);
+  register_set(&DMA1_Stream0->CR, DMA_SxCR_DBM | (0b10UL << DMA_SxCR_MSIZE_Pos) | (0b10UL << DMA_SxCR_PSIZE_Pos) | DMA_SxCR_MINC | DMA_SxCR_CIRC | DMA_SxCR_TCIE, 0x01F7FFFFU);
   register_set(&DMAMUX1_Channel0->CCR, 101U, DMAMUX_CxCR_DMAREQ_ID_Msk); // DFSDM1_DMA0
   register_set_bits(&DMA1_Stream0->CR, DMA_SxCR_EN);
   DMA1->LIFCR |= 0x7D; // clear flags

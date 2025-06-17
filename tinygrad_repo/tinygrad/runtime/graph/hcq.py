@@ -1,10 +1,10 @@
 import collections, time
-from typing import Any, cast, Optional
-from tinygrad.helpers import round_up, PROFILE
+from typing import Any, cast
+from tinygrad.helpers import round_up, PROFILE, merge_dicts
 from tinygrad.runtime.support.hcq import HCQCompiled, HCQAllocator, HCQSignal, HCQBuffer, HWQueue, HCQArgsState, BumpAllocator
 from tinygrad.device import Buffer, BufferSpec, Compiled, Device, ProfileGraphEntry, ProfileGraphEvent
 from tinygrad.dtype import dtypes
-from tinygrad.ops import UOp, Variable
+from tinygrad.uop.ops import UOp, Variable
 from tinygrad.engine.realize import ExecItem, BufferXfer, CompiledRunner
 from tinygrad.engine.jit import MultiGraphRunner
 
@@ -31,18 +31,19 @@ class HCQGraph(MultiGraphRunner):
     # Fill initial arguments.
     self.ji_args: dict[int, HCQArgsState] = {}
 
-    kargs_alloc: dict[Compiled, BumpAllocator] = {dev:BumpAllocator(buf.size, start=cast(int, buf.va_addr)) for dev,buf in self.kernargs_bufs.items()}
+    kargs_alloc: dict[Compiled, BumpAllocator] = {dev:BumpAllocator(buf.size) for dev,buf in self.kernargs_bufs.items()}
     for j,ji in enumerate(jit_cache):
       if not isinstance(ji.prg, CompiledRunner): continue
 
-      self.ji_args[j] = ji.prg._prg.fill_kernargs(self.hcq_bufs[j], ji.prg.p.vars, kargs_alloc[ji.prg.dev].alloc(ji.prg._prg.kernargs_alloc_size, 16))
+      argsbuf = self.kernargs_bufs[ji.prg.dev].offset(kargs_alloc[ji.prg.dev].alloc(ji.prg._prg.kernargs_alloc_size, 16))
+      self.ji_args[j] = ji.prg._prg.fill_kernargs(self.hcq_bufs[j], ji.prg.p.vars, argsbuf)
 
     # Schedule Dependencies.
     # There are two types of queues on each device: copy and compute. Both must synchronize with all external operations before launching any
     # graph-related tasks. This synchronization uses a global timeline signal per device. Within the graph, the compute queue coordinates with
     # global operations and sets a kickoff signal. Any queue accessing a buffer from another device waits for this signal from the device’s
     # compute queue to ensure exclusive access. The compute queue signals the completion of the graph, synchronizing with the device's copy queue.
-    self.ji_schedule: dict[int, tuple[HCQCompiled, HWQueue, list, list, HCQSignal, Optional[int]]] = {}
+    self.ji_schedule: dict[int, tuple[HCQCompiled, HWQueue, list, list, HCQSignal, int|None]] = {}
 
     self.comp_queues: dict[HCQCompiled, HWQueue] = {dev: dev.hw_compute_queue_t() for dev in self.devices}
     self.copy_queues: dict[HCQCompiled, HWQueue] = {} # lazy allocation
@@ -57,14 +58,19 @@ class HCQGraph(MultiGraphRunner):
     self.prog_graph_deps: list[list[int]] = []
     self.prof_graph_entries: list[ProfileGraphEntry] = []
 
-    last_j: dict[HWQueue, Optional[int]] = collections.defaultdict(lambda: None)
-    queue_access: dict[HWQueue, dict[HWQueue, Optional[int]]] = collections.defaultdict(lambda: collections.defaultdict(lambda: None))
+    last_j: dict[HWQueue, int|None] = collections.defaultdict(lambda: None)
+    queue_access: dict[HWQueue, dict[HWQueue, int|None]] = collections.defaultdict(lambda: collections.defaultdict(lambda: None))
     dev_access: dict[HWQueue, set[HCQCompiled]] = collections.defaultdict(set)
 
     for dev, queue in self.comp_queues.items(): dev_access[queue].add(dev)
 
+    self.fixedvars: dict[HCQCompiled, dict[Variable, int]] = {}
+
     for j,ji in enumerate(jit_cache):
       enqueue_dev: HCQCompiled = ji.prg.dev if (is_exec_prg:=isinstance(ji.prg, CompiledRunner)) else Device[ji.bufs[1].device] #type:ignore
+
+      # set any fixedvars on the device
+      self.fixedvars[enqueue_dev] = merge_dicts([self.fixedvars.get(enqueue_dev, {}), ji.fixedvars])
 
       if is_exec_prg:
         enqueue_queue = self.comp_queues[enqueue_dev]
@@ -125,7 +131,7 @@ class HCQGraph(MultiGraphRunner):
     # Create variable timeline signals for each device.
     timeline_sigaddrs = {dev: UOp.variable(f"timeline_sig_{dev.device_id}", 0, 0xffffffffffffffff, dtype=dtypes.uint64) for dev in self.devices}
     self.virt_timeline_vals = {dev: UOp.variable(f"timeline_var_{dev.device_id}", 0, 0xffffffff, dtype=dtypes.uint32) for dev in self.devices}
-    self.virt_timeline_signals = {dev: dev.signal_t(base_addr=timeline_sigaddrs[dev], timeline_for_device=dev) for dev in self.devices}
+    self.virt_timeline_signals = {dev: dev.signal_t(base_buf=HCQBuffer(timeline_sigaddrs[dev], 16), timeline_for_device=dev) for dev in self.devices}
 
     for dev in self.devices:
       self.comp_queues[dev].memory_barrier().wait(self.virt_timeline_signals[dev], self.virt_timeline_vals[dev]) \
@@ -164,7 +170,7 @@ class HCQGraph(MultiGraphRunner):
     self.last_timeline: dict[HCQCompiled, tuple[HCQSignal, int]] = {dev: (dev.timeline_signal, 0) for dev in self.devices}
     self.queue_signals_to_reset = [self.signals[q] for q in list(self.comp_queues.values()) + list(self.copy_queues.values()) if q in self.signals]
 
-  def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> Optional[float]:
+  def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> float|None:
     # Wait and restore signals
     self.kickoff_value += 1
     for dev in self.devices: self.last_timeline[dev][0].wait(self.last_timeline[dev][1])
@@ -175,17 +181,16 @@ class HCQGraph(MultiGraphRunner):
 
     hcq_var_vals = {self.kickoff_var: self.kickoff_value, **var_vals,
                     **{var: dev.timeline_value - 1 for dev, var in self.virt_timeline_vals.items()},
-                    **{sig.base_addr: dev.timeline_signal.base_addr for dev, sig in self.virt_timeline_signals.items()}}
+                    **{sig.base_buf.va_addr: dev.timeline_signal.base_buf.va_addr for dev, sig in self.virt_timeline_signals.items()}}
 
     # Update rawbuffers
     for (j,i),input_idx in self.input_replace.items(): hcq_var_vals[self.input_replace_to_var.get((j,i))] = input_rawbuffers[input_idx]._buf.va_addr
 
     for dev in self.devices:
-      self.comp_queues[dev].submit(dev, hcq_var_vals)
-      if (copy_queue:=self.copy_queues.get(dev, None)) is not None: copy_queue.submit(dev, hcq_var_vals)
+      self.comp_queues[dev].submit(dev, hcq_var_vals_local:=hcq_var_vals|self.fixedvars.get(dev, {}))
+      if (copy_queue:=self.copy_queues.get(dev, None)) is not None: copy_queue.submit(dev, hcq_var_vals_local)
 
-      self.last_timeline[dev] = (dev.timeline_signal, dev.timeline_value)
-      dev.timeline_value += 1
+      self.last_timeline[dev] = (dev.timeline_signal, dev.next_timeline())
 
     if wait:
       st = time.perf_counter()

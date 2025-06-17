@@ -2,22 +2,6 @@
 // Jungle board v1 (STM32F4) //
 // ///////////////////////// //
 
-void board_v1_set_led(uint8_t color, bool enabled) {
-  switch (color) {
-    case LED_RED:
-      set_gpio_output(GPIOC, 9, !enabled);
-      break;
-     case LED_GREEN:
-      set_gpio_output(GPIOC, 7, !enabled);
-      break;
-    case LED_BLUE:
-      set_gpio_output(GPIOC, 6, !enabled);
-      break;
-    default:
-      break;
-  }
-}
-
 void board_v1_enable_can_transceiver(uint8_t transceiver, bool enabled) {
   switch (transceiver) {
     case 1U:
@@ -140,11 +124,6 @@ void board_v1_init(void) {
     board_v1_enable_can_transceiver(i, true);
   }
 
-  // Disable LEDs
-  board_v1_set_led(LED_RED, false);
-  board_v1_set_led(LED_GREEN, false);
-  board_v1_set_led(LED_BLUE, false);
-
   // Set normal CAN mode
   board_v1_set_can_mode(CAN_MODE_NORMAL);
 
@@ -162,7 +141,8 @@ board board_v1 = {
   .has_sbu_sense = false,
   .avdd_mV = 3300U,
   .init = &board_v1_init,
-  .set_led = &board_v1_set_led,
+  .led_GPIO = {GPIOC, GPIOC, GPIOC},
+  .led_pin = {9, 7, 6},
   .board_tick = &board_v1_tick,
   .get_button = &board_v1_get_button,
   .set_panda_power = &board_v1_set_panda_power,

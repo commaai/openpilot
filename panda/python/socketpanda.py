@@ -30,6 +30,8 @@ CANFD_FDF = 0x04 # mark CAN FD for dual use of struct canfd_frame
 # https://github.com/torvalds/linux/blob/47ac09b91befbb6a235ab620c32af719f8208399/include/uapi/asm-generic/socket.h#L61
 SO_RXQ_OVFL = 40
 
+import typing
+@typing.no_type_check # mypy struggles with macOS here...
 def create_socketcan(interface:str, recv_buffer_size:int, fd:bool) -> socket.socket:
   # settings mostly from https://github.com/linux-can/can-utils/blob/master/candump.c
   socketcan = socket.socket(socket.AF_CAN, socket.SOCK_RAW, socket.CAN_RAW)

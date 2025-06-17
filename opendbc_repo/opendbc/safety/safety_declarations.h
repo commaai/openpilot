@@ -3,6 +3,36 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+// from cereal.car.CarParams.SafetyModel
+#define SAFETY_SILENT 0U
+#define SAFETY_HONDA_NIDEC 1U
+#define SAFETY_TOYOTA 2U
+#define SAFETY_ELM327 3U
+#define SAFETY_GM 4U
+#define SAFETY_HONDA_BOSCH_GIRAFFE 5U
+#define SAFETY_FORD 6U
+#define SAFETY_HYUNDAI 8U
+#define SAFETY_CHRYSLER 9U
+#define SAFETY_TESLA 10U
+#define SAFETY_SUBARU 11U
+#define SAFETY_MAZDA 13U
+#define SAFETY_NISSAN 14U
+#define SAFETY_VOLKSWAGEN_MQB 15U
+#define SAFETY_ALLOUTPUT 17U
+#define SAFETY_GM_ASCM 18U
+#define SAFETY_NOOUTPUT 19U
+#define SAFETY_HONDA_BOSCH 20U
+#define SAFETY_VOLKSWAGEN_PQ 21U
+#define SAFETY_SUBARU_PREGLOBAL 22U
+#define SAFETY_HYUNDAI_LEGACY 23U
+#define SAFETY_HYUNDAI_COMMUNITY 24U
+#define SAFETY_STELLANTIS 25U
+#define SAFETY_FAW 26U
+#define SAFETY_BODY 27U
+#define SAFETY_HYUNDAI_CANFD 28U
+#define SAFETY_RIVIAN 33U
+#define SAFETY_VOLKSWAGEN_MEB 34U
+
 #define GET_BIT(msg, b) ((bool)!!(((msg)->data[((b) / 8U)] >> ((b) % 8U)) & 0x1U))
 #define GET_BYTE(msg, b) ((msg)->data[(b)])
 #define GET_FLAG(value, mask) (((__typeof__(mask))(value) & (mask)) == (mask)) // cppcheck-suppress misra-c2012-1.2; allow __typeof__
@@ -22,7 +52,7 @@
     (config).tx_msgs = (tx); \
     (config).tx_msgs_len = sizeof((tx)) / sizeof((tx)[0]); \
     (config).disable_forwarding = false; \
-  } while(0);
+  } while (0);
 
 #define UPDATE_VEHICLE_SPEED(val_ms) (update_sample(&vehicle_speed, ROUND((val_ms) * VEHICLE_SPEED_FACTOR)))
 
@@ -33,7 +63,10 @@ extern const int MAX_WRONG_COUNTERS;
 #define MAX_SAMPLE_VALS 6
 // used to represent floating point vehicle speed in a sample_t
 #define VEHICLE_SPEED_FACTOR 1000.0
+#define MAX_RT_INTERVAL 250000U
 
+// Conversions
+#define KPH_TO_MS (1.0 / 3.6)
 
 // sample struct that keeps 6 samples in memory
 struct sample_t {
@@ -52,7 +85,8 @@ typedef struct {
   int addr;
   int bus;
   int len;
-  bool check_relay;
+  bool check_relay;              // if true, trigger relay malfunction if existence on destination bus and block forwarding to destination bus
+  bool disable_static_blocking;  // if true, static blocking is disabled so safety mode can dynamically handle it (e.g. selective AEB pass-through)
 } CanMsg;
 
 typedef enum {
@@ -62,11 +96,13 @@ typedef enum {
 
 typedef struct {
   // torque cmd limits
-  const int max_steer;
+  const int max_torque;  // this upper limit is always enforced
+  const bool dynamic_max_torque;  // use max_torque_lookup to apply torque limit based on speed
+  const struct lookup_t max_torque_lookup;
+
   const int max_rate_up;
   const int max_rate_down;
-  const int max_rt_delta;
-  const uint32_t max_rt_interval;
+  const int max_rt_delta;  // max change in torque per 250ms interval (MAX_RT_INTERVAL)
 
   const SteeringControlType type;
 
@@ -93,11 +129,19 @@ typedef struct {
   const struct lookup_t angle_rate_down_lookup;
   const int max_angle_error;             // used to limit error between meas and cmd while enabled
   const float angle_error_min_speed;     // minimum speed to start limiting angle error
+  const uint32_t frequency;              // Hz
 
   const bool angle_is_curvature;         // if true, we can apply max lateral acceleration limits
   const bool enforce_angle_error;        // enables max_angle_error check
   const bool inactive_angle_is_zero;     // if false, enforces angle near meas when disabled (default)
 } AngleSteeringLimits;
+
+// parameters for lateral accel/jerk angle limiting using a simple vehicle model
+typedef struct {
+  const float slip_factor;
+  const float steer_ratio;
+  const float wheelbase;
+} AngleSteeringParams;
 
 typedef struct {
   // acceleration cmd limits
@@ -128,7 +172,7 @@ typedef struct {
   const bool ignore_checksum;        // checksum check is not performed when set to true
   const bool ignore_counter;         // counter check is not performed when set to true
   const uint8_t max_counter;         // maximum value of the counter. 0 means that the counter check is skipped
-  const bool quality_flag;           // true is quality flag check is performed
+  const bool ignore_quality_flag;    // true if quality flag check is skipped
   const uint32_t frequency;          // expected frequency of the message [Hz]
 } CanMsgCheck;
 
@@ -181,7 +225,6 @@ typedef struct {
 
 bool safety_rx_hook(const CANPacket_t *to_push);
 bool safety_tx_hook(CANPacket_t *to_send);
-uint32_t get_ts_elapsed(uint32_t ts, uint32_t ts_last);
 int to_signed(int d, int bits);
 void update_sample(struct sample_t *sample, int sample_new);
 bool get_longitudinal_allowed(void);
@@ -190,15 +233,17 @@ void gen_crc_lookup_table_8(uint8_t poly, uint8_t crc_lut[]);
 #ifdef CANFD
 void gen_crc_lookup_table_16(uint16_t poly, uint16_t crc_lut[]);
 #endif
-static void generic_rx_checks(bool stock_ecu_detected);
 bool steer_torque_cmd_checks(int desired_torque, int steer_req, const TorqueSteeringLimits limits);
 bool steer_angle_cmd_checks(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits);
+bool steer_angle_cmd_checks_vm(int desired_angle, bool steer_control_enabled, const AngleSteeringLimits limits,
+                               const AngleSteeringParams params);
 bool longitudinal_accel_checks(int desired_accel, const LongitudinalLimits limits);
 bool longitudinal_speed_checks(int desired_speed, const LongitudinalLimits limits);
 bool longitudinal_gas_checks(int desired_gas, const LongitudinalLimits limits);
 bool longitudinal_transmission_rpm_checks(int desired_transmission_rpm, const LongitudinalLimits limits);
 bool longitudinal_brake_checks(int desired_brake, const LongitudinalLimits limits);
 void pcm_cruise_check(bool cruise_engaged);
+void speed_mismatch_check(const float speed_2);
 
 void safety_tick(const safety_config *safety_config);
 
@@ -211,6 +256,8 @@ extern bool brake_pressed;
 extern bool brake_pressed_prev;
 extern bool regen_braking;
 extern bool regen_braking_prev;
+extern bool steering_disengage;
+extern bool steering_disengage_prev;
 extern bool cruise_engaged_prev;
 extern struct sample_t vehicle_speed;
 extern bool vehicle_moving;
@@ -233,15 +280,16 @@ extern bool heartbeat_engaged;             // openpilot enabled, passed in heart
 extern uint32_t heartbeat_engaged_mismatches;  // count of mismatches between heartbeat_engaged and controls_allowed
 
 // for safety modes with angle steering control
-extern uint32_t ts_angle_last;
+extern uint32_t rt_angle_msgs;
+extern uint32_t ts_angle_check_last;
 extern int desired_angle_last;
 extern struct sample_t angle_meas;         // last 6 steer angles/curvatures
 
-// This can be set with a USB command
+// Alt experiences can be set with a USB command
 // It enables features that allow alternative experiences, like not disengaging on gas press
 // It is only either 0 or 1 on mainline comma.ai openpilot
 
-#define ALT_EXP_DISABLE_DISENGAGE_ON_GAS 1
+//#define ALT_EXP_DISABLE_DISENGAGE_ON_GAS 1  // not used anymore, but reserved
 
 // If using this flag, make sure to communicate to your users that a stock safety feature is now disabled.
 #define ALT_EXP_DISABLE_STOCK_AEB 2

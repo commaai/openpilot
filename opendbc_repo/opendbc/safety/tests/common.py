@@ -1,21 +1,37 @@
 import os
 import abc
+import math
 import unittest
 import importlib
 import numpy as np
 from collections.abc import Callable
 
-from opendbc.can.packer import CANPacker  # pylint: disable=import-error
+from opendbc.can.packer import CANPacker
 from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from opendbc.safety.tests.libsafety import libsafety_py
 
 MAX_WRONG_COUNTERS = 5
 MAX_SAMPLE_VALS = 6
+VEHICLE_SPEED_FACTOR = 1000
+RT_INTERVAL = 250000  # 250ms
+
+# Max allowed delta between car speeds
+MAX_SPEED_DELTA = 2.0  # m/s
 
 MessageFunction = Callable[[float], libsafety_py.CANPacket]
 
+
 def sign_of(a):
   return 1 if a > 0 else -1
+
+
+def away_round(x):
+  # non-banker's/away from zero rounding, C++ CANParser uses this style
+  return math.floor(x + 0.5) if x >= 0 else math.ceil(x - 0.5)
+
+
+def round_speed(v):
+  return round(v * VEHICLE_SPEED_FACTOR) / VEHICLE_SPEED_FACTOR
 
 
 def make_msg(bus, addr, length=8, dat=None):
@@ -166,6 +182,7 @@ class LongitudinalGasBrakeSafetyTest(PandaSafetyTestBase, abc.ABC):
   MIN_GAS: int = 0
   MAX_GAS: int | None = None
   INACTIVE_GAS = 0
+  MIN_POSSIBLE_GAS: int = 0.
   MAX_POSSIBLE_GAS: int | None = None
 
   def test_gas_brake_limits_correct(self):
@@ -187,16 +204,16 @@ class LongitudinalGasBrakeSafetyTest(PandaSafetyTestBase, abc.ABC):
     self._generic_limit_safety_check(self._send_brake_msg, self.MIN_BRAKE, self.MAX_BRAKE, 0, self.MAX_POSSIBLE_BRAKE, 1)
 
   def test_gas_safety_check(self):
-    self._generic_limit_safety_check(self._send_gas_msg, self.MIN_GAS, self.MAX_GAS, 0, self.MAX_POSSIBLE_GAS, 1, self.INACTIVE_GAS)
+    self._generic_limit_safety_check(self._send_gas_msg, self.MIN_GAS, self.MAX_GAS, self.MIN_POSSIBLE_GAS, self.MAX_POSSIBLE_GAS, 1, self.INACTIVE_GAS)
 
 
 class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
 
   MAX_RATE_UP = 0
   MAX_RATE_DOWN = 0
-  MAX_TORQUE = 0
+  MAX_TORQUE_LOOKUP: tuple[list[float], list[int]] = ([0], [0])
+  DYNAMIC_MAX_TORQUE = False
   MAX_RT_DELTA = 0
-  RT_INTERVAL = 0
 
   NO_STEER_REQ_BIT = False
 
@@ -206,23 +223,53 @@ class TorqueSteeringSafetyTestBase(PandaSafetyTestBase, abc.ABC):
       cls.safety = None
       raise unittest.SkipTest
 
+  @property
+  def MAX_TORQUE(self):
+    return max(self.MAX_TORQUE_LOOKUP[1])
+
+  @property
+  def _torque_speed_range(self):
+    if not self.DYNAMIC_MAX_TORQUE:
+      return [0]
+    else:
+      # test with more precision inside breakpoint range
+      min_speed = min(self.MAX_TORQUE_LOOKUP[0])
+      max_speed = max(self.MAX_TORQUE_LOOKUP[0])
+      return np.concatenate([np.arange(0, min_speed, 5), np.arange(min_speed, max_speed, 0.5), np.arange(max_speed, 40, 5)])
+
+  def _get_max_torque(self, speed):
+    # matches safety fudge
+    torque = int(np.interp(speed - 1, self.MAX_TORQUE_LOOKUP[0], self.MAX_TORQUE_LOOKUP[1]) + 1)
+    return min(torque, self.MAX_TORQUE)
+
   @abc.abstractmethod
   def _torque_cmd_msg(self, torque, steer_req=1):
     pass
+
+  @abc.abstractmethod
+  def _speed_msg(self, speed):
+    pass
+
+  def _reset_speed_measurement(self, speed):
+    for _ in range(MAX_SAMPLE_VALS):
+      self._rx(self._speed_msg(speed))
 
   def _set_prev_torque(self, t):
     self.safety.set_desired_torque_last(t)
     self.safety.set_rt_torque_last(t)
 
   def test_steer_safety_check(self):
-    for enabled in [0, 1]:
-      for t in range(int(-self.MAX_TORQUE * 1.5), int(self.MAX_TORQUE * 1.5)):
-        self.safety.set_controls_allowed(enabled)
-        self._set_prev_torque(t)
-        if abs(t) > self.MAX_TORQUE or (not enabled and abs(t) > 0):
-          self.assertFalse(self._tx(self._torque_cmd_msg(t)))
-        else:
-          self.assertTrue(self._tx(self._torque_cmd_msg(t)))
+    for speed in self._torque_speed_range:
+      self._reset_speed_measurement(speed)
+      max_torque = self._get_max_torque(speed)
+      for enabled in [0, 1]:
+        for t in range(int(-max_torque * 1.5), int(max_torque * 1.5)):
+          self.safety.set_controls_allowed(enabled)
+          self._set_prev_torque(t)
+          if abs(t) > max_torque or (not enabled and abs(t) > 0):
+            self.assertFalse(self._tx(self._torque_cmd_msg(t)))
+          else:
+            self.assertTrue(self._tx(self._torque_cmd_msg(t)))
 
   def test_non_realtime_limit_up(self):
     self.safety.set_controls_allowed(True)
@@ -266,7 +313,12 @@ class SteerRequestCutSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
   # Safety around steering request bit mismatch tolerance
   MIN_VALID_STEERING_FRAMES: int
   MAX_INVALID_STEERING_FRAMES: int
-  MIN_VALID_STEERING_RT_INTERVAL: int
+  STEER_STEP: int = 1
+
+  @property
+  def MIN_VALID_STEERING_RT_INTERVAL(self):
+    # a ~10% buffer
+    return int((self.MIN_VALID_STEERING_FRAMES + 1) * self.STEER_STEP * 10000 * 0.9)
 
   def test_steer_req_bit_frames(self):
     """
@@ -389,40 +441,44 @@ class DriverTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
     # Tests down limits and driver torque blending
     self.safety.set_controls_allowed(True)
 
-    # Cannot stay at MAX_TORQUE if above DRIVER_TORQUE_ALLOWANCE
-    for sign in [-1, 1]:
-      for driver_torque in np.arange(0, self.DRIVER_TORQUE_ALLOWANCE * 2, 1):
-        self._reset_torque_driver_measurement(-driver_torque * sign)
-        self._set_prev_torque(self.MAX_TORQUE * sign)
-        should_tx = abs(driver_torque) <= self.DRIVER_TORQUE_ALLOWANCE
-        self.assertEqual(should_tx, self._tx(self._torque_cmd_msg(self.MAX_TORQUE * sign)))
+    for speed in self._torque_speed_range:
+      self._reset_speed_measurement(speed)
+      max_torque = self._get_max_torque(speed)
 
-    # arbitrary high driver torque to ensure max steer torque is allowed
-    max_driver_torque = int(self.MAX_TORQUE / self.DRIVER_TORQUE_FACTOR + self.DRIVER_TORQUE_ALLOWANCE + 1)
+      # Cannot stay at MAX_TORQUE if above DRIVER_TORQUE_ALLOWANCE
+      for sign in [-1, 1]:
+        for driver_torque in np.arange(0, self.DRIVER_TORQUE_ALLOWANCE * 2, 1):
+          self._reset_torque_driver_measurement(-driver_torque * sign)
+          self._set_prev_torque(max_torque * sign)
+          should_tx = abs(driver_torque) <= self.DRIVER_TORQUE_ALLOWANCE
+          self.assertEqual(should_tx, self._tx(self._torque_cmd_msg(max_torque * sign)))
 
-    # spot check some individual cases
-    for sign in [-1, 1]:
-      # Ensure we wind down factor units for every unit above allowance
-      driver_torque = (self.DRIVER_TORQUE_ALLOWANCE + 10) * sign
-      torque_desired = (self.MAX_TORQUE - 10 * self.DRIVER_TORQUE_FACTOR) * sign
-      delta = 1 * sign
-      self._set_prev_torque(torque_desired)
-      self._reset_torque_driver_measurement(-driver_torque)
-      self.assertTrue(self._tx(self._torque_cmd_msg(torque_desired)))
-      self._set_prev_torque(torque_desired + delta)
-      self._reset_torque_driver_measurement(-driver_torque)
-      self.assertFalse(self._tx(self._torque_cmd_msg(torque_desired + delta)))
+      # arbitrary high driver torque to ensure max steer torque is allowed
+      max_driver_torque = int(max_torque / self.DRIVER_TORQUE_FACTOR + self.DRIVER_TORQUE_ALLOWANCE + 1)
 
-      # If we're well past the allowance, minimum wind down is MAX_RATE_DOWN
-      self._set_prev_torque(self.MAX_TORQUE * sign)
-      self._reset_torque_driver_measurement(-max_driver_torque * sign)
-      self.assertTrue(self._tx(self._torque_cmd_msg((self.MAX_TORQUE - self.MAX_RATE_DOWN) * sign)))
-      self._set_prev_torque(self.MAX_TORQUE * sign)
-      self._reset_torque_driver_measurement(-max_driver_torque * sign)
-      self.assertTrue(self._tx(self._torque_cmd_msg(0)))
-      self._set_prev_torque(self.MAX_TORQUE * sign)
-      self._reset_torque_driver_measurement(-max_driver_torque * sign)
-      self.assertFalse(self._tx(self._torque_cmd_msg((self.MAX_TORQUE - self.MAX_RATE_DOWN + 1) * sign)))
+      # spot check some individual cases
+      for sign in [-1, 1]:
+        # Ensure we wind down factor units for every unit above allowance
+        driver_torque = (self.DRIVER_TORQUE_ALLOWANCE + 10) * sign
+        torque_desired = (max_torque - 10 * self.DRIVER_TORQUE_FACTOR) * sign
+        delta = 1 * sign
+        self._set_prev_torque(torque_desired)
+        self._reset_torque_driver_measurement(-driver_torque)
+        self.assertTrue(self._tx(self._torque_cmd_msg(torque_desired)))
+        self._set_prev_torque(torque_desired + delta)
+        self._reset_torque_driver_measurement(-driver_torque)
+        self.assertFalse(self._tx(self._torque_cmd_msg(torque_desired + delta)))
+
+        # If we're well past the allowance, minimum wind down is MAX_RATE_DOWN
+        self._set_prev_torque(max_torque * sign)
+        self._reset_torque_driver_measurement(-max_driver_torque * sign)
+        self.assertTrue(self._tx(self._torque_cmd_msg((max_torque - self.MAX_RATE_DOWN) * sign)))
+        self._set_prev_torque(max_torque * sign)
+        self._reset_torque_driver_measurement(-max_driver_torque * sign)
+        self.assertTrue(self._tx(self._torque_cmd_msg(0)))
+        self._set_prev_torque(max_torque * sign)
+        self._reset_torque_driver_measurement(-max_driver_torque * sign)
+        self.assertFalse(self._tx(self._torque_cmd_msg((max_torque - self.MAX_RATE_DOWN + 1) * sign)))
 
   def test_realtime_limits(self):
     self.safety.set_controls_allowed(True)
@@ -442,7 +498,7 @@ class DriverTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
         self.assertTrue(self._tx(self._torque_cmd_msg(t)))
 
       # Increase timer to update rt_torque_last
-      self.safety.set_timer(self.RT_INTERVAL + 1)
+      self.safety.set_timer(RT_INTERVAL + 1)
       self.assertTrue(self._tx(self._torque_cmd_msg(sign * (self.MAX_RT_DELTA - 1))))
       self.assertTrue(self._tx(self._torque_cmd_msg(sign * (self.MAX_RT_DELTA + 1))))
 
@@ -479,34 +535,41 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
     self.safety.set_torque_meas(t, t)
 
   def test_torque_absolute_limits(self):
-    for controls_allowed in [True, False]:
-      for torque in np.arange(-self.MAX_TORQUE - 1000, self.MAX_TORQUE + 1000, self.MAX_RATE_UP):
-        self.safety.set_controls_allowed(controls_allowed)
-        self.safety.set_rt_torque_last(torque)
-        self.safety.set_torque_meas(torque, torque)
-        self.safety.set_desired_torque_last(torque - self.MAX_RATE_UP)
+    for speed in self._torque_speed_range:
+      self._reset_speed_measurement(speed)
+      max_torque = self._get_max_torque(speed)
+      for controls_allowed in [True, False]:
+        for torque in np.arange(-max_torque - 1000, max_torque + 1000, self.MAX_RATE_UP):
+          self.safety.set_controls_allowed(controls_allowed)
+          self.safety.set_rt_torque_last(torque)
+          self.safety.set_torque_meas(torque, torque)
+          self.safety.set_desired_torque_last(torque - self.MAX_RATE_UP)
 
-        if controls_allowed:
-          send = (-self.MAX_TORQUE <= torque <= self.MAX_TORQUE)
-        else:
-          send = torque == 0
+          if controls_allowed:
+            send = (-max_torque <= torque <= max_torque)
+          else:
+            send = torque == 0
 
-        self.assertEqual(send, self._tx(self._torque_cmd_msg(torque)))
+          self.assertEqual(send, self._tx(self._torque_cmd_msg(torque)))
 
   def test_non_realtime_limit_down(self):
     self.safety.set_controls_allowed(True)
 
-    torque_meas = self.MAX_TORQUE - self.MAX_TORQUE_ERROR - 50
+    for speed in self._torque_speed_range:
+      self._reset_speed_measurement(speed)
+      max_torque = self._get_max_torque(speed)
 
-    self.safety.set_rt_torque_last(self.MAX_TORQUE)
-    self.safety.set_torque_meas(torque_meas, torque_meas)
-    self.safety.set_desired_torque_last(self.MAX_TORQUE)
-    self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_TORQUE - self.MAX_RATE_DOWN)))
+      torque_meas = max_torque - self.MAX_TORQUE_ERROR - 50
 
-    self.safety.set_rt_torque_last(self.MAX_TORQUE)
-    self.safety.set_torque_meas(torque_meas, torque_meas)
-    self.safety.set_desired_torque_last(self.MAX_TORQUE)
-    self.assertFalse(self._tx(self._torque_cmd_msg(self.MAX_TORQUE - self.MAX_RATE_DOWN + 1)))
+      self.safety.set_rt_torque_last(max_torque)
+      self.safety.set_torque_meas(torque_meas, torque_meas)
+      self.safety.set_desired_torque_last(max_torque)
+      self.assertTrue(self._tx(self._torque_cmd_msg(max_torque - self.MAX_RATE_DOWN)))
+
+      self.safety.set_rt_torque_last(max_torque)
+      self.safety.set_torque_meas(torque_meas, torque_meas)
+      self.safety.set_desired_torque_last(max_torque)
+      self.assertFalse(self._tx(self._torque_cmd_msg(max_torque - self.MAX_RATE_DOWN + 1)))
 
   def test_exceed_torque_sensor(self):
     self.safety.set_controls_allowed(True)
@@ -538,7 +601,7 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
         self.assertTrue(self._tx(self._torque_cmd_msg(t)))
 
       # Increase timer to update rt_torque_last
-      self.safety.set_timer(self.RT_INTERVAL + 1)
+      self.safety.set_timer(RT_INTERVAL + 1)
       self.assertTrue(self._tx(self._torque_cmd_msg(sign * self.MAX_RT_DELTA)))
       self.assertTrue(self._tx(self._torque_cmd_msg(sign * (self.MAX_RT_DELTA + 1))))
 
@@ -577,13 +640,32 @@ class MotorTorqueSteeringSafetyTest(TorqueSteeringSafetyTestBase, abc.ABC):
     self.assertEqual(self.safety.get_torque_meas_max(), 0)
 
 
-class AngleSteeringSafetyTest(PandaSafetyTestBase):
+class VehicleSpeedSafetyTest(PandaSafetyTestBase):
+  @classmethod
+  def setUpClass(cls):
+    if cls.__name__ == "VehicleSpeedSafetyTest":
+      cls.safety = None
+      raise unittest.SkipTest
+
+  @abc.abstractmethod
+  def _speed_msg(self, speed):
+    pass
+
+  def test_vehicle_speed_measurements(self):
+    # TODO: lower tolerance on these tests
+    self._common_measurement_test(self._speed_msg, 0, 80, 1, self.safety.get_vehicle_speed_min, self.safety.get_vehicle_speed_max)
+
+
+class AngleSteeringSafetyTest(VehicleSpeedSafetyTest):
 
   STEER_ANGLE_MAX: float = 300
   DEG_TO_CAN: float
   ANGLE_RATE_BP: list[float]
   ANGLE_RATE_UP: list[float]  # windup limit
   ANGLE_RATE_DOWN: list[float]  # unwind limit
+
+  # Real time limits
+  LATERAL_FREQUENCY: int = -1  # Hz
 
   @classmethod
   def setUpClass(cls):
@@ -592,16 +674,15 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
       raise unittest.SkipTest
 
   @abc.abstractmethod
-  def _speed_msg(self, speed):
-    pass
-
-  @abc.abstractmethod
-  def _angle_cmd_msg(self, angle: float, enabled: bool):
+  def _angle_cmd_msg(self, angle: float, enabled: bool, increment_timer: bool = True):
     pass
 
   @abc.abstractmethod
   def _angle_meas_msg(self, angle: float):
     pass
+
+  def _get_steer_cmd_angle_max(self, speed):
+    return self.STEER_ANGLE_MAX
 
   def _set_prev_desired_angle(self, t):
     t = round(t * self.DEG_TO_CAN)
@@ -614,10 +695,6 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
   def _reset_speed_measurement(self, speed):
     for _ in range(MAX_SAMPLE_VALS):
       self._rx(self._speed_msg(speed))
-
-  def test_vehicle_speed_measurements(self):
-    # TODO: lower tolerance on these tests
-    self._common_measurement_test(self._speed_msg, 0, 80, 1, self.safety.get_vehicle_speed_min, self.safety.get_vehicle_speed_max)
 
   def test_steering_angle_measurements(self):
     self._common_measurement_test(self._angle_meas_msg, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX, self.DEG_TO_CAN,
@@ -687,6 +764,43 @@ class AngleSteeringSafetyTest(PandaSafetyTestBase):
             # controls_allowed is checked if actuation bit is 1, else the angle must be close to meas (inactive)
             should_tx = controls_allowed if steer_control_enabled else angle_cmd == angle_meas
             self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(angle_cmd, steer_control_enabled)))
+
+  def test_angle_violation(self):
+    # If violation occurs, angle cmd is blocked until reset to 0. Matches behavior of torque safety modes
+    self.safety.set_controls_allowed(True)
+
+    for speed in (0., 1., 5., 10., 15., 50.):
+      self._tx(self._angle_cmd_msg(0, True))
+      self._reset_speed_measurement(speed)
+
+      for _ in range(20):
+        self.assertFalse(self._tx(self._angle_cmd_msg(self._get_steer_cmd_angle_max(speed), True)))
+      self.assertTrue(self._tx(self._angle_cmd_msg(0, True)))
+
+  def test_rt_limits(self):
+    # TODO: remove and check all safety modes
+    if self.LATERAL_FREQUENCY == -1:
+      raise unittest.SkipTest("No real time limits")
+
+    # Angle safety enforces real time limits by checking the message send frequency in a 250ms time window
+    self.safety.set_timer(0)
+    self.safety.set_controls_allowed(True)
+    max_rt_msgs = int(self.LATERAL_FREQUENCY * RT_INTERVAL / 1e6 * 1.2 + 1)  # 1.2x buffer
+
+    for i in range(max_rt_msgs * 2):
+      should_tx = i <= max_rt_msgs
+      self.assertEqual(should_tx, self._tx(self._angle_cmd_msg(0, True, increment_timer=False)))
+
+    # One under RT interval should do nothing
+    self.safety.set_timer(RT_INTERVAL - 1)
+    for _ in range(5):
+      self.assertFalse(self._tx(self._angle_cmd_msg(0, True, increment_timer=False)))
+
+    # Increment timer and send 1 message to reset RT window
+    self.safety.set_timer(RT_INTERVAL)
+    self.assertFalse(self._tx(self._angle_cmd_msg(0, True, increment_timer=False)))
+    for _ in range(5):
+      self.assertTrue(self._tx(self._angle_cmd_msg(0, True, increment_timer=False)))
 
 
 class PandaSafetyTest(PandaSafetyTestBase):
@@ -841,6 +955,10 @@ class PandaCarSafetyTest(PandaSafetyTest):
   def _speed_msg(self, speed):
     pass
 
+  @abc.abstractmethod
+  def _speed_msg_2(self, speed: float):
+    pass
+
   # Safety modes can override if vehicle_moving is driven by a different message
   def _vehicle_moving_msg(self, speed: float):
     return self._speed_msg(speed)
@@ -888,16 +1006,9 @@ class PandaCarSafetyTest(PandaSafetyTest):
     self._rx(self._user_gas_msg(1))
     self.assertTrue(self.safety.get_controls_allowed())
 
-  def test_disengage_on_gas(self):
+  def test_no_disengage_on_gas(self):
     self._rx(self._user_gas_msg(0))
     self.safety.set_controls_allowed(True)
-    self._rx(self._user_gas_msg(self.GAS_PRESSED_THRESHOLD + 1))
-    self.assertFalse(self.safety.get_controls_allowed())
-
-  def test_alternative_experience_no_disengage_on_gas(self):
-    self._rx(self._user_gas_msg(0))
-    self.safety.set_controls_allowed(True)
-    self.safety.set_alternative_experience(ALTERNATIVE_EXPERIENCE.DISABLE_DISENGAGE_ON_GAS)
     self._rx(self._user_gas_msg(self.GAS_PRESSED_THRESHOLD + 1))
     # Test we allow lateral, but not longitudinal
     self.assertTrue(self.safety.get_controls_allowed())
@@ -987,6 +1098,21 @@ class PandaCarSafetyTest(PandaSafetyTest):
     # past threshold
     self._rx(self._vehicle_moving_msg(self.STANDSTILL_THRESHOLD + 1))
     self.assertTrue(self.safety.get_vehicle_moving())
+
+  def test_rx_hook_speed_mismatch(self):
+    if self._speed_msg_2(0) is None:
+      raise unittest.SkipTest("No second speed message for this safety mode")
+
+    for speed in np.arange(0, 40, 0.5):
+      for speed_delta in np.arange(-5, 5, 0.1):
+        speed_2 = round(max(speed + speed_delta, 0), 1)
+        # Set controls allowed in between rx since first message can reset it
+        self._rx(self._speed_msg(speed))
+        self.safety.set_controls_allowed(True)
+        self._rx(self._speed_msg_2(speed_2))
+
+        within_delta = abs(speed - speed_2) <= MAX_SPEED_DELTA
+        self.assertEqual(self.safety.get_controls_allowed(), within_delta)
 
   def test_safety_tick(self):
     self.safety.set_timer(int(2e6))

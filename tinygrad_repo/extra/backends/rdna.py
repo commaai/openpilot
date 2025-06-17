@@ -1,7 +1,7 @@
 from typing import Dict, Set
 import yaml
 from tinygrad.codegen.uops import UOpGraph, UOps, UOp
-from tinygrad.ops import BinaryOps
+from tinygrad.uop.ops import BinaryOps
 from tinygrad.dtype import dtypes
 
 def uops_to_rdna(function_name:str, uops:UOpGraph) -> str:

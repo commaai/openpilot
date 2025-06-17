@@ -1,0 +1,12 @@
+# Fuzzing Infra
+
+To add a new test, define a `TestSpec`-based class in a file in the `tests/` folder.
+
+You can choose which tests to load from which file:
+```bash
+RUN_FILES="hcq,allocator" python3 extra/hcqfuzz/fuzzer.py
+```
+Or skip tests from any file:
+```bash
+SKIP_FILES="allocator" python3 extra/hcqfuzz/fuzzer.py
+```

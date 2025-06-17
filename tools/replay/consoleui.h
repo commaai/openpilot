@@ -12,7 +12,7 @@ public:
   ConsoleUI(Replay *replay);
   ~ConsoleUI();
   int exec();
-  inline static const std::array speed_array = {0.2f, 0.5f, 1.0f, 2.0f, 3.0f};
+  inline static const std::array speed_array = {0.2f, 0.5f, 1.0f, 2.0f, 4.0f, 8.0f};
 
 private:
   void initWindows();

@@ -63,10 +63,6 @@
         <translation>Plano de datos limitado</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Evitar grandes descargas de datos cuando tenga una conexión limitada</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>Red Oculta</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>para &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -137,11 +157,11 @@
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>Activar ADB</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>ADB (Android Debug Bridge) permite conectar a su dispositivo por USB o por red. Visite https://docs.comma.ai/how-to/connect-to-comma para más información.</translation>
     </message>
 </context>
 <context>
@@ -286,6 +306,14 @@
         <source>Disengage to Power Off</source>
         <translation>Desactivar para apagar</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -309,36 +337,38 @@
     <name>FirehosePanel</name>
     <message>
         <source>🔥 Firehose Mode 🔥</source>
-        <translation type="unfinished"></translation>
+        <translation>🔥 Modo Firehose 🔥</translation>
     </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot aprende a conducir observando a humanos, como tú, conducir.
+
+El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para mejorar los modelos de conducción de openpilot. Más datos significan modelos más grandes, lo que significa un mejor Modo Experimental.</translation>
     </message>
     <message>
         <source>Firehose Mode: ACTIVE</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo Firehose: ACTIVO</translation>
     </message>
     <message>
         <source>ACTIVE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to unmetered network</source>
-        <translation type="unfinished"></translation>
+        <translation>ACTIVO</translation>
     </message>
     <message>
         <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
-        <translation type="unfinished"></translation>
+        <translation>Para máxima efectividad, traiga su dispositivo adentro y conéctelo a un buen adaptador USB-C y Wi-Fi semanalmente.&lt;br&gt;&lt;br&gt;El Modo Firehose también puede funcionar mientras conduce si está conectado a un punto de acceso o tarjeta SIM ilimitada.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Preguntas Frecuentes&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;¿Importa cómo o dónde conduzco?&lt;/i&gt; No, solo conduzca como lo haría normalmente.&lt;br&gt;&lt;br&gt;&lt;i&gt;¿Se extraen todos mis segmentos en el Modo Firehose?&lt;/i&gt; No, seleccionamos selectivamente un subconjunto de sus segmentos.&lt;br&gt;&lt;br&gt;&lt;i&gt;¿Qué es un buen adaptador USB-C?&lt;/i&gt; Cualquier cargador rápido de teléfono o portátil debería funcionar.&lt;br&gt;&lt;br&gt;&lt;i&gt;¿Importa qué software ejecuto?&lt;/i&gt; Sí, solo el openpilot original (y forks específicos) pueden usarse para el entrenamiento.</translation>
     </message>
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>&lt;b&gt;%n segmento&lt;/b&gt; de tu conducción está en el conjunto de datos de entrenamiento hasta ahora.</numerusform>
+            <numerusform>&lt;b&gt;%n segmentos&lt;/b&gt; de tu conducción están en el conjunto de datos de entrenamiento hasta ahora.</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
+        <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVO&lt;/span&gt;: conéctate a una red sin límite de datos</translation>
     </message>
 </context>
 <context>
@@ -368,13 +398,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
             <numerusform>¡Necesita mínimo %n caracter!</numerusform>
             <numerusform>¡Necesita mínimo %n caracteres!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Instalando...</translation>
     </message>
 </context>
 <context>
@@ -573,14 +596,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
 <context>
     <name>QObject</name>
     <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation>Salir</translation>
-    </message>
-    <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
     </message>
@@ -679,7 +694,7 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>Firehose</source>
-        <translation type="unfinished"></translation>
+        <translation>Firehose</translation>
     </message>
 </context>
 <context>
@@ -1000,11 +1015,11 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>Welcome to openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>Bienvenido a openpilot</translation>
     </message>
     <message>
         <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
-        <translation type="unfinished"></translation>
+        <translation>Debe aceptar los Términos y Condiciones para usar openpilot. Lea los términos más recientes en &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; antes de continuar.</translation>
     </message>
 </context>
 <context>
@@ -1012,10 +1027,6 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Enable openpilot</source>
         <translation>Activar openpilot</translation>
-    </message>
-    <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Utilice el sistema openpilot para acceder a un autocrucero adaptativo y asistencia al conductor para mantenerse en el carril. Se requiere su atención en todo momento para utilizar esta función. Cambiar esta configuración solo tendrá efecto con el auto apagado.</translation>
     </message>
     <message>
         <source>Experimental Mode</source>
@@ -1117,6 +1128,14 @@ Esto puede tardar un minuto.</translation>
         <source>Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.</source>
         <translation>Activar el control longitudinal (fase experimental) para permitir el modo Experimental.</translation>
     </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>Updater</name>
@@ -1157,15 +1176,15 @@ Esto puede tardar un minuto.</translation>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>Abrir</translation>
     </message>
     <message>
         <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximice sus cargas de datos de entrenamiento para mejorar los modelos de conducción de openpilot.</translation>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Modo Firehose &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>

@@ -63,10 +63,6 @@
         <translation>ลดการส่งข้อมูลผ่านเซลลูล่าร์</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>ปิดการอัพโหลดข้อมูลขนาดใหญ่เมื่อเชื่อมต่อผ่านเซลลูล่าร์</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>เครือข่ายที่ซ่อนอยู่</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>สำหรับ &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -117,31 +137,31 @@
     <name>DeveloperPanel</name>
     <message>
         <source>Joystick Debug Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>โหมดดีบักจอยสติ๊ก</translation>
     </message>
     <message>
         <source>Longitudinal Maneuver Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>โหมดการควบคุมการเร่ง/เบรค</translation>
     </message>
     <message>
         <source>openpilot Longitudinal Control (Alpha)</source>
-        <translation type="unfinished">ระบบควบคุมการเร่ง/เบรคโดย openpilot (Alpha)</translation>
+        <translation>ระบบควบคุมการเร่ง/เบรคโดย openpilot (Alpha)</translation>
     </message>
     <message>
         <source>WARNING: openpilot longitudinal control is in alpha for this car and will disable Automatic Emergency Braking (AEB).</source>
-        <translation type="unfinished">คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในสถานะ alpha และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด</translation>
+        <translation>คำเตือน: การควบคุมการเร่ง/เบรคโดย openpilot สำหรับรถคันนี้ยังอยู่ในสถานะ alpha และระบบเบรคฉุกเฉินอัตโนมัติ (AEB) จะถูกปิด</translation>
     </message>
     <message>
         <source>On this car, openpilot defaults to the car&apos;s built-in ACC instead of openpilot&apos;s longitudinal control. Enable this to switch to openpilot longitudinal control. Enabling Experimental mode is recommended when enabling openpilot longitudinal control alpha.</source>
-        <translation type="unfinished">โดยปกติสำหรับรถคันนี้ openpilot จะควบคุมการเร่ง/เบรคด้วยระบบ ACC จากโรงงาน แทนการควยคุมโดย openpilot เปิดสวิตซ์นี้เพื่อให้ openpilot ควบคุมการเร่ง/เบรค แนะนำให้เปิดโหมดทดลองเมื่อต้องการให้ openpilot ควบคุมการเร่ง/เบรค ซึ่งอยู่ในสถานะ alpha</translation>
+        <translation>โดยปกติสำหรับรถคันนี้ openpilot จะควบคุมการเร่ง/เบรคด้วยระบบ ACC จากโรงงาน แทนการควยคุมโดย openpilot เปิดสวิตซ์นี้เพื่อให้ openpilot ควบคุมการเร่ง/เบรค แนะนำให้เปิดโหมดทดลองเมื่อต้องการให้ openpilot ควบคุมการเร่ง/เบรค ซึ่งอยู่ในสถานะ alpha</translation>
     </message>
     <message>
         <source>Enable ADB</source>
-        <translation type="unfinished"></translation>
+        <translation>เปิด ADB</translation>
     </message>
     <message>
         <source>ADB (Android Debug Bridge) allows connecting to your device over USB or over the network. See https://docs.comma.ai/how-to/connect-to-comma for more info.</source>
-        <translation type="unfinished"></translation>
+        <translation>ADB (Android Debug Bridge) อนุญาตให้เชื่อมต่ออุปกรณ์ของคุณผ่าน USB หรือผ่านเครือข่าย ดูข้อมูลเพิ่มเติมที่ https://docs.comma.ai/how-to/connect-to-comma</translation>
     </message>
 </context>
 <context>
@@ -286,6 +306,14 @@
         <source>PAIR</source>
         <translation>จับคู่</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -309,35 +337,37 @@
     <name>FirehosePanel</name>
     <message>
         <source>🔥 Firehose Mode 🔥</source>
-        <translation type="unfinished"></translation>
+        <translation>🔥 โหมดสายยางดับเพลิง 🔥</translation>
     </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot เรียนรู้วิธีขับรถจากการเฝ้าดูการขับขี่ของมนุษย์เช่นคุณ
+
+โหมดสายยางดับเพลิงช่วยให้คุณอัปโหลดข้อมูลการฝึกฝนได้มากที่สุด เพื่อนำไปพัฒนาโมเดลการขับขี่ของ openpilot ข้อมูลที่มากขึ้นหมายถึงโมเดลที่ใหญ่ขึ้น และนั่นหมายถึงโหมดทดลองที่ดีขึ้น</translation>
     </message>
     <message>
         <source>Firehose Mode: ACTIVE</source>
-        <translation type="unfinished"></translation>
+        <translation>โหมดสายยางดับเพลิง: เปิดใช้งาน</translation>
     </message>
     <message>
         <source>ACTIVE</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to unmetered network</source>
-        <translation type="unfinished"></translation>
+        <translation>เปิดใช้งาน</translation>
     </message>
     <message>
         <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
-        <translation type="unfinished"></translation>
+        <translation>เพื่อประสิทธิภาพสูงสุด ควรนำอุปกรณ์เข้ามาข้างใน เชื่อมต่อกับอะแดปเตอร์ USB-C คุณภาพดี และ Wi-Fi สัปดาห์ละครั้ง&lt;br&gt;&lt;br&gt;โหมดสายยางดับเพลิงยังสามารถทำงานระหว่างขับรถได้ หากเชื่อมต่อกับฮอตสปอตหรือซิมการ์ดที่มีเน็ตไม่จำกัด&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;คำถามที่พบบ่อย&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;วิธีการขับหรือสถานที่ขับขี่มีผลหรือไม่?&lt;/i&gt;ไม่มีผล แค่ขับขี่ตามปกติของคุณ&lt;br&gt;&lt;br&gt;&lt;i&gt;เซกเมนต์ทั้งหมดของฉันจะถูกดึงข้อมูลในโหมดสายยางดับเพลิงหรือไม่?&lt;/i&gt;ไม่ใช่ เราจะเลือกดึงข้อมูลเพียงบางส่วนจากเซกเมนต์ของคุณ&lt;br&gt;&lt;br&gt;&lt;i&gt;อะแดปเตอร์ USB-C แบบไหนดี?&lt;/i&gt;ที่ชาร์จเร็วของโทรศัพท์หรือแล็ปท็อปแบบใดก็ได้ สามารถใช้ได้&lt;br&gt;&lt;br&gt;&lt;i&gt;ซอฟต์แวร์ที่ใช้มีผลหรือไม่?&lt;/i&gt;มีผล เฉพาะ openpilot ตัวหลัก (และ fork เฉพาะบางตัว) เท่านั้น ที่สามารถนำข้อมูลไปใช้ฝึกฝนโมเดลได้</translation>
     </message>
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
-        <translation type="unfinished">
-            <numerusform></numerusform>
+        <translation>
+            <numerusform>มีการขับขี่ของคุณ &lt;b&gt;%n เซกเมนต์&lt;/b&gt; อยู่ในชุดข้อมูลการฝึกฝนแล้วในขณะนี้</numerusform>
         </translation>
+    </message>
+    <message>
+        <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
+        <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;ไม่เปิดใช้งาน&lt;/span&gt;: เชื่อมต่อกับเครือข่ายที่ไม่จำกัดข้อมูล</translation>
     </message>
 </context>
 <context>
@@ -366,13 +396,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>
             <numerusform>ต้องการอย่างน้อย %n ตัวอักษร!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>กำลังติดตั้ง...</translation>
     </message>
 </context>
 <context>
@@ -485,11 +508,11 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Waiting to start</source>
-        <translation type="unfinished"></translation>
+        <translation>รอเริ่มทำงาน</translation>
     </message>
     <message>
         <source>System Unresponsive</source>
-        <translation type="unfinished"></translation>
+        <translation>ระบบไม่ตอบสนอง</translation>
     </message>
 </context>
 <context>
@@ -512,7 +535,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Please connect to Wi-Fi to complete initial pairing</source>
-        <translation type="unfinished"></translation>
+        <translation>กรุณาเชื่อมต่อ Wi-Fi เพื่อทำการจับคู่ครั้งแรกให้เสร็จสิ้น</translation>
     </message>
 </context>
 <context>
@@ -554,7 +577,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Remote snapshots</source>
-        <translation type="unfinished"></translation>
+        <translation>ภาพถ่ายระยะไกล</translation>
     </message>
 </context>
 <context>
@@ -570,14 +593,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
 </context>
 <context>
     <name>QObject</name>
-    <message>
-        <source>Reboot</source>
-        <translation>รีบูต</translation>
-    </message>
-    <message>
-        <source>Exit</source>
-        <translation>ปิด</translation>
-    </message>
     <message>
         <source>openpilot</source>
         <translation>openpilot</translation>
@@ -670,11 +685,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Developer</source>
-        <translation type="unfinished"></translation>
+        <translation>นักพัฒนา</translation>
     </message>
     <message>
         <source>Firehose</source>
-        <translation type="unfinished"></translation>
+        <translation>สายยางดับเพลิง</translation>
     </message>
 </context>
 <context>
@@ -995,11 +1010,11 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Welcome to openpilot</source>
-        <translation type="unfinished"></translation>
+        <translation>ยินดีต้อนรับสู่ openpilot</translation>
     </message>
     <message>
         <source>You must accept the Terms and Conditions to use openpilot. Read the latest terms at &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; before continuing.</source>
-        <translation type="unfinished"></translation>
+        <translation>คุณต้องยอมรับข้อกำหนดและเงื่อนไขเพื่อใช้งาน openpilot อ่านข้อกำหนดล่าสุดได้ที่ &lt;span style=&apos;color: #465BEA;&apos;&gt;https://comma.ai/terms&lt;/span&gt; ก่อนดำเนินการต่อ</translation>
     </message>
 </context>
 <context>
@@ -1007,10 +1022,6 @@ This may take up to a minute.</source>
     <message>
         <source>Enable openpilot</source>
         <translation>เปิดใช้งาน openpilot</translation>
-    </message>
-    <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>ใช้ระบบ openpilot สำหรับระบบควบคุมความเร็วอัตโนมัติ และระบบช่วยควบคุมรถให้อยู่ในเลน คุณจำเป็นต้องให้ความสนใจตลอดเวลาที่ใช้คุณสมบัตินี้ การเปลี่ยนการตั้งค่านี้จะมีผลเมื่อคุณดับเครื่องยนต์</translation>
     </message>
     <message>
         <source>Enable Lane Departure Warnings</source>
@@ -1106,10 +1117,18 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Always-On Driver Monitoring</source>
-        <translation type="unfinished"></translation>
+        <translation>การเฝ้าระวังผู้ขับขี่ตลอดเวลา</translation>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation>เปิดใช้งานการเฝ้าระวังผู้ขับขี่แม้เมื่อ openpilot ไม่ได้เข้าควบคุมอยู่</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1152,15 +1171,15 @@ This may take up to a minute.</source>
     <name>WiFiPromptWidget</name>
     <message>
         <source>Open</source>
-        <translation type="unfinished"></translation>
+        <translation>เปิด</translation>
     </message>
     <message>
         <source>Maximize your training data uploads to improve openpilot&apos;s driving models.</source>
-        <translation type="unfinished"></translation>
+        <translation>อัปโหลดข้อมูลการฝึกฝนให้ได้มากที่สุด เพื่อพัฒนาโมเดลการขับขี่ของ openpilot</translation>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; โหมดสายยางดับเพลิง &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>

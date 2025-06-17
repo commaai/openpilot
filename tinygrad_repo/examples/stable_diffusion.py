@@ -14,6 +14,7 @@ from tinygrad.nn import Conv2d, GroupNorm
 from tinygrad.nn.state import torch_load, load_state_dict, get_state_dict
 from extra.models.clip import Closed, Tokenizer
 from extra.models.unet import UNetModel
+from extra.bench_log import BenchEvent, WallTimeEvent
 
 class AttnBlock:
   def __init__(self, in_channels):
@@ -232,12 +233,13 @@ if __name__ == "__main__":
   model = StableDiffusion()
 
   # load in weights
-  load_state_dict(model, torch_load(fetch('https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt', 'sd-v1-4.ckpt'))['state_dict'], strict=False)
+  with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
+    load_state_dict(model, torch_load(fetch('https://huggingface.co/CompVis/stable-diffusion-v-1-4-original/resolve/main/sd-v1-4.ckpt', 'sd-v1-4.ckpt'))['state_dict'], strict=False)
 
-  if args.fp16:
-    for k,v in get_state_dict(model).items():
-      if k.startswith("model"):
-        v.replace(v.cast(dtypes.float16).realize())
+    if args.fp16:
+      for k,v in get_state_dict(model).items():
+        if k.startswith("model"):
+          v.replace(v.cast(dtypes.float16).realize())
 
   # run through CLIP to get context
   tokenizer = Tokenizer.ClipTokenizer()
@@ -270,9 +272,10 @@ if __name__ == "__main__":
       GlobalCounters.reset()
       t.set_description("%3d %3d" % (index, timestep))
       with Timing("step in ", enabled=args.timing, on_exit=lambda _: f", using {GlobalCounters.mem_used/1e9:.2f} GB"):
-        tid = Tensor([index])
-        latent = run(model, unconditional_context, context, latent, Tensor([timestep]), alphas[tid], alphas_prev[tid], Tensor([args.guidance]))
-        if args.timing: Device[Device.DEFAULT].synchronize()
+        with WallTimeEvent(BenchEvent.STEP):
+          tid = Tensor([index])
+          latent = run(model, unconditional_context, context, latent, Tensor([timestep]), alphas[tid], alphas_prev[tid], Tensor([args.guidance]))
+          if args.timing: Device[Device.DEFAULT].synchronize()
     del run
 
   # upsample latent space to image with autoencoder

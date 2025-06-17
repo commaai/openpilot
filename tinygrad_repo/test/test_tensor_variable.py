@@ -1,6 +1,7 @@
 import unittest
 import numpy as np
 from tinygrad import Tensor, Variable
+from tinygrad.helpers import Context
 
 class TestTensorVariable(unittest.TestCase):
   def test_add_tvar(self):
@@ -22,38 +23,43 @@ class TestTensorVariable(unittest.TestCase):
     assert (Tensor(3) * (vv * 4)).item() == 24
 
   def test_symbolic_mean(self):
-    vv = Variable("a", 1, 10).bind(2)
-    t = Tensor.ones(2, 2).contiguous().reshape(2, vv)
-    ret = t.mean().item()
-    assert ret == 1
+    with Context(IGNORE_OOB=1):
+      vv = Variable("a", 1, 10).bind(2)
+      t = Tensor.ones(2, 2).contiguous().reshape(2, vv)
+      ret = t.mean().item()
+      assert ret == 1
 
   def test_symbolic_mean_2d(self):
-    vv = Variable("a", 1, 10).bind(2)
-    vv2 = Variable("b", 1, 10).bind(2)
-    t = Tensor.ones(2, 2).contiguous().reshape(vv2, vv)
-    ret = t.mean().item()
-    assert ret == 1
+    with Context(IGNORE_OOB=1):
+      vv = Variable("a", 1, 10).bind(2)
+      vv2 = Variable("b", 1, 10).bind(2)
+      t = Tensor.ones(2, 2).contiguous().reshape(vv2, vv)
+      ret = t.mean().item()
+      assert ret == 1
 
   def test_symbolic_mean_2d_axis_1(self):
-    vv = Variable("a", 1, 10).bind(2)
-    vv2 = Variable("b", 1, 10).bind(2)
-    t = Tensor.ones(2, 2).contiguous().reshape(vv2, vv)
-    ret = t.mean(axis=1).reshape(2, 1).numpy()
-    assert np.all(ret == 1)
+    with Context(IGNORE_OOB=1):
+      vv = Variable("a", 1, 10).bind(2)
+      vv2 = Variable("b", 1, 10).bind(2)
+      t = Tensor.ones(2, 2).contiguous().reshape(vv2, vv)
+      ret = t.mean(axis=1).reshape(2, 1).numpy()
+      assert np.all(ret == 1)
 
   def test_symbolic_mean_2d_add(self):
-    add_term = Variable("c", 0, 10).bind(1)
-    vv = Variable("a", 1, 10).bind(1)
-    vv2 = Variable("b", 1, 10).bind(1)
-    t = Tensor.ones(2, 2).contiguous().reshape(vv2+add_term, vv+add_term)
-    ret = t.mean().item()
-    assert ret == 1
+    with Context(IGNORE_OOB=1):
+      add_term = Variable("c", 0, 10).bind(1)
+      vv = Variable("a", 1, 10).bind(1)
+      vv2 = Variable("b", 1, 10).bind(1)
+      t = Tensor.ones(2, 2).contiguous().reshape(vv2+add_term, vv+add_term)
+      ret = t.mean().item()
+      assert ret == 1
 
   def test_symbolic_var(self):
-    vv = Variable("a", 1, 10).bind(2)
-    t = Tensor.ones(2, 2).contiguous().reshape(2, vv)
-    ret = t.var().item()
-    assert ret == 0
+    with Context(IGNORE_OOB=1):
+      vv = Variable("a", 1, 10).bind(2)
+      t = Tensor.ones(2, 2).contiguous().reshape(2, vv)
+      ret = t.var().item()
+      assert ret == 0
 
   def test_symbolic_pad(self):
     vv = Variable("a", 1, 10).bind(2)

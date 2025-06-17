@@ -1,7 +1,7 @@
 import unittest, itertools
 from tinygrad.dtype import dtypes
-from tinygrad.ops import Ops, UOp, GroupOp # noqa: F401
-from tinygrad.ops import PatternMatcher, UPat
+from tinygrad.uop.ops import Ops, UOp, GroupOp # noqa: F401
+from tinygrad.uop.ops import PatternMatcher, UPat
 
 class TestPatternMatcher(unittest.TestCase):
   def test_simple_match(self):
@@ -22,6 +22,14 @@ class TestPatternMatcher(unittest.TestCase):
     v2 = UOp.variable("b", 0, 10)
     c1 = v1+v2
     self.assertEqual(matcher.rewrite(c1), c1)
+
+  def test_minimum_len(self):
+    matcher = PatternMatcher([
+      (UPat(Ops.NOOP, src=(UPat(Ops.NOOP), UPat(Ops.NOOP)), allow_any_len=True), lambda: True),
+    ])
+    self.assertTrue(matcher.rewrite(UOp(Ops.NOOP, src=(UOp(Ops.NOOP), UOp(Ops.NOOP), UOp(Ops.NOOP),))))
+    self.assertTrue(matcher.rewrite(UOp(Ops.NOOP, src=(UOp(Ops.NOOP), UOp(Ops.NOOP)))))
+    self.assertIsNone(matcher.rewrite(UOp(Ops.NOOP, src=(UOp(Ops.NOOP),))))
 
   @unittest.skip("closures aren't supported on pattern matchers")
   def test_match_sz_0(self):

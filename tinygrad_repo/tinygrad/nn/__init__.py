@@ -1,6 +1,7 @@
 from __future__ import annotations
 import math
-from tinygrad.tensor import Tensor, dtypes
+from tinygrad.tensor import Tensor
+from tinygrad.dtype import dtypes
 from tinygrad.device import is_dtype_supported
 from tinygrad.helpers import prod, make_tuple, flatten
 from tinygrad.nn import optim, state, datasets  # noqa: F401
@@ -298,11 +299,15 @@ class RMSNorm:
   print(norm(t).numpy())
   ```
   """
-  def __init__(self, dim:int, eps=1e-6): self.eps, self.weight = eps, Tensor.ones(dim)
+  def __init__(self, dim:int, eps=1e-6, elementwise_affine=True):
+    self.eps = eps
+    self.weight = Tensor.ones(dim) if elementwise_affine else None
 
   def _norm(self, x:Tensor) -> Tensor: return x * (x.square().mean(-1, keepdim=True) + self.eps).rsqrt()
 
-  def __call__(self, x:Tensor) -> Tensor: return self._norm(x.float()).cast(x.dtype) * self.weight
+  def __call__(self, x:Tensor) -> Tensor:
+    x = self._norm(x.float()).cast(x.dtype)
+    return x if self.weight is None else x * self.weight
 
 class Embedding:
   """
@@ -322,7 +327,7 @@ class Embedding:
     if not hasattr(self, 'arange'): self.arange = Tensor.arange(self.vocab_sz, requires_grad=False, device=self.weight.device).unsqueeze(-1)
     big_shp = idx.shape+(self.vocab_sz, self.embed_sz)
     arange, idx, vals = self.arange.expand(big_shp), idx.reshape(idx.shape+(1, 1)).expand(big_shp), self.weight.expand(big_shp)
-    return (arange == idx).mul(vals).sum(-2, acc_dtype=vals.dtype)
+    return (arange == idx).mul(vals).sum(-2, dtype=vals.dtype)
 
 class LSTMCell:
   """

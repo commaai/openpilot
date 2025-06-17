@@ -1,109 +1,100 @@
 #!/usr/bin/env python3
-import multiprocessing, pickle, functools, difflib, os, threading, json, time, sys, webbrowser, socket, argparse, decimal
-from http.server import HTTPServer, BaseHTTPRequestHandler
+import multiprocessing, pickle, functools, difflib, os, threading, json, time, sys, webbrowser, socket, argparse, decimal, socketserver
+from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
-from dataclasses import asdict, dataclass
-from typing import Any, Callable, Optional
-from tinygrad.helpers import colored, getenv, to_function_name, tqdm, unwrap, word_wrap
-from tinygrad.ops import TrackedGraphRewrite, UOp, Ops, lines, GroupOp
+from typing import Any, TypedDict, Generator
+from tinygrad.helpers import colored, getenv, tqdm, unwrap, word_wrap, TRACEMETA
+from tinygrad.uop.ops import TrackedGraphRewrite, UOp, Ops, lines, GroupOp, srender, sint
 from tinygrad.codegen.kernel import Kernel
 from tinygrad.device import ProfileEvent, ProfileDeviceEvent, ProfileRangeEvent, ProfileGraphEvent
+from tinygrad.dtype import dtypes
 
-uops_colors = {Ops.LOAD: "#ffc0c0", Ops.PRELOAD: "#ffc0c0", Ops.STORE: "#87CEEB", Ops.CONST: "#e0e0e0", Ops.VCONST: "#e0e0e0",
+uops_colors = {Ops.LOAD: "#ffc0c0", Ops.STORE: "#87CEEB", Ops.CONST: "#e0e0e0", Ops.VCONST: "#e0e0e0", Ops.REDUCE: "#FF5B5B",
                Ops.DEFINE_GLOBAL: "#ffe0b0", Ops.DEFINE_LOCAL: "#ffe0d0", Ops.DEFINE_ACC: "#f0ffe0", Ops.REDUCE_AXIS: "#FF6B6B",
-               Ops.RANGE: "#c8a0e0", Ops.ASSIGN: "#e0ffc0", Ops.BARRIER: "#ff8080", Ops.IF: "#c8b0c0", Ops.SPECIAL: "#c0c0ff",
-               Ops.INDEX: "#e8ffa0", Ops.WMMA: "#efefc0", Ops.VIEW: "#C8F9D4",
-               **{x:"#D8F9E4" for x in GroupOp.Movement}, **{x:"#ffffc0" for x in GroupOp.ALU}, Ops.THREEFRY:"#ffff80",
-               Ops.BLOCK: "#C4A484", Ops.BLOCKEND: "#C4A4A4", Ops.BUFFER: "#B0BDFF", Ops.COPY: "#a040a0"}
+               Ops.RANGE: "#c8a0e0", Ops.ASSIGN: "#909090", Ops.BARRIER: "#ff8080", Ops.IF: "#c8b0c0", Ops.SPECIAL: "#c0c0ff",
+               Ops.INDEX: "#e8ffa0", Ops.WMMA: "#efefc0", Ops.VIEW: "#C8F9D4", Ops.MULTI: "#f6ccff", Ops.KERNEL: "#3e7f55", Ops.IGNORE: "#00C000",
+               **{x:"#D8F9E4" for x in GroupOp.Movement}, **{x:"#ffffc0" for x in GroupOp.ALU}, Ops.THREEFRY:"#ffff80", Ops.BUFFER_VIEW: "#E5EAFF",
+               Ops.BLOCK: "#C4A484", Ops.BLOCKEND: "#C4A4A4", Ops.BUFFER: "#B0BDFF", Ops.COPY: "#a040a0", Ops.FUSE: "#FFa500",
+               Ops.ALLREDUCE: "#ff40a0", Ops.GBARRIER: "#FFC14D", Ops.MSELECT: "#d040a0"}
 
-# ** API spec
+# VIZ API
 
-@dataclass
-class GraphRewriteMetadata:
-  """Overview of a tracked rewrite to viz the sidebar"""
-  loc: tuple[str, int]
-  """File_path, Lineno"""
-  code_line: str
-  """The Python line calling graph_rewrite"""
-  kernel_name: str
-  """The kernel calling graph_rewrite"""
-  upats: list[tuple[tuple[str, int], str, float]]
-  """List of all the applied UPats"""
+# ** Metadata for a track_rewrites scope
 
-@dataclass
-class GraphRewriteDetails(GraphRewriteMetadata):
-  """Full details about a single call to graph_rewrite"""
-  graphs: list[UOp]
-  """Sink at every step of graph_rewrite"""
-  diffs: list[list[str]]
-  """.diff style before and after of the rewritten UOp child"""
-  changed_nodes: list[list[int]]
-  """Nodes that changed at every step of graph_rewrite"""
-  kernel_code: Optional[str]
-  """The program after all rewrites"""
+class GraphRewriteMetadata(TypedDict):
+  loc: tuple[str, int]                   # [path, lineno] calling graph_rewrite
+  match_count: int                       # total match count in this context
+  code_line: str                         # source code calling graph_rewrite
+  kernel_code: str|None                  # optionally render the final kernel code
+  name: str|None                         # optional name of the rewrite
+  depth: int                             # depth if it's a subrewrite
 
-# ** API functions
+@functools.cache
+def render_program(k:Kernel):
+  try: return k.opts.render(k.uops)
+  except Exception as e: return f"ISSUE RENDERING KERNEL: {e}\nast = {k.ast}\nopts = {k.applied_opts}"
 
-# NOTE: if any extra rendering in VIZ fails, we don't crash
-def pcall(fxn:Callable[..., str], *args, **kwargs) -> str:
-  try: return fxn(*args, **kwargs)
-  except Exception as e: return f"ERROR: {e}"
+def to_metadata(k:Any, v:TrackedGraphRewrite) -> GraphRewriteMetadata:
+  return {"loc":v.loc, "match_count":len(v.matches), "name":v.name, "depth":v.depth, "code_line":lines(v.loc[0])[v.loc[1]-1].strip(),
+          "kernel_code":render_program(k) if isinstance(k, Kernel) else None}
 
-def get_metadata(keys:list[Any], contexts:list[list[TrackedGraphRewrite]]) -> list[list[tuple[Any, TrackedGraphRewrite, GraphRewriteMetadata]]]:
-  kernels: dict[str, list[tuple[Any, TrackedGraphRewrite, GraphRewriteMetadata]]] = {}
-  for k,ctxs in tqdm(zip(keys, contexts), desc="preparing kernels"):
-    name = to_function_name(k.name) if isinstance(k, Kernel) else str(k)
-    for ctx in ctxs:
-      if pickle.loads(ctx.sink).op is Ops.CONST: continue
-      upats = [(upat.location, upat.printable(), tm) for _,_,upat,tm in ctx.matches if upat is not None]
-      kernels.setdefault(name, []).append((k, ctx, GraphRewriteMetadata(ctx.loc, lines(ctx.loc[0])[ctx.loc[1]-1].strip(), name, upats)))
-  return list(kernels.values())
+def get_metadata(keys:list[Any], contexts:list[list[TrackedGraphRewrite]]) -> list[tuple[str, list[GraphRewriteMetadata]]]:
+  return [(k.name if isinstance(k, Kernel) else str(k), [to_metadata(k, v) for v in vals]) for k,vals in zip(keys, contexts)]
 
-def uop_to_json(x:UOp) -> dict[int, tuple[str, str, list[int], str, str]]:
+# ** Complete rewrite details for a graph_rewrite call
+
+class GraphRewriteDetails(TypedDict):
+  graph: dict                            # JSON serialized UOp for this rewrite step
+  uop: str                               # strigified UOp for this rewrite step
+  diff: list[str]|None                   # diff of the single UOp that changed
+  changed_nodes: list[int]|None          # the changed UOp id + all its parents ids
+  upat: tuple[tuple[str, int], str]|None # [loc, source_code] of the matched UPat
+
+def shape_to_str(s:tuple[sint, ...]): return "(" + ','.join(srender(x) for x in s) + ")"
+def mask_to_str(s:tuple[tuple[sint, sint], ...]): return "(" + ','.join(shape_to_str(x) for x in s) + ")"
+
+def uop_to_json(x:UOp) -> dict[int, dict]:
   assert isinstance(x, UOp)
-  graph: dict[int, tuple[str, str, list[int], str, str]] = {}
-  excluded = set()
-  for u in x.toposort:
-    if u.op in {Ops.CONST, Ops.DEVICE}:
-      excluded.add(u)
-      continue
-    argst = ("\n".join([f"{v.shape} / {v.strides}"+(f" / {v.offset}" if v.offset else "") for v in u.arg.views])) if u.op is Ops.VIEW else str(u.arg)
-    label = f"{str(u.op).split('.')[1]}{(' '+word_wrap(argst.replace(':', ''))) if u.arg is not None else ''}\n{str(u.dtype)}"
+  graph: dict[int, dict] = {}
+  excluded: set[UOp] = set()
+  for u in (toposort:=x.toposort()):
+    # always exclude DEVICE/CONST/UNIQUE
+    if u.op in {Ops.DEVICE, Ops.CONST, Ops.UNIQUE}: excluded.add(u)
+    # only exclude CONST VIEW source if it has no other children in the graph
+    if u.op is Ops.CONST and len(u.src) != 0 and all(cr.op is Ops.CONST for c in u.src[0].children if (cr:=c()) is not None and cr in toposort):
+      excluded.update(u.src)
+  for u in toposort:
+    if u in excluded: continue
+    argst = str(u.arg)
+    if u.op is Ops.VIEW:
+      argst = ("\n".join([f"{shape_to_str(v.shape)} / {shape_to_str(v.strides)}"+("" if v.offset == 0 else f" / {srender(v.offset)}")+
+                          (f"\nMASK {mask_to_str(v.mask)}" if v.mask is not None else "") for v in unwrap(u.st).views]))
+    label = f"{str(u.op).split('.')[1]}{(chr(10)+word_wrap(argst.replace(':', ''))) if u.arg is not None else ''}"
+    if u.dtype != dtypes.void: label += f"\n{u.dtype}"
     for idx,x in enumerate(u.src):
-      if x.op is Ops.CONST: label += f"\nCONST{idx} {x.arg:g}"
-      if x.op is Ops.DEVICE: label += f"\nDEVICE{idx} {x.arg}"
-    graph[id(u)] = (label, str(u.dtype), [id(x) for x in u.src if x not in excluded], str(u.arg), uops_colors.get(u.op, "#ffffff"))
+      if x in excluded:
+        if x.op is Ops.CONST and dtypes.is_float(u.dtype): label += f"\nCONST{idx} {x.arg:g}"
+        else: label += f"\n{x.op.name}{idx} {x.arg}"
+    try:
+      if u.op not in {Ops.VIEW, Ops.BUFFER, Ops.KERNEL, Ops.ASSIGN, Ops.COPY, Ops.SINK, *GroupOp.Buffer} and u.st is not None:
+        label += f"\n{shape_to_str(u.shape)}"
+    except Exception:
+      label += "\n<ISSUE GETTING SHAPE>"
+    # NOTE: kernel already has metadata in arg
+    if TRACEMETA >= 2 and u.metadata is not None and u.op is not Ops.KERNEL: label += "\n"+repr(u.metadata)
+    graph[id(u)] = {"label":label, "src":[id(x) for x in u.src if x not in excluded], "color":uops_colors.get(u.op, "#ffffff")}
   return graph
-def _replace_uop(base:UOp, replaces:dict[UOp, UOp]) -> UOp:
-  if (found:=replaces.get(base)) is not None: return found
-  ret = base.replace(src=tuple(_replace_uop(x, replaces) for x in base.src))
-  if (final := replaces.get(ret)) is not None:
-      return final
-  replaces[base] = ret
-  return ret
-@functools.lru_cache(None)
-def _prg(k:Kernel): return k.to_program().src
-def get_details(k:Any, ctx:TrackedGraphRewrite, metadata:GraphRewriteMetadata) -> GraphRewriteDetails:
-  g = GraphRewriteDetails(**asdict(metadata), graphs=[pickle.loads(ctx.sink)], diffs=[], changed_nodes=[],
-                          kernel_code=pcall(_prg, k) if isinstance(k, Kernel) else None)
+
+def get_details(k:Any, ctx:TrackedGraphRewrite) -> Generator[GraphRewriteDetails, None, None]:
+  yield {"graph":uop_to_json(next_sink:=ctx.sink), "uop":str(ctx.sink), "changed_nodes":None, "diff":None, "upat":None}
   replaces: dict[UOp, UOp] = {}
-  sink = g.graphs[0]
-  for i,(u0_b,u1_b,upat,_) in enumerate(ctx.matches):
-    u0 = pickle.loads(u0_b)
-    # if the match didn't result in a rewrite we move forward
-    if u1_b is None:
-      replaces[u0] = u0
-      continue
-    replaces[u0] = u1 = pickle.loads(u1_b)
-    # first, rewrite this UOp with the current rewrite + all the matches in replaces
-    new_sink = _replace_uop(sink, {**replaces})
-    # sanity check
-    if new_sink is sink: raise AssertionError(f"rewritten sink wasn't rewritten! {i} {unwrap(upat).location}")
-    # update ret data
-    g.changed_nodes.append([id(x) for x in u1.toposort if x.op is not Ops.CONST])
-    g.diffs.append(list(difflib.unified_diff(pcall(str, u0).splitlines(), pcall(str, u1).splitlines())))
-    g.graphs.append(sink:=new_sink)
-  return g
+  for u0,u1,upat in tqdm(ctx.matches):
+    replaces[u0] = u1
+    try: new_sink = next_sink.substitute(replaces)
+    except RecursionError as e: new_sink = UOp(Ops.NOOP, arg=str(e))
+    yield {"graph":(sink_json:=uop_to_json(new_sink)), "uop":str(new_sink), "changed_nodes":[id(x) for x in u1.toposort() if id(x) in sink_json],
+           "diff":list(difflib.unified_diff(str(u0).splitlines(), str(u1).splitlines())), "upat":(upat.location, upat.printable())}
+    if not ctx.bottom_up: next_sink = new_sink
 
 # Profiler API
 devices:dict[str, tuple[decimal.Decimal, decimal.Decimal, int]] = {}
@@ -140,23 +131,31 @@ class Handler(BaseHTTPRequestHandler):
   def do_GET(self):
     ret, status_code, content_type = b"", 200, "text/html"
 
-    if (url:=urlparse(self.path)).path == "/":
-      with open(os.path.join(os.path.dirname(__file__), "index.html"), "rb") as f: ret = f.read()
-    elif (url:=urlparse(self.path)).path == "/profiler":
-      with open(os.path.join(os.path.dirname(__file__), "perfetto.html"), "rb") as f: ret = f.read()
-    elif self.path.startswith("/assets/") and '/..' not in self.path:
+    if (fn:={"/":"index", "/profiler":"perfetto"}.get((url:=urlparse(self.path)).path)):
+      with open(os.path.join(os.path.dirname(__file__), f"{fn}.html"), "rb") as f: ret = f.read()
+    elif self.path.startswith(("/assets/", "/js/")) and '/..' not in self.path:
       try:
         with open(os.path.join(os.path.dirname(__file__), self.path.strip('/')), "rb") as f: ret = f.read()
         if url.path.endswith(".js"): content_type = "application/javascript"
         if url.path.endswith(".css"): content_type = "text/css"
       except FileNotFoundError: status_code = 404
     elif url.path == "/kernels":
-      query = parse_qs(url.query)
-      if (qkernel:=query.get("kernel")) is not None:
-        g = get_details(*kernels[int(qkernel[0])][int(query["idx"][0])])
-        jret: Any = {**asdict(g), "graphs": [uop_to_json(x) for x in g.graphs], "uops": [pcall(str,x) for x in g.graphs]}
-      else: jret = [list(map(lambda x:asdict(x[2]), v)) for v in kernels]
-      ret, content_type = json.dumps(jret).encode(), "application/json"
+      if "kernel" in (query:=parse_qs(url.query)):
+        kidx, ridx = int(query["kernel"][0]), int(query["idx"][0])
+        try:
+          # stream details
+          self.send_response(200)
+          self.send_header("Content-Type", "text/event-stream")
+          self.send_header("Cache-Control", "no-cache")
+          self.end_headers()
+          for r in get_details(contexts[0][kidx], contexts[1][kidx][ridx]):
+            self.wfile.write(f"data: {json.dumps(r)}\n\n".encode("utf-8"))
+            self.wfile.flush()
+          self.wfile.write("data: END\n\n".encode("utf-8"))
+          return self.wfile.flush()
+        # pass if client closed connection
+        except (BrokenPipeError, ConnectionResetError): return
+      ret, content_type = json.dumps(kernels).encode(), "application/json"
     elif url.path == "/get_profile" and perfetto_profile is not None: ret, content_type = perfetto_profile, "application/json"
     else: status_code = 404
 
@@ -181,6 +180,9 @@ def load_pickle(path:str):
   if path is None or not os.path.exists(path): return None
   with open(path, "rb") as f: return pickle.load(f)
 
+# NOTE: using HTTPServer forces a potentially slow socket.getfqdn
+class TCPServerWithReuse(socketserver.TCPServer): allow_reuse_address = True
+
 if __name__ == "__main__":
   parser = argparse.ArgumentParser()
   parser.add_argument('--kernels', type=str, help='Path to kernels', default=None)
@@ -197,15 +199,12 @@ if __name__ == "__main__":
 
   contexts, profile = load_pickle(args.kernels), load_pickle(args.profile)
 
+  # NOTE: this context is a tuple of list[keys] and list[values]
   kernels = get_metadata(*contexts) if contexts is not None else []
-
-  if getenv("FUZZ_VIZ"):
-    ret = [get_details(*args) for v in tqdm(kernels) for args in v]
-    print(f"fuzzed {len(ret)} rewrite details")
 
   perfetto_profile = to_perfetto(profile) if profile is not None else None
 
-  server = HTTPServer(('', PORT), Handler)
+  server = TCPServerWithReuse(('', PORT), Handler)
   reloader_thread = threading.Thread(target=reloader)
   reloader_thread.start()
   print(f"*** started viz on {HOST}:{PORT}")

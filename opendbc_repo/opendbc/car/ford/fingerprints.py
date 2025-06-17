@@ -46,6 +46,20 @@ FW_VERSIONS = {
       b'LV4T-14F397-GG\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.FORD_ESCAPE_MK4_5: {
+    (Ecu.eps, 0x730, None): [
+      b'PZ11-14D003-EA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'PZ1C-2D053-EJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'PJ6T-14H102-ABL\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.FORD_EXPLORER_MK6: {
     (Ecu.eps, 0x730, None): [
       b'L1MC-14D003-AJ\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -75,11 +89,26 @@ FW_VERSIONS = {
       b'LC5T-14F397-AH\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
   },
+  CAR.FORD_EXPEDITION_MK4: {
+    (Ecu.eps, 0x730, None): [
+      b'NL14-14D003-AE\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.abs, 0x760, None): [
+      b'RL14-2D053-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdRadar, 0x764, None): [
+      b'ML3T-14D049-AL\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+    (Ecu.fwdCamera, 0x706, None): [
+      b'ML3T-14H102-ABT\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+    ],
+  },
   CAR.FORD_F_150_MK14: {
     (Ecu.eps, 0x730, None): [
       b'ML3V-14D003-BC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x760, None): [
+      b'NL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PL34-2D053-CA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PL34-2D053-CC\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PL3V-2D053-BB\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
@@ -89,6 +118,7 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'ML3T-14H102-ABR\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'ML3T-14H102-ABT\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'PJ6T-14H102-ABJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'RJ6T-14H102-ACJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
@@ -96,9 +126,11 @@ FW_VERSIONS = {
   CAR.FORD_F_150_LIGHTNING_MK1: {
     (Ecu.abs, 0x760, None): [
       b'PL38-2D053-AA\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'RL38-2D053-BD\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x706, None): [
       b'ML3T-14H102-ABT\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+      b'RJ6T-14H102-ACJ\x00\x00\x00\x00\x00\x00\x00\x00\x00',
       b'RJ6T-14H102-BBC\x00\x00\x00\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x764, None): [

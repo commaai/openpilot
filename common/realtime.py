@@ -1,6 +1,7 @@
 """Utilities for reading real time clocks and keeping soft real time constraints."""
 import gc
 import os
+import sys
 import time
 
 from setproctitle import getproctitle
@@ -28,13 +29,13 @@ class Priority:
 
 
 def set_core_affinity(cores: list[int]) -> None:
-  if not PC:
+  if sys.platform == 'linux' and not PC:
     os.sched_setaffinity(0, cores)
 
 
 def config_realtime_process(cores: int | list[int], priority: int) -> None:
   gc.disable()
-  if not PC:
+  if sys.platform == 'linux' and not PC:
     os.sched_setscheduler(0, os.SCHED_FIFO, os.sched_param(priority))
   c = cores if isinstance(cores, list) else [cores, ]
   set_core_affinity(c)

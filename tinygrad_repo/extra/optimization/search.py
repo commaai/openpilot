@@ -1,11 +1,11 @@
 import argparse
-from extra.optimization.helpers import ast_str_to_lin
+from extra.optimization.helpers import ast_str_to_lin, time_linearizer
 
 from tinygrad import dtypes
 from tinygrad.helpers import BEAM, getenv
 from tinygrad.device import Device, Compiled
 from tinygrad.codegen.kernel import Kernel
-from tinygrad.engine.search import time_linearizer, beam_search, bufs_from_lin
+from tinygrad.engine.search import beam_search, bufs_from_lin
 
 
 if __name__ == '__main__':

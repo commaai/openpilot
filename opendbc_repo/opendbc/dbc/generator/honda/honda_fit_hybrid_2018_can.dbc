@@ -1,13 +1,6 @@
 CM_ "IMPORT _honda_common.dbc";
 CM_ "IMPORT _nidec_common.dbc";
-
-BO_ 228 STEERING_CONTROL: 5 ADAS
- SG_ STEER_TORQUE : 7|16@0- (1,0) [-3840|3840] "" EPS
- SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
- SG_ SET_ME_X00 : 22|7@0+ (1,0) [0|127] "" EPS
- SG_ SET_ME_X00_2 : 31|8@0+ (1,0) [0|0] "" EPS
- SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" EPS
- SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" EPS
+CM_ "IMPORT _steering_control_a.dbc";
 
 BO_ 342 STEERING_SENSORS: 6 EPS
  SG_ STEER_ANGLE : 7|16@0- (-0.1,0) [-500|500] "deg" EON
@@ -57,19 +50,6 @@ BO_ 862 HIGHBEAM_CONTROL: 8 ADAS
  SG_ AUTO_HIGHBEAMS_ACTIVE : 53|1@0+ (1,0) [0|1] "" XXX
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
-
-BO_ 927 RADAR_HUD: 8 ADAS
- SG_ ZEROS_BOH : 7|17@0+ (1,0) [0|127] "" BDY
- SG_ APPLY_BRAKES_FOR_CANC : 23|1@0+ (1,0) [0|15] "" BDY
- SG_ ZEROS_BOH2 : 31|8@0+ (1,0) [0|127] "" BDY
- SG_ RESUME_INSTRUCTION : 21|1@0+ (1,0) [0|15] "" BDY
- SG_ ACC_ALERTS : 20|5@0+ (1,0) [0|15] "" BDY
- SG_ LEAD_SPEED : 39|9@0+ (1,0) [0|127] "" BDY
- SG_ LEAD_STATE : 46|3@0+ (1,0) [0|127] "" BDY
- SG_ LEAD_DISTANCE : 43|5@0+ (1,0) [0|31] "" BDY
- SG_ ZEROS_BOH3 : 54|7@0+ (1,0) [0|127] "" BDY
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
 
 CM_ SG_ 419 GEAR "10 = reverse, 11 = transition";
 

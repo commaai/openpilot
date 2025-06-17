@@ -4,23 +4,19 @@ This problem uses BERT for NLP.
 
 ## Requirements
 
-Install tinygrad and mlperf-logging from master.
+Install tinygrad and mlperf-logging (uncomment mlperf from setup.py) from branch mlperf_training_v5.0.
 ```
 git clone https://github.com/tinygrad/tinygrad.git
 python3 -m pip install -e ".[mlperf]"
 ```
-Also install tqdm and tensorflow.
+Also install gdown (for dataset), numpy, tqdm and tensorflow.
 ```
-pip install tqdm tensorflow
+pip install gdown numpy tqdm tensorflow
 ```
 
 ### tinybox_green
 Install the p2p driver per [README](https://github.com/tinygrad/open-gpu-kernel-modules/blob/550.54.15-p2p/README.md)
 This is the default on production tinybox green.
-
-### tinybox_red
-Disable cwsr + increase mes timeout.
-Install the custom amdgpu driver per [README](https://github.com/nimlgen/amdgpu_ubuntu_22_04/blob/v6.1.3/readme.md)
 
 # 2. Directions
 
@@ -56,18 +52,18 @@ BASEDIR="/raid/datasets/wiki" python3 extra/datasets/wikipedia.py pre-eval
 
 #### Steps to run benchmark
 ```
-examples/mlperf/training_submission_v4.1/tinycorp/benchmarks/bert/implementations/tinybox_green/run_and_time.sh
+examples/mlperf/training_submission_v5.0/tinycorp/benchmarks/bert/implementations/tinybox_green/run_and_time.sh
 ```
 
 ### tinybox_red
 
-#### One time setup
-
+#### Steps to run benchmark
 ```
-examples/mlperf/training_submission_v4.1/tinycorp/benchmarks/bert/implementations/tinybox_red/setup.sh
+examples/mlperf/training_submission_v5.0/tinycorp/benchmarks/bert/implementations/tinybox_red/run_and_time.sh
 ```
+### tinybox_8xMI300X
 
 #### Steps to run benchmark
 ```
-examples/mlperf/training_submission_v4.1/tinycorp/benchmarks/bert/implementations/tinybox_red/run_and_time.sh
+examples/mlperf/training_submission_v5.0/tinycorp/benchmarks/bert/implementations/tinybox_8xMI300X/run_and_time.sh
 ```

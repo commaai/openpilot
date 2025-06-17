@@ -10,6 +10,8 @@ import ctypes, ctypes.util, os
 PATHS_TO_TRY = [
   '/opt/rocm/lib/libamd_comgr.so',
   os.getenv('ROCM_PATH', '')+'/lib/libamd_comgr.so',
+  '/usr/local/lib/libamd_comgr.dylib',
+  '/opt/homebrew/lib/libamd_comgr.dylib',
 ]
 def _try_dlopen_amd_comgr():
   library = ctypes.util.find_library("amd_comgr")
@@ -17,7 +19,7 @@ def _try_dlopen_amd_comgr():
   for candidate in PATHS_TO_TRY:
     try: return ctypes.CDLL(candidate)
     except OSError: pass
-  raise RuntimeError("library amd_comgr not found")
+  return None
 
 
 def string_cast(char_pointer, encoding='utf-8', errors='strict'):

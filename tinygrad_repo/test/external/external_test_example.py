@@ -7,7 +7,7 @@ def multidevice_test(fxn):
   exclude_devices = getenv("EXCLUDE_DEVICES", "").split(",")
   def ret(self):
     for device in Device._devices:
-      if device in ["DISK", "NPY", "FAKE"]: continue
+      if device in ["REMOTE", "DISK", "NPY", "FAKE", "DSP", "NULL"]: continue
       if not CI: print(device)
       if device in exclude_devices:
         if not CI: print(f"WARNING: {device} test is excluded")
@@ -23,10 +23,10 @@ def multidevice_test(fxn):
 
 class TestExample(unittest.TestCase):
   @multidevice_test
-  def test_convert_to_clang(self, device):
+  def test_convert_to_cpu(self, device):
     a = Tensor([[1,2],[3,4]], device=device)
     assert a.numpy().shape == (2,2)
-    b = a.to("CLANG")
+    b = a.to("CPU")
     assert b.numpy().shape == (2,2)
 
   @multidevice_test

@@ -4,7 +4,6 @@ from tinygrad import Tensor, Device
 import tinygrad.runtime.autogen.amd_gpu as amd_gpu
 import tinygrad.runtime.autogen.kfd as kfd
 import tinygrad.runtime.autogen.hsa as hsa
-from tinygrad.engine.schedule import create_schedule
 from tinygrad.runtime.ops_amd import kio, AMDProgram
 from tinygrad.helpers import to_mv
 
@@ -49,7 +48,7 @@ if __name__ == "__main__":
   a = Tensor([0.,1.,2.], device="KFD").realize()
   b = a + 7
   b.lazydata.buffer.allocate()
-  si = create_schedule([b.lazydata])[-1]
+  si = b.schedule()[-1]
   runner = dev.get_runner(*si.ast)
   prg: AMDProgram = runner.clprg
   print("device initted")

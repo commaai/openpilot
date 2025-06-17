@@ -13,4 +13,4 @@ echo -e "$MULL_OPS" > $GIT_ROOT/mull.yml
 scons --mutation -j$(nproc) -D
 echo -e "timeout: 10000\ngitDiffRef: $GIT_REF\ngitProjectRoot: $GIT_ROOT" >> $GIT_ROOT/mull.yml
 
-mull-runner-17 --ld-search-path /lib/x86_64-linux-gnu/ ./libsafety/libsafety.so -test-program=pytest -- -n8
+mull-runner-17 --ld-search-path /lib/x86_64-linux-gnu/ ./libsafety/libsafety.so -test-program=pytest -- -n8 --ignore-glob=misra/*

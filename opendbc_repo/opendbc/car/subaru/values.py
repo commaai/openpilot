@@ -103,7 +103,7 @@ class SubaruCarDocs(CarDocs):
   def init_make(self, CP: CarParams):
     self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
 
-    if CP.experimentalLongitudinalAvailable:
+    if CP.alphaLongitudinalAvailable:
       self.footnotes.append(Footnote.EXP_LONG)
 
 
@@ -142,8 +142,8 @@ class CAR(Platforms):
   SUBARU_IMPREZA = SubaruPlatformConfig(
     [
       SubaruCarDocs("Subaru Impreza 2017-19"),
-      SubaruCarDocs("Subaru Crosstrek 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
-      SubaruCarDocs("Subaru XV 2018-19", video_link="https://youtu.be/Agww7oE1k-s?t=26"),
+      SubaruCarDocs("Subaru Crosstrek 2018-19", video="https://youtu.be/Agww7oE1k-s?t=26"),
+      SubaruCarDocs("Subaru XV 2018-19", video="https://youtu.be/Agww7oE1k-s?t=26"),
     ],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=15),
   )

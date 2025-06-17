@@ -2,6 +2,8 @@
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
+from functools import partial
+from tqdm import tqdm
 from typing import NamedTuple
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.models.pose_kf import EARTH_G
@@ -20,14 +22,15 @@ class Event(NamedTuple):
   timestamp: float  # relative to start of route (s)
 
 
-def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
+def find_events(lr: LogReader, extrapolate: bool = False, qlog: bool = False) -> list[Event]:
   min_lat_active = RLOG_MIN_LAT_ACTIVE // QLOG_DECIMATION if qlog else RLOG_MIN_LAT_ACTIVE
   min_steering_unpressed = RLOG_MIN_STEERING_UNPRESSED // QLOG_DECIMATION if qlog else RLOG_MIN_STEERING_UNPRESSED
   min_requesting_max = RLOG_MIN_REQUESTING_MAX // QLOG_DECIMATION if qlog else RLOG_MIN_REQUESTING_MAX
 
-  events = []
+  # if we test with driver torque safety, max torque can be slightly noisy
+  steer_threshold = 0.7 if extrapolate else 0.95
 
-  start_ts = 0
+  events = []
 
   # state tracking
   steering_unpressed = 0  # frames
@@ -38,7 +41,9 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
   curvature = 0
   v_ego = 0
   roll = 0
+  out_torque = 0
 
+  start_ts = 0
   for msg in lr:
     if msg.which() == 'carControl':
       if start_ts == 0:
@@ -47,8 +52,8 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
       lat_active = lat_active + 1 if msg.carControl.latActive else 0
 
     elif msg.which() == 'carOutput':
-      # if we test with driver torque safety, max torque can be slightly noisy
-      requesting_max = requesting_max + 1 if abs(msg.carOutput.actuatorsOutput.torque) > 0.95 else 0
+      out_torque = msg.carOutput.actuatorsOutput.torque
+      requesting_max = requesting_max + 1 if abs(out_torque) > steer_threshold else 0
 
     elif msg.which() == 'carState':
       steering_unpressed = steering_unpressed + 1 if not msg.carState.steeringPressed else 0
@@ -64,7 +69,8 @@ def find_events(lr: LogReader, qlog: bool = False) -> list[Event]:
       # TODO: record max lat accel at the end of the event, need to use the past lat accel as overriding can happen before we detect it
       requesting_max = 0
 
-      current_lateral_accel = curvature * v_ego ** 2 - roll * EARTH_G
+      factor = 1 / abs(out_torque)
+      current_lateral_accel = (curvature * v_ego ** 2 * factor) - roll * EARTH_G
       events.append(Event(current_lateral_accel, v_ego, roll, round((msg.logMonoTime - start_ts) * 1e-9, 2)))
       print(events[-1])
 
@@ -75,29 +81,38 @@ if __name__ == '__main__':
   parser = argparse.ArgumentParser(description="Find max lateral acceleration events",
                                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)
 
-  parser.add_argument("route")
+  parser.add_argument("route", nargs='+')
+  parser.add_argument("-e", "--extrapolate", action="store_true", help="Extrapolates max lateral acceleration events linearly. " +
+                                                                       "This option can be far less accurate.")
   args = parser.parse_args()
 
-  lr = LogReader(args.route, sort_by_time=True)
-  qlog = args.route.endswith('/q')
-  if qlog:
-    print('WARNING: Treating route as qlog!')
+  events = []
+  for route in tqdm(args.route):
+    try:
+      lr = LogReader(route, sort_by_time=True)
+    except Exception:
+      print(f'Skipping {route}')
+      continue
 
-  print('Finding events...')
-  events = find_events(lr, qlog=qlog)
+    qlog = route.endswith('/q')
+    if qlog:
+      print('WARNING: Treating route as qlog!')
+
+    print('Finding events...')
+    events += lr.run_across_segments(8, partial(find_events, extrapolate=args.extrapolate, qlog=qlog), disable_tqdm=True)
 
   print()
   print(f'Found {len(events)} events')
 
-  perc_left_accel = -np.percentile([-ev.lateral_accel for ev in events if ev.lateral_accel < 0], 90)
-  perc_right_accel = np.percentile([ev.lateral_accel for ev in events if ev.lateral_accel > 0], 90)
+  perc_left_accel = -np.percentile([-ev.lateral_accel for ev in events if ev.lateral_accel < 0] or [0], 90)
+  perc_right_accel = np.percentile([ev.lateral_accel for ev in events if ev.lateral_accel > 0] or [0], 90)
 
   CP = lr.first('carParams')
 
   plt.ion()
   plt.clf()
   plt.suptitle(f'{CP.carFingerprint} - Max lateral acceleration events')
-  plt.title(args.route)
+  plt.title(', '.join(args.route))
   plt.scatter([ev.speed for ev in events], [ev.lateral_accel for ev in events], label='max lateral accel events')
 
   plt.plot([0, 35], [3, 3], c='r', label='ISO 11270 - 3 m/s^2')

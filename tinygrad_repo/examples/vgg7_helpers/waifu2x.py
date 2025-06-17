@@ -105,12 +105,12 @@ class Vgg7:
     Output format: (1, 3, Y - 14, X - 14)
     (the - 14 represents the 7-pixel context border that is lost)
     """
-    x = self.conv1.forward(x).leakyrelu(0.1)
-    x = self.conv2.forward(x).leakyrelu(0.1)
-    x = self.conv3.forward(x).leakyrelu(0.1)
-    x = self.conv4.forward(x).leakyrelu(0.1)
-    x = self.conv5.forward(x).leakyrelu(0.1)
-    x = self.conv6.forward(x).leakyrelu(0.1)
+    x = self.conv1.forward(x).leaky_relu(0.1)
+    x = self.conv2.forward(x).leaky_relu(0.1)
+    x = self.conv3.forward(x).leaky_relu(0.1)
+    x = self.conv4.forward(x).leaky_relu(0.1)
+    x = self.conv5.forward(x).leaky_relu(0.1)
+    x = self.conv6.forward(x).leaky_relu(0.1)
     x = self.conv7.forward(x)
     return x
 

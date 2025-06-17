@@ -12,6 +12,8 @@ To run process replay locally:
 
 (optional: clear previous process replay runs with `test/external/process_replay/reset.py`)
 
-1. Run tests with `RUN_PROCESS_REPLAY=1` in your branch. This will capture the kernels.
+1. Run tests with `CAPTURE_PROCESS_REPLAY=1` in your branch. This will pickle process inputs to CACHEDB.
 2. Checkout master
 3. Run `test/external/process_replay/process_replay.py`
+
+For reference, see `test/external/process_replay/local.sh`.

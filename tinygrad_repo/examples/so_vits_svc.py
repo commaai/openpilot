@@ -437,14 +437,14 @@ class Generator:
     x = self.conv_pre(x)
     if g is not None:  x = x + self.cond(g)
     for i in range(self.num_upsamples):
-      x, xs = self.ups[i](x.leakyrelu(LRELU_SLOPE)), None
+      x, xs = self.ups[i](x.leaky_relu(LRELU_SLOPE)), None
       x_source = self.noise_convs[i](har_source)
       x = x + x_source
       for j in range(self.num_kernels):
         if xs is None: xs = self.resblocks[i * self.num_kernels + j].forward(x)
         else: xs += self.resblocks[i * self.num_kernels + j].forward(x)
       x = xs / self.num_kernels
-    return self.conv_post(x.leakyrelu()).tanh()
+    return self.conv_post(x.leaky_relu()).tanh()
 
 # **** helpers ****
 
@@ -504,7 +504,7 @@ def load_checkpoint_enc(checkpoint_path, model: ContentVec, optimizer=None, skip
         obj, v = getattr(parent, "weight"), weight_norm(weight_v, weight_g, 0)
         weight_g, weight_v, parent, skip = None, None, None, False
       if not skip and obj.shape == v.shape:
-        if "feature_extractor" in key and (isinstance(parent, nn.GroupNorm) or isinstance(parent, nn.LayerNorm)):  # cast
+        if "feature_extractor" in key and (isinstance(parent, (nn.GroupNorm, nn.LayerNorm))):  # cast
           obj.assign(v.to(obj.device).float())
         else:
           obj.assign(v.to(obj.device))

@@ -32,9 +32,13 @@ For doing development work on device, it's recommended to use [SSH agent forward
 
 ## ADB
 
-In order to use ADB on your device, you'll need to enable it in the device's settings.
+In order to use ADB on your device, you'll need to perform the following steps using the image below for reference:
 
+![comma 3/3x back](../assets/three-back.svg)
+
+* Plug your device into constant power using port 2, letting the device boot up
 * Enable ADB in your device's settings
+* Plug in your device to your PC using port 1
 * Connect to your device
     * `adb shell` over USB
     * `adb connect` over WiFi
