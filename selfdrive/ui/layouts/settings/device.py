@@ -40,6 +40,20 @@ class Text(Widget):
     """Update the text content."""
     self.text = text
 
+  def _recalc_size(self):
+    font = gui_app.font(FontWeight.NORMAL)
+
+    # If parent has already fixed a width, respect it and wrap.
+    if self._rect.width > 0:
+      lines = wrap_text(font, self.text,
+                        self.font_size, int(self._rect.width))
+      self._rect.height = len(lines) * self.font_size + self.PADDING_Y * 2
+    else:
+      # No width yet → single-line bbox + padding.
+      size = measure_text_cached(font, self.text, self.font_size)
+      self._rect.width = size.x + self.PADDING_X * 2
+      self._rect.height = self.font_size + self.PADDING_Y * 2
+
   def _render(self, rect: rl.Rectangle):
     print('text rect', rect.x, rect.y, rect.width, rect.height)
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
