@@ -1,18 +1,20 @@
 import os
 import json
+import pyray as rl
 
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item, dual_button_item
 from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog, alert_dialog
 from openpilot.system.ui.widgets.html_render import HtmlRenderer
+from openpilot.system.ui.lib.wrap_text import wrap_text
 
 # Description constants
 DESCRIPTIONS = {
@@ -24,6 +26,73 @@ DESCRIPTIONS = {
   ),
   'review_guide': "Review the rules, features, and limitations of openpilot",
 }
+
+
+class Text(Widget):
+  def __init__(self, text: str, font_size: int = 40, color: rl.Color = rl.WHITE):
+    super().__init__()
+    self.text = text
+    self.font_size = font_size
+    self.color = color
+    self._update_layout_rects()
+
+  def set_text(self, text: str):
+    """Update the text content."""
+    self.text = text
+
+  def _render(self, rect: rl.Rectangle):
+    print('text rect', rect.x, rect.y, rect.width, rect.height)
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
+    font = gui_app.font(FontWeight.NORMAL)
+    wrapped_text = wrap_text(font, self.text, self.font_size, int(rect.width))
+    print(wrapped_text)
+    y_offset = rect.y + (rect.height - len(wrapped_text) * self.font_size) // 2
+    for line in wrapped_text:
+      rl.draw_text_ex(font, line, rl.Vector2(rect.x + 20, y_offset), self.font_size, 0, self.color)
+      y_offset += self.font_size
+    rl.end_scissor_mode()
+
+
+class VBox(Widget):
+  """Minimal vertical stack container (padding + spacing only)."""
+
+  def __init__(self, children: list[Widget] | None = None,
+               spacing: int = 10, padding: int = 0):
+    super().__init__()
+    self._children: list[Widget] = children or []
+    self.spacing = spacing
+    self.padding = padding
+
+    # if children are passed in, set their parent rects once
+    self._update_layout_rects()
+
+  # ------------------------------------------------------------
+  # public helpers
+  def add_child(self, w: Widget):
+    self._children.append(w)
+    self._update_layout_rects()  # relayout immediately
+
+  # ------------------------------------------------------------
+  # layout: update kids when *our* rect changes
+  def _update_layout_rects(self):
+    y = self._rect.y + self.padding
+    avail_w = self._rect.width - self.padding * 2
+
+    for child in self._children:
+      h = child.height or 0  # child must already know its height
+      child.set_rect(rl.Rectangle(
+        self._rect.x + self.padding,
+        y,
+        avail_w,
+        h
+      ))
+      y += h + self.spacing
+
+  # ------------------------------------------------------------
+  # paint: just forward
+  def _render(self, rect: rl.Rectangle):
+    for c in self._children:
+      c.render()
 
 
 class DeviceLayout(Widget):
