@@ -1,0 +1,76 @@
+CI / testing:
+  - changed-files:
+    - any-glob-to-any-file: '.github/**'
+
+car:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/**'
+
+car safety:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/safety/**'
+
+can:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/can/**'
+
+DBC signals:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/dbc/**'
+
+
+body:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/body/**'
+
+chrysler:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/chrysler/**'
+
+ford:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/ford/**'
+
+gm:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/gm/**'
+
+honda:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/honda/**'
+
+hyundai:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/hyundai/**'
+
+mazda:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/mazda/**'
+
+nissan:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/nissan/**'
+
+rivian:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/rivian/**'
+
+subaru:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/subaru/**'
+
+tesla:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/tesla/**'
+
+toyota:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/toyota/**'
+
+volkswagen:
+  - changed-files:
+    - any-glob-to-any-file: 'opendbc/car/volkswagen/**'
+
+fingerprint:
+  - changed-files:
+    - any-glob-to-all-files: 'opendbc/car/*/fingerprints.py'

@@ -1,0 +1,13 @@
+FROM ghcr.io/commaai/openpilot-base:latest
+
+ENV PYTHONUNBUFFERED=1
+
+ENV OPENPILOT_PATH=/home/batman/openpilot
+ENV PYTHONPATH=${OPENPILOT_PATH}:${PYTHONPATH}
+
+RUN mkdir -p ${OPENPILOT_PATH}
+WORKDIR ${OPENPILOT_PATH}
+
+COPY . ${OPENPILOT_PATH}/
+
+RUN scons --cache-readonly -j$(nproc)

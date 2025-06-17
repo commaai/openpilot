@@ -1,0 +1,17 @@
+Import('env', 'envCython', 'common')
+
+cc_sources = [
+  "helpers/ekf_load.cc",
+  "helpers/ekf_sym.cc",
+]
+libs = ["dl"]
+if common != "":
+  # for SWAGLOG support
+  libs += [common, 'zmq']
+
+ekf_objects = env.SharedObject(cc_sources)
+rednose = env.Library("helpers/ekf_sym", ekf_objects, LIBS=libs)
+rednose_python = envCython.Program("helpers/ekf_sym_pyx.so", ["helpers/ekf_sym_pyx.pyx", ekf_objects],
+                                   LIBS=libs + envCython["LIBS"])
+
+Export('rednose', 'rednose_python')

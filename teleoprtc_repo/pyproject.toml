@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "teleoprtc"
+version = "1.0.1"
+authors = [{ name="Vehicle Researcher", email="user@comma.ai" }]
+description = "Comma webRTC abstractions"
+readme = "README.md"
+license = { file="LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: OS Independent",
+]
+dependencies = [
+  "aiortc>=1.6.0",
+  "aiohttp>=3.7.0",
+  "av>=11.0.0,<13.0.0",
+  "numpy>=1.19.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "parameterized>=0.8",
+  "pre-commit",
+  "pytest",
+  "pytest-asyncio",
+  "pytest-xdist"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/commaai/teleoprtc"
+"Bug Tracker" = "https://github.com/commaai/teleoprtc/issues"
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+line-length = 160
+target-version="py38"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "PIE", "C4", "ISC", "RUF008", "RUF100", "A", "B", "TID251"]
+ignore = ["W292", "E741", "E402", "C408", "ISC003", "B027", "B024"]
+flake8-implicit-str-concat.allow-multiline=false
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"unittest".msg = "Use pytest"
+
+[tool.pytest.ini_options]
+addopts = "--durations=10 -n auto"

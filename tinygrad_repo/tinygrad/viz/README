@@ -1,0 +1,53 @@
+viz is a replacement for:
+GRAPH=1
+JITGRAPH=1 (this restricts the graph...no need if we can select the schedules)
+GRAPHUOPS=1
+most uses of DEBUG >= 3
+tiny-tools
+
+and a viewer for:
+SAVE_SCHEDULE=1
+TRACK_MATCH_STATS=2
+PROFILE=1
+
+to use:
+1. Run tinygrad with VIZ=1 and/or PROFILE=1 (this saves the pkls and launches the server (new process please!))
+2. That's it!
+
+This should be able to:
+1. See all schedules (VIZ=1)
+2. See all graphs and how they were rewritten (VIZ=1)
+3. See generated code (VIZ=1)
+4. See profile (PROFILE=1)
+
+bunch of dev rules:
+* everything must be responsive to keyboard smashing! lag should never happen
+* no requirement to use any of these libraries, but in general libraries are bad
+* pure python server + browser ready JS
+* serialization is very annoying! UOps are fine...others think carefully
+* NOTE: we don't have to save very much
+  * anything pure functional can be regen by the server (stable tinygrad APIs only!)
+
+user story: viewing code
+* tinygrad ran 3 schedules: init the model + first train step, train step, test step
+  * schedule 1 (123) = main.py:97
+  * schedule 2 (97) = main.py:97
+  * schedule 3 (10) = main.py:145
+* click "schedule 1", get list of kernels (like DEBUG=2)
+  * kernel 1 "E_34_34" -- 'sin'
+  * kernel 2 "R_4545"
+* click "E_34_34"
+  * pre-rewritten UOp graph (step through rewrite here)
+  * post-rewritten UOp graph
+  * UOp list
+  * generated code
+
+user story: debugging scheduler
+* tinygrad ran 3 schedules: init the model + first train step, train step, test step
+  * ...
+* click "schedule 1 graph", get a graph of the schedule in UOps
+  * step through rewrite rules
+  * see how things are broken into kernels
+  * see why two kernels didn't fuse
+
+this needs to be tested, both as the server and as the frontend
