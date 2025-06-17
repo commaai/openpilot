@@ -11,16 +11,16 @@ class Label(Widget):
                font_size: int = DEFAULT_TEXT_SIZE,
                color: rl.Color = DEFAULT_TEXT_COLOR,
                font_weight: FontWeight = FontWeight.NORMAL,
-               align_h: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-               align_v: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+               alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+               alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
                elide_right: bool = True):
     super().__init__()
     self.text = text
     self.font_size = font_size
     self.color = color
     self.font_weight = font_weight
-    self.align_h = align_h
-    self.align_v = align_v
+    self.alignment = alignment
+    self.alignment_vertical = alignment_vertical
     self.elide_right = elide_right
 
   def set_text(self, txt: str):
@@ -50,14 +50,14 @@ class Label(Widget):
       rl.GuiTextAlignment.TEXT_ALIGN_LEFT: 0,
       rl.GuiTextAlignment.TEXT_ALIGN_CENTER: (rect.width - text_size.x) / 2,
       rl.GuiTextAlignment.TEXT_ALIGN_RIGHT: rect.width - text_size.x,
-    }.get(self.align_h, 0)
+    }.get(self.alignment, 0)
 
     # -------- vertical alignment --------------------------------
     text_y = rect.y + {
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP: 0,
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE: (rect.height - text_size.y) / 2,
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM: rect.height - text_size.y,
-    }.get(self.align_v, 0)
+    }.get(self.alignment_vertical, 0)
 
     rl.draw_text_ex(font, display,
                     rl.Vector2(text_x, text_y),
