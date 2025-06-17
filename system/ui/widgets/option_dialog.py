@@ -1,7 +1,7 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle, TextAlignment
-from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.label import Label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.widget import Widget
 
@@ -23,6 +23,8 @@ class MultiOptionDialog(Widget):
     self.current = current
     self.selection = current
     self.scroll = GuiScrollPanel()
+    self._title_label = Label(title, font_size=TITLE_FONT_SIZE, font_weight=FontWeight.BOLD,
+                              alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
   def _render(self, rect):
     dialog_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - 2 * MARGIN, rect.height - 2 * MARGIN)
@@ -31,7 +33,8 @@ class MultiOptionDialog(Widget):
     content_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y + MARGIN,
                                 dialog_rect.width - 2 * MARGIN, dialog_rect.height - 2 * MARGIN)
 
-    gui_label(rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, TITLE_FONT_SIZE), self.title, 70, font_weight=FontWeight.BOLD)
+    # gui_label(rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, TITLE_FONT_SIZE), self.title, 70, font_weight=FontWeight.BOLD)
+    self._title_label.render(rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, TITLE_FONT_SIZE))
 
     # Options area
     options_y = content_rect.y + TITLE_FONT_SIZE + ITEM_SPACING

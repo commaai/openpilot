@@ -5,7 +5,7 @@ from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
-from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.label import Label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
 from openpilot.system.ui.widgets.keyboard import Keyboard
@@ -66,6 +66,8 @@ class WifiManagerUI(Widget):
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
+    self._scanning_label = Label("Scanning Wi-Fi networks...", font_size=72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+
     self._networks: list[NetworkInfo] = []
     self._lock = Lock()
     self.wifi_manager = wifi_manager
@@ -85,8 +87,9 @@ class WifiManagerUI(Widget):
   def _render(self, rect: rl.Rectangle):
     with self._lock:
       if not self._networks:
-        gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+        self._scanning_label.render(rect)
         return
+
 
       match self.state:
         case StateNeedsAuth(network):
@@ -139,7 +142,8 @@ class WifiManagerUI(Widget):
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    gui_label(ssid_rect, network.ssid, 55)
+    # gui_label(ssid_rect, network.ssid, 55)
+    Label(network.ssid, font_size=55).render(ssid_rect)
 
     status_text = ""
     match self.state:
@@ -152,7 +156,8 @@ class WifiManagerUI(Widget):
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
-      gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      # gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      Label(status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER).render(status_text_rect)
     else:
       # If the network is saved, show the "Forget" button
       if network.is_saved:
