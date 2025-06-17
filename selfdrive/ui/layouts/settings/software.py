@@ -10,8 +10,8 @@ class SoftwareLayout(Widget):
     super().__init__()
 
     self._params = Params()
-    items = self._init_items()
-    self._list_widget = ListView(items)
+    # items = self._init_items()
+    # self._list_widget = ListView(items)
 
   def _init_items(self):
     items = [
@@ -24,7 +24,8 @@ class SoftwareLayout(Widget):
     return items
 
   def _render(self, rect):
-    self._list_widget.render(rect)
+    pass
+    # self._list_widget.render(rect)
 
   def _on_download_update(self): pass
   def _on_install_update(self): pass

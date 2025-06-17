@@ -21,38 +21,39 @@ class DeveloperLayout(Widget):
   def __init__(self):
     super().__init__()
     self._params = Params()
-    items = [
-      toggle_item(
-        "Enable ADB",
-        description=DESCRIPTIONS["enable_adb"],
-        initial_state=self._params.get_bool("AdbEnabled"),
-        callback=self._on_enable_adb,
-      ),
-      ssh_key_item("SSH Key", description=DESCRIPTIONS["ssh_key"]),
-      toggle_item(
-        "Joystick Debug Mode",
-        description=DESCRIPTIONS["joystick_debug_mode"],
-        initial_state=self._params.get_bool("JoystickDebugMode"),
-        callback=self._on_joystick_debug_mode,
-      ),
-      toggle_item(
-        "Longitudinal Maneuver Mode",
-        description="",
-        initial_state=self._params.get_bool("LongitudinalManeuverMode"),
-        callback=self._on_long_maneuver_mode,
-      ),
-      toggle_item(
-        "openpilot Longitudinal Control (Alpha)",
-        description="",
-        initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
-        callback=self._on_alpha_long_enabled,
-      ),
-    ]
+    # items = [
+    #   toggle_item(
+    #     "Enable ADB",
+    #     description=DESCRIPTIONS["enable_adb"],
+    #     initial_state=self._params.get_bool("AdbEnabled"),
+    #     callback=self._on_enable_adb,
+    #   ),
+    #   ssh_key_item("SSH Key", description=DESCRIPTIONS["ssh_key"]),
+    #   toggle_item(
+    #     "Joystick Debug Mode",
+    #     description=DESCRIPTIONS["joystick_debug_mode"],
+    #     initial_state=self._params.get_bool("JoystickDebugMode"),
+    #     callback=self._on_joystick_debug_mode,
+    #   ),
+    #   toggle_item(
+    #     "Longitudinal Maneuver Mode",
+    #     description="",
+    #     initial_state=self._params.get_bool("LongitudinalManeuverMode"),
+    #     callback=self._on_long_maneuver_mode,
+    #   ),
+    #   toggle_item(
+    #     "openpilot Longitudinal Control (Alpha)",
+    #     description="",
+    #     initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
+    #     callback=self._on_alpha_long_enabled,
+    #   ),
+    # ]
 
-    self._list_widget = ListView(items)
+    # self._list_widget = ListView(items)
 
   def _render(self, rect):
-    self._list_widget.render(rect)
+    pass
+    # self._list_widget.render(rect)
 
   def _on_enable_adb(self): pass
   def _on_joystick_debug_mode(self): pass

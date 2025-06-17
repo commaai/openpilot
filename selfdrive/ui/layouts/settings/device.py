@@ -8,6 +8,7 @@ from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.list_view import ListView, text_item, button_item, dual_button_item
+from openpilot.system.ui.lib.scroller import Scroller, Text
 from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.widgets.option_dialog import MultiOptionDialog
@@ -36,8 +37,18 @@ class DeviceLayout(Widget):
     self._pair_device_dialog: PairingDialog | None = None
     self._fcc_dialog: HtmlRenderer | None = None
 
-    items = self._initialize_items()
-    self._list_widget = ListView(items)
+    # items = self._initialize_items()
+    # self._list_widget = ListView(items)
+
+    self._scroller = Scroller([
+      Text("Dongle ID"),
+      Text("Serial"),
+      Text("Pair Device"),
+      Text("Driver Camera"),
+      Text("Reset Calibration"),
+      Text("Regulatory"),
+      Text("Review Training Guide"),
+    ])
 
   def _initialize_items(self):
     dongle_id = self._params.get("DongleId", encoding="utf-8") or "N/A"
@@ -57,7 +68,8 @@ class DeviceLayout(Widget):
     return items
 
   def _render(self, rect):
-    self._list_widget.render(rect)
+    # self._list_widget.render(rect)
+    self._scroller.render(rect)
 
   def _show_language_selection(self):
     try:

@@ -15,6 +15,32 @@ class Widget(abc.ABC):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
     self._is_visible: bool | Callable[[], bool] = True
+    self._click_valid_callback: Callable[[], bool] | None = None
+
+  @property
+  def width(self) -> float:
+    return self._rect.width
+
+  @property
+  def height(self) -> float:
+    return self._rect.height
+
+  def set_position(self, x: float, y: float) -> None:
+    """Set the position of the widget."""
+    prev_rect = self._rect
+    self._rect.x = x
+    self._rect.y = y
+    if (x != prev_rect.x or y != prev_rect.y or
+        self._rect.width != prev_rect.width or self._rect.height != prev_rect.height):
+      self._update_layout_rects()
+
+  def set_click_valid_callback(self, callback: Callable[[], bool]) -> None:
+    self._click_valid_callback = callback
+
+  # TODO: use this below to be even simpler!
+  def _click_valid(self) -> bool:
+    """Check if the widget can be clicked."""
+    return self._click_valid_callback() if self._click_valid_callback else True
 
   @property
   def is_visible(self) -> bool:
