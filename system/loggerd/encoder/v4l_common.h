@@ -13,7 +13,7 @@
 #define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 
 
-static void checked_ioctl(int fd, unsigned long request, void *argp) {
+void checked_ioctl(int fd, unsigned long request, void *argp) {
   int ret = util::safe_ioctl(fd, request, argp);
   if (ret != 0) {
     LOGE("checked_ioctl failed with error %d (%d %lx %p)", errno, fd, request, argp);
@@ -21,7 +21,7 @@ static void checked_ioctl(int fd, unsigned long request, void *argp) {
   }
 }
 
-static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
+void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
   v4l2_plane plane = {0};
   v4l2_buffer v4l_buf = {
     .type = buf_type,
@@ -38,7 +38,7 @@ static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=N
   assert(v4l_buf.m.planes[0].data_offset == 0);
 }
 
-static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
+void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
   v4l2_plane plane = {
     .bytesused = (uint32_t)buf->len,
     .length = (unsigned int)buf->len,
@@ -59,7 +59,7 @@ static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, Vis
   checked_ioctl(fd, VIDIOC_QBUF, &v4l_buf);
 }
 
-static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
+void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
   struct v4l2_requestbuffers reqbuf = {
     .count = count,
     .type = buf_type,
