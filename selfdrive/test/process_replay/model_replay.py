@@ -197,10 +197,6 @@ def model_replay(lr, frs):
 
 def get_frames():
   regen_cache = "--regen-cache" in sys.argv
-  cache = "--cache" in sys.argv or not PC or regen_cache
-  videos = ('fcamera.hevc', 'dcamera.hevc', 'ecamera.hevc')
-  cams = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
-
   frames_cache = '/tmp/model_replay_cache' if PC else '/data/model_replay_cache'
   os.makedirs(frames_cache, exist_ok=True)
 
