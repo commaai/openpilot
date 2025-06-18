@@ -1,4 +1,5 @@
 import av
+import cv2 as cv
 
 class Camera:
   def __init__(self, cam_type_state, stream_type, camera_id):
@@ -10,11 +11,9 @@ class Camera:
     self.stream_type = stream_type
     self.cur_frame_id = 0
 
-    self.container = av.open(camera_id)
-    assert self.container.streams.video, f"Can't open video stream for camera {camera_id}"
-    self.video_stream = self.container.streams.video[0]
-    self.W = self.video_stream.codec_context.width
-    self.H = self.video_stream.codec_context.height
+    self.cap = cv.VideoCapture(camera_id)
+    self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
+    self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
 
   @classmethod
   def bgr2nv12(self, bgr):
@@ -22,8 +21,10 @@ class Camera:
     return frame.reformat(format='nv12').to_ndarray()
 
   def read_frames(self):
-    for frame in self.container.decode(self.video_stream):
-      img = frame.to_rgb().to_ndarray()[:,:, ::-1] # convert to bgr24
-      yuv = Camera.bgr2nv12(img)
+    while True:
+      ret, frame = self.cap.read()
+      if not ret:
+        break
+      yuv = Camera.bgr2nv12(frame)
       yield yuv.data.tobytes()
-    self.container.close()
+    self.cap.release()
