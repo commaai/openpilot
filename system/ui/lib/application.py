@@ -60,9 +60,6 @@ class GuiApplication:
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
 
-    self._interactive_timeout = 0.0
-    self._interactive_timeout_callbacks: list[Callable] = []
-
   def request_close(self):
     self._window_close_requested = True
 
@@ -93,8 +90,6 @@ class GuiApplication:
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
-
-
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
