@@ -106,7 +106,7 @@ dev = [
   "azure-storage-blob",
   "dbus-next",
   "dictdiffer",
-  "lru-dict",
+  "cachetools",
   "matplotlib",
   "parameterized >=0.8, <0.9",
   "pyautogui",
