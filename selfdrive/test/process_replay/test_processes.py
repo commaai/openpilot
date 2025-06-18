@@ -3,6 +3,7 @@ import argparse
 import concurrent.futures
 import os
 import sys
+import time
 from collections import defaultdict
 from tqdm import tqdm
 from typing import Any
@@ -102,7 +103,9 @@ def test_process(cfg, lr, segment, ref_log_path, new_log_path, ignore_fields=Non
   ref_log_msgs = list(LogReader(ref_log_path))
 
   try:
+    st = time.monotonic()
     log_msgs = replay_process(cfg, lr, disable_progress=True)
+    print(f"XXX: {cfg.proc_name} took : {time.monotonic() - st}")
   except Exception as e:
     raise Exception("failed on segment: " + segment) from e
 
