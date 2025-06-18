@@ -4,7 +4,7 @@ import json
 from collections.abc import Iterator
 
 import numpy as np
-from lru import LRU
+from cachetools import LRUCache
 
 from openpilot.tools.lib.filereader import FileReader, resolve_name
 from openpilot.tools.lib.exceptions import DataUnreadableError
@@ -135,7 +135,7 @@ class FrameReader:
                cache_size: int = 30, pix_fmt: str = "rgb24"):
     self.decoder = FfmpegDecoder(fn, index_data, pix_fmt)
     self.iframes = self.decoder.iframes
-    self._cache: LRU[int, np.ndarray] = LRU(cache_size)
+    self._cache: LRUCache[int, np.ndarray] = LRUCache(cache_size)
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count
     self.pix_fmt = pix_fmt
 

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import pickle
 import sys
 from collections import defaultdict
 from typing import Any
@@ -22,7 +23,7 @@ from openpilot.tools.lib.github_utils import GithubUtils
 TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
 SEGMENT = 4
 START_FRAME = 0
-END_FRAME = 60
+END_FRAME = 200
 
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
@@ -194,17 +195,43 @@ def model_replay(lr, frs):
   return msgs
 
 
+def get_frames():
+  regen_cache = "--regen-cache" in sys.argv
+  cache = "--cache" in sys.argv or not PC or regen_cache
+  videos = ('fcamera.hevc', 'dcamera.hevc', 'ecamera.hevc')
+  cams = ('roadCameraState', 'driverCameraState', 'wideRoadCameraState')
+
+  frames_cache = '/tmp/model_replay_cache' if PC else '/data/model_replay_cache'
+  os.makedirs(frames_cache, exist_ok=True)
+
+  cache_name = f'{frames_cache}/{TEST_ROUTE}_{SEGMENT}_{START_FRAME}_{END_FRAME}.pkl'
+  if os.path.isfile(cache_name) and not regen_cache:
+    try:
+      print(f"Loading frames from cache {cache_name}")
+      return pickle.load(open(cache_name, "rb"))
+    except Exception as e:
+      print(f"Failed to load frames from cache {cache_name}: {e}")
+
+  frs = {
+    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), pix_fmt='nv12', cache_size=END_FRAME - START_FRAME),
+  }
+  for fr in frs.values():
+    for fidx in range(START_FRAME, END_FRAME):
+      fr.get(fidx)
+    fr.it = None
+  print(f"Dumping frame cache {cache_name}")
+  pickle.dump(frs, open(cache_name, "wb"))
+  return frs
+
 if __name__ == "__main__":
   update = "--update" in sys.argv or (os.getenv("GIT_BRANCH", "") == 'master')
   replay_dir = os.path.dirname(os.path.abspath(__file__))
 
   # load logs
   lr = list(LogReader(get_url(TEST_ROUTE, SEGMENT, "rlog.zst")))
-  frs = {
-    'roadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "fcamera.hevc"), pix_fmt='nv12'),
-    'driverCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "dcamera.hevc"), pix_fmt='nv12'),
-    'wideRoadCameraState': FrameReader(get_url(TEST_ROUTE, SEGMENT, "ecamera.hevc"), pix_fmt='nv12')
-  }
+  frs = get_frames()
 
   log_msgs = []
   # run replays
