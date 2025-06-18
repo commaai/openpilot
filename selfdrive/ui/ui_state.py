@@ -1,4 +1,5 @@
 import pyray as rl
+from collections.abc import Callable
 from enum import Enum
 from cereal import messaging, log
 from openpilot.common.params import Params, UnknownKeyName
@@ -133,5 +134,21 @@ class UIState:
       self.is_metric = False
 
 
+class Device:
+  def __init__(self, ui_state: UIState):
+    self._ui_state = ui_state
+    self._ignition = False
+    self._interactive_timeout = 0.0
+    self._interactive_timeout_callbacks: list[Callable] = []
+
+  def add_interactive_timeout_callback(self, callback: Callable):
+    self._interactive_timeout_callbacks.append(callback)
+
+  def update(self):
+    ignition_just_turned_off = ui_state.ignition and not self._ignition
+    self._ignition = ui_state.ignition
+
+
 # Global instance
 ui_state = UIState()
+device = Device(ui_state)
