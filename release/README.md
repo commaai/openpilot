@@ -1,5 +1,6 @@
 # openpilot releases
 
+```
 ## release checklist
 
 **Go to `devel-staging`**
@@ -21,13 +22,10 @@
 **Go to `release3`**
 - [ ] publish the blog post
 - [ ] `git reset --hard origin/release3-staging`
-- [ ] tag the release
-```
-git tag v0.X.X <commit-hash>
-git push origin v0.X.X
-```
+- [ ] tag the release: `git tag v0.X.X <commit-hash> && git push origin v0.X.X`
 - [ ] create GitHub release
 - [ ] final test install on `openpilot.comma.ai`
 - [ ] update factory provisioning
 - [ ] close out milestone
 - [ ] post on Discord, X, etc.
+```
