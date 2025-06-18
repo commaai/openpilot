@@ -36,20 +36,17 @@ class TestReaders:
       assert f.frame_count == 1200
       assert f.w == 1164
       assert f.h == 874
+      
+      first_30 = []
+      for fidx in range(0, 30):
+        first_30.append(f.get(fidx))
+        
 
-      frame_first_30 = f.get(0, 30)
-      assert len(frame_first_30) == 30
+      frame_0 = f.get(0,)
+      frame_15 = f.get(15)
 
-      print(frame_first_30[15])
-
-      print("frame_0")
-      frame_0 = f.get(0, 1)
-      frame_15 = f.get(15, 1)
-
-      print(frame_15[0])
-
-      assert np.all(frame_first_30[0] == frame_0[0])
-      assert np.all(frame_first_30[15] == frame_15[0])
+      assert np.all(first_30[0] == frame_0[0])
+      assert np.all(first_30[15] == frame_15[0])
 
     with tempfile.NamedTemporaryFile(suffix=".hevc") as fp:
       r = requests.get("https://github.com/commaai/comma2k19/blob/master/Example_1/b0c9d2329ad1606b%7C2018-08-02--08-34-47/40/video.hevc?raw=true", timeout=10)

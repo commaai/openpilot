@@ -169,4 +169,4 @@ class FrameReader:
     while self.fidx < fidx:
       self.fidx, frame = next(self.it)
       self._cache[self.fidx] = frame
-    return [self._cache[fidx]]  # TODO: return just frame
+    return self._cache[fidx]
