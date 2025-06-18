@@ -52,6 +52,7 @@ class UIState:
     self.started_frame: int = 0
     self._engaged_prev: bool = False
     self._started_prev: bool = False
+    self._ignition_prev: bool = False
 
     # Core state variables
     self.is_metric: bool = self.params.get_bool("IsMetric")
@@ -60,6 +61,9 @@ class UIState:
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.light_sensor: float = -1.0
+
+    self._interactive_timeout: int = 0
+    self._interactive_timeout_callbacks: list[Callable] = []
 
     self._update_params()
 
@@ -77,6 +81,7 @@ class UIState:
     self.sm.update(0)
     self._update_state()
     self._update_status()
+    device.update()
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -89,6 +94,7 @@ class UIState:
         # Check ignition status across all pandas
         if self.panda_type != log.PandaState.PandaType.unknown:
           self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
+
     elif self.sm.frame - self.sm.recv_frame["pandaStates"] > 5 * rl.get_fps():
       self.panda_type = log.PandaState.PandaType.unknown
 
@@ -127,6 +133,39 @@ class UIState:
 
       self._started_prev = self.started
 
+    if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      # Reset interactive timeout when mouse is pressed
+      # self._reset_interactive_timeout()
+      device._reset_interactive_timeout()
+
+    # Handle interactive timeout
+    ignition_just_turned_off = not self.ignition and self._ignition_prev
+    self._ignition_prev = self.ignition
+
+    interactive_timeout_prev = self._interactive_timeout < 0
+    self._interactive_timeout -= 1
+    if ignition_just_turned_off:
+      self._reset_interactive_timeout()
+    elif not interactive_timeout_prev and self._interactive_timeout < 0:
+      print('interaction timeout')
+      for callback in self._interactive_timeout_callbacks:
+        callback()
+
+  def _reset_interactive_timeout(self, timeout: int = -1) -> None:
+    """
+  if (timeout == -1) {
+    timeout = (ignition_on ? 10 : 30);
+  }
+  interactive_timeout = timeout * UI_FREQ;
+    """
+    if timeout == -1:
+      timeout = 10 if self.ignition else 30
+    self._interactive_timeout = int(timeout * rl.get_fps())
+    print('set interactive timeout to', self._interactive_timeout)
+
+  def add_interactive_timeout_callback(self, callback: Callable):
+    self._interactive_timeout_callbacks.append(callback)
+
   def _update_params(self) -> None:
     try:
       self.is_metric = self.params.get_bool("IsMetric")
@@ -135,20 +174,36 @@ class UIState:
 
 
 class Device:
-  def __init__(self, ui_state: UIState):
-    self._ui_state = ui_state
+  def __init__(self):
     self._ignition = False
     self._interactive_timeout = 0.0
     self._interactive_timeout_callbacks: list[Callable] = []
+
+  def _reset_interactive_timeout(self, timeout: int = -1) -> None:
+    if timeout == -1:
+      timeout = 1 if ui_state.ignition else 2
+    self._interactive_timeout = int(timeout * rl.get_fps())
+    print('DEVICE: set interactive timeout to', self._interactive_timeout)
 
   def add_interactive_timeout_callback(self, callback: Callable):
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
-    ignition_just_turned_off = ui_state.ignition and not self._ignition
+    # Handle interactive timeout
+    ignition_just_turned_off = not ui_state.ignition and self._ignition
     self._ignition = ui_state.ignition
+
+    interactive_timeout_prev = self._interactive_timeout < 0
+    self._interactive_timeout -= 1
+    if ignition_just_turned_off:
+      self._reset_interactive_timeout()
+    elif not interactive_timeout_prev and self._interactive_timeout < 0:
+      print('DEVICE interaction timeout')
+      for callback in self._interactive_timeout_callbacks:
+        callback()
+
 
 
 # Global instance
 ui_state = UIState()
-device = Device(ui_state)
+device = Device()

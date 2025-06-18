@@ -4,7 +4,7 @@ import cereal.messaging as messaging
 from openpilot.selfdrive.ui.layouts.sidebar import Sidebar, SIDEBAR_WIDTH
 from openpilot.selfdrive.ui.layouts.home import HomeLayout
 from openpilot.selfdrive.ui.layouts.settings.settings import SettingsLayout, PanelType
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.ui_state import device, ui_state
 from openpilot.selfdrive.ui.onroad.augmented_road_view import AugmentedRoadView
 from openpilot.system.ui.lib.widget import Widget
 
@@ -44,6 +44,7 @@ class MainLayout(Widget):
     self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
+    device.add_interactive_timeout_callback(self._close_settings)
 
   def _update_layout_rects(self):
     self._sidebar_rect = rl.Rectangle(self._rect.x, self._rect.y, SIDEBAR_WIDTH, self._rect.height)
@@ -69,6 +70,12 @@ class MainLayout(Widget):
     self._layouts[MainState.SETTINGS].set_current_panel(panel_type)
     self._current_mode = MainState.SETTINGS
     self._sidebar.set_visible(False)
+
+  def _close_settings(self):
+    if ui_state.started:
+      self._current_mode = MainState.ONROAD
+    else:
+      self._current_mode = MainState.HOME
 
   def _on_settings_clicked(self):
     self.open_settings(PanelType.DEVICE)
