@@ -2,10 +2,9 @@ import os
 import subprocess
 import json
 from collections.abc import Iterator
+from collections import OrderedDict
 
 import numpy as np
-from lru import LRU
-
 from openpilot.tools.lib.filereader import FileReader, resolve_name
 from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
@@ -14,6 +13,24 @@ from openpilot.tools.lib.vidindex import hevc_index
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
+
+
+class LRUCache:
+    def __init__(self, capacity: int):
+      self._cache: OrderedDict = OrderedDict()
+      self.capacity = capacity
+
+    def __getitem__(self, key):
+      self._cache.move_to_end(key)
+      return self._cache[key]
+
+    def __setitem__(self, key, value):
+      self._cache[key] = value
+      if len(self._cache) > self.capacity:
+          self._cache.popitem(last=False)
+
+    def __contains__(self, key):
+      return key in self._cache
 
 
 def assert_hvec(fn: str) -> None:
@@ -135,7 +152,7 @@ class FrameReader:
                cache_size: int = 30, pix_fmt: str = "rgb24"):
     self.decoder = FfmpegDecoder(fn, index_data, pix_fmt)
     self.iframes = self.decoder.iframes
-    self._cache: LRU[int, np.ndarray] = LRU(cache_size)
+    self._cache: LRUCache = LRUCache(cache_size)
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count
     self.pix_fmt = pix_fmt
 
