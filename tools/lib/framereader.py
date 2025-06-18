@@ -17,7 +17,7 @@ HEVC_SLICE_I = 2
 
 class LRUCache:
     def __init__(self, capacity: int):
-      self._cache = OrderedDict()
+      self._cache: OrderedDict = OrderedDict()
       self.capacity = capacity
 
     def __getitem__(self, key):
