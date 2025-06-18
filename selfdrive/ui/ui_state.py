@@ -52,7 +52,6 @@ class UIState:
     self.started_frame: int = 0
     self._engaged_prev: bool = False
     self._started_prev: bool = False
-    self._ignition_prev: bool = False
 
     # Core state variables
     self.is_metric: bool = self.params.get_bool("IsMetric")
@@ -61,9 +60,6 @@ class UIState:
     self.panda_type: log.PandaState.PandaType = log.PandaState.PandaType.unknown
     self.personality: log.LongitudinalPersonality = log.LongitudinalPersonality.standard
     self.light_sensor: float = -1.0
-
-    self._interactive_timeout: int = 0
-    self._interactive_timeout_callbacks: list[Callable] = []
 
     self._update_params()
 
@@ -133,23 +129,9 @@ class UIState:
 
       self._started_prev = self.started
 
+    # Reset interactive timeout when mouse is pressed
     if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      # Reset interactive timeout when mouse is pressed
-      # self._reset_interactive_timeout()
       device._reset_interactive_timeout()
-
-    # Handle interactive timeout
-    ignition_just_turned_off = not self.ignition and self._ignition_prev
-    self._ignition_prev = self.ignition
-
-    interactive_timeout_prev = self._interactive_timeout < 0
-    self._interactive_timeout -= 1
-    if ignition_just_turned_off:
-      self._reset_interactive_timeout()
-    elif not interactive_timeout_prev and self._interactive_timeout < 0:
-      print('interaction timeout')
-      for callback in self._interactive_timeout_callbacks:
-        callback()
 
   def _reset_interactive_timeout(self, timeout: int = -1) -> None:
     """
