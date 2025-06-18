@@ -91,7 +91,6 @@ class UIState:
         # Check ignition status across all pandas
         if self.panda_type != log.PandaState.PandaType.unknown:
           self.ignition = any(state.ignitionLine or state.ignitionCan for state in panda_states)
-
     elif self.sm.frame - self.sm.recv_frame["pandaStates"] > 5 * rl.get_fps():
       self.panda_type = log.PandaState.PandaType.unknown
 
@@ -149,7 +148,6 @@ class Device:
     if timeout == -1:
       timeout = 1 if ui_state.ignition else 2
     self._interaction_time = time.monotonic() + timeout
-    print('DEVICE: set interactive timeout to', self._interaction_time)
 
   def add_interactive_timeout_callback(self, callback: Callable):
     self._interactive_timeout_callbacks.append(callback)
