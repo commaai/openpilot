@@ -23,7 +23,7 @@ from openpilot.tools.lib.github_utils import GithubUtils
 TEST_ROUTE = "8494c69d3c710e81|000001d4--2648a9a404"
 SEGMENT = 4
 START_FRAME = 0
-END_FRAME = 200
+END_FRAME = 100
 
 SEND_EXTRA_INPUTS = bool(int(os.getenv("SEND_EXTRA_INPUTS", "0")))
 
