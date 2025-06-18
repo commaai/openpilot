@@ -202,15 +202,6 @@ wheels = [
 ]
 
 [[package]]
-name = "cachetools"
-version = "6.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/8a/89/817ad5d0411f136c484d535952aef74af9b25e0d99e90cdffbe121e6d628/cachetools-6.1.0.tar.gz", hash = "sha256:b4c4f404392848db3ce7aac34950d17be4d864da4b8b66911008e430bc544587", size = 30714 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/00/f0/2ef431fe4141f5e334759d73e81120492b23b2824336883a91ac04ba710b/cachetools-6.1.0-py3-none-any.whl", hash = "sha256:1c7bb3cf9193deaf3508b7c5f2a79986c13ea38965c5adcff1f84519cf39163e", size = 11189 },
-]
-
-[[package]]
 name = "casadi"
 version = "3.7.0"
 source = { registry = "https://pypi.org/simple" }
@@ -527,7 +518,7 @@ version = "0.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "python-xlib", marker = "sys_platform == 'linux'" },
-    { name = "typing-extensions", marker = "sys_platform != 'darwin'" },
+    { name = "typing-extensions", marker = "(platform_machine != 'aarch64' and sys_platform != 'darwin') or (platform_system != 'Linux' and sys_platform != 'darwin') or (platform_machine == 'aarch64' and platform_system == 'Linux' and sys_platform == 'linux')" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/2f/3a/46ca34abf0725a754bc44ef474ad34aedcc3ea23b052d97b18b76715a6a9/EWMHlib-0.2-py3-none-any.whl", hash = "sha256:f5b07d8cfd4c7734462ee744c32d490f2f3233fa7ab354240069344208d2f6f5", size = 46657 },
@@ -674,10 +665,10 @@ name = "gymnasium"
 version = "1.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cloudpickle", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "farama-notifications", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "cloudpickle", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "farama-notifications", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/90/69/70cd29e9fc4953d013b15981ee71d4c9ef4d8b2183e6ef2fe89756746dce/gymnasium-1.1.1.tar.gz", hash = "sha256:8bd9ea9bdef32c950a444ff36afc785e1d81051ec32d30435058953c20d2456d", size = 829326 }
 wheels = [
@@ -954,22 +945,22 @@ name = "metadrive-simulator"
 version = "0.4.2.4"
 source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" }
 dependencies = [
-    { name = "filelock", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "gymnasium", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "lxml", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "matplotlib", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "opencv-python-headless", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "panda3d-gltf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "pillow", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "progressbar", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "psutil", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "pygments", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "requests", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "shapely", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "tqdm", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "yapf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "filelock", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "gymnasium", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "lxml", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "matplotlib", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "opencv-python-headless", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "panda3d-gltf", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "pillow", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "progressbar", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "psutil", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "pygments", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "requests", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "shapely", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "tqdm", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "yapf", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 wheels = [
     { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:fbf0ea9be67e65cd45d38ff930e3d49f705dd76c9ddbd1e1482e3f87b61efcef" },
@@ -1231,7 +1222,7 @@ name = "opencv-python-headless"
 version = "4.11.0.86"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/36/2f/5b2b3ba52c864848885ba988f24b7f105052f68da9ab0e693cc7c25b0b30/opencv-python-headless-4.11.0.86.tar.gz", hash = "sha256:996eb282ca4b43ec6a3972414de0e2331f5d9cda2b41091a49739c19fb843798", size = 95177929 }
 wheels = [
@@ -1290,7 +1281,6 @@ dev = [
     { name = "av" },
     { name = "azure-identity" },
     { name = "azure-storage-blob" },
-    { name = "cachetools" },
     { name = "dbus-next" },
     { name = "dictdiffer" },
     { name = "matplotlib" },
@@ -1341,7 +1331,6 @@ requires-dist = [
     { name = "av", marker = "extra == 'dev'" },
     { name = "azure-identity", marker = "extra == 'dev'" },
     { name = "azure-storage-blob", marker = "extra == 'dev'" },
-    { name = "cachetools", marker = "extra == 'dev'" },
     { name = "casadi", specifier = ">=3.6.6" },
     { name = "cffi" },
     { name = "codespell", marker = "extra == 'testing'" },
@@ -1444,8 +1433,8 @@ name = "panda3d-gltf"
 version = "0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "panda3d-simplepbr", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "panda3d-simplepbr", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/07/7f/9f18fc3fa843a080acb891af6bcc12262e7bdf1d194a530f7042bebfc81f/panda3d-gltf-0.13.tar.gz", hash = "sha256:d06d373bdd91cf530909b669f43080e599463bbf6d3ef00c3558bad6c6b19675", size = 25573 }
 wheels = [
@@ -1457,8 +1446,8 @@ name = "panda3d-simplepbr"
 version = "0.13.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/be/c4d1ded04c22b357277cf6e6a44c1ab4abb285a700bd1991460460e05b99/panda3d_simplepbr-0.13.1.tar.gz", hash = "sha256:c83766d7c8f47499f365a07fe1dff078fc8b3054c2689bdc8dceabddfe7f1a35", size = 6216055 }
 wheels = [
@@ -2407,7 +2396,7 @@ name = "pyobjc-framework-cocoa"
 version = "11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core" },
+    { name = "pyobjc-core", marker = "sys_platform == 'darwin' or (platform_machine == 'aarch64' and sys_platform == 'linux') or platform_system == 'Darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/4b/c5/7a866d24bc026f79239b74d05e2cf3088b03263da66d53d1b4cf5207f5ae/pyobjc_framework_cocoa-11.1.tar.gz", hash = "sha256:87df76b9b73e7ca699a828ff112564b59251bb9bbe72e610e670a4dc9940d038", size = 5565335 }
 wheels = [
@@ -3690,8 +3679,8 @@ name = "pyobjc-framework-quartz"
 version = "11.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "pyobjc-core" },
-    { name = "pyobjc-framework-cocoa" },
+    { name = "pyobjc-core", marker = "sys_platform == 'darwin' or (platform_machine == 'aarch64' and sys_platform == 'linux') or platform_system == 'Darwin'" },
+    { name = "pyobjc-framework-cocoa", marker = "sys_platform == 'darwin' or (platform_machine == 'aarch64' and sys_platform == 'linux') or platform_system == 'Darwin'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/c7/ac/6308fec6c9ffeda9942fef72724f4094c6df4933560f512e63eac37ebd30/pyobjc_framework_quartz-11.1.tar.gz", hash = "sha256:a57f35ccfc22ad48c87c5932818e583777ff7276605fef6afad0ac0741169f75", size = 3953275 }
 wheels = [
@@ -4223,9 +4212,9 @@ name = "pyopencl"
 version = "2025.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "pytools", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "pytools", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/28/88/0ac460d3e2def08b2ad6345db6a13613815f616bbbd60c6f4bdf774f4c41/pyopencl-2025.1.tar.gz", hash = "sha256:0116736d7f7920f87b8db4b66a03f27b1d930d2e37ddd14518407cc22dd24779", size = 422510 }
 wheels = [
@@ -4439,7 +4428,7 @@ name = "python-xlib"
 version = "0.33"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "six", marker = "sys_platform != 'darwin'" },
+    { name = "six", marker = "(platform_machine != 'aarch64' and sys_platform != 'darwin') or (platform_system != 'Linux' and sys_platform != 'darwin') or (platform_machine == 'aarch64' and platform_system == 'Linux' and sys_platform == 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/86/f5/8c0653e5bb54e0cbdfe27bf32d41f27bc4e12faa8742778c17f2a71be2c0/python-xlib-0.33.tar.gz", hash = "sha256:55af7906a2c75ce6cb280a584776080602444f75815a7aff4d287bb2d7018b32", size = 269068 }
 wheels = [
@@ -4457,9 +4446,9 @@ name = "pytools"
 version = "2024.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "siphash24", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
-    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "siphash24", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741 }
 wheels = [
@@ -4801,7 +4790,7 @@ name = "shapely"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ca/3c/2da625233f4e605155926566c0e7ea8dda361877f48e8b1655e53456f252/shapely-2.1.1.tar.gz", hash = "sha256:500621967f2ffe9642454808009044c21e5b35db89ce69f8a2042c2ffd0e2772", size = 315422 }
 wheels = [
@@ -5059,7 +5048,7 @@ name = "yapf"
 version = "0.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or (platform_system != 'Linux' and sys_platform != 'linux')" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/97/b6f296d1e9cc1ec25c7604178b48532fa5901f721bcf1b8d8148b13e5588/yapf-0.43.0.tar.gz", hash = "sha256:00d3aa24bfedff9420b2e0d5d9f5ab6d9d4268e72afbf59bb3fa542781d5218e", size = 254907 }
 wheels = [
