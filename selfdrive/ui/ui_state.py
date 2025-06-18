@@ -1,4 +1,5 @@
 import pyray as rl
+import time
 from collections.abc import Callable
 from enum import Enum
 from cereal import messaging, log
@@ -139,15 +140,16 @@ class UIState:
 class Device:
   def __init__(self):
     self._ignition = False
-    self._interactive_timeout = 0.0
+    self._interaction_time: float = 0.0
     self._interactive_timeout_callbacks: list[Callable] = []
-    self._reset_interactive_timeout()
+    self._prev_timed_out = False
+    self.reset_interactive_timeout()
 
-  def _reset_interactive_timeout(self, timeout: int = -1) -> None:
+  def reset_interactive_timeout(self, timeout: int = -1) -> None:
     if timeout == -1:
       timeout = 1 if ui_state.ignition else 2
-    self._interactive_timeout = int(timeout * rl.get_fps())
-    print('DEVICE: set interactive timeout to', self._interactive_timeout)
+    self._interaction_time = time.monotonic() + timeout
+    print('DEVICE: set interactive timeout to', self._interaction_time)
 
   def add_interactive_timeout_callback(self, callback: Callable):
     self._interactive_timeout_callbacks.append(callback)
@@ -157,16 +159,13 @@ class Device:
     ignition_just_turned_off = not ui_state.ignition and self._ignition
     self._ignition = ui_state.ignition
 
-    interactive_timeout_prev = self._interactive_timeout < 0
-    self._interactive_timeout -= 1
-    if ignition_just_turned_off:
-      self._reset_interactive_timeout()
-    elif ((not interactive_timeout_prev and self._interactive_timeout < 0) or
-          rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)):
-      print('DEVICE interaction timeout')
+    interaction_timeout = time.monotonic() > self._interaction_time
+    if ignition_just_turned_off or rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      self.reset_interactive_timeout()
+    elif interaction_timeout and not self._prev_timed_out:
       for callback in self._interactive_timeout_callbacks:
         callback()
-
+    self._prev_timed_out = interaction_timeout
 
 
 # Global instance

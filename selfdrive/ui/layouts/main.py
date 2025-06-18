@@ -76,6 +76,7 @@ class MainLayout(Widget):
       self._current_mode = MainState.ONROAD
     else:
       self._current_mode = MainState.HOME
+      self._sidebar.set_visible(True)
 
   def _on_settings_clicked(self):
     self.open_settings(PanelType.DEVICE)
