@@ -129,10 +129,6 @@ class UIState:
 
       self._started_prev = self.started
 
-    # Reset interactive timeout when mouse is pressed
-    if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      device._reset_interactive_timeout()
-
   def _update_params(self) -> None:
     try:
       self.is_metric = self.params.get_bool("IsMetric")
@@ -145,6 +141,7 @@ class Device:
     self._ignition = False
     self._interactive_timeout = 0.0
     self._interactive_timeout_callbacks: list[Callable] = []
+    self._reset_interactive_timeout()
 
   def _reset_interactive_timeout(self, timeout: int = -1) -> None:
     if timeout == -1:
@@ -164,7 +161,8 @@ class Device:
     self._interactive_timeout -= 1
     if ignition_just_turned_off:
       self._reset_interactive_timeout()
-    elif not interactive_timeout_prev and self._interactive_timeout < 0:
+    elif ((not interactive_timeout_prev and self._interactive_timeout < 0) or
+          rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)):
       print('DEVICE interaction timeout')
       for callback in self._interactive_timeout_callbacks:
         callback()
