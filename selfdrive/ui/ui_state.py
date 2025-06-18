@@ -133,21 +133,6 @@ class UIState:
     if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
       device._reset_interactive_timeout()
 
-  def _reset_interactive_timeout(self, timeout: int = -1) -> None:
-    """
-  if (timeout == -1) {
-    timeout = (ignition_on ? 10 : 30);
-  }
-  interactive_timeout = timeout * UI_FREQ;
-    """
-    if timeout == -1:
-      timeout = 10 if self.ignition else 30
-    self._interactive_timeout = int(timeout * rl.get_fps())
-    print('set interactive timeout to', self._interactive_timeout)
-
-  def add_interactive_timeout_callback(self, callback: Callable):
-    self._interactive_timeout_callbacks.append(callback)
-
   def _update_params(self) -> None:
     try:
       self.is_metric = self.params.get_bool("IsMetric")
