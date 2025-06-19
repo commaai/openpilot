@@ -96,7 +96,7 @@ class Mic:
         self.melspec_model = pickle.load(f)
       with open(model_path / "wakeword_models/embedding_model_tinygrad.pkl", "rb") as f:
         self.embedding_model = pickle.load(f)
-      with open(model_path / "wakeword_models/hey_comma_tinygrad_v15.pkl", "rb") as f:
+      with open(model_path / "wakeword_models/hey_comma_tinygrad_v17.pkl", "rb") as f:
         self.wakeword_model = pickle.load(f)
       cloudlog.warning("Wake word models loaded.")
     except Exception as e:
@@ -151,9 +151,9 @@ class Mic:
       if score > 0.1:
         self.consecutive_detections += 1
         cloudlog.warning(f"Wake word segment detected! Score: {float(score):.3f}, Consecutive: {self.consecutive_detections}")
-        if self.consecutive_detections >= 2 and (current_time - self.last_ww_detection_time) > self.debounce_period:
+        if (self.consecutive_detections >= 2 or score > 0.5) and (current_time - self.last_ww_detection_time) > self.debounce_period:
           self.last_ww_detection_time = current_time
-          cloudlog.warning(f"send heyComma message")
+          cloudlog.warning("send heyComma message")
 
           # Calculate detection offset for saving buffer
           detection_offset = len(self.ww_raw_data_buffer) - WW_BUFFER_SIZE // 2
