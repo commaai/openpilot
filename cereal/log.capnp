@@ -2479,6 +2479,9 @@ struct Microphone {
   filteredSoundPressureWeightedDb @2 :Float32;
 }
 
+struct HeyComma {
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2557,6 +2560,7 @@ struct Event {
 
     # microphone data
     microphone @103 :Microphone;
+    heyComma @147 :HeyComma;
 
     # systems stuff
     androidLog @20 :AndroidLogEntry;
