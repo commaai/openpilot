@@ -52,7 +52,7 @@ class Controls:
     self.VM = VehicleModel(self.CP)
     self.LaC: LatControl
     if self.CP.steerControlType == car.CarParams.SteerControlType.angle and self.CP.lateralTuning.which() == 'torque':
-      self.LaC = LatControlAngleTorque(self.CP, self.CP_SP, self.CI)
+      self.LaC = LatControlAngleTorque(self.CP, self.CI)
     elif self.CP.steerControlType == car.CarParams.SteerControlType.angle:
       self.LaC = LatControlAngle(self.CP, self.CI)
     elif self.CP.lateralTuning.which() == 'pid':
