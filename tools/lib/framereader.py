@@ -15,22 +15,19 @@ HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
 
 
-class LRUCache:
+class LRUCache(OrderedDict):
     def __init__(self, capacity: int):
-      self._cache: OrderedDict = OrderedDict()
       self.capacity = capacity
+      super().__init__()
 
     def __getitem__(self, key):
-      self._cache.move_to_end(key)
-      return self._cache[key]
+      self.move_to_end(key)
+      return super().__getitem__(key)
 
     def __setitem__(self, key, value):
-      self._cache[key] = value
-      if len(self._cache) > self.capacity:
-          self._cache.popitem(last=False)
-
-    def __contains__(self, key):
-      return key in self._cache
+      super().__setitem__(key, value)
+      if len(self) > self.capacity:
+          self.popitem(last=False)
 
 
 def assert_hvec(fn: str) -> None:
@@ -159,7 +156,7 @@ class FrameReader:
     self.it: Iterator[tuple[int, np.ndarray]] | None = None
     self.fidx = -1
 
-  def get(self, fidx:int) -> np.ndarray:
+  def get(self, fidx:int):
     if fidx in self._cache:  # If frame is cached, return it
       return self._cache[fidx]
     read_start = self.decoder.get_gop_start(fidx)
