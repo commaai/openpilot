@@ -159,9 +159,9 @@ class FrameReader:
     self.it: Iterator[tuple[int, np.ndarray]] | None = None
     self.fidx = -1
 
-  def get(self, fidx:int) -> list[np.ndarray]:
+  def get(self, fidx:int):
     if fidx in self._cache:  # If frame is cached, return it
-      return [self._cache[fidx]]
+      return self._cache[fidx]
     read_start = self.decoder.get_gop_start(fidx)
     if not self.it or fidx < self.fidx or read_start != self.decoder.get_gop_start(self.fidx):  # If the frame is in a different GOP, reset the iterator
       self.it = self.decoder.get_iterator(read_start)
@@ -169,4 +169,4 @@ class FrameReader:
     while self.fidx < fidx:
       self.fidx, frame = next(self.it)
       self._cache[self.fidx] = frame
-    return [self._cache[fidx]]  # TODO: return just frame
+    return self._cache[fidx]
