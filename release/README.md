@@ -1,6 +1,6 @@
 # openpilot releases
 
-```
+
 ## release checklist
 
 **Go to `devel-staging`**
@@ -28,4 +28,4 @@
 - [ ] update factory provisioning
 - [ ] close out milestone
 - [ ] post on Discord, X, etc.
-```
+
