@@ -96,7 +96,7 @@ class Mic:
         self.melspec_model = pickle.load(f)
       with open(model_path / "wakeword_models/embedding_model_tinygrad.pkl", "rb") as f:
         self.embedding_model = pickle.load(f)
-      with open(model_path / "wakeword_models/hey_comma_tinygrad.pkl", "rb") as f:
+      with open(model_path / "wakeword_models/hey_comma_tinygrad_v15.pkl", "rb") as f:
         self.wakeword_model = pickle.load(f)
       cloudlog.warning("Wake word models loaded.")
     except Exception as e:
@@ -106,7 +106,7 @@ class Mic:
     # Buffers for the wake word model
     self.ww_raw_data_buffer = np.array([], dtype=np.int16)
     self.ww_melspectrogram_buffer = np.ones((76, 32), dtype=np.float32)
-    self.ww_feature_buffer = np.zeros((28, 96), dtype=np.float32)
+    self.ww_feature_buffer = np.zeros((16, 96), dtype=np.float32)
     self.last_ww_detection_time = 0
     self.debounce_period = 3.0  # seconds
     self.consecutive_detections = 0
@@ -143,7 +143,7 @@ class Mic:
       window_batch = self.ww_melspectrogram_buffer[None, :, :, None].astype(np.float32)
       window_tensor = Tensor(window_batch)
       new_embedding = self.embedding_model(input_1=window_tensor).numpy().squeeze()
-      self.ww_feature_buffer = np.vstack([self.ww_feature_buffer, new_embedding])[-28:]
+      self.ww_feature_buffer = np.vstack([self.ww_feature_buffer, new_embedding])[-16:]
 
       score = self._predict_wakeword(self.ww_feature_buffer)
       current_time = time.time()
