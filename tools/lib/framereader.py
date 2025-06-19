@@ -159,7 +159,7 @@ class FrameReader:
     self.it: Iterator[tuple[int, np.ndarray]] | None = None
     self.fidx = -1
 
-  def get(self, fidx:int) -> np.ndarray:
+  def get(self, fidx:int):
     if fidx in self._cache:  # If frame is cached, return it
       return self._cache[fidx]
     read_start = self.decoder.get_gop_start(fidx)
