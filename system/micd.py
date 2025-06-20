@@ -22,8 +22,8 @@ from openpilot.common.swaglog import cloudlog
 RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
-SAMPLE_RATE = 44100
-SAMPLE_BUFFER = 4096  # approx 100ms
+SAMPLE_RATE = 16000
+SAMPLE_BUFFER = 1280  # approx 80ms
 
 WW_SAMPLE_RATE = 16000
 WW_CHUNK_SIZE = 1280
