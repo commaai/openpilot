@@ -107,6 +107,7 @@ dev = [
   "dbus-next",
   "dictdiffer",
   "matplotlib",
+  "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pygame",
