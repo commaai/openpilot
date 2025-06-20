@@ -1,0 +1,16 @@
+name: test-bounty-run
+
+on:
+  push:
+    branches:
+      - ci-bounty-optimization
+
+jobs:
+  run-setup:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v2
+
+      - name: Run setup with retry
+        uses: ./.github/workflows/setup-with-retry
