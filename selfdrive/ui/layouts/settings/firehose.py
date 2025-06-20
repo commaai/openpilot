@@ -6,6 +6,7 @@ import threading
 from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
@@ -51,6 +52,8 @@ class FirehoseLayout(Widget):
 
   def _get_segment_count(self) -> int:
     stats = self.params.get(self.PARAM_KEY, encoding='utf8')
+    if not stats:
+      return 0
     try:
       return int(json.loads(stats).get("firehose", 0))
     except Exception:
@@ -158,7 +161,9 @@ class FirehoseLayout(Widget):
 
   def _fetch_firehose_stats(self):
     try:
-      dongle_id = self.params.get("DongleId", encoding='utf8') or ""
+      dongle_id = self.params.get("DongleId", encoding='utf8')
+      if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
+        return
       identity_token = Api(dongle_id).get_token()
       response = api_get(f"v1/devices/{dongle_id}/firehose_stats", access_token=identity_token)
       if response.status_code == 200:
