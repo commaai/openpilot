@@ -13,10 +13,19 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Pre-pull Docker image
+      shell: bash
+      run: |
+        docker pull ghcr.io/commaai/openpilot-base:latest &
+        echo "DOCKER_PULL_PID=$!" >> $GITHUB_ENV
+
     # Parallel setup operations for maximum speed
     - name: Setup environment
       shell: bash
       run: |
+        START_TIME=$(date +%s)
+        echo "START_TIME=$START_TIME" >> $GITHUB_ENV
+
         # Set environment variables for faster operations
         export DEBIAN_FRONTEND=noninteractive
         export PYTHONUNBUFFERED=1
@@ -24,10 +33,6 @@ runs:
         # Create cache directories with proper permissions
         mkdir -p .ci_cache/scons_cache .ci_cache/comma_download_cache .ci_cache/openpilot_cache
         sudo chmod -R 777 .ci_cache/
-
-        # Pre-pull base image in background for faster startup
-        docker pull ghcr.io/commaai/openpilot-base:latest &
-        DOCKER_PULL_PID=$!
 
     # Parallel LFS pull and cache setup
     - name: Parallel operations
@@ -44,7 +49,7 @@ runs:
         wait $LFS_PID
 
         # Wait for Docker pull to complete
-        wait $DOCKER_PULL_PID
+        wait ${DOCKER_PULL_PID}
 
     # Optimized cache restore
     - id: scons-cache
@@ -66,4 +71,5 @@ runs:
         # Verify scons cache is accessible
         ls -la .ci_cache/scons_cache/
 
-        echo "Setup completed successfully in $(($(date +%s) - $(date +%s -d "$(ps -o lstart= -p $$)"))) seconds"
+        END_TIME=$(date +%s)
+        echo "Setup completed successfully in $((END_TIME - START_TIME)) seconds"
