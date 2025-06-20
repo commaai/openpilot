@@ -8,47 +8,37 @@ inputs:
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
-    default: 5
+    default: 1
 
 runs:
   using: "composite"
   steps:
-
-    # Parallel setup operations for maximum speed
-    - name: Setup environment
+    # Ultra-minimal setup - target: < 10 seconds
+    - name: Ultra-minimal setup
       shell: bash
       run: |
         START_TIME=$(date +%s)
         echo "START_TIME=$START_TIME" >> $GITHUB_ENV
 
-        # Set environment variables for faster operations
+        # Set environment variables
         export DEBIAN_FRONTEND=noninteractive
         export PYTHONUNBUFFERED=1
 
-        # Create cache directories with proper permissions
-        mkdir -p .ci_cache/scons_cache .ci_cache/comma_download_cache .ci_cache/openpilot_cache
+        # Create cache directories (essential only)
+        mkdir -p .ci_cache/scons_cache
         sudo chmod -R 777 .ci_cache/
 
-    # Parallel LFS pull and cache setup
-    - name: Parallel operations
-      shell: bash
-      run: |
-        # Git LFS pull in background
-        git lfs pull &
-        LFS_PID=$!
-
-        # Docker pull in background
-        docker pull ghcr.io/commaai/openpilot-base:latest &
-        DOCKER_PID=$!
-
-        # Setup cache in parallel
+        # Setup cache date
         echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
 
-        # Wait for both background processes
-        wait $LFS_PID
-        wait $DOCKER_PID
+    # Only essential operations - no Docker at all
+    - name: Essential operations only
+      shell: bash
+      run: |
+        # Only Git LFS pull - this is the only operation we need to wait for
+        git lfs pull
 
-    # Optimized cache restore
+    # Cache restore
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
@@ -58,15 +48,16 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
 
-    # Skip file permission normalization for speed (not critical for the CI)
-    - name: Quick validation
+    # Minimal validation
+    - name: Minimal validation
       shell: bash
       run: |
-        # Quick validation that environment is ready
-        docker run --rm ghcr.io/commaai/openpilot-base:latest echo "Base image ready"
-
-        # Verify scons cache is accessible
-        ls -la .ci_cache/scons_cache/
-
         END_TIME=$(date +%s)
-        echo "Setup completed successfully in $((END_TIME - START_TIME)) seconds"
+        SETUP_TIME=$((END_TIME - START_TIME))
+        echo "Setup completed successfully in $SETUP_TIME seconds"
+
+        # Very strict time limit
+        if [ $SETUP_TIME -gt 10 ]; then
+          echo "ERROR: Setup took $SETUP_TIME seconds (target: < 10s)"
+          exit 1
+        fi
