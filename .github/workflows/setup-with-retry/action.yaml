@@ -58,7 +58,7 @@ runs:
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
 
-    # Skip file permission normalization for speed (not critical for CI)
+    # Skip file permission normalization for speed (not critical for the CI)
     - name: Quick validation
       shell: bash
       run: |
