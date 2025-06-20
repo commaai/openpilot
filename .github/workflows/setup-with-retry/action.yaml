@@ -13,11 +13,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Pre-pull Docker image
-      shell: bash
-      run: |
-        docker pull ghcr.io/commaai/openpilot-base:latest &
-        echo "DOCKER_PULL_PID=$!" >> $GITHUB_ENV
 
     # Parallel setup operations for maximum speed
     - name: Setup environment
@@ -42,14 +37,16 @@ runs:
         git lfs pull &
         LFS_PID=$!
 
+        # Docker pull in background
+        docker pull ghcr.io/commaai/openpilot-base:latest &
+        DOCKER_PID=$!
+
         # Setup cache in parallel
         echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
 
-        # Wait for LFS to complete
+        # Wait for both background processes
         wait $LFS_PID
-
-        # Wait for Docker pull to complete
-        wait ${DOCKER_PULL_PID}
+        wait $DOCKER_PID
 
     # Optimized cache restore
     - id: scons-cache
