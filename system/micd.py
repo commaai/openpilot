@@ -28,6 +28,7 @@ SAMPLE_BUFFER = 4096  # approx 100ms
 WW_SAMPLE_RATE = 16000
 WW_CHUNK_SIZE = 1280
 WW_BUFFER_SIZE = WW_CHUNK_SIZE + 480  # overlap with prev chunk
+VAD_FRAME_SIZE = 640
 
 
 @cache
@@ -58,6 +59,8 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 
 
 def resample_audio(audio_chunk: np.ndarray, from_rate: int, to_rate: int) -> np.ndarray:
+  if from_rate == to_rate:
+    return audio_chunk
   # Resamples an audio chunk using linear interpolation.
   num_samples_in = len(audio_chunk)
   num_samples_out = int(num_samples_in * to_rate / from_rate)
@@ -92,16 +95,25 @@ class Mic:
     cloudlog.warning("Loading wake word models...")
     try:  # TODO currently only built for QCOM, should build according to arch in scons
       model_path = Path(__file__).parent
-      with open(model_path / "wakeword_models/melspectrogram_tinygrad.pkl", "rb") as f:
+      with open(model_path / "wakeword_models/melspectrogram_tinygrad_compile3.pkl", "rb") as f:
         self.melspec_model = pickle.load(f)
-      with open(model_path / "wakeword_models/embedding_model_tinygrad.pkl", "rb") as f:
+      with open(model_path / "wakeword_models/embedding_model_tinygrad_compile3.pkl", "rb") as f:
         self.embedding_model = pickle.load(f)
-      with open(model_path / "wakeword_models/hey_comma_tinygrad_v17.pkl", "rb") as f:
+      with open(model_path / "wakeword_models/hey_comma_tinygrad_v17_compile3.pkl", "rb") as f:
         self.wakeword_model = pickle.load(f)
       cloudlog.warning("Wake word models loaded.")
     except Exception as e:
       cloudlog.error(f"Failed to load wake word models: {e}")
       self.wakeword_model = None  # Continue without wakeword detection if models fail to load
+
+    cloudlog.warning("Loading VAD model...")
+    try:  # TODO currently only built for QCOM, should build according to arch in scons
+      model_path = Path(__file__).parent
+      with open(model_path / "wakeword_models/silero_vad_v5_simplified_tinygrad.pkl", "rb") as f:
+        self.vad_model = pickle.load(f)
+    except Exception as e:
+      cloudlog.error(f"Failed to load wake word models: {e}")
+      self.vad_model = None  # Continue without VAD if models fail to load
 
     # Buffers for the wake word model
     self.ww_raw_data_buffer = np.array([], dtype=np.int16)
@@ -111,15 +123,18 @@ class Mic:
     self.debounce_period = 3.0  # seconds
     self.consecutive_detections = 0
 
+    self.vad_state = np.zeros((2, 1, 128), dtype=np.float32)
+    self.vad_raw_data_buffer = np.array([], dtype=np.float32)
+
   def _get_melspectrogram(self, audio_data: np.ndarray) -> np.ndarray:
     audio_float32 = audio_data.astype(np.float32)
-    audio_tensor = Tensor(audio_float32[None, :], dtype=dtypes.float32)
+    audio_tensor = Tensor(audio_float32[None, :], dtype=dtypes.float32, device='NPY')
     spec = np.squeeze(self.melspec_model(input=audio_tensor).numpy())
     return (spec / 10) + 2
 
   def _predict_wakeword(self, features: np.ndarray) -> float:
     model_input = features[None, :].astype(np.float32)
-    feature_tensor = Tensor(model_input)
+    feature_tensor = Tensor(model_input, device='NPY')
     prediction = self.wakeword_model(input=feature_tensor).numpy()
     return prediction[0][0]
 
@@ -136,12 +151,11 @@ class Mic:
     self.ww_raw_data_buffer = np.concatenate([self.ww_raw_data_buffer, audio_chunk_16khz])
     while len(self.ww_raw_data_buffer) >= WW_BUFFER_SIZE:
       processing_chunk = self.ww_raw_data_buffer[:WW_BUFFER_SIZE]
-
       new_melspec = self._get_melspectrogram(processing_chunk)
       self.ww_melspectrogram_buffer = np.vstack([self.ww_melspectrogram_buffer, new_melspec])[-76:]
 
       window_batch = self.ww_melspectrogram_buffer[None, :, :, None].astype(np.float32)
-      window_tensor = Tensor(window_batch)
+      window_tensor = Tensor(window_batch, device='NPY')
       new_embedding = self.embedding_model(input_1=window_tensor).numpy().squeeze()
       self.ww_feature_buffer = np.vstack([self.ww_feature_buffer, new_embedding])[-16:]
 
@@ -166,6 +180,22 @@ class Mic:
         self.consecutive_detections = 0
 
       self.ww_raw_data_buffer = self.ww_raw_data_buffer[WW_CHUNK_SIZE:]
+
+  def _process_vad(self, audio_chunk_16khz: np.ndarray):
+    self.vad_raw_data_buffer = np.concatenate([self.vad_raw_data_buffer, audio_chunk_16khz])
+    # frame_predictions = []
+    while len(self.vad_raw_data_buffer) >= VAD_FRAME_SIZE:
+      processing_chunk = self.vad_raw_data_buffer[:VAD_FRAME_SIZE]
+      input_tensor = Tensor(processing_chunk, dtype=dtypes.float32, device='NPY').unsqueeze(0)
+      state_tensor = Tensor(self.vad_state, dtype=dtypes.float32, device='NPY')
+      sr_tensor = Tensor(WW_SAMPLE_RATE, dtype=dtypes.long, device='NPY')
+      out, new_state = self.vad_model(input=input_tensor, state=state_tensor, sr=sr_tensor)
+      self.vad_state = new_state.numpy()
+      # frame_predictions.append(out.numpy()[0][0])
+      self.vad_raw_data_buffer = self.vad_raw_data_buffer[VAD_FRAME_SIZE:]
+      score = float(out.numpy()[0][0])
+      if score > 0.1:
+        cloudlog.warning(f"VAD {score:.4f}")
 
   def _save_audio_buffer(self, detection_offset_samples=0):
     try:
@@ -240,10 +270,14 @@ class Mic:
 
         self.measurements = self.measurements[FFT_SAMPLES:]
 
-    if self.wakeword_model:
-      resampled_chunk = resample_audio(indata[:, 0], SAMPLE_RATE, WW_SAMPLE_RATE)
+
+    resampled_chunk = resample_audio(indata[:, 0], SAMPLE_RATE, WW_SAMPLE_RATE)
+    if self.wakeword_model: # excl copy time ~3.88ms GPU time per 80ms chunk (0.38ms melspec, 3.45ms embedding, 0.05ms wakeword)
       audio_data_int16 = (resampled_chunk * 32767).astype(np.int16)
       self._process_wakeword(audio_data_int16)
+    if self.vad_model: # excl copy time ~0.92ms GPU time per 80ms chunk
+      self._process_vad(resampled_chunk)
+
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):
