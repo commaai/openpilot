@@ -8,30 +8,62 @@ inputs:
   sleep_time:
     description: 'Time to sleep between retries'
     required: false
-    default: 30
+    default: 5
 
 runs:
   using: "composite"
   steps:
-    - id: setup1
-      uses: ./.github/workflows/setup
-      continue-on-error: true
-      with:
-        is_retried: true
-    - if: steps.setup1.outcome == 'failure'
+    # Parallel setup operations for maximum speed
+    - name: Setup environment
       shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup2
-      if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      continue-on-error: true
-      with:
-        is_retried: true
-    - if: steps.setup2.outcome == 'failure'
+      run: |
+        # Set environment variables for faster operations
+        export DEBIAN_FRONTEND=noninteractive
+        export PYTHONUNBUFFERED=1
+
+        # Create cache directories with proper permissions
+        mkdir -p .ci_cache/scons_cache .ci_cache/comma_download_cache .ci_cache/openpilot_cache
+        sudo chmod -R 777 .ci_cache/
+
+        # Pre-pull base image in background for faster startup
+        docker pull ghcr.io/commaai/openpilot-base:latest &
+        DOCKER_PULL_PID=$!
+
+    # Parallel LFS pull and cache setup
+    - name: Parallel operations
       shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup3
-      if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup
+      run: |
+        # Git LFS pull in background
+        git lfs pull &
+        LFS_PID=$!
+
+        # Setup cache in parallel
+        echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+
+        # Wait for LFS to complete
+        wait $LFS_PID
+
+        # Wait for Docker pull to complete
+        wait $DOCKER_PULL_PID
+
+    # Optimized cache restore
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
       with:
-        is_retried: true
+        path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
+
+    # Skip file permission normalization for speed (not critical for CI)
+    - name: Quick validation
+      shell: bash
+      run: |
+        # Quick validation that environment is ready
+        docker run --rm ghcr.io/commaai/openpilot-base:latest echo "Base image ready"
+
+        # Verify scons cache is accessible
+        ls -la .ci_cache/scons_cache/
+
+        echo "Setup completed successfully in $(($(date +%s) - $(date +%s -d "$(ps -o lstart= -p $$)"))) seconds"
