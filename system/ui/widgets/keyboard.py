@@ -4,7 +4,7 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
-from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.label import Label
 from openpilot.system.ui.lib.widget import Widget
 
 KEY_FONT_SIZE = 96
@@ -59,8 +59,8 @@ class Keyboard(Widget):
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
-    self._title = ""
-    self._sub_title = ""
+    # self._title = ""
+    # self._sub_title = ""
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
@@ -72,6 +72,9 @@ class Keyboard(Widget):
     self._backspace_pressed: bool = False
     self._backspace_press_time: float = 0.0
     self._backspace_last_repeat: float = 0.0
+
+    self._title_label = Label("", font_size=90, font_weight=FontWeight.BOLD)
+    self._sub_title_label = Label("", font_size=55, font_weight=FontWeight.NORMAL)
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -94,13 +97,15 @@ class Keyboard(Widget):
     self._backspace_pressed = False
 
   def set_title(self, title: str, sub_title: str = ""):
-    self._title = title
-    self._sub_title = sub_title
+    # self._title = title
+    # self._sub_title = sub_title
+    self._title_label.set_text(title)
+    self._sub_title_label.set_text(sub_title)
 
   def _render(self, rect: rl.Rectangle):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
-    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
-    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
+    self._title_label.render(rl.Rectangle(rect.x, rect.y, rect.width, 95))
+    self._sub_title_label.render(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60))
     if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
       self.clear()
       return 0
