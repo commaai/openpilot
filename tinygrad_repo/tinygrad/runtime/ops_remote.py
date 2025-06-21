@@ -246,7 +246,9 @@ class RemoteAllocator(Allocator['RemoteDevice']):
     self.dev.q(BufferAlloc(buffer_num:=next(self.dev.buffer_num), size, options))
     return buffer_num
   # TODO: options should not be here in any Allocator
-  def _free(self, opaque:int, options): self.dev.q(BufferFree(opaque))
+  def _free(self, opaque:int, options):
+    try: self.dev.q(BufferFree(opaque))
+    except (TypeError, AttributeError): pass
   def _copyin(self, dest:int, src:memoryview): self.dev.q(CopyIn(dest, self.dev.conn.req.h(src)))
   def _copyout(self, dest:memoryview, src:int):
     resp = self.dev.q(CopyOut(src), wait=True)

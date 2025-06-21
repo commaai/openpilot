@@ -64,7 +64,7 @@ if __name__ == "__main__":
       ys.append(Y[sel])
     return Tensor(xs), Tensor(ys)
 
-  Tensor.no_grad, Tensor.training = False, True
+  Tensor.training = True
   losses = []
   test_losses = []
   test_loss = float('inf')

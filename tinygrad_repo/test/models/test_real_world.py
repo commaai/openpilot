@@ -61,7 +61,7 @@ class TestRealWorld(unittest.TestCase):
     derandomize_model(model)
     @TinyJit
     def test(t, t2): return model(t, Tensor([801]), t2).realize()
-    helper_test("test_sd", lambda: (Tensor.randn(1, 4, 64, 64),Tensor.randn(1, 77, params["ctx_dim"])), test, 18.0, 515)
+    helper_test("test_sd", lambda: (Tensor.randn(1, 4, 32, 32),Tensor.randn(1, 77, params["ctx_dim"])), test, 18.0, 515)
 
   def test_unet_resblock(self):
     model = [ResBlock(16, 24, 16) for _ in range(4)]

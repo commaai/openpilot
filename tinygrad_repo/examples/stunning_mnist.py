@@ -45,8 +45,7 @@ if __name__ == "__main__":
   print("*** scheduled training")
 
   # evaluate the model
-  with Tensor.test():
-    test_acc = ((model(X_test).argmax(axis=1) == Y_test).mean()*100)
+  test_acc = ((model(X_test).argmax(axis=1) == Y_test).mean()*100)
   print("*** scheduled eval")
 
   # NOTE: there's no kernels run in the scheduling phase

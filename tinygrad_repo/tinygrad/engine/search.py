@@ -25,21 +25,21 @@ actions += [Opt(op=OptOps.TC, axis=axis, arg=(-1, getenv("TC_OPT", 2), getenv("T
 actions += [Opt(op=OptOps.SWAP, axis=axis_0, arg=axis_1) for axis_0 in range(5) for axis_1 in range(axis_0+1, 5)]
 if getenv("NOLOCALS"): actions += [Opt(op=OptOps.NOLOCALS)]
 
-def _get_test_global_size(global_size, max_global_size, var_vals):
-  test_global_size, factor = [sym_infer(sz, var_vals) for sz in global_size], 1
+def get_test_global_size(global_size, max_global_size, var_vals):
+  test_global_size = [sym_infer(sz, var_vals) for sz in global_size]
+  input_size = prod(test_global_size)
   while prod(test_global_size) > max_global_size:
     for j in range(len(global_size)-1,-1,-1):
       if test_global_size[j] > 16:
         test_global_size[j] //= 2
-        factor *= 2
         break
-  return test_global_size, factor
+  return test_global_size, input_size / prod(test_global_size)
 
 def _time_program(p:ProgramSpec, lib:bytes, var_vals:dict[Variable, int], rawbufs:list[Buffer], early_stop:Optional[float]=None,
                   allow_test_size:int=True, max_global_size:Optional[int]=65536, clear_l2=False, cnt=3, name="test") -> list[float]:
   factor = 1
   if allow_test_size and p.global_size is not None and max_global_size is not None:
-    global_size, factor = _get_test_global_size(p.global_size, max_global_size, var_vals)
+    global_size, factor = get_test_global_size(p.global_size, max_global_size, var_vals)
     p = replace(p, global_size=global_size)
   try: car = CompiledRunner(p, precompiled=lib)
   except AssertionError: return [math.inf] * cnt
@@ -81,8 +81,10 @@ def _try_compile_linearized_w_idx(x:tuple[int,Kernel], compiler:Compiler) -> tup
     if hasattr(signal, "alarm"): signal.alarm(0)
   return x[0], ret
 
-# workers should ignore ctrl c
-def _init_worker(): signal.signal(signal.SIGINT, signal.SIG_IGN)
+# workers should not open devices and should ignore ctrl c
+def _init_worker():
+  Context(ALLOW_DEVICE_USAGE=0).__enter__()
+  signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 def _ensure_buffer_alloc(bufs:list[Buffer]) -> list[Buffer]: return [buf.ensure_allocated() if buf is not None else buf for buf in bufs]
 
@@ -92,7 +94,7 @@ def _ensure_buffer_alloc(bufs:list[Buffer]) -> list[Buffer]: return [buf.ensure_
 def bufs_from_lin(lin:Kernel, allocate:bool=True) -> list[Buffer]:
   bufsts: defaultdict[int, list[UOp]] = defaultdict(list)
   for x in lin.bufs:
-    if x.src[0].op is Ops.DEFINE_GLOBAL: bufsts[x.src[0].arg].append(x)
+    if x.src[0].base.op is Ops.DEFINE_GLOBAL: bufsts[x.src[0].base.arg].append(x)
   # TODO: Nones are staying in here if buffers are optimized out!
   # TODO: add a test for this
   rawbufs: list[Optional[Buffer]] = [None]*(max(bufsts)+1)

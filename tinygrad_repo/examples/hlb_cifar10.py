@@ -118,7 +118,7 @@ class SpeedyResNet:
 # hyper-parameters were exactly the same as the original repo
 bias_scaler = 58
 hyp = {
-  'seed' : 209,
+  'seed' : 200,
   'opt': {
     'bias_lr':            1.76 * bias_scaler/512,
     'non_bias_lr':        1.76 / 512,
@@ -267,13 +267,10 @@ def train_cifar():
 
     @TinyJit
     def update(self, net, decay):
-      # TODO with Tensor.no_grad()
-      Tensor.no_grad = True
       for net_ema_param, (param_name, net_param) in zip(get_state_dict(self.net_ema).values(), get_state_dict(net).items()):
         # batchnorm currently is not being tracked
         if not ("num_batches_tracked" in param_name) and not ("running" in param_name):
           net_ema_param.assign(net_ema_param.detach()*decay + net_param.detach()*(1.-decay)).realize()
-      Tensor.no_grad = False
 
   set_seed(getenv('SEED', hyp['seed']))
 

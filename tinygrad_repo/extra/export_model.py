@@ -48,13 +48,13 @@ def jit_model(model, *args) -> Tuple[TinyJit,Dict[int,str]]:
 
   # hack to put the inputs back
   for (j,i),idx in run.input_replace.items():
-    realized_input = args[idx].lazydata.base.realized
+    realized_input = args[idx].uop.base.realized
     run.jit_cache[j].bufs[i] = realized_input
     special_names[id(realized_input)] = f'input{idx}'
 
   # TODO: fetch this from the jit in self.input_replace and self.ret (hint: use get_parameters on self.ret)
   for i, output in enumerate(the_output):
-    special_names[id(output.lazydata.base.realized)] = f'output{i}'
+    special_names[id(output.uop.base.realized)] = f'output{i}'
   return run, special_names
 
 def export_model_clang(functions:Dict[str,str], statements:Dict[str,Tuple[str,int,int]], bufs:Dict[str,Tuple[str,int,int]],
@@ -242,7 +242,7 @@ def export_model(model, target:str, *inputs, model_name: Optional[str] = "model"
   with Context(JIT=2): run,special_names = jit_model(model, *inputs)
   functions, statements, bufs, bufs_to_save = compile_net(run, special_names)
   state = get_state_dict(model)
-  weight_names = {id(x.lazydata.base.realized): name for name, x in state.items()}
+  weight_names = {id(x.uop.base.realized): name for name, x in state.items()}
   input_names = [name for _,name in special_names.items() if "input" in name]
   output_names = [name for _,name in special_names.items() if "output" in name]
 

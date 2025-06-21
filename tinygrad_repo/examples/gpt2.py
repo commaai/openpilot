@@ -85,7 +85,10 @@ class Transformer:
       seqlen = tokens.shape[1]
       tok_emb = self.wte(tokens)
 
-    pos_emb = self.wpe(self.allpos.shrink((None, (start_pos, start_pos+seqlen))))
+    # not symbolic when consuming the prompt
+    selected_pos = (0, seqlen) if start_pos.val == 0 else (start_pos, start_pos+1)
+    pos_emb = self.wpe(self.allpos.shrink((None, selected_pos)))
+
     h = tok_emb + pos_emb
 
     if HALF: h = h.half()
@@ -190,7 +193,7 @@ class GPT2:
                   (f", {GlobalCounters.global_mem*1e-9/(GlobalCounters.time_sum_s-st):.2f} GB/s" if DEBUG>=2 else "")) if DEBUG else None, enabled=timing):
         with WallTimeEvent(BenchEvent.STEP):
           if batch_size == 1 and len(toks[0][start_pos:]) == 1:
-            tokens = Variable("tokens", 0, VOCAB_SIZE).bind(toks[0][start_pos])
+            tokens = Variable("tokens", 0, VOCAB_SIZE-1).bind(toks[0][start_pos])
           else:
             tokens = Tensor([x[start_pos:] for x in toks])
           tok = self.model(tokens, Variable("start_pos", 1 if start_pos else 0, MAX_CONTEXT-1).bind(start_pos), temperature).tolist()
@@ -201,7 +204,6 @@ class GPT2:
 # **** main code ****
 
 if __name__ == "__main__":
-  Tensor.no_grad = True
   print(f"using {Device.DEFAULT} backend")
   default_prompt = "What is the answer to life, the universe, and everything?"
 

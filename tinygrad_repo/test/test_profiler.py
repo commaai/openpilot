@@ -36,12 +36,12 @@ class TestProfiler(unittest.TestCase):
     si = self.b.schedule()[-1]
 
     TestProfiler.runner = get_runner(TestProfiler.d0.device, si.ast)
-    TestProfiler.b.lazydata.buffer.allocate()
+    TestProfiler.b.uop.buffer.allocate()
 
   def test_profile_kernel_run(self):
     runner_name = TestProfiler.runner._prg.name
     with helper_collect_profile(TestProfiler.d0) as profile:
-      TestProfiler.runner([TestProfiler.b.lazydata.buffer, TestProfiler.a.lazydata.buffer], var_vals={})
+      TestProfiler.runner([TestProfiler.b.uop.buffer, TestProfiler.a.uop.buffer], var_vals={})
 
     profile, _ = helper_profile_filter_device(profile, TestProfiler.d0.device)
     kernel_runs = [x for x in profile if isinstance(x, ProfileRangeEvent)]
@@ -66,7 +66,7 @@ class TestProfiler(unittest.TestCase):
 
     with helper_collect_profile(TestProfiler.d0) as profile:
       buf1.copyin(memoryview(bytearray(struct.pack("ff", 0, 1))))
-      TestProfiler.runner([buf1, TestProfiler.a.lazydata.buffer], var_vals={})
+      TestProfiler.runner([buf1, TestProfiler.a.uop.buffer], var_vals={})
       buf1.copyout(memoryview(bytearray(buf1.nbytes)))
 
     profile, _ = helper_profile_filter_device(profile, TestProfiler.d0.device)

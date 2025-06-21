@@ -1,13 +1,20 @@
+import platform
 import pyray as rl
 import numpy as np
 from typing import Any
 
 MAX_GRADIENT_COLORS = 15
 
-FRAGMENT_SHADER = """
+VERSION = """
 #version 300 es
 precision mediump float;
+"""
+if platform.system() == "Darwin":
+  VERSION = """
+    #version 330 core
+  """
 
+FRAGMENT_SHADER = VERSION + """
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
@@ -111,8 +118,7 @@ void main() {
 """
 
 # Default vertex shader
-VERTEX_SHADER = """
-#version 300 es
+VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 out vec2 fragTexCoord;
@@ -123,7 +129,6 @@ void main() {
   gl_Position = mvp * vec4(vertexPosition, 1.0);
 }
 """
-
 
 UNIFORM_INT = rl.ShaderUniformDataType.SHADER_UNIFORM_INT
 UNIFORM_FLOAT = rl.ShaderUniformDataType.SHADER_UNIFORM_FLOAT
@@ -243,6 +248,7 @@ def _configure_shader_color(state, color, gradient, clipped_rect, original_rect)
     color = color or rl.WHITE
     state.fill_color_ptr[0:4] = [color.r / 255.0, color.g / 255.0, color.b / 255.0, color.a / 255.0]
     rl.set_shader_value(state.shader, state.locations['fillColor'], state.fill_color_ptr, UNIFORM_VEC4)
+
 
 def draw_polygon(origin_rect: rl.Rectangle, points: np.ndarray, color=None, gradient=None):
   """

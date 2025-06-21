@@ -18,7 +18,7 @@ if __name__ == "__main__":
   # select a world
   all_feats, all_acts, all_rews = [], [], []
   while 1:
-    Tensor.no_grad, Tensor.training = True, False
+    Tensor.training = False
     lin = ast_str_to_lin(random.choice(ast_strs))
     rawbufs = bufs_from_lin(lin)
     tm = last_tm = base_tm = time_linearizer(lin, rawbufs)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     BS = 32
     if len(all_feats) >= BS:
-      Tensor.no_grad, Tensor.training = False, True
+      Tensor.training = True
       x = Tensor(all_feats[:BS])
       mask = np.zeros((BS, len(actions)+1), dtype=np.float32)
       mask[range(BS), all_acts[:BS]] = all_rews[:BS]

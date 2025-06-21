@@ -91,6 +91,17 @@ class TestAMPageTable(unittest.TestCase):
           assert pte['paddr'] == 0
           assert pte['valid'] == 0
 
+  def test_map_notaligned(self):
+    mm0 = self.d[0].mm
+
+    for (va1,sz1),(va2,sz2) in [((0x10000, (0x1000)), (0x11000, (2 << 20)))]:
+      exteranl_va1 = va1 + AMMemoryManager.va_allocator.base
+      exteranl_va2 = va2 + AMMemoryManager.va_allocator.base
+      mm0.map_range(vaddr=exteranl_va1, size=sz1, paddrs=[(va1, sz1)])
+      mm0.map_range(vaddr=exteranl_va2, size=sz2, paddrs=[(va2, sz2)])
+      mm0.unmap_range(va2, sz2)
+      mm0.unmap_range(va1, sz1)
+
   def test_double_map(self):
     mm0 = self.d[0].mm
 

@@ -2,10 +2,11 @@ import time, struct
 from typing import Any, Callable, Optional
 import numpy as np
 from tinygrad import Tensor, dtypes, Device
-from tinygrad.uop.ops import UOp, Ops, sint
+from tinygrad.uop.ops import UOp, Ops, sint, graph_rewrite
 from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.tensor import _to_np_dtype
 from tinygrad.engine.realize import Runner
+from tinygrad.engine.grouper import view_left
 from tinygrad.dtype import ConstType, DType
 from tinygrad.nn.state import get_parameters
 from tinygrad.helpers import T, unwrap, CI
@@ -44,7 +45,7 @@ def ast_const(dtype:DType, val:ConstType, shape:tuple[sint, ...]=(), st:Optional
     st_src = (st.to_uop() if st is not None else ShapeTracker.from_shape(()).reshape((1,)*len(shape)).expand(shape).to_uop(),)
   st = unwrap(st_src[0].st)
   if all(v.mask is None for v in st.views): return UOp.const(dtype, val).replace(src=(st.to_uop(),))
-  return UOp.const(dtype, val).valid(st)
+  return graph_rewrite(UOp.const(dtype, val).view(st).valid(), view_left)
 
 def timeit(fxn:Callable[..., T], *args, **kwargs) -> tuple[T, float]:
   st = time.perf_counter_ns()

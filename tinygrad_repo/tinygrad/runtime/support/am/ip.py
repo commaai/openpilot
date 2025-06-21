@@ -38,9 +38,11 @@ class AM_GMC(AM_IP):
     # GFX11/GFX12 has 44-bit address space
     self.address_space_mask = (1 << 44) - 1
 
-    self.memscratch_paddr = self.adev.mm.palloc(0x1000, zero=not self.adev.partial_boot, boot=True)
-    self.dummy_page_paddr = self.adev.mm.palloc(0x1000, zero=not self.adev.partial_boot, boot=True)
+    self.memscratch_paddr = self.adev.mm.palloc(0x1000, zero=False, boot=True)
+    self.dummy_page_paddr = self.adev.mm.palloc(0x1000, zero=False, boot=True)
     self.hub_initted = {"MM": False, "GC": False}
+
+    self.pf_status_reg = lambda ip: f"reg{ip}VM_L2_PROTECTION_FAULT_STATUS{'_LO32' if self.adev.ip_ver[am.GC_HWIP] >= (12,0,0) else ''}"
 
   def init_hw(self): self.init_hub("MM")
 
@@ -127,15 +129,14 @@ class AM_GMC(AM_IP):
 
   def on_interrupt(self):
     for ip in ["MM", "GC"]:
-      st = self.adev.reg(f"reg{ip}VM_L2_PROTECTION_FAULT_STATUS{'_LO32' if self.adev.ip_ver[am.GC_HWIP] >= (12,0,0) else ''}").read()
-      va = (self.adev.reg(f'reg{ip}VM_L2_PROTECTION_FAULT_ADDR_LO32').read()
-            | (self.adev.reg(f'reg{ip}VM_L2_PROTECTION_FAULT_ADDR_HI32').read()) << 32) << 12
-      if st: raise RuntimeError(f"{ip}VM_L2_PROTECTION_FAULT_STATUS: {st:#x} {va:#x}")
+      va = (self.adev.reg(f'reg{ip}VM_L2_PROTECTION_FAULT_ADDR_HI32').read()<<32) | self.adev.reg(f'reg{ip}VM_L2_PROTECTION_FAULT_ADDR_LO32').read()
+      if self.adev.reg(self.pf_status_reg(ip)).read():
+        raise RuntimeError(f"{ip}VM_L2_PROTECTION_FAULT_STATUS: {self.adev.reg(self.pf_status_reg(ip)).read_bitfields()} {va<<12:#x}")
 
 class AM_SMU(AM_IP):
   def init_sw(self):
     self.smu_mod = self.adev._ip_module("smu", am.MP1_HWIP, prever_prefix='v')
-    self.driver_table_paddr = self.adev.mm.palloc(0x4000, zero=not self.adev.partial_boot, boot=True)
+    self.driver_table_paddr = self.adev.mm.palloc(0x4000, zero=False, boot=True)
 
   def init_hw(self):
     self._send_msg(self.smu_mod.PPSMC_MSG_SetDriverDramAddrHigh, hi32(self.adev.paddr2mc(self.driver_table_paddr)))
@@ -377,7 +378,7 @@ class AM_PSP(AM_IP):
       self.msg1_addr, self.msg1_view = self.adev.paddr2mc(self.msg1_paddr), self.adev.vram.view(self.msg1_paddr, am.PSP_1_MEG, 'B')
 
     self.cmd_paddr = self.adev.mm.palloc(am.PSP_CMD_BUFFER_SIZE, zero=False, boot=True)
-    self.fence_paddr = self.adev.mm.palloc(am.PSP_FENCE_BUFFER_SIZE, zero=not self.adev.partial_boot, boot=True)
+    self.fence_paddr = self.adev.mm.palloc(am.PSP_FENCE_BUFFER_SIZE, zero=True, boot=True)
 
     self.ring_size = 0x10000
     self.ring_paddr = self.adev.mm.palloc(self.ring_size, zero=False, boot=True)

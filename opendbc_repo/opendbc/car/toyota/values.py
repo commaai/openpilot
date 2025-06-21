@@ -317,7 +317,7 @@ class CAR(Platforms):
   )
   LEXUS_ES_TSS2 = ToyotaTSS2PlatformConfig(
     [
-      ToyotaCarDocs("Lexus ES 2019-24"),
+      ToyotaCarDocs("Lexus ES 2019-25"),
       ToyotaCarDocs("Lexus ES Hybrid 2019-25", video="https://youtu.be/BZ29osRVJeg?t=12"),
     ],
     LEXUS_ES.specs,
@@ -329,7 +329,7 @@ class CAR(Platforms):
     flags=ToyotaFlags.UNSUPPORTED_DSU,
   )
   LEXUS_IS_TSS2 = ToyotaTSS2PlatformConfig(
-    [ToyotaCarDocs("Lexus IS 2022-23")],
+    [ToyotaCarDocs("Lexus IS 2022-24")],
     LEXUS_IS.specs,
   )
   LEXUS_NX = PlatformConfig(

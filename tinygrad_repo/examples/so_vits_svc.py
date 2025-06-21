@@ -587,7 +587,7 @@ if __name__=="__main__":
   vits_model = args.model
   encoder_location, vits_location = ENCODER_MODELS[ENCODER_MODEL], VITS_MODELS[vits_model]
 
-  Tensor.no_grad, Tensor.training = True, False
+  Tensor.training = False
   # Get Synthesizer and ContentVec
   net_g, hps = Synthesizer.load_from_pretrained(vits_location[0], vits_location[2], vits_location[1], vits_location[3])
   Encoder = get_encoder(hps.model.ssl_dim)

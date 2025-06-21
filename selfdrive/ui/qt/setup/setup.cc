@@ -136,6 +136,59 @@ QWidget * Setup::low_voltage() {
   return widget;
 }
 
+QWidget * Setup::custom_software_warning() {
+  QWidget *widget = new QWidget();
+  QVBoxLayout *main_layout = new QVBoxLayout(widget);
+  main_layout->setContentsMargins(55, 0, 55, 55);
+  main_layout->setSpacing(0);
+
+  QVBoxLayout *inner_layout = new QVBoxLayout();
+  inner_layout->setContentsMargins(110, 110, 300, 0);
+  main_layout->addLayout(inner_layout);
+
+  QLabel *title = new QLabel(tr("WARNING: Custom Software"));
+  title->setStyleSheet("font-size: 90px; font-weight: 500; color: #FF594F;");
+  inner_layout->addWidget(title, 0, Qt::AlignTop | Qt::AlignLeft);
+
+  inner_layout->addSpacing(25);
+
+  QLabel *body = new QLabel(tr("Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.\n\nIf you'd like to proceed, use https://flash.comma.ai to restore your device to a factory state later."));
+  body->setWordWrap(true);
+  body->setAlignment(Qt::AlignTop | Qt::AlignLeft);
+  body->setStyleSheet("font-size: 65px; font-weight: 300;");
+  inner_layout->addWidget(body);
+
+  inner_layout->addStretch();
+
+  QHBoxLayout *blayout = new QHBoxLayout();
+  blayout->setSpacing(50);
+  main_layout->addLayout(blayout, 0);
+
+  QPushButton *back = new QPushButton(tr("Back"));
+  back->setObjectName("navBtn");
+  blayout->addWidget(back);
+  QObject::connect(back, &QPushButton::clicked, this, &Setup::prevPage);
+
+  QPushButton *cont = new QPushButton(tr("Continue"));
+  cont->setObjectName("navBtn");
+  blayout->addWidget(cont);
+  QObject::connect(cont, &QPushButton::clicked, this, [=]() {
+    QTimer::singleShot(0, [=]() {
+      setCurrentWidget(downloading_widget);
+    });
+    QString url = InputDialog::getText(tr("Enter URL"), this, tr("for Custom Software"));
+    if (!url.isEmpty()) {
+      QTimer::singleShot(1000, this, [=]() {
+        download(url);
+      });
+    } else {
+      setCurrentWidget(software_selection_widget);
+    }
+  });
+
+  return widget;
+}
+
 QWidget * Setup::getting_started() {
   QWidget *widget = new QWidget();
 
@@ -305,20 +358,17 @@ QWidget * Setup::software_selection() {
   blayout->addWidget(cont);
 
   QObject::connect(cont, &QPushButton::clicked, [=]() {
-    auto w = currentWidget();
-    QTimer::singleShot(0, [=]() {
-      setCurrentWidget(downloading_widget);
-    });
-    QString url = OPENPILOT_URL;
     if (group->checkedButton() != openpilot) {
-      url = InputDialog::getText(tr("Enter URL"), this, tr("for Custom Software"));
-    }
-    if (!url.isEmpty()) {
-      QTimer::singleShot(1000, this, [=]() {
-        download(url);
+      QTimer::singleShot(0, [=]() {
+        setCurrentWidget(custom_software_warning_widget);
       });
     } else {
-      setCurrentWidget(w);
+      QTimer::singleShot(0, [=]() {
+        setCurrentWidget(downloading_widget);
+      });
+      QTimer::singleShot(1000, this, [=]() {
+        download(OPENPILOT_URL);
+      });
     }
   });
 
@@ -415,8 +465,10 @@ Setup::Setup(QWidget *parent) : QStackedWidget(parent) {
 
   addWidget(getting_started());
   addWidget(network_setup());
-  addWidget(software_selection());
-
+  software_selection_widget = software_selection();
+  addWidget(software_selection_widget);
+  custom_software_warning_widget = custom_software_warning();
+  addWidget(custom_software_warning_widget);
   downloading_widget = downloading();
   addWidget(downloading_widget);
 

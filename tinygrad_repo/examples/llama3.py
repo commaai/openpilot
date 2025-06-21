@@ -233,8 +233,6 @@ def prefill(model, toks, start_pos=0):
   return start_pos
 
 if __name__ == "__main__":
-  Tensor.no_grad = True
-
   parser = argparse.ArgumentParser()
   parser.add_argument("--download_model", action="store_true", help="Download a model")
   parser.add_argument("--model", type=Path, help="Model path")
@@ -286,7 +284,7 @@ if __name__ == "__main__":
 
   device = tuple(f"{Device.DEFAULT}:{i}" for i in range(args.shard)) if args.shard > 1 else Device.DEFAULT
   model = build_transformer(args.model, model_size=args.size, quantize=args.quantize, device=device)
-  param_bytes = sum(x.lazydata.size * x.dtype.itemsize for x in get_parameters(model))
+  param_bytes = sum(x.uop.size * x.dtype.itemsize for x in get_parameters(model))
 
   if not args.no_api and not args.benchmark:
     from bottle import Bottle, request, response, HTTPResponse, abort, static_file

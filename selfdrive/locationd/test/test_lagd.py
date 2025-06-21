@@ -94,6 +94,7 @@ class TestLagd:
     assert np.allclose(msg.liveDelay.lateralDelay, estimator.initial_lag)
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, estimator.initial_lag)
     assert msg.liveDelay.validBlocks == 0
+    assert msg.liveDelay.calPerc == 0
 
   def test_estimator_basics(self, subtests):
     for lag_frames in range(5):
@@ -107,6 +108,7 @@ class TestLagd:
         assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
         assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
         assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
+        assert msg.liveDelay.calPerc == 100
 
   def test_disabled_estimator(self):
     mocked_CP = car.CarParams(steerActuatorDelay=0.8)
@@ -119,6 +121,7 @@ class TestLagd:
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
     assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
     assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
+    assert msg.liveDelay.calPerc == 100
 
   def test_estimator_masking(self):
     mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.8), random.randint(1, 19)
@@ -127,6 +130,7 @@ class TestLagd:
     msg = estimator.get_msg(True)
     assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
     assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
+    assert msg.liveDelay.calPerc == 100
 
   @pytest.mark.skipif(PC, reason="only on device")
   @pytest.mark.timeout(60)

@@ -5,7 +5,7 @@ from tinygrad.helpers import Profiling, Timing, getenv, BEAM, NOOPT, DEBUG, Cont
 from tinygrad.uop.ops import Ops
 from tinygrad.codegen.kernel import Kernel
 from tinygrad.codegen.heuristic import hand_coded_optimizations
-from tinygrad.codegen import get_rewrites_for_renderer, apply_rewrites
+from tinygrad.codegen import get_rewrites_for_renderer, apply_rewrites, rewrites_for_linearizer
 from tinygrad.engine.search import beam_search, bufs_from_lin
 
 if __name__ == "__main__":
@@ -24,7 +24,8 @@ if __name__ == "__main__":
 
     if not FORWARD_ONLY:
       with Timing("***** model schedule in  "):
-        sched = out.schedule()
+        with Profiling(PROFILE >= 3):
+          sched = out.schedule()
 
       if not SCHEDULE_ONLY:
         asts = list({x.ast.key:x.ast for x in sched if x.ast.op is Ops.SINK}.values())
@@ -41,7 +42,7 @@ if __name__ == "__main__":
               kernels.append(k)
 
         with Timing("***** model prep in      "):
-          kernels = [(k, k.get_optimized_ast(), get_rewrites_for_renderer(k.opts, linearizer=LINEARIZE)) for k in kernels]
+          kernels = [(k, k.get_optimized_ast(), get_rewrites_for_renderer(k.opts, linearizer=False)) for k in kernels]
 
         with Profiling(PROFILE, fn="/tmp/rewrite.prof"):
           with Timing("***** model rewrite in   "):
@@ -49,5 +50,10 @@ if __name__ == "__main__":
             for i,(k,u,rewrites) in enumerate(kernels):
               with Timing(f"rewrite {i:2d} {k.name}{' '*(50-ansilen(k.name))}", enabled=getenv("VERBOSE", 0)):
                 rewritten_uops.append(apply_rewrites(u, rewrites))
-            uops = rewritten_uops
-        if LINEARIZE: print(sum(len(u.arg.lst) for u in uops))
+
+        if LINEARIZE:
+          with Timing("***** model linearize in "):
+            uops_line = []
+            for u in rewritten_uops:
+              uops_line.append(apply_rewrites(u, rewrites_for_linearizer))
+          print(sum(len(u.arg.lst) for u in uops_line))

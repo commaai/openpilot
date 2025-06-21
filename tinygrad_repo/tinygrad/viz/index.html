@@ -44,17 +44,38 @@
   ul.active {
     opacity: 1;
   }
+  ul > ul {
+    display: none;
+  }
+  ul.expanded > ul {
+    display: block;
+  }
   ul.disabled {
     opacity: 0.4;
     pointer-events: none;
   }
-  svg {
+  .graph svg {
     width: 100%;
     height: 100%;
   }
   svg * {
     cursor: default;
     user-select: none;
+  }
+  g.clickable * {
+    cursor: pointer;
+    user-select: auto;
+  }
+  g.tag circle {
+    r: 5;
+    fill: #FFD700;
+    stroke: #B8860B;
+    stroke-width: 0.8;
+  }
+  g.tag text {
+    text-anchor: middle;
+    font-size: 6px;
+    fill: black;
   }
   .label :is(text, p) {
     color: #08090e;
@@ -78,10 +99,10 @@
     position: relative;
     height: 100%;
   }
-  .metadata > * + *, .rewrite-container > * + *, .kernel-list > * + * {
+  .metadata > * + *, .rewrite-container > * + *, .ctx-list > * + * {
     margin-top: 12px;
   }
-  .kernel-list > ul > * + * {
+  .ctx-list > ul > * + * {
     margin-top: 4px;
   }
   .graph {
@@ -89,12 +110,12 @@
     inset: 0;
     z-index: 1;
   }
-  .kernel-list-parent {
+  .ctx-list-parent {
     width: 15%;
     padding-top: 50px;
     border-right: 1px solid #4a4b56;
   }
-  .kernel-list {
+  .ctx-list {
     width: 100%;
     height: 100%;
     overflow-y: auto;
@@ -189,7 +210,7 @@
         </svg>
       </button>
     </div>
-    <div class="container kernel-list-parent"><div class="kernel-list"></div></div>
+    <div class="container ctx-list-parent"><div class="ctx-list"></div></div>
     <div class="graph">
       <div class="progress-message">Rendering new layout...</div>
       <svg id="graph-svg" preserveAspectRatio="xMidYMid meet">

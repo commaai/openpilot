@@ -36,7 +36,7 @@ class DSPRenderer(ClangRenderer):
   device = "DSP"
   supports_float4 = True
   buffer_suffix = " restrict __attribute__((align_value(128)))"
-  kernel_prefix = "__attribute__((noinline)) "
+  kernel_typedef = "__attribute__((noinline)) void"
   pre_matcher = dsp_pm
   extra_matcher = dsp_pm_late+ClangRenderer.extra_matcher
   string_rewrite = dsp_string+ClangRenderer.string_rewrite

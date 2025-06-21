@@ -13,6 +13,7 @@ from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
+
 try:
   from openpilot.common.params import Params
 except ImportError:
@@ -38,6 +39,7 @@ NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "12345678"
 
+
 # NetworkManager device states
 class NMDeviceState(IntEnum):
   DISCONNECTED = 30
@@ -46,12 +48,14 @@ class NMDeviceState(IntEnum):
   IP_CONFIG = 70
   ACTIVATED = 100
 
+
 class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
   WPA2 = 2
   WPA3 = 3
   UNSUPPORTED = 4
+
 
 @dataclass
 class NetworkInfo:
@@ -227,7 +231,7 @@ class WifiManager:
     except Exception as e:
       self._current_connection_ssid = None
       cloudlog.error(f"Error connecting to network: {e}")
-       # Notify UI of failure
+      # Notify UI of failure
       if self.callbacks.connection_failed:
         self.callbacks.connection_failed(ssid, str(e))
 

@@ -18,7 +18,7 @@ class AMRegister(AMDReg):
 
   def write(self, _am_val:int=0, **kwargs): self.adev.wreg(self.addr, _am_val | self.encode(**kwargs))
 
-  def update(self, **kwargs): self.write(self.encode(**{**self.read_bitfields(), **kwargs}))
+  def update(self, **kwargs): self.write(self.read() & ~self.fields_mask(*kwargs.keys()), **kwargs)
 
 class AMFirmware:
   def __init__(self, adev):
@@ -139,7 +139,7 @@ class AMPageTableTraverseContext:
     while size > 0:
       pt, pte_idx, pte_covers = self.pt_stack[-1]
       if self.create_pts:
-        while pte_covers > size: pt, pte_idx, pte_covers = self.level_down()
+        while pte_covers > size or self.vaddr & (pte_covers-1) != 0: pt, pte_idx, pte_covers = self.level_down()
       else:
         while pt.lv!=am.AMDGPU_VM_PTB and not self.adev.gmc.is_pte_huge_page(pt.entries[pte_idx]): pt, pte_idx, pte_covers = self.level_down()
 
@@ -152,7 +152,7 @@ class AMPageTableTraverseContext:
       self.level_up()
 
 class AMMemoryManager:
-  va_allocator = TLSFAllocator(512 * (1 << 30), base=0x7F0000000000) # global for all devices.
+  va_allocator = TLSFAllocator(512 * (1 << 30), base=0x200000000000) # global for all devices.
 
   def __init__(self, adev:AMDev, vram_size:int):
     self.adev, self.vram_size = adev, vram_size
@@ -265,7 +265,7 @@ class AMDev:
     # all blocks that are initialized only during the initial AM boot.
     # To determine if the GPU is in the third state, AM uses regSCRATCH_REG7 as a flag.
     self.is_booting, self.smi_dev = True, False # During boot only boot memory can be allocated. This flag is to validate this.
-    self.partial_boot = (self.reg("regSCRATCH_REG7").read() == (am_version:=0xA0000004)) and (getenv("AM_RESET", 0) != 1)
+    self.partial_boot = (self.reg("regSCRATCH_REG7").read() == (am_version:=0xA0000005)) and (getenv("AM_RESET", 0) != 1)
 
     # Memory manager & firmware
     self.mm = AMMemoryManager(self, self.vram_size)
@@ -280,12 +280,12 @@ class AMDev:
     self.gfx:AM_GFX = AM_GFX(self)
     self.sdma:AM_SDMA = AM_SDMA(self)
 
-    if self.partial_boot and (self.reg("regGCVM_CONTEXT0_CNTL").read() != 0):
-      if DEBUG >= 2: print(f"am {self.devfmt}: MEC is active. Issue a full reset.")
-      self.partial_boot = False
-
     # Init sw for all IP blocks
     for ip in [self.soc, self.gmc, self.ih, self.psp, self.smu, self.gfx, self.sdma]: ip.init_sw()
+
+    if self.partial_boot and (self.reg("regGCVM_CONTEXT0_CNTL").read() != 0 or self.reg(self.gmc.pf_status_reg("GC")).read() != 0):
+      if DEBUG >= 2: print(f"am {self.devfmt}: Malformed state. Issuing a full reset.")
+      self.partial_boot = False
 
     # Init hw for IP blocks where it is needed
     if not self.partial_boot:
