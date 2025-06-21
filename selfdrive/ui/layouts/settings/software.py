@@ -1,6 +1,6 @@
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
+from openpilot.system.ui.lib.list_view import ListView, ButtonItem, TextItem
 from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
@@ -15,11 +15,11 @@ class SoftwareLayout(Widget):
 
   def _init_items(self):
     items = [
-      text_item("Current Version", ""),
-      button_item("Download", "CHECK", callback=self._on_download_update),
-      button_item("Install Update", "INSTALL", callback=self._on_install_update),
-      button_item("Target Branch", "SELECT", callback=self._on_select_branch),
-      button_item("Uninstall", "UNINSTALL", callback=self._on_uninstall),
+      TextItem("Current Version", ""),
+      ButtonItem("Download", "CHECK", callback=self._on_download_update),
+      ButtonItem("Install Update", "INSTALL", callback=self._on_install_update),
+      ButtonItem("Target Branch", "SELECT", callback=self._on_select_branch),
+      ButtonItem("Uninstall", "UNINSTALL", callback=self._on_uninstall),
     ]
     return items
 

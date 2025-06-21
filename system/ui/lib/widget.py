@@ -67,3 +67,6 @@ class Widget(abc.ABC):
   def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
     """Optionally handle mouse release events."""
     return False
+
+  def _get_height(self, max_width: int) -> float:
+    raise NotImplementedError("Subclasses must implement the get_height method")
