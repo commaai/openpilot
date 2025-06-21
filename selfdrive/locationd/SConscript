@@ -1,0 +1,21 @@
+Import('env', 'rednose')
+
+# build ekf models
+rednose_gen_dir = 'models/generated'
+rednose_gen_deps = [
+  "models/constants.py",
+]
+pose_ekf = env.RednoseCompileFilter(
+  target='pose',
+  filter_gen_script='models/pose_kf.py',
+  output_dir=rednose_gen_dir,
+  extra_gen_artifacts=[],
+  gen_script_deps=rednose_gen_deps,
+)
+car_ekf = env.RednoseCompileFilter(
+  target='car',
+  filter_gen_script='models/car_kf.py',
+  output_dir=rednose_gen_dir,
+  extra_gen_artifacts=[],
+  gen_script_deps=rednose_gen_deps,
+)
