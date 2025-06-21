@@ -1,9 +1,9 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle, TextAlignment
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.widget import Widget, DialogResult
 
 # Constants
 MARGIN = 50
@@ -61,11 +61,13 @@ class MultiOptionDialog(Widget):
     button_y = content_rect.y + content_rect.height - BUTTON_HEIGHT
     button_w = (content_rect.width - BUTTON_SPACING) / 2
 
+    result = DialogResult.NO_ACTION
     if gui_button(rl.Rectangle(content_rect.x, button_y, button_w, BUTTON_HEIGHT), "Cancel"):
-      return 0
+      result = DialogResult.CANCEL
 
     if gui_button(rl.Rectangle(content_rect.x + button_w + BUTTON_SPACING, button_y, button_w, BUTTON_HEIGHT),
                   "Select", is_enabled=self.selection != self.current, button_style=ButtonStyle.PRIMARY):
-      return 1
+      result = DialogResult.OK
 
-    return -1
+    if result != DialogResult.NO_ACTION:
+      gui_app.close_dialog(result)

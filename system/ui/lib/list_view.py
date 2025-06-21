@@ -167,16 +167,12 @@ class MultipleButtonAction(ItemAction):
       button_x = rect.x + i * (self.button_width + spacing)
       button_rect = rl.Rectangle(button_x, button_y, self.button_width, 100)
 
-      # Check button state
-      mouse_pos = rl.get_mouse_position()
-      is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect)
-      is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
       is_selected = i == self.selected_button
 
       # Button colors
       if is_selected:
         bg_color = rl.Color(51, 171, 76, 255)  # Green
-      elif is_pressed:
+      elif gui_app.mouse.is_held_down_in(button_rect):
         bg_color = rl.Color(74, 74, 74, 255)  # Dark gray
       else:
         bg_color = rl.Color(57, 57, 57, 255)  # Gray
@@ -191,7 +187,7 @@ class MultipleButtonAction(ItemAction):
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
 
       # Handle click
-      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if gui_app.mouse.consume_clicked_in(button_rect):
         clicked = i
 
     if clicked >= 0:
@@ -282,8 +278,7 @@ class ListView(Widget):
     scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
 
     # Handle mouse interaction
-    if self.scroll_panel.is_click_valid():
-      self._handle_mouse_interaction(rect, scroll_offset)
+    self._handle_mouse_interaction(rect, scroll_offset)
 
     # Set scissor mode for clipping
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
@@ -396,7 +391,7 @@ class ListView(Widget):
             break
 
     # Handle click on main item (not right item)
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._hovered_item >= 0:
+    if gui_app.mouse.is_clicked_in(rect) and self._hovered_item >= 0:
       item = self._items[self._hovered_item]
 
       # Check if click was on right item area
@@ -405,7 +400,7 @@ class ListView(Widget):
         adjusted_rect = rl.Rectangle(item.rect.x, item.rect.y + scroll_offset.y, item.rect.width, item.rect.height)
         right_rect = item.get_right_item_rect(adjusted_rect)
 
-        if rl.check_collision_point_rec(mouse_pos, right_rect):
+        if gui_app.mouse.is_clicked_in(right_rect):
           # Click was on right item, don't toggle description
           return
 

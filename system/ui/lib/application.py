@@ -8,6 +8,8 @@ from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.mouse_state import MouseState
+
 
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -59,6 +61,8 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+
+    self.mouse = MouseState()
 
   def request_close(self):
     self._window_close_requested = True
@@ -153,6 +157,10 @@ class GuiApplication:
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
+
+        # Update mouse state at the beginning of each frame
+        self.mouse.update()
+
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
@@ -163,18 +171,11 @@ class GuiApplication:
         # Handle modal overlay rendering and input processing
         if self._modal_overlay.overlay:
           if hasattr(self._modal_overlay.overlay, 'render'):
-            result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+            self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
           elif callable(self._modal_overlay.overlay):
-            result = self._modal_overlay.overlay()
+            self._modal_overlay.overlay()
           else:
             raise Exception
-
-          if result >= 0:
-            # Execute callback with the result and clear the overlay
-            if self._modal_overlay.callback is not None:
-              self._modal_overlay.callback(result)
-
-            self._modal_overlay = ModalOverlay()
         else:
           yield
 
@@ -193,6 +194,16 @@ class GuiApplication:
         self._monitor_fps()
     except KeyboardInterrupt:
       pass
+
+  def close_dialog(self, result: int = 0):
+    """Close the current modal dialog and execute its callback if available."""
+    if self._modal_overlay.overlay:
+      if self._modal_overlay.callback is not None:
+        self._modal_overlay.callback(result)
+
+      self._modal_overlay = ModalOverlay()
+    else:
+      cloudlog.debug("No modal overlay to close.")
 
   def font(self, font_weight: FontWeight = FontWeight.NORMAL):
     return self._fonts[font_weight]

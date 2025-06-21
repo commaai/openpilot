@@ -12,7 +12,7 @@ TEXT_AREA_HEIGHT_REDUCTION = 200
 BACKGROUND_COLOR = rl.Color(27, 27, 27, 255)
 
 
-def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel") -> DialogResult:
+def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel") -> None:
   dialog_x = (gui_app.width - DIALOG_WIDTH) / 2
   dialog_y = (gui_app.height - DIALOG_HEIGHT) / 2
   dialog_rect = rl.Rectangle(dialog_x, dialog_y, DIALOG_WIDTH, DIALOG_HEIGHT)
@@ -61,8 +61,9 @@ def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel")
     if gui_button(centered_yes_button, confirm_text, button_style=ButtonStyle.PRIMARY):
       result = DialogResult.CONFIRM
 
-  return result
+  if result != DialogResult.NO_ACTION:
+    gui_app.close_dialog(result)
 
 
-def alert_dialog(message: str, button_text: str = "OK") -> DialogResult:
+def alert_dialog(message: str, button_text: str = "OK") -> None:
   return confirm_dialog(message, button_text, cancel_text="")
