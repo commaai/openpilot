@@ -1,0 +1,23 @@
+name: 'Docker pre-cache for faster setup'
+
+runs:
+  using: "composite"
+  steps:
+    - name: Pre-cache Docker base image in background
+      shell: bash
+      run: |
+        echo "Pre-caching Docker base image for faster setup..."
+
+        # Pull the base image in background
+        docker pull ghcr.io/commaai/openpilot-base:latest &
+        DOCKER_PULL_PID=$!
+
+        # Wait a few seconds to give the pull a head start (non-blocking suggestion)
+        sleep 2
+
+        # Check status
+        if kill -0 "$DOCKER_PULL_PID" 2>/dev/null; then
+          echo "Docker pull started successfully in background (PID: $DOCKER_PULL_PID)"
+        else
+          echo "Docker pull process did not start properly"
+        fi

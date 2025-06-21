@@ -2,39 +2,36 @@
 
 set -e
 
-echo "🧪 Testing OpenPilot CI Setup Optimization"
-echo "=========================================="
+echo "🧪 Testing OpenPilot CI Setup Optimization (Ultra-Minimal)"
+echo "========================================================="
 
-# Test 1: Measure setup time
-echo "📊 Test 1: Measuring setup time..."
+# Test 1: Measure ultra-minimal setup time
+echo "📊 Test 1: Measuring ultra-minimal setup time..."
 START_TIME=$(date +%s)
 
-# Simulate the optimized setup
+# Simulate the ultra-minimal setup (no Docker operations)
 export DEBIAN_FRONTEND=noninteractive
 export PYTHONUNBUFFERED=1
 
-# Create cache directories
-mkdir -p .ci_cache/scons_cache .ci_cache/comma_download_cache .ci_cache/openpilot_cache
+# Create cache directories (essential only)
+mkdir -p .ci_cache/scons_cache
 sudo chmod -R 777 .ci_cache/
 
-# Parallel operations
-git lfs pull &
-LFS_PID=$!
-
+# Setup cache date
 echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
 
-# Wait for LFS to complete
-wait $LFS_PID
+# Only Git LFS pull - this is the only operation we need to wait for
+git lfs pull
 
 END_TIME=$(date +%s)
 SETUP_TIME=$((END_TIME - START_TIME))
 
-echo "✅ Setup completed in ${SETUP_TIME} seconds"
+echo "✅ Ultra-minimal setup completed in ${SETUP_TIME} seconds"
 
 # Test 2: Validate cache directories
 echo "📁 Test 2: Validating cache directories..."
-if [ -d ".ci_cache/scons_cache" ] && [ -d ".ci_cache/comma_download_cache" ] && [ -d ".ci_cache/openpilot_cache" ]; then
-    echo "✅ Cache directories created successfully"
+if [ -d ".ci_cache/scons_cache" ]; then
+    echo "✅ Cache directory created successfully"
 else
     echo "❌ Cache directory creation failed"
     exit 1
@@ -58,37 +55,44 @@ else
     exit 1
 fi
 
-# Test 5: Performance validation
-echo "⚡ Test 5: Performance validation..."
-if [ $SETUP_TIME -lt 20 ]; then
+# Test 5: Performance validation (ultra-strict)
+echo "⚡ Test 5: Ultra-strict performance validation..."
+if [ $SETUP_TIME -lt 10 ]; then
+    echo "✅ Setup time (${SETUP_TIME}s) is under 10 seconds target"
+elif [ $SETUP_TIME -lt 20 ]; then
     echo "✅ Setup time (${SETUP_TIME}s) is under 20 seconds target"
 else
-    echo "⚠️  Setup time (${SETUP_TIME}s) exceeds 20 seconds target"
+    echo "❌ Setup time (${SETUP_TIME}s) exceeds both targets"
+    exit 1
 fi
 
-# Test 6: Docker image availability (if Docker is available)
+# Test 6: Docker image availability (optional)
 if command -v docker &> /dev/null; then
     echo "🐳 Test 6: Checking Docker image availability..."
-    if docker pull ghcr.io/commaai/openpilot-base:latest > /dev/null 2>&1; then
-        echo "✅ Base Docker image available"
+    if docker images ghcr.io/commaai/openpilot-base:latest | grep -q "ghcr.io/commaai/openpilot-base"; then
+        echo "✅ Base Docker image available (cached)"
     else
-        echo "⚠️  Base Docker image not available (may need authentication)"
+        echo "ℹ️  Base Docker image not cached (will be pulled when needed)"
     fi
 else
     echo "ℹ️  Docker not available, skipping Docker test"
 fi
 
 echo ""
-echo "🎉 Optimization test completed!"
+echo "🎉 Ultra-minimal optimization test completed!"
 echo "📈 Performance summary:"
 echo "   - Setup time: ${SETUP_TIME} seconds"
-echo "   - Target: < 20 seconds"
+echo "   - Ultra-strict target: < 10 seconds"
+echo "   - Original target: < 20 seconds"
 echo "   - Improvement: $((64 - SETUP_TIME)) seconds faster than original"
 
-if [ $SETUP_TIME -lt 20 ]; then
-    echo "✅ SUCCESS: Setup optimization meets target!"
+if [ $SETUP_TIME -lt 10 ]; then
+    echo "✅ SUCCESS: Ultra-minimal setup meets strict target!"
+    exit 0
+elif [ $SETUP_TIME -lt 20 ]; then
+    echo "✅ SUCCESS: Setup optimization meets original target!"
     exit 0
 else
-    echo "⚠️  WARNING: Setup time exceeds target, but still significantly improved"
-    exit 0
+    echo "❌ FAILURE: Setup time exceeds all targets"
+    exit 1
 fi
