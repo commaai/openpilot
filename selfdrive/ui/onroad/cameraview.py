@@ -1,3 +1,4 @@
+import platform
 import numpy as np
 import pyray as rl
 
@@ -6,12 +7,21 @@ from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
-
+from openpilot.system.ui.lib.widget import Widget
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 
-VERTEX_SHADER = """
+VERSION = """
 #version 300 es
+precision mediump float;
+"""
+if platform.system() == "Darwin":
+  VERSION = """
+    #version 330 core
+  """
+
+
+VERTEX_SHADER = VERSION + """
 in vec3 vertexPosition;
 in vec2 vertexTexCoord;
 in vec3 vertexNormal;
@@ -41,9 +51,7 @@ if TICI:
     }
     """
 else:
-  FRAME_FRAGMENT_SHADER = """
-    #version 300 es
-    precision mediump float;
+  FRAME_FRAGMENT_SHADER = VERSION + """
     in vec2 fragTexCoord;
     uniform sampler2D texture0;
     uniform sampler2D texture1;
@@ -55,8 +63,10 @@ else:
     }
     """
 
-class CameraView:
+
+class CameraView(Widget):
   def __init__(self, name: str, stream_type: VisionStreamType):
+    super().__init__()
     self._name = name
     # Primary stream
     self.client = VisionIpcClient(name, stream_type, conflate=True)
@@ -67,7 +77,6 @@ class CameraView:
     self._target_client: VisionIpcClient | None = None
     self._target_stream_type: VisionStreamType | None = None
     self._switching: bool = False
-
 
     self._texture_needs_update = True
     self.last_connection_attempt: float = 0.0
@@ -82,7 +91,7 @@ class CameraView:
     self.egl_images: dict[int, EGLImage] = {}
     self.egl_texture: rl.Texture | None = None
 
-    self._placeholder_color : rl.Color | None = None
+    self._placeholder_color: rl.Color | None = None
 
     # Initialize EGL for zero-copy rendering on TICI
     if TICI:
@@ -145,12 +154,12 @@ class CameraView:
     zy = min(widget_aspect_ratio / frame_aspect_ratio, 1.0)
 
     return np.array([
-        [zx, 0.0, 0.0],
-        [0.0, zy, 0.0],
-        [0.0, 0.0, 1.0]
+      [zx, 0.0, 0.0],
+      [0.0, zy, 0.0],
+      [0.0, 0.0, 1.0]
     ])
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     if self._switching:
       self._handle_switch()
 
@@ -230,7 +239,7 @@ class CameraView:
     # Update textures with new frame data
     if self._texture_needs_update:
       y_data = self.frame.data[: self.frame.uv_offset]
-      uv_data = self.frame.data[self.frame.uv_offset :]
+      uv_data = self.frame.data[self.frame.uv_offset:]
 
       rl.update_texture(self.texture_y, rl.ffi.cast("void *", y_data.ctypes.data))
       rl.update_texture(self.texture_uv, rl.ffi.cast("void *", uv_data.ctypes.data))
@@ -265,7 +274,7 @@ class CameraView:
   def _handle_switch(self) -> None:
     """Check if target stream is ready and switch immediately."""
     if not self._target_client or not self._switching:
-        return
+      return
 
     # Try to connect target if needed
     if not self._target_client.is_connected():
@@ -277,28 +286,28 @@ class CameraView:
     # Check if target has frames ready
     target_frame = self._target_client.recv(timeout_ms=0)
     if target_frame:
-      self.frame = target_frame # Update current frame to target frame
+      self.frame = target_frame  # Update current frame to target frame
       self._complete_switch()
 
   def _complete_switch(self) -> None:
-      """Instantly switch to target stream."""
-      cloudlog.debug(f"Switching to {self._target_stream_type}")
-      # Clean up current resources
-      if self.client:
-        del self.client
+    """Instantly switch to target stream."""
+    cloudlog.debug(f"Switching to {self._target_stream_type}")
+    # Clean up current resources
+    if self.client:
+      del self.client
 
-      # Switch to target
-      self.client = self._target_client
-      self._stream_type = self._target_stream_type
-      self._texture_needs_update = True
+    # Switch to target
+    self.client = self._target_client
+    self._stream_type = self._target_stream_type
+    self._texture_needs_update = True
 
-      # Reset state
-      self._target_client = None
-      self._target_stream_type = None
-      self._switching = False
+    # Reset state
+    self._target_client = None
+    self._target_stream_type = None
+    self._switching = False
 
-      # Initialize textures for new stream
-      self._initialize_textures()
+    # Initialize textures for new stream
+    self._initialize_textures()
 
   def _initialize_textures(self):
       self._clear_textures()

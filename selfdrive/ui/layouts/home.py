@@ -4,10 +4,12 @@ from collections.abc import Callable
 from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
+from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
+from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
+from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR
-
+from openpilot.system.ui.lib.widget import Widget
 
 HEADER_HEIGHT = 80
 HEAD_BUTTON_FONT_SIZE = 40
@@ -25,8 +27,9 @@ class HomeLayoutState(IntEnum):
   ALERTS = 2
 
 
-class HomeLayout:
+class HomeLayout(Widget):
   def __init__(self):
+    super().__init__()
     self.params = Params()
 
     self.update_alert = UpdateAlert()
@@ -47,6 +50,10 @@ class HomeLayout:
     self.update_notif_rect = rl.Rectangle(0, 0, 200, HEADER_HEIGHT - 10)
     self.alert_notif_rect = rl.Rectangle(0, 0, 220, HEADER_HEIGHT - 10)
 
+    self._prime_widget = PrimeWidget()
+    self._setup_widget = SetupWidget()
+
+    self._exp_mode_button = ExperimentalModeButton()
     self._setup_callbacks()
 
   def _setup_callbacks(self):
@@ -59,9 +66,7 @@ class HomeLayout:
   def _set_state(self, state: HomeLayoutState):
     self.current_state = state
 
-  def render(self, rect: rl.Rectangle):
-    self._update_layout_rects(rect)
-
+  def _render(self, rect: rl.Rectangle):
     current_time = time.time()
     if current_time - self.last_refresh >= REFRESH_INTERVAL:
       self._refresh()
@@ -78,16 +83,16 @@ class HomeLayout:
     elif self.current_state == HomeLayoutState.ALERTS:
       self._render_alerts_view()
 
-  def _update_layout_rects(self, rect: rl.Rectangle):
+  def _update_layout_rects(self):
     self.header_rect = rl.Rectangle(
-      rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, HEADER_HEIGHT
+      self._rect.x + CONTENT_MARGIN, self._rect.y + CONTENT_MARGIN, self._rect.width - 2 * CONTENT_MARGIN, HEADER_HEIGHT
     )
 
-    content_y = rect.y + CONTENT_MARGIN + HEADER_HEIGHT + SPACING
-    content_height = rect.height - CONTENT_MARGIN - HEADER_HEIGHT - SPACING - CONTENT_MARGIN
+    content_y = self._rect.y + CONTENT_MARGIN + HEADER_HEIGHT + SPACING
+    content_height = self._rect.height - CONTENT_MARGIN - HEADER_HEIGHT - SPACING - CONTENT_MARGIN
 
     self.content_rect = rl.Rectangle(
-      rect.x + CONTENT_MARGIN, content_y, rect.width - 2 * CONTENT_MARGIN, content_height
+      self._rect.x + CONTENT_MARGIN, content_y, self._rect.width - 2 * CONTENT_MARGIN, content_height
     )
 
     left_width = self.content_rect.width - RIGHT_COLUMN_WIDTH - SPACING
@@ -170,28 +175,25 @@ class HomeLayout:
     self.offroad_alert.render(self.content_rect)
 
   def _render_left_column(self):
-    rl.draw_rectangle_rounded(self.left_column_rect, 0.02, 10, PRIME_BG_COLOR)
-    gui_label(self.left_column_rect, "Prime Widget", 48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._prime_widget.render(self.left_column_rect)
 
   def _render_right_column(self):
-    widget_height = (self.right_column_rect.height - SPACING) // 2
-
+    exp_height = 125
     exp_rect = rl.Rectangle(
-      self.right_column_rect.x, self.right_column_rect.y, self.right_column_rect.width, widget_height
+      self.right_column_rect.x, self.right_column_rect.y, self.right_column_rect.width, exp_height
     )
-    rl.draw_rectangle_rounded(exp_rect, 0.02, 10, PRIME_BG_COLOR)
-    gui_label(exp_rect, "Experimental Mode", 36, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._exp_mode_button.render(exp_rect)
 
     setup_rect = rl.Rectangle(
       self.right_column_rect.x,
-      self.right_column_rect.y + widget_height + SPACING,
+      self.right_column_rect.y + exp_height + SPACING,
       self.right_column_rect.width,
-      widget_height,
+      self.right_column_rect.height - exp_height - SPACING,
     )
-    rl.draw_rectangle_rounded(setup_rect, 0.02, 10, PRIME_BG_COLOR)
-    gui_label(setup_rect, "Setup", 36, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._setup_widget.render(setup_rect)
 
   def _refresh(self):
+    # TODO: implement _update_state with a timer
     self.update_available = self.update_alert.refresh()
     self.alert_count = self.offroad_alert.refresh()
     self._update_state_priority(self.update_available, self.alert_count > 0)

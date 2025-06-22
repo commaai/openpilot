@@ -2,14 +2,15 @@ import pyray as rl
 import time
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-
+from openpilot.system.ui.lib.widget import Widget
 
 PASSWORD_MASK_CHAR = "•"
 PASSWORD_MASK_DELAY = 1.5  # Seconds to show character before masking
 
 
-class InputBox:
+class InputBox(Widget):
   def __init__(self, max_text_size=255, password_mode=False):
+    super().__init__()
     self._max_text_size = max_text_size
     self._input_text = ""
     self._cursor_position = 0
@@ -23,7 +24,7 @@ class InputBox:
     self._text_offset = 0
     self._visible_width = 0
     self._last_char_time = 0  # Track when last character was added
-    self._masked_length = 0   # How many characters are currently masked
+    self._masked_length = 0  # How many characters are currently masked
 
   @property
   def text(self):
@@ -76,7 +77,7 @@ class InputBox:
   def add_char_at_cursor(self, char):
     """Add a character at the current cursor position."""
     if len(self._input_text) < self._max_text_size:
-      self._input_text = self._input_text[: self._cursor_position] + char + self._input_text[self._cursor_position :]
+      self._input_text = self._input_text[: self._cursor_position] + char + self._input_text[self._cursor_position:]
       self.set_cursor_position(self._cursor_position + 1)
 
       if self._password_mode:
@@ -88,7 +89,7 @@ class InputBox:
   def delete_char_before_cursor(self):
     """Delete the character before the cursor position (backspace)."""
     if self._cursor_position > 0:
-      self._input_text = self._input_text[: self._cursor_position - 1] + self._input_text[self._cursor_position :]
+      self._input_text = self._input_text[: self._cursor_position - 1] + self._input_text[self._cursor_position:]
       self.set_cursor_position(self._cursor_position - 1)
       return True
     return False
@@ -96,12 +97,12 @@ class InputBox:
   def delete_char_at_cursor(self):
     """Delete the character at the cursor position (delete)."""
     if self._cursor_position < len(self._input_text):
-      self._input_text = self._input_text[: self._cursor_position] + self._input_text[self._cursor_position + 1 :]
+      self._input_text = self._input_text[: self._cursor_position] + self._input_text[self._cursor_position + 1:]
       self.set_cursor_position(self._cursor_position)
       return True
     return False
 
-  def render(self, rect, color=rl.BLACK, border_color=rl.DARKGRAY, text_color=rl.WHITE, font_size=80):
+  def _render(self, rect, color=rl.BLACK, border_color=rl.DARKGRAY, text_color=rl.WHITE, font_size=80):
     # Store dimensions for text offset calculations
     self._visible_width = rect.width
     self._font_size = font_size
@@ -164,14 +165,14 @@ class InputBox:
     if recent_edit and self._input_text:
       last_pos = max(0, self._cursor_position - 1)
       if last_pos < len(self._input_text):
-        return masked_text[:last_pos] + self._input_text[last_pos] + masked_text[last_pos + 1 :]
+        return masked_text[:last_pos] + self._input_text[last_pos] + masked_text[last_pos + 1:]
 
     return masked_text
 
   def _handle_mouse_input(self, rect, font_size):
     """Handle mouse clicks to position cursor."""
     mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON) and rl.check_collision_point_rec(mouse_pos, rect):
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(mouse_pos, rect):
       # Calculate cursor position from click
       if len(self._input_text) > 0:
         font = gui_app.font()

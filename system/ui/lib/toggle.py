@@ -1,4 +1,5 @@
 import pyray as rl
+from openpilot.system.ui.lib.widget import Widget
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
@@ -11,19 +12,22 @@ BG_HEIGHT = 60
 ANIMATION_SPEED = 8.0
 
 
-class Toggle:
+class Toggle(Widget):
   def __init__(self, initial_state=False):
+    super().__init__()
     self._state = initial_state
     self._enabled = True
-    self._rect = rl.Rectangle(0, 0, WIDTH, HEIGHT)
     self._progress = 1.0 if initial_state else 0.0
     self._target = self._progress
+
+  def set_rect(self, rect: rl.Rectangle):
+    self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
 
   def handle_input(self):
     if not self._enabled:
       return 0
 
-    if rl.is_mouse_button_pressed(rl.MOUSE_LEFT_BUTTON):
+    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
       if rl.check_collision_point_rec(rl.get_mouse_position(), self._rect):
         self._state = not self._state
         self._target = 1.0 if self._state else 0.0
@@ -49,8 +53,7 @@ class Toggle:
       self._progress += delta if self._progress < self._target else -delta
       self._progress = max(0.0, min(1.0, self._progress))
 
-  def render(self, rect: rl.Rectangle):
-    self._rect.x, self._rect.y = rect.x, rect.y
+  def _render(self, rect: rl.Rectangle):
     self.update()
 
     if self._enabled:

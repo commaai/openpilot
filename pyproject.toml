@@ -68,6 +68,9 @@ dependencies = [
 
   # logreader
   "zstandard",
+
+  # ui
+  "qrcode",
 ]
 
 [project.optional-dependencies]
@@ -85,7 +88,8 @@ testing = [
   "pytest-cov",
   "pytest-cpp",
   "pytest-subtests",
-  "pytest-xdist",
+  # https://github.com/pytest-dev/pytest-xdist/issues/1215
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@909e97b49d12401c10608f9d777bfc9dab8a4413",
   "pytest-timeout",
   "pytest-randomly",
   "pytest-asyncio",
@@ -102,7 +106,6 @@ dev = [
   "azure-storage-blob",
   "dbus-next",
   "dictdiffer",
-  "lru-dict",
   "matplotlib",
   "parameterized >=0.8, <0.9",
   "pyautogui",
