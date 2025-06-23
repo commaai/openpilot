@@ -68,6 +68,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/icons/metric.png",
       false,
     },
+    {
+      "RecordAudio",
+      tr("Record Microphone Audio"),
+      tr("Records microphone audio."),
+      "../assets/icons/monitoring.png",
+      true,
+    },
   };
 
 

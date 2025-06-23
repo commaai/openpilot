@@ -7,12 +7,13 @@ from cereal import messaging
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
+from openpilot.common.params import Params
 
 RATE = 10
 FFT_SAMPLES = 4096
 REFERENCE_SPL = 2e-5  # newtons/m^2
-SAMPLE_RATE = 44100
-SAMPLE_BUFFER = 4096  # approx 100ms
+SAMPLE_RATE = 16000
+SAMPLE_BUFFER = 800  # 50ms
 
 
 @cache
@@ -45,7 +46,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 class Mic:
   def __init__(self):
     self.rk = Ratekeeper(RATE)
-    self.pm = messaging.PubMaster(['microphone'])
+    self.pm = messaging.PubMaster(['microphone', 'audioData', 'audioDataNoLog'])
 
     self.measurements = np.empty(0)
 
@@ -87,6 +88,14 @@ class Mic:
         self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
 
         self.measurements = self.measurements[FFT_SAMPLES:]
+
+    audio_data_service = 'audioData' if Params().get_bool("RecordAudio") else 'audioDataNoLog'
+    msg = messaging.new_message(audio_data_service, valid=True)
+    audio_field = getattr(msg, audio_data_service)
+    audio_field.sampleRate = SAMPLE_RATE
+    audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
+    audio_field.data = audio_data_int_16.tobytes()
+    self.pm.send(audio_data_service, msg)
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):

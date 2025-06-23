@@ -2479,6 +2479,11 @@ struct Microphone {
   filteredSoundPressureWeightedDb @2 :Float32;
 }
 
+struct AudioData {
+  sampleRate @0 :UInt32;
+  data @1 :Data;
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2557,6 +2562,8 @@ struct Event {
 
     # microphone data
     microphone @103 :Microphone;
+    audioData @147 :AudioData;
+    audioDataNoLog @148 :AudioData;
 
     # systems stuff
     androidLog @20 :AndroidLogEntry;
