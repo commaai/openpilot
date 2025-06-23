@@ -71,8 +71,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "RecordAudio",
       tr("Record Microphone Audio"),
-      tr("Records microphone audio."),
-      "../assets/icons/monitoring.png",
+      tr("Records and stores microphone audio while driving."),
+      "../assets/icons/microphone.png",
       true,
     },
   };
