@@ -2480,8 +2480,10 @@ struct Microphone {
 }
 
 struct AudioData {
-  sampleRate @0 :UInt32;
-  data @1 :Data;
+  data @0 :Data;
+  sampleRate @1 :UInt32;
+  length @2 :UInt32;
+  sequenceNum @3 :UInt64;
 }
 
 struct Touch {

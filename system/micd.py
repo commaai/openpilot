@@ -53,6 +53,8 @@ class Mic:
     self.sound_pressure_weighted = 0
     self.sound_pressure_level_weighted = 0
 
+    self.audio_sequence_number = 0
+
     self.lock = threading.Lock()
 
   def update(self):
@@ -89,9 +91,12 @@ class Mic:
         self.measurements = self.measurements[FFT_SAMPLES:]
 
     msg = messaging.new_message('audioData', valid=True)
-    msg.audioData.sampleRate = SAMPLE_RATE
     audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
     msg.audioData.data = audio_data_int_16.tobytes()
+    msg.audioData.sampleRate = SAMPLE_RATE
+    msg.audioData.length = frames
+    msg.audioData.sequenceNum = self.audio_sequence_number
+    self.audio_sequence_number += 1
     self.pm.send('audioData', msg)
 
   @retry(attempts=7, delay=3)
