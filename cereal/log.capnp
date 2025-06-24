@@ -2563,7 +2563,6 @@ struct Event {
     # microphone data
     microphone @103 :Microphone;
     audioData @147 :AudioData;
-    audioDataNoLog @148 :AudioData;
 
     # systems stuff
     androidLog @20 :AndroidLogEntry;
