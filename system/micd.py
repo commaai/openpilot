@@ -54,6 +54,7 @@ class Mic:
     self.sound_pressure_level_weighted = 0
 
     self.audio_sequence_number = 0
+    self.audio_frame_index = 0
 
     self.lock = threading.Lock()
 
@@ -95,6 +96,8 @@ class Mic:
     msg.audioData.data = audio_data_int_16.tobytes()
     msg.audioData.sampleRate = SAMPLE_RATE
     msg.audioData.length = frames
+    msg.audioData.startFrameIdx = self.audio_frame_index
+    self.audio_frame_index += frames
     msg.audioData.sequenceNum = self.audio_sequence_number
     self.audio_sequence_number += 1
     self.pm.send('audioData', msg)
