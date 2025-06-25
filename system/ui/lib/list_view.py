@@ -202,22 +202,47 @@ class MultipleButtonAction(ItemAction):
     return False
 
 
-@dataclass
-class ListItem:
-  title: str
-  icon: str | None = None
-  description: str | Callable[[], str] | None = None
-  description_visible: bool = False
-  rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
-  callback: Callable | None = None
-  action_item: ItemAction | None = None
-  visible: bool | Callable[[], bool] = True
+# @dataclass
+class ListItem(Widget):
+  # title: str
+  # icon: str | None = None
+  # description: str | Callable[[], str] | None = None
+  # description_visible: bool = False
+  # rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
+  # callback: Callable | None = None
+  # action_item: ItemAction | None = None
+  # visible: bool | Callable[[], bool] = True
+  #
+  # # Cached properties for performance
+  # _prev_max_width: int = 0
+  # _wrapped_description: str | None = None
+  # _prev_description: str | None = None
+  # _description_height: float = 0
 
-  # Cached properties for performance
-  _prev_max_width: int = 0
-  _wrapped_description: str | None = None
-  _prev_description: str | None = None
-  _description_height: float = 0
+  def __init__(self, title: str, icon: str | None = None, description: str | Callable[[], str] | None = None,
+               description_visible: bool = False, callback: Callable | None = None,
+               action_item: ItemAction | None = None, visible: bool | Callable[[], bool] = True):
+    super().__init__()
+    self.title = title
+    self.icon = icon
+    self.description = description
+    self.description_visible = description_visible
+    self.callback = callback
+    self.action_item = action_item
+    self.visible = visible
+
+    self.set_rect(rl.Rectangle(0, 0, 0, ITEM_BASE_HEIGHT))
+
+    self._prev_max_width: int = 0
+    self._wrapped_description: str | None = None
+    self._prev_description: str | None = None
+    self._description_height: float = 0
+
+  def _render(self, _):
+    self.set_rect(rl.Rectangle(self._rect.x, self._rect.y, self.get_content_width(), ITEM_BASE_HEIGHT))
+
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+    print(f"ListItem clicked: {self.title} at {mouse_pos}")
 
   @property
   def is_visible(self) -> bool:
@@ -274,7 +299,14 @@ class ListView(Widget):
     self._hovered_item = -1
     self._total_height = 0
 
+    for item in self._items:
+      item.set_click_valid_callback(self.scroll_panel.is_click_valid,
+                                    self.scroll_panel.is_touch_valid)
+
   def _render(self, rect: rl.Rectangle):
+    for item in self._items:
+      item.render()
+
     self._update_layout_rects()
 
     # Update layout and handle scrolling
