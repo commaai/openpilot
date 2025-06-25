@@ -5,7 +5,7 @@ from enum import IntEnum
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
 INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
-MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
+MIN_VELOCITY = 0.5 * 60             # Minimum velocity before stopping the inertia
 DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
 BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
 BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
@@ -44,6 +44,7 @@ class GuiScrollPanel:
 
     # Calculate time delta
     current_time = rl.get_time()
+    fps_scale = 60.0 / rl.get_fps()
 
     mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
@@ -74,7 +75,7 @@ class GuiScrollPanel:
         # Track velocity for inertia
         time_since_last_drag = current_time - self._last_drag_time
         if time_since_last_drag > 0:
-          drag_velocity = delta_y / time_since_last_drag / 60.0
+          drag_velocity = delta_y / time_since_last_drag  # / 60.0 * fps_scale
           self._velocity_history.append(drag_velocity)
 
         self._last_drag_time = current_time
@@ -134,7 +135,7 @@ class GuiScrollPanel:
     # Apply inertia (continue scrolling after mouse release)
     if self._scroll_state == ScrollState.IDLE:
       if abs(self._velocity_y) > MIN_VELOCITY:
-        self._offset.y += self._velocity_y
+        self._offset.y += self._velocity_y * rl.get_frame_time()
         self._velocity_y *= INERTIA_FRICTION
 
         if self._offset.y > 0 or self._offset.y < -max_scroll_y:
@@ -149,9 +150,9 @@ class GuiScrollPanel:
         target_y = -max_scroll_y
 
       distance = target_y - self._offset.y
-      bounce_step = distance * BOUNCE_RETURN_SPEED
+      bounce_step = distance * BOUNCE_RETURN_SPEED * fps_scale
       self._offset.y += bounce_step
-      self._velocity_y *= INERTIA_FRICTION * 0.8
+      self._velocity_y *= pow(INERTIA_FRICTION, fps_scale) * 0.8
 
       if abs(distance) < 0.5 and abs(self._velocity_y) < MIN_VELOCITY:
         self._offset.y = target_y
