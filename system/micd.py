@@ -79,6 +79,17 @@ class Mic:
 
     Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
+    msg = messaging.new_message('audioData', valid=True)
+    audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
+    msg.audioData.data = audio_data_int_16.tobytes()
+    msg.audioData.sampleRate = SAMPLE_RATE
+    msg.audioData.length = frames
+    msg.audioData.startFrameIdx = self.audio_frame_index
+    self.audio_frame_index += frames
+    msg.audioData.sequenceNum = self.audio_sequence_number
+    self.audio_sequence_number += 1
+    self.pm.send('audioData', msg)
+
     with self.lock:
       self.measurements = np.concatenate((self.measurements, indata[:, 0]))
 
@@ -90,17 +101,6 @@ class Mic:
         self.sound_pressure_weighted, self.sound_pressure_level_weighted = calculate_spl(measurements_weighted)
 
         self.measurements = self.measurements[FFT_SAMPLES:]
-
-    msg = messaging.new_message('audioData', valid=True)
-    audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
-    msg.audioData.data = audio_data_int_16.tobytes()
-    msg.audioData.sampleRate = SAMPLE_RATE
-    msg.audioData.length = frames
-    msg.audioData.startFrameIdx = self.audio_frame_index
-    self.audio_frame_index += frames
-    msg.audioData.sequenceNum = self.audio_sequence_number
-    self.audio_sequence_number += 1
-    self.pm.send('audioData', msg)
 
   @retry(attempts=7, delay=3)
   def get_stream(self, sd):
