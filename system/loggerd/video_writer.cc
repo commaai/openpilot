@@ -134,57 +134,46 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
   }
 }
 
-void VideoWriter::write_audio(const cereal::AudioData::Reader &audio_data, uint64_t logMonoTime) {
-  if (!this->remuxing || !this->audio_codec_ctx) return;
+void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp) {
+  if (!remuxing || !audio_codec_ctx) return;
 
    // approximately sync with video by syncing the timestampEof of first video packet with the logMonoTime of first audio packet
-  if (this->first_audio_logMonoTime == 0) {
-    this->first_audio_logMonoTime = logMonoTime;
+  if (first_audio_timestamp == 0) {
+    first_audio_timestamp = timestamp; // microseconds
   }
 
   // convert s16le samples to fltp and add to buffer
-  auto data = audio_data.getData();
-  const int16_t *raw_samples = reinterpret_cast<const int16_t*>(data.begin());
-  for (int i = 0; i < audio_data.getLength(); i++) {
-    this->audio_buffer.push_back(raw_samples[i] / 32768.0f);
+  const int16_t *raw_samples = reinterpret_cast<const int16_t*>(data);
+  int sample_count = len / sizeof(int16_t);
+  for (int i = 0; i < sample_count; i++) {
+    audio_buffer.push_back(raw_samples[i] / 32768.0f);
   }
-  this->buffered_samples += audio_data.getLength();
+  buffered_samples += sample_count;
 
-  // only encode/write when we have enough samples for the encoder
-  while (this->buffered_samples >= this->audio_codec_ctx->frame_size) {
-    this->audio_frame->pts = this->next_audio_pts;
+  while (buffered_samples >= audio_codec_ctx->frame_size) {
+    audio_frame->pts = next_audio_pts;
 
-    float *f_samples = reinterpret_cast<float*>(this->audio_frame->data[0]);
-    for (int i = 0; i < this->audio_codec_ctx->frame_size; i++) {
-      f_samples[i] = this->audio_buffer[i];
+    float *f_samples = reinterpret_cast<float*>(audio_frame->data[0]);
+    for (int i = 0; i < audio_codec_ctx->frame_size; i++) {
+      f_samples[i] = audio_buffer[i];
     }
 
-    // remove used samples from buffer
-    for (int i = 0; i < this->audio_codec_ctx->frame_size; i++) {
-      this->audio_buffer.pop_front();
+    for (int i = 0; i < audio_codec_ctx->frame_size; i++) {
+      audio_buffer.pop_front();
     }
-    this->buffered_samples -= this->audio_codec_ctx->frame_size;
+    buffered_samples -= audio_codec_ctx->frame_size;
 
-    // encode frames
-    int send_result = avcodec_send_frame(this->audio_codec_ctx, this->audio_frame);
+    int send_result = avcodec_send_frame(audio_codec_ctx, audio_frame); // encode frames
     if (send_result >= 0) {
       AVPacket *pkt = av_packet_alloc();
-      while (avcodec_receive_packet(this->audio_codec_ctx, pkt) == 0) {
-        // calculate and rescale timestamp based on the current frame's PTS
-        uint64_t total_samples = this->audio_frame->pts;
-        uint64_t time_diff_ns = (total_samples * 1000000000ULL) / this->audio_codec_ctx->sample_rate;
-        uint64_t synchronized_mono_time = this->first_audio_logMonoTime + time_diff_ns;
-        uint64_t timestamp_us = synchronized_mono_time / 1000;
+      while (avcodec_receive_packet(audio_codec_ctx, pkt) == 0) {
+        uint64_t time_diff_us = (audio_frame->pts * 1000000ULL) / audio_codec_ctx->sample_rate;
+        uint64_t synchronized_time = first_audio_timestamp + time_diff_us;
         AVRational in_timebase = {1, 1000000};
-        int64_t pts = av_rescale_q(timestamp_us, in_timebase, this->audio_stream->time_base);
+        pkt->pts = pkt->dts = av_rescale_q(synchronized_time, in_timebase, audio_stream->time_base);
+        pkt->stream_index = audio_stream->index;
 
-        this->last_audio_pts = std::max(pts, this->last_audio_pts + 1); // Ensure PTS is monotonically increasing to prevent TS discontinuities
-
-        pkt->pts = pkt->dts = this->last_audio_pts;
-        pkt->stream_index = this->audio_stream->index;
-
-        // write encoded frames
-        int err = av_interleaved_write_frame(this->ofmt_ctx, pkt);
+        int err = av_interleaved_write_frame(ofmt_ctx, pkt); // write encoded frames
         if (err < 0) {
           LOGW("AUDIO: Write frame failed - error: %d", err);
         }
@@ -194,7 +183,7 @@ void VideoWriter::write_audio(const cereal::AudioData::Reader &audio_data, uint6
     } else {
       LOGW("AUDIO: Failed to send audio frame to encoder: %d", send_result);
     }
-    this->next_audio_pts += this->audio_codec_ctx->frame_size;
+    next_audio_pts += audio_codec_ctx->frame_size;
   }
 }
 
