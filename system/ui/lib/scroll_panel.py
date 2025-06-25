@@ -31,7 +31,6 @@ class GuiScrollPanel:
     self._velocity_y = 0.0  # Velocity for inertia
     self._is_dragging: bool = False
     self._bounce_offset: float = 0.0
-    self._last_frame_time = rl.get_time()
     self._velocity_history: list[float] = []
     self._last_drag_time: float = 0.0
     self._content_rect: rl.Rectangle | None = None
@@ -44,8 +43,7 @@ class GuiScrollPanel:
 
     # Calculate time delta
     current_time = rl.get_time()
-    delta_time = current_time - self._last_frame_time
-    self._last_frame_time = current_time
+    delta_time = rl.get_frame_time()
 
     # Prevent large jumps
     delta_time = min(delta_time, 0.05)
