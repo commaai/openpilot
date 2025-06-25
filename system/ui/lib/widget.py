@@ -46,6 +46,11 @@ class Widget(abc.ABC):
     if changed:
       self._update_layout_rects()
 
+  def set_position(self, x: float, y: float) -> None:
+    """Set the position of the widget."""
+    changed = (self._rect.x != x or self._rect.y != y)
+    self._rect.x, self._rect.y = x, y
+
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
     if rect is not None:
       self.set_rect(rect)

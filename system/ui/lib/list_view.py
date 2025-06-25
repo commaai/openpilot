@@ -191,7 +191,7 @@ class MultipleButtonAction(ItemAction):
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
 
       # Handle click
-      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._touch_valid():
         clicked = i
 
     if clicked >= 0:
@@ -239,10 +239,24 @@ class ListItem(Widget):
     self._description_height: float = 0
 
   def _render(self, _):
+    print(f"Rendering ListItem: {self.title} at {self.rect.x, self.rect.y}, size {self.rect.width, self.rect.height}")
     """ TODO: Implement rendering logic here """
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
     print(f"ListItem clicked: {self.title} at {mouse_pos}")
+
+    if self.action_item and self._rect:
+      # Use the same coordinate system as in _render_item
+      # adjusted_rect = rl.Rectangle(self._rect.x, self._rect.y + scroll_offset.y, self._rect.width, self._rect.height)
+      right_rect = self.get_right_item_rect(self._rect)
+
+      if rl.check_collision_point_rec(mouse_pos, right_rect):
+        # Click was on right item, don't toggle description
+        print('in right item rect')
+        return
+
+    if self.description:
+      self.description_visible = not self.description_visible
 
   @property
   def is_visible(self) -> bool:
@@ -302,6 +316,9 @@ class ListView(Widget):
     for item in self._items:
       item.set_click_valid_callback(self.scroll_panel.is_click_valid,
                                     self.scroll_panel.is_touch_valid)
+      if item.action_item:
+        item.action_item.set_click_valid_callback(self.scroll_panel.is_click_valid,
+                                                  self.scroll_panel.is_touch_valid)
 
   def _render(self, rect: rl.Rectangle):
     for item in self._items:
@@ -314,8 +331,8 @@ class ListView(Widget):
     scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
 
     # Handle mouse interaction
-    if self.scroll_panel.is_click_valid():
-      self._handle_mouse_interaction(rect, scroll_offset)
+    # if self.scroll_panel.is_click_valid():
+    #   self._handle_mouse_interaction(rect, scroll_offset)
 
     # Set scissor mode for clipping
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
@@ -325,15 +342,17 @@ class ListView(Widget):
         continue
 
       y = int(item.rect.y + scroll_offset.y)
+      item.set_position(item.rect.x, y)
       if y + item.rect.height <= rect.y or y >= rect.y + rect.height:
         continue
+      del y
 
-      self._render_item(item, y)
+      self._render_item(item)
 
       # Draw separator line
       next_visible_item = self._get_next_visible_item(i)
       if next_visible_item is not None:
-        line_y = int(y + item.rect.height - 1)
+        line_y = int(item.rect.y + item.rect.height - 1)
         rl.draw_line(
           int(item.rect.x) + LINE_PADDING,
           line_y,
@@ -363,7 +382,7 @@ class ListView(Widget):
       current_y += item_height
     self._total_height = current_y  # total height of all items
 
-  def _render_item(self, item: ListItem, y: int):
+  def _render_item(self, item: ListItem):
     content_x = item.rect.x + ITEM_PADDING
     text_x = content_x
 
@@ -372,12 +391,12 @@ class ListView(Widget):
       # Draw icon if present
       if item.icon:
         icon_texture = gui_app.texture(os.path.join("icons", item.icon), ICON_SIZE, ICON_SIZE)
-        rl.draw_texture(icon_texture, int(content_x), int(y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
+        rl.draw_texture(icon_texture, int(content_x), int(item.rect.y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
 
       # Draw main text
       text_size = measure_text_cached(self._font, item.title, ITEM_TEXT_FONT_SIZE)
-      item_y = y + (ITEM_BASE_HEIGHT - text_size.y) // 2
+      item_y = item.rect.y + (ITEM_BASE_HEIGHT - text_size.y) // 2
       rl.draw_text_ex(self._font, item.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
 
     # Draw description if visible
@@ -386,7 +405,7 @@ class ListView(Widget):
       rl.draw_text_ex(
         self._font,
         item._wrapped_description,
-        rl.Vector2(text_x, y + ITEM_DESC_V_OFFSET),
+        rl.Vector2(text_x, item.rect.y + ITEM_DESC_V_OFFSET),
         ITEM_DESC_FONT_SIZE,
         0,
         ITEM_DESC_TEXT_COLOR,
@@ -395,13 +414,14 @@ class ListView(Widget):
     # Draw right item if present
     if item.action_item:
       right_rect = item.get_right_item_rect(item.rect)
-      right_rect.y = y
+      right_rect.y = item.rect.y
       if item.action_item.render(right_rect) and item.action_item.enabled:
         # Right item was clicked/activated
         if item.callback:
           item.callback()
 
   def _handle_mouse_interaction(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
+    return
     mouse_pos = rl.get_mouse_position()
 
     self._hovered_item = -1
@@ -427,23 +447,23 @@ class ListView(Widget):
             self._hovered_item = i
             break
 
-    # Handle click on main item (not right item)
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._hovered_item >= 0:
-      item = self._items[self._hovered_item]
+    # # Handle click on main item (not right item)
+    # if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._hovered_item >= 0:
+    #   item = self._items[self._hovered_item]
 
       # Check if click was on right item area
-      if item.action_item and item.rect:
-        # Use the same coordinate system as in _render_item
-        adjusted_rect = rl.Rectangle(item.rect.x, item.rect.y + scroll_offset.y, item.rect.width, item.rect.height)
-        right_rect = item.get_right_item_rect(adjusted_rect)
-
-        if rl.check_collision_point_rec(mouse_pos, right_rect):
-          # Click was on right item, don't toggle description
-          return
+      # if item.action_item and item.rect:
+      #   # Use the same coordinate system as in _render_item
+      #   adjusted_rect = rl.Rectangle(item.rect.x, item.rect.y + scroll_offset.y, item.rect.width, item.rect.height)
+      #   right_rect = item.get_right_item_rect(adjusted_rect)
+      #
+      #   if rl.check_collision_point_rec(mouse_pos, right_rect):
+      #     # Click was on right item, don't toggle description
+      #     return
 
       # Toggle description visibility if item has description
-      if item.description:
-        item.description_visible = not item.description_visible
+      # if item.description:
+      #   item.description_visible = not item.description_visible
 
 
 # Factory functions
