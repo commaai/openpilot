@@ -4,14 +4,14 @@ from enum import IntEnum
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
-INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
-MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
+INERTIA_FRICTION = 0.92 / 1.1        # The rate at which the inertia slows down
+MIN_VELOCITY = 2             # Minimum velocity before stopping the inertia
 DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
 BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
 BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
 MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
 FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
-VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
+VELOCITY_HISTORY_SIZE = 3      # Track velocity over multiple frames for smoother motion  # TODO: this doesn't work like I think
 
 
 class ScrollState(IntEnum):
@@ -167,12 +167,19 @@ class GuiScrollPanel:
 
     return self._offset
 
+  # TODO: any reason for this?
   def is_click_valid(self) -> bool:
     # Check if this is a click rather than a drag
     return (
       self._scroll_state == ScrollState.IDLE
       and not self._is_dragging
       and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
+    )
+
+  def is_touch_valid(self) -> bool:
+    return (
+      # self._scroll_state == ScrollState.IDLE
+      not self._is_dragging
     )
 
   def get_normalized_scroll_position(self) -> float:
