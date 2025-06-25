@@ -291,10 +291,10 @@ void loggerd_thread() {
         } else if (service.record_audio) {
           capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
           auto event = cmsg.getRoot<cereal::Event>();
-          auto audio_data = event.getAudioData();
+          auto audio_data = event.getAudioData().getData();
           for (auto* encoder : encoders_with_audio) {
             if (encoder && encoder->writer) {
-              encoder->writer->write_audio(audio_data, event.getLogMonoTime());
+              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime()/1000);
             }
           }
           delete msg;
