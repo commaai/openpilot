@@ -9,7 +9,7 @@ from openpilot.common.retry import retry
 from openpilot.common.swaglog import cloudlog
 
 RATE = 10
-FFT_SAMPLES = 4096
+FFT_SAMPLES = 1600 # 100ms
 REFERENCE_SPL = 2e-5  # newtons/m^2
 SAMPLE_RATE = 16000
 SAMPLE_BUFFER = 800  # 50ms
