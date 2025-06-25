@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from pathlib import Path
 from openpilot.system.hardware import TICI
 USBGPU = "USBGPU" in os.environ
 if USBGPU:
@@ -10,10 +9,7 @@ elif TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  import json
-  with open(Path(__file__).parent / 'models/modeld_flags.json') as f:
-    flags = json.load(f)
-    os.environ.update(flags)
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import backend_from_jit
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
@@ -21,6 +17,7 @@ import pickle
 import numpy as np
 import cereal.messaging as messaging
 from cereal import car, log
+from pathlib import Path
 from setproctitle import setproctitle
 from cereal.messaging import PubMaster, SubMaster
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
@@ -132,6 +129,11 @@ class ModelState:
 
     with open(POLICY_PKL_PATH, "rb") as f:
       self.policy_run = pickle.load(f)
+
+    if backend_from_jit:
+      backend = backend_from_jit(self.vision_run)
+      os.environ[backend] = '1'
+      cloudlog.warning(f"modeld backend set to {backend}")
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}

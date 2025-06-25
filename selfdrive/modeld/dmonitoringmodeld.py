@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-from pathlib import Path
 from openpilot.system.hardware import TICI
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
@@ -8,15 +7,13 @@ if TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  import json
-  with open(Path(__file__).parent / 'models/dmonitoringmodeld_flags.json') as f:
-    flags = json.load(f)
-    os.environ.update(flags)
+  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import backend_from_jit
 import math
 import time
 import pickle
 import ctypes
 import numpy as np
+from pathlib import Path
 from setproctitle import setproctitle
 
 from cereal import messaging
@@ -83,6 +80,11 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
+
+    if backend_from_jit:
+      backend = backend_from_jit(self.model_run)
+      os.environ[backend] = '1'
+      cloudlog.warning(f"dmonitoringmodeld backend set to {backend}")
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib

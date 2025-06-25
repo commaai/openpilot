@@ -17,7 +17,7 @@ common_src = [
 if arch == "Darwin":
   # OpenCL is a framework on Mac
   frameworks += ['OpenCL']
-  # Fix for "Error: $HOME must be set to run brew"
+  # Fix for METAL Error: $HOME must be set to run brew
   lenv['ENV']['HOME'] = os.environ['HOME']
 else:
   libs += ['OpenCL']
@@ -49,18 +49,8 @@ def tg_compile(flags, model_name):
     f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
   )
 
-def tg_dump_flags(flags, prefix):
-  flags_dict = {}
-  for flag_pair in flags.split():
-      k, v = flag_pair.split('=')
-      flags_dict[k] = v
-  import json
-  with open(f'models/{prefix}_flags.json', 'w') as f:
-      json.dump(flags_dict, f)
-
-import subprocess
-
 # because tg doesn't support multi-process
+import subprocess
 devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True)
 print("Available tinygrad devices:", devs)
 
@@ -79,8 +69,6 @@ else:
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   tg_compile(flags, model_name)
 
-tg_dump_flags(flags, 'dmonitoringmodeld')
-
 # Compile BIG model if USB GPU is available
 if b"AMD" in devs:
   print("USB GPU detected... building")
@@ -90,5 +78,3 @@ if b"AMD" in devs:
   lenv.SideEffect('lock', [bp, bv])  # tg doesn't support multi-process so build serially
 else:
   print("USB GPU not detected... skipping")
-
-tg_dump_flags(flags, 'modeld')
