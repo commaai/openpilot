@@ -29,6 +29,10 @@ class Widget(abc.ABC):
     return self._touch_valid_callback() if self._touch_valid_callback else True
 
   @property
+  def rect(self) -> rl.Rectangle:
+    return self._rect
+
+  @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
 

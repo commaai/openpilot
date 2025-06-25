@@ -241,6 +241,9 @@ class ListItem(Widget):
   def _render(self, _):
     """ TODO: Implement rendering logic here """
 
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+    print(f"ListItem clicked: {self.title} at {mouse_pos}")
+
   @property
   def is_visible(self) -> bool:
     return bool(_resolve_value(self.visible, True))
@@ -351,12 +354,12 @@ class ListView(Widget):
     current_y = 0.0
     for item in self._items:
       if not item.is_visible:
-        item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, 0)
+        item.set_rect(rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, 0))
         continue
 
       content_width = item.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
       item_height = item.get_item_height(self._font, content_width)
-      item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, item_height)
+      item.set_rect(rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, item_height))
       current_y += item_height
     self._total_height = current_y  # total height of all items
 
