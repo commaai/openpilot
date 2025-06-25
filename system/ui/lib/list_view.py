@@ -239,10 +239,7 @@ class ListItem(Widget):
     self._description_height: float = 0
 
   def _render(self, _):
-    self.set_rect(rl.Rectangle(self._rect.x, self._rect.y, self.get_content_width(), ITEM_BASE_HEIGHT))
-
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
-    print(f"ListItem clicked: {self.title} at {mouse_pos}")
+    """ TODO: Implement rendering logic here """
 
   @property
   def is_visible(self) -> bool:
