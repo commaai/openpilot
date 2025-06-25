@@ -21,7 +21,7 @@ DESCRIPTIONS = {
   "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
-  "RecordAudio": "Records and stores microphone audio while driving.",
+  "RecordAudio": "Records microphone audio.",
 }
 
 
@@ -81,7 +81,7 @@ class TogglesLayout(Widget):
         "Record Microphone Audio",
         DESCRIPTIONS["RecordAudio"],
         self._params.get_bool("RecordAudio"),
-        icon="microphone.png",
+        icon="monitoring.png",
       ),
     ]
 

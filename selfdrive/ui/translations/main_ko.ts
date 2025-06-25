@@ -1157,14 +1157,6 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation> 이 설정을 변경하면 차량이 재가동된후 오픈파일럿이 시작됩니다.</translation>
     </message>
-    <message>
-        <source>Record Microphone Audio</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Records and stores microphone audio while driving.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Updater</name>

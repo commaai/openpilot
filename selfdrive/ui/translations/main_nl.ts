@@ -1062,14 +1062,6 @@ ingesteld</translation>
         <source>Enable experimental longitudinal control to enable this.</source>
         <translation type="unfinished"></translation>
     </message>
-    <message>
-        <source>Record Microphone Audio</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Records and stores microphone audio while driving.</source>
-        <translation type="unfinished"></translation>
-    </message>
 </context>
 <context>
     <name>Updater</name>
