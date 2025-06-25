@@ -634,11 +634,12 @@ void SignalView::updateState(const std::set<MessageId> *msgs) {
     QSize size(available_width - value_width,
                delegate->button_size.height() - style()->pixelMetric(QStyle::PM_FocusFrameVMargin) * 2);
 
+    auto [first, last] = can->eventsInRange(model->msg_id, std::make_pair(last_msg.ts -settings.sparkline_range, last_msg.ts));
     QFutureSynchronizer<void> synchronizer;
     for (int i = first_visible.row(); i <= last_visible.row(); ++i) {
       auto item = model->getItem(model->index(i, 1));
       synchronizer.addFuture(QtConcurrent::run(
-          &item->sparkline, &Sparkline::update, model->msg_id, item->sig, last_msg.ts, settings.sparkline_range, size));
+          &item->sparkline, &Sparkline::update, item->sig, first, last, settings.sparkline_range, size));
     }
     synchronizer.waitForFinished();
   }
