@@ -15,9 +15,9 @@ class Camera:
 
     self.cap = cv.VideoCapture(camera_id)
 
-    self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1920.0)
-    self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 1080.0)
-    self.cap.set(cv.CAP_PROP_FPS, 30.0)
+    self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280.0)
+    self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720.0)
+    self.cap.set(cv.CAP_PROP_FPS, 25.0)
 
     self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
     self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
