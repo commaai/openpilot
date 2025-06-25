@@ -81,7 +81,7 @@ class InputBox(Widget):
       self.set_cursor_position(self._cursor_position + 1)
 
       if self._password_mode:
-        self._last_char_time = time.time()
+        self._last_char_time = time.monotonic()
 
       return True
     return False
@@ -161,7 +161,7 @@ class InputBox(Widget):
 
     # Show character at last edited position if within delay window
     masked_text = PASSWORD_MASK_CHAR * len(self._input_text)
-    recent_edit = time.time() - self._last_char_time < PASSWORD_MASK_DELAY
+    recent_edit = time.monotonic() - self._last_char_time < PASSWORD_MASK_DELAY
     if recent_edit and self._input_text:
       last_pos = max(0, self._cursor_position - 1)
       if last_pos < len(self._input_text):
