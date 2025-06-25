@@ -10,8 +10,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_text_box, gui_label
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
+from openpilot.system.ui.lib.widget import Widget
 from openpilot.system.ui.widgets.network import WifiManagerUI
-
 
 # Constants
 MARGIN = 50
@@ -31,8 +31,9 @@ class Screen(IntEnum):
   PROGRESS = 2
 
 
-class Updater:
+class Updater(Widget):
   def __init__(self, updater_path, manifest_path):
+    super().__init__()
     self.updater = updater_path
     self.manifest = manifest_path
     self.current_screen = Screen.PROMPT
@@ -60,7 +61,7 @@ class Updater:
     # TODO: just import it and run in a thread without a subprocess
     cmd = [self.updater, "--swap", self.manifest]
     self.process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                                   text=True, bufsize=1, universal_newlines=True)
+                                    text=True, bufsize=1, universal_newlines=True)
 
     for line in self.process.stdout:
       parts = line.strip().split(":")
@@ -78,21 +79,21 @@ class Updater:
       self.progress_text = "Update failed"
       self.show_reboot_button = True
 
-  def render_prompt_screen(self):
+  def render_prompt_screen(self, rect: rl.Rectangle):
     # Title
-    title_rect = rl.Rectangle(MARGIN + 50, 250, gui_app.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
+    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
     gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
 
     # Description
     desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
-                "The download size is approximately 1GB.")
+                 "The download size is approximately 1GB.")
 
-    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, gui_app.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
     gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
 
     # Buttons at the bottom
-    button_y = gui_app.height - MARGIN - BUTTON_HEIGHT
-    button_width = (gui_app.width - MARGIN * 3) // 2
+    button_y = rect.height - MARGIN - BUTTON_HEIGHT
+    button_width = (rect.width - MARGIN * 3) // 2
 
     # WiFi button
     wifi_button_rect = rl.Rectangle(MARGIN, button_y, button_width, BUTTON_HEIGHT)
@@ -106,24 +107,22 @@ class Updater:
       self.install_update()
       return  # Return to avoid further processing after action
 
-  def render_wifi_screen(self):
+  def render_wifi_screen(self, rect: rl.Rectangle):
     # Draw the Wi-Fi manager UI
-    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, gui_app.width - MARGIN * 2 - 100, gui_app.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
+    wifi_rect = rl.Rectangle(MARGIN + 50, MARGIN, rect.width - MARGIN * 2 - 100, rect.height - MARGIN * 2 - BUTTON_HEIGHT - 20)
     self.wifi_manager_ui.render(wifi_rect)
-    if self.wifi_manager_ui.require_full_screen:
-      return
 
-    back_button_rect = rl.Rectangle(MARGIN, gui_app.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+    back_button_rect = rl.Rectangle(MARGIN, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
     if gui_button(back_button_rect, "Back"):
       self.current_screen = Screen.PROMPT
       return  # Return to avoid processing other interactions after screen change
 
-  def render_progress_screen(self):
-    title_rect = rl.Rectangle(MARGIN + 100, 330, gui_app.width - MARGIN * 2 - 200, 100)
+  def render_progress_screen(self, rect: rl.Rectangle):
+    title_rect = rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, 100)
     gui_label(title_rect, self.progress_text, 90, font_weight=FontWeight.SEMI_BOLD)
 
     # Progress bar
-    bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, gui_app.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
+    bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, rect.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
     rl.draw_rectangle_rounded(bar_rect, 0.5, 10, PROGRESS_BG_COLOR)
 
     # Calculate the width of the progress chunk
@@ -134,19 +133,19 @@ class Updater:
 
     # Show reboot button if needed
     if self.show_reboot_button:
-      reboot_rect = rl.Rectangle(MARGIN + 100, gui_app.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
+      reboot_rect = rl.Rectangle(MARGIN + 100, rect.height - MARGIN - BUTTON_HEIGHT, BUTTON_WIDTH, BUTTON_HEIGHT)
       if gui_button(reboot_rect, "Reboot"):
         # Return True to signal main loop to exit before rebooting
         HARDWARE.reboot()
         return
 
-  def render(self):
+  def _render(self, rect: rl.Rectangle):
     if self.current_screen == Screen.PROMPT:
-      self.render_prompt_screen()
+      self.render_prompt_screen(rect)
     elif self.current_screen == Screen.WIFI:
-      self.render_wifi_screen()
+      self.render_wifi_screen(rect)
     elif self.current_screen == Screen.PROGRESS:
-      self.render_progress_screen()
+      self.render_progress_screen(rect)
 
 
 def main():
@@ -161,7 +160,7 @@ def main():
     gui_app.init_window("System Update")
     updater = Updater(updater_path, manifest_path)
     for _ in gui_app.render():
-      updater.render()
+      updater.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
   finally:
     # Make sure we clean up even if there's an error
     gui_app.close()

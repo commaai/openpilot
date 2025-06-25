@@ -47,8 +47,8 @@ def replay(route, segment, loop):
 
     if w == 'roadCameraState':
       try:
-        img = fr.get(frame_idx[msg.roadCameraState.frameId], pix_fmt="rgb24")
-        img = img[0][:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
+        img = fr.get(frame_idx[msg.roadCameraState.frameId])
+        img = img[:, ::-1]  # Convert RGB to BGR, which is what the camera outputs
         msg.roadCameraState.image = img.flatten().tobytes()
       except (KeyError, ValueError):
         pass

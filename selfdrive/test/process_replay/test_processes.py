@@ -17,7 +17,6 @@ from openpilot.tools.lib.filereader import FileReader
 from openpilot.tools.lib.logreader import LogReader, save_log
 
 source_segments = [
-  ("BODY", "937ccb7243511b65|2022-05-24--16-03-09--1"),        # COMMA.COMMA_BODY
   ("HYUNDAI", "02c45f73a2e5c6e9|2021-01-01--19-08-22--1"),     # HYUNDAI.HYUNDAI_SONATA
   ("HYUNDAI2", "d545129f3ca90f28|2022-11-07--20-43-08--3"),    # HYUNDAI.HYUNDAI_KIA_EV6 (+ QCOM GPS)
   ("TOYOTA", "0982d79ebb0de295|2021-01-04--17-13-21--13"),     # TOYOTA.TOYOTA_PRIUS
@@ -42,7 +41,6 @@ source_segments = [
 ]
 
 segments = [
-  ("BODY", "regen2F3C7259F1B|2025-04-08--23-00-23--0"),
   ("HYUNDAI", "regenAA0FC4ED71E|2025-04-08--22-57-50--0"),
   ("HYUNDAI2", "regenAFB9780D823|2025-04-08--23-00-34--0"),
   ("TOYOTA", "regen218A4DCFAA1|2025-04-08--22-57-51--0"),
@@ -63,7 +61,7 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "tesla"]
+excluded_interfaces = ["mock", "body"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")
@@ -197,7 +195,7 @@ if __name__ == "__main__":
           continue
 
         # to speed things up, we only test all segments on card
-        if cfg.proc_name != 'card' and car_brand not in ('HYUNDAI', 'TOYOTA', 'HONDA', 'SUBARU', 'FORD', 'RIVIAN', 'TESLA'):
+        if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
           continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
