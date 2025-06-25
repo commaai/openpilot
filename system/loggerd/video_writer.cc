@@ -157,9 +157,8 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp) {
   for (int i = 0; i < sample_count; i++) {
     audio_buffer.push_back(raw_samples[i] / 32768.0f);
   }
-  buffered_samples += sample_count;
 
-  while (buffered_samples >= audio_codec_ctx->frame_size) {
+  while (audio_buffer.size() >= audio_codec_ctx->frame_size) {
     audio_frame->pts = next_audio_pts;
 
     float *f_samples = reinterpret_cast<float*>(audio_frame->data[0]);
@@ -170,7 +169,6 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp) {
     for (int i = 0; i < audio_codec_ctx->frame_size; i++) {
       audio_buffer.pop_front();
     }
-    buffered_samples -= audio_codec_ctx->frame_size;
 
     int send_result = avcodec_send_frame(audio_codec_ctx, audio_frame); // encode frames
     if (send_result >= 0) {

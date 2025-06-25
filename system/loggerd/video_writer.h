@@ -31,7 +31,6 @@ private:
   uint64_t next_audio_pts = 0;
   uint64_t first_audio_timestamp = 0;
   std::deque<float> audio_buffer;
-  uint64_t buffered_samples = 0;
 
   bool remuxing;
 };
