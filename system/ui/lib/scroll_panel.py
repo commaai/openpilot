@@ -43,10 +43,6 @@ class GuiScrollPanel:
 
     # Calculate time delta
     current_time = rl.get_time()
-    delta_time = rl.get_frame_time()
-
-    # Prevent large jumps
-    delta_time = min(delta_time, 0.05)
 
     mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
