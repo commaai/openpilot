@@ -1,4 +1,5 @@
 import pyray as rl
+from collections import deque
 from enum import IntEnum
 
 # Scroll constants for smooth scrolling behavior
@@ -31,8 +32,7 @@ class GuiScrollPanel:
     self._velocity_y = 0.0  # Velocity for inertia
     self._is_dragging: bool = False
     self._bounce_offset: float = 0.0
-    self._last_frame_time = rl.get_time()
-    self._velocity_history: list[float] = []
+    self._velocity_history: deque[float] = deque(maxlen=VELOCITY_HISTORY_SIZE)
     self._last_drag_time: float = 0.0
     self._content_rect: rl.Rectangle | None = None
     self._bounds_rect: rl.Rectangle | None = None
@@ -44,11 +44,6 @@ class GuiScrollPanel:
 
     # Calculate time delta
     current_time = rl.get_time()
-    delta_time = current_time - self._last_frame_time
-    self._last_frame_time = current_time
-
-    # Prevent large jumps
-    delta_time = min(delta_time, 0.05)
 
     mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
@@ -66,7 +61,7 @@ class GuiScrollPanel:
         self._last_mouse_y = mouse_pos.y
         self._start_mouse_y = mouse_pos.y
         self._last_drag_time = current_time
-        self._velocity_history = []
+        self._velocity_history.clear()
         self._velocity_y = 0.0
         self._bounce_offset = 0.0
         self._is_dragging = False
@@ -81,9 +76,6 @@ class GuiScrollPanel:
         if time_since_last_drag > 0:
           drag_velocity = delta_y / time_since_last_drag / 60.0
           self._velocity_history.append(drag_velocity)
-
-          if len(self._velocity_history) > VELOCITY_HISTORY_SIZE:
-            self._velocity_history.pop(0)
 
         self._last_drag_time = current_time
 
