@@ -83,7 +83,6 @@ class Mic:
     audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
     msg.audioData.data = audio_data_int_16.tobytes()
     msg.audioData.sampleRate = SAMPLE_RATE
-    msg.audioData.length = frames
     msg.audioData.startFrameIdx = self.audio_frame_index
     self.audio_frame_index += frames
     msg.audioData.sequenceNum = self.audio_sequence_number
