@@ -256,7 +256,6 @@ class GuiApplication:
 
     @rl.ffi.callback("void(int, char *, void *)")
     def trace_log_callback(log_level, text, args):
-      print('log_level:', log_level, 'text:', text, 'args:', args)
       try:
         text_addr = int(rl.ffi.cast("uintptr_t", text))
         args_addr = int(rl.ffi.cast("uintptr_t", args))
