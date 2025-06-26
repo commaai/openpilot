@@ -285,10 +285,8 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
-        if (service.encoder) {
-          s.last_camera_seen_tms = millis_since_boot();
-          bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
-        } else if (service.record_audio) {
+
+        if (service.record_audio) {
           capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
           auto event = cmsg.getRoot<cereal::Event>();
           auto audio_data = event.getAudioData().getData();
@@ -297,7 +295,11 @@ void loggerd_thread() {
               encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime()/1000);
             }
           }
-          delete msg;
+        }
+
+        if (service.encoder) {
+          s.last_camera_seen_tms = millis_since_boot();
+          bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);
         } else {
           s.logger.write((uint8_t *)msg->getData(), msg->getSize(), in_qlog);
           bytes_count += msg->getSize();
