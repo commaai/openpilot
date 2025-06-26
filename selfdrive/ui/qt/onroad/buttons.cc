@@ -50,14 +50,12 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
 
 // RecordingAudioButton
 RecordingAudioButton::RecordingAudioButton(QWidget *parent) : recording_audio(false), QPushButton(parent) {
-  setFixedSize(btn_size, btn_size);
-
-  microphone_img = loadPixmap("../assets/icons/microphone.png", {img_size, img_size});
-  QObject::connect(this, &QPushButton::clicked, [=]() { emit openSettings(2, "RecordAudio"); });
+  setFixedSize(148, 148);
+  QObject::connect(this, &QPushButton::clicked, [=]() { if (recording_audio) emit openSettings(2, "RecordAudio"); });
 }
 
 void RecordingAudioButton::updateState(const UIState &s) {
-  if (s.scene.recording_audio != recording_audio) {
+    if (s.scene.recording_audio != recording_audio) {
     recording_audio = s.scene.recording_audio;
     update();
   }
@@ -66,6 +64,27 @@ void RecordingAudioButton::updateState(const UIState &s) {
 void RecordingAudioButton::paintEvent(QPaintEvent *event) {
   QPainter p(this);
   if (recording_audio) {
-    drawIcon(p, QPoint(btn_size / 2, btn_size / 2), microphone_img, QColor(255, 140, 0, 166), isDown() ? 0.6 : 1.0);
+    p.setRenderHint(QPainter::Antialiasing);
+
+    QPoint center(width() / 2, height() / 2);
+
+    QColor bg(255, 255, 255, 127);
+    QColor accent(255, 69, 58);
+
+    if (isDown()) {
+      accent.setAlphaF(0.7);
+    }
+
+    p.setPen(Qt::NoPen);
+    p.setBrush(bg);
+    p.drawEllipse(center, 74, 74);
+
+    p.setPen(QPen(accent, 6));
+    p.setBrush(Qt::NoBrush);
+    p.drawEllipse(center, 42, 42);
+
+    p.setPen(Qt::NoPen);
+    p.setBrush(accent);
+    p.drawEllipse(center, 22, 22);
   }
 }
