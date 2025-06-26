@@ -154,21 +154,19 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp) {
   // convert s16le samples to fltp and add to buffer
   const int16_t *raw_samples = reinterpret_cast<const int16_t*>(data);
   int sample_count = len / sizeof(int16_t);
-  for (int i = 0; i < sample_count; i++) {
-    audio_buffer.push_back(raw_samples[i] / 32768.0f);
-  }
+  audio_buffer.reserve(audio_buffer.size() + sample_count);
+  constexpr float normalizer = 1.0f / 32768.0f;
+  std::transform(raw_samples, raw_samples + sample_count, std::back_inserter(audio_buffer),
+                 [](int16_t sample) {
+                     return sample * normalizer;
+                 });
 
   while (audio_buffer.size() >= audio_codec_ctx->frame_size) {
     audio_frame->pts = next_audio_pts;
 
     float *f_samples = reinterpret_cast<float*>(audio_frame->data[0]);
-    for (int i = 0; i < audio_codec_ctx->frame_size; i++) {
-      f_samples[i] = audio_buffer[i];
-    }
-
-    for (int i = 0; i < audio_codec_ctx->frame_size; i++) {
-      audio_buffer.pop_front();
-    }
+    std::copy(audio_buffer.begin(),  audio_buffer.begin() + audio_codec_ctx->frame_size, f_samples);
+    audio_buffer.erase(audio_buffer.begin(), audio_buffer.begin() + audio_codec_ctx->frame_size);
 
     int send_result = avcodec_send_frame(audio_codec_ctx, audio_frame); // encode frames
     if (send_result >= 0) {
