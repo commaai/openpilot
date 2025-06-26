@@ -11,6 +11,7 @@ from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 from openpilot.system.ui.lib.widget import Widget
 
+ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
 LINE_PADDING = 40
 LINE_COLOR = rl.GRAY
@@ -202,22 +203,106 @@ class MultipleButtonAction(ItemAction):
     return False
 
 
-@dataclass
-class ListItem:
-  title: str
-  icon: str | None = None
-  description: str | Callable[[], str] | None = None
-  description_visible: bool = False
-  rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
-  callback: Callable | None = None
-  action_item: ItemAction | None = None
-  visible: bool | Callable[[], bool] = True
+class ListItem(Widget):
+  # title: str
+  # icon: str | None = None
+  # description: str | Callable[[], str] | None = None
+  # description_visible: bool = False
+  # rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
+  # callback: Callable | None = None
+  # action_item: ItemAction | None = None
+  # visible: bool | Callable[[], bool] = True
+  #
+  # # Cached properties for performance
+  # _prev_max_width: int = 0
+  # _wrapped_description: str | None = None
+  # _prev_description: str | None = None
+  # _description_height: float = 0
 
-  # Cached properties for performance
-  _prev_max_width: int = 0
-  _wrapped_description: str | None = None
-  _prev_description: str | None = None
-  _description_height: float = 0
+  def __init__(self, title: str = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
+               description_visible: bool = False, callback: Callable | None = None,
+               action_item: ItemAction | None = None, visible: bool | Callable[[], bool] = True):
+    super().__init__()
+    self.title = title
+    self.icon = icon
+    self.description = description
+    self.description_visible = description_visible
+    self.callback = callback
+    self.action_item = action_item
+    self.visible = visible
+    self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
+
+    self._font = gui_app.font(FontWeight.NORMAL)
+
+    # Initialize cached properties
+    self._wrapped_description = None
+    self._prev_description = None
+    self._prev_max_width = 0
+    self._description_height = 0
+
+  def set_parent_rect(self, parent_rect: rl.Rectangle):
+    self._rect.width = parent_rect.width #- (self._rect.x - max_rect.x)
+
+  def _render(self, _):
+    if not self.is_visible:
+      return
+
+    # y = int(self.rect.y + scroll_offset.y)
+    # if y + self.rect.height <= rect.y or y >= rect.y + rect.height:
+    #   continue
+
+    content_x = self._rect.x + ITEM_PADDING
+    text_x = content_x
+
+    # Only draw title and icon for items that have them
+    if self.title:
+      print('drawing title', self.title)
+      # Draw icon if present
+      if self.icon:
+        print('drawing icon', self.icon)
+        icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE)
+        rl.draw_texture(icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
+        text_x += ICON_SIZE + ITEM_PADDING
+
+      # Draw main text
+      text_size = measure_text_cached(self._font, self.title, ITEM_TEXT_FONT_SIZE)
+      item_y = self._rect.y + (ITEM_BASE_HEIGHT - text_size.y) // 2
+      rl.draw_text_ex(self._font, self.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
+
+    # Draw description if visible
+    current_description = self.get_description()
+    if self.description_visible and current_description and self._wrapped_description:
+      rl.draw_text_ex(
+        self._font,
+        self._wrapped_description,
+        rl.Vector2(text_x, self._rect.y + ITEM_DESC_V_OFFSET),
+        ITEM_DESC_FONT_SIZE,
+        0,
+        ITEM_DESC_TEXT_COLOR,
+      )
+
+    # Draw right item if present
+    if self.action_item:
+      print('item rect', self._rect.x, self._rect.y, self._rect.width, self._rect.height)
+      rl.draw_rectangle_lines_ex(self._rect, 5, LINE_COLOR)
+      right_rect = self.get_right_item_rect(self._rect)
+      right_rect.y = self._rect.y
+      if self.action_item.render(right_rect) and self.action_item.enabled:
+        # Right item was clicked/activated
+        if self.callback:
+          self.callback()
+
+    # # Draw separator line
+    # next_visible_item = self._get_next_visible_item(i)
+    # if next_visible_item is not None:
+    #   line_y = int(y + self.rect.height - 1)
+    #   rl.draw_line(
+    #     int(self.rect.x) + LINE_PADDING,
+    #     line_y,
+    #     int(self.rect.x + self.rect.width) - LINE_PADDING * 2,
+    #     line_y,
+    #     LINE_COLOR,
+    #   )
 
   @property
   def is_visible(self) -> bool:

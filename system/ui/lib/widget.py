@@ -13,21 +13,51 @@ class DialogResult(IntEnum):
 class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
+    self._max_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
+    self._enabled: bool = True
     self._is_visible: bool | Callable[[], bool] = True
+    self._click_valid_callback: Callable[[], bool] | None = None
+    self._touch_valid_callback: Callable[[], bool] | None = None
+
+  def set_click_valid_callback(self, click_callback: Callable[[], bool],
+                               touch_callback: Callable[[], bool]) -> None:
+    """Set a callback to determine if the widget can be clicked."""
+    self._click_valid_callback = click_callback
+    self._touch_valid_callback = touch_callback
+
+  def _touch_valid(self) -> bool:
+    """Check if the widget can be touched."""
+    return self._touch_valid_callback() if self._touch_valid_callback else True
 
   @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
 
+  def set_enabled(self, enabled: bool) -> None:
+    self._enabled = enabled
+
+  @property
+  def rect(self) -> rl.Rectangle:
+    return self._rect
+
   def set_visible(self, visible: bool | Callable[[], bool]) -> None:
     self._is_visible = visible
 
   def set_rect(self, rect: rl.Rectangle) -> None:
-    prev_rect = self._rect
+    changed = (self._rect.x != rect.x or self._rect.y != rect.y or
+               self._rect.width != rect.width or self._rect.height != rect.height)
     self._rect = rect
-    if (rect.x != prev_rect.x or rect.y != prev_rect.y or
-        rect.width != prev_rect.width or rect.height != prev_rect.height):
+    if changed:
+      self._update_layout_rects()
+
+  def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
+    """ Like size hint in QT """
+
+  def set_position(self, x: float, y: float) -> None:
+    changed = (self._rect.x != x or self._rect.y != y)
+    self._rect.x, self._rect.y = x, y
+    if changed:
       self._update_layout_rects()
 
   def render(self, rect: rl.Rectangle = None) -> bool | int | None:
@@ -42,15 +72,19 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
-    mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if rl.check_collision_point_rec(mouse_pos, self._rect):
-        self._is_pressed = True
+    if self._enabled:
+      mouse_pos = rl.get_mouse_position()
+      if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._touch_valid():
+        if rl.check_collision_point_rec(mouse_pos, self._rect):
+          self._is_pressed = True
 
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if self._is_pressed and rl.check_collision_point_rec(mouse_pos, self._rect):
-        self._handle_mouse_release(mouse_pos)
-      self._is_pressed = False
+      elif not self._touch_valid():
+        self._is_pressed = False
+
+      elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+        if self._is_pressed and rl.check_collision_point_rec(mouse_pos, self._rect):
+          self._handle_mouse_release(mouse_pos)
+        self._is_pressed = False
 
     return ret
 
