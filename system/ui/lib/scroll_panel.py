@@ -8,7 +8,7 @@ INERTIA_FRICTION = pow(0.92, 60)        # The rate at which the inertia slows do
 MIN_VELOCITY = 0.5 * 60             # Minimum velocity before stopping the inertia
 DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
 BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
-BOUNCE_RETURN_RATE = 0.15 * 60     # How quickly it returns from the bounce each 1/60s
+BOUNCE_RETURN_RATE = 0.15     # How quickly it returns from the bounce each 1/60s
 MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
 FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
 VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
@@ -151,12 +151,13 @@ class GuiScrollPanel:
         target_y = -max_scroll_y
 
       distance = target_y - self._offset.y
-      bounce_step = distance * BOUNCE_RETURN_RATE * rl.get_frame_time()
+      bounce_step = distance * BOUNCE_RETURN_RATE * 60 * rl.get_frame_time()
+      bounce_step = distance * (1.0 - pow(1.0 - 0.15, rl.get_frame_time() * 60.0))
       self._offset.y += bounce_step
       self._velocity_y *= pow(INERTIA_FRICTION, rl.get_frame_time())
-      print(self._velocity_y, self._offset.y, target_y, distance)
+      print(self._velocity_y, self._offset.y, target_y, distance, bounce_step)
 
-      if abs(distance) < 0.5 and abs(self._velocity_y) < MIN_VELOCITY:
+      if abs(distance) < 0.5:# and abs(self._velocity_y) < MIN_VELOCITY:
         self._offset.y = target_y
         self._velocity_y = 0.0
         self._scroll_state = ScrollState.IDLE
