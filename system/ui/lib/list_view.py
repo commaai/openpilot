@@ -44,6 +44,7 @@ class ItemAction(Widget, ABC):
   def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
     super().__init__()
     self.width = width
+    # self.set_rect(rl.Rectangle(0, 0, width, ITEM_BASE_HEIGHT))
     self._enabled_source = enabled
 
   @property
@@ -246,6 +247,13 @@ class ListItem(Widget):
   def _handle_mouse_release(self, mouse_pos: rl.Vector2):
     if not self.is_visible:
       return
+
+    # Check not in action rect
+    if self.action_item:
+      action_rect = self.get_right_item_rect(self._rect)
+      if rl.check_collision_point_rec(mouse_pos, action_rect):
+        # Click was on right item, don't toggle description
+        return
 
     if self.description:
       print('toggled description visibility for', self.title)
