@@ -18,9 +18,9 @@ class Scroller(Widget):
     self._pad_end = pad_end
     self.scroll_panel = GuiScrollPanel()
 
-    # for item in self._items:
-    #   item.set_click_valid_callback(self.scroll_panel.is_click_valid,
-    #                                 self.scroll_panel.is_touch_valid)
+    for item in self._items:
+      item.set_click_valid_callback(self.scroll_panel.is_click_valid,
+                                    self.scroll_panel.is_touch_valid)
 
   def add_widget(self, item: Widget) -> None:
     self._items.append(item)
@@ -29,7 +29,6 @@ class Scroller(Widget):
 
   def _render(self, _):
     # TODO: don't draw items that are not in the viewport
-    print([item.rect.height for item in self._items])
     visible_items = [item for item in self._items if item.is_visible]
     content_height = sum(item.rect.height for item in visible_items) + ITEM_SPACING * (len(visible_items))
     print('content height', content_height, 'rect height', self._rect.height)

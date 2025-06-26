@@ -175,6 +175,9 @@ class GuiScrollPanel:
       and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
     )
 
+  def is_touch_valid(self):
+    return not self._is_dragging
+
   def get_normalized_scroll_position(self) -> float:
     """Returns the current scroll position as a value from 0.0 to 1.0"""
     if not self._content_rect or not self._bounds_rect:

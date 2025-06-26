@@ -243,9 +243,21 @@ class ListItem(Widget):
   def set_parent_rect(self, parent_rect: rl.Rectangle):
     self._rect.width = parent_rect.width #- (self._rect.x - max_rect.x)
 
+  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
+    if not self.is_visible:
+      return
+
+    if self.description:
+      print('toggled description visibility for', self.title)
+      self.description_visible = not self.description_visible
+      self._rect.height = self.get_item_height(self._font, self._rect.width)
+
   def _render(self, _):
     if not self.is_visible:
       return
+
+    # if self._is_pressed:
+    #   raise Exception('clicked!', self.title)
 
     # y = int(self.rect.y + scroll_offset.y)
     # if y + self.rect.height <= rect.y or y >= rect.y + rect.height:
@@ -256,10 +268,11 @@ class ListItem(Widget):
 
     # Only draw title and icon for items that have them
     if self.title:
-      print('drawing title', self.title)
+      # print('drawing title', self.title)
       # Draw icon if present
       if self.icon:
-        print('drawing icon', self.icon)
+        # TODO: ICON not working
+        # print('drawing icon', self.icon)
         icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE)
         rl.draw_texture(icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
@@ -272,6 +285,7 @@ class ListItem(Widget):
     # Draw description if visible
     current_description = self.get_description()
     if self.description_visible and current_description and self._wrapped_description:
+      # raise Exception('drawing description', current_description)
       rl.draw_text_ex(
         self._font,
         self._wrapped_description,
