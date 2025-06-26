@@ -298,7 +298,7 @@ class ListItem(Widget):
     # Draw right item if present
     if self.action_item:
       print('item rect', self._rect.x, self._rect.y, self._rect.width, self._rect.height)
-      rl.draw_rectangle_lines_ex(self._rect, 5, LINE_COLOR)
+      # rl.draw_rectangle_lines_ex(self._rect, 5, LINE_COLOR)
       right_rect = self.get_right_item_rect(self._rect)
       right_rect.y = self._rect.y
       if self.action_item.render(right_rect) and self.action_item.enabled:

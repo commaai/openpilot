@@ -53,7 +53,7 @@ class DeviceLayout(Widget):
       button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
       button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
       dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
-    ])
+    ], line_separator=True, spacing=0)
 
   def _initialize_items(self):
     dongle_id = self._params.get("DongleId", encoding="utf-8") or "N/A"
