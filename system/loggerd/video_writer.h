@@ -1,7 +1,7 @@
 #pragma once
 
 #include <string>
-#include <deque>
+#include <vector>
 
 extern "C" {
 #include <libavformat/avformat.h>
@@ -30,7 +30,7 @@ private:
   AVFrame *audio_frame = nullptr;
   uint64_t next_audio_pts = 0;
   uint64_t first_audio_timestamp = 0;
-  std::deque<float> audio_buffer;
+  std::vector<float> audio_buffer;
 
   bool remuxing;
 };
