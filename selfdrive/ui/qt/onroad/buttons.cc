@@ -47,3 +47,25 @@ void ExperimentalButton::paintEvent(QPaintEvent *event) {
   QPixmap img = experimental_mode ? experimental_img : engage_img;
   drawIcon(p, QPoint(btn_size / 2, btn_size / 2), img, QColor(0, 0, 0, 166), (isDown() || !engageable) ? 0.6 : 1.0);
 }
+
+// RecordingAudioButton
+RecordingAudioButton::RecordingAudioButton(QWidget *parent) : recording_audio(false), QPushButton(parent) {
+  setFixedSize(btn_size, btn_size);
+
+  microphone_img = loadPixmap("../assets/icons/microphone.png", {img_size, img_size});
+  QObject::connect(this, &QPushButton::clicked, [=]() { emit openSettings(2, "RecordAudio"); });
+}
+
+void RecordingAudioButton::updateState(const UIState &s) {
+  if (s.scene.recording_audio != recording_audio) {
+    recording_audio = s.scene.recording_audio;
+    update();
+  }
+}
+
+void RecordingAudioButton::paintEvent(QPaintEvent *event) {
+  QPainter p(this);
+  if (recording_audio) {
+    drawIcon(p, QPoint(btn_size / 2, btn_size / 2), microphone_img, QColor(255, 140, 0, 166), isDown() ? 0.6 : 1.0);
+  }
+}

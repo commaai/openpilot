@@ -25,4 +25,21 @@ private:
   bool engageable;
 };
 
+class RecordingAudioButton : public QPushButton {
+  Q_OBJECT
+
+public:
+  explicit RecordingAudioButton(QWidget *parent = 0);
+  void updateState(const UIState &s);
+
+signals:
+  void openSettings(int index = 0, const QString &param = "");
+
+private:
+  void paintEvent(QPaintEvent *event) override;
+
+  QPixmap microphone_img;
+  bool recording_audio;
+};
+
 void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, const QBrush &bg, float opacity);

@@ -15,9 +15,13 @@ public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
 
+signals:
+  void openSettings(int index, const QString &param);
+
 private:
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
+  RecordingAudioButton *recording_audio_btn;
   DriverMonitorRenderer dmon;
   HudRenderer hud;
   ModelRenderer model;
