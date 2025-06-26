@@ -1,4 +1,5 @@
 import atexit
+import cffi
 import os
 import time
 import pyray as rl
@@ -8,8 +9,6 @@ from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.formatter import ffi, lib
-
 
 DEFAULT_FPS = 60
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -248,16 +247,28 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
 
   def _set_log_callback(self):
-    @rl.ffi.callback("void(int, char *, void *)")
-    def trace_log_callback(log_level, text, args):
+    ffi_libc = cffi.FFI()
+    ffi_libc.cdef("""
+      int vasprintf(char **strp, const char *fmt, void *ap);
+      void free(void *ptr);
+    """)
+    libc = ffi_libc.dlopen(None)
+    ffi_rl = rl.ffi
+
+    @ffi_rl.callback("void(int, char *, void *)")
+    def trace_log_callback(log_level, fmt, ap):
       try:
-        format_str = rl.ffi.string(text).decode('utf-8')
-        strp = ffi.new("char **")
-        if lib.format_with_va_list(strp, text, args) >= 0 and strp[0] != ffi.NULL:
-          text_str = ffi.string(strp[0]).decode('utf-8')
-          lib.free(strp[0])
+        fmt_addr = int(ffi_rl.cast("uintptr_t", fmt))
+        ap_addr = int(ffi_rl.cast("uintptr_t", ap))
+        fmt_libc = ffi_libc.cast("char *", fmt_addr)
+        ap_libc = ffi_libc.cast("void *", ap_addr)
+
+        out = ffi_libc.new("char **")
+        if libc.vasprintf(out, fmt_libc, ap_libc) >= 0 and out[0] != ffi_libc.NULL:
+          text_str = ffi_libc.string(out[0]).decode("utf-8", "replace")
+          libc.free(out[0])
         else:
-          text_str = format_str
+          text_str = ffi_rl.string(fmt).decode("utf-8", "replace")
       except Exception as e:
         text_str = f"[Log decode error: {e}]"
 
