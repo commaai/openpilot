@@ -250,7 +250,8 @@ class ListItem(Widget):
     if self.description:
       print('toggled description visibility for', self.title)
       self.description_visible = not self.description_visible
-      self._rect.height = self.get_item_height(self._font, self._rect.width)
+      content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
+      self._rect.height = self.get_item_height(self._font, content_width)
 
   def _render(self, _):
     if not self.is_visible:
