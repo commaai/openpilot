@@ -27,6 +27,13 @@ AnnotatedCameraWidget::AnnotatedCameraWidget(VisionStreamType type, QWidget *par
 }
 
 void AnnotatedCameraWidget::updateState(const UIState &s) {
+  // driver monitoring switches sides based on lhd/rhd, recording button needs to do the same
+  bool new_is_rhd = (*s.sm)["driverMonitoringState"].getDriverMonitoringState().getIsRHD();
+  if (new_is_rhd != is_rhd) {
+    is_rhd = new_is_rhd;
+    main_layout->setAlignment(recording_audio_btn, Qt::AlignBottom | (is_rhd ? Qt::AlignLeft : Qt::AlignRight));
+  }
+
   // update engageability/experimental mode button
   experimental_btn->updateState(s);
   recording_audio_btn->updateState(s);
