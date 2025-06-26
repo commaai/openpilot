@@ -42,49 +42,46 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
     assert(this->out_stream);
 
     if (has_audio) {
-      if (this->ofmt_ctx->oformat->audio_codec == AV_CODEC_ID_NONE) {
-        LOGE("Output format '%s' does not support audio streams, continuing without audio. Please change the output format or the set include_audio to false.", this->ofmt_ctx->oformat->name);
-      } else {
-        const AVCodec *audio_avcodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
-        assert(audio_avcodec);
-        this->audio_codec_ctx = avcodec_alloc_context3(audio_avcodec);
-        assert(this->audio_codec_ctx);
-        this->audio_codec_ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
-        this->audio_codec_ctx->sample_rate = 16000; // from system/micd.py
-        #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)  // FFmpeg 5.1+
-        av_channel_layout_default(&this->audio_codec_ctx->ch_layout, 1);
-        #else
-        this->audio_codec_ctx->channel_layout = AV_CH_LAYOUT_MONO;
-        #endif
-        this->audio_codec_ctx->bit_rate = 32000;
-        this->audio_codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+      assert(this->ofmt_ctx->oformat->audio_codec != AV_CODEC_ID_NONE); // check output format supports audio streams
+      const AVCodec *audio_avcodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
+      assert(audio_avcodec);
+      this->audio_codec_ctx = avcodec_alloc_context3(audio_avcodec);
+      assert(this->audio_codec_ctx);
+      this->audio_codec_ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
+      this->audio_codec_ctx->sample_rate = 16000; // from system/micd.py
+      #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)  // FFmpeg 5.1+
+      av_channel_layout_default(&this->audio_codec_ctx->ch_layout, 1);
+      #else
+      this->audio_codec_ctx->channel_layout = AV_CH_LAYOUT_MONO;
+      #endif
+      this->audio_codec_ctx->bit_rate = 32000;
+      this->audio_codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
-        int err = avcodec_open2(this->audio_codec_ctx, audio_avcodec, NULL);
-        assert(err >= 0);
-        av_log_set_level(AV_LOG_WARNING); // hide "QAvg" info msgs at the end of every segment
+      int err = avcodec_open2(this->audio_codec_ctx, audio_avcodec, NULL);
+      assert(err >= 0);
+      av_log_set_level(AV_LOG_WARNING); // hide "QAvg" info msgs at the end of every segment
 
-        this->audio_stream = avformat_new_stream(this->ofmt_ctx, NULL);
-        assert(this->audio_stream);
-        err = avcodec_parameters_from_context(this->audio_stream->codecpar, this->audio_codec_ctx);
-        assert(err >= 0);
-        this->audio_stream->time_base = (AVRational){1, this->audio_codec_ctx->sample_rate};
+      this->audio_stream = avformat_new_stream(this->ofmt_ctx, NULL);
+      assert(this->audio_stream);
+      err = avcodec_parameters_from_context(this->audio_stream->codecpar, this->audio_codec_ctx);
+      assert(err >= 0);
+      this->audio_stream->time_base = (AVRational){1, this->audio_codec_ctx->sample_rate};
 
-        this->audio_frame = av_frame_alloc();
-        assert(this->audio_frame);
-        this->audio_frame->format = this->audio_codec_ctx->sample_fmt;
-        #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)  // FFmpeg 5.1+
-        av_channel_layout_copy(&this->audio_frame->ch_layout, &this->audio_codec_ctx->ch_layout);
-        #else
-        this->audio_frame->channel_layout = this->audio_codec_ctx->channel_layout;
-        #endif
-        this->audio_frame->sample_rate = this->audio_codec_ctx->sample_rate;
-        this->audio_frame->nb_samples = this->audio_codec_ctx->frame_size;
-        int ret = av_frame_get_buffer(this->audio_frame, 0);
-        if (ret < 0) {
-          LOGE("AUDIO: Failed to allocate frame buffer: %d", ret);
-          av_frame_free(&this->audio_frame);
-          this->audio_frame = nullptr;
-        }
+      this->audio_frame = av_frame_alloc();
+      assert(this->audio_frame);
+      this->audio_frame->format = this->audio_codec_ctx->sample_fmt;
+      #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)  // FFmpeg 5.1+
+      av_channel_layout_copy(&this->audio_frame->ch_layout, &this->audio_codec_ctx->ch_layout);
+      #else
+      this->audio_frame->channel_layout = this->audio_codec_ctx->channel_layout;
+      #endif
+      this->audio_frame->sample_rate = this->audio_codec_ctx->sample_rate;
+      this->audio_frame->nb_samples = this->audio_codec_ctx->frame_size;
+      int ret = av_frame_get_buffer(this->audio_frame, 0);
+      if (ret < 0) {
+        LOGE("AUDIO: Failed to allocate frame buffer: %d", ret);
+        av_frame_free(&this->audio_frame);
+        this->audio_frame = nullptr;
       }
     }
 
