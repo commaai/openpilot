@@ -4,11 +4,11 @@ from enum import IntEnum
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
-INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
-MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
+INERTIA_FRICTION = pow(0.92, 60)        # The rate at which the inertia slows down
+MIN_VELOCITY = 0.5 * 60             # Minimum velocity before stopping the inertia
 DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
 BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
-BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
+BOUNCE_RETURN_RATE = 0.15 * 60     # How quickly it returns from the bounce each 1/60s
 MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
 FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
 VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
@@ -47,6 +47,7 @@ class GuiScrollPanel:
 
     mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
+    # print(rl.get_fps(), 1/ rl.get_frame_time())
 
     # Start dragging on mouse press
     if rl.check_collision_point_rec(mouse_pos, bounds) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
@@ -74,7 +75,7 @@ class GuiScrollPanel:
         # Track velocity for inertia
         time_since_last_drag = current_time - self._last_drag_time
         if time_since_last_drag > 0:
-          drag_velocity = delta_y / time_since_last_drag / 60.0
+          drag_velocity = delta_y / time_since_last_drag# / 60.0
           self._velocity_history.append(drag_velocity)
 
         self._last_drag_time = current_time
@@ -134,8 +135,8 @@ class GuiScrollPanel:
     # Apply inertia (continue scrolling after mouse release)
     if self._scroll_state == ScrollState.IDLE:
       if abs(self._velocity_y) > MIN_VELOCITY:
-        self._offset.y += self._velocity_y
-        self._velocity_y *= INERTIA_FRICTION
+        self._offset.y += self._velocity_y * rl.get_frame_time()
+        self._velocity_y *= pow(INERTIA_FRICTION, rl.get_frame_time())
 
         if self._offset.y > 0 or self._offset.y < -max_scroll_y:
           self._scroll_state = ScrollState.BOUNCING
@@ -144,14 +145,16 @@ class GuiScrollPanel:
 
     # Handle bouncing effect
     elif self._scroll_state == ScrollState.BOUNCING:
+      print('here!!!')
       target_y = 0.0
       if self._offset.y < -max_scroll_y:
         target_y = -max_scroll_y
 
       distance = target_y - self._offset.y
-      bounce_step = distance * BOUNCE_RETURN_SPEED
+      bounce_step = distance * BOUNCE_RETURN_RATE * rl.get_frame_time()
       self._offset.y += bounce_step
-      self._velocity_y *= INERTIA_FRICTION * 0.8
+      self._velocity_y *= pow(INERTIA_FRICTION, rl.get_frame_time())
+      print(self._velocity_y, self._offset.y, target_y, distance)
 
       if abs(distance) < 0.5 and abs(self._velocity_y) < MIN_VELOCITY:
         self._offset.y = target_y
