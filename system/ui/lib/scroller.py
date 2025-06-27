@@ -23,9 +23,9 @@ class LineSeparator(Widget):
 
 
 class Scroller(Widget):
-  def __init__(self, items: list, spacing: int = ITEM_SPACING, line_separator: bool = False, pad_end: bool = True):
+  def __init__(self, items: list[Widget], spacing: int = ITEM_SPACING, line_separator: bool = False, pad_end: bool = True):
     super().__init__()
-    self._items = []
+    self._items: list[Widget] = []
     self._spacing = spacing
     self._line_separator = line_separator
     self._pad_end = pad_end

@@ -211,10 +211,10 @@ class ListItem(Widget):
     self._font = gui_app.font(FontWeight.NORMAL)
 
     # Cached properties for performance
-    self._wrapped_description = None
-    self._prev_description = None
-    self._prev_max_width = 0
-    self._description_height = 0
+    self._prev_max_width: int = 0
+    self._wrapped_description: str | None = None
+    self._prev_description: str | None = None
+    self._description_height: float = 0
 
   def set_parent_rect(self, parent_rect: rl.Rectangle):
     super().set_parent_rect(parent_rect)
