@@ -15,7 +15,6 @@ class Widget(abc.ABC):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
-    self._enabled: bool = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
 
@@ -30,9 +29,6 @@ class Widget(abc.ABC):
   @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
-
-  def set_enabled(self, enabled: bool) -> None:
-    self._enabled = enabled
 
   @property
   def rect(self) -> rl.Rectangle:
@@ -70,19 +66,18 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
-    if self._enabled:
-      mouse_pos = rl.get_mouse_position()
-      if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._touch_valid():
-        if rl.check_collision_point_rec(mouse_pos, self._rect):
-          self._is_pressed = True
+    mouse_pos = rl.get_mouse_position()
+    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._touch_valid():
+      if rl.check_collision_point_rec(mouse_pos, self._rect):
+        self._is_pressed = True
 
-      elif not self._touch_valid():
-        self._is_pressed = False
+    elif not self._touch_valid():
+      self._is_pressed = False
 
-      elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-        if self._is_pressed and rl.check_collision_point_rec(mouse_pos, self._rect):
-          self._handle_mouse_release(mouse_pos)
-        self._is_pressed = False
+    elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if self._is_pressed and rl.check_collision_point_rec(mouse_pos, self._rect):
+        self._handle_mouse_release(mouse_pos)
+      self._is_pressed = False
 
     return ret
 
