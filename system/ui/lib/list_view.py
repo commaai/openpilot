@@ -52,6 +52,10 @@ class ToggleAction(ItemAction):
     self.toggle = Toggle(initial_state=initial_state)
     self.state = initial_state
 
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    self.toggle.set_touch_valid_callback(touch_callback)
+
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
     self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
@@ -163,7 +167,7 @@ class MultipleButtonAction(ItemAction):
       # Check button state
       mouse_pos = rl.get_mouse_position()
       is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect)
-      is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT)
+      is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._is_pressed
       is_selected = i == self.selected_button
 
       # Button colors
@@ -184,7 +188,7 @@ class MultipleButtonAction(ItemAction):
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
 
       # Handle click
-      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._is_pressed:
         clicked = i
 
     if clicked >= 0:
@@ -215,6 +219,11 @@ class ListItem(Widget):
     self._wrapped_description: str | None = None
     self._prev_description: str | None = None
     self._description_height: float = 0
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    if self.action_item:
+      self.action_item.set_touch_valid_callback(touch_callback)
 
   def set_parent_rect(self, parent_rect: rl.Rectangle):
     super().set_parent_rect(parent_rect)
