@@ -38,7 +38,6 @@ signals:
 private:
   void paintEvent(QPaintEvent *event) override;
 
-  QPixmap microphone_img;
   bool recording_audio;
 };
 
