@@ -198,7 +198,7 @@ class MultipleButtonAction(ItemAction):
 class ListItem(Widget):
   def __init__(self, title: str = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
                description_visible: bool = False, callback: Callable | None = None,
-               action_item: ItemAction | None = None, visible: bool | Callable[[], bool] = True):
+               action_item: ItemAction | None = None):
     super().__init__()
     self.title = title
     self.icon = icon
@@ -206,7 +206,6 @@ class ListItem(Widget):
     self.description_visible = description_visible
     self.callback = callback
     self.action_item = action_item
-    self.visible = visible
 
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
     self._font = gui_app.font(FontWeight.NORMAL)
@@ -283,10 +282,6 @@ class ListItem(Widget):
         if self.callback:
           self.callback()
 
-  @property
-  def is_visible(self) -> bool:
-    return bool(_resolve_value(self.visible, True))
-
   def get_description(self):
     return _resolve_value(self.description, None)
 
@@ -330,36 +325,32 @@ class ListItem(Widget):
 
 
 # Factory functions
-def simple_item(title: str, callback: Callable | None = None, visible: bool | Callable[[], bool] = True) -> ListItem:
-  return ListItem(title=title, callback=callback, visible=visible)
+def simple_item(title: str, callback: Callable | None = None) -> ListItem:
+  return ListItem(title=title, callback=callback)
 
 
 def toggle_item(title: str, description: str | Callable[[], str] | None = None, initial_state: bool = False,
-                callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True,
-                visible: bool | Callable[[], bool] = True) -> ListItem:
+                callback: Callable | None = None, icon: str = "", enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ToggleAction(initial_state=initial_state, enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback, visible=visible)
+  return ListItem(title=title, description=description, action_item=action, icon=icon, callback=callback)
 
 
 def button_item(title: str, button_text: str | Callable[[], str], description: str | Callable[[], str] | None = None,
-                callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
-                visible: bool | Callable[[], bool] = True) -> ListItem:
+                callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = ButtonAction(text=button_text, enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+  return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
 def text_item(title: str, value: str | Callable[[], str], description: str | Callable[[], str] | None = None,
-              callback: Callable | None = None, enabled: bool | Callable[[], bool] = True,
-              visible: bool | Callable[[], bool] = True) -> ListItem:
+              callback: Callable | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = TextAction(text=value, color=rl.Color(170, 170, 170, 255), enabled=enabled)
-  return ListItem(title=title, description=description, action_item=action, callback=callback, visible=visible)
+  return ListItem(title=title, description=description, action_item=action, callback=callback)
 
 
 def dual_button_item(left_text: str, right_text: str, left_callback: Callable = None, right_callback: Callable = None,
-                     description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True,
-                     visible: bool | Callable[[], bool] = True) -> ListItem:
+                     description: str | Callable[[], str] | None = None, enabled: bool | Callable[[], bool] = True) -> ListItem:
   action = DualButtonAction(left_text, right_text, left_callback, right_callback, enabled)
-  return ListItem(title="", description=description, action_item=action, visible=visible)
+  return ListItem(title="", description=description, action_item=action)
 
 
 def multiple_button_item(title: str, description: str, buttons: list[str], selected_index: int,
