@@ -21,7 +21,7 @@ DESCRIPTIONS = {
   "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
-  "RecordAudio": "Record and store microphone audio while driving.",
+  "RecordAudio": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.",
 }
 
 
