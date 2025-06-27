@@ -151,12 +151,11 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp) {
   // convert s16le samples to fltp and add to buffer
   const int16_t *raw_samples = reinterpret_cast<const int16_t*>(data);
   int sample_count = len / sizeof(int16_t);
-  audio_buffer.reserve(audio_buffer.size() + sample_count);
   constexpr float normalizer = 1.0f / 32768.0f;
-  std::transform(raw_samples, raw_samples + sample_count, std::back_inserter(audio_buffer),
-                 [](int16_t sample) {
-                     return sample * normalizer;
-                 });
+  const size_t original_size = audio_buffer.size();
+  audio_buffer.resize(original_size + sample_count);
+  std::transform(raw_samples, raw_samples + sample_count, audio_buffer.begin() + original_size,
+                [](int16_t sample) { return sample * normalizer; });
 
   while (audio_buffer.size() >= audio_codec_ctx->frame_size) {
     audio_frame->pts = next_audio_pts;
