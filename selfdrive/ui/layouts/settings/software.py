@@ -1,6 +1,7 @@
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.list_view import ListView, button_item, text_item
+from openpilot.system.ui.lib.list_view import button_item, text_item
+from openpilot.system.ui.lib.scroller import Scroller
 from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 
@@ -11,7 +12,7 @@ class SoftwareLayout(Widget):
 
     self._params = Params()
     items = self._init_items()
-    self._list_widget = ListView(items)
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
 
   def _init_items(self):
     items = [
@@ -24,7 +25,7 @@ class SoftwareLayout(Widget):
     return items
 
   def _render(self, rect):
-    self._list_widget.render(rect)
+    self._scroller.render(rect)
 
   def _on_download_update(self): pass
   def _on_install_update(self): pass

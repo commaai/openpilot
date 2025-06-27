@@ -7,7 +7,7 @@ from openpilot.selfdrive.ui.onroad.driver_camera_dialog import DriverCameraDialo
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.list_view import ListView, text_item, button_item, dual_button_item
+from openpilot.system.ui.lib.list_view import text_item, button_item, dual_button_item
 from openpilot.system.ui.lib.scroller import Scroller
 from openpilot.system.ui.lib.widget import Widget, DialogResult
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
@@ -38,22 +38,7 @@ class DeviceLayout(Widget):
     self._fcc_dialog: HtmlRenderer | None = None
 
     items = self._initialize_items()
-    self._list_widget = ListView(items)
-
-    dongle_id = self._params.get("DongleId", encoding="utf-8") or "N/A"
-    serial = self._params.get("HardwareSerial") or "N/A"
-
-    self._scroller = Scroller([
-      text_item("Dongle ID", dongle_id),
-      text_item("Serial", serial),
-      button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
-      button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
-      button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
-      button_item("Regulatory", "VIEW", callback=self._on_regulatory, visible=TICI),
-      button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
-      button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
-      dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
-    ], line_separator=True, spacing=0)
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
 
   def _initialize_items(self):
     dongle_id = self._params.get("DongleId", encoding="utf-8") or "N/A"
@@ -75,7 +60,6 @@ class DeviceLayout(Widget):
   def _render(self, rect):
     print('scroller rect', rect.x, rect.y, rect.width, rect.height)
     self._scroller.render(rect)
-    # self._list_widget.render(rect)
     print()
 
   def _show_language_selection(self):

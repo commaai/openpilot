@@ -1,4 +1,5 @@
-from openpilot.system.ui.lib.list_view import ListView, multiple_button_item, toggle_item
+from openpilot.system.ui.lib.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.lib.scroller import Scroller
 from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
 
@@ -78,10 +79,10 @@ class TogglesLayout(Widget):
       ),
     ]
 
-    self._list_widget = ListView(items)
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
 
   def _render(self, rect):
-    self._list_widget.render(rect)
+    self._scroller.render(rect)
 
   def _set_longitudinal_personality(self, button_index: int):
     self._params.put("LongitudinalPersonality", str(button_index))
