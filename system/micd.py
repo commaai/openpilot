@@ -45,7 +45,7 @@ def apply_a_weighting(measurements: np.ndarray) -> np.ndarray:
 class Mic:
   def __init__(self):
     self.rk = Ratekeeper(RATE)
-    self.pm = messaging.PubMaster(['microphone', 'audioData'])
+    self.pm = messaging.PubMaster(['soundPressure', 'rawAudioData'])
 
     self.measurements = np.empty(0)
 
@@ -64,12 +64,12 @@ class Mic:
       sound_pressure_weighted = self.sound_pressure_weighted
       sound_pressure_level_weighted = self.sound_pressure_level_weighted
 
-    msg = messaging.new_message('microphone', valid=True)
-    msg.microphone.soundPressure = float(sound_pressure)
-    msg.microphone.soundPressureWeighted = float(sound_pressure_weighted)
-    msg.microphone.soundPressureWeightedDb = float(sound_pressure_level_weighted)
+    msg = messaging.new_message('soundPressure', valid=True)
+    msg.soundPressure.soundPressure = float(sound_pressure)
+    msg.soundPressure.soundPressureWeighted = float(sound_pressure_weighted)
+    msg.soundPressure.soundPressureWeightedDb = float(sound_pressure_level_weighted)
 
-    self.pm.send('microphone', msg)
+    self.pm.send('soundPressure', msg)
     self.rk.keep_time()
 
   def callback(self, indata, frames, time, status):
@@ -79,15 +79,15 @@ class Mic:
 
     Logged A-weighted equivalents are rough approximations of the human-perceived loudness.
     """
-    msg = messaging.new_message('audioData', valid=True)
+    msg = messaging.new_message('rawAudioData', valid=True)
     audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
-    msg.audioData.data = audio_data_int_16.tobytes()
-    msg.audioData.sampleRate = SAMPLE_RATE
-    msg.audioData.startFrameIdx = self.audio_frame_index
+    msg.rawAudioData.data = audio_data_int_16.tobytes()
+    msg.rawAudioData.sampleRate = SAMPLE_RATE
+    msg.rawAudioData.startFrameIdx = self.audio_frame_index
     self.audio_frame_index += frames
-    msg.audioData.sequenceNum = self.audio_sequence_number
+    msg.rawAudioData.sequenceNum = self.audio_sequence_number
     self.audio_sequence_number += 1
-    self.pm.send('audioData', msg)
+    self.pm.send('rawAudioData', msg)
 
     with self.lock:
       self.measurements = np.concatenate((self.measurements, indata[:, 0]))

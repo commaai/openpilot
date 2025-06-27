@@ -226,7 +226,7 @@ void loggerd_thread() {
   for (const auto& [_, it] : services) {
     const bool encoder = util::ends_with(it.name, "EncodeData");
     const bool livestream_encoder = util::starts_with(it.name, "livestream");
-    const bool record_audio = (it.name == "audioData") && Params().getBool("RecordAudio");
+    const bool record_audio = (it.name == "rawAudioData") && Params().getBool("RecordAudio");
     if (!it.should_log && (!encoder || livestream_encoder) && !record_audio) continue;
     LOGD("logging %s", it.name.c_str());
 

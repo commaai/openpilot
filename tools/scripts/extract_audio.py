@@ -10,9 +10,9 @@ from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 def extract_audio(route_or_segment_name, output_file=None, play=False):
   lr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
-  audio_messages = list(lr.filter("audioData"))
+  audio_messages = list(lr.filter("rawAudioData"))
   if not audio_messages:
-    print("No audioData messages found in logs")
+    print("No rawAudioData messages found in logs")
     return
   sample_rate = audio_messages[0].sampleRate
 

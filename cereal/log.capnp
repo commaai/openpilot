@@ -2470,7 +2470,7 @@ struct DebugAlert {
 struct UserFlag {
 }
 
-struct Microphone {
+struct SoundPressure {
   soundPressure @0 :Float32;
 
   # uncalibrated, A-weighted
@@ -2563,8 +2563,8 @@ struct Event {
     livestreamDriverEncodeIdx @119 :EncodeIndex;
 
     # microphone data
-    microphone @103 :Microphone;
-    audioData @147 :AudioData;
+    soundPressure @103 :SoundPressure;
+    rawAudioData @147 :AudioData;
 
     # systems stuff
     androidLog @20 :AndroidLogEntry;
