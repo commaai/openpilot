@@ -43,16 +43,12 @@ def _resolve_value(value, default=""):
 class ItemAction(Widget, ABC):
   def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
     super().__init__()
-    self.width = width
-    # self.set_rect(rl.Rectangle(0, 0, width, ITEM_BASE_HEIGHT))
+    self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
 
   @property
   def enabled(self):
     return _resolve_value(self._enabled_source, False)
-
-  def get_width(self) -> int:
-    return self.width
 
 
 class ToggleAction(ItemAction):
@@ -355,15 +351,15 @@ class ListItem(Widget):
     return ITEM_BASE_HEIGHT
 
   def get_content_width(self, total_width: int) -> int:
-    if self.action_item and self.action_item.get_width() > 0:
-      return total_width - self.action_item.get_width() - RIGHT_ITEM_PADDING
+    if self.action_item and self.action_item.rect.width > 0:
+      return total_width - int(self.action_item.rect.width) - RIGHT_ITEM_PADDING
     return total_width
 
   def get_right_item_rect(self, item_rect: rl.Rectangle) -> rl.Rectangle:
     if not self.action_item:
       return rl.Rectangle(0, 0, 0, 0)
 
-    right_width = self.action_item.get_width()
+    right_width = self.action_item.rect.width
     if right_width == 0:  # Full width action (like DualButtonAction)
       return rl.Rectangle(item_rect.x + ITEM_PADDING, item_rect.y,
                           item_rect.width - (ITEM_PADDING * 2), ITEM_BASE_HEIGHT)
