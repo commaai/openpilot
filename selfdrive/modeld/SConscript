@@ -60,7 +60,7 @@ import subprocess
 from tinygrad import Device
 
 # because tg doesn't support multi-process
-devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True)
+devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True, cwd=env.Dir('#').abspath)
 if b"AMD" in devs:
   del Device
   print("USB GPU detected... building")
