@@ -58,9 +58,7 @@ class DeviceLayout(Widget):
     return items
 
   def _render(self, rect):
-    print('scroller rect', rect.x, rect.y, rect.width, rect.height)
     self._scroller.render(rect)
-    print()
 
   def _show_language_selection(self):
     try:

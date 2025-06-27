@@ -1,14 +1,9 @@
-import os
 import pyray as rl
-from dataclasses import dataclass
-from collections.abc import Callable
-from abc import ABC, abstractmethod
 from openpilot.system.ui.lib.widget import Widget
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.application import gui_app, FontWeight
 
-LINE_COLOR = rl.GRAY
 ITEM_SPACING = 40
+LINE_COLOR = rl.GRAY
 LINE_PADDING = 40
 
 
@@ -18,6 +13,7 @@ class LineSeparator(Widget):
     self._rect = rl.Rectangle(0, 0, 0, height)
 
   def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
+    super().set_parent_rect(parent_rect)
     self._rect.width = parent_rect.width
 
   def _render(self, _):
@@ -33,6 +29,7 @@ class Scroller(Widget):
     self._spacing = spacing
     self._line_separator = line_separator
     self._pad_end = pad_end
+
     self.scroll_panel = GuiScrollPanel()
 
     for item in items:
@@ -49,12 +46,9 @@ class Scroller(Widget):
     # TODO: don't draw items that are not in the viewport
     visible_items = [item for item in self._items if item.is_visible]
     content_height = sum(item.rect.height for item in visible_items) + self._spacing * (len(visible_items))
-    print('content height', content_height, 'rect height', self._rect.height)
     if not self._pad_end:
       content_height -= self._spacing
     scroll = self.scroll_panel.handle_scroll(self._rect, rl.Rectangle(0, 0, self._rect.width, content_height))
-    print(scroll.x, scroll.y)
-    # rl.draw_rectangle_lines_ex(self._rect, 5, LINE_COLOR)
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
@@ -63,15 +57,11 @@ class Scroller(Widget):
     for idx, item in enumerate(visible_items):
       if not item.is_visible:
         continue
-      # print(f"Rendering item {idx} at position {cur_height}")
-      # print('item height', item.rect.height)
 
       # Nicely lay out items vertically
-      # x = self._rect.x + cur_height + self._spacing * (idx != 0)
+      x = self._rect.x
       y = self._rect.y + cur_height + self._spacing * (idx != 0)
       cur_height += item.rect.height + self._spacing * (idx != 0)
-      x = self._rect.x# + self._spacing
-      # y = self._rect.y + (self._rect.height - item.rect.height) / 2
 
       # Consider scroll
       x += scroll.x
@@ -80,7 +70,6 @@ class Scroller(Widget):
       # Update item state
       item.set_position(x, y)
       item.set_parent_rect(self._rect)
-      # print('setting item position', item.rect.x, item.rect.y)
       item.render()
 
     rl.end_scissor_mode()

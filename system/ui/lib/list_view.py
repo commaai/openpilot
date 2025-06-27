@@ -11,10 +11,7 @@ from openpilot.system.ui.lib.widget import Widget
 
 ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
-LINE_PADDING = 40
-LINE_COLOR = rl.GRAY
 ITEM_PADDING = 20
-ITEM_SPACING = 80
 ITEM_TEXT_FONT_SIZE = 50
 ITEM_TEXT_COLOR = rl.WHITE
 ITEM_DESC_TEXT_COLOR = rl.Color(128, 128, 128, 255)
@@ -39,7 +36,7 @@ def _resolve_value(value, default=""):
 
 # Abstract base class for right-side items
 class ItemAction(Widget, ABC):
-  def __init__(self, width: int = 100, enabled: bool | Callable[[], bool] = True):
+  def __init__(self, width: int = BUTTON_HEIGHT, enabled: bool | Callable[[], bool] = True):
     super().__init__()
     self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
@@ -156,12 +153,12 @@ class MultipleButtonAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     spacing = 20
-    button_y = rect.y + (rect.height - 100) / 2
+    button_y = rect.y + (rect.height - BUTTON_HEIGHT) / 2
     clicked = -1
 
     for i, text in enumerate(self.buttons):
       button_x = rect.x + i * (self.button_width + spacing)
-      button_rect = rl.Rectangle(button_x, button_y, self.button_width, 100)
+      button_rect = rl.Rectangle(button_x, button_y, self.button_width, BUTTON_HEIGHT)
 
       # Check button state
       mouse_pos = rl.get_mouse_position()
@@ -183,7 +180,7 @@ class MultipleButtonAction(ItemAction):
       # Draw text
       text_size = measure_text_cached(self._font, text, 40)
       text_x = button_x + (self.button_width - text_size.x) / 2
-      text_y = button_y + (100 - text_size.y) / 2
+      text_y = button_y + (BUTTON_HEIGHT - text_size.y) / 2
       rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
 
       # Handle click
