@@ -117,7 +117,7 @@ class WifiManagerUI(Widget):
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    clicked = self.scroll_panel.is_click_valid()
+    clicked = self.scroll_panel.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):

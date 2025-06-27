@@ -42,7 +42,7 @@ class MultiOptionDialog(Widget):
 
     # Scroll and render options
     offset = self.scroll.handle_scroll(view_rect, list_content_rect)
-    valid_click = self.scroll.is_click_valid()
+    valid_click = self.scroll.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(view_rect.x), int(options_y), int(view_rect.width), int(options_h))
     for i, option in enumerate(self.options):

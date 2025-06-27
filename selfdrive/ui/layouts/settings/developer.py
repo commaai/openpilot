@@ -1,4 +1,5 @@
-from openpilot.system.ui.lib.list_view import ListView, toggle_item
+from openpilot.system.ui.lib.list_view import toggle_item
+from openpilot.system.ui.lib.scroller import Scroller
 from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
@@ -49,10 +50,10 @@ class DeveloperLayout(Widget):
       ),
     ]
 
-    self._list_widget = ListView(items)
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
 
   def _render(self, rect):
-    self._list_widget.render(rect)
+    self._scroller.render(rect)
 
   def _on_enable_adb(self): pass
   def _on_joystick_debug_mode(self): pass
