@@ -57,6 +57,7 @@ class AbstractAlert(Widget, ABC):
     self.content_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel_rect = rl.Rectangle(0, 0, 0, 0)
     self.scroll_panel = GuiScrollPanel()
+    self.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def set_dismiss_callback(self, callback: Callable):
     self.dismiss_callback = callback
@@ -70,8 +71,7 @@ class AbstractAlert(Widget, ABC):
     pass
 
   def handle_input(self, mouse_pos: rl.Vector2, mouse_clicked: bool) -> bool:
-    # TODO: fix scroll_panel.is_click_valid()
-    if not mouse_clicked:
+    if not mouse_clicked or not self._touch_valid():
       return False
 
     if rl.check_collision_point_rec(mouse_pos, self.dismiss_btn_rect):

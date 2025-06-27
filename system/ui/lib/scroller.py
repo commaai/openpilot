@@ -39,8 +39,7 @@ class Scroller(Widget):
     if self._line_separator and len(self._items) > 0:
       self._items.append(LineSeparator())
     self._items.append(item)
-    item.set_click_valid_callback(self.scroll_panel.is_click_valid,
-                                  self.scroll_panel.is_touch_valid)
+    item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def _render(self, _):
     # TODO: don't draw items that are not in the viewport

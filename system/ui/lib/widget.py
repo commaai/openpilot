@@ -17,13 +17,10 @@ class Widget(abc.ABC):
     self._is_pressed = False
     self._enabled: bool = True
     self._is_visible: bool | Callable[[], bool] = True
-    self._click_valid_callback: Callable[[], bool] | None = None
     self._touch_valid_callback: Callable[[], bool] | None = None
 
-  def set_click_valid_callback(self, click_callback: Callable[[], bool],
-                               touch_callback: Callable[[], bool]) -> None:
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     """Set a callback to determine if the widget can be clicked."""
-    self._click_valid_callback = click_callback
     self._touch_valid_callback = touch_callback
 
   def _touch_valid(self) -> bool:
