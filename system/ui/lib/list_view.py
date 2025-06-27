@@ -1,9 +1,7 @@
 import os
 import pyray as rl
-from dataclasses import dataclass
 from collections.abc import Callable
 from abc import ABC
-from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
@@ -201,21 +199,6 @@ class MultipleButtonAction(ItemAction):
 
 
 class ListItem(Widget):
-  # title: str
-  # icon: str | None = None
-  # description: str | Callable[[], str] | None = None
-  # description_visible: bool = False
-  # rect: "rl.Rectangle" = rl.Rectangle(0, 0, 0, 0)
-  # callback: Callable | None = None
-  # action_item: ItemAction | None = None
-  # visible: bool | Callable[[], bool] = True
-  #
-  # # Cached properties for performance
-  # _prev_max_width: int = 0
-  # _wrapped_description: str | None = None
-  # _prev_description: str | None = None
-  # _description_height: float = 0
-
   def __init__(self, title: str = "", icon: str | None = None, description: str | Callable[[], str] | None = None,
                description_visible: bool = False, callback: Callable | None = None,
                action_item: ItemAction | None = None, visible: bool | Callable[[], bool] = True):
@@ -227,18 +210,19 @@ class ListItem(Widget):
     self.callback = callback
     self.action_item = action_item
     self.visible = visible
-    self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
 
+    self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
     self._font = gui_app.font(FontWeight.NORMAL)
 
-    # Initialize cached properties
+    # Cached properties for performance
     self._wrapped_description = None
     self._prev_description = None
     self._prev_max_width = 0
     self._description_height = 0
 
   def set_parent_rect(self, parent_rect: rl.Rectangle):
-    self._rect.width = parent_rect.width #- (self._rect.x - max_rect.x)
+    super().set_parent_rect(parent_rect)
+    self._rect.width = parent_rect.width
 
   def _handle_mouse_release(self, mouse_pos: rl.Vector2):
     if not self.is_visible:
@@ -252,7 +236,6 @@ class ListItem(Widget):
         return
 
     if self.description:
-      print('toggled description visibility for', self.title)
       self.description_visible = not self.description_visible
       content_width = self.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
       self._rect.height = self.get_item_height(self._font, content_width)
@@ -261,23 +244,18 @@ class ListItem(Widget):
     if not self.is_visible:
       return
 
-    # if self._is_pressed:
-    #   raise Exception('clicked!', self.title)
-
-    # y = int(self.rect.y + scroll_offset.y)
-    # if y + self.rect.height <= rect.y or y >= rect.y + rect.height:
-    #   continue
+    # Don't draw items that are not in parent's viewport
+    if ((self._rect.y + self.rect.height) <= self._parent_rect.y or
+      self._rect.y >= (self._parent_rect.y + self._parent_rect.height)):
+      return
 
     content_x = self._rect.x + ITEM_PADDING
     text_x = content_x
 
     # Only draw title and icon for items that have them
     if self.title:
-      # print('drawing title', self.title)
       # Draw icon if present
       if self.icon:
-        # TODO: ICON not working
-        # print('drawing icon', self.icon)
         icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE)
         rl.draw_texture(icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
@@ -290,7 +268,6 @@ class ListItem(Widget):
     # Draw description if visible
     current_description = self.get_description()
     if self.description_visible and current_description and self._wrapped_description:
-      # raise Exception('drawing description', current_description)
       rl.draw_text_ex(
         self._font,
         self._wrapped_description,
@@ -302,26 +279,12 @@ class ListItem(Widget):
 
     # Draw right item if present
     if self.action_item:
-      print('item rect', self._rect.x, self._rect.y, self._rect.width, self._rect.height)
-      # rl.draw_rectangle_lines_ex(self._rect, 5, LINE_COLOR)
       right_rect = self.get_right_item_rect(self._rect)
       right_rect.y = self._rect.y
       if self.action_item.render(right_rect) and self.action_item.enabled:
         # Right item was clicked/activated
         if self.callback:
           self.callback()
-
-    # # Draw separator line
-    # next_visible_item = self._get_next_visible_item(i)
-    # if next_visible_item is not None:
-    #   line_y = int(y + self.rect.height - 1)
-    #   rl.draw_line(
-    #     int(self.rect.x) + LINE_PADDING,
-    #     line_y,
-    #     int(self.rect.x + self.rect.width) - LINE_PADDING * 2,
-    #     line_y,
-    #     LINE_COLOR,
-    #   )
 
   @property
   def is_visible(self) -> bool:
@@ -367,155 +330,6 @@ class ListItem(Widget):
     right_x = item_rect.x + item_rect.width - right_width
     right_y = item_rect.y
     return rl.Rectangle(right_x, right_y, right_width, ITEM_BASE_HEIGHT)
-
-
-class ListView(Widget):
-  def __init__(self, items: list[ListItem]):
-    super().__init__()
-    self._items = items
-    self.scroll_panel = GuiScrollPanel()
-    self._font = gui_app.font(FontWeight.NORMAL)
-    self._hovered_item = -1
-    self._total_height = 0
-
-  def _render(self, rect: rl.Rectangle):
-    self._update_layout_rects()
-
-    # Update layout and handle scrolling
-    content_rect = rl.Rectangle(rect.x, rect.y, rect.width, self._total_height)
-    scroll_offset = self.scroll_panel.handle_scroll(rect, content_rect)
-
-    # Handle mouse interaction
-    if self.scroll_panel.is_click_valid():
-      self._handle_mouse_interaction(rect, scroll_offset)
-
-    # Set scissor mode for clipping
-    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
-
-    for i, item in enumerate(self._items):
-      if not item.is_visible:
-        continue
-
-      y = int(item.rect.y + scroll_offset.y)
-      if y + item.rect.height <= rect.y or y >= rect.y + rect.height:
-        continue
-
-      self._render_item(item, y)
-
-      # Draw separator line
-      next_visible_item = self._get_next_visible_item(i)
-      if next_visible_item is not None:
-        line_y = int(y + item.rect.height - 1)
-        rl.draw_line(
-          int(item.rect.x) + LINE_PADDING,
-          line_y,
-          int(item.rect.x + item.rect.width) - LINE_PADDING * 2,
-          line_y,
-          LINE_COLOR,
-        )
-
-    rl.end_scissor_mode()
-
-  def _get_next_visible_item(self, current_index: int) -> int | None:
-    for i in range(current_index + 1, len(self._items)):
-      if self._items[i].is_visible:
-        return i
-    return None
-
-  def _update_layout_rects(self):
-    current_y = 0.0
-    for item in self._items:
-      if not item.is_visible:
-        item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, 0)
-        continue
-
-      content_width = item.get_content_width(int(self._rect.width - ITEM_PADDING * 2))
-      item_height = item.get_item_height(self._font, content_width)
-      item.rect = rl.Rectangle(self._rect.x, self._rect.y + current_y, self._rect.width, item_height)
-      current_y += item_height
-    self._total_height = current_y  # total height of all items
-
-  def _render_item(self, item: ListItem, y: int):
-    content_x = item.rect.x + ITEM_PADDING
-    text_x = content_x
-
-    # Only draw title and icon for items that have them
-    if item.title:
-      # Draw icon if present
-      if item.icon:
-        icon_texture = gui_app.texture(os.path.join("icons", item.icon), ICON_SIZE, ICON_SIZE)
-        rl.draw_texture(icon_texture, int(content_x), int(y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
-        text_x += ICON_SIZE + ITEM_PADDING
-
-      # Draw main text
-      text_size = measure_text_cached(self._font, item.title, ITEM_TEXT_FONT_SIZE)
-      item_y = y + (ITEM_BASE_HEIGHT - text_size.y) // 2
-      rl.draw_text_ex(self._font, item.title, rl.Vector2(text_x, item_y), ITEM_TEXT_FONT_SIZE, 0, ITEM_TEXT_COLOR)
-
-    # Draw description if visible
-    current_description = item.get_description()
-    if item.description_visible and current_description and item._wrapped_description:
-      rl.draw_text_ex(
-        self._font,
-        item._wrapped_description,
-        rl.Vector2(text_x, y + ITEM_DESC_V_OFFSET),
-        ITEM_DESC_FONT_SIZE,
-        0,
-        ITEM_DESC_TEXT_COLOR,
-      )
-
-    # Draw right item if present
-    if item.action_item:
-      right_rect = item.get_right_item_rect(item.rect)
-      right_rect.y = y
-      if item.action_item.render(right_rect) and item.action_item.enabled:
-        # Right item was clicked/activated
-        if item.callback:
-          item.callback()
-
-  def _handle_mouse_interaction(self, rect: rl.Rectangle, scroll_offset: rl.Vector2):
-    mouse_pos = rl.get_mouse_position()
-
-    self._hovered_item = -1
-    if not rl.check_collision_point_rec(mouse_pos, rect):
-      return
-
-    content_mouse_y = mouse_pos.y - rect.y - scroll_offset.y
-
-    for i, item in enumerate(self._items):
-      if not item.is_visible:
-        continue
-
-      if item.rect:
-        # Check if mouse is within this item's bounds in content space
-        if (
-          mouse_pos.x >= rect.x
-          and mouse_pos.x <= rect.x + rect.width
-          and content_mouse_y >= item.rect.y
-          and content_mouse_y <= item.rect.y + item.rect.height
-        ):
-          item_screen_y = item.rect.y + scroll_offset.y
-          if item_screen_y < rect.height and item_screen_y + item.rect.height > 0:
-            self._hovered_item = i
-            break
-
-    # Handle click on main item (not right item)
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._hovered_item >= 0:
-      item = self._items[self._hovered_item]
-
-      # Check if click was on right item area
-      if item.action_item and item.rect:
-        # Use the same coordinate system as in _render_item
-        adjusted_rect = rl.Rectangle(item.rect.x, item.rect.y + scroll_offset.y, item.rect.width, item.rect.height)
-        right_rect = item.get_right_item_rect(adjusted_rect)
-
-        if rl.check_collision_point_rec(mouse_pos, right_rect):
-          # Click was on right item, don't toggle description
-          return
-
-      # Toggle description visibility if item has description
-      if item.description:
-        item.description_visible = not item.description_visible
 
 
 # Factory functions

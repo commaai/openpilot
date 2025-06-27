@@ -13,7 +13,7 @@ class DialogResult(IntEnum):
 class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._max_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
+    self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = False
     self._enabled: bool = True
     self._is_visible: bool | Callable[[], bool] = True
@@ -52,7 +52,8 @@ class Widget(abc.ABC):
       self._update_layout_rects()
 
   def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
-    """ Like size hint in QT """
+    """Can be used like size hint in QT"""
+    self._parent_rect = parent_rect
 
   def set_position(self, x: float, y: float) -> None:
     changed = (self._rect.x != x or self._rect.y != y)
