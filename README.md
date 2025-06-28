@@ -1,3 +1,27 @@
+***
+
+### **hC3-openpilot: A Research Fork for Human-in-the-Loop Connected Cruise Control**
+
+This repository contains a research-focused fork of `commaai/openpilot`, developed as part of the Human-in-the-Loop Connected Cruise Control (hC3) project at the University of Virginia. The primary goal of this fork is to implement and test the hC3 algorithm in a real-world, two-vehicle environment using Comma 3X hardware.
+
+This fork is not intended for general use but serves as a development platform for academic research into cooperative driving systems.
+
+**Key Features & Modifications:**
+
+*   **hC3 Longitudinal Control:** Implements a novel human-in-the-loop control algorithm that takes the driver's acceleration or deceleration commands and optimally adjusts them based on real-time data received from a preceding vehicle. This fork modifies the stock Adaptive Cruise Control (ACC) logic to integrate this cooperative driving strategy.
+*   **Vehicle-to-Vehicle (V2V) Communication:** Includes a custom-built V2V communication daemon that enables two Comma 3X devices to exchange critical data (e.g., acceleration, speed) over a standard Wi-Fi network. This facilitates the data sharing required for the hC3 algorithm to function.
+*   **Modular Integration:** The custom logic is implemented through new, dedicated openpilot daemons. This approach ensures a clean separation from the core openpilot code, allowing for coexistence with stock features and easier analysis.
+
+**Project Status:**
+
+This fork is an experimental build intended for academic research and field testing. It represents the transition of the hC3 algorithm from a virtual simulation environment to a practical, on-road application.
+
+**Disclaimer:**
+
+This is alpha-quality software for research purposes only. It is not a product. By installing this software, you accept all responsibility and liability for anything that might occur while you use it. The driver must remain attentive and ready to take control at all times. Use at your own risk.
+
+***
+
 <div align="center" style="text-align: center;">
 
 <h1>openpilot</h1>
