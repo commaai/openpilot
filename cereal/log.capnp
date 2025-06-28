@@ -2487,6 +2487,18 @@ struct Touch {
   value @4 :Int32;
 }
 
+struct V2VData {
+  logMonoTime @0 :UInt64;
+  vEgo @1 :Float32;
+  aEgo @2 :Float32;
+  status @3 :UInt8;
+}
+
+struct Hc3Control {
+  active @0 :Bool;
+  aTarget @1 :Float32;
+}
+
 struct Event {
   logMonoTime @0 :UInt64;  # nanoseconds
   valid @67 :Bool = true;
