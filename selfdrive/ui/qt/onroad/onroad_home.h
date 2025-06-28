@@ -9,9 +9,6 @@ class OnroadWindow : public QWidget {
 public:
   OnroadWindow(QWidget* parent = 0);
 
-signals:
-  void openSettings(int index = 0, const QString &param = "");
-
 private:
   void paintEvent(QPaintEvent *event);
   OnroadAlerts *alerts;
