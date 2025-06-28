@@ -11,7 +11,14 @@ class Camera:
     self.stream_type = stream_type
     self.cur_frame_id = 0
 
+    print(f"Opening {cam_type_state} at {camera_id}")
+
     self.cap = cv.VideoCapture(camera_id)
+
+    self.cap.set(cv.CAP_PROP_FRAME_WIDTH, 1280.0)
+    self.cap.set(cv.CAP_PROP_FRAME_HEIGHT, 720.0)
+    self.cap.set(cv.CAP_PROP_FPS, 25.0)
+
     self.W = self.cap.get(cv.CAP_PROP_FRAME_WIDTH)
     self.H = self.cap.get(cv.CAP_PROP_FRAME_HEIGHT)
 
@@ -25,6 +32,8 @@ class Camera:
       ret, frame = self.cap.read()
       if not ret:
         break
+      # Rotate the frame 180 degrees (flip both axes)
+      frame = cv.flip(frame, -1)
       yuv = Camera.bgr2nv12(frame)
       yield yuv.data.tobytes()
     self.cap.release()
