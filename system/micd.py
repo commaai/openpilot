@@ -53,9 +53,6 @@ class Mic:
     self.sound_pressure_weighted = 0
     self.sound_pressure_level_weighted = 0
 
-    self.audio_sequence_number = 0
-    self.audio_frame_index = 0
-
     self.lock = threading.Lock()
 
   def update(self):
@@ -83,10 +80,6 @@ class Mic:
     audio_data_int_16 = (indata[:, 0] * 32767).astype(np.int16)
     msg.rawAudioData.data = audio_data_int_16.tobytes()
     msg.rawAudioData.sampleRate = SAMPLE_RATE
-    msg.rawAudioData.startFrameIdx = self.audio_frame_index
-    self.audio_frame_index += frames
-    msg.rawAudioData.sequenceNum = self.audio_sequence_number
-    self.audio_sequence_number += 1
     self.pm.send('rawAudioData', msg)
 
     with self.lock:

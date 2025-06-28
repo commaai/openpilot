@@ -2482,8 +2482,6 @@ struct SoundPressure {
 struct AudioData {
   data @0 :Data;
   sampleRate @1 :UInt32;
-  startFrameIdx @2 :UInt64;
-  sequenceNum @3 :UInt64;
 }
 
 struct Touch {
