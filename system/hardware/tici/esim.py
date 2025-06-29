@@ -108,18 +108,14 @@ class TiciLPA(LPABase):
     self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
 
   def _validate_iccid(self, iccid: str) -> None:
-    if not re.match(r'^89\d{17,18}$', iccid):
-      raise ValueError('invalid ICCID format. expected format: 8988303000000614227')
+    assert re.match(r'^89\d{17,18}$', iccid), 'invalid ICCID format. expected format: 8988303000000614227'
 
   def _validate_lpa_activation_code(self, lpa_activation_code: str) -> None:
-    if not re.match(r'^LPA:1\$\w+\$\w+$', lpa_activation_code):
-      raise ValueError('invalid LPA activation code format. expected format: LPA:1$domain$code')
+    assert re.match(r'^LPA:1\$.+\$.+$', lpa_activation_code), 'invalid LPA activation code format. expected format: LPA:1$domain$code'
 
   def _validate_nickname(self, nickname: str) -> None:
-    if len(nickname) < 1 or len(nickname) > 16:
-      raise ValueError('nickname must be between 1 and 16 characters')
-    if not re.match(r'^[a-zA-Z0-9]+$', nickname):
-      raise ValueError('nickname must contain only alphanumeric characters')
+    assert len(nickname) >= 1 and len(nickname) <= 16, 'nickname must be between 1 and 16 characters'
+    assert re.match(r'^[a-zA-Z0-9-_ ]+$', nickname), 'nickname must contain only alphanumeric characters, hyphens, underscores, and spaces'
 
   def _validate_profile_exists(self, iccid: str) -> None:
     if not any(p.iccid == iccid for p in self.list_profiles()):
