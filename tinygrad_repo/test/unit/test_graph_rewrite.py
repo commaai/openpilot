@@ -1,7 +1,7 @@
 import unittest, math
 from tinygrad import dtypes
 from tinygrad.helpers import all_same
-from tinygrad.uop.ops import GroupOp, UOp, Ops, exec_alu
+from tinygrad.uop.ops import GroupOp, UOp, Ops, exec_alu, PatternMatcher, UPat
 from tinygrad.codegen import full_rewrite_to_sink
 
 # Helper function to apply the graph rewrite
@@ -204,7 +204,7 @@ class TestGEPAndVectorizeRewrite(unittest.TestCase):
 
 import inspect
 from tinygrad.uop.ops import graph_rewrite, _substitute, track_rewrites
-from tinygrad.codegen.symbolic import symbolic_simple
+from tinygrad.uop.symbolic import symbolic_simple
 
 class TestBottomUpRewrite(unittest.TestCase):
   def test_const_folding(self):
@@ -253,6 +253,7 @@ class TestSubstitute(unittest.TestCase):
 
   # broken due to infinite recursion
   # NOTE: VIZ hangs and doesn't recover if you click this one
+  @unittest.skip("recursion error no longer raised")
   def test_assert_inf_recurse(self):
     a = UOp.variable('a', 0, 10)
     n1 = a.sin()
@@ -275,6 +276,19 @@ class TestSubstitute(unittest.TestCase):
     ret = substitute(ret, {a.sin():a.sqrt(), n1.sin():n1.sqrt()})
     self.assertIs(ret, a.sqrt().sqrt())
 
+  def test_tagged_replace(self):
+    a = UOp.variable('a', 0, 10)
+    b = UOp.variable('b', 0, 10)
+    ret = (a+4).replace(tag=1)
+    ret = substitute(ret, {a:b})
+    # the srcs are rewritten but we keep tag
+    self.assertIs(ret, (b+4).replace(tag=1))
+
+class TestRecurse(unittest.TestCase):
+  def test_no_inf_loop(self):
+    a = UOp.variable('a', 0, 10)
+    pm = PatternMatcher([(UPat(Ops.DEFINE_VAR, name="x"), lambda x: x)])
+    graph_rewrite(a, pm)
 
 if __name__ == '__main__':
   unittest.main()

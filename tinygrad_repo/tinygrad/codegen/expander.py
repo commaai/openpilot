@@ -114,25 +114,3 @@ migrate_indexing = PatternMatcher([
   # create gate MUST BE BEFORE expander
   (UPat(Ops.STORE, name="root"), create_gate),
 ])
-
-# **** IGNORE support ****
-
-pm_store_ignore = PatternMatcher([
-  (UPat().index(UPat(), UPat(name="mask")).store(UPat()).named("store"),
-   lambda store,mask: store.replace(src=(store.src[0], UOp(Ops.IGNORE, src=(store.src[1], mask)))) if store.src[1].op is not Ops.IGNORE else None),
-])
-
-pm_move_ignore = PatternMatcher([
-  # IGNORE on SELF is nothing
-  (UPat(Ops.IGNORE, src=(UPat(name="x"), UPat(name="x"))), lambda x: x.const_like(True)),
-  # IGNORE on a CONST is nothing
-  (UPat(Ops.IGNORE, src=(UPat((Ops.CONST, Ops.VCONST), name="c"), UPat())), lambda c: c),
-  # move the IGNOREs
-  (UPat(Ops.IGNORE, src=(UPat((*GroupOp.ALU, Ops.CAST, Ops.VECTORIZE), name="alu"), UPat.var("mask")), name="ig"),
-   lambda ig,alu,mask: alu.replace(src=tuple(UOp(Ops.IGNORE, x.dtype, (x, mask)) for x in alu.src))),
-])
-
-pm_delete_ignore = PatternMatcher([
-  # IGNORE on SELF is nothing
-  (UPat(Ops.IGNORE, src=(UPat(name="x"), UPat())), lambda x: x),
-])

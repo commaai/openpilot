@@ -113,7 +113,7 @@ class DispatchLog(TorchDispatchMode):
         _ = tiny_x.cpu().numpy()
         if torch.is_tensor(tiny_x) and tiny_x.device.type == "tiny":
           tt = tiny_torch.unwrap(tiny_x)
-          try: out_addr = tt.lazydata.buffer._buf.value
+          try: out_addr = tt.uop.buffer._buf.value
           except Exception: pass
         tiny_events = hook_cuda.collect_events(clear=True)
         print_events(tiny_events, colored("tiny", "magenta"), out_addr)

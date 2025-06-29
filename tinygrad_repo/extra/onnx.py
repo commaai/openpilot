@@ -1,65 +1,86 @@
+from types import SimpleNamespace
 from typing import Any, Sequence, cast, Literal, Callable
-import dataclasses, functools, io, math, types
+import dataclasses, functools, io, math, types, warnings
 from tinygrad.tensor import Tensor, _broadcast_shape, ReductionStr
 from tinygrad.helpers import getenv, DEBUG, all_same, prod, flatten, make_tuple, argsort
 from tinygrad.dtype import DType, ConstType, dtypes, ImageDType
-from tinygrad.device import is_dtype_supported
+from tinygrad.device import is_dtype_supported, Device
+
+# https://github.com/onnx/onnx/blob/rel-1.17.0/onnx/onnx.proto3#L500-L544
+data_types: dict[int, DType] = {
+  1:dtypes.float32, 2:dtypes.uint8, 3:dtypes.int8, 4:dtypes.uint16, 5:dtypes.int16, 6:dtypes.int32, 7:dtypes.int64,
+  9:dtypes.bool, 10:dtypes.float32, 11:dtypes.double, 12:dtypes.uint32, 13:dtypes.uint64, 16:dtypes.bfloat16,
+}
+
+# https://github.com/onnx/onnx/blob/rel-1.17.0/onnx/onnx.proto3#L128-L145
+attribute_types: dict[int, Callable] = {
+  1: lambda a: float(a.f),
+  2: lambda a: int(a.i),
+  3: lambda a: a.s.data().tobytes().decode("utf8") if isinstance(a.s, Tensor) else a.s.decode("utf8"),
+  4: lambda a: buffer_parse(a.t),
+  6: lambda a: tuple(float(x) for x in a.floats),
+  7: lambda a: tuple(int(x) for x in a.ints),
+  8: lambda a: tuple(x.data().tobytes().decode("utf8") for x in a.strings)
+}
 
 # ***** protobuf parsing ******
 from onnx import AttributeProto, ModelProto, TensorProto, TypeProto, helper
 import numpy as np
 
-def dtype_parse(onnx_dtype: int) -> DType:
-  supported: dict[int, DType] = {
-    TensorProto.FLOAT:dtypes.float32, TensorProto.UINT8:dtypes.uint8, TensorProto.INT8:dtypes.int8,
-    TensorProto.UINT16:dtypes.uint16, TensorProto.INT16:dtypes.int16, TensorProto.INT32:dtypes.int32, TensorProto.INT64:dtypes.int64,
-    TensorProto.BOOL:dtypes.bool, TensorProto.FLOAT16:dtypes.float32, TensorProto.DOUBLE:dtypes.double, TensorProto.UINT32:dtypes.uint32,
-    TensorProto.UINT64:dtypes.uint64, TensorProto.BFLOAT16:dtypes.bfloat16,
-  }
-  unsupported = {
-    TensorProto.UNDEFINED, TensorProto.STRING, TensorProto.COMPLEX64, TensorProto.COMPLEX128, TensorProto.FLOAT8E4M3FN, TensorProto.FLOAT8E4M3FNUZ,
-    TensorProto.FLOAT8E5M2, TensorProto.FLOAT8E5M2FNUZ, TensorProto.UINT4, TensorProto.INT4
-  }
-  if onnx_dtype in unsupported: raise NotImplementedError(f"onnx dtype {TensorProto.DataType.Name(onnx_dtype)} is not supported")
-  return supported[onnx_dtype] if is_dtype_supported(supported[onnx_dtype]) else dtypes.float
+def has_field(onnx_type: TypeProto|SimpleNamespace, field):
+  if isinstance(onnx_type, TypeProto): return onnx_type.HasField(field)
+  return hasattr(onnx_type, field)
+
+def dtype_parse(onnx_dtype: int, fallback_context: str | None = None) -> DType:
+  if onnx_dtype not in data_types: raise NotImplementedError(f"onnx dtype id {onnx_dtype} is not supported")
+  if is_dtype_supported(dtype := data_types[onnx_dtype]): return dtype
+  # if fallback_context is provided, we can fall back to a default dtype
+  if fallback_context is not None:
+    default_dtype = dtypes.default_int if dtypes.is_int(dtype) else dtypes.default_float
+    warnings.warn(f"dtype {dtype} on {Device.DEFAULT} from {fallback_context} is not supported, falling back to {default_dtype}")
+    assert is_dtype_supported(default_dtype), f"dtype {default_dtype} must be supported on {Device.DEFAULT}"
+    return default_dtype
+  raise RuntimeError(f"dtype {dtype} on device {Device.DEFAULT} is not supported")
 
 def attribute_parse(onnx_attribute: AttributeProto):
-  supported: dict[AttributeProto.AttributeType, Callable[[AttributeProto], Any]] = {
-    AttributeProto.FLOAT: lambda a: float(a.f), AttributeProto.INT: lambda a: int(a.i),
-    AttributeProto.STRING: lambda a: a.s.decode("utf-8"), AttributeProto.TENSOR: lambda a: buffer_parse(a.t),
-    AttributeProto.FLOATS: lambda a: tuple(float(x) for x in a.floats), AttributeProto.INTS: lambda a: tuple(int(x) for x in a.ints),
-    AttributeProto.STRINGS: lambda a: tuple(x.decode("utf-8") for x in a.strings)
-  }
-  unsupported = {
-    AttributeProto.UNDEFINED, AttributeProto.GRAPH, AttributeProto.SPARSE_TENSOR, AttributeProto.TYPE_PROTO, AttributeProto.TENSORS,
-    AttributeProto.GRAPHS, AttributeProto.SPARSE_TENSORS, AttributeProto.TYPE_PROTOS
-  }
-  if onnx_attribute.type in unsupported:
-    raise NotImplementedError(f"attribute with type {AttributeProto.AttributeType.Name(onnx_attribute.type)} is not supported")
-  return supported[onnx_attribute.type](onnx_attribute)
+  if onnx_attribute.type not in attribute_types: raise NotImplementedError(f"attribute type {onnx_attribute.type} is not supported")
+  return attribute_types[onnx_attribute.type](onnx_attribute)
 
 def buffer_parse(onnx_tensor: TensorProto) -> Tensor:
   if onnx_tensor.string_data: raise NotImplementedError("Parsing for buffer with string data is not implemented.")
-  dtype, shape = dtype_parse(onnx_tensor.data_type), tuple(onnx_tensor.dims)
-  if data := list(onnx_tensor.float_data) or list(onnx_tensor.int32_data) or list(onnx_tensor.int64_data) or list(onnx_tensor.double_data) or \
-             list(onnx_tensor.uint64_data):
-    if len(data) == 1: return Tensor(data[0], dtype=dtype).reshape(shape)
-    return Tensor(data, dtype=dtype).reshape(shape).realize()
-  if onnx_tensor.HasField("raw_data"):
-    np_buffer = np.frombuffer(onnx_tensor.raw_data, dtype=helper.tensor_dtype_to_np_dtype(onnx_tensor.data_type)).copy().reshape(shape)
-    if np_buffer.size == 1: return Tensor(np_buffer.item(), dtype=dtype).reshape(shape)
-    return Tensor(np_buffer, dtype=dtype)
+  dtype, shape = dtype_parse(onnx_tensor.data_type, "buffer parse"), tuple(onnx_tensor.dims)
+  data = None
+  if len(onnx_tensor.float_data): data = onnx_tensor.float_data
+  elif len(onnx_tensor.int32_data): data = onnx_tensor.int32_data
+  elif len(onnx_tensor.int64_data): data = onnx_tensor.int64_data
+  elif len(onnx_tensor.double_data): data = onnx_tensor.double_data
+  elif len(onnx_tensor.uint64_data): data = onnx_tensor.uint64_data
+  if isinstance(data, Tensor):
+    if len(data) == 1: return Tensor(data.tolist()[0], dtype=dtype).reshape(shape)
+    return data.cast(dtype).reshape(shape).to(Device.DEFAULT)
+  if has_field(onnx_tensor, "raw_data"):
+    raw_data = onnx_tensor.raw_data
+    if not isinstance(raw_data, Tensor): raw_data = Tensor(raw_data)
+    if onnx_tensor.data_type == TensorProto.FLOAT16 or not is_dtype_supported(data_types[onnx_tensor.data_type]):
+      np_buffer = np.frombuffer(raw_data.data().tobytes(),
+                                dtype=helper.tensor_dtype_to_np_dtype(onnx_tensor.data_type)).copy().reshape(shape)
+      if np_buffer.size == 1: return Tensor(np_buffer.item(), dtype=dtype).reshape(shape)
+      return Tensor(np_buffer, dtype=dtype)
+    ret = raw_data.bitcast(dtype).reshape(shape).to(Device.DEFAULT)
+    if shape == (): ret = Tensor(ret.item(), dtype=dtype).reshape(shape)
+    return ret
   return Tensor(None)
 
 def type_parse(onnx_type: TypeProto):
   elem_type = onnx_type
-  if elem_type.HasField("map_type") or elem_type.HasField("sparse_tensor_type") or elem_type.HasField("opaque_type"):
+  if has_field(elem_type, "map_type") or has_field(elem_type, "sparse_tensor_type") or has_field(elem_type, "opaque_type"):
     raise NotImplementedError("parsing for map_type, sparse_tensor_type and opaque_type are not implemented")
-  if is_optional := elem_type.HasField("optional_type"): elem_type = elem_type.optional_type.elem_type
-  if is_sequence := elem_type.HasField("sequence_type"): elem_type = elem_type.sequence_type.elem_type
-  if elem_type.HasField("tensor_type"):
-    shape = tuple(d.dim_param or d.dim_value for d in elem_type.tensor_type.shape.dim)
-    dtype = dtype_parse(elem_type.tensor_type.elem_type)
+  if is_optional := has_field(elem_type, "optional_type"): elem_type = elem_type.optional_type.elem_type
+  if is_sequence := has_field(elem_type, "sequence_type"): elem_type = elem_type.sequence_type.elem_type
+  if has_field(elem_type, "tensor_type"):
+    shape = tuple(getattr(d, "dim_param", None) or getattr(d, "dim_value") for d in elem_type.tensor_type.shape.dim) \
+      if has_field(elem_type.tensor_type, "shape") else None # test_identity_sequence_cpu
+    dtype = dtype_parse(elem_type.tensor_type.elem_type, "input type spec parse")
     return OnnxValue(shape, dtype, is_optional, is_sequence)
   raise RuntimeError(f"TypeProto was not parsed properly: {onnx_type=}")
 
@@ -109,12 +130,11 @@ def to_python_const(t:Any, op:str, idx:int) -> list[ConstType]|ConstType|bytes:
 debug = int(getenv("DEBUGONNX", "0"))
 limit = int(getenv("ONNXLIMIT", "-1"))
 class OnnxRunner:
-  def __init__(self, model: ModelProto):
+  def __init__(self, model: ModelProto|SimpleNamespace):
     # parse model protobuf
     self.is_training = any(n.domain in {"ai.onnx.training", "ai.onnx.preview.training"} for n in model.graph.node)
-    self.old_training, self.old_no_grad = Tensor.training, Tensor.no_grad
+    self.old_training = Tensor.training
     Tensor.training = True if self.is_training else False
-    Tensor.no_grad = False if self.is_training else True
     self.graph_values = {"": None, **{x.name:buffer_parse(x) for x in model.graph.initializer}}
     self.graph_inputs = {x.name:type_parse(x.type) for x in model.graph.input if x.name not in self.graph_values}
     self.graph_outputs = tuple(x.name for x in model.graph.output)
@@ -129,15 +149,15 @@ class OnnxRunner:
     if spec.is_optional and value is None: return None
     # TODO: need true float16 for dtype checking
     if spec.is_sequence:
-      if not isinstance(value, Sequence): raise RuntimeError(f"{name} received {value}, expected a sequence type")
+      if not isinstance(value, Sequence): raise RuntimeError(f"input {name} received {value}, expected a sequence type")
       sequence = [Tensor(v, dtype=spec.dtype, requires_grad=self.is_training) if not isinstance(v, Tensor) else v for v in value]
-      if not all_same(tuple(t.shape for t in sequence)): raise RuntimeError(f"Shapes for {name} sequence must be homogeneous")
+      if not all_same(tuple(t.shape for t in sequence)): raise RuntimeError(f"Shapes for input {name} sequence must be homogeneous")
       return sequence
     tensor = Tensor(value, dtype=spec.dtype, requires_grad=self.is_training) if not isinstance(value, Tensor) else value
     for dim, (onnx_dim, user_dim_input) in enumerate(zip(spec.shape, tensor.shape, strict=True)):
       if isinstance(onnx_dim, str):
         onnx_dim = self.variable_dims[onnx_dim] if onnx_dim in self.variable_dims else self.variable_dims.setdefault(onnx_dim, int(user_dim_input))
-      if user_dim_input != onnx_dim: raise RuntimeError(f"{name} has mismatch on {dim=}. Expected {onnx_dim}, received {user_dim_input}.")
+      if user_dim_input != onnx_dim: raise RuntimeError(f"input {name} has mismatch on {dim=}. Expected {onnx_dim}, received {user_dim_input}.")
     return tensor
 
   def _dispatch_op(self, op, inps, opts):
@@ -176,9 +196,9 @@ class OnnxRunner:
       self.graph_values.update(dict(zip(node.outputs, ret[:len(node.outputs)], strict=True)))
 
       if node.num == limit:
-        Tensor.training, Tensor.no_grad = self.old_training, self.old_no_grad
+        Tensor.training = self.old_training
         return {name:self.graph_values[name] for name in node.outputs}
-    Tensor.training, Tensor.no_grad = self.old_training, self.old_no_grad
+    Tensor.training = self.old_training
     return {name:self.graph_values[name] for name in self.graph_outputs}
 
 ####################
@@ -268,7 +288,7 @@ def get_onnx_ops():
     raise ValueError(f"pixel_format={pixel_format!r} is not supported.")
 
   def EyeLike(x:Tensor, dtype:int|None=None, k:int=0):
-    ret = Tensor.eye(cast(int, min(x.shape)), dtype=dtype_parse(dtype) if dtype is not None else x.dtype)
+    ret = Tensor.eye(cast(int, min(x.shape)), dtype=dtype_parse(dtype, "EyeLike op") if dtype is not None else x.dtype)
     return ret if x.size(0) == x.size(1) else ret.pad(tuple(None if d == ret.size(0) else (k, d-ret.shape[0]-k) for d in x.shape))
 
   def OptionalHasElement(x:Tensor|None=None): return Tensor(x is not None and x.numel() > 0)
@@ -322,7 +342,7 @@ def get_onnx_ops():
 
   # ***** Casting Ops *****
   # TODO: saturate
-  def Cast(x:Tensor, to:int, saturate:int=1): return x.cast(dtype_parse(to))
+  def Cast(x:Tensor, to:int, saturate:int=1): return x.cast(dtype_parse(to, "Cast op"))
   def CastLike(x:Tensor, target_type:Tensor, saturate:int=1): return x.cast(target_type.dtype)
 
   # ***** Reduce Ops *****
@@ -589,9 +609,13 @@ def get_onnx_ops():
 
   # Reimplemented here because you need legacy RNG for passing ONNX tests.
   def Dropout_7(data:Tensor, ratio:float=0.5, training_mode:bool=False, seed:int|None=None):
-    if not training_mode: return data, Tensor.ones(data.shape, dtype=dtypes.bool)  # if mask is requested as output it will contain all True's.
-    mask = Tensor(np.random.RandomState(seed).random(cast(tuple[int,...], data.shape)) >= ratio, requires_grad=False, device=data.device)
-    return data * mask * (1/(1.0 - ratio)), mask
+    if not training_mode: return data, data.full_like(True, dtype=dtypes.bool)
+    if seed is not None:
+      rand = Tensor(np.random.RandomState(seed).random(cast(tuple[int,...], data.shape)), requires_grad=False, dtype=data.dtype, device=data.device)
+    else:
+      rand = data.rand_like(requires_grad=False)
+    mask = rand >= ratio
+    return data * mask / (1.0 - ratio), mask
   # 6 with 'is_test' needed for https://github.com/MTlab/onnx2caffe/raw/refs/heads/master/model/MobileNetV2.onnx
   def Dropout_6(data:Tensor, ratio:float=0.5, is_test=0): return Dropout_7(data, ratio, training_mode=not is_test)
   Dropout = {6:Dropout_6, 7:Dropout_7}
@@ -715,7 +739,9 @@ def get_onnx_ops():
 
   # ***** Quantization Ops *****
   def QuantizeLinear(x:Tensor, y_scale:Tensor, y_zero_point:Tensor|int=0, axis:int=1, block_size:int=0, output_dtype:int=0, saturate=1):
-    out_dtype = y_zero_point.dtype if isinstance(y_zero_point, Tensor) else dtype_parse(output_dtype) if output_dtype else dtypes.uint8
+    if isinstance(y_zero_point, Tensor): out_dtype = y_zero_point.dtype
+    elif output_dtype != 0: out_dtype = dtype_parse(output_dtype, "QuantizeLinear op")
+    else: out_dtype = dtypes.uint8
     y_scale, y_zero_point = _prepare_quantize(x, y_scale, y_zero_point, axis, block_size)
     if out_dtype == dtypes.uchar:
       # this appears to work in practice, at least for uchar out_dtype. it folds with the quantize stuff

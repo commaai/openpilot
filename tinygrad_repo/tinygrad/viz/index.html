@@ -44,17 +44,38 @@
   ul.active {
     opacity: 1;
   }
+  ul > ul {
+    display: none;
+  }
+  ul.expanded > ul {
+    display: block;
+  }
   ul.disabled {
     opacity: 0.4;
     pointer-events: none;
   }
-  svg {
+  .graph svg {
     width: 100%;
     height: 100%;
   }
   svg * {
     cursor: default;
     user-select: none;
+  }
+  g.clickable * {
+    cursor: pointer;
+    user-select: auto;
+  }
+  g.tag circle {
+    r: 5;
+    fill: #FFD700;
+    stroke: #B8860B;
+    stroke-width: 0.8;
+  }
+  g.tag text {
+    text-anchor: middle;
+    font-size: 6px;
+    fill: black;
   }
   .label :is(text, p) {
     color: #08090e;
@@ -72,16 +93,17 @@
     position: relative;
   }
   .container {
+    flex: 0 0 auto;
     background-color: #0f1018;
     padding: 20px;
     z-index: 2;
     position: relative;
     height: 100%;
   }
-  .metadata > * + *, .rewrite-container > * + *, .kernel-list > * + * {
+  .metadata > * + *, .rewrite-container > * + *, .ctx-list > * + * {
     margin-top: 12px;
   }
-  .kernel-list > ul > * + * {
+  .ctx-list > ul > * + * {
     margin-top: 4px;
   }
   .graph {
@@ -89,12 +111,19 @@
     inset: 0;
     z-index: 1;
   }
-  .kernel-list-parent {
+  .profiler {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    height: 100%;
+    padding-top: 50px;
+  }
+  .ctx-list-parent {
     width: 15%;
     padding-top: 50px;
     border-right: 1px solid #4a4b56;
   }
-  .kernel-list {
+  .ctx-list {
     width: 100%;
     height: 100%;
     overflow-y: auto;
@@ -182,15 +211,18 @@
       <button class="btn collapse-btn">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20"><path d="M15 19l-7-7 7-7"/></svg>
       </button>
-      <a class="btn nav-btn" href="/profiler">Profiler</a>
       <button class="btn" id="zoom-to-fit-btn" aria-label="Fit graph">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20">
           <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
         </svg>
       </button>
     </div>
-    <div class="container kernel-list-parent"><div class="kernel-list"></div></div>
-    <div class="graph">
+    <div class="container ctx-list-parent"><div class="ctx-list"></div></div>
+    <div class="view profiler">
+      <div id="device-list"></div>
+      <canvas id="timeline"></canvas>
+    </div>
+    <div class="view graph">
       <div class="progress-message">Rendering new layout...</div>
       <svg id="graph-svg" preserveAspectRatio="xMidYMid meet">
         <g id="render">

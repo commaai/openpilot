@@ -1,6 +1,5 @@
 from collections import defaultdict
 import pytest
-import re
 
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.docs import get_all_car_docs
@@ -61,7 +60,10 @@ class TestCarDocs:
   def test_year_format(self, subtests):
     for car in self.all_cars:
       with subtests.test(car=car.name):
-        assert re.search(r"\d{4}-\d{4}", car.name) is None, f"Format years correctly: {car.name}"
+        if car.name == "comma body":
+          pytest.skip()
+
+        assert car.years and car.year_list, f"Format years correctly: {car.name}"
 
   def test_harnesses(self, subtests):
     for car in self.all_cars:

@@ -9,7 +9,7 @@ class TestTensorUOp(unittest.TestCase):
   def test_fromcpu_shape_tracker(self):
     def helper(a: np.ndarray):
       print(a.shape, a.strides, a.flags.c_contiguous)
-      b = Tensor(a).lazydata
+      b = Tensor(a).uop
       #assert b.st.contiguous == a.flags.c_contiguous
       assert b.st.shape == a.shape
       np.testing.assert_equal(a, Tensor(b).numpy())
@@ -60,11 +60,11 @@ class TestTensorUOp(unittest.TestCase):
     np.testing.assert_allclose(c.numpy(), np.concatenate((a.numpy(), b.numpy()), axis=1))
 
   def test_const_dtype(self):
-    lb: UOp = Tensor([1], dtype=dtypes.int).lazydata
+    lb: UOp = Tensor([1], dtype=dtypes.int).uop
     assert lb.const_like(1).base.arg == 1
     assert type(lb.const_like(1).base.arg) is int
 
-    lb: UOp = Tensor([1], dtype=dtypes.float).lazydata
+    lb: UOp = Tensor([1], dtype=dtypes.float).uop
     assert lb.const_like(1).base.arg == 1.0
     assert type(lb.const_like(1).base.arg) is float
 
@@ -92,7 +92,7 @@ class TestTensorUOp(unittest.TestCase):
     out.realize()
     self.assertEqual(out.tolist(), Tensor.zeros(4, 8).tolist())
 
-reduce_kernel = UPat(Ops.SINK, src=(UPat(Ops.STORE, src=(UPat(), UPat(), UPat(Ops.REDUCE_AXIS)))))
+reduce_kernel = UPat(Ops.SINK, src=(UPat(Ops.STORE, src=(UPat(), UPat(Ops.REDUCE_AXIS)))))
 class TestReduceOp(unittest.TestCase):
   def test_no_split_reduce_kernel(self):
     a = Tensor.rand(4, 4).realize()

@@ -679,7 +679,7 @@ CM_ SG_ 524 ESP_BrakePressure_LF "Brake Pressure Left Front";
 CM_ SG_ 524 ESP_BrakePressure_LR "Brake Pressure Left Rear";
 CM_ SG_ 524 ESP_BrakePressure_RF "Brake Pressure Right Front";
 CM_ SG_ 524 ESP_BrakePressure_RR "Brake Pressure Right Rear";
-CM_ SG_ 524 ESP_MasterCyl_Pressure "Master Cyclinder Brake Pressure";
+CM_ SG_ 524 ESP_MasterCyl_Pressure "Master Cylinder Brake Pressure";
 CM_ SG_ 524 ESP_MasterCyl_Pressure_Q "Indication of whether signal with corresponding name is valid";
 CM_ SG_ 524 ESP_BrakePressure_RR_Q "Indication of whether signal with corresponding name is valid";
 CM_ SG_ 524 ESP_BrakePressure_LR_Q "Indication of whether signal with corresponding name is valid";

@@ -1,4 +1,4 @@
-import functools, ctypes, platform
+import ctypes, platform
 from tinygrad.device import Compiled, Compiler, MallocAllocator, CPUProgram
 from tinygrad.helpers import OSX, getenv, capstone_flatdump, DEBUG
 from tinygrad.renderer.llvmir import LLVMRenderer
@@ -70,6 +70,4 @@ class HostLLVMCompiler(LLVMCompiler):
     super().__init__(cpu.decode(), feats.decode())
 
 class LLVMDevice(Compiled):
-  def __init__(self, device:str):
-    from tinygrad.runtime.graph.cpu import LLVMGraph
-    super().__init__(device, MallocAllocator, LLVMRenderer(), HostLLVMCompiler(), CPUProgram, functools.partial(LLVMGraph, self))
+  def __init__(self, device:str): super().__init__(device, MallocAllocator, LLVMRenderer(), HostLLVMCompiler(), CPUProgram)

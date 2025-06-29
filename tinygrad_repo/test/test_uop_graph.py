@@ -3,7 +3,7 @@ import unittest, pytest
 from tinygrad import dtypes, Variable
 from tinygrad.helpers import DEBUG, Context
 from tinygrad.uop.ops import Ops, UOp, UPat, PatternMatcher, track_rewrites, graph_rewrite, GroupOp
-from tinygrad.codegen.symbolic import sym
+from tinygrad.uop.symbolic import sym
 from tinygrad.codegen import full_rewrite, full_rewrite_to_sink
 from tinygrad.codegen.expander import expander
 

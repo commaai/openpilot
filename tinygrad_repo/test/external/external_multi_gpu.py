@@ -21,8 +21,8 @@ if __name__ == "__main__":
   with Timing("CPU creation: ", on_exit=lambda x: f", {(sz*4*2)/x:.2f} GB/sec"):
     c0 = (Tensor.ones(sz, device="CPU")/2).realize()
     c1 = (Tensor.ones(sz, device="CPU")/4).realize()
-    print(c0.lazydata.base.realized)
-    print(c1.lazydata.base.realized)
+    print(c0.uop.base.realized)
+    print(c1.uop.base.realized)
 
   with Timing("CPU -> 0: ", on_exit=lambda x: f", {(sz*4)/x:.2f} GB/sec"):
     a0 = c0.to(d0).realize()

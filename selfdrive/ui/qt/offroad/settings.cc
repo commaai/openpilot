@@ -130,6 +130,15 @@ void TogglesPanel::expandToggleDescription(const QString &param) {
   toggles[param.toStdString()]->showDescription();
 }
 
+void TogglesPanel::scrollToToggle(const QString &param) {
+  if (auto it = toggles.find(param.toStdString()); it != toggles.end()) {
+    auto scroll_area = qobject_cast<QScrollArea*>(parent()->parent());
+    if (scroll_area) {
+      scroll_area->ensureWidgetVisible(it->second);
+    }
+  }
+}
+
 void TogglesPanel::showEvent(QShowEvent *event) {
   updateToggles();
 }
@@ -207,7 +216,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
   connect(dcamBtn, &ButtonControl::clicked, [=]() { emit showDriverView(); });
   addItem(dcamBtn);
 
-  auto resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
+  resetCalibBtn = new ButtonControl(tr("Reset Calibration"), tr("RESET"), "");
   connect(resetCalibBtn, &ButtonControl::showDescriptionEvent, this, &DevicePanel::updateCalibDescription);
   connect(resetCalibBtn, &ButtonControl::clicked, [&]() {
     if (!uiState()->engaged()) {
@@ -220,6 +229,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
           params.remove("LiveParametersV2");
           params.remove("LiveDelay");
           params.putBool("OnroadCycleRequested", true);
+          updateCalibDescription();
         }
       }
     } else {
@@ -297,9 +307,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void DevicePanel::updateCalibDescription() {
-  QString desc =
-      tr("openpilot requires the device to be mounted within 4° left or right and "
-         "within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.");
+  QString desc = tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
   std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -317,8 +325,53 @@ void DevicePanel::updateCalibDescription() {
       qInfo() << "invalid CalibrationParams";
     }
   }
-  desc += tr(" Resetting calibration will restart openpilot if the car is powered on.");
-  qobject_cast<ButtonControl *>(sender())->setDescription(desc);
+
+  const bool is_release = params.getBool("IsReleaseBranch");
+  if (!is_release) {
+    int lag_perc = 0;
+    std::string lag_bytes = params.get("LiveDelay");
+    if (!lag_bytes.empty()) {
+      try {
+        AlignedBuffer aligned_buf;
+        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
+        lag_perc = cmsg.getRoot<cereal::Event>().getLiveDelay().getCalPerc();
+      } catch (kj::Exception) {
+        qInfo() << "invalid LiveDelay";
+      }
+    }
+    desc += "\n\n";
+    if (lag_perc < 100) {
+      desc += tr("Steering lag calibration is %1% complete.").arg(lag_perc);
+    } else {
+      desc += tr("Steering lag calibration is complete.");
+    }
+  }
+
+  std::string torque_bytes = params.get("LiveTorqueParameters");
+  if (!torque_bytes.empty()) {
+    try {
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(torque_bytes.data(), torque_bytes.size()));
+      auto torque = cmsg.getRoot<cereal::Event>().getLiveTorqueParameters();
+      // don't add for non-torque cars
+      if (torque.getUseParams()) {
+        int torque_perc = torque.getCalPerc();
+        desc += is_release ? "\n\n" : " ";
+        if (torque_perc < 100) {
+          desc += tr("Steering torque response calibration is %1% complete.").arg(torque_perc);
+        } else {
+          desc += tr("Steering torque response calibration is complete.");
+        }
+      }
+    } catch (kj::Exception) {
+      qInfo() << "invalid LiveTorqueParameters";
+    }
+  }
+
+  desc += "\n\n";
+  desc += tr("openpilot is continuously calibrating, resetting is rarely required. "
+             "Resetting calibration will restart openpilot if the car is powered on.");
+  resetCalibBtn->setDescription(desc);
 }
 
 void DevicePanel::reboot() {
@@ -367,6 +420,7 @@ void SettingsWindow::setCurrentPanel(int index, const QString &param) {
       }
     } else {
       emit expandToggleDescription(param);
+      emit scrollToToggle(param);
     }
   }
 
@@ -407,6 +461,7 @@ SettingsWindow::SettingsWindow(QWidget *parent) : QFrame(parent) {
 
   TogglesPanel *toggles = new TogglesPanel(this);
   QObject::connect(this, &SettingsWindow::expandToggleDescription, toggles, &TogglesPanel::expandToggleDescription);
+  QObject::connect(this, &SettingsWindow::scrollToToggle, toggles, &TogglesPanel::scrollToToggle);
 
   auto networking = new Networking(this);
   QObject::connect(uiState()->prime_state, &PrimeState::changed, networking, &Networking::setPrimeType);

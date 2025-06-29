@@ -110,6 +110,9 @@ class TestSymbolic(unittest.TestCase):
   def test_neg(self):
     self.helper_test_variable(-Variable("a", 0, 8), -8, 0, "(a*-1)")
 
+  def test_xor_0(self):
+    self.helper_test_variable(Variable("a", 0, 8) ^ 0, 0, 8, "a")
+
   def test_add_1(self):
     self.helper_test_variable(Variable("a", 0, 8)+1, 1, 9, "(a+1)")
 
@@ -268,6 +271,15 @@ class TestSymbolic(unittest.TestCase):
     a = Variable("a", 0, 124)
     self.helper_test_variable(((a-10)//2+10)//2, 2, 33, "((((a+-10)//2)+10)//2)")
 
+  def test_div_const_div_wrong_sign_divisor(self):
+    a = Variable("a", 0, 124)
+    self.helper_test_variable(((a+10)//-2+10)//-4, -1, 14, "(((((a//2)*-1)+5)//4)*-1)")
+
+  def test_neg_mod(self):
+    a = Variable("a", 0, 124)
+    self.helper_test_variable((-a)%4, -3, 0, "((a%4)*-1)")
+    self.helper_test_variable(a%-4, 0, 3, "(a%-4)")
+
   def test_distribute_mul(self):
     self.helper_test_variable(usum([Variable("a", 0, 3), Variable("b", 0, 5)])*3, 0, 24, "((a*3)+(b*3))")
     self.helper_test_variable((1+Variable("a", 0, 3))*(-2)+12, 4, 10, "((a*-2)+10)")
@@ -398,6 +410,8 @@ class TestSymbolic(unittest.TestCase):
     self.helper_test_variable((-Variable("idx", 0, 100)+199)//-4 + 50, 1, 26, "((idx//4)+1)")
     self.helper_test_variable((-Variable("idx", 0, 100)+200)//-4 + 50, 0, 25, "((idx+3)//4)")
     self.helper_test_variable((-Variable("idx", 0, 100)+201)//-4 + 50, 0, 25, "((idx+2)//4)")
+    self.helper_test_variable((-Variable("idx", 0, 100))//2, -50, 0, "((idx//2)*-1)")
+    self.helper_test_variable(Variable("idx", 0, 100)//-2, -50, 0, "((idx//2)*-1)")
 
   def test_sum_div_big_const(self):
     gidx0 = Variable("gidx0", 0, 24)

@@ -44,6 +44,16 @@ class TestView(unittest.TestCase):
     self.assertIsNotNone(v)
     self.assertEqual(v, View.create((20,), mask=((0,0),)))
 
+  def test_add_0(self):
+    v1 = View.create((2,3,4))
+    v2 = View.create((2,0,4))
+    self.assertEqual(v2, v1+v2)
+
+  def test_add_0_masked(self):
+    v1 = View.create((2,3,4), mask=((0, 0), (0, 0), (0, 0)))
+    v2 = View.create((2,0,4))
+    self.assertEqual(v2, v1+v2)
+
 class TestMergeDims(unittest.TestCase):
   def test_contiguous(self):
     shape = (2, 3, 4)

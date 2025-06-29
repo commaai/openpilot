@@ -3,11 +3,11 @@ import unittest
 
 from tinygrad import Device
 from tinygrad.uop.ops import UOp, Ops
-from tinygrad.engine.search import Opt, OptOps
+from tinygrad.opt.search import Opt, OptOps
 from tinygrad.dtype import dtypes
 from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.shape.view import View
-from tinygrad.codegen.kernel import Kernel
+from tinygrad.opt.kernel import Kernel
 
 class TestOpenpilotValidhack(unittest.TestCase):
   def test_valid_removal(self):

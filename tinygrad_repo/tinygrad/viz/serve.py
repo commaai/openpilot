@@ -1,45 +1,33 @@
 #!/usr/bin/env python3
-import multiprocessing, pickle, functools, difflib, os, threading, json, time, sys, webbrowser, socket, argparse, decimal, socketserver
+import multiprocessing, pickle, difflib, os, threading, json, time, sys, webbrowser, socket, argparse, decimal, socketserver
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 from typing import Any, TypedDict, Generator
 from tinygrad.helpers import colored, getenv, tqdm, unwrap, word_wrap, TRACEMETA
 from tinygrad.uop.ops import TrackedGraphRewrite, UOp, Ops, lines, GroupOp, srender, sint
-from tinygrad.codegen.kernel import Kernel
+from tinygrad.renderer import ProgramSpec
 from tinygrad.device import ProfileEvent, ProfileDeviceEvent, ProfileRangeEvent, ProfileGraphEvent
 from tinygrad.dtype import dtypes
 
 uops_colors = {Ops.LOAD: "#ffc0c0", Ops.STORE: "#87CEEB", Ops.CONST: "#e0e0e0", Ops.VCONST: "#e0e0e0", Ops.REDUCE: "#FF5B5B",
                Ops.DEFINE_GLOBAL: "#ffe0b0", Ops.DEFINE_LOCAL: "#ffe0d0", Ops.DEFINE_ACC: "#f0ffe0", Ops.REDUCE_AXIS: "#FF6B6B",
                Ops.RANGE: "#c8a0e0", Ops.ASSIGN: "#909090", Ops.BARRIER: "#ff8080", Ops.IF: "#c8b0c0", Ops.SPECIAL: "#c0c0ff",
-               Ops.INDEX: "#e8ffa0", Ops.WMMA: "#efefc0", Ops.VIEW: "#C8F9D4", Ops.MULTI: "#f6ccff", Ops.KERNEL: "#3e7f55", Ops.IGNORE: "#00C000",
+               Ops.INDEX: "#e8ffa0", Ops.WMMA: "#efefc0", Ops.VIEW: "#C8F9D4", Ops.MULTI: "#f6ccff", Ops.KERNEL: "#3e7f55",
                **{x:"#D8F9E4" for x in GroupOp.Movement}, **{x:"#ffffc0" for x in GroupOp.ALU}, Ops.THREEFRY:"#ffff80", Ops.BUFFER_VIEW: "#E5EAFF",
                Ops.BLOCK: "#C4A484", Ops.BLOCKEND: "#C4A4A4", Ops.BUFFER: "#B0BDFF", Ops.COPY: "#a040a0", Ops.FUSE: "#FFa500",
-               Ops.ALLREDUCE: "#ff40a0", Ops.GBARRIER: "#FFC14D", Ops.MSELECT: "#d040a0"}
+               Ops.ALLREDUCE: "#ff40a0", Ops.GBARRIER: "#FFC14D", Ops.MSELECT: "#d040a0", Ops.MSTACK: "#d040a0"}
 
 # VIZ API
 
 # ** Metadata for a track_rewrites scope
 
-class GraphRewriteMetadata(TypedDict):
-  loc: tuple[str, int]                   # [path, lineno] calling graph_rewrite
-  match_count: int                       # total match count in this context
-  code_line: str                         # source code calling graph_rewrite
-  kernel_code: str|None                  # optionally render the final kernel code
-  name: str|None                         # optional name of the rewrite
-  depth: int                             # depth if it's a subrewrite
-
-@functools.cache
-def render_program(k:Kernel):
-  try: return k.opts.render(k.uops)
-  except Exception as e: return f"ISSUE RENDERING KERNEL: {e}\nast = {k.ast}\nopts = {k.applied_opts}"
-
-def to_metadata(k:Any, v:TrackedGraphRewrite) -> GraphRewriteMetadata:
-  return {"loc":v.loc, "match_count":len(v.matches), "name":v.name, "depth":v.depth, "code_line":lines(v.loc[0])[v.loc[1]-1].strip(),
-          "kernel_code":render_program(k) if isinstance(k, Kernel) else None}
-
-def get_metadata(keys:list[Any], contexts:list[list[TrackedGraphRewrite]]) -> list[tuple[str, list[GraphRewriteMetadata]]]:
-  return [(k.name if isinstance(k, Kernel) else str(k), [to_metadata(k, v) for v in vals]) for k,vals in zip(keys, contexts)]
+def get_metadata(keys:list[Any], contexts:list[list[TrackedGraphRewrite]]) -> list[dict]:
+  ret = []
+  for k,v in zip(keys, contexts):
+    steps = [{"name":s.name, "loc":s.loc, "depth":s.depth, "match_count":len(s.matches), "code_line":lines(s.loc[0])[s.loc[1]-1].strip()} for s in v]
+    if isinstance(k, ProgramSpec): ret.append({"name":k.name, "kernel_code":k.src, "ref":id(k.ast), "steps":steps})
+    else: ret.append({"name":str(k), "steps":steps})
+  return ret
 
 # ** Complete rewrite details for a graph_rewrite call
 
@@ -82,10 +70,11 @@ def uop_to_json(x:UOp) -> dict[int, dict]:
       label += "\n<ISSUE GETTING SHAPE>"
     # NOTE: kernel already has metadata in arg
     if TRACEMETA >= 2 and u.metadata is not None and u.op is not Ops.KERNEL: label += "\n"+repr(u.metadata)
-    graph[id(u)] = {"label":label, "src":[id(x) for x in u.src if x not in excluded], "color":uops_colors.get(u.op, "#ffffff")}
+    graph[id(u)] = {"label":label, "src":[id(x) for x in u.src if x not in excluded], "color":uops_colors.get(u.op, "#ffffff"),
+                    "ref":id(u.arg.ast) if u.op is Ops.KERNEL else None, "tag":u.tag}
   return graph
 
-def get_details(k:Any, ctx:TrackedGraphRewrite) -> Generator[GraphRewriteDetails, None, None]:
+def get_details(ctx:TrackedGraphRewrite) -> Generator[GraphRewriteDetails, None, None]:
   yield {"graph":uop_to_json(next_sink:=ctx.sink), "uop":str(ctx.sink), "changed_nodes":None, "diff":None, "upat":None}
   replaces: dict[UOp, UOp] = {}
   for u0,u1,upat in tqdm(ctx.matches):
@@ -139,23 +128,23 @@ class Handler(BaseHTTPRequestHandler):
         if url.path.endswith(".js"): content_type = "application/javascript"
         if url.path.endswith(".css"): content_type = "text/css"
       except FileNotFoundError: status_code = 404
-    elif url.path == "/kernels":
-      if "kernel" in (query:=parse_qs(url.query)):
-        kidx, ridx = int(query["kernel"][0]), int(query["idx"][0])
+    elif url.path == "/ctxs":
+      if "ctx" in (query:=parse_qs(url.query)):
+        kidx, ridx = int(query["ctx"][0]), int(query["idx"][0])
         try:
           # stream details
           self.send_response(200)
           self.send_header("Content-Type", "text/event-stream")
           self.send_header("Cache-Control", "no-cache")
           self.end_headers()
-          for r in get_details(contexts[0][kidx], contexts[1][kidx][ridx]):
+          for r in get_details(contexts[1][kidx][ridx]):
             self.wfile.write(f"data: {json.dumps(r)}\n\n".encode("utf-8"))
             self.wfile.flush()
           self.wfile.write("data: END\n\n".encode("utf-8"))
           return self.wfile.flush()
         # pass if client closed connection
         except (BrokenPipeError, ConnectionResetError): return
-      ret, content_type = json.dumps(kernels).encode(), "application/json"
+      ret, content_type = json.dumps(ctxs).encode(), "application/json"
     elif url.path == "/get_profile" and perfetto_profile is not None: ret, content_type = perfetto_profile, "application/json"
     else: status_code = 404
 
@@ -200,7 +189,7 @@ if __name__ == "__main__":
   contexts, profile = load_pickle(args.kernels), load_pickle(args.profile)
 
   # NOTE: this context is a tuple of list[keys] and list[values]
-  kernels = get_metadata(*contexts) if contexts is not None else []
+  ctxs = get_metadata(*contexts) if contexts is not None else []
 
   perfetto_profile = to_perfetto(profile) if profile is not None else None
 
@@ -208,7 +197,7 @@ if __name__ == "__main__":
   reloader_thread = threading.Thread(target=reloader)
   reloader_thread.start()
   print(f"*** started viz on {HOST}:{PORT}")
-  print(colored(f"*** ready in {(time.perf_counter()-st)*1e3:4.2f}ms", "green"))
+  print(colored(f"*** ready in {(time.perf_counter()-st)*1e3:4.2f}ms", "green"), flush=True)
   if len(getenv("BROWSER", "")) > 0: webbrowser.open(f"{HOST}:{PORT}{'/profiler' if contexts is None else ''}")
   try: server.serve_forever()
   except KeyboardInterrupt:

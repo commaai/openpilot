@@ -18,13 +18,13 @@ def check_assign(buffers:list[list[Buffer]|tuple[Buffer, ...]]):
   first_appearance, last_appearance = {}, {}
   for i,u in enumerate(buffers):
     for buf in u:
-      if buf.is_allocated() or buf.base.is_allocated() or buf.lb_refcount > 0: continue
+      if buf.is_allocated() or buf.base.is_allocated() or buf.uop_refcount > 0: continue
       if buf.base not in first_appearance: first_appearance[buf.base] = i
       last_appearance[buf.base] = i
 
   for i,u in enumerate(buffers):
     for buf in u:
-      if buf.is_allocated() or buf.base.is_allocated() or buf.lb_refcount > 0: continue
+      if buf.is_allocated() or buf.base.is_allocated() or buf.uop_refcount > 0: continue
       cur, base = assigned.get(buf, buf), assigned.get(buf.base, buf.base)
       if buf._base is not None:
         assert cur.base == base.base and cur.offset == buf.offset + base.offset, f"failed: {buf} {cur} {base} {buf.offset} {base.offset}"

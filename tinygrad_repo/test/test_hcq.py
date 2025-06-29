@@ -5,7 +5,7 @@ from tinygrad.device import Buffer, BufferSpec
 from tinygrad.runtime.support.hcq import HCQCompiled, HCQBuffer
 from tinygrad.runtime.autogen import libc
 from tinygrad.engine.realize import get_runner, CompiledRunner
-from tinygrad.codegen.kernel import Kernel, Opt, OptOps
+from tinygrad.opt.kernel import Kernel, Opt, OptOps
 from tinygrad import Variable
 
 MOCKGPU = getenv("MOCKGPU")
@@ -20,15 +20,15 @@ class TestHCQ(unittest.TestCase):
     si = self.b.schedule()[-1]
 
     TestHCQ.runner = get_runner(TestHCQ.d0.device, si.ast)
-    TestHCQ.b.lazydata.buffer.allocate()
+    TestHCQ.b.uop.buffer.allocate()
 
-    TestHCQ.kernargs_ba_ptr = TestHCQ.runner._prg.fill_kernargs([TestHCQ.b.lazydata.buffer._buf, TestHCQ.a.lazydata.buffer._buf])
-    TestHCQ.kernargs_ab_ptr = TestHCQ.runner._prg.fill_kernargs([TestHCQ.a.lazydata.buffer._buf, TestHCQ.b.lazydata.buffer._buf])
+    TestHCQ.kernargs_ba_ptr = TestHCQ.runner._prg.fill_kernargs([TestHCQ.b.uop.buffer._buf, TestHCQ.a.uop.buffer._buf])
+    TestHCQ.kernargs_ab_ptr = TestHCQ.runner._prg.fill_kernargs([TestHCQ.a.uop.buffer._buf, TestHCQ.b.uop.buffer._buf])
 
   def setUp(self):
     TestHCQ.d0.synchronize()
-    TestHCQ.a.lazydata.buffer.copyin(memoryview(bytearray(struct.pack("ff", 0, 1))))
-    TestHCQ.b.lazydata.buffer.copyin(memoryview(bytearray(struct.pack("ff", 0, 0))))
+    TestHCQ.a.uop.buffer.copyin(memoryview(bytearray(struct.pack("ff", 0, 1))))
+    TestHCQ.b.uop.buffer.copyin(memoryview(bytearray(struct.pack("ff", 0, 0))))
     TestHCQ.d0.synchronize() # wait for copyins to complete
 
   # Test signals
@@ -117,7 +117,7 @@ class TestHCQ(unittest.TestCase):
     TestHCQ.d0.timeline_signal.wait(TestHCQ.d0.timeline_value)
     TestHCQ.d0.timeline_value += 1
 
-    val = TestHCQ.b.lazydata.buffer.as_buffer().cast("f")[0]
+    val = TestHCQ.b.uop.buffer.as_buffer().cast("f")[0]
     assert val == 1.0, f"got val {val}"
 
   def test_exec_2_kernels_100_times(self):
@@ -133,7 +133,7 @@ class TestHCQ(unittest.TestCase):
       q.submit(TestHCQ.d0, {virt_val: TestHCQ.d0.timeline_value})
       TestHCQ.d0.timeline_value += 1
 
-    val = TestHCQ.a.lazydata.buffer.as_buffer().cast("f")[0]
+    val = TestHCQ.a.uop.buffer.as_buffer().cast("f")[0]
     assert val == 200.0, f"got val {val}"
 
   def test_exec_update(self):
@@ -148,9 +148,9 @@ class TestHCQ(unittest.TestCase):
     TestHCQ.d0.timeline_signal.wait(TestHCQ.d0.timeline_value)
     TestHCQ.d0.timeline_value += 1
 
-    val = TestHCQ.b.lazydata.buffer.as_buffer().cast("f")[0]
+    val = TestHCQ.b.uop.buffer.as_buffer().cast("f")[0]
     assert val == 1.0, f"got val {val}"
-    val = TestHCQ.b.lazydata.buffer.as_buffer().cast("f")[1]
+    val = TestHCQ.b.uop.buffer.as_buffer().cast("f")[1]
     assert val == 0.0, f"got val {val}, should not be updated"
 
   def test_exec_update_fuzz(self):
@@ -192,13 +192,13 @@ class TestHCQ(unittest.TestCase):
     if TestHCQ.d0.hw_copy_queue_t is None: self.skipTest("device does not support copy queue")
 
     TestHCQ.d0.hw_copy_queue_t().wait(TestHCQ.d0.timeline_signal, TestHCQ.d0.timeline_value - 1) \
-                                .copy(TestHCQ.b.lazydata.buffer._buf.va_addr, TestHCQ.a.lazydata.buffer._buf.va_addr, 8) \
+                                .copy(TestHCQ.b.uop.buffer._buf.va_addr, TestHCQ.a.uop.buffer._buf.va_addr, 8) \
                                 .signal(TestHCQ.d0.timeline_signal, TestHCQ.d0.timeline_value).submit(TestHCQ.d0)
 
     TestHCQ.d0.timeline_signal.wait(TestHCQ.d0.timeline_value)
     TestHCQ.d0.timeline_value += 1
 
-    val = TestHCQ.b.lazydata.buffer.as_buffer().cast("f")[1]
+    val = TestHCQ.b.uop.buffer.as_buffer().cast("f")[1]
     assert val == 1.0, f"got val {val}"
 
   def test_copy_long(self):
@@ -252,12 +252,12 @@ class TestHCQ(unittest.TestCase):
                                     .copy(virt_dest_addr, virt_src_addr, 8) \
                                     .signal(TestHCQ.d0.timeline_signal, TestHCQ.d0.timeline_value)
 
-    q.submit(TestHCQ.d0, {virt_src_addr: TestHCQ.a.lazydata.buffer._buf.va_addr, virt_dest_addr: TestHCQ.b.lazydata.buffer._buf.va_addr})
+    q.submit(TestHCQ.d0, {virt_src_addr: TestHCQ.a.uop.buffer._buf.va_addr, virt_dest_addr: TestHCQ.b.uop.buffer._buf.va_addr})
 
     TestHCQ.d0.timeline_signal.wait(TestHCQ.d0.timeline_value)
     TestHCQ.d0.timeline_value += 1
 
-    val = TestHCQ.b.lazydata.buffer.as_buffer().cast("f")[1]
+    val = TestHCQ.b.uop.buffer.as_buffer().cast("f")[1]
     assert val == 1.0, f"got val {val}"
 
   def test_update_copy_long(self):
