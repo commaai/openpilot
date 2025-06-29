@@ -1,4 +1,5 @@
 loggerd
 encoderd
+encoderd_burn
 bootlog
 tests/test_logger

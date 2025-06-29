@@ -4,7 +4,7 @@ libs = [common, messaging, visionipc,
         'avformat', 'avcodec', 'avutil',
         'yuv', 'OpenCL', 'pthread', 'zstd']
 
-src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
+src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/v4l_encoder_burn.cc', 'encoder/jpeg_encoder.cc']
 if arch != "larch64":
   src += ['encoder/ffmpeg_encoder.cc']
 
@@ -14,12 +14,14 @@ if arch == "Darwin":
   env['FRAMEWORKS'] = ['OpenCL']
   # exclude v4l
   del src[src.index('encoder/v4l_encoder.cc')]
+  del src[src.index('encoder/v4l_encoder_burn.cc')]
 
 logger_lib = env.Library('logger', src)
 libs.insert(0, logger_lib)
 
 env.Program('loggerd', ['loggerd.cc'], LIBS=libs)
 env.Program('encoderd', ['encoderd.cc'], LIBS=libs + ["jpeg"])
+env.Program('encoderd_burn', ['encoderd_burn.cc'], LIBS=libs + ["jpeg"])
 env.Program('bootlog.cc', LIBS=libs)
 
 if GetOption('extras'):
