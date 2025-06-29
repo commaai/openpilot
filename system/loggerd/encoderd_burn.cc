@@ -2,6 +2,8 @@
 #include <random>
 #include <thread>
 #include <chrono>
+#include <cstring>
+#include <vector>
 
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/v4l_encoder_burn.h"
@@ -10,28 +12,51 @@
 
 #include "third_party/linux/include/msm_media_info.h"
 
-#define BURN_ENCODER_COUNT 1  // Number of parallel encoders for stress testing
-#define BURN_WIDTH 1920 // 4K width
-#define BURN_HEIGHT 1080 // 4K height  
+#define BURN_ENCODER_COUNT 4  // Number of parallel encoders for stress testing
+#define BURN_WIDTH 3840       // 4K width
+#define BURN_HEIGHT 2160      // 4K height  
 #define BURN_FPS 60           // 60 fps for maximum stress
 #define BURN_BITRATE (100 * 1000000)  // 100 Mbps for maximum load
+#define PRECOMPUTED_FRAMES 8  // Number of precomputed noise frames to cycle through
 
 ExitHandler do_exit;
 
-// Generate random noise data to simulate 4K video frames
-void generate_random_noise(VisionBuf *buf, std::mt19937 &gen, std::uniform_int_distribution<uint8_t> &dis) {
-  uint8_t *y_plane = (uint8_t*)buf->addr;
-  uint8_t *uv_plane = y_plane + BURN_WIDTH * BURN_HEIGHT;
+// Global precomputed VisionBuf frames - no copying needed!
+static std::vector<VisionBuf> precomputed_frames;
+static bool frames_initialized = false;
+
+// Initialize precomputed random noise frames as VisionBuf objects
+void init_precomputed_frames(size_t frame_size) {
+  if (frames_initialized) return;  // Already initialized
   
-  // Fill Y plane with random values
-  for (int i = 0; i < BURN_WIDTH * BURN_HEIGHT; i++) {
-    y_plane[i] = dis(gen);
+  precomputed_frames.resize(PRECOMPUTED_FRAMES);
+  
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<uint8_t> dis(0, 255);
+  
+  LOGW("Precomputing %d VisionBuf noise frames of %zu bytes each", PRECOMPUTED_FRAMES, frame_size);
+  
+  for (int frame_idx = 0; frame_idx < PRECOMPUTED_FRAMES; frame_idx++) {
+    // Allocate VisionBuf directly
+    precomputed_frames[frame_idx].allocate(frame_size);
+    
+    // Fill with random noise
+    uint8_t *data = (uint8_t*)precomputed_frames[frame_idx].addr;
+    for (size_t i = 0; i < frame_size; i++) {
+      data[i] = dis(gen);
+    }
   }
   
-  // Fill UV plane with random values (NV12 format: UV interleaved)
-  for (int i = 0; i < (BURN_WIDTH * BURN_HEIGHT) / 2; i++) {
-    uv_plane[i] = dis(gen);
-  }
+  LOGW("Precomputation complete, using %zu MB total", 
+       (frame_size * PRECOMPUTED_FRAMES) / (1024 * 1024));
+  frames_initialized = true;
+}
+
+// Get a pointer to a precomputed frame - no copying!
+VisionBuf* get_precomputed_frame(int frame_index) {
+  int idx = frame_index % PRECOMPUTED_FRAMES;
+  return &precomputed_frames[idx];
 }
 
 void burn_encoder_thread(int encoder_id) {
@@ -57,16 +82,11 @@ void burn_encoder_thread(int encoder_id) {
   
   // Calculate proper buffer size using VENUS macros for NV12 format
   size_t frame_size = VENUS_BUFFER_SIZE(COLOR_FMT_NV12, BURN_WIDTH, BURN_HEIGHT);
-  if (true) frame_size = 4202496;
   LOGD("Burn encoder %d: calculated buffer size %zu for %dx%d",
        encoder_id, frame_size, BURN_WIDTH, BURN_HEIGHT);
-  VisionBuf frame_buf;
-  frame_buf.allocate(frame_size);
   
-  // Random number generation for noise
-  std::random_device rd;
-  std::mt19937 gen(rd());
-  std::uniform_int_distribution<uint8_t> dis(0, 255);
+  // Initialize precomputed frames (only done once)
+  init_precomputed_frames(frame_size);
   
   // Frame timing
   const auto frame_duration = std::chrono::microseconds(1000000 / BURN_FPS);
@@ -84,8 +104,8 @@ void burn_encoder_thread(int encoder_id) {
       std::this_thread::sleep_until(next_frame_time);
     }
     
-    // Generate random noise for this frame
-    generate_random_noise(&frame_buf, gen, dis);
+    // Get precomputed frame pointer - zero copy!
+    VisionBuf* frame_buf = get_precomputed_frame(frame_id);
     
     // Create frame metadata
     VisionIpcBufExtra extra = {
@@ -93,8 +113,8 @@ void burn_encoder_thread(int encoder_id) {
       .frame_id = frame_id++,
     };
     
-    // Encode the frame
-    int result = encoder.encode_frame(&frame_buf, &extra);
+    // Encode the frame directly from precomputed buffer
+    int result = encoder.encode_frame(frame_buf, &extra);
     if (result == -1) {
       LOGE("Burn encoder %d failed to encode frame %d", encoder_id, frame_id - 1);
       // Continue anyway for stress testing
@@ -112,7 +132,6 @@ void burn_encoder_thread(int encoder_id) {
   }
   
   encoder.encoder_close();
-  frame_buf.free();
   LOGW("Burn encoder %d stopped after %d frames", encoder_id, frame_id);
 }
 
