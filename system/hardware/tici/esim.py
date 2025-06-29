@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import shutil
 import subprocess
 from typing import Literal
@@ -32,6 +33,7 @@ class TiciLPA(LPABase):
     return next((p for p in self.list_profiles() if p.enabled), None)
 
   def delete_profile(self, iccid: str) -> None:
+    self._validate_iccid(iccid)
     self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is not None and latest.iccid == iccid:
@@ -39,8 +41,12 @@ class TiciLPA(LPABase):
     self._validate_successful(self._invoke('profile', 'delete', iccid))
     self._process_notifications()
 
-  def download_profile(self, qr: str, nickname: str | None = None) -> None:
-    msgs = self._invoke('profile', 'download', '-a', qr)
+  def download_profile(self, lpa_activation_code: str, nickname: str | None = None) -> None:
+    self._validate_lpa_activation_code(lpa_activation_code)
+    if nickname:
+      self._validate_nickname(nickname)
+
+    msgs = self._invoke('profile', 'download', '-a', lpa_activation_code)
     self._validate_successful(msgs)
     new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
     if new_profile is None:
@@ -50,10 +56,13 @@ class TiciLPA(LPABase):
     self._process_notifications()
 
   def nickname_profile(self, iccid: str, nickname: str) -> None:
+    self._validate_iccid(iccid)
     self._validate_profile_exists(iccid)
+    self._validate_nickname(nickname)
     self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
   def switch_profile(self, iccid: str) -> None:
+    self._validate_iccid(iccid)
     self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest and latest.iccid == iccid:
@@ -97,6 +106,20 @@ class TiciLPA(LPABase):
     Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
     """
     self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
+
+  def _validate_iccid(self, iccid: str) -> None:
+    if not re.match(r'^89\d{17,18}$', iccid):
+      raise ValueError('invalid ICCID format. expected format: 8988303000000614227')
+
+  def _validate_lpa_activation_code(self, lpa_activation_code: str) -> None:
+    if not re.match(r'^LPA:1\$\w+\$\w+$', lpa_activation_code):
+      raise ValueError('invalid LPA activation code format. expected format: LPA:1$domain$code')
+
+  def _validate_nickname(self, nickname: str) -> None:
+    if len(nickname) < 1 or len(nickname) > 16:
+      raise ValueError('nickname must be between 1 and 16 characters')
+    if not re.match(r'^[a-zA-Z0-9]+$', nickname):
+      raise ValueError('nickname must contain only alphanumeric characters')
 
   def _validate_profile_exists(self, iccid: str) -> None:
     if not any(p.iccid == iccid for p in self.list_profiles()):

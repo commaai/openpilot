@@ -8,6 +8,7 @@ import json
 import os
 import queue
 import random
+import re
 import select
 import socket
 import sys
@@ -550,8 +551,8 @@ def getEsimProfiles():
 
 
 @dispatcher.add_method
-def downloadEsimProfile(qr: str, profile_name: str):
-  HARDWARE.get_sim_lpa().download_profile(qr, profile_name)
+def downloadEsimProfile(lpa_activation_code: str, profile_name: str):
+  HARDWARE.get_sim_lpa().download_profile(lpa_activation_code, profile_name)
 
 
 @dispatcher.add_method
