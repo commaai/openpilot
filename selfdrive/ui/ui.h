@@ -26,9 +26,14 @@ const Eigen::Matrix3f VIEW_FROM_DEVICE = (Eigen::Matrix3f() <<
   0.0, 0.0, 1.0,
   1.0, 0.0, 0.0).finished();
 
-const Eigen::Matrix3f FCAM_INTRINSIC_MATRIX = (Eigen::Matrix3f() <<
+const Eigen::Matrix3f FCAM_INTRINSIC_MATRIX_AR_OX = (Eigen::Matrix3f() <<
   2648.0, 0.0, 1928.0 / 2,
   0.0, 2648.0, 1208.0 / 2,
+  0.0, 0.0, 1.0).finished();
+
+const Eigen::Matrix3f FCAM_INTRINSIC_MATRIX_UNKNOWN = (Eigen::Matrix3f() <<
+  1477.0, 0.0, 1280.0 / 2,
+  0.0, 1477.0, 720.0 / 2,
   0.0, 0.0, 1.0).finished();
 
 // tici ecam focal probably wrong? magnification is not consistent across frame
@@ -51,6 +56,7 @@ const QColor bg_colors [] = {
 };
 
 typedef struct UIScene {
+  Eigen::Matrix3f fcam_intrinsic_matrix = FCAM_INTRINSIC_MATRIX_AR_OX;
   Eigen::Matrix3f view_from_calib = VIEW_FROM_DEVICE;
   Eigen::Matrix3f view_from_wide_calib = VIEW_FROM_DEVICE;
   cereal::PandaState::PandaType pandaType;

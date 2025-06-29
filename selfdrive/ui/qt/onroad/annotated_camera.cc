@@ -47,7 +47,7 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
   // Select intrinsic matrix and calibration based on camera type
   auto *s = uiState();
   bool wide_cam = active_stream_type == VISION_STREAM_WIDE_ROAD;
-  const auto &intrinsic_matrix = wide_cam ? ECAM_INTRINSIC_MATRIX : FCAM_INTRINSIC_MATRIX;
+  const auto &intrinsic_matrix = wide_cam ? ECAM_INTRINSIC_MATRIX : s->scene.fcam_intrinsic_matrix;
   const auto &calibration = wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
 
    // Compute the calibration transformation matrix
