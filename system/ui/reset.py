@@ -9,6 +9,7 @@ from openpilot.system.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.label import gui_label, gui_text_box
+from openpilot.system.ui.lib.widget import Widget
 
 NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"
@@ -27,8 +28,9 @@ class ResetState(IntEnum):
   FAILED = 3
 
 
-class Reset:
+class Reset(Widget):
   def __init__(self, mode):
+    super().__init__()
     self.mode = mode
     self.reset_state = ResetState.NONE
 
@@ -54,7 +56,7 @@ class Reset:
     self.reset_state = ResetState.RESETTING
     threading.Timer(0.1, self._do_erase).start()
 
-  def render(self, rect: rl.Rectangle):
+  def _render(self, rect: rl.Rectangle):
     label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
     gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
 
@@ -76,7 +78,7 @@ class Reset:
 
       if self.reset_state != ResetState.FAILED:
         if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height),
-                       "Confirm", button_style=ButtonStyle.PRIMARY):
+                      "Confirm", button_style=ButtonStyle.PRIMARY):
           self.confirm()
 
     return True

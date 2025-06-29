@@ -199,7 +199,6 @@ class SwagLogger(logging.Logger):
       co = f.f_code
       filename = os.path.normcase(co.co_filename)
 
-      # TODO: is this pylint exception correct?
       if filename == _srcfile:
         f = f.f_back
         continue

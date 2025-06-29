@@ -1,13 +1,16 @@
 import pyray as rl
 from dataclasses import dataclass
-from cereal.messaging import SubMaster
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.common.conversions import Conversions as CV
-from enum import IntEnum
+from openpilot.system.ui.lib.widget import Widget
 
 # Constants
 SET_SPEED_NA = 255
 KM_TO_MILE = 0.621371
+CRUISE_DISABLED_CHAR = '–'
 
 
 @dataclass(frozen=True)
@@ -52,34 +55,26 @@ FONT_SIZES = FontSizes()
 COLORS = Colors()
 
 
-class HudStatus(IntEnum):
-  DISENGAGED = 0
-  OVERRIDE = 1
-  ENGAGED = 2
-
-
-class HudRenderer:
+class HudRenderer(Widget):
   def __init__(self):
+    super().__init__()
     """Initialize the HUD renderer."""
-    self.is_metric: bool = False
-    self.status: HudStatus = HudStatus.DISENGAGED
     self.is_cruise_set: bool = False
     self.is_cruise_available: bool = False
     self.set_speed: float = SET_SPEED_NA
     self.speed: float = 0.0
     self.v_ego_cluster_seen: bool = False
-    self.font_metrics_cache: dict[[str, int, str], rl.Vector2] = {}
-    self._wheel_texture: rl.Texture = gui_app.texture('icons/chffr_wheel.png', UI_CONFIG.wheel_icon_size, UI_CONFIG.wheel_icon_size)
+
     self._font_semi_bold: rl.Font = gui_app.font(FontWeight.SEMI_BOLD)
     self._font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
     self._font_medium: rl.Font = gui_app.font(FontWeight.MEDIUM)
 
-  def _update_state(self, sm: SubMaster) -> None:
-    """Update HUD state based on car state and controls state."""
-    self.is_metric = True
-    self.status = HudStatus.DISENGAGED
+    self._exp_button = ExpButton(UI_CONFIG.button_size, UI_CONFIG.wheel_icon_size)
 
-    if not sm.valid['carState']:
+  def _update_state(self) -> None:
+    """Update HUD state based on car state and controls state."""
+    sm = ui_state.sm
+    if sm.recv_frame["carState"] < ui_state.started_frame:
       self.is_cruise_set = False
       self.set_speed = SET_SPEED_NA
       self.speed = 0.0
@@ -95,18 +90,18 @@ class HudRenderer:
     self.is_cruise_set = 0 < self.set_speed < SET_SPEED_NA
     self.is_cruise_available = self.set_speed != -1
 
-    if self.is_cruise_set and not self.is_metric:
+    if self.is_cruise_set and not ui_state.is_metric:
       self.set_speed *= KM_TO_MILE
 
     v_ego_cluster = car_state.vEgoCluster
     self.v_ego_cluster_seen = self.v_ego_cluster_seen or v_ego_cluster != 0.0
     v_ego = v_ego_cluster if self.v_ego_cluster_seen else car_state.vEgo
-    speed_conversion = CV.MS_TO_KPH if self.is_metric else CV.MS_TO_MPH
+    speed_conversion = CV.MS_TO_KPH if ui_state.is_metric else CV.MS_TO_MPH
     self.speed = max(0.0, v_ego * speed_conversion)
 
-  def draw(self, rect: rl.Rectangle, sm: SubMaster) -> None:
+  def _render(self, rect: rl.Rectangle) -> None:
     """Render HUD elements to the screen."""
-    self._update_state(sm)
+    # Draw the header background
     rl.draw_rectangle_gradient_v(
       int(rect.x),
       int(rect.y),
@@ -120,11 +115,17 @@ class HudRenderer:
       self._draw_set_speed(rect)
 
     self._draw_current_speed(rect)
-    self._draw_wheel_icon(rect)
+
+    button_x = rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size
+    button_y = rect.y + UI_CONFIG.border_size
+    self._exp_button.render(rl.Rectangle(button_x, button_y, UI_CONFIG.button_size, UI_CONFIG.button_size))
+
+  def handle_mouse_event(self) -> bool:
+    return bool(self._exp_button.handle_mouse_event())
 
   def _draw_set_speed(self, rect: rl.Rectangle) -> None:
     """Draw the MAX speed indicator box."""
-    set_speed_width = UI_CONFIG.set_speed_width_metric if self.is_metric else UI_CONFIG.set_speed_width_imperial
+    set_speed_width = UI_CONFIG.set_speed_width_metric if ui_state.is_metric else UI_CONFIG.set_speed_width_imperial
     x = rect.x + 60 + (UI_CONFIG.set_speed_width_imperial - set_speed_width) // 2
     y = rect.y + 45
 
@@ -136,14 +137,15 @@ class HudRenderer:
     set_speed_color = COLORS.dark_grey
     if self.is_cruise_set:
       set_speed_color = COLORS.white
-      max_color = {
-        HudStatus.DISENGAGED: COLORS.disengaged,
-        HudStatus.OVERRIDE: COLORS.override,
-        HudStatus.ENGAGED: COLORS.engaged,
-      }.get(self.status, COLORS.grey)
+      if ui_state.status == UIStatus.ENGAGED:
+        max_color = COLORS.engaged
+      elif ui_state.status == UIStatus.DISENGAGED:
+        max_color = COLORS.disengaged
+      elif ui_state.status == UIStatus.OVERRIDE:
+        max_color = COLORS.override
 
     max_text = "MAX"
-    max_text_width = self._measure_text(max_text, self._font_semi_bold, FONT_SIZES.max_speed, 'semi_bold').x
+    max_text_width = measure_text_cached(self._font_semi_bold, max_text, FONT_SIZES.max_speed).x
     rl.draw_text_ex(
       self._font_semi_bold,
       max_text,
@@ -153,8 +155,8 @@ class HudRenderer:
       max_color,
     )
 
-    set_speed_text = "–" if not self.is_cruise_set else str(round(self.set_speed))
-    speed_text_width = self._measure_text(set_speed_text, self._font_bold, FONT_SIZES.set_speed, 'bold').x
+    set_speed_text = CRUISE_DISABLED_CHAR if not self.is_cruise_set else str(round(self.set_speed))
+    speed_text_width = measure_text_cached(self._font_bold, set_speed_text, FONT_SIZES.set_speed).x
     rl.draw_text_ex(
       self._font_bold,
       set_speed_text,
@@ -167,28 +169,11 @@ class HudRenderer:
   def _draw_current_speed(self, rect: rl.Rectangle) -> None:
     """Draw the current vehicle speed and unit."""
     speed_text = str(round(self.speed))
-    speed_text_size = self._measure_text(speed_text, self._font_bold, FONT_SIZES.current_speed, 'bold')
+    speed_text_size = measure_text_cached(self._font_bold, speed_text, FONT_SIZES.current_speed)
     speed_pos = rl.Vector2(rect.x + rect.width / 2 - speed_text_size.x / 2, 180 - speed_text_size.y / 2)
     rl.draw_text_ex(self._font_bold, speed_text, speed_pos, FONT_SIZES.current_speed, 0, COLORS.white)
 
-    unit_text = "km/h" if self.is_metric else "mph"
-    unit_text_size = self._measure_text(unit_text, self._font_medium, FONT_SIZES.speed_unit, 'medium')
+    unit_text = "km/h" if ui_state.is_metric else "mph"
+    unit_text_size = measure_text_cached(self._font_medium, unit_text, FONT_SIZES.speed_unit)
     unit_pos = rl.Vector2(rect.x + rect.width / 2 - unit_text_size.x / 2, 290 - unit_text_size.y / 2)
     rl.draw_text_ex(self._font_medium, unit_text, unit_pos, FONT_SIZES.speed_unit, 0, COLORS.white_translucent)
-
-  def _draw_wheel_icon(self, rect: rl.Rectangle) -> None:
-    """Draw the steering wheel icon with status-based opacity."""
-    center_x = int(rect.x + rect.width - UI_CONFIG.border_size - UI_CONFIG.button_size / 2)
-    center_y = int(rect.y + UI_CONFIG.border_size + UI_CONFIG.button_size / 2)
-    rl.draw_circle(center_x, center_y, UI_CONFIG.button_size / 2, COLORS.black_translucent)
-
-    opacity = 0.7 if self.status == HudStatus.DISENGAGED else 1.0
-    img_pos = rl.Vector2(center_x - self._wheel_texture.width / 2, center_y - self._wheel_texture.height / 2)
-    rl.draw_texture_v(self._wheel_texture, img_pos, rl.Color(255, 255, 255, int(255 * opacity)))
-
-  def _measure_text(self, text: str, font: rl.Font, font_size: int, font_type: str) -> rl.Vector2:
-    """Measure text dimensions with caching."""
-    key = (text, font_size, font_type)
-    if key not in self.font_metrics_cache:
-      self.font_metrics_cache[key] = rl.measure_text_ex(font, text, font_size, 0)
-    return self.font_metrics_cache[key]
