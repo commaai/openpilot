@@ -58,13 +58,15 @@ class GuiScrollPanel:
           if mouse_pos.x >= scrollbar_x:
             self._scroll_state = ScrollState.DRAGGING_SCROLLBAR
 
+        # TODO: hacky
+        # when clicking while moving, go straight into dragging
+        self._is_dragging = abs(self._velocity_y) > MIN_VELOCITY
         self._last_mouse_y = mouse_pos.y
         self._start_mouse_y = mouse_pos.y
         self._last_drag_time = current_time
         self._velocity_history.clear()
         self._velocity_y = 0.0
         self._bounce_offset = 0.0
-        self._is_dragging = False
 
     # Handle active dragging
     if self._scroll_state == ScrollState.DRAGGING_CONTENT or self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
@@ -167,13 +169,8 @@ class GuiScrollPanel:
 
     return self._offset
 
-  def is_click_valid(self) -> bool:
-    # Check if this is a click rather than a drag
-    return (
-      self._scroll_state == ScrollState.IDLE
-      and not self._is_dragging
-      and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-    )
+  def is_touch_valid(self):
+    return not self._is_dragging
 
   def get_normalized_scroll_position(self) -> float:
     """Returns the current scroll position as a value from 0.0 to 1.0"""

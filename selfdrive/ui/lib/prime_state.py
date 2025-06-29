@@ -6,6 +6,7 @@ import time
 from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
 
 class PrimeType(IntEnum):
@@ -44,7 +45,7 @@ class PrimeState:
 
   def _fetch_prime_status(self) -> None:
     dongle_id = self._params.get("DongleId", encoding='utf8')
-    if not dongle_id:
+    if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
       return
 
     try:

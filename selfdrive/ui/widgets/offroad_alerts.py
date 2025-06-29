@@ -70,8 +70,7 @@ class AbstractAlert(Widget, ABC):
     pass
 
   def handle_input(self, mouse_pos: rl.Vector2, mouse_clicked: bool) -> bool:
-    # TODO: fix scroll_panel.is_click_valid()
-    if not mouse_clicked:
+    if not mouse_clicked or not self.scroll_panel.is_touch_valid():
       return False
 
     if rl.check_collision_point_rec(mouse_pos, self.dismiss_btn_rect):
