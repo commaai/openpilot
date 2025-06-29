@@ -8,7 +8,6 @@ import json
 import os
 import queue
 import random
-import re
 import select
 import socket
 import sys
