@@ -68,6 +68,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       "../assets/icons/metric.png",
       false,
     },
+    {
+      "RecordAudio",
+      tr("Record Microphone Audio"),
+      tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
+      "../assets/icons/microphone.png",
+      true,
+    },
   };
 
 

@@ -5,7 +5,7 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
-VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec)
+VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec, bool has_audio)
   : remuxing(remuxing) {
   vid_path = util::string_format("%s/%s", path, filename);
   lock_path = util::string_format("%s/%s.lock", path, filename);
@@ -40,6 +40,50 @@ VideoWriter::VideoWriter(const char *path, const char *filename, bool remuxing, 
 
     this->out_stream = avformat_new_stream(this->ofmt_ctx, raw ? avcodec : NULL);
     assert(this->out_stream);
+
+    if (has_audio) {
+      assert(this->ofmt_ctx->oformat->audio_codec != AV_CODEC_ID_NONE); // check output format supports audio streams
+      const AVCodec *audio_avcodec = avcodec_find_encoder(AV_CODEC_ID_AAC);
+      assert(audio_avcodec);
+      this->audio_codec_ctx = avcodec_alloc_context3(audio_avcodec);
+      assert(this->audio_codec_ctx);
+      this->audio_codec_ctx->sample_fmt = AV_SAMPLE_FMT_FLTP;
+      this->audio_codec_ctx->sample_rate = 16000; // from system/micd.py
+      #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)  // FFmpeg 5.1+
+      av_channel_layout_default(&this->audio_codec_ctx->ch_layout, 1);
+      #else
+      this->audio_codec_ctx->channel_layout = AV_CH_LAYOUT_MONO;
+      #endif
+      this->audio_codec_ctx->bit_rate = 32000;
+      this->audio_codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+
+      int err = avcodec_open2(this->audio_codec_ctx, audio_avcodec, NULL);
+      assert(err >= 0);
+      av_log_set_level(AV_LOG_WARNING); // hide "QAvg" info msgs at the end of every segment
+
+      this->audio_stream = avformat_new_stream(this->ofmt_ctx, NULL);
+      assert(this->audio_stream);
+      err = avcodec_parameters_from_context(this->audio_stream->codecpar, this->audio_codec_ctx);
+      assert(err >= 0);
+      this->audio_stream->time_base = (AVRational){1, this->audio_codec_ctx->sample_rate};
+
+      this->audio_frame = av_frame_alloc();
+      assert(this->audio_frame);
+      this->audio_frame->format = this->audio_codec_ctx->sample_fmt;
+      #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 28, 100)  // FFmpeg 5.1+
+      av_channel_layout_copy(&this->audio_frame->ch_layout, &this->audio_codec_ctx->ch_layout);
+      #else
+      this->audio_frame->channel_layout = this->audio_codec_ctx->channel_layout;
+      #endif
+      this->audio_frame->sample_rate = this->audio_codec_ctx->sample_rate;
+      this->audio_frame->nb_samples = this->audio_codec_ctx->frame_size;
+      int ret = av_frame_get_buffer(this->audio_frame, 0);
+      if (ret < 0) {
+        LOGE("AUDIO: Failed to allocate frame buffer: %d", ret);
+        av_frame_free(&this->audio_frame);
+        this->audio_frame = nullptr;
+      }
+    }
 
     int err = avio_open(&this->ofmt_ctx->pb, this->vid_path.c_str(), AVIO_FLAG_WRITE);
     assert(err >= 0);
@@ -77,6 +121,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       av_init_packet(&pkt);
       pkt.data = data;
       pkt.size = len;
+      pkt.stream_index = this->out_stream->index;
 
       enum AVRounding rnd = static_cast<enum AVRounding>(AV_ROUND_NEAR_INF|AV_ROUND_PASS_MINMAX);
       pkt.pts = pkt.dts = av_rescale_q_rnd(timestamp, in_timebase, ofmt_ctx->streams[0]->time_base, rnd);
@@ -95,11 +140,67 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
   }
 }
 
+void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp) {
+  if (!remuxing || !audio_codec_ctx) return;
+
+   // approximately sync with video by syncing the timestampEof of first video packet with the logMonoTime of first audio packet
+  if (first_audio_timestamp == 0) {
+    first_audio_timestamp = timestamp; // microseconds
+  }
+
+  // convert s16le samples to fltp and add to buffer
+  const int16_t *raw_samples = reinterpret_cast<const int16_t*>(data);
+  int sample_count = len / sizeof(int16_t);
+  constexpr float normalizer = 1.0f / 32768.0f;
+  const size_t original_size = audio_buffer.size();
+  audio_buffer.resize(original_size + sample_count);
+  std::transform(raw_samples, raw_samples + sample_count, audio_buffer.begin() + original_size,
+                [](int16_t sample) { return sample * normalizer; });
+
+  while (audio_buffer.size() >= audio_codec_ctx->frame_size) {
+    audio_frame->pts = next_audio_pts;
+
+    float *f_samples = reinterpret_cast<float*>(audio_frame->data[0]);
+    std::copy(audio_buffer.begin(),  audio_buffer.begin() + audio_codec_ctx->frame_size, f_samples);
+    audio_buffer.erase(audio_buffer.begin(), audio_buffer.begin() + audio_codec_ctx->frame_size);
+
+    int send_result = avcodec_send_frame(audio_codec_ctx, audio_frame); // encode frames
+    if (send_result >= 0) {
+      AVPacket *pkt = av_packet_alloc();
+      while (avcodec_receive_packet(audio_codec_ctx, pkt) == 0) {
+        uint64_t time_diff_us = (audio_frame->pts * 1000000ULL) / audio_codec_ctx->sample_rate;
+        uint64_t synchronized_time = first_audio_timestamp + time_diff_us;
+        AVRational in_timebase = {1, 1000000};
+        pkt->pts = pkt->dts = av_rescale_q(synchronized_time, in_timebase, audio_stream->time_base);
+        pkt->stream_index = audio_stream->index;
+
+        int err = av_interleaved_write_frame(ofmt_ctx, pkt); // write encoded frames
+        if (err < 0) {
+          LOGW("AUDIO: Write frame failed - error: %d", err);
+        }
+        av_packet_unref(pkt);
+      }
+      av_packet_free(&pkt);
+    } else {
+      LOGW("AUDIO: Failed to send audio frame to encoder: %d", send_result);
+    }
+    next_audio_pts += audio_codec_ctx->frame_size;
+  }
+}
+
 VideoWriter::~VideoWriter() {
   if (this->remuxing) {
+    if (this->audio_codec_ctx) { // flush audio encoder
+      avcodec_send_frame(this->audio_codec_ctx, NULL);
+      AVPacket *pkt = av_packet_alloc();
+      while (avcodec_receive_packet(this->audio_codec_ctx, pkt) == 0) av_packet_unref(pkt);
+      av_packet_free(&pkt);
+      avcodec_free_context(&this->audio_codec_ctx);
+    }
     int err = av_write_trailer(this->ofmt_ctx);
     if (err != 0) LOGE("av_write_trailer failed %d", err);
     avcodec_free_context(&this->codec_ctx);
+    if (this->audio_frame) av_frame_free(&this->audio_frame);
     err = avio_closep(&this->ofmt_ctx->pb);
     if (err != 0) LOGE("avio_closep failed %d", err);
     avformat_free_context(this->ofmt_ctx);

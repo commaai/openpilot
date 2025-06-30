@@ -99,6 +99,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"PandaSomResetTriggered", CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION},
     {"PandaSignatures", CLEAR_ON_MANAGER_START},
     {"PrimeType", PERSISTENT},
+    {"RecordAudio", PERSISTENT},
     {"RecordFront", PERSISTENT},
     {"RecordFrontLock", PERSISTENT},  // for the internal fleet
     {"SecOCKey", PERSISTENT | DONT_LOG},

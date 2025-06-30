@@ -83,7 +83,8 @@ size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEnc
         assert(encoder_info.filename != NULL);
         re.writer.reset(new VideoWriter(s->logger.segmentPath().c_str(),
                                         encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-                                        edata.getWidth(), edata.getHeight(), encoder_info.fps, idx.getType()));
+                                        edata.getWidth(), edata.getHeight(), encoder_info.fps, idx.getType(),
+                                        encoder_info.include_audio));
         // write the header
         auto header = edata.getHeader();
         re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof() / 1000, true, false);
@@ -214,7 +215,7 @@ void loggerd_thread() {
   typedef struct ServiceState {
     std::string name;
     int counter, freq;
-    bool encoder, user_flag;
+    bool encoder, user_flag, record_audio;
   } ServiceState;
   std::unordered_map<SubSocket*, ServiceState> service_state;
   std::unordered_map<SubSocket*, struct RemoteEncoder> remote_encoders;
@@ -226,7 +227,8 @@ void loggerd_thread() {
   for (const auto& [_, it] : services) {
     const bool encoder = util::ends_with(it.name, "EncodeData");
     const bool livestream_encoder = util::starts_with(it.name, "livestream");
-    if (!it.should_log && (!encoder || livestream_encoder)) continue;
+    const bool record_audio = (it.name == "rawAudioData") && Params().getBool("RecordAudio");
+    if (!it.should_log && (!encoder || livestream_encoder) && !record_audio) continue;
     LOGD("logging %s", it.name.c_str());
 
     SubSocket * sock = SubSocket::create(ctx.get(), it.name);
@@ -238,6 +240,7 @@ void loggerd_thread() {
       .freq = it.decimation,
       .encoder = encoder,
       .user_flag = it.name == "userFlag",
+      .record_audio = record_audio,
     };
   }
 
@@ -247,10 +250,20 @@ void loggerd_thread() {
   Params().put("CurrentRoute", s.logger.routeName());
 
   std::map<std::string, EncoderInfo> encoder_infos_dict;
+  std::vector<RemoteEncoder*> encoders_with_audio;
   for (const auto &cam : cameras_logged) {
     for (const auto &encoder_info : cam.encoder_infos) {
       encoder_infos_dict[encoder_info.publish_name] = encoder_info;
       s.max_waiting++;
+
+      if (encoder_info.include_audio) {
+        for (auto& [sock, service] : service_state) {
+          if (service.name == encoder_info.publish_name) {
+            encoders_with_audio.push_back(&remote_encoders[sock]);
+            break;
+          }
+        }
+      }
     }
   }
 
@@ -271,6 +284,18 @@ void loggerd_thread() {
       Message *msg = nullptr;
       while (!do_exit && (msg = sock->receive(true))) {
         const bool in_qlog = service.freq != -1 && (service.counter++ % service.freq == 0);
+
+        if (service.record_audio) {
+          capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
+          auto event = cmsg.getRoot<cereal::Event>();
+          auto audio_data = event.getRawAudioData().getData();
+          for (auto* encoder : encoders_with_audio) {
+            if (encoder && encoder->writer) {
+              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime()/1000);
+            }
+          }
+        }
+
         if (service.encoder) {
           s.last_camera_seen_tms = millis_since_boot();
           bytes_count += handle_encoder_msg(&s, msg, service.name, remote_encoders[sock], encoder_infos_dict[service.name]);

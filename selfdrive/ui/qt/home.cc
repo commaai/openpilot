@@ -29,6 +29,7 @@ HomeWindow::HomeWindow(QWidget* parent) : QWidget(parent) {
 
   onroad = new OnroadWindow(this);
   slayout->addWidget(onroad);
+  QObject::connect(onroad, &OnroadWindow::openSettings, this, &HomeWindow::openSettings);
 
   body = new BodyWindow(this);
   slayout->addWidget(body);

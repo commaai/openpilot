@@ -15,9 +15,13 @@ public:
   explicit AnnotatedCameraWidget(VisionStreamType type, QWidget* parent = 0);
   void updateState(const UIState &s);
 
+signals:
+  void openSettings(int index, const QString &param);
+
 private:
   QVBoxLayout *main_layout;
   ExperimentalButton *experimental_btn;
+  RecordingAudioButton *recording_audio_btn;
   DriverMonitorRenderer dmon;
   HudRenderer hud;
   ModelRenderer model;
@@ -25,6 +29,7 @@ private:
 
   int skip_frame_count = 0;
   bool wide_cam_requested = false;
+  bool is_rhd = false;
 
 protected:
   void paintGL() override;
