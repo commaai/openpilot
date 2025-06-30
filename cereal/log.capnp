@@ -2470,7 +2470,7 @@ struct DebugAlert {
 struct UserFlag {
 }
 
-struct SoundPressure {
+struct SoundPressure @0xdc24138990726023 {
   soundPressure @0 :Float32;
 
   # uncalibrated, A-weighted
