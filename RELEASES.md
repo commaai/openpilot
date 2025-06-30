@@ -1,5 +1,9 @@
-Version 0.9.10 (2025-06-30)
+Version 0.9.10 (2025-07-07)
 ========================
+* New driving model
+  * Lead car ground-truth fixes
+  * Ported over VAE from the MLSIM stack
+* Opt-in audio recording for dashcam video
 
 Version 0.9.9 (2025-05-23)
 ========================
