@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - master
+      - carnival
   pull_request:
   workflow_dispatch:
   workflow_call:
@@ -32,9 +33,9 @@ env:
 jobs:
   build_release:
     name: build release
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -70,9 +71,9 @@ jobs:
       run: release/check-submodules.sh
 
   build:
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -124,9 +125,9 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -143,9 +144,9 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -173,9 +174,9 @@ jobs:
 
   process_replay:
     name: process replay
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -229,9 +230,9 @@ jobs:
 
   test_cars:
     name: cars
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -324,9 +325,9 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -349,9 +350,9 @@ jobs:
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
