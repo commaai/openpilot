@@ -215,6 +215,13 @@ V4LEncoderBurn::V4LEncoderBurn(const EncoderInfo &encoder_info, int in_width, in
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_CBR_CFR}, // CBR for constant load
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_ENABLE}, // High priority
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_IDR_PERIOD, .value = 1}, // Frequent I-frames for more work
+   
+       { .id = V4L2_CID_MPEG_VIDC_VIDEO_OPERATING_RATE, .value = INT_MAX },  // puts the encoder in "turbo" mode
+
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_MODE, .value = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_ENABLE},
+
+      // doesn't work even with the default value...
+      //{ .id = V4L2_CID_MPEG_VIDC_VIDEO_FRAME_QUALITY, .value = 80},
     };
     for (auto ctrl : ctrls) {
       checked_ioctl(fd, VIDIOC_S_CTRL, &ctrl);
