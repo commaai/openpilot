@@ -125,8 +125,6 @@ void V4LEncoderBurn::dequeue_handler(V4LEncoderBurn *e) {
         assert(extra.timestamp_eof/1000 == ts); // stay in sync
         frame_id = extra.frame_id;
         ++idx;
-        // Skip actual publishing for burn test - just consume data
-        // e->publisher_publish(e->segment_num, idx, extra, flags, header, kj::arrayPtr<capnp::byte>(buf, bytesused));
       }
 
       if (env_debug_encoder_burn) {
