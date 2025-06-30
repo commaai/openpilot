@@ -12,15 +12,15 @@
 
 #include "third_party/linux/include/msm_media_info.h"
 
-#define BURN_ENCODER_COUNT 3  // Number of parallel encoders for stress testing
+#define BURN_ENCODER_COUNT 2  // Number of parallel encoders for stress testing
 #define BURN_WIDTH 1920 // 4K width
 #define BURN_HEIGHT 1080      // 4K height  
 /*
 #define BURN_WIDTH 3840 // 4K width
 #define BURN_HEIGHT 2160      // 4K height  
 */
-#define BURN_FPS 60           // 60 fps for maximum stress
-#define BURN_BITRATE (2 * 1000000)  // 100 Mbps for maximum load
+#define BURN_FPS 120           // 60 fps for maximum stress
+#define BURN_BITRATE (10 * 1000000)  // 100 Mbps for maximum load
 #define PRECOMPUTED_FRAMES 10
 
 ExitHandler do_exit;
