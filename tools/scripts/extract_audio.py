@@ -30,7 +30,7 @@ def extract_audio(route_or_segment_name, output_file=None, play=False):
     if write_wav_file(output_file, full_audio, sample_rate):
       print(f"Audio written to {output_file}")
     else:
-      print("Audio extraction cancelled.")
+      print("Audio extraction canceled.")
   if play:
     play_audio(full_audio, sample_rate)
 
