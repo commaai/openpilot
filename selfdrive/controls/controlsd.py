@@ -120,7 +120,7 @@ class Controls:
 
     actual_curvature_vm = -self.VM.calc_curvature(math.radians(CS.steeringAngleDeg - lp.angleOffsetDeg), CS.vEgo, lp.roll)
     actuators.curvature = self.desired_curvature + 1*(self.desired_curvature - actual_curvature_vm)
-    
+
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
                                                        self.steer_limited_by_controls, self.desired_curvature,
                                                        self.calibrated_pose, curvature_limited)  # TODO what if not available
