@@ -226,19 +226,21 @@ void loggerd_thread() {
   for (const auto& [_, it] : services) {
     const bool encoder = util::ends_with(it.name, "EncodeData");
     const bool livestream_encoder = util::starts_with(it.name, "livestream");
-    if (!it.should_log && (!encoder || livestream_encoder)) continue;
-    LOGD("logging %s", it.name.c_str());
+    const bool record_audio = (it.name == "rawAudioData") && Params().getBool("RecordAudio");
+    if (it.should_log || (encoder && !livestream_encoder) || record_audio) {
+      LOGD("logging %s", it.name.c_str());
 
-    SubSocket * sock = SubSocket::create(ctx.get(), it.name);
-    assert(sock != NULL);
-    poller->registerSocket(sock);
-    service_state[sock] = {
-      .name = it.name,
-      .counter = 0,
-      .freq = it.decimation,
-      .encoder = encoder,
-      .user_flag = it.name == "userFlag",
-    };
+      SubSocket * sock = SubSocket::create(ctx.get(), it.name);
+      assert(sock != NULL);
+      poller->registerSocket(sock);
+      service_state[sock] = {
+        .name = it.name,
+        .counter = 0,
+        .freq = it.decimation,
+        .encoder = encoder,
+        .user_flag = it.name == "userFlag",
+      };
+    }
   }
 
   LoggerdState s;
