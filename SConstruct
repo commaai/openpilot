@@ -88,7 +88,7 @@ lenv = {
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
-rpath = [] # lenv["LD_LIBRARY_PATH"].copy()
+rpath = []
 
 if arch == "larch64":
   cpppath = [
