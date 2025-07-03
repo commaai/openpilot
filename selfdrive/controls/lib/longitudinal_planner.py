@@ -52,6 +52,7 @@ class LongitudinalPlanner:
   def __init__(self, CP, init_v=0.0, init_a=0.0, dt=DT_MDL):
     self.CP = CP
     self.mpc = LongitudinalMpc(dt=dt)
+    # TODO remove mpc modes when TR released
     self.mpc.mode = 'acc'
     self.fcw = False
     self.dt = dt
@@ -127,7 +128,7 @@ class LongitudinalPlanner:
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
-    # Compute model v_ego error
+    # TODO v_model_error is deprecated with TR
     self.v_model_error = get_speed_error(sm['modelV2'], v_ego)
     x, v, a, j, throttle_prob = self.parse_model(sm['modelV2'], self.v_model_error)
     # Don't clip at low speeds since throttle_prob doesn't account for creep
