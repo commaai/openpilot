@@ -256,15 +256,13 @@ void loggerd_thread() {
     for (const auto &encoder_info : cam.encoder_infos) {
       encoder_infos_dict[encoder_info.publish_name] = encoder_info;
       s.max_waiting++;
+    }
+  }
 
-      if (encoder_info.include_audio) {
-        for (auto& [sock, service] : service_state) {
-          if (service.name == encoder_info.publish_name) {
-            encoders_with_audio.push_back(&remote_encoders[sock]);
-            break;
-          }
-        }
-      }
+  for (auto &[sock, service] : service_state) {
+    auto it = encoder_infos_dict.find(service.name);
+    if (it != encoder_infos_dict.end() && it->second.include_audio) {
+      encoders_with_audio.push_back(&remote_encoders[sock]);
     }
   }
 
@@ -292,7 +290,7 @@ void loggerd_thread() {
           auto audio_data = event.getRawAudioData().getData();
           for (auto* encoder : encoders_with_audio) {
             if (encoder && encoder->writer) {
-              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime()/1000);
+              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime() / 1000);
             }
           }
         }

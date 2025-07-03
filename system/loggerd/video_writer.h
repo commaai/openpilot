@@ -12,12 +12,15 @@ extern "C" {
 
 class VideoWriter {
 public:
-  VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec, bool has_audio);
+  VideoWriter(const char *path, const char *filename, bool remuxing, int width, int height, int fps, cereal::EncodeIndex::Type codec, bool include_audio);
   void write(uint8_t *data, int len, long long timestamp, bool codecconfig, bool keyframe);
   void write_audio(uint8_t *data, int len, long long timestamp);
+
   ~VideoWriter();
 
 private:
+  void encode_and_write_audio_frame(AVFrame* frame);
+
   std::string vid_path, lock_path;
   FILE *of = nullptr;
 
@@ -28,8 +31,7 @@ private:
   AVStream *audio_stream = nullptr;
   AVCodecContext *audio_codec_ctx = nullptr;
   AVFrame *audio_frame = nullptr;
-  uint64_t next_audio_pts = 0;
-  uint64_t first_audio_timestamp = 0;
+  uint64_t audio_pts = 0;
   std::deque<float> audio_buffer;
 
   bool remuxing;
