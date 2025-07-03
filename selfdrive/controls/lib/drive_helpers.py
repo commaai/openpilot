@@ -1,5 +1,4 @@
 import numpy as np
-from cereal import log
 from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.common.realtime import DT_CTRL, DT_MDL
 
