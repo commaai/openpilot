@@ -195,18 +195,18 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
 
     - name: DEBUG DEBUG
+      if: failure()
       uses: namespacelabs/breakpoint-action@v0
       with:
-        duration: 50m
+        duration: 55m
         authorized-users: maxime-desroches
 
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache && \
-                        coverage combine && \
-                        coverage xml"
+        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        chmod -R 777 /tmp/comma_download_cache"
+
     - name: Print diff
       id: print-diff
       if: always()
