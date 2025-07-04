@@ -250,13 +250,6 @@ jobs:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
 
-    - name: BUG
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 60m
-        authorized-users: maxime-desroches
-
-
   car_docs_diff:
     name: PR comments
     runs-on: ubuntu-latest
