@@ -79,7 +79,6 @@ size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEnc
         LOGW("%s: dropped %d non iframe packets before init", encoder_info.publish_name, re.dropped_frames);
         re.dropped_frames = 0;
       }
-      // if we aren't actually recording, don't create the writer
       if (encoder_info.record) {
         // write the header
         auto header = edata.getHeader();
@@ -135,6 +134,7 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
 
     // if this is a new segment, we close any possible old segments, move to the new, and process any queued packets
     if (re.current_segment != s->logger.segment()) {
+      // if we aren't actually recording, don't create the writer
       if (encoder_info.record) {
         assert(encoder_info.filename != NULL);
         re.writer.reset(new VideoWriter(s->logger.segmentPath().c_str(),
@@ -145,9 +145,9 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
       }
       re.current_segment = s->logger.segment();
       re.marked_ready_to_rotate = false;
-      // we are in this segment now, process any queued messages before this one
     }
     if (re.audio_initialized || !encoder_info.include_audio) {
+      // we are in this segment now, process any queued messages before this one
       if (!re.q.empty()) {
         for (auto qmsg : re.q) {
           capnp::FlatArrayMessageReader reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
