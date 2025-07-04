@@ -153,6 +153,16 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp, int s
   const int16_t *raw_samples = reinterpret_cast<const int16_t*>(data);
   int sample_count = len / sizeof(int16_t);
   constexpr float normalizer = 1.0f / 32768.0f;
+
+  const size_t max_buffer_size = sample_rate * 10; // 10 seconds
+  if (audio_buffer.size() + sample_count > max_buffer_size) {
+    size_t samples_to_drop = (audio_buffer.size() + sample_count) - max_buffer_size;
+    LOGE("Audio buffer overflow, dropping %zu oldest samples", samples_to_drop);
+    audio_buffer.erase(audio_buffer.begin(), audio_buffer.begin() + samples_to_drop);
+    audio_pts += samples_to_drop;
+  }
+
+  // Add new samples to the buffer
   const size_t original_size = audio_buffer.size();
   audio_buffer.resize(original_size + sample_count);
   std::transform(raw_samples, raw_samples + sample_count, audio_buffer.begin() + original_size,
@@ -162,7 +172,7 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp, int s
   while (audio_buffer.size() >= audio_codec_ctx->frame_size) {
     audio_frame->pts = audio_pts;
     float *f_samples = reinterpret_cast<float*>(audio_frame->data[0]);
-    std::copy(audio_buffer.begin(),  audio_buffer.begin() + audio_codec_ctx->frame_size, f_samples);
+    std::copy(audio_buffer.begin(), audio_buffer.begin() + audio_codec_ctx->frame_size, f_samples);
     audio_buffer.erase(audio_buffer.begin(), audio_buffer.begin() + audio_codec_ctx->frame_size);
     encode_and_write_audio_frame(audio_frame);
   }
