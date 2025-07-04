@@ -62,6 +62,7 @@ struct RemoteEncoder {
   bool recording = false;
   bool marked_ready_to_rotate = false;
   bool seen_first_packet = false;
+  bool audio_initialized = false;
 };
 
 size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEncoder &re, const EncoderInfo &encoder_info) {
@@ -80,11 +81,6 @@ size_t write_encode_data(LoggerdState *s, cereal::Event::Reader event, RemoteEnc
       }
       // if we aren't actually recording, don't create the writer
       if (encoder_info.record) {
-        assert(encoder_info.filename != NULL);
-        re.writer.reset(new VideoWriter(s->logger.segmentPath().c_str(),
-                                        encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
-                                        edata.getWidth(), edata.getHeight(), encoder_info.fps, idx.getType(),
-                                        encoder_info.include_audio));
         // write the header
         auto header = edata.getHeader();
         re.writer->write((uint8_t *)header.begin(), header.size(), idx.getTimestampEof() / 1000, true, false);
@@ -139,13 +135,19 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
 
     // if this is a new segment, we close any possible old segments, move to the new, and process any queued packets
     if (re.current_segment != s->logger.segment()) {
-      if (re.recording) {
-        re.writer.reset();
+      if (encoder_info.record) {
+        assert(encoder_info.filename != NULL);
+        re.writer.reset(new VideoWriter(s->logger.segmentPath().c_str(),
+                                        encoder_info.filename, idx.getType() != cereal::EncodeIndex::Type::FULL_H_E_V_C,
+                                        edata.getWidth(), edata.getHeight(), encoder_info.fps, idx.getType()));
         re.recording = false;
+        re.audio_initialized = false;
       }
       re.current_segment = s->logger.segment();
       re.marked_ready_to_rotate = false;
       // we are in this segment now, process any queued messages before this one
+    }
+    if (re.audio_initialized || !encoder_info.include_audio) {
       if (!re.q.empty()) {
         for (auto qmsg : re.q) {
           capnp::FlatArrayMessageReader reader({(capnp::word *)qmsg->getData(), qmsg->getSize() / sizeof(capnp::word)});
@@ -154,9 +156,14 @@ int handle_encoder_msg(LoggerdState *s, Message *msg, std::string &name, struct 
         }
         re.q.clear();
       }
+      bytes_count += write_encode_data(s, event, re, encoder_info);
+      delete msg;
+    } else if (re.q.size() > MAIN_FPS*10) {
+      LOGE_100("%s: dropping frame waiting for audio initialization, queue is too large", name.c_str());
+      delete msg;
+    } else {
+      re.q.push_back(msg); // queue up all the new segment messages, they go in after audio is initialized
     }
-    bytes_count += write_encode_data(s, event, re, encoder_info);
-    delete msg;
   } else if (offset_segment_num > s->logger.segment()) {
     // encoderd packet has a newer segment, this means encoderd has rolled over
     if (!re.marked_ready_to_rotate) {
@@ -288,9 +295,11 @@ void loggerd_thread() {
           capnp::FlatArrayMessageReader cmsg(kj::ArrayPtr<capnp::word>((capnp::word *)msg->getData(), msg->getSize() / sizeof(capnp::word)));
           auto event = cmsg.getRoot<cereal::Event>();
           auto audio_data = event.getRawAudioData().getData();
+          auto sample_rate = event.getRawAudioData().getSampleRate();
           for (auto* encoder : encoders_with_audio) {
             if (encoder && encoder->writer) {
-              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime() / 1000);
+              encoder->writer->write_audio((uint8_t*)audio_data.begin(), audio_data.size(), event.getLogMonoTime() / 1000, sample_rate);
+              encoder->audio_initialized = true;
             }
           }
         }
