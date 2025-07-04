@@ -16,7 +16,7 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.tools.sim.lib.common import vec3
 from openpilot.tools.sim.lib.camerad import W, H
 
-C3_POSITION = Vec3(0.0, 0, 1.22)
+C3_POSITION = Vec3(0.0, 0, 1.42)
 C3_HPR = Vec3(0, 0,0)
 
 
