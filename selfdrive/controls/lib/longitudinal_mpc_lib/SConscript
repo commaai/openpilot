@@ -61,8 +61,8 @@ source_list = ['long_mpc.py',
 ]
 
 lenv = env.Clone()
+lenv["LINKFLAGS"] += [f'-Wl,-rpath,\\$$ORIGIN/../../../../../third_party/acados/{arch}/lib']
 lenv.Clean(generated_files, Dir(gen))
-
 generated_long = lenv.Command(generated_files,
                               source_list,
                               f"cd {Dir('.').abspath} && python3 long_mpc.py")
@@ -86,7 +86,8 @@ libacados_ocp_solver_pxd = File(f'{gen}/acados_solver.pxd')
 libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
 lenv2 = envCython.Clone()
-lenv2["LINKFLAGS"] += [lib_solver[0].get_labspath()]
+lenv2["LIBPATH"] += [lib_solver[0].dir.abspath]
+lenv2["LINKFLAGS"] += [f'-Wl,-rpath,\\$$ORIGIN']
 lenv2.Command(libacados_ocp_solver_c,
   [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
@@ -94,6 +95,6 @@ lenv2.Command(libacados_ocp_solver_c,
   f' -I {libacados_ocp_solver_pxd.get_dir().get_labspath()}' + \
   f' -I {acados_ocp_solver_common.get_dir().get_labspath()}' + \
   f' {acados_ocp_solver_pyx.get_labspath()}')
-lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c])
+lib_cython = lenv2.Program(f'{gen}/acados_ocp_solver_pyx.so', [libacados_ocp_solver_c], LIBS=['acados_ocp_solver_long'])
 lenv2.Depends(lib_cython, lib_solver)
 lenv2.Depends(libacados_ocp_solver_c, np_version)
