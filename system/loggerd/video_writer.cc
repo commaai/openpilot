@@ -106,7 +106,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       }
       int err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
       assert(err >= 0);
-      // if there is an audio stream, it must be intialized before this point
+      // if there is an audio stream, it must be initialized before this point
       err = avformat_write_header(ofmt_ctx, NULL);
       assert(err >= 0);
       header_written = true;
