@@ -27,7 +27,7 @@ env:
 
   RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
-  PYTEST: pytest --continue-on-collection-errors --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
+  PYTEST: pytest --continue-on-collection-errors --durations=0 --durations-min=5 -n logical
 
 jobs:
   build_release:
@@ -164,12 +164,6 @@ jobs:
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   process_replay:
     name: process replay
@@ -193,20 +187,11 @@ jobs:
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
-
-    - name: DEBUG DEBUG
-      if: failure()
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 55m
-        authorized-users: maxime-desroches
-
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
-
     - name: Print diff
       id: print-diff
       if: always()
@@ -227,12 +212,6 @@ jobs:
       run: |
         ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
                         chmod -R 777 /tmp/comma_download_cache"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test_cars:
     name: cars
@@ -267,12 +246,6 @@ jobs:
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}-${{ matrix.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   car_docs_diff:
     name: PR comments
