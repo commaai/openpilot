@@ -144,8 +144,6 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp, int s
     audio_initialized = true;
   }
   if (!audio_codec_ctx) return;
-  if (!header_written) return; // header not written yet, skip processing audio frame
-
   // sync logMonoTime of first audio packet with the timestampEof of first video packet
   if (audio_pts == 0) {
     audio_pts = (timestamp * audio_codec_ctx->sample_rate) / 1000000ULL;
@@ -160,6 +158,7 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp, int s
   std::transform(raw_samples, raw_samples + sample_count, audio_buffer.begin() + original_size,
                 [](int16_t sample) { return sample * normalizer; });
 
+  if (!header_written) return; // header not written yet, process audio frame after header is written
   while (audio_buffer.size() >= audio_codec_ctx->frame_size) {
     audio_frame->pts = audio_pts;
     float *f_samples = reinterpret_cast<float*>(audio_frame->data[0]);
