@@ -193,6 +193,13 @@ jobs:
       run: |
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
+
+    - name: BUG
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 60m
+        authorized-users: maxime-desroches
+
     - name: Print diff
       id: print-diff
       if: always()
@@ -240,12 +247,6 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
 
-    - name: BUG
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 60m
-        authorized-users: maxime-desroches
-
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 6 }}
       run: |
@@ -254,6 +255,13 @@ jobs:
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
+
+    - name: BUG
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 60m
+        authorized-users: maxime-desroches
+
 
   car_docs_diff:
     name: PR comments
