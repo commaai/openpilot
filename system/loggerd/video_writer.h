@@ -30,6 +30,7 @@ private:
   AVStream *out_stream;
 
   bool audio_initialized = false;
+  bool header_written = false;
   AVStream *audio_stream = nullptr;
   AVCodecContext *audio_codec_ctx = nullptr;
   AVFrame *audio_frame = nullptr;

@@ -106,9 +106,11 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       }
       int err = avcodec_parameters_from_context(out_stream->codecpar, codec_ctx);
       assert(err >= 0);
-        err = avformat_write_header(ofmt_ctx, NULL);
-        assert(err >= 0);
-      } else {
+      // if there is an audio stream, it must be intialized before this point
+      err = avformat_write_header(ofmt_ctx, NULL);
+      assert(err >= 0);
+      header_written = true;
+    } else {
       // input timestamps are in microseconds
       AVRational in_timebase = {1, 1000000};
 
@@ -142,6 +144,7 @@ void VideoWriter::write_audio(uint8_t *data, int len, long long timestamp, int s
     audio_initialized = true;
   }
   if (!audio_codec_ctx) return;
+  if (!header_written) return; // header not written yet, skip processing audio frame
 
   // sync logMonoTime of first audio packet with the timestampEof of first video packet
   if (audio_pts == 0) {
