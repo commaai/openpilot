@@ -2,7 +2,6 @@ import contextlib
 import gc
 import os
 import pytest
-import random
 
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.system.manager import manager
@@ -48,8 +47,6 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
-  random.seed(0)
-
   with clean_env():
     # setup a clean environment for each test
     with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
