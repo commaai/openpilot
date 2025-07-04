@@ -110,6 +110,7 @@ class TestLagd:
         assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
         assert msg.liveDelay.calPerc == 100
 
+<<<<<<< HEAD
   def test_disabled_estimator(self):
     mocked_CP = car.CarParams(steerActuatorDelay=0.8)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, enabled=False)
@@ -123,6 +124,8 @@ class TestLagd:
     assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
     assert msg.liveDelay.calPerc == 100
 
+=======
+>>>>>>> parent of 6f6adc10a (lagd: disable in release (#35426))
   def test_estimator_masking(self):
     mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.8), random.randint(1, 19)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
