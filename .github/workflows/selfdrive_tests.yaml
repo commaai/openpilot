@@ -187,6 +187,13 @@ jobs:
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
+
+    - name: BUG
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 60m
+        authorized-users: maxime-desroches
+
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
