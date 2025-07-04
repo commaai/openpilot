@@ -17,6 +17,7 @@ from cereal import car
 from cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
 from opendbc.car.car_helpers import get_car, interfaces
+from opendbc.safety import ALTERNATIVE_EXPERIENCE
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
@@ -755,6 +756,8 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     "OpenpilotEnabledToggle": True,
     "DisengageOnAccelerator": True,
     "DisableLogging": False,
+    "SplitLkasAndAcc": False,
+    "ResumeLkasAfterBrake": False,
   }
 
   if custom_params is not None:
@@ -766,6 +769,11 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
     params_dict["IsRhdDetected"] = is_rhd
 
   if CP is not None:
+    if CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.SPLIT_LKAS_AND_ACC:
+      params_dict["SplitLkasAndAcc"] = True
+    if CP.alternativeExperience & ALTERNATIVE_EXPERIENCE.RESUME_LKAS_AFTER_BRAKE:
+      params_dict["ResumeLkasAfterBrake"] = True
+
     if fingerprint is None:
       if CP.fingerprintSource == "fw":
         params_dict["CarParamsCache"] = CP.as_builder().to_bytes()

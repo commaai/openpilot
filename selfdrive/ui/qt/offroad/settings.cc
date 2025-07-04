@@ -41,6 +41,20 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       false,
     },
     {
+      "SplitLkasAndAcc",
+      tr("Split LKAS and ACC"),
+      tr("Enable the ability to toggle LKAS and ACC independently of each other. Allows openpilot to be engaged after pressing the LKAS button and doesn't block openpilot from engaging after pressing the cancel button."),
+      "../assets/offroad/icon_disengage_on_accelerator.svg",
+      true,
+    },
+    {
+      "ResumeLkasAfterBrake",
+      tr("Resume LKAS after braking"),
+      tr("If the previous disengagement is from a brake press, allow openpilot to engage after releasing the brake."),
+      "../assets/offroad/icon_disengage_on_accelerator.svg",
+      true
+    },
+    {
       "IsLdwEnabled",
       tr("Enable Lane Departure Warnings"),
       tr("Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line without a turn signal activated while driving over 31 mph (50 km/h)."),

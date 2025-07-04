@@ -55,6 +55,8 @@ class SelfdriveD:
 
     self.car_events = CarSpecificEvents(self.CP)
 
+    self.disengage_from_brakes = False
+
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
 
@@ -84,6 +86,8 @@ class SelfdriveD:
     self.is_metric = self.params.get_bool("IsMetric")
     self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
     self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
+    self.split_lkas_and_acc = self.params.get_bool("SplitLkasAndAcc")
+    self.resume_lkas_after_brake = self.params.get_bool("ResumeLkasAfterBrake")
 
     car_recognized = self.CP.brand != 'mock'
 
@@ -190,7 +194,18 @@ class SelfdriveD:
       if (CS.gasPressed and not self.CS_prev.gasPressed and self.disengage_on_accelerator) or \
         (CS.brakePressed and (not self.CS_prev.brakePressed or not CS.standstill)) or \
         (CS.regenBraking and (not self.CS_prev.regenBraking or not CS.standstill)):
-        self.events.add(EventName.pedalPressed)
+        if (CS.lkasEnabled):
+          self.disengage_from_brakes = True
+        if (not self.split_lkas_and_acc or (CS.cruiseState.enabled and not CS.lkasEnabled)):
+          self.events.add(EventName.pedalPressed)
+        else:
+          self.events.add(EventName.silentPedalPressed)
+
+      if (not CS.brakePressed) and (not CS.brakeHoldActive):
+        if(self.resume_lkas_after_brake):
+          if self.disengage_from_brakes and CS.lkasEnabled:
+            self.events.add(EventName.silentButtonEnable)
+        self.disengage_from_brakes = False
 
     # Create events for temperature, disk space, and memory
     if self.sm['deviceState'].thermalStatus >= ThermalStatus.red:
@@ -328,7 +343,7 @@ class SelfdriveD:
 
     if not REPLAY:
       # Check for mismatch between openpilot and car's PCM
-      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or not self.CP.pcmCruise)
+      cruise_mismatch = CS.cruiseState.enabled and (not self.enabled or (not self.CP.pcmCruise and not self.split_lkas_and_acc))
       self.cruise_mismatch_counter = self.cruise_mismatch_counter + 1 if cruise_mismatch else 0
       if self.cruise_mismatch_counter > int(6. / DT_CTRL):
         self.events.add(EventName.cruiseMismatch)
@@ -340,14 +355,18 @@ class SelfdriveD:
     controlstate = self.sm['controlsState']
     lac = getattr(controlstate.lateralControlState, controlstate.lateralControlState.which())
     if lac.active and not recent_steer_pressed and not self.CP.notCar:
-      clipped_speed = max(CS.vEgo, 0.3)
-      actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
-      desired_lateral_accel = self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
-      undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
-      turning = abs(desired_lateral_accel) > 1.0
-      # TODO: lac.saturated includes speed and other checks, should be pulled out
-      if undershooting and turning and lac.saturated:
-        self.events.add(EventName.steerSaturated)
+      if (not self.split_lkas_and_acc or
+          (not CS.steeringPressed and
+          CS.lkasEnabled and
+          not (CS.leftBlinker or CS.rightBlinker))):
+        clipped_speed = max(CS.vEgo, 0.3)
+        actual_lateral_accel = controlstate.curvature * (clipped_speed**2)
+        desired_lateral_accel = self.sm['modelV2'].action.desiredCurvature * (clipped_speed**2)
+        undershooting = abs(desired_lateral_accel) / abs(1e-3 + actual_lateral_accel) > 1.2
+        turning = abs(desired_lateral_accel) > 1.0
+        # TODO: lac.saturated includes speed and other checks, should be pulled out
+        if undershooting and turning and lac.saturated:
+          self.events.add(EventName.steerSaturated)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
