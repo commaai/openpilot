@@ -194,12 +194,6 @@ jobs:
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
 
-    - name: BUG
-      uses: namespacelabs/breakpoint-action@v0
-      with:
-        duration: 60m
-        authorized-users: maxime-desroches
-
     - name: Print diff
       id: print-diff
       if: always()
