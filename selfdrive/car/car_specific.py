@@ -2,7 +2,7 @@ from cereal import car, log
 import cereal.messaging as messaging
 from opendbc.car import DT_CTRL, structs
 from opendbc.car.interfaces import MAX_CTRL_SPEED
-
+from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import Events
 
 ButtonType = structs.CarState.ButtonEvent.Type
@@ -131,6 +131,7 @@ class CarSpecificEvents:
   def create_common_events(self, CS: structs.CarState, CS_prev: car.CarState, extra_gears=None, pcm_enable=True,
                            allow_button_cancel=True):
     events = Events()
+    split_lkas_and_acc = Params().get_bool("SplitLkasAndAcc")
 
     if CS.doorOpen:
       events.add(EventName.doorOpen)
@@ -205,12 +206,38 @@ class CarSpecificEvents:
     if CS.steerFaultPermanent:
       events.add(EventName.steerUnavailable)
 
+    # Enable on LKAS button press
+    if split_lkas_and_acc:
+      if CS.lkasEnabled and not CS_prev.lkasEnabled:
+        if CS.cruiseState.enabled:
+          events.add(EventName.silentButtonEnable)
+        else:
+          events.add(EventName.buttonEnable)
+      else:
+        if CS_prev.lkasEnabled and not CS.lkasEnabled:
+          if CS.cruiseState.enabled:
+            events.add(EventName.manualSteeringRequired)
+          else:
+            events.add(EventName.buttonCancel)
+
     # we engage when pcm is active (rising edge)
     # enabling can optionally be blocked by the car interface
     if pcm_enable:
-      if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled and not CS.blockPcmEnable:
-        events.add(EventName.pcmEnable)
-      elif not CS.cruiseState.enabled:
-        events.add(EventName.pcmDisable)
+      if split_lkas_and_acc:
+        if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled and not CS.blockPcmEnable:
+          if CS.lkasEnabled:
+            events.add(EventName.silentPcmEnable)
+          else:
+            events.add(EventName.pcmEnable)
+        elif CS_prev.cruiseState.enabled and not CS.cruiseState.enabled:
+          if CS.lkasEnabled:
+            events.add(EventName.manualLongitudinalRequired)
+          else:
+            events.add(EventName.pcmDisable)
+      else:
+        if CS.cruiseState.enabled and not CS_prev.cruiseState.enabled and not CS.blockPcmEnable:
+          events.add(EventName.pcmEnable)
+        elif not CS.cruiseState.enabled:
+          events.add(EventName.pcmDisable)
 
     return events

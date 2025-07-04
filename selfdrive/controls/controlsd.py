@@ -9,6 +9,7 @@ from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
+from openpilot.common.realtime import DT_CTRL
 from opendbc.car.car_helpers import interfaces
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
@@ -32,6 +33,8 @@ class Controls:
     cloudlog.info("controlsd is waiting for CarParams")
     self.CP = messaging.log_from_bytes(self.params.get("CarParams", block=True), car.CarParams)
     cloudlog.info("controlsd got CarParams")
+    self.split_lkas_and_acc = self.params.get_bool("SplitLkasAndAcc")
+    self.last_blinker_frame = 0
 
     self.CI = interfaces[self.CP.carFingerprint](self.CP)
 
@@ -92,9 +95,15 @@ class Controls:
 
     # Check which actuators can be enabled
     standstill = abs(CS.vEgo) <= max(self.CP.minSteerSpeed, 0.3) or CS.standstill
-    CC.latActive = self.sm['selfdriveState'].active and not CS.steerFaultTemporary and not CS.steerFaultPermanent and \
-                   (not standstill or self.CP.steerAtStandstill)
-    CC.longActive = CC.enabled and not any(e.overrideLongitudinal for e in self.sm['onroadEvents']) and self.CP.openpilotLongitudinalControl
+    CC.latActive = (self.sm['selfdriveState'].active and (not CS.steerFaultTemporary) and (not CS.steerFaultPermanent) and
+                    (not standstill or self.CP.steerAtStandstill) and (not self.split_lkas_and_acc or
+                    (CS.lkasEnabled and
+                    ((not CS.belowLaneChangeSpeed) or (not (((self.sm.frame - self.last_blinker_frame) * DT_CTRL) < 1.0))))))
+    CC.longActive = (CC.enabled and
+                     (not any(e.overrideLongitudinal for e in self.sm['onroadEvents'])) and
+                     self.CP.openpilotLongitudinalControl and
+                     (not self.split_lkas_and_acc or
+                     (CS.cruiseState.enabled or (self.CP.pcmCruise and CS.accEnabled and self.CP.minEnableSpeed > 0 and not CS.cruiseState.enabled))))
 
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
@@ -103,6 +112,9 @@ class Controls:
     if model_v2.meta.laneChangeState != LaneChangeState.off:
       CC.leftBlinker = model_v2.meta.laneChangeDirection == LaneChangeDirection.left
       CC.rightBlinker = model_v2.meta.laneChangeDirection == LaneChangeDirection.right
+
+    if CS.leftBlinker or CS.rightBlinker:
+      self.last_blinker_frame = self.sm.frame
 
     if not CC.latActive:
       self.LaC.reset()
@@ -147,7 +159,7 @@ class Controls:
       CC.angularVelocity = self.calibrated_pose.angular_velocity.xyz.tolist()
 
     CC.cruiseControl.override = CC.enabled and not CC.longActive and self.CP.openpilotLongitudinalControl
-    CC.cruiseControl.cancel = CS.cruiseState.enabled and (not CC.enabled or not self.CP.pcmCruise)
+    CC.cruiseControl.cancel = CS.cruiseState.enabled and (not CC.enabled or (not self.CP.pcmCruise and not self.split_lkas_and_acc))
 
     speeds = self.sm['longitudinalPlan'].speeds
     if len(speeds):
