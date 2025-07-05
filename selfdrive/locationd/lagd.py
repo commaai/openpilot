@@ -157,8 +157,7 @@ class LateralLagEstimator:
                block_count: int = BLOCK_NUM, min_valid_block_count: int = BLOCK_NUM_NEEDED, block_size: int = BLOCK_SIZE,
                window_sec: float = MOVING_WINDOW_SEC, okay_window_sec: float = MIN_OKAY_WINDOW_SEC, min_recovery_buffer_sec: float = MIN_RECOVERY_BUFFER_SEC,
                min_vego: float = MIN_VEGO, min_yr: float = MIN_ABS_YAW_RATE, min_ncc: float = MIN_NCC,
-               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF, min_confidence: float = MIN_CONFIDENCE,
-               enabled: bool = True):
+               max_lat_accel: float = MAX_LAT_ACCEL, max_lat_accel_diff: float = MAX_LAT_ACCEL_DIFF, min_confidence: float = MIN_CONFIDENCE):
     self.dt = dt
     self.window_sec = window_sec
     self.okay_window_sec = okay_window_sec
@@ -173,7 +172,6 @@ class LateralLagEstimator:
     self.min_confidence = min_confidence
     self.max_lat_accel = max_lat_accel
     self.max_lat_accel_diff = max_lat_accel_diff
-    self.enabled = enabled
 
     self.t = 0.0
     self.lat_active = False
@@ -208,7 +206,7 @@ class LateralLagEstimator:
     liveDelay = msg.liveDelay
 
     valid_mean_lag, valid_std, current_mean_lag, current_std = self.block_avg.get()
-    if self.enabled and self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
+    if self.block_avg.valid_blocks >= self.min_valid_block_count and not np.isnan(valid_mean_lag) and not np.isnan(valid_std):
       if valid_std > MAX_LAG_STD:
         liveDelay.status = log.LiveDelayData.Status.invalid
       else:
@@ -371,10 +369,7 @@ def main():
   params = Params()
   CP = messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams)
 
-  # TODO: remove me, lagd is in shadow mode on release
-  is_release = params.get_bool("IsReleaseBranch")
-
-  lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency, enabled=not is_release)
+  lag_learner = LateralLagEstimator(CP, 1. / SERVICE_LIST['livePose'].frequency)
   if (initial_lag_params := retrieve_initial_lag(params, CP)) is not None:
     lag, valid_blocks = initial_lag_params
     lag_learner.reset(lag, valid_blocks)

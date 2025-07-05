@@ -110,19 +110,6 @@ class TestLagd:
         assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
         assert msg.liveDelay.calPerc == 100
 
-  def test_disabled_estimator(self):
-    mocked_CP = car.CarParams(steerActuatorDelay=0.8)
-    estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, enabled=False)
-    lag_frames = 5
-    process_messages(estimator, lag_frames, int(MIN_OKAY_WINDOW_SEC / DT) + BLOCK_NUM_NEEDED * BLOCK_SIZE)
-    msg = estimator.get_msg(True)
-    assert msg.liveDelay.status == 'unestimated'
-    assert np.allclose(msg.liveDelay.lateralDelay, 1.0, atol=0.01)
-    assert np.allclose(msg.liveDelay.lateralDelayEstimate, lag_frames * DT, atol=0.01)
-    assert np.allclose(msg.liveDelay.lateralDelayEstimateStd, 0.0, atol=0.01)
-    assert msg.liveDelay.validBlocks == BLOCK_NUM_NEEDED
-    assert msg.liveDelay.calPerc == 100
-
   def test_estimator_masking(self):
     mocked_CP, lag_frames = car.CarParams(steerActuatorDelay=0.8), random.randint(1, 19)
     estimator = LateralLagEstimator(mocked_CP, DT, min_recovery_buffer_sec=0.0, min_yr=0.0, min_valid_block_count=1)
