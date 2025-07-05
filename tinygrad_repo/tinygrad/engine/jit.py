@@ -176,7 +176,7 @@ class CapturedJit(Generic[ReturnType]):
     self.__post_init__()   # reset the graph state
 
   def replan_buffers_memory_layout(self):
-    blacklist = [t.lazydata.buffer for t in get_parameters(self.ret)]
+    blacklist = [t.uop.buffer for t in get_parameters(self.ret)]
     asgn = _internal_memory_planner([[b for item in self.jit_cache for b in item.bufs if b is not None and b not in blacklist]], ignore_checks=True)
     self.jit_cache = [ExecItem(item.prg, [asgn.get(b,b) if b is not None else None for b in item.bufs]) for item in self.jit_cache]
     for old, new in asgn.items():
@@ -210,9 +210,9 @@ class CapturedJit(Generic[ReturnType]):
 def _prepare_jit_inputs(args, kwargs):
   input_tensors: list[tuple[int|str, Tensor]] = [(name,t) for name,t in list(enumerate(args))+sorted(kwargs.items()) if t.__class__ is Tensor]
   names, tensors = [name for name,_ in input_tensors], [t for _,t in input_tensors]
-  if len(unrealized_tensors := [x for x in tensors if not x.lazydata.is_realized]): Tensor.realize(*unrealized_tensors)
+  if len(unrealized_tensors := [x for x in tensors if not x.uop.is_realized]): Tensor.realize(*unrealized_tensors)
   # TODO: this multi unpack stuff is not well tested.
-  lbs: list[UOp] = flatten([t.lazydata.src if t.lazydata.op is Ops.MULTI else [t.lazydata] for t in tensors])
+  lbs: list[UOp] = flatten([t.uop.src if t.uop.op is Ops.MULTI else [t.uop] for t in tensors])
   input_buffers: list[Buffer] = flatten([rb.bufs if isinstance(rb:=lb.base.realized, MultiBuffer) else [rb]
                                          for lb in lbs if lb.base.realized is not None])
   assert len(set(input_buffers)) == len(input_buffers), "duplicate inputs to JIT"
@@ -232,7 +232,7 @@ class TinyJit(Generic[ReturnType]):
 
   def add_buffer(self, b:Buffer) -> Buffer:
     if found:=self._buffer_replace.get(b, None): return found
-    if b.is_allocated() or b.lb_refcount > 0: return b
+    if b.is_allocated() or b.uop_refcount > 0: return b
     if b._base is not None:
       self._buffer_replace[b] = ret = Buffer(b.device, b.size, b.dtype, base=self.add_buffer(b._base), offset=b.offset)
     else:

@@ -1,6 +1,6 @@
 from tinygrad import Tensor, dtypes, Device
 from tinygrad.helpers import getenv, DEBUG
-from tinygrad.codegen.kernel import Kernel, Opt, OptOps
+from tinygrad.opt.kernel import Kernel, Opt, OptOps
 from tinygrad.engine.realize import CompiledRunner, ExecItem
 from dataclasses import replace
 

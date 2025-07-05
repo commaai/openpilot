@@ -752,11 +752,6 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.noGps: {
-    ET.PERMANENT: Alert(
-      "Poor GPS reception",
-      "Ensure device has a clear view of the sky",
-      AlertStatus.normal, AlertSize.mid,
-      Priority.LOWER, VisualAlert.none, AudibleAlert.none, .2, creation_delay=600.)
   },
 
   EventName.tooDistracted: {

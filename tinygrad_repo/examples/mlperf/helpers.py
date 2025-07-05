@@ -212,7 +212,7 @@ def get_mlperf_bert_model():
   from examples.mlperf.initializers import LinearBert, EmbeddingBert, LayerNormBert
 
   bert.Linear = LinearBert
-  bert.Embedding = EmbeddingBert 
+  bert.Embedding = EmbeddingBert
   bert.LayerNorm = LayerNormBert
 
   from extra.models.bert import BertForPretraining

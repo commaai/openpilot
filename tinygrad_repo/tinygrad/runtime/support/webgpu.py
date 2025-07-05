@@ -1,4 +1,4 @@
-import ctypes, ctypes.util, os, subprocess
+import ctypes, ctypes.util, os, subprocess, platform
 from tinygrad.helpers import OSX
 
 if OSX:
@@ -8,4 +8,5 @@ if OSX:
 else:
   if (WEBGPU_PATH:=ctypes.util.find_library('webgpu_dawn')) is None:
     raise FileNotFoundError("dawn library not found. " +
-    "Install it with `sudo curl -L https://github.com/wpmed92/pydawn/releases/download/v0.1.6/libwebgpu_dawn.so -o /usr/lib/libwebgpu_dawn.so`")
+    "Install it with `sudo curl -L https://github.com/wpmed92/pydawn/releases/download/v0.3.0/" +
+    f"libwebgpu_dawn_{platform.machine()}.so -o /usr/lib/libwebgpu_dawn.so`")

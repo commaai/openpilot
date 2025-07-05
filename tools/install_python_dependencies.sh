@@ -23,8 +23,8 @@ echo "installing python packages..."
 uv sync --frozen --all-extras
 source .venv/bin/activate
 
-echo "PYTHONPATH=${PWD}" > "$ROOT"/.env
 if [[ "$(uname)" == 'Darwin' ]]; then
+  touch "$ROOT"/.env
   echo "# msgq doesn't work on mac" >> "$ROOT"/.env
   echo "export ZMQ=1" >> "$ROOT"/.env
   echo "export OBJC_DISABLE_INITIALIZE_FORK_SAFETY=YES" >> "$ROOT"/.env

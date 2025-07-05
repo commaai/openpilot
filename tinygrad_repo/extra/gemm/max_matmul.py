@@ -4,9 +4,9 @@ from tinygrad import dtypes
 from typing import Optional, List, Tuple, cast, Dict, Final, DefaultDict, Self
 
 # for copied uops
-from tinygrad.codegen.kernel import Kernel, KernelOptError
+from tinygrad.opt.kernel import Kernel, KernelOptError
 from tinygrad.uop.ops import UOp, Ops, BinaryOps, UnaryOps, TernaryOps, KernelInfo
-from tinygrad.engine.search import Opt, OptOps
+from tinygrad.opt.search import Opt, OptOps
 from tinygrad import Device, dtypes, Tensor
 from tinygrad.dtype import PtrDType, DType, DTYPES_DICT
 from tinygrad.shape.shapetracker import ShapeTracker

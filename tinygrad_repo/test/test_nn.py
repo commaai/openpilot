@@ -596,9 +596,9 @@ class TestNN(unittest.TestCase):
 
     # sharded model shards the state_dict
     self.assertEqual(layer.weight.device, devices)
-    self.assertEqual(layer.weight.lazydata.axis, 3)
+    self.assertEqual(layer.weight.uop.axis, 3)
     self.assertEqual(layer.bias.device, devices)
-    self.assertEqual(layer.bias.lazydata.axis, None)
+    self.assertEqual(layer.bias.uop.axis, None)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())
 
@@ -634,9 +634,9 @@ class TestNN(unittest.TestCase):
     load_state_dict(layer, state_dict)
 
     self.assertEqual(layer.weight.device, devices)
-    self.assertEqual(layer.weight.lazydata.axis, 3)
+    self.assertEqual(layer.weight.uop.axis, 3)
     self.assertEqual(layer.bias.device, devices)
-    self.assertEqual(layer.bias.lazydata.axis, None)
+    self.assertEqual(layer.bias.uop.axis, None)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())
 
@@ -658,9 +658,9 @@ class TestNN(unittest.TestCase):
 
     # NOTE: model and state_dict shard differently, use the state_dict sharding  # TODO: revisit this?
     self.assertEqual(layer.weight.device, devices)
-    self.assertEqual(layer.weight.lazydata.axis, None)
+    self.assertEqual(layer.weight.uop.axis, None)
     self.assertEqual(layer.bias.device, devices5)
-    self.assertEqual(layer.bias.lazydata.axis, 0)
+    self.assertEqual(layer.bias.uop.axis, 0)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())
 

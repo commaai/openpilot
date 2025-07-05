@@ -50,7 +50,7 @@ CM_ SG_ 479 CONTROL_ON "Set to 5 when car is being controlled";
 CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
 CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
 CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";
-CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
+CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnings etc...";
 CM_ SG_ 829 CAM_TEMP_HIGH "Some Driver Assist Systems Cannot Operate: Camera Temperature Too High";
 CM_ SG_ 829 CAMERA_OVERHEAT "Lane Keeping Assist Cannot Operate: Camera Too Hot";
 

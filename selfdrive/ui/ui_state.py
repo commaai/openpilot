@@ -1,8 +1,10 @@
 import pyray as rl
+import time
+from collections.abc import Callable
 from enum import Enum
 from cereal import messaging, log
 from openpilot.common.params import Params, UnknownKeyName
-
+from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 
 UI_BORDER_SIZE = 30
 
@@ -44,6 +46,8 @@ class UIState:
       ]
     )
 
+    self.prime_state = PrimeState()
+
     # UI Status tracking
     self.status: UIStatus = UIStatus.DISENGAGED
     self.started_frame: int = 0
@@ -64,10 +68,17 @@ class UIState:
   def engaged(self) -> bool:
     return self.started and self.sm["selfdriveState"].enabled
 
+  def is_onroad(self) -> bool:
+    return self.started
+
+  def is_offroad(self) -> bool:
+    return not self.started
+
   def update(self) -> None:
     self.sm.update(0)
     self._update_state()
     self._update_status()
+    device.update()
 
   def _update_state(self) -> None:
     # Handle panda states updates
@@ -125,5 +136,36 @@ class UIState:
       self.is_metric = False
 
 
+class Device:
+  def __init__(self):
+    self._ignition = False
+    self._interaction_time: float = 0.0
+    self._interactive_timeout_callbacks: list[Callable] = []
+    self._prev_timed_out = False
+    self.reset_interactive_timeout()
+
+  def reset_interactive_timeout(self, timeout: int = -1) -> None:
+    if timeout == -1:
+      timeout = 10 if ui_state.ignition else 30
+    self._interaction_time = time.monotonic() + timeout
+
+  def add_interactive_timeout_callback(self, callback: Callable):
+    self._interactive_timeout_callbacks.append(callback)
+
+  def update(self):
+    # Handle interactive timeout
+    ignition_just_turned_off = not ui_state.ignition and self._ignition
+    self._ignition = ui_state.ignition
+
+    interaction_timeout = time.monotonic() > self._interaction_time
+    if ignition_just_turned_off or rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      self.reset_interactive_timeout()
+    elif interaction_timeout and not self._prev_timed_out:
+      for callback in self._interactive_timeout_callbacks:
+        callback()
+    self._prev_timed_out = interaction_timeout
+
+
 # Global instance
 ui_state = UIState()
+device = Device()

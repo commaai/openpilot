@@ -50,7 +50,7 @@ class TestSetitem(unittest.TestCase):
 
   def test_setitem_into_noncontiguous(self):
     t = Tensor.ones(4)
-    self.assertFalse(t.lazydata.st.contiguous)
+    self.assertFalse(t.uop.st.contiguous)
     with self.assertRaises(RuntimeError): t[1] = 5
 
   @unittest.skip("TODO: flaky")

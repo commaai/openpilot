@@ -2,8 +2,8 @@ from tinygrad import Device, dtypes
 from tinygrad.helpers import getenv, colorize_float
 from extra.optimization.helpers import load_worlds, ast_str_to_lin
 from test.external.fuzz_linearizer import get_fuzz_rawbufs
-from tinygrad.codegen.heuristic import hand_coded_optimizations
-from tinygrad.engine.search import bufs_from_lin
+from tinygrad.opt.heuristic import hand_coded_optimizations
+from tinygrad.opt.search import bufs_from_lin
 from tinygrad.engine.realize import CompiledRunner
 from tinygrad.tensor import _to_np_dtype
 import numpy as np

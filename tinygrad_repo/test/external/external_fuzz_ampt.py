@@ -1,4 +1,5 @@
 import random
+from typing import Optional
 from tinygrad.helpers import round_up
 from tinygrad.runtime.support.am.amdev import AMPageTableTraverseContext
 from test.external.external_test_am import helper_read_entry_components, FakeAM
@@ -29,7 +30,7 @@ class AMPTFuzzer:
         self.d.vram[pte['paddr']] = pattern # Mark this page
         assert pte['valid'] == 1
 
-        # If page has contigous fragment, all range should be this valid memory
+        # If page has contiguous fragment, all range should be this valid memory
         frags_cnt = pte['fragment']
         contig_range = (1 << (frags_cnt + 12))
         start_vaddr = _vaddr & ~(contig_range - 1)
@@ -59,7 +60,7 @@ class AMPTFuzzer:
 
     return True
 
-  def random_alloc(self):
+  def random_alloc(self) -> Optional[int]:
     if self.total_size - self.alloc_payload < self.min_alloc_size: return None
 
     size = random.randint(self.min_alloc_size, min(self.max_alloc_size, self.total_size - self.alloc_payload))

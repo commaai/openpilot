@@ -117,6 +117,7 @@ class TestSafetensors(unittest.TestCase):
       for k in f.keys():
         np.testing.assert_array_equal(f.get_tensor(k).numpy(), state_dict[k].numpy())
 
+  @unittest.skip("this test takes 7 seconds. TODO: make disk assign lazy")
   def test_efficientnet_safetensors(self):
     from extra.models.efficientnet import EfficientNet
     model = EfficientNet(0)
@@ -351,6 +352,7 @@ class TestDiskTensor(unittest.TestCase):
       on_dev = t.to(Device.DEFAULT).realize()
       np.testing.assert_equal(on_dev.numpy(), t.numpy())
 
+  @unittest.skip("this allocates a lot of RAM")
   @unittest.skipUnless(OSX, "seems to only be an issue on macOS with file size >2 GiB")
   def test_copy_to_cpu_not_truncated(self):
     with open((fn:=temp("dt_copy_to_cpu_not_truncated")), "wb") as f: f.write(b'\x01' * (size := int(2 * 1024**3)) + (test := b"test"))

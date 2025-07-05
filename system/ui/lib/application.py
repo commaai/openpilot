@@ -1,7 +1,10 @@
 import atexit
+import cffi
 import os
 import time
 import pyray as rl
+from collections.abc import Callable
+from dataclasses import dataclass
 from enum import IntEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -12,7 +15,7 @@ FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
-ENABLE_VSYNC = os.getenv("ENABLE_VSYNC") == "1"
+ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "1") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 SCALE = float(os.getenv("SCALE", "1.0"))
@@ -36,6 +39,12 @@ class FontWeight(IntEnum):
   BLACK = 8
 
 
+@dataclass
+class ModalOverlay:
+  overlay: object = None
+  callback: Callable | None = None
+
+
 class GuiApplication:
   def __init__(self, width: int, height: int):
     self._fonts: dict[FontWeight, rl.Font] = {}
@@ -50,6 +59,7 @@ class GuiApplication:
     self._last_fps_log_time: float = time.monotonic()
     self._window_close_requested = False
     self._trace_log_callback = None
+    self._modal_overlay = ModalOverlay()
 
   def request_close(self):
     self._window_close_requested = True
@@ -78,6 +88,9 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+
+  def set_modal_overlay(self, overlay, callback: Callable | None = None):
+    self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
 
   def texture(self, asset_path: str, width: int, height: int, alpha_premultiply=False, keep_aspect_ratio=True):
     cache_key = f"{asset_path}_{width}_{height}_{alpha_premultiply}{keep_aspect_ratio}"
@@ -148,7 +161,23 @@ class GuiApplication:
           rl.begin_drawing()
           rl.clear_background(rl.BLACK)
 
-        yield
+        # Handle modal overlay rendering and input processing
+        if self._modal_overlay.overlay:
+          if hasattr(self._modal_overlay.overlay, 'render'):
+            result = self._modal_overlay.overlay.render(rl.Rectangle(0, 0, self.width, self.height))
+          elif callable(self._modal_overlay.overlay):
+            result = self._modal_overlay.overlay()
+          else:
+            raise Exception
+
+          if result >= 0:
+            # Execute callback with the result and clear the overlay
+            if self._modal_overlay.callback is not None:
+              self._modal_overlay.callback(result)
+
+            self._modal_overlay = ModalOverlay()
+        else:
+          yield
 
         if self._render_texture:
           rl.end_texture_mode()
@@ -192,12 +221,11 @@ class GuiApplication:
 
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
-    from openpilot.selfdrive.ui.onroad.hud_renderer import CRUISE_DISABLED_CHAR
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
     all_chars = "".join(all_chars)
-    all_chars += CRUISE_DISABLED_CHAR
+    all_chars += "–✓°"
 
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
@@ -219,12 +247,29 @@ class GuiApplication:
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
 
   def _set_log_callback(self):
+    ffi_libc = cffi.FFI()
+    ffi_libc.cdef("""
+      int vasprintf(char **strp, const char *fmt, void *ap);
+      void free(void *ptr);
+    """)
+    libc = ffi_libc.dlopen(None)
+
     @rl.ffi.callback("void(int, char *, void *)")
     def trace_log_callback(log_level, text, args):
       try:
-        text_str = rl.ffi.string(text).decode('utf-8')
-      except (TypeError, UnicodeDecodeError):
-        text_str = str(text)
+        text_addr = int(rl.ffi.cast("uintptr_t", text))
+        args_addr = int(rl.ffi.cast("uintptr_t", args))
+        text_libc = ffi_libc.cast("char *", text_addr)
+        args_libc = ffi_libc.cast("void *", args_addr)
+
+        out = ffi_libc.new("char **")
+        if libc.vasprintf(out, text_libc, args_libc) >= 0 and out[0] != ffi_libc.NULL:
+          text_str = ffi_libc.string(out[0]).decode("utf-8", "replace")
+          libc.free(out[0])
+        else:
+          text_str = rl.ffi.string(text).decode("utf-8", "replace")
+      except Exception as e:
+        text_str = f"[Log decode error: {e}]"
 
       if log_level == rl.TraceLogLevel.LOG_ERROR:
         cloudlog.error(f"raylib: {text_str}")

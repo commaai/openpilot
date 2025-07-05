@@ -41,7 +41,7 @@ class PythonProgram:
       while i < len(self.uops):
         uop, dtype, idp, arg = self.uops[i]
         void_ops = {Ops.STORE, Ops.ENDRANGE, Ops.BARRIER, Ops.IF, Ops.ENDIF, Ops.SINK}
-        if uop is Ops.DEFINE_ACC: idp = [idp[0]]
+        if uop is Ops.DEFINE_REG: idp = [idp[0]]
         inp = [ul[v] for v in idp if self.uops[v][0] not in void_ops]
         dtp = [dl[v] for v in idp if self.uops[v][0] not in void_ops]
         if getenv("TRACE"): print(i, uop, dtype, arg, inp, dtp)
@@ -77,7 +77,7 @@ class PythonProgram:
           if arg[0][0] == 'g': ul[i] = [idxs[2-int(arg[0][-1])]] * warp_size
           elif arg[0][0] == 'l': ul[i] = [x[2-int(arg[0][-1])] for x in warp]
         elif uop is Ops.CONST: ul[i] = [arg] * warp_size
-        elif uop is Ops.DEFINE_ACC:
+        elif uop is Ops.DEFINE_REG:
           ul[i] = [[inp[0][0][0]] * warp_size for _ in range(dtype.count)] if dtype.count > 1 else [inp[0][0]] * warp_size
         elif uop is Ops.INDEX:
           ret:list = []

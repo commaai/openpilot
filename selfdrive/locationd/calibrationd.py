@@ -13,6 +13,7 @@ from typing import NoReturn
 
 from cereal import log, car
 import cereal.messaging as messaging
+from openpilot.system.hardware import HARDWARE
 from openpilot.common.conversions import Conversions as CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
@@ -36,8 +37,11 @@ RPY_INIT = np.array([0.0,0.0,0.0])
 WIDE_FROM_DEVICE_EULER_INIT = np.array([0.0, 0.0, 0.0])
 HEIGHT_INIT = np.array([1.22])
 
-# These values are needed to accommodate the model frame in the narrow cam of the C3
-PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
+# These values are needed to accommodate the model frame in the narrow cam
+if HARDWARE.get_device_type() == 'mici':
+  PITCH_LIMITS = np.array([-0.143101, 0.22235988])
+else:
+  PITCH_LIMITS = np.array([-0.09074112085129739, 0.17])
 YAW_LIMITS = np.array([-0.06912048084718224, 0.06912048084718235])
 DEBUG = os.getenv("DEBUG") is not None
 
