@@ -1,56 +1,67 @@
-name: 'openpilot env setup'
+name: 'openpilot env setup (native no-docker)'
 
 inputs:
   is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    description: 'Mock param to maintain compatibility'
     required: false
     default: 'false'
 
 runs:
   using: "composite"
   steps:
-    # assert that this action is retried using the setup-with-retry
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
-      run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
-
-    - shell: bash
-      name: No retries!
-      run: |
-        if [ "${{ github.run_attempt }}" -gt 1 ]; then
-          echo -e "\033[0;31m##################################################"
-          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
-          echo -e "\033[0;31m##################################################\033[0m"
-          exit 1
-        fi
-
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
-      run: git lfs pull
-
-    # build cache
-    - id: date
+    - name: Show runner info
       shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
+      run: |
+        echo "Runner OS: $RUNNER_OS"
+        echo "Arch: $(uname -m)"
+
+    - name: Restore apt cache
+      uses: actions/cache@v3
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        path: /var/cache/apt/archives
+        key: apt-cache-${{ runner.os }}
         restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
+          apt-cache-${{ runner.os }}
+
+    - name: Restore pip cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: pip-cache-${{ runner.os }}
+        restore-keys: |
+          pip-cache-${{ runner.os }}
+
+    - name: Install system dependencies
       shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
       run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
+        sudo apt update
+        sudo apt install -y \
+          git \
+          python3-pip \
+          python3-dev \
+          python3-venv \
+          build-essential \
+          libcap-dev \
+          libusb-1.0-0-dev \
+          libavcodec-dev \
+          libavformat-dev \
+          libswscale-dev \
+          libopencv-dev \
+          libeigen3-dev \
+          libprotobuf-dev \
+          protobuf-compiler \
+          libturbojpeg0-dev \
+          libcurl4-openssl-dev
+
+    - name: Set up Python environment
+      shell: bash
+      run: |
+        python3 -m venv venv
+        source venv/bin/activate
+        python -m pip install --upgrade pip
+
+    - name: Install Python dependencies
+      shell: bash
+      run: |
+        source venv/bin/activate
+        pip install -r requirements.txt
