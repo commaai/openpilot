@@ -13,6 +13,3 @@
 [submodule "teleoprtc_repo"]
   path = teleoprtc_repo
   url = ../../commaai/teleoprtc
-[submodule "tinygrad"]
-  path = tinygrad_repo
-  url = https://github.com/tinygrad/tinygrad.git

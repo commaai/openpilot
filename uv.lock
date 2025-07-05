@@ -1225,6 +1225,7 @@ dependencies = [
     { name = "sounddevice" },
     { name = "spidev", marker = "sys_platform == 'linux'" },
     { name = "sympy" },
+    { name = "tinygrad" },
     { name = "tqdm" },
     { name = "websocket-client" },
     { name = "xattr" },
@@ -1346,6 +1347,7 @@ requires-dist = [
     { name = "spidev", marker = "sys_platform == 'linux'" },
     { name = "sympy" },
     { name = "tabulate", marker = "extra == 'dev'" },
+    { name = "tinygrad", git = "https://github.com/tinygrad/tinygrad.git?rev=a4aa769c0acc7f9478468ce53a0857e21e3c1ec8" },
     { name = "tqdm" },
     { name = "types-requests", marker = "extra == 'dev'" },
     { name = "types-tabulate", marker = "extra == 'dev'" },
@@ -4838,6 +4840,11 @@ sdist = { url = "https://files.pythonhosted.org/packages/ec/fe/802052aecb21e3797
 wheels = [
     { url = "https://files.pythonhosted.org/packages/40/44/4a5f08c96eb108af5cb50b41f76142f0afa346dfa99d5296fe7202a11854/tabulate-0.9.0-py3-none-any.whl", hash = "sha256:024ca478df22e9340661486f85298cff5f6dcdba14f3813e8830015b9ed1948f", size = 35252, upload-time = "2022-10-06T17:21:44.262Z" },
 ]
+
+[[package]]
+name = "tinygrad"
+version = "0.10.3"
+source = { git = "https://github.com/tinygrad/tinygrad.git?rev=a4aa769c0acc7f9478468ce53a0857e21e3c1ec8#a4aa769c0acc7f9478468ce53a0857e21e3c1ec8" }
 
 [[package]]
 name = "tqdm"
