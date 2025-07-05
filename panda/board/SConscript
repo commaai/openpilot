@@ -1,0 +1,18 @@
+import os
+import copy
+
+Import('build_project', 'base_project_f4', 'base_project_h7')
+
+build_projects = {
+  "panda": base_project_f4,
+  "panda_h7": base_project_h7,
+}
+
+for project_name, project in build_projects.items():
+  flags = [
+    "-DPANDA",
+  ]
+  if ("ENABLE_SPI" in os.environ or "h7" in project_name):
+    flags.append('-DENABLE_SPI')
+
+  build_project(project_name, project, flags)
