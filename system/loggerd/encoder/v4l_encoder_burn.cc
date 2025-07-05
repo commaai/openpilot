@@ -220,6 +220,9 @@ V4LEncoderBurn::V4LEncoderBurn(const EncoderInfo &encoder_info, int in_width, in
 
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_MODE, .value = V4L2_CID_MPEG_VIDC_VIDEO_LOWLATENCY_ENABLE},
 
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_BLUR_WIDTH, 1000},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_BLUR_HEIGHT, 1000},
+
       // doesn't work even with the default value...
       //{ .id = V4L2_CID_MPEG_VIDC_VIDEO_FRAME_QUALITY, .value = 80},
     };
