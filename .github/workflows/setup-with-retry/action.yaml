@@ -13,25 +13,56 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - id: setup1
-      uses: ./.github/workflows/setup
-      continue-on-error: true
+       # 1) Checkout your repo
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+
+    # 2) Setup Python
+    - name: Set up Python 3.8
+      uses: actions/setup-python@v4
       with:
-        is_retried: true
-    - if: steps.setup1.outcome == 'failure'
+        python-version: '3.8'
+
+       # 3) Cache pip wheels via your auto-cache action
+    - name: Cache pip
+      id: pip-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('tools/requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+        save: 'true'
+
+
+    # 4) Cache APT packages via your auto-cache action
+    - name: Cache APT packages
+      id: apt-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: /var/cache/apt/archives
+        key: ${{ runner.os }}-apt-${{ hashFiles('apt_requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-apt-
+        save: 'true'
+
+         # 5) Native install of system + Python deps
+    - id: install
+      name: Install system & Python dependencies
       shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup2
-      if: steps.setup1.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      continue-on-error: true
-      with:
-        is_retried: true
-    - if: steps.setup2.outcome == 'failure'
+      run: |
+        sudo apt-get update -qq
+        xargs -a apt_requirements.txt sudo apt-get install -qq -y
+        pip install --no-cache-dir -r tools/requirements.txt
+
+      # 6) Retry logic if the above failed
+    - name: Retry install if it failed
+      if: steps.install.outcome == 'failure'
       shell: bash
-      run: sleep ${{ inputs.sleep_time }}
-    - id: setup3
-      if: steps.setup2.outcome == 'failure'
-      uses: ./.github/workflows/setup
-      with:
-        is_retried: true
+      run: |
+        echo "Initial install failed, sleeping for ${{ inputs.sleep_time }}s…"
+        sleep ${{ inputs.sleep_time }}
+        sudo apt-get update -qq
+        xargs -a apt_requirements.txt sudo apt-get install -qq -y
+        pip install --no-cache-dir -r tools/requirements.txt
