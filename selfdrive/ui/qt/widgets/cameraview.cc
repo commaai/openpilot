@@ -181,11 +181,18 @@ void CameraWidget::availableStreamsUpdated(std::set<VisionStreamType> streams) {
 }
 
 mat4 CameraWidget::calcFrameMatrix() {
-  // Scale the frame to fit the widget while maintaining the aspect ratio.
+  // Scale the frame to fit the widget while maintaining aspect ratio, but allow upscaling.
   float widget_aspect_ratio = (float)width() / height();
   float frame_aspect_ratio = (float)stream_width / stream_height;
-  float zx = std::min(frame_aspect_ratio / widget_aspect_ratio, 1.0f);
-  float zy = std::min(widget_aspect_ratio / frame_aspect_ratio, 1.0f);
+  float zx = frame_aspect_ratio / widget_aspect_ratio;
+  float zy = widget_aspect_ratio / frame_aspect_ratio;
+
+  // Use max instead of min to allow upscaling and fill the screen
+  if (zx > zy) {
+    zy = 1.0f;
+  } else {
+    zx = 1.0f;
+  }
 
   return mat4{{
     zx, 0.0, 0.0, 0.0,

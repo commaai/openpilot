@@ -41,8 +41,8 @@ void AnnotatedCameraWidget::initializeGL() {
 mat4 AnnotatedCameraWidget::calcFrameMatrix() {
   // Project point at "infinity" to compute x and y offsets
   // to ensure this ends up in the middle of the screen
-  // for narrow come and a little lower for wide cam.
-  // TODO: use proper perspective transform?
+  // for narrow cam and a little lower for wide cam.
+  // Modified to support upscaling to fill screen.
 
   // Select intrinsic matrix and calibration based on camera type
   auto *s = uiState();
@@ -50,7 +50,7 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
   const auto &intrinsic_matrix = wide_cam ? ECAM_INTRINSIC_MATRIX : s->scene.fcam_intrinsic_matrix;
   const auto &calibration = wide_cam ? s->scene.view_from_wide_calib : s->scene.view_from_calib;
 
-   // Compute the calibration transformation matrix
+  // Compute the calibration transformation matrix
   const auto calib_transform = intrinsic_matrix * calibration;
 
   float zoom = wide_cam ? 2.0 : 1.1;
@@ -77,8 +77,25 @@ mat4 AnnotatedCameraWidget::calcFrameMatrix() {
 
   model.setTransform(video_transform * calib_transform);
 
-  float zx = zoom * 2 * center_x / w;
-  float zy = zoom * 2 * center_y / h;
+  // Scale to fill screen - use larger zoom factor to eliminate black bars
+  float widget_aspect_ratio = (float)w / h;
+  float camera_aspect_ratio = (float)(center_x * 2) / (center_y * 2);
+
+  if (widget_aspect_ratio > camera_aspect_ratio) {
+    // Widget is wider, scale by width
+    zoom *= widget_aspect_ratio / camera_aspect_ratio;
+  } else {
+    // Widget is taller, scale by height
+    zoom *= camera_aspect_ratio / widget_aspect_ratio;
+  }
+
+  // Force uniform scaling to fill entire screen
+  float scale_x = (float)w / (center_x * 2);
+  float scale_y = (float)h / (center_y * 2);
+  float max_scale = std::max(scale_x, scale_y);
+
+  float zx = max_scale;
+  float zy = max_scale;
   return mat4{{
     zx, 0.0, 0.0, -x_offset / w * 2,
     0.0, zy, 0.0, y_offset / h * 2,
