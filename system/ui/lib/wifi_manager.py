@@ -204,7 +204,7 @@ class WifiManager:
         'connection': {
           'type': Variant('s', '802-11-wireless'),
           'uuid': Variant('s', str(uuid.uuid4())),
-          'id': Variant('s', ssid),
+          'id': Variant('s', f'openpilot connection {ssid}'),
           'autoconnect-retries': Variant('i', 0),
         },
         '802-11-wireless': {
@@ -212,7 +212,10 @@ class WifiManager:
           'hidden': Variant('b', is_hidden),
           'mode': Variant('s', 'infrastructure'),
         },
-        'ipv4': {'method': Variant('s', 'auto')},
+        'ipv4': {
+          'method': Variant('s', 'auto'),
+          'dns-priority': Variant('i', 600),
+        },
         'ipv6': {'method': Variant('s', 'ignore')},
       }
 
