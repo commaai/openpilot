@@ -14,6 +14,7 @@ import sys
 import tempfile
 import threading
 import time
+import urllib3
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
@@ -54,6 +55,7 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
+UPLOAD_TOS = 0xb8
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -61,6 +63,18 @@ UploadFileDict = dict[str, str | int | float | bool]
 UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
+
+
+class _TOSAdapter(requests.adapters.HTTPAdapter):
+  def __init__(self, tos, *a, **kw):
+    base = urllib3.connection.HTTPConnection.default_socket_options
+    self.socket_options = base + [(socket.IPPROTO_IP, socket.IP_TOS, tos)]
+    super().__init__(*a, **kw)
+
+
+_upload_sess = requests.Session()
+_upload_sess.mount("http://", _TOSAdapter(UPLOAD_TOS))
+_upload_sess.mount("https://", _TOSAdapter(UPLOAD_TOS))
 
 
 @dataclass
@@ -309,10 +323,10 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = requests.put(upload_item.url,
-                            data=CallbackReader(stream, callback, content_length) if callback else stream,
-                            headers={**upload_item.headers, 'Content-Length': str(content_length)},
-                            timeout=30)
+    response = _upload_sess.put(upload_item.url,
+                                data=CallbackReader(stream, callback, content_length) if callback else stream,
+                                headers={**upload_item.headers, 'Content-Length': str(content_length)},
+                                timeout=30)
     return response
   finally:
     if stream:
