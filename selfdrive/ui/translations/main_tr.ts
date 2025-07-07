@@ -63,10 +63,6 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation type="unfinished"></translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation type="unfinished">için &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -227,10 +247,6 @@
         <translation>Sistemi kapat</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot, cihazın 4° sola veya 5° yukarı yada 9° aşağı bakıcak şekilde monte edilmesi gerekmektedir. openpilot sürekli kendisini kalibre edilmektedir ve nadiren sıfırlama gerebilir.</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Cihazınız %1° %2 ve %3° %4 yönünde ayarlı</translation>
     </message>
@@ -286,6 +302,38 @@
         <source>PAIR</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -307,10 +355,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -337,6 +381,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -366,13 +414,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>
             <numerusform>En az %n karakter gerekli!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Yükleniyor...</translation>
     </message>
 </context>
 <context>
@@ -761,6 +802,16 @@ This may take up to a minute.</source>
         <source>Custom Software</source>
         <translation type="unfinished"></translation>
     </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
@@ -999,10 +1050,6 @@ This may take up to a minute.</source>
         <translation>openpilot&apos;u aktifleştir</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Ayarlanabilir hız sabitleyici ve şeritte kalma yardımı için openpilot sistemini kullanın. Bu özelliği kullanırken her zaman dikkatli olmanız gerekiyor. Bu ayarın değiştirilmesi için araç kapatılıp açılması gerekiyor.</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>Şerit ihlali uyarı alın</translation>
     </message>
@@ -1100,6 +1147,22 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

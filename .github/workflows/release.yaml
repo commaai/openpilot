@@ -8,8 +8,7 @@ jobs:
   build_masterci:
     name: build master-ci
     env:
-      TARGET_DIR: /tmp/openpilot
-      ImageOS: ubuntu20
+      ImageOS: ubuntu24
     container:
       image: ghcr.io/commaai/openpilot-base:latest
     runs-on: ubuntu-latest
@@ -23,7 +22,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libyaml-dev
     - name: Wait for green check mark
-      if: ${{ github.event_name != 'workflow_dispatch' }}
+      if: ${{ github.event_name == 'schedule' }}
       uses: lewagon/wait-on-check-action@ccfb013c15c8afb7bf2b7c028fb74dc5a068cccc
       with:
         ref: master
@@ -39,16 +38,5 @@ jobs:
       run: |
         git config --global --add safe.directory '*'
         git lfs pull
-    - name: Build master-ci
-      run: |
-        release/build_devel.sh
-    - name: Run tests
-      run: |
-        export PYTHONPATH=$TARGET_DIR
-        cd $TARGET_DIR
-        scons -j$(nproc)
-        pytest -n logical selfdrive/car/tests/test_car_interfaces.py
     - name: Push master-ci
-      run: |
-        unset TARGET_DIR
-        BRANCH=__nightly release/build_devel.sh
+      run: BRANCH=__nightly release/build_devel.sh

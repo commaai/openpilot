@@ -13,7 +13,12 @@ from dbus_next.aio import MessageBus
 from dbus_next import BusType, Variant, Message
 from dbus_next.errors import DBusError
 from dbus_next.constants import MessageType
-from openpilot.common.params import Params
+
+try:
+  from openpilot.common.params import Params
+except ImportError:
+  # Params/Cythonized modules are not available in zipapp
+  Params = None
 from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
@@ -34,6 +39,7 @@ NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "12345678"
 
+
 # NetworkManager device states
 class NMDeviceState(IntEnum):
   DISCONNECTED = 30
@@ -42,12 +48,14 @@ class NMDeviceState(IntEnum):
   IP_CONFIG = 70
   ACTIVATED = 100
 
+
 class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
   WPA2 = 2
   WPA3 = 3
   UNSUPPORTED = 4
+
 
 @dataclass
 class NetworkInfo:
@@ -65,8 +73,9 @@ class NetworkInfo:
 class WifiManagerCallbacks:
   need_auth: Callable[[str], None] | None = None
   activated: Callable[[], None] | None = None
-  forgotten: Callable[[], None] | None = None
+  forgotten: Callable[[str], None] | None = None
   networks_updated: Callable[[list[NetworkInfo]], None] | None = None
+  connection_failed: Callable[[str, str], None] | None = None  # Added for error feedback
 
 
 class WifiManager:
@@ -81,9 +90,10 @@ class WifiManager:
     self.scan_task: asyncio.Task | None = None
     # Set tethering ssid as "weedle" + first 4 characters of a dongle id
     self._tethering_ssid = "weedle"
-    dongle_id = Params().get("DongleId", encoding="utf-8")
-    if dongle_id:
-      self._tethering_ssid += "-" + dongle_id[:4]
+    if Params is not None:
+      dongle_id = Params().get("DongleId", encoding="utf-8")
+      if dongle_id:
+        self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
@@ -93,8 +103,8 @@ class WifiManager:
       self.bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
       if not await self._find_wifi_device():
         raise ValueError("No Wi-Fi device found")
-      await self._setup_signals(self.device_path)
 
+      await self._setup_signals(self.device_path)
       self.active_ap_path = await self.get_active_access_point()
       await self.add_tethering_connection(self._tethering_ssid, DEFAULT_TETHERING_PASSWORD)
       self.saved_connections = await self._get_saved_connections()
@@ -115,9 +125,9 @@ class WifiManager:
       except asyncio.CancelledError:
         pass
     if self.bus:
-      await self.bus.disconnect()
+      self.bus.disconnect()
 
-  async def request_scan(self) -> None:
+  async def _request_scan(self) -> None:
     try:
       interface = self.device_proxy.get_interface(NM_WIRELESS_IFACE)
       await interface.call_request_scan({})
@@ -141,11 +151,22 @@ class WifiManager:
     try:
       nm_iface = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
       await nm_iface.call_delete()
+
       if self._current_connection_ssid == ssid:
         self._current_connection_ssid = None
 
       if ssid in self.saved_connections:
         del self.saved_connections[ssid]
+
+      for network in self.networks:
+        if network.ssid == ssid:
+          network.is_saved = False
+          network.is_connected = False
+          break
+
+      # Notify UI of forgotten connection
+      if self.callbacks.networks_updated:
+        self.callbacks.networks_updated(copy.deepcopy(self.networks))
 
       return True
     except DBusError as e:
@@ -207,10 +228,12 @@ class WifiManager:
 
       nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
       await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
-      await self._update_connection_status()
-    except DBusError as e:
+    except Exception as e:
       self._current_connection_ssid = None
       cloudlog.error(f"Error connecting to network: {e}")
+      # Notify UI of failure
+      if self.callbacks.connection_failed:
+        self.callbacks.connection_failed(ssid, str(e))
 
   def is_saved(self, ssid: str) -> bool:
     return ssid in self.saved_connections
@@ -388,8 +411,7 @@ class WifiManager:
   async def _periodic_scan(self):
     while self.running:
       try:
-        await self.request_scan()
-        await self._get_available_networks()
+        await self._request_scan()
         await asyncio.sleep(30)
       except asyncio.CancelledError:
         break
@@ -418,21 +440,24 @@ class WifiManager:
   def _on_properties_changed(self, interface: str, changed: dict, invalidated: list):
     # print("property changed", interface, changed, invalidated)
     if 'LastScan' in changed:
-      asyncio.create_task(self._get_available_networks())
+      asyncio.create_task(self._refresh_networks())
     elif interface == NM_WIRELESS_IFACE and "ActiveAccessPoint" in changed:
-      self.active_ap_path = changed["ActiveAccessPoint"].value
-      asyncio.create_task(self._get_available_networks())
+      new_ap_path = changed["ActiveAccessPoint"].value
+      if self.active_ap_path != new_ap_path:
+        self.active_ap_path = new_ap_path
+        asyncio.create_task(self._refresh_networks())
 
   def _on_state_changed(self, new_state: int, old_state: int, reason: int):
-    print(f"State changed: {old_state} -> {new_state}, reason: {reason}")
+    print("State changed", new_state, old_state, reason)
     if new_state == NMDeviceState.ACTIVATED:
       if self.callbacks.activated:
         self.callbacks.activated()
-      asyncio.create_task(self._update_connection_status())
+      asyncio.create_task(self._refresh_networks())
       self._current_connection_ssid = None
     elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
       for network in self.networks:
         network.is_connected = False
+
       if new_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self.callbacks.need_auth:
         if self._current_connection_ssid:
           self.callbacks.need_auth(self._current_connection_ssid)
@@ -448,19 +473,19 @@ class WifiManager:
 
   def _on_new_connection(self, path: str) -> None:
     """Callback for NewConnection signal."""
-    print(f"New connection added: {path}")
     asyncio.create_task(self._add_saved_connection(path))
 
   def _on_connection_removed(self, path: str) -> None:
     """Callback for ConnectionRemoved signal."""
-    print(f"Connection removed: {path}")
     for ssid, p in list(self.saved_connections.items()):
       if path == p:
         del self.saved_connections[ssid]
+
         if self.callbacks.forgotten:
-          self.callbacks.forgotten()
+          self.callbacks.forgotten(ssid)
+
         # Update network list to reflect the removed saved connection
-        asyncio.create_task(self._update_connection_status())
+        asyncio.create_task(self._refresh_networks())
         break
 
   async def _add_saved_connection(self, path: str) -> None:
@@ -469,7 +494,7 @@ class WifiManager:
       settings = await self._get_connection_settings(path)
       if ssid := self._extract_ssid(settings):
         self.saved_connections[ssid] = path
-        await self._update_connection_status()
+        await self._refresh_networks()
     except DBusError as e:
       cloudlog.error(f"Failed to add connection {path}: {e}")
 
@@ -477,10 +502,6 @@ class WifiManager:
     """Extract SSID from connection settings."""
     ssid_variant = settings.get('802-11-wireless', {}).get('ssid', Variant('ay', b'')).value
     return ''.join(chr(b) for b in ssid_variant) if ssid_variant else None
-
-  async def _update_connection_status(self):
-    self.active_ap_path = await self.get_active_access_point()
-    await self._get_available_networks()
 
   async def _add_match_rule(self, rule):
     """Add a match rule on the bus."""
@@ -499,10 +520,11 @@ class WifiManager:
     assert reply.message_type == MessageType.METHOD_RETURN
     return reply
 
-  async def _get_available_networks(self):
+  async def _refresh_networks(self):
     """Get a list of available networks via NetworkManager."""
     wifi_iface = self.device_proxy.get_interface(NM_WIRELESS_IFACE)
     access_points = await wifi_iface.get_access_points()
+    self.active_ap_path = await self.get_active_access_point()
     network_dict = {}
     for ap_path in access_points:
       try:
@@ -526,7 +548,7 @@ class WifiManager:
             security_type=self._get_security_type(flags, wpa_flags, rsn_flags),
             path=ap_path,
             bssid=bssid,
-            is_connected=self.active_ap_path == ap_path,
+            is_connected=self.active_ap_path == ap_path and self._current_connection_ssid != ssid,
             is_saved=ssid in self.saved_connections
           )
 
@@ -550,9 +572,7 @@ class WifiManager:
   async def _get_connection_settings(self, path):
     """Fetch connection settings for a specific connection path."""
     try:
-      connection_proxy = await self.bus.introspect(NM, path)
-      connection = self.bus.get_proxy_object(NM, path, connection_proxy)
-      settings = connection.get_interface(NM_CONNECTION_IFACE)
+      settings = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
       return await settings.call_get_settings()
     except DBusError as e:
       cloudlog.error(f"Failed to get settings for {path}: {str(e)}")
@@ -591,7 +611,8 @@ class WifiManager:
     if flags == 0 and not (wpa_flags or rsn_flags):
       return SecurityType.OPEN
     if rsn_flags & 0x200:  # SAE (WPA3 Personal)
-      return SecurityType.WPA3
+      # TODO: support WPA3
+      return SecurityType.UNSUPPORTED
     if rsn_flags:  # RSN indicates WPA2 or higher
       return SecurityType.WPA2
     if wpa_flags:  # WPA flags indicate WPA
@@ -634,8 +655,10 @@ class WifiManagerWrapper:
 
   def shutdown(self) -> None:
     if self._running:
-      if self._manager is not None:
-        self._run_coroutine(self._manager.shutdown())
+      if self._manager is not None and self._loop:
+        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
+        shutdown_future.result(timeout=3.0)
+
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():
@@ -651,12 +674,6 @@ class WifiManagerWrapper:
     if not self._manager:
       return
     self._run_coroutine(self._manager.connect())
-
-  def request_scan(self):
-    """Request a scan for Wi-Fi networks."""
-    if not self._manager:
-      return
-    self._run_coroutine(self._manager.request_scan())
 
   def forget_connection(self, ssid: str):
     """Forget a saved Wi-Fi connection."""

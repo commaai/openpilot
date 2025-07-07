@@ -58,7 +58,7 @@ typedef struct UIScene {
   cereal::LongitudinalPersonality personality;
 
   float light_sensor = -1;
-  bool started, ignition, is_metric;
+  bool started, ignition, is_metric, recording_audio;
   uint64_t started_frame;
 } UIScene;
 
@@ -81,6 +81,7 @@ public:
 signals:
   void uiUpdate(const UIState &s);
   void offroadTransition(bool offroad);
+  void engagedChanged(bool engaged);
 
 private slots:
   void update();
@@ -88,6 +89,7 @@ private slots:
 private:
   QTimer *timer;
   bool started_prev = false;
+  bool engaged_prev = false;
 };
 
 UIState *uiState();

@@ -60,6 +60,9 @@ static void update_state(UIState *s) {
     scene.light_sensor = -1;
   }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
+
+  auto params = Params();
+  scene.recording_audio = params.getBool("RecordAudio") && scene.started;
 }
 
 void ui_update_params(UIState *s) {
@@ -76,6 +79,11 @@ void UIState::updateStatus() {
     } else {
       status = ss.getEnabled() ? STATUS_ENGAGED : STATUS_DISENGAGED;
     }
+  }
+
+  if (engaged() != engaged_prev) {
+    engaged_prev = engaged();
+    emit engagedChanged(engaged());
   }
 
   // Handle onroad/offroad transition

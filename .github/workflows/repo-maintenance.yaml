@@ -50,12 +50,13 @@ jobs:
     - name: bump submodules
       run: |
         git config --global --add safe.directory '*'
-        git -c submodule."tinygrad".update=none submodule update --remote
+        git submodule update --remote
         git add .
     - name: update car docs
       run: |
+        export PYTHONPATH="$PWD"
         scons -j$(nproc) --minimal opendbc_repo
-        PYTHONPATH=. python selfdrive/car/docs.py
+        python selfdrive/car/docs.py
         git add docs/CARS.md
     - name: Create Pull Request
       uses: peter-evans/create-pull-request@9153d834b60caba6d51c9b9510b087acf9f33f83

@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from openpilot.selfdrive.test.helpers import with_processes
-from openpilot.system.camerad.snapshot.snapshot import get_snapshots
+from openpilot.system.camerad.snapshot import get_snapshots
 
 TEST_TIME = 45
 REPEAT = 5

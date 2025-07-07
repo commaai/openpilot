@@ -1,98 +1,123 @@
 from dataclasses import dataclass
+from threading import Lock
 from typing import Literal
 
 import pyray as rl
-from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.button import gui_button
+from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
+from openpilot.system.ui.lib.widget import Widget
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
 MAX_PASSWORD_LENGTH = 64
 ITEM_HEIGHT = 160
+ICON_SIZE = 50
+
+STRENGTH_ICONS = [
+  "icons/wifi_strength_low.png",
+  "icons/wifi_strength_medium.png",
+  "icons/wifi_strength_high.png",
+  "icons/wifi_strength_full.png",
+]
 
 
 @dataclass
 class StateIdle:
   action: Literal["idle"] = "idle"
 
+
 @dataclass
 class StateConnecting:
   network: NetworkInfo
   action: Literal["connecting"] = "connecting"
+
 
 @dataclass
 class StateNeedsAuth:
   network: NetworkInfo
   action: Literal["needs_auth"] = "needs_auth"
 
+
 @dataclass
 class StateShowForgetConfirm:
   network: NetworkInfo
   action: Literal["show_forget_confirm"] = "show_forget_confirm"
+
 
 @dataclass
 class StateForgetting:
   network: NetworkInfo
   action: Literal["forgetting"] = "forgetting"
 
+
 UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm | StateForgetting
 
 
-class WifiManagerUI:
+class WifiManagerUI(Widget):
   def __init__(self, wifi_manager: WifiManagerWrapper):
+    super().__init__()
     self.state: UIState = StateIdle()
-    self.btn_width = 200
+    self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
-    self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH)
+    self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     self._networks: list[NetworkInfo] = []
-
+    self._lock = Lock()
     self.wifi_manager = wifi_manager
-    self.wifi_manager.set_callbacks(WifiManagerCallbacks(self._on_need_auth, self._on_activated, self._on_forgotten, self._on_network_updated))
+
+    self.wifi_manager.set_callbacks(
+      WifiManagerCallbacks(
+        need_auth=self._on_need_auth,
+        activated=self._on_activated,
+        forgotten=self._on_forgotten,
+        networks_updated=self._on_network_updated,
+        connection_failed=self._on_connection_failed
+      )
+    )
     self.wifi_manager.start()
     self.wifi_manager.connect()
 
-  def render(self, rect: rl.Rectangle):
-    if not self._networks:
-      gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-      return
+  def _render(self, rect: rl.Rectangle):
+    with self._lock:
+      if not self._networks:
+        gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+        return
 
-    match self.state:
-      case StateNeedsAuth(network):
-        result = self.keyboard.render("Enter password", f"for {network.ssid}")
-        if result == 1:
-          password = self.keyboard.text
-          self.keyboard.clear()
+      match self.state:
+        case StateNeedsAuth(network):
+          self.keyboard.set_title("Enter password", f"for {network.ssid}")
+          gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
+        case StateShowForgetConfirm(network):
+          gui_app.set_modal_overlay(lambda: confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget"),
+                                    callback=lambda result: self.on_forgot_confirm_finished(network, result))
+        case _:
+          self._draw_network_list(rect)
 
-          if len(password) >= MIN_PASSWORD_LENGTH:
-            self.connect_to_network(network, password)
-        elif result == 0:
-          self.state = StateIdle()
+  def _on_password_entered(self, network: NetworkInfo, result: int):
+    if result == 1:
+      password = self.keyboard.text
+      self.keyboard.clear()
 
-      case StateShowForgetConfirm(network):
-        result = confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget")
-        if result == 1:
-          self.forget_network(network)
-        elif result == 0:
-          self.state = StateIdle()
+      if len(password) >= MIN_PASSWORD_LENGTH:
+        self.connect_to_network(network, password)
+    elif result == 0:
+      self.state = StateIdle()
 
-      case _:
-        self._draw_network_list(rect)
-
-  @property
-  def require_full_screen(self) -> bool:
-    """Check if the WiFi UI requires exclusive full-screen rendering."""
-    return isinstance(self.state, (StateNeedsAuth, StateShowForgetConfirm))
+  def on_forgot_confirm_finished(self, network, result: int):
+    if result == 1:
+      self.forget_network(network)
+    elif result == 0:
+      self.state = StateIdle()
 
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    clicked = self.scroll_panel.is_click_valid()
+    clicked = self.scroll_panel.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):
@@ -109,14 +134,14 @@ class WifiManagerUI:
     rl.end_scissor_mode()
 
   def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
-    label_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
-    state_rect = rl.Rectangle(rect.x + rect.width - self.btn_width * 2 - 150, rect.y, 300, ITEM_HEIGHT)
+    spacing = 50
+    ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
+    signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
+    security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    gui_label(label_rect, network.ssid, 55)
+    gui_label(ssid_rect, network.ssid, 55)
 
     status_text = ""
-    if network.is_connected:
-      status_text = "Connected"
     match self.state:
       case StateConnecting(network=connecting):
         if connecting.ssid == network.ssid:
@@ -124,25 +149,52 @@ class WifiManagerUI:
       case StateForgetting(network=forgetting):
         if forgetting.ssid == network.ssid:
           status_text = "FORGETTING..."
+
     if status_text:
-      rl.gui_label(state_rect, status_text)
+      status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
+      gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    else:
+      # If the network is saved, show the "Forget" button
+      if network.is_saved:
+        forget_btn_rect = rl.Rectangle(
+          security_icon_rect.x - self.btn_width - spacing,
+          rect.y + (ITEM_HEIGHT - 80) / 2,
+          self.btn_width,
+          80,
+        )
+        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget", button_style=ButtonStyle.ACTION) and clicked:
+          self.state = StateShowForgetConfirm(network)
 
-    # If the network is saved, show the "Forget" button
-    if network.is_saved:
-      forget_btn_rect = rl.Rectangle(
-        rect.x + rect.width - self.btn_width,
-        rect.y + (ITEM_HEIGHT - 80) / 2,
-        self.btn_width,
-        80,
-      )
-      if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget") and clicked:
-        self.state = StateShowForgetConfirm(network)
+    self._draw_status_icon(security_icon_rect, network)
+    self._draw_signal_strength_icon(signal_icon_rect, network)
 
-    if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), label_rect) and clicked:
-      if not network.is_saved:
+    if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), ssid_rect) and clicked:
+      if not network.is_saved and network.security_type != SecurityType.OPEN:
         self.state = StateNeedsAuth(network)
-      else:
+      elif not network.is_connected:
         self.connect_to_network(network)
+
+  def _draw_status_icon(self, rect, network: NetworkInfo):
+    """Draw the status icon based on network's connection state"""
+    icon_file = None
+    if network.is_connected:
+      icon_file = "icons/checkmark.png"
+    elif network.security_type == SecurityType.UNSUPPORTED:
+      icon_file = "icons/circled_slash.png"
+    elif network.security_type != SecurityType.OPEN:
+      icon_file = "icons/lock_closed.png"
+
+    if not icon_file:
+      return
+
+    texture = gui_app.texture(icon_file, ICON_SIZE, ICON_SIZE)
+    icon_rect = rl.Vector2(rect.x, rect.y + (ICON_SIZE - texture.height) / 2)
+    rl.draw_texture_v(texture, icon_rect, rl.WHITE)
+
+  def _draw_signal_strength_icon(self, rect: rl.Rectangle, network: NetworkInfo):
+    """Draw the Wi-Fi signal strength icon based on network's signal strength"""
+    strength_level = max(0, min(3, round(network.strength / 33.0)))
+    rl.draw_texture_v(gui_app.texture(STRENGTH_ICONS[strength_level], ICON_SIZE, ICON_SIZE), rl.Vector2(rect.x, rect.y), rl.WHITE)
 
   def connect_to_network(self, network: NetworkInfo, password=''):
     self.state = StateConnecting(network)
@@ -157,25 +209,29 @@ class WifiManagerUI:
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[NetworkInfo]):
-    self._networks = networks
+    with self._lock:
+      self._networks = networks
 
   def _on_need_auth(self, ssid):
-    match self.state:
-      case StateConnecting(ssid):
-        self.state = StateNeedsAuth(ssid)
-      case _:
-        # Find network by SSID
-        network = next((n for n in self.wifi_manager.networks if n.ssid == ssid), None)
-        if network:
-          self.state = StateNeedsAuth(network)
+    with self._lock:
+      network = next((n for n in self._networks if n.ssid == ssid), None)
+      if network:
+        self.state = StateNeedsAuth(network)
 
   def _on_activated(self):
-    if isinstance(self.state, StateConnecting):
-      self.state = StateIdle()
+    with self._lock:
+      if isinstance(self.state, StateConnecting):
+        self.state = StateIdle()
 
-  def _on_forgotten(self):
-    if isinstance(self.state, StateForgetting):
-      self.state = StateIdle()
+  def _on_forgotten(self, ssid):
+    with self._lock:
+      if isinstance(self.state, StateForgetting):
+        self.state = StateIdle()
+
+  def _on_connection_failed(self, ssid: str, error: str):
+    with self._lock:
+      if isinstance(self.state, StateConnecting):
+        self.state = StateIdle()
 
 
 def main():

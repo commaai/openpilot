@@ -39,10 +39,6 @@ AddOption('--clazy',
           action='store_true',
           help='build with clazy')
 
-AddOption('--compile_db',
-          action='store_true',
-          help='build clang compilation database')
-
 AddOption('--ccflags',
           action='store',
           type='string',
@@ -54,11 +50,6 @@ AddOption('--external-sconscript',
           metavar='FILE',
           dest='external_sconscript',
           help='add an external SConscript to the build')
-
-AddOption('--pc-thneed',
-          action='store_true',
-          dest='pc_thneed',
-          help='use thneed on pc')
 
 AddOption('--mutation',
           action='store_true',
@@ -219,8 +210,7 @@ if arch == "Darwin":
   darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
   env["LINKFLAGS"] += darwin_rpath_link_flags
 
-if GetOption('compile_db'):
-  env.CompilationDatabase('compile_commands.json')
+env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
@@ -288,12 +278,7 @@ else:
   elif arch != "Darwin":
     qt_libs += ["GL"]
 qt_env['QT3DIR'] = qt_env['QTDIR']
-
-# compatibility for older SCons versions
-try:
-  qt_env.Tool('qt3')
-except SCons.Errors.UserError:
-  qt_env.Tool('qt')
+qt_env.Tool('qt3')
 
 qt_env['CPPPATH'] += qt_dirs + ["#third_party/qrcode"]
 qt_flags = [
@@ -352,14 +337,13 @@ SConscript(['rednose/SConscript'])
 
 # Build system services
 SConscript([
-  'system/proclogd/SConscript',
   'system/ubloxd/SConscript',
   'system/loggerd/SConscript',
 ])
 if arch != "Darwin":
   SConscript([
-    'system/sensord/SConscript',
     'system/logcatd/SConscript',
+    'system/proclogd/SConscript',
   ])
 
 if arch == "larch64":

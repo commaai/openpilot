@@ -7,6 +7,7 @@ on:
 env:
   DAYS_BEFORE_PR_CLOSE: 2
   DAYS_BEFORE_PR_STALE: 9
+  DAYS_BEFORE_PR_STALE_DRAFT: 30
 
 jobs:
   stale:
@@ -24,6 +25,28 @@ jobs:
           exempt-pr-labels: "ignore stale,needs testing" # if wip or it needs testing from the community, don't mark as stale
           days-before-pr-stale: ${{ env.DAYS_BEFORE_PR_STALE }}
           days-before-pr-close: ${{ env.DAYS_BEFORE_PR_CLOSE }}
+          exempt-draft-pr: false
+
+          # issue config
+          days-before-issue-stale: -1 # ignore issues for now
+
+  # same as above, but give draft PRs more time
+  stale_drafts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v9
+        with:
+          exempt-all-milestones: true
+
+          # pull request config
+          stale-pr-message: 'This PR has had no activity for ${{ env.DAYS_BEFORE_PR_STALE_DRAFT }} days. It will be automatically closed in ${{ env.DAYS_BEFORE_PR_CLOSE }} days if there is no activity.'
+          close-pr-message: 'This PR has been automatically closed due to inactivity. Feel free to re-open once activity resumes.'
+          stale-pr-label: stale
+          delete-branch: ${{ github.event.pull_request.head.repo.full_name == 'commaai/openpilot' }} # only delete branches on the main repo
+          exempt-pr-labels: "ignore stale,needs testing" # if wip or it needs testing from the community, don't mark as stale
+          days-before-pr-stale: ${{ env.DAYS_BEFORE_PR_STALE_DRAFT }}
+          days-before-pr-close: ${{ env.DAYS_BEFORE_PR_CLOSE }}
+          exempt-draft-pr: true
 
           # issue config
           days-before-issue-stale: -1 # ignore issues for now

@@ -248,6 +248,7 @@ def retrieve_initial_vehicle_params(params: Params, CP: car.CarParams, replay: b
         retrieve_success = True
     except Exception as e:
       cloudlog.error(f"Failed to retrieve initial values: {e}")
+      params.remove("LiveParametersV2")
 
   if not replay:
     # When driving in wet conditions the stiffness can go down, and then be too low on the next drive

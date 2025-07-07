@@ -63,10 +63,6 @@
         <translation>ลดการส่งข้อมูลผ่านเซลลูล่าร์</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>ปิดการอัพโหลดข้อมูลขนาดใหญ่เมื่อเชื่อมต่อผ่านเซลลูล่าร์</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>เครือข่ายที่ซ่อนอยู่</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>สำหรับ &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -227,10 +247,6 @@
         <translation>ปิดเครื่อง</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot กำหนดให้ติดตั้งอุปกรณ์ โดยสามารถเอียงด้านซ้ายหรือขวาไม่เกิน 4° และเอียงขึ้นด้านบนไม่เกิน 5° หรือเอียงลงด้านล่างไม่เกิน 9° openpilot ทำการคาลิเบรทอย่างต่อเนื่อง แทบจะไม่จำเป็นต้องทำการรีเซ็ตการคาลิเบรท</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> อุปกรณ์ของคุณเอียงไปทาง %2 %1° และ %4 %3°</translation>
     </message>
@@ -286,6 +302,38 @@
         <source>PAIR</source>
         <translation>จับคู่</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -307,10 +355,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 โหมดสายยางดับเพลิง 🔥</translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -341,6 +385,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
         <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;ไม่เปิดใช้งาน&lt;/span&gt;: เชื่อมต่อกับเครือข่ายที่ไม่จำกัดข้อมูล</translation>
     </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>HudRenderer</name>
@@ -368,13 +416,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>
             <numerusform>ต้องการอย่างน้อย %n ตัวอักษร!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>กำลังติดตั้ง...</translation>
     </message>
 </context>
 <context>
@@ -765,6 +806,16 @@ This may take up to a minute.</source>
         <source>Custom Software</source>
         <translation>ซอฟต์แวร์ที่กำหนดเอง</translation>
     </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
@@ -1003,10 +1054,6 @@ This may take up to a minute.</source>
         <translation>เปิดใช้งาน openpilot</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>ใช้ระบบ openpilot สำหรับระบบควบคุมความเร็วอัตโนมัติ และระบบช่วยควบคุมรถให้อยู่ในเลน คุณจำเป็นต้องให้ความสนใจตลอดเวลาที่ใช้คุณสมบัตินี้ การเปลี่ยนการตั้งค่านี้จะมีผลเมื่อคุณดับเครื่องยนต์</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>เปิดใช้งานการเตือนการออกนอกเลน</translation>
     </message>
@@ -1105,6 +1152,22 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>เปิดใช้งานการเฝ้าระวังผู้ขับขี่แม้เมื่อ openpilot ไม่ได้เข้าควบคุมอยู่</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

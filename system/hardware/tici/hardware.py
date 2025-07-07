@@ -9,9 +9,11 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 
 from cereal import log
+from openpilot.common.util import sudo_read, sudo_write
 from openpilot.common.gpio import gpio_set, gpio_init, get_irqs_for_action
-from openpilot.system.hardware.base import HardwareBase, ThermalConfig, ThermalZone
+from openpilot.system.hardware.base import HardwareBase, LPABase, ThermalConfig, ThermalZone
 from openpilot.system.hardware.tici import iwlist
+from openpilot.system.hardware.tici.esim import TiciLPA
 from openpilot.system.hardware.tici.pins import GPIO
 from openpilot.system.hardware.tici.amplifier import Amplifier
 
@@ -60,25 +62,6 @@ NetworkStrength = log.DeviceState.NetworkStrength
 MM_MODEM_ACCESS_TECHNOLOGY_UMTS = 1 << 5
 MM_MODEM_ACCESS_TECHNOLOGY_LTE = 1 << 14
 
-
-def sudo_write(val, path):
-  try:
-    with open(path, 'w') as f:
-      f.write(str(val))
-  except PermissionError:
-    os.system(f"sudo chmod a+w {path}")
-    try:
-      with open(path, 'w') as f:
-        f.write(str(val))
-    except PermissionError:
-      # fallback for debugfs files
-      os.system(f"sudo su -c 'echo {val} > {path}'")
-
-def sudo_read(path: str) -> str:
-  try:
-    return subprocess.check_output(f"sudo cat {path}", shell=True, encoding='utf8').strip()
-  except Exception:
-    return ""
 
 def affine_irq(val, action):
   irqs = get_irqs_for_action(action)
@@ -198,6 +181,9 @@ class Tici(HardwareBase):
         'data_connected': modem.Get(MM_MODEM, 'State', dbus_interface=DBUS_PROPS, timeout=TIMEOUT) == MM_MODEM_STATE.CONNECTED,
       }
 
+  def get_sim_lpa(self) -> LPABase:
+    return TiciLPA()
+
   def get_imei(self, slot):
     if slot != 0:
       return ""
@@ -297,13 +283,11 @@ class Tici(HardwareBase):
       return None
 
   def get_modem_temperatures(self):
-    if self.get_device_type() == "mici":
-      return []
     timeout = 0.2  # Default timeout is too short
     try:
       modem = self.get_modem()
       temps = modem.Command("AT+QTEMP", math.ceil(timeout), dbus_interface=MM_MODEM, timeout=timeout)
-      return list(map(int, temps.split(' ')[1].split(',')))
+      return list(filter(lambda t: t != 255, map(int, temps.split(' ')[1].split(','))))
     except Exception:
       return []
 
@@ -431,8 +415,8 @@ class Tici(HardwareBase):
 
     # *** GPU config ***
     # https://github.com/commaai/agnos-kernel-sdm845/blob/master/arch/arm64/boot/dts/qcom/sdm845-gpu.dtsi#L216
-    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
-    sudo_write("0", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/min_pwrlevel")
+    sudo_write("1", "/sys/class/kgsl/kgsl-3d0/max_pwrlevel")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_bus_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_clk_on")
     sudo_write("1", "/sys/class/kgsl/kgsl-3d0/force_rail_on")

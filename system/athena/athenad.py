@@ -546,7 +546,7 @@ def getNetworks():
 
 @dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
-  from openpilot.system.camerad.snapshot.snapshot import jpeg_write, snapshot
+  from openpilot.system.camerad.snapshot import jpeg_write, snapshot
   ret = snapshot()
   if ret is not None:
     def b64jpeg(x):

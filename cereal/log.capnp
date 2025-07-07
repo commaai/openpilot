@@ -1083,7 +1083,7 @@ struct ModelDataV2 {
   confidence @23: ConfidenceClass;
 
   # Model perceived motion
-  temporalPose @21 :Pose;
+  temporalPoseDEPRECATED @21 :Pose;
 
   # e2e lateral planner
   action @26: Action;
@@ -2281,6 +2281,7 @@ struct LiveTorqueParametersData {
   points @10 :List(List(Float32));
   version @11 :Int32;
   useParams @12 :Bool;
+  calPerc @13 :Int8;
 }
 
 struct LiveDelayData {
@@ -2291,6 +2292,7 @@ struct LiveDelayData {
   lateralDelayEstimate @3 :Float32;
   lateralDelayEstimateStd @5 :Float32;
   points @4 :List(Float32);
+  calPerc @6 :Int8;
 
   enum Status {
     unestimated @0;
@@ -2468,13 +2470,19 @@ struct DebugAlert {
 struct UserFlag {
 }
 
-struct Microphone {
+struct SoundPressure @0xdc24138990726023 {
   soundPressure @0 :Float32;
 
   # uncalibrated, A-weighted
   soundPressureWeighted @3 :Float32;
   soundPressureWeightedDb @1 :Float32;
-  filteredSoundPressureWeightedDb @2 :Float32;
+
+  filteredSoundPressureWeightedDbDEPRECATED @2 :Float32;
+}
+
+struct AudioData {
+  data @0 :Data;
+  sampleRate @1 :UInt32;
 }
 
 struct Touch {
@@ -2554,7 +2562,8 @@ struct Event {
     livestreamDriverEncodeIdx @119 :EncodeIndex;
 
     # microphone data
-    microphone @103 :Microphone;
+    soundPressure @103 :SoundPressure;
+    rawAudioData @147 :AudioData;
 
     # systems stuff
     androidLog @20 :AndroidLogEntry;

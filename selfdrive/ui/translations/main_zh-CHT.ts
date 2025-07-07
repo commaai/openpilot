@@ -60,11 +60,7 @@
     </message>
     <message>
         <source>Cellular Metered</source>
-        <translation>行動網路</translation>
-    </message>
-    <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>防止使用行動網路上傳大量的數據</translation>
+        <translation>計費的行動網路</translation>
     </message>
     <message>
         <source>Hidden Network</source>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>給 &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation>在使用計費行動網路時，防止上傳大量數據</translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation>預設</translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation>計費</translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation>非計費</translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation>計費 Wi-Fi 網路</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation>在使用計費 Wi-Fi 網路時，防止上傳大量數據</translation>
     </message>
 </context>
 <context>
@@ -227,10 +247,6 @@
         <translation>關機</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot 需要將裝置固定在左右偏差 4° 以內，朝上偏差 5° 以內或朝下偏差 9° 以內。鏡頭在後台會持續自動校準，很少有需要重置的情況。</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> 你的裝置目前朝%2 %1° 以及朝%4 %3° 。</translation>
     </message>
@@ -286,6 +302,38 @@
         <source>PAIR</source>
         <translation>配對</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation>解除以重設校準</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -307,10 +355,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 訓練資料上傳模式 🔥</translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -339,7 +383,11 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
-        <translation type="unfinished">&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;閒置中&lt;/span&gt;：請連接到不按流量計費的網絡</translation>
+        <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;閒置中&lt;/span&gt;：請連接到不按流量計費的網絡</translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -368,13 +416,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>
             <numerusform>需要至少 %n 個字元！</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>安裝中…</translation>
     </message>
 </context>
 <context>
@@ -765,6 +806,16 @@ This may take up to a minute.</source>
         <source>Custom Software</source>
         <translation>自訂軟體</translation>
     </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
@@ -1003,10 +1054,6 @@ This may take up to a minute.</source>
         <translation>啟用 openpilot</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>使用 openpilot 的主動式巡航和車道保持功能，開啟後您需要持續集中注意力，設定變更在重新啟動車輛後生效。</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>啟用車道偏離警告</translation>
     </message>
@@ -1105,6 +1152,22 @@ This may take up to a minute.</source>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>即使在openpilot未激活時也啟用駕駛監控。</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation>openpilot 系統提供「主動式巡航」與「車道維持」等駕駛輔助功能。使用這些功能時，您必須隨時保持專注。</translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation>若車輛電源為開啟狀態，變更此設定將會重新啟動 openpilot。</translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

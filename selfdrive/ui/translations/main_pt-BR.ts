@@ -63,10 +63,6 @@
         <translation>Plano de Dados Limitado</translation>
     </message>
     <message>
-        <source>Prevent large data uploads when on a metered connection</source>
-        <translation>Evite grandes uploads de dados quando estiver em uma conexão limitada</translation>
-    </message>
-    <message>
         <source>Hidden Network</source>
         <translation>Rede Oculta</translation>
     </message>
@@ -85,6 +81,30 @@
     <message>
         <source>for &quot;%1&quot;</source>
         <translation>para &quot;%1&quot;</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered cellular connection</source>
+        <translation>Previna o envio de grandes volumes de dados em conexões de celular com franquia de limite de dados</translation>
+    </message>
+    <message>
+        <source>default</source>
+        <translation>padrão</translation>
+    </message>
+    <message>
+        <source>metered</source>
+        <translation>limitada</translation>
+    </message>
+    <message>
+        <source>unmetered</source>
+        <translation>ilimitada</translation>
+    </message>
+    <message>
+        <source>Wi-Fi Network Metered</source>
+        <translation>Rede Wi-Fi com Franquia</translation>
+    </message>
+    <message>
+        <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
+        <translation>Previna o envio de grandes volumes de dados em conexões Wi-Fi com franquia de limite de dados</translation>
     </message>
 </context>
 <context>
@@ -227,10 +247,6 @@
         <translation>Desligar</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 9° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Seu dispositivo está montado %1° %2 e %3° %4.</translation>
     </message>
@@ -286,6 +302,38 @@
         <source>PAIR</source>
         <translation>PAREAR</translation>
     </message>
+    <message>
+        <source>Disengage to Reset Calibration</source>
+        <translation>Desacione para Resetar a Calibração</translation>
+    </message>
+    <message>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>DriverViewWindow</name>
@@ -307,10 +355,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 Modo Firehose 🔥</translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -342,6 +386,10 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
         <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INATIVO&lt;/span&gt;: conecte-se a uma rede sem limite &lt;br&gt; de dados</translation>
     </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>HudRenderer</name>
@@ -370,13 +418,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
             <numerusform>Necessita no mínimo %n caractere!</numerusform>
             <numerusform>Necessita no mínimo %n caracteres!</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Installer</name>
-    <message>
-        <source>Installing...</source>
-        <translation>Instalando...</translation>
     </message>
 </context>
 <context>
@@ -770,6 +811,16 @@ Isso pode levar até um minuto.</translation>
         <source>Custom Software</source>
         <translation>Software Customizado</translation>
     </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation type="unfinished"></translation>
+    </message>
 </context>
 <context>
     <name>SetupWidget</name>
@@ -1008,10 +1059,6 @@ Isso pode levar até um minuto.</translation>
         <translation>Ativar openpilot</translation>
     </message>
     <message>
-        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature. Changing this setting takes effect when the car is powered off.</source>
-        <translation>Use o sistema openpilot para controle de cruzeiro adaptativo e assistência ao motorista de manutenção de faixa. Sua atenção é necessária o tempo todo para usar esse recurso. A alteração desta configuração tem efeito quando o carro é desligado.</translation>
-    </message>
-    <message>
         <source>Enable Lane Departure Warnings</source>
         <translation>Ativar Avisos de Saída de Faixa</translation>
     </message>
@@ -1110,6 +1157,22 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Enable driver monitoring even when openpilot is not engaged.</source>
         <translation>Habilite o monitoramento do motorista mesmo quando o openpilot não estiver acionado.</translation>
+    </message>
+    <message>
+        <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
+        <translation>Use o sistema openpilot para controle de cruzeiro adaptativo e assistência ao motorista de manutenção de faixa. Sua atenção é necessária o tempo todo para usar esse recurso.</translation>
+    </message>
+    <message>
+        <source> Changing this setting will restart openpilot if the car is powered on.</source>
+        <translation> Alterar esta configuração fará com que o openpilot reinicie se o carro estiver ligado.</translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

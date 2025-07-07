@@ -25,7 +25,7 @@
 // - If a panda connection is dropped, pandad will reconnect to all pandas
 // - If a panda is added, we will only reconnect when we are offroad
 // CAN buses:
-// - Each panda will have it's block of 4 buses. E.g.: the second panda will use
+// - Each panda will have its block of 4 buses. E.g.: the second panda will use
 //   bus numbers 4, 5, 6 and 7
 // - The internal panda will always be used for accessing the OBD2 port,
 //   and thus firmware queries
