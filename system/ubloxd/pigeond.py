@@ -25,17 +25,6 @@ UBLOX_SOS_NACK = b"\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00"
 UBLOX_BACKUP_RESTORE_MSG = b"\xb5\x62\x09\x14\x08\x00\x03"
 UBLOX_ASSIST_ACK = b"\xb5\x62\x13\x60\x08\x00"
 
-def save_almanac(pigeon: TTYPigeon) -> None:
-  # store almanac in flash
-  pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
-  try:
-    if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
-      cloudlog.warning("Done storing almanac")
-    else:
-      cloudlog.error("Error storing almanac")
-  except TimeoutError:
-    pass
-
 def set_power(enabled: bool) -> None:
   gpio_init(GPIO.UBLOX_SAFEBOOT_N, True)
   gpio_init(GPIO.GNSS_PWR_EN, True)
@@ -146,6 +135,17 @@ class TTYPigeon:
       if status == 1 or status == 3:
         return True
     return False
+
+def save_almanac(pigeon: TTYPigeon) -> None:
+  # store almanac in flash
+  pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
+  try:
+    if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
+      cloudlog.warning("Done storing almanac")
+    else:
+      cloudlog.error("Error storing almanac")
+  except TimeoutError:
+    pass
 
 def init_baudrate(pigeon: TTYPigeon):
   # ublox default setting on startup is 9600 baudrate
