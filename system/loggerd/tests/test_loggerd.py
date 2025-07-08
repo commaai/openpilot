@@ -296,6 +296,7 @@ class TestLoggerd:
     segment_dir = self._get_latest_log_dir()
     assert getxattr(segment_dir, PRESERVE_ATTR_NAME) is None
 
+  @pytest.mark.xdist_group("camera_encoder_tests")
   @pytest.mark.parametrize("record_front", [True, False])
   def test_record_front(self, record_front):
     params = Params()
@@ -306,6 +307,7 @@ class TestLoggerd:
     dcamera_hevc_exists = os.path.exists(os.path.join(self._get_latest_log_dir(), 'dcamera.hevc'))
     assert dcamera_hevc_exists == record_front
 
+  @pytest.mark.xdist_group("camera_encoder_tests")
   @pytest.mark.parametrize("record_audio", [True, False])
   def test_record_audio(self, record_audio):
     params = Params()
