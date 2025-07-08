@@ -1,4 +1,4 @@
-Version 0.9.10 (2025-07-07)
+Version 0.10.0 (2025-07-07)
 ========================
 * New driving model
   * Lead car ground-truth fixes
