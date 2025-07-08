@@ -56,8 +56,11 @@ MAX_AGE = 31 * 24 * 3600  # seconds
 WS_FRAME_SIZE = 4096
 DEVICE_STATE_UPDATE_INTERVAL = 1.0  # in seconds
 DEFAULT_UPLOAD_PRIORITY = 99  # higher number = lower priority
-UPLOAD_TOS = 0x20
-SSH_TOS = 0x42
+
+# https://bytesolutions.com/dscp-tos-cos-precedence-conversion-chart,
+# https://en.wikipedia.org/wiki/Differentiated_services
+UPLOAD_TOS = 0x20  # CS1, low priority background traffic
+SSH_TOS = 0x90  # AF42, DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -67,47 +70,15 @@ UploadItemDict = dict[str, str | bool | int | float | dict[str, str]]
 UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 
-_DEFAULT_OPTS = urllib3.connection.HTTPConnection.default_socket_options
-_TOS_OPT      = (socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)
-_SOCKET_OPTS  = _DEFAULT_OPTS + [_TOS_OPT]                # keep Nagle-off, etc.
-
 class UploadTOSAdapter(HTTPAdapter):
-    """requests => urllib3 adapter that marks every connection with IP_TOS."""
-
-    def init_poolmanager(self, connections, maxsize, block=False, **kw):
-        kw["socket_options"] = _SOCKET_OPTS
-        super().init_poolmanager(connections, maxsize, block, **kw)
-
-    # if you ever use proxies, make sure those pools get it too
-    def proxy_manager_for(self, proxy, **kw):
-        kw["socket_options"] = _SOCKET_OPTS
-        return super().proxy_manager_for(proxy, **kw)
-
-
-UPLOAD_TOS = int(os.getenv("UPLOADER_TOS", "0x20"), 0)     # CS1 by default
-
-_DEFAULT_OPTS = urllib3.connection.HTTPConnection.default_socket_options
-_TOS_OPT      = (socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)
-_SOCKET_OPTS  = _DEFAULT_OPTS + [_TOS_OPT]                # keep Nagle-off, etc.
-
-
-class UploadTOSAdapter(HTTPAdapter):
-  """requests => urllib3 adapter that marks every connection with IP_TOS."""
-
   def init_poolmanager(self, connections, maxsize, block=False, **kw):
-    kw["socket_options"] = _SOCKET_OPTS
+    kw["socket_options"] = [(socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)]
     super().init_poolmanager(connections, maxsize, block, **kw)
-
-  # if you ever use proxies, make sure those pools get it too
-  def proxy_manager_for(self, proxy, **kw):
-    kw["socket_options"] = _SOCKET_OPTS
-    return super().proxy_manager_for(proxy, **kw)
-
 
 
 _upload_sess = requests.Session()
-_upload_sess.mount("http://", UploadTOSAdapter(UPLOAD_TOS))
-_upload_sess.mount("https://", UploadTOSAdapter(UPLOAD_TOS))
+_upload_sess.mount("http://", UploadTOSAdapter())
+_upload_sess.mount("https://", UploadTOSAdapter())
 
 
 @dataclass
@@ -529,8 +500,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
                            enable_multithread=True)
 
     # Set TOS to keep connection responsive while under load.
-    # DSCP of 36/HDD_LINUX_AC_VI with the minimum delay flag
-    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, 0x90)
+    ws.sock.setsockopt(socket.IPPROTO_IP, socket.IP_TOS, SSH_TOS)
 
     ssock, csock = socket.socketpair()
     local_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
