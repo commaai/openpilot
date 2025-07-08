@@ -22,7 +22,7 @@ from typing import cast
 from collections.abc import Callable
 
 import requests
-from requests.adapters import HTTPAdapter
+from requests.adapters import HTTPAdapter, DEFAULT_POOLBLOCK
 from jsonrpc import JSONRPCResponseManager, dispatcher
 from websocket import (ABNF, WebSocket, WebSocketException, WebSocketTimeoutException,
                        create_connection)
@@ -70,13 +70,12 @@ UploadFilesToUrlResponse = dict[str, int | list[UploadItemDict] | list[str]]
 
 
 class UploadTOSAdapter(HTTPAdapter):
-  def init_poolmanager(self, connections, maxsize, block=False, **kw):
-    kw["socket_options"] = [(socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)]
-    super().init_poolmanager(connections, maxsize, block, **kw)
+  def init_poolmanager(self, connections, maxsize, block=DEFAULT_POOLBLOCK, **pool_kwargs):
+    pool_kwargs["socket_options"] = [(socket.IPPROTO_IP, socket.IP_TOS, UPLOAD_TOS)]
+    super().init_poolmanager(connections, maxsize, block, **pool_kwargs)
 
 
 _UPLOAD_SESS = requests.Session()
-_UPLOAD_SESS.mount("http://", UploadTOSAdapter())
 _UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
 
