@@ -1169,7 +1169,7 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Record and Upload Microphone Audio</source>
-        <translation>マイク音声を録音してアップロードします</translation>
+        <translation>マイク音声の録音とアップロード</translation>
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
