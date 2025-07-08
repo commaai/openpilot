@@ -1,6 +1,7 @@
 import math
 import numpy as np
 
+from math import sin
 from cereal import log
 from opendbc.car.interfaces import LatControlInputs
 from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
@@ -60,6 +61,9 @@ class LatControlTorque(LatControl):
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
+      actual_lateral_accel_compensated = actual_lateral_accel - (ACCELERATION_DUE_TO_GRAVITY * sin(params.roll))
+      actual_lateral_accel_compensated_two = (CS.vEgo * CS.yawRate) - (ACCELERATION_DUE_TO_GRAVITY * sin(params.roll))
+
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
@@ -86,6 +90,8 @@ class LatControlTorque(LatControl):
       pid_log.f = float(self.pid.f)
       pid_log.output = float(-output_torque)
       pid_log.actualLateralAccel = float(actual_lateral_accel)
+      pid_log.actualLateralAccelCompensated = float(actual_lateral_accel_compensated)
+      pid_log.actualLateralAccelCompensatedYaw = float(actual_lateral_accel_compensated_two)
       pid_log.desiredLateralAccel = float(desired_lateral_accel)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_controls, curvature_limited))
 
