@@ -25,6 +25,17 @@ UBLOX_SOS_NACK = b"\xb5\x62\x09\x14\x08\x00\x02\x00\x00\x00\x00\x00\x00\x00"
 UBLOX_BACKUP_RESTORE_MSG = b"\xb5\x62\x09\x14\x08\x00\x03"
 UBLOX_ASSIST_ACK = b"\xb5\x62\x13\x60\x08\x00"
 
+def save_almanac(pigeon: TTYPigeon) -> None:
+  # store almanac in flash
+  pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
+  try:
+    if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
+      cloudlog.warning("Done storing almanac")
+    else:
+      cloudlog.error("Error storing almanac")
+  except TimeoutError:
+    pass
+
 def set_power(enabled: bool) -> None:
   gpio_init(GPIO.UBLOX_SAFEBOOT_N, True)
   gpio_init(GPIO.GNSS_PWR_EN, True)
@@ -245,15 +256,7 @@ def deinitialize_and_exit(pigeon: TTYPigeon | None):
     # controlled GNSS stop
     pigeon.send(b"\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74")
 
-    # store almanac in flash
-    pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
-    try:
-      if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
-        cloudlog.warning("Done storing almanac")
-      else:
-        cloudlog.error("Error storing almanac")
-    except TimeoutError:
-      pass
+    save_almanac(pigeon)
 
   # turn off power and exit cleanly
   set_power(False)
@@ -278,6 +281,7 @@ def create_pigeon() -> tuple[TTYPigeon, messaging.PubMaster]:
 def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0):
 
   start_time = time.monotonic()
+  last_almanac_save = start_time
   def end_condition():
     return True if duration == 0 else time.monotonic() - start_time < duration
 
@@ -294,6 +298,11 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
       msg = messaging.new_message('ubloxRaw', len(dat), valid=True)
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
+
+      # save almanac every 5 minutes
+      if (time.monotonic() - last_almanac_save) > 60*5:
+        save_almanac(pigeon)
+        last_almanac_save = time.monotonic()
     else:
       # prevent locking up a CPU core if ublox disconnects
       time.sleep(0.001)
