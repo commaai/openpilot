@@ -180,14 +180,14 @@ class TestLoggerd:
       assert getattr(initData, initData_key) == v
       assert logged_params[param_key].decode() == v
 
-  @pytest.mark.skip("FIXME: encoderd sometimes crashes in CI when running with pytest-xdist")
+  @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
   def test_rotation(self):
     Params().put("RecordFront", "1")
 
     expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
 
-    num_segs = random.randint(2, 5)
-    length = random.randint(1, 3)
+    num_segs = random.randint(2, 3)
+    length = random.randint(4, 5) # H264 encoder uses 40 lookahead frames and does B-frame reordering, so minimum 3 seconds before qcam output
 
     self._publish_camera_and_audio_messages(num_segs=num_segs, segment_length=length)
 
