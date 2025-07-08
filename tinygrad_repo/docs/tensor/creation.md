@@ -24,6 +24,7 @@
 ::: tinygrad.Tensor.randn
 ::: tinygrad.Tensor.randn_like
 ::: tinygrad.Tensor.randint
+::: tinygrad.Tensor.randperm
 ::: tinygrad.Tensor.normal
 ::: tinygrad.Tensor.uniform
 ::: tinygrad.Tensor.scaled_uniform

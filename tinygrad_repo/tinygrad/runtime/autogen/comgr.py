@@ -226,7 +226,8 @@ amd_comgr_data_kind_s__enumvalues = {
     17: 'AMD_COMGR_DATA_KIND_AR',
     18: 'AMD_COMGR_DATA_KIND_BC_BUNDLE',
     19: 'AMD_COMGR_DATA_KIND_AR_BUNDLE',
-    19: 'AMD_COMGR_DATA_KIND_LAST',
+    20: 'AMD_COMGR_DATA_KIND_OBJ_BUNDLE',
+    20: 'AMD_COMGR_DATA_KIND_LAST',
 }
 AMD_COMGR_DATA_KIND_UNDEF = 0
 AMD_COMGR_DATA_KIND_SOURCE = 1
@@ -242,7 +243,8 @@ AMD_COMGR_DATA_KIND_FATBIN = 16
 AMD_COMGR_DATA_KIND_AR = 17
 AMD_COMGR_DATA_KIND_BC_BUNDLE = 18
 AMD_COMGR_DATA_KIND_AR_BUNDLE = 19
-AMD_COMGR_DATA_KIND_LAST = 19
+AMD_COMGR_DATA_KIND_OBJ_BUNDLE = 20
+AMD_COMGR_DATA_KIND_LAST = 20
 amd_comgr_data_kind_s = ctypes.c_uint32 # enum
 amd_comgr_data_kind_t = amd_comgr_data_kind_s
 amd_comgr_data_kind_t__enumvalues = amd_comgr_data_kind_s__enumvalues
@@ -516,6 +518,24 @@ try:
 except AttributeError:
     pass
 try:
+    amd_comgr_action_info_set_bundle_entry_ids = _libraries['libamd_comgr.so'].amd_comgr_action_info_set_bundle_entry_ids
+    amd_comgr_action_info_set_bundle_entry_ids.restype = amd_comgr_status_t
+    amd_comgr_action_info_set_bundle_entry_ids.argtypes = [amd_comgr_action_info_t, ctypes.POINTER(ctypes.c_char) * 0, size_t]
+except AttributeError:
+    pass
+try:
+    amd_comgr_action_info_get_bundle_entry_id_count = _libraries['libamd_comgr.so'].amd_comgr_action_info_get_bundle_entry_id_count
+    amd_comgr_action_info_get_bundle_entry_id_count.restype = amd_comgr_status_t
+    amd_comgr_action_info_get_bundle_entry_id_count.argtypes = [amd_comgr_action_info_t, ctypes.POINTER(ctypes.c_uint64)]
+except AttributeError:
+    pass
+try:
+    amd_comgr_action_info_get_bundle_entry_id = _libraries['libamd_comgr.so'].amd_comgr_action_info_get_bundle_entry_id
+    amd_comgr_action_info_get_bundle_entry_id.restype = amd_comgr_status_t
+    amd_comgr_action_info_get_bundle_entry_id.argtypes = [amd_comgr_action_info_t, size_t, ctypes.POINTER(ctypes.c_uint64), ctypes.POINTER(ctypes.c_char)]
+except AttributeError:
+    pass
+try:
     amd_comgr_action_info_set_working_directory_path = _libraries['libamd_comgr.so'].amd_comgr_action_info_set_working_directory_path
     amd_comgr_action_info_set_working_directory_path.restype = amd_comgr_status_t
     amd_comgr_action_info_set_working_directory_path.argtypes = [amd_comgr_action_info_t, ctypes.POINTER(ctypes.c_char)]
@@ -560,7 +580,8 @@ amd_comgr_action_kind_s__enumvalues = {
     15: 'AMD_COMGR_ACTION_COMPILE_SOURCE_WITH_DEVICE_LIBS_TO_BC',
     16: 'AMD_COMGR_ACTION_COMPILE_SOURCE_TO_RELOCATABLE',
     17: 'AMD_COMGR_ACTION_COMPILE_SOURCE_TO_EXECUTABLE',
-    17: 'AMD_COMGR_ACTION_LAST',
+    18: 'AMD_COMGR_ACTION_UNBUNDLE',
+    18: 'AMD_COMGR_ACTION_LAST',
 }
 AMD_COMGR_ACTION_SOURCE_TO_PREPROCESSOR = 0
 AMD_COMGR_ACTION_ADD_PRECOMPILED_HEADERS = 1
@@ -580,7 +601,8 @@ AMD_COMGR_ACTION_COMPILE_SOURCE_TO_FATBIN = 14
 AMD_COMGR_ACTION_COMPILE_SOURCE_WITH_DEVICE_LIBS_TO_BC = 15
 AMD_COMGR_ACTION_COMPILE_SOURCE_TO_RELOCATABLE = 16
 AMD_COMGR_ACTION_COMPILE_SOURCE_TO_EXECUTABLE = 17
-AMD_COMGR_ACTION_LAST = 17
+AMD_COMGR_ACTION_UNBUNDLE = 18
+AMD_COMGR_ACTION_LAST = 18
 amd_comgr_action_kind_s = ctypes.c_uint32 # enum
 amd_comgr_action_kind_t = amd_comgr_action_kind_s
 amd_comgr_action_kind_t__enumvalues = amd_comgr_action_kind_s__enumvalues
@@ -801,12 +823,13 @@ __all__ = \
     'AMD_COMGR_ACTION_LINK_RELOCATABLE_TO_RELOCATABLE',
     'AMD_COMGR_ACTION_OPTIMIZE_BC_TO_BC',
     'AMD_COMGR_ACTION_SOURCE_TO_PREPROCESSOR',
-    'AMD_COMGR_DATA_KIND_AR', 'AMD_COMGR_DATA_KIND_AR_BUNDLE',
-    'AMD_COMGR_DATA_KIND_BC', 'AMD_COMGR_DATA_KIND_BC_BUNDLE',
-    'AMD_COMGR_DATA_KIND_BYTES', 'AMD_COMGR_DATA_KIND_DIAGNOSTIC',
+    'AMD_COMGR_ACTION_UNBUNDLE', 'AMD_COMGR_DATA_KIND_AR',
+    'AMD_COMGR_DATA_KIND_AR_BUNDLE', 'AMD_COMGR_DATA_KIND_BC',
+    'AMD_COMGR_DATA_KIND_BC_BUNDLE', 'AMD_COMGR_DATA_KIND_BYTES',
+    'AMD_COMGR_DATA_KIND_DIAGNOSTIC',
     'AMD_COMGR_DATA_KIND_EXECUTABLE', 'AMD_COMGR_DATA_KIND_FATBIN',
     'AMD_COMGR_DATA_KIND_INCLUDE', 'AMD_COMGR_DATA_KIND_LAST',
-    'AMD_COMGR_DATA_KIND_LOG',
+    'AMD_COMGR_DATA_KIND_LOG', 'AMD_COMGR_DATA_KIND_OBJ_BUNDLE',
     'AMD_COMGR_DATA_KIND_PRECOMPILED_HEADER',
     'AMD_COMGR_DATA_KIND_RELOCATABLE', 'AMD_COMGR_DATA_KIND_SOURCE',
     'AMD_COMGR_DATA_KIND_UNDEF', 'AMD_COMGR_LANGUAGE_HC',
@@ -828,6 +851,8 @@ __all__ = \
     'AMD_COMGR_SYMBOL_TYPE_OBJECT', 'AMD_COMGR_SYMBOL_TYPE_SECTION',
     'AMD_COMGR_SYMBOL_TYPE_UNKNOWN', 'amd_comgr_action_data_count',
     'amd_comgr_action_data_get_data',
+    'amd_comgr_action_info_get_bundle_entry_id',
+    'amd_comgr_action_info_get_bundle_entry_id_count',
     'amd_comgr_action_info_get_isa_name',
     'amd_comgr_action_info_get_language',
     'amd_comgr_action_info_get_logging',
@@ -835,6 +860,7 @@ __all__ = \
     'amd_comgr_action_info_get_option_list_item',
     'amd_comgr_action_info_get_options',
     'amd_comgr_action_info_get_working_directory_path',
+    'amd_comgr_action_info_set_bundle_entry_ids',
     'amd_comgr_action_info_set_isa_name',
     'amd_comgr_action_info_set_language',
     'amd_comgr_action_info_set_logging',

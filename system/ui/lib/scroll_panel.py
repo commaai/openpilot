@@ -1,11 +1,12 @@
 import pyray as rl
+from collections import deque
 from enum import IntEnum
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
 INERTIA_FRICTION = 0.92        # The rate at which the inertia slows down
 MIN_VELOCITY = 0.5             # Minimum velocity before stopping the inertia
-DRAG_THRESHOLD = 5             # Pixels of movement to consider it a drag, not a click
+DRAG_THRESHOLD = 12            # Pixels of movement to consider it a drag, not a click
 BOUNCE_FACTOR = 0.2            # Elastic bounce when scrolling past boundaries
 BOUNCE_RETURN_SPEED = 0.15     # How quickly it returns from the bounce
 MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
@@ -31,8 +32,7 @@ class GuiScrollPanel:
     self._velocity_y = 0.0  # Velocity for inertia
     self._is_dragging: bool = False
     self._bounce_offset: float = 0.0
-    self._last_frame_time = rl.get_time()
-    self._velocity_history: list[float] = []
+    self._velocity_history: deque[float] = deque(maxlen=VELOCITY_HISTORY_SIZE)
     self._last_drag_time: float = 0.0
     self._content_rect: rl.Rectangle | None = None
     self._bounds_rect: rl.Rectangle | None = None
@@ -44,11 +44,6 @@ class GuiScrollPanel:
 
     # Calculate time delta
     current_time = rl.get_time()
-    delta_time = current_time - self._last_frame_time
-    self._last_frame_time = current_time
-
-    # Prevent large jumps
-    delta_time = min(delta_time, 0.05)
 
     mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
@@ -63,13 +58,15 @@ class GuiScrollPanel:
           if mouse_pos.x >= scrollbar_x:
             self._scroll_state = ScrollState.DRAGGING_SCROLLBAR
 
+        # TODO: hacky
+        # when clicking while moving, go straight into dragging
+        self._is_dragging = abs(self._velocity_y) > MIN_VELOCITY
         self._last_mouse_y = mouse_pos.y
         self._start_mouse_y = mouse_pos.y
         self._last_drag_time = current_time
-        self._velocity_history = []
+        self._velocity_history.clear()
         self._velocity_y = 0.0
         self._bounce_offset = 0.0
-        self._is_dragging = False
 
     # Handle active dragging
     if self._scroll_state == ScrollState.DRAGGING_CONTENT or self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
@@ -81,9 +78,6 @@ class GuiScrollPanel:
         if time_since_last_drag > 0:
           drag_velocity = delta_y / time_since_last_drag / 60.0
           self._velocity_history.append(drag_velocity)
-
-          if len(self._velocity_history) > VELOCITY_HISTORY_SIZE:
-            self._velocity_history.pop(0)
 
         self._last_drag_time = current_time
 
@@ -175,13 +169,8 @@ class GuiScrollPanel:
 
     return self._offset
 
-  def is_click_valid(self) -> bool:
-    # Check if this is a click rather than a drag
-    return (
-      self._scroll_state == ScrollState.IDLE
-      and not self._is_dragging
-      and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
-    )
+  def is_touch_valid(self):
+    return not self._is_dragging
 
   def get_normalized_scroll_position(self) -> float:
     """Returns the current scroll position as a value from 0.0 to 1.0"""

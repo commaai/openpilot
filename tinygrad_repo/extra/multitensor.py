@@ -23,7 +23,7 @@ def explicit_shard_W_axis_1(X, W):
     x = x.reshape(N, 1, N).expand(N, N, N)
     w = w.T.reshape(1, N, N).expand(N, N, N)
     m = x*w
-    assert m.lazydata.st.views[0].mask is not None
+    assert m.uop.st.views[0].mask is not None
     ret = m.sum(2)
     return ret
   #Os = [lm(Xs[0], Ws[0]), lm(Xs[1], Ws[1])]

@@ -174,9 +174,9 @@ class TestMovedConstFolding(unittest.TestCase):
     if is_dtype_supported(dtypes.uint16):
       _check_ast_count(0, Tensor.full(4, fill_value=-1).pad(((1, 1),)).cast(dtypes.uint16))
       np.testing.assert_equal(Tensor.full(4, fill_value=-1).pad(((1, 1),)).cast(dtypes.uint16).numpy(), [0, 65535, 65535, 65535, 65535, 0])
-    # not folded
+    # folded
     if is_dtype_supported(dtypes.int64):
-      _check_ast_count(1, Tensor.ones(4).pad(((1, 1),)).cast(dtypes.int64))
+      _check_ast_count(0, Tensor.ones(4).pad(((1, 1),)).cast(dtypes.int64))
       np.testing.assert_equal(Tensor.ones(4).pad(((1, 1),)).cast(dtypes.int64).numpy(), [0, 1, 1, 1, 1, 0])
 
 class TestReduceOpsConstFolding(unittest.TestCase):
@@ -221,7 +221,7 @@ class TestReduceOpsConstFolding(unittest.TestCase):
     # contiguous folded const can still schedule
     a = Tensor.empty(1, 0).sum().contiguous()
     _check_ast_count(2, a+2)
-    self.assertIs(a.lazydata.base.op, Ops.BUFFER)
+    self.assertIs(a.uop.base.op, Ops.BUFFER)
     np.testing.assert_equal((Tensor.empty(1, 0).sum().contiguous()+2).numpy(), 2)
     # otherwise we just fuse it
     _check_ast_count(1, (Tensor.empty(1, 0).sum()+2).contiguous())

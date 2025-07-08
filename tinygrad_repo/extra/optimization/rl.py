@@ -3,7 +3,7 @@ import numpy as np
 import math, random
 from tinygrad.tensor import Tensor
 from tinygrad.nn.state import get_parameters, get_state_dict, safe_save, safe_load, load_state_dict
-from tinygrad.engine.search import actions, bufs_from_lin, get_kernel_actions
+from tinygrad.opt.search import actions, bufs_from_lin, get_kernel_actions
 from tinygrad.nn.optim import Adam
 from extra.optimization.extract_policynet import PolicyNet
 from extra.optimization.helpers import load_worlds, ast_str_to_lin, lin_to_feats, time_linearizer
@@ -18,7 +18,7 @@ if __name__ == "__main__":
   # select a world
   all_feats, all_acts, all_rews = [], [], []
   while 1:
-    Tensor.no_grad, Tensor.training = True, False
+    Tensor.training = False
     lin = ast_str_to_lin(random.choice(ast_strs))
     rawbufs = bufs_from_lin(lin)
     tm = last_tm = base_tm = time_linearizer(lin, rawbufs)
@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
     BS = 32
     if len(all_feats) >= BS:
-      Tensor.no_grad, Tensor.training = False, True
+      Tensor.training = True
       x = Tensor(all_feats[:BS])
       mask = np.zeros((BS, len(actions)+1), dtype=np.float32)
       mask[range(BS), all_acts[:BS]] = all_rews[:BS]

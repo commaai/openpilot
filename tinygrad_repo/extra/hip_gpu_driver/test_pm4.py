@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
   a = Tensor([0.,1.,2.], device="KFD").realize()
   b = a + 7
-  b.lazydata.buffer.allocate()
+  b.uop.buffer.allocate()
   si = b.schedule()[-1]
   runner = dev.get_runner(*si.ast)
   prg: AMDProgram = runner.clprg
@@ -69,8 +69,8 @@ if __name__ == "__main__":
 
   #scratch = dev._gpu_alloc(0x10000, kfd.KFD_IOC_ALLOC_MEM_FLAGS_VRAM)
   ka = to_mv(dev.kernargs_ptr, 0x10).cast("Q")
-  ka[0] = b.lazydata.buffer._buf.va_addr
-  ka[1] = a.lazydata.buffer._buf.va_addr
+  ka[0] = b.uop.buffer._buf.va_addr
+  ka[1] = a.uop.buffer._buf.va_addr
 
   compute_read_pointer = to_mv(compute_queue.read_pointer_address, 8).cast("Q")
   compute_write_pointer = to_mv(compute_queue.write_pointer_address, 8).cast("Q")

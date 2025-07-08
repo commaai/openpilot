@@ -92,9 +92,9 @@ class HCQGraph(MultiGraphRunner):
         if (qa:=queue_access[enqueue_queue][dep_queue]) is None or qa < dep_val:
           opt_deps.append((self.signals[dep_queue], dep_val))
           queue_access[enqueue_queue][dep_queue] = dep_val
+          dev_access[enqueue_queue].update(dev_access[dep_queue])
 
       # Ensure device is ready for use in current context: the graph has initialized the device and it's safe to operate on it within this graph.
-      for dep_queue, _ in opt_deps: dev_access[enqueue_queue].update(dev_access[dep_queue])
       sync_signals = [(self.signals[d], self.kickoff_var) for b in ji.bufs if (d:=Device[cast(Buffer, b).device]) not in dev_access[enqueue_queue]]
       dev_access[enqueue_queue].update(cast(HCQCompiled, Device[cast(Buffer, b).device]) for b in ji.bufs)
 

@@ -7,10 +7,10 @@ from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 class LSM6DS3_Temp(Sensor):
   @property
   def device_address(self) -> int:
-    return 0x6A  # Default I2C address for LSM6DS3
+    return 0x6A
 
   def _read_temperature(self) -> float:
-    scale = 16.0 if log.SensorEventData.SensorSource.lsm6ds3 else 256.0
+    scale = 16.0 if self.source == log.SensorEventData.SensorSource.lsm6ds3 else 256.0
     data = self.read(0x20, 2)
     return 25 + (self.parse_16bit(data[0], data[1]) / scale)
 

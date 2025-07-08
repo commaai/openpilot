@@ -1,8 +1,7 @@
 import time, sys, hashlib
 from pathlib import Path
-import onnx
 from onnx.helper import tensor_dtype_to_np_dtype
-from tinygrad.frontend.onnx import OnnxRunner
+from tinygrad.frontend.onnx import OnnxRunner, onnx_load
 from tinygrad import Tensor, dtypes, TinyJit
 from tinygrad.helpers import IMAGE, GlobalCounters, fetch, colored, getenv, trange
 from tinygrad.tensor import _from_np_dtype
@@ -12,7 +11,7 @@ from extra.bench_log import BenchEvent, WallTimeEvent
 OPENPILOT_MODEL = sys.argv[1] if len(sys.argv) > 1 else "https://github.com/commaai/openpilot/raw/v0.9.4/selfdrive/modeld/models/supercombo.onnx"
 
 if __name__ == "__main__":
-  onnx_model = onnx.load(onnx_path := fetch(OPENPILOT_MODEL))
+  onnx_model = onnx_load(onnx_path := fetch(OPENPILOT_MODEL))
   run_onnx = OnnxRunner(onnx_model)
 
   Tensor.manual_seed(100)

@@ -1,45 +1,33 @@
 #!/usr/bin/env python3
-import multiprocessing, pickle, functools, difflib, os, threading, json, time, sys, webbrowser, socket, argparse, decimal, socketserver
+import multiprocessing, pickle, difflib, os, threading, json, time, sys, webbrowser, socket, argparse, socketserver, functools, decimal, codecs
 from http.server import BaseHTTPRequestHandler
 from urllib.parse import parse_qs, urlparse
 from typing import Any, TypedDict, Generator
 from tinygrad.helpers import colored, getenv, tqdm, unwrap, word_wrap, TRACEMETA
-from tinygrad.uop.ops import TrackedGraphRewrite, UOp, Ops, lines, GroupOp, srender, sint
-from tinygrad.codegen.kernel import Kernel
-from tinygrad.device import ProfileEvent, ProfileDeviceEvent, ProfileRangeEvent, ProfileGraphEvent
+from tinygrad.uop.ops import TrackedGraphRewrite, TracingKey, UOp, Ops, printable, GroupOp, srender, sint
+from tinygrad.device import ProfileEvent, ProfileDeviceEvent, ProfileRangeEvent, ProfileGraphEvent, ProfileGraphEntry, ProfilePointEvent
 from tinygrad.dtype import dtypes
 
 uops_colors = {Ops.LOAD: "#ffc0c0", Ops.STORE: "#87CEEB", Ops.CONST: "#e0e0e0", Ops.VCONST: "#e0e0e0", Ops.REDUCE: "#FF5B5B",
-               Ops.DEFINE_GLOBAL: "#ffe0b0", Ops.DEFINE_LOCAL: "#ffe0d0", Ops.DEFINE_ACC: "#f0ffe0", Ops.REDUCE_AXIS: "#FF6B6B",
+               Ops.DEFINE_GLOBAL: "#ffe0b0", Ops.DEFINE_LOCAL: "#ffe0d0", Ops.DEFINE_REG: "#f0ffe0", Ops.REDUCE_AXIS: "#FF6B6B",
                Ops.RANGE: "#c8a0e0", Ops.ASSIGN: "#909090", Ops.BARRIER: "#ff8080", Ops.IF: "#c8b0c0", Ops.SPECIAL: "#c0c0ff",
-               Ops.INDEX: "#e8ffa0", Ops.WMMA: "#efefc0", Ops.VIEW: "#C8F9D4", Ops.MULTI: "#f6ccff", Ops.KERNEL: "#3e7f55", Ops.IGNORE: "#00C000",
+               Ops.INDEX: "#e8ffa0", Ops.WMMA: "#efefc0", Ops.VIEW: "#C8F9D4", Ops.MULTI: "#f6ccff", Ops.KERNEL: "#3e7f55",
                **{x:"#D8F9E4" for x in GroupOp.Movement}, **{x:"#ffffc0" for x in GroupOp.ALU}, Ops.THREEFRY:"#ffff80", Ops.BUFFER_VIEW: "#E5EAFF",
                Ops.BLOCK: "#C4A484", Ops.BLOCKEND: "#C4A4A4", Ops.BUFFER: "#B0BDFF", Ops.COPY: "#a040a0", Ops.FUSE: "#FFa500",
-               Ops.ALLREDUCE: "#ff40a0", Ops.GBARRIER: "#FFC14D", Ops.MSELECT: "#d040a0"}
+               Ops.ALLREDUCE: "#ff40a0", Ops.GBARRIER: "#FFC14D", Ops.MSELECT: "#d040a0", Ops.MSTACK: "#d040a0"}
 
 # VIZ API
 
 # ** Metadata for a track_rewrites scope
 
-class GraphRewriteMetadata(TypedDict):
-  loc: tuple[str, int]                   # [path, lineno] calling graph_rewrite
-  match_count: int                       # total match count in this context
-  code_line: str                         # source code calling graph_rewrite
-  kernel_code: str|None                  # optionally render the final kernel code
-  name: str|None                         # optional name of the rewrite
-  depth: int                             # depth if it's a subrewrite
-
-@functools.cache
-def render_program(k:Kernel):
-  try: return k.opts.render(k.uops)
-  except Exception as e: return f"ISSUE RENDERING KERNEL: {e}\nast = {k.ast}\nopts = {k.applied_opts}"
-
-def to_metadata(k:Any, v:TrackedGraphRewrite) -> GraphRewriteMetadata:
-  return {"loc":v.loc, "match_count":len(v.matches), "name":v.name, "depth":v.depth, "code_line":lines(v.loc[0])[v.loc[1]-1].strip(),
-          "kernel_code":render_program(k) if isinstance(k, Kernel) else None}
-
-def get_metadata(keys:list[Any], contexts:list[list[TrackedGraphRewrite]]) -> list[tuple[str, list[GraphRewriteMetadata]]]:
-  return [(k.name if isinstance(k, Kernel) else str(k), [to_metadata(k, v) for v in vals]) for k,vals in zip(keys, contexts)]
+ref_map:dict[Any, int] = {}
+def get_metadata(keys:list[TracingKey], contexts:list[list[TrackedGraphRewrite]]) -> list[dict]:
+  ret = []
+  for i,(k,v) in enumerate(zip(keys, contexts)):
+    steps = [{"name":s.name, "loc":s.loc, "depth":s.depth, "match_count":len(s.matches), "code_line":printable(s.loc)} for s in v]
+    ret.append({"name":k.display_name, "fmt":k.fmt, "steps":steps})
+    for key in k.keys: ref_map[key] = i
+  return ret
 
 # ** Complete rewrite details for a graph_rewrite call
 
@@ -65,7 +53,7 @@ def uop_to_json(x:UOp) -> dict[int, dict]:
       excluded.update(u.src)
   for u in toposort:
     if u in excluded: continue
-    argst = str(u.arg)
+    argst = codecs.decode(str(u.arg), "unicode_escape")
     if u.op is Ops.VIEW:
       argst = ("\n".join([f"{shape_to_str(v.shape)} / {shape_to_str(v.strides)}"+("" if v.offset == 0 else f" / {srender(v.offset)}")+
                           (f"\nMASK {mask_to_str(v.mask)}" if v.mask is not None else "") for v in unwrap(u.st).views]))
@@ -80,50 +68,105 @@ def uop_to_json(x:UOp) -> dict[int, dict]:
         label += f"\n{shape_to_str(u.shape)}"
     except Exception:
       label += "\n<ISSUE GETTING SHAPE>"
+    if (ref:=ref_map.get(u.arg.ast) if u.op is Ops.KERNEL else None) is not None: label += f"\ncodegen@{ctxs[ref]['name']}"
     # NOTE: kernel already has metadata in arg
     if TRACEMETA >= 2 and u.metadata is not None and u.op is not Ops.KERNEL: label += "\n"+repr(u.metadata)
-    graph[id(u)] = {"label":label, "src":[id(x) for x in u.src if x not in excluded], "color":uops_colors.get(u.op, "#ffffff")}
+    graph[id(u)] = {"label":label, "src":[id(x) for x in u.src if x not in excluded], "color":uops_colors.get(u.op, "#ffffff"),
+                    "ref":ref, "tag":u.tag}
   return graph
 
-def get_details(k:Any, ctx:TrackedGraphRewrite) -> Generator[GraphRewriteDetails, None, None]:
-  yield {"graph":uop_to_json(next_sink:=ctx.sink), "uop":str(ctx.sink), "changed_nodes":None, "diff":None, "upat":None}
+@functools.cache
+def _reconstruct(a:int):
+  op, dtype, src, arg, tag = contexts[2][a]
+  arg = type(arg)(_reconstruct(arg.ast), arg.metadata) if op is Ops.KERNEL else arg
+  return UOp(op, dtype, tuple(_reconstruct(s) for s in src), arg, tag)
+
+def get_details(ctx:TrackedGraphRewrite) -> Generator[GraphRewriteDetails, None, None]:
+  yield {"graph":uop_to_json(next_sink:=_reconstruct(ctx.sink)), "uop":str(next_sink), "changed_nodes":None, "diff":None, "upat":None}
   replaces: dict[UOp, UOp] = {}
-  for u0,u1,upat in tqdm(ctx.matches):
-    replaces[u0] = u1
+  for u0_num,u1_num,upat_loc in tqdm(ctx.matches):
+    replaces[u0:=_reconstruct(u0_num)] = u1 = _reconstruct(u1_num)
     try: new_sink = next_sink.substitute(replaces)
-    except RecursionError as e: new_sink = UOp(Ops.NOOP, arg=str(e))
+    except RuntimeError as e: new_sink = UOp(Ops.NOOP, arg=str(e))
     yield {"graph":(sink_json:=uop_to_json(new_sink)), "uop":str(new_sink), "changed_nodes":[id(x) for x in u1.toposort() if id(x) in sink_json],
-           "diff":list(difflib.unified_diff(str(u0).splitlines(), str(u1).splitlines())), "upat":(upat.location, upat.printable())}
+           "diff":list(difflib.unified_diff(str(u0).splitlines(), str(u1).splitlines())), "upat":(upat_loc, printable(upat_loc))}
     if not ctx.bottom_up: next_sink = new_sink
 
 # Profiler API
-devices:dict[str, tuple[decimal.Decimal, decimal.Decimal, int]] = {}
-def prep_ts(device:str, ts:decimal.Decimal, is_copy): return int(decimal.Decimal(ts) + devices[device][is_copy])
-def dev_to_pid(device:str, is_copy=False): return {"pid": devices[device][2], "tid": int(is_copy)}
-def dev_ev_to_perfetto_json(ev:ProfileDeviceEvent):
-  devices[ev.device] = (ev.comp_tdiff, ev.copy_tdiff if ev.copy_tdiff is not None else ev.comp_tdiff, len(devices))
-  return [{"name": "process_name", "ph": "M", "pid": dev_to_pid(ev.device)['pid'], "args": {"name": ev.device}},
-          {"name": "thread_name", "ph": "M", "pid": dev_to_pid(ev.device)['pid'], "tid": 0, "args": {"name": "COMPUTE"}},
-          {"name": "thread_name", "ph": "M", "pid": dev_to_pid(ev.device)['pid'], "tid": 1, "args": {"name": "COPY"}}]
-def range_ev_to_perfetto_json(ev:ProfileRangeEvent):
-  return [{"name": ev.name, "ph": "X", "ts": prep_ts(ev.device, ev.st, ev.is_copy), "dur": float(ev.en-ev.st), **dev_to_pid(ev.device, ev.is_copy)}]
-def graph_ev_to_perfetto_json(ev:ProfileGraphEvent, reccnt):
-  ret = []
-  for i,e in enumerate(ev.ents):
-    st, en = ev.sigs[e.st_id], ev.sigs[e.en_id]
-    ret += [{"name": e.name, "ph": "X", "ts": prep_ts(e.device, st, e.is_copy), "dur": float(en-st), **dev_to_pid(e.device, e.is_copy)}]
-    for dep in ev.deps[i]:
-      d = ev.ents[dep]
-      ret += [{"ph": "s", **dev_to_pid(d.device, d.is_copy), "id": reccnt+len(ret), "ts": prep_ts(d.device, ev.sigs[d.en_id], d.is_copy), "bp": "e"}]
-      ret += [{"ph": "f", **dev_to_pid(e.device, e.is_copy), "id": reccnt+len(ret)-1, "ts": prep_ts(e.device, st, e.is_copy), "bp": "e"}]
-  return ret
-def to_perfetto(profile:list[ProfileEvent]):
-  # Start json with devices.
-  prof_json = [x for ev in profile if isinstance(ev, ProfileDeviceEvent) for x in dev_ev_to_perfetto_json(ev)]
-  for ev in tqdm(profile, desc="preparing profile"):
-    if isinstance(ev, ProfileRangeEvent): prof_json += range_ev_to_perfetto_json(ev)
-    elif isinstance(ev, ProfileGraphEvent): prof_json += graph_ev_to_perfetto_json(ev, reccnt=len(prof_json))
-  return json.dumps({"traceEvents": prof_json}).encode() if len(prof_json) > 0 else None
+
+DevEvent = ProfileRangeEvent|ProfileGraphEntry|ProfilePointEvent
+def flatten_events(profile:list[ProfileEvent]) -> Generator[tuple[decimal.Decimal, decimal.Decimal|None, DevEvent], None, None]:
+  for e in profile:
+    if isinstance(e, ProfileRangeEvent): yield (e.st, e.en, e)
+    if isinstance(e, ProfilePointEvent): yield (e.st, None, e)
+    if isinstance(e, ProfileGraphEvent):
+      for ent in e.ents: yield (e.sigs[ent.st_id], e.sigs[ent.en_id], ent)
+
+# timeline layout stacks events in a contiguous block. When a late starter finishes late, there is whitespace in the higher levels.
+def timeline_layout(events:list[tuple[int, int, float, DevEvent]]) -> dict:
+  shapes:list[dict] = []
+  levels:list[int] = []
+  for st,et,dur,e in events:
+    if dur == 0: continue
+    # find a free level to put the event
+    depth = next((i for i,level_et in enumerate(levels) if st>=level_et), len(levels))
+    if depth < len(levels): levels[depth] = et
+    else: levels.append(et)
+    name, cat = e.name, None
+    if (ref:=ref_map.get(name)) is not None: name = ctxs[ref]["name"]
+    elif isinstance(e.name, TracingKey):
+      name, cat = e.name.display_name, e.name.cat
+      ref = next((v for k in e.name.keys if (v:=ref_map.get(k)) is not None), None)
+    shapes.append({"name":name, "ref":ref, "st":st, "dur":dur, "depth":depth, "cat":cat})
+  return {"shapes":shapes, "maxDepth":len(levels)}
+
+def mem_layout(events:list[tuple[int, int, float, DevEvent]]) -> dict:
+  step, peak, mem = 0, 0, 0
+  shps:dict[int, dict] = {}
+  temp:dict[int, dict] = {}
+  timestamps:list[int] = []
+  for st,_,_,e in events:
+    if not isinstance(e, ProfilePointEvent): continue
+    if e.name == "alloc":
+      shps[e.ref] = temp[e.ref] = {"x":[step], "y":[mem], "arg":e.arg}
+      timestamps.append(int(e.st))
+      step += 1
+      mem += e.arg["nbytes"]
+      if mem > peak: peak = mem
+    if e.name == "free":
+      timestamps.append(int(e.st))
+      step += 1
+      mem -= (removed:=temp.pop(e.ref))["arg"]["nbytes"]
+      removed["x"].append(step)
+      removed["y"].append(removed["y"][-1])
+      for k,v in temp.items():
+        if k > e.ref:
+          v["x"] += [step, step]
+          v["y"] += [v["y"][-1], v["y"][-1]-removed["arg"]["nbytes"]]
+  for v in temp.values():
+    v["x"].append(step)
+    v["y"].append(v["y"][-1])
+  return {"shapes":list(shps.values()), "peak":peak, "timestamps":timestamps}
+
+def get_profile(profile:list[ProfileEvent]):
+  # start by getting the time diffs
+  devs = {e.device:(e.comp_tdiff, e.copy_tdiff if e.copy_tdiff is not None else e.comp_tdiff) for e in profile if isinstance(e,ProfileDeviceEvent)}
+  # map events per device
+  dev_events:dict[str, list[tuple[int, int, float, DevEvent]]] = {}
+  min_ts:int|None = None
+  max_ts:int|None = None
+  for ts,en,e in flatten_events(profile):
+    time_diff = devs[e.device][e.__dict__.get("is_copy",False)] if e.device in devs else decimal.Decimal(0)
+    # ProfilePointEvent records perf_counter, offset other events by GPU time diff
+    st = int(ts) if isinstance(e, ProfilePointEvent) else int(ts+time_diff)
+    et = st if en is None else int(en+time_diff)
+    dev_events.setdefault(e.device,[]).append((st, et, 0. if en is None else float(en-ts), e))
+    if min_ts is None or st < min_ts: min_ts = st
+    if max_ts is None or et > max_ts: max_ts = et
+  # return layout of per device events
+  for events in dev_events.values(): events.sort(key=lambda v:v[0])
+  dev_layout = {k:{"timeline":timeline_layout(v), "mem":mem_layout(v)} for k,v in dev_events.items()}
+  return json.dumps({"layout":dev_layout, "st":min_ts, "et":max_ts}).encode("utf-8")
 
 # ** HTTP server
 
@@ -131,32 +174,32 @@ class Handler(BaseHTTPRequestHandler):
   def do_GET(self):
     ret, status_code, content_type = b"", 200, "text/html"
 
-    if (fn:={"/":"index", "/profiler":"perfetto"}.get((url:=urlparse(self.path)).path)):
-      with open(os.path.join(os.path.dirname(__file__), f"{fn}.html"), "rb") as f: ret = f.read()
+    if (url:=urlparse(self.path)).path == "/":
+      with open(os.path.join(os.path.dirname(__file__), "index.html"), "rb") as f: ret = f.read()
     elif self.path.startswith(("/assets/", "/js/")) and '/..' not in self.path:
       try:
         with open(os.path.join(os.path.dirname(__file__), self.path.strip('/')), "rb") as f: ret = f.read()
         if url.path.endswith(".js"): content_type = "application/javascript"
         if url.path.endswith(".css"): content_type = "text/css"
       except FileNotFoundError: status_code = 404
-    elif url.path == "/kernels":
-      if "kernel" in (query:=parse_qs(url.query)):
-        kidx, ridx = int(query["kernel"][0]), int(query["idx"][0])
+    elif url.path == "/ctxs":
+      if "ctx" in (query:=parse_qs(url.query)):
+        kidx, ridx = int(query["ctx"][0]), int(query["idx"][0])
         try:
           # stream details
           self.send_response(200)
           self.send_header("Content-Type", "text/event-stream")
           self.send_header("Cache-Control", "no-cache")
           self.end_headers()
-          for r in get_details(contexts[0][kidx], contexts[1][kidx][ridx]):
+          for r in get_details(contexts[1][kidx][ridx]):
             self.wfile.write(f"data: {json.dumps(r)}\n\n".encode("utf-8"))
             self.wfile.flush()
           self.wfile.write("data: END\n\n".encode("utf-8"))
           return self.wfile.flush()
         # pass if client closed connection
         except (BrokenPipeError, ConnectionResetError): return
-      ret, content_type = json.dumps(kernels).encode(), "application/json"
-    elif url.path == "/get_profile" and perfetto_profile is not None: ret, content_type = perfetto_profile, "application/json"
+      ret, content_type = json.dumps(ctxs).encode(), "application/json"
+    elif url.path == "/get_profile" and profile_ret is not None: ret, content_type = profile_ret, "application/json"
     else: status_code = 404
 
     # send response
@@ -200,15 +243,15 @@ if __name__ == "__main__":
   contexts, profile = load_pickle(args.kernels), load_pickle(args.profile)
 
   # NOTE: this context is a tuple of list[keys] and list[values]
-  kernels = get_metadata(*contexts) if contexts is not None else []
+  ctxs = get_metadata(*contexts[:2]) if contexts is not None else []
 
-  perfetto_profile = to_perfetto(profile) if profile is not None else None
+  profile_ret = get_profile(profile) if profile is not None else None
 
   server = TCPServerWithReuse(('', PORT), Handler)
   reloader_thread = threading.Thread(target=reloader)
   reloader_thread.start()
   print(f"*** started viz on {HOST}:{PORT}")
-  print(colored(f"*** ready in {(time.perf_counter()-st)*1e3:4.2f}ms", "green"))
+  print(colored(f"*** ready in {(time.perf_counter()-st)*1e3:4.2f}ms", "green"), flush=True)
   if len(getenv("BROWSER", "")) > 0: webbrowser.open(f"{HOST}:{PORT}{'/profiler' if contexts is None else ''}")
   try: server.serve_forever()
   except KeyboardInterrupt:

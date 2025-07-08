@@ -13,6 +13,6 @@ if __name__ == "__main__":
     (Tensor.empty(BS, 16, 512, 512), Tensor.empty(BS, 512, 16, 64).permute(0,2,1,3)),                   # qk@v
   ]
   for t0, t1 in tensors:
-    print(f"{t0.shape=}, {t0.lazydata.st.real_strides()=}, {t1.shape=}, {t1.lazydata.st.real_strides()=}")
+    print(f"{t0.shape=}, {t0.uop.st.real_strides()=}, {t1.shape=}, {t1.uop.st.real_strides()=}")
     for _ in range(5):
       t0.dot(t1, dtype=acc_dtype).realize()

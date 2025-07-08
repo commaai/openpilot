@@ -1,0 +1,36 @@
+# https://github.com/sgl-project/sglang/blob/main/python/sglang/test/simple_eval_mgsm.py#L41
+task: mgsm_en_cot_sglang
+dataset_path: juletxara/mgsm
+dataset_name: en
+output_type: generate_until
+training_split: train
+test_split: test
+doc_to_target: '{{answer[21:] if answer is not none else answer_number|string}}'
+doc_to_text: >-
+  {{'Solve this math problem. Give the reasoning steps before giving the final answer on the last line by itself in the format of "Answer:".
+  Do not add anything other than the integer answer after "Answer:".\n\n'
+  +(question[10:] if answer is not none else question)}}
+generation_kwargs:
+  do_sample: false
+  temperature: 0.0
+  until: []
+metric_list:
+  - metric: exact_match
+    aggregation: mean
+    higher_is_better: true
+    ignore_case: true
+    ignore_punctuation: true
+filter_list:
+  - name: "strict-match"
+    filter:
+      - function: "regex"
+        regex_pattern: 'Answer:\s*([\-]?[0-9\.\,]+)'
+      - function: "take_first"
+  - filter:
+    - function: regex
+      group_select: -1
+      regex_pattern: (-?[$0-9.,]{2,})|(-?[0-9]+)
+    - function: take_first
+    name: flexible-extract
+metadata:
+  version: 3.0

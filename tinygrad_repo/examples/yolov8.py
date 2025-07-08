@@ -1,7 +1,5 @@
 from tinygrad.nn import Conv2d, BatchNorm2d
 from tinygrad.tensor import Tensor
-from tinygrad.device import is_dtype_supported
-from tinygrad import dtypes
 import numpy as np
 from itertools import chain
 from pathlib import Path

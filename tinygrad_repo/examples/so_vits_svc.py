@@ -5,7 +5,7 @@ from functools import partial, reduce
 from pathlib import Path
 from typing import Tuple, Optional, Type
 from tinygrad import nn, dtypes, Tensor
-from tinygrad.helpers import getenv
+from tinygrad.helpers import getenv, fetch
 from tinygrad.nn.state import torch_load
 from examples.vits import ResidualCouplingBlock, PosteriorEncoder, Encoder, ResBlock1, ResBlock2, LRELU_SLOPE, sequence_mask, split, get_hparams_from_file, load_checkpoint, weight_norm, HParams
 from examples.sovits_helpers import preprocess
@@ -18,10 +18,6 @@ F0_MAX = 1100.0
 F0_MIN = 50.0
 F0_MEL_MIN = 1127 * np.log(1 + F0_MIN / 700)
 F0_MEL_MAX = 1127 * np.log(1 + F0_MAX / 700)
-
-def download_if_not_present(file_path: Path, url: str):
-  if not os.path.isfile(file_path): download_file(url, file_path)
-  return file_path
 
 class SpeechEncoder:
   def __init__(self, hidden_dim, model:ContentVec): self.hidden_dim, self.model = hidden_dim, model
@@ -97,7 +93,7 @@ class ContentVec:
     return res, padding_mask
   @classmethod
   def load_from_pretrained(cls, checkpoint_path:str, checkpoint_url:str) -> ContentVec:
-    download_if_not_present(checkpoint_path, checkpoint_url)
+    fetch(checkpoint_url, checkpoint_path)
     cfg = load_fairseq_cfg(checkpoint_path)
     enc = cls(cfg.model)
     _ = load_checkpoint_enc(checkpoint_path, enc, None)
@@ -324,9 +320,9 @@ class Synthesizer:
     return f0_coarse
   @classmethod
   def load_from_pretrained(cls, config_path:str, config_url:str, weights_path:str, weights_url:str) -> Synthesizer:
-    download_if_not_present(config_path, config_url)
+    fetch(config_url, config_path)
     hps = get_hparams_from_file(config_path)
-    download_if_not_present(weights_path, weights_url)
+    fetch(weights_url, weights_path)
     net_g = cls(hps.data.filter_length // 2 + 1, hps.train.segment_size // hps.data.hop_length, **hps.model)
     _ = load_checkpoint(weights_path, net_g, None, skip_list=["f0_decoder"])
     logging.debug(f"{cls.__name__}:Loaded model with hps: {hps}")
@@ -587,7 +583,7 @@ if __name__=="__main__":
   vits_model = args.model
   encoder_location, vits_location = ENCODER_MODELS[ENCODER_MODEL], VITS_MODELS[vits_model]
 
-  Tensor.no_grad, Tensor.training = True, False
+  Tensor.training = False
   # Get Synthesizer and ContentVec
   net_g, hps = Synthesizer.load_from_pretrained(vits_location[0], vits_location[2], vits_location[1], vits_location[3])
   Encoder = get_encoder(hps.model.ssl_dim)
@@ -602,7 +598,7 @@ if __name__=="__main__":
   speaker = args.speaker if args.speaker is not None else list(hps.spk.__dict__.keys())[0]
 
   ### Loading audio and slicing ###
-  if audio_path == DEMO_PATH: download_if_not_present(DEMO_PATH, DEMO_URL)
+  if audio_path == DEMO_PATH: fetch(DEMO_URL, DEMO_PATH)
   assert Path(audio_path).is_file() and Path(audio_path).suffix == ".wav"
   chunks = preprocess.cut(audio_path, db_thresh=slice_db)
   audio_data, audio_sr = preprocess.chunks2audio(audio_path, chunks)

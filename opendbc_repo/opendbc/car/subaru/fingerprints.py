@@ -1,3 +1,4 @@
+""" AUTO-FORMATTED USING opendbc/car/debug/format_fingerprints.py, EDIT STRUCTURE THERE."""
 from opendbc.car.structs import CarParams
 from opendbc.car.subaru.values import CAR
 
@@ -68,8 +69,8 @@ FW_VERSIONS = {
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xde"a0\x07',
-      b'\xe2"a0\x07',
       b'\xde,\xa0@\x07',
+      b'\xe2"a0\x07',
       b'\xe2"aq\x07',
       b'\xe2,\xa0@\x07',
     ],
@@ -498,8 +499,8 @@ FW_VERSIONS = {
       b'\xe2"`0\x07',
       b'\xe2"`p\x07',
       b'\xe2"`q\x07',
-      b'\xe3,\xa0@\x07',
       b'\xe2,\xa0p\x07',
+      b'\xe3,\xa0@\x07',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xa5\xf6D@\x00',

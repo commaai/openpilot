@@ -3,19 +3,19 @@ import pyray as rl
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
 from openpilot.system.ui.lib.application import gui_app
-
+from openpilot.system.ui.lib.widget import Widget
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
-    [-5.98, -51.20, 8.00], [-17.64, -49.14, 8.00], [-23.81, -46.40, 8.00], [-29.98, -40.91, 8.00],
-    [-32.04, -37.49, 8.00], [-34.10, -32.00, 8.00], [-36.16, -21.03, 8.00], [-36.16, 6.40, 8.00],
-    [-35.47, 10.51, 8.00], [-32.73, 19.43, 8.00], [-29.30, 26.29, 8.00], [-24.50, 33.83, 8.00],
-    [-19.01, 41.37, 8.00], [-14.21, 46.17, 8.00], [-12.16, 47.54, 8.00], [-4.61, 49.60, 8.00],
-    [4.99, 49.60, 8.00], [12.53, 47.54, 8.00], [14.59, 46.17, 8.00], [19.39, 41.37, 8.00],
-    [24.87, 33.83, 8.00], [29.67, 26.29, 8.00], [33.10, 19.43, 8.00], [35.84, 10.51, 8.00],
-    [36.53, 6.40, 8.00], [36.53, -21.03, 8.00], [34.47, -32.00, 8.00], [32.42, -37.49, 8.00],
-    [30.36, -40.91, 8.00], [24.19, -46.40, 8.00], [18.02, -49.14, 8.00], [6.36, -51.20, 8.00],
-    [-5.98, -51.20, 8.00],
+  [-5.98, -51.20, 8.00], [-17.64, -49.14, 8.00], [-23.81, -46.40, 8.00], [-29.98, -40.91, 8.00],
+  [-32.04, -37.49, 8.00], [-34.10, -32.00, 8.00], [-36.16, -21.03, 8.00], [-36.16, 6.40, 8.00],
+  [-35.47, 10.51, 8.00], [-32.73, 19.43, 8.00], [-29.30, 26.29, 8.00], [-24.50, 33.83, 8.00],
+  [-19.01, 41.37, 8.00], [-14.21, 46.17, 8.00], [-12.16, 47.54, 8.00], [-4.61, 49.60, 8.00],
+  [4.99, 49.60, 8.00], [12.53, 47.54, 8.00], [14.59, 46.17, 8.00], [19.39, 41.37, 8.00],
+  [24.87, 33.83, 8.00], [29.67, 26.29, 8.00], [33.10, 19.43, 8.00], [35.84, 10.51, 8.00],
+  [36.53, 6.40, 8.00], [36.53, -21.03, 8.00], [34.47, -32.00, 8.00], [32.42, -37.49, 8.00],
+  [30.36, -40.91, 8.00], [24.19, -46.40, 8.00], [18.02, -49.14, 8.00], [6.36, -51.20, 8.00],
+  [-5.98, -51.20, 8.00],
 ], dtype=np.float32)
 
 # UI constants
@@ -31,6 +31,7 @@ SCALES_NEG = np.array([0.7, 0.4, 0.4], dtype=np.float32)
 ARC_POINT_COUNT = 37  # Number of points in the arc
 ARC_ANGLES = np.linspace(0.0, np.pi, ARC_POINT_COUNT, dtype=np.float32)
 
+
 @dataclass
 class ArcData:
   """Data structure for arc rendering parameters."""
@@ -40,14 +41,15 @@ class ArcData:
   height: float
   thickness: float
 
-class DriverStateRenderer:
+
+class DriverStateRenderer(Widget):
   def __init__(self):
+    super().__init__()
     # Initial state with NumPy arrays
     self.face_kpts_draw = DEFAULT_FACE_KPTS_3D.copy()
     self.is_active = False
     self.is_rhd = False
     self.dm_fade_state = 0.0
-    self.state_updated = False
     self.last_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self.driver_pose_vals = np.zeros(3, dtype=np.float32)
     self.driver_pose_diff = np.zeros(3, dtype=np.float32)
@@ -73,14 +75,10 @@ class DriverStateRenderer:
     self.engaged_color = rl.Color(26, 242, 66, 255)
     self.disengaged_color = rl.Color(139, 139, 139, 255)
 
-  def draw(self, rect, sm):
-    if not self._is_visible(sm):
-      return
+    self.set_visible(lambda: (ui_state.sm.recv_frame['driverStateV2'] > ui_state.started_frame and
+                              ui_state.sm.seen['driverMonitoringState']))
 
-    self._update_state(sm, rect)
-    if not self.state_updated:
-      return
-
+  def _render(self, rect):
     # Set opacity based on active state
     opacity = 0.65 if self.is_active else 0.2
 
@@ -105,18 +103,14 @@ class DriverStateRenderer:
     if self.v_arc_data:
       rl.draw_spline_linear(self.v_arc_lines, len(self.v_arc_lines), self.v_arc_data.thickness, self.arc_color)
 
-  def _is_visible(self, sm):
-    """Check if the visualization should be rendered."""
-    return (sm.recv_frame['driverStateV2'] > ui_state.started_frame and
-            sm.seen['driverMonitoringState'] and
-            sm['selfdriveState'].alertSize == 0)
-
-  def _update_state(self, sm, rect):
+  def _update_state(self):
     """Update the driver monitoring state based on model data"""
-    if  not sm.updated["driverMonitoringState"]:
-      if self.state_updated and (rect.x != self.last_rect.x or rect.y != self.last_rect.y or \
-         rect.width != self.last_rect.width or rect.height != self.last_rect.height):
-        self._pre_calculate_drawing_elements(rect)
+    sm = ui_state.sm
+    if not sm.updated["driverMonitoringState"]:
+      if (self._rect.x != self.last_rect.x or self._rect.y != self.last_rect.y or
+          self._rect.width != self.last_rect.width or self._rect.height != self.last_rect.height):
+        self._pre_calculate_drawing_elements()
+        self.last_rect = self._rect
       return
 
     # Get monitoring state
@@ -165,16 +159,15 @@ class DriverStateRenderer:
     self.face_keypoints_transformed = self.face_kpts_draw[:, :2] * kp_depth[:, None]
 
     # Pre-calculate all drawing elements
-    self._pre_calculate_drawing_elements(rect)
-    self.state_updated = True
+    self._pre_calculate_drawing_elements()
 
-  def _pre_calculate_drawing_elements(self, rect):
+  def _pre_calculate_drawing_elements(self):
     """Pre-calculate all drawing elements based on the current rectangle"""
     # Calculate icon position (bottom-left or bottom-right)
-    width, height = rect.width, rect.height
+    width, height = self._rect.width, self._rect.height
     offset = UI_BORDER_SIZE + BTN_SIZE // 2
-    self.position_x = rect.x + (width - offset if self.is_rhd else offset)
-    self.position_y = rect.y + height - offset
+    self.position_x = self._rect.x + (width - offset if self.is_rhd else offset)
+    self.position_y = self._rect.y + height - offset
 
     # Pre-calculate the face lines positions
     positioned_keypoints = self.face_keypoints_transformed + np.array([self.position_x, self.position_y])
@@ -189,15 +182,15 @@ class DriverStateRenderer:
     # Horizontal arc
     h_width = abs(delta_x)
     self.h_arc_data = self._calculate_arc_data(
-        delta_x, h_width, self.position_x, self.position_y - ARC_LENGTH / 2,
-        self.driver_pose_sins[1], self.driver_pose_diff[1], is_horizontal=True
+      delta_x, h_width, self.position_x, self.position_y - ARC_LENGTH / 2,
+      self.driver_pose_sins[1], self.driver_pose_diff[1], is_horizontal=True
     )
 
     # Vertical arc
     v_height = abs(delta_y)
     self.v_arc_data = self._calculate_arc_data(
-        delta_y, v_height, self.position_x - ARC_LENGTH / 2, self.position_y,
-        self.driver_pose_sins[0], self.driver_pose_diff[0], is_horizontal=False
+      delta_y, v_height, self.position_x - ARC_LENGTH / 2, self.position_y,
+      self.driver_pose_sins[0], self.driver_pose_diff[0], is_horizontal=False
     )
 
   def _calculate_arc_data(

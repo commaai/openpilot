@@ -116,7 +116,7 @@ at::Tensor wrap_tensor(py::object &py_obj, c10::ScalarType dtype, c10::DeviceInd
   // TODO: we have to get the dtype and the shape from the tinygrad Tensor
   std::vector<int64_t> sizes = py_obj.attr("shape").cast<std::vector<int64_t>>();
 
-  py::list views = py_obj.attr("lazydata").attr("st").attr("views");
+  py::list views = py_obj.attr("uop").attr("st").attr("views");
   std::vector<int64_t> strides = views[views.size() - 1].attr("strides").cast<std::vector<int64_t>>();
   int64_t storage_offset = 0;
   for (auto& v: views) {

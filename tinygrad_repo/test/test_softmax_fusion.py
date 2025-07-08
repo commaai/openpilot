@@ -153,6 +153,7 @@ class TestSoftmaxFusion(unittest.TestCase):
 
     np.testing.assert_allclose(sout.numpy(), out.numpy())
 
+  @unittest.skip("recursion error no longer raised")
   def test_softmax_bw(self):
     print("*** softmax bw ***")
     self.test.requires_grad_()

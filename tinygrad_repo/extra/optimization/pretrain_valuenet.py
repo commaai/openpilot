@@ -1,4 +1,4 @@
-from tinygrad.codegen.kernel import Kernel
+from tinygrad.opt.kernel import Kernel
 from tqdm import tqdm, trange
 import math
 import random
@@ -14,7 +14,7 @@ from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.shape.view import View
 from tinygrad.uop.ops import Variable
 inf, nan = float('inf'), float('nan')
-from tinygrad.codegen.kernel import Opt, OptOps
+from tinygrad.opt.kernel import Opt, OptOps
 
 from extra.optimization.helpers import lin_to_feats, MAX_DIMS
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
       ys.append(Y[sel])
     return Tensor(xs), Tensor(ys)
 
-  Tensor.no_grad, Tensor.training = False, True
+  Tensor.training = True
   losses = []
   test_losses = []
   test_loss = float('inf')

@@ -6,8 +6,8 @@ from tinygrad.helpers import getenv, BEAM
 from tinygrad.engine.jit import TinyJit
 from tinygrad.engine.realize import CompiledRunner, ExecItem, ScheduleItem, lower_schedule_item
 from tinygrad.renderer import ProgramSpec
-from tinygrad.codegen.kernel import Kernel, Opt, OptOps
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.opt.kernel import Kernel, Opt, OptOps
+from tinygrad.opt.heuristic import hand_coded_optimizations
 import numpy as np
 
 def move_jit_captured_to_dev(captured, device="DSP"):

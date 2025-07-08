@@ -229,7 +229,6 @@ if __name__ == "__main__":
   parser.add_argument('--guidance', type=float, default=7.5, help="Prompt strength")
   args = parser.parse_args()
 
-  Tensor.no_grad = True
   model = StableDiffusion()
 
   # load in weights

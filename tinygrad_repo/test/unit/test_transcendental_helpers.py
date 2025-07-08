@@ -2,8 +2,8 @@ import unittest, math
 import numpy as np
 from tinygrad import dtypes
 from tinygrad.uop.ops import UOp, Ops
-from tinygrad.codegen.transcendental import TRANSCENDENTAL_SUPPORTED_DTYPES, payne_hanek_reduction, cody_waite_reduction
-from tinygrad.codegen.transcendental import frexp, rintk, xpow, xexp2, xlog2, trig_poly, pow2if
+from tinygrad.uop.transcendental import TRANSCENDENTAL_SUPPORTED_DTYPES, payne_hanek_reduction, cody_waite_reduction
+from tinygrad.uop.transcendental import frexp, rintk, xpow, xexp2, xlog2, trig_poly, pow2if
 from test.helpers import eval_uop
 
 class TestTranscendentalFunctions(unittest.TestCase):

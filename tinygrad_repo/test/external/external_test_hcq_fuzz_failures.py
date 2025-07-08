@@ -4,10 +4,10 @@ os.environ["VALIDATE_HCQ"]="1"
 
 import unittest, random
 import numpy as np
-from tinygrad.codegen.kernel import Kernel, KernelOptError
+from tinygrad.opt.kernel import Kernel, KernelOptError
 from tinygrad.device import is_dtype_supported
 from tinygrad.uop.ops import UOp, Ops
-from tinygrad.engine.search import Opt, OptOps
+from tinygrad.opt.search import Opt, OptOps
 from tinygrad import Device, dtypes, Tensor
 from test.external.fuzz_linearizer import compare_linearizer, compare_states, get_fuzz_rawbuf_like
 

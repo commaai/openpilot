@@ -651,7 +651,7 @@ class TextMapper: # Based on https://github.com/keithito/tacotron
 VITS_PATH = Path(__file__).parents[1] / "weights/VITS/"
 MODELS = { # config_url, weights_url
   "ljs": ("https://raw.githubusercontent.com/jaywalnut310/vits/main/configs/ljs_base.json", "https://drive.google.com/uc?export=download&id=1q86w74Ygw2hNzYP9cWkeClGT5X25PvBT&confirm=t"),
-  "vctk": ("https://raw.githubusercontent.com/jaywalnut310/vits/main/configs/vctk_base.json", "https://drive.google.com/uc?export=download&id=11aHOlhnxzjpdWDpsz1vFDCzbeEfoIxru&confirm=t"),
+  "vctk": ("https://huggingface.co/csukuangfj/vits-vctk/resolve/main/vctk_base.json", "https://huggingface.co/csukuangfj/vits-vctk/resolve/main/pretrained_vctk.pth"),
   "mmts-tts": ("https://huggingface.co/facebook/mms-tts/raw/main/full_models/eng/config.json", "https://huggingface.co/facebook/mms-tts/resolve/main/full_models/eng/G_100000.pth"),
   "uma_trilingual": ("https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/raw/main/configs/uma_trilingual.json", "https://huggingface.co/spaces/Plachta/VITS-Umamusume-voice-synthesizer/resolve/main/pretrained_models/G_trilingual.pth"),
   "cjks": ("https://huggingface.co/spaces/skytnt/moe-tts/resolve/main/saved_model/14/config.json", "https://huggingface.co/spaces/skytnt/moe-tts/resolve/main/saved_model/14/model.pth"),
@@ -707,7 +707,6 @@ if __name__ == '__main__':
   text_mapper = TextMapper(apply_cleaners=True, symbols=symbols)
 
   # Load the model.
-  Tensor.no_grad = True
   if args.seed is not None:
     Tensor.manual_seed(args.seed)
     np.random.seed(args.seed)

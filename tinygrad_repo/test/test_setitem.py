@@ -50,7 +50,7 @@ class TestSetitem(unittest.TestCase):
 
   def test_setitem_into_noncontiguous(self):
     t = Tensor.ones(4)
-    self.assertFalse(t.lazydata.st.contiguous)
+    self.assertFalse(t.uop.st.contiguous)
     with self.assertRaises(RuntimeError): t[1] = 5
 
   @unittest.skip("TODO: flaky")
@@ -175,6 +175,13 @@ class TestWithGrad(unittest.TestCase):
     x = Tensor.rand(8, requires_grad=True)
     with self.assertRaises(NotImplementedError):
       z[:3] = x
+
+class TestSetitemLoop(unittest.TestCase):
+  def test_arange(self):
+    N = 10
+    cmp = Tensor.empty(N)
+    for i in range(N): cmp[i] = i
+    self.assertListEqual(Tensor.arange(N).tolist(), cmp.tolist())
 
 if __name__ == '__main__':
   unittest.main()

@@ -36,7 +36,7 @@ def helper_alloc_rawbuffer(device, fill=False):
   if fill:
     with Context(DEBUG=0):
       data = np.random.randint(-10000, 10000, size=rawbuf.size, dtype=_to_np_dtype(rawbuf.dtype))
-      rawbuf.copyin(Tensor(data).realize().lazydata.base.realized.as_buffer())
+      rawbuf.copyin(Tensor(data).realize().uop.base.realized.as_buffer())
   return rawbuf
 
 def helper_create_offset_rawbuffer(base, offset=0):

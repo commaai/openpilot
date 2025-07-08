@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import unittest
+import unittest, math
 import numpy as np
 import tensorflow as tf
 import tensorflow_addons as tfa
@@ -7,11 +7,11 @@ from tensorflow.python.ops import math_ops
 from extra.lr_scheduler import LRSchedulerGroup
 
 from tinygrad.tensor import Tensor
-from tinygrad.nn.optim import LAMB, LARS, SGD, OptimizerGroup
+from tinygrad.nn.optim import LAMB, LARS, SGD, OptimizerGroup, AdamW
 
 from test.external.mlperf_resnet.lars_optimizer import LARSOptimizer
 
-from examples.mlperf.lr_schedulers import PolynomialDecayWithWarmup
+from examples.mlperf.lr_schedulers import PolynomialDecayWithWarmup, CosineAnnealingLRWithWarmup
 from test.external.mlperf_resnet.lars_util import PolynomialDecayWithWarmup as PolynomialDecayWithWarmup_tf
 
 np.random.seed(1337)
@@ -170,6 +170,27 @@ class ExternalTestOptim(unittest.TestCase):
       'train_steps': steps_per_epoch * epochs,
       'warmup': steps_per_epoch * warmup_epochs,
     }, 1e-5, 1e-5, do_optim=False)
+
+
+class TestCosineAnnealingLRWithWarmup(unittest.TestCase):
+  # only tests the lr
+  def _test_lr(self, base_lr, end_lr, warmup_steps, decay_steps):
+    net = TinyNet()
+    optim = AdamW([net.W], lr=0.0)
+    tiny_lr = CosineAnnealingLRWithWarmup(optim, base_lr, end_lr, warmup_steps, decay_steps)
+    lr = []
+    for _ in range(warmup_steps+decay_steps):
+      lr.append(optim.lr.item())
+      tiny_lr.step()
+    # reimplemented in python
+    expected = []
+    for i in range(warmup_steps): expected.append((i+1)/warmup_steps*base_lr)
+    for i in range(decay_steps): expected.append(end_lr+(base_lr-end_lr)*(1+math.cos((i+1)/decay_steps*math.pi))/2)
+    np.testing.assert_allclose(lr, expected, rtol=1e-5)
+
+  def test_lr_0(self): self._test_lr(3e-4, 8e-5, 3, 5)
+  def test_lr_1(self): self._test_lr(3e-4, 8e-5, 10, 20)
+  def test_lr_llama3(self): self._test_lr(8e-5, 8e-7, 20, 100)
 
 if __name__ == '__main__':
   unittest.main()

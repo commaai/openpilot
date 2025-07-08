@@ -10,7 +10,7 @@ from tinygrad.device import is_dtype_supported
 # pip3 install tabulate
 pytest_plugins = 'onnx.backend.test.report',
 
-from tinygrad.frontend.onnx import OnnxRunner
+from tinygrad.frontend.onnx import OnnxRunner, onnx_load
 
 class TinygradModel(BackendRep):
   def __init__(self, run_onnx, input_names):
@@ -25,12 +25,13 @@ class TinygradModel(BackendRep):
 
 class TinygradBackend(Backend):
   @classmethod
-  def prepare(cls, model, device):
+  def prepare(cls, model: onnx.ModelProto, device):
     input_all = [x.name for x in model.graph.input]
     input_initializer = [x.name for x in model.graph.initializer]
     net_feed_input = [x for x in input_all if x not in input_initializer]
     print("prepare", cls, device, net_feed_input)
-    run_onnx = OnnxRunner(model)
+    model = Tensor(model.SerializeToString(), device="PYTHON")
+    run_onnx = OnnxRunner(onnx_load(model))
     return TinygradModel(run_onnx, net_feed_input)
 
   @classmethod
@@ -87,13 +88,6 @@ backend_test.exclude('FLOAT8')
 backend_test.exclude('INT4')
 backend_test.exclude('UINT4')
 backend_test.exclude('BFLOAT16')  # not supported in numpy
-# TODO: fix these with true onnx float16
-backend_test.exclude('to_FLOAT16')
-backend_test.exclude('cast_no_saturate')
-backend_test.exclude('test_dequantizelinear_e4m3fn_float16_cpu')
-backend_test.exclude('test_max_float16_cpu')
-backend_test.exclude('test_min_float16_cpu')
-backend_test.exclude('test_mod_mixed_sign_float16_cpu')
 
 backend_test.exclude('test_dequantizelinear_int4_cpu')
 backend_test.exclude('test_dequantizelinear_uint4_cpu')
@@ -107,6 +101,7 @@ backend_test.exclude('test_quantizelinear_e4m3fn_cpu')
 backend_test.exclude('test_quantizelinear_e5m2_cpu')
 backend_test.exclude('test_dequantizelinear_e4m3fn_cpu')
 backend_test.exclude('test_dequantizelinear_e4m3fn_zero_point_cpu')
+backend_test.exclude('test_dequantizelinear_e4m3fn_float16_cpu')
 backend_test.exclude('test_dequantizelinear_e5m2_cpu')
 
 # we don't support indexes

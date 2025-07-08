@@ -146,7 +146,6 @@ if __name__ == "__main__":
     return loss
 
   @TinyJit
-  @Tensor.test()
   def sample(z:Tensor, cond:Tensor) -> Tensor:
     return model.sample(z, cond, Tensor.full_like(cond, 10), sample_steps=getenv("SAMPLE_STEPS", 20))[-1]
 

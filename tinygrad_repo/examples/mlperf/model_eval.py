@@ -9,7 +9,6 @@ from extra.bench_log import BenchEvent, WallTimeEvent
 def tlog(x): print(f"{x:25s}  @ {time.perf_counter()-start:5.2f}s")
 
 def eval_resnet():
-  Tensor.no_grad = True
   with WallTimeEvent(BenchEvent.FULL):
     # Resnet50-v1.5
     from extra.models.resnet import ResNet50
@@ -245,7 +244,6 @@ def eval_mrcnn():
 if __name__ == "__main__":
   # inference only
   Tensor.training = False
-  Tensor.no_grad = True
 
   models = getenv("MODEL", "resnet,retinanet,unet3d,rnnt,bert,mrcnn").split(",")
   for m in models:

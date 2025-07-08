@@ -46,7 +46,8 @@ class CUDAProgram:
     if self.smem > 0: check(cuda.cuFuncSetAttribute(self.prg, cuda.CU_FUNC_ATTRIBUTE_MAX_DYNAMIC_SHARED_SIZE_BYTES, self.smem))
 
   def __del__(self):
-    if hasattr(self, 'module'): check(cuda.cuModuleUnload(self.module))
+    try: check(cuda.cuModuleUnload(self.module))
+    except AttributeError: pass
 
   def __call__(self, *args, global_size:tuple[int,int,int]=(1,1,1), local_size:tuple[int,int,int]=(1,1,1), vals:tuple[int, ...]=(), wait=False):
     check(cuda.cuCtxSetCurrent(self.dev.context))
@@ -67,8 +68,10 @@ class CUDAAllocator(LRUAllocator['CUDADevice']):
     if options.host: return init_c_var(ctypes.c_void_p(), lambda x: check(cuda.cuMemHostAlloc(ctypes.byref(x), size, 0x01)))
     return init_c_var(cuda.CUdeviceptr(), lambda x: check(cuda.cuMemAlloc_v2(ctypes.byref(x), size)))
   def _free(self, opaque, options:BufferSpec):
-    if options.host: check(cuda.cuMemFreeHost(opaque))
-    else: check(cuda.cuMemFree_v2(opaque))
+    try:
+      if options.host: check(cuda.cuMemFreeHost(opaque))
+      else: check(cuda.cuMemFree_v2(opaque))
+    except (TypeError, AttributeError): pass
   def _copyin(self, dest, src:memoryview):
     check(cuda.cuCtxSetCurrent(self.dev.context))
     host_mem = self.alloc(len(src), BufferSpec(host=True))

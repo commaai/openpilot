@@ -82,7 +82,6 @@ if __name__ == "__main__":
   args = parser.parse_args()
   Device.DEFAULT = "WEBGPU"
 
-  Tensor.no_grad = True
   model = StableDiffusion()
 
   # load in weights
@@ -115,7 +114,7 @@ if __name__ == "__main__":
     run, special_names = jit_model(step, *step.input)
     functions, statements, bufs, _ = compile_net(run, special_names)
     state = get_state_dict(model)
-    weights = {id(x.lazydata.base.realized): name for name, x in state.items()}
+    weights = {id(x.uop.base.realized): name for name, x in state.items()}
     kernel_code = '\n\n'.join([f"const {key} = `{fixup_code(code, key)}`;" for key, code in functions.items()])
     kernel_names = ', '.join([name for (name, _, _, _) in statements])
     input_names = [name for _,name in special_names.items() if "input" in name]

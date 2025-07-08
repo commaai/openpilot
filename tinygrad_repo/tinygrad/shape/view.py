@@ -3,8 +3,33 @@ import functools, operator, itertools
 from dataclasses import dataclass
 from typing import Optional, cast, Sequence
 from tinygrad.dtype import dtypes
-from tinygrad.uop.ops import resolve, UOp, Variable, sint, sym_infer, smax, smin, sint_to_uop, Ops
+from tinygrad.uop.ops import resolve, UOp, Variable, sint, sym_infer, smax, smin, sint_to_uop, Ops, ssimplify
 from tinygrad.helpers import prod, all_int, argsort, flatten, ceildiv
+
+# returns the axes to create new_shape if new_shape can be created by combining axis from old_shape
+def get_contraction(old_shape:tuple[sint, ...], new_shape:tuple[sint, ...]) -> list[list[int]]|None:
+  acc_old, acc_new = list(itertools.accumulate(old_shape, operator.mul)), list(itertools.accumulate(new_shape, operator.mul))
+  try: split = [acc_old.index(acc)+1 if acc != 1 else 0 for acc in acc_new]
+  except ValueError: return None
+  return [list(range(st,ed)) for st,ed in zip([0]+split[:-1], split[:-1]+[len(old_shape)])]
+
+def get_contraction_with_reduce(old_shape:tuple[sint, ...], new_shape:tuple[sint, ...], reduce_axis:tuple[int, ...]) -> list[list[int]]|None:
+  if (contraction:=get_contraction(old_shape, new_shape)) is None: return None
+  # contraction returns the 1s as right justified as possible
+  # normally this contraction is good, but sometimes the reduce dim is empty. borrow from the next one, leaving one
+  # this ensures there's always ones available in the reduce dimension. this is also a valid contraction
+  for i in range(len(contraction)):
+    if i in reduce_axis and len(contraction[i]) == 0:
+      take_from = i+1
+      while take_from < len(contraction) and len(contraction[take_from]) == 0:
+        assert new_shape[take_from] == 1
+        take_from += 1
+      if take_from == len(contraction) or new_shape[take_from] != 1: return None # nothing to take
+      for j in range(take_from, i, -1):
+        assert len(contraction[j]) > 0
+        contraction[j-1] = contraction[j][:-1]
+        contraction[j] = contraction[j][-1:]
+  return contraction
 
 @functools.cache
 def canonicalize_strides(shape:tuple[sint, ...], strides:tuple[sint, ...]) -> tuple[sint, ...]:
@@ -51,7 +76,7 @@ def _reshape_mask(_mask:Optional[tuple[tuple[sint, sint], ...]], old_shape:tuple
   curr_stride, old_dim, new_dim, mask = 1, next(r_shape, 1), next(r_new_shape, 1), next(r_masks, (0,1))
 
   while len(new_mask) < len(new_shape):
-    (l, r), next_stride = mask, new_dim * curr_stride
+    (l, r), next_stride = mask, ssimplify(new_dim * curr_stride)
 
     # need to split mask
     if old_dim == next_stride: # simply copy the mask and get next batch for merging
@@ -66,7 +91,7 @@ def _reshape_mask(_mask:Optional[tuple[tuple[sint, sint], ...]], old_shape:tuple
       next_mask = next(r_masks, (0, 1))
       # combine if the mask can unfold continuously
       if mask != (0, old_dim) and l != r and next_mask[1] - next_mask[0] != 1: return None
-      mask, old_dim = (next_mask[0] * old_dim + l, (next_mask[1] - 1) * old_dim + r), old_dim * next(r_shape, 1)
+      mask, old_dim = (next_mask[0] * old_dim + l, (next_mask[1] - 1) * old_dim + r), ssimplify(old_dim * next(r_shape, 1))
 
   return tuple(reversed(new_mask))
 
@@ -154,13 +179,17 @@ class View:
   @functools.cache  # pylint: disable=method-cache-max-size-none
   def __add__(self, vm1:View) -> Optional[View]:
     vm2 = self
-    if vm2.contiguous: return vm1
+    if vm2.contiguous or vm1.size() == 0: return vm1
     if vm1.contiguous and vm1.shape == vm2.shape: return vm2
     if vm1.contiguous and vm1.size() == vm2.size() and (ret := vm2.reshape(vm1.shape)) is not None: return ret
     if vm1.mask:
       if (new_vm1 := vm1.shrink(vm1.mask)) == vm1 or (merged := vm2 + new_vm1) is None: return None
       return merged.pad(tuple((b,s-e) for (b,e),s in zip(vm1.mask, vm1.shape)))
-    if not all_int(vm1.shape): return None
+    if not all_int(vm1.shape):
+      # if all strides are 0 and vm2 is unmasked, return vm1
+      if all(x == 0 for x in vm2.strides+vm1.strides) and vm2.mask is None: return vm1
+      # TODO: handle more cases
+      return None
 
     # Project vm1's offset and strides on to vm2.
     origin = unravel(vm2.shape, vm1.offset)
@@ -256,8 +285,8 @@ class View:
     # NOTE: does not check multiple of symbolic shape
     assert all(resolve(s == ns) or s == 1 for s,ns in zip(self.shape, new_shape)), f"can't expand {self.shape} into {new_shape}"
     if 0 in self.shape: return View.create(new_shape)
-    # TODO: this resolve may not be needed, but it's hard because vars need to be sorted
-    mask = tuple([(((0,0) if m != (0,1) else (0,ns)) if resolve(s != ns, False) else m) \
+    # TODO: resolve may not be needed, but it's hard because vars need to be canonicalized
+    mask = tuple([(((0,0) if m != (0,1) else (0,ns)) if resolve(s != ns) and resolve(s == 1, False) else m) \
                   for m,s,ns in zip(self.mask, self.shape, new_shape)]) if self.mask else None
     return View.create(new_shape, self.strides, self.offset, mask)
 

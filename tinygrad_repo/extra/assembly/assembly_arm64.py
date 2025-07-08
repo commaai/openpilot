@@ -3,7 +3,7 @@ from platform import system
 from typing import Tuple, Dict, List, Optional
 from tinygrad import dtypes
 from tinygrad.uop.ops import BinaryOps, UnaryOps, TernaryOps
-from tinygrad.codegen.kernel import Ops, UOp
+from tinygrad.opt.kernel import Ops, UOp
 from tinygrad.helpers import CI
 from tinygrad.codegen.assembly import uops_to_asmstyle, AssemblyLanguage
 

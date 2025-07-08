@@ -170,6 +170,13 @@ class TestTorchBackend(unittest.TestCase):
     assert torch.equal(tensor_a, tensor_b)
     assert not torch.equal(tensor_a, tensor_c)
 
+  def test_linalg_eigh(self):
+    a = torch.tensor([[1, 2], [2, 1]], dtype=torch.float32, device=device)
+    w, v = torch.linalg.eigh(a)
+    np.testing.assert_equal(w.cpu().numpy(), [-1, 3])
+    recon = (v @ torch.diag(w) @ v.T).cpu().numpy()
+    np.testing.assert_allclose(recon, a.cpu().numpy(), atol=1e-6)
+
   def test_scalar_assign(self):
     a = torch.tensor([1, 2, 3], device=device)
     a[1] = 4
@@ -198,6 +205,17 @@ class TestTorchBackend(unittest.TestCase):
       X,Y = X_train[samples], Y_train[samples]
       X.cpu(), Y.cpu()
       self.assertLessEqual(GlobalCounters.global_ops, 10_000_000)
+
+  def _test_diagonal(self, *shape):
+    a = torch.randn(*shape, dtype=torch.float32, device=device)
+    ref = np.diagonal(a.cpu().numpy(), axis1=-2, axis2=-1)
+    diag = torch.linalg.diagonal(a)
+    np.testing.assert_equal(diag.cpu().numpy(), ref)
+    np.testing.assert_equal(diag[-1].cpu().numpy(), ref[-1])
+
+  def test_diagonal_cube(self): self._test_diagonal(3, 3, 3)
+  def test_diagonal_rectangular(self): self._test_diagonal(4, 5, 6)
+  def test_diagonal_4d(self): self._test_diagonal(2, 3, 4, 5)
 
 if __name__ == "__main__":
   unittest.main()

@@ -22,6 +22,7 @@ nav:
     - Runtime: runtime.md
   - Developer:
     - Intro: developer/developer.md
+    - Layout: developer/layout.md
     - Speed: developer/speed.md
     - UOp: developer/uop.md
     - Grouper:

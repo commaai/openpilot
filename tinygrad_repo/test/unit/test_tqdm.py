@@ -80,7 +80,7 @@ class TestProgressBar(unittest.TestCase):
 
           # compare bars at each iteration (only when tinytqdm bar has been updated)
           # setting high rate to make sure it does not skip
-          for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=1e9):
+          for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=10**9):
             tinytqdm_output = mock_stderr.getvalue().split("\r")[-1].rstrip()
 
             if n:
@@ -103,7 +103,7 @@ class TestProgressBar(unittest.TestCase):
     total = 10
     with patch('time.perf_counter', side_effect=[0]+list(range(100))):  # one more 0 for the init call
       # compare bars at each iteration (only when tinytqdm bar has been updated)
-      for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=1e9):
+      for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=10**9):
         tinytqdm_output = mock_stderr.getvalue().split("\r")[-1].rstrip()
         elapsed = n
         tqdm_output = tqdm.format_meter(n=n, total=total, elapsed=elapsed, ncols=ncols, prefix="Test", unit_scale=unit_scale)
@@ -120,7 +120,7 @@ class TestProgressBar(unittest.TestCase):
     # E   ?              +  ^
     with patch('time.perf_counter', side_effect=[0, *[i*k for i in range(100)]]):  # one more 0 for the init call
       # compare bars at each iteration (only when tinytqdm bar has been updated)
-      for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=1e9):
+      for n in tinytqdm(range(total), desc="Test", total=total, unit_scale=unit_scale, rate=10**9):
         tinytqdm_output = mock_stderr.getvalue().split("\r")[-1].rstrip()
         elapsed = n*k
         tqdm_output = tqdm.format_meter(n=n, total=total, elapsed=elapsed, ncols=ncols, prefix="Test", unit_scale=unit_scale)
@@ -238,7 +238,7 @@ class TestProgressBar(unittest.TestCase):
 
         # compare bars at each iteration (only when tinytqdm bar has been updated)
         # setting high rate to make sure it does not skip
-        for n,g in enumerate(tinytqdm(gen, desc="Test", unit_scale=unit_scale, rate=1e9)):
+        for n,g in enumerate(tinytqdm(gen, desc="Test", unit_scale=unit_scale, rate=10**9)):
           assert g == n
           tinytqdm_output = mock_stderr.getvalue().split("\r")[-1].rstrip()
           if n:

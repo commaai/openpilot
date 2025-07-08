@@ -1,4 +1,5 @@
 # ruff: noqa: E501
+""" AUTO-FORMATTED USING opendbc/car/debug/format_fingerprints.py, EDIT STRUCTURE THERE."""
 from opendbc.car.gm.values import CAR
 
 # Trailblazer also matches as a SILVERADO, TODO: split with fw versions

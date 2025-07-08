@@ -3,14 +3,14 @@ from tinygrad.runtime.support.hip_comgr import compile_hip
 from tinygrad import Tensor
 from tinygrad.device import Device
 from tinygrad.engine.schedule import create_schedule
-from tinygrad.codegen.kernel import Kernel
+from tinygrad.opt.kernel import Kernel
 
 class TestHIPCompileSpeed(unittest.TestCase):
   @unittest.skipIf(Device.DEFAULT != "HIP", "only run on HIP")
   def test_hip_compile(self):
     a, b = Tensor([1,2,3,4,5]), Tensor([1,2,3,4,5])
     out = a + b
-    lin = Kernel(create_schedule([out.lazydata])[-1].ast[0])
+    lin = Kernel(create_schedule([out.uop])[-1].ast[0])
     lin.linearize()
 
     reference = """

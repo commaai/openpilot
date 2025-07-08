@@ -1,6 +1,6 @@
 import onnx, yaml, tempfile, time, collections, pprint, argparse, json
 from pathlib import Path
-from tinygrad.frontend.onnx import OnnxRunner
+from tinygrad.frontend.onnx import OnnxRunner, onnx_load
 from extra.onnx import get_onnx_ops
 from extra.onnx_helpers import validate, get_example_inputs
 
@@ -13,7 +13,7 @@ def get_config(root_path: Path):
   return ret
 
 def run_huggingface_validate(onnx_model_path, config, rtol, atol):
-  onnx_model = onnx.load(onnx_model_path)
+  onnx_model = onnx_load(onnx_model_path)
   onnx_runner = OnnxRunner(onnx_model)
   inputs = get_example_inputs(onnx_runner.graph_inputs, config)
   validate(onnx_model_path, inputs, rtol=rtol, atol=atol)
@@ -116,7 +116,7 @@ if __name__ == "__main__":
       # repo id
       # validates all onnx models inside repo
       repo_id = "/".join(path)
-      root_path = Path(snapshot_download(repo_id=repo_id, allow_patterns=["*.onnx", ".onnx_data"], cache_dir=download_dir))
+      root_path = Path(snapshot_download(repo_id=repo_id, allow_patterns=["*.onnx", "*.onnx_data"], cache_dir=download_dir))
       snapshot_download(repo_id=repo_id, allow_patterns=["*config.json"], cache_dir=download_dir)
       config = get_config(root_path)
       for onnx_model in root_path.rglob("*.onnx"):

@@ -1,7 +1,7 @@
 import unittest
 from tinygrad import dtypes
 from tinygrad.uop.ops import UOp, graph_rewrite_map, _substitute
-from tinygrad.codegen.symbolic import symbolic
+from tinygrad.uop.symbolic import symbolic
 
 class TestRewriteMap(unittest.TestCase):
   def test_substitute(self):
