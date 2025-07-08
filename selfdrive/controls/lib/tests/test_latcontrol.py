@@ -10,7 +10,6 @@ from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
 from openpilot.selfdrive.locationd.helpers import Pose
-from openpilot.common.mock.generators import generate_livePose
 
 
 class TestLatControl:
