@@ -8,7 +8,13 @@ import functools
 import threading
 from cereal.messaging import PubMaster
 from cereal.services import SERVICE_LIST
+from openpilot.common.mock.generators import generate_livePose
 from openpilot.common.realtime import Ratekeeper
+
+
+MOCK_GENERATOR = {
+  "livePose": generate_livePose
+}
 
 
 def generate_messages_loop(services: list[str], done: threading.Event):
