@@ -75,8 +75,9 @@ class UploadTOSAdapter(HTTPAdapter):
     super().init_poolmanager(connections, maxsize, block, **pool_kwargs)
 
 
-_UPLOAD_SESS = requests.Session()
-_UPLOAD_SESS.mount("https://", UploadTOSAdapter())
+UPLOAD_SESS = requests.Session()
+UPLOAD_SESS.mount("http://", UploadTOSAdapter())
+UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
 
 @dataclass
@@ -325,10 +326,10 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = _UPLOAD_SESS.put(upload_item.url,
-                                data=CallbackReader(stream, callback, content_length) if callback else stream,
-                                headers={**upload_item.headers, 'Content-Length': str(content_length)},
-                                timeout=30)
+    response = UPLOAD_SESS.put(upload_item.url,
+                               data=CallbackReader(stream, callback, content_length) if callback else stream,
+                               headers={**upload_item.headers, 'Content-Length': str(content_length)},
+                               timeout=30)
     return response
   finally:
     if stream:
