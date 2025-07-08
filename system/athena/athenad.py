@@ -14,7 +14,6 @@ import sys
 import tempfile
 import threading
 import time
-import urllib3
 from dataclasses import asdict, dataclass, replace
 from datetime import datetime
 from functools import partial, total_ordering
@@ -76,9 +75,9 @@ class UploadTOSAdapter(HTTPAdapter):
     super().init_poolmanager(connections, maxsize, block, **kw)
 
 
-_upload_sess = requests.Session()
-_upload_sess.mount("http://", UploadTOSAdapter())
-_upload_sess.mount("https://", UploadTOSAdapter())
+_UPLOAD_SESS = requests.Session()
+_UPLOAD_SESS.mount("http://", UploadTOSAdapter())
+_UPLOAD_SESS.mount("https://", UploadTOSAdapter())
 
 
 @dataclass
@@ -327,7 +326,7 @@ def _do_upload(upload_item: UploadItem, callback: Callable = None) -> requests.R
   stream = None
   try:
     stream, content_length = get_upload_stream(path, compress)
-    response = _upload_sess.put(upload_item.url,
+    response = _UPLOAD_SESS.put(upload_item.url,
                                 data=CallbackReader(stream, callback, content_length) if callback else stream,
                                 headers={**upload_item.headers, 'Content-Length': str(content_length)},
                                 timeout=30)
