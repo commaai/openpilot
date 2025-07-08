@@ -29,15 +29,13 @@ class LatControlTorque(LatControl):
     self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
                              k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
-    self.use_steering_angle = self.torque_params.useSteeringAngle
-    self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
 
-  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose, curvature_limited):
+  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, curvature_limited):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -45,14 +43,8 @@ class LatControlTorque(LatControl):
     else:
       actual_curvature_vm = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
-      if self.use_steering_angle:
-        actual_curvature = actual_curvature_vm
-        curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
-      else:
-        assert calibrated_pose is not None
-        actual_curvature_pose = calibrated_pose.angular_velocity.yaw / CS.vEgo
-        actual_curvature = np.interp(CS.vEgo, [2.0, 5.0], [actual_curvature_vm, actual_curvature_pose])
-        curvature_deadzone = 0.0
+      actual_curvature = actual_curvature_vm
+      curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
 
       # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
