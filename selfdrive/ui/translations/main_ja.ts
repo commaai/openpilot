@@ -311,24 +311,28 @@
         <translation>openpilotの本体は左右4°以内、上5°下9°以内の角度で取付ける必要があります。</translation>
     </message>
     <message>
-        <source>Steering lag calibration is %1% complete.</source>
-        <translation>ステアリング遅延のキャリブレーションが%1％完了。</translation>
-    </message>
-    <message>
-        <source>Steering lag calibration is complete.</source>
-        <translation>ステアリング遅延のキャリブレーション完了。</translation>
-    </message>
-    <message>
-        <source>Steering torque response calibration is %1% complete.</source>
-        <translation>ステアリングトルク応答のキャリブレーションが%1％完了。</translation>
-    </message>
-    <message>
-        <source>Steering torque response calibration is complete.</source>
-        <translation>ステアリングトルク応答のキャリブレーション完了。</translation>
-    </message>
-    <message>
         <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
         <translation>openpilot は継続的にキャリブレーションを行っており、リセットが必要になることはほとんどありません。キャリブレーションをリセットすると、車の電源が入っている場合はopenpilotが再起動します。</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1156,6 +1160,14 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation>この設定を変更すると車の電源が入っている場合はopenpilotが再起動します。</translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
