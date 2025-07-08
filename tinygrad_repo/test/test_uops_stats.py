@@ -6,7 +6,7 @@ from tinygrad.renderer import Estimates
 from tinygrad.codegen import full_rewrite
 from tinygrad.uop.ops import Ops, UOp
 from tinygrad.dtype import dtypes
-from tinygrad.codegen.kernel import Kernel, Opt, OptOps, KernelOptError
+from tinygrad.opt.kernel import Kernel, Opt, OptOps, KernelOptError
 from tinygrad.device import Device
 
 def flops_mem(uops, ignore_indexing=False):

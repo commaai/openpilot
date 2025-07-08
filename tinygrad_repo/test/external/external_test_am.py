@@ -1,7 +1,8 @@
 import unittest
-from tinygrad.runtime.support.am.amdev import AMMemoryManager, AMPageTableTraverseContext
+from tinygrad.runtime.support.am.amdev import AMMemoryManager, AMPageTableEntry
 from tinygrad.runtime.support.am.ip import AM_GMC
 from tinygrad.runtime.support.hcq import MMIOInterface
+from tinygrad.runtime.support.memory import PageTableTraverseContext
 from tinygrad.runtime.autogen.am import am
 from tinygrad.helpers import mv_address
 
@@ -23,7 +24,9 @@ class FakeAM:
     self.vram_mv = memoryview(bytearray(4 << 30))
     self.vram = MMIOInterface(mv_address(self.vram_mv), self.vram_mv.nbytes)
     self.gmc = FakeGMC(self)
-    self.mm = AMMemoryManager(self, vram_size=4 << 30)
+    self.mm = AMMemoryManager(self, 4 << 30, boot_size=(32 << 20), pt_t=AMPageTableEntry, pte_cnt=[512, 512, 512, 512],
+      pte_covers=[(1 << ((9 * (3-lv)) + 12)) for lv in range(4)], first_lv=am.AMDGPU_VM_PDB1, va_base=AMMemoryManager.va_allocator.base,
+      palloc_ranges=[(1 << i, 0x1000) for i in range(9 * (3 - am.AMDGPU_VM_PDB2), 11, -1)])
     self.is_booting = False
     self.ip_ver = {am.GC_HWIP: (11, 0, 0)}
   def paddr2cpu(self, paddr:int) -> int: return paddr + mv_address(self.vram)
@@ -65,7 +68,7 @@ class TestAMPageTable(unittest.TestCase):
       exteranl_va = va + AMMemoryManager.va_allocator.base
       mm.map_range(vaddr=exteranl_va, size=sz, paddrs=[(va, sz)])
 
-      ctx = AMPageTableTraverseContext(self.d[0], mm.root_page_table, exteranl_va)
+      ctx = PageTableTraverseContext(self.d[0], mm.root_page_table, exteranl_va)
       results = list(ctx.next(sz))
 
       total_covered = 0
@@ -91,6 +94,17 @@ class TestAMPageTable(unittest.TestCase):
           assert pte['paddr'] == 0
           assert pte['valid'] == 0
 
+  def test_map_notaligned(self):
+    mm0 = self.d[0].mm
+
+    for (va1,sz1),(va2,sz2) in [((0x10000, (0x1000)), (0x11000, (2 << 20)))]:
+      exteranl_va1 = va1 + AMMemoryManager.va_allocator.base
+      exteranl_va2 = va2 + AMMemoryManager.va_allocator.base
+      mm0.map_range(vaddr=exteranl_va1, size=sz1, paddrs=[(va1, sz1)])
+      mm0.map_range(vaddr=exteranl_va2, size=sz2, paddrs=[(va2, sz2)])
+      mm0.unmap_range(va2, sz2)
+      mm0.unmap_range(va1, sz1)
+
   def test_double_map(self):
     mm0 = self.d[0].mm
 
@@ -115,7 +129,7 @@ class TestAMPageTable(unittest.TestCase):
       # Finally can map and check paddrs
       mm0.map_range(vaddr=exteranl_va + 0x2000, size=0x100000, paddrs=[(0xdead0000, 0x1000), (0xdead1000, 0xff000)])
 
-      ctx = AMPageTableTraverseContext(self.d[0], mm0.root_page_table, exteranl_va + 0x2000)
+      ctx = PageTableTraverseContext(self.d[0], mm0.root_page_table, exteranl_va + 0x2000)
       for tup in ctx.next(0x100000):
         _offset, _pt, _pte_idx, _n_ptes, _pte_covers = tup
         for i in range(_n_ptes):

@@ -3,9 +3,9 @@ import numpy as np
 from tinygrad import Tensor, GlobalCounters, dtypes, nn, Device, Variable
 from tinygrad.helpers import CI, Context, getenv
 from tinygrad.engine.realize import run_schedule
-from tinygrad.codegen.kernel import Opt, OptOps, Kernel, KernelOptError
+from tinygrad.opt.kernel import Opt, OptOps, Kernel, KernelOptError
 from tinygrad.engine.realize import CompiledRunner, ExecItem
-from tinygrad.engine.search import get_kernel_actions
+from tinygrad.opt.search import get_kernel_actions
 from tinygrad.uop.ops import Ops
 
 class TestArange(unittest.TestCase):
@@ -20,7 +20,7 @@ class TestArange(unittest.TestCase):
     p = k.to_program()
     print(p.name)
     #print(p.src)
-    ExecItem(CompiledRunner(p), [tt.lazydata.buffer]).run()
+    ExecItem(CompiledRunner(p), [tt.uop.buffer]).run()
     np.testing.assert_equal(tt.numpy(), np.arange(N))
     return p.estimates.ops
 
@@ -189,8 +189,6 @@ class TestIndexing(unittest.TestCase):
     np.testing.assert_allclose(X_train.numpy()[samples.numpy()], x)
     np.testing.assert_allclose(Y_train.numpy()[samples.numpy()], y)
 
-  # TODO: fix these on WEBGPU, it looks like it has to do with packed stuff
-  @unittest.skipIf(getenv("WEBGPU"), "broken on webgpu for some reason")
   def test_index_mnist_opt(self): self.test_index_mnist(0)
   def test_index_mnist_split(self): self.test_index_mnist(1, split_reduceop=1)
   def test_index_mnist_opt_split(self): self.test_index_mnist(0, split_reduceop=1)

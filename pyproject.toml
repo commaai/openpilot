@@ -68,6 +68,9 @@ dependencies = [
 
   # logreader
   "zstandard",
+
+  # ui
+  "qrcode",
 ]
 
 [project.optional-dependencies]
@@ -78,14 +81,13 @@ docs = [
 ]
 
 testing = [
-  "coverage",
   "hypothesis ==6.47.*",
   "mypy",
   "pytest",
-  "pytest-cov",
   "pytest-cpp",
   "pytest-subtests",
-  "pytest-xdist",
+  # https://github.com/pytest-dev/pytest-xdist/issues/1215
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@909e97b49d12401c10608f9d777bfc9dab8a4413",
   "pytest-timeout",
   "pytest-randomly",
   "pytest-asyncio",
@@ -102,8 +104,8 @@ dev = [
   "azure-storage-blob",
   "dbus-next",
   "dictdiffer",
-  "lru-dict",
   "matplotlib",
+  "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pygame",
@@ -259,9 +261,7 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "tools".msg = "Use openpilot.tools"
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
-
-[tool.coverage.run]
-concurrency = ["multiprocessing", "thread"]
+"pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
 
 [tool.ruff.format]
 quote-style = "preserve"

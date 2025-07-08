@@ -490,7 +490,9 @@ BO_ 1024 VehicleConfig: 7 CGM
  SG_ VCM_Market : 23|8@0+ (1,0) [0|255] "" ACM,ESP
 
 BO_ 1265 Cluster: 6 XXX
- SG_ Cluster_VehicleSpeed : 8|8@1+ (1,0) [0|255] "mph" XXX
+ SG_ Cluster_Unit : 7|1@0+ (1,0) [0|1] "" XXX
+ SG_ Cluster_VehicleSpeed : 15|8@0+ (1,0) [0|255] "mph" XXX
+ SG_ Cluster_Odometer : 23|32@0+ (0.1,0) [0|429496729.5] "" XXX
 
 BO_ 1280 RCM_Dtc: 8 RCM
  SG_ RCM_Dtc_Checksum : 7|8@0+ (1,0) [0|25] "" VDM
@@ -679,7 +681,7 @@ CM_ SG_ 524 ESP_BrakePressure_LF "Brake Pressure Left Front";
 CM_ SG_ 524 ESP_BrakePressure_LR "Brake Pressure Left Rear";
 CM_ SG_ 524 ESP_BrakePressure_RF "Brake Pressure Right Front";
 CM_ SG_ 524 ESP_BrakePressure_RR "Brake Pressure Right Rear";
-CM_ SG_ 524 ESP_MasterCyl_Pressure "Master Cyclinder Brake Pressure";
+CM_ SG_ 524 ESP_MasterCyl_Pressure "Master Cylinder Brake Pressure";
 CM_ SG_ 524 ESP_MasterCyl_Pressure_Q "Indication of whether signal with corresponding name is valid";
 CM_ SG_ 524 ESP_BrakePressure_RR_Q "Indication of whether signal with corresponding name is valid";
 CM_ SG_ 524 ESP_BrakePressure_LR_Q "Indication of whether signal with corresponding name is valid";
@@ -1008,6 +1010,7 @@ VAL_ 1024 VCM_VehicleType 0 "VCM_VehicleType_Sna" 1 "VCM_VehicleType_R1T" 2 "VCM
 VAL_ 1024 VCM_HandOfDrive 0 "VCM_HandOfDrive_Lhd" 1 "VCM_HandOfDrive_Rhd";
 VAL_ 1024 VCM_BatterySize 0 "VCM_BatterySize_Sna" 1 "VCM_BatterySize_A105kW" 2 "VCM_BatterySize_A130kW" 3 "VCM_BatterySize_A180kW" 4 "VCM_BatterySize_BxxxkW" 5 "VCM_BatterySize_CxxxkW" 6 "VCM_BatterySize_DxxxkW" 7 "VCM_BatterySize_ExxxkW";
 VAL_ 1024 VCM_Market 0 "VCM_Market_Sna" 1 "VCM_Market_RegionB" 2 "VCM_Market_RegionC" 3 "VCM_Market_RegionD" 4 "VCM_Market_RegionE" 5 "VCM_Market_RegionF" 6 "VCM_Market_RegionG" 7 "VCM_Market_RegionH";
+VAL_ 1265 Cluster_Unit 0 "KPH" 1 "MPH";
 VAL_ 1640 OCS_FrontPassClass 0 "OCS_FrontPassClass_Classification_Unknown" 1 "OCS_FrontPassClass_Reserved_1" 2 "OCS_FrontPassClass_One_YO_CRS" 3 "OCS_FrontPassClass_Reserved_2" 4 "OCS_FrontPassClass_Reserved_3" 5 "OCS_FrontPassClass_Reserved_4" 6 "OCS_FrontPassClass_Small_Adult" 7 "OCS_FrontPassClass_Medium_Adult" 8 "OCS_FrontPassClass_Reserved_5" 9 "OCS_FrontPassClass_Reserved_6" 10 "OCS_FrontPassClass_Reserved_7" 11 "OCS_FrontPassClass_Reserved_8" 12 "OCS_FrontPassClass_Reserved_9" 13 "OCS_FrontPassClass_Reserved_10" 14 "OCS_FrontPassClass_Reserved_11" 15 "OCS_FrontPassClass_Reserved_12";
 VAL_ 1640 OCS_FrontPassClassValid 0 "Not_Valid" 1 "Valid";
 VAL_ 1640 OCS_FrontPassFaultStatus 0 "No_Fault_Present" 1 "Fault_Status" 2 "Reserved_1" 3 "Reserved_2";

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import Optional, Callable, cast
-import functools, math
+import functools, math, itertools
 from enum import Enum, auto
 from dataclasses import dataclass, field, replace
 from tinygrad.helpers import to_function_name, dedup, prod
@@ -26,7 +26,7 @@ class TensorCore: # D = A * B + C, A is (M x K), B is (K x N), C and D are (M x 
   elements_per_thread: tuple[int, int, int] # elements per-thread to load/store from A/B/C
   dtype_in: DType # dtype for A and B
   dtype_out: DType # dtype for C and D
-  opts: tuple[str, ...] # ordered tuple of "ux" or "lx" specifing kernel opts to perform. "ux" upcasts dim x and "lx" localizes dim x
+  opts: tuple[str, ...] # ordered tuple of "ux" or "lx" specifying kernel opts to perform. "ux" upcasts dim x and "lx" localizes dim x
   swizzle: tuple[Optional[tuple[tuple[int, ...], tuple[int, ...]]], Optional[tuple[tuple[int, ...], tuple[int, ...]]]] = (None, None)
   def get_reduce_axes(self): return [(i, 2) for i in range(int(math.log2(self.dims[2])))]
   def get_upcast_axes(self): return [opt for opt in self.opts if opt[0] == "u"]
@@ -87,8 +87,6 @@ class ProgramSpec:
   device:str
   ast:UOp  # save the base ast (this is method cache key)
   uops:Optional[list[UOp]]=None
-  applied_opts:Optional[list[Opt]]=None
-  mem_estimate:sint=0  # TODO: get this from the load/store uops once min/max are good
 
   # filled in from uops (if we have uops)
   global_size:Optional[list[int]]=None
@@ -118,11 +116,23 @@ class ProgramSpec:
       self._ran_post_init = True
 
   @functools.cached_property
+  def mem_estimate(self) -> sint:
+    # group non-local bufs by the op type (LOAD or STORE) and the buffer arg. take the max access of that buffer in bytes
+    # TODO: these max and min don't work on symbolic, and results are very wrong.
+    return sum(max(x.src[0].dtype.nbytes() for x in group)
+      for _, group in itertools.groupby([x for x in self.ast.toposort() if x.op in {Ops.LOAD, Ops.STORE} and x.src[0].base.op is Ops.DEFINE_GLOBAL],
+                        key=lambda x: (x.op, x.src[0].base.arg)))
+
+  @functools.cached_property
   def estimates(self) -> Estimates:
     return replace(Estimates() if self.uops is None else Estimates.from_uops(self.uops, ignore_indexing=True), mem=self.mem_estimate)
 
   @functools.cached_property
   def function_name(self) -> str: return to_function_name(self.name)
+
+  @property
+  def applied_opts(self) -> tuple[Opt, ...]|None: return self.uops[-1].arg.applied_opts if \
+    self.uops is not None and self.uops[-1].op is Ops.SINK and self.uops[-1].arg is not None else None
 
   def launch_dims(self, var_vals:dict[Variable, int]):
     global_size = [sym_infer(sz, var_vals) for sz in self.global_size] if self.global_size is not None else None

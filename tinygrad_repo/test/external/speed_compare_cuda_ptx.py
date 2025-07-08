@@ -1,10 +1,10 @@
 import itertools
 from tinygrad import Device
 from tinygrad.engine.realize import CompiledRunner
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.opt.heuristic import hand_coded_optimizations
 from tinygrad.helpers import getenv, colorize_float
 from extra.optimization.helpers import load_worlds, ast_str_to_lin
-from tinygrad.engine.search import bufs_from_lin
+from tinygrad.opt.search import bufs_from_lin
 from tinygrad.runtime.ops_cuda import PTXCompiler, PTXRenderer, CUDACompiler
 
 if __name__ == "__main__":
@@ -33,7 +33,6 @@ if __name__ == "__main__":
     dev.compiler = PTXCompiler(dev.arch)
     lin = ast_str_to_lin(ast, opts=ptx)
     lin.apply_opts(hand_coded_optimizations(lin))
-    lin.linearize()
     ptx_prg = CompiledRunner(lin.to_program())
 
     # warmup

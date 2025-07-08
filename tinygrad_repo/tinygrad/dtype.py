@@ -42,6 +42,10 @@ class DType(metaclass=DTypeMetaClass):
     return PtrDType(self.priority, self.itemsize, self.name, self.fmt, self.count, None, self, local, 1, size)
   def scalar(self) -> DType: return self._scalar if self._scalar is not None else self
   def nbytes(self): raise RuntimeError("only ptr types have nbytes")
+  @property
+  def min(self): return dtypes.min(self)
+  @property
+  def max(self): return dtypes.max(self)
 
 @dataclass(frozen=True, eq=False)
 class PtrDType(DType):

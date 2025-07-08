@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-import unittest
+import unittest, os, subprocess, sys
 from tinygrad import Tensor
 from tinygrad.device import Device, Compiler
 from tinygrad.helpers import diskcache_get, diskcache_put, getenv, Context
@@ -52,6 +52,14 @@ class TestCompiler(unittest.TestCase):
     with Context(DISABLE_COMPILER_CACHE=1):
       a = Tensor([0.,1.], device=Device.DEFAULT).realize()
       (a + 1).realize()
+
+class TestRunAsModule(unittest.TestCase):
+  def test_module_runs(self):
+    p = subprocess.run([sys.executable, "-m", "tinygrad.device"],stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+      env={**os.environ, "DEBUG": "1"}, timeout=10,)
+    out = (p.stdout + p.stderr).decode()
+    self.assertEqual(p.returncode, 0, msg=out)
+    self.assertIn("CPU", out) # for sanity check
 
 if __name__ == "__main__":
   unittest.main()

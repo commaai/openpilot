@@ -5,6 +5,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.button import ButtonStyle, gui_button
 from openpilot.system.ui.lib.inputbox import InputBox
 from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.lib.widget import Widget
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
@@ -52,11 +53,14 @@ KEYBOARD_LAYOUTS = {
 }
 
 
-class Keyboard:
+class Keyboard(Widget):
   def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
+    super().__init__()
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
+    self._title = ""
+    self._sub_title = ""
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
@@ -67,7 +71,7 @@ class Keyboard:
     # Backspace key repeat tracking
     self._backspace_pressed: bool = False
     self._backspace_press_time: float = 0.0
-    self._backspace_last_repeat:float = 0.0
+    self._backspace_last_repeat: float = 0.0
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -89,10 +93,14 @@ class Keyboard:
     self._input_box.clear()
     self._backspace_pressed = False
 
-  def render(self, title: str, sub_title: str):
-    rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
-    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90, font_weight=FontWeight.BOLD)
-    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, font_weight=FontWeight.NORMAL)
+  def set_title(self, title: str, sub_title: str = ""):
+    self._title = title
+    self._sub_title = sub_title
+
+  def _render(self, rect: rl.Rectangle):
+    rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
+    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
+    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
     if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
       self.clear()
       return 0
@@ -223,7 +231,8 @@ if __name__ == "__main__":
   gui_app.init_window("Keyboard")
   keyboard = Keyboard(min_text_size=8, show_password_toggle=True)
   for _ in gui_app.render():
-    result = keyboard.render("Keyboard", "Type here")
+    keyboard.set_title("Keyboard Input", "Type your text below")
+    result = keyboard.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     if result == 1:
       print(f"You typed: {keyboard.text}")
       gui_app.request_close()

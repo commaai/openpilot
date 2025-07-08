@@ -2,11 +2,11 @@ from extra.models.resnet import ResNet50
 from extra.mcts_search import mcts_search
 from examples.mlperf.helpers import get_mlperf_bert_model
 from tinygrad import Tensor, Device, dtypes, nn
-from tinygrad.codegen.kernel import Kernel
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.opt.kernel import Kernel
+from tinygrad.opt.heuristic import hand_coded_optimizations
 from tinygrad.uop.ops import Ops, sym_infer
 from tinygrad.device import Compiled
-from tinygrad.engine.search import beam_search, bufs_from_lin
+from tinygrad.opt.search import beam_search, bufs_from_lin
 from tinygrad.helpers import DEBUG, ansilen, getenv, colored, TRACEMETA
 from extra.optimization.helpers import time_linearizer
 

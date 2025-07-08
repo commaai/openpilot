@@ -12,16 +12,18 @@ import multiprocessing, functools, itertools, asyncio, http, http.client, hashli
 from tinygrad.renderer import Renderer, ProgramSpec
 from tinygrad.dtype import DTYPES_DICT, dtypes
 from tinygrad.uop.ops import UOp, Ops, Variable, sint
-from tinygrad.helpers import getenv, DEBUG, fromimport, unwrap, Timing
+from tinygrad.helpers import getenv, DEBUG, fromimport, unwrap, LazySeq, Timing
 from tinygrad.engine.jit import GraphRunner, MultiGraphRunner, ExecItem, graph_class
 from tinygrad.engine.realize import CompiledRunner, BufferXfer
 from tinygrad.device import Compiled, Buffer, Allocator, Compiler, Device, BufferSpec
-from tinygrad.runtime.graph.cpu import CPUGraph
 
 # ***** API *****
 
 @dataclass(frozen=True)
-class RemoteRequest: session: tuple[str, int]|None = field(default=None, kw_only=True)
+class SessionKey: host: str; idx: int; nonce: str # noqa: E702
+
+@dataclass(frozen=True)
+class RemoteRequest: session: SessionKey|None = field(default=None, kw_only=True)
 
 @dataclass(frozen=True)
 class SessionFree(RemoteRequest): pass
@@ -30,13 +32,18 @@ class SessionFree(RemoteRequest): pass
 class RemoteProperties:
   real_device: str
   renderer: tuple[str, str, tuple[Any, ...]]
+  offset_supported: bool
   graph_supported: bool
   graph_supports_multi: bool
-  transfer_supported: bool
-  offset_supported: bool
 
 @dataclass(frozen=True)
 class GetProperties(RemoteRequest): pass
+
+@dataclass(frozen=True)
+class Event(RemoteRequest): event_session: SessionKey; event: int # noqa: E702
+
+@dataclass(frozen=True)
+class Wait(RemoteRequest): event: int
 
 @dataclass(frozen=True)
 class BufferAlloc(RemoteRequest): buffer_num: int; size: int; options: BufferSpec # noqa: E702
@@ -54,7 +61,7 @@ class CopyIn(RemoteRequest): buffer_num: int; datahash: str # noqa: E702
 class CopyOut(RemoteRequest): buffer_num: int
 
 @dataclass(frozen=True)
-class Transfer(RemoteRequest): buffer_num: int; ssession: tuple[str, int]; sbuffer_num: int # noqa: E702
+class Transfer(RemoteRequest): buffer_num: int; dsession: SessionKey; dbuffer_num: int # noqa: E702
 
 @dataclass(frozen=True)
 class ProgramAlloc(RemoteRequest): name: str; datahash: str # noqa: E702
@@ -69,7 +76,7 @@ class ProgramExec(RemoteRequest):
 
 @dataclass(frozen=True)
 class GraphComputeItem:
-  session: tuple[str, int]
+  session: SessionKey
   name: str
   datahash: str
   bufs: tuple[int, ...]
@@ -84,7 +91,7 @@ class GraphComputeItem:
 class GraphAlloc(RemoteRequest):
   graph_num: int
   jit_cache: tuple[GraphComputeItem|Transfer, ...]
-  bufs: tuple[tuple[tuple[str, int], int], ...]
+  bufs: tuple[tuple[SessionKey, int], ...]
   var_vals: dict[Variable, int]
 
 @dataclass(frozen=True)
@@ -94,14 +101,14 @@ class GraphFree(RemoteRequest):
 @dataclass(frozen=True)
 class GraphExec(RemoteRequest):
   graph_num: int
-  bufs: tuple[tuple[tuple[str, int], int], ...]
+  bufs: tuple[tuple[SessionKey, int], ...]
   var_vals: dict[Variable, int]
   wait: bool
 
 # for safe deserialization
-eval_globals = {x.__name__:x for x in [SessionFree, RemoteProperties, GetProperties, BufferAlloc, BufferOffset, BufferFree, CopyIn, CopyOut, Transfer,
-                                       ProgramAlloc, ProgramFree, ProgramExec, GraphComputeItem, GraphAlloc, GraphFree, GraphExec, BufferSpec, UOp,
-                                       Ops, dtypes]}
+eval_globals = {x.__name__:x for x in [SessionKey, SessionFree, RemoteProperties, GetProperties, Event, Wait, BufferAlloc, BufferOffset, BufferFree,
+                                       CopyIn, CopyOut, Transfer, ProgramAlloc, ProgramFree, ProgramExec, GraphComputeItem, GraphAlloc, GraphFree,
+                                       GraphExec, BufferSpec, UOp, Ops, dtypes]}
 attribute_whitelist: dict[Any, set[str]] = {dtypes: {*DTYPES_DICT.keys(), 'imagef', 'imageh'}, Ops: {x.name for x in Ops}}
 eval_fxns = {ast.Constant: lambda x: x.value, ast.Tuple: lambda x: tuple(map(safe_eval, x.elts)), ast.List: lambda x: list(map(safe_eval, x.elts)),
   ast.Dict: lambda x: {safe_eval(k):safe_eval(v) for k,v in zip(x.keys, x.values)},
@@ -141,11 +148,12 @@ class RemoteSession:
   programs: dict[tuple[str, str], Any] = field(default_factory=dict)
   graphs: dict[int, GraphRunner] = field(default_factory=dict)
   buffers: dict[int, Buffer] = field(default_factory=dict)
+  events: defaultdict[int, asyncio.Event] = field(default_factory=functools.partial(defaultdict, asyncio.Event))
 
 class RemoteHandler:
   def __init__(self, base_device: str):
     self.base_device = base_device
-    self.sessions: defaultdict[tuple[str, int], RemoteSession] = defaultdict(RemoteSession)
+    self.sessions: defaultdict[SessionKey, RemoteSession] = defaultdict(RemoteSession)
 
   async def __call__(self, reader:asyncio.StreamReader, writer:asyncio.StreamWriter):
     while (req_hdr:=(await reader.readline()).decode().strip()):
@@ -155,10 +163,10 @@ class RemoteHandler:
         key, value = hdr.split(':', 1)
         req_headers[key.lower()] = value.strip()
       req_body = await reader.readexactly(int(req_headers.get("content-length", "0")))
-      res_status, res_body = self.handle(req_method, req_path, req_body)
+      res_status, res_body = await self.handle(req_method, req_path, req_body)
       writer.write(f"HTTP/1.1 {res_status.value} {res_status.phrase}\r\nContent-Length: {len(res_body)}\r\n\r\n".encode() + res_body)
 
-  def handle(self, method:str, path:str, body:bytes) -> tuple[http.HTTPStatus, bytes]:
+  async def handle(self, method:str, path:str, body:bytes) -> tuple[http.HTTPStatus, bytes]:
     status, ret = http.HTTPStatus.OK, b""
     if path == "/batch" and method == "POST":
       # TODO: streaming deserialize?
@@ -166,19 +174,27 @@ class RemoteHandler:
       # the cmds are always last (currently in datahash)
       for c in req._q:
         if DEBUG >= 1: print(c)
-        session, dev = self.sessions[unwrap(c.session)], Device[f"{self.base_device}:{unwrap(c.session)[1]}"]
+        session, dev = self.sessions[unwrap(c.session)], Device[f"{self.base_device}:{unwrap(c.session).idx}"]
         match c:
           case SessionFree(): del self.sessions[unwrap(c.session)]
           case GetProperties():
             cls, args = dev.renderer.__reduce__()
-            # CPUGraph re-renders kernel from uops specified in CompiledRunner, this is not supported
-            graph_cls = gt if (gt:=graph_class(Device[self.base_device])) is not CPUGraph else None
+            graph_cls = graph_class(Device[self.base_device])
             rp = RemoteProperties(
-              real_device=dev.device, renderer=(cls.__module__, cls.__name__, args),
+              real_device=dev.device, renderer=(cls.__module__, cls.__name__, args), offset_supported=hasattr(dev.allocator, '_offset'),
               graph_supported=graph_cls is not None, graph_supports_multi=graph_cls is not None and issubclass(graph_cls, MultiGraphRunner),
-              transfer_supported=hasattr(dev.allocator, '_transfer'), offset_supported=hasattr(dev.allocator, '_offset'),
             )
             ret = repr(rp).encode()
+          case Event():
+            if c.session == c.event_session:
+              session.events[c.event].set()
+            else:
+              dev.synchronize() # wait for device to finish executing previous stuff
+              # TODO: don't wait, just send
+              RemoteConnection(c.event_session.host).q(Event(c.event_session, c.event, session=c.event_session), wait=True)
+          case Wait():
+            assert await session.events[c.event].wait()
+            del session.events[c.event] # do not leak memory
           case BufferAlloc():
             assert c.buffer_num not in session.buffers, f"buffer {c.buffer_num} already allocated"
             session.buffers[c.buffer_num] = Buffer(dev.device, c.size, dtypes.uint8, options=c.options, preallocate=True)
@@ -189,11 +205,20 @@ class RemoteHandler:
           case CopyIn(): session.buffers[c.buffer_num].copyin(memoryview(bytearray(req._h[c.datahash])))
           case CopyOut(): session.buffers[c.buffer_num].copyout(memoryview(ret:=bytearray(session.buffers[c.buffer_num].nbytes)))
           case Transfer():
-            ssession, sdev = self.sessions[c.ssession], Device[f"{self.base_device}:{unwrap(c.ssession)[1]}"]
-            dbuf, sbuf = session.buffers[c.buffer_num], ssession.buffers[c.sbuffer_num]
-            assert dbuf.nbytes == sbuf.nbytes, f"{dbuf.nbytes} != {sbuf.nbytes}"
-            assert hasattr(dev.allocator, '_transfer'), f"Device {dev.device} doesn't support transfers"
-            dev.allocator._transfer(dbuf._buf, sbuf._buf, dbuf.nbytes, dest_dev=dev, src_dev=sdev)
+            if c.dsession.host == unwrap(c.session).host:
+              dsession, ddev = self.sessions[c.dsession], Device[f"{self.base_device}:{unwrap(c.dsession).idx}"]
+              dbuf, sbuf = dsession.buffers[c.dbuffer_num], session.buffers[c.buffer_num]
+              if hasattr(ddev.allocator, '_transfer'):
+                assert dbuf.nbytes == sbuf.nbytes, f"{dbuf.nbytes} != {sbuf.nbytes}"
+                ddev.allocator._transfer(dbuf._buf, sbuf._buf, dbuf.nbytes, dest_dev=ddev, src_dev=dev)
+              else:
+                sbuf.copyout(data:=memoryview(bytearray(sbuf.nbytes)))
+                dbuf.copyin(data)
+            else:
+              conn = RemoteConnection(c.dsession.host)
+              sbuf = session.buffers[c.buffer_num]
+              sbuf.copyout(data:=memoryview(bytearray(sbuf.nbytes)))
+              conn.q(CopyIn(c.dbuffer_num, conn.req.h(data), session=c.dsession), wait=True)
           case ProgramAlloc():
             lib = dev.compiler.compile_cached(req._h[c.datahash].decode())
             session.programs[(c.name, c.datahash)] = dev.runtime(c.name, lib)
@@ -209,14 +234,14 @@ class RemoteHandler:
               match gi:
                 case GraphComputeItem():
                   prg = self.sessions[gi.session].programs[(gi.name, gi.datahash)]
-                  ps = ProgramSpec(gi.name, '', f"{self.base_device}:{gi.session[1]}", UOp(Ops.NOOP),
+                  ps = ProgramSpec(gi.name, '', f"{self.base_device}:{gi.session.idx}", UOp(Ops.NOOP),
                                    vars=list(gi.vars), ins=list(gi.ins), outs=list(gi.outs),
                                    global_size=list(cast(tuple[int], gi.global_size)) if gi.global_size is not None else None,
                                    local_size=list(cast(tuple[int], gi.local_size)) if gi.local_size is not None else None)
                   return ExecItem(CompiledRunner(ps, precompiled=b'', prg=prg), [self.sessions[gi.session].buffers[buf] for buf in gi.bufs],
                                   fixedvars=gi.fixedvars)
                 case Transfer():
-                  dbuf, sbuf = self.sessions[unwrap(gi.session)].buffers[gi.buffer_num], self.sessions[gi.ssession].buffers[gi.sbuffer_num]
+                  dbuf, sbuf = self.sessions[gi.dsession].buffers[gi.dbuffer_num], self.sessions[unwrap(gi.session)].buffers[gi.buffer_num]
                   assert dbuf.nbytes == sbuf.nbytes, f"{dbuf.nbytes} != {sbuf.nbytes}"
                   return ExecItem(BufferXfer(dbuf.nbytes, dbuf.device, sbuf.device), [dbuf, sbuf])
             assert c.graph_num not in session.graphs, f"graph {c.graph_num} already allocated"
@@ -246,18 +271,23 @@ class RemoteAllocator(Allocator['RemoteDevice']):
     self.dev.q(BufferAlloc(buffer_num:=next(self.dev.buffer_num), size, options))
     return buffer_num
   # TODO: options should not be here in any Allocator
-  def _free(self, opaque:int, options): self.dev.q(BufferFree(opaque))
+  def _free(self, opaque:int, options):
+    try: self.dev.q(BufferFree(opaque))
+    except (TypeError, AttributeError): pass
   def _copyin(self, dest:int, src:memoryview): self.dev.q(CopyIn(dest, self.dev.conn.req.h(src)))
   def _copyout(self, dest:memoryview, src:int):
     resp = self.dev.q(CopyOut(src), wait=True)
     assert len(resp) == len(dest), f"buffer length mismatch {len(resp)} != {len(dest)}"
     dest[:] = resp
   def _transfer(self, dest, src, sz, src_dev, dest_dev):
-    if dest_dev.properties.transfer_supported and src_dev.conn == dest_dev.conn:
-      dest_dev.q(Transfer(dest, src_dev.session, src))
-    else:
-      src_dev.allocator._copyout(tmp:=memoryview(bytearray(sz)), src)
-      dest_dev.allocator._copyin(dest, tmp)
+    if dest_dev.conn != src_dev.conn:
+      dest_dev.q(Event(src_dev.session, start_event:=next(src_dev.event_num)))
+      src_dev.q(Wait(start_event))
+    src_dev.q(Transfer(src, dest_dev.session, dest))
+    if dest_dev.conn != src_dev.conn:
+      src_dev.q(Event(dest_dev.session, end_event:=next(dest_dev.event_num)))
+      dest_dev.q(Wait(end_event))
+    if DEBUG >= 2: dest_dev.conn.batch_submit()
   def _dyn_offset(self, opaque:int, size:int, offset:int) -> int:
     self.dev.q(BufferOffset(buffer_num:=next(self.dev.buffer_num), size, offset, opaque))
     return buffer_num
@@ -279,6 +309,8 @@ class RemoteProgram:
 
 @functools.cache
 class RemoteConnection:
+  all: dict[RemoteConnection, None] = {} # dict instead of set for deterministic ordering
+
   def __init__(self, host:str):
     if DEBUG >= 1: print(f"remote with host {host}")
     while 1:
@@ -290,31 +322,51 @@ class RemoteConnection:
         print(e)
         time.sleep(0.1)
     self.req: BatchRequest = BatchRequest()
+    RemoteConnection.all[self] = None
+
+  def q(self, x:RemoteRequest, wait:bool=False):
+    self.req.q(x)
+    if wait: return self.batch_submit()
 
   def batch_submit(self):
-    data = self.req.serialize()
-    with Timing(f"*** send {len(self.req._q):-3d} requests {len(self.req._h):-3d} hashes with len {len(data)/1024:.2f} kB in ", enabled=DEBUG>=3):
-      self.conn.request("POST", "/batch", data)
-      response = self.conn.getresponse()
-      assert response.status == 200, f"POST /batch failed: {response}"
-      ret = response.read()
-    self.req = BatchRequest()
+    conns = RemoteConnection.all.keys()
+    datas = {conn: conn.req.serialize() for conn in conns}
+    reqs, hashes, hash_datas = sum(len(c.req._q) for c in conns), sum(len(c.req._h) for c in conns), sum(len(data) for data in datas.values())
+    with Timing(f"*** send {reqs:-3d} requests {hashes:-3d} hashes with len {hash_datas/1024:.2f} kB in ", enabled=DEBUG>=3):
+      for conn,data in datas.items(): conn.conn.request("POST", "/batch", data)
+      for conn in datas.keys():
+        response = conn.conn.getresponse()
+        assert response.status == 200, f"POST /batch failed: {response}"
+        resp = response.read()
+        if conn == self: ret = resp
+        conn.req = BatchRequest()
     return ret
 
-class RemoteDevice(Compiled):
-  def __init__(self, device:str):
-    self.conn: RemoteConnection = RemoteConnection(getenv("HOST", "") or RemoteDevice.local_server())
+def parse_hosts(hs:str) -> list[tuple[str, int]]|LazySeq[tuple[str, int]]:
+  hosts = [(unwrap(h), int(c) if c is not None else c) for h,c in ((h.split("*", maxsplit=1)+[None,])[:2] for h in hs.split(","))]
+  if len(hosts) == 1 and hosts[0][1] is None: return LazySeq(lambda idx: (hosts[0][0], idx))
+  return [(h, i) for h,c in hosts for i in range(unwrap(c))]
 
-    # state for the connection
-    self.session = (binascii.hexlify(os.urandom(0x10)).decode(), int(device.split(":")[1]) if ":" in device else 0)
+class RemoteDevice(Compiled):
+  devices = parse_hosts(getenv("HOST", ""))
+
+  def __init__(self, device:str):
+    host, idx = RemoteDevice.devices[int(device.split(":")[1]) if ":" in device else 0]
+
+    # connection is shared between sessions on the same host
+    self.session: SessionKey = SessionKey(host or RemoteDevice.local_server(), idx, binascii.hexlify(os.urandom(0x10)).decode())
+    self.conn: RemoteConnection = RemoteConnection(self.session.host)
+
+    # state for the session
     self.buffer_num: Iterator[int] = itertools.count(0)
     self.graph_num: Iterator[int] = itertools.count(0)
+    self.event_num: Iterator[int] = itertools.count(0)
 
     self.properties: RemoteProperties = safe_eval(ast.parse(self.q(GetProperties(), wait=True), mode="eval").body)
     if DEBUG >= 1: print(f"remote has device {self.properties.real_device}")
     # TODO: how to we have BEAM be cached on the backend? this should just send a specification of the compute. rethink what goes in Renderer
     renderer = self.properties.renderer
-    if not renderer[0].startswith("tinygrad.renderer.") or not renderer[1].endswith("Renderer"): raise RuntimeError(f"bad renderer {renderer}")
+    if not renderer[0].startswith("tinygrad.") or not renderer[1].endswith("Renderer"): raise RuntimeError(f"bad renderer {renderer}")
     renderer_class = fromimport(renderer[0], renderer[1])  # TODO: is this secure?
     if not issubclass(renderer_class, Renderer): raise RuntimeError(f"renderer isn't a Renderer {renderer}")
     renderer_instance = renderer_class(*renderer[2])
@@ -326,9 +378,7 @@ class RemoteDevice(Compiled):
   def finalize(self):
     with contextlib.suppress(ConnectionError, http.client.HTTPException): self.q(SessionFree(), wait=True)
 
-  def q(self, x:RemoteRequest, wait:bool=False):
-    self.conn.req.q(replace(x, session=self.session))
-    if wait: return self.conn.batch_submit()
+  def q(self, x:RemoteRequest, wait:bool=False): return self.conn.q(replace(x, session=self.session), wait=wait)
 
   @functools.cache
   @staticmethod

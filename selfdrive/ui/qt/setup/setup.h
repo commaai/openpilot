@@ -15,6 +15,7 @@ public:
 private:
   void selectLanguage();
   QWidget *low_voltage();
+  QWidget *custom_software_warning();
   QWidget *getting_started();
   QWidget *network_setup();
   QWidget *software_selection();
@@ -23,6 +24,8 @@ private:
 
   QWidget *failed_widget;
   QWidget *downloading_widget;
+  QWidget *custom_software_warning_widget;
+  QWidget *software_selection_widget;
   QTranslator translator;
 
 signals:

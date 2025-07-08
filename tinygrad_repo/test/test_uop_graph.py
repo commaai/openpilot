@@ -3,7 +3,7 @@ import unittest, pytest
 from tinygrad import dtypes, Variable
 from tinygrad.helpers import DEBUG, Context
 from tinygrad.uop.ops import Ops, UOp, UPat, PatternMatcher, track_rewrites, graph_rewrite, GroupOp
-from tinygrad.codegen.symbolic import sym
+from tinygrad.uop.symbolic import sym
 from tinygrad.codegen import full_rewrite, full_rewrite_to_sink
 from tinygrad.codegen.expander import expander
 
@@ -422,6 +422,40 @@ class TestUOpGraph(unittest.TestCase):
 
       ld0 = UOp(Ops.LOAD, dtypes.int, (glbl0.index(Variable("i", 0, 20)),))
       with self.assertRaises(RuntimeError): to_uops_list([ld0])
+
+  def test_in_out_of_bounds_access_gated_store(self):
+    with Context(IGNORE_OOB=0):
+      glbl0 = UOp(Ops.DEFINE_GLOBAL, dtypes.int.ptr(16), (), 0)
+      v = Variable("v", 0, 20)
+      st0 = UOp(Ops.STORE, dtypes.void, (glbl0.index(v), UOp.const(dtypes.int, 0), v<16))
+      to_uops_list([st0])
+
+      st1 = UOp(Ops.STORE, dtypes.void, (glbl0.index(v), v, v<20))
+      with self.assertRaises(RuntimeError): to_uops_list([st1])
+
+  def test_in_bounds_access_gated_local(self):
+    with Context(IGNORE_OOB=0):
+      # Define buffers
+      gbuf = UOp(Ops.DEFINE_GLOBAL, dtypes.uint.ptr(400), (), 0)
+      sbuf = UOp(Ops.DEFINE_LOCAL, dtypes.uint.ptr(8, local=True), (), "temp0")
+
+      # Define indices, valids and barrier
+      gidx = UOp(Ops.SPECIAL, dtypes.int, (), ("gidx0", 416))
+      lidx = UOp(Ops.SPECIAL, dtypes.int, (), ("lidx0", 10))
+
+      gate = (gidx<400) & (lidx<8)
+
+      local_store = UOp(Ops.STORE, dtypes.void, (sbuf.index(lidx), UOp.const(dtypes.uint, 1), lidx<8))
+
+      barrier = UOp(Ops.BARRIER, dtypes.void, (local_store,))
+      if_barrier = UOp(Ops.IF, dtypes.void, (gate, barrier))
+
+      # Load from local memory (after the IF/barrier)
+      local_load = UOp(Ops.LOAD, dtypes.uint, (sbuf.index(lidx), if_barrier))
+
+      # Store to global memory
+      global_store = UOp(Ops.STORE, dtypes.void, (gbuf.index(gidx), local_load))
+      to_uops_list([global_store])
 
   def test_out_of_bounds_off_by_one_access(self):
     with Context(IGNORE_OOB=0):
