@@ -3,19 +3,23 @@ import cffi
 import os
 import time
 import pyray as rl
+import threading
 from collections.abc import Callable
+from collections import deque
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE
+from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.common.realtime import Ratekeeper
 
-DEFAULT_FPS = 60
+DEFAULT_FPS = int(os.getenv("FPS", "60"))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
-ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "1") == "1"
+ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 SCALE = float(os.getenv("SCALE", "1.0"))
@@ -43,6 +47,71 @@ class FontWeight(IntEnum):
 class ModalOverlay:
   overlay: object = None
   callback: Callable | None = None
+
+
+class MousePos(NamedTuple):
+  x: float
+  y: float
+
+
+class MouseEvent(NamedTuple):
+  pos: MousePos
+  left_pressed: bool
+  left_released: bool
+  left_down: bool
+  t: float
+
+
+MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
+
+
+class MouseState:
+  def __init__(self):
+    self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
+    self._prev_mouse_event: MouseEvent | None = None
+
+    self._rk = Ratekeeper(MOUSE_THREAD_RATE)
+    self._lock = threading.Lock()
+    self._exit_event = threading.Event()
+    self._thread = None
+
+  def get_events(self) -> list[MouseEvent]:
+    with self._lock:
+      events = list(self._events)
+      self._events.clear()
+    return events
+
+  def start(self):
+    self._exit_event.clear()
+    if self._thread is None or not self._thread.is_alive():
+      self._thread = threading.Thread(target=self._run_thread, daemon=True)
+      self._thread.start()
+
+  def stop(self):
+    self._exit_event.set()
+    if self._thread is not None and self._thread.is_alive():
+      self._thread.join()
+
+  def _run_thread(self):
+    while not self._exit_event.is_set():
+      rl.poll_input_events()
+      self._handle_mouse_event()
+      self._rk.keep_time()
+
+  def _handle_mouse_event(self):
+    mouse_pos = rl.get_mouse_position()
+    ev = MouseEvent(
+      MousePos(mouse_pos.x, mouse_pos.y),
+      rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT),
+      rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT),
+      rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT),
+      time.monotonic(),
+    )
+    # Only add changes
+    if self._prev_mouse_event is None or ev[:-1] != self._prev_mouse_event[:-1]:
+      with self._lock:
+        self._events.append(ev)
+      self._prev_mouse_event = ev
 
 
 class GuiApplication:
