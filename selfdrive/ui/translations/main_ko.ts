@@ -308,31 +308,35 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
-        <translation type="unfinished"></translation>
+        <translation>오픈파일럿 장치는 좌우측으로는 4° 또는 위로는 5° 아래로는 9° 이내에 장착해야합니다.</translation>
     </message>
     <message>
         <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation>오픈파일럿은 지속적으로 갤리브레이션되어 재설정이 거의 필요하지 않습니다. 차량과 연결된 경우 캘리브레이션 재설정이 오픈파일럿을 재시작합니다.</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+조향 지연 캘리브레이션이 %1% 진행되었습니다.</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+조향 지연 캘리브레이션이 완료되었습니다.</translation>
     </message>
     <message>
         <source> Steering torque response calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation> 조향 토크 응답 캘리브레이션이 %1% 진행되었습니다.</translation>
     </message>
     <message>
         <source> Steering torque response calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation> 조향 토크 응답 캘리브레이션이 완료되었습니다.</translation>
     </message>
 </context>
 <context>
@@ -387,7 +391,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Firehose Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>파이어호스 모드</translation>
     </message>
 </context>
 <context>
@@ -808,13 +812,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>경고: 커스텀 소프트웨어</translation>
     </message>
     <message>
         <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
 
 If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
+        <translation>타사 소프트웨어를 설치할 때는 주의하십시오. 타사 소프트웨어는 comma에 의해 테스트되지 않았으며 장치나 차량에 손상을 줄 수 있습니다.
+
+진행하려면 https://flash.comma.ai를 사용하여 나중에 장치를 공장 초기화하세요.</translation>
     </message>
 </context>
 <context>
@@ -1163,11 +1169,11 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Record and Upload Microphone Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>마이크 오디오를 녹음하고 업로드하세요</translation>
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>운전 중에 마이크 오디오를 녹음하고 저장하십시오. 오디오는 comma connect의 대시캠 비디오에 포함됩니다.</translation>
     </message>
 </context>
 <context>
