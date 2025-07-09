@@ -61,7 +61,7 @@ source_list = ['long_mpc.py',
 ]
 
 lenv = env.Clone()
-lenv["LINKFLAGS"] += [f'-Wl,-rpath,\\$$ORIGIN/../../../../../third_party/acados/{arch}/lib']
+lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{Dir({gen}).rel_path(Dir(f"#third_party/acados/{arch}/lib"))}')]
 lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
                               source_list,
@@ -87,7 +87,7 @@ libacados_ocp_solver_c = File(f'{gen}/acados_ocp_solver_pyx.c')
 
 lenv2 = envCython.Clone()
 lenv2["LIBPATH"] += [lib_solver[0].dir.abspath]
-lenv2["LINKFLAGS"] += [f'-Wl,-rpath,\\$$ORIGIN']
+lenv2["RPATH"] += [lenv2.Literal('\\$$ORIGIN')]
 lenv2.Command(libacados_ocp_solver_c,
   [acados_ocp_solver_pyx, acados_ocp_solver_common, libacados_ocp_solver_pxd],
   f'cython' + \
