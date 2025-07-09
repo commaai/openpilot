@@ -65,6 +65,8 @@ elif b"LLVM" in devs:
 else:
   flags = 'CPU=1 IMAGE=0 JIT=2'
 
+print(f"Compiling models with flags: '{flags}'")
+
 # Compile small models
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   tg_compile(flags, model_name)
