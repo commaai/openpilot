@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import argparse
-import pickle
+import json
 
 from opendbc.car.docs import get_all_car_docs
 
 
 def dump_car_docs(path):
-  with open(path, 'wb') as f:
-    pickle.dump(get_all_car_docs(), f)
+  with open(path, 'w') as f:
+    json.dump(get_all_car_docs(), f)
   print(f'Dumping car info to {path}')
 
 
