@@ -282,7 +282,6 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
   def end_condition():
     return True if duration == 0 else time.monotonic() - start_time < duration
 
-  params = Params()
   last_almanac_save = time.monotonic()
   while end_condition():
     dat = pigeon.receive()
@@ -298,8 +297,8 @@ def run_receiving(pigeon: TTYPigeon, pm: messaging.PubMaster, duration: int = 0)
       msg.ubloxRaw = dat[:]
       pm.send('ubloxRaw', msg)
 
-      # save almanac every 5 minutes while onroad
-      if (time.monotonic() - last_almanac_save) > 60*5 and params.get_bool("IsOnroad"):
+      # save almanac every 5 minutes
+      if (time.monotonic() - last_almanac_save) > 60*5:
         save_almanac(pigeon)
         last_almanac_save = time.monotonic()
     else:
