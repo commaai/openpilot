@@ -129,7 +129,6 @@ else:
       f"{brew_prefix}/include",
       f"{brew_prefix}/opt/openssl@3.0/include",
     ]
-    lenv["DYLD_LIBRARY_PATH"] = lenv["LD_LIBRARY_PATH"]
   # Linux
   else:
     libpath = [
