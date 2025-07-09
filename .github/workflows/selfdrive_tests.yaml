@@ -27,14 +27,14 @@ env:
 
   RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
 
-  PYTEST: pytest --continue-on-collection-errors --cov --cov-report=xml --cov-append --durations=0 --durations-min=5 --hypothesis-seed 0 -n logical
+  PYTEST: pytest --continue-on-collection-errors --durations=0 --durations-min=5 -n logical
 
 jobs:
   build_release:
     name: build release
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -70,9 +70,9 @@ jobs:
       run: release/check-submodules.sh
 
   build:
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -124,9 +124,9 @@ jobs:
 
   static_analysis:
     name: static analysis
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -143,9 +143,9 @@ jobs:
 
   unit_tests:
     name: unit tests
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -164,18 +164,12 @@ jobs:
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   process_replay:
     name: process replay
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -196,10 +190,8 @@ jobs:
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
       run: |
-        ${{ env.RUN }} "coverage run selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache && \
-                        coverage combine && \
-                        coverage xml"
+        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
+                        chmod -R 777 /tmp/comma_download_cache"
     - name: Print diff
       id: print-diff
       if: always()
@@ -220,18 +212,12 @@ jobs:
       run: |
         ${{ env.RUN }} "ONNXCPU=1 $PYTEST selfdrive/test/process_replay/test_regen.py && \
                         chmod -R 777 /tmp/comma_download_cache"
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   test_cars:
     name: cars
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -260,12 +246,6 @@ jobs:
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
-    - name: "Upload coverage to Codecov"
-      uses: codecov/codecov-action@v4
-      with:
-        name: ${{ github.job }}-${{ matrix.job }}
-      env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   car_docs_diff:
     name: PR comments
@@ -324,9 +304,9 @@ jobs:
 
   simulator_driving:
     name: simulator driving
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
@@ -349,9 +329,9 @@ jobs:
   create_ui_report:
     # This job name needs to be the same as UI_JOB_NAME in ui_preview.yaml
     name: Create UI Report
-    runs-on: ${{ 
-      (github.repository == 'commaai/openpilot') && 
-      ((github.event_name != 'pull_request') || 
+    runs-on: ${{
+      (github.repository == 'commaai/openpilot') &&
+      ((github.event_name != 'pull_request') ||
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}

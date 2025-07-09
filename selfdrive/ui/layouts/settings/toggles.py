@@ -22,6 +22,7 @@ DESCRIPTIONS = {
   "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
+  "RecordAudio": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.",
 }
 
 
@@ -73,6 +74,12 @@ class TogglesLayout(Widget):
         DESCRIPTIONS["RecordFront"],
         self._params.get_bool("RecordFront"),
         icon="monitoring.png",
+      ),
+      toggle_item(
+        "Record Microphone Audio",
+        DESCRIPTIONS["RecordAudio"],
+        self._params.get_bool("RecordAudio"),
+        icon="microphone.png",
       ),
       toggle_item(
         "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"

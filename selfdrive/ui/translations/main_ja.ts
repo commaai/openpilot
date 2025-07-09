@@ -311,24 +311,32 @@
         <translation>openpilotの本体は左右4°以内、上5°下9°以内の角度で取付ける必要があります。</translation>
     </message>
     <message>
-        <source>Steering lag calibration is %1% complete.</source>
-        <translation>ステアリング遅延のキャリブレーションが%1％完了。</translation>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation>openpilot は継続的にキャリブレーションを行っており、リセットが必要になることはほとんどありません。キャリブレーションをリセットすると、車の電源が入っている場合はopenpilotが再起動します。</translation>
     </message>
     <message>
-        <source>Steering lag calibration is complete.</source>
-        <translation>ステアリング遅延のキャリブレーション完了。</translation>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation>
+
+ステアリング遅延のキャリブレーションが%1％完了。</translation>
     </message>
     <message>
-        <source>Steering torque response calibration is %1% complete.</source>
+        <source>
+
+Steering lag calibration is complete.</source>
+<translation>
+
+ステアリング遅延のキャリブレーション完了。</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
         <translation>ステアリングトルク応答のキャリブレーションが%1％完了。</translation>
     </message>
     <message>
-        <source>Steering torque response calibration is complete.</source>
+        <source> Steering torque response calibration is complete.</source>
         <translation>ステアリングトルク応答のキャリブレーション完了。</translation>
-    </message>
-    <message>
-        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation>openpilot は継続的にキャリブレーションを行っており、リセットが必要になることはほとんどありません。キャリブレーションをリセットすると、車の電源が入っている場合はopenpilotが再起動します。</translation>
     </message>
 </context>
 <context>
@@ -804,13 +812,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>警告: カスタムソフトウェア</translation>
     </message>
     <message>
         <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
 
 If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
+        <translation>サードパーティ製ソフトウェアをインストールする際は注意してください。サードパーティ製ソフトウェアはcommaによってテストされておらず、あなたのデバイスや車両に損害を与える可能性があります。
+
+続行したい場合は、後でデバイスを工場出荷時の状態に戻すために https://flash.comma.ai を使用してください。</translation>
     </message>
 </context>
 <context>
@@ -1156,6 +1166,14 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation>この設定を変更すると車の電源が入っている場合はopenpilotが再起動します。</translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation>マイク音声の録音とアップロード</translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>運転中にマイク音声を録音・保存します。音声は comma connect のドライブレコーダー映像に含まれます。</translation>
     </message>
 </context>
 <context>
