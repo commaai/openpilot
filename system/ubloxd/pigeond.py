@@ -141,7 +141,7 @@ def save_almanac(pigeon: TTYPigeon) -> None:
   pigeon.send(b"\xB5\x62\x09\x14\x04\x00\x00\x00\x00\x00\x21\xEC")
   try:
     if pigeon.wait_for_ack(ack=UBLOX_SOS_ACK, nack=UBLOX_SOS_NACK):
-      cloudlog.warning("Done storing almanac")
+      cloudlog.info("Done storing almanac")
     else:
       cloudlog.error("Error storing almanac")
   except TimeoutError:
@@ -255,8 +255,6 @@ def deinitialize_and_exit(pigeon: TTYPigeon | None):
   if pigeon is not None:
     # controlled GNSS stop
     pigeon.send(b"\xB5\x62\x06\x04\x04\x00\x00\x00\x08\x00\x16\x74")
-
-    save_almanac(pigeon)
 
   # turn off power and exit cleanly
   set_power(False)
