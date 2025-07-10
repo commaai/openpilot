@@ -132,10 +132,10 @@ class GuiApplication:
     self._modal_overlay = ModalOverlay()
 
     self._mouse = MouseState()
-    self._mouse_events = []
+    self._mouse_events: list[MouseEvent] = []
 
     # Debug variables
-    self._mouse_history: deque[rl.Vector2] = deque(maxlen=MOUSE_THREAD_RATE)
+    self._mouse_history: deque[MousePos] = deque(maxlen=MOUSE_THREAD_RATE)
 
   def request_close(self):
     self._window_close_requested = True
@@ -233,6 +233,10 @@ class GuiApplication:
 
     rl.close_window()
 
+  @property
+  def mouse_events(self) -> list[MouseEvent]:
+    return self._mouse_events
+
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
@@ -273,9 +277,10 @@ class GuiApplication:
           rl.draw_fps(10, 10)
 
         if SHOW_TOUCHES:
-          if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-            self._mouse_history.clear()
-          self._mouse_history.append(rl.get_mouse_position())
+          for mouse_event in self._mouse_events:
+            if mouse_event.left_pressed:
+              self._mouse_history.clear()
+            self._mouse_history.append(mouse_event.pos)
 
           if self._mouse_history:
             mouse_pos = self._mouse_history[-1]
