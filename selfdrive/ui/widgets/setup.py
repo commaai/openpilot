@@ -3,9 +3,9 @@ from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 
 
 class SetupWidget(Widget):
