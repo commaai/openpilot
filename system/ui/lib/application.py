@@ -64,7 +64,7 @@ class GuiApplication:
     self._modal_overlay = ModalOverlay()
 
     # Debug variables
-    self._mouse_history = deque(maxlen=DEFAULT_FPS * 2)
+    self._mouse_history: deque[rl.Vector2] = deque(maxlen=DEFAULT_FPS * 2)
 
   def request_close(self):
     self._window_close_requested = True
