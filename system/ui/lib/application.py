@@ -16,10 +16,10 @@ FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
-ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "1") == "1"
-SHOW_FPS = os.getenv("SHOW_FPS") == '1'
-SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == '1'
-STRICT_MODE = os.getenv("STRICT_MODE") == '1'
+ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
+SHOW_FPS = os.getenv("SHOW_FPS") == "1"
+SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == "1"
+STRICT_MODE = os.getenv("STRICT_MODE") == "1"
 SCALE = float(os.getenv("SCALE", "1.0"))
 
 DEFAULT_TEXT_SIZE = 60
