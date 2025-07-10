@@ -172,8 +172,6 @@ class GuiScrollPanel:
       elif self._offset.y < -(max_scroll_y + MAX_BOUNCE_DISTANCE):
         self._offset.y = -(max_scroll_y + MAX_BOUNCE_DISTANCE)
 
-    return self._offset
-
   def is_touch_valid(self):
     return not self._is_dragging
 
