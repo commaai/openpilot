@@ -38,6 +38,7 @@ class FontWeight(IntEnum):
   EXTRA_BOLD = 7
   BLACK = 8
 
+
 FONT_FILES: dict[FontWeight, str] = {
   FontWeight.THIN: "Inter-Thin.ttf",
   FontWeight.EXTRA_LIGHT: "Inter-ExtraLight.ttf",
@@ -221,6 +222,7 @@ class GuiApplication:
   def _load_fonts(self):
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
