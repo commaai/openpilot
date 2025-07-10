@@ -7,7 +7,7 @@ from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 from openpilot.system.ui.lib.widget import Widget
@@ -132,7 +132,7 @@ class SettingsLayout(Widget):
     if panel.instance:
       panel.instance.render(content_rect)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
       if self._close_callback:
