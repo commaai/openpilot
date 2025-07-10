@@ -32,7 +32,7 @@ class PrimeState:
 
     self._running = False
     self._thread = None
-    self.start()
+    # self.start()
 
   def _load_initial_state(self) -> PrimeType:
     prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType", encoding='utf8')
