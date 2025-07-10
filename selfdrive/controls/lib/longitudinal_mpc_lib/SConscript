@@ -61,7 +61,8 @@ source_list = ['long_mpc.py',
 ]
 
 lenv = env.Clone()
-lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{Dir({gen}).rel_path(Dir(f"#third_party/acados/{arch}/lib"))}')]
+acados_rel_path = Dir({gen}).rel_path(Dir(f"#third_party/acados/{arch}/lib"))
+lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
 lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
                               source_list,
@@ -75,6 +76,7 @@ if arch != "Darwin":
   lenv["LINKFLAGS"].append("-Wl,--disable-new-dtags")
 else:
   lenv["LINKFLAGS"].append("-Wl,-install_name,@loader_path/libacados_ocp_solver_long.dylib")
+  lenv["LINKFLAGS"].append(f"-Wl,-rpath,@loader_path/{acados_rel_path}")
 lib_solver = lenv.SharedLibrary(f"{gen}/acados_ocp_solver_long",
                                 build_files,
                                 LIBS=['m', 'acados', 'hpipm', 'blasfeo', 'qpOASES_e'])
