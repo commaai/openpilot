@@ -2,7 +2,7 @@ import os
 import pyray as rl
 from collections.abc import Callable
 from abc import ABC
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.button import gui_button, ButtonStyle
@@ -229,7 +229,7 @@ class ListItem(Widget):
     super().set_parent_rect(parent_rect)
     self._rect.width = parent_rect.width
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
+  def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self.is_visible:
       return
 

@@ -1,4 +1,5 @@
 import pyray as rl
+from openpilot.system.ui.lib.application import MousePos
 from openpilot.system.ui.lib.widget import Widget
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
@@ -23,7 +24,7 @@ class Toggle(Widget):
   def set_rect(self, rect: rl.Rectangle):
     self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
+  def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._enabled:
       return
 

@@ -2,7 +2,7 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, MousePos
 
 
 class DialogResult(IntEnum):
@@ -92,6 +92,6 @@ class Widget(abc.ABC):
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     """Optionally handle mouse release events."""
     return False
