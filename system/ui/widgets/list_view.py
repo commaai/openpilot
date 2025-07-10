@@ -4,9 +4,9 @@ from collections.abc import Callable
 from abc import ABC
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 
 ITEM_BASE_WIDTH = 600

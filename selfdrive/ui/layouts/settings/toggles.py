@@ -1,7 +1,7 @@
-from openpilot.system.ui.lib.list_view import multiple_button_item, toggle_item
+from openpilot.common.params import Params
 from openpilot.system.ui.lib.scroller import Scroller
 from openpilot.system.ui.lib.widget import Widget
-from openpilot.common.params import Params
+from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
 
 # Description constants
 DESCRIPTIONS = {
