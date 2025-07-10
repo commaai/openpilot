@@ -21,6 +21,7 @@ FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == '1'
+SHOW_TOUCHES = os.getenv("SHOW_TOUCHES") == '1'
 STRICT_MODE = os.getenv("STRICT_MODE") == '1'
 SCALE = float(os.getenv("SCALE", "1.0"))
 
@@ -129,6 +130,9 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+
+    # Debug variables
+    self._mouse_history: deque[rl.Vector2] = deque(maxlen=DEFAULT_FPS * 2)
 
   def request_close(self):
     self._window_close_requested = True
@@ -258,6 +262,19 @@ class GuiApplication:
 
         if SHOW_FPS:
           rl.draw_fps(10, 10)
+
+        if SHOW_TOUCHES:
+          if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+            self._mouse_history.clear()
+          self._mouse_history.append(rl.get_mouse_position())
+
+          if self._mouse_history:
+            mouse_pos = self._mouse_history[-1]
+            rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 15, rl.RED)
+            for idx, mouse_pos in enumerate(self._mouse_history):
+              perc = idx / len(self._mouse_history)
+              color = rl.Color(min(int(255 * (1.5 - perc)), 255), int(min(255 * (perc + 0.5), 255)), 50, 255)
+              rl.draw_circle(int(mouse_pos.x), int(mouse_pos.y), 5, color)
 
         rl.end_drawing()
         self._monitor_fps()
