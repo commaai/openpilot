@@ -14,7 +14,7 @@ from openpilot.system.ui.lib.widget import Widget
 
 # Import individual panels
 
-SETTINGS_CLOSE_TEXT = "×"
+SETTINGS_CLOSE_TEXT = "×" # TODO: Fix font rendering to support non-ascii
 # Constants
 SIDEBAR_WIDTH = 500
 CLOSE_BTN_SIZE = 200
