@@ -12,6 +12,10 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 from openpilot.system.ui.lib.widget import Widget
 
+# Settings close button
+SETTINGS_CLOSE_TEXT = "×"
+SETTINGS_CLOSE_TEXT_Y_OFFSET = 8  # The '×' character isn't quite vertically centered in the font so we need to offset it a bit to fully center it
+
 # Constants
 SIDEBAR_WIDTH = 500
 CLOSE_BTN_SIZE = 200
@@ -25,10 +29,6 @@ CLOSE_BTN_COLOR = rl.Color(41, 41, 41, 255)
 CLOSE_BTN_PRESSED = rl.Color(59, 59, 59, 255)
 TEXT_NORMAL = rl.Color(128, 128, 128, 255)
 TEXT_SELECTED = rl.Color(255, 255, 255, 255)
-
-# Settings close button
-SETTINGS_CLOSE_TEXT = "×"
-SETTINGS_CLOSE_TEXT_OFFSET = rl.Vector2(2, 8) # The '×' character isn't quite centered in the font so we need to offset it a bit to fully center it
 
 
 class PanelType(IntEnum):
@@ -94,8 +94,8 @@ class SettingsLayout(Widget):
 
     close_text_size = measure_text_cached(self._font_weight, SETTINGS_CLOSE_TEXT, 140)
     close_text_pos = rl.Vector2(
-      close_btn_rect.x + (close_btn_rect.width - close_text_size.x) / 2 - SETTINGS_CLOSE_TEXT_OFFSET.x,
-      close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2 - SETTINGS_CLOSE_TEXT_OFFSET.y,
+      close_btn_rect.x + (close_btn_rect.width - close_text_size.x) / 2,
+      close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2 - SETTINGS_CLOSE_TEXT_Y_OFFSET,
     )
     rl.draw_text_ex(self._font_weight, SETTINGS_CLOSE_TEXT, close_text_pos, 140, 0, TEXT_SELECTED)
 
