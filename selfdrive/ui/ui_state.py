@@ -7,6 +7,7 @@ from openpilot.common.params import Params, UnknownKeyName
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
 
 UI_BORDER_SIZE = 30
+BACKLIGHT_OFFROAD = 50
 
 
 class UIStatus(Enum):
