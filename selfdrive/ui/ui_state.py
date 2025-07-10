@@ -140,7 +140,7 @@ class UIState:
 class Device:
   def __init__(self):
     self._ignition = False
-    self._interaction_time: float = 0.0
+    self._interaction_time: float = -1
     self._interactive_timeout_callbacks: list[Callable] = []
     self._prev_timed_out = False
     self.reset_interactive_timeout()
@@ -154,6 +154,10 @@ class Device:
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
+    # do initial reset
+    if self._interaction_time <= 0:
+      self.reset_interactive_timeout()
+
     # Handle interactive timeout
     ignition_just_turned_off = not ui_state.ignition and self._ignition
     self._ignition = ui_state.ignition
