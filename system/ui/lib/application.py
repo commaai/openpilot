@@ -38,6 +38,17 @@ class FontWeight(IntEnum):
   EXTRA_BOLD = 7
   BLACK = 8
 
+FONT_FILES: dict[FontWeight, str] = {
+  FontWeight.THIN: "Inter-Thin.ttf",
+  FontWeight.EXTRA_LIGHT: "Inter-ExtraLight.ttf",
+  FontWeight.LIGHT: "Inter-Light.ttf",
+  FontWeight.NORMAL: "Inter-Regular.ttf",
+  FontWeight.MEDIUM: "Inter-Medium.ttf",
+  FontWeight.SEMI_BOLD: "Inter-SemiBold.ttf",
+  FontWeight.BOLD: "Inter-Bold.ttf",
+  FontWeight.EXTRA_BOLD: "Inter-ExtraBold.ttf",
+  FontWeight.BLACK: "Inter-Black.ttf",
+}
 
 @dataclass
 class ModalOverlay:
@@ -207,18 +218,6 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
-    font_files = (
-      "Inter-Thin.ttf",
-      "Inter-ExtraLight.ttf",
-      "Inter-Light.ttf",
-      "Inter-Regular.ttf",
-      "Inter-Medium.ttf",
-      "Inter-SemiBold.ttf",
-      "Inter-Bold.ttf",
-      "Inter-ExtraBold.ttf",
-      "Inter-Black.ttf",
-    )
-
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
     all_chars = set()
@@ -230,11 +229,11 @@ class GuiApplication:
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
-    for index, font_file in enumerate(font_files):
+    for font_weight, font_file in FONT_FILES.items():
       with as_file(FONT_DIR.joinpath(font_file)) as fspath:
         font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[index] = font
+        self._fonts[font_weight] = font
 
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
