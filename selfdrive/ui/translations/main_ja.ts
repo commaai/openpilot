@@ -326,7 +326,7 @@ Steering lag calibration is %1% complete.</source>
         <source>
 
 Steering lag calibration is complete.</source>
-<translation>
+        <translation>
 
 ステアリング遅延のキャリブレーション完了。</translation>
     </message>
