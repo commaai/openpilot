@@ -11,7 +11,7 @@ from enum import IntEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware import HARDWARE, TICI
+from openpilot.system.hardware import HARDWARE, PC
 from openpilot.common.realtime import Ratekeeper
 
 DEFAULT_FPS = int(os.getenv("FPS", "60"))
@@ -131,8 +131,11 @@ class GuiApplication:
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
 
+    self._mouse = MouseState()
+    self._mouse_events = []
+
     # Debug variables
-    self._mouse_history: deque[rl.Vector2] = deque(maxlen=DEFAULT_FPS * 2)
+    self._mouse_history: deque[rl.Vector2] = deque(maxlen=MOUSE_THREAD_RATE)
 
   def request_close(self):
     self._window_close_requested = True
@@ -161,6 +164,9 @@ class GuiApplication:
     self._target_fps = fps
     self._set_styles()
     self._load_fonts()
+
+    if not PC:
+      self._mouse.start()
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
@@ -221,6 +227,9 @@ class GuiApplication:
     if self._render_texture is not None:
       rl.unload_render_texture(self._render_texture)
       self._render_texture = None
+
+    if not PC:
+      self._mouse.stop()
 
     rl.close_window()
 
