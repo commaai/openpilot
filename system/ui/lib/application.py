@@ -240,6 +240,13 @@ class GuiApplication:
   def render(self):
     try:
       while not (self._window_close_requested or rl.window_should_close()):
+        if PC:
+          # Thread is not used on PC, need to manually add mouse events
+          self._mouse._handle_mouse_event()
+
+        # Store all mouse events for the current frame
+        self._mouse_events = self._mouse.get_events()
+
         if self._render_texture:
           rl.begin_texture_mode(self._render_texture)
           rl.clear_background(rl.BLACK)
