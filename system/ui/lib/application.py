@@ -18,6 +18,7 @@ DEFAULT_FPS = int(os.getenv("FPS", "60"))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
+MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
 
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == "1"
@@ -61,9 +62,6 @@ class MouseEvent(NamedTuple):
   left_released: bool
   left_down: bool
   t: float
-
-
-MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
 
 
 class MouseState:
