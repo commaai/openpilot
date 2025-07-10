@@ -6,7 +6,7 @@ from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 SIDEBAR_WIDTH = 300
 METRIC_HEIGHT = 126

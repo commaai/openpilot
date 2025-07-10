@@ -4,8 +4,8 @@ from typing import Literal
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.widget import Widget
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 from openpilot.system.ui.widgets.keyboard import Keyboard

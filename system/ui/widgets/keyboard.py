@@ -2,7 +2,7 @@ import time
 from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
 from openpilot.system.ui.widgets.inputbox import InputBox
 from openpilot.system.ui.widgets.label import gui_label

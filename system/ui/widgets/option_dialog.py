@@ -1,6 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, TextAlignment
 from openpilot.system.ui.widgets.label import gui_label
 from openpilot.system.ui.widgets.scroll_panel import GuiScrollPanel
