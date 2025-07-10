@@ -50,6 +50,7 @@ FONT_FILES: dict[FontWeight, str] = {
   FontWeight.BLACK: "Inter-Black.ttf",
 }
 
+
 @dataclass
 class ModalOverlay:
   overlay: object = None
