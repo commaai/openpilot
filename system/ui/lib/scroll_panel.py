@@ -80,7 +80,8 @@ class GuiScrollPanel:
         # Track velocity for inertia
         time_since_last_drag = mouse_event.t - self._last_drag_time
         if time_since_last_drag > 0:
-          drag_velocity = delta_y / time_since_last_drag / 60.0
+          # TODO: HACK: /2 since we usually get two touch events per frame
+          drag_velocity = delta_y / time_since_last_drag / 60.0 / 2  # TODO: shouldn't be hardcoded
           self._velocity_history.append(drag_velocity)
 
         self._last_drag_time = mouse_event.t
