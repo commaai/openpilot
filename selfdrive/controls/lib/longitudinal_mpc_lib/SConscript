@@ -61,7 +61,7 @@ source_list = ['long_mpc.py',
 ]
 
 lenv = env.Clone()
-acados_rel_path = Dir(gen).rel_path(Dir(f"#third_party/acados/{arch}/lib"))
+acados_rel_path = Dir({gen}).rel_path(Dir(f"#third_party/acados/{arch}/lib"))
 lenv["RPATH"] += [lenv.Literal(f'\\$$ORIGIN/{acados_rel_path}')]
 lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
