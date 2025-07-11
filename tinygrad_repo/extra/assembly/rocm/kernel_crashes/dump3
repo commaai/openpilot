@@ -1,0 +1,20 @@
+# two tinygrad + two bandwidth test
+# RDNA2, driver 6.0.5
+# recovered from this!
+
+[  136.971209] gmc_v10_0_process_interrupt: 39 callbacks suppressed
+[  136.971218] amdgpu 0000:0b:00.0: amdgpu: [gfxhub] page fault (src_id:0 ring:24 vmid:11 pasid:32773, for process rocm-bandwidth- pid 20281 thread rocm-bandwidth- pid 20281)
+[  136.971228] amdgpu 0000:0b:00.0: amdgpu:   in page starting at address 0x00007f5c2b800000 from client 0x1b (UTCL2)
+[  136.971232] amdgpu 0000:0b:00.0: amdgpu: GCVM_L2_PROTECTION_FAULT_STATUS:0x00B01A31
+[  136.971233] amdgpu 0000:0b:00.0: amdgpu:      Faulty UTCL2 client ID: SDMA0 (0xd)
+[  136.971235] amdgpu 0000:0b:00.0: amdgpu:      MORE_FAULTS: 0x1
+[  136.971236] amdgpu 0000:0b:00.0: amdgpu:      WALKER_ERROR: 0x0
+[  136.971236] amdgpu 0000:0b:00.0: amdgpu:      PERMISSION_FAULTS: 0x3
+[  136.971237] amdgpu 0000:0b:00.0: amdgpu:      MAPPING_ERROR: 0x0
+[  136.971238] amdgpu 0000:0b:00.0: amdgpu:      RW: 0x0
+...
+[  136.993979] amdgpu 0000:0b:00.0: amdgpu: IH ring buffer overflow (0x000BE5A0, 0x0003C480, 0x0003E5C0)
+[  138.209072] amdgpu 0000:0b:00.0: AMD-Vi: Event logged [IO_PAGE_FAULT domain=0x001a address=0x7c00004000 flags=0x0000]
+[  138.209078] amdgpu 0000:0b:00.0: AMD-Vi: Event logged [IO_PAGE_FAULT domain=0x001a address=0x7c00004d80 flags=0x0000]
+[  138.209081] amdgpu 0000:0b:00.0: AMD-Vi: Event logged [IO_PAGE_FAULT domain=0x001a address=0x7c00005000 flags=0x0000]
+[  138.209084] amdgpu 0000:0b:00.0: AMD-Vi: Event logged [IO_PAGE_FAULT domain=0x001a address=0x7c00005d80 flags=0x0000]

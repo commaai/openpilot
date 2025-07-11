@@ -1,0 +1,1070 @@
+VERSION ""
+
+
+NS_ : 
+    NS_DESC_
+    CM_
+    BA_DEF_
+    BA_
+    VAL_
+    CAT_DEF_
+    CAT_
+    FILTER
+    BA_DEF_DEF_
+    EV_DATA_
+    ENVVAR_DATA_
+    SGTYPE_
+    SGTYPE_VAL_
+    BA_DEF_SGTYPE_
+    BA_SGTYPE_
+    SIG_TYPE_REF_
+    VAL_TABLE_
+    SIG_GROUP_
+    SIG_VALTYPE_
+    SIGTYPE_VALTYPE_
+    BO_TX_BU_
+    BA_DEF_REL_
+    BA_REL_
+    BA_DEF_DEF_REL_
+    BU_SG_REL_
+    BU_EV_REL_
+    BU_BO_REL_
+    SG_MUL_VAL_
+
+BS_:
+
+BU_: XXX
+
+
+BO_ 58 BCM_m_FrP01: 8 XXX
+ SG_ ChildLockCmd : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ ChildLockCmd_UB : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ CLockCmd : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ CLockCmd_UB : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ DDShortDrop : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ DDShortDrop_UB : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ DirectionIndication : 11|2@0+ (1,0) [0|0] "" XXX
+ SG_ DirectionIndication_UB : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ EpsDrvInfo_D_Dsply : 36|4@0+ (1,0) [0|0] "" XXX
+ SG_ EpsDrvInfo_D_Dsply_UB : 39|1@0+ (1,0) [0|0] "" XXX
+ SG_ GearRvrseActv_D_Actl : 38|2@0+ (1,0) [0|0] "" XXX
+ SG_ GearRvrseActv_D_Actl_UB : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ VehVActlEng_D_Qf_3A : 9|2@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_V_ActlEng_UB_3A : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_V_ActlEng_3A : 55|16@0+ (0.01,0) [0|0] "kph" XXX
+ SG_ Veh_V_DsplyCcSet : 23|8@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_V_RqCcSet : 32|9@0+ (0.5,0) [0|0] "kph" XXX
+ SG_ WasherFluidLevelLow : 5|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 64 BCM_m_FrP02: 8 XXX
+ SG_ FuelCutoffReq : 7|4@0+ (1,0) [0|0] "" XXX
+ SG_ FuelCutoffReq_UB : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ KVRFRSettings : 54|15@0+ (1,0) [0|0] "" XXX
+ SG_ KVRFRSettings_UB : 10|1@0+ (1,0) [0|0] "" XXX
+ SG_ PsngrFrntDetct_D_Actl : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ PsngrFrntDetct_D_Actl_UB : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ RILReq : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ RILReq_UB : 55|1@0+ (1,0) [0|0] "" XXX
+ SG_ SecondRowBuckleDriver : 31|2@0+ (1,0) [0|0] "" XXX
+ SG_ SecondRowBuckleDriver_UB : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ SecondRowBuckleMid : 29|2@0+ (1,0) [0|0] "" XXX
+ SG_ SecondRowBuckleMid_UB : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ SecondRowBucklePsngr : 27|2@0+ (1,0) [0|0] "" XXX
+ SG_ SecondRowBucklePsngr_UB : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ ThirdRowBuckleDriver : 25|2@0+ (1,0) [0|0] "" XXX
+ SG_ ThirdRowBuckleDriver_UB : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ ThirdRowBucklePsngr : 37|2@0+ (1,0) [0|0] "" XXX
+ SG_ ThirdRowBucklePsngr_UB : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotationCnt : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotationCnt_UB : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotationCntQF : 35|2@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRr_D_Actl_UB_40 : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRr_D_Actl_40 : 39|2@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRl_D_Actl_UB_40 : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRl_D_Actl_40 : 33|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 131 MS_Steering_Data: 8 XXX
+ SG_ SteColumn_Status_UB : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteColumn_Status : 31|3@0+ (1,0) [0|0] "" XXX
+ SG_ SteCol_Manual_Override_UB : 26|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteCol_Manual_Override : 27|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Send_UB : 20|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Send : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Phone_UB : 17|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Phone : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_OK_UB : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_OK : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Volume_Up_UB : 23|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Volume_Down_UB : 22|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Voice_PTT_UB : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Seek_Right_UB : 19|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Seek_Left_UB : 18|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Mode_UB : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Mode : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Media_UB : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Volume_Up : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Volume_Down : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Voice_PTT : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Seek_Right : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Seek_Left : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Media : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ VehYaw_W_Actl : 55|16@0+ (0.0002,-6.5) [0|0] "rad/s" XXX
+ SG_ SteWhlCtl_End_UB : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_End : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ VehYaw_W_Actl_UB : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Mute_UB : 10|1@0+ (1,0) [0|0] "" XXX
+ SG_ SteWhlCtl_Mute : 12|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 257 Driver_Seat_Information: 8 XXX
+ SG_ Reverse_Mirror_Stat : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ Memory_Feedback_Rqst : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ Easy_Entry_Exit_Stat : 7|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 260 Driver_Seat_Information_2: 8 XXX
+ SG_ Memory_Cmd : 15|4@0+ (1,0) [0|0] "" XXX
+ SG_ Easy_Entry_Rqst : 4|2@0+ (1,0) [0|0] "" XXX
+ SG_ DrvSeat_Stat : 7|3@0+ (1,0) [0|0] "" XXX
+ SG_ Cancel_Auto_Movement : 1|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 269 IdleShutdown_Legacy: 8 XXX
+ SG_ IDLE_ENGINE_SHUTDOWN : 23|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 272 Keyfob_Pad_Stat: 8 XXX
+ SG_ L_Pwr_Sliding_Dr_Rqst : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Decklid_Rqst : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ R_Pwr_Sliding_Dr_Rqst : 29|1@0+ (1,0) [0|0] "" XXX
+ SG_ Keyfob_Pad_Msg_Count : 23|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ Keyfob_Pad_Id_Number : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ Keyfob_Pad_Button_Pressed : 7|8@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Liftgate_Rqst : 30|1@0+ (1,0) [0|0] "" XXX
+ SG_ Keycode_Status : 27|20@0+ (1,0) [0|0] "" XXX
+
+BO_ 275 Power_Liftgate_Mode_StatM: 8 XXX
+ SG_ Power_Liftgate_Mode_Stat : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ DrTgateChime_D_Rq : 5|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 276 Running_Board_CmdM: 8 XXX
+ SG_ Running_Board_Cmd : 7|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 277 Running_Board_StatM: 8 XXX
+ SG_ Running_Board_Stat : 7|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 288 ClmtCtrlSeat_SetCmdlegacy1: 8 XXX
+ SG_ ClmtCtrlSeat_SetCmd_Dvr : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 289 ClmtCtrlSeat_SetStat_DvrM: 8 XXX
+ SG_ ClmtCtrlSeat_SetStat_Dvr : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 290 ClmtCtrlSeat_SetCmdlegacy2: 8 XXX
+ SG_ ClmtCtrlSeat_SetCmd_Psgr : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 291 ClmtCtrlSeat_SetStat_PsgrM: 8 XXX
+ SG_ ClmtCtrlSeat_SetStat_Psgr : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 292 ClmtCtrlSeatSet_Cmd_v2_MS: 8 XXX
+ SG_ ClmtCtrlSeat_SetCmd_Psgr : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ ClmtCtrlSeat_SetCmd_Dvr : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 293 ClmtCtrlSeatSet_Stat_v2: 8 XXX
+ SG_ ClmtCtrlSeat_SetStat_Psgr : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ ClmtCtrlSeat_SetStat_Dvr : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 304 Mirror_Manual_Override_M: 8 XXX
+ SG_ Mirror_Manual_Override : 7|1@0+ (1,0) [0|0] "Binary" XXX
+
+BO_ 305 Memory_Sw_StatM: 8 XXX
+ SG_ Memory_Sw_Message_Count : 15|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ Memory_Set_Sw_Stat : 7|1@0+ (1,0) [0|0] "Binary" XXX
+ SG_ Memory_Set_Cancel : 3|1@0+ (1,0) [0|0] "Binary" XXX
+ SG_ Memory_3_Sw_Stat : 4|1@0+ (1,0) [0|0] "Binary" XXX
+ SG_ Memory_2_Sw_Stat : 5|1@0+ (1,0) [0|0] "Binary" XXX
+ SG_ Memory_1_Sw_Stat : 6|1@0+ (1,0) [0|0] "Binary" XXX
+
+BO_ 306 Driver_Lock_Sw_StatM: 8 XXX
+ SG_ Driver_Door_Key_Unlock : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ Driver_Door_Key_Lock : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Driver_Lock_Sw_Message_Cnt : 7|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ Driver_Lock_Sw_Stat : 15|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 309 Memory_Cancel_Cmd_M: 8 XXX
+ SG_ Memory_Cancel_Cmd : 7|1@0+ (1,0) [0|0] "Binary" XXX
+
+BO_ 310 Driver_Door_Lock_CmdM: 8 XXX
+ SG_ Driver_Door_Lock_Msg_Cnt : 7|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ Driver_Door_Lock_Cmd : 15|4@0+ (1,0) [0|0] "" XXX
+
+BO_ 311 Pass_Mirror_Sw_StatM: 8 XXX
+ SG_ Pass_Mirror_Sw_UD_Stat : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Pass_Mirror_Sw_LR_Stat : 5|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 313 RPwrSlideDr_Unlock_RqstM: 8 XXX
+ SG_ RPwrSlideDr_Unlock_Rqst : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 320 LPwrSlideDr_Unlock_RqstM: 8 XXX
+ SG_ LPwrSlideDr_Unlock_Rqst : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 321 Passive_Entry_Ctrl_Data: 8 XXX
+ SG_ PE_Control_Data_1 : 23|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Control_Cmd : 7|3@0+ (1,0) [0|0] "" XXX
+ SG_ PK_SearchResults_Prog : 63|4@0+ (1,0) [0|0] "" XXX
+ SG_ PK_SearchResults_MyKey : 4|4@0+ (1,0) [0|0] "" XXX
+ SG_ PK_SearchResults_Found : 59|4@0+ (1,0) [0|0] "" XXX
+ SG_ PK_Search_EvNum : 15|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ PE_Control_Data_5 : 55|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Control_Data_4 : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Control_Data_3 : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Control_Data_2 : 31|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 322 Passive_Entry_Target_Data: 8 XXX
+ SG_ PE_Target_Data_5 : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Target_Cmd : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Target_Status : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Target_Data_1 : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Search_Rqst : 4|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Target_Data_4 : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Target_Data_3 : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Target_Data_2 : 23|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 577 BCM_m_FrP28: 8 XXX
+ SG_ WheelRotToothCntFrL : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntFrL_UB : 42|1@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntFrR : 23|8@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntFrR_UB : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntReL : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntReL_UB : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntReR : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ WheelRotToothCntReR_UB : 43|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 736 FCIM_Button_Press: 8 XXX
+ SG_ FCIM_Target_ID : 13|4@0+ (1,0) [0|0] "" XXX
+ SG_ FCIM_Button_Type : 7|8@0+ (1,0) [0|0] "" XXX
+ SG_ FCIM_Button_State : 15|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 806 Compressor_Req: 8 XXX
+ SG_ HvacEvap_Te_Rq : 33|10@0+ (0.125,-50.0) [0|0] "Degrees C" XXX
+ SG_ HvacEvap_Te_Actl : 17|10@0+ (0.125,-50.0) [0|0] "Degrees C" XXX
+ SG_ HvacAirCond_B_Rq : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ HvacEvap_Te_Offst : 1|10@0+ (0.125,-50.0) [0|0] "Degrees C" XXX
+
+BO_ 842 MassageSeat_Data1: 8 XXX
+ SG_ SeatLmbrUpDrv_Pc_Actl : 38|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatLmbrMidDrv_Pc_Actl : 30|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatLmbrLoDrv_Pc_Actl : 22|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatBlUpDrv_Pc_Actl : 14|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatBlLoDrv_Pc_Actl : 6|7@0+ (1,0) [0|0] "%" XXX
+
+BO_ 843 MassageSeat_Data2: 8 XXX
+ SG_ SeatLmbrUpPsgr_Pc_Actl : 38|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatLmbrMidPsgr_Pc_Actl : 30|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatLmbrLoPsgr_Pc_Actl : 22|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatBlUpPsgr_Pc_Actl : 14|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatBlLoPsgr_Pc_Actl : 6|7@0+ (1,0) [0|0] "%" XXX
+
+BO_ 844 MassageSeat_Stat1: 8 XXX
+ SG_ StmsLmbrDrv_D_Stat : 17|2@0+ (1,0) [0|0] "" XXX
+ SG_ StmsCshnDrv_D_Stat : 19|2@0+ (1,0) [0|0] "" XXX
+ SG_ SeatSwtchDrv_B_Stat : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnDrv_D_Stat : 23|3@0+ (1,0) [0|0] "" XXX
+ SG_ SeatAirAmb_P_Actl : 7|16@0+ (0.01,0) [0|0] "KiloPascal" XXX
+ SG_ SeatPDrv_B_Stat : 20|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 845 MassageSeat_Stat2: 8 XXX
+ SG_ StmsLmbrPsgr_D_Stat : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ StmsCshnPsgr_D_Stat : 13|2@0+ (1,0) [0|0] "" XXX
+ SG_ SeatSwtchPsgr_B_Stat : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ SeatPPsgr_B_Stat : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnPsgr_D_Stat : 6|3@0+ (1,0) [0|0] "" XXX
+ SG_ PsgrMemFeedback_Rsp : 3|4@0+ (1,0) [0|0] "" XXX
+
+BO_ 846 MassageSeat_Req_MS: 8 XXX
+ SG_ SeatFnPsgr_D_Rq : 15|3@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnDrv_D_Rq : 12|3@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnDfaltPsgr_B_Rq : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnDfaltDrv_B_Rq : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnChngPsgr_D_Rq : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ SeatFnChngDrv_D_Rq : 5|2@0+ (1,0) [0|0] "" XXX
+ SG_ PsgrMemory_Rq : 3|4@0+ (1,0) [0|0] "" XXX
+
+BO_ 849 MassageSeat_Data3: 8 XXX
+ SG_ SeatCshnDrvRR_Pc_Actl : 30|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatCshnDrvRL_Pc_Actl : 22|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatCshnDrvFR_Pc_Actl : 14|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatCshnDrvFL_Pc_Actl : 6|7@0+ (1,0) [0|0] "%" XXX
+
+BO_ 850 MassageSeat_Data4: 8 XXX
+ SG_ SeatCshnPsgrRR_Pc_Actl : 30|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatCshnPsgrRL_Pc_Actl : 22|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatCshnPsgrFR_Pc_Actl : 14|7@0+ (1,0) [0|0] "%" XXX
+ SG_ SeatCshnPsgrFL_Pc_Actl : 6|7@0+ (1,0) [0|0] "%" XXX
+
+BO_ 853 EFP_CC_Status_MS: 8 XXX
+ SG_ Save_My_Temp : 59|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Left_Temp_Setpt : 31|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ RrDefrost_HtdMirrorReq : 60|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Control_Status : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ MultipleButtonPressReq : 63|3@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_System_Mode_Req : 19|3@0+ (1,0) [0|0] "" XXX
+ SG_ Recirc_Request : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Rt_Temp_Setpt : 39|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ AC_Request : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ Windshield_ModeRequest : 15|4@0+ (8.33,0) [0|0] "%" XXX
+ SG_ Panel_Mode_Request : 7|4@0+ (8.33,0) [0|0] "%" XXX
+ SG_ Overriding_ModeReq : 10|3@0+ (1,0) [0|0] "" XXX
+ SG_ Floor_Mode_Request : 3|4@0+ (8.33,0) [0|0] "%" XXX
+ SG_ Rear_Right_Temp_Setpt : 55|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ Forced_Recirc_Req : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Left_Temp_Setpt : 47|8@0+ (1,0) [0|0] "Mixed" XXX
+
+BO_ 854 EFP_CC_Seat_Req_Stat_MS: 8 XXX
+ SG_ Front_Rear_Blower_Req : 31|6@0+ (1,0) [0|0] "Detents" XXX
+ SG_ Pass_Rr_Cond_Seat_Req : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ Pass_Rr_Cond_Seat_Lvl : 8|3@0+ (1,0) [0|0] "" XXX
+ SG_ Pass_Fr_Cond_Seat_Req : 13|2@0+ (1,0) [0|0] "" XXX
+ SG_ Pass_Fr_Cond_Seat_Lvl : 11|3@0+ (1,0) [0|0] "" XXX
+ SG_ Drvr_Rr_Cond_Seat_Req : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ Drvr_Rr_Cond_Seat_Lvl : 2|3@0+ (1,0) [0|0] "" XXX
+ SG_ Drvr_Fr_Cond_Seat_Req : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Drvr_Fr_Cond_Seat_Lvl : 5|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 855 RCCM_CC_Status: 8 XXX
+ SG_ RrBlwrCondStLdShedStat : 25|2@0+ (1,0) [0|0] "" XXX
+ SG_ FrBlwrCondStLdShedStat : 20|2@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_Rr_Rt_TempSetpt : 63|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ RCCM_Rr_Left_TempSetpt : 55|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ RCCM_Fr_Rt_TempSetpt : 47|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ RCCM_Fr_Left_TempSetpt : 39|8@0+ (1,0) [0|0] "Mixed" XXX
+ SG_ RCCM_Fr_Rr_Blower_Req : 31|6@0+ (1,0) [0|0] "Detents" XXX
+ SG_ Panel_Mode_State : 7|4@0+ (8.33,0) [0|0] "%" XXX
+ SG_ RrDefHtdMirrLdShedStat : 18|2@0+ (1,0) [0|0] "" XXX
+ SG_ Windshield_Mode_State : 15|4@0+ (8.33,0) [0|0] "%" XXX
+ SG_ Recirc_Door_State : 11|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_System_Mode_State : 23|3@0+ (1,0) [0|0] "" XXX
+ SG_ Default_Defrost_State : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ Auto_AC_Indicator_Temp : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ Floor_Mode_State : 3|4@0+ (8.33,0) [0|0] "%" XXX
+ SG_ RrDefrost_HtdMirrState : 8|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 856 RCCM_CC_Seat_Status: 8 XXX
+ SG_ Active_My_Temp : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_HtdStrWhl_Req : 24|1@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_PR_Cond_Seat_Lvl : 31|3@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_PR_Cond_Seat_Req : 28|2@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_PF_Cond_Seat_Req : 20|2@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_PF_Cond_Seat_Lvl : 23|3@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_DR_Cond_Seat_Req : 12|2@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_DR_Cond_Seat_Lvl : 15|3@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_DF_Cond_Seat_Req : 4|2@0+ (1,0) [0|0] "" XXX
+ SG_ RCCM_DF_Cond_Seat_Lvl : 7|3@0+ (1,0) [0|0] "" XXX
+ SG_ PassRrCondStLdShedStat : 26|2@0+ (1,0) [0|0] "" XXX
+ SG_ PassFrCondStLdShedStat : 18|2@0+ (1,0) [0|0] "" XXX
+ SG_ DrvRrCondStLdShedStat : 10|2@0+ (1,0) [0|0] "" XXX
+ SG_ DrvFrCondStLdShedStat : 1|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 857 RCCM_CC_MBP_Press_Stat: 8 XXX
+ SG_ Report_Active : 33|2@0+ (1,0) [0|0] "" XXX
+ SG_ Pass_Temp_Units : 35|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Fan_Bars_Disply : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ Drvr_Temp_Units : 36|1@0+ (1,0) [0|0] "" XXX
+ SG_ MultBtnPushDsplyPass10 : 23|8@0+ (1,0) [0|0] "" XXX
+ SG_ MultBtnPushDsplyPass1 : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ MultBtnPushDsplyDrvr10 : 7|8@0+ (1,0) [0|0] "" XXX
+ SG_ MultBtnPushDsplyDrvr1 : 15|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 859 MFD_CC_Status_MS: 8 XXX
+ SG_ Rear_Mode_Bttn_Status : 38|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 860 EFP_CC_Info_Status_MS: 8 XXX
+ SG_ Rear_Panel_Btn_State : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Floor_Btn_State : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ HtdStrWhl_SftBtt_Stt : 39|2@0+ (1,0) [0|0] "" XXX
+ SG_ AC_Sft_Button_State : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ DrvRrCondSeatSftBttnSt : 47|3@0+ (1,0) [0|0] "" XXX
+ SG_ DrvFrCondSeatSftBtnStt : 37|3@0+ (1,0) [0|0] "" XXX
+ SG_ CC_RecircSBtn_St : 27|2@0+ (1,0) [0|0] "" XXX
+ SG_ CC_RrDefrSBtn_St : 24|1@0+ (1,0) [0|0] "" XXX
+ SG_ PasRrCondSeatSftBttnSt : 44|3@0+ (1,0) [0|0] "" XXX
+ SG_ PasFrCondSeatSftBtnStt : 34|3@0+ (1,0) [0|0] "" XXX
+ SG_ MyTemp_Soft_Bttn_State : 25|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_MaxACSBtn_St : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ RearPowerButtonState : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ RearCoolBarsDisplayed : 11|3@0+ (1,0) [0|0] "Bars_On" XXX
+ SG_ Rear_Sft_Control_Stat : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ CC_RrNeutralBarDsp_St : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_RrHeatBarsDsp_St : 31|3@0+ (1,0) [0|0] "Bars_On" XXX
+ SG_ Rear_Fan_Bars_Displayed : 19|3@0+ (1,0) [0|0] "" XXX
+ SG_ CC_RrCtrlBtn_St : 20|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Auto_Button_State : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_FrPowerSBtn_St : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_FrDefrostSBtn_St : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_AUTO_Soft_Btn_Stt : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_AUTO_MODE_State : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_AUTO_FAN_State : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ Dual_Button_State : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_BarPnlSBtn_St : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_BarPnFlrSBtn_St : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_BarFlrWsSBtn_St : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_BarDrvFlrSBtn_St : 3|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 861 HSWheel_CC_Info_Stat: 8 XXX
+ SG_ HtdStrWhl_SftBtt_State : 57|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 862 Climate_Control_Data_2: 8 XXX
+ SG_ HvacRec_Pc_Est : 31|7@0+ (1,0) [0|0] "%" XXX
+ SG_ HvacEngIdleInc_B_Rq : 24|1@0+ (1,0) [0|0] "" XXX
+ SG_ HvacAir_Flw_Est : 13|9@0+ (0.5,0) [0|0] "liter/second" XXX
+ SG_ AmbTempImpr : 7|10@0+ (0.25,-128.0) [0|0] "degreesC" XXX
+
+BO_ 900 Vehicle_Access_RqstM: 8 XXX
+ SG_ PE_AssocConfirm_D_Actl : 63|3@0+ (1,0) [0|0] "" XXX
+ SG_ DrTgateOpen_D_RqRfa : 51|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Decklid_Inhibit_Rqst : 53|2@0+ (1,0) [0|0] "" XXX
+ SG_ PK_Program : 45|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Packet_Cnt : 31|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ PE_Control_Status : 33|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Control_Code : 7|8@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Perimeter_Lighting_Stat : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_RKE_Flash_Rqst : 34|1@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Lock_EvNum : 23|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ PE_Lock_Requestor : 39|5@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Lock_Sub_Id : 11|4@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Lock_Status : 13|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_DrvCfg_Horn_Rqst : 47|2@0+ (1,0) [0|0] "" XXX
+ SG_ PEBackupSlot_Stats : 55|2@0+ (1,0) [0|0] "" XXX
+ SG_ PE_Fob_Number : 43|4@0+ (1,0) [0|0] "Number" XXX
+ SG_ PE_Keypad_LiftGlass_Rqst : 49|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 901 Vehicle_Lock_Status: 8 XXX
+ SG_ CntrStkKeycodeActl : 55|16@0+ (1,0) [0|0] "" XXX
+ SG_ CntrStk_D_RqAssoc_UB : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ CntrStk_D_RqAssoc : 43|3@0+ (1,0) [0|0] "" XXX
+ SG_ KeyTypeChngMykey_D_Rq : 45|2@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_Lock_Sub_Id : 21|4@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_Lock_Status : 17|2@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_Lock_Requestor : 39|5@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_Lock_EvNum : 31|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ Trim_Switch_Status_Count : 15|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ Trim_Switch_Status : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ DF_KeyCyl_Switch_Stat_Cnt : 7|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ DF_KeyCyl_Switch_Stat : 34|2@0+ (1,0) [0|0] "" XXX
+ SG_ Perimeter_Alarm_Status : 47|2@0+ (1,0) [0|0] "" XXX
+ SG_ KeyTypeChngMykey_D_Rq_UB : 32|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 902 Remote_Start: 8 XXX
+ SG_ Remote_Start_Req : 7|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 903 CC_FCIM_Update: 8 XXX
+ SG_ Rr_Temp_M_H_Heat_Ind : 30|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_7_Indicator : 45|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_6_Indicator : 46|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_5_Indicator : 47|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_4_Indicator : 32|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_3_Indicator : 33|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_2_Indicator : 34|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Fan_Low_Indicator : 35|1@0+ (1,0) [0|0] "" XXX
+ SG_ AC_Indicator : 36|1@0+ (1,0) [0|0] "" XXX
+ SG_ Floor_Mode_Indicator : 37|1@0+ (1,0) [0|0] "" XXX
+ SG_ Panel_Mode_Indicator : 38|1@0+ (1,0) [0|0] "" XXX
+ SG_ Windshield_Mode_Indicator : 39|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_High_Cool_Ind : 24|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_M_H_Cool_Ind : 25|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_M_L_Cool_Ind : 26|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_Low_Cool_Ind : 27|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_Center_Ind_On : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_High_Heat_Ind : 29|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_M_L_Heat_Ind : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Temp_Low_Heat_Ind : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Control_Indicator : 17|1@0+ (1,0) [0|0] "" XXX
+ SG_ Auto_Indicator_Rear : 18|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Indicator_Rear : 19|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_U_R_Seat_Cool_Ind : 20|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_M_Seat_Cool_Ind : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_L_L_Seat_Cool_Ind : 22|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_U_R_Seat_Heat_Ind : 23|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_M_Seat_Heat_Ind : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_L_L_Seat_Heat_Ind : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_U_R_Seat_Cool_Ind : 10|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_M_Seat_Cool_Ind : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_L_L_Seat_Cool_Ind : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_U_R_Seat_Heat_Ind : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_M_Seat_Heat_Ind : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_L_L_Seat_Heat_Ind : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ Single_Mode_Indicator : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ Auto_Indicator : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ Recirc_Indicator : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ Max_AC_Econ_Indicator : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_DefHtd_Mirr_Indicator : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ Defrost_Indicator : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Temp_Dual_Indicator : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Indicator_Front : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 904 CC_NavChassis_Info_Status: 8 XXX
+ SG_ Rear_Defrost_Soft_Bttn_Stt : 52|1@0+ (1,0) [0|0] "" XXX
+ SG_ Recirc_Soft_Button_State : 54|2@0+ (1,0) [0|0] "" XXX
+ SG_ Max_AC_Soft_Button_State : 55|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_AUTO_Soft_Btn_Stt : 24|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Power_Soft_Btn_State : 25|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Defrost_Soft_Btn_Stt : 26|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Power_Button_State : 33|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_AUTO_FAN_Indicator : 27|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_AUTO_MODE_Indicator : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Rear_Set_Temp_Display : 17|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Rear_Set_Temp_Units : 19|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Heat_Bars_Displayed : 42|3@0+ (1,0) [0|0] "Bars_On" XXX
+ SG_ CC_Bar_Rear_Set_Temp_Dig3 : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Rear_Set_Temp_Dig2 : 15|8@0+ (1,0) [0|0] "ASCII" XXX
+ SG_ CC_Bar_Rear_Set_Temp_Dig1 : 7|8@0+ (1,0) [0|0] "ASCII" XXX
+ SG_ Rear_Neutral_Bar_Displayed : 43|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Fan_Bars_Displayed : 46|3@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Control_Button_State : 47|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Auto_Button_State : 32|1@0+ (1,0) [0|0] "" XXX
+ SG_ AC_Sft_Button_State : 35|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Cool_Bars_Displayed : 38|3@0+ (1,0) [0|0] "Bars_On" XXX
+ SG_ Dual_Button_State : 39|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Sft_Btn_FlrWs_State : 29|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Sft_Btn_Floor_State : 30|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Sft_Btn_PnFlr_State : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ CC_Bar_Sft_Btn_Pnl_State : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Sft_Control_Status : 23|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 920 FCIM_CC_Status: 8 XXX
+ SG_ Manual_Temp_Knob_Pos : 8|9@0+ (1,0) [0|0] "Degrees CW" XXX
+ SG_ Manual_Blower_Knob_Pos : 24|9@0+ (1,0) [0|0] "Degrees CW" XXX
+ SG_ Rear_Blower_IncreaseButton : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Blower_DecreaseButton : 55|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Temp_Decrease_Button : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Temp_Increase_Button : 42|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Control_Button : 43|1@0+ (1,0) [0|0] "" XXX
+ SG_ Auto_Button_Rear : 44|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Button_Rear : 45|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_Heated_Seat_Btn : 47|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_Cooled_Seat_Btn : 46|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_Cooled_Seat_Btn : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_Heated_Seat_Btn : 10|1@0+ (1,0) [0|0] "" XXX
+ SG_ Blower_Decrease_Button : 25|1@0+ (1,0) [0|0] "" XXX
+ SG_ Blower_Increase_Button : 26|1@0+ (1,0) [0|0] "" XXX
+ SG_ Floor_Defrost_Mode_Button : 27|1@0+ (1,0) [0|0] "" XXX
+ SG_ Floor_Mode_Button : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ Panel_Floor_Mode_Button : 29|1@0+ (1,0) [0|0] "" XXX
+ SG_ Panel_Mode_Button : 30|1@0+ (1,0) [0|0] "" XXX
+ SG_ Mode_Change_Button : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_Temp_Increase : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_Temp_Decrease : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_Temp_Decrease : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Lft_Side_Temp_Increase : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ Auto_Button_Front : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ Recirc_Button : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ Max_AC_Econ_Button : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ AC_Button : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rr_Def_Htd_Mirr_Button : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Defrost_Button : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rt_Side_Temp_Dual_Button : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Button_Front : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ Climate_Button : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ CcdMde_D_Rq : 54|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 921 Nav_CC_Status: 8 XXX
+ SG_ Front_System_Button_Status : 7|5@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Temp_Button_Status : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Man_Temp_Bar_Status : 11|4@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Fan_Button_Status : 13|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Man_ATC_Button_Status : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Blower_Bar_Status : 2|3@0+ (1,0) [0|0] "# of Bars" XXX
+
+BO_ 922 VoiceRec_CC_Request: 8 XXX
+ SG_ Recirculate_On : 10|1@0+ (1,0) [0|0] "" XXX
+ SG_ Recirculate_Off : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Defrost_On : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Defrost_Off : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ Max_AC_On : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ Max_AC_Off : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Defrost_On : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Defrost_Off : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Blower_Increment : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Blower_Decrement : 23|1@0+ (1,0) [0|0] "" XXX
+ SG_ Dual_Zone_Off : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ Driver_Temp_Increment : 22|1@0+ (1,0) [0|0] "" XXX
+ SG_ Driver_Temp_Decrement : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ Climate_On : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ Climate_Off : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ Automatic_Mode : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ AC_On : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ AC_Off : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ Voice_Blower_Limit : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ Driver_Set_Temp : 31|8@0+ (0.5,0) [0|0] "Degrees" XXX
+
+BO_ 928 Ignition_Switch_PositionM: 8 XXX
+ SG_ AirAmb_Te_ActlFilt_UB : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirAmb_Te_ActlFilt : 49|10@0+ (0.25,-128.0) [0|0] "deg C" XXX
+ SG_ OdometerMasterValue_UB : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ OdometerMasterValue : 31|24@0+ (1,0) [0|0] "km" XXX
+ SG_ Remote_Start_Status : 13|2@0+ (1,0) [0|0] "" XXX
+ SG_ Key_In_Ignition_Stat : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ Ignition_Switch_Stable : 1|2@0+ (1,0) [0|0] "" XXX
+ SG_ Ignition_Status : 7|4@0+ (1,0) [0|0] "" XXX
+ SG_ BOO_Switch_Status : 9|2@0+ (1,0) [0|0] "" XXX
+ SG_ Remote_Device_Feedback : 23|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 934 Side_Detect_L_StatusM: 8 XXX
+ SG_ Cross_Traffic_L_SnState : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ SideDetect_L_SysOpState : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ SideDetect_L_SnsrState : 1|2@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_L_Illum : 15|8@0+ (1,0) [0|0] "%" XXX
+ SG_ Side_Detect_L_Detect : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Cross_Traffic_L_Op_State : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ Cross_Traffic_L_Alert : 19|2@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_L_Alert : 5|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 935 Side_Detect_R_StatusM: 8 XXX
+ SG_ Cross_Traffic_R_Alert : 23|2@0+ (1,0) [0|0] "" XXX
+ SG_ Cross_Traffic_R_SnState : 19|2@0+ (1,0) [0|0] "" XXX
+ SG_ Cross_Traffic_R_Op_State : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_R_Detect : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_R_Illum : 15|8@0+ (1,0) [0|0] "%" XXX
+ SG_ SideDetect_R_SnsrState : 1|2@0+ (1,0) [0|0] "" XXX
+ SG_ SideDetect_R_SysOpState : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_R_Alert : 5|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 944 Body_Information_6_MS: 8 XXX
+ SG_ DRV_SELECT_STAT : 3|4@0+ (1,0) [0|0] "" XXX
+ SG_ reserve_2bits : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ reserve_2 : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ reserve_3 : 4|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 945 Ajar_Stat: 8 XXX
+ SG_ Decklid_Ajar_Status : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ Hood_Ajar_Status : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ LG_Glass_Ajar_Status : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ DF_Door_Ajar_Status : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ PF_Door_Ajar_Status : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ DR_Door_Ajar_Status : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ PR_Door_Ajar_Status : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ LG_Door_Ajar_Status : 1|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 946 Body_Information_5_MS: 8 XXX
+ SG_ CoolantFanStepAct_UB : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondRec_B_Rq_UB : 38|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondRec_B_Rq : 39|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondEvdc_D_Stats_UB : 34|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondEvdc_D_Stats : 37|3@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondClutch_B_Stats_UB : 19|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondClutch_B_Stats : 20|1@0+ (1,0) [0|0] "" XXX
+ SG_ CoolantFanStepAct : 47|5@0+ (1,0) [0|0] "Steps" XXX
+ SG_ AirCondFluidHi_P_Actl_UB : 18|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirCondFluidHi_P_Actl : 31|8@0+ (0.125,0) [0|0] "bar" XXX
+ SG_ SECONDARY_HEATER_STAT_UB : 63|1@0+ (1,0) [0|0] "" XXX
+ SG_ CURRENT_DRAW_UB : 62|1@0+ (1,0) [0|0] "" XXX
+ SG_ SECONDARY_HEATER_STAT : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ CURRENT_DRAW : 55|8@0+ (0.5,0) [0|0] "Amps" XXX
+
+BO_ 947 BodyInformation_3_MS: 8 XXX
+ SG_ CamraDefog_B_Req_UB : 58|1@0+ (1,0) [0|0] "" XXX
+ SG_ TrStats_D_Actl_UB : 48|1@0+ (1,0) [0|0] "" XXX
+ SG_ RearFog_Lamp_Dbnce_UB : 49|1@0+ (1,0) [0|0] "" XXX
+ SG_ TrStats_D_Actl : 13|2@0+ (1,0) [0|0] "" XXX
+ SG_ CamraDefog_B_Req : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ RearFog_Lamp_Dbnce : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ CarMode : 53|4@0+ (1,0) [0|0] "" XXX
+ SG_ Day_Night_Status : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ Parklamp_Status : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ Dimming_Lvl : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ Litval : 23|8@0+ (1,0) [0|0] "" XXX
+ SG_ Mfs_Turn_Stalk_SW_Status : 11|2@0+ (1,0) [0|0] "" XXX
+ SG_ PwMdeExten_D_Actl : 63|5@0+ (1,0) [0|0] "" XXX
+ SG_ STR_WHL_ANGLE : 39|15@0+ (0.1,-1000.0) [0|0] "Degrees" XXX
+ SG_ Turn_Seq_Cmd_Right : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Turn_Seq_Cmd_Left : 5|2@0+ (1,0) [0|0] "" XXX
+ SG_ Smart_Wiper_Motor_Stat_UB : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ Smart_Wiper_Motor_Stat : 55|2@0+ (1,0) [0|0] "" XXX
+ SG_ Mfs_Turn_Stalk_SW_Status_UB : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ reserve : 1|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 950 RKE_Packet: 8 XXX
+ SG_ RemoteKey_Packet_TIC : 7|32@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Packet_RollB : 55|8@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Packet_RollA : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Packet_Ctrl : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Packet_CkSum : 63|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 951 TPM_Frame: 8 XXX
+ SG_ TirePress_Frame_Temp : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Frame_Status : 55|8@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Frame_Press : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Frame_ID : 7|32@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Frame_CkSum : 63|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 952 RKE_TPM_Info: 8 XXX
+ SG_ TirePress_HitRate_Ctrl : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_HitRate_Ctrl : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Antenna_Ctrl : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Filter_Ctrl : 5|2@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Filter_Ctrl : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ Modulation_Ctrl : 1|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 953 RKE_Info: 8 XXX
+ SG_ RemoteKey_Info_TIC : 7|32@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Info_RollB : 55|8@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Info_RollA : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Info_Ctrl : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ RemoteKey_Info_CkSum : 63|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 954 Tire_Pressure_Info: 8 XXX
+ SG_ TirePress_Info_MaxInd : 47|8@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Info_Index : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ TirePress_Info_ID : 7|32@0+ (1,0) [0|0] "" XXX
+
+BO_ 956 Body_Information_7_MS: 8 XXX
+ SG_ GearLvrPos_D_Actl_UB : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ PrplWhlTot_Tq_Actl : 31|16@0+ (4.0,-131072.0) [0|0] "Nm" XXX
+ SG_ GearLvrPos_D_Actl : 7|4@0+ (1,0) [0|0] "" XXX
+ SG_ ApedPos_Pc_ActlArb : 15|10@0+ (0.1,0) [0|0] "%" XXX
+ SG_ PrplWhlTot_Tq_Actl_UB : 17|1@0+ (1,0) [0|0] "" XXX
+ SG_ EngOff_T_Actl : 47|16@0+ (1,0) [0|0] "seconds" XXX
+ SG_ ApedPos_Pc_ActlArb_UB : 20|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 958 Rear_FoglampStat: 8 XXX
+ SG_ RearFog_Lamp_Ind : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 963 BCM_to_MS_Body: 8 XXX
+ SG_ LF_Low_Beam_CKT_CAN : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ IKT_Program_Status : 51|2@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_Spd_Slow_Puddle_Status : 41|2@0+ (1,0) [0|0] "" XXX
+ SG_ Illuminated_Exit_Status : 43|2@0+ (1,0) [0|0] "" XXX
+ SG_ Illuminated_Entry_Status : 45|2@0+ (1,0) [0|0] "" XXX
+ SG_ Door_Courtesy_Light_Status : 47|2@0+ (1,0) [0|0] "" XXX
+ SG_ Courtesy_Demand_BSave_Stat : 33|2@0+ (1,0) [0|0] "" XXX
+ SG_ Alarm_Lights_Courtesy_Stat : 35|2@0+ (1,0) [0|0] "" XXX
+ SG_ Courtesy_Delay_Status : 37|2@0+ (1,0) [0|0] "" XXX
+ SG_ Courtesy_Mode_Status : 39|2@0+ (1,0) [0|0] "" XXX
+ SG_ Front_Fog_Light_SW_Status : 22|2@0+ (1,0) [0|0] "" XXX
+ SG_ Brake_Lamp_On_Status : 23|1@0+ (1,0) [0|0] "" XXX
+ SG_ ParkLamps_CKT_CAN : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ RF_Low_Beam_CKT_CAN : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Brk_Fluid_Lvl_Low : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ Park_Brake_Status : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ High_Beam_Indicator_Rqst : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ Headlamp_On_Wrning_Cmd : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ Key_In_Ignition_Warn_Cmd : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ Park_Brake_Chime_Rqst : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ Daytime_Running_Lamps : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ AutoHighBeam_Cmd : 18|2@0+ (1,0) [0|0] "" XXX
+ SG_ Perimeter_Alarm_Chime_Rqst : 20|2@0+ (1,0) [0|0] "" XXX
+ SG_ OCSSensrDataUpperLim_UB : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ OCSSensrDataLowerLim_UB : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ OCSSensrDataUpperLim : 63|8@0+ (1,0) [0|0] "" XXX
+ SG_ OCSSensrDataLowerLim : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ AutoHighBeam_Cmd_UB : 16|1@0+ (1,0) [0|0] "" XXX
+ SG_ PrkBrkActv_B_Actl : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ Headlamp_Switch_Stat : 49|2@0+ (1,0) [0|0] "" XXX
+ SG_ Perimeter_Alarm_Inclin_Cmd : 53|2@0+ (1,0) [0|0] "" XXX
+ SG_ Perimeter_Alarm_Intrus_Cmd : 55|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 964 BodyInformation_2_MS: 8 XXX
+ SG_ LockInhibit : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ MetricActvTe_B_Actl_UB : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ MetricActvTe_B_Actl : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Liftgate_Mode_Cmd : 42|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirAmb_Te_Actl : 55|10@0+ (0.25,-128.0) [0|0] "degC" XXX
+ SG_ EngClntTe_D_Qf : 47|2@0+ (1,0) [0|0] "" XXX
+ SG_ Cross_Traffic_Cmd : 26|2@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_Cmd : 28|2@0+ (1,0) [0|0] "" XXX
+ SG_ SAPPStatusCoding : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ Delay_Accy : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ Volume_Cutback : 7|1@0+ (1,0) [0|0] "" XXX
+ SG_ MetricActv_B_Actl : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatTgate_B_Actl : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatRr_B_Actl : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatRl_B_Actl : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatPsngr_B_Actl : 4|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatInnrTgate_B_Actl : 5|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatHood_B_Actl : 6|1@0+ (1,0) [0|0] "" XXX
+ SG_ DrStatDrv_B_Actl : 10|1@0+ (1,0) [0|0] "" XXX
+ SG_ EngClnt_Te_Actl : 23|8@0+ (1,-60.0) [0|0] "degC" XXX
+ SG_ AirAmbTe_D_Qf_UB : 59|1@0+ (1,0) [0|0] "" XXX
+ SG_ Volume_Cutback_UB : 58|1@0+ (1,0) [0|0] "" XXX
+ SG_ Side_Detect_Cmd_UB : 57|1@0+ (1,0) [0|0] "" XXX
+ SG_ SAPPStatusCoding_UB : 56|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Liftgate_Mode_Cmd_UB : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ MetricActv_B_Actl_UB : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Cross_Traffic_Cmd_UB : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ AirAmbTe_D_Qf : 61|2@0+ (1,0) [0|0] "" XXX
+ SG_ AirAmb_Te_Actl_UB : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ EngClnt_Te_Actl_UB : 24|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 966 Delay_AccyM_for_P473: 8 XXX
+ SG_ Delay_Accy : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 967 CMPS_FDM_Info_StatusMS: 8 XXX
+ SG_ Segment_MSD_UB : 37|1@0+ (1,0) [0|0] "" XXX
+ SG_ Segment_LSD_UB : 36|1@0+ (1,0) [0|0] "" XXX
+ SG_ Compass_Display_UB : 35|1@0+ (1,0) [0|0] "" XXX
+ SG_ Segment_LSD : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ Segment_MSD : 7|8@0+ (1,0) [0|0] "" XXX
+ SG_ Cal_Icon : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ Zone_Icon : 22|1@0+ (1,0) [0|0] "" XXX
+ SG_ Compass_Display : 23|1@0+ (1,0) [0|0] "" XXX
+ SG_ Zone_Icon_UB : 34|1@0+ (1,0) [0|0] "" XXX
+ SG_ Cal_Icon_UB : 33|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 968 EATC_FDM_Info_Status: 8 XXX
+ SG_ Outside_Rear_Temp_Digit3 : 47|4@0+ (1,0) [0|0] "BCD" XXX
+ SG_ Outside_Rear_Temp_Digit2 : 35|4@0+ (1,0) [0|0] "BCD" XXX
+ SG_ Outside_Rear_Temp_Digit1 : 39|4@0+ (1,0) [0|0] "BCD" XXX
+ SG_ EATC_Out_Rear_Units : 58|2@0+ (1,0) [0|0] "" XXX
+ SG_ Outside_Rear_Temp_Digit4 : 55|2@0+ (1,0) [0|0] "" XXX
+ SG_ EATC_RHS_Units : 60|2@0+ (1,0) [0|0] "" XXX
+ SG_ EATC_Fan_Speed : 51|3@0+ (1,0) [0|0] "" XXX
+ SG_ EATC_Outside_Rear_Display : 62|2@0+ (1,0) [0|0] "" XXX
+ SG_ RHS_Temp_Display_Digit2 : 31|8@0+ (1,0) [0|0] "ASCII" XXX
+ SG_ RHS_Temp_Display_Digit3 : 41|2@0+ (1,0) [0|0] "" XXX
+ SG_ RHS_Temp_Display_Digit1 : 23|8@0+ (1,0) [0|0] "ASCII" XXX
+ SG_ EATC_RHS_Display : 63|1@0+ (1,0) [0|0] "" XXX
+ SG_ LHS_Temp_Display_Digit3 : 43|2@0+ (1,0) [0|0] "" XXX
+ SG_ LHS_Temp_Display_Digit2 : 15|8@0+ (1,0) [0|0] "ASCII" XXX
+ SG_ LHS_Temp_Display_Digit1 : 7|8@0+ (1,0) [0|0] "ASCII" XXX
+ SG_ EATC_LHS_Display : 48|1@0+ (1,0) [0|0] "" XXX
+ SG_ EATC_LHS_Units : 53|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 969 Aux_Body_Ctrl_Mod_Status: 8 XXX
+ SG_ Perimeter_Alrm_Intrus_Stat : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Turn_Outage_Stat_Rt_Rear : 15|2@0+ (1,0) [0|0] "" XXX
+ SG_ Turn_Outage_Stat_Left_Rear : 1|2@0+ (1,0) [0|0] "" XXX
+ SG_ Perimeter_Alrm_Inclin_Stat : 5|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 976 Veh_Characteristic_Set_2: 8 XXX
+ SG_ VehMykey_Vl_LimRq_UB : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ CamraFrntStat_D_Stat : 21|2@0+ (1,0) [0|0] "" XXX
+ SG_ CamraZoomMan_D_Actl : 12|3@0+ (1,0) [0|0] "" XXX
+ SG_ CamZoomActiveState : 17|2@0+ (1,0) [0|0] "" XXX
+ SG_ CamraOvrlStat_D_Actl : 19|2@0+ (1,0) [0|0] "" XXX
+ SG_ CamraOvrlDyn_D_Actl : 39|2@0+ (1,0) [0|0] "" XXX
+ SG_ CamPDCGuidStat : 31|2@0+ (1,0) [0|0] "" XXX
+ SG_ VehMykey_Vl_LimRq : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ IgnKeyType_D_Actl : 4|4@0+ (1,0) [0|0] "" XXX
+ SG_ New_Module_Attn_Event : 0|1@0+ (1,0) [0|0] "" XXX
+ SG_ Beltminder_Warn_Stats : 9|1@0+ (1,0) [0|0] "" XXX
+ SG_ Attn_Info_Audio : 7|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 977 ClmtCtrlSeat_SetCmd_LRPM: 8 XXX
+ SG_ ClmtCtrlSeat_SetCmd_LRP : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 978 ClmtCtrlSeat_SetStat_LRPM: 8 XXX
+ SG_ ClmtCtrlSeat_SetStat_LRP : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 979 ClmtCtrlSeat_SetCmd_RRPM: 8 XXX
+ SG_ ClmtCtrlSeat_SetCmd_RRP : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 980 ClmtCtrlSeat_SetStat_RRPM: 8 XXX
+ SG_ ClmtCtrlSeat_SetStat_RRP : 7|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 981 Rear_HVAC_Control_Status: 8 XXX
+ SG_ Temp_Knob_Position : 23|9@0+ (1,0) [0|0] "Degrees CW" XXX
+ SG_ Rear_Lock_Ind_State : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ Blower_Knob_Position : 7|9@0+ (1,0) [0|0] "Degrees CW" XXX
+ SG_ AUTO_Ind_State : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ Panel_Mode_Ind_State : 11|1@0+ (1,0) [0|0] "" XXX
+ SG_ Panel_Floor_Md_Ind_State : 10|2@0+ (1,0) [0|0] "" XXX
+ SG_ Floor_Mode_Ind_State : 8|1@0+ (1,0) [0|0] "" XXX
+ SG_ Power_Status : 14|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 982 Rear_HVAC_Control_Update: 8 XXX
+ SG_ Power_State_Commanded : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ Rear_Lock_Indicator : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ Panel_Floor_Mode_Indicator : 4|2@0+ (1,0) [0|0] "" XXX
+ SG_ R_Floor_Mode_Indicator : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ AUTO_Mode_Indicator : 1|2@0+ (1,0) [0|0] "" XXX
+ SG_ F_Panel_Mode_Indicator : 13|1@0+ (1,0) [0|0] "" XXX
+ SG_ R_Panel_Mode_Indicator : 12|2@0+ (1,0) [0|0] "" XXX
+
+BO_ 986 Personality_APIM_Data3_MS: 8 XXX
+ SG_ LightAmbIntSwtchInc_B : 22|1@0+ (1,0) [0|0] "" XXX
+ SG_ LightAmbIntSwtchDec_B : 21|1@0+ (1,0) [0|0] "" XXX
+ SG_ LightAmbIntsty_No_Rq : 15|8@0+ (1,0) [0|0] "% Intensity" XXX
+ SG_ LightAmbColor_No_Rq : 7|8@0+ (1,0) [0|0] "Color Index" XXX
+ SG_ LightAmbClrSwtchInc_B : 20|1@0+ (1,0) [0|0] "" XXX
+ SG_ LightAmbClrSwtchDec_B : 23|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 987 RHVAC_Data: 8 XXX
+ SG_ CamraDefog_B_Actl : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 992 Personality_Data_MS: 8 XXX
+ SG_ PersSetupRestr_D_Actl : 45|2@0+ (1,0) [0|0] "" XXX
+ SG_ PersSetupAccessCtrl : 43|1@0+ (1,0) [0|0] "SES" XXX
+ SG_ PersSetup_No_Actl : 55|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ MsgCntrPersIndex_D_Rq_UB : 47|1@0+ (1,0) [0|0] "" XXX
+ SG_ MsgCntrFeatNoRq_UB : 46|1@0+ (1,0) [0|0] "" XXX
+ SG_ MsgCntrFeatConfigRq_UB : 33|1@0+ (1,0) [0|0] "" XXX
+ SG_ MsgCntrDsplyOp_D_Rq_UB : 32|1@0+ (1,0) [0|0] "" XXX
+ SG_ MsgCntrPersIndex_D_Rq : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ MsgCntrFeatConfigRq : 23|16@0+ (1,0) [0|0] "" XXX
+ SG_ MsgCntrFeatNoRq : 7|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ MsgCntrDsplyOp_D_Rq : 36|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 993 Personality_DSM_Data: 8 XXX
+ SG_ PersIndexDsm_D_Actl : 47|3@0+ (1,0) [0|0] "" XXX
+ SG_ FeatNoDsmActl : 31|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ FeatConfigDsmActl : 15|16@0+ (1,0) [0|0] "" XXX
+ SG_ PersStore_D_Actl : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ MemSwtch_D_RqRecall : 5|3@0+ (1,0) [0|0] "" XXX
+ SG_ MemSwtch_D_RqAssoc : 2|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 994 Personality_Data_MS_2: 8 XXX
+ SG_ RecallEvent_No_Cnt : 63|8@0+ (1,0) [0|0] "Counts" XXX
+ SG_ PersNo_D_Actl : 55|3@0+ (1,0) [0|0] "" XXX
+ SG_ PersNoPos_D_Actl : 44|3@0+ (1,0) [0|0] "" XXX
+ SG_ PersStore_D_Rq_UB : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkPersIndex_D_Actl_UB : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkFeatNoActl_UB : 52|1@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkFeatConfigActl_UB : 33|1@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkDsplyOp_D_Rq_UB : 32|1@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkPersIndex_D_Actl : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkFeatNoActl : 23|16@0+ (1,0) [0|0] "" XXX
+ SG_ PersStore_D_Rq : 36|3@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkFeatConfigActl : 7|16@0+ (1,0) [0|0] "" XXX
+ SG_ CtrStkDsplyOp_D_Rq : 47|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 996 Personality_HCMB_Data: 8 XXX
+ SG_ PersIndexHcmb_D_Actl : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ FeatNoHcmbActl : 23|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ FeatConfigHcmbActl : 7|16@0+ (1,0) [0|0] "" XXX
+
+BO_ 999 Personality_HVAC_Data: 8 XXX
+ SG_ LightAmbIntsty_No_Actl : 55|8@0+ (1,0) [0|0] "% Intensity" XXX
+ SG_ LightAmbColor_No_Actl : 47|8@0+ (1,0) [0|0] "Color Index" XXX
+ SG_ PersIndexHvac_D_Actl : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ FeatNoHvacActl : 23|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ FeatConfigHvacActl : 7|16@0+ (1,0) [0|0] "" XXX
+
+BO_ 1000 ACM_Status_Message: 8 XXX
+ SG_ Multimedia_System : 26|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1001 Personality_RFA_Data: 8 XXX
+ SG_ PersIndexRfa_D_Actl : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ FeatNoRfaActl : 23|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ FeatConfigRfaActl : 7|16@0+ (1,0) [0|0] "" XXX
+
+BO_ 1005 Personality_RHVAC_Data: 8 XXX
+ SG_ PersIndexRhvac_D_Actl : 39|3@0+ (1,0) [0|0] "" XXX
+ SG_ FeatNoRhvacActl : 23|16@0+ (1,0) [0|0] "Number" XXX
+ SG_ FeatConfigRhvacActl : 7|16@0+ (1,0) [0|0] "" XXX
+
+BO_ 1006 Nav_HMI_Status: 8 XXX
+ SG_ Nav_Unit_Setting : 14|1@0+ (1,0) [0|0] "" XXX
+ SG_ Fuel_Econ_AFE_Reset_Req : 15|1@0+ (1,0) [0|0] "" XXX
+ SG_ DistanceBarSetting : 23|1@0+ (1,0) [0|0] "" XXX
+ SG_ CamraZoomMan_D_Rq : 22|3@0+ (1,0) [0|0] "" XXX
+ SG_ CamraOvrlStat_D_Rq : 19|1@0+ (1,0) [0|0] "" XXX
+ SG_ CamraOvrlDyn_D_Rq : 18|1@0+ (1,0) [0|0] "" XXX
+ SG_ CamAutoTowbarZoom : 17|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1023 Reserve_3FF_MKX_Audio: 8 XXX
+ SG_ reserve : 7|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1034 GGCC_Config_Mgmt_ID_1: 8 XXX
+ SG_ VehicleGGCCData : 7|64@0+ (1,0) [0|0] "mixed" XXX
+
+BO_ 1050 Climate_Control_Data: 8 XXX
+ SG_ SecondaryHeater_Rqst : 31|1@0+ (1,0) [0|0] "" XXX
+ SG_ Passenger_Sunload_Raw : 15|8@0+ (5.0,0) [0|0] "W/m^2" XXX
+ SG_ Driver_Sunload_Raw : 7|8@0+ (5.0,0) [0|0] "W/m^2" XXX
+ SG_ HvacEvap_Te_Rq : 43|10@0+ (0.125,-50.0) [0|0] "Degrees C" XXX
+ SG_ HvacRemoteStrt_N_Rq : 47|4@0+ (100.0,450.0) [0|0] "RPM" XXX
+ SG_ Remote_Start_QuietMode : 28|1@0+ (1,0) [0|0] "" XXX
+ SG_ InCarTempQF : 30|2@0+ (1,0) [0|0] "" XXX
+ SG_ HvacAirCond_B_Rq : 27|1@0+ (1,0) [0|0] "" XXX
+ SG_ InCarTemp : 39|8@0+ (0.5,-57.0) [0|0] "degreesC" XXX
+ SG_ Outside_Air_Temp_Stat : 23|8@0+ (0.5,-40.0) [0|0] "Degrees C" XXX
+ SG_ HvacEvap_Te_Actl : 49|10@0+ (0.125,-50.0) [0|0] "Degrees C" XXX
+
+BO_ 1059 Engine_Data_MS: 8 XXX
+ SG_ Res_UreaLvlLo_B_Dsply_UB : 35|1@0+ (1,0) [0|0] "" XXX
+ SG_ Res_UreaLvlLo_B_Dsply : 36|1@0+ (1,0) [0|0] "" XXX
+ SG_ Fuel_Level_State : 47|2@0+ (1,0) [0|0] "" XXX
+ SG_ AwdOffRoadMode_D_Stats_UB : 55|1@0+ (1,0) [0|0] "" XXX
+ SG_ AwdRnge_D_Actl_UB : 42|1@0+ (1,0) [0|0] "" XXX
+ SG_ RearDiffLckLamp_D_Rq_UB : 32|1@0+ (1,0) [0|0] "" XXX
+ SG_ AwdOffRoadMode_D_Stats : 41|2@0+ (1,0) [0|0] "" XXX
+ SG_ AwdRnge_D_Actl : 45|3@0+ (1,0) [0|0] "" XXX
+ SG_ RearDiffLckLamp_D_Rq : 34|2@0+ (1,0) [0|0] "" XXX
+ SG_ VEH_SPD : 7|16@0+ (0.01,-100.0) [0|0] "KPH" XXX
+ SG_ ENG_SPD : 23|16@0+ (0.25,0) [0|0] "RPM" XXX
+ SG_ Fuel_Level_State_UB : 37|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1061 Engine_Data_2_MS: 8 XXX
+ SG_ RstrnImpactEvntStatus_UB : 56|1@0+ (1,0) [0|0] "" XXX
+ SG_ EngAirIn_Te_Actl_UB : 60|1@0+ (1,0) [0|0] "" XXX
+ SG_ EngAirIn_Te_Actl : 55|10@0+ (0.25,-128.0) [0|0] "degC" XXX
+ SG_ ACCompressorDisp_UB : 61|1@0+ (1,0) [0|0] "" XXX
+ SG_ ACCompressorDisp : 46|7@0+ (1,0) [0|0] "%" XXX
+ SG_ RstrnImpactEvntStatus : 59|3@0+ (1,0) [0|0] "" XXX
+ SG_ EngAout_N_Actl_UB : 47|1@0+ (1,0) [0|0] "" XXX
+ SG_ EngAout_N_Actl : 28|13@0+ (2.0,0) [0|0] "rpm" XXX
+ SG_ VehVActlEng_D_Qf : 31|2@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_V_ActlEng_UB : 29|1@0+ (1,0) [0|0] "" XXX
+ SG_ Veh_V_ActlEng : 15|16@0+ (0.01,0) [0|0] "kph" XXX
+ SG_ PwPck_D_Stat_UB : 3|1@0+ (1,0) [0|0] "" XXX
+ SG_ PwPck_D_Stat : 7|4@0+ (1,0) [0|0] "" XXX
+
+BO_ 1062 ACM_NAV_WHEEL_INFO: 8 XXX
+ SG_ WhlRotatRr_No_Cnt_UB : 63|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatRl_No_Cnt_UB : 40|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatFr_No_Cnt_UB : 41|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatFl_No_Cnt_UB : 42|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRr_D_Actl_UB : 44|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRl_D_Actl_UB : 45|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirFr_D_Actl_UB : 46|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirFl_D_Actl_UB : 47|1@0+ (1,0) [0|0] "" XXX
+ SG_ WHEEL_ROLLING_TIMESTAMP_UB : 62|1@0+ (1,0) [0|0] "" XXX
+ SG_ ACM_NAV_WHEEL_INFO_RESET : 43|1@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatRr_No_Cnt : 39|8@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatRl_No_Cnt : 31|8@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatFr_No_Cnt : 23|8@0+ (1,0) [0|0] "" XXX
+ SG_ WhlRotatFl_No_Cnt : 15|8@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRr_D_Actl : 1|2@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirRl_D_Actl : 3|2@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirFr_D_Actl : 5|2@0+ (1,0) [0|0] "" XXX
+ SG_ WhlDirFl_D_Actl : 7|2@0+ (1,0) [0|0] "" XXX
+ SG_ WHEEL_ROLLING_TIMESTAMP : 55|8@0+ (1,0) [0|0] "" XXX
+
+BO_ 1068 Battery_Mgmt_2_MS: 8 XXX
+ SG_ Shed_T_Eng_Off_B : 12|1@0+ (1,0) [0|0] "" XXX
+ SG_ Shed_Level_Req : 15|3@0+ (1,0) [0|0] "" XXX
+ SG_ Shed_Feature_Group_ID : 7|5@0+ (1,0) [0|0] "" XXX
+ SG_ Shed_Drain_Eng_Off_B : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ Batt_Lo_SoC_B : 1|1@0+ (1,0) [0|0] "" XXX
+ SG_ Batt_Crit_SoC_B : 0|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1125 GPS_Data_Nav_1: 8 XXX
+ SG_ GpsHsphLattSth_D_Actl : 25|2@0+ (1,0) [0|0] "" XXX
+ SG_ GpsHsphLongEast_D_Actl : 9|2@0+ (1,0) [0|0] "" XXX
+ SG_ GPS_Longitude_Minutes : 46|6@0+ (1,0) [0|0] "Minutes" XXX
+ SG_ GPS_Longitude_Min_dec : 55|14@0+ (0.0001,0) [0|0] "Minutes" XXX
+ SG_ GPS_Longitude_Degrees : 39|9@0+ (1,-179.0) [0|0] "Degrees" XXX
+ SG_ GPS_Latitude_Minutes : 15|6@0+ (1,0) [0|0] "Minutes" XXX
+ SG_ GPS_Latitude_Min_dec : 23|14@0+ (0.0001,0) [0|0] "Minutes" XXX
+ SG_ GPS_Latitude_Degrees : 7|8@0+ (1,-89.0) [0|0] "Degrees" XXX
+
+BO_ 1126 GPS_Data_Nav_2: 8 XXX
+ SG_ Gps_B_Falt : 2|1@0+ (1,0) [0|0] "" XXX
+ SG_ GpsUtcYr_No_Actl : 55|5@0+ (1,1.0) [0|0] "Year" XXX
+ SG_ GpsUtcMnth_No_Actl : 47|4@0+ (1,1.0) [0|0] "Month" XXX
+ SG_ GpsUtcDay_No_Actl : 37|5@0+ (1,1.0) [0|0] "Day" XXX
+ SG_ GPS_UTC_seconds : 23|6@0+ (1,0) [0|0] "seconds" XXX
+ SG_ GPS_UTC_minutes : 15|6@0+ (1,0) [0|0] "Minutes" XXX
+ SG_ GPS_UTC_hours : 7|5@0+ (1,0) [0|0] "Hours" XXX
+ SG_ GPS_Pdop : 31|5@0+ (0.2,0) [0|0] "" XXX
+ SG_ GPS_Compass_direction : 26|4@0+ (1,0) [0|0] "" XXX
+ SG_ GPS_Actual_vs_Infer_pos : 38|1@0+ (1,0) [0|0] "" XXX
+
+BO_ 1127 GPS_Data_Nav_3: 8 XXX
+ SG_ GPS_Vdop : 63|5@0+ (0.2,0) [0|0] "" XXX
+ SG_ GPS_Speed : 47|8@0+ (1,0) [0|0] "MPH" XXX
+ SG_ GPS_Sat_num_in_view : 7|5@0+ (1,0) [0|0] "" XXX
+ SG_ GPS_MSL_altitude : 15|12@0+ (10.0,-20460.0) [0|0] "feet" XXX
+ SG_ GPS_Heading : 31|16@0+ (0.01,0) [0|0] "Degrees" XXX
+ SG_ GPS_Hdop : 55|5@0+ (0.2,0) [0|0] "" XXX
+ SG_ GPS_dimension : 2|3@0+ (1,0) [0|0] "" XXX
+
+BO_ 1144 GPS_Data_Nav_4: 8 XXX
+ SG_ VehPos_L_Est : 39|32@0+ (0.01,0) [0|0] "meter" XXX
+ SG_ VehHead_W_Actl : 23|16@0+ (0.01,-327.68) [0|0] "degrees/second" XXX
+ SG_ VehHead_An_Est : 7|16@0+ (0.01,0) [0|0] "degrees" XXX

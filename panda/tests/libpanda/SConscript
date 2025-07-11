@@ -1,0 +1,38 @@
+import opendbc
+import platform
+
+CC = 'gcc'
+system = platform.system()
+mac_ver = platform.mac_ver()
+
+# gcc installed by homebrew has version suffix (e.g. gcc-12) in order to be
+# distinguishable from system one - which acts as a symlink to clang
+# clang works on macOS 15 and greater but has issues on earlier macOS versions.
+# see: https://github.com/commaai/openpilot/issues/35093
+if system == 'Darwin' and mac_ver[0] and mac_ver[0] < '15':
+  CC += '-13'
+
+env = Environment(
+  CC=CC,
+  CFLAGS=[
+    '-nostdlib',
+    '-fno-builtin',
+    '-std=gnu11',
+    '-Wfatal-errors',
+    '-Wno-pointer-to-int-cast',
+  ],
+  CPPPATH=[".", "../../board/", opendbc.INCLUDE_PATH],
+)
+if system == "Darwin":
+  env.PrependENVPath('PATH', '/opt/homebrew/bin')
+
+if GetOption('ubsan'):
+  flags = [
+    "-fsanitize=undefined",
+    "-fno-sanitize-recover=undefined",
+  ]
+  env['CFLAGS'] += flags
+  env['LINKFLAGS'] += flags
+
+panda = env.SharedObject("panda.os", "panda.c")
+libpanda = env.SharedLibrary("libpanda.so", [panda])
