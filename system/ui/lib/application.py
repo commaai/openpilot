@@ -5,7 +5,7 @@ import time
 import pyray as rl
 from collections.abc import Callable
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import StrEnum
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE
@@ -27,29 +27,16 @@ ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
-class FontWeight(IntEnum):
-  THIN = 0
-  EXTRA_LIGHT = 1
-  LIGHT = 2
-  NORMAL = 3
-  MEDIUM = 4
-  SEMI_BOLD = 5
-  BOLD = 6
-  EXTRA_BOLD = 7
-  BLACK = 8
-
-
-FONT_FILES: dict[FontWeight, str] = {
-  FontWeight.THIN: "Inter-Thin.ttf",
-  FontWeight.EXTRA_LIGHT: "Inter-ExtraLight.ttf",
-  FontWeight.LIGHT: "Inter-Light.ttf",
-  FontWeight.NORMAL: "Inter-Regular.ttf",
-  FontWeight.MEDIUM: "Inter-Medium.ttf",
-  FontWeight.SEMI_BOLD: "Inter-SemiBold.ttf",
-  FontWeight.BOLD: "Inter-Bold.ttf",
-  FontWeight.EXTRA_BOLD: "Inter-ExtraBold.ttf",
-  FontWeight.BLACK: "Inter-Black.ttf",
-}
+class FontWeight(StrEnum):
+  THIN = "Inter-Thin.ttf"
+  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
+  LIGHT = "Inter-Light.ttf"
+  NORMAL = "Inter-Regular.ttf"
+  MEDIUM = "Inter-Medium.ttf"
+  SEMI_BOLD = "Inter-SemiBold.ttf"
+  BOLD = "Inter-Bold.ttf"
+  EXTRA_BOLD = "Inter-ExtraBold.ttf"
+  BLACK = "Inter-Black.ttf"
 
 
 @dataclass
@@ -232,11 +219,11 @@ class GuiApplication:
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
-    for font_weight, font_file in FONT_FILES.items():
-      with as_file(FONT_DIR.joinpath(font_file)) as fspath:
+    for font_weight_file in FontWeight:
+      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
         font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[font_weight] = font
+        self._fonts[font_weight_file] = font
 
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
