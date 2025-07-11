@@ -239,6 +239,11 @@ jobs:
       with:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
+    - name: BUG BUG
+      uses: namespacelabs/breakpoint-action@v0
+      with:
+        duration: 60m
+        authorized-users: maxime-desroches
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
