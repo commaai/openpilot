@@ -247,6 +247,7 @@ jobs:
       timeout-minutes: ${{ (steps.setup-step.outputs.duration < 19) && 1 || 2 }}
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
+                        sleep 15 && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
@@ -330,6 +331,7 @@ jobs:
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
+                        sleep 15 && \
                         CI=1 pytest -s tools/sim/tests/test_metadrive_bridge.py"
 
   create_ui_report:
