@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
-from openpilot.system.ui.widgets.scroll_panel import GuiScrollPanel
 
 
 class ElementType(Enum):
