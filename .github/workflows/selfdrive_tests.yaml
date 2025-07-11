@@ -246,6 +246,7 @@ jobs:
         ls -lah .ci_cache/scons_cache
         ${{ env.RUN }} "scons -j8 --minimal panda"
         ${{ env.RUN }} "ls -lah /tmp/scons_cache"
+        ls -lah $GITHUB_WORKSPACE/.ci_cache/scons_cache
 
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
