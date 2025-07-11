@@ -240,7 +240,11 @@ jobs:
         path: .ci_cache/comma_download_cache
         key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
     - name: test
-      run: ${{ env.RUN }} "ls -lah /tmp/scons_cache"
+      run: |
+        ${{ env.RUN }} "ls -lah /tmp/scons_cache"
+        ls -lah $GITHUB_WORKSPACE/.ci_cache/scons_cache
+        ls -lah .ci_cache/scons_cache
+        ls -lah /.ci_cache/scons_cache
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
