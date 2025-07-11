@@ -245,7 +245,6 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
-                        sleep 90 && \
                         chmod -R 777 /tmp/comma_download_cache"
       env:
         NUM_JOBS: 4
