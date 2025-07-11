@@ -120,7 +120,7 @@ class CarSpecificEvents:
       #   events.add(EventName.steerTimeLimit)
 
     elif self.CP.brand == 'hyundai':
-      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport, GearShifter.manumatic],
+      events = self.create_common_events(CS, CS_prev, extra_gears=(GearShifter.sport, GearShifter.manumatic),
                                          pcm_enable=self.CP.pcmCruise, allow_button_cancel=False)
 
     else:
