@@ -40,10 +40,10 @@ runs:
       uses: ./.github/workflows/auto-cache
       with:
         path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        key: scons1-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
+          scons1-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons1-${{ runner.arch }}
     # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
     - id: normalize-file-permissions
       shell: bash
