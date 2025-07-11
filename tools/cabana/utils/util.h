@@ -98,7 +98,9 @@ public:
 };
 
 namespace utils {
+
 QPixmap icon(const QString &id);
+bool isDarkTheme();
 void setTheme(int theme);
 QString formatSeconds(double sec, bool include_milliseconds = false, bool absolute_time = false);
 inline void drawStaticText(QPainter *p, const QRect &r, const QStaticText &text) {
