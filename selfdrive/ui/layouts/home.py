@@ -18,8 +18,6 @@ SPACING = 25
 RIGHT_COLUMN_WIDTH = 750
 REFRESH_INTERVAL = 10.0
 
-PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
-
 
 class HomeLayoutState(IntEnum):
   HOME = 0
