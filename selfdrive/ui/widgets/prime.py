@@ -2,10 +2,10 @@ import pyray as rl
 
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.label import gui_label
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.wrap_text import wrap_text
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.label import gui_label
 
 
 class PrimeWidget(Widget):

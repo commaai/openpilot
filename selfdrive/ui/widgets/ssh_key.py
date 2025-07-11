@@ -6,8 +6,12 @@ from enum import Enum
 
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle
-from openpilot.system.ui.lib.list_view import (
+from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets import DialogResult
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
+from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets.list_view import (
   ItemAction,
   ListItem,
   BUTTON_HEIGHT,
@@ -15,10 +19,6 @@ from openpilot.system.ui.lib.list_view import (
   BUTTON_FONT_SIZE,
   BUTTON_WIDTH,
 )
-from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.widget import DialogResult
-from openpilot.system.ui.widgets.confirm_dialog import alert_dialog
-from openpilot.system.ui.widgets.keyboard import Keyboard
 
 
 class SshKeyActionState(Enum):

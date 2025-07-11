@@ -1,9 +1,9 @@
 import time
 import pyray as rl
+from openpilot.common.params import Params
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.widget import Widget
-from openpilot.common.params import Params
+from openpilot.system.ui.widgets import Widget
 
 
 class ExpButton(Widget):

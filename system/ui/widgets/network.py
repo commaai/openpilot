@@ -4,13 +4,13 @@ from typing import Literal
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.button import ButtonStyle, gui_button
-from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
-from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets.label import gui_label
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8

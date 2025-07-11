@@ -2,12 +2,12 @@ import platform
 import numpy as np
 import pyray as rl
 
-from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 

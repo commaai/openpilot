@@ -1,11 +1,11 @@
 import pyray as rl
 from dataclasses import dataclass
-from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.common.conversions import Conversions as CV
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 # Constants
 SET_SPEED_NA = 255

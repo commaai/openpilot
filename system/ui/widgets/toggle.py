@@ -1,6 +1,6 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import MousePos
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
