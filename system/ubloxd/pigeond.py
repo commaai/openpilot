@@ -258,7 +258,7 @@ def deinitialize_and_exit(pigeon: TTYPigeon | None):
   set_power(False)
   sys.exit(0)
 
-def init(pigeon: TTYPigeon) -> tuple[TTYPigeon, messaging.PubMaster]:
+def init(pigeon: TTYPigeon) -> None:
   # register exit handler
   signal.signal(signal.SIGINT, lambda sig, frame: deinitialize_and_exit(pigeon))
 
@@ -268,7 +268,7 @@ def init(pigeon: TTYPigeon) -> tuple[TTYPigeon, messaging.PubMaster]:
   set_power(True)
   time.sleep(0.5)
 
-  init_baudrate()
+  init_baudrate(pigeon)
   init_pigeon(pigeon)
 
 def run_receiving(duration: int = 0):
