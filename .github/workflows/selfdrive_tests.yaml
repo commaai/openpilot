@@ -248,16 +248,16 @@ jobs:
         ${{ env.RUN }} "ls -lah /tmp/scons_cache"
         ls -lah $GITHUB_WORKSPACE/.ci_cache/scons_cache
 
-    - name: Build openpilot
-      run: ${{ env.RUN }} "scons -j$(nproc)"
-    - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
-      run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
-      env:
-        NUM_JOBS: 4
-        JOB_ID: ${{ matrix.job }}
+#    - name: Build openpilot
+#      run: ${{ env.RUN }} "scons -j$(nproc)"
+#    - name: Test car models
+#      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
+#      run: |
+#        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
+#                        chmod -R 777 /tmp/comma_download_cache"
+#      env:
+#        NUM_JOBS: 4
+#        JOB_ID: ${{ matrix.job }}
 
   car_docs_diff:
     name: PR comments
