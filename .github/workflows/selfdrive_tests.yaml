@@ -233,12 +233,12 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
-    - name: Cache test routes
-      id: routes-cache
-      uses: actions/cache@v4
-      with:
-        path: .ci_cache/comma_download_cache
-        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
+#    - name: Cache test routes
+#      id: routes-cache
+#      uses: actions/cache@v4
+#      with:
+#        path: .ci_cache/comma_download_cache
+#        key: car_models-${{ hashFiles('selfdrive/car/tests/test_models.py', 'opendbc/car/tests/routes.py') }}-${{ matrix.job }}
     - name: test
       run: |
         ${{ env.RUN }} "ls -lah /tmp/scons_cache"
