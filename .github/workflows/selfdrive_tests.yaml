@@ -321,11 +321,12 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      id: setup-step
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Driving test
-      timeout-minutes: 1
+      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 19) && 1 || 2 }}
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
