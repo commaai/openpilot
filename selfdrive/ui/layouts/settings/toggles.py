@@ -82,7 +82,7 @@ class TogglesLayout(Widget):
         icon="microphone.png",
       ),
       toggle_item(
-        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
+        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="metric.png"
       ),
     ]
 

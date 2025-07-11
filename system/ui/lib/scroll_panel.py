@@ -1,6 +1,8 @@
+import time
 import pyray as rl
 from collections import deque
 from enum import IntEnum
+from openpilot.system.ui.lib.application import gui_app, MouseEvent, MousePos
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
@@ -38,51 +40,54 @@ class GuiScrollPanel:
     self._bounds_rect: rl.Rectangle | None = None
 
   def handle_scroll(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
+    # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
+    for mouse_event in gui_app.mouse_events or [MouseEvent(MousePos(0, 0), False, False, False, time.monotonic())]:
+      self._handle_mouse_event(mouse_event, bounds, content)
+    return self._offset
+
+  def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):
     # Store rectangles for reference
     self._content_rect = content
     self._bounds_rect = bounds
 
-    # Calculate time delta
-    current_time = rl.get_time()
-
-    mouse_pos = rl.get_mouse_position()
     max_scroll_y = max(content.height - bounds.height, 0)
 
     # Start dragging on mouse press
-    if rl.check_collision_point_rec(mouse_pos, bounds) and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    if rl.check_collision_point_rec(mouse_event.pos, bounds) and mouse_event.left_pressed:
       if self._scroll_state == ScrollState.IDLE or self._scroll_state == ScrollState.BOUNCING:
         self._scroll_state = ScrollState.DRAGGING_CONTENT
         if self._show_vertical_scroll_bar:
           scrollbar_width = rl.gui_get_style(rl.GuiControl.LISTVIEW, rl.GuiListViewProperty.SCROLLBAR_WIDTH)
           scrollbar_x = bounds.x + bounds.width - scrollbar_width
-          if mouse_pos.x >= scrollbar_x:
+          if mouse_event.pos.x >= scrollbar_x:
             self._scroll_state = ScrollState.DRAGGING_SCROLLBAR
 
         # TODO: hacky
         # when clicking while moving, go straight into dragging
         self._is_dragging = abs(self._velocity_y) > MIN_VELOCITY
-        self._last_mouse_y = mouse_pos.y
-        self._start_mouse_y = mouse_pos.y
-        self._last_drag_time = current_time
+        self._last_mouse_y = mouse_event.pos.y
+        self._start_mouse_y = mouse_event.pos.y
+        self._last_drag_time = mouse_event.t
         self._velocity_history.clear()
         self._velocity_y = 0.0
         self._bounce_offset = 0.0
 
     # Handle active dragging
     if self._scroll_state == ScrollState.DRAGGING_CONTENT or self._scroll_state == ScrollState.DRAGGING_SCROLLBAR:
-      if rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
-        delta_y = mouse_pos.y - self._last_mouse_y
+      if mouse_event.left_down:
+        delta_y = mouse_event.pos.y - self._last_mouse_y
 
         # Track velocity for inertia
-        time_since_last_drag = current_time - self._last_drag_time
+        time_since_last_drag = mouse_event.t - self._last_drag_time
         if time_since_last_drag > 0:
-          drag_velocity = delta_y / time_since_last_drag / 60.0
+          # TODO: HACK: /2 since we usually get two touch events per frame
+          drag_velocity = delta_y / time_since_last_drag / 60.0 / 2  # TODO: shouldn't be hardcoded
           self._velocity_history.append(drag_velocity)
 
-        self._last_drag_time = current_time
+        self._last_drag_time = mouse_event.t
 
         # Detect actual dragging
-        total_drag = abs(mouse_pos.y - self._start_mouse_y)
+        total_drag = abs(mouse_event.pos.y - self._start_mouse_y)
         if total_drag > DRAG_THRESHOLD:
           self._is_dragging = True
 
@@ -96,9 +101,9 @@ class GuiScrollPanel:
           scroll_ratio = content.height / bounds.height
           self._offset.y -= delta_y * scroll_ratio
 
-        self._last_mouse_y = mouse_pos.y
+        self._last_mouse_y = mouse_event.pos.y
 
-      elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      elif mouse_event.left_released:
         # Calculate flick velocity
         if self._velocity_history:
           total_weight = 0
@@ -166,8 +171,6 @@ class GuiScrollPanel:
         self._offset.y = MAX_BOUNCE_DISTANCE
       elif self._offset.y < -(max_scroll_y + MAX_BOUNCE_DISTANCE):
         self._offset.y = -(max_scroll_y + MAX_BOUNCE_DISTANCE)
-
-    return self._offset
 
   def is_touch_valid(self):
     return not self._is_dragging

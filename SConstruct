@@ -76,7 +76,6 @@ assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
 lenv = {
   "PATH": os.environ['PATH'],
-  "LD_LIBRARY_PATH": [Dir(f"#third_party/acados/{arch}/lib").abspath],
   "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
 
   "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
@@ -84,7 +83,7 @@ lenv = {
   "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
 }
 
-rpath = lenv["LD_LIBRARY_PATH"].copy()
+rpath = []
 
 if arch == "larch64":
   cpppath = [
@@ -126,7 +125,6 @@ else:
       f"{brew_prefix}/include",
       f"{brew_prefix}/opt/openssl@3.0/include",
     ]
-    lenv["DYLD_LIBRARY_PATH"] = lenv["LD_LIBRARY_PATH"]
   # Linux
   else:
     libpath = [

@@ -154,10 +154,11 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      id: setup-step
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
         ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
@@ -178,6 +179,7 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      id: setup-step
     - name: Cache test routes
       id: dependency-cache
       uses: actions/cache@v4
@@ -188,7 +190,7 @@ jobs:
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && 1 || 20 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
@@ -203,7 +205,7 @@ jobs:
         name: process_replay_diff.txt
         path: selfdrive/test/process_replay/diff.txt
     - name: Upload reference logs
-      if: ${{ failure() && steps.print-diff.outcome == 'success' && github.repository == 'commaai/openpilot' && env.AZURE_TOKEN != '' }}
+      if: false # TODO: move this to github instead of azure
       run: |
         ${{ env.RUN }} "unset PYTHONWARNINGS && AZURE_TOKEN='$AZURE_TOKEN' python3 selfdrive/test/process_replay/test_processes.py -j$(nproc) --upload-only"
     - name: Run regen
@@ -230,6 +232,7 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      id: setup-step
     - name: Cache test routes
       id: routes-cache
       uses: actions/cache@v4
@@ -239,7 +242,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Test car models
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && 1 || 6 }}
+      timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
       run: |
         ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
                         chmod -R 777 /tmp/comma_download_cache"
@@ -316,11 +319,12 @@ jobs:
       with:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
+      id: setup-step
     - name: Build openpilot
       run: |
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Driving test
-      timeout-minutes: 1
+      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 18) && 1 || 2 }}
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         source selfdrive/test/setup_vsound.sh && \
