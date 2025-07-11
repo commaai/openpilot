@@ -271,7 +271,7 @@ def init(pigeon: TTYPigeon) -> tuple[TTYPigeon, messaging.PubMaster]:
   init_baudrate()
   init_pigeon(pigeon)
 
-def run_receiving(pigeon: TTYPigeon, duration: int = 0):
+def run_receiving(duration: int = 0):
   pm = messaging.PubMaster(['ubloxRaw'])
 
   pigeon = TTYPigeon()
