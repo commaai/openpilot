@@ -5,13 +5,14 @@ from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import Label
 
 
 class DriverCameraDialog(CameraView):
   def __init__(self):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
+    self._starting_label = Label("camera starting", font_size=100, font_weight=FontWeight.BOLD, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
   def _render(self, rect):
     super()._render(rect)
@@ -20,13 +21,7 @@ class DriverCameraDialog(CameraView):
       return 1
 
     if not self.frame:
-      gui_label(
-        rect,
-        "camera starting",
-        font_size=100,
-        font_weight=FontWeight.BOLD,
-        alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-      )
+      self._starting_label.render(rect)
       return -1
 
     self._draw_face_detection(rect)
