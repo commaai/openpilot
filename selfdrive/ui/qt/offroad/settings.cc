@@ -62,18 +62,18 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       true,
     },
     {
+      "RecordAudio",
+      tr("Record and Upload Microphone Audio"),
+      tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
+      "../assets/icons/microphone.png",
+      true,
+    },
+    {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
       "../assets/icons/metric.png",
       false,
-    },
-    {
-      "RecordAudio",
-      tr("Record Microphone Audio"),
-      tr("Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect."),
-      "../assets/icons/microphone.png",
-      true,
     },
   };
 
@@ -333,25 +333,21 @@ void DevicePanel::updateCalibDescription() {
     }
   }
 
-  const bool is_release = params.getBool("IsReleaseBranch");
-  if (!is_release) {
-    int lag_perc = 0;
-    std::string lag_bytes = params.get("LiveDelay");
-    if (!lag_bytes.empty()) {
-      try {
-        AlignedBuffer aligned_buf;
-        capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
-        lag_perc = cmsg.getRoot<cereal::Event>().getLiveDelay().getCalPerc();
-      } catch (kj::Exception) {
-        qInfo() << "invalid LiveDelay";
-      }
+  int lag_perc = 0;
+  std::string lag_bytes = params.get("LiveDelay");
+  if (!lag_bytes.empty()) {
+    try {
+      AlignedBuffer aligned_buf;
+      capnp::FlatArrayMessageReader cmsg(aligned_buf.align(lag_bytes.data(), lag_bytes.size()));
+      lag_perc = cmsg.getRoot<cereal::Event>().getLiveDelay().getCalPerc();
+    } catch (kj::Exception) {
+      qInfo() << "invalid LiveDelay";
     }
-    desc += "\n\n";
-    if (lag_perc < 100) {
-      desc += tr("Steering lag calibration is %1% complete.").arg(lag_perc);
-    } else {
-      desc += tr("Steering lag calibration is complete.");
-    }
+  }
+  if (lag_perc < 100) {
+    desc += tr("\n\nSteering lag calibration is %1% complete.").arg(lag_perc);
+  } else {
+    desc += tr("\n\nSteering lag calibration is complete.");
   }
 
   std::string torque_bytes = params.get("LiveTorqueParameters");
@@ -363,11 +359,10 @@ void DevicePanel::updateCalibDescription() {
       // don't add for non-torque cars
       if (torque.getUseParams()) {
         int torque_perc = torque.getCalPerc();
-        desc += is_release ? "\n\n" : " ";
         if (torque_perc < 100) {
-          desc += tr("Steering torque response calibration is %1% complete.").arg(torque_perc);
+          desc += tr(" Steering torque response calibration is %1% complete.").arg(torque_perc);
         } else {
-          desc += tr("Steering torque response calibration is complete.");
+          desc += tr(" Steering torque response calibration is complete.");
         }
       }
     } catch (kj::Exception) {

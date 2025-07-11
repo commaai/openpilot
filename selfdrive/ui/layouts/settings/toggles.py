@@ -76,13 +76,13 @@ class TogglesLayout(Widget):
         icon="monitoring.png",
       ),
       toggle_item(
-        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
-      ),
-      toggle_item(
         "Record Microphone Audio",
         DESCRIPTIONS["RecordAudio"],
         self._params.get_bool("RecordAudio"),
         icon="microphone.png",
+      ),
+      toggle_item(
+        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
       ),
     ]
 
