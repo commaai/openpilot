@@ -191,7 +191,6 @@ jobs:
         ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
-      timeout-minutes: ${{ (steps.setup-step.outputs.duration < 19) && 1 || 2 }}
       run: |
         ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
                         chmod -R 777 /tmp/comma_download_cache"
