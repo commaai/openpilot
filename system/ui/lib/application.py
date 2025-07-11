@@ -7,7 +7,7 @@ import threading
 from collections.abc import Callable
 from collections import deque
 from dataclasses import dataclass
-from enum import IntEnum
+from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
@@ -33,16 +33,16 @@ ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
 
 
-class FontWeight(IntEnum):
-  THIN = 0
-  EXTRA_LIGHT = 1
-  LIGHT = 2
-  NORMAL = 3
-  MEDIUM = 4
-  SEMI_BOLD = 5
-  BOLD = 6
-  EXTRA_BOLD = 7
-  BLACK = 8
+class FontWeight(StrEnum):
+  THIN = "Inter-Thin.ttf"
+  EXTRA_LIGHT = "Inter-ExtraLight.ttf"
+  LIGHT = "Inter-Light.ttf"
+  NORMAL = "Inter-Regular.ttf"
+  MEDIUM = "Inter-Medium.ttf"
+  SEMI_BOLD = "Inter-SemiBold.ttf"
+  BOLD = "Inter-Bold.ttf"
+  EXTRA_BOLD = "Inter-ExtraBold.ttf"
+  BLACK = "Inter-Black.ttf"
 
 
 @dataclass
@@ -312,20 +312,9 @@ class GuiApplication:
     return self._height
 
   def _load_fonts(self):
-    font_files = (
-      "Inter-Thin.ttf",
-      "Inter-ExtraLight.ttf",
-      "Inter-Light.ttf",
-      "Inter-Regular.ttf",
-      "Inter-Medium.ttf",
-      "Inter-SemiBold.ttf",
-      "Inter-Bold.ttf",
-      "Inter-ExtraBold.ttf",
-      "Inter-Black.ttf",
-    )
-
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
+
     all_chars = set()
     for layout in KEYBOARD_LAYOUTS.values():
       all_chars.update(key for row in layout for key in row)
@@ -335,11 +324,11 @@ class GuiApplication:
     codepoint_count = rl.ffi.new("int *", 1)
     codepoints = rl.load_codepoints(all_chars, codepoint_count)
 
-    for index, font_file in enumerate(font_files):
-      with as_file(FONT_DIR.joinpath(font_file)) as fspath:
+    for font_weight_file in FontWeight:
+      with as_file(FONT_DIR.joinpath(font_weight_file)) as fspath:
         font = rl.load_font_ex(fspath.as_posix(), 200, codepoints, codepoint_count[0])
         rl.set_texture_filter(font.texture, rl.TextureFilter.TEXTURE_FILTER_BILINEAR)
-        self._fonts[index] = font
+        self._fonts[font_weight_file] = font
 
     rl.unload_codepoints(codepoints)
     rl.gui_set_font(self._fonts[FontWeight.NORMAL])
