@@ -54,6 +54,8 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
 _pressed_buttons: set[str] = set()  # Track mouse press state globally
 
 
+# TODO: This should be a Widget class
+
 def gui_button(
   rect: rl.Rectangle,
   text: str,
