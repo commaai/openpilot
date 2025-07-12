@@ -2,15 +2,28 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
-from openpilot.system.ui.widgets.label import gui_text_box
+from openpilot.system.ui.widgets.label import Text
 
 DIALOG_WIDTH = 1520
 DIALOG_HEIGHT = 600
 BUTTON_HEIGHT = 160
 MARGIN = 50
+MESSAGE_FONT_SIZE = 70
 TEXT_AREA_HEIGHT_REDUCTION = 200
 BACKGROUND_COLOR = rl.Color(27, 27, 27, 255)
 
+
+# TODO: Move to the class init method (once it's added)
+message_text_widget = Text(
+  "",
+  font_size=MESSAGE_FONT_SIZE,
+  font_weight=FontWeight.BOLD,
+  alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
+  alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+)
+
+
+# TODO: This should be a Widget class
 
 def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel") -> DialogResult:
   dialog_x = (gui_app.width - DIALOG_WIDTH) / 2
@@ -29,15 +42,10 @@ def confirm_dialog(message: str, confirm_text: str, cancel_text: str = "Cancel")
   # Draw the dialog background
   rl.draw_rectangle_rec(dialog_rect, BACKGROUND_COLOR)
 
-  # Draw the message in the dialog, centered
-  text_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y, dialog_rect.width - 2 * MARGIN, dialog_rect.height - TEXT_AREA_HEIGHT_REDUCTION)
-  gui_text_box(
-    text_rect,
-    message,
-    font_size=70,
-    alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-    alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-    font_weight=FontWeight.BOLD,
+  # Render the message in the dialog
+  message_text_widget.text = message
+  message_text_widget.render(
+    rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y, dialog_rect.width - 2 * MARGIN, dialog_rect.height - TEXT_AREA_HEIGHT_REDUCTION)
   )
 
   # Initialize result; -1 means no action taken yet
