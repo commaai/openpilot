@@ -73,7 +73,7 @@ class Label(Widget):
     rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), self.font_size, self.spacing, self.color)
 
 
-# TODO: Remove
+# TODO: Remove and replace all usages with the Text widget
 def gui_text_box(
   rect: rl.Rectangle,
   text: str,
@@ -148,6 +148,7 @@ class Text(Widget):
 
     ret = None
     # Render the label with the custom styles (overrides the default styles)
+    # TODO: There should be a better way to do this without having to override the styles.
     with GuiStyleContext(self._get_styles()):
       ret = rl.gui_label(rect, self.text)
 
