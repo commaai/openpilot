@@ -26,7 +26,7 @@ dependencies = [
   "pycapnp",
   "Cython",
   "setuptools",
-  "numpy >=2.0, <2.2", # Linting issues with mypy in 2.2
+  "numpy >=2.0",
 
   # body / webrtcd
   "aiohttp",
