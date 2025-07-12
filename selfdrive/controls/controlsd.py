@@ -19,6 +19,7 @@ from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle, S
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 State = log.SelfdriveState.OpenpilotState
 LaneChangeState = log.LaneChangeState
@@ -163,8 +164,8 @@ class Controls:
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
 
-    if check_lateral_iso_violation(sm):
-      set_offroad_alert_if_changed("Offroad_ViolatedIsoLimits", True)
+    if check_lateral_iso_violation(self.sm):
+      set_offroad_alert("Offroad_ViolatedIsoLimits", True)
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
