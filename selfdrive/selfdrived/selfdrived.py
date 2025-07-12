@@ -7,6 +7,7 @@ import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from opendbc.car.interfaces import ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 
 
 from openpilot.common.params import Params
@@ -37,6 +38,10 @@ ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
+
+
+def check_lateral_iso_violation(sm: messaging.SubMaster) -> bool:
+  return False
 
 
 class SelfdriveD:
@@ -226,6 +231,9 @@ class SelfdriveD:
     if self.is_ldw_enabled and self.sm.valid['driverAssistance']:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
+
+    if check_lateral_iso_violation(self.sm):
+      set_offroad_alert("Offroad_ViolatedIsoLimits", True)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
