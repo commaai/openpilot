@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import Label
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -66,6 +66,10 @@ class WifiManagerUI(Widget):
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
+    self._scanning_label = Label("Scanning Wi-Fi networks...", font_size=72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self._ssid_label = Label("", font_size=55)
+    self._status_label = Label("", font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+
     self._networks: list[NetworkInfo] = []
     self._lock = Lock()
     self.wifi_manager = wifi_manager
@@ -85,7 +89,7 @@ class WifiManagerUI(Widget):
   def _render(self, rect: rl.Rectangle):
     with self._lock:
       if not self._networks:
-        gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+        self._scanning_label.render(rect)
         return
 
       match self.state:
@@ -135,11 +139,13 @@ class WifiManagerUI(Widget):
 
   def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
     spacing = 50
-    ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    gui_label(ssid_rect, network.ssid, 55)
+    # Show SSID
+    ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
+    self._ssid_label.text = network.ssid
+    self._ssid_label.render(ssid_rect)
 
     status_text = ""
     match self.state:
@@ -151,8 +157,9 @@ class WifiManagerUI(Widget):
           status_text = "FORGETTING..."
 
     if status_text:
-      status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
-      gui_label(status_text_rect, status_text, font_size=48, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      # Show status text
+      self._status_label.text = status_text
+      self._status_label.render(rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT))
     else:
       # If the network is saved, show the "Forget" button
       if network.is_saved:
