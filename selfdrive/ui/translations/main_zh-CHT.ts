@@ -477,10 +477,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>一個有關操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>裝置註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方裝置，請訪問 https://comma.ai/support 。</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>NVMe 固態硬碟未被掛載。</translation>
     </message>
@@ -499,6 +495,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>裝置溫度過高。系統正在冷卻中，等冷卻完畢後才會啟動。目前內部組件溫度：%1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
