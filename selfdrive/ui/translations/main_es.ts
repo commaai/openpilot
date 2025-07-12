@@ -84,7 +84,7 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation>Evite cargas de grandes cantidades de datos cuando utilice una conexión celular con medidor</translation>
+        <translation>Evite cargas de grandes cantidades de datos cuando utilice una conexión celular medida</translation>
     </message>
     <message>
         <source>default</source>
@@ -96,7 +96,7 @@
     </message>
     <message>
         <source>unmetered</source>
-        <translation>sin medidor</translation>
+        <translation>sin medidor</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
