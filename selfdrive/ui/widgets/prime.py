@@ -50,7 +50,7 @@ class PrimeWidget(Widget):
     w = rect.width - 160
 
     # Title
-    self._upgrade_now.render(rl.Rectangle(x, y, w, 90))
+    self._upgrade_now.render(rl.Rectangle(x, y, w, self._upgrade_now.font_size))
 
     # Description with wrapping
     desc_y = y + 140
@@ -60,16 +60,16 @@ class PrimeWidget(Widget):
     rl.draw_text_ex(font, wrapped_text, rl.Vector2(x, desc_y), FONT_SIZE_MEDIUM, 0, rl.Color(255, 255, 255, 255))
 
     # Features section
-    features_y = desc_y + text_size.y + 50
-    self._prime_features.render(rl.Rectangle(x, features_y, w, 50))
+    features_y = desc_y + text_size.y + self._prime_features.font_size
+    self._prime_features.render(rl.Rectangle(x, features_y, w, self._prime_features.font_size))
 
     # Feature list
     for i, feature_label in enumerate(self._feature_labels):
       item_y = features_y + 80 + i * 65
       # Draw check mark
-      self._check_mark_label.render(rl.Rectangle(x, item_y, 50, 60))
+      self._check_mark_label.render(rl.Rectangle(x, item_y, 50, self._check_mark_label.font_size))
       # Draw feature label
-      feature_label.render(rl.Rectangle(x + 60, item_y, w - 60, 60))
+      feature_label.render(rl.Rectangle(x + 60, item_y, w - 60, feature_label.font_size))
 
   def _render_for_prime_user(self, rect: rl.Rectangle):
     """Renders the prime user widget with subscription status."""

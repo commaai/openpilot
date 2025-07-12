@@ -84,10 +84,10 @@ class Updater(Widget):
 
   def render_prompt_screen(self, rect: rl.Rectangle):
     # Title
-    self.title_label.render(rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE))
+    self.title_label.render(rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, self.title_label.font_size))
 
     # Description
-    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, self.description_label.font_size * 3)
     self.description_label.render(desc_rect)
 
     # Buttons at the bottom
@@ -117,7 +117,7 @@ class Updater(Widget):
       return  # Return to avoid processing other interactions after screen change
 
   def render_progress_screen(self, rect: rl.Rectangle):
-    self.progress_label.render(rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, 100))
+    self.progress_label.render(rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, self.progress_label.font_size))
 
     # Progress bar
     bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, rect.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
