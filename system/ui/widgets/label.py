@@ -13,7 +13,7 @@ class Label(Widget):
     font_weight: FontWeight = FontWeight.NORMAL,
     color: rl.Color = DEFAULT_TEXT_COLOR,
     alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-    alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
+    alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
     spacing: int = DEFAULT_TEXT_SPACING,
     truncated: bool = True,
     truncate_suffix: str = "...",
