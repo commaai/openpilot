@@ -100,7 +100,7 @@
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation>Red Wi-Fi medida</translation>
+        <translation>Red Wi-Fi medida</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
