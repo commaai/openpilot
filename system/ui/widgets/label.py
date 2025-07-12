@@ -149,11 +149,7 @@ def gui_text_box(
 
 
 class Text(Label):
-  def __init__(
-    self,
-    *args,
-    **kwargs,
-  ):
+  def __init__(self, *args, **kwargs):
     """Text widget that extends Label, but wraps the text with word wrapping instead of truncation."""
     super().__init__(*args, **kwargs, truncated=False)
 
