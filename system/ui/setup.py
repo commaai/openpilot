@@ -11,7 +11,7 @@ from cereal import log
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, SelectionButton
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import Label, Text, gui_label
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
@@ -56,12 +56,16 @@ class Setup(Widget):
     self.wifi_manager = WifiManagerWrapper()
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.keyboard = Keyboard()
-    self.selected_radio = None
 
     self.title_label = Label("", TITLE_FONT_SIZE, FontWeight.MEDIUM)
     self.warning_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, rl.Color(255, 89, 79, 255))
     self.downloading_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
     self.body_text = Text("", BODY_FONT_SIZE)
+    self.software_buttons: list[SelectionButton] = [
+      SelectionButton("openpilot", BODY_FONT_SIZE, FontWeight.NORMAL, foreground_color=rl.WHITE, on_select_callback=self.handle_software_select),
+      SelectionButton("Custom Software", BODY_FONT_SIZE, FontWeight.NORMAL, foreground_color=rl.WHITE, on_select_callback=self.handle_software_select),
+    ]
+    self.selected_software_button_index: int = -1
 
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
@@ -73,6 +77,10 @@ class Setup(Widget):
           self.state = SetupState.LOW_VOLTAGE
     except (FileNotFoundError, ValueError):
       self.state = SetupState.LOW_VOLTAGE
+
+  def handle_software_select(self, button: SelectionButton):
+    selected_index = next((i for i, b in enumerate(self.software_buttons) if b == button), -1)
+    self.selected_software_button_index = selected_index
 
   def _render(self, rect: rl.Rectangle):
     if self.state == SetupState.LOW_VOLTAGE:
@@ -187,41 +195,15 @@ class Setup(Widget):
     self.title_label.text = "Choose Software to Install"
     self.title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, self.title_label.font_size))
 
-    radio_height = 230
-    radio_spacing = 30
+    selection_button_height = 230
+    selection_button_spacing = 30
 
-    # TODO: Make these a separate widget
-
-    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + self.title_label.font_size + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
-    openpilot_selected = self.selected_radio == "openpilot"
-
-    rl.draw_rectangle_rounded(openpilot_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if openpilot_selected else rl.Color(79, 79, 79, 255))
-    gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", BODY_FONT_SIZE)
-
-    if openpilot_selected:
-      checkmark_pos = rl.Vector2(
-        openpilot_rect.x + openpilot_rect.width - 100 - self.checkmark.width, openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2
-      )
-      rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
-
-    custom_rect = rl.Rectangle(
-      rect.x + MARGIN, rect.y + self.title_label.font_size + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height
-    )
-    custom_selected = self.selected_radio == "custom"
-
-    rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
-    gui_label(rl.Rectangle(custom_rect.x + 100, custom_rect.y, custom_rect.width - 200, radio_height), "Custom Software", BODY_FONT_SIZE)
-
-    if custom_selected:
-      checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100 - self.checkmark.width, custom_rect.y + radio_height / 2 - self.checkmark.height / 2)
-      rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
-
-    mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if rl.check_collision_point_rec(mouse_pos, openpilot_rect):
-        self.selected_radio = "openpilot"
-      elif rl.check_collision_point_rec(mouse_pos, custom_rect):
-        self.selected_radio = "custom"
+    # Render software selection buttons
+    for i, button in enumerate(self.software_buttons):
+      y_offset = i * (selection_button_height + selection_button_spacing)
+      button_rect = rl.Rectangle(rect.x + MARGIN, rect.y + self.title_label.font_size + MARGIN * 2 + y_offset, rect.width - MARGIN * 2, selection_button_height)
+      button.set_selected(i == self.selected_software_button_index)
+      button.render(button_rect)
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
@@ -229,7 +211,7 @@ class Setup(Widget):
     if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
       self.state = SetupState.NETWORK_SETUP
 
-    continue_enabled = self.selected_radio is not None
+    continue_enabled = self.selected_software_button_index >= 0
     if gui_button(
       rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
       "Continue",
@@ -237,7 +219,7 @@ class Setup(Widget):
       is_enabled=continue_enabled,
     ):
       if continue_enabled:
-        if self.selected_radio == "openpilot":
+        if self.selected_software_button_index == 0:
           self.download(OPENPILOT_URL)
         else:
           self.state = SetupState.CUSTOM_URL
@@ -258,9 +240,9 @@ class Setup(Widget):
     self.body_text.render(
       rl.Rectangle(
         rect.x + 117,
-        rect.y + 185 +  self.title_label.font_size + 67 + 64 + 48,
+        rect.y + 185 + self.title_label.font_size + 67 + 64 + 48,
         rect.width - 117 - 100,
-        rect.height - 185 +  self.title_label.font_size + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2,
+        rect.height - 185 + self.title_label.font_size + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2,
       )
     )
 

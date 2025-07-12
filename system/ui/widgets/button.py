@@ -1,7 +1,11 @@
 import pyray as rl
+from collections.abc import Callable
 from enum import IntEnum
+from typing import Self
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets import MousePos, Widget
+from openpilot.system.ui.widgets.label import Label
 
 
 class ButtonStyle(IntEnum):
@@ -148,3 +152,44 @@ def gui_button(
     rl.draw_text_ex(font, text, text_pos, font_size, 0, color)
 
   return result
+
+
+# TODO: This could extend the Button class once it's added
+class SelectionButton(Widget):
+  def __init__(
+    self,
+    text: str,
+    font_size: int = DEFAULT_BUTTON_FONT_SIZE,
+    font_weight: FontWeight = FontWeight.MEDIUM,
+    foreground_color: rl.Color = BUTTON_TEXT_COLOR[ButtonStyle.PRIMARY],
+    is_selected: bool = False,
+    on_select_callback: Callable[[Self], None] | None = None,
+  ):
+    """A button that can be selected or deselected, like a radio button."""
+    super().__init__()
+    self.font_size = font_size
+    self.font_weight = font_weight
+    self.foreground_color = foreground_color
+    self.is_selected = is_selected
+    self.label = Label(text, font_size=font_size, font_weight=font_weight, color=self.foreground_color)
+    self.check_icon = gui_app.texture("icons/circled_check.png", 100, 100)
+    self.on_select_callback = on_select_callback
+
+  def set_selected(self, is_selected: bool):
+    self.is_selected = is_selected
+
+  def _render(self, rect: rl.Rectangle):
+    # Render background, based on selected state
+    rl.draw_rectangle_rounded(rect, 0.1, 10, BUTTON_BACKGROUND_COLORS[ButtonStyle.PRIMARY] if self.is_selected else rl.Color(79, 79, 79, 255))
+    # Render label
+    self.label.render(rl.Rectangle(rect.x + 100, rect.y, rect.width - 200, self.font_size))
+    # Render checkmark, if selected
+    if self.is_selected:
+      checkmark_pos = rl.Vector2(rect.x + rect.width - 100 - self.check_icon.width, rect.y + self.font_size / 2 - self.check_icon.height / 2)
+      rl.draw_texture_v(self.check_icon, checkmark_pos, self.foreground_color)
+
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
+    self.set_selected(True)
+    if self.on_select_callback:
+      self.on_select_callback(self)
+    return True
