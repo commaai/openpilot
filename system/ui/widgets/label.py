@@ -1,10 +1,9 @@
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR
+from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_SIZE, DEFAULT_TEXT_COLOR, DEFAULT_TEXT_SPACING
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.widgets import Widget
 
-# TODO: Use constant for spacing
 
 class Label(Widget):
   def __init__(
@@ -15,7 +14,7 @@ class Label(Widget):
     color: rl.Color = DEFAULT_TEXT_COLOR,
     alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
     alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-    spacing: int = 1,
+    spacing: int = DEFAULT_TEXT_SPACING,
     truncated: bool = True,
     truncate_suffix: str = "...",
   ):
@@ -160,7 +159,7 @@ class Text(Widget):
     color: rl.Color = DEFAULT_TEXT_COLOR,
     alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
     alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-    spacing: int = 1,
+    spacing: int = DEFAULT_TEXT_SPACING,
     wrap_mode: int = rl.GuiTextWrapMode.TEXT_WRAP_WORD,
   ):
     super().__init__()

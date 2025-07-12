@@ -10,9 +10,9 @@ from dataclasses import dataclass
 from enum import StrEnum
 from typing import NamedTuple
 from importlib.resources import as_file, files
+from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.common.realtime import Ratekeeper
 
 DEFAULT_FPS = int(os.getenv("FPS", "60"))
 FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
@@ -28,6 +28,7 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
+DEFAULT_TEXT_SPACING = 1
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
@@ -336,6 +337,7 @@ class GuiApplication:
   def _set_styles(self):
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BORDER_WIDTH, 0)
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, DEFAULT_TEXT_SIZE)
+    rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SPACING, DEFAULT_TEXT_SPACING)
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.BACKGROUND_COLOR, rl.color_to_int(rl.BLACK))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(DEFAULT_TEXT_COLOR))
     rl.gui_set_style(rl.GuiControl.DEFAULT, rl.GuiControlProperty.BASE_COLOR_NORMAL, rl.color_to_int(rl.Color(50, 50, 50, 255)))
