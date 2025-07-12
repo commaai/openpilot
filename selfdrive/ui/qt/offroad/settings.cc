@@ -69,6 +69,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       true,
     },
     {
+      "HeyComma",
+      tr("\"Hey comma\" to Bookmark"),
+      tr("Say \"Hey comma\" to bookmark an event in your drive. The timestamp will be highlighted in comma connect."),
+      "../assets/icons/microphone.png",
+      false,
+    },
+    {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),

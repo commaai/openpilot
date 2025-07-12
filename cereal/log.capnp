@@ -2485,6 +2485,15 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
+struct FeedbackState {
+  timestampEof @0 :UInt64;
+  melspecExecutionTime @1 :Float32;
+  embeddingExecutionTime @2 :Float32;
+  wakewordExecutionTime @3 :Float32;
+
+  wakewordProb @4 :Float32;
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2585,8 +2594,13 @@ struct Event {
     mapRenderState @105: MapRenderState;
 
     # UI services
-    userFlag @93 :UserFlag;
     uiDebug @102 :UIDebug;
+
+    # driving feedback
+    feedbackState @148 :FeedbackState;
+    userFlag @93 :UserFlag;
+
+
 
     # *********** debug ***********
     testJoystick @52 :Joystick;
