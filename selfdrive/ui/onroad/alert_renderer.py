@@ -7,7 +7,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import gui_text_box
+from openpilot.system.ui.widgets.label import Text
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -20,6 +20,8 @@ ALERT_BORDER_RADIUS = 30
 ALERT_FONT_SMALL = 66
 ALERT_FONT_MEDIUM = 74
 ALERT_FONT_BIG = 88
+ALERT_FONT_BIG_TITLE_LONG = 132
+ALERT_FONT_BIG_TITLE_SHORT = 177
 
 SELFDRIVE_STATE_TIMEOUT = 5  # Seconds
 SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
@@ -69,6 +71,11 @@ class AlertRenderer(Widget):
     self.font_regular: rl.Font = gui_app.font(FontWeight.NORMAL)
     self.font_bold: rl.Font = gui_app.font(FontWeight.BOLD)
 
+    alignment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
+    alignment_vertical = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
+    self.full_text1_widget = Text("", font_weight=FontWeight.BOLD, alignment=alignment, alignment_vertical=alignment_vertical)
+    self.full_text2_widget = Text("", font_size=ALERT_FONT_BIG, alignment=alignment, alignment_vertical=alignment_vertical)
+
   def get_alert(self, sm: messaging.SubMaster) -> Alert | None:
     """Generate the current alert based on selfdrive state."""
     ss = sm['selfdriveState']
@@ -107,10 +114,7 @@ class AlertRenderer(Widget):
     self._draw_background(alert_rect, alert)
 
     text_rect = rl.Rectangle(
-      alert_rect.x + ALERT_PADDING,
-      alert_rect.y + ALERT_PADDING,
-      alert_rect.width - 2 * ALERT_PADDING,
-      alert_rect.height - 2 * ALERT_PADDING
+      alert_rect.x + ALERT_PADDING, alert_rect.y + ALERT_PADDING, alert_rect.width - 2 * ALERT_PADDING, alert_rect.height - 2 * ALERT_PADDING
     )
     self._draw_text(text_rect, alert)
     return True
@@ -119,15 +123,9 @@ class AlertRenderer(Widget):
     if size == AlertSize.full:
       return rect
 
-    height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
-              ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
+    height = ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING
 
-    return rl.Rectangle(
-      rect.x + ALERT_MARGIN,
-      rect.y + rect.height - ALERT_MARGIN - height,
-      rect.width - 2 * ALERT_MARGIN,
-      height
-    )
+    return rl.Rectangle(rect.x + ALERT_MARGIN, rect.y + rect.height - ALERT_MARGIN - height, rect.width - 2 * ALERT_MARGIN, height)
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
@@ -148,15 +146,15 @@ class AlertRenderer(Widget):
       self._draw_centered(alert.text2, rect, self.font_regular, ALERT_FONT_SMALL, center_y=False)
 
     else:
-      is_long = len(alert.text1) > 15
-      font_size1 = 132 if is_long else 177
-      align_ment = rl.GuiTextAlignment.TEXT_ALIGN_CENTER
-      vertical_align = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE
+      # Text 1
       text_rect = rl.Rectangle(rect.x, rect.y, rect.width, rect.height // 2)
-
-      gui_text_box(text_rect, alert.text1, font_size1, alignment=align_ment, alignment_vertical=vertical_align, font_weight=FontWeight.BOLD)
+      self.full_text1_widget.text = alert.text1
+      self.full_text1_widget.font_size = ALERT_FONT_BIG_TITLE_LONG if len(alert.text1) > 15 else ALERT_FONT_BIG_TITLE_SHORT
+      self.full_text1_widget.render(text_rect)
+      # Text 2
       text_rect.y = rect.y + rect.height // 2
-      gui_text_box(text_rect, alert.text2, ALERT_FONT_BIG, alignment=align_ment)
+      self.full_text2_widget.text = alert.text2
+      self.full_text2_widget.render(text_rect)
 
   def _draw_centered(self, text, rect, font, font_size, center_y=True, color=rl.WHITE) -> None:
     text_size = measure_text_cached(font, text, font_size)
