@@ -26,8 +26,6 @@ LaneChangeDirection = log.LaneChangeDirection
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 
 
-def check_lateral_iso_violation(sm: messaging.SubMaster) -> bool:
-
 
 
 class Controls:
