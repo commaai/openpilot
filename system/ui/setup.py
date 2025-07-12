@@ -13,7 +13,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.system.ui.widgets.label import Label, Text, gui_label
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 
 NetworkType = log.DeviceState.NetworkType
@@ -58,6 +58,8 @@ class Setup(Widget):
     self.keyboard = Keyboard()
     self.selected_radio = None
 
+    self.body_text = Text("", font_size=BODY_FONT_SIZE)
+
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
 
@@ -91,8 +93,9 @@ class Setup(Widget):
     title_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE)
     gui_label(title_rect, "WARNING: Low Voltage", TITLE_FONT_SIZE, rl.Color(255, 89, 79, 255), FontWeight.MEDIUM)
 
-    body_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100 + TITLE_FONT_SIZE + 25, rect.width - 500 - 150, BODY_FONT_SIZE * 3)
-    gui_text_box(body_rect, "Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE)
+    body_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100 + TITLE_FONT_SIZE + 25, rect.width - 500 - 150, self.body_text.font_size * 3)
+    self.body_text.text = "Power your device in a car with a harness or proceed at your own risk."
+    self.body_text.render(body_rect)
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
@@ -107,8 +110,9 @@ class Setup(Widget):
     title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
     gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
-    desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, BODY_FONT_SIZE * 3)
-    gui_text_box(desc_rect, "Before we get on the road, let's finish installation and cover some details.", BODY_FONT_SIZE)
+    desc_rect = rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, self.body_text.font_size * 3)
+    self.body_text.text = "Before we get on the road, let's finish installation and cover some details."
+    self.body_text.render(desc_rect)
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
@@ -240,7 +244,8 @@ class Setup(Widget):
 
     error_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48,
                               rect.width - 117 - 100, rect.height - 185 + TITLE_FONT_SIZE + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2)
-    gui_text_box(error_rect, self.failed_reason, BODY_FONT_SIZE)
+    self.body_text.text = self.failed_reason
+    self.body_text.render(error_rect)
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
