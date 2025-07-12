@@ -9,16 +9,18 @@ from openpilot.system.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.system.ui.widgets.label import Label, Text
 
 NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"
 
+PADDING_HORIZONTAL = 140
+
 
 class ResetMode(IntEnum):
   USER_RESET = 0  # user initiated a factory reset from openpilot
-  RECOVER = 1     # userdata is corrupt for some reason, give a chance to recover
-  FORMAT = 2      # finish up a factory reset from a tool that doesn't flash an empty partition to userdata
+  RECOVER = 1  # userdata is corrupt for some reason, give a chance to recover
+  FORMAT = 2  # finish up a factory reset from a tool that doesn't flash an empty partition to userdata
 
 
 class ResetState(IntEnum):
@@ -33,6 +35,8 @@ class Reset(Widget):
     super().__init__()
     self.mode = mode
     self.reset_state = ResetState.NONE
+    self._header_label = Label("System Reset", font_size=100, font_weight=FontWeight.BOLD)
+    self._text_widget = Text(self.get_body_text(), font_size=90)
 
   def _do_erase(self):
     if PC:
@@ -57,11 +61,17 @@ class Reset(Widget):
     threading.Timer(0.1, self._do_erase).start()
 
   def _render(self, rect: rl.Rectangle):
-    label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
-    gui_label(label_rect, "System Reset", 100, font_weight=FontWeight.BOLD)
-
-    text_rect = rl.Rectangle(rect.x + 140, rect.y + 140, rect.width - 280, rect.height - 90 - 100)
-    gui_text_box(text_rect, self.get_body_text(), 90)
+    # Render header and text
+    self._header_label.render(rl.Rectangle(rect.x + PADDING_HORIZONTAL, rect.y, rect.width - PADDING_HORIZONTAL * 2, self._header_label.font_size))
+    self._text_widget.text = self.get_body_text()
+    self._text_widget.render(
+      rl.Rectangle(
+        rect.x + PADDING_HORIZONTAL,
+        rect.y + self._header_label.font_size + 40,
+        rect.width - PADDING_HORIZONTAL * 2,
+        rect.height,
+      )
+    )
 
     button_height = 160
     button_spacing = 50
@@ -77,8 +87,7 @@ class Reset(Widget):
           return False
 
       if self.reset_state != ResetState.FAILED:
-        if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height),
-                      "Confirm", button_style=ButtonStyle.PRIMARY):
+        if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height), "Confirm", button_style=ButtonStyle.PRIMARY):
           self.confirm()
 
     return True
