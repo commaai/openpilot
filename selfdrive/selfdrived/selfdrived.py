@@ -43,21 +43,21 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_lateral_iso_violation(car_control, controls_state, car_state, live_parameters, live_calibration, live_pose, calibrator):
-  calibrator.feed_live_calib(live_calibration)
-  device_pose = Pose.from_live_pose(live_pose)
+def check_lateral_iso_violation(sm, CS, calibrator):
+  calibrator.feed_live_calib(sm['liveCalibration'])
+  device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
 
   yaw_rate = calibrated_pose.angular_velocity.yaw
   roll = device_pose.orientation.roll
 
-  roll_compensated_lateral_accel = float((car_state.vEgo * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY))
+  roll_compensated_lateral_accel = float((CS.vEgo * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY))
 
   print('roll_compensated_lateral_accel:', roll_compensated_lateral_accel)
 
   # TODO: some temporal tolerance?
-  if car_control.latActive:
-    if abs(roll_compensated_lateral_accel) > (ISO_LATERAL_ACCEL + 2):  # TODO: 2x. this is to just test rn
+  if sm['carControl'].latActive:
+    if abs(roll_compensated_lateral_accel) > (ISO_LATERAL_ACCEL * 2):
       return True
 
   return False
@@ -254,9 +254,7 @@ class SelfdriveD:
         self.events.add(EventName.ldw)
 
     # Check for lateral ISO violations
-    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm['carControl'], self.sm['controlsState'],
-                                                                      CS, self.sm['liveParameters'], self.sm['liveCalibration'],
-                                                                      self.sm['livePose'], self.calibrator):
+    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm, CS, self.calibrator):
       set_offroad_alert("Offroad_LateralIsoViolation", True)
       self.lateral_iso_violation = True
 
