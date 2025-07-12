@@ -19,7 +19,7 @@ from cereal import messaging
 from openpilot.common.params import Params
 from openpilot.common.timeout import Timeout
 from openpilot.system.athena import athenad
-from openpilot.system.athena.athenad import MAX_RETRY_COUNT, dispatcher
+from openpilot.system.athena.athenad import MAX_RETRY_COUNT, UPLOAD_SESS, dispatcher
 from openpilot.system.athena.tests.helpers import HTTPRequestHandler, MockWebsocket, MockApi, EchoSocket
 from openpilot.selfdrive.test.helpers import http_server_context
 from openpilot.system.hardware.hw import Paths
@@ -29,7 +29,7 @@ def seed_athena_server(host, port):
   with Timeout(2, 'HTTP Server seeding failed'):
     while True:
       try:
-        requests.put(f'http://{host}:{port}/qlog.zst', data='', timeout=10)
+        UPLOAD_SESS.put(f'http://{host}:{port}/qlog.zst', data='', timeout=10)
         break
       except requests.exceptions.ConnectionError:
         time.sleep(0.1)
@@ -239,7 +239,7 @@ class TestAthenadMethods:
   @pytest.mark.parametrize("status,retry", [(500,True), (412,False)])
   @with_upload_handler
   def test_upload_handler_retry(self, mocker, host, status, retry):
-    mock_put = mocker.patch('requests.put')
+    mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')
     mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
     item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)

@@ -4,7 +4,7 @@ import requests
 
 # Forks with additional car support can fork the commaCarSegments repo on huggingface or host the LFS files themselves
 COMMA_CAR_SEGMENTS_REPO = os.environ.get("COMMA_CAR_SEGMENTS_REPO", "https://huggingface.co/datasets/commaai/commaCarSegments")
-COMMA_CAR_SEGMENTS_BRANCH = os.environ.get("COMMA_CAR_SEGMENTS_BRANCH", "main")
+COMMA_CAR_SEGMENTS_BRANCH = os.environ.get("COMMA_CAR_SEGMENTS_BRANCH", "v2")
 COMMA_CAR_SEGMENTS_LFS_INSTANCE = os.environ.get("COMMA_CAR_SEGMENTS_LFS_INSTANCE", COMMA_CAR_SEGMENTS_REPO)
 
 def get_comma_car_segments_database():
@@ -86,5 +86,5 @@ def get_repo_url(path):
     return get_repo_raw_url(path)
 
 
-def get_url(route, segment, file="rlog.bz2"):
+def get_url(route, segment, file="rlog.zst"):
   return get_repo_url(f"segments/{route.replace('|', '/')}/{segment}/{file}")
