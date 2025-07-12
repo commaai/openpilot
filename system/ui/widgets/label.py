@@ -6,6 +6,12 @@ from openpilot.system.ui.widgets import Widget
 
 
 class Label(Widget):
+  """Text label widget with customizable text properties (font size, font weight, color, alignment, spacing, etc.).
+  The `truncated` parameter (default `True`) controls whether the text is cut on the right if it exceeds the widget's width,
+  while the `truncate_suffix` parameter (default "...") controls the text suffix that is displayed when the text is truncated.
+  To display and wrap longer lines of text, use the `Text` widget instead.
+  """
+
   def __init__(
     self,
     text: str,
@@ -18,11 +24,6 @@ class Label(Widget):
     truncated: bool = True,
     truncate_suffix: str = "...",
   ):
-    """Text label widget with customizable text properties (font size, font weight, color, alignment, spacing, etc.).
-    The `truncated` parameter (default "true") controls whether the text is cut on the right if it exceeds the widget's width,
-    while the `truncate_suffix` parameter (default "...") controls the text suffix that is displayed when the text is truncated.
-    To display and wrap longer lines of text, use the `Text` widget instead.
-    """
     super().__init__()
     self.text = text
     self.font_size = font_size
@@ -104,6 +105,11 @@ def gui_text_box(
 
 
 class Text(Widget):
+  """Text widget with customizable text properties (font size, font weight, color, alignment, spacing, etc.).
+  The `wrap_mode` parameter (default `TEXT_WRAP_WORD`) controls how the text is wrapped if it exceeds the rectangle width.
+  This widget is useful for displaying longer text that doesn't fit in a single line.
+  """
+
   def __init__(
     self,
     text: str,
@@ -115,10 +121,6 @@ class Text(Widget):
     spacing: int = DEFAULT_TEXT_SPACING,
     wrap_mode: int = rl.GuiTextWrapMode.TEXT_WRAP_WORD,
   ):
-    """Text widget with customizable text properties (font size, font weight, color, alignment, spacing, etc.).
-    The `wrap_mode` parameter (default "TEXT_WRAP_WORD") controls how the text is wrapped if it exceeds the rectangle width.
-    This widget is useful for displaying longer text that doesn't fit in a single line.
-    """
     super().__init__()
     self.text = text
     self.font_size = font_size
