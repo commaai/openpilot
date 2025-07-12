@@ -53,18 +53,20 @@ class Label(Widget):
       text_size = measure_text_cached(font, display_text, self.font_size)
 
     # Calculate horizontal position based on alignment
-    text_x = rect.x + {
+    horizontal_alignment_map = {
       rl.GuiTextAlignment.TEXT_ALIGN_LEFT: 0,
       rl.GuiTextAlignment.TEXT_ALIGN_CENTER: (rect.width - text_size.x) / 2,
       rl.GuiTextAlignment.TEXT_ALIGN_RIGHT: rect.width - text_size.x,
-    }.get(self.alignment, 0)
+    }
+    text_x = rect.x + horizontal_alignment_map.get(self.alignment, 0)
 
     # Calculate vertical position based on alignment
-    text_y = rect.y + {
+    vertical_alignment_map = {
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP: 0,
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE: (rect.height - text_size.y) / 2,
       rl.GuiTextAlignmentVertical.TEXT_ALIGN_BOTTOM: rect.height - text_size.y,
-    }.get(self.alignment_vertical, 0)
+    }
+    text_y = rect.y + vertical_alignment_map.get(self.alignment_vertical, 0)
 
     # Draw the text in the specified rectangle
     rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), self.font_size, self.spacing, self.color)
