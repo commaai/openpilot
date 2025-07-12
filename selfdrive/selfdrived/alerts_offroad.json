@@ -44,5 +44,9 @@
   "Offroad_Recalibration": {
     "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
     "severity": 0
+  },
+  "Offroad_LateralIsoViolation": {
+    "text": "Your car has been observed violating the ISO 11270 lateral safety standard. This may cause openpilot to disengage unexpectedly. Please contact support at https://comma.ai/support.",
+    "severity": 1
   }
 }
