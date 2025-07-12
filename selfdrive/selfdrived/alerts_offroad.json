@@ -46,7 +46,7 @@
     "severity": 0
   },
   "Offroad_LateralIsoViolation": {
-    "text": "openpilot observed your vehicle violating standard lateral safety limits. Please contact support at https://comma.ai/support.",
+    "text": "openpilot observed your vehicle violating ISO 11270 lateral safety limits. Please contact support at https://comma.ai/support.",
     "severity": 1
   }
 }

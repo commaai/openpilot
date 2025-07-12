@@ -41,11 +41,13 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_lateral_iso_violation(active, controls_state, car_state, live_parameters):
+def check_lateral_iso_violation(car_control, controls_state, car_state, live_parameters):
   roll_compensated_lateral_accel = controls_state.curvature * car_state.vEgo ** 2 - live_parameters.roll * ACCELERATION_DUE_TO_GRAVITY
 
+  print('roll_compensated_lateral_accel:', roll_compensated_lateral_accel)
+
   # TODO: some temporal tolerance?
-  if active:
+  if car_control.latActive:
     if abs(roll_compensated_lateral_accel) > (ISO_LATERAL_ACCEL + 2):  # TODO: 2x. this is to just test rn
       return True
 
@@ -241,8 +243,9 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    if not self.lateral_iso_violation and check_lateral_iso_violation(self.active, self.sm['controlsState'],
-                                                                      self.sm['carState'], self.sm['liveParameters']):
+    # Check for lateral ISO violations
+    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm['carControl'], self.sm['controlsState'],
+                                                                      CS, self.sm['liveParameters']):
       set_offroad_alert("Offroad_LateralIsoViolation", True)
       self.lateral_iso_violation = True
 
@@ -399,8 +402,8 @@ class SelfdriveD:
         self.events.add(EventName.personalityChanged)
 
   def data_sample(self):
-    car_state = messaging.recv_one(self.car_state_sock)
-    CS = car_state.carState if car_state else self.CS_prev
+    _car_state = messaging.recv_one(self.car_state_sock)
+    CS = _car_state.carState if _car_state else self.CS_prev
 
     self.sm.update(0)
 
