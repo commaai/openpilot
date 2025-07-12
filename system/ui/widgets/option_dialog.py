@@ -43,16 +43,16 @@ class MultiOptionDialog(Widget):
     valid_click = self.scroll.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(view_rect.x), int(options_y), int(view_rect.width), int(options_h))
-    for i, option in enumerate(self.options):
+    for i, option_key in enumerate(self.options):
       item_y = options_y + i * (ITEM_HEIGHT + LIST_ITEM_SPACING) + offset.y
       item_rect = rl.Rectangle(view_rect.x, item_y, view_rect.width, ITEM_HEIGHT)
 
       if rl.check_collision_recs(item_rect, view_rect):
-        selected = option == self.selection
+        selected = option_key == self.selection
         style = ButtonStyle.PRIMARY if selected else ButtonStyle.NORMAL
 
-        if gui_button(item_rect, option, button_style=style, text_alignment=TextAlignment.LEFT) and valid_click:
-          self.selection = option
+        if gui_button(item_rect, option_key, button_style=style, text_alignment=TextAlignment.LEFT) and valid_click:
+          self.selection = option_key
     rl.end_scissor_mode()
 
     # Buttons
