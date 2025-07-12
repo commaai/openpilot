@@ -56,6 +56,7 @@ class Soundd:
 
     self.current_alert = AudibleAlert.none
     self.current_volume = MIN_VOLUME
+    self.dm_volume = MIN_VOLUME
     self.current_sound_frame = 0
 
     self.selfdrive_timeout_alert = False
@@ -96,7 +97,7 @@ class Soundd:
         written_frames += frames_to_write
         self.current_sound_frame += frames_to_write
 
-    return ret * self.current_volume
+    return ret * min(self.current_volume, self.dm_volume)
 
   def callback(self, data_out: np.ndarray, frames: int, time, status) -> None:
     if status:
@@ -135,8 +136,9 @@ class Soundd:
     # sounddevice must be imported after forking processes
     import sounddevice as sd
 
-    sm = messaging.SubMaster(['selfdriveState', 'soundPressure'])
+    sm = messaging.SubMaster(['selfdriveState', 'soundPressure', 'driverStateV2', 'driverMonitoringState'])
 
+    attn_cnt = 0
     with self.get_stream(sd) as stream:
       rk = Ratekeeper(20)
 
@@ -147,6 +149,17 @@ class Soundd:
         if sm.updated['soundPressure'] and self.current_alert == AudibleAlert.none: # only update volume filter when not playing alert
           self.spl_filter_weighted.update(sm["soundPressure"].soundPressureWeightedDb)
           self.current_volume = self.calculate_volume(float(self.spl_filter_weighted.x))
+
+        # try the dumb thing: min when paying attention, max when not
+        if sm.updated['driverMonitoringState']:
+          dm = sm['driverMonitoringState']
+          paying_attention = dm.isActiveMode and dm.faceDetected and not dm.isDistracted
+          if paying_attention:
+            attn_cnt = 40
+          else:
+            attn_cnt = max(attn_cnt - 1, 0)
+
+          self.dm_volume = MIN_VOLUME if attn_cnt > 0 else MAX_VOLUME
 
         self.get_audible_alert(sm)
 
