@@ -10,8 +10,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
-from openpilot.system.ui.widgets.label import gui_text_box, gui_label
 from openpilot.system.ui.widgets.network import WifiManagerUI
+from openpilot.system.ui.widgets.text import Label, Text
 
 # Constants
 MARGIN = 50
@@ -38,8 +38,11 @@ class Updater(Widget):
     self.manifest = manifest_path
     self.current_screen = Screen.PROMPT
 
+    self.title_label = Label("Update Required", TITLE_FONT_SIZE, FontWeight.BOLD)
+    self.description_label = Text("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
+                                  "The download size is approximately 1GB.", font_size=BODY_FONT_SIZE)
+    self.progress_label = Label("Loading...", font_size=90, font_weight=FontWeight.SEMI_BOLD)
     self.progress_value = 0
-    self.progress_text = "Loading..."
     self.show_reboot_button = False
     self.process = None
     self.update_thread = None
@@ -48,8 +51,8 @@ class Updater(Widget):
 
   def install_update(self):
     self.current_screen = Screen.PROGRESS
+    self.progress_label.text = "Downloading..."
     self.progress_value = 0
-    self.progress_text = "Downloading..."
     self.show_reboot_button = False
 
     # Start the update process in a separate thread
@@ -66,7 +69,7 @@ class Updater(Widget):
     for line in self.process.stdout:
       parts = line.strip().split(":")
       if len(parts) == 2:
-        self.progress_text = parts[0]
+        self.progress_label.text = parts[0]
         try:
           self.progress_value = int(float(parts[1]))
         except ValueError:
@@ -76,20 +79,16 @@ class Updater(Widget):
     if exit_code == 0:
       HARDWARE.reboot()
     else:
-      self.progress_text = "Update failed"
+      self.progress_label.text = "Update failed"
       self.show_reboot_button = True
 
   def render_prompt_screen(self, rect: rl.Rectangle):
     # Title
-    title_rect = rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Update Required", TITLE_FONT_SIZE, font_weight=FontWeight.BOLD)
+    self.title_label.render(rl.Rectangle(MARGIN + 50, 250, rect.width - MARGIN * 2 - 100, self.title_label.font_size))
 
     # Description
-    desc_text = ("An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. " +
-                 "The download size is approximately 1GB.")
-
-    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, BODY_FONT_SIZE * 3)
-    gui_text_box(desc_rect, desc_text, BODY_FONT_SIZE)
+    desc_rect = rl.Rectangle(MARGIN + 50, 250 + TITLE_FONT_SIZE + 75, rect.width - MARGIN * 2 - 100, self.description_label.font_size * 3)
+    self.description_label.render(desc_rect)
 
     # Buttons at the bottom
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
@@ -118,8 +117,7 @@ class Updater(Widget):
       return  # Return to avoid processing other interactions after screen change
 
   def render_progress_screen(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, 100)
-    gui_label(title_rect, self.progress_text, 90, font_weight=FontWeight.SEMI_BOLD)
+    self.progress_label.render(rl.Rectangle(MARGIN + 100, 330, rect.width - MARGIN * 2 - 200, self.progress_label.font_size))
 
     # Progress bar
     bar_rect = rl.Rectangle(MARGIN + 100, 330 + 100 + 100, rect.width - MARGIN * 2 - 200, PROGRESS_BAR_HEIGHT)
