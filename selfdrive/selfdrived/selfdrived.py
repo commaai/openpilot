@@ -107,6 +107,7 @@ class SelfdriveD:
     self.active = False
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
+    self.lateral_iso_violation = False
     self.last_steering_pressed_frame = 0
     self.distance_traveled = 0
     self.last_functional_fan_frame = 0
@@ -232,9 +233,12 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    if check_lateral_iso_violation(self.sm):
+    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm):
       set_offroad_alert("Offroad_LateralIsoViolation", True)
-      # TODO: lockout for rest of drive like DM attention warning
+      self.lateral_iso_violation = True
+
+    if self.lateral_iso_violation:
+      self.events.add(EventName.lateralIsoViolation)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
