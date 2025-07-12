@@ -91,7 +91,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"Offroad_Recalibration", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_StorageMissing", CLEAR_ON_MANAGER_START},
     {"Offroad_TemperatureTooHigh", CLEAR_ON_MANAGER_START},
-    {"Offroad_UnofficialHardware", CLEAR_ON_MANAGER_START},
+    {"Offroad_UnregisteredHardware", CLEAR_ON_MANAGER_START},
     {"Offroad_UpdateFailed", CLEAR_ON_MANAGER_START},
     {"OnroadCycleRequested", CLEAR_ON_MANAGER_START},
     {"OpenpilotEnabledToggle", PERSISTENT},
