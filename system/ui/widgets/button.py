@@ -156,6 +156,8 @@ def gui_button(
 
 # TODO: This could extend the Button class once it's added
 class SelectionButton(Widget):
+  MARGIN = 100
+
   def __init__(
     self,
     text: str,
@@ -182,10 +184,10 @@ class SelectionButton(Widget):
     # Render background, based on selected state
     rl.draw_rectangle_rounded(rect, 0.1, 10, BUTTON_BACKGROUND_COLORS[ButtonStyle.PRIMARY] if self.is_selected else rl.Color(79, 79, 79, 255))
     # Render label
-    self.label.render(rl.Rectangle(rect.x + 100, rect.y, rect.width - 200, self.font_size))
+    self.label.render(rl.Rectangle(rect.x + self.MARGIN, rect.y, rect.width - self.MARGIN * 2, rect.height))
     # Render checkmark, if selected
     if self.is_selected:
-      checkmark_pos = rl.Vector2(rect.x + rect.width - 100 - self.check_icon.width, rect.y + self.font_size / 2 - self.check_icon.height / 2)
+      checkmark_pos = rl.Vector2(rect.x + rect.width - self.MARGIN - self.check_icon.width, rect.y + rect.height / 2 - self.check_icon.height / 2)
       rl.draw_texture_v(self.check_icon, checkmark_pos, self.foreground_color)
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
