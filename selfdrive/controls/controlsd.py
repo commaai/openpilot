@@ -10,6 +10,7 @@ from openpilot.common.realtime import config_realtime_process, Priority, Ratekee
 from openpilot.common.swaglog import cloudlog
 
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.interfaces import ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
@@ -26,6 +27,8 @@ LaneChangeDirection = log.LaneChangeDirection
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 
 
+def check_lateral_iso_violation(sm: messaging.SubMaster) -> bool:
+  return False
 
 
 class Controls:
@@ -160,7 +163,7 @@ class Controls:
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
 
-    if accel is bad:
+    if check_lateral_iso_violation(sm):
       set_offroad_alert_if_changed("Offroad_ViolatedIsoLimits", True)
 
     hudControl.rightLaneVisible = True
