@@ -156,6 +156,11 @@ def gui_button(
 
 # TODO: This could extend the Button class once it's added
 class SelectionButton(Widget):
+  """A button that can be selected, like a radio button.
+  If `toggleable` is `True`, the button will be deselected when clicked again.
+  If `on_select_callback` is provided, it will be called when the button is clicked (either selected or deselected).
+  """
+
   MARGIN = 100
 
   def __init__(
@@ -165,9 +170,9 @@ class SelectionButton(Widget):
     font_weight: FontWeight = FontWeight.MEDIUM,
     foreground_color: rl.Color = BUTTON_TEXT_COLOR[ButtonStyle.PRIMARY],
     is_selected: bool = False,
-    on_select_callback: Callable[[Self], None] | None = None,
+    on_select_callback: Callable[[Self], None] | None = None, # Called when the button is clicked (either selected or deselected)
+    toggleable: bool = False, # If true, the button can be deselected when clicked again
   ):
-    """A button that can be selected or deselected, like a radio button."""
     super().__init__()
     self.font_size = font_size
     self.font_weight = font_weight
@@ -176,6 +181,7 @@ class SelectionButton(Widget):
     self.label = Label(text, font_size=font_size, font_weight=font_weight, color=self.foreground_color)
     self.check_icon = gui_app.texture("icons/circled_check.png", 100, 100)
     self.on_select_callback = on_select_callback
+    self.toggleable = toggleable
 
   def set_selected(self, is_selected: bool):
     self.is_selected = is_selected
@@ -191,7 +197,10 @@ class SelectionButton(Widget):
       rl.draw_texture_v(self.check_icon, checkmark_pos, self.foreground_color)
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
-    self.set_selected(True)
+    if self.toggleable and self.is_selected:
+      self.set_selected(False)
+    else:
+      self.set_selected(True)
     if self.on_select_callback:
       self.on_select_callback(self)
     return True

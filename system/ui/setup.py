@@ -80,8 +80,11 @@ class Setup(Widget):
       self.state = SetupState.LOW_VOLTAGE
 
   def handle_software_select(self, button: SelectionButton):
-    selected_index = next((i for i, b in enumerate(self.software_buttons) if b == button), -1)
-    self.selected_software_button_index = selected_index
+    if (button.is_selected):
+      selected_index = next((i for i, b in enumerate(self.software_buttons) if b == button), -1)
+      self.selected_software_button_index = selected_index
+    else:
+      self.selected_software_button_index = -1
 
   def _render(self, rect: rl.Rectangle):
     if self.state == SetupState.LOW_VOLTAGE:
