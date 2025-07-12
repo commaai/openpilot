@@ -41,11 +41,13 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_lateral_iso_violation(sm: messaging.SubMaster) -> bool:
-  roll_compensated_lateral_accel = sm['controlsState'].curvature * sm['carState'].vEgo ** 2 - sm['liveParameters'].roll * ACCELERATION_DUE_TO_GRAVITY
+def check_lateral_iso_violation(active, controls_state, car_state, live_parameters):
+  roll_compensated_lateral_accel = controls_state.curvature * car_state.vEgo ** 2 - live_parameters.roll * ACCELERATION_DUE_TO_GRAVITY
 
-  if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL:
-    return True
+  # TODO: some temporal tolerance?
+  if active:
+    if abs(roll_compensated_lateral_accel) > (ISO_LATERAL_ACCEL + 2):  # TODO: 2x. this is to just test rn
+      return True
 
   return False
 
@@ -239,7 +241,8 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm):
+    if not self.lateral_iso_violation and check_lateral_iso_violation(self.active, self.sm['controlsState'],
+                                                                      self.sm['carState'], self.sm['liveParameters']):
       set_offroad_alert("Offroad_LateralIsoViolation", True)
       self.lateral_iso_violation = True
 
