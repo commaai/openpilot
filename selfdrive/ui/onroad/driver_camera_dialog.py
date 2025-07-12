@@ -5,7 +5,7 @@ from openpilot.selfdrive.ui.onroad.cameraview import CameraView
 from openpilot.selfdrive.ui.onroad.driver_state import DriverStateRenderer
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.text import Label
 
 
 class DriverCameraDialog(CameraView):

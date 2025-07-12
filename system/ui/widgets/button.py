@@ -5,7 +5,7 @@ from typing import Self
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import MousePos, Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.text import Label
 
 
 class ButtonStyle(IntEnum):

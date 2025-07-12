@@ -7,7 +7,7 @@ from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Text
+from openpilot.system.ui.widgets.text import Text
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus

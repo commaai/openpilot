@@ -10,8 +10,8 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
-from openpilot.system.ui.widgets.label import Label, Text
 from openpilot.system.ui.widgets.network import WifiManagerUI
+from openpilot.system.ui.widgets.text import Label, Text
 
 # Constants
 MARGIN = 50

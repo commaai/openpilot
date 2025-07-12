@@ -3,7 +3,7 @@ from openpilot.system.ui.lib.application import FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, TextAlignment
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.text import Label
 
 # Constants
 MARGIN = 50

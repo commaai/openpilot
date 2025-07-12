@@ -5,7 +5,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.text import Label
 
 PRIME_BG_COLOR = rl.Color(51, 51, 51, 255)
 SUBSCRIBED_TEXT_COLOR = rl.Color(134, 255, 78, 255)

@@ -10,7 +10,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import Label
+from openpilot.system.ui.widgets.text import Label
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
