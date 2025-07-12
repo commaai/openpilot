@@ -13,7 +13,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, SelectionButton
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import Label, Text, gui_label
+from openpilot.system.ui.widgets.label import Label, Text
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 
 NetworkType = log.DeviceState.NetworkType
@@ -61,6 +61,7 @@ class Setup(Widget):
     self.warning_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, rl.Color(255, 89, 79, 255))
     self.downloading_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
     self.body_text = Text("", BODY_FONT_SIZE)
+    self.failed_url_label = Label("", font_size=64, font_weight=FontWeight.NORMAL)
     self.software_buttons: list[SelectionButton] = [
       SelectionButton("openpilot", BODY_FONT_SIZE, FontWeight.NORMAL, foreground_color=rl.WHITE, on_select_callback=self.handle_software_select),
       SelectionButton("Custom Software", BODY_FONT_SIZE, FontWeight.NORMAL, foreground_color=rl.WHITE, on_select_callback=self.handle_software_select),
@@ -233,8 +234,10 @@ class Setup(Widget):
     self.title_label.text = "Download Failed"
     self.title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, self.title_label.font_size))
 
-    url_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + self.title_label.font_size + 67, rect.width - 117 - 100, 64)
-    gui_label(url_rect, self.failed_url, 64, font_weight=FontWeight.NORMAL)
+    self.failed_url_label.text = self.failed_url
+    self.failed_url_label.render(
+      rl.Rectangle(rect.x + 117, rect.y + 185 + self.title_label.font_size + 67, rect.width - 117 - 100, self.failed_url_label.font_size)
+    )
 
     self.body_text.text = self.failed_reason
     self.body_text.render(
