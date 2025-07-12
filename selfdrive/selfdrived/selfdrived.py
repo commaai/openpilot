@@ -7,6 +7,7 @@ import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.car.interfaces import ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 
 
@@ -41,6 +42,11 @@ IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
 def check_lateral_iso_violation(sm: messaging.SubMaster) -> bool:
+  roll_compensated_lateral_accel = sm['controlsState'].curvature * sm['carState'].vEgo ** 2 - sm['liveParameters'].roll * ACCELERATION_DUE_TO_GRAVITY
+
+  if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL:
+    return True
+
   return False
 
 
