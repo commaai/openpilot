@@ -58,7 +58,10 @@ class Setup(Widget):
     self.keyboard = Keyboard()
     self.selected_radio = None
 
-    self.body_text = Text("", font_size=BODY_FONT_SIZE)
+    self.title_label = Label("", TITLE_FONT_SIZE, FontWeight.MEDIUM)
+    self.warning_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, rl.Color(255, 89, 79, 255))
+    self.downloading_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self.body_text = Text("", BODY_FONT_SIZE)
 
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
@@ -90,11 +93,12 @@ class Setup(Widget):
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
 
-    title_rect = rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE)
-    gui_label(title_rect, "WARNING: Low Voltage", TITLE_FONT_SIZE, rl.Color(255, 89, 79, 255), FontWeight.MEDIUM)
+    self.warning_title_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, self.warning_title_label.font_size))
 
     self.body_text.text = "Power your device in a car with a harness or proceed at your own risk."
-    self.body_text.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100 + TITLE_FONT_SIZE + 25, rect.width - 500 - 150, self.body_text.font_size * 3))
+    self.body_text.render(
+      rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100 + self.warning_title_label.font_size + 25, rect.width - 500 - 150, self.body_text.font_size * 3)
+    )
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
@@ -106,11 +110,11 @@ class Setup(Widget):
       self.state = SetupState.GETTING_STARTED
 
   def render_getting_started(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Getting Started", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
+    self.title_label.text = "Getting Started"
+    self.title_label.render(rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, self.title_label.font_size))
 
     self.body_text.text = "Before we get on the road, let's finish installation and cover some details."
-    self.body_text.render(rl.Rectangle(rect.x + 165, rect.y + 280 + TITLE_FONT_SIZE + 90, rect.width - 500, self.body_text.font_size * 3))
+    self.body_text.render(rl.Rectangle(rect.x + 165, rect.y + 280 + self.title_label.font_size + 90, rect.width - 500, self.body_text.font_size * 3))
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
@@ -147,11 +151,14 @@ class Setup(Widget):
       self.network_check_thread.join()
 
   def render_network_setup(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Connect to Wi-Fi", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
+    self.title_label.text = "Connect to Wi-Fi"
+    self.title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, self.title_label.font_size))
 
     wifi_rect = rl.Rectangle(
-      rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN + 25, rect.width - MARGIN * 2, rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN * 3
+      rect.x + MARGIN,
+      rect.y + self.title_label.font_size + MARGIN + 25,
+      rect.width - MARGIN * 2,
+      rect.height - self.title_label.font_size - 25 - BUTTON_HEIGHT - MARGIN * 3,
     )
     rl.draw_rectangle_rounded(wifi_rect, 0.05, 10, rl.Color(51, 51, 51, 255))
     wifi_content_rect = rl.Rectangle(wifi_rect.x + MARGIN, wifi_rect.y, wifi_rect.width - MARGIN * 2, wifi_rect.height)
@@ -177,13 +184,15 @@ class Setup(Widget):
       self.stop_network_check_thread.set()
 
   def render_software_selection(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Choose Software to Install", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
+    self.title_label.text = "Choose Software to Install"
+    self.title_label.render(rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, self.title_label.font_size))
 
     radio_height = 230
     radio_spacing = 30
 
-    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
+    # TODO: Make these a separate widget
+
+    openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + self.title_label.font_size + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
     openpilot_selected = self.selected_radio == "openpilot"
 
     rl.draw_rectangle_rounded(openpilot_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if openpilot_selected else rl.Color(79, 79, 79, 255))
@@ -195,7 +204,9 @@ class Setup(Widget):
       )
       rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
 
-    custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
+    custom_rect = rl.Rectangle(
+      rect.x + MARGIN, rect.y + self.title_label.font_size + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height
+    )
     custom_selected = self.selected_radio == "custom"
 
     rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
@@ -232,23 +243,24 @@ class Setup(Widget):
           self.state = SetupState.CUSTOM_URL
 
   def render_downloading(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Downloading...", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    self.downloading_label.render(
+      rl.Rectangle(rect.x, rect.y + rect.height / 2 - self.downloading_label.font_size / 2, rect.width, self.downloading_label.font_size)
+    )
 
   def render_download_failed(self, rect: rl.Rectangle):
-    title_rect = rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Download Failed", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
+    self.title_label.text = "Download Failed"
+    self.title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, self.title_label.font_size))
 
-    url_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + TITLE_FONT_SIZE + 67, rect.width - 117 - 100, 64)
+    url_rect = rl.Rectangle(rect.x + 117, rect.y + 185 + self.title_label.font_size + 67, rect.width - 117 - 100, 64)
     gui_label(url_rect, self.failed_url, 64, font_weight=FontWeight.NORMAL)
 
     self.body_text.text = self.failed_reason
     self.body_text.render(
       rl.Rectangle(
         rect.x + 117,
-        rect.y + 185 + TITLE_FONT_SIZE + 67 + 64 + 48,
+        rect.y + 185 +  self.title_label.font_size + 67 + 64 + 48,
         rect.width - 117 - 100,
-        rect.height - 185 + TITLE_FONT_SIZE + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2,
+        rect.height - 185 +  self.title_label.font_size + 67 + 64 + 48 - BUTTON_HEIGHT - MARGIN * 2,
       )
     )
 
