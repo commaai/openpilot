@@ -234,6 +234,7 @@ class SelfdriveD:
 
     if check_lateral_iso_violation(self.sm):
       set_offroad_alert("Offroad_LateralIsoViolation", True)
+      # TODO: lockout for rest of drive like DM attention warning
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
