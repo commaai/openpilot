@@ -4,6 +4,7 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.widgets import Widget
 
+# TODO: Use constant for spacing
 
 class Label(Widget):
   def __init__(
@@ -14,7 +15,7 @@ class Label(Widget):
     color: rl.Color = DEFAULT_TEXT_COLOR,
     alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
     alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-    spacing: int = 0,
+    spacing: int = 1,
     truncated: bool = True,
     truncate_suffix: str = "...",
   ):
@@ -150,10 +151,27 @@ def gui_text_box(
     rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
 
 
-class Text(Label):
-  def __init__(self, *args, **kwargs):
-    """Text widget that extends Label, but wraps the text with word wrapping instead of truncation."""
-    super().__init__(*args, **kwargs, truncated=False)
+class Text(Widget):
+  def __init__(
+    self,
+    text: str,
+    font_size: int = DEFAULT_TEXT_SIZE,
+    font_weight: FontWeight = FontWeight.NORMAL,
+    color: rl.Color = DEFAULT_TEXT_COLOR,
+    alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
+    alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
+    spacing: int = 1,
+    wrap_mode: int = rl.GuiTextWrapMode.TEXT_WRAP_WORD,
+  ):
+    super().__init__()
+    self.text = text
+    self.font_size = font_size
+    self.font_weight = font_weight
+    self.color = color
+    self.alignment = alignment
+    self.alignment_vertical = alignment_vertical
+    self.spacing = spacing
+    self.wrap_mode = wrap_mode
 
   def _get_styles(self):
     """Return the custom styles for this widget."""
@@ -164,7 +182,7 @@ class Text(Label):
       (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, self.alignment),
       (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, self.alignment_vertical),
       (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SPACING, self.spacing),
-      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD),
+      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, self.wrap_mode),
     ]
 
   def _render(self, rect: rl.Rectangle):
@@ -172,10 +190,13 @@ class Text(Label):
     if self.font_weight != FontWeight.NORMAL:
       rl.gui_set_font(gui_app.font(self.font_weight))
 
+    ret = None
     # Render the label with the custom styles (overrides the default styles)
     with GuiStyleContext(self._get_styles()):
-      super()._render(rect)
+      ret = rl.gui_label(rect, self.text)
 
     # Restore default font
     if self.font_weight != FontWeight.NORMAL:
       rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
+
+    return ret
