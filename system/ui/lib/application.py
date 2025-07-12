@@ -28,7 +28,7 @@ SCALE = float(os.getenv("SCALE", "1.0"))
 
 DEFAULT_TEXT_SIZE = 60
 DEFAULT_TEXT_COLOR = rl.WHITE
-DEFAULT_TEXT_SPACING = 1
+DEFAULT_TEXT_SPACING = 0
 
 ASSETS_DIR = files("openpilot.selfdrive").joinpath("assets")
 FONT_DIR = ASSETS_DIR.joinpath("fonts")
