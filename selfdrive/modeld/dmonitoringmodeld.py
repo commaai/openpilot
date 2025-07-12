@@ -7,7 +7,7 @@ if TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import backend_from_jit
+  os.environ['LLVM'] = '1'
 import math
 import time
 import pickle
@@ -78,11 +78,6 @@ class ModelState:
     self.tensor_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     with open(MODEL_PKL_PATH, "rb") as f:
       self.model_run = pickle.load(f)
-
-    if not TICI:
-      backend = backend_from_jit(self.model_run)
-      os.environ[backend] = '1'
-      cloudlog.warning(f"dmonitoringmodeld backend set to {backend}")
 
   def run(self, buf: VisionBuf, calib: np.ndarray, transform: np.ndarray) -> tuple[np.ndarray, float]:
     self.numpy_inputs['calib'][0,:] = calib
