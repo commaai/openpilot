@@ -233,7 +233,7 @@ class SelfdriveD:
         self.events.add(EventName.ldw)
 
     if check_lateral_iso_violation(self.sm):
-      set_offroad_alert("Offroad_ViolatedIsoLimits", True)
+      set_offroad_alert("Offroad_LateralIsoViolation", True)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
