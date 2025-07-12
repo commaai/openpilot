@@ -1,7 +1,6 @@
 import pyray as rl
 from collections.abc import Callable
 from enum import IntEnum
-from typing import Self
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import MousePos, Widget
@@ -170,7 +169,7 @@ class SelectionButton(Widget):
     font_weight: FontWeight = FontWeight.MEDIUM,
     foreground_color: rl.Color = BUTTON_TEXT_COLOR[ButtonStyle.PRIMARY],
     is_selected: bool = False,
-    on_select_callback: Callable[[Self], None] | None = None, # Called when the button is clicked (either selected or deselected)
+    on_select_callback: Callable[['SelectionButton'], None] | None = None, # Called when the button is clicked (either selected or deselected)
     toggleable: bool = False, # If true, the button can be deselected when clicked again
   ):
     super().__init__()
