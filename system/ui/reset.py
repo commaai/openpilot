@@ -36,7 +36,7 @@ class Reset(Widget):
     self.mode = mode
     self.reset_state = ResetState.NONE
     self.header_label = Label("System Reset", font_size=100, font_weight=FontWeight.BOLD)
-    self.text_widget = Text(self.get_body_text(), font_size=90)
+    self.body_text = Text(self.get_body_text(), font_size=90)
 
   def _do_erase(self):
     if PC:
@@ -63,8 +63,8 @@ class Reset(Widget):
   def _render(self, rect: rl.Rectangle):
     # Render header and text
     self.header_label.render(rl.Rectangle(rect.x + PADDING_HORIZONTAL, rect.y, rect.width - PADDING_HORIZONTAL * 2, self.header_label.font_size))
-    self.text_widget.text = self.get_body_text()
-    self.text_widget.render(
+    self.body_text.text = self.get_body_text()
+    self.body_text.render(
       rl.Rectangle(
         rect.x + PADDING_HORIZONTAL,
         rect.y + self.header_label.font_size + 40,
