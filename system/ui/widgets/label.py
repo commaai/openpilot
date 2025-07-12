@@ -33,6 +33,11 @@ class Label(Widget):
     self.truncated = truncated
     self.truncate_suffix = truncate_suffix
 
+  def set_text_and_render(self, rect: rl.Rectangle, text: str):
+    """Update the text and render the widget."""
+    self.text = text
+    return self._render(rect)
+
   def _render(self, rect: rl.Rectangle):
     font = gui_app.font(self.font_weight)
     text_size = measure_text_cached(font, self.text, self.font_size)
@@ -183,6 +188,11 @@ class Text(Widget):
       (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SPACING, self.spacing),
       (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, self.wrap_mode),
     ]
+
+  def set_text_and_render(self, rect: rl.Rectangle, text: str):
+    """Update the text and render the widget."""
+    self.text = text
+    return self._render(rect)
 
   def _render(self, rect: rl.Rectangle):
     # Override font for this render
