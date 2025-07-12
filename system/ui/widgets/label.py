@@ -9,14 +9,19 @@ class Label(Widget):
   def __init__(
     self,
     text: str,
-    font_size: int= DEFAULT_TEXT_SIZE,
+    font_size: int = DEFAULT_TEXT_SIZE,
     font_weight: FontWeight = FontWeight.NORMAL,
     color: rl.Color = DEFAULT_TEXT_COLOR,
     alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
     alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-    elide_right: bool = True,
     spacing: int = 0,
+    truncated: bool = True,
+    truncate_suffix: str = "...",
   ):
+    """Text label widget with customizable text properties (font size, font weight, color, alignment, spacing, etc.).
+    The `truncated` parameter (default "true") controls whether the text is cut on the right if it exceeds the widget's width,
+    while the `truncate_suffix` parameter (default "...") controls the text suffix that is displayed when the text is truncated.
+    """
     super().__init__()
     self.text = text
     self.font_size = font_size
@@ -24,27 +29,27 @@ class Label(Widget):
     self.color = color
     self.alignment = alignment
     self.alignment_vertical = alignment_vertical
-    self.elide_right = elide_right
     self.spacing = spacing
+    self.truncated = truncated
+    self.truncate_suffix = truncate_suffix
 
   def _render(self, rect: rl.Rectangle):
     font = gui_app.font(self.font_weight)
     text_size = measure_text_cached(font, self.text, self.font_size)
     display_text = self.text
 
-    # Elide text to fit within the rectangle
-    if self.elide_right and text_size.x > rect.width:
-      ellipsis = "..."
+    # Truncate text to fit within the rectangle if needed
+    if self.truncated and text_size.x > rect.width:
       left, right = 0, len(self.text)
       while left < right:
         mid = (left + right) // 2
-        candidate = self.text[:mid] + ellipsis
+        candidate = self.text[:mid] + self.truncate_suffix
         candidate_size = measure_text_cached(font, candidate, self.font_size)
         if candidate_size.x <= rect.width:
           left = mid + 1
         else:
           right = mid
-      display_text = self.text[: left - 1] + ellipsis if left > 0 else ellipsis
+      display_text = self.text[: left - 1] + self.truncate_suffix if left > 0 else self.truncate_suffix
       text_size = measure_text_cached(font, display_text, self.font_size)
 
     # Calculate horizontal position based on alignment
@@ -65,7 +70,7 @@ class Label(Widget):
     rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), self.font_size, self.spacing, self.color)
 
 
-# TODO: Remove this function
+# TODO: Remove
 def gui_label(
   rect: rl.Rectangle,
   text: str,
@@ -74,7 +79,7 @@ def gui_label(
   font_weight: FontWeight = FontWeight.NORMAL,
   alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
   alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-  elide_right: bool = True
+  elide_right: bool = True,
 ):
   font = gui_app.font(font_weight)
   text_size = measure_text_cached(font, text, font_size)
@@ -113,6 +118,7 @@ def gui_label(
   rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), font_size, 0, color)
 
 
+# TODO: Remove
 def gui_text_box(
   rect: rl.Rectangle,
   text: str,
@@ -122,19 +128,56 @@ def gui_text_box(
   alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
   font_weight: FontWeight = FontWeight.NORMAL,
 ):
+  """Draw text with word wrapping and alignment."""
+  if font_weight != FontWeight.NORMAL:
+    rl.gui_set_font(gui_app.font(font_weight))
+
   styles = [
     (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(color)),
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, font_size),
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, font_size),
     (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, alignment),
     (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, alignment_vertical),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD)
+    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD),
   ]
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(font_weight))
 
   with GuiStyleContext(styles):
     rl.gui_label(rect, text)
 
   if font_weight != FontWeight.NORMAL:
     rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
+
+
+class Text(Label):
+  def __init__(
+    self,
+    *args,
+    **kwargs,
+  ):
+    """Text widget that extends Label, but wraps the text with word wrapping instead of truncation."""
+    super().__init__(*args, **kwargs, truncated=False)
+
+  def _get_styles(self):
+    """Return the custom styles for this widget."""
+    return [
+      (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(self.color)),
+      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, self.font_size),
+      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, self.font_size),
+      (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, self.alignment),
+      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, self.alignment_vertical),
+      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SPACING, self.spacing),
+      (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD),
+    ]
+
+  def _render(self, rect: rl.Rectangle):
+    # Override font for this render
+    if self.font_weight != FontWeight.NORMAL:
+      rl.gui_set_font(gui_app.font(self.font_weight))
+
+    # Render the label with the custom styles (overrides the default styles)
+    with GuiStyleContext(self._get_styles()):
+      super()._render(rect)
+
+    # Restore default font
+    if self.font_weight != FontWeight.NORMAL:
+      rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
