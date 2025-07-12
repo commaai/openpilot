@@ -26,6 +26,10 @@ LaneChangeDirection = log.LaneChangeDirection
 ACTUATOR_FIELDS = tuple(car.CarControl.Actuators.schema.fields.keys())
 
 
+def check_lateral_iso_violation(sm: messaging.SubMaster) -> bool:
+
+
+
 class Controls:
   def __init__(self) -> None:
     self.params = Params()
@@ -157,6 +161,9 @@ class Controls:
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
+
+    if accel is bad:
+      set_offroad_alert_if_changed("Offroad_ViolatedIsoLimits", True)
 
     hudControl.rightLaneVisible = True
     hudControl.leftLaneVisible = True
