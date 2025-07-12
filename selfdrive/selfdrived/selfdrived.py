@@ -2,6 +2,7 @@
 import os
 import time
 import threading
+import numpy as np
 
 import cereal.messaging as messaging
 
@@ -17,6 +18,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents
+from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
@@ -41,8 +43,15 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_lateral_iso_violation(car_control, controls_state, car_state, live_parameters):
-  roll_compensated_lateral_accel = controls_state.curvature * car_state.vEgo ** 2 - live_parameters.roll * ACCELERATION_DUE_TO_GRAVITY
+def check_lateral_iso_violation(car_control, controls_state, car_state, live_parameters, live_calibration, live_pose, calibrator):
+  calibrator.feed_live_calib(live_calibration)
+  device_pose = Pose.from_live_pose(live_pose)
+  calibrated_pose = calibrator.build_calibrated_pose(device_pose)
+
+  yaw_rate = calibrated_pose.angular_velocity.yaw
+  roll = device_pose.orientation.roll
+
+  roll_compensated_lateral_accel = float((car_state.vEgo * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY))
 
   print('roll_compensated_lateral_accel:', roll_compensated_lateral_accel)
 
@@ -129,6 +138,7 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
+    self.calibrator = PoseCalibrator()
 
     # some comma three with NVMe experience NVMe dropouts mid-drive that
     # cause loggerd to crash on write, so ignore it only on that platform
@@ -245,7 +255,8 @@ class SelfdriveD:
 
     # Check for lateral ISO violations
     if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm['carControl'], self.sm['controlsState'],
-                                                                      CS, self.sm['liveParameters']):
+                                                                      CS, self.sm['liveParameters'], self.sm['liveCalibration'],
+                                                                      self.sm['livePose'], self.calibrator):
       set_offroad_alert("Offroad_LateralIsoViolation", True)
       self.lateral_iso_violation = True
 
