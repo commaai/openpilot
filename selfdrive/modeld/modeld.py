@@ -9,7 +9,8 @@ elif TICI:
   from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
   os.environ['QCOM'] = '1'
 else:
-  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import backend_from_jit
+  os.environ['LLVM'] = '1'
+  os.environ['JIT'] = '2'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
@@ -129,11 +130,6 @@ class ModelState:
 
     with open(POLICY_PKL_PATH, "rb") as f:
       self.policy_run = pickle.load(f)
-
-    if not TICI and not USBGPU:
-      backend = backend_from_jit(self.vision_run)
-      os.environ[backend] = '1'
-      cloudlog.warning(f"modeld backend set to {backend}")
 
   def slice_outputs(self, model_outputs: np.ndarray, output_slices: dict[str, slice]) -> dict[str, np.ndarray]:
     parsed_model_outputs = {k: model_outputs[np.newaxis, v] for k,v in output_slices.items()}

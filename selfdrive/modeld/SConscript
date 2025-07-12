@@ -14,11 +14,9 @@ common_src = [
   "transforms/transform.cc",
 ]
 
+# OpenCL is a framework on Mac
 if arch == "Darwin":
-  # OpenCL is a framework on Mac
   frameworks += ['OpenCL']
-  # Fix for METAL Error: $HOME must be set to run brew
-  lenv['ENV']['HOME'] = os.environ['HOME']
 else:
   libs += ['OpenCL']
 
@@ -49,30 +47,19 @@ def tg_compile(flags, model_name):
     f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
   )
 
-# because tg doesn't support multi-process
-import subprocess
-devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True, cwd=env.Dir('#').abspath)
-print("Available tinygrad devices:", devs)
-
-if b"QCOM" in devs:
-  flags = 'QCOM=1'
-elif b"METAL" in devs:
-  flags = 'METAL=1 IMAGE=0 NOLOCALS=0'
-elif b"GPU" in devs:
-  flags = 'GPU=1'
-elif b"LLVM" in devs:
-  flags = 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2'
-else:
-  flags = 'CPU=1 IMAGE=0 JIT=2'
-
-print(f"Compiling models with flags: '{flags}'")
-
 # Compile small models
 for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  flags = {
+    'larch64': 'QCOM=1',
+    'Darwin': 'CPU=1 IMAGE=0 JIT=2',
+  }.get(arch, 'LLVM=1 LLVMOPT=1 BEAM=0 IMAGE=0 JIT=2')
   tg_compile(flags, model_name)
 
 # Compile BIG model if USB GPU is available
 if "USBGPU" in os.environ:
+  import subprocess
+  # because tg doesn't support multi-process
+  devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True, cwd=env.Dir('#').abspath)
   if b"AMD" in devs:
     print("USB GPU detected... building")
     flags = "AMD=1 AMD_IFACE=USB AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
