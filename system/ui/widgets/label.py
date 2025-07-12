@@ -74,36 +74,6 @@ class Label(Widget):
     rl.draw_text_ex(font, display_text, rl.Vector2(text_x, text_y), self.font_size, self.spacing, self.color)
 
 
-# TODO: Remove and replace all usages with the Text widget
-def gui_text_box(
-  rect: rl.Rectangle,
-  text: str,
-  font_size: int = DEFAULT_TEXT_SIZE,
-  color: rl.Color = DEFAULT_TEXT_COLOR,
-  alignment: int = rl.GuiTextAlignment.TEXT_ALIGN_LEFT,
-  alignment_vertical: int = rl.GuiTextAlignmentVertical.TEXT_ALIGN_TOP,
-  font_weight: FontWeight = FontWeight.NORMAL,
-):
-  """Draw text with word wrapping and alignment."""
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(font_weight))
-
-  styles = [
-    (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_COLOR_NORMAL, rl.color_to_int(color)),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_SIZE, font_size),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_LINE_SPACING, font_size),
-    (rl.GuiControl.DEFAULT, rl.GuiControlProperty.TEXT_ALIGNMENT, alignment),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_ALIGNMENT_VERTICAL, alignment_vertical),
-    (rl.GuiControl.DEFAULT, rl.GuiDefaultProperty.TEXT_WRAP_MODE, rl.GuiTextWrapMode.TEXT_WRAP_WORD),
-  ]
-
-  with GuiStyleContext(styles):
-    rl.gui_label(rect, text)
-
-  if font_weight != FontWeight.NORMAL:
-    rl.gui_set_font(gui_app.font(FontWeight.NORMAL))
-
-
 class Text(Widget):
   """Text widget with customizable text properties (font size, font weight, color, alignment, spacing, etc.).
   The `wrap_mode` parameter (default `TEXT_WRAP_WORD`) controls how the text is wrapped if it exceeds the rectangle width.
