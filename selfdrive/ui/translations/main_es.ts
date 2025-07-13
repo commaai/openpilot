@@ -84,27 +84,27 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Evite cargas de grandes cantidades de datos cuando utilice una conexión celular medida</translation>
     </message>
     <message>
         <source>default</source>
-        <translation type="unfinished"></translation>
+        <translation>por defecto</translation>
     </message>
     <message>
         <source>metered</source>
-        <translation type="unfinished"></translation>
+        <translation>medido</translation>
     </message>
     <message>
         <source>unmetered</source>
-        <translation type="unfinished"></translation>
+        <translation>sin medidor</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>Red Wi-Fi medida</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Evite cargas de grandes cantidades de datos cuando esté en una conexión Wi-Fi medida</translation>
     </message>
 </context>
 <context>
@@ -304,35 +304,39 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>Desactivar para restablecer la calibración</translation>
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot requiere que el dispositivo esté montado dentro de los 4° hacia la izquierda o la derecha y dentro de los 5° hacia arriba o 9° hacia abajo.</translation>
     </message>
     <message>
         <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation>Openpilot se calibra continuamente, por lo que rara vez es necesario reiniciarlo. Restablecer la calibración reiniciará Openpilot si el automóvil está encendido.</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+La calibración del retraso de dirección está %1% completada.</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+La calibración del retraso de la dirección está completa.</translation>
     </message>
     <message>
         <source> Steering torque response calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation> La calibración de la respuesta del par de dirección está %1% completada.</translation>
     </message>
     <message>
         <source> Steering torque response calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation> La calibración de la respuesta del par de dirección está completa.</translation>
     </message>
 </context>
 <context>
@@ -388,7 +392,7 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
     </message>
     <message>
         <source>Firehose Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Modo manguera contra incendios</translation>
     </message>
 </context>
 <context>
@@ -813,13 +817,15 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>ADVERTENCIA: Software personalizado</translation>
     </message>
     <message>
         <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
 
 If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
+        <translation>Tenga cuidado al instalar software de terceros. El software de terceros no ha sido probado por comma y puede causar daños a su dispositivo y/o vehículo.
+
+Si desea continuar, utilice https://flash.comma.ai para restaurar su dispositivo a un estado de fábrica más tarde.</translation>
     </message>
 </context>
 <context>
@@ -1160,19 +1166,19 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilice el sistema openpilot para el control de crucero adaptativo y la asistencia al conductor para mantenerse en el carril. Se requiere su atención en todo momento para utilizar esta función.</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> Cambiar esta configuración reiniciará Openpilot si el automóvil está encendido.</translation>
     </message>
     <message>
         <source>Record and Upload Microphone Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>Grabar y cargar audio de micrófono</translation>
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
-        <translation type="unfinished"></translation>
+        <translation>Graba y almacena el audio del micrófono mientras conduces. El audio se incluirá en el video de la cámara del tablero en comma connect.</translation>
     </message>
 </context>
 <context>
