@@ -500,7 +500,7 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     </message>
     <message>
         <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <translation>O dispositivo não conseguiu se registrar no backend da comma.ai. Ele não se conecta nem faz upload para os servidores da comma.ai e não recebe suporte da comma.ai. Se este for um dispositivo adquirido em comma.ai/shop, abra um ticket em https://comma.ai/support.</translation>
     </message>
 </context>
 <context>
