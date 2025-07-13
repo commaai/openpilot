@@ -16,7 +16,7 @@ from cereal import log
 from cereal.services import SERVICE_LIST
 from openpilot.common.dict_helpers import strip_deprecated_keys
 from openpilot.common.filter_simple import FirstOrderFilter
-from openpilot.common.params import Params
+from openpilot.common.params import Params, ParamKeyType
 from openpilot.common.realtime import DT_HW
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 from openpilot.system.hardware import HARDWARE, TICI, AGNOS, PC
@@ -224,7 +224,10 @@ def hardware_thread(end_event, hw_queue) -> None:
     if sm.updated['pandaStates'] and len(pandaStates) > 0:
 
       # Set ignition based on any panda connected
+      prev_ignition = onroad_conditions["ignition"]
       onroad_conditions["ignition"] = any(ps.ignitionLine or ps.ignitionCan for ps in pandaStates if ps.pandaType != log.PandaState.PandaType.unknown)
+      if onroad_conditions["ignition"] and not prev_ignition:
+        params.clear_all(ParamKeyType.CLEAR_ON_IGNITION_ON)
 
       pandaState = pandaStates[0]
 
