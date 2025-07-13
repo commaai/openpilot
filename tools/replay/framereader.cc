@@ -80,14 +80,8 @@ bool FrameReader::loadFromFile(CameraType type, const std::string &file, bool no
   }
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
 
-  for (int i = 0; i < input_ctx->nb_streams; i++) {
-    if (input_ctx->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO) {
-      video_stream_idx_ = i;
-      break;
-    }
-  }
-
-  if (video_stream_idx_ == -1) {
+  video_stream_idx_ = av_find_best_stream(input_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+  if (video_stream_idx_ < 0) {
     rError("No video stream found in file");
     return false;
   }
