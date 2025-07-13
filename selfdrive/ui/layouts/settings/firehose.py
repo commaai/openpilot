@@ -6,12 +6,12 @@ import threading
 from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.widget import Widget
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.wrap_text import wrap_text
+from openpilot.system.ui.widgets import Widget
 
 
 TITLE = "Firehose Mode"

@@ -2,6 +2,7 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
+from openpilot.system.ui.lib.application import gui_app, MousePos
 
 
 class DialogResult(IntEnum):
@@ -66,18 +67,18 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
-    mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._touch_valid():
-      if rl.check_collision_point_rec(mouse_pos, self._rect):
-        self._is_pressed = True
+    for mouse_event in gui_app.mouse_events:
+      if mouse_event.left_pressed and self._touch_valid():
+        if rl.check_collision_point_rec(mouse_event.pos, self._rect):
+          self._is_pressed = True
 
-    elif not self._touch_valid():
-      self._is_pressed = False
+      elif not self._touch_valid():
+        self._is_pressed = False
 
-    elif rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if self._is_pressed and rl.check_collision_point_rec(mouse_pos, self._rect):
-        self._handle_mouse_release(mouse_pos)
-      self._is_pressed = False
+      elif mouse_event.left_released:
+        if self._is_pressed and rl.check_collision_point_rec(mouse_event.pos, self._rect):
+          self._handle_mouse_release(mouse_event.pos)
+        self._is_pressed = False
 
     return ret
 
@@ -91,6 +92,6 @@ class Widget(abc.ABC):
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     """Optionally handle mouse release events."""
     return False

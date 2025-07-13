@@ -4,6 +4,8 @@ from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 
 
+# TODO: This should be a Widget class
+
 def gui_label(
   rect: rl.Rectangle,
   text: str,

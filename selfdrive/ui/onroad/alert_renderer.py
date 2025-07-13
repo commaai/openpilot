@@ -2,12 +2,15 @@ import time
 import pyray as rl
 from dataclasses import dataclass
 from cereal import messaging, log
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
-from openpilot.system.ui.lib.label import gui_text_box
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.widget import Widget
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.label import gui_text_box
+
+AlertSize = log.SelfdriveState.AlertSize
+AlertStatus = log.SelfdriveState.AlertStatus
 
 ALERT_MARGIN = 40
 ALERT_PADDING = 60
@@ -23,9 +26,9 @@ SELFDRIVE_UNRESPONSIVE_TIMEOUT = 10  # Seconds
 
 # Constants
 ALERT_COLORS = {
-  log.SelfdriveState.AlertStatus.normal: rl.Color(0, 0, 0, 235),  # Black
-  log.SelfdriveState.AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 235),  # Orange
-  log.SelfdriveState.AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 235),  # Red
+  AlertStatus.normal: rl.Color(0, 0, 0, 235),  # Black
+  AlertStatus.userPrompt: rl.Color(0xFE, 0x8C, 0x34, 235),  # Orange
+  AlertStatus.critical: rl.Color(0xC9, 0x22, 0x31, 235),  # Red
 }
 
 
@@ -41,22 +44,22 @@ class Alert:
 ALERT_STARTUP_PENDING = Alert(
   text1="openpilot Unavailable",
   text2="Waiting to start",
-  size=log.SelfdriveState.AlertSize.mid,
-  status=log.SelfdriveState.AlertStatus.normal,
+  size=AlertSize.mid,
+  status=AlertStatus.normal,
 )
 
 ALERT_CRITICAL_TIMEOUT = Alert(
   text1="TAKE CONTROL IMMEDIATELY",
   text2="System Unresponsive",
-  size=log.SelfdriveState.AlertSize.full,
-  status=log.SelfdriveState.AlertStatus.critical,
+  size=AlertSize.full,
+  status=AlertStatus.critical,
 )
 
 ALERT_CRITICAL_REBOOT = Alert(
   text1="System Unresponsive",
   text2="Reboot Device",
-  size=log.SelfdriveState.AlertSize.full,
-  status=log.SelfdriveState.AlertStatus.critical,
+  size=AlertSize.full,
+  status=AlertStatus.critical,
 )
 
 
@@ -93,7 +96,7 @@ class AlertRenderer(Widget):
       return None
 
     # Return current alert
-    return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize, status=ss.alertStatus)
+    return Alert(text1=ss.alertText1, text2=ss.alertText2, size=ss.alertSize.raw, status=ss.alertStatus.raw)
 
   def _render(self, rect: rl.Rectangle) -> bool:
     alert = self.get_alert(ui_state.sm)
@@ -113,10 +116,10 @@ class AlertRenderer(Widget):
     return True
 
   def _get_alert_rect(self, rect: rl.Rectangle, size: int) -> rl.Rectangle:
-    if size == log.SelfdriveState.AlertSize.full:
+    if size == AlertSize.full:
       return rect
 
-    height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == log.SelfdriveState.AlertSize.small else
+    height = (ALERT_FONT_MEDIUM + 2 * ALERT_PADDING if size == AlertSize.small else
               ALERT_FONT_BIG + ALERT_LINE_SPACING + ALERT_FONT_SMALL + 2 * ALERT_PADDING)
 
     return rl.Rectangle(
@@ -127,19 +130,19 @@ class AlertRenderer(Widget):
     )
 
   def _draw_background(self, rect: rl.Rectangle, alert: Alert) -> None:
-    color = ALERT_COLORS.get(alert.status, ALERT_COLORS[log.SelfdriveState.AlertStatus.normal])
+    color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
 
-    if alert.size != log.SelfdriveState.AlertSize.full:
+    if alert.size != AlertSize.full:
       roundness = ALERT_BORDER_RADIUS / (min(rect.width, rect.height) / 2)
       rl.draw_rectangle_rounded(rect, roundness, 10, color)
     else:
       rl.draw_rectangle_rec(rect, color)
 
   def _draw_text(self, rect: rl.Rectangle, alert: Alert) -> None:
-    if alert.size == log.SelfdriveState.AlertSize.small:
+    if alert.size == AlertSize.small:
       self._draw_centered(alert.text1, rect, self.font_bold, ALERT_FONT_MEDIUM)
 
-    elif alert.size == log.SelfdriveState.AlertSize.mid:
+    elif alert.size == AlertSize.mid:
       self._draw_centered(alert.text1, rect, self.font_bold, ALERT_FONT_BIG, center_y=False)
       rect.y += ALERT_FONT_BIG + ALERT_LINE_SPACING
       self._draw_centered(alert.text2, rect, self.font_regular, ALERT_FONT_SMALL, center_y=False)

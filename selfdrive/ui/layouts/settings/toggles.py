@@ -1,7 +1,7 @@
-from openpilot.system.ui.lib.list_view import multiple_button_item, toggle_item
-from openpilot.system.ui.lib.scroller import Scroller
-from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.scroller import Scroller
 
 # Description constants
 DESCRIPTIONS = {
@@ -82,7 +82,7 @@ class TogglesLayout(Widget):
         icon="microphone.png",
       ),
       toggle_item(
-        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
+        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="metric.png"
       ),
     ]
 

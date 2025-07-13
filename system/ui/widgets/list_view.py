@@ -2,12 +2,12 @@ import os
 import pyray as rl
 from collections.abc import Callable
 from abc import ABC
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle
-from openpilot.system.ui.lib.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
 ITEM_BASE_WIDTH = 600
 ITEM_BASE_HEIGHT = 170
@@ -229,7 +229,7 @@ class ListItem(Widget):
     super().set_parent_rect(parent_rect)
     self._rect.width = parent_rect.width
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
+  def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self.is_visible:
       return
 

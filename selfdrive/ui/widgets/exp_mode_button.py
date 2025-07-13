@@ -1,7 +1,7 @@
 import pyray as rl
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 
 class ExperimentalModeButton(Widget):

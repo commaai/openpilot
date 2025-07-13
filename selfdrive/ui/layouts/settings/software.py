@@ -1,9 +1,9 @@
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.list_view import button_item, text_item
-from openpilot.system.ui.lib.scroller import Scroller
-from openpilot.system.ui.lib.widget import Widget, DialogResult
+from openpilot.system.ui.widgets import Widget, DialogResult
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
+from openpilot.system.ui.widgets.list_view import button_item, text_item
+from openpilot.system.ui.widgets.scroller import Scroller
 
 
 class SoftwareLayout(Widget):

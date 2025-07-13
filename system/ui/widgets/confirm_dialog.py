@@ -1,8 +1,8 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle
-from openpilot.system.ui.lib.label import gui_text_box
-from openpilot.system.ui.lib.widget import DialogResult
+from openpilot.system.ui.widgets import DialogResult
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.label import gui_text_box
 
 DIALOG_WIDTH = 1520
 DIALOG_HEIGHT = 600

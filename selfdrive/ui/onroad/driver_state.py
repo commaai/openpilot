@@ -3,7 +3,7 @@ import pyray as rl
 from dataclasses import dataclass
 from openpilot.selfdrive.ui.ui_state import ui_state, UI_BORDER_SIZE
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 # Default 3D coordinates for face keypoints as a NumPy array
 DEFAULT_FACE_KPTS_3D = np.array([
