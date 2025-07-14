@@ -200,7 +200,7 @@ class Sidebar(Widget):
     text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE)
     for text in labels:
       text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)
-      text_y += FONT_SIZE
+      text_y += text_size.y
       text_pos = rl.Vector2(
         metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
         text_y
