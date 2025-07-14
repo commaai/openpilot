@@ -21,10 +21,12 @@ runs:
       with:
         packages: >-
           build-essential
+          portaudio19-dev
+          libasound-dev
           python3-crcmod
           sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils
           gnome-screenshot python3-tk python3-dev
-        version: 1.3
+        version: 1.4
 
     - name: Set up Python and cache pip dependencies
       uses: actions/setup-python@v4
