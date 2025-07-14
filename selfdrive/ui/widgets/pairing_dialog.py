@@ -7,8 +7,9 @@ from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import FontWeight, gui_app
-from openpilot.system.ui.lib.wrap_text import wrap_text
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.wrap_text import wrap_text
 
 
 class PairingDialog:
@@ -142,8 +143,8 @@ class PairingDialog:
       y += text_height + 50
 
   def _render_qr_code(self, rect: rl.Rectangle) -> None:
-    if not self.qr_texture:
-      rl.draw_rectangle_rounded(rect, 0.1, 20, rl.Color(240, 240, 240, 255))
+    if self.qr_texture:
+      rl.draw_rectangle_rounded(rect, get_roundness(rect, 30), 20, rl.Color(240, 240, 240, 255))
       error_font = gui_app.font(FontWeight.BOLD)
       rl.draw_text_ex(
         error_font, "QR Code Error", rl.Vector2(rect.x + 20, rect.y + rect.height // 2 - 15), 30, 0.0, rl.RED
