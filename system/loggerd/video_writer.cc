@@ -200,10 +200,23 @@ void VideoWriter::encode_and_write_audio_frame(AVFrame* frame) {
   audio_pts += audio_codec_ctx->frame_size;
 }
 
+void VideoWriter::process_remaining_audio() {
+  // Process remaining audio samples by padding with silence
+  if (audio_buffer.size() > 0 && audio_buffer.size() < audio_codec_ctx->frame_size) {
+    audio_buffer.resize(audio_codec_ctx->frame_size, 0.0f);
+
+    // Encode final frame
+    audio_frame->pts = audio_pts;
+    float *f_samples = reinterpret_cast<float *>(audio_frame->data[0]);
+    std::copy(audio_buffer.begin(), audio_buffer.end(), f_samples);
+    encode_and_write_audio_frame(audio_frame);
+  }
+}
 
 VideoWriter::~VideoWriter() {
   if (this->remuxing) {
     if (this->audio_codec_ctx) {
+      process_remaining_audio();
       encode_and_write_audio_frame(NULL); // flush encoder
       avcodec_free_context(&this->audio_codec_ctx);
     }
