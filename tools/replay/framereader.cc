@@ -176,17 +176,17 @@ bool VideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 }
 
 bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
-  int from_idx = idx;
+  int current_idx = idx;
   if (idx != reader->prev_idx + 1) {
     // seeking to the nearest key frame
     for (int i = idx; i >= 0; --i) {
       if (reader->packets_info[i].flags & AV_PKT_FLAG_KEY) {
-        from_idx = i;
+        current_idx = i;
         break;
       }
     }
 
-    auto pos = reader->packets_info[from_idx].pos;
+    auto pos = reader->packets_info[current_idx].pos;
     int ret = avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE);
     if (ret < 0) {
       rError("Failed to seek to byte position %lld: %d", pos, AVERROR(ret));
@@ -196,25 +196,27 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   }
   reader->prev_idx = idx;
 
-  bool result = false;
   AVPacket pkt;
-  for (int i = from_idx; i <= idx; ++i) {
-    while (av_read_frame(reader->input_ctx, &pkt) == 0) {
-      // Skip non-video packets
-      if (pkt.stream_index != reader->video_stream_idx_) {
-        av_packet_unref(&pkt);
-        continue;
-      }
-
-      AVFrame *f = decodeFrame(&pkt);
-      if (f && i == idx) {
-        result = copyBuffer(f, buf);
-      }
+  while (av_read_frame(reader->input_ctx, &pkt) >= 0) {
+    // Skip non-video packets
+    if (pkt.stream_index != reader->video_stream_idx_) {
       av_packet_unref(&pkt);
-      break;
+      continue;
+    }
+
+    AVFrame *frame = decodeFrame(&pkt);
+    av_packet_unref(&pkt);
+    if (!frame) {
+      rError("Failed to decode frame at index %d", current_idx);
+      return false;
+    }
+
+    if (current_idx++ == idx) {
+      return copyBuffer(frame, buf);
     }
   }
-  return result;
+  rError("Failed to find frame at index %d", idx);
+  return false;
 }
 
 AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
