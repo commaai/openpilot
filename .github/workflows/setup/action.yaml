@@ -1,56 +1,49 @@
-name: 'openpilot env setup'
+name: 'Setup openpilot Environment (Native)'
+description: 'Sets up the openpilot CI environment on a native runner with aggressive caching for apt and pip.'
 
+# Accept the 'is_retried' input from the wrapper action to prevent parsing errors.
 inputs:
   is_retried:
-    description: 'A mock param that asserts that we use the setup-with-retry instead of this action directly'
+    description: 'Input from retry wrapper, not used in this action.'
     required: false
     default: 'false'
 
 runs:
   using: "composite"
   steps:
-    # assert that this action is retried using the setup-with-retry
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
-      run: |
-        echo "You should not run this action directly. Use setup-with-retry instead"
-        exit 1
-
-    - shell: bash
-      name: No retries!
-      run: |
-        if [ "${{ github.run_attempt }}" -gt 1 ]; then
-          echo -e "\033[0;31m##################################################"
-          echo -e "\033[0;31m    Retries not allowed! Fix the flaky test!      "
-          echo -e "\033[0;31m##################################################\033[0m"
-          exit 1
-        fi
-
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
-      run: git lfs pull
-
-    # build cache
-    - id: date
+    - name: Set system locale
       shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
+      run: |
+        sudo sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen
+        sudo locale-gen
+
+    - name: Cache and install apt packages
+      uses: awalsh128/cache-apt-pkgs-action@latest
       with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
+        packages: >-
+          build-essential
+          portaudio19-dev
+          libasound-dev
+          python3-crcmod
+          sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils
+          gnome-screenshot python3-tk python3-dev
+        # Increment version to force a cache refresh that includes the new packages
+        version: 1.4
+
+    - name: Set up Python and cache pip dependencies
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        cache: 'pip'
+        cache-dependency-path: |
+          **/pyproject.toml
+          **/requirements*.txt
+
+    - name: Install Python dependencies
       shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
       run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
-    # build our docker image
-    - shell: bash
-      run: eval ${{ env.BUILD }}
+        # The crcmod package build emits a deprecation warning which fails the build
+        # because PYTHONWARNINGS=error is set globally. We temporarily ignore it for this command.
+        PYTHONWARNINGS=ignore::DeprecationWarning python -m pip install .
+      env:
+        PYTHONUNBUFFERED: "1"
