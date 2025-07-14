@@ -18,22 +18,16 @@ runs:
           gnome-screenshot python3-tk python3-dev
         version: 1.0
 
-    - name: Set up Python
+    - name: Set up Python and cache Poetry dependencies
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        cache: 'pip'
-        cache-dependency-path: |
-          **/pyproject.toml
-          **/poetry.lock
-          **/requirements*.txt
+        cache: 'poetry'
 
-    - name: Install Python dependencies
+    - name: Install Python dependencies with Poetry
       shell: bash
       run: |
-        python -m pip install --upgrade pip
-        pip install
+        pip install poetry
+        poetry install --no-interaction
       env:
         PYTHONUNBUFFERED: "1"
-
-
