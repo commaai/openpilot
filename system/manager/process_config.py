@@ -106,6 +106,8 @@ procs = [
   PythonProcess("updated", "system.updated.updated", only_offroad, enabled=not PC),
   PythonProcess("uploader", "system.loggerd.uploader", always_run),
   PythonProcess("statsd", "system.statsd", always_run),
+  PythonProcess("feedbackd", "selfdrive.feedback.feedbackd", only_onroad),
+  PythonProcess("feedbackmodeld", "selfdrive.modeld.feedbackmodeld", only_onroad),
 
   # debug procs
   NativeProcess("bridge", "cereal/messaging", ["./bridge"], notcar),
