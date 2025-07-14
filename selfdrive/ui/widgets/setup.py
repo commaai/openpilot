@@ -3,9 +3,13 @@ from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+
+BORDER_RADIUS = 10
+PANEL_COLOR = rl.Color(51, 51, 51, 255)
 
 
 class SetupWidget(Widget):
@@ -26,7 +30,8 @@ class SetupWidget(Widget):
   def _render_registration(self, rect: rl.Rectangle):
     """Render registration prompt."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 590), 0.02, 20, rl.Color(51, 51, 51, 255))
+    panel_rect = rl.Rectangle(rect.x, rect.y, rect.width, 590)
+    rl.draw_rectangle_rounded(panel_rect, get_roundness(panel_rect, BORDER_RADIUS), 20, PANEL_COLOR)
 
     x = rect.x + 64
     y = rect.y + 48
@@ -52,7 +57,8 @@ class SetupWidget(Widget):
   def _render_firehose_prompt(self, rect: rl.Rectangle):
     """Render firehose prompt widget."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 450), 0.02, 20, rl.Color(51, 51, 51, 255))
+    panel_rect = rl.Rectangle(rect.x, rect.y, rect.width, 450)
+    rl.draw_rectangle_rounded(panel_rect, get_roundness(panel_rect, BORDER_RADIUS), 20, PANEL_COLOR)
 
     # Content margins (56, 40, 56, 40)
     x = rect.x + 56
