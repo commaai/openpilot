@@ -1,7 +1,5 @@
 import pyray as rl
 
-DEFAULT_BORDER_RADIUS = 10
-
 
 def get_roundness(rect: rl.Rectangle, border_radius: int) -> float:
   """Calculate the roundness of a rectangle based on its width and height, given a border radius value in pixels.
