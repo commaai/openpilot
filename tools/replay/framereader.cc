@@ -80,7 +80,13 @@ bool FrameReader::loadFromFile(CameraType type, const std::string &file, bool no
   }
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
 
-  decoder_ = decoder_manager.acquire(type, input_ctx->streams[0]->codecpar, !no_hw_decoder);
+  video_stream_index = av_find_best_stream(input_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, nullptr, 0);
+  if (video_stream_index < 0) {
+    rError("No video stream found");
+    return false;
+  }
+
+  decoder_ = decoder_manager.acquire(type, input_ctx->streams[video_stream_index]->codecpar, !no_hw_decoder);
   if (!decoder_) {
     return false;
   }
@@ -90,7 +96,9 @@ bool FrameReader::loadFromFile(CameraType type, const std::string &file, bool no
   AVPacket pkt;
   packets_info.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort) && av_read_frame(input_ctx, &pkt) == 0) {
-    packets_info.emplace_back(PacketInfo{.flags = pkt.flags, .pos = pkt.pos});
+    if (pkt.stream_index == video_stream_index) {
+      packets_info.emplace_back(PacketInfo{.flags = pkt.flags, .pos = pkt.pos});
+    }
     av_packet_unref(&pkt);
   }
   avio_seek(input_ctx->pb, 0, SEEK_SET);
@@ -190,14 +198,17 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
 
   bool result = false;
   AVPacket pkt;
-  for (int i = from_idx; i <= idx; ++i) {
-    if (av_read_frame(reader->input_ctx, &pkt) == 0) {
+  int frames_to_skip = idx - from_idx;
+  while (frames_to_skip >= 0) {
+    if (av_read_frame(reader->input_ctx, &pkt) < 0) break;
+    if (pkt.stream_index == reader->video_stream_index) {
       AVFrame *f = decodeFrame(&pkt);
-      if (f && i == idx) {
+      if (f && frames_to_skip == 0) {
         result = copyBuffer(f, buf);
       }
-      av_packet_unref(&pkt);
+      --frames_to_skip;
     }
+    av_packet_unref(&pkt);
   }
   return result;
 }
