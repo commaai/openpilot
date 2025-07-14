@@ -2598,6 +2598,7 @@ struct Event {
 
     # driving feedback
     feedbackState @148 :FeedbackState;
+    bookmarkButton @149 :UserFlag;
     userFlag @93 :UserFlag;
 
 

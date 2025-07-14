@@ -50,6 +50,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"GsmMetered", PERSISTENT},
     {"GsmRoaming", PERSISTENT},
     {"HardwareSerial", PERSISTENT},
+    {"HeyComma", PERSISTENT},
     {"HasAcceptedTerms", PERSISTENT},
     {"InstallDate", PERSISTENT},
     {"IsDriverViewEnabled", CLEAR_ON_MANAGER_START},

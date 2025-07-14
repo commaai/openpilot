@@ -39,6 +39,7 @@ def manager_init() -> None:
     ("HasAcceptedTerms", "0"),
     ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
+    ("HeyComma", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
   ]
 

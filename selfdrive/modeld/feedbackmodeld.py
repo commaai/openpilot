@@ -1,15 +1,12 @@
 #!/usr/bin/env python3
 
-# Attribution for Specific Models:
-# The models ./models/melspectrogram_1760.onnx and ./models/embedding_model_76.onnx
+# Attribution: The models melspectrogram_1760.onnx and embedding_model_76.onnx
 # are derived from a speech embedding model originally created by Google
-# (https://www.kaggle.com/models/google/speech-embedding/tensorFlow1/speech-embedding/1)
-# and re-implemented/modified by David Scripka in the openWakeWord project
-# (https://github.com/dscripka/openWakeWord/).
+# (https://www.kaggle.com/models/google/speech-embedding/tensorFlow1/speech-embedding/1),
+# re-implemented/modified by David Scripka in the openWakeWord project
+# (https://github.com/dscripka/openWakeWord/), and adapted here with fixed input sizes.
 #
-# These models have been further modified to use fixed input dimensions.
-#
-# These specific models are licensed under the Apache License, Version 2.0 (the "License");
+# These models are licensed under the Apache License, Version 2.0 (the "License");
 # you may not use these models except in compliance with the License.
 # You may obtain a copy of the License at
 #
@@ -49,17 +46,16 @@ MODEL_PKL_PATHS = {
   'wakeword': Path(__file__).parent / "models/hey_comma_v17_big_tinygrad.pkl",
 }
 
-def fast_numpy(x: Tensor) -> np.ndarray: # massive speedup when compiling with LLVM when used instead of .numpy()
+
+def fast_numpy(x: Tensor) -> np.ndarray:  # massive speedup when compiling with LLVM when used instead of .numpy()
   return x.cast(x.dtype.base).contiguous().realize().uop.base.buffer.numpy().reshape(x.shape)
+
 
 class ModelState:
   def __init__(self):
-    self.debounce_period = 3.0
     self.ww_raw_data_buffer = np.array([], dtype=np.int16)
     self.ww_melspectrogram_buffer = np.ones((76, 32), dtype=np.float32)
     self.ww_feature_buffer = np.zeros((16, 96), dtype=np.float32)
-    self.last_ww_detection_time = 0
-    self.consecutive_detections = 0
     self.pm = PubMaster(['feedbackState'])
 
     cloudlog.warning("Loading wake word models...")
@@ -74,8 +70,6 @@ class ModelState:
       cloudlog.warning("Wake word models loaded.")
     except Exception as e:
       cloudlog.error(f"Failed to load wake word models: {e}")
-      import traceback
-      traceback.print_exc()
       self.melspec_model = None
       self.embedding_model = None
       self.wakeword_model = None
@@ -132,20 +126,6 @@ class ModelState:
       wakeword_time = t2 - t1
       wakeword_prob = score
 
-
-      ### move to feedbackd.py later
-      current_time = time.time()
-      if score > 0.1:
-        self.consecutive_detections += 1
-        cloudlog.warning(f"Wake word segment detected! Score: {float(score):.3f}, Consecutive: {self.consecutive_detections}")
-
-        if (self.consecutive_detections >= 2 or score > 0.5) and (current_time - self.last_ww_detection_time) > self.debounce_period:
-          self.last_ww_detection_time = current_time
-          cloudlog.warning("Wake word detected!")
-      else:
-        self.consecutive_detections = 0
-      ###
-
       self.ww_raw_data_buffer = self.ww_raw_data_buffer[WW_CHUNK_SIZE:]
 
       msg = messaging.new_message('feedbackState', valid=True)
@@ -158,23 +138,6 @@ class ModelState:
       fs.wakewordProb = float(wakeword_prob)
 
       self.pm.send('feedbackState', msg)
-
-
-def resample_audio(audio_chunk: np.ndarray, from_rate: int, to_rate: int):
-  """Resample audio using linear interpolation"""
-  if from_rate == to_rate:
-    return audio_chunk
-
-  num_samples_in = len(audio_chunk)
-  num_samples_out = int(num_samples_in * to_rate / from_rate)
-
-  x_original = np.arange(num_samples_in)
-  x_new = np.linspace(0, num_samples_in - 1, num_samples_out)
-
-  resampled_chunk = np.interp(x_new, x_original, audio_chunk)
-  return resampled_chunk
-
-
 def main():
   config_realtime_process(6, 5)
 
@@ -192,13 +155,14 @@ def main():
       sample_rate = msg.sampleRate
       audio_eof = sm.logMonoTime['rawAudioData']
 
-      resampled_audio = resample_audio(audio_data, sample_rate, WW_SAMPLE_RATE).astype(np.int16) # resample if micd sample rate is ever changed
+      if sample_rate != WW_SAMPLE_RATE:
+        cloudlog.error(f"Sample rate mismatch: expected wakeword sample rate {WW_SAMPLE_RATE}, got {sample_rate}")
 
-      model.run(resampled_audio, audio_eof)
+      model.run(audio_data, audio_eof)
+
 
 if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
     cloudlog.warning("got SIGINT")
-
