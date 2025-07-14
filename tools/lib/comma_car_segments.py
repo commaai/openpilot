@@ -86,5 +86,5 @@ def get_repo_url(path):
     return get_repo_raw_url(path)
 
 
-def get_url(route, segment, file="rlog.bz2"):
+def get_url(route, segment, file="rlog.zst"):
   return get_repo_url(f"segments/{route.replace('|', '/')}/{segment}/{file}")
