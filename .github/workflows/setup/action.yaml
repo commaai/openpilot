@@ -1,6 +1,12 @@
 name: 'Setup openpilot Environment (Native)'
 description: 'Sets up the openpilot CI environment on a native runner with aggressive caching for apt and pip.'
 
+inputs:
+  is_retried:
+    description: 'Input from retry wrapper, not used in this action.'
+    required: false
+    default: 'false'
+
 runs:
   using: "composite"
   steps:
@@ -18,16 +24,19 @@ runs:
           gnome-screenshot python3-tk python3-dev
         version: 1.0
 
-    - name: Set up Python and cache Poetry dependencies
+    - name: Set up Python and cache pip dependencies
       uses: actions/setup-python@v4
       with:
         python-version: '3.11'
-        cache: 'poetry'
+        cache: 'pip'
+        cache-dependency-path: |
+          **/pyproject.toml
+          **/requirements*.txt
 
-    - name: Install Python dependencies with Poetry
+    - name: Install Python dependencies
       shell: bash
       run: |
-        pip install poetry
-        poetry install --no-interaction
+        python -m pip install --upgrade pip
+        python -m pip install.
       env:
         PYTHONUNBUFFERED: "1"
