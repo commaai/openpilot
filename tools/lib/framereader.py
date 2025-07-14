@@ -56,6 +56,7 @@ def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc') -> np.n
           "-"]
   dat = subprocess.check_output(args, input=rawdat)
 
+  ret: np.ndarray
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
   elif pix_fmt in ["nv12", "yuv420p"]:
