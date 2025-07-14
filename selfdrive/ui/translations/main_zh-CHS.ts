@@ -498,7 +498,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <translation>设备未能注册到 comma.ai 后端。该设备将无法连接或上传数据到 comma.ai 服务器，也无法获得 comma.ai 的支持。如果该设备是在 comma.ai/shop 购买的，请访问 https://comma.ai/support 提交工单。</translation>
     </message>
 </context>
 <context>
