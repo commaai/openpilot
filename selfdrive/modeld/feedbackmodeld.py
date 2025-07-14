@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-# Attribution: The models melspectrogram_1760.onnx and embedding_model_76.onnx
+# Attribution: The models melspectrogram.onnx and embedding_model.onnx
 # are derived from a speech embedding model originally created by Google
 # (https://www.kaggle.com/models/google/speech-embedding/tensorFlow1/speech-embedding/1),
 # re-implemented/modified by David Scripka in the openWakeWord project
@@ -41,9 +41,9 @@ WW_BUFFER_SIZE = WW_CHUNK_SIZE + 480
 PROCESS_NAME = "selfdrive.modeld.feedbackmodeld"
 
 MODEL_PKL_PATHS = {
-  'melspec': Path(__file__).parent / "models/melspectrogram_1760_tinygrad.pkl",
-  'embedding': Path(__file__).parent / "models/embedding_model_76_tinygrad.pkl",
-  'wakeword': Path(__file__).parent / "models/hey_comma_v17_big_tinygrad.pkl",
+  'melspec': Path(__file__).parent / "models/melspectrogram_tinygrad.pkl",
+  'embedding': Path(__file__).parent / "models/embedding_model_tinygrad.pkl",
+  'wakeword': Path(__file__).parent / "models/hey_comma_tinygrad.pkl",
 }
 
 
@@ -59,7 +59,6 @@ class ModelState:
     self.pm = PubMaster(['feedbackState'])
 
     cloudlog.warning("Loading wake word models...")
-    print(MODEL_PKL_PATHS)
     try:
       with open(MODEL_PKL_PATHS['melspec'], "rb") as f:
         self.melspec_model = pickle.load(f)
@@ -138,11 +137,12 @@ class ModelState:
       fs.wakewordProb = float(wakeword_prob)
 
       self.pm.send('feedbackState', msg)
+
+
 def main():
   config_realtime_process(6, 5)
 
   model = ModelState()
-  cloudlog.warning("models loaded, feedbackmodeld starting")
 
   sm = SubMaster(['rawAudioData'])
 

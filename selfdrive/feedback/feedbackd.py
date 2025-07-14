@@ -2,13 +2,10 @@
 import time
 import cereal.messaging as messaging
 from openpilot.common.params import Params
-from openpilot.common.realtime import config_realtime_process
 from openpilot.common.swaglog import cloudlog
 
 
 def feedbackd_thread():
-  # config_realtime_process([0, 1, 2, 3], 5)
-
   params = Params()
   pm = messaging.PubMaster(['userFlag'])
   sm = messaging.SubMaster(['feedbackState', 'bookmarkButton'])
@@ -32,16 +29,16 @@ def feedbackd_thread():
 
       if score > 0.2:
         consecutive_detections += 1
-        cloudlog.warning(f"Wake word segment detected! Score: {float(score):.3f}, Consecutive: {consecutive_detections}")
+        cloudlog.debug(f"Wake word segment detected! Score: {float(score):.3f}, Consecutive: {consecutive_detections}")
 
         if (consecutive_detections >= 2 or score > 0.5) and (current_time - last_user_flag_time) > debounce_period:
-          cloudlog.warning("Wake word detected!")
+          cloudlog.info("Wake word detected!")
           should_send_flag = True
       else:
         consecutive_detections = 0
 
     if sm.updated['bookmarkButton'] and (current_time - last_user_flag_time) > debounce_period:
-      cloudlog.warning("Bookmark button pressed!")
+      cloudlog.info("Bookmark button pressed!")
       should_send_flag = True
 
     if should_send_flag:

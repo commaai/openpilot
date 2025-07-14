@@ -71,7 +71,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "HeyComma",
       tr("\"Hey comma\" to Bookmark"),
-      tr("Say \"Hey comma\" to bookmark an event in your drive. The timestamp will be highlighted in comma connect."),
+      tr("Say \"Hey comma\" to bookmark an event in your drive. The timestamp will be highlighted in comma connect. Audio is processed on-device and not uploaded unless the \"Record and Upload Microphone Audio\" toggle is enabled."),
       "../assets/icons/microphone.png",
       false,
     },
