@@ -36,12 +36,10 @@ runs:
           **/requirements.txt
           **/pyproject.toml
 
-    - name: Install Python dependencies
+- name: Install Python dependencies
       run: |
-        # Upgrade pip and setuptools for compatibility
-        python -m pip install --upgrade pip setuptools
-        # Install all required packages from the primary requirements file
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip
+        pip install.
       shell: bash
       env:
         PYTHONUNBUFFERED: "1"
