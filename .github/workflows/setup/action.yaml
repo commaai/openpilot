@@ -38,7 +38,6 @@ runs:
     - name: Install Python dependencies
       shell: bash
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install .
+        PYTHONWARNINGS=ignore::DeprecationWarning python -m pip install .
       env:
         PYTHONUNBUFFERED: "1"
