@@ -143,7 +143,7 @@ class PairingDialog:
       y += text_height + 50
 
   def _render_qr_code(self, rect: rl.Rectangle) -> None:
-    if self.qr_texture:
+    if not self.qr_texture:
       rl.draw_rectangle_rounded(rect, get_roundness(rect, 30), 20, rl.Color(240, 240, 240, 255))
       error_font = gui_app.font(FontWeight.BOLD)
       rl.draw_text_ex(
