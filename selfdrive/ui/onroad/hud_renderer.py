@@ -4,6 +4,7 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
 from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -21,6 +22,7 @@ class UIConfig:
   set_speed_width_metric: int = 200
   set_speed_width_imperial: int = 172
   set_speed_height: int = 204
+  set_speed_border_radius: int = 20
   wheel_icon_size: int = 144
 
 
@@ -130,8 +132,9 @@ class HudRenderer(Widget):
     y = rect.y + 45
 
     set_speed_rect = rl.Rectangle(x, y, set_speed_width, UI_CONFIG.set_speed_height)
-    rl.draw_rectangle_rounded(set_speed_rect, 0.2, 30, COLORS.black_translucent)
-    rl.draw_rectangle_rounded_lines_ex(set_speed_rect, 0.2, 30, 6, COLORS.border_translucent)
+    set_speed_roundness = get_roundness(set_speed_rect, UI_CONFIG.set_speed_border_radius)
+    rl.draw_rectangle_rounded(set_speed_rect, set_speed_roundness, 30, COLORS.black_translucent)
+    rl.draw_rectangle_rounded_lines_ex(set_speed_rect, set_speed_roundness, 30, 6, COLORS.border_translucent)
 
     max_color = COLORS.grey
     set_speed_color = COLORS.dark_grey
