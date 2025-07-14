@@ -5,6 +5,7 @@ from cereal import messaging, log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_FPS
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_text_box
@@ -133,8 +134,7 @@ class AlertRenderer(Widget):
     color = ALERT_COLORS.get(alert.status, ALERT_COLORS[AlertStatus.normal])
 
     if alert.size != AlertSize.full:
-      roundness = ALERT_BORDER_RADIUS / (min(rect.width, rect.height) / 2)
-      rl.draw_rectangle_rounded(rect, roundness, 10, color)
+      rl.draw_rectangle_rounded(rect, get_roundness(rect, ALERT_BORDER_RADIUS), 10, color)
     else:
       rl.draw_rectangle_rec(rect, color)
 

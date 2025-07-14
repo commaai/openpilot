@@ -1,6 +1,7 @@
 import pyray as rl
 from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 
 
@@ -102,7 +103,7 @@ def gui_button(
     _pressed_buttons.remove(button_id)
 
   # Draw the button with rounded corners
-  roundness = border_radius / (min(rect.width, rect.height) / 2)
+  roundness = get_roundness(rect, border_radius)
   if button_style != ButtonStyle.TRANSPARENT:
     rl.draw_rectangle_rounded(rect, roundness, 20, bg_color)
   else:
