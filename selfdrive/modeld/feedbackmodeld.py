@@ -72,7 +72,7 @@ class ModelState:
   def run_model(self, model, input_data):
     t1 = time.perf_counter()
     tensor = Tensor(input_data, dtype=dtypes.float32, device='NPY')
-    output = model(input=tensor).numpy().squeeze()
+    output = model(input=tensor).realize().uop.base.buffer.numpy() # grab directly from buffer without reshaping bc faster
     t2 = time.perf_counter()
     return output, t2 - t1
 
@@ -87,7 +87,7 @@ class ModelState:
       processing_chunk = self.raw_audio_buffer[:BUFFER_SIZE]
 
       new_melspec, melspec_time = self.run_model(self.melspec_model, processing_chunk[None, :])
-      new_melspec = (new_melspec / 10) + 2  # done in openWakeWord to better match Google's implementation
+      new_melspec = (new_melspec.reshape(8, 32) / 10) + 2  # done in openWakeWord to better match Google's implementation
       self.melspec_buffer = np.vstack([self.melspec_buffer, new_melspec])[-76:]
 
       new_embedding, embedding_time = self.run_model(self.embedding_model, self.melspec_buffer[None, :, :, None])
@@ -103,7 +103,7 @@ class ModelState:
       fs.melspecExecutionTime = float(melspec_time)
       fs.embeddingExecutionTime = float(embedding_time)
       fs.wakewordExecutionTime = float(wakeword_time)
-      fs.wakewordProb = float(wakeword_prob)
+      fs.wakewordProb = float(wakeword_prob[0])
 
       self.pm.send('feedbackState', msg)
 

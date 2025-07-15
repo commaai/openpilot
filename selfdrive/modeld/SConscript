@@ -56,7 +56,11 @@ for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
   tg_compile(flags, model_name)
 
 for model_name in ['melspectrogram', 'embedding_model', 'hey_comma']:
-  tg_compile('CPU=1 BEAM=1 IMAGE=0 JIT=2', model_name)
+  flags = {
+    'larch64': ('QCOM=1' if model_name == 'embedding_model' else 'LLVM=1 LLVMOPT=1') + ' BEAM=1 IMAGE=0',
+    'Darwin': 'CPU=1 IMAGE=0',
+  }.get(arch, 'LLVM=1 LLVMOPT=1 BEAM=1 IMAGE=0')
+  tg_compile(flags, model_name)
 
 # Compile BIG model if USB GPU is available
 if "USBGPU" in os.environ:
