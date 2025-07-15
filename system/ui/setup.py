@@ -10,6 +10,7 @@ import pyray as rl
 from cereal import log
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 from openpilot.system.ui.widgets.keyboard import Keyboard
@@ -150,7 +151,7 @@ class Setup(Widget):
 
     wifi_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN + 25, rect.width - MARGIN * 2,
                              rect.height - TITLE_FONT_SIZE - 25 - BUTTON_HEIGHT - MARGIN * 3)
-    rl.draw_rectangle_rounded(wifi_rect, 0.05, 10, rl.Color(51, 51, 51, 255))
+    rl.draw_rectangle_rounded(wifi_rect, get_roundness(wifi_rect, 15), 10, rl.Color(51, 51, 51, 255))
     wifi_content_rect = rl.Rectangle(wifi_rect.x + MARGIN, wifi_rect.y, wifi_rect.width - MARGIN * 2, wifi_rect.height)
     self.wifi_ui.render(wifi_content_rect)
 

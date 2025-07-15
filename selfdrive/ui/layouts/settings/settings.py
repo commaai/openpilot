@@ -9,6 +9,7 @@ from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -21,6 +22,7 @@ SIDEBAR_WIDTH = 500
 CLOSE_BTN_SIZE = 200
 NAV_BTN_HEIGHT = 110
 PANEL_MARGIN = 50
+PANEL_BORDER_RADIUS = 20
 
 # Colors
 SIDEBAR_COLOR = rl.BLACK
@@ -43,7 +45,7 @@ class PanelType(IntEnum):
 @dataclass
 class PanelInfo:
   name: str
-  instance: object
+  instance: Widget
   button_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
 
 
@@ -123,11 +125,9 @@ class SettingsLayout(Widget):
       y += NAV_BTN_HEIGHT
 
   def _draw_current_panel(self, rect: rl.Rectangle):
-    rl.draw_rectangle_rounded(
-      rl.Rectangle(rect.x + 10, rect.y + 10, rect.width - 20, rect.height - 20), 0.04, 30, PANEL_COLOR
-    )
+    panel_rect = rl.Rectangle(rect.x + 10, rect.y + 10, rect.width - 20, rect.height - 20)
+    rl.draw_rectangle_rounded(panel_rect, get_roundness(panel_rect, PANEL_BORDER_RADIUS), 30, PANEL_COLOR)
     content_rect = rl.Rectangle(rect.x + PANEL_MARGIN, rect.y + 25, rect.width - (PANEL_MARGIN * 2), rect.height - 50)
-    # rl.draw_rectangle_rounded(content_rect, 0.03, 30, PANEL_COLOR)
     panel = self._panels[self._current_panel]
     if panel.instance:
       panel.instance.render(content_rect)

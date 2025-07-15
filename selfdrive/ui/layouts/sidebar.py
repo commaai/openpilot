@@ -5,6 +5,7 @@ from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -12,6 +13,7 @@ SIDEBAR_WIDTH = 300
 METRIC_HEIGHT = 126
 METRIC_WIDTH = 240
 METRIC_MARGIN = 30
+METRIC_BORDER_RADIUS = 20
 
 SETTINGS_BTN = rl.Rectangle(50, 35, 200, 117)
 HOME_BTN = rl.Rectangle(60, 860, 180, 180)
@@ -188,11 +190,11 @@ class Sidebar(Widget):
     # Draw colored left edge (clipped rounded rectangle)
     edge_rect = rl.Rectangle(metric_rect.x + 4, metric_rect.y + 4, 100, 118)
     rl.begin_scissor_mode(int(metric_rect.x + 4), int(metric_rect.y), 18, int(metric_rect.height))
-    rl.draw_rectangle_rounded(edge_rect, 0.18, 10, metric.color)
+    rl.draw_rectangle_rounded(edge_rect, get_roundness(edge_rect, METRIC_BORDER_RADIUS), 10, metric.color)
     rl.end_scissor_mode()
 
     # Draw border
-    rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.15, 10, 2, Colors.METRIC_BORDER)
+    rl.draw_rectangle_rounded_lines_ex(metric_rect, get_roundness(metric_rect, METRIC_BORDER_RADIUS), 10, 2, Colors.METRIC_BORDER)
 
     # Draw text
     text = f"{metric.label}\n{metric.value}"

@@ -2,10 +2,13 @@ import pyray as rl
 
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.rounded_corners import get_roundness
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.label import gui_label
+
+BORDER_RADIUS = 10
 
 
 class PrimeWidget(Widget):
@@ -22,7 +25,7 @@ class PrimeWidget(Widget):
   def _render_for_non_prime_users(self, rect: rl.Rectangle):
     """Renders the advertisement for non-Prime users."""
 
-    rl.draw_rectangle_rounded(rect, 0.02, 10, self.PRIME_BG_COLOR)
+    rl.draw_rectangle_rounded(rect, get_roundness(rect, BORDER_RADIUS), 10, self.PRIME_BG_COLOR)
 
     # Layout
     x, y = rect.x + 80, rect.y + 90
@@ -52,7 +55,8 @@ class PrimeWidget(Widget):
   def _render_for_prime_user(self, rect: rl.Rectangle):
     """Renders the prime user widget with subscription status."""
 
-    rl.draw_rectangle_rounded(rl.Rectangle(rect.x, rect.y, rect.width, 230), 0.02, 10, self.PRIME_BG_COLOR)
+    panel_rect = rl.Rectangle(rect.x, rect.y, rect.width, 230)
+    rl.draw_rectangle_rounded(panel_rect, get_roundness(panel_rect, BORDER_RADIUS), 10, self.PRIME_BG_COLOR)
 
     x = rect.x + 56
     y = rect.y + 40
