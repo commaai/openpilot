@@ -1,4 +1,3 @@
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include <cassert>
 
 #include "system/loggerd/video_writer.h"
@@ -114,8 +113,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       // input timestamps are in microseconds
       AVRational in_timebase = {1, 1000000};
 
-      AVPacket pkt;
-      av_init_packet(&pkt);
+      AVPacket pkt = {};
       pkt.data = data;
       pkt.size = len;
       pkt.stream_index = this->out_stream->index;
