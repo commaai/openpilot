@@ -2490,8 +2490,9 @@ struct FeedbackState {
   melspecExecutionTime @1 :Float32;
   embeddingExecutionTime @2 :Float32;
   wakewordExecutionTime @3 :Float32;
+  totalExecutionTime @4 :Float32;
 
-  wakewordProb @4 :Float32;
+  wakewordProb @5 :Float32;
 }
 
 struct Touch {

@@ -70,8 +70,8 @@ class ModelState:
       self.wakeword_model = None
 
   def run_model(self, model, input_data):
-    t1 = time.perf_counter()
     tensor = Tensor(input_data, dtype=dtypes.float32, device='NPY')
+    t1 = time.perf_counter()
     output = model(input=tensor).realize().uop.base.buffer.numpy() # grab directly from buffer without reshaping bc faster
     t2 = time.perf_counter()
     return output, t2 - t1
@@ -84,6 +84,7 @@ class ModelState:
     self.raw_audio_buffer = np.concatenate([self.raw_audio_buffer, audio_chunk])
 
     while len(self.raw_audio_buffer) >= BUFFER_SIZE:
+      t1 = time.perf_counter()
       processing_chunk = self.raw_audio_buffer[:BUFFER_SIZE]
 
       new_melspec, melspec_time = self.run_model(self.melspec_model, processing_chunk[None, :])
@@ -97,12 +98,14 @@ class ModelState:
 
       self.raw_audio_buffer = self.raw_audio_buffer[CHUNK_SIZE:]
 
+      t2 = time.perf_counter()
       msg = messaging.new_message('feedbackState', valid=True)
       fs = msg.feedbackState
       fs.timestampEof = audio_eof
       fs.melspecExecutionTime = float(melspec_time)
       fs.embeddingExecutionTime = float(embedding_time)
       fs.wakewordExecutionTime = float(wakeword_time)
+      fs.totalExecutionTime = float(t2 - t1)
       fs.wakewordProb = float(wakeword_prob[0])
 
       self.pm.send('feedbackState', msg)
