@@ -48,7 +48,7 @@ PROCS = {
   "selfdrive.controls.radard": 2.0,
   "selfdrive.modeld.modeld": 22.0,
   "selfdrive.modeld.dmonitoringmodeld": 18.0,
-  "selfdrive.modeld.feedbackmodeld": 42.0,
+  "selfdrive.modeld.feedbackmodeld": 41.0,
   "system.hardware.hardwared": 4.0,
   "selfdrive.locationd.calibrationd": 2.0,
   "selfdrive.locationd.torqued": 5.0,
