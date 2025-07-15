@@ -18,7 +18,7 @@ if __name__ == "__main__":
 
   for f in glob.glob(BASEDIR + MODEL_PATH + "/*.onnx"):
     # TODO: add checkpoint to DM
-    if "dmonitoring" in f:
+    if any(s in f for s in ["dmonitoring", "melspectrogram", "embedding_model", "hey_comma"]):
       continue
 
     fn = os.path.basename(f)
