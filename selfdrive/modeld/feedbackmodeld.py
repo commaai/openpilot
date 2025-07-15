@@ -47,10 +47,6 @@ MODEL_PKL_PATHS = {
 }
 
 
-def fast_numpy(x: Tensor):  # massive speedup when compiling with LLVM when used instead of .numpy()
-  return x.cast(x.dtype.base).contiguous().realize().uop.base.buffer.numpy().reshape(x.shape)  # type: ignore[union-attr]
-
-
 class ModelState:
   def __init__(self):
     self.raw_audio_buffer = np.array([], dtype=np.int16)
@@ -76,7 +72,7 @@ class ModelState:
   def run_model(self, model, input_data):
     t1 = time.perf_counter()
     tensor = Tensor(input_data, dtype=dtypes.float32, device='NPY')
-    output = fast_numpy(model(input=tensor)).squeeze()
+    output = model(input=tensor).numpy().squeeze()
     t2 = time.perf_counter()
     return output, t2 - t1
 
