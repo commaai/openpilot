@@ -47,8 +47,8 @@ MODEL_PKL_PATHS = {
 }
 
 
-def fast_numpy(x: Tensor) -> np.ndarray:  # massive speedup when compiling with LLVM when used instead of .numpy()
-  return x.cast(x.dtype.base).contiguous().realize().uop.base.buffer.numpy().reshape(x.shape)
+def fast_numpy(x: Tensor):  # massive speedup when compiling with LLVM when used instead of .numpy()
+  return x.cast(x.dtype.base).contiguous().realize().uop.base.buffer.numpy().reshape(x.shape) # type: ignore[union-attr]
 
 
 class ModelState:
@@ -73,13 +73,13 @@ class ModelState:
       self.embedding_model = None
       self.wakeword_model = None
 
-  def _get_melspectrogram(self, audio_data: np.ndarray) -> np.ndarray:
+  def _get_melspectrogram(self, audio_data: np.ndarray):
     audio_float32 = audio_data.astype(np.float32)
     audio_tensor = Tensor(audio_float32[None, :], dtype=dtypes.float32, device='NPY')
     spec = np.squeeze(fast_numpy(self.melspec_model(input=audio_tensor)))
     return (spec / 10) + 2
 
-  def _predict_wakeword(self, features: np.ndarray) -> float:
+  def _predict_wakeword(self, features: np.ndarray):
     model_input = features[None, :].astype(np.float32)
     feature_tensor = Tensor(model_input, device='NPY')
     prediction = fast_numpy(self.wakeword_model(input=feature_tensor))
