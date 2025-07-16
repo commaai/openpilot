@@ -6,7 +6,7 @@ import queue
 import struct
 import threading
 import time
-from collections import OrderedDict, namedtuple, defaultdict
+from collections import OrderedDict, namedtuple
 from pathlib import Path
 
 import psutil
