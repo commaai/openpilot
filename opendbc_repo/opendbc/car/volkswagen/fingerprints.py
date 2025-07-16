@@ -980,18 +980,22 @@ FW_VERSIONS = {
   CAR.SKODA_FABIA_MK4: {
     (Ecu.engine, 0x7e0, None): [
       b'\xf1\x8705E906018CF\xf1\x891905',
+      b'\xf1\x8705C906032L \xf1\x891701',
     ],
     (Ecu.transmission, 0x7e1, None): [
       b'\xf1\x870CW300051M \xf1\x891936',
+      b'\xf1\x870CW300051G \xf1\x891906',
     ],
     (Ecu.srs, 0x715, None): [
       b'\xf1\x875QF959655AT\xf1\x890755\xf1\x82\x1311110011110011111100110200--1111120749',
+      b'\xf1\x875QF959655AF\xf1\x890753\xf1\x82\x13111100111100111111001102----1111120749',
     ],
     (Ecu.eps, 0x712, None): [
       b'\xf1\x872Q1909144S \xf1\x896042',
     ],
     (Ecu.fwdRadar, 0x757, None): [
       b'\xf1\x872Q0907572AA\xf1\x890396',
+      b'\xf1\x872Q0907572T \xf1\x890383',
     ],
   },
   CAR.SKODA_KAMIQ_MK1: {
