@@ -1,5 +1,3 @@
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-
 #include "system/loggerd/encoder/ffmpeg_encoder.h"
 
 #include <fcntl.h>
@@ -119,8 +117,7 @@ int FfmpegEncoder::encode_frame(VisionBuf* buf, VisionIpcBufExtra *extra) {
     ret = -1;
   }
 
-  AVPacket pkt;
-  av_init_packet(&pkt);
+  AVPacket pkt = {};
   pkt.data = NULL;
   pkt.size = 0;
   while (ret >= 0) {

@@ -1,4 +1,3 @@
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 #include <cassert>
 
 #include "system/loggerd/video_writer.h"
@@ -114,8 +113,7 @@ void VideoWriter::write(uint8_t *data, int len, long long timestamp, bool codecc
       // input timestamps are in microseconds
       AVRational in_timebase = {1, 1000000};
 
-      AVPacket pkt;
-      av_init_packet(&pkt);
+      AVPacket pkt = {};
       pkt.data = data;
       pkt.size = len;
       pkt.stream_index = this->out_stream->index;
@@ -200,10 +198,23 @@ void VideoWriter::encode_and_write_audio_frame(AVFrame* frame) {
   audio_pts += audio_codec_ctx->frame_size;
 }
 
+void VideoWriter::process_remaining_audio() {
+  // Process remaining audio samples by padding with silence
+  if (audio_buffer.size() > 0 && audio_buffer.size() < audio_codec_ctx->frame_size) {
+    audio_buffer.resize(audio_codec_ctx->frame_size, 0.0f);
+
+    // Encode final frame
+    audio_frame->pts = audio_pts;
+    float *f_samples = reinterpret_cast<float *>(audio_frame->data[0]);
+    std::copy(audio_buffer.begin(), audio_buffer.end(), f_samples);
+    encode_and_write_audio_frame(audio_frame);
+  }
+}
 
 VideoWriter::~VideoWriter() {
   if (this->remuxing) {
     if (this->audio_codec_ctx) {
+      process_remaining_audio();
       encode_and_write_audio_frame(NULL); // flush encoder
       avcodec_free_context(&this->audio_codec_ctx);
     }
