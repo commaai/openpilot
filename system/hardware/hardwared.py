@@ -183,7 +183,8 @@ def hardware_thread(end_event, hw_queue) -> None:
   startup_blocked_ts: float | None = None
   thermal_status = ThermalStatus.yellow
 
-  uptime: dict[str, float] = json.loads(Params().get('Uptime')) or defaultdict(float)
+  uptime_param: str | None = Params().get('Uptime', encoding='utf8')
+  uptime: dict[str, float] = json.loads(uptime_param) if uptime_param else {'onroad': 0.0, 'offroad': 0.0}
   uptime_ts: float = time.monotonic()
 
   last_hw_state = HardwareState(
@@ -469,7 +470,7 @@ def hardware_thread(end_event, hw_queue) -> None:
       uptime['onroad'] += now - max(uptime_ts, started_ts)
     uptime_ts = now
 
-    if (count % int(60. / DT_HW)) == 0:
+    if (count % int(30. / DT_HW)) == 0:
       try:
         params.put("Uptime", json.dumps(uptime))
       except Exception:
