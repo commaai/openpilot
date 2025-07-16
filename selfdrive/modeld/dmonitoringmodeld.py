@@ -94,6 +94,7 @@ class ModelState:
 
 
     output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
+
     t2 = time.perf_counter()
     return output, t2 - t1
 
