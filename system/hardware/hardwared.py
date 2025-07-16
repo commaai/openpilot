@@ -6,7 +6,7 @@ import queue
 import struct
 import threading
 import time
-from collections import OrderedDict, namedtuple
+from collections import OrderedDict, namedtuple, defaultdict
 from pathlib import Path
 
 import psutil
@@ -182,6 +182,9 @@ def hardware_thread(end_event, hw_queue) -> None:
   started_seen = False
   startup_blocked_ts: float | None = None
   thermal_status = ThermalStatus.yellow
+
+  uptime: dict[str, float] = json.loads(Params().get('Uptime')) or defaultdict(float)
+  uptime_ts: float = time.monotonic()
 
   last_hw_state = HardwareState(
     network_type=NetworkType.none,
@@ -458,6 +461,19 @@ def hardware_thread(end_event, hw_queue) -> None:
           cloudlog.exception("failed to save offroad status")
 
     params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
+
+    now = time.monotonic()
+    if off_ts:
+      uptime['offroad'] += now - max(uptime_ts, off_ts)
+    elif started_ts:
+      uptime['onroad'] += now - max(uptime_ts, started_ts)
+    uptime_ts = now
+
+    if (count % int(60. / DT_HW)) == 0:
+      try:
+        params.put("Uptime", json.dumps(uptime))
+      except Exception:
+        cloudlog.exception("failed to save Uptime param")
 
     count += 1
     should_start_prev = should_start
