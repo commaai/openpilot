@@ -177,9 +177,6 @@ skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, .
 
 [tool.mypy]
 python_version = "3.11"
-plugins = [
-  "numpy.typing.mypy_plugin",
-]
 exclude = [
   "cereal/",
   "msgq/",
