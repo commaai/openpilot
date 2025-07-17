@@ -71,12 +71,10 @@ class ModelState:
 
   def run_model(self, model, input_data):
     tensor = Tensor(input_data, dtype=dtypes.float32, device='NPY')
-    t1 = time.perf_counter()
     output = model(input=tensor).realize().uop.base.buffer.numpy() # grab directly from buffer without reshaping bc faster
-    t2 = time.perf_counter()
-    return output, t2 - t1
+    return output
 
-  def run(self, audio_chunk: np.ndarray, audio_eof: int):
+  def run(self, audio_chunk: np.ndarray):
     if not all([self.melspec_model, self.embedding_model, self.wakeword_model]):
       cloudlog.error("models not loaded, feedbackmodeld cannot run")
       return
@@ -87,24 +85,20 @@ class ModelState:
       t1 = time.perf_counter()
       processing_chunk = self.raw_audio_buffer[:BUFFER_SIZE]
 
-      new_melspec, melspec_time = self.run_model(self.melspec_model, processing_chunk[None, :])
+      new_melspec = self.run_model(self.melspec_model, processing_chunk[None, :])
       new_melspec = (new_melspec.reshape(8, 32) / 10) + 2  # done in openWakeWord to better match Google's implementation
       self.melspec_buffer = np.vstack([self.melspec_buffer, new_melspec])[-76:]
 
-      new_embedding, embedding_time = self.run_model(self.embedding_model, self.melspec_buffer[None, :, :, None])
+      new_embedding = self.run_model(self.embedding_model, self.melspec_buffer[None, :, :, None])
       self.feature_buffer = np.vstack([self.feature_buffer, new_embedding])[-16:]
 
-      wakeword_prob, wakeword_time = self.run_model(self.wakeword_model, self.feature_buffer[None, :])
+      wakeword_prob = self.run_model(self.wakeword_model, self.feature_buffer[None, :])
 
       self.raw_audio_buffer = self.raw_audio_buffer[CHUNK_SIZE:]
 
       t2 = time.perf_counter()
       msg = messaging.new_message('feedbackState', valid=True)
       fs = msg.feedbackState
-      fs.timestampEof = audio_eof
-      fs.melspecExecutionTime = float(melspec_time)
-      fs.embeddingExecutionTime = float(embedding_time)
-      fs.wakewordExecutionTime = float(wakeword_time)
       fs.totalExecutionTime = float(t2 - t1)
       fs.wakewordProb = float(wakeword_prob[0])
 
@@ -115,21 +109,16 @@ def main():
   config_realtime_process([0, 1, 2, 3], 5)
 
   model = ModelState()
-
   sm = SubMaster(['rawAudioData'])
 
   while True:
     sm.update()
-
     if sm.updated['rawAudioData']:
       msg = sm['rawAudioData']
       audio_data = np.frombuffer(msg.data, dtype=np.int16)
-      audio_eof = sm.logMonoTime['rawAudioData']
-
       if msg.sampleRate != SAMPLE_RATE:
         cloudlog.error(f"Sample rate mismatch: expected wakeword sample rate {SAMPLE_RATE}, got {msg.sampleRate}")
-
-      model.run(audio_data, audio_eof)
+      model.run(audio_data)
 
 
 if __name__ == "__main__":
