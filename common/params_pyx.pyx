@@ -11,6 +11,7 @@ cdef extern from "common/params.h":
     CLEAR_ON_ONROAD_TRANSITION
     CLEAR_ON_OFFROAD_TRANSITION
     DEVELOPMENT_ONLY
+    CLEAR_ON_IGNITION_ON
     ALL
 
   cdef cppclass c_Params "Params":
