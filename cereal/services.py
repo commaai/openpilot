@@ -77,6 +77,8 @@ _services: dict[str, tuple] = {
   "soundPressure": (True, 10., 10),
   "rawAudioData": (False, 20.),
   "feedbackState": (True, 12.5, 6),
+  "audioFeedback": (True, 0, 1),
+
 
 
   # debug

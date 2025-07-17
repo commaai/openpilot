@@ -2486,8 +2486,18 @@ struct AudioData {
 }
 
 struct FeedbackState {
-  totalExecutionTime @0 :Float32;
+  wakewordExecutionTime @0 :Float32;
   wakewordProb @1 :Float32;
+
+  vadExecutionTime @2 :Float32;
+  vadProb @3 :Float32;
+}
+
+struct AudioFeedback {
+  feedbackStartTime @0 :UInt64;
+  vadProb @1 :Float32;
+  data @2 :AudioData;
+  timeout @3 :Float32;
 }
 
 struct Touch {
@@ -2596,6 +2606,7 @@ struct Event {
     feedbackState @148 :FeedbackState;
     bookmarkButton @93 :UserFlag;
     heyComma @149 :UserFlag;
+    audioFeedback @150 :AudioFeedback;
 
 
 
