@@ -53,7 +53,7 @@ class SimulatedSensors:
     for _ in range(10):
       dat = messaging.new_message('gpsLocationExternal', valid=True)
       dat.gpsLocationExternal = {
-        "unixTimestampMillis": int(time.time() * 1000),
+        "unixTimestampMillis": int(time.time() * 1000),  # noqa: TID251
         "flags": 1,  # valid fix
         "horizontalAccuracy": 1.0,
         "verticalAccuracy": 1.0,
