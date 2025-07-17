@@ -446,7 +446,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
       bool started = sm.allAliveAndValid({"deviceState"}) && sm["deviceState"].getDeviceState().getStarted();
       process_panda_state(pandas, &pm, engaged, started, spoofing_started);
-      panda_safety.configureSafetyMode();
+      panda_safety.configureSafetyMode(started);
     }
 
     // Send out peripheralState at 2Hz

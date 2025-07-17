@@ -2,10 +2,8 @@
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 
-void PandaSafety::configureSafetyMode() {
-  bool is_onroad = params_.getBool("IsOnroad");
-
-  if (is_onroad && !safety_configured_) {
+void PandaSafety::configureSafetyMode(bool started) {
+  if (started && !safety_configured_) {
     updateMultiplexingMode();
 
     auto car_params = fetchCarParams();
@@ -14,7 +12,7 @@ void PandaSafety::configureSafetyMode() {
       setSafetyMode(car_params);
       safety_configured_ = true;
     }
-  } else if (!is_onroad) {
+  } else if (!started) {
     initialized_ = false;
     safety_configured_ = false;
     log_once_ = false;
