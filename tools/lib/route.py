@@ -242,6 +242,10 @@ class SegmentName:
   def canonical_name(self) -> str: return self._canonical_name
 
   @property
+  def data_name(self) -> str:
+    return f"{self._route_name.canonical_name}/{self._num}"
+
+  @property
   def dongle_id(self) -> str: return self._route_name.dongle_id
 
   @property
