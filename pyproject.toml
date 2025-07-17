@@ -42,7 +42,6 @@ dependencies = [
 
   # modeld
   "onnx >= 1.14.0",
-  "llvmlite",
 
   # logging
   "pyzmq",
@@ -121,7 +120,7 @@ dev = [
 
 tools = [
   "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl ; (platform_machine != 'aarch64')",
-  "rerun-sdk >= 0.18",
+  #"rerun-sdk >= 0.18",  # this is pretty big, so only enable once we use it
 ]
 
 [project.urls]
