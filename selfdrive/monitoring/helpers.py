@@ -313,7 +313,7 @@ class DriverMonitoring:
        self.terminal_time >= self.settings._MAX_TERMINAL_DURATION or \
        self.always_on and self.awareness <= self.threshold_prompt:
       if not self.too_distracted:
-        self.params.put_bool("DriverTooDistracted", True)
+        self.params.put_bool_nonblocking("DriverTooDistracted", True)
       self.too_distracted = True
 
     if self.too_distracted:
