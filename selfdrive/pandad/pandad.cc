@@ -444,7 +444,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
     if (rk.frame() % 10 == 0) {
       sm.update(0);
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
-      bool started = sm.allAliveAndValid({"deviceState"}) && sm["deviceState"].getDeviceState().getStarted();
+      bool started = sm["deviceState"].getDeviceState().getStarted();
       process_panda_state(pandas, &pm, engaged, started, spoofing_started);
       panda_safety.configureSafetyMode();
     }
