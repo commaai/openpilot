@@ -143,9 +143,7 @@ class DriverMonitoring:
     self.ee1_calibrated = False
     self.ee2_calibrated = False
 
-    self.params = Params()
     self.always_on = always_on
-    self.too_distracted = self.params.get_bool("DriverTooDistracted")
     self.distracted_types = []
     self.driver_distracted = False
     self.driver_distraction_filter = FirstOrderFilter(0., self.settings._DISTRACTED_FILTER_TS, self.settings._DT_DMON)
@@ -161,6 +159,9 @@ class DriverMonitoring:
     self.hi_stds = 0
     self.threshold_pre = self.settings._DISTRACTED_PRE_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
     self.threshold_prompt = self.settings._DISTRACTED_PROMPT_TIME_TILL_TERMINAL / self.settings._DISTRACTED_TIME
+
+    self.params = Params()
+    self.too_distracted = self.params.get_bool("DriverTooDistracted")
 
     self._reset_awareness()
     self._set_timers(active_monitoring=True)
