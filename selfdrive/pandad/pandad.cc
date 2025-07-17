@@ -424,10 +424,10 @@ void pandad_run(std::vector<Panda *> &pandas) {
   // Start the CAN send thread
   std::thread send_thread(can_send_thread, pandas, fake_send);
 
+  Params params;
   RateKeeper rk("pandad", 100);
   SubMaster sm({"selfdriveState"});
   PubMaster pm({"can", "pandaStates", "peripheralState"});
-  Params params;
   PandaSafety panda_safety(pandas);
   Panda *peripheral_panda = pandas[0];
   bool engaged = false;
