@@ -199,9 +199,6 @@ class HardwareBase(ABC):
   def get_modem_temperatures(self):
     pass
 
-  @abstractmethod
-  def get_nvme_temperatures(self):
-    pass
 
   @abstractmethod
   def initialize_hardware(self):
