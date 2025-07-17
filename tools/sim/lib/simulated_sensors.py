@@ -109,7 +109,7 @@ class SimulatedSensors:
       self.camerad.cam_send_yuv_wide_road(yuv)
 
   def update(self, simulator_state: 'SimulatorState', world: 'World'):
-    now = time.time()
+    now = time.monotonic()
     self.send_imu_message(simulator_state)
     self.send_gps_message(simulator_state)
 
