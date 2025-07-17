@@ -15,3 +15,5 @@ class RE:
 
   EXPLORER_FILE = fr'^(?P<segment_name>{SEGMENT_NAME})--(?P<file_name>[a-z]+\.[a-z0-9]+)$'
   OP_SEGMENT_DIR = fr'^(?P<segment_name>{SEGMENT_NAME})$'
+
+  DONGLE_LESS_SEGMENT_NAME = fr'^(?P<segment_name>{LOG_ID}(?:--|/)(?P<segment_num>[0-9]+))'

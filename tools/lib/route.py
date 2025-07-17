@@ -19,9 +19,13 @@ ECAMERA_FILENAMES = ['ecamera.hevc']
 
 
 class Route:
-  def __init__(self, name, data_dir=None):
+  def __init__(self, name, data_dir=None, dir_with_dongle_id=False, disable_metadata=False):
     self._metadata = None
     self._name = RouteName(name)
+
+    self.dir_with_dongle_id = dir_with_dongle_id
+    self.disable_metadata = disable_metadata
+
     self.files = None
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
@@ -104,8 +108,14 @@ class Route:
     return sorted(segments.values(), key=lambda seg: seg.name.segment_num)
 
   def _get_segments_local(self, data_dir):
-    files = os.listdir(data_dir)
     segment_files = defaultdict(list)
+
+    # check if the dongle id is it's own directory
+    if self.name.dongle_id and self.dir_with_dongle_id:
+      data_dir = os.path.join(data_dir, self.name.dongle_id)
+      if not os.path.isdir(data_dir):
+        raise ValueError(f'Data directory {data_dir} does not exist')
+    files = os.listdir(data_dir)
 
     for f in files:
       fullpath = os.path.join(data_dir, f)
@@ -128,6 +138,20 @@ class Route:
             continue
 
           segment_name = f'{self.name.canonical_name}--{seg_num}'
+          for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
+            segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
+      elif f == self.name.time_str:
+        # this is a route directory without dongle_id, e.g. 0000000a--d35e9f401b
+        for seg_num in os.listdir(fullpath):
+          segment_name = None
+
+          if seg_num.isdigit(): # <count>--<uid>/<seg num> format
+            segment_name = f'{self.name.canonical_name}--{seg_num}'
+          else: # <count>--<uid>--<seg num> format
+            seg_match = re.match(RE.DONGLE_LESS_SEGMENT_NAME, seg_num)
+            if seg_match:
+              segment_name = f'{self.name.canonical_name}--{seg_match.group("segment_num")}'
+
           for seg_f in os.listdir(os.path.join(fullpath, seg_num)):
             segment_files[segment_name].append((os.path.join(fullpath, seg_num, seg_f), seg_f))
 
@@ -164,8 +188,8 @@ class Route:
       except StopIteration:
         qcamera_path = None
 
-      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path, self.metadata['url']))
-
+      segments.append(Segment(segment, log_path, qlog_path, camera_path, dcamera_path, ecamera_path, qcamera_path,
+                              self.metadata['url'] if not self.disable_metadata else data_dir))
     if len(segments) == 0:
       raise ValueError(f'Could not find segments for route {self.name.canonical_name} in data directory {data_dir}')
     return sorted(segments, key=lambda seg: seg.name.segment_num)
@@ -222,8 +246,6 @@ class RouteName:
 
 
 class SegmentName:
-  # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
-  # of this class instead of manually constructing a segment name (use canonical_name prop instead)
   def __init__(self, name_str: str, allow_route_name=False):
     data_dir_path_separator_index = name_str.rsplit("|", 1)[0].rfind("/")
     use_data_dir = (data_dir_path_separator_index != -1) and ("|" in name_str)
@@ -237,6 +259,14 @@ class SegmentName:
     self._route_name = RouteName(name_parts[0])
     self._num = int(name_parts[1])
     self._canonical_name = f"{self._route_name._dongle_id}|{self._route_name._time_str}--{self._num}"
+
+  @classmethod
+  def from_parts(cls, dongle_id: str, time_str: str, segment_num: int):
+    """
+    Alternate constructor for SegmentName using dongle_id, time_str, and segment_num.
+    """
+    canonical_name = f"{dongle_id}|{time_str}--{segment_num}"
+    return cls(canonical_name)
 
   @property
   def canonical_name(self) -> str: return self._canonical_name
