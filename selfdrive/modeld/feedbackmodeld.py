@@ -52,7 +52,11 @@ class ModelState:
     self.raw_audio_buffer = np.array([], dtype=np.int16)
     self.melspec_buffer = np.ones((76, 32), dtype=np.float32)
     self.feature_buffer = np.zeros((16, 96), dtype=np.float32)
-    self.pm = PubMaster(['feedbackState'])
+    self.pm = PubMaster(['feedbackState', 'userFlag'])
+
+    self.debounce_period = 2.0
+    self.last_user_flag_time = 0
+    self.consecutive_detections = 0
 
     cloudlog.warning("Loading wake word models...")
     try:
@@ -103,6 +107,20 @@ class ModelState:
       fs.wakewordProb = float(wakeword_prob[0])
 
       self.pm.send('feedbackState', msg)
+
+  def process_feedback(self, wakeword_prob):
+    current_time = time.monotonic()
+
+    if wakeword_prob > 0.2:
+      self.consecutive_detections += 1
+      cloudlog.debug(f"Wake word segment detected! Score: {wakeword_prob:.3f}, Consecutive: {self.consecutive_detections}")
+      if (self.consecutive_detections >= 2 or wakeword_prob > 0.5) and (current_time - self.last_user_flag_time) > self.debounce_period:
+        cloudlog.info("Wake word detected!")
+        self.last_user_flag_time = current_time
+        msg = messaging.new_message('userFlag', valid=True)
+        self.pm.send('userFlag', msg)
+    else:
+      self.consecutive_detections = 0
 
 
 def main():
