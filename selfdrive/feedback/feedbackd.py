@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 import time
 import cereal.messaging as messaging
-from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 
 
 def feedbackd_thread():
-  params = Params()
   pm = messaging.PubMaster(['userFlag'])
   sm = messaging.SubMaster(['feedbackState', 'bookmarkButton'])
 
@@ -19,7 +17,7 @@ def feedbackd_thread():
     if not (sm.updated['feedbackState'] or sm.updated['bookmarkButton']):
       continue
 
-    current_time = time.time()
+    current_time = time.monotonic()
     should_send_flag = False
 
     if sm.updated['feedbackState']:
