@@ -37,8 +37,6 @@ monitored_proc_names = [
 
 cpu_time_names = ['user', 'system', 'children_user', 'children_system']
 
-timer = getattr(time, 'monotonic', time.time)
-
 
 def get_arg_parser():
   parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -72,7 +70,7 @@ if __name__ == "__main__":
       print('Add monitored proc:', k)
       stats[k] = {'cpu_samples': defaultdict(list), 'min': defaultdict(lambda: None), 'max': defaultdict(lambda: None),
                   'avg': defaultdict(float), 'last_cpu_times': None, 'last_sys_time': None}
-      stats[k]['last_sys_time'] = timer()
+      stats[k]['last_sys_time'] = time.monotonic()
       stats[k]['last_cpu_times'] = p.cpu_times()
       monitored_procs.append(p)
   i = 0
@@ -80,7 +78,7 @@ if __name__ == "__main__":
   while True:
     for p in monitored_procs:
       k = ' '.join(p.cmdline())
-      cur_sys_time = timer()
+      cur_sys_time = time.monotonic()
       cur_cpu_times = p.cpu_times()
       cpu_times = np.subtract(cur_cpu_times, stats[k]['last_cpu_times']) / (cur_sys_time - stats[k]['last_sys_time'])
       stats[k]['last_sys_time'] = cur_sys_time

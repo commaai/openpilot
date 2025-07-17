@@ -91,8 +91,8 @@ class TestAthenadMethods:
 
   @staticmethod
   def _wait_for_upload():
-    now = time.time()
-    while time.time() - now < 5:
+    now = time.monotonic()
+    while time.monotonic() - now < 5:
       if athenad.upload_queue.qsize() == 0:
         break
 
@@ -190,11 +190,11 @@ class TestAthenadMethods:
     fn = self._create_file('qlog', data=os.urandom(10000 * 1024))
 
     upload_fn = fn + ('.zst' if compress else '')
-    item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')
+    item = athenad.UploadItem(path=upload_fn, url="http://localhost:1238", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
     with pytest.raises(requests.exceptions.ConnectionError):
       athenad._do_upload(item)
 
-    item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')
+    item = athenad.UploadItem(path=upload_fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='')  # noqa: TID251
     resp = athenad._do_upload(item)
     assert resp.status_code == 201
 
@@ -226,7 +226,7 @@ class TestAthenadMethods:
   @with_upload_handler
   def test_upload_handler(self, host):
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -242,7 +242,7 @@ class TestAthenadMethods:
     mock_put = mocker.patch('openpilot.system.athena.athenad.UPLOAD_SESS.put')
     mock_put.return_value.__enter__.return_value.status_code = status
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -257,7 +257,7 @@ class TestAthenadMethods:
   def test_upload_handler_timeout(self):
     """When an upload times out or fails to connect it should be placed back in the queue"""
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url="http://localhost:44444/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
     item_no_retry = replace(item, retry_count=MAX_RETRY_COUNT)
 
     athenad.upload_queue.put_nowait(item_no_retry)
@@ -278,7 +278,7 @@ class TestAthenadMethods:
   @with_upload_handler
   def test_cancel_upload(self):
     item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)  # noqa: TID251
     athenad.upload_queue.put_nowait(item)
     dispatcher["cancelUpload"](item.id)
 
@@ -312,7 +312,7 @@ class TestAthenadMethods:
   @with_upload_handler
   def test_list_upload_queue_current(self, host: str):
     fn = self._create_file('qlog.zst')
-    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)
+    item = athenad.UploadItem(path=fn, url=f"{host}/qlog.zst", headers={}, created_at=int(time.time()*1000), id='', allow_cellular=True)  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item)
     self._wait_for_upload()
@@ -331,7 +331,7 @@ class TestAthenadMethods:
         path=fp,
         url=f"http://localhost:44444/{fn}",
         headers={},
-        created_at=int(time.time()*1000),
+        created_at=int(time.time()*1000),  # noqa: TID251
         id='',
         allow_cellular=True,
         priority=i
@@ -343,7 +343,7 @@ class TestAthenadMethods:
 
   def test_list_upload_queue(self):
     item = athenad.UploadItem(path="qlog.zst", url="http://localhost:44444/qlog.zst", headers={},
-                              created_at=int(time.time()*1000), id='id', allow_cellular=True)
+                              created_at=int(time.time()*1000), id='id', allow_cellular=True)  # noqa: TID251
     athenad.upload_queue.put_nowait(item)
 
     items = dispatcher["listUploadQueue"]()
@@ -356,8 +356,8 @@ class TestAthenadMethods:
     assert len(items) == 0
 
   def test_upload_queue_persistence(self):
-    item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id1')
-    item2 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id2')
+    item1 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id1')  # noqa: TID251
+    item2 = athenad.UploadItem(path="_", url="_", headers={}, created_at=int(time.time()), id='id2')  # noqa: TID251
 
     athenad.upload_queue.put_nowait(item1)
     athenad.upload_queue.put_nowait(item2)
