@@ -14,9 +14,6 @@ def feedbackd_thread():
   last_user_flag_time = 0
   consecutive_detections = 0
 
-  hey_comma_enabled = params.get_bool("HeyComma")
-  last_refresh_time = time.time()
-
   while True:
     sm.update()
     if not (sm.updated['feedbackState'] or sm.updated['bookmarkButton']):
@@ -25,7 +22,7 @@ def feedbackd_thread():
     current_time = time.time()
     should_send_flag = False
 
-    if sm.updated['feedbackState'] and hey_comma_enabled:
+    if sm.updated['feedbackState']:
       fs = sm['feedbackState']
       score = fs.wakewordProb
       if score > 0.2:
@@ -45,10 +42,6 @@ def feedbackd_thread():
       last_user_flag_time = current_time
       msg = messaging.new_message('userFlag', valid=True)
       pm.send('userFlag', msg)
-
-    if current_time - last_refresh_time > 2:
-      hey_comma_enabled = params.get_bool("HeyComma")
-      last_refresh_time = current_time
 
 
 def main():
