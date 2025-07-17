@@ -188,7 +188,7 @@ void fill_panda_can_state(cereal::PandaState::PandaCanState::Builder &cs, const 
   cs.setCanCoreResetCnt(can_health.can_core_reset_cnt);
 }
 
-std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool started, bool spoofing_started) {
+std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
   bool ignition_local = false;
   const uint32_t pandas_cnt = pandas.size();
 
@@ -256,6 +256,7 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
     }
 
     // set safety mode to NO_OUTPUT when car is off or we're not onroad. ELM327 is an alternative if we want to leverage athenad/connect
+    bool started = Params().getBool("IsOnroad");
     bool offroad = !ignition_local || !started;
     if (offroad && (health.safety_mode_pkt != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
@@ -324,14 +325,14 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
   pm->send("peripheralState", msg);
 }
 
-void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool engaged, bool started, bool spoofing_started) {
+void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool engaged, bool spoofing_started) {
   std::vector<std::string> connected_serials;
   for (Panda *p : pandas) {
     connected_serials.push_back(p->hw_serial());
   }
 
   {
-    auto ignition_opt = send_panda_states(pm, pandas, started, spoofing_started);
+    auto ignition_opt = send_panda_states(pm, pandas, spoofing_started);
     if (!ignition_opt) {
       LOGE("Failed to get ignition_opt");
       return;
@@ -444,8 +445,7 @@ void pandad_run(std::vector<Panda *> &pandas) {
     if (rk.frame() % 10 == 0) {
       sm.update(0);
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
-      bool started = sm["deviceState"].getDeviceState().getStarted();
-      process_panda_state(pandas, &pm, engaged, started, spoofing_started);
+      process_panda_state(pandas, &pm, engaged, spoofing_started);
       panda_safety.configureSafetyMode();
     }
 

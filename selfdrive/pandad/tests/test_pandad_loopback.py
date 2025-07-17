@@ -40,11 +40,6 @@ def setup_pandad(num_pandas):
   safety_config.safetyModel = car.CarParams.SafetyModel.allOutput
   cp.safetyConfigs = [safety_config]*num_pandas
 
-  pm = messaging.PubMaster(["deviceState"])
-  device_state = messaging.new_message("deviceState")
-  device_state.deviceState.started = True
-  pm.send("deviceState", device_state)
-
   params.put_bool("IsOnroad", True)
   params.put_bool("FirmwareQueryDone", True)
   params.put_bool("ControlsReady", True)
@@ -52,9 +47,6 @@ def setup_pandad(num_pandas):
 
   with Timeout(90, "pandad didn't set safety mode"):
     while any(ps.safetyModel != car.CarParams.SafetyModel.allOutput for ps in sm['pandaStates']):
-      device_state = messaging.new_message("deviceState")
-      device_state.deviceState.started = True
-      pm.send("deviceState", device_state)
       sm.update(1000)
 
 def send_random_can_messages(sendcan, count, num_pandas=1):
