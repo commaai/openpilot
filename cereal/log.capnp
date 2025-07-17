@@ -101,6 +101,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     startupMaster @64;
     fcw @65;
     steerSaturated @66;
+    steerSaturatedDistracted @96;
     belowEngageSpeed @67;
     noGps @68;
     wrongCruiseMode @69;

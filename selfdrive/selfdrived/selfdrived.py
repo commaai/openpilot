@@ -347,7 +347,18 @@ class SelfdriveD:
       turning = abs(desired_lateral_accel) > 1.0
       # TODO: lac.saturated includes speed and other checks, should be pulled out
       if undershooting and turning and lac.saturated:
-        self.events.add(EventName.steerSaturated)
+        # If the driver is inattentive, the alert will be more severe.
+        dm_events = [e.name for e in self.sm['driverMonitoringState'].events]
+        distracted_conditions = {
+          'preDriverDistracted',
+          'promptDriverDistracted',
+          'preDriverUnresponsive',
+          'promptDriverUnresponsive',
+        }
+        if any(event in dm_events for event in distracted_conditions):
+          self.events.add(EventName.steerSaturatedDistracted)
+        else:
+          self.events.add(EventName.steerSaturated)
 
     # Check for FCW
     stock_long_is_braking = self.enabled and not self.CP.openpilotLongitudinalControl and CS.aEgo < -1.25
