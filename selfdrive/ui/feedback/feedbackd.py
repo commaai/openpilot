@@ -118,10 +118,10 @@ class ModelState:
       msg = messaging.new_message('feedbackState', valid=True)
       fs = msg.feedbackState
       fs.totalExecutionTime = float(t2 - t1)
-      fs.wakewordProb = wakeword_prob[0]
+      fs.wakewordProb = float(wakeword_prob)
       self.pm.send('feedbackState', msg)
 
-      self.process_feedback(wakeword_prob[0])
+      self.process_feedback(wakeword_prob)
 
 
 def main():
