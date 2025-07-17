@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# ruff: noqa: TID251
 from __future__ import annotations
 
 import base64
@@ -426,7 +427,7 @@ def uploadFilesToUrls(files_data: list[UploadFileDict]) -> UploadFilesToUrlRespo
       path=path,
       url=file.url,
       headers=file.headers,
-      created_at=int(time.time() * 1000),  # noqa: TID251
+      created_at=int(time.time() * 1000),
       id=None,
       allow_cellular=file.allow_cellular,
       priority=file.priority,
@@ -580,7 +581,7 @@ def takeSnapshot() -> str | dict[str, str] | None:
 
 def get_logs_to_send_sorted() -> list[str]:
   # TODO: scan once then use inotify to detect file creation/deletion
-  curr_time = int(time.time())  # noqa: TID251
+  curr_time = int(time.time())
   logs = []
   for log_entry in os.listdir(Paths.swaglog_root()):
     log_path = os.path.join(Paths.swaglog_root(), log_entry)
@@ -617,7 +618,7 @@ def log_handler(end_event: threading.Event) -> None:
         log_entry = log_files.pop() # newest log file
         cloudlog.debug(f"athena.log_handler.forward_request {log_entry}")
         try:
-          curr_time = int(time.time())  # noqa: TID251
+          curr_time = int(time.time())
           log_path = os.path.join(Paths.swaglog_root(), log_entry)
           setxattr(log_path, LOG_ATTR_NAME, int.to_bytes(curr_time, 4, sys.byteorder))
           with open(log_path) as f:
