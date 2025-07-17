@@ -82,7 +82,6 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"NetworkMetered", PERSISTENT},
     {"ObdMultiplexingChanged", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"ObdMultiplexingEnabled", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
-    {"Offroad_BadNvme", CLEAR_ON_MANAGER_START},
     {"Offroad_CarUnrecognized", CLEAR_ON_MANAGER_START | CLEAR_ON_ONROAD_TRANSITION},
     {"Offroad_ConnectivityNeeded", CLEAR_ON_MANAGER_START},
     {"Offroad_ConnectivityNeededPrompt", CLEAR_ON_MANAGER_START},

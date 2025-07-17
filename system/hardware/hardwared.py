@@ -39,7 +39,7 @@ ONROAD_CYCLE_TIME = 1  # seconds to wait offroad after requesting an onroad cycl
 
 ThermalBand = namedtuple("ThermalBand", ['min_temp', 'max_temp'])
 HardwareState = namedtuple("HardwareState", ['network_type', 'network_info', 'network_strength', 'network_stats',
-                                             'network_metered', 'nvme_temps', 'modem_temps'])
+                                             'network_metered', 'modem_temps'])
 
 # List of thermal bands. We will stay within this region as long as we are within the bounds.
 # When exiting the bounds, we'll jump to the lower or higher band. Bands are ordered in the dict.
@@ -142,7 +142,6 @@ def hw_state_thread(end_event, hw_queue):
           network_strength=HARDWARE.get_network_strength(network_type),
           network_stats={'wwanTx': tx, 'wwanRx': rx},
           network_metered=HARDWARE.get_network_metered(network_type),
-          nvme_temps=HARDWARE.get_nvme_temperatures(),
           modem_temps=modem_temps,
         )
 
@@ -189,7 +188,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     network_metered=False,
     network_strength=NetworkStrength.unknown,
     network_stats={'wwanTx': -1, 'wwanRx': -1},
-    nvme_temps=[],
     modem_temps=[],
   )
 
@@ -268,7 +266,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     if last_hw_state.network_info is not None:
       msg.deviceState.networkInfo = last_hw_state.network_info
 
-    msg.deviceState.nvmeTempC = last_hw_state.nvme_temps
     msg.deviceState.modemTempC = last_hw_state.modem_temps
 
     msg.deviceState.screenBrightnessPercent = HARDWARE.get_screen_brightness()
@@ -337,16 +334,6 @@ def hardware_thread(end_event, hw_queue) -> None:
       if not os.path.isfile("/persist/comma/living-in-the-moment"):
         if not Path("/data/media").is_mount():
           set_offroad_alert_if_changed("Offroad_StorageMissing", True)
-        else:
-          # check for bad NVMe
-          try:
-            with open("/sys/block/nvme0n1/device/model") as f:
-              model = f.read().strip()
-            if not model.startswith("Samsung SSD 980") and params.get("Offroad_BadNvme") is None:
-              set_offroad_alert_if_changed("Offroad_BadNvme", True)
-              cloudlog.event("Unsupported NVMe", model=model, error=True)
-          except Exception:
-            pass
 
     # Handle offroad/onroad transition
     should_start = all(onroad_conditions.values())
@@ -431,8 +418,6 @@ def hardware_thread(end_event, hw_queue) -> None:
     statlog.gauge("memory_temperature", msg.deviceState.memoryTempC)
     for i, temp in enumerate(msg.deviceState.pmicTempC):
       statlog.gauge(f"pmic{i}_temperature", temp)
-    for i, temp in enumerate(last_hw_state.nvme_temps):
-      statlog.gauge(f"nvme_temperature{i}", temp)
     for i, temp in enumerate(last_hw_state.modem_temps):
       statlog.gauge(f"modem_temperature{i}", temp)
     statlog.gauge("fan_speed_percent_desired", msg.deviceState.fanSpeedPercentDesired)
