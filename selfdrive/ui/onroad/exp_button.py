@@ -41,7 +41,7 @@ class ExpButton(Widget):
 
         # Hold new state temporarily
         self._held_mode = new_mode
-        self._hold_end_time = time.time() + self._hold_duration
+        self._hold_end_time = time.monotonic() + self._hold_duration
       return True
     return False
 
@@ -58,7 +58,7 @@ class ExpButton(Widget):
     rl.draw_texture(texture, center_x - texture.width // 2, center_y - texture.height // 2, self._white_color)
 
   def _held_or_actual_mode(self):
-    now = time.time()
+    now = time.monotonic()
     if self._hold_end_time and now < self._hold_end_time:
       return self._held_mode
 
