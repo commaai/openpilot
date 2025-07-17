@@ -1,4 +1,4 @@
-import json
+import json, glob
 Import('env', 'qt_env', 'arch', 'common', 'messaging', 'visionipc', 'transformations')
 
 base_libs = [common, messaging, visionipc, transformations,
@@ -110,3 +110,22 @@ if GetOption('extras'):
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
   qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])
+
+# compile hey comma models
+tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
+
+def tg_compile(flags, model_name):
+  pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
+  fn = File(f"feedback/models/{model_name}").abspath
+  return env.Command(
+    fn + "_tinygrad.pkl",
+    [fn + ".onnx"] + tinygrad_files,
+    f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
+  )
+
+for model_name in ['melspectrogram', 'embedding_model', 'hey_comma']:
+  flags = {
+    'larch64': ('QCOM=1 IMAGE=2' if model_name == 'embedding_model' else 'LLVM=1 LLVMOPT=1 JITBEAM=1 IMAGE=0'),
+    'Darwin': 'CPU=1 IMAGE=0',
+  }.get(arch, 'LLVM=1 LLVMOPT=1 IMAGE=0')
+  tg_compile(flags, model_name)

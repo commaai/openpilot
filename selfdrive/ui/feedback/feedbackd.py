@@ -38,7 +38,7 @@ SAMPLE_RATE = 16000
 CHUNK_SIZE = 1280
 BUFFER_SIZE = CHUNK_SIZE + 480
 
-PROCESS_NAME = "selfdrive.modeld.feedbackmodeld"
+PROCESS_NAME = "selfdrive.ui.feedback.feedbackd"
 
 MODEL_PKL_PATHS = {
   'melspec': Path(__file__).parent / "models/melspectrogram_tinygrad.pkl",
@@ -75,8 +75,22 @@ class ModelState:
 
   def run_model(self, model, input_data):
     tensor = Tensor(input_data, dtype=dtypes.float32, device='NPY')
-    output = model(input=tensor).realize().uop.base.buffer.numpy() # grab directly from buffer without reshaping bc faster
+    output = model(input=tensor).realize().uop.base.buffer.numpy()  # grab directly from buffer without reshaping bc faster
     return output
+
+  def process_feedback(self, wakeword_prob):
+    current_time = time.monotonic()
+
+    if wakeword_prob > 0.2:
+      self.consecutive_detections += 1
+      cloudlog.debug(f"Wake word segment detected! Score: {wakeword_prob:.3f}, Consecutive: {self.consecutive_detections}")
+      if (self.consecutive_detections >= 2 or wakeword_prob > 0.5) and (current_time - self.last_user_flag_time) > self.debounce_period:
+        cloudlog.info("Wake word detected!")
+        self.last_user_flag_time = current_time
+        msg = messaging.new_message('userFlag', valid=True)
+        self.pm.send('userFlag', msg)
+    else:
+      self.consecutive_detections = 0
 
   def run(self, audio_chunk: np.ndarray):
     if not all([self.melspec_model, self.embedding_model, self.wakeword_model]):
@@ -96,7 +110,7 @@ class ModelState:
       new_embedding = self.run_model(self.embedding_model, self.melspec_buffer[None, :, :, None])
       self.feature_buffer = np.vstack([self.feature_buffer, new_embedding])[-16:]
 
-      wakeword_prob = self.run_model(self.wakeword_model, self.feature_buffer[None, :])
+      wakeword_prob = self.run_model(self.wakeword_model, self.feature_buffer[None, :])[0]
 
       self.raw_audio_buffer = self.raw_audio_buffer[CHUNK_SIZE:]
 
@@ -104,23 +118,10 @@ class ModelState:
       msg = messaging.new_message('feedbackState', valid=True)
       fs = msg.feedbackState
       fs.totalExecutionTime = float(t2 - t1)
-      fs.wakewordProb = float(wakeword_prob[0])
-
+      fs.wakewordProb = wakeword_prob[0]
       self.pm.send('feedbackState', msg)
 
-  def process_feedback(self, wakeword_prob):
-    current_time = time.monotonic()
-
-    if wakeword_prob > 0.2:
-      self.consecutive_detections += 1
-      cloudlog.debug(f"Wake word segment detected! Score: {wakeword_prob:.3f}, Consecutive: {self.consecutive_detections}")
-      if (self.consecutive_detections >= 2 or wakeword_prob > 0.5) and (current_time - self.last_user_flag_time) > self.debounce_period:
-        cloudlog.info("Wake word detected!")
-        self.last_user_flag_time = current_time
-        msg = messaging.new_message('userFlag', valid=True)
-        self.pm.send('userFlag', msg)
-    else:
-      self.consecutive_detections = 0
+      self.process_feedback(wakeword_prob[0])
 
 
 def main():
