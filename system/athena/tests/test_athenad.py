@@ -91,8 +91,8 @@ class TestAthenadMethods:
 
   @staticmethod
   def _wait_for_upload():
-    now = time.time()
-    while time.time() - now < 5:
+    now = time.monotonic()
+    while time.monotonic() - now < 5:
       if athenad.upload_queue.qsize() == 0:
         break
 
