@@ -152,16 +152,11 @@ def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interact
 def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   route = Route(sr.route_name)
 
+  # comma api will have already checked if the file exists
   if fns == FileName.RLOG:
     return [route.log_paths()[seg] for seg in sr.seg_idxs]
   else:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
-
-  # # comma api will have already checked if the file exists
-  # def valid_file(fn):
-  #   return fn is not None
-  #
-  # return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
 def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
@@ -176,17 +171,6 @@ def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_EN
     files.append([get_internal_url(sr, seg, fn) for fn in fns.value])
   return list(eval_source(files))
 
-  # # TODO: list instead of using static URLs to support routes with multiple file extensions
-  # rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
-  # qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
-  #
-  # return apply_strategy(mode, rlog_paths, qlog_paths)
-
-
-# def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst",
-#                         endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
-#   return internal_source(sr, mode, file_ext, endpoint_url)
-
 
 def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   files = []
@@ -194,43 +178,15 @@ def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
     files.append([get_url(sr.route_name, seg, fn) for fn in fns.value])
   return list(eval_source(files))
 
-  for fn in fns.value:
-    for seg in sr.seg_idxs:
-      url = get_url(sr.route_name, seg, fn)
-      print('trying url', url)
-      if file_exists(url):
-        urls[seg] = url
-  print('urls', urls)
-  return list(urls.values())
-
-
-  # rlog_paths = [get_url(sr.route_name, seg, f"rlog.{file_ext}") for seg in sr.seg_idxs]
-  # qlog_paths = [get_url(sr.route_name, seg, f"qlog.{file_ext}") for seg in sr.seg_idxs]
-  #
-  # return apply_strategy(mode, rlog_paths, qlog_paths)
-
-
-# def openpilotci_source_zst(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
-#   return openpilotci_source(sr, mode, "zst")
-
 
 def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  urls = []
-  for seg in sr.seg_idxs:
-    url = get_comma_segments_url(sr.route_name, seg)
-    urls.append(url if file_exists(url) else None)
-  return urls
+  return list(eval_source([[get_comma_segments_url(sr.route_name, seg)] for seg in sr.seg_idxs]))
 
 
 def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
-
-  urls = []
-  for seg in sr.seg_idxs:
-    url = f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog"
-    urls.append(url if file_exists(url) else None)
-  return urls
+  return list(eval_source([[f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog"] for seg in sr.seg_idxs]))
 
 
 def direct_source(file_or_url: str) -> list[LogPath]:
