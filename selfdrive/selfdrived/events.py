@@ -85,6 +85,16 @@ class Events:
           if not isinstance(alert, Alert):
             alert = alert(*callback_args)
 
+          if isinstance(alert, ProgressAlert) and hasattr(alert, 'duration_source') and alert.duration_source:
+            sm = callback_args[2] if len(callback_args) > 2 else None
+            if sm:
+              parts = alert.duration_source.split('.')
+              if len(parts) == 2:
+                service_name, field_name = parts
+                if service_name in sm.data and hasattr(sm[service_name], field_name):
+                  dynamic_duration = getattr(sm[service_name], field_name)
+                  alert.duration = int(dynamic_duration / DT_CTRL)
+
           if DT_CTRL * (self.event_counters[e] + 1) >= alert.creation_delay:
             alert.alert_type = f"{EVENT_NAME[e]}/{et}"
             alert.event_type = et
@@ -116,7 +126,8 @@ class Alert:
                visual_alert: car.CarControl.HUDControl.VisualAlert,
                audible_alert: car.CarControl.HUDControl.AudibleAlert,
                duration: float,
-               creation_delay: float = 0.):
+               creation_delay: float = 0.,
+               progress_duration: float = None):
 
     self.alert_text_1 = alert_text_1
     self.alert_text_2 = alert_text_2
@@ -127,6 +138,7 @@ class Alert:
     self.audible_alert = audible_alert
 
     self.duration = int(duration / DT_CTRL)
+    self.progress_duration = int(progress_duration / DT_CTRL) if progress_duration else None
 
     self.creation_delay = creation_delay
 
@@ -197,6 +209,18 @@ class StartupAlert(Alert):
                      alert_status, AlertSize.mid,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
 
+
+class ProgressAlert(Alert):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "",
+               duration: float = 0.2, priority: Priority = Priority.LOWER,
+               creation_delay: float = 0., progress_duration: float = 0.,
+               duration_source: str = None):
+
+    super().__init__(alert_text_1, alert_text_2,
+                     AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
+                     priority, VisualAlert.none, AudibleAlert.none,
+                     duration, creation_delay=creation_delay, progress_duration=progress_duration)
+    self.duration_source = duration_source
 
 # ********** helper functions **********
 def get_display_speed(speed_ms: float, metric: bool) -> str:
@@ -987,7 +1011,15 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.userFlag: {
-    ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
+    ET.PERMANENT: ProgressAlert("Bookmark Saved", duration=5, progress_duration=4.5),
+  },
+
+  EventName.audioFeedback: {
+    ET.PERMANENT: ProgressAlert(
+      "Recording Feedback",
+      "Speak to record feedback, stop speaking to send.",
+      duration_source="audioFeedback.timeout",
+      progress_duration=1.5),
   },
 }
 

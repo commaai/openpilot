@@ -28,12 +28,22 @@ class AlertEntry:
   start_frame: int = -1
   end_frame: int = -1
   added_frame: int = -1
-
   def active(self, frame: int) -> bool:
     return frame <= self.end_frame
 
   def just_added(self, frame: int) -> bool:
     return self.active(frame) and frame == (self.added_frame + 1)
+
+  def progress_ratio(self, frame: int) -> float:
+    if not self.alert or not self.alert.progress_duration:
+      return 0.0
+    frames_remaining = self.end_frame - frame
+
+    if frames_remaining > self.alert.progress_duration:
+      return 0.0  # Don't show progress bar yet
+
+    progress = 1.0 - (frames_remaining / self.alert.progress_duration)
+    return min(1.0, max(0.0, progress))
 
 class AlertManager:
   def __init__(self):
@@ -46,8 +56,11 @@ class AlertManager:
       entry.alert = alert
       if not entry.just_added(frame):
         entry.start_frame = frame
-      min_end_frame = entry.start_frame + alert.duration
-      entry.end_frame = max(frame + 1, min_end_frame)
+      if alert.progress_duration is None:
+        min_end_frame = entry.start_frame + alert.duration
+        entry.end_frame = max(frame + 1, min_end_frame)
+      else:
+        entry.end_frame = frame + alert.duration
       entry.added_frame = frame
 
   def process_alerts(self, frame: int, clear_event_types: set):
@@ -65,3 +78,10 @@ class AlertManager:
         ae = v
 
     self.current_alert = ae.alert if ae.alert is not None else EmptyAlert
+
+  def get_current_progress_ratio(self, frame: int) -> float:
+    for entry in self.alerts.values():
+      if entry.alert and entry.alert == self.current_alert:
+        return entry.progress_ratio(frame)
+    return 0.0
+

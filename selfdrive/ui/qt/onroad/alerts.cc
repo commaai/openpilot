@@ -7,7 +7,7 @@
 
 void OnroadAlerts::updateState(const UIState &s) {
   Alert a = getAlert(*(s.sm), s.scene.started_frame);
-  if (!alert.equal(a)) {
+  if (!alert.equal(a) || (alert.progressRatio != a.progressRatio)) {
     alert = a;
     update();
   }
@@ -25,7 +25,8 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
   Alert a = {};
   if (selfdrive_frame >= started_frame) {  // Don't get old alert.
     a = {ss.getAlertText1().cStr(), ss.getAlertText2().cStr(),
-         ss.getAlertType().cStr(), ss.getAlertSize(), ss.getAlertStatus()};
+         ss.getAlertType().cStr(), ss.getAlertSize(), ss.getAlertStatus(),
+         ss.getAlertProgressRatio()};
   }
 
   if (!sm.updated("selfdriveState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
@@ -89,6 +90,26 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setBrush(QBrush(g));
   p.drawRoundedRect(r, radius, radius);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+  // Draw progress bar if progress ratio > 0
+  if (alert.progressRatio > 0.0f) {
+    int progressBarHeight = 6;
+    int progressBarMargin = 10;
+    QRect progressBg = QRect(r.x() + progressBarMargin,
+                           r.bottom() - progressBarHeight - progressBarMargin,
+                           r.width() - 2 * progressBarMargin,
+                           progressBarHeight);
+
+    // Background of progress bar
+    p.setBrush(QBrush(QColor(0x40, 0x40, 0x40, 0x80)));
+    p.drawRoundedRect(progressBg, 3, 3);
+
+    // Progress fill (green bar)
+    int progressWidth = (int)(progressBg.width() * alert.progressRatio);
+    QRect progressFill = QRect(progressBg.x(), progressBg.y(), progressWidth, progressBg.height());
+    p.setBrush(QBrush(QColor(0x00, 0xFF, 0x00, 0xC0)));  // Green with transparency
+    p.drawRoundedRect(progressFill, 3, 3);
+  }
 
   // text
   const QPoint c = r.center();

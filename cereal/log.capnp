@@ -128,6 +128,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
     userFlag @95;
+    audioFeedback @96;
 
     soundsUnavailableDEPRECATED @47;
   }
@@ -825,6 +826,7 @@ struct SelfdriveState {
   alertType @7 :Text;
   alertSound @8 :Car.CarControl.HUDControl.AudibleAlert;
   alertHudVisual @12 :Car.CarControl.HUDControl.VisualAlert;
+  alertProgressRatio @13 :Float32;
 
   # configurable driving settings
   experimentalMode @10 :Bool;

@@ -76,7 +76,7 @@ class SelfdriveD:
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
                                    'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'bookmarkButton',
-                                   'heyComma'] + \
+                                   'heyComma', 'audioFeedback'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
@@ -161,8 +161,12 @@ class SelfdriveD:
       return
 
     # Check for user flag (bookmark) press
-    if self.sm.updated['bookmarkButton'] or self.sm.updated['heyComma']:
+    if self.sm.updated['bookmarkButton']:# or self.sm.updated['heyComma']:
       self.events.add(EventName.userFlag)
+
+    if self.sm.updated['audioFeedback']:
+      self.events.add(EventName.audioFeedback)
+
 
     # Don't add any more events while in dashcam mode
     if self.CP.passive:
@@ -456,6 +460,7 @@ class SelfdriveD:
     ss.alertType = self.AM.current_alert.alert_type
     ss.alertSound = self.AM.current_alert.audible_alert
     ss.alertHudVisual = self.AM.current_alert.visual_alert
+    ss.alertProgressRatio = self.AM.get_current_progress_ratio(self.sm.frame)
 
     self.pm.send('selfdriveState', ss_msg)
 
