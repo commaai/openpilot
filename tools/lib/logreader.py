@@ -171,15 +171,16 @@ def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_EN
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  valid_files: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
+  urls: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
+  print('urls', urls)
   for fn in fns.value:
-    for idx, seg, in enumerate(sr.seg_idxs):
+    for seg in sr.seg_idxs:
       url = get_internal_url(sr, seg, fn)
       print('trying url', url)
       if file_exists(url):
-        valid_files[idx] = url
-  print('valid_files', valid_files)
-  return list(valid_files.values())
+        urls[seg] = url
+  print('urls', urls)
+  return list(urls.values())
 
   # # TODO: list instead of using static URLs to support routes with multiple file extensions
   # rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
@@ -194,16 +195,16 @@ def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_EN
 
 
 def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  valid_files: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
+  urls: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
 
   for fn in fns.value:
-    for idx, seg, in enumerate(sr.seg_idxs):
+    for seg in sr.seg_idxs:
       url = get_url(sr.route_name, seg, fn)
       print('trying url', url)
       if file_exists(url):
-        valid_files[idx] = url
-  print('valid_files', valid_files)
-  return list(valid_files.values())
+        urls[seg] = url
+  print('urls', urls)
+  return list(urls.values())
 
 
   # rlog_paths = [get_url(sr.route_name, seg, f"rlog.{file_ext}") for seg in sr.seg_idxs]
@@ -217,13 +218,22 @@ def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
 
 
 def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
+  urls = []
+  for seg in sr.seg_idxs:
+    url = get_comma_segments_url(sr.route_name, seg)
+    urls.append(url if file_exists(url) else None)
+  return urls
 
 
 def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
-  return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
+
+  urls = []
+  for seg in sr.seg_idxs:
+    url = f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog"
+    urls.append(url if file_exists(url) else None)
+  return urls
 
 
 def direct_source(file_or_url: str) -> list[LogPath]:
@@ -260,21 +270,27 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   #     except Exception:
   #       pass
 
+  if mode == ReadMode.RLOG:
+    fn = FileName.RLOG
+  else:
+    fn = FileName.QLOG
+
+  fallback_fn = None
+  if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE):
+    fallback_fn = FileName.QLOG
+
   # We don't know how many files to expect until we evaluate the first source
   valid_files = {}
 
   # Automatically determine viable source
   for source in sources:
     try:
-      if mode == ReadMode.RLOG:
-        fn = FileName.RLOG
-      else:
-        fn = FileName.QLOG
       files = source(sr, fn)
+      print(f"source {source.__name__} returned {files}")
 
       # Check every source returns an expected number of files
       if len(valid_files) > 0:
-        assert len(files) == len(valid_files), f"Source {source.__name__} returned {len(files)} files, expected {len(valid_files)} files"
+        assert len(files) == len(valid_files), f"Source {source.__name__} returned unexpected number of files"
 
       # files = check_source(source, sr, fn)
       for idx, f in enumerate(files):
@@ -283,14 +299,18 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
           print('adding valid file', idx, f)
           valid_files[idx] = f
 
+      print(source.__name__, files)
+
       # We've found all files, return them
-      if all(f is not None for f in valid_files):
+      if all(f is not None for f in valid_files.values()):
         return list(valid_files.values())
 
-      print(source.__name__, files)
       # return check_source(source, sr, mode)
     except Exception as e:
+      cloudlog.exception(f"Error while checking source {source.__name__}")
       exceptions[source.__name__] = e
+
+  cloudlog.warning(f"{list(valid_files.values()).count(None)}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
 
   raise LogsUnavailable("auto_source could not find any valid source, exceptions for sources:\n  - " +
                         "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
