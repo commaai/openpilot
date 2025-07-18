@@ -19,7 +19,7 @@ from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import FileReader, file_exists, internal_source_available
+from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available
 from openpilot.tools.lib.route import Route, SegmentRange
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -157,12 +157,13 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
   return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> list[LogPath]:
-  if not internal_source_available():
+def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2",
+                    endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+  if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"cd:/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
+    return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   # TODO: list instead of using static URLs to support routes with multiple file extensions
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
@@ -171,8 +172,9 @@ def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
 
-def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst") -> list[LogPath]:
-  return internal_source(sr, mode, file_ext)
+def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst",
+                        endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+  return internal_source(sr, mode, file_ext, endpoint_url)
 
 
 def openpilotci_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> list[LogPath]:
@@ -208,6 +210,7 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> list[LogPath]:
   files = source(*args)
+  print('got files from source:', source.__name__, files)
   assert len(files) > 0, "No files on source"
   assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
@@ -229,6 +232,7 @@ def auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMo
 
   # Automatically determine viable source
   for source in sources:
+    print('Checking source:', source.__name__)
     try:
       return check_source(source, sr, mode)
     except Exception as e:
