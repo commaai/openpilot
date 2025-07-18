@@ -251,7 +251,6 @@ class LogReader:
   def _parse_identifier(self, identifier: str) -> list[str]:
     # useradmin, etc.
     identifier = parse_indirect(identifier)
-    print('new identifier:', identifier)
     return auto_source(identifier, self.sources, self.default_mode)
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,

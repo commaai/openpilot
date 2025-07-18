@@ -10,7 +10,7 @@ import requests
 from parameterized import parameterized
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
@@ -193,17 +193,17 @@ class TestLogReader:
 
     with subtests.test("interactive_yes"):
       mocker.patch("sys.stdin", new=io.StringIO("y\n"))
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, source=comma_api_source)
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[comma_api_source])
       log_len = len(list(lr))
       assert qlog_len == log_len
 
     with subtests.test("interactive_no"):
       mocker.patch("sys.stdin", new=io.StringIO("n\n"))
-      with pytest.raises(AssertionError):
-        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, source=comma_api_source)
+      with pytest.raises(LogsUnavailable):
+        lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO_INTERACTIVE, sources=[comma_api_source])
 
     with subtests.test("non_interactive"):
-      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, source=comma_api_source)
+      lr = LogReader(f"{TEST_ROUTE}/0", default_mode=ReadMode.AUTO, sources=[comma_api_source])
       log_len = len(list(lr))
       assert qlog_len == log_len
 
