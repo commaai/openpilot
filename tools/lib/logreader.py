@@ -155,19 +155,6 @@ def testing_closet_source(identifier: str, fns: FileName) -> list[LogPath]:
   return eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs])
 
 
-def parse_indirect(identifier: str) -> str:
-  if "useradmin.comma.ai" in identifier:
-    query = parse_qs(urlparse(identifier).query)
-    identifier = query["onebox"][0]
-
-  elif "connect.comma.ai" in identifier:
-    # use parse_qs
-    # https://connect.comma.ai/d9b97c1d3b8c39b2/00000161--2c3b03f304
-    identifier = urlparse(identifier).path.strip("/")
-
-  return identifier
-
-
 def direct_source(identifier: str, fns: FileName) -> list[LogPath]:
   return eval_source([identifier])
 
@@ -245,6 +232,30 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} logs were not found, please ensure all logs " +
                         "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
                         "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
+
+
+def parse_indirect(identifier: str) -> str:
+  if "useradmin.comma.ai" in identifier:
+    query = parse_qs(urlparse(identifier).query)
+    identifier = query["onebox"][0]
+  elif "connect.comma.ai" in identifier:
+    path = urlparse(identifier).path.strip("/").split("/")
+    path = ['/'.join(path[:2]), *path[2:]]  # recombine log id
+
+    identifier = path[0]
+    if len(path) > 2:
+      # convert url with seconds to segments
+      start, end = int(path[1]) // 60, int(path[2]) // 60 + 1
+      identifier = f"{identifier}/{start}:{end}"
+
+      # add selector if it exists
+      if len(path) > 3:
+        identifier += f"/{path[3]}"
+    else:
+      # add selector if it exists
+      identifier = "/".join(path)
+
+  return identifier
 
 
 class LogReader:
