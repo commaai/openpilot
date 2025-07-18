@@ -101,7 +101,7 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-class FileType:  # TODO: FileName?
+class FileType(enum.Enum):  # TODO: FileName?
   RLOG = ("rlog.bz2", "rlog.zst")
   QLOG = ("qlog.bz2", "qlog.zst")
   QCAMERA = ("qcamera.ts",)
@@ -111,7 +111,7 @@ class FileType:  # TODO: FileName?
 
 LogPath = str | None
 ValidFileCallable = Callable[[LogPath], bool]
-Source = Callable[[SegmentRange, ReadMode], list[LogPath]]
+Source = Callable[[SegmentRange, FileType], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -152,10 +152,12 @@ def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[L
   raise ValueError(f"invalid mode: {mode}")
 
 
-def comma_api_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
   route = Route(sr.route_name)
 
-  if fns == FileType.RLOG:
+  if fns == FileType.QCAMERA:
+    return [route.qcamera_paths()[seg] for seg in sr.seg_idxs]
+  elif fns == FileType.QLOG:
     return [route.log_paths()[seg] for seg in sr.seg_idxs]
   else:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
@@ -167,46 +169,56 @@ def comma_api_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
   # return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, fns: tuple[str, ...],
-                    endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(sr: SegmentRange, fns: FileType, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  valid_files = [None] * len(sr.seg_idxs)  # TODO: use a dict with segment index as key
-  for fn in fns:
-    # print('ehehe', fn)
+  valid_files: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
+  for fn in fns.value:
     for idx, seg, in enumerate(sr.seg_idxs):
       url = get_internal_url(sr, seg, fn)
       print('trying url', url)
       if file_exists(url):
         valid_files[idx] = url
   print('valid_files', valid_files)
-  return valid_files
+  return list(valid_files.values())
 
-  # TODO: list instead of using static URLs to support routes with multiple file extensions
-  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
-  qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
-
-  return apply_strategy(mode, rlog_paths, qlog_paths)
-
-
-def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst",
-                        endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
-  return internal_source(sr, mode, file_ext, endpoint_url)
+  # # TODO: list instead of using static URLs to support routes with multiple file extensions
+  # rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
+  # qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
+  #
+  # return apply_strategy(mode, rlog_paths, qlog_paths)
 
 
-def openpilotci_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2") -> list[LogPath]:
-  rlog_paths = [get_url(sr.route_name, seg, f"rlog.{file_ext}") for seg in sr.seg_idxs]
-  qlog_paths = [get_url(sr.route_name, seg, f"qlog.{file_ext}") for seg in sr.seg_idxs]
-
-  return apply_strategy(mode, rlog_paths, qlog_paths)
+# def internal_source_zst(sr: SegmentRange, mode: ReadMode, file_ext: str = "zst",
+#                         endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+#   return internal_source(sr, mode, file_ext, endpoint_url)
 
 
-def openpilotci_source_zst(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
-  return openpilotci_source(sr, mode, "zst")
+def openpilotci_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
+  valid_files: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
+
+  for fn in fns.value:
+    for idx, seg, in enumerate(sr.seg_idxs):
+      url = get_url(sr.route_name, seg, fn)
+      print('trying url', url)
+      if file_exists(url):
+        valid_files[idx] = url
+  print('valid_files', valid_files)
+  return list(valid_files.values())
+
+
+  # rlog_paths = [get_url(sr.route_name, seg, f"rlog.{file_ext}") for seg in sr.seg_idxs]
+  # qlog_paths = [get_url(sr.route_name, seg, f"qlog.{file_ext}") for seg in sr.seg_idxs]
+  #
+  # return apply_strategy(mode, rlog_paths, qlog_paths)
+
+
+# def openpilotci_source_zst(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
+#   return openpilotci_source(sr, mode, "zst")
 
 
 def comma_car_segments_source(sr: SegmentRange, mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
@@ -253,7 +265,8 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   #     except Exception:
   #       pass
 
-  valid_files = {}  # use a dict
+  # We don't know how many files to expect until we evaluate the first source
+  valid_files = {}
 
   # Automatically determine viable source
   for source in sources:
@@ -262,18 +275,20 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         fn = FileType.RLOG
       else:
         fn = FileType.QLOG
-      fn = FileType.CAMERA
       files = source(sr, fn)
+
+      # Check every source returns an expected number of files
+      if len(valid_files) > 0:
+        assert len(files) == len(valid_files), f"Source {source.__name__} returned {len(files)} files, expected {len(valid_files)} files"
+
       # files = check_source(source, sr, fn)
       for idx, f in enumerate(files):
-        if idx not in valid_files:
+        if valid_files.get(idx) is None:
+          # Add file if current one is not valid
           print('adding valid file', idx, f)
           valid_files[idx] = f
-        elif valid_files[idx] is None:
-          print('updating valid file', idx, f)
-          valid_files[idx] = f
 
-      # we've found all files, return them
+      # We've found all files, return them
       if all(f is not None for f in valid_files):
         return list(valid_files.values())
 
@@ -319,8 +334,12 @@ class LogReader:
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                sources: list[Source] = None, sort_by_time=False, only_union_types=False):
     if sources is None:
-      sources = [internal_source, internal_source_zst, openpilotci_source, openpilotci_source_zst,
-                 comma_api_source, comma_car_segments_source, testing_closet_source]
+      sources = [internal_source,
+                 openpilotci_source,
+                 # openpilotci_source_zst,
+                 comma_api_source,
+                 # comma_car_segments_source, testing_closet_source
+                 ]
 
     self.default_mode = default_mode
     self.sources = sources
