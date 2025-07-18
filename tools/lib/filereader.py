@@ -1,17 +1,13 @@
 import os
-import functools
 import posixpath
 import socket
 from urllib.parse import urlparse
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 from openpilot.tools.lib.url_file import URLFile
 
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 
-# @functools.cache
-# @retry(retry=retry_if_exception_type(TimeoutError), stop=stop_after_attempt(3), reraise=True)
 def internal_source_available(url=DATA_ENDPOINT):
   if os.path.isdir(url):
     return True
