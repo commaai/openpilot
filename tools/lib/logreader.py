@@ -96,7 +96,6 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r"  # only read rlogs
   QLOG = "q"  # only read qlogs
-  SANITIZED = "s"  # read from the commaCarSegments database
   AUTO = "a"  # default to rlogs, fallback to qlogs
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
@@ -216,9 +215,6 @@ def check_source(source: Source, *args) -> list[LogPath]:
 
 
 def auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
-  if mode == ReadMode.SANITIZED:
-    return comma_car_segments_source(sr, mode)
-
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
