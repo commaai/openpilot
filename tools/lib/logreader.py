@@ -96,7 +96,6 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r"  # only read rlogs
   QLOG = "q"  # only read qlogs
-  SANITIZED = "s"  # read from the commaCarSegments database
   AUTO = "a"  # default to rlogs, fallback to qlogs
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
@@ -220,9 +219,6 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
   sr = SegmentRange(identifier)
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
-
-  # if mode == ReadMode.SANITIZED:
-  #   return comma_car_segments_source(sr, mode)
 
   exceptions = {}
 
