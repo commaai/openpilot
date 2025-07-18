@@ -1,6 +1,7 @@
 import os
 import posixpath
 import socket
+from functools import cache
 from urllib.parse import urlparse
 
 from openpilot.tools.lib.url_file import URLFile
@@ -30,6 +31,7 @@ def resolve_name(fn):
   return fn
 
 
+@cache
 def file_exists(fn):
   fn = resolve_name(fn)
   if fn.startswith(("http://", "https://")):
