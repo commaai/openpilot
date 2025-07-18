@@ -43,7 +43,7 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_lateral_iso_violation(sm, CS, calibrator):
+def check_lateral_iso_violation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator):
   calibrator.feed_live_calib(sm['liveCalibration'])
   device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
