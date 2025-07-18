@@ -180,13 +180,13 @@ def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
 
 
 def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  return list(eval_source([[get_comma_segments_url(sr.route_name, seg)] for seg in sr.seg_idxs]))
+  return list(eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]))
 
 
 def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
-  return list(eval_source([[f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog"] for seg in sr.seg_idxs]))
+  return list(eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]))
 
 
 def direct_source(file_or_url: str) -> list[LogPath]:
@@ -206,9 +206,12 @@ def direct_source(file_or_url: str) -> list[LogPath]:
 #   return files
 
 
-def eval_source(files: list[list[str]]) -> Iterator[LogPath]:
+def eval_source(files: list[list[str] | str]) -> Iterator[LogPath]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
   for urls in files:
+    if isinstance(urls, str):
+      urls = [urls]
+
     for url in urls:
       if file_exists(url):
         yield url
