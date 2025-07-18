@@ -3,7 +3,7 @@ from openpilot.system.ui.lib.application import FontWeight
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, TextAlignment
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.text import Label
 
 # Constants
 MARGIN = 50
@@ -16,9 +16,9 @@ LIST_ITEM_SPACING = 25
 
 
 class MultiOptionDialog(Widget):
-  def __init__(self, title, options, current=""):
+  def __init__(self, title: str, options: dict[str, str], current: str = ""):
     super().__init__()
-    self.title = title
+    self.title_label = Label(title, font_size=70, font_weight=FontWeight.BOLD)
     self.options = options
     self.current = current
     self.selection = current
@@ -28,10 +28,8 @@ class MultiOptionDialog(Widget):
     dialog_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - 2 * MARGIN, rect.height - 2 * MARGIN)
     rl.draw_rectangle_rounded(dialog_rect, 0.02, 20, rl.Color(30, 30, 30, 255))
 
-    content_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y + MARGIN,
-                                dialog_rect.width - 2 * MARGIN, dialog_rect.height - 2 * MARGIN)
-
-    gui_label(rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, TITLE_FONT_SIZE), self.title, 70, font_weight=FontWeight.BOLD)
+    content_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y + MARGIN, dialog_rect.width - 2 * MARGIN, dialog_rect.height - 2 * MARGIN)
+    self.title_label.render(rl.Rectangle(content_rect.x, content_rect.y, content_rect.width, TITLE_FONT_SIZE))
 
     # Options area
     options_y = content_rect.y + TITLE_FONT_SIZE + ITEM_SPACING
@@ -45,16 +43,16 @@ class MultiOptionDialog(Widget):
     valid_click = self.scroll.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(view_rect.x), int(options_y), int(view_rect.width), int(options_h))
-    for i, option in enumerate(self.options):
+    for i, option_key in enumerate(self.options):
       item_y = options_y + i * (ITEM_HEIGHT + LIST_ITEM_SPACING) + offset.y
       item_rect = rl.Rectangle(view_rect.x, item_y, view_rect.width, ITEM_HEIGHT)
 
       if rl.check_collision_recs(item_rect, view_rect):
-        selected = option == self.selection
+        selected = option_key == self.selection
         style = ButtonStyle.PRIMARY if selected else ButtonStyle.NORMAL
 
-        if gui_button(item_rect, option, button_style=style, text_alignment=TextAlignment.LEFT) and valid_click:
-          self.selection = option
+        if gui_button(item_rect, option_key, button_style=style, text_alignment=TextAlignment.LEFT) and valid_click:
+          self.selection = option_key
     rl.end_scissor_mode()
 
     # Buttons

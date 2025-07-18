@@ -1,7 +1,10 @@
 import pyray as rl
+from collections.abc import Callable
 from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets import MousePos, Widget
+from openpilot.system.ui.widgets.text import Label
 
 
 class ButtonStyle(IntEnum):
@@ -148,3 +151,55 @@ def gui_button(
     rl.draw_text_ex(font, text, text_pos, font_size, 0, color)
 
   return result
+
+
+# TODO: This could extend the Button class once it's added
+class SelectionButton(Widget):
+  """A button that can be selected, like a radio button.
+  If `toggleable` is `True`, the button will be deselected when clicked again.
+  If `on_select_callback` is provided, it will be called when the button is clicked (either selected or deselected).
+  """
+
+  MARGIN = 100
+
+  def __init__(
+    self,
+    text: str,
+    font_size: int = DEFAULT_BUTTON_FONT_SIZE,
+    font_weight: FontWeight = FontWeight.MEDIUM,
+    foreground_color: rl.Color = BUTTON_TEXT_COLOR[ButtonStyle.PRIMARY],
+    is_selected: bool = False,
+    on_select_callback: Callable[['SelectionButton'], None] | None = None, # Called when the button is clicked (either selected or deselected)
+    toggleable: bool = False, # If true, the button can be deselected when clicked again
+  ):
+    super().__init__()
+    self.font_size = font_size
+    self.font_weight = font_weight
+    self.foreground_color = foreground_color
+    self.is_selected = is_selected
+    self.label = Label(text, font_size=font_size, font_weight=font_weight, color=self.foreground_color)
+    self.check_icon = gui_app.texture("icons/circled_check.png", 100, 100)
+    self.on_select_callback = on_select_callback
+    self.toggleable = toggleable
+
+  def set_selected(self, is_selected: bool):
+    self.is_selected = is_selected
+
+  def _render(self, rect: rl.Rectangle):
+    # Render background, based on selected state
+    rl.draw_rectangle_rounded(rect, 0.1, 10, BUTTON_BACKGROUND_COLORS[ButtonStyle.PRIMARY] if self.is_selected else rl.Color(79, 79, 79, 255))
+    # Render label
+    self.label.render(rl.Rectangle(rect.x + self.MARGIN, rect.y, rect.width - self.MARGIN * 2, rect.height))
+    # Render checkmark, if selected
+    if self.is_selected:
+      checkmark_pos = rl.Vector2(rect.x + rect.width - self.MARGIN - self.check_icon.width, rect.y + rect.height / 2 - self.check_icon.height / 2)
+      rl.draw_texture_v(self.check_icon, checkmark_pos, self.foreground_color)
+
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
+    if self.toggleable and self.is_selected:
+      self.set_selected(False)
+    else:
+      self.set_selected(True)
+    if self.on_select_callback:
+      self.on_select_callback(self)
+    return True
