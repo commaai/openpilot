@@ -166,27 +166,21 @@ def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_EN
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  files = []
-  for seg in sr.seg_idxs:
-    files.append([get_internal_url(sr, seg, fn) for fn in fns.value])
-  return list(eval_source(files))
+  return eval_source([[get_internal_url(sr, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
 
 
 def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  files = []
-  for seg in sr.seg_idxs:
-    files.append([get_url(sr.route_name, seg, fn) for fn in fns.value])
-  return list(eval_source(files))
+  return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
 
 
 def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  return list(eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]))
+  return eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs])
 
 
 def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
-  return list(eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]))
+  return eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs])
 
 
 def direct_source(file_or_url: str) -> list[LogPath]:
@@ -206,19 +200,22 @@ def direct_source(file_or_url: str) -> list[LogPath]:
 #   return files
 
 
-def eval_source(files: list[list[str] | str]) -> Iterator[LogPath]:
+def eval_source(files: list[list[str] | str]) -> list[LogPath]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
+  valid_files = []
+
   for urls in files:
     if isinstance(urls, str):
       urls = [urls]
 
     for url in urls:
       if file_exists(url):
-        yield url
+        valid_files.append(url)
         break
     else:
-      yield None
+      valid_files.append(None)
 
+  return valid_files
 
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
   sr = SegmentRange(identifier)
