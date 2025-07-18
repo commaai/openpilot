@@ -212,7 +212,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
           return list(valid_files.values())
 
       except Exception as e:
-        cloudlog.exception(f"Error while checking source {source.__name__}")
         exceptions[source.__name__] = e
 
     if fn == try_fns[0]:
@@ -224,7 +223,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
           break
 
   missing_logs = list(valid_files.values()).count(None)
-  raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} missing log(s) found, please ensure all logs " +
+  raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} logs were not found, please ensure all logs " +
                         "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
                         "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
