@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import bz2
-from functools import cache, partial
+from functools import partial
 import multiprocessing
 import capnp
 import enum
@@ -13,6 +13,7 @@ import warnings
 import zstandard as zstd
 
 from collections.abc import Callable, Iterable, Iterator
+from typing import cast
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
@@ -149,7 +150,7 @@ def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   return eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs])
 
 
-def direct_source(file_or_url: str) -> list[LogPath]:
+def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
 
@@ -172,10 +173,10 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
 
 
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
+  exceptions = {}
+
   sr = SegmentRange(identifier)
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
-
-  exceptions = {}
 
   if mode == ReadMode.QLOG:
     try_fns = [FileName.QLOG]
@@ -186,30 +187,25 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE):
     try_fns.append(FileName.QLOG)
 
-  # We don't know how many files to expect until we evaluate the first source
-  valid_files = {}
-
-  # Automatically determine viable source
+  # Build a dict of valid files as we evaluate each source. May contain mix of rlogs, qlogs, and None.
+  # This function only returns when we've sourced all files, or throws an exception
+  valid_files: dict[int, LogPath] = {}
   for fn in try_fns:
-    print('fn:', fn)
     for source in sources:
       try:
         files = source(sr, fn)
-        print(f"final source {source.__name__} returned {files}")
 
         # Check every source returns an expected number of files
-        if len(valid_files) > 0:
-          assert len(files) == len(valid_files), f"Source {source.__name__} returned unexpected number of files"
+        assert len(files) == len(valid_files) or len(valid_files) == 0, f"Source {source.__name__} returned unexpected number of files"
 
+        # Build a dict of valid files
         for idx, f in enumerate(files):
           if valid_files.get(idx) is None:
             valid_files[idx] = f
 
-        print(source.__name__, files)
-
         # We've found all files, return them
         if all(f is not None for f in valid_files.values()):
-          return list(valid_files.values())
+          return cast(list[str], list(valid_files.values()))
 
       except Exception as e:
         exceptions[source.__name__] = e
@@ -242,7 +238,7 @@ def parse_direct(identifier: str):
 
 
 class LogReader:
-  def _parse_identifier(self, identifier: str) -> list[LogPath]:
+  def _parse_identifier(self, identifier: str) -> list[str]:
     # useradmin, etc.
     identifier = parse_indirect(identifier)
 
