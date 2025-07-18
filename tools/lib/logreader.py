@@ -155,7 +155,7 @@ def direct_source(file_or_url: str) -> list[LogPath]:
 
 def eval_source(files: list[list[str] | str]) -> list[LogPath]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
-  valid_files = []
+  valid_files: list[LogPath] = []
 
   for urls in files:
     if isinstance(urls, str):
@@ -171,30 +171,30 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
   return valid_files
 
 
-def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
+def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
   sr = SegmentRange(identifier)
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
 
   exceptions = {}
 
   if mode == ReadMode.QLOG:
-    fn = FileName.QLOG
+    try_fns = [FileName.QLOG]
   else:
-    fn = FileName.RLOG
+    try_fns = [FileName.RLOG]
 
-  fallback_fn = None
+  # If selector allows it, fallback to qlogs
   if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE):
-    fallback_fn = FileName.QLOG
+    try_fns.append(FileName.QLOG)
 
   # We don't know how many files to expect until we evaluate the first source
   valid_files = {}
 
   # Automatically determine viable source
-  for _fn in (fn, fallback_fn):
-    print('_fn:', _fn)
+  for fn in try_fns:
+    print('fn:', fn)
     for source in sources:
       try:
-        files = source(sr, _fn)
+        files = source(sr, fn)
         print(f"final source {source.__name__} returned {files}")
 
         # Check every source returns an expected number of files
@@ -215,7 +215,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         cloudlog.exception(f"Error while checking source {source.__name__}")
         exceptions[source.__name__] = e
 
-    if _fn == fn:
+    if fn == try_fns[0]:
       missing_logs = list(valid_files.values()).count(None)
       if mode == ReadMode.AUTO:
         cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
@@ -223,10 +223,10 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
           break
 
-  print('final valid_files', valid_files)
-
-  raise LogsUnavailable("auto_source could not find any valid source, exceptions for sources:\n  - " +
-                        "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
+  missing_logs = list(valid_files.values()).count(None)
+  raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} missing log(s) found, please ensure all logs " +
+                        "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
+                        "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
 def parse_indirect(identifier: str) -> str:
@@ -253,10 +253,6 @@ class LogReader:
       return direct_source(identifier)
 
     identifiers = auto_source(identifier, self.sources, self.default_mode)
-
-    missing_count = identifiers.count(None)
-    assert missing_count == 0, (f"{missing_count}/{len(identifiers)} missing log(s) found, please ensure all logs " +
-                                "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.")
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
