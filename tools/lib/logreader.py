@@ -239,7 +239,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   fallback_fn = None
   if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE):
     fallback_fn = FileName.QLOG
-  fell_back = False
 
   # We don't know how many files to expect until we evaluate the first source
   valid_files = {}
@@ -271,19 +270,14 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         exceptions[source.__name__] = e
 
     if _fn == fn:
-      print('HI!!!!!!!!!!!!!')
       missing_logs = list(valid_files.values()).count(None)
       if mode == ReadMode.AUTO:
         cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
       elif mode == ReadMode.AUTO_INTERACTIVE:
         if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
           break
-      fell_back = True
-
-  # if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE) and fallback_fn is not None:
 
   print('final valid_files', valid_files)
-
 
   raise LogsUnavailable("auto_source could not find any valid source, exceptions for sources:\n  - " +
                         "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
