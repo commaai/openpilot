@@ -216,6 +216,7 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
 
   return valid_files
 
+
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
   sr = SegmentRange(identifier)
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
@@ -230,10 +231,10 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   #     except Exception:
   #       pass
 
-  if mode == ReadMode.RLOG:
-    fn = FileName.RLOG
-  else:
+  if mode == ReadMode.QLOG:
     fn = FileName.QLOG
+  else:
+    fn = FileName.RLOG
 
   fallback_fn = None
   if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE):
