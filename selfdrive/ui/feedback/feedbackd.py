@@ -41,7 +41,7 @@ VAD_FRAME_SIZE = 640
 
 SILENCE_TIMEOUT = 1.5
 MAX_DURATION = 15.0
-VAD_THRESHOLD = 0.5
+VAD_THRESHOLD = 0.25
 
 PROCESS_NAME = "selfdrive.ui.feedback.feedbackd"
 
