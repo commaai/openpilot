@@ -213,9 +213,6 @@ def check_source(source: Source, *args) -> list[LogPath]:
 
 
 def auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
-  if mode == ReadMode.SANITIZED:
-    return comma_car_segments_source(sr, mode)
-
   exceptions = {}
 
   # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
