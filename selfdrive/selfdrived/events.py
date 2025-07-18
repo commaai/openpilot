@@ -1019,7 +1019,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       "Recording Feedback",
       "Speak to record feedback, stop speaking to send.",
       duration_source="audioFeedback.timeout",
-      progress_duration=1.5),
+      progress_duration=1.5), # start showing progress bar with 1.5 seconds left
   },
 }
 

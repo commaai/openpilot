@@ -41,7 +41,8 @@ VAD_FRAME_SIZE = 640
 
 SILENCE_TIMEOUT = 2
 MAX_DURATION = 15.0
-VAD_THRESHOLD = 0.2
+MINIMUM_DURATION = 3.0
+VAD_THRESHOLD = 0.1
 
 PROCESS_NAME = "selfdrive.ui.feedback.feedbackd"
 
@@ -132,19 +133,19 @@ class ModelState:
       low_vad_timeout = (self.vad_low_start_time is not None and
                         current_time - self.vad_low_start_time > SILENCE_TIMEOUT)
 
-      if time_since_start >= MAX_DURATION or low_vad_timeout:
+      if (time_since_start >= MAX_DURATION or low_vad_timeout) and time_since_start >= MINIMUM_DURATION:
         reason = f"{MAX_DURATION} seconds" if time_since_start >= MAX_DURATION else f"VAD below {VAD_THRESHOLD} for more than {SILENCE_TIMEOUT} seconds"
         cloudlog.info(f"VAD mode timeout reached ({reason}). Returning to wakeword detection.")
         self.in_vad_mode = False
         self.vad_low_start_time = None
         return vad_score
 
-      # Calculate timeout (time until either condition is met)
       time_until_max = MAX_DURATION - time_since_start
-      time_until_silence_timeout = (SILENCE_TIMEOUT - (current_time - self.vad_low_start_time)
-                      if self.vad_low_start_time is not None
-                      else float('inf'))
-      timeout = max(0.0, min(time_until_max, time_until_silence_timeout))
+      time_until_min = max(MINIMUM_DURATION - time_since_start, 0)
+      time_until_silence = (SILENCE_TIMEOUT - (current_time - self.vad_low_start_time) if self.vad_low_start_time is not None else float('inf'))
+
+      timeout = max(time_until_min, min(time_until_max, time_until_silence))
+
 
       # Publish audioFeedback message with timeout
       msg = messaging.new_message('audioFeedback', valid=True)
@@ -163,7 +164,7 @@ class ModelState:
       fs.vadProb = vad_score
       self.pm.send('feedbackState', msg)
 
-      if vad_score > 0.1:
+      if vad_score > 0.01:
         cloudlog.warning(f"VAD detected speech: {vad_score:.4f}")
 
     return vad_score

@@ -93,7 +93,7 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
   // Draw progress bar if progress ratio > 0
   if (alert.progressRatio > 0.0f) {
-    int progressBarHeight = 6;
+    int progressBarHeight = 8;
     int progressBarMargin = 10;
     QRect progressBg = QRect(r.x() + progressBarMargin,
                            r.bottom() - progressBarHeight - progressBarMargin,
@@ -102,13 +102,13 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 
     // Background of progress bar
     p.setBrush(QBrush(QColor(0x40, 0x40, 0x40, 0x80)));
-    p.drawRoundedRect(progressBg, 3, 3);
+    p.drawRoundedRect(progressBg, 4, 4);
 
     // Progress fill (green bar)
     int progressWidth = (int)(progressBg.width() * alert.progressRatio);
     QRect progressFill = QRect(progressBg.x(), progressBg.y(), progressWidth, progressBg.height());
     p.setBrush(QBrush(QColor(0x00, 0xFF, 0x00, 0xC0)));  // Green with transparency
-    p.drawRoundedRect(progressFill, 3, 3);
+    p.drawRoundedRect(progressFill, 4, 4);
   }
 
   // text
