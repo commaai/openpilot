@@ -241,6 +241,10 @@ class SegmentName:
   @property
   def canonical_name(self) -> str: return self._canonical_name
 
+  #TODO should only use one name
+  @property
+  def data_name(self) -> str: return f"{self._route_name.canonical_name}/{self._num}"
+
   @property
   def dongle_id(self) -> str: return self._route_name.dongle_id
 
