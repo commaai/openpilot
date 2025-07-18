@@ -107,7 +107,7 @@ class FileName(enum.Enum):
 
 
 LogPath = str | None
-Source = Callable[[SegmentRange, FileName], list[LogPath]]
+Source = Callable[[str, FileName], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -116,7 +116,8 @@ class LogsUnavailable(Exception):
   pass
 
 
-def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
+def comma_api_source(identifier: str, fns: FileName) -> list[LogPath]:
+  sr = SegmentRange(identifier)
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
@@ -126,32 +127,36 @@ def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
 
 
-def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(identifier: str, fns: FileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
+  sr = SegmentRange(identifier)
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
   return eval_source([[get_internal_url(sr, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
 
 
-def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
+def openpilotci_source(identifier: str, fns: FileName) -> list[LogPath]:
+  sr = SegmentRange(identifier)
   return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
 
 
-def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
+def comma_car_segments_source(identifier: str, fns: FileName) -> list[LogPath]:
+  sr = SegmentRange(identifier)
   return eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs])
 
 
-def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
+def testing_closet_source(identifier: str, fns: FileName) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
+  sr = SegmentRange(identifier)
   return eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs])
 
 
-def direct_source(file_or_url: str) -> list[str]:
-  return [file_or_url]
+def direct_source(identifier: str, fns: FileName) -> list[LogPath]:
+  return eval_source([identifier])
 
 
 def eval_source(files: list[list[str] | str]) -> list[LogPath]:
@@ -173,10 +178,15 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
 
 
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
-  exceptions = {}
+  mode = default_mode
+  try:
+    sr = SegmentRange(identifier)
+    if sr.selector is not None:
+      mode = ReadMode(sr.selector)
+  except AssertionError:
+    pass
 
-  sr = SegmentRange(identifier)
-  mode = default_mode if sr.selector is None else ReadMode(sr.selector)
+  exceptions = {}
 
   if mode == ReadMode.QLOG:
     try_fns = [FileName.QLOG]
@@ -193,7 +203,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   for fn in try_fns:
     for source in sources:
       try:
-        files = source(sr, fn)
+        files = source(identifier, fn)
 
         # Check every source returns an expected number of files
         assert len(files) == len(valid_files) or len(valid_files) == 0, f"Source {source.__name__} returned unexpected number of files"
@@ -248,29 +258,16 @@ def parse_indirect(identifier: str) -> str:
   return identifier
 
 
-def parse_direct(identifier: str):
-  if identifier.startswith(("http://", "https://", "cd:/")) or pathlib.Path(identifier).exists():
-    return identifier
-  return None
-
-
 class LogReader:
   def _parse_identifier(self, identifier: str) -> list[str]:
     # useradmin, etc.
     identifier = parse_indirect(identifier)
-
-    # direct url or file
-    direct_parsed = parse_direct(identifier)
-    if direct_parsed is not None:
-      return direct_source(identifier)
-
-    identifiers = auto_source(identifier, self.sources, self.default_mode)
-    return identifiers
+    return auto_source(identifier, self.sources, self.default_mode)
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                sources: list[Source] = None, sort_by_time=False, only_union_types=False):
     if sources is None:
-      sources = [internal_source, openpilotci_source, comma_api_source,
+      sources = [direct_source, internal_source, openpilotci_source, comma_api_source,
                  comma_car_segments_source, testing_closet_source]
 
     self.default_mode = default_mode
