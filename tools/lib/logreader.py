@@ -155,9 +155,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[L
 def comma_api_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
   route = Route(sr.route_name)
 
-  if fns == FileType.QCAMERA:
-    return [route.qcamera_paths()[seg] for seg in sr.seg_idxs]
-  elif fns == FileType.QLOG:
+  if fns == FileType.QLOG:
     return [route.log_paths()[seg] for seg in sr.seg_idxs]
   else:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
