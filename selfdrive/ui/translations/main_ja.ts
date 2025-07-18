@@ -477,10 +477,6 @@ Firehoseモードを有効にすると学習データを最大限アップロー
         <translation>オペレーティングシステムがバックグラウンドでダウンロードされています。インストールの準備が整うと更新を促されます。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりデータをアップロードしたりできません。またcomma.aiのサポートも受けられません。公式デバイスである場合は https://comma.ai/support に問い合わせて下さい。</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>SSDドライブ(NVMe)がマウントされていません。</translation>
     </message>
@@ -499,6 +495,10 @@ Firehoseモードを有効にすると学習データを最大限アップロー
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>デバイスの温度が高すぎるためシステム起動前の冷却中です。現在のデバイス内部温度: %1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

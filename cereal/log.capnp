@@ -493,7 +493,6 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   gpuTempC @27 :List(Float32);
   dspTempC @49 :Float32;
   memoryTempC @28 :Float32;
-  nvmeTempC @35 :List(Float32);
   modemTempC @36 :List(Float32);
   pmicTempC @39 :List(Float32);
   intakeTempC @46 :Float32;
@@ -569,6 +568,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   chargingDisabledDEPRECATED @18 :Bool;
   usbOnlineDEPRECATED @12 :Bool;
   ambientTempCDEPRECATED @30 :Float32;
+  nvmeTempCDEPRECATED @35 :List(Float32);
 }
 
 struct PandaState @0xa7649e2575e4591e {

@@ -53,7 +53,7 @@ class SimulatedSensors:
     for _ in range(10):
       dat = messaging.new_message('gpsLocationExternal', valid=True)
       dat.gpsLocationExternal = {
-        "unixTimestampMillis": int(time.time() * 1000),
+        "unixTimestampMillis": int(time.time() * 1000),  # noqa: TID251
         "flags": 1,  # valid fix
         "horizontalAccuracy": 1.0,
         "verticalAccuracy": 1.0,
@@ -109,7 +109,7 @@ class SimulatedSensors:
       self.camerad.cam_send_yuv_wide_road(yuv)
 
   def update(self, simulator_state: 'SimulatorState', world: 'World'):
-    now = time.time()
+    now = time.monotonic()
     self.send_imu_message(simulator_state)
     self.send_gps_message(simulator_state)
 
