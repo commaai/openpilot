@@ -158,14 +158,17 @@ def testing_closet_source(identifier: str, fns: FileName) -> list[LogPath]:
 def parse_indirect(identifier: str) -> str:
   if "useradmin.comma.ai" in identifier:
     query = parse_qs(urlparse(identifier).query)
-    return query["onebox"][0]
+    identifier = query["onebox"][0]
+
+  elif "connect.comma.ai" in identifier:
+    # use parse_qs
+    # https://connect.comma.ai/d9b97c1d3b8c39b2/00000161--2c3b03f304
+    identifier = urlparse(identifier).path.strip("/")
+
   return identifier
 
 
 def direct_source(identifier: str, fns: FileName) -> list[LogPath]:
-  # useradmin, etc.
-  identifier = parse_indirect(identifier)
-
   return eval_source([identifier])
 
 
@@ -246,6 +249,9 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
 class LogReader:
   def _parse_identifier(self, identifier: str) -> list[str]:
+    # useradmin, etc.
+    identifier = parse_indirect(identifier)
+    print('new identifier:', identifier)
     return auto_source(identifier, self.sources, self.default_mode)
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
