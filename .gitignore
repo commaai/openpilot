@@ -71,6 +71,7 @@ cppcheck_report.txt
 comma*.sh
 
 selfdrive/modeld/models/*.pkl
+selfdrive/ui/feedback/models/*.pkl
 
 *.bz2
 *.zst
