@@ -106,7 +106,6 @@ class FileName(enum.Enum):
 
 
 LogPath = str | None
-ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, FileName], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
@@ -114,38 +113,6 @@ InternalUnavailableException = Exception("Internal source not available")
 
 class LogsUnavailable(Exception):
   pass
-
-
-@cache
-def default_valid_file(fn: LogPath) -> bool:
-  return fn is not None and file_exists(fn)
-
-
-def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interactive: bool, valid_file: ValidFileCallable) -> list[LogPath]:
-  # auto select logs based on availability
-  missing_rlogs = [rlog is None or not valid_file(rlog) for rlog in rlog_paths].count(True)
-  if missing_rlogs != 0:
-    if interactive:
-      if input(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/n) ").lower() != "y":
-        return rlog_paths
-    else:
-      cloudlog.warning(f"{missing_rlogs}/{len(rlog_paths)} rlogs were not found, falling back to qlogs for those segments...")
-
-    return [rlog if valid_file(rlog) else (qlog if valid_file(qlog) else None)
-            for (rlog, qlog) in zip(rlog_paths, qlog_paths, strict=True)]
-  return rlog_paths
-
-
-# def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[LogPath], valid_file: ValidFileCallable = default_valid_file) -> list[LogPath]:
-#   if mode == ReadMode.RLOG:
-#     return rlog_paths
-#   elif mode == ReadMode.QLOG:
-#     return qlog_paths
-#   elif mode == ReadMode.AUTO:
-#     return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
-#   elif mode == ReadMode.AUTO_INTERACTIVE:
-#     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
-#   raise ValueError(f"invalid mode: {mode}")
 
 
 def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
@@ -186,19 +153,6 @@ def direct_source(file_or_url: str) -> list[LogPath]:
   return [file_or_url]
 
 
-# def get_invalid_files(files):
-#   for f in files:
-#     if f is None or not file_exists(f):
-#       yield f
-
-
-# def check_source(source: Source, *args) -> list[LogPath]:
-#   files = source(*args)
-#   assert len(files) > 0, "No files on source"
-#   assert next(get_invalid_files(files), False) is False, "Some files are invalid"
-#   return files
-
-
 def eval_source(files: list[list[str] | str]) -> list[LogPath]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
   valid_files = []
@@ -222,14 +176,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
 
   exceptions = {}
-
-  # # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
-  # if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
-  #   for source in sources:
-  #     try:
-  #       return check_source(source, sr, ReadMode.RLOG)
-  #     except Exception:
-  #       pass
 
   if mode == ReadMode.QLOG:
     fn = FileName.QLOG
