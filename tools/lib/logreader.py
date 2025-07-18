@@ -210,7 +210,6 @@ def get_invalid_files(files):
 
 def check_source(source: Source, *args) -> list[LogPath]:
   files = source(*args)
-  print('got files from source:', source.__name__, files)
   assert len(files) > 0, "No files on source"
   assert next(get_invalid_files(files), False) is False, "Some files are invalid"
   return files
@@ -232,7 +231,6 @@ def auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMo
 
   # Automatically determine viable source
   for source in sources:
-    print('Checking source:', source.__name__)
     try:
       return check_source(source, sr, mode)
     except Exception as e:
