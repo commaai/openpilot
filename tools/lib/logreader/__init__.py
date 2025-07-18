@@ -14,11 +14,11 @@ import zstandard as zstd
 
 from collections.abc import Callable, Iterable, Iterator
 from typing import cast
-from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
+from openpilot.tools.lib.logreader.helpers import parse_indirect
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available
 from openpilot.tools.lib.route import Route, SegmentRange
@@ -222,30 +222,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} logs were not found, please ensure all logs " +
                         "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
                         "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
-
-
-def parse_indirect(identifier: str) -> str:
-  if "useradmin.comma.ai" in identifier:
-    query = parse_qs(urlparse(identifier).query)
-    identifier = query["onebox"][0]
-  elif "connect.comma.ai" in identifier:
-    path = urlparse(identifier).path.strip("/").split("/")
-    path = ['/'.join(path[:2]), *path[2:]]  # recombine log id
-
-    identifier = path[0]
-    if len(path) > 2:
-      # convert url with seconds to segments
-      start, end = int(path[1]) // 60, int(path[2]) // 60 + 1
-      identifier = f"{identifier}/{start}:{end}"
-
-      # add selector if it exists
-      if len(path) > 3:
-        identifier += f"/{path[3]}"
-    else:
-      # add selector if it exists
-      identifier = "/".join(path)
-
-  return identifier
 
 
 def parse_direct(identifier: str):
