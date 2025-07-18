@@ -101,6 +101,14 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
+class FileType:  # TODO: FileName?
+  RLOG = ("rlog.bz2", "rlog.zst")
+  QLOG = ("qlog.bz2", "qlog.zst")
+  QCAMERA = ("qcamera.ts",)
+  CAMERA = ("fcamera.hevc",)
+  ...
+
+
 LogPath = str | None
 ValidFileCallable = Callable[[LogPath], bool]
 Source = Callable[[SegmentRange, ReadMode], list[LogPath]]
@@ -144,26 +152,39 @@ def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[L
   raise ValueError(f"invalid mode: {mode}")
 
 
-def comma_api_source(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
   route = Route(sr.route_name)
 
-  rlog_paths = [route.log_paths()[seg] for seg in sr.seg_idxs]
-  qlog_paths = [route.qlog_paths()[seg] for seg in sr.seg_idxs]
+  if fns == FileType.RLOG:
+    return [route.log_paths()[seg] for seg in sr.seg_idxs]
+  else:
+    return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
 
-  # comma api will have already checked if the file exists
-  def valid_file(fn):
-    return fn is not None
+  # # comma api will have already checked if the file exists
+  # def valid_file(fn):
+  #   return fn is not None
+  #
+  # return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
-  return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
-
-def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2",
+def internal_source(sr: SegmentRange, fns: tuple[str, ...],
                     endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
-    return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
+    return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
+
+  valid_files = [None] * len(sr.seg_idxs)  # TODO: use a dict with segment index as key
+  for fn in fns:
+    # print('ehehe', fn)
+    for idx, seg, in enumerate(sr.seg_idxs):
+      url = get_internal_url(sr, seg, fn)
+      print('trying url', url)
+      if file_exists(url):
+        valid_files[idx] = url
+  print('valid_files', valid_files)
+  return valid_files
 
   # TODO: list instead of using static URLs to support routes with multiple file extensions
   rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
@@ -215,24 +236,49 @@ def check_source(source: Source, *args) -> list[LogPath]:
   return files
 
 
-def auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
-  if mode == ReadMode.SANITIZED:
-    return comma_car_segments_source(sr, mode)
+def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
+  sr = SegmentRange(identifier)
+  mode = default_mode if sr.selector is None else ReadMode(sr.selector)
+
+  # if mode == ReadMode.SANITIZED:
+  #   return comma_car_segments_source(sr, mode)
 
   exceptions = {}
 
-  # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
-  if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
-    for source in sources:
-      try:
-        return check_source(source, sr, ReadMode.RLOG)
-      except Exception:
-        pass
+  # # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
+  # if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
+  #   for source in sources:
+  #     try:
+  #       return check_source(source, sr, ReadMode.RLOG)
+  #     except Exception:
+  #       pass
+
+  valid_files = {}  # use a dict
 
   # Automatically determine viable source
   for source in sources:
     try:
-      return check_source(source, sr, mode)
+      if mode == ReadMode.RLOG:
+        fn = FileType.RLOG
+      else:
+        fn = FileType.QLOG
+      fn = FileType.CAMERA
+      files = source(sr, fn)
+      # files = check_source(source, sr, fn)
+      for idx, f in enumerate(files):
+        if idx not in valid_files:
+          print('adding valid file', idx, f)
+          valid_files[idx] = f
+        elif valid_files[idx] is None:
+          print('updating valid file', idx, f)
+          valid_files[idx] = f
+
+      # we've found all files, return them
+      if all(f is not None for f in valid_files):
+        return list(valid_files.values())
+
+      print(source.__name__, files)
+      # return check_source(source, sr, mode)
     except Exception as e:
       exceptions[source.__name__] = e
 
@@ -263,10 +309,7 @@ class LogReader:
     if direct_parsed is not None:
       return direct_source(identifier)
 
-    sr = SegmentRange(identifier)
-    mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
-
-    identifiers = auto_source(sr, self.sources, mode)
+    identifiers = auto_source(identifier, self.sources, self.default_mode)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
