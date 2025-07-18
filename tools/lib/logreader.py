@@ -219,7 +219,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
       if mode == ReadMode.AUTO:
         cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
       elif mode == ReadMode.AUTO_INTERACTIVE:
-        if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
+        if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (Y/n) ").lower() == "n":
           break
 
   missing_logs = list(valid_files.values()).count(None)
