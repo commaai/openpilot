@@ -152,7 +152,7 @@ def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interact
 def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   route = Route(sr.route_name)
 
-  if fns == FileName.QLOG:
+  if fns == FileName.RLOG:
     return [route.log_paths()[seg] for seg in sr.seg_idxs]
   else:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
