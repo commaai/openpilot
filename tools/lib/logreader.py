@@ -140,16 +140,16 @@ def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interact
   return rlog_paths
 
 
-def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[LogPath], valid_file: ValidFileCallable = default_valid_file) -> list[LogPath]:
-  if mode == ReadMode.RLOG:
-    return rlog_paths
-  elif mode == ReadMode.QLOG:
-    return qlog_paths
-  elif mode == ReadMode.AUTO:
-    return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
-  elif mode == ReadMode.AUTO_INTERACTIVE:
-    return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
-  raise ValueError(f"invalid mode: {mode}")
+# def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[LogPath], valid_file: ValidFileCallable = default_valid_file) -> list[LogPath]:
+#   if mode == ReadMode.RLOG:
+#     return rlog_paths
+#   elif mode == ReadMode.QLOG:
+#     return qlog_paths
+#   elif mode == ReadMode.AUTO:
+#     return auto_strategy(rlog_paths, qlog_paths, False, valid_file)
+#   elif mode == ReadMode.AUTO_INTERACTIVE:
+#     return auto_strategy(rlog_paths, qlog_paths, True, valid_file)
+#   raise ValueError(f"invalid mode: {mode}")
 
 
 def comma_api_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
@@ -219,11 +219,11 @@ def openpilotci_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
 #   return openpilotci_source(sr, mode, "zst")
 
 
-def comma_car_segments_source(sr: SegmentRange, mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
+def comma_car_segments_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
-def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]:
+def testing_closet_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
   return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
@@ -334,9 +334,9 @@ class LogReader:
     if sources is None:
       sources = [internal_source,
                  openpilotci_source,
-                 # openpilotci_source_zst,
                  comma_api_source,
-                 # comma_car_segments_source, testing_closet_source
+                 comma_car_segments_source,
+                 testing_closet_source,
                  ]
 
     self.default_mode = default_mode
