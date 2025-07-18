@@ -39,6 +39,10 @@ CHUNK_SIZE = 1280
 BUFFER_SIZE = CHUNK_SIZE + 480
 VAD_FRAME_SIZE = 640
 
+SILENCE_TIMEOUT = 1.5
+MAX_DURATION = 15.0
+VAD_THRESHOLD = 0.5
+
 PROCESS_NAME = "selfdrive.ui.feedback.feedbackd"
 
 MODEL_PKL_PATHS = {
@@ -118,7 +122,7 @@ class ModelState:
       time_since_start = current_time - self.vad_start_time
 
       # Update VAD low state tracking
-      if vad_score < 0.1:
+      if vad_score < VAD_THRESHOLD:
         if self.vad_low_start_time is None:
           self.vad_low_start_time = current_time
       else:
@@ -126,21 +130,21 @@ class ModelState:
 
       # Check both exit conditions in one if statement
       low_vad_timeout = (self.vad_low_start_time is not None and
-                        current_time - self.vad_low_start_time > 2.0)
+                        current_time - self.vad_low_start_time > SILENCE_TIMEOUT)
 
-      if time_since_start >= 15.0 or low_vad_timeout:
-        reason = "15 seconds" if time_since_start >= 15.0 else "VAD below 0.1 for more than 2 seconds"
+      if time_since_start >= MAX_DURATION or low_vad_timeout:
+        reason = f"{MAX_DURATION} seconds" if time_since_start >= MAX_DURATION else f"VAD below {VAD_THRESHOLD} for more than {SILENCE_TIMEOUT} seconds"
         cloudlog.info(f"VAD mode timeout reached ({reason}). Returning to wakeword detection.")
         self.in_vad_mode = False
         self.vad_low_start_time = None
         return vad_score
 
       # Calculate timeout (time until either condition is met)
-      time_until_15s = 15.0 - time_since_start
-      time_until_2s = (2.0 - (current_time - self.vad_low_start_time)
+      time_until_max = MAX_DURATION - time_since_start
+      time_until_silence_timeout = (SILENCE_TIMEOUT - (current_time - self.vad_low_start_time)
                       if self.vad_low_start_time is not None
                       else float('inf'))
-      timeout = max(0.0, min(time_until_15s, time_until_2s))
+      timeout = max(0.0, min(time_until_max, time_until_silence_timeout))
 
       # Publish audioFeedback message with timeout
       msg = messaging.new_message('audioFeedback', valid=True)
