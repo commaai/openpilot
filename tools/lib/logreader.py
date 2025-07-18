@@ -101,17 +101,14 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-class FileType(enum.Enum):  # TODO: FileName?
+class FileName(enum.Enum):
   RLOG = ("rlog.bz2", "rlog.zst")
   QLOG = ("qlog.bz2", "qlog.zst")
-  QCAMERA = ("qcamera.ts",)
-  CAMERA = ("fcamera.hevc",)
-  ...
 
 
 LogPath = str | None
 ValidFileCallable = Callable[[LogPath], bool]
-Source = Callable[[SegmentRange, FileType], list[LogPath]]
+Source = Callable[[SegmentRange, FileName], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -152,10 +149,10 @@ def auto_strategy(rlog_paths: list[LogPath], qlog_paths: list[LogPath], interact
 #   raise ValueError(f"invalid mode: {mode}")
 
 
-def comma_api_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   route = Route(sr.route_name)
 
-  if fns == FileType.QLOG:
+  if fns == FileName.QLOG:
     return [route.log_paths()[seg] for seg in sr.seg_idxs]
   else:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
@@ -167,7 +164,7 @@ def comma_api_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
   # return apply_strategy(mode, rlog_paths, qlog_paths, valid_file=valid_file)
 
 
-def internal_source(sr: SegmentRange, fns: FileType, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
@@ -196,7 +193,7 @@ def internal_source(sr: SegmentRange, fns: FileType, endpoint_url: str = DATA_EN
 #   return internal_source(sr, mode, file_ext, endpoint_url)
 
 
-def openpilotci_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
+def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   valid_files: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
 
   for fn in fns.value:
@@ -219,11 +216,11 @@ def openpilotci_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
 #   return openpilotci_source(sr, mode, "zst")
 
 
-def comma_car_segments_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
+def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   return [get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs]
 
 
-def testing_closet_source(sr: SegmentRange, fns: FileType) -> list[LogPath]:
+def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   if not internal_source_available('http://testing.comma.life'):
     raise InternalUnavailableException
   return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
@@ -270,9 +267,9 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   for source in sources:
     try:
       if mode == ReadMode.RLOG:
-        fn = FileType.RLOG
+        fn = FileName.RLOG
       else:
-        fn = FileType.QLOG
+        fn = FileName.QLOG
       files = source(sr, fn)
 
       # Check every source returns an expected number of files
