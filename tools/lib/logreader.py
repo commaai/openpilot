@@ -213,13 +213,13 @@ def check_source(source: Source, *args) -> list[LogPath]:
   return files
 
 
-def _auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
+def auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
   exceptions = {}
 
-  # for automatic fallback modes, _auto_source needs to first check if rlogs exist for any source
+  # for automatic fallback modes, auto_source needs to first check if rlogs exist for any source
   if mode in [ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE]:
     for source in sources:
       try:
@@ -234,7 +234,7 @@ def _auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadM
     except Exception as e:
       exceptions[source.__name__] = e
 
-  raise LogsUnavailable("_auto_source could not find any valid source, exceptions for sources:\n  - " +
+  raise LogsUnavailable("auto_source could not find any valid source, exceptions for sources:\n  - " +
                         "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
 
@@ -264,7 +264,7 @@ class LogReader:
     sr = SegmentRange(identifier)
     mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
 
-    identifiers = _auto_source(sr, self.sources, mode)
+    identifiers = auto_source(sr, self.sources, mode)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
