@@ -102,8 +102,8 @@ class ReadMode(enum.StrEnum):
 
 
 class FileName(enum.Enum):
-  RLOG = ("rlog.bz2", "rlog.zst")
-  QLOG = ("qlog.bz2", "qlog.zst")
+  RLOG = ("rlog.zst", "rlog.bz2")
+  QLOG = ("qlog.zst", "qlog.bz2")
 
 
 LogPath = str | None
