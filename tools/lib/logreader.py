@@ -196,8 +196,14 @@ def testing_closet_source(sr: SegmentRange, mode=ReadMode.RLOG) -> list[LogPath]
   return [f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs]
 
 
-def direct_source(file_or_url: str) -> list[LogPath]:
-  return [file_or_url]
+# def direct_source(file_or_url: str) -> list[LogPath]:
+def direct_source(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
+  # direct url or file
+  direct_parsed = parse_direct(sr)
+  if direct_parsed is not None:
+    return [sr]
+
+  return []
 
 
 def get_invalid_files(files):
@@ -213,7 +219,16 @@ def check_source(source: Source, *args) -> list[LogPath]:
   return files
 
 
-def _auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
+# def _auto_source(sr: SegmentRange, sources: list[Source], mode: ReadMode = ReadMode.RLOG) -> list[LogPath]:
+def _auto_source(identifier: str, default_mode: ReadMode, sources: list[Source]) -> list[LogPath]:
+  mode = default_mode
+  try:
+    sr = SegmentRange(identifier)
+    if sr.selector is not None:
+      mode = ReadMode(sr.selector)
+  except AssertionError as e:
+    print(e)
+
   if mode == ReadMode.SANITIZED:
     return comma_car_segments_source(sr, mode)
 
@@ -256,15 +271,16 @@ class LogReader:
     # useradmin, etc.
     identifier = parse_indirect(identifier)
 
-    # direct url or file
-    direct_parsed = parse_direct(identifier)
-    if direct_parsed is not None:
-      return direct_source(identifier)
+    # # direct url or file
+    # direct_parsed = parse_direct(identifier)
+    # if direct_parsed is not None:
+    #   return direct_source(identifier)
 
-    sr = SegmentRange(identifier)
-    mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
+    # sr = SegmentRange(identifier)
+    # mode = self.default_mode if sr.selector is None else ReadMode(sr.selector)
 
-    identifiers = _auto_source(sr, self.sources, mode)
+    # identifiers = _auto_source(sr, self.sources, mode)
+    identifiers = _auto_source(identifier, self.default_mode, self.sources)
 
     invalid_count = len(list(get_invalid_files(identifiers)))
     assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
@@ -274,7 +290,7 @@ class LogReader:
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                sources: list[Source] = None, sort_by_time=False, only_union_types=False):
     if sources is None:
-      sources = [internal_source, internal_source_zst, openpilotci_source, openpilotci_source_zst,
+      sources = [direct_source, internal_source, internal_source_zst, openpilotci_source, openpilotci_source_zst,
                  comma_api_source, comma_car_segments_source, testing_closet_source]
 
     self.default_mode = default_mode
