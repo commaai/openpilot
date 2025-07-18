@@ -2,19 +2,20 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import IntEnum
 from collections.abc import Callable
+from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
 from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.selfdrive.ui.layouts.network import NetworkLayout
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
-# Import individual panels
+# Settings close button
+SETTINGS_CLOSE_TEXT = "×"
+SETTINGS_CLOSE_TEXT_Y_OFFSET = 8  # The '×' character isn't quite vertically centered in the font so we need to offset it a bit to fully center it
 
-SETTINGS_CLOSE_TEXT = "X"
 # Constants
 SIDEBAR_WIDTH = 500
 CLOSE_BTN_SIZE = 200
@@ -62,7 +63,6 @@ class SettingsLayout(Widget):
     }
 
     self._font_medium = gui_app.font(FontWeight.MEDIUM)
-    self._font_bold = gui_app.font(FontWeight.SEMI_BOLD)
 
     # Callbacks
     self._close_callback: Callable | None = None
@@ -84,7 +84,7 @@ class SettingsLayout(Widget):
 
     # Close button
     close_btn_rect = rl.Rectangle(
-      rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 45, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
+      rect.x + (rect.width - CLOSE_BTN_SIZE) / 2, rect.y + 60, CLOSE_BTN_SIZE, CLOSE_BTN_SIZE
     )
 
     pressed = (rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and
@@ -92,12 +92,12 @@ class SettingsLayout(Widget):
     close_color = CLOSE_BTN_PRESSED if pressed else CLOSE_BTN_COLOR
     rl.draw_rectangle_rounded(close_btn_rect, 1.0, 20, close_color)
 
-    close_text_size = measure_text_cached(self._font_bold, SETTINGS_CLOSE_TEXT, 140)
+    close_text_size = measure_text_cached(self._font_medium, SETTINGS_CLOSE_TEXT, 140)
     close_text_pos = rl.Vector2(
       close_btn_rect.x + (close_btn_rect.width - close_text_size.x) / 2,
-      close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2,
+      close_btn_rect.y + (close_btn_rect.height - close_text_size.y) / 2 - SETTINGS_CLOSE_TEXT_Y_OFFSET,
     )
-    rl.draw_text_ex(self._font_bold, SETTINGS_CLOSE_TEXT, close_text_pos, 140, 0, TEXT_SELECTED)
+    rl.draw_text_ex(self._font_medium, SETTINGS_CLOSE_TEXT, close_text_pos, 140, 0, TEXT_SELECTED)
 
     # Store close button rect for click detection
     self._close_btn_rect = close_btn_rect
@@ -132,7 +132,7 @@ class SettingsLayout(Widget):
     if panel.instance:
       panel.instance.render(content_rect)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2) -> bool:
+  def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
       if self._close_callback:

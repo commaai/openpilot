@@ -4,14 +4,15 @@ from dataclasses import dataclass
 from collections.abc import Callable
 from cereal import log
 from openpilot.selfdrive.ui.ui_state import ui_state
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 SIDEBAR_WIDTH = 300
 METRIC_HEIGHT = 126
 METRIC_WIDTH = 240
 METRIC_MARGIN = 30
+FONT_SIZE = 35
 
 SETTINGS_BTN = rl.Rectangle(50, 35, 200, 117)
 HOME_BTN = rl.Rectangle(60, 860, 180, 180)
@@ -135,7 +136,7 @@ class Sidebar(Widget):
     else:
       self._panda_status.update("VEHICLE", "ONLINE", Colors.GOOD)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
+  def _handle_mouse_release(self, mouse_pos: MousePos):
     if rl.check_collision_point_rec(mouse_pos, SETTINGS_BTN):
       if self._on_settings_click:
         self._on_settings_click()
@@ -175,7 +176,7 @@ class Sidebar(Widget):
     # Network type text
     text_y = rect.y + 247
     text_pos = rl.Vector2(rect.x + 58, text_y)
-    rl.draw_text_ex(self._font_regular, self._net_type, text_pos, 35, 0, Colors.WHITE)
+    rl.draw_text_ex(self._font_regular, self._net_type, text_pos, FONT_SIZE, 0, Colors.WHITE)
 
   def _draw_metrics(self, rect: rl.Rectangle):
     metrics = [(self._temp_status, 338), (self._panda_status, 496), (self._connect_status, 654)]
@@ -194,11 +195,14 @@ class Sidebar(Widget):
     # Draw border
     rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.15, 10, 2, Colors.METRIC_BORDER)
 
-    # Draw text
-    text = f"{metric.label}\n{metric.value}"
-    text_size = measure_text_cached(self._font_bold, text, 35)
-    text_pos = rl.Vector2(
-      metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
-      metric_rect.y + (metric_rect.height - text_size.y) / 2
-    )
-    rl.draw_text_ex(self._font_bold, text, text_pos, 35, 0, Colors.WHITE)
+    # Draw label and value
+    labels = [metric.label, metric.value]
+    text_y = metric_rect.y + (metric_rect.height / 2 - len(labels) * FONT_SIZE)
+    for text in labels:
+      text_size = measure_text_cached(self._font_bold, text, FONT_SIZE)
+      text_y += text_size.y
+      text_pos = rl.Vector2(
+        metric_rect.x + 22 + (metric_rect.width - 22 - text_size.x) / 2,
+        text_y
+      )
+      rl.draw_text_ex(self._font_bold, text, text_pos, FONT_SIZE, 0, Colors.WHITE)

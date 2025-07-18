@@ -1,5 +1,6 @@
 import pyray as rl
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.application import MousePos
+from openpilot.system.ui.widgets import Widget
 
 ON_COLOR = rl.Color(51, 171, 76, 255)
 OFF_COLOR = rl.Color(0x39, 0x39, 0x39, 255)
@@ -23,16 +24,12 @@ class Toggle(Widget):
   def set_rect(self, rect: rl.Rectangle):
     self._rect = rl.Rectangle(rect.x, rect.y, WIDTH, HEIGHT)
 
-  def handle_input(self):
+  def _handle_mouse_release(self, mouse_pos: MousePos):
     if not self._enabled:
-      return 0
+      return
 
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if rl.check_collision_point_rec(rl.get_mouse_position(), self._rect):
-        self._state = not self._state
-        self._target = 1.0 if self._state else 0.0
-        return 1
-    return 0
+    self._state = not self._state
+    self._target = 1.0 if self._state else 0.0
 
   def get_state(self):
     return self._state
@@ -71,8 +68,6 @@ class Toggle(Widget):
     knob_x = self._rect.x + HEIGHT / 2 + (WIDTH - HEIGHT) * self._progress
     knob_y = self._rect.y + HEIGHT / 2
     rl.draw_circle(int(knob_x), int(knob_y), HEIGHT / 2, knob_color)
-
-    return self.handle_input()
 
   def _blend_color(self, c1, c2, t):
     return rl.Color(int(c1.r + (c2.r - c1.r) * t), int(c1.g + (c2.g - c1.g) * t), int(c1.b + (c2.b - c1.b) * t), 255)

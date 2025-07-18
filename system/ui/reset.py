@@ -7,9 +7,9 @@ from enum import IntEnum
 
 from openpilot.system.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle
-from openpilot.system.ui.lib.label import gui_label, gui_text_box
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 
 NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"

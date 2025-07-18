@@ -1,9 +1,9 @@
 import pyray as rl
 from openpilot.system.ui.lib.application import FontWeight
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle, TextAlignment
-from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, TextAlignment
+from openpilot.system.ui.widgets.label import gui_label
 
 # Constants
 MARGIN = 50
@@ -42,7 +42,7 @@ class MultiOptionDialog(Widget):
 
     # Scroll and render options
     offset = self.scroll.handle_scroll(view_rect, list_content_rect)
-    valid_click = self.scroll.is_click_valid()
+    valid_click = self.scroll.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(view_rect.x), int(options_y), int(view_rect.width), int(options_h))
     for i, option in enumerate(self.options):

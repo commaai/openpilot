@@ -3,11 +3,11 @@ import re
 import sys
 import pyray as rl
 from openpilot.system.hardware import HARDWARE, PC
-from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.system.ui.lib.button import gui_button, ButtonStyle
-from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
 
 MARGIN = 50
 SPACING = 40

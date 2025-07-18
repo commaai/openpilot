@@ -4,13 +4,13 @@ from typing import Literal
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
-from openpilot.system.ui.lib.button import ButtonStyle, gui_button
-from openpilot.system.ui.lib.label import gui_label
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
-from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets.keyboard import Keyboard
+from openpilot.system.ui.widgets.label import gui_label
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -117,7 +117,7 @@ class WifiManagerUI(Widget):
   def _draw_network_list(self, rect: rl.Rectangle):
     content_rect = rl.Rectangle(rect.x, rect.y, rect.width, len(self._networks) * ITEM_HEIGHT)
     offset = self.scroll_panel.handle_scroll(rect, content_rect)
-    clicked = self.scroll_panel.is_click_valid()
+    clicked = self.scroll_panel.is_touch_valid() and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT)
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     for i, network in enumerate(self._networks):

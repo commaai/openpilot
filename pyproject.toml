@@ -26,7 +26,7 @@ dependencies = [
   "pycapnp",
   "Cython",
   "setuptools",
-  "numpy >=2.0, <2.2", # Linting issues with mypy in 2.2
+  "numpy >=2.0",
 
   # body / webrtcd
   "aiohttp",
@@ -42,7 +42,6 @@ dependencies = [
 
   # modeld
   "onnx >= 1.14.0",
-  "llvmlite",
 
   # logging
   "pyzmq",
@@ -81,11 +80,9 @@ docs = [
 ]
 
 testing = [
-  "coverage",
   "hypothesis ==6.47.*",
   "mypy",
   "pytest",
-  "pytest-cov",
   "pytest-cpp",
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/issues/1215
@@ -106,8 +103,8 @@ dev = [
   "azure-storage-blob",
   "dbus-next",
   "dictdiffer",
-  "lru-dict",
   "matplotlib",
+  "opencv-python-headless",
   "parameterized >=0.8, <0.9",
   "pyautogui",
   "pygame",
@@ -123,7 +120,7 @@ dev = [
 
 tools = [
   "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl ; (platform_machine != 'aarch64')",
-  "rerun-sdk >= 0.18",
+  #"rerun-sdk >= 0.18",  # this is pretty big, so only enable once we use it
 ]
 
 [project.urls]
@@ -179,9 +176,6 @@ skip = "./third_party/*, ./tinygrad/*, ./tinygrad_repo/*, ./msgq/*, ./panda/*, .
 
 [tool.mypy]
 python_version = "3.11"
-plugins = [
-  "numpy.typing.mypy_plugin",
-]
 exclude = [
   "cereal/",
   "msgq/",
@@ -264,9 +258,7 @@ lint.flake8-implicit-str-concat.allow-multiline = false
 "pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
 "unittest".msg = "Use pytest"
 "pyray.measure_text_ex".msg = "Use openpilot.system.ui.lib.text_measure"
-
-[tool.coverage.run]
-concurrency = ["multiprocessing", "thread"]
+"time.time".msg = "Use time.monotonic"
 
 [tool.ruff.format]
 quote-style = "preserve"

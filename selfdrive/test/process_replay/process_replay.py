@@ -297,7 +297,7 @@ class ProcessContainer:
             camera_state = getattr(m, m.which())
             camera_meta = meta_from_camera_state(m.which())
             assert frs is not None
-            img = frs[m.which()].get(camera_state.frameId)[0]
+            img = frs[m.which()].get(camera_state.frameId)
             self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []

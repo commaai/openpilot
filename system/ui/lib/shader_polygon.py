@@ -7,7 +7,7 @@ MAX_GRADIENT_COLORS = 15
 
 VERSION = """
 #version 300 es
-precision mediump float;
+precision highp float;
 """
 if platform.system() == "Darwin":
   VERSION = """
@@ -112,7 +112,7 @@ void main() {
     vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
     finalColor = vec4(color.rgb, color.a * alpha);
   } else {
-    finalColor = vec4(0.0);
+    discard;
   }
 }
 """

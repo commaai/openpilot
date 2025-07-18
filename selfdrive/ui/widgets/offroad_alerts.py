@@ -5,11 +5,11 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
-from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.wrap_text import wrap_text
-from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.wrap_text import wrap_text
+from openpilot.system.ui.widgets import Widget
 
 
 class AlertColors:
@@ -70,8 +70,7 @@ class AbstractAlert(Widget, ABC):
     pass
 
   def handle_input(self, mouse_pos: rl.Vector2, mouse_clicked: bool) -> bool:
-    # TODO: fix scroll_panel.is_click_valid()
-    if not mouse_clicked:
+    if not mouse_clicked or not self.scroll_panel.is_touch_valid():
       return False
 
     if rl.check_collision_point_rec(mouse_pos, self.dismiss_btn_rect):

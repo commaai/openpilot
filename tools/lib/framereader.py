@@ -2,10 +2,9 @@ import os
 import subprocess
 import json
 from collections.abc import Iterator
+from collections import OrderedDict
 
 import numpy as np
-from lru import LRU
-
 from openpilot.tools.lib.filereader import FileReader, resolve_name
 from openpilot.tools.lib.exceptions import DataUnreadableError
 from openpilot.tools.lib.vidindex import hevc_index
@@ -14,6 +13,24 @@ from openpilot.tools.lib.vidindex import hevc_index
 HEVC_SLICE_B = 0
 HEVC_SLICE_P = 1
 HEVC_SLICE_I = 2
+
+
+class LRUCache:
+  def __init__(self, capacity: int):
+    self._cache: OrderedDict = OrderedDict()
+    self.capacity = capacity
+
+  def __getitem__(self, key):
+    self._cache.move_to_end(key)
+    return self._cache[key]
+
+  def __setitem__(self, key, value):
+    self._cache[key] = value
+    if len(self._cache) > self.capacity:
+        self._cache.popitem(last=False)
+
+  def __contains__(self, key):
+    return key in self._cache
 
 
 def assert_hvec(fn: str) -> None:
@@ -39,6 +56,7 @@ def decompress_video_data(rawdat, w, h, pix_fmt="rgb24", vid_fmt='hevc') -> np.n
           "-"]
   dat = subprocess.check_output(args, input=rawdat)
 
+  ret: np.ndarray
   if pix_fmt == "rgb24":
     ret = np.frombuffer(dat, dtype=np.uint8).reshape(-1, h, w, 3)
   elif pix_fmt in ["nv12", "yuv420p"]:
@@ -135,16 +153,16 @@ class FrameReader:
                cache_size: int = 30, pix_fmt: str = "rgb24"):
     self.decoder = FfmpegDecoder(fn, index_data, pix_fmt)
     self.iframes = self.decoder.iframes
-    self._cache: LRU[int, np.ndarray] = LRU(cache_size)
+    self._cache: LRUCache = LRUCache(cache_size)
     self.w, self.h, self.frame_count, = self.decoder.w, self.decoder.h, self.decoder.frame_count
     self.pix_fmt = pix_fmt
 
     self.it: Iterator[tuple[int, np.ndarray]] | None = None
     self.fidx = -1
 
-  def get(self, fidx:int) -> list[np.ndarray]:
+  def get(self, fidx:int):
     if fidx in self._cache:  # If frame is cached, return it
-      return [self._cache[fidx]]
+      return self._cache[fidx]
     read_start = self.decoder.get_gop_start(fidx)
     if not self.it or fidx < self.fidx or read_start != self.decoder.get_gop_start(self.fidx):  # If the frame is in a different GOP, reset the iterator
       self.it = self.decoder.get_iterator(read_start)
@@ -152,4 +170,4 @@ class FrameReader:
     while self.fidx < fidx:
       self.fidx, frame = next(self.it)
       self._cache[self.fidx] = frame
-    return [self._cache[fidx]]  # TODO: return just frame
+    return self._cache[fidx]
