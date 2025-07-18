@@ -102,7 +102,7 @@ class ReadMode(enum.StrEnum):
 
 LogPath = str | None
 ValidFileCallable = Callable[[LogPath], bool]
-Source = Callable[[SegmentRange, ReadMode], list[LogPath]]
+Source = Callable[[str, ReadMode], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -144,6 +144,7 @@ def apply_strategy(mode: ReadMode, rlog_paths: list[LogPath], qlog_paths: list[L
 
 
 def comma_api_source(identifier: str, mode: ReadMode) -> list[LogPath]:
+  sr = SegmentRange(identifier)
   route = Route(sr.route_name)
 
   rlog_paths = [route.log_paths()[seg] for seg in sr.seg_idxs]
