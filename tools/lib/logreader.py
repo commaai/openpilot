@@ -239,40 +239,51 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   fallback_fn = None
   if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE):
     fallback_fn = FileName.QLOG
+  fell_back = False
 
   # We don't know how many files to expect until we evaluate the first source
   valid_files = {}
 
   # Automatically determine viable source
-  for source in sources:
-    try:
-      files = source(sr, fn)
-      print(f"final source {source.__name__} returned {files}")
+  for _fn in (fn, fallback_fn):
+    print('_fn:', _fn)
+    for source in sources:
+      try:
+        files = source(sr, _fn)
+        print(f"final source {source.__name__} returned {files}")
 
-      # Check every source returns an expected number of files
-      if len(valid_files) > 0:
-        assert len(files) == len(valid_files), f"Source {source.__name__} returned unexpected number of files"
+        # Check every source returns an expected number of files
+        if len(valid_files) > 0:
+          assert len(files) == len(valid_files), f"Source {source.__name__} returned unexpected number of files"
 
-      # files = check_source(source, sr, fn)
-      for idx, f in enumerate(files):
-        if valid_files.get(idx) is None:
-          # Add file if current one is not valid
-          print('adding valid file', idx, f)
-          valid_files[idx] = f
+        for idx, f in enumerate(files):
+          if valid_files.get(idx) is None:
+            valid_files[idx] = f
 
-      print(source.__name__, files)
+        print(source.__name__, files)
 
-      # We've found all files, return them
-      if all(f is not None for f in valid_files.values()):
-        return list(valid_files.values())
+        # We've found all files, return them
+        if all(f is not None for f in valid_files.values()):
+          return list(valid_files.values())
 
-    except Exception as e:
-      cloudlog.exception(f"Error while checking source {source.__name__}")
-      exceptions[source.__name__] = e
+      except Exception as e:
+        cloudlog.exception(f"Error while checking source {source.__name__}")
+        exceptions[source.__name__] = e
+
+    if _fn == fn:
+      print('HI!!!!!!!!!!!!!')
+      missing_logs = list(valid_files.values()).count(None)
+      if mode == ReadMode.AUTO:
+        cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
+      elif mode == ReadMode.AUTO_INTERACTIVE:
+        if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
+          break
+      fell_back = True
 
   # if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE) and fallback_fn is not None:
 
-  cloudlog.warning(f"{list(valid_files.values()).count(None)}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
+  print('final valid_files', valid_files)
+
 
   raise LogsUnavailable("auto_source could not find any valid source, exceptions for sources:\n  - " +
                         "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
