@@ -230,17 +230,17 @@ def direct_source(file_or_url: str) -> list[LogPath]:
   return [file_or_url]
 
 
-def get_invalid_files(files):
-  for f in files:
-    if f is None or not file_exists(f):
-      yield f
+# def get_invalid_files(files):
+#   for f in files:
+#     if f is None or not file_exists(f):
+#       yield f
 
 
-def check_source(source: Source, *args) -> list[LogPath]:
-  files = source(*args)
-  assert len(files) > 0, "No files on source"
-  assert next(get_invalid_files(files), False) is False, "Some files are invalid"
-  return files
+# def check_source(source: Source, *args) -> list[LogPath]:
+#   files = source(*args)
+#   assert len(files) > 0, "No files on source"
+#   assert next(get_invalid_files(files), False) is False, "Some files are invalid"
+#   return files
 
 
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
@@ -321,9 +321,9 @@ class LogReader:
 
     identifiers = auto_source(identifier, self.sources, self.default_mode)
 
-    invalid_count = len(list(get_invalid_files(identifiers)))
-    assert invalid_count == 0, (f"{invalid_count}/{len(identifiers)} invalid log(s) found, please ensure all logs " +
-                                "are uploaded or auto fallback to qlogs with '/a' selector at the end of the route name.")
+    missing_count = identifiers.count(None)
+    assert missing_count == 0, (f"{missing_count}/{len(identifiers)} missing log(s) found, please ensure all logs " +
+                                "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.")
     return identifiers
 
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
