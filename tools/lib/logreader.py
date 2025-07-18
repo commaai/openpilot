@@ -171,16 +171,10 @@ def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_EN
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  urls: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
-  print('urls', urls)
-  for fn in fns.value:
-    for seg in sr.seg_idxs:
-      url = get_internal_url(sr, seg, fn)
-      print('trying url', url)
-      if file_exists(url):
-        urls[seg] = url
-  print('urls', urls)
-  return list(urls.values())
+  files = []
+  for seg in sr.seg_idxs:
+    files.append([get_internal_url(sr, seg, fn) for fn in fns.value])
+  return list(eval_source(files))
 
   # # TODO: list instead of using static URLs to support routes with multiple file extensions
   # rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
@@ -195,7 +189,10 @@ def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_EN
 
 
 def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  urls: dict[int, str | None] = {seg: None for seg in sr.seg_idxs}
+  files = []
+  for seg in sr.seg_idxs:
+    files.append([get_url(sr.route_name, seg, fn) for fn in fns.value])
+  return list(eval_source(files))
 
   for fn in fns.value:
     for seg in sr.seg_idxs:
@@ -253,6 +250,17 @@ def direct_source(file_or_url: str) -> list[LogPath]:
 #   return files
 
 
+def eval_source(files: list[list[str]]) -> Iterator[LogPath]:
+  # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
+  for urls in files:
+    for url in urls:
+      if file_exists(url):
+        yield url
+        break
+    else:
+      yield None
+
+
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[LogPath]:
   sr = SegmentRange(identifier)
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
@@ -286,7 +294,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   for source in sources:
     try:
       files = source(sr, fn)
-      print(f"source {source.__name__} returned {files}")
+      print(f"final source {source.__name__} returned {files}")
 
       # Check every source returns an expected number of files
       if len(valid_files) > 0:
@@ -305,10 +313,11 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
       if all(f is not None for f in valid_files.values()):
         return list(valid_files.values())
 
-      # return check_source(source, sr, mode)
     except Exception as e:
       cloudlog.exception(f"Error while checking source {source.__name__}")
       exceptions[source.__name__] = e
+
+  # if mode in (ReadMode.AUTO, ReadMode.AUTO_INTERACTIVE) and fallback_fn is not None:
 
   cloudlog.warning(f"{list(valid_files.values()).count(None)}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
 
