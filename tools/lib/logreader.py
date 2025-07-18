@@ -96,7 +96,6 @@ class _LogFileReader:
 class ReadMode(enum.StrEnum):
   RLOG = "r"  # only read rlogs
   QLOG = "q"  # only read qlogs
-  SANITIZED = "s"  # read from the commaCarSegments database
   AUTO = "a"  # default to rlogs, fallback to qlogs
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
