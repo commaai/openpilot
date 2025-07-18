@@ -158,6 +158,7 @@ def comma_api_source(sr: SegmentRange, mode: ReadMode) -> list[LogPath]:
 
 
 def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2",
+                    rlog_fn: str = "rlog", qlog_fn: str = "qlog",
                     endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
@@ -166,8 +167,8 @@ def internal_source(sr: SegmentRange, mode: ReadMode, file_ext: str = "bz2",
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}.{file_ext}"
 
   # TODO: list instead of using static URLs to support routes with multiple file extensions
-  rlog_paths = [get_internal_url(sr, seg, "rlog") for seg in sr.seg_idxs]
-  qlog_paths = [get_internal_url(sr, seg, "qlog") for seg in sr.seg_idxs]
+  rlog_paths = [get_internal_url(sr, seg, rlog_fn) for seg in sr.seg_idxs]
+  qlog_paths = [get_internal_url(sr, seg, qlog_fn) for seg in sr.seg_idxs]
 
   return apply_strategy(mode, rlog_paths, qlog_paths)
 
