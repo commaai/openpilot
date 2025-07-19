@@ -2,11 +2,14 @@
 import os
 import time
 import threading
+import numpy as np
 
 import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.interfaces import ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 
 
 from openpilot.common.params import Params
@@ -15,6 +18,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
 
 from openpilot.selfdrive.car.car_specific import CarSpecificEvents
+from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from openpilot.selfdrive.selfdrived.events import Events, ET
 from openpilot.selfdrive.selfdrived.state import StateMachine
 from openpilot.selfdrive.selfdrived.alertmanager import AlertManager, set_offroad_alert
@@ -37,6 +41,26 @@ ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
+
+
+def check_lateral_iso_violation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator):
+  calibrator.feed_live_calib(sm['liveCalibration'])
+  device_pose = Pose.from_live_pose(sm['livePose'])
+  calibrated_pose = calibrator.build_calibrated_pose(device_pose)
+
+  yaw_rate = calibrated_pose.angular_velocity.yaw
+  roll = device_pose.orientation.roll
+
+  roll_compensated_lateral_accel = float((CS.vEgo * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY))
+
+  print('roll_compensated_lateral_accel:', roll_compensated_lateral_accel)
+
+  # TODO: some temporal tolerance?
+  if sm['carControl'].latActive:
+    if abs(roll_compensated_lateral_accel) > (ISO_LATERAL_ACCEL * 2):
+      return True
+
+  return False
 
 
 class SelfdriveD:
@@ -102,6 +126,7 @@ class SelfdriveD:
     self.active = False
     self.mismatch_counter = 0
     self.cruise_mismatch_counter = 0
+    self.lateral_iso_violation = False
     self.last_steering_pressed_frame = 0
     self.distance_traveled = 0
     self.last_functional_fan_frame = 0
@@ -113,6 +138,7 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
+    self.calibrator = PoseCalibrator()
 
     # some comma three with NVMe experience NVMe dropouts mid-drive that
     # cause loggerd to crash on write, so ignore it only on that platform
@@ -226,6 +252,14 @@ class SelfdriveD:
     if self.is_ldw_enabled and self.sm.valid['driverAssistance']:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
+
+    # Check for lateral ISO violations
+    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm, CS, self.calibrator):
+      set_offroad_alert("Offroad_LateralIsoViolation", True)
+      self.lateral_iso_violation = True
+
+    if self.lateral_iso_violation:
+      self.events.add(EventName.lateralIsoViolation)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
