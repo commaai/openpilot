@@ -148,12 +148,6 @@ def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
   return eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs])
 
 
-def testing_closet_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  if not internal_source_available('http://testing.comma.life'):
-    raise InternalUnavailableException
-  return eval_source([f"http://testing.comma.life/download/{sr.route_name.replace('|', '/')}/{seg}/rlog" for seg in sr.seg_idxs])
-
-
 def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
@@ -274,8 +268,7 @@ class LogReader:
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                sources: list[Source] = None, sort_by_time=False, only_union_types=False):
     if sources is None:
-      sources = [internal_source, openpilotci_source, comma_api_source,
-                 comma_car_segments_source, testing_closet_source]
+      sources = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source]
 
     self.default_mode = default_mode
     self.sources = sources
