@@ -8,7 +8,7 @@ from enum import IntEnum
 from openpilot.system.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 
 NVME = "/dev/nvme0n1"
@@ -33,6 +33,16 @@ class Reset(Widget):
     super().__init__()
     self.mode = mode
     self.reset_state = ResetState.NONE
+    self.cancel_button = Button("Cancel", self.cancel_callback)
+    self.confirm_button = Button("Confirm", self.confirm, button_style=ButtonStyle.PRIMARY)
+    self.reboot_button = Button("Reboot", self.reboot_callback)
+    self.status = True
+
+  def reboot_callback(self):
+    os.system("sudo reboot")
+
+  def cancel_callback(self):
+    self.status = False
 
   def _do_erase(self):
     if PC:
@@ -70,18 +80,14 @@ class Reset(Widget):
 
     if self.reset_state != ResetState.RESETTING:
       if self.mode == ResetMode.RECOVER or self.reset_state == ResetState.FAILED:
-        if gui_button(rl.Rectangle(rect.x, button_top, button_width, button_height), "Reboot"):
-          os.system("sudo reboot")
+        self.reboot_button.render(rl.Rectangle(rect.x, button_top, rect.width, button_height))
       elif self.mode == ResetMode.USER_RESET:
-        if gui_button(rl.Rectangle(rect.x, button_top, button_width, button_height), "Cancel"):
-          return False
+        self.cancel_button.render(rl.Rectangle(rect.x, button_top, button_width, button_height))
 
       if self.reset_state != ResetState.FAILED:
-        if gui_button(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height),
-                      "Confirm", button_style=ButtonStyle.PRIMARY):
-          self.confirm()
+        self.confirm_button.render(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height))
 
-    return True
+    return self.status
 
   def confirm(self):
     if self.reset_state == ResetState.CONFIRM:
