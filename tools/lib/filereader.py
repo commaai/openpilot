@@ -11,7 +11,7 @@ DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
 
 @cache
-@retry
+@retry(delay=0.0)
 def internal_source_available(url: str) -> bool:
   if os.path.isdir(url):
     return True
