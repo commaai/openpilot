@@ -1,4 +1,5 @@
 import pyray as rl
+from collections.abc import Callable
 from enum import IntEnum
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -154,7 +155,7 @@ def gui_button(
 class Button(Widget):
   def __init__(self,
                text: str,
-               click_callback = None,
+               click_callback: Callable[[], None] = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                font_weight: FontWeight = FontWeight.MEDIUM,
                button_style: ButtonStyle = ButtonStyle.NORMAL,
