@@ -1,6 +1,8 @@
-import pyray as rl
 from collections.abc import Callable
 from enum import IntEnum
+
+import pyray as rl
+
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget

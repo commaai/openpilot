@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 import os
-import pyray as rl
 import sys
 import threading
 from enum import IntEnum
+
+import pyray as rl
 
 from openpilot.system.hardware import PC
 from openpilot.system.ui.lib.application import gui_app, FontWeight
