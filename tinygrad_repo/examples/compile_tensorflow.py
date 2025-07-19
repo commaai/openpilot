@@ -25,7 +25,7 @@ class TinyOnnx:
   def __init__(self, keras_model):
     input_signature = [tf.TensorSpec([1,32], tf.float32, name='x')]
     onnx_model, _ = tf2onnx.convert.from_keras(keras_model, input_signature, opset=13)
-    self.run_onnx = OnnxRunner(onnx_model)
+    self.run_onnx = OnnxRunner(Tensor(onnx_model.SerializeToString(), device="PYTHON"))
 
   def forward(self, x):
     return self.run_onnx({"x": x}, debug=False)['predictions']

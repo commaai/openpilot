@@ -38,10 +38,7 @@ tinygrad can run [LLaMA](/docs/showcase.md#llama) and [Stable Diffusion](/docs/s
 Try a matmul. See how, despite the style, it is fused into one kernel with the power of laziness.
 
 ```sh
-DEBUG=3 python3 -c "from tinygrad import Tensor;
-N = 1024; a, b = Tensor.rand(N, N), Tensor.rand(N, N);
-c = (a.reshape(N, 1, N) * b.T.reshape(1, N, N)).sum(axis=2);
-print((c.numpy() - (a.numpy() @ b.numpy())).mean())"
+DEBUG=3 python3 -c "from tinygrad import Tensor; N = 1024; a, b = Tensor.empty(N, N), Tensor.empty(N, N); (a @ b).realize()"
 ```
 
 And we can change `DEBUG` to `4` to see the generated code.

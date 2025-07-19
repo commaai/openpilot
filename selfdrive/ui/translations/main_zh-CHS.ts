@@ -40,7 +40,7 @@
     </message>
     <message>
         <source>IP Address</source>
-        <translation>IP地址</translation>
+        <translation>IP 地址</translation>
     </message>
     <message>
         <source>Enable Roaming</source>
@@ -48,11 +48,11 @@
     </message>
     <message>
         <source>APN Setting</source>
-        <translation>APN设置</translation>
+        <translation>APN 设置</translation>
     </message>
     <message>
         <source>Enter APN</source>
-        <translation>输入APN</translation>
+        <translation>输入 APN</translation>
     </message>
     <message>
         <source>leave blank for automatic configuration</source>
@@ -84,27 +84,27 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation type="unfinished"></translation>
+        <translation>在按流量计费的移动网络上，防止上传大数据</translation>
     </message>
     <message>
         <source>default</source>
-        <translation type="unfinished"></translation>
+        <translation>默认</translation>
     </message>
     <message>
         <source>metered</source>
-        <translation type="unfinished"></translation>
+        <translation>按流量计费</translation>
     </message>
     <message>
         <source>unmetered</source>
-        <translation type="unfinished"></translation>
+        <translation>不按流量计费</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>按流量计费的 WLAN 网络</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
-        <translation type="unfinished"></translation>
+        <translation>在按流量计费的 WLAN 网络上，防止上传大数据</translation>
     </message>
 </context>
 <context>
@@ -247,10 +247,6 @@
         <translation>关机</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot要求设备安装的偏航角在左4°和右4°之间，俯仰角在上5°和下9°之间。一般来说，openpilot会持续更新校准，很少需要重置。</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> 您的设备校准为%1° %2、%3° %4。</translation>
     </message>
@@ -308,11 +304,39 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>解除以重置校准</translation>
     </message>
     <message>
-        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation>openpilot 要求设备的安装角度：左右偏移需在 4° 以内，上下俯仰角度需在向上 5° 至向下 9° 的范围内。</translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation>openpilot 会持续进行校准，因此很少需要重置。如果车辆电源已开启，重置校准会重新启动 openpilot。</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation>
+
+转向延迟校准已完成 %1%。</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation>
+
+转向延迟校准已完成。</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation> 转向扭矩响应校准已完成 %1%。</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation> 转向扭矩响应校准已完成。</translation>
     </message>
 </context>
 <context>
@@ -336,20 +360,16 @@
 <context>
     <name>FirehosePanel</name>
     <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 训练数据上传模式 🔥</translation>
-    </message>
-    <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
         <translation>openpilot 通过观察人类驾驶（包括您）来学习如何驾驶。
 
-“训练数据上传模式”允许您最大化上传训练数据，以改进 openpilot 的驾驶模型。更多数据意味着更强大的模型，也就意味着更优秀的“实验模式”。</translation>
+“Firehose 模式”允许您最大化上传训练数据，以改进 openpilot 的驾驶模型。更多数据意味着更强大的模型，也就意味着更优秀的“实验模式”。</translation>
     </message>
     <message>
         <source>Firehose Mode: ACTIVE</source>
-        <translation>训练数据上传模式：激活中</translation>
+        <translation>Firehose 模式：激活中</translation>
     </message>
     <message>
         <source>ACTIVE</source>
@@ -368,6 +388,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
         <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;闲置&lt;/span&gt;：请连接到不限流量的网络</translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation>Firehose 模式</translation>
     </message>
 </context>
 <context>
@@ -453,10 +477,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>一个针对您设备的操作系统更新正在后台下载中。当更新准备好安装时，您将收到提示进行更新。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>设备注册失败。它将无法连接或上传至 comma.ai 服务器，并且无法获得 comma.ai 的支持。如果这是一个官方设备，请访问 https://comma.ai/support。</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>NVMe固态硬盘未被挂载。</translation>
     </message>
@@ -475,6 +495,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>设备温度过高。系统正在冷却中，等冷却完毕后才会启动。目前内部组件温度：%1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation>设备未能注册到 comma.ai 后端。该设备将无法连接或上传数据到 comma.ai 服务器，也无法获得 comma.ai 的支持。如果该设备是在 comma.ai/shop 购买的，请访问 https://comma.ai/support 提交工单。</translation>
     </message>
 </context>
 <context>
@@ -689,7 +713,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Firehose</source>
-        <translation>训练上传</translation>
+        <translation>Firehose</translation>
     </message>
 </context>
 <context>
@@ -785,6 +809,18 @@ This may take up to a minute.</source>
     <message>
         <source>Custom Software</source>
         <translation>定制软件</translation>
+    </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation>警告：自定义软件</translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation>请谨慎安装第三方软件。第三方软件未经 comma 测试，可能会损害您的设备和车辆。
+
+如果您决定继续，后续可通过 https://flash.comma.ai 将设备恢复到出厂状态。</translation>
     </message>
 </context>
 <context>
@@ -1125,11 +1161,19 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 系统提供“自适应巡航”和“车道保持”驾驶辅助功能。使用此功能时，您需要时刻保持专注。</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation> 如果车辆已通电，更改此设置将会重新启动 openpilot。</translation>
+    </message>
+    <message>
+        <source>Record and Upload Microphone Audio</source>
+        <translation>录制并上传麦克风音频</translation>
+    </message>
+    <message>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>在驾驶时录制并存储麦克风音频。该音频将会包含在 comma connect 的行车记录仪视频中。</translation>
     </message>
 </context>
 <context>
@@ -1179,7 +1223,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; 训练数据上传模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose 模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>

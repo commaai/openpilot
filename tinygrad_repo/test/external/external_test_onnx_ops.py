@@ -4,7 +4,7 @@
 
 from typing import Any
 import unittest, onnx, tempfile
-from tinygrad import dtypes
+from tinygrad import dtypes, Tensor
 from tinygrad.frontend.onnx import OnnxRunner
 import numpy as np
 from extra.onnx_helpers import validate
@@ -88,7 +88,8 @@ class TestMainOnnxOps(TestOnnxOps):
     attributes = {"detect_negative":1, "detect_positive":1}
     outputs = ["y"]
     model = self.helper_build_model("IsInf", inputs, attributes, outputs)
-    outputs = OnnxRunner(model)(inputs)
+    runner = OnnxRunner(Tensor(model.SerializeToString(), device="PYTHON"))
+    outputs = runner(inputs)
     assert outputs["y"].dtype is dtypes.bool
 
   def test_quantize_linear(self):
@@ -203,7 +204,7 @@ class TestTrainingOnnxOps(TestOnnxOps):
   def _validate_training(self, op:str, onnx_fxn, inps:dict[str, np.ndarray], opts:dict[str, Any], outs:list[str]):
     model = self.helper_build_model(op, inps, opts, outs)
     if op == "Momentum": del opts['mode']
-    runner = OnnxRunner(model)
+    runner = OnnxRunner(Tensor(model.SerializeToString(), device="PYTHON"))
     tiny_out = runner(inps)
     onnx_out = onnx_fxn(**inps, **opts)
     for (nm, t_out), o_out in  zip(tiny_out.items(), onnx_out):

@@ -254,7 +254,7 @@ void ChartsWidget::settingChanged() {
   if (std::exchange(current_theme, settings.theme) != current_theme) {
     undo_zoom_action->setIcon(utils::icon("arrow-counterclockwise"));
     redo_zoom_action->setIcon(utils::icon("arrow-clockwise"));
-    auto theme = settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
+    auto theme = utils::isDarkTheme() ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight;
     for (auto c : charts) {
       c->setTheme(theme);
     }

@@ -8,42 +8,26 @@ Most of openpilot should work natively on macOS. On Windows you can use WSL for 
 
 ## Native setup on Ubuntu 24.04 and macOS
 
+Follow these instructions for a fully managed setup experience. If you'd like to manage the dependencies yourself, just read the setup scripts in this directory.
+
 **1. Clone openpilot**
-
-NOTE: This repository uses Git LFS for large files. Ensure you have [Git LFS](https://git-lfs.com/) installed and set up before cloning or working with it.
-
-Either do a partial clone for faster download:
 ``` bash
-git clone --filter=blob:none --recurse-submodules --also-filter-submodules https://github.com/commaai/openpilot.git
-```
-
-or do a full clone:
-``` bash
-git clone --recurse-submodules https://github.com/commaai/openpilot.git
+git clone https://github.com/commaai/openpilot.git
 ```
 
 **2. Run the setup script**
-
 ``` bash
 cd openpilot
 tools/op.sh setup
 ```
 
-**3. Git LFS**
-
-``` bash
-git lfs pull
-```
-
-**4. Activate a python shell**
-
+**3. Activate a Python shell**
 Activate a shell with the Python dependencies installed:
 ``` bash
 source .venv/bin/activate
 ```
 
-**5. Build openpilot**
-
+**4. Build openpilot**
 ``` bash
 scons -u -j$(nproc)
 ```
@@ -62,8 +46,6 @@ Learn about the openpilot ecosystem and tools by playing our [CTF](/tools/CTF.md
 ## Directory Structure
 
 ```
-├── ubuntu_setup.sh     # Setup script for Ubuntu
-├── mac_setup.sh        # Setup script for macOS
 ├── cabana/             # View and plot CAN messages from drives or in realtime
 ├── camerastream/       # Cameras stream over the network
 ├── joystick/           # Control your car with a joystick

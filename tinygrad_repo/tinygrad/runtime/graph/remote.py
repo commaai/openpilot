@@ -22,13 +22,14 @@ class RemoteGraph(GraphRunner):
         case BufferXfer():
           dest, src = ji.bufs[0:2]
           assert dest is not None and src is not None, ji
-          return Transfer(session=cast(RemoteDevice, Device[dest.device]).session, buffer_num=dest._buf,
-                          ssession=cast(RemoteDevice, Device[src.device]).session, sbuffer_num=src._buf)
+          return Transfer(session=cast(RemoteDevice, Device[src.device]).session, buffer_num=src._buf,
+                          dsession=cast(RemoteDevice, Device[dest.device]).session, dbuffer_num=dest._buf)
     self.graph_num = next(self.devices[0].graph_num)
     self.devices[0].q(GraphAlloc(self.graph_num, tuple(_process_ji(ji) for ji in jit_cache), self.map_rawbufs(rawbufs), var_vals))
 
   def __del__(self):
-    self.devices[0].q(GraphFree(self.graph_num))
+    # This can happen if `GraphException` is thrown at the very start
+    if hasattr(self, "graph_num"): self.devices[0].q(GraphFree(self.graph_num))
 
   def map_rawbufs(self, rawbufs:list[Buffer]):
     return tuple((cast(RemoteDevice, Device[rawbufs[i].device]).session, rawbufs[i]._buf) for i in self.iids)

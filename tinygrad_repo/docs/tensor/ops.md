@@ -37,8 +37,10 @@
 ::: tinygrad.Tensor.scatter
 ::: tinygrad.Tensor.scatter_reduce
 ::: tinygrad.Tensor.masked_select
+::: tinygrad.Tensor.masked_fill
 ::: tinygrad.Tensor.sort
 ::: tinygrad.Tensor.topk
+::: tinygrad.Tensor.multinomial
 
 ## Neural Network (functional)
 

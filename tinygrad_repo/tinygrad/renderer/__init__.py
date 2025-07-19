@@ -1,46 +1,12 @@
 from __future__ import annotations
-from typing import Optional, Callable, cast
-import functools, math
-from enum import Enum, auto
+from typing import Optional, Callable, cast, TYPE_CHECKING
+import functools, itertools
 from dataclasses import dataclass, field, replace
 from tinygrad.helpers import to_function_name, dedup, prod
 from tinygrad.uop.ops import Ops, UOp, sym_infer, sint, Variable, ssimplify, GroupOp, PatternMatcher
-from tinygrad.dtype import DType
-
-class OptOps(Enum):
-  TC = auto(); UPCAST = auto(); UNROLL = auto(); LOCAL = auto() # noqa: E702
-  GROUP = auto(); GROUPTOP = auto(); NOLOCALS = auto(); PADTO = auto(); SWAP = auto() # noqa: E702
-  def __lt__(self, x:OptOps): return self.value < x.value
-
-@dataclass(frozen=True, order=True)
-class Opt:
-  op: OptOps
-  axis: Optional[int] = None
-  arg: Optional[int | tuple] = None
-  def __repr__(self): return f"Opt(op={self.op}, axis={self.axis}, arg={self.arg})"
-
-@dataclass(frozen=True)
-class TensorCore: # D = A * B + C, A is (M x K), B is (K x N), C and D are (M x N)
-  dims: tuple[int,int,int] # N, M, K
-  threads: int # number of threads that construct the warp
-  elements_per_thread: tuple[int, int, int] # elements per-thread to load/store from A/B/C
-  dtype_in: DType # dtype for A and B
-  dtype_out: DType # dtype for C and D
-  opts: tuple[str, ...] # ordered tuple of "ux" or "lx" specifing kernel opts to perform. "ux" upcasts dim x and "lx" localizes dim x
-  swizzle: tuple[Optional[tuple[tuple[int, ...], tuple[int, ...]]], Optional[tuple[tuple[int, ...], tuple[int, ...]]]] = (None, None)
-  def get_reduce_axes(self): return [(i, 2) for i in range(int(math.log2(self.dims[2])))]
-  def get_upcast_axes(self): return [opt for opt in self.opts if opt[0] == "u"]
-  def get_local_axes(self): return [opt for opt in self.opts if opt[0] == "l"]
-  def __str__(self): return "_".join(["WMMA"] + list(map(str, self.dims)) + [self.dtype_in.name, self.dtype_out.name])
-  def __post_init__(self):
-    local_axes, upcast_axes, reduce_axes = len(self.get_local_axes()), len(self.get_upcast_axes()), len(self.get_reduce_axes())
-    assert self.dims[0] * self.dims[1] == 2**(local_axes + upcast_axes), (
-      f"N({self.dims[0]}) x M({self.dims[1]}) != local({2**local_axes}) x upcast({2**upcast_axes}) with opts({self.opts})")
-    assert 2**local_axes == self.threads, f"{self.threads} threads construct the warp but found {2**local_axes} in {self.opts}"
-    assert 2**upcast_axes == self.elements_per_thread[2], (
-      f"{self.elements_per_thread[2]} elements from C are processed per thread but found {2**upcast_axes} in {self.opts}")
-    assert all(len(perm[0]) == local_axes and len(perm[1]) == reduce_axes + upcast_axes for perm in self.swizzle if perm), (
-      f"swizzle perm should be of len (({local_axes})({reduce_axes + upcast_axes}))")
+if TYPE_CHECKING:
+  from tinygrad.opt.tc import TensorCore
+  from tinygrad.opt.kernel import Opt
 
 @dataclass(frozen=True)
 class Estimates:
@@ -87,8 +53,6 @@ class ProgramSpec:
   device:str
   ast:UOp  # save the base ast (this is method cache key)
   uops:Optional[list[UOp]]=None
-  applied_opts:Optional[list[Opt]]=None
-  mem_estimate:sint=0  # TODO: get this from the load/store uops once min/max are good
 
   # filled in from uops (if we have uops)
   global_size:Optional[list[int]]=None
@@ -118,11 +82,23 @@ class ProgramSpec:
       self._ran_post_init = True
 
   @functools.cached_property
+  def mem_estimate(self) -> sint:
+    # group non-local bufs by the op type (LOAD or STORE) and the buffer arg. take the max access of that buffer in bytes
+    # TODO: these max and min don't work on symbolic, and results are very wrong.
+    return sum(max(x.src[0].dtype.nbytes() for x in group)
+      for _, group in itertools.groupby([x for x in self.ast.toposort() if x.op in {Ops.LOAD, Ops.STORE} and x.src[0].base.op is Ops.DEFINE_GLOBAL],
+                        key=lambda x: (x.op, x.src[0].base.arg)))
+
+  @functools.cached_property
   def estimates(self) -> Estimates:
     return replace(Estimates() if self.uops is None else Estimates.from_uops(self.uops, ignore_indexing=True), mem=self.mem_estimate)
 
   @functools.cached_property
   def function_name(self) -> str: return to_function_name(self.name)
+
+  @property
+  def applied_opts(self) -> tuple[Opt, ...]|None: return self.uops[-1].arg.applied_opts if \
+    self.uops is not None and self.uops[-1].op is Ops.SINK and self.uops[-1].arg is not None else None
 
   def launch_dims(self, var_vals:dict[Variable, int]):
     global_size = [sym_infer(sz, var_vals) for sz in self.global_size] if self.global_size is not None else None

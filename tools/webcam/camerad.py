@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import threading
 import os
+import platform
 from collections import namedtuple
 
 from msgq.visionipc import VisionIpcServer, VisionStreamType
@@ -30,8 +31,7 @@ class Camerad:
 
     self.cameras = []
     for c in CAMERAS:
-      cam_device = f"/dev/video{c.cam_id}"
-      print(f"opening {c.msg_name} at {cam_device}")
+      cam_device = f"/dev/video{c.cam_id}" if platform.system() != "Darwin" else c.cam_id
       cam = Camera(c.msg_name, c.stream_type, cam_device)
       self.cameras.append(cam)
       self.vipc_server.create_buffers(c.stream_type, 20, cam.W, cam.H)

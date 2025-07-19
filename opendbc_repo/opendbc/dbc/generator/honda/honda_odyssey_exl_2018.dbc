@@ -18,13 +18,6 @@ BO_ 419 GEARBOX: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
-BO_ 450 EPB_STATUS: 8 XXX
- SG_ EPB_BRAKE_AND_PULL : 6|1@0+ (1,0) [0|1] "" XXX
- SG_ EPB_ACTIVE : 3|1@0+ (1,0) [0|1] "" XXX
- SG_ EPB_STATE : 29|2@0+ (1,0) [0|1] "" XXX
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
-
 BO_ 662 SCM_BUTTONS: 4 SCM
  SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
  SG_ CRUISE_SETTING : 3|2@0+ (1,0) [0|3] "" EON
@@ -54,7 +47,6 @@ CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
 
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
 VAL_ 419 GEAR_SHIFTER 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
-VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;
 VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
 VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
 VAL_ 780 HUD_LEAD 3 "no_car" 2 "solid_car" 1 "dashed_car" 0 "no_car" ;

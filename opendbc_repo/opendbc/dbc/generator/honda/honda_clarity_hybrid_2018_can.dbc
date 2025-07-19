@@ -24,12 +24,6 @@ BO_ 419 GEARBOX: 8 PCM
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
 
-BO_ 450 EPB_STATUS: 8 EPB
- SG_ EPB_ACTIVE : 3|1@0+ (1,0) [0|1] "" EON
- SG_ EPB_STATE : 29|2@0+ (1,0) [0|3] "" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
-
 BO_ 545 ECON_STATUS: 6 XXX
  SG_ ECON_ON_2 : 37|2@0+ (1,0) [0|3] "" EON
  SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" EON
@@ -80,7 +74,6 @@ CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
 
 VAL_ 399 STEER_STATUS 5 "tmp_fault" 4 "no_torque_alert_2" 2 "no_torque_alert_1" 0 "normal" ;
 VAL_ 419 GEAR_SHIFTER 10 "S" 4 "D" 3 "N" 2 "R" 1 "P" ;
-VAL_ 450 EPB_STATE 3 "engaged" 2 "disengaging" 1 "engaging" 0 "disengaged" ;
 VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
 VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
 VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;

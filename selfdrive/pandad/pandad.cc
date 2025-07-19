@@ -188,7 +188,7 @@ void fill_panda_can_state(cereal::PandaState::PandaCanState::Builder &cs, const 
   cs.setCanCoreResetCnt(can_health.can_core_reset_cnt);
 }
 
-std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool spoofing_started) {
+std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> &pandas, bool is_onroad, bool spoofing_started) {
   bool ignition_local = false;
   const uint32_t pandas_cnt = pandas.size();
 
@@ -255,8 +255,9 @@ std::optional<bool> send_panda_states(PubMaster *pm, const std::vector<Panda *> 
       panda->set_power_saving(power_save_desired);
     }
 
-    // set safety mode to NO_OUTPUT when car is off. ELM327 is an alternative if we want to leverage athenad/connect
-    if (!ignition_local && (health.safety_mode_pkt != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
+    // set safety mode to NO_OUTPUT when car is off or we're not onroad. ELM327 is an alternative if we want to leverage athenad/connect
+    bool should_close_relay = !ignition_local || !is_onroad;
+    if (should_close_relay && (health.safety_mode_pkt != (uint8_t)(cereal::CarParams::SafetyModel::NO_OUTPUT))) {
       panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
     }
 
@@ -323,14 +324,14 @@ void send_peripheral_state(Panda *panda, PubMaster *pm) {
   pm->send("peripheralState", msg);
 }
 
-void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool engaged, bool spoofing_started) {
+void process_panda_state(std::vector<Panda *> &pandas, PubMaster *pm, bool engaged, bool is_onroad, bool spoofing_started) {
   std::vector<std::string> connected_serials;
   for (Panda *p : pandas) {
     connected_serials.push_back(p->hw_serial());
   }
 
   {
-    auto ignition_opt = send_panda_states(pm, pandas, spoofing_started);
+    auto ignition_opt = send_panda_states(pm, pandas, is_onroad, spoofing_started);
     if (!ignition_opt) {
       LOGE("Failed to get ignition_opt");
       return;
@@ -423,12 +424,14 @@ void pandad_run(std::vector<Panda *> &pandas) {
   // Start the CAN send thread
   std::thread send_thread(can_send_thread, pandas, fake_send);
 
+  Params params;
   RateKeeper rk("pandad", 100);
   SubMaster sm({"selfdriveState"});
   PubMaster pm({"can", "pandaStates", "peripheralState"});
   PandaSafety panda_safety(pandas);
   Panda *peripheral_panda = pandas[0];
   bool engaged = false;
+  bool is_onroad = false;
 
   // Main loop: receive CAN data and process states
   while (!do_exit && check_all_connected(pandas)) {
@@ -443,8 +446,9 @@ void pandad_run(std::vector<Panda *> &pandas) {
     if (rk.frame() % 10 == 0) {
       sm.update(0);
       engaged = sm.allAliveAndValid({"selfdriveState"}) && sm["selfdriveState"].getSelfdriveState().getEnabled();
-      process_panda_state(pandas, &pm, engaged, spoofing_started);
-      panda_safety.configureSafetyMode();
+      is_onroad = params.getBool("IsOnroad");
+      process_panda_state(pandas, &pm, engaged, is_onroad, spoofing_started);
+      panda_safety.configureSafetyMode(is_onroad);
     }
 
     // Send out peripheralState at 2Hz
@@ -469,7 +473,6 @@ void pandad_run(std::vector<Panda *> &pandas) {
   }
 
   // Close relay on exit to prevent a fault
-  const bool is_onroad = Params().getBool("IsOnroad");
   if (is_onroad && !engaged) {
     for (auto &p : pandas) {
       if (p->connected()) {

@@ -65,13 +65,9 @@ if GetOption('extras'):
 
   qt_env.SharedLibrary("qt/python_helpers", ["qt/qt_window.cc"], LIBS=qt_libs)
 
-  # setup and factory resetter
-  qt_env.Program("qt/setup/reset", ["qt/setup/reset.cc"], LIBS=qt_libs)
+  # setup
   qt_env.Program("qt/setup/setup", ["qt/setup/setup.cc", asset_obj],
                  LIBS=qt_libs + ['curl', 'common'])
-
-  # build updater UI
-  qt_env.Program("qt/setup/updater", ["qt/setup/updater.cc", asset_obj], LIBS=qt_libs)
 
   if arch != "Darwin":
     # build installers
@@ -105,7 +101,7 @@ if GetOption('extras'):
       obj = raylib_env.Object(f"installer/installers/installer_{name}.o", ["installer/installer.cc"], CPPDEFINES=d)
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
       # keep installers small
-      assert f[0].get_size() < 1300*1e3, f[0].get_size()
+      assert f[0].get_size() < 1900*1e3, f[0].get_size()
 
 # build watch3
 if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):

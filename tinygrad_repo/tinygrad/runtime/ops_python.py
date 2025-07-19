@@ -7,9 +7,9 @@ import pickle, base64, itertools, time, struct, sys
 from tinygrad.dtype import DType, dtypes, ImageDType, PtrDType, truncate
 from tinygrad.helpers import all_same, getenv, flatten, get_single_element
 from tinygrad.device import Compiled, Compiler, Allocator
+from tinygrad.opt import tc
 from tinygrad.uop.ops import exec_alu, Ops, UOp, GroupOp
 from tinygrad.renderer import Renderer
-from tinygrad.renderer.cstyle import CUDARenderer, MetalRenderer, AMDRenderer, IntelRenderer, ClangRenderer
 
 def _load(m, i):
   if i is None: return 0.0
@@ -41,19 +41,15 @@ class PythonProgram:
       while i < len(self.uops):
         uop, dtype, idp, arg = self.uops[i]
         void_ops = {Ops.STORE, Ops.ENDRANGE, Ops.BARRIER, Ops.IF, Ops.ENDIF, Ops.SINK}
-        if uop is Ops.DEFINE_ACC: idp = [idp[0]]
+        if uop is Ops.DEFINE_REG: idp = [idp[0]]
         inp = [ul[v] for v in idp if self.uops[v][0] not in void_ops]
         dtp = [dl[v] for v in idp if self.uops[v][0] not in void_ops]
         if getenv("TRACE"): print(i, uop, dtype, arg, inp, dtp)
         if uop is Ops.STORE:
           assert len(inp) == 2, "expected store is ([(memory, offset, gate)], [value])"
-          if dtp[1].count > 1:
-            for j,val in enumerate(inp[1]):
-              for (m,o,g),v in zip(inp[0], val):
-                if g: _store(m, o+j, v)
-          else:
-            for (m,o,g),v in zip(*inp):
-              if g: _store(m, o, v)
+          for j,val in enumerate(inp[1] if dtp[1].count > 1 else [inp[1]]):
+            for (m,o,g),v in zip(inp[0], val):
+              if g: _store(m, o+j, v)
           i += 1
           continue
         if uop is Ops.ENDRANGE:
@@ -77,7 +73,7 @@ class PythonProgram:
           if arg[0][0] == 'g': ul[i] = [idxs[2-int(arg[0][-1])]] * warp_size
           elif arg[0][0] == 'l': ul[i] = [x[2-int(arg[0][-1])] for x in warp]
         elif uop is Ops.CONST: ul[i] = [arg] * warp_size
-        elif uop is Ops.DEFINE_ACC:
+        elif uop is Ops.DEFINE_REG:
           ul[i] = [[inp[0][0][0]] * warp_size for _ in range(dtype.count)] if dtype.count > 1 else [inp[0][0]] * warp_size
         elif uop is Ops.INDEX:
           ret:list = []
@@ -200,14 +196,14 @@ class PythonProgram:
 class PythonRenderer(Renderer):
   device = "PYTHON"
   def __init__(self):
-    if getenv("EMULATE_METAL"): self.device, self.tensor_cores = "METAL", MetalRenderer.tensor_cores
-    if getenv("EMULATE_AMD"): self.device, self.tensor_cores = "AMD", AMDRenderer.tensor_cores
-    if getenv("EMULATE_AMD_MFMA"): self.device, self.tensor_cores = "AMD", AMDRenderer.tensor_cores_mfma
-    if getenv("EMULATE_AMD_RDNA4"): self.device, self.tensor_cores = "AMD", AMDRenderer.tensor_cores_rdna4
-    if getenv("EMULATE_CUDA"): self.device, self.tensor_cores = "CUDA", CUDARenderer.tc_sm80
-    if getenv("EMULATE_CUDA_SM75"): self.device, self.tensor_cores = "CUDA", CUDARenderer.tc_sm75
-    if getenv("EMULATE_INTEL"): self.device, self.suffix, self.tensor_cores = "INTEL", "INTEL", IntelRenderer.tensor_cores
-    if getenv("EMULATE_AMX"): self.device, self.tensor_cores = "CPU", ClangRenderer.tensor_cores
+    if getenv("EMULATE_METAL"): self.device, self.tensor_cores = "METAL", tc.metal
+    if getenv("EMULATE_AMD"): self.device, self.tensor_cores = "AMD", tc.amd_rdna3
+    if getenv("EMULATE_AMD_MFMA"): self.device, self.tensor_cores = "AMD", tc.amd_cdna
+    if getenv("EMULATE_AMD_RDNA4"): self.device, self.tensor_cores = "AMD", tc.amd_rdna4
+    if getenv("EMULATE_CUDA"): self.device, self.tensor_cores = "CUDA", tc.cuda_sm80
+    if getenv("EMULATE_CUDA_SM75"): self.device, self.tensor_cores = "CUDA", tc.cuda_sm75
+    if getenv("EMULATE_INTEL"): self.device, self.suffix, self.tensor_cores = "INTEL", "INTEL", tc.intel
+    if getenv("EMULATE_AMX"): self.device, self.tensor_cores = "CPU", tc.amx
 
   def render(self, uops:list[UOp]) -> str:
     lops = [(u.op, u.dtype, [uops.index(v) for v in u.src], u.arg) for u in uops]

@@ -10,9 +10,9 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
+QLOG_FILENAMES = ['qlog.bz2', 'qlog.zst', 'qlog']
 QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2', 'rlog.zst']
+LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2', 'rlog.zst', 'rlog']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
@@ -240,6 +240,10 @@ class SegmentName:
 
   @property
   def canonical_name(self) -> str: return self._canonical_name
+
+  #TODO should only use one name
+  @property
+  def data_name(self) -> str: return f"{self._route_name.canonical_name}/{self._num}"
 
   @property
   def dongle_id(self) -> str: return self._route_name.dongle_id

@@ -3,39 +3,16 @@ import os
 import argparse
 import time
 import capnp
-import numpy as np
 
 from typing import Any
 from collections.abc import Iterable
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, FAKEDATA, ProcessConfig, replay_process, get_process_config, \
                                                                    check_openpilot_enabled, check_most_messages_valid, get_custom_params_from_lr
-from openpilot.selfdrive.test.process_replay.vision_meta import DRIVER_CAMERA_FRAME_SIZES
 from openpilot.selfdrive.test.update_ci_routes import upload_route
-from openpilot.tools.lib.framereader import FrameReader, BaseFrameReader, FrameType
+from openpilot.tools.lib.framereader import FrameReader
 from openpilot.tools.lib.logreader import LogReader, LogIterable, save_log
 from openpilot.tools.lib.openpilotci import get_url
-
-class DummyFrameReader(BaseFrameReader):
-  def __init__(self, w: int, h: int, frame_count: int, pix_val: int):
-    self.pix_val = pix_val
-    self.w, self.h = w, h
-    self.frame_count = frame_count
-    self.frame_type = FrameType.raw
-
-  def get(self, idx, count=1, pix_fmt="rgb24"):
-    if pix_fmt == "rgb24":
-      shape = (self.h, self.w, 3)
-    elif pix_fmt == "nv12" or pix_fmt == "yuv420p":
-      shape = (int((self.h * self.w) * 3 / 2),)
-    else:
-      raise NotImplementedError
-
-    return [np.full(shape, self.pix_val, dtype=np.uint8) for _ in range(count)]
-
-  @staticmethod
-  def zero_dcamera():
-    return DummyFrameReader(*DRIVER_CAMERA_FRAME_SIZES[("tici", "ar0231")], 1200, 0)
 
 
 def regen_segment(
@@ -64,7 +41,7 @@ def setup_data_readers(
       frs['wideRoadCameraState'] = FrameReader(get_url(route, str(sidx), "ecamera.hevc"))
   if needs_driver_cam:
     if dummy_driver_cam:
-      frs['driverCameraState'] = DummyFrameReader.zero_dcamera()
+      frs['driverCameraState'] = FrameReader(get_url(route, str(sidx), "fcamera.hevc")) # Use fcam as dummy
     else:
       device_type = next(str(msg.initData.deviceType) for msg in lr if msg.which() == "initData")
       assert device_type != "neo", "Driver camera not supported on neo segments. Use dummy dcamera."

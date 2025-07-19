@@ -35,7 +35,7 @@ class TestBenchLog(unittest.TestCase):
       self.assertGreater(_events[event]["wall"][0], 0)
       self.assertGreater(_events[event]["wall"][1], 0)
 
-  @skipIf(CI and Device.DEFAULT == "CUDA", "ci cuda timing is not accurate")
+  @skipIf(CI, "ci timing is not accurate")
   def test_log_single_kernel_time(self):
     wall_times = []
 
