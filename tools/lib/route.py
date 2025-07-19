@@ -10,9 +10,9 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog', 'qlog.bz2', 'qlog.zst']
-QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog', 'rlog.bz2', 'raw_log.bz2', 'rlog.zst']
+QLOG_FILENAMES = ['qlog.bz2', 'qlog.zst', 'qlog']
+QCAMERA_FILENAMES = ['qcamera.ts', 'qcamera.ts.gz']
+LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2', 'rlog.zst', 'rlog']
 CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
 DCAMERA_FILENAMES = ['dcamera.hevc']
 ECAMERA_FILENAMES = ['ecamera.hevc']
