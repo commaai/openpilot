@@ -455,7 +455,7 @@ def hardware_thread(end_event, hw_queue) -> None:
       uptime_onroad += now_ts - max(last_uptime_ts, started_ts)
     last_uptime_ts = now_ts
 
-    if (count % int(30. / DT_HW)) == 0:
+    if (count % int(60. / DT_HW)) == 0:
       params.put("UptimeOffroad", str(uptime_offroad))
       params.put("UptimeOnroad", str(uptime_onroad))
 
