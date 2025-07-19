@@ -120,5 +120,7 @@ inline static std::unordered_map<std::string, uint32_t> keys = {
     {"UpdaterState", CLEAR_ON_MANAGER_START},
     {"UpdaterTargetBranch", CLEAR_ON_MANAGER_START},
     {"UpdaterLastFetchTime", PERSISTENT},
+    {"UptimeOffroad", PERSISTENT},
+    {"UptimeOnroad", PERSISTENT},
     {"Version", PERSISTENT},
 };
