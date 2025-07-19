@@ -979,7 +979,7 @@ nie zostało ustawione</translation>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <source>Enable openpilot</source>
+        <source>Enable ghostpilot</source>
         <translation>Włącz openpilota</translation>
     </message>
     <message>

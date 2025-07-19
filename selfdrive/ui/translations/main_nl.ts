@@ -975,7 +975,7 @@ ingesteld</translation>
 <context>
     <name>TogglesPanel</name>
     <message>
-        <source>Enable openpilot</source>
+        <source>Enable ghostpilot</source>
         <translation>openpilot Inschakelen</translation>
     </message>
     <message>

@@ -6,20 +6,20 @@ from openpilot.common.params import Params
 # Description constants
 DESCRIPTIONS = {
   "OpenpilotEnabledToggle": (
-    "Use the openpilot system for adaptive cruise control and lane keep driver assistance. " +
+    "Use the ghostpilot system for adaptive cruise control and lane keep driver assistance. " +
     "Your attention is required at all times to use this feature."
   ),
-  "DisengageOnAccelerator": "When enabled, pressing the accelerator pedal will disengage openpilot.",
+  "DisengageOnAccelerator": "When enabled, pressing the accelerator pedal will disengage ghostpilot.",
   "LongitudinalPersonality": (
-    "Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
-    "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
+    "Standard is recommended. In aggressive mode, ghostpilot will follow lead cars closer and be more aggressive with the gas and brake. " +
+    "In relaxed mode ghostpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with " +
     "your steering wheel distance button."
   ),
   "IsLdwEnabled": (
     "Receive alerts to steer back into the lane when your vehicle drifts over a detected lane line " +
     "without a turn signal activated while driving over 31 mph (50 km/h)."
   ),
-  "AlwaysOnDM": "Enable driver monitoring even when openpilot is not engaged.",
+  "AlwaysOnDM": "Enable driver monitoring even when ghostpilot is not engaged.",
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
 }
@@ -31,7 +31,7 @@ class TogglesLayout(Widget):
     self._params = Params()
     items = [
       toggle_item(
-        "Enable openpilot",
+        "Enable ghostpilot",
         DESCRIPTIONS["OpenpilotEnabledToggle"],
         self._params.get_bool("OpenpilotEnabledToggle"),
         icon="chffr_wheel.png",

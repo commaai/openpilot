@@ -209,6 +209,6 @@ class HomeLayout(Widget):
       self.current_state = HomeLayoutState.ALERTS
 
   def _get_version_text(self) -> str:
-    brand = "openpilot"
+    brand = "ghostpilot"
     description = self.params.get("UpdaterCurrentDescription", encoding='utf-8')
     return f"{brand} {description}" if description else brand

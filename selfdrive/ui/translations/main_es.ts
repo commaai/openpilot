@@ -1051,7 +1051,7 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
 <context>
     <name>TogglesPanel</name>
     <message>
-        <source>Enable openpilot</source>
+        <source>Enable ghostpilot</source>
         <translation>Activar openpilot</translation>
     </message>
     <message>

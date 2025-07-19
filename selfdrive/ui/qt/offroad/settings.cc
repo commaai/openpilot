@@ -21,8 +21,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
   std::vector<std::tuple<QString, QString, QString, QString, bool>> toggle_defs{
     {
       "OpenpilotEnabledToggle",
-      tr("Enable openpilot"),
-      tr("Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature."),
+      tr("Enable ghostpilot"),
+      tr("Use the ghostpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature."),
       "../assets/icons/chffr_wheel.png",
       true,
     },
@@ -36,21 +36,21 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "DisengageOnAccelerator",
       tr("Disengage on Accelerator Pedal"),
-      tr("When enabled, pressing the accelerator pedal will disengage openpilot."),
+      tr("When enabled, pressing the accelerator pedal will disengage ghostpilot."),
       "../assets/icons/disengage_on_accelerator.svg",
       false,
     },
     {
       "SplitLkasAndAcc",
       tr("Split LKAS and ACC"),
-      tr("Enable the ability to toggle LKAS and ACC independently of each other. Allows openpilot to be engaged after pressing the LKAS button and doesn't block openpilot from engaging after pressing the cancel button."),
+      tr("Enable the ability to toggle LKAS and ACC independently of each other. Allows ghostpilot to be engaged after pressing the LKAS button and doesn't block openpilot from engaging after pressing the cancel button."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
       true,
     },
     {
       "ResumeLkasAfterBrake",
       tr("Resume LKAS after braking"),
-      tr("If the previous disengagement is from a brake press, allow openpilot to engage after releasing the brake."),
+      tr("If the previous disengagement is from a brake press, allow ghostpilot to engage after releasing the brake."),
       "../assets/offroad/icon_disengage_on_accelerator.svg",
       true
     },
@@ -64,7 +64,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     {
       "AlwaysOnDM",
       tr("Always-On Driver Monitoring"),
-      tr("Enable driver monitoring even when openpilot is not engaged."),
+      tr("Enable driver monitoring even when ghostpilot is not engaged."),
       "../assets/icons/monitoring.png",
       false,
     },
@@ -87,8 +87,8 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
 
   std::vector<QString> longi_button_texts{tr("Aggressive"), tr("Standard"), tr("Relaxed")};
   long_personality_setting = new ButtonParamControl("LongitudinalPersonality", tr("Driving Personality"),
-                                          tr("Standard is recommended. In aggressive mode, openpilot will follow lead cars closer and be more aggressive with the gas and brake. "
-                                             "In relaxed mode openpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
+                                          tr("Standard is recommended. In aggressive mode, ghostpilot will follow lead cars closer and be more aggressive with the gas and brake. "
+                                             "In relaxed mode ghostpilot will stay further away from lead cars. On supported cars, you can cycle through these personalities with "
                                              "your steering wheel distance button."),
                                           "../assets/icons/speed_limit.png",
                                           longi_button_texts);
@@ -103,7 +103,7 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
     toggle->setEnabled(!locked);
 
     if (needs_restart && !locked) {
-      toggle->setDescription(toggle->getDescription() + tr(" Changing this setting will restart openpilot if the car is powered on."));
+      toggle->setDescription(toggle->getDescription() + tr(" Changing this setting will restart ghostpilot if the car is powered on."));
 
       QObject::connect(uiState(), &UIState::engagedChanged, [toggle](bool engaged) {
         toggle->setEnabled(!engaged);
@@ -164,9 +164,9 @@ void TogglesPanel::updateToggles() {
                                           "%3<br>"
                                           "<h4>%4</h4><br>"
                                           "%5<br>")
-                                  .arg(tr("openpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
+                                  .arg(tr("ghostpilot defaults to driving in <b>chill mode</b>. Experimental mode enables <b>alpha-level features</b> that aren't ready for chill mode. Experimental features are listed below:"))
                                   .arg(tr("End-to-End Longitudinal Control"))
-                                  .arg(tr("Let the driving model control the gas and brakes. openpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
+                                  .arg(tr("Let the driving model control the gas and brakes. ghostpilot will drive as it thinks a human would, including stopping for red lights and stop signs. "
                                           "Since the driving model decides the speed to drive, the set speed will only act as an upper bound. This is an alpha quality feature; "
                                           "mistakes should be expected."))
                                   .arg(tr("New Driving Visualization"))
@@ -193,12 +193,12 @@ void TogglesPanel::updateToggles() {
       const QString unavailable = tr("Experimental mode is currently unavailable on this car since the car's stock ACC is used for longitudinal control.");
 
       QString long_desc = unavailable + " " + \
-                          tr("openpilot longitudinal control may come in a future update.");
+                          tr("ghostpilot longitudinal control may come in a future update.");
       if (CP.getAlphaLongitudinalAvailable()) {
         if (is_release) {
-          long_desc = unavailable + " " + tr("An alpha version of openpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
+          long_desc = unavailable + " " + tr("An alpha version of ghostpilot longitudinal control can be tested, along with Experimental mode, on non-release branches.");
         } else {
-          long_desc = tr("Enable the openpilot longitudinal control (alpha) toggle to allow Experimental mode.");
+          long_desc = tr("Enable the ghostpilot longitudinal control (alpha) toggle to allow Experimental mode.");
         }
       }
       experimental_mode_toggle->setDescription("<b>" + long_desc + "</b><br><br>" + e2e_description);
@@ -321,7 +321,7 @@ DevicePanel::DevicePanel(SettingsWindow *parent) : ListWidget(parent) {
 }
 
 void DevicePanel::updateCalibDescription() {
-  QString desc = tr("openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
+  QString desc = tr("ghostpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.");
   std::string calib_bytes = params.get("CalibrationParams");
   if (!calib_bytes.empty()) {
     try {
@@ -383,8 +383,8 @@ void DevicePanel::updateCalibDescription() {
   }
 
   desc += "\n\n";
-  desc += tr("openpilot is continuously calibrating, resetting is rarely required. "
-             "Resetting calibration will restart openpilot if the car is powered on.");
+  desc += tr("ghostpilot is continuously calibrating, resetting is rarely required. "
+             "Resetting calibration will restart ghostpilot if the car is powered on.");
   resetCalibBtn->setDescription(desc);
 }
 
