@@ -1,7 +1,7 @@
 import pyray as rl
 from collections.abc import Callable
 from enum import IntEnum
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -173,7 +173,7 @@ class Button(Widget):
     self.text_color = BUTTON_TEXT_COLOR[button_style]
     self.text_size = measure_text_cached(gui_app.font(font_weight), text, font_size)
 
-  def _handle_mouse_release(self, mouse_pos: rl.Vector2):
+  def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._click_callback:
       print(f"Button clicked: {self.text}")
       self._click_callback()
