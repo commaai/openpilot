@@ -33,16 +33,13 @@ class Reset(Widget):
     super().__init__()
     self.mode = mode
     self.reset_state = ResetState.NONE
-    self.cancel_button = Button("Cancel", self.cancel_callback)
+    self.cancel_button = Button("Cancel", self._cancel_callback)
     self.confirm_button = Button("Confirm", self.confirm, button_style=ButtonStyle.PRIMARY)
-    self.reboot_button = Button("Reboot", self.reboot_callback)
-    self.status = True
+    self.reboot_button = Button("Reboot", lambda: os.system("sudo reboot"))
+    self.render_status = True
 
-  def reboot_callback(self):
-    os.system("sudo reboot")
-
-  def cancel_callback(self):
-    self.status = False
+  def _cancel_callback(self):
+    self.render_status = False
 
   def _do_erase(self):
     if PC:
@@ -87,7 +84,7 @@ class Reset(Widget):
       if self.reset_state != ResetState.FAILED:
         self.confirm_button.render(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height))
 
-    return self.status
+    return self.render_status
 
   def confirm(self):
     if self.reset_state == ResetState.CONFIRM:

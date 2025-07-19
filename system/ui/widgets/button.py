@@ -172,10 +172,9 @@ class Button(Widget):
     self.text_color = BUTTON_TEXT_COLOR[button_style]
     self.text_size = measure_text_cached(gui_app.font(font_weight), text, font_size)
 
-
   def _handle_mouse_release(self, mouse_pos: rl.Vector2):
     if self._click_callback:
-      print(f"BigButton clicked: {self.text}")
+      print(f"Button clicked: {self.text}")
       self._click_callback()
 
   def _get_background_color(self) -> rl.Color:
@@ -185,10 +184,8 @@ class Button(Widget):
       return BUTTON_BACKGROUND_COLORS[self.button_style]
 
   def _render(self, _):
-    bg_color = self._get_background_color()
-
     roundness = self.border_radius / (min(self._rect.width, self._rect.height) / 2)
-    rl.draw_rectangle_rounded(self._rect, roundness, 10, bg_color)
+    rl.draw_rectangle_rounded(self._rect, roundness, 10, self._get_background_color())
 
     text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self.text_size.y) // 2)
     text_pos.x = self._rect.x + (self._rect.width - self.text_size.x) // 2
