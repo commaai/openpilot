@@ -104,6 +104,10 @@ class ReadMode(enum.StrEnum):
 class FileName(enum.Enum):
   RLOG = ("rlog.zst", "rlog.bz2")
   QLOG = ("qlog.zst", "qlog.bz2")
+  QCAMERA = ("qcamera.ts",)
+  FCAMERA = ("fcamera.hevc",)
+  ECAMERA = ("ecamera.hevc",)
+  DCAMERA = ("dcamera.hevc",)
 
 
 LogPath = str | None
