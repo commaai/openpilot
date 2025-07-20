@@ -105,15 +105,12 @@ jobs:
         restore-keys: |
           brew-macos-${{ env.CACHE_COMMIT_DATE }}
           brew-macos
-    - uses: nick-fields/retry@9417ab499314dfe692edb043ded2ff9b3f5f0a68
-      with:
-        timeout_minutes: 20
-        max_attempts: 3
-        command: |
-          # package install has DeprecationWarnings
-          export PYTHONWARNINGS=default
-          ./tools/mac_setup.sh
-          git lfs pull
+    - name: Install dependencies
+      run: ./tools/mac_setup.sh
+      env:
+        # package install has DeprecationWarnings
+        PYTHONWARNINGS: default
+    - run: git lfs pull
     - name: Getting scons cache
       uses: ./.github/workflows/auto-cache
       with:
