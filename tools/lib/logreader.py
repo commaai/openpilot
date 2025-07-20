@@ -103,7 +103,7 @@ class ReadMode(enum.StrEnum):
 
 
 class FileName(enum.Enum):
-  #TODO dont rewrite this, use the ones from route.py
+  #TODO use the ones from route.py
   RLOG = ("rlog.zst", "rlog.bz2")
   QLOG = ("qlog.zst", "qlog.bz2")
   QCAMERA = QCAMERA_FILENAMES
