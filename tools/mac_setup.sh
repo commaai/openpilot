@@ -6,7 +6,7 @@ ROOT="$(cd $DIR/../ && pwd)"
 ARCH=$(uname -m)
 
 # homebrew update is slow
-export HOMEBREW_NO_AUTO_UPDATE=1
+#export HOMEBREW_NO_AUTO_UPDATE=1
 
 if [[ $SHELL == "/bin/zsh" ]]; then
   RC_FILE="$HOME/.zshrc"
