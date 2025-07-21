@@ -40,6 +40,8 @@ def manager_init() -> None:
     ("HasAcceptedTerms", "0"),
     ("LanguageSetting", "main_en"),
     ("OpenpilotEnabledToggle", "1"),
+    ("UptimeOffroad", "0.0"),
+    ("UptimeOnroad", "0.0"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
   ]
 
