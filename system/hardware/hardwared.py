@@ -206,8 +206,8 @@ def hardware_thread(end_event, hw_queue) -> None:
   params = Params()
   power_monitor = PowerMonitoring()
 
-  uptime_offroad: float = read_uptime_from_param(params, 'UptimeOffroad')
-  uptime_onroad: float = read_uptime_from_param(params, 'UptimeOnroad')
+  uptime_offroad: float = read_uptime_from_param(params, "UptimeOffroad")
+  uptime_onroad: float = read_uptime_from_param(params, "UptimeOnroad")
   last_uptime_ts: float = time.monotonic()
 
   HARDWARE.initialize_hardware()
