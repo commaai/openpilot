@@ -152,7 +152,7 @@ class ParamsBaseUpdateTest(TestBaseUpdate):
 
   def wait_for_failed(self):
     self.wait_for_condition(lambda: self.params.get("UpdateFailedCount", encoding="utf-8") is not None and \
-                                              int(self.params.get("UpdateFailedCount", encoding="utf-8")) > 0)
+                                              self.params.get("UpdateFailedCount", encoding="utf-8", type=int) > 0)
 
   def wait_for_fetch_available(self):
     self.wait_for_condition(lambda: self.params.get_bool("UpdaterFetchAvailable"))
