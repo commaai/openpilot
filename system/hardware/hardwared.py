@@ -56,6 +56,11 @@ OFFROAD_DANGER_TEMP = 75
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
 
+def read_uptime_from_param(params, param: str) -> float:
+  try:
+    return float(params.get(param))
+  except (TypeError, ValueError):
+    return 0.0
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
@@ -201,8 +206,8 @@ def hardware_thread(end_event, hw_queue) -> None:
   params = Params()
   power_monitor = PowerMonitoring()
 
-  uptime_offroad: float = float(params.get('UptimeOffroad') or 0.0)
-  uptime_onroad: float = float(params.get('UptimeOnroad') or 0.0)
+  uptime_offroad: float = read_uptime_from_param(params, 'UptimeOffroad')
+  uptime_onroad: float = read_uptime_from_param(params, 'UptimeOnroad')
   last_uptime_ts: float = time.monotonic()
 
   HARDWARE.initialize_hardware()
