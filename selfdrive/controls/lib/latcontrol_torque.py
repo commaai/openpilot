@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 from cereal import log
-from opendbc.car.interfaces import LatControlInputs
+from opendbc.car.interfaces import LatControlInputs, get_friction
 from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController
@@ -43,25 +43,25 @@ class LatControlTorque(LatControl):
       pid_log.active = False
     else:
       actual_curvature = -VM.calc_curvature(math.radians(CS.steeringAngleDeg - params.angleOffsetDeg), CS.vEgo, params.roll)
-      roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
-      curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
-      desired_lateral_accel = desired_curvature * CS.vEgo ** 2
+      roll_compensation = 0  # params.roll * ACCELERATION_DUE_TO_GRAVITY
+      curvature_deadzone = 0  # abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
+      desired_lateral_accel = 2  # desired_curvature * CS.vEgo ** 2
 
       # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
       # desired_lateral_jerk = desired_curvature_rate * CS.vEgo ** 2
-      actual_lateral_accel = actual_curvature * CS.vEgo ** 2
+      actual_lateral_accel = 1.8  # actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
-      low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
-      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
-      measurement = actual_lateral_accel + low_speed_factor * actual_curvature
+      # low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
+      setpoint = desired_lateral_accel #+ low_speed_factor * desired_curvature
+      measurement = actual_lateral_accel #+ low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
-      torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(setpoint, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+      torque_from_setpoint = self.torque_from_lateral_accel(0, LatControlInputs(setpoint, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                                             setpoint, lateral_accel_deadzone, friction_compensation=False, gravity_adjusted=False)
-      torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+      torque_from_measurement = self.torque_from_lateral_accel(0, LatControlInputs(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                                                measurement, lateral_accel_deadzone, friction_compensation=False, gravity_adjusted=False)
       pid_log.error = float(torque_from_setpoint - torque_from_measurement)
-      ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+      ff = self.torque_from_lateral_accel(pid_log.error, LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                           desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, friction_compensation=True,
                                           gravity_adjusted=True)
 
