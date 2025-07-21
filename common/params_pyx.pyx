@@ -60,7 +60,7 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def get(self, key, bool block=False, encoding=None):
+  def get(self, key, bool block=False, encoding=None, type=None, default=None):
     cdef string k = self.check_key(key)
     cdef string val
     with nogil:
@@ -72,9 +72,13 @@ cdef class Params:
         # it means we got an interrupt while waiting
         raise KeyboardInterrupt
       else:
-        return None
+        return default
 
-    return val if encoding is None else val.decode(encoding)
+    val = val if encoding is None else val.decode(encoding)
+    try:
+      return val if type is None else type(val)
+    except (TypeError, ValueError):
+      return default
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
