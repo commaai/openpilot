@@ -56,11 +56,6 @@ OFFROAD_DANGER_TEMP = 75
 prev_offroad_states: dict[str, tuple[bool, str | None]] = {}
 
 
-def read_uptime_from_param(params, param: str) -> float:
-  try:
-    return float(params.get(param))
-  except (TypeError, ValueError):
-    return 0.0
 
 def set_offroad_alert_if_changed(offroad_alert: str, show_alert: bool, extra_text: str | None=None):
   if prev_offroad_states.get(offroad_alert, None) == (show_alert, extra_text):
@@ -205,10 +200,6 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   params = Params()
   power_monitor = PowerMonitoring()
-
-  uptime_offroad: float = read_uptime_from_param(params, "UptimeOffroad")
-  uptime_onroad: float = read_uptime_from_param(params, "UptimeOnroad")
-  last_uptime_ts: float = time.monotonic()
 
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
@@ -452,17 +443,6 @@ def hardware_thread(end_event, hw_queue) -> None:
           cloudlog.exception("failed to save offroad status")
 
     params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
-
-    now_ts = time.monotonic()
-    if off_ts:
-      uptime_offroad += now_ts - max(last_uptime_ts, off_ts)
-    elif started_ts:
-      uptime_onroad += now_ts - max(last_uptime_ts, started_ts)
-    last_uptime_ts = now_ts
-
-    if (count % int(60. / DT_HW)) == 0:
-      params.put("UptimeOffroad", str(uptime_offroad))
-      params.put("UptimeOnroad", str(uptime_onroad))
 
     count += 1
     should_start_prev = should_start
