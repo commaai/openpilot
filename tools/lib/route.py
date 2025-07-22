@@ -248,7 +248,7 @@ class SegmentName:
 
   @property
   def azure_prefix(self):
-    return "%s/%s/%s" % (self.dongle_id, self.log_id, self._num)
+    return f'{self.dongle_id}/{self.log_id}/{self._num}'
 
   @property
   def dongle_id(self) -> str: return self._route_name.dongle_id
