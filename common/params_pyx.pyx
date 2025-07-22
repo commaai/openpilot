@@ -1,5 +1,6 @@
 # distutils: language = c++
 # cython: language_level = 3
+import datetime
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -19,6 +20,7 @@ cdef extern from "common/params.h":
     BOOL
     INT
     FLOAT
+    TIME
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
@@ -77,6 +79,8 @@ cdef class Params:
         return int(value)
       elif t == FLOAT:
         return float(value)
+      elif t == TIME:
+        return datetime.datetime.fromisoformat(value)
       else:
         return default
     except (TypeError, ValueError):

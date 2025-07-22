@@ -71,7 +71,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"LastOffroadStatusPacket", {CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION, STRING}},
     {"LastPowerDropDetected", {CLEAR_ON_MANAGER_START, STRING}},
     {"LastUpdateException", {CLEAR_ON_MANAGER_START, STRING}},
-    {"LastUpdateTime", {PERSISTENT, STRING}},
+    {"LastUpdateTime", {PERSISTENT, TIME}},
     {"LiveDelay", {PERSISTENT, STRING}},
     {"LiveParameters", {PERSISTENT, STRING}},
     {"LiveParametersV2", {PERSISTENT, STRING}},
