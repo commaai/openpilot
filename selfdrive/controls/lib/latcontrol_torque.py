@@ -39,12 +39,16 @@ class LatControlTorque(LatControl):
 
   def get_friction(self, desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, roll_compensation, CS):
     # Calculate the friction in torque space to account for non-linear torque_from_lateral_accel functions
-    torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(desired_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
-    torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(actual_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
+    torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(desired_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                          gravity_adjusted=False)
+    torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(actual_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                             gravity_adjusted=False)
     error = float(torque_from_setpoint - torque_from_measurement)
 
-    friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
-    torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
+    friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                        gravity_adjusted=False)
+    torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                     gravity_adjusted=False)
     return get_friction(error, torque_deadzone, friction_threshold, self.torque_params)
 
   def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, curvature_limited):
