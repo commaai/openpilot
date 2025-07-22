@@ -63,9 +63,6 @@ def write_time_to_param(params, param) -> None:
   t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
   params.put(param, t.isoformat().encode('utf8'))
 
-def read_time_from_param(params, param) -> datetime.datetime | None:
-  return params.get(param, encoding='utf8', type=datetime.datetime.fromisoformat)
-
 def run(cmd: list[str], cwd: str = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
 
@@ -278,7 +275,7 @@ class Updater:
     if update_success:
       write_time_to_param(self.params, "LastUpdateTime")
     else:
-      t = read_time_from_param(self.params, "LastUpdateTime")
+      t = self.params.get("LastUpdateTime", encoding="utf8")
       if t is not None:
         last_update = t
 
@@ -463,7 +460,7 @@ def main() -> None:
         updater.check_for_update()
 
         # download update
-        last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
+        last_fetch = params.get("UpdaterLastFetchTime", encoding="utf8")
         timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
         user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
         if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:
