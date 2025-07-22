@@ -74,9 +74,9 @@ cdef class Params:
       else:
         return default
 
-    val = val if encoding is None else val.decode(encoding)
+    cval = val if encoding is None else val.decode(encoding)
     try:
-      return val if type is None else type(val)
+      return cval if type is None else type(cval)
     except (TypeError, ValueError):
       return default
 
