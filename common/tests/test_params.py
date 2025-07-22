@@ -4,7 +4,7 @@ import threading
 import time
 import uuid
 
-from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
+from openpilot.common.params import Params, ParamKeyFlag, UnknownKeyName
 
 class TestParams:
   def setup_method(self):
@@ -29,7 +29,7 @@ class TestParams:
       f.write("test")
     assert os.path.isfile(undefined_param)
 
-    self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
+    self.params.clear_all(ParamKeyFlag.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
     assert not os.path.isfile(undefined_param)
