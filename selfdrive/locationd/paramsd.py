@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import json
 import numpy as np
 import capnp
 
@@ -206,7 +207,7 @@ def migrate_cached_vehicle_params_if_needed(params: Params):
     return
 
   try:
-    last_parameters_dict = last_parameters_data_old
+    last_parameters_dict = json.loads(last_parameters_data_old)
     last_parameters_msg = messaging.new_message('liveParameters')
     last_parameters_msg.liveParameters.valid = True
     last_parameters_msg.liveParameters.steerRatio = last_parameters_dict['steerRatio']
