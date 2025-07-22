@@ -135,3 +135,7 @@ class TestParams:
     self.params.remove("InstallDate")
     assert self.params.get("InstallDate", encoding="utf-8") is None
     assert self.params.get("InstallDate", encoding="utf-8", default=now) == now
+
+    self.params.put("BootCount", "1xx1")
+    assert self.params.get("BootCount", encoding="utf-8") is None
+    assert self.params.get("BootCount", encoding="utf-8", default=1441) == 1441
