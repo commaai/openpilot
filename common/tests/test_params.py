@@ -119,7 +119,7 @@ class TestParams:
     assert self.params.get("BootCount") == 1441
     # bool
     self.params.put("AdbEnabled", "1")
-    assert self.params.get("AdbEnabled") == True
+    assert self.params.get("AdbEnabled")
     # time
     now = datetime.datetime.now(datetime.UTC)
     self.params.put("InstallDate", str(now))
@@ -128,5 +128,5 @@ class TestParams:
   def test_params_get_default(self):
     now = datetime.datetime.now(datetime.UTC)
     self.params.remove("InstallDate")
-    assert self.params.get("InstallDate", encoding="utf-8") == None
+    assert self.params.get("InstallDate", encoding="utf-8") is None
     assert self.params.get("InstallDate", encoding="utf-8", default=now) == now
