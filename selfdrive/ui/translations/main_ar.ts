@@ -491,10 +491,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>محرك NVMe غير مثبَّت.</translation>
     </message>
     <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>تم اكتشاف محرك NVMe غير مدعوم. قد يستهلك الجهاز قدراً أكبر بكثير من الطاقة، وزيادة في ارتفاع درجة الحرارة بسبب وجود NVMe غير مدعوم.</translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation>لم يكن openpilot قادراً على تحديد سيارتك. إما أن تكون سيارتك غير مدعومة أو أنه لم يتم التعرف على وحدة التحكم الإلكتروني (ECUs) فيها. يرجى تقديم طلب سحب من أجل إضافة نسخ برمجيات ثابتة إلى السيارة المناسبة. هل تحتاج إلى أي مساعدة؟ لا تتردد في التواصل مع doscord.comma.ai.</translation>
     </message>
@@ -663,47 +659,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>now</source>
         <translation>الآن</translation>
-    </message>
-</context>
-<context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>فشل إعاة الضبط. أعد التشغيل للمحاولة من جديد.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>هل أنت متأكد أنك تريد إعادة ضبط جهازك؟</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>إعادة ضبط النظام</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>إلغاء</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>إعادة التشغيل</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>تأكيد</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>يتم إعادة ضبط الجهاز...
-قد يستغرق الأمر حوالي الدقيقة.</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>غير قادر على تحميل جزء البيانات. قد يكون الجزء تالفاً. اضغط على تأكيد لمسح جهازك وإعادة ضبطه.</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>تم تفعيل إعادة ضبط النظام. اضغط على تأكيد لمسح جميع المحتويات والإعدادات. اضغط على إلغاء لاستئناف التمهيد.</translation>
     </message>
 </context>
 <context>
@@ -1193,41 +1148,6 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Updater</name>
-    <message>
-        <source>Update Required</source>
-        <translation>التحديث مطلوب</translation>
-    </message>
-    <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>تحديث نظام التشغيل مطلوب. قم بوصل جهازك بشبكة واي فاي من أجل تحديث أسرع. حجم التحميل حوالي 1 غيغا بايت تقريباً.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>الاتصال بشبكة الواي فاي</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>تثبيت</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>السابق</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>يتم التحميل...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>إعادة التشغيل</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>فشل التحديث</translation>
     </message>
 </context>
 <context>
