@@ -249,7 +249,7 @@ jobs:
 
   car_docs_diff:
     name: PR comments
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     #if: github.event_name == 'pull_request'
     if: false  # TODO: run this in opendbc?
     steps:

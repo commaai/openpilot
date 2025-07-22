@@ -18,7 +18,7 @@ concurrency:
 jobs:
   docs:
     name: build docs
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-20.04
     steps:
     - uses: commaai/timeout@v1
 

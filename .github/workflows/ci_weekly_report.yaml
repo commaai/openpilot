@@ -16,7 +16,7 @@ env:
 jobs:
   setup:
     if: github.repository == 'commaai/openpilot'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     outputs:
       ci_runs: ${{ steps.ci_runs_setup.outputs.matrix }}
     steps:
@@ -37,7 +37,7 @@ jobs:
 
   report:
     needs: [ci_matrix_run]
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: always()
     steps:
       - name: Get job results
