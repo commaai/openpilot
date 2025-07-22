@@ -93,7 +93,7 @@ class ModelState:
       self.tensor_inputs['input_img'] = Tensor(self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT)), dtype=dtypes.uint8).realize()
 
 
-    output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
 
     t2 = time.perf_counter()
     return output, t2 - t1
