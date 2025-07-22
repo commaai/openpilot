@@ -37,6 +37,19 @@ class LatControlTorque(LatControl):
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
 
+  def get_friction(self, desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, roll_compensation, CS):
+    torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(desired_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                          gravity_adjusted=False)
+    torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(actual_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                             gravity_adjusted=False)
+    error = float(torque_from_setpoint - torque_from_measurement)
+
+    friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                        gravity_adjusted=False)
+    torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
+                                                     gravity_adjusted=False)
+    return get_friction(error, torque_deadzone, friction_threshold, self.torque_params)
+
   def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, curvature_limited):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
@@ -66,11 +79,7 @@ class LatControlTorque(LatControl):
                                           gravity_adjusted=True)
 
       # add friction compensation
-      friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                          gravity_adjusted=False)
-      torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                       gravity_adjusted=False)
-      ff += get_friction(pid_log.error, torque_deadzone, friction_threshold, self.torque_params)
+      ff += self.get_friction(desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, roll_compensation, CS)
 
       freeze_integrator = steer_limited_by_controls or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
