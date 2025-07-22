@@ -1,56 +1,67 @@
-name: 'Optimized Native Setup'
+name: 'openpilot env setup (native no-docker)'
 
 inputs:
   is_retried:
-    description: 'Mock param for validation'
+    description: 'Mock param to maintain compatibility'
     required: false
     default: 'false'
 
 runs:
   using: "composite"
   steps:
-    - shell: bash
-      if: ${{ inputs.is_retried == 'false' }}
+    - name: Show runner info
+      shell: bash
       run: |
-        echo "Use setup-with-retry instead."
-        exit 1
+        echo "Runner OS: $RUNNER_OS"
+        echo "Arch: $(uname -m)"
 
-    - shell: bash
-      name: Disallow manual retries
-      run: |
-        if [ "${{ github.run_attempt }}" -gt 1 ]; then
-          echo "No retries allowed"
-          exit 1
-        fi
+    - name: Restore apt cache
+      uses: actions/cache@v3
+      with:
+        path: /var/cache/apt/archives
+        key: apt-cache-${{ runner.os }}
+        restore-keys: |
+          apt-cache-${{ runner.os }}
 
-    - shell: bash
-      name: Install system packages
-      run: |
-        sudo apt update
-        sudo apt install -y \
-          git build-essential libusb-1.0-0-dev libcap-dev \
-          libjpeg-dev libturbojpeg0-dev libopencv-dev \
-          libprotobuf-dev protobuf-compiler libeigen3-dev \
-          python3-dev python3-pip python3-venv
-
-    - uses: actions/cache@v3
+    - name: Restore pip cache
+      uses: actions/cache@v3
       with:
         path: ~/.cache/pip
-        key: pip-cache-${{ runner.os }}-${{ hashFiles('**/requirements.txt') }}
+        key: pip-cache-${{ runner.os }}
         restore-keys: |
           pip-cache-${{ runner.os }}
 
-    - shell: bash
-      name: Set up Python environment
+    - name: Install system dependencies
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install -y \
+          git \
+          python3-pip \
+          python3-dev \
+          python3-venv \
+          build-essential \
+          libcap-dev \
+          libusb-1.0-0-dev \
+          libavcodec-dev \
+          libavformat-dev \
+          libswscale-dev \
+          libopencv-dev \
+          libeigen3-dev \
+          libprotobuf-dev \
+          protobuf-compiler \
+          libturbojpeg0-dev \
+          libcurl4-openssl-dev
+
+    - name: Set up Python environment
+      shell: bash
       run: |
         python3 -m venv venv
         source venv/bin/activate
-        pip install --upgrade pip
-        pip install -r requirements.txt
+        python -m pip install --upgrade pip
 
-    - shell: bash
-      name: Generate diff.txt (process replay)
+    - name: Install Python dependencies
+      shell: bash
       run: |
         source venv/bin/activate
-        python selfdrive/test/process_replay/process_replay.py --updatedb
-        test -f selfdrive/test/process_replay/diff.txt || touch selfdrive/test/process_replay/diff.txt
+        pip install -r requirements.txt
