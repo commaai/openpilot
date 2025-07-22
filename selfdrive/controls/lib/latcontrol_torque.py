@@ -39,16 +39,12 @@ class LatControlTorque(LatControl):
 
   def get_friction(self, desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, roll_compensation, CS):
     # Calculate the friction in torque space to account for non-linear torque_from_lateral_accel functions
-    torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(desired_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                          gravity_adjusted=False)
-    torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(actual_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                             gravity_adjusted=False)
+    torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(desired_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
+    torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(actual_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
     error = float(torque_from_setpoint - torque_from_measurement)
 
-    friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                        gravity_adjusted=False)
-    torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                     gravity_adjusted=False)
+    friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
+    torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
     return get_friction(error, torque_deadzone, friction_threshold, self.torque_params)
 
   def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, curvature_limited):
@@ -71,10 +67,8 @@ class LatControlTorque(LatControl):
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
-      torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(setpoint, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                            gravity_adjusted=False)
-      torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                               gravity_adjusted=False)
+      torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(setpoint, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
+      torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(measurement, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params, False)
       pid_log.error = float(torque_from_setpoint - torque_from_measurement)
       ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                           gravity_adjusted=True)
