@@ -260,6 +260,9 @@ class SegmentName:
   def time_str(self) -> str: return self._route_name.time_str
 
   @property
+  def log_id(self) -> str: return self._route_name.time_str
+
+  @property
   def segment_num(self) -> int: return self._num
 
   @property
