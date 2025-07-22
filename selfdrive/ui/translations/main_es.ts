@@ -487,10 +487,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
         <translation>Unidad NVMe no montada.</translation>
     </message>
     <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>Se detectó una unidad NVMe incompatible. El dispositivo puede consumir mucha más energía y sobrecalentarse debido a esto.</translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation>openpilot no pudo identificar su automóvil. Su automóvil no es compatible o no se reconocen sus ECU. Por favor haga un pull request para agregar las versiones de firmware del vehículo adecuado. ¿Necesita ayuda? Únase a discord.comma.ai.</translation>
     </message>
@@ -647,47 +643,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
             <numerusform>hace %n día</numerusform>
             <numerusform>hace %n días</numerusform>
         </translation>
-    </message>
-</context>
-<context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>Formateo fallido. Reinicie para reintentar.</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>formateando dispositivo...
-Esto puede tardar un minuto.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>¿Seguro que quiere formatear su dispositivo?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>Formatear Sistema</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Formateo del sistema activado. Presione confirmar para borrar todo el contenido y la configuración. Presione cancelar para reanudar el inicio.</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancelar</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>Confirmar</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>No es posible montar una partición de datos. La partición podría estar corrompida. Confirme para borrar y formatear su dispositivo.</translation>
     </message>
 </context>
 <context>
@@ -1179,41 +1134,6 @@ Si desea continuar, utilice https://flash.comma.ai para restaurar su dispositivo
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Graba y almacena el audio del micrófono mientras conduces. El audio se incluirá en el video de la cámara del tablero en comma connect.</translation>
-    </message>
-</context>
-<context>
-    <name>Updater</name>
-    <message>
-        <source>Update Required</source>
-        <translation>Actualización Requerida</translation>
-    </message>
-    <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Es necesario la actualización del sistema operativo. Conecte su dispositivo al Wi-Fi para una actualización rápida. El tamaño de descarga es de aproximadamente 1GB.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conectarse a la Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>Instalar</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Volver</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>Cargando...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>Actualización fallida</translation>
     </message>
 </context>
 <context>
