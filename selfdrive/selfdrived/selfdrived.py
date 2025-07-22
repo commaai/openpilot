@@ -478,7 +478,7 @@ class SelfdriveD:
     self.CS_prev = CS
 
   def read_personality_param(self):
-    return self.params.get('LongitudinalPersonality', type=int, default=log.LongitudinalPersonality.standard)
+    return self.params.get('LongitudinalPersonality', default=log.LongitudinalPersonality.standard)
 
   def params_thread(self, evt):
     while not evt.is_set():
