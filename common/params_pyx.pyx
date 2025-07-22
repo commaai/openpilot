@@ -35,6 +35,7 @@ cdef extern from "common/params.h":
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
     ParamKeyType getKeyType(string) nogil
+    string getKeyDefaultValue(string) nogil
     string getParamPath(string) nogil
     void clearAll(ParamKeyFlag)
     vector[string] allKeys()
@@ -153,3 +154,6 @@ cdef class Params:
 
   def all_keys(self):
     return self.p.allKeys()
+
+  def get_default_value(self, key):
+    return self.p.getKeyDefaultValue(self.check_key(key))

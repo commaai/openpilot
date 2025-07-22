@@ -33,23 +33,14 @@ def manager_init() -> None:
   if build_metadata.release_channel:
     params.clear_all(ParamKeyFlag.DEVELOPMENT_ONLY)
 
-  default_params: list[tuple[str, str | bytes]] = [
-    ("CompletedTrainingVersion", "0"),
-    ("DisengageOnAccelerator", "0"),
-    ("GsmMetered", "1"),
-    ("HasAcceptedTerms", "0"),
-    ("LanguageSetting", "main_en"),
-    ("OpenpilotEnabledToggle", "1"),
-    ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
-  ]
-
   if params.get_bool("RecordFrontLock"):
     params.put_bool("RecordFront", True)
 
-  # set unset params
-  for k, v in default_params:
-    if params.get(k) is None:
-      params.put(k, v)
+  # set unset params to their default value
+  for k in params.all_keys():
+    default_value = params.get_default_value(k)
+    if default_value and not params.get(k):
+      params.put(k, default_value)
 
   # Create folders needed for msgq
   try:

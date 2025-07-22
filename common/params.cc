@@ -120,7 +120,11 @@ ParamKeyFlag Params::getKeyFlag(const std::string &key) {
 }
 
 ParamKeyType Params::getKeyType(const std::string &key) {
-  return static_cast<ParamKeyType>(keys[key].type);
+  return keys[key].type;
+}
+
+std::string Params::getKeyDefaultValue(const std::string &key) {
+  return keys[key].default_value;
 }
 
 int Params::put(const char* key, const char* value, size_t value_size) {
