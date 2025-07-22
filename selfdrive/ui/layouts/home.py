@@ -67,7 +67,7 @@ class HomeLayout(Widget):
     self.current_state = state
 
   def _render(self, rect: rl.Rectangle):
-    current_time = time.time()
+    current_time = time.monotonic()
     if current_time - self.last_refresh >= REFRESH_INTERVAL:
       self._refresh()
       self.last_refresh = current_time

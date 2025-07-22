@@ -33,10 +33,6 @@
     "text": "NVMe drive not mounted.",
     "severity": 1
   },
-  "Offroad_BadNvme": {
-    "text": "Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.",
-    "severity": 1
-  },
   "Offroad_CarUnrecognized": {
     "text": "openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.",
     "severity": 0

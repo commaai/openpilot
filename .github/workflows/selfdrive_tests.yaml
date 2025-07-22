@@ -91,6 +91,7 @@ jobs:
 
   build_mac:
     name: build macOS
+    if: false  # temp disable since homebrew install is getting stuck
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v4
