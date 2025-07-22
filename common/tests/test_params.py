@@ -1,4 +1,6 @@
 import pytest
+import datetime
+import json
 import os
 import threading
 import time
@@ -107,3 +109,24 @@ class TestParams:
     assert len(keys) > 20
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
+
+  def test_params_get_type(self):
+    # json
+    self.params.put("ApiCache_FirehoseStats", json.dumps({"a": 0}))
+    assert self.params.get("ApiCache_FirehoseStats") == {"a": 0}
+    # int
+    self.params.put("BootCount", str(1441))
+    assert self.params.get("BootCount") == 1441
+    # bool
+    self.params.put("AdbEnabled", "1")
+    assert self.params.get("AdbEnabled") == True
+    # time
+    now = datetime.datetime.now(datetime.UTC)
+    self.params.put("InstallDate", str(now))
+    assert self.params.get("InstallDate", encoding="utf-8") == now
+
+  def test_params_get_default(self):
+    now = datetime.datetime.now(datetime.UTC)
+    self.params.remove("InstallDate")
+    assert self.params.get("InstallDate", encoding="utf-8") == None
+    assert self.params.get("InstallDate", encoding="utf-8", default=now) == now
