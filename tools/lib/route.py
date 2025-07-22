@@ -284,6 +284,12 @@ class SegmentName:
     # 2018-05-07--18-56-13--5/rlog.bz2
     segment_name = key.split('/')[0]
     return SegmentName(dongle_id + "|" + segment_name)
+  
+  @staticmethod
+  def from_file_key(key):
+    # 38c52c217150700f/2018-05-07--18-56-13/5/rlog.bz2
+    az_prefix = '/'.join(key.split('/')[:3])
+    return SegmentName.from_azure_prefix(az_prefix)
 
   @staticmethod
   def from_azure_prefix(prefix):
