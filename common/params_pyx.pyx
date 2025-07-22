@@ -1,6 +1,7 @@
 # distutils: language = c++
 # cython: language_level = 3
 import datetime
+import json
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
@@ -21,6 +22,7 @@ cdef extern from "common/params.h":
     INT
     FLOAT
     TIME
+    JSON
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
@@ -81,6 +83,8 @@ cdef class Params:
         return float(value)
       elif t == TIME:
         return datetime.datetime.fromisoformat(value)
+      elif t == JSON:
+        return json.loads(value)
       else:
         return default
     except (TypeError, ValueError):

@@ -25,7 +25,8 @@ enum ParamKeyType {
   BOOL = 1,
   INT = 2,
   FLOAT = 3,
-  TIME = 4 // ISO 8601
+  TIME = 4, // ISO 8601
+  JSON = 5
 };
 
 struct ParamKeyAttributes {
