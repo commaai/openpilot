@@ -64,12 +64,7 @@ def write_time_to_param(params, param) -> None:
   params.put(param, t.isoformat().encode('utf8'))
 
 def read_time_from_param(params, param) -> datetime.datetime | None:
-  t = params.get(param, encoding='utf8')
-  try:
-    return datetime.datetime.fromisoformat(t)
-  except (TypeError, ValueError):
-    pass
-  return None
+  return params.get(param, encoding='utf8', type=datetime.datetime.fromisoformat)
 
 def run(cmd: list[str], cwd: str = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
