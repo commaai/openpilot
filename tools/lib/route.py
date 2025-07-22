@@ -222,7 +222,12 @@ class RouteName:
   @property
   def time_str(self) -> str: return self._time_str
 
+  @property
+  def azure_prefix(self):
+    return "%s/%s" % (self._dongle_id, self._log_id)
+
   def __str__(self) -> str: return self._canonical_name
+
 
 
 class SegmentName:
