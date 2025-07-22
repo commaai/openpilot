@@ -110,6 +110,11 @@ class TestParams:
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
 
+  def test_params_default_init_value(self):
+    assert self.params.get_default_value("LanguageSetting") == b"main_en"
+    assert self.params.get_default_value("LongitudinalPersonality") == b"1"
+    assert self.params.get_default_value("LiveParameters") == b""
+
   def test_params_get_type(self):
     # json
     self.params.put("ApiCache_FirehoseStats", json.dumps({"a": 0}))
