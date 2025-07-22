@@ -87,7 +87,7 @@ cdef class Params:
         return json.loads(value)
       else:
         return default
-    except (TypeError, ValueError, json.JSONDecodeError):
+    except (TypeError, ValueError):
       return default
 
   def get(self, key, bool block=False, encoding=None, default=None):
