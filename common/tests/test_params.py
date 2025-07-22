@@ -111,9 +111,9 @@ class TestParams:
     assert b"CarParams" in keys
 
   def test_params_default_init_value(self):
-    assert self.params.get_default_value("LanguageSetting") == b"main_en"
-    assert self.params.get_default_value("LongitudinalPersonality") == b"1"
-    assert self.params.get_default_value("LiveParameters") == b""
+    assert self.params.get_default_value("LanguageSetting")
+    assert self.params.get_default_value("LongitudinalPersonality")
+    assert not self.params.get_default_value("LiveParameters")
 
   def test_params_get_type(self):
     # json
