@@ -38,6 +38,7 @@ class LatControlTorque(LatControl):
     self.torque_params.friction = friction
 
   def get_friction(self, desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, roll_compensation, CS):
+    # Calculate the friction in torque space to account for non-linear torque_from_lateral_accel functions
     torque_from_setpoint = self.torque_from_lateral_accel(LatControlInputs(desired_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                                           gravity_adjusted=False)
     torque_from_measurement = self.torque_from_lateral_accel(LatControlInputs(actual_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
@@ -77,8 +78,6 @@ class LatControlTorque(LatControl):
       pid_log.error = float(torque_from_setpoint - torque_from_measurement)
       ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                           gravity_adjusted=True)
-
-      # add friction compensation
       ff += self.get_friction(desired_lateral_accel, actual_lateral_accel, lateral_accel_deadzone, roll_compensation, CS)
 
       freeze_integrator = steer_limited_by_controls or CS.steeringPressed or CS.vEgo < 5
