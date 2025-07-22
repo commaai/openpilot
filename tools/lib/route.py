@@ -217,6 +217,9 @@ class RouteName:
   def dongle_id(self) -> str: return self._dongle_id
 
   @property
+  def log_id(self) -> str: return self._time_str
+
+  @property
   def time_str(self) -> str: return self._time_str
 
   def __str__(self) -> str: return self._canonical_name
