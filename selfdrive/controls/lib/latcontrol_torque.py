@@ -63,14 +63,11 @@ class LatControlTorque(LatControl):
                                                                gravity_adjusted=False)
       pid_log.error = float(torque_from_setpoint - torque_from_measurement)
       ff = self.torque_from_lateral_accel(LatControlInputs(gravity_adjusted_lateral_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                          # desired_lateral_accel - actual_lateral_accel, gravity_adjusted=True)
                                           gravity_adjusted=True)
 
       # add friction compensation
-      # friction_threashold = self.torque_from_lateral_accel(FRRICTION_THRESHOLD)
-      # convert lateral acceleration to torque
       friction_threshold = self.torque_from_lateral_accel(LatControlInputs(FRICTION_THRESHOLD, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                          gravity_adjusted=False)  # TODO: gravity adjusted?
+                                                          gravity_adjusted=False)
       torque_deadzone = self.torque_from_lateral_accel(LatControlInputs(lateral_accel_deadzone, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
                                                        gravity_adjusted=False)
       ff += get_friction(pid_log.error, torque_deadzone, friction_threshold, self.torque_params)
