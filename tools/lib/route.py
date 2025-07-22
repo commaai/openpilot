@@ -224,7 +224,7 @@ class RouteName:
 
   @property
   def azure_prefix(self):
-    return "%s/%s" % (self._dongle_id, self._log_id)
+    return "%s/%s" % (self.dongle_id, self.log_id)
 
   def __str__(self) -> str: return self._canonical_name
 
