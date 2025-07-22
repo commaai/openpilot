@@ -193,10 +193,7 @@ class OffroadAlert(AbstractAlert):
       alert_json = self.params.get(alert_data.key)
 
       if alert_json:
-        try:
-          text = alert_json.get("text", "").replace("{}", alert_json.get("extra", ""))
-        except json.JSONDecodeError:
-          text = ""
+        text = alert_json.get("text", "").replace("{}", alert_json.get("extra", ""))
 
       alert_data.text = text
       alert_data.visible = bool(text)
