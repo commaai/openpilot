@@ -76,7 +76,7 @@ cdef class Params:
       if t == STRING:
         return value
       elif t == BOOL:
-        return value == "1"
+        return value == b"1"
       elif t == INT:
         return int(value)
       elif t == FLOAT:
