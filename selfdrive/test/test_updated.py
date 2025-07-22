@@ -162,8 +162,7 @@ class TestUpdated:
 
   def _check_update_state(self, update_available):
     # make sure LastUpdateTime is recent
-    t = self._read_param("LastUpdateTime")
-    last_update_time = datetime.datetime.fromisoformat(t)
+    last_update_time = self._read_param("LastUpdateTime", encoding="utf-8")
     td = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update_time
     assert td.total_seconds() < 10
     self.params.remove("LastUpdateTime")
