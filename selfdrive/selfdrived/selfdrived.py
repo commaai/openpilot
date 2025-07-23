@@ -38,7 +38,7 @@ ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.1 / DT_CTRL)
 
 
 def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, counter: int) -> tuple[int, bool]:
