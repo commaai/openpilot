@@ -42,7 +42,7 @@
     "severity": 0
   },
   "Offroad_ExcessiveActuation": {
-    "text": "",
+    "text": "openpilot has detected excessive actuation. This may be due to a hardware issue or a software bug. Please contact support at https://comma.ai/support.",
     "severity": 1
   }
 }
