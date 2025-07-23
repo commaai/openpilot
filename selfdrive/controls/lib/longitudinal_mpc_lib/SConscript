@@ -1,4 +1,4 @@
-Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'opendbc_python', 'pandad_python', 'np_version')
+Import('env', 'envCython', 'arch', 'msgq_python', 'common_python', 'pandad_python', 'np_version')
 
 gen = "c_generated_code"
 
@@ -67,7 +67,7 @@ lenv.Clean(generated_files, Dir(gen))
 generated_long = lenv.Command(generated_files,
                               source_list,
                               f"cd {Dir('.').abspath} && python3 long_mpc.py")
-lenv.Depends(generated_long, [msgq_python, common_python, opendbc_python, pandad_python])
+lenv.Depends(generated_long, [msgq_python, common_python, pandad_python])
 
 lenv["CFLAGS"].append("-DACADOS_WITH_QPOASES")
 lenv["CXXFLAGS"].append("-DACADOS_WITH_QPOASES")
