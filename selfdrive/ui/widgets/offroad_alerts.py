@@ -292,7 +292,7 @@ class UpdateAlert(AbstractAlert):
   def refresh(self) -> bool:
     update_available: bool = self.params.get_bool("UpdateAvailable")
     if update_available:
-      self.release_notes = self.params.get("UpdaterNewReleaseNotes", encoding='utf-8')
+      self.release_notes = self.params.get("UpdaterNewReleaseNotes")
       self._cached_content_height = 0
 
     return update_available

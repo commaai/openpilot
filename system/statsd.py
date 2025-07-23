@@ -61,7 +61,7 @@ class StatLog:
 
 
 def main() -> NoReturn:
-  dongle_id = Params().get("DongleId", encoding='utf-8')
+  dongle_id = Params().get("DongleId")
   def get_influxdb_line(measurement: str, value: float | dict[str, float],  timestamp: datetime, tags: dict) -> str:
     res = f"{measurement}"
     for k, v in tags.items():

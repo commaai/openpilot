@@ -41,7 +41,7 @@ class DeviceLayout(Widget):
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
   def _initialize_items(self):
-    dongle_id = self._params.get("DongleId", encoding="utf-8") or "N/A"
+    dongle_id = self._params.get("DongleId") or "N/A"
     serial = self._params.get("HardwareSerial") or "N/A"
 
     items = [

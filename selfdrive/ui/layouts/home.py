@@ -210,5 +210,5 @@ class HomeLayout(Widget):
 
   def _get_version_text(self) -> str:
     brand = "openpilot"
-    description = self.params.get("UpdaterCurrentDescription", encoding='utf-8')
+    description = self.params.get("UpdaterCurrentDescription")
     return f"{brand} {description}" if description else brand

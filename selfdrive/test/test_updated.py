@@ -105,7 +105,7 @@ class TestUpdated:
     ret = None
     start_time = time.monotonic()
     while ret is None:
-      ret = self.params.get(key, encoding='utf8')
+      ret = self.params.get(key)
       if time.monotonic() - start_time > timeout:
         break
       time.sleep(0.01)
@@ -162,7 +162,7 @@ class TestUpdated:
 
   def _check_update_state(self, update_available):
     # make sure LastUpdateTime is recent
-    last_update_time = self._read_param("LastUpdateTime", encoding="utf-8")
+    last_update_time = self._read_param("LastUpdateTime")
     td = datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update_time
     assert td.total_seconds() < 10
     self.params.remove("LastUpdateTime")

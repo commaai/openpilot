@@ -470,7 +470,7 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
   # maintain a list of the last 10 routes viewed in connect
   params = Params()
 
-  r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+  r = params.get("AthenadRecentlyViewedRoutes")
   routes = [] if r is None else r.split(",")
   routes.append(route)
 
@@ -532,12 +532,12 @@ def getPublicKey() -> str | None:
 
 @dispatcher.add_method
 def getSshAuthorizedKeys() -> str:
-  return Params().get("GithubSshKeys", encoding='utf8') or ''
+  return Params().get("GithubSshKeys", default="")
 
 
 @dispatcher.add_method
 def getGithubUsername() -> str:
-  return Params().get("GithubUsername", encoding='utf8') or ''
+  return Params().get("GithubUsername", default="")
 
 @dispatcher.add_method
 def getSimInfo():
@@ -815,7 +815,7 @@ def main(exit_event: threading.Event = None):
     cloudlog.exception("failed to set core affinity")
 
   params = Params()
-  dongle_id = params.get("DongleId", encoding='utf-8')
+  dongle_id = params.get("DongleId")
   UploadQueueCache.initialize(upload_queue)
 
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id
