@@ -38,14 +38,14 @@ ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
 
 
-def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState) -> bool:
-  excessive_actuation = CS.aEgo > ACCEL_MAX * 2 or CS.aEgo < ACCEL_MIN * 2
-  if sm['carControl'].longActive:
-    if excessive_actuation:
-      return True
-  return False
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, counter: int) -> tuple[int, bool]:
+  _excessive_actuation = CS.aEgo > ACCEL_MAX * 2 or CS.aEgo < ACCEL_MIN * 2
+  counter = counter + 1 if sm['carControl'].longActive and _excessive_actuation else 0
+
+  return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
 
 
 class SelfdriveD:
@@ -121,6 +121,7 @@ class SelfdriveD:
     self.personality = self.read_personality_param()
     self.recalibrating_seen = False
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
+    self.excessive_actuation_counter = 0
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -237,7 +238,8 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    if not self.excessive_actuation and check_excessive_actuation(self.sm, CS):
+    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.excessive_actuation_counter)
+    if not self.excessive_actuation and excessive_actuation:
       set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
       self.excessive_actuation = True
 
