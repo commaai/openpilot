@@ -420,7 +420,7 @@ def main() -> None:
     if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
       cloudlog.event("update installed")
 
-    if not params.get("InstallDate"):
+    if not params.get("InstallDate", encoding="utf-8"):
       t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
       params.put("InstallDate", t.encode('utf8'))
 
