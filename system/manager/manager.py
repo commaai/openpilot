@@ -112,7 +112,7 @@ def manager_thread() -> None:
   params = Params()
 
   ignore: list[str] = []
-  if params.get("DongleId", encoding='utf8') in (None, UNREGISTERED_DONGLE_ID):
+  if params.get("DongleId") in (None, UNREGISTERED_DONGLE_ID):
     ignore += ["manage_athenad", "uploader"]
   if os.getenv("NOBOARD") is not None:
     ignore.append("pandad")

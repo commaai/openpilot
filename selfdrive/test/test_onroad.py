@@ -147,7 +147,7 @@ class TestOnroad:
         while not sm.seen['carState']:
           sm.update(1000)
 
-      route = params.get("CurrentRoute", encoding="utf-8")
+      route = params.get("CurrentRoute")
       assert route is not None
 
       segs = list(Path(Paths.log_root()).glob(f"{route}--*"))

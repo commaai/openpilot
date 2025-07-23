@@ -21,12 +21,13 @@ enum ParamKeyFlag {
 };
 
 enum ParamKeyType {
-  STRING = 0,
+  STRING = 0, // must be utf-8 decodable
   BOOL = 1,
   INT = 2,
   FLOAT = 3,
   TIME = 4, // ISO 8601
-  JSON = 5
+  JSON = 5,
+  BYTES = 6
 };
 
 struct ParamKeyAttributes {

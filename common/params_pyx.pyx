@@ -23,6 +23,7 @@ cdef extern from "common/params.h":
     FLOAT
     TIME
     JSON
+    BYTES
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
@@ -72,26 +73,7 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def cast(self, value, t, default):
-    try:
-      if t == STRING:
-        return value
-      elif t == BOOL:
-        return value == b"1"
-      elif t == INT:
-        return int(value)
-      elif t == FLOAT:
-        return float(value)
-      elif t == TIME:
-        return datetime.datetime.fromisoformat(value)
-      elif t == JSON:
-        return json.loads(value)
-      else:
-        return default
-    except (TypeError, ValueError):
-      return default
-
-  def get(self, key, bool block=False, encoding=None, default=None):
+  def get(self, key, bool block=False, default=None):
     cdef string k = self.check_key(key)
     cdef ParamKeyType t = self.p.getKeyType(ensure_bytes(key))
     cdef string val
@@ -106,7 +88,25 @@ cdef class Params:
       else:
         return default
 
-    return self.cast(val if encoding is None else val.decode(encoding), t, default)
+    try:
+      if t == STRING:
+        return val.decode("utf-8")
+      elif t == BOOL:
+        return val == b"1"
+      elif t == INT:
+        return int(val)
+      elif t == FLOAT:
+        return float(val)
+      elif t == TIME:
+        return datetime.datetime.fromisoformat(val.decode("utf-8"))
+      elif t == JSON:
+        return json.loads(val)
+      elif t == BYTES:
+        return val
+      else:
+        return default
+    except (TypeError, ValueError):
+      return default
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)

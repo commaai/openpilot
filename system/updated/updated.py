@@ -234,7 +234,7 @@ class Updater:
 
   @property
   def target_branch(self) -> str:
-    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    b: str | None = self.params.get("UpdaterTargetBranch")
     if b is None:
       b = self.get_branch(BASEDIR)
     return b
@@ -275,7 +275,7 @@ class Updater:
     if update_success:
       write_time_to_param(self.params, "LastUpdateTime")
     else:
-      t = self.params.get("LastUpdateTime", encoding="utf8")
+      t = self.params.get("LastUpdateTime")
       if t is not None:
         last_update = t
 
@@ -420,7 +420,7 @@ def main() -> None:
     if Path(os.path.join(STAGING_ROOT, "old_openpilot")).is_dir():
       cloudlog.event("update installed")
 
-    if not params.get("InstallDate", encoding="utf-8"):
+    if not params.get("InstallDate"):
       t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
       params.put("InstallDate", t.encode('utf8'))
 
@@ -460,7 +460,7 @@ def main() -> None:
         updater.check_for_update()
 
         # download update
-        last_fetch = params.get("UpdaterLastFetchTime", encoding="utf8")
+        last_fetch = params.get("UpdaterLastFetchTime")
         timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
         user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
         if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:

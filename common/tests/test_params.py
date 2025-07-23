@@ -14,7 +14,7 @@ class TestParams:
 
   def test_params_put_and_get(self):
     self.params.put("DongleId", "cb38263377b873ee")
-    assert self.params.get("DongleId") == b"cb38263377b873ee"
+    assert self.params.get("DongleId") == "cb38263377b873ee"
 
   def test_params_non_ascii(self):
     st = b"\xe1\x90\xff"
@@ -39,8 +39,8 @@ class TestParams:
   def test_params_two_things(self):
     self.params.put("DongleId", "bob")
     self.params.put("AthenadPid", "123")
-    assert self.params.get("DongleId") == b"bob"
-    assert self.params.get("AthenadPid") == b"123"
+    assert self.params.get("DongleId") == "bob"
+    assert self.params.get("AthenadPid") == "123"
 
   def test_params_get_block(self):
     def _delayed_writer():
@@ -131,14 +131,14 @@ class TestParams:
     # time
     now = datetime.datetime.now(datetime.UTC)
     self.params.put("InstallDate", str(now))
-    assert self.params.get("InstallDate", encoding="utf-8") == now
+    assert self.params.get("InstallDate") == now
 
   def test_params_get_default(self):
     now = datetime.datetime.now(datetime.UTC)
     self.params.remove("InstallDate")
-    assert self.params.get("InstallDate", encoding="utf-8") is None
-    assert self.params.get("InstallDate", encoding="utf-8", default=now) == now
+    assert self.params.get("InstallDate") is None
+    assert self.params.get("InstallDate", default=now) == now
 
     self.params.put("BootCount", "1xx1")
-    assert self.params.get("BootCount", encoding="utf-8") is None
-    assert self.params.get("BootCount", encoding="utf-8", default=1441) == 1441
+    assert self.params.get("BootCount") is None
+    assert self.params.get("BootCount", default=1441) == 1441
