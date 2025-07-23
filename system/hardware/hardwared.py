@@ -400,7 +400,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     last_ping = params.get("LastAthenaPingTime")
     if last_ping is not None:
-      msg.deviceState.lastAthenaPingTime = int(last_ping)
+      msg.deviceState.lastAthenaPingTime = last_ping
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
