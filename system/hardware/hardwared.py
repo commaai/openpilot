@@ -172,6 +172,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   onroad_conditions: dict[str, bool] = {
     "ignition": False,
     "not_onroad_cycle": True,
+    "device_temp_good": True,
   }
   startup_conditions: dict[str, bool] = {}
   startup_conditions_prev: dict[str, bool] = {}
