@@ -40,6 +40,9 @@ IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
 def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState) -> bool:
+  if sm['carControl'].longActive:
+    if CS.aEgo > 2 or CS.aEgo < -3.5:  # TODO: use constants
+      return True
   return False
 
 
@@ -115,6 +118,7 @@ class SelfdriveD:
     self.experimental_mode = False
     self.personality = self.read_personality_param()
     self.recalibrating_seen = False
+    self.excessive_actuation = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -231,7 +235,11 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    if check_excessive_actuation(self.sm, CS):
+    if not self.excessive_actuation and check_excessive_actuation(self.sm, CS):
+      set_offroad_alert("Offroad_LateralIsoViolation", True, extra_text="longitudinal")
+      self.excessive_actuation = True
+
+    if self.excessive_actuation:
       self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
