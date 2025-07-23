@@ -127,6 +127,7 @@ class TestParams:
     # bool
     self.params.put("AdbEnabled", "1")
     assert self.params.get("AdbEnabled")
+    assert isinstance(self.params.get("AdbEnabled"), bool)
 
     # time
     now = datetime.datetime.now(datetime.UTC)
