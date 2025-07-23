@@ -109,7 +109,7 @@ class SelfdriveD:
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.experimental_mode = False
-    self.personality = self.read_personality_param()
+    self.personality = self.params.get('LongitudinalPersonality')
     self.recalibrating_seen = False
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
@@ -477,16 +477,13 @@ class SelfdriveD:
 
     self.CS_prev = CS
 
-  def read_personality_param(self):
-    return self.params.get('LongitudinalPersonality', default=log.LongitudinalPersonality.standard)
-
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
       self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.personality = self.read_personality_param()
+      self.personality = self.params.get('LongitudinalPersonality')
       time.sleep(0.1)
 
   def run(self):
