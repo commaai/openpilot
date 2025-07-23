@@ -16,6 +16,7 @@ protected:
   AbstractAlert(bool hasRebootBtn, QWidget *parent = nullptr);
 
   QPushButton *snooze_btn;
+  QPushButton *accept_btn;
   QVBoxLayout *scrollable_layout;
   Params params;
 
