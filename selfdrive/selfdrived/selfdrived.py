@@ -7,6 +7,7 @@ import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 
 
 from openpilot.common.params import Params
@@ -41,7 +42,7 @@ IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState) -> bool:
   if sm['carControl'].longActive:
-    if CS.aEgo > 2 or CS.aEgo < -3.5:  # TODO: use constants
+    if CS.aEgo > ACCEL_MAX * 1.1 or CS.aEgo < ACCEL_MIN * 1.1:
       return True
   return False
 
