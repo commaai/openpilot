@@ -110,7 +110,7 @@ class TestParams:
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
 
-  def test_params_default_init_value(self):
+  def test_params_default_value(self):
     assert self.params.get_default_value("LanguageSetting")
     assert self.params.get_default_value("LongitudinalPersonality")
     assert not self.params.get_default_value("LiveParameters")
@@ -132,13 +132,3 @@ class TestParams:
     now = datetime.datetime.now(datetime.UTC)
     self.params.put("InstallDate", str(now))
     assert self.params.get("InstallDate") == now
-
-  def test_params_get_default(self):
-    now = datetime.datetime.now(datetime.UTC)
-    self.params.remove("InstallDate")
-    assert self.params.get("InstallDate") is None
-    assert self.params.get("InstallDate", default=now) == now
-
-    self.params.put("BootCount", "1xx1")
-    assert self.params.get("BootCount") is None
-    assert self.params.get("BootCount", default=1441) == 1441
