@@ -119,12 +119,15 @@ class TestParams:
     # json
     self.params.put("ApiCache_FirehoseStats", json.dumps({"a": 0}))
     assert self.params.get("ApiCache_FirehoseStats") == {"a": 0}
+
     # int
     self.params.put("BootCount", str(1441))
     assert self.params.get("BootCount") == 1441
+
     # bool
     self.params.put("AdbEnabled", "1")
     assert self.params.get("AdbEnabled")
+
     # time
     now = datetime.datetime.now(datetime.UTC)
     self.params.put("InstallDate", str(now))
