@@ -151,7 +151,7 @@ class UploadQueueCache:
     try:
       upload_queue_json = Params().get("AthenadUploadQueue")
       if upload_queue_json is not None:
-        for item in json.loads(upload_queue_json):
+        for item in upload_queue_json:
           upload_queue.put(UploadItem.from_dict(item))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.initialize.exception")

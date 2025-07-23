@@ -190,14 +190,10 @@ class OffroadAlert(AbstractAlert):
 
     for alert_data in self.sorted_alerts:
       text = ""
-      bytes_data = self.params.get(alert_data.key)
+      alert_json = self.params.get(alert_data.key)
 
-      if bytes_data:
-        try:
-          alert_json = json.loads(bytes_data)
-          text = alert_json.get("text", "").replace("{}", alert_json.get("extra", ""))
-        except json.JSONDecodeError:
-          text = ""
+      if alert_json:
+        text = alert_json.get("text", "").replace("{}", alert_json.get("extra", ""))
 
       alert_data.text = text
       alert_data.visible = bool(text)

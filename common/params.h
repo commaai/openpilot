@@ -9,7 +9,7 @@
 
 #include "common/queue.h"
 
-enum ParamKeyType {
+enum ParamKeyFlag {
   PERSISTENT = 0x02,
   CLEAR_ON_MANAGER_START = 0x04,
   CLEAR_ON_ONROAD_TRANSITION = 0x08,
@@ -18,6 +18,21 @@ enum ParamKeyType {
   DEVELOPMENT_ONLY = 0x40,
   CLEAR_ON_IGNITION_ON = 0x80,
   ALL = 0xFFFFFFFF
+};
+
+enum ParamKeyType {
+  STRING = 0,
+  BOOL = 1,
+  INT = 2,
+  FLOAT = 3,
+  TIME = 4, // ISO 8601
+  JSON = 5
+};
+
+struct ParamKeyAttributes {
+  uint32_t flags;
+  ParamKeyType type;
+  std::string default_value = "";
 };
 
 class Params {
@@ -30,14 +45,16 @@ public:
 
   std::vector<std::string> allKeys() const;
   bool checkKey(const std::string &key);
+  ParamKeyFlag getKeyFlag(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
+  std::string getKeyDefaultValue(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {
     return params_path + params_prefix + (key.empty() ? "" : "/" + key);
   }
 
   // Delete a value
   int remove(const std::string &key);
-  void clearAll(ParamKeyType type);
+  void clearAll(ParamKeyFlag flag);
 
   // helpers for reading values
   std::string get(const std::string &key, bool block = false);

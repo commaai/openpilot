@@ -55,7 +55,7 @@ class FirehoseLayout(Widget):
     if not stats:
       return 0
     try:
-      return int(json.loads(stats).get("firehose", 0))
+      return int(stats.get("firehose", 0))
     except Exception:
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
