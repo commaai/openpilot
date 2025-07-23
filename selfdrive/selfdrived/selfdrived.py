@@ -39,6 +39,10 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState) -> bool:
+  return False
+
+
 class SelfdriveD:
   def __init__(self, CP=None):
     self.params = Params()
@@ -226,6 +230,9 @@ class SelfdriveD:
     if self.is_ldw_enabled and self.sm.valid['driverAssistance']:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
+
+    if check_excessive_actuation(self.sm, CS):
+      self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
