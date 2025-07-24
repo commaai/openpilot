@@ -49,7 +49,7 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
   accel_calibrated = calibrated_pose.acceleration.x
 
-  # livePose acceleration can be noisy due to bad mounting
+  # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
   accel_valid = abs(CS.aEgo - accel_calibrated) < 2
 
   excessive_actuation = accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2
