@@ -144,7 +144,11 @@ class LocationEstimator:
 
     elif which == "carState":
       self.car_speed = abs(msg.vEgo)
+      self.standstill = msg.standstill
 
+      if self.standstill:
+        self.kf.predict_and_observe(t, ObservationKind.NO_ACCEL, np.array([0.0, 0.0, 0.0]))
+        self.kf.predict_and_observe(t, ObservationKind.NO_ROT, np.array([0.0, 0.0, 0.0]))
     elif which == "liveCalibration":
       # Note that we use this message during calibration
       if len(msg.rpyCalib) > 0:
