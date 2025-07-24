@@ -160,5 +160,5 @@ cdef class Params:
     return self.p.allKeys()
 
   def get_default_value(self, key):
-    cdef optional[string] result = self.p.getKeyDefaultValue(self.check_key(key))
-    return result.value() if result.has_value() else None
+    cdef optional[string] default = self.p.getKeyDefaultValue(self.check_key(key))
+    return default.value() if default.has_value() else None
