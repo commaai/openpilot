@@ -51,6 +51,7 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
 
   # livePose acceleration can be noisy due to bad mounting
   accel_valid = abs(CS.aEgo - accel_calibrated) < 2
+
   excessive_actuation = accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2
   counter = counter + 1 if sm['carControl'].longActive and excessive_actuation and accel_valid else 0
 
