@@ -2,7 +2,6 @@
 
 #include <future>
 #include <map>
-#include <optional>
 #include <string>
 #include <tuple>
 #include <utility>
@@ -34,7 +33,7 @@ enum ParamKeyType {
 struct ParamKeyAttributes {
   uint32_t flags;
   ParamKeyType type;
-  std::optional<std::string> default_value = std::nullopt;
+  std::string default_value = "";
 };
 
 class Params {
@@ -49,7 +48,7 @@ public:
   bool checkKey(const std::string &key);
   ParamKeyFlag getKeyFlag(const std::string &key);
   ParamKeyType getKeyType(const std::string &key);
-  std::optional<std::string> getKeyDefaultValue(const std::string &key);
+  std::string getKeyDefaultValue(const std::string &key);
   inline std::string getParamPath(const std::string &key = {}) {
     return params_path + params_prefix + (key.empty() ? "" : "/" + key);
   }

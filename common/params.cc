@@ -123,7 +123,7 @@ ParamKeyType Params::getKeyType(const std::string &key) {
   return keys[key].type;
 }
 
-std::optional<std::string> Params::getKeyDefaultValue(const std::string &key) {
+std::string Params::getKeyDefaultValue(const std::string &key) {
   return keys[key].default_value;
 }
 
