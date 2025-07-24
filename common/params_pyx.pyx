@@ -5,6 +5,7 @@ import json
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libcpp.optional cimport optional
 
 cdef extern from "common/params.h":
   cpdef enum ParamKeyFlag:
@@ -36,7 +37,7 @@ cdef extern from "common/params.h":
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
     ParamKeyType getKeyType(string) nogil
-    string getKeyDefaultValue(string) nogil
+    optional[string] getKeyDefaultValue(string) nogil
     string getParamPath(string) nogil
     void clearAll(ParamKeyFlag)
     vector[string] allKeys()
@@ -73,40 +74,45 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def get(self, key, bool block=False, default=None):
+  def cast(self, t, value, default):
+    if value is None:
+      return None
+    try:
+      if t == STRING:
+        return value.decode("utf-8")
+      elif t == BOOL:
+        return value == b"1"
+      elif t == INT:
+        return int(value)
+      elif t == FLOAT:
+        return float(value)
+      elif t == TIME:
+        return datetime.datetime.fromisoformat(value.decode("utf-8"))
+      elif t == JSON:
+        return json.loads(value)
+      elif t == BYTES:
+        return value
+      else:
+        raise TypeError()
+    except (TypeError, ValueError):
+      return self.cast(t, default, None)
+
+  def get(self, key, bool block=False):
     cdef string k = self.check_key(key)
-    cdef ParamKeyType t = self.p.getKeyType(ensure_bytes(key))
+    cdef ParamKeyType t = self.p.getKeyType(k)
     cdef string val
     with nogil:
       val = self.p.get(k, block)
 
+    default = self.get_default_value(k)
     if val == b"":
       if block:
         # If we got no value while running in blocked mode
         # it means we got an interrupt while waiting
         raise KeyboardInterrupt
       else:
-        return default
-
-    try:
-      if t == STRING:
-        return val.decode("utf-8")
-      elif t == BOOL:
-        return val == b"1"
-      elif t == INT:
-        return int(val)
-      elif t == FLOAT:
-        return float(val)
-      elif t == TIME:
-        return datetime.datetime.fromisoformat(val.decode("utf-8"))
-      elif t == JSON:
-        return json.loads(val)
-      elif t == BYTES:
-        return val
-      else:
-        return default
-    except (TypeError, ValueError):
-      return default
+        return self.cast(t, default, None)
+    return self.cast(t, val, default)
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
@@ -156,4 +162,5 @@ cdef class Params:
     return self.p.allKeys()
 
   def get_default_value(self, key):
-    return self.p.getKeyDefaultValue(self.check_key(key))
+    cdef optional[string] default = self.p.getKeyDefaultValue(self.check_key(key))
+    return default.value() if default.has_value() else None
