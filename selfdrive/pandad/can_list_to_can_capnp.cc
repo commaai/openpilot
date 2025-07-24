@@ -1,5 +1,5 @@
 #include "cereal/messaging/messaging.h"
-#include "opendbc/can/common.h"
+#include "selfdrive/pandad/can_types.h"
 
 void can_list_to_can_capnp_cpp(const std::vector<CanFrame> &can_list, std::string &out, bool sendcan, bool valid) {
   MessageBuilder msg;
