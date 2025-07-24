@@ -17,7 +17,7 @@ from openpilot.common.swaglog import cloudlog
 UNREGISTERED_DONGLE_ID = "UnregisteredDevice"
 
 def is_registered_device() -> bool:
-  dongle = Params().get("DongleId", encoding='utf-8')
+  dongle = Params().get("DongleId")
   return dongle not in (None, UNREGISTERED_DONGLE_ID)
 
 
@@ -33,7 +33,7 @@ def register(show_spinner=False) -> str | None:
   """
   params = Params()
 
-  dongle_id: str | None = params.get("DongleId", encoding='utf8')
+  dongle_id: str | None = params.get("DongleId")
   if dongle_id is None and Path(Paths.persist_root()+"/comma/dongle_id").is_file():
     # not all devices will have this; added early in comma 3X production (2/28/24)
     with open(Paths.persist_root()+"/comma/dongle_id") as f:

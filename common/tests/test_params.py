@@ -1,10 +1,12 @@
 import pytest
+import datetime
+import json
 import os
 import threading
 import time
 import uuid
 
-from openpilot.common.params import Params, ParamKeyType, UnknownKeyName
+from openpilot.common.params import Params, ParamKeyFlag, UnknownKeyName
 
 class TestParams:
   def setup_method(self):
@@ -12,7 +14,7 @@ class TestParams:
 
   def test_params_put_and_get(self):
     self.params.put("DongleId", "cb38263377b873ee")
-    assert self.params.get("DongleId") == b"cb38263377b873ee"
+    assert self.params.get("DongleId") == "cb38263377b873ee"
 
   def test_params_non_ascii(self):
     st = b"\xe1\x90\xff"
@@ -29,7 +31,7 @@ class TestParams:
       f.write("test")
     assert os.path.isfile(undefined_param)
 
-    self.params.clear_all(ParamKeyType.CLEAR_ON_MANAGER_START)
+    self.params.clear_all(ParamKeyFlag.CLEAR_ON_MANAGER_START)
     assert self.params.get("CarParams") is None
     assert self.params.get("DongleId") is not None
     assert not os.path.isfile(undefined_param)
@@ -37,8 +39,8 @@ class TestParams:
   def test_params_two_things(self):
     self.params.put("DongleId", "bob")
     self.params.put("AthenadPid", "123")
-    assert self.params.get("DongleId") == b"bob"
-    assert self.params.get("AthenadPid") == b"123"
+    assert self.params.get("DongleId") == "bob"
+    assert self.params.get("AthenadPid") == "123"
 
   def test_params_get_block(self):
     def _delayed_writer():
@@ -107,3 +109,36 @@ class TestParams:
     assert len(keys) > 20
     assert len(keys) == len(set(keys))
     assert b"CarParams" in keys
+
+  def test_params_default_init_value(self):
+    assert self.params.get_default_value("LanguageSetting")
+    assert self.params.get_default_value("LongitudinalPersonality")
+    assert not self.params.get_default_value("LiveParameters")
+
+  def test_params_get_type(self):
+    # json
+    self.params.put("ApiCache_FirehoseStats", json.dumps({"a": 0}))
+    assert self.params.get("ApiCache_FirehoseStats") == {"a": 0}
+
+    # int
+    self.params.put("BootCount", str(1441))
+    assert self.params.get("BootCount") == 1441
+
+    # bool
+    self.params.put("AdbEnabled", "1")
+    assert self.params.get("AdbEnabled")
+
+    # time
+    now = datetime.datetime.now(datetime.UTC)
+    self.params.put("InstallDate", str(now))
+    assert self.params.get("InstallDate") == now
+
+  def test_params_get_default(self):
+    now = datetime.datetime.now(datetime.UTC)
+    self.params.remove("InstallDate")
+    assert self.params.get("InstallDate") is None
+    assert self.params.get("InstallDate", default=now) == now
+
+    self.params.put("BootCount", "1xx1")
+    assert self.params.get("BootCount") is None
+    assert self.params.get("BootCount", default=1441) == 1441

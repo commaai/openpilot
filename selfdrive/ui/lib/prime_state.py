@@ -35,7 +35,7 @@ class PrimeState:
     self.start()
 
   def _load_initial_state(self) -> PrimeType:
-    prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType", encoding='utf8')
+    prime_type_str = os.getenv("PRIME_TYPE") or self._params.get("PrimeType")
     try:
       if prime_type_str is not None:
         return PrimeType(int(prime_type_str))
@@ -44,7 +44,7 @@ class PrimeState:
     return PrimeType.UNKNOWN
 
   def _fetch_prime_status(self) -> None:
-    dongle_id = self._params.get("DongleId", encoding='utf8')
+    dongle_id = self._params.get("DongleId")
     if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
       return
 

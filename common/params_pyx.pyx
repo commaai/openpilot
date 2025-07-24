@@ -1,11 +1,13 @@
 # distutils: language = c++
 # cython: language_level = 3
+import datetime
+import json
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
 cdef extern from "common/params.h":
-  cpdef enum ParamKeyType:
+  cpdef enum ParamKeyFlag:
     PERSISTENT
     CLEAR_ON_MANAGER_START
     CLEAR_ON_ONROAD_TRANSITION
@@ -13,6 +15,15 @@ cdef extern from "common/params.h":
     DEVELOPMENT_ONLY
     CLEAR_ON_IGNITION_ON
     ALL
+
+  cpdef enum ParamKeyType:
+    STRING
+    BOOL
+    INT
+    FLOAT
+    TIME
+    JSON
+    BYTES
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
@@ -24,8 +35,10 @@ cdef extern from "common/params.h":
     void putBoolNonBlocking(string, bool) nogil
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
+    ParamKeyType getKeyType(string) nogil
+    string getKeyDefaultValue(string) nogil
     string getParamPath(string) nogil
-    void clearAll(ParamKeyType)
+    void clearAll(ParamKeyFlag)
     vector[string] allKeys()
 
 
@@ -51,8 +64,8 @@ cdef class Params:
   def __dealloc__(self):
     del self.p
 
-  def clear_all(self, tx_type=ParamKeyType.ALL):
-    self.p.clearAll(tx_type)
+  def clear_all(self, tx_flag=ParamKeyFlag.ALL):
+    self.p.clearAll(tx_flag)
 
   def check_key(self, key):
     key = ensure_bytes(key)
@@ -60,8 +73,9 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def get(self, key, bool block=False, encoding=None):
+  def get(self, key, bool block=False, default=None):
     cdef string k = self.check_key(key)
+    cdef ParamKeyType t = self.p.getKeyType(ensure_bytes(key))
     cdef string val
     with nogil:
       val = self.p.get(k, block)
@@ -72,9 +86,27 @@ cdef class Params:
         # it means we got an interrupt while waiting
         raise KeyboardInterrupt
       else:
-        return None
+        return default
 
-    return val if encoding is None else val.decode(encoding)
+    try:
+      if t == STRING:
+        return val.decode("utf-8")
+      elif t == BOOL:
+        return val == b"1"
+      elif t == INT:
+        return int(val)
+      elif t == FLOAT:
+        return float(val)
+      elif t == TIME:
+        return datetime.datetime.fromisoformat(val.decode("utf-8"))
+      elif t == JSON:
+        return json.loads(val)
+      elif t == BYTES:
+        return val
+      else:
+        return default
+    except (TypeError, ValueError):
+      return default
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
@@ -122,3 +154,6 @@ cdef class Params:
 
   def all_keys(self):
     return self.p.allKeys()
+
+  def get_default_value(self, key):
+    return self.p.getKeyDefaultValue(self.check_key(key))

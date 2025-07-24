@@ -251,7 +251,7 @@ class DaemonProcess(ManagerProcess):
     if self.params is None:
       self.params = Params()
 
-    pid = self.params.get(self.param_name, encoding='utf-8')
+    pid = self.params.get(self.param_name)
     if pid is not None:
       try:
         os.kill(int(pid), 0)
