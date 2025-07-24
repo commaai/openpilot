@@ -75,6 +75,8 @@ cdef class Params:
     return key
 
   def cast(self, t, value, default):
+    if value is None:
+      return None
     try:
       if t == STRING:
         return value.decode("utf-8")
@@ -93,23 +95,23 @@ cdef class Params:
       else:
         raise TypeError()
     except (TypeError, ValueError):
-      return None if default is None else self.cast(t, default, None)
+      return self.cast(t, default, None)
 
   def get(self, key, bool block=False):
     cdef string k = self.check_key(key)
-    cdef ParamKeyType t = self.p.getKeyType(ensure_bytes(key))
+    cdef ParamKeyType t = self.p.getKeyType(k)
     cdef string val
     with nogil:
       val = self.p.get(k, block)
 
-    default = self.get_default_value(key)
+    default = self.get_default_value(k)
     if val == b"":
       if block:
         # If we got no value while running in blocked mode
         # it means we got an interrupt while waiting
         raise KeyboardInterrupt
       else:
-        return None if default is None else self.cast(t, default, None)
+        return self.cast(t, default, None)
     return self.cast(t, val, default)
 
   def get_bool(self, key, bool block=False):
