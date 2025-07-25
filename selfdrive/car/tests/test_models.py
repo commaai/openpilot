@@ -190,18 +190,14 @@ class TestCarModelBase(unittest.TestCase):
   def test_car_interface(self):
     # TODO: also check for checksum violations from can parser
     can_invalid_cnt = 0
-    can_valid = False
     CC = structs.CarControl().as_reader()
 
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(msg)
       self.CI.apply(CC, msg[0])
 
-      if CS.canValid:
-        can_valid = True
-
       # wait max of 2s for low frequency msgs to be seen
-      if i > 200 or can_valid:
+      if i > 250:
         can_invalid_cnt += not CS.canValid
 
     self.assertEqual(can_invalid_cnt, 0)
@@ -320,7 +316,7 @@ class TestCarModelBase(unittest.TestCase):
 
     vehicle_speed_seen = self.CP.steerControlType == SteerControlType.angle and not self.CP.notCar
 
-    for dat in msgs:
+    for n, dat in enumerate(msgs):
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
       #  (eg. toyota's gasPressed is the inverse of a signal being set)
@@ -339,6 +335,8 @@ class TestCarModelBase(unittest.TestCase):
 
       can = [(int(time.monotonic() * 1e9), [CanData(address=address, dat=dat, src=bus)])]
       CS = self.CI.update(can)
+      if n < 5:  # CANParser warmup time
+        continue
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
         self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())

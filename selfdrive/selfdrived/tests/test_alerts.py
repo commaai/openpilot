@@ -111,7 +111,7 @@ class TestAlerts:
       alert = copy.copy(self.offroad_alerts[a])
       set_offroad_alert(a, True)
       alert['extra'] = ''
-      assert json.dumps(alert) == params.get(a, encoding='utf8')
+      assert alert == params.get(a)
 
       # then delete it
       set_offroad_alert(a, False)
@@ -125,6 +125,6 @@ class TestAlerts:
       alert = self.offroad_alerts[a]
       set_offroad_alert(a, True, extra_text="a"*i)
 
-      written_alert = json.loads(params.get(a, encoding='utf8'))
+      written_alert = params.get(a)
       assert "a"*i == written_alert['extra']
       assert alert["text"] == written_alert['text']

@@ -41,8 +41,9 @@
     "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
     "severity": 0
   },
-  "Offroad_LateralIsoViolation": {
-    "text": "openpilot observed your vehicle achieving unreasonable lateral acceleration or jerk while engaged. Please contact support at https://comma.ai/support.",
-    "severity": 1
+  "Offroad_ExcessiveActuation": {
+    "text": "openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.",
+    "severity": 1,
+    "_comment": "Set extra field to lateral or longitudinal."
   }
 }

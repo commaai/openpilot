@@ -51,11 +51,11 @@ class FirehoseLayout(Widget):
     self.last_update_time = 0
 
   def _get_segment_count(self) -> int:
-    stats = self.params.get(self.PARAM_KEY, encoding='utf8')
+    stats = self.params.get(self.PARAM_KEY)
     if not stats:
       return 0
     try:
-      return int(json.loads(stats).get("firehose", 0))
+      return int(stats.get("firehose", 0))
     except Exception:
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
@@ -161,7 +161,7 @@ class FirehoseLayout(Widget):
 
   def _fetch_firehose_stats(self):
     try:
-      dongle_id = self.params.get("DongleId", encoding='utf8')
+      dongle_id = self.params.get("DongleId")
       if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
         return
       identity_token = Api(dongle_id).get_token()

@@ -29,12 +29,10 @@ class PowerMonitoring:
     self.car_voltage_instant_mV = 12e3          # Last value of peripheralState voltage
     self.integration_lock = threading.Lock()
 
-    car_battery_capacity_uWh = self.params.get("CarBatteryCapacity")
-    if car_battery_capacity_uWh is None:
-      car_battery_capacity_uWh = 0
+    car_battery_capacity_uWh = self.params.get("CarBatteryCapacity") or 0
 
     # Reset capacity if it's low
-    self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), int(car_battery_capacity_uWh))
+    self.car_battery_capacity_uWh = max((CAR_BATTERY_CAPACITY_uWh / 10), car_battery_capacity_uWh)
 
   # Calculation tick
   def calculate(self, voltage: int | None, ignition: bool):

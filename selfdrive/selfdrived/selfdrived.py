@@ -9,7 +9,7 @@ import cereal.messaging as messaging
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
-from opendbc.car.interfaces import ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 
 
 from openpilot.common.params import Params
@@ -29,7 +29,9 @@ from openpilot.system.version import get_build_metadata
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
+
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -43,24 +45,27 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_lateral_iso_violation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator):
-  calibrator.feed_live_calib(sm['liveCalibration'])
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator, counter: int) -> tuple[int, bool]:
+  # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
   device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
 
-  yaw_rate = calibrated_pose.angular_velocity.yaw
-  roll = device_pose.orientation.roll
+  # longitudinal
+  accel_calibrated = calibrated_pose.acceleration.x
 
+  # lateral
+  yaw_rate = calibrated_pose.angular_velocity.yaw
+  roll = device_pose.orientation.roll  # TODO: calibrated_pose?
   roll_compensated_lateral_accel = float((CS.vEgo * yaw_rate) - (np.sin(roll) * ACCELERATION_DUE_TO_GRAVITY))
 
-  print('roll_compensated_lateral_accel:', roll_compensated_lateral_accel)
+  # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
+  accel_valid = abs(CS.aEgo - accel_calibrated) < 2
 
-  # TODO: some temporal tolerance?
-  if sm['carControl'].latActive:
-    if abs(roll_compensated_lateral_accel) > (ISO_LATERAL_ACCEL * 2):
-      return True
+  excessive_actuation = (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2 or
+                         abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2)
+  counter = counter + 1 if sm['carControl'].longActive and excessive_actuation and accel_valid else 0
 
-  return False
+  return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
 
 
 class SelfdriveD:
@@ -78,6 +83,7 @@ class SelfdriveD:
       self.CP = CP
 
     self.car_events = CarSpecificEvents(self.CP)
+    self.calibrator = PoseCalibrator()
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -134,8 +140,10 @@ class SelfdriveD:
     self.logged_comm_issue = None
     self.not_running_prev = None
     self.experimental_mode = False
-    self.personality = self.read_personality_param()
+    self.personality = self.params.get("LongitudinalPersonality", return_default=True)
     self.recalibrating_seen = False
+    self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
+    self.excessive_actuation_counter = 0
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
     self.calibrator = PoseCalibrator()
@@ -253,13 +261,17 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    # Check for lateral ISO violations
-    if not self.lateral_iso_violation and check_lateral_iso_violation(self.sm, CS, self.calibrator):
-      set_offroad_alert("Offroad_LateralIsoViolation", True)
-      self.lateral_iso_violation = True
+    # Check for excessive (longitudinal) actuation
+    if self.sm.updated['liveCalibration']:
+      self.calibrator.feed_live_calib(self.sm['liveCalibration'])
 
-    if self.lateral_iso_violation:
-      self.events.add(EventName.lateralIsoViolation)
+    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.excessive_actuation_counter)
+    if not self.excessive_actuation and excessive_actuation:
+      set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
+      self.excessive_actuation = True
+
+    if self.excessive_actuation:
+      self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
@@ -511,19 +523,13 @@ class SelfdriveD:
 
     self.CS_prev = CS
 
-  def read_personality_param(self):
-    try:
-      return int(self.params.get('LongitudinalPersonality'))
-    except (ValueError, TypeError):
-      return log.LongitudinalPersonality.standard
-
   def params_thread(self, evt):
     while not evt.is_set():
       self.is_metric = self.params.get_bool("IsMetric")
       self.is_ldw_enabled = self.params.get_bool("IsLdwEnabled")
       self.disengage_on_accelerator = self.params.get_bool("DisengageOnAccelerator")
       self.experimental_mode = self.params.get_bool("ExperimentalMode") and self.CP.openpilotLongitudinalControl
-      self.personality = self.read_personality_param()
+      self.personality = self.params.get("LongitudinalPersonality", return_default=True)
       time.sleep(0.1)
 
   def run(self):

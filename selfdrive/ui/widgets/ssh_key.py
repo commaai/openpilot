@@ -42,7 +42,7 @@ class SshKeyAction(ItemAction):
     self._refresh_state()
 
   def _refresh_state(self):
-    self._username = self._params.get("GithubUsername", "")
+    self._username = self._params.get("GithubUsername")
     self._state = SshKeyActionState.REMOVE if self._params.get("GithubSshKeys") else SshKeyActionState.ADD
 
   def _render(self, rect: rl.Rectangle) -> bool:

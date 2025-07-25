@@ -10,12 +10,13 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ['qlog.bz2', 'qlog.zst', 'qlog']
-QCAMERA_FILENAMES = ['qcamera.ts']
-LOG_FILENAMES = ['rlog.bz2', 'raw_log.bz2', 'rlog.zst', 'rlog']
-CAMERA_FILENAMES = ['fcamera.hevc', 'video.hevc']
-DCAMERA_FILENAMES = ['dcamera.hevc']
-ECAMERA_FILENAMES = ['ecamera.hevc']
+QLOG_FILENAMES = ('qlog.bz2', 'qlog.zst', 'qlog')
+QCAMERA_FILENAMES = ('qcamera.ts',)
+LOG_FILENAMES = ('rlog.bz2', 'raw_log.bz2', 'rlog.zst', 'rlog')
+CAMERA_FILENAMES = ('fcamera.hevc', 'video.hevc')
+DCAMERA_FILENAMES = ('dcamera.hevc',)
+ECAMERA_FILENAMES = ('ecamera.hevc',)
+BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 
 
 class Route:
@@ -216,9 +217,17 @@ class RouteName:
   def dongle_id(self) -> str: return self._dongle_id
 
   @property
+  def log_id(self) -> str: return self._time_str
+
+  @property
   def time_str(self) -> str: return self._time_str
 
+  @property
+  def azure_prefix(self):
+    return f'{self.dongle_id}/{self.log_id}'
+
   def __str__(self) -> str: return self._canonical_name
+
 
 
 class SegmentName:
@@ -246,10 +255,17 @@ class SegmentName:
   def data_name(self) -> str: return f"{self._route_name.canonical_name}/{self._num}"
 
   @property
+  def azure_prefix(self):
+    return f'{self.dongle_id}/{self.log_id}/{self._num}'
+
+  @property
   def dongle_id(self) -> str: return self._route_name.dongle_id
 
   @property
   def time_str(self) -> str: return self._route_name.time_str
+
+  @property
+  def log_id(self) -> str: return self._route_name.time_str
 
   @property
   def segment_num(self) -> int: return self._num
@@ -262,6 +278,29 @@ class SegmentName:
 
   def __str__(self) -> str: return self._canonical_name
 
+  @staticmethod
+  def from_file_name(file_name):
+    # ??????/xxxxxxxxxxxxxxxx|1111-11-11-11--11-11-11/1/rlog.bz2
+    dongle_id, route_name, segment_num = file_name.replace('|','/').split('/')[-4:-1]
+    return SegmentName(dongle_id + "|" + route_name + "--" + segment_num)
+
+  @staticmethod
+  def from_device_key(dongle_id, key):
+    # 2018-05-07--18-56-13--5/rlog.bz2
+    segment_name = key.split('/')[0]
+    return SegmentName(dongle_id + "|" + segment_name)
+
+  @staticmethod
+  def from_file_key(key):
+    # 38c52c217150700f/2018-05-07--18-56-13/5/rlog.bz2
+    az_prefix = '/'.join(key.split('/')[:3])
+    return SegmentName.from_azure_prefix(az_prefix)
+
+  @staticmethod
+  def from_azure_prefix(prefix):
+    # xxxxxxxx/1111-11-11-11--11-11-11/0
+    dongle_id, route_name, segment_num = prefix.split("/")
+    return SegmentName(dongle_id + "|" + route_name + "--" + segment_num)
 
 @cache
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
@@ -324,3 +363,4 @@ class SegmentRange:
 
   def __repr__(self) -> str:
     return self.__str__()
+

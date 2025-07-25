@@ -132,8 +132,8 @@ class TestBaseUpdate:
 
 class ParamsBaseUpdateTest(TestBaseUpdate):
   def _test_finalized_update(self, branch, version, agnos_version, release_notes):
-    assert self.params.get("UpdaterNewDescription", encoding="utf-8").startswith(f"{version} / {branch}")
-    assert self.params.get("UpdaterNewReleaseNotes", encoding="utf-8") == f"{release_notes}\n"
+    assert self.params.get("UpdaterNewDescription").startswith(f"{version} / {branch}")
+    assert self.params.get("UpdaterNewReleaseNotes") == f"{release_notes}\n"
     super()._test_finalized_update(branch, version, agnos_version, release_notes)
 
   def send_check_for_updates_signal(self, updated: ManagerProcess):
@@ -143,16 +143,16 @@ class ParamsBaseUpdateTest(TestBaseUpdate):
     updated.signal(signal.SIGHUP.value)
 
   def _test_params(self, branch, fetch_available, update_available):
-    assert self.params.get("UpdaterTargetBranch", encoding="utf-8") == branch
+    assert self.params.get("UpdaterTargetBranch") == branch
     assert self.params.get_bool("UpdaterFetchAvailable") == fetch_available
     assert self.params.get_bool("UpdateAvailable") == update_available
 
   def wait_for_idle(self):
-    self.wait_for_condition(lambda: self.params.get("UpdaterState", encoding="utf-8") == "idle")
+    self.wait_for_condition(lambda: self.params.get("UpdaterState") == "idle")
 
   def wait_for_failed(self):
-    self.wait_for_condition(lambda: self.params.get("UpdateFailedCount", encoding="utf-8") is not None and \
-                                              int(self.params.get("UpdateFailedCount", encoding="utf-8")) > 0)
+    self.wait_for_condition(lambda: self.params.get("UpdateFailedCount") is not None and \
+                                              self.params.get("UpdateFailedCount") > 0)
 
   def wait_for_fetch_available(self):
     self.wait_for_condition(lambda: self.params.get_bool("UpdaterFetchAvailable"))

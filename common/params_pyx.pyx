@@ -1,11 +1,14 @@
 # distutils: language = c++
 # cython: language_level = 3
+import datetime
+import json
 from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
+from libcpp.optional cimport optional
 
 cdef extern from "common/params.h":
-  cpdef enum ParamKeyType:
+  cpdef enum ParamKeyFlag:
     PERSISTENT
     CLEAR_ON_MANAGER_START
     CLEAR_ON_ONROAD_TRANSITION
@@ -13,6 +16,15 @@ cdef extern from "common/params.h":
     DEVELOPMENT_ONLY
     CLEAR_ON_IGNITION_ON
     ALL
+
+  cpdef enum ParamKeyType:
+    STRING
+    BOOL
+    INT
+    FLOAT
+    TIME
+    JSON
+    BYTES
 
   cdef cppclass c_Params "Params":
     c_Params(string) except + nogil
@@ -24,8 +36,10 @@ cdef extern from "common/params.h":
     void putBoolNonBlocking(string, bool) nogil
     int putBool(string, bool) nogil
     bool checkKey(string) nogil
+    ParamKeyType getKeyType(string) nogil
+    optional[string] getKeyDefaultValue(string) nogil
     string getParamPath(string) nogil
-    void clearAll(ParamKeyType)
+    void clearAll(ParamKeyFlag)
     vector[string] allKeys()
 
 
@@ -51,8 +65,8 @@ cdef class Params:
   def __dealloc__(self):
     del self.p
 
-  def clear_all(self, tx_type=ParamKeyType.ALL):
-    self.p.clearAll(tx_type)
+  def clear_all(self, tx_flag=ParamKeyFlag.ALL):
+    self.p.clearAll(tx_flag)
 
   def check_key(self, key):
     key = ensure_bytes(key)
@@ -60,21 +74,45 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def get(self, key, bool block=False, encoding=None):
+  def cast(self, t, value, default):
+    if value is None:
+      return None
+    try:
+      if t == STRING:
+        return value.decode("utf-8")
+      elif t == BOOL:
+        return value == b"1"
+      elif t == INT:
+        return int(value)
+      elif t == FLOAT:
+        return float(value)
+      elif t == TIME:
+        return datetime.datetime.fromisoformat(value.decode("utf-8"))
+      elif t == JSON:
+        return json.loads(value)
+      elif t == BYTES:
+        return value
+      else:
+        raise TypeError()
+    except (TypeError, ValueError):
+      return self.cast(t, default, None)
+
+  def get(self, key, bool block=False, bool return_default=False):
     cdef string k = self.check_key(key)
+    cdef ParamKeyType t = self.p.getKeyType(k)
     cdef string val
     with nogil:
       val = self.p.get(k, block)
 
+    default_val = self.get_default_value(k) if return_default else None
     if val == b"":
       if block:
         # If we got no value while running in blocked mode
         # it means we got an interrupt while waiting
         raise KeyboardInterrupt
       else:
-        return None
-
-    return val if encoding is None else val.decode(encoding)
+        return self.cast(t, default_val, None)
+    return self.cast(t, val, default_val)
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
@@ -120,5 +158,12 @@ cdef class Params:
     cdef string key_bytes = ensure_bytes(key)
     return self.p.getParamPath(key_bytes).decode("utf-8")
 
+  def get_type(self, key):
+    return self.p.getKeyType(self.check_key(key))
+
   def all_keys(self):
     return self.p.allKeys()
+
+  def get_default_value(self, key):
+    cdef optional[string] default = self.p.getKeyDefaultValue(self.check_key(key))
+    return default.value() if default.has_value() else None

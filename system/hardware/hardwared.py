@@ -172,6 +172,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   onroad_conditions: dict[str, bool] = {
     "ignition": False,
     "not_onroad_cycle": True,
+    "device_temp_good": True,
   }
   startup_conditions: dict[str, bool] = {}
   startup_conditions_prev: dict[str, bool] = {}
@@ -302,6 +303,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # **** starting logic ****
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
+    startup_conditions["no_excessive_actuation"] = params.get("Offroad_ExcessiveActuation") is None
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
@@ -400,7 +402,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     last_ping = params.get("LastAthenaPingTime")
     if last_ping is not None:
-      msg.deviceState.lastAthenaPingTime = int(last_ping)
+      msg.deviceState.lastAthenaPingTime = last_ping
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)

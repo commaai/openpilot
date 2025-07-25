@@ -91,7 +91,7 @@ class WifiManager:
     # Set tethering ssid as "weedle" + first 4 characters of a dongle id
     self._tethering_ssid = "weedle"
     if Params is not None:
-      dongle_id = Params().get("DongleId", encoding="utf-8")
+      dongle_id = Params().get("DongleId")
       if dongle_id:
         self._tethering_ssid += "-" + dongle_id[:4]
     self.running: bool = True

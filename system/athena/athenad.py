@@ -151,7 +151,7 @@ class UploadQueueCache:
     try:
       upload_queue_json = Params().get("AthenadUploadQueue")
       if upload_queue_json is not None:
-        for item in json.loads(upload_queue_json):
+        for item in upload_queue_json:
           upload_queue.put(UploadItem.from_dict(item))
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.initialize.exception")
@@ -470,7 +470,7 @@ def setRouteViewed(route: str) -> dict[str, int | str]:
   # maintain a list of the last 10 routes viewed in connect
   params = Params()
 
-  r = params.get("AthenadRecentlyViewedRoutes", encoding="utf8")
+  r = params.get("AthenadRecentlyViewedRoutes")
   routes = [] if r is None else r.split(",")
   routes.append(route)
 
@@ -492,7 +492,7 @@ def startLocalProxy(global_end_event: threading.Event, remote_ws_uri: str, local
 
     cloudlog.debug("athena.startLocalProxy.starting")
 
-    dongle_id = Params().get("DongleId").decode('utf8')
+    dongle_id = Params().get("DongleId")
     identity_token = Api(dongle_id).get_token()
     ws = create_connection(remote_ws_uri,
                            cookie="jwt=" + identity_token,
@@ -532,12 +532,12 @@ def getPublicKey() -> str | None:
 
 @dispatcher.add_method
 def getSshAuthorizedKeys() -> str:
-  return Params().get("GithubSshKeys", encoding='utf8') or ''
+  return cast(str, Params().get("GithubSshKeys") or "")
 
 
 @dispatcher.add_method
 def getGithubUsername() -> str:
-  return Params().get("GithubUsername", encoding='utf8') or ''
+  return cast(str, Params().get("GithubUsername") or "")
 
 @dispatcher.add_method
 def getSimInfo():
@@ -815,7 +815,7 @@ def main(exit_event: threading.Event = None):
     cloudlog.exception("failed to set core affinity")
 
   params = Params()
-  dongle_id = params.get("DongleId", encoding='utf-8')
+  dongle_id = params.get("DongleId")
   UploadQueueCache.initialize(upload_queue)
 
   ws_uri = ATHENA_HOST + "/ws/v2/" + dongle_id

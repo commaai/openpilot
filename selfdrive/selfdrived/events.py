@@ -758,10 +758,9 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.NO_ENTRY: NoEntryAlert("Distraction Level Too High"),
   },
 
-  EventName.lateralIsoViolation: {
-    # TODO: call Iso something else if we don't explain it in the offroad alert?
-    ET.SOFT_DISABLE: soft_disable_alert("Lateral ISO Violation"),
-    ET.NO_ENTRY: NoEntryAlert("Lateral ISO Violation"),
+  EventName.excessiveActuation: {
+    ET.SOFT_DISABLE: soft_disable_alert("Excessive Actuation"),
+    ET.NO_ENTRY: NoEntryAlert("Excessive Actuation"),
   },
 
   EventName.overheat: {
