@@ -34,7 +34,6 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
 
   action_btn = new QPushButton();
   action_btn->setVisible(false);
-//  action_btn->setFixedSize(550, 125);
   action_btn->setFixedHeight(125);
   footer_layout->addWidget(action_btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(action_btn, &QPushButton::clicked, [=]() {
