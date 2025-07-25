@@ -47,7 +47,7 @@ class TestParamsd:
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     msg = get_random_live_parameters(CP)
-    params.put("LiveParameters", json.dumps(msg.liveParameters.to_dict()))
+    params.put("LiveParameters", msg.liveParameters.to_dict())
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes())
     params.remove("LiveParametersV2")
 
@@ -60,7 +60,7 @@ class TestParamsd:
 
   def test_read_saved_params_corrupted_old_format(self):
     params = Params()
-    params.put("LiveParameters", b'\x00\x00\x02\x00\x01\x00:F\xde\xed\xae;')
+    params.put("LiveParameters", {})
     params.remove("LiveParametersV2")
 
     migrate_cached_vehicle_params_if_needed(params)
