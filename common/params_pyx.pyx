@@ -50,6 +50,7 @@ PYTHON_2_CPP = {
   (float, FLOAT): str,
   (datetime.datetime, TIME): lambda v: v.isoformat(),
   (dict, JSON): json.dumps,
+  (list, JSON): json.dumps,
   (bytes, BYTES): lambda v: v,
 }
 CPP_2_PYTHON = {

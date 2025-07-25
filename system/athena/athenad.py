@@ -161,7 +161,7 @@ class UploadQueueCache:
     try:
       queue: list[UploadItem | None] = list(upload_queue.queue)
       items = [asdict(i) for i in queue if i is not None and (i.id not in cancelled_uploads)]
-      Params().put("AthenadUploadQueue", json.dumps(items))
+      Params().put("AthenadUploadQueue", items)
     except Exception:
       cloudlog.exception("athena.UploadQueueCache.cache.exception")
 
