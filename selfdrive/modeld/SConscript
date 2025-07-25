@@ -62,7 +62,7 @@ if "USBGPU" in os.environ:
   devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True, cwd=env.Dir('#').abspath)
   if b"AMD" in devs:
     print("USB GPU detected... building")
-    flags = "AMD=1 AMD_IFACE=USB AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
+    flags = "DEV=AMD AMD_IFACE=USB AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
     bp = tg_compile(flags, "big_driving_policy")
     bv = tg_compile(flags, "big_driving_vision")
     lenv.SideEffect('lock', [bp, bv])  # tg doesn't support multi-process so build serially
