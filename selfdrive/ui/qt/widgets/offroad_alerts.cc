@@ -38,10 +38,8 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   footer_layout->addWidget(action_btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(action_btn, &QPushButton::clicked, [=]() {
     if (!alerts["Offroad_ExcessiveActuation"]->text().isEmpty()) {
-      qDebug() << "Acknowledging excessive actuation";
       params.remove("Offroad_ExcessiveActuation");
     } else {
-      qDebug() << "Snoozing update";
       params.putBool("SnoozeUpdate", true);
     }
   });
