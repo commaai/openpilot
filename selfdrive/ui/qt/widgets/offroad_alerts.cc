@@ -117,9 +117,9 @@ int OffroadAlert::refresh() {
     label->setVisible(!text.isEmpty());
     alertCount += !text.isEmpty();
   }
-  accept_btn->setVisible(!alerts["Offroad_ExcessiveActuation"]->text().isEmpty());
-  snooze_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty() && !accept_btn->isVisible());
-//  snooze_btn->setVisible(true);
+  bool show_accept_btn = !alerts["Offroad_ExcessiveActuation"]->text().isEmpty();
+  accept_btn->setVisible(show_accept_btn);
+  snooze_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty() && !show_accept_btn);
   return alertCount;
 }
 
