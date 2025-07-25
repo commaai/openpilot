@@ -35,18 +35,20 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   action_btn = new QPushButton();
   action_btn->setVisible(false);
 //  action_btn->setFixedSize(550, 125);
-  accept_btn->setFixedHeight(125);
+  action_btn->setFixedHeight(125);
   footer_layout->addWidget(action_btn, 0, Qt::AlignBottom | Qt::AlignRight);
   QObject::connect(action_btn, &QPushButton::clicked, [=]() {
     if (!alerts["Offroad_ExcessiveActuation"]->text().isEmpty()) {
+      qDebug() << "Acknowledging excessive actuation";
       params.remove("Offroad_ExcessiveActuation");
     } else {
+      qDebug() << "Snoozing update";
       params.putBool("SnoozeUpdate", true);
     }
   });
   QObject::connect(action_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
 //  action_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
-  action_btn->setStyleSheet("color: white; background-color: #4F4F4F; padding-left: 40px; padding-right: 40px;");
+  action_btn->setStyleSheet("color: white; background-color: #4F4F4F; padding-left: 60px; padding-right: 60px;");
 
   accept_btn = new QPushButton(tr("Acknowledge Excessive Actuation"));
   accept_btn->setVisible(false);

@@ -19,6 +19,7 @@ protected:
   QPushButton *accept_btn;
   QVBoxLayout *scrollable_layout;
   Params params;
+  std::map<std::string, QLabel*> alerts;
 
 signals:
   void dismiss();
@@ -42,6 +43,6 @@ public:
   explicit OffroadAlert(QWidget *parent = 0) : AbstractAlert(false, parent) {}
   int refresh();
 
-private:
-  std::map<std::string, QLabel*> alerts;
+//private:
+//  std::map<std::string, QLabel*> alerts;
 };
