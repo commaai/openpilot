@@ -75,7 +75,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"LastUpdateException", {CLEAR_ON_MANAGER_START, STRING}},
     {"LastUpdateTime", {PERSISTENT, TIME}},
     {"LiveDelay", {PERSISTENT, BYTES}},
-    {"LiveParameters", {PERSISTENT, BYTES}},
+    {"LiveParameters", {PERSISTENT, JSON}},
     {"LiveParametersV2", {PERSISTENT, BYTES}},
     {"LiveTorqueParameters", {PERSISTENT | DONT_LOG, BYTES}},
     {"LocationFilterInitialState", {PERSISTENT, BYTES}},
