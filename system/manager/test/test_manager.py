@@ -38,6 +38,18 @@ class TestManager:
     # TODO: ensure there are blacklisted procs until we have a dedicated test
     assert len(BLACKLIST_PROCS), "No blacklisted procs to test not_run"
 
+  def test_set_params_with_default_value(self):
+    params = Params()
+    params.clear_all()
+
+    os.environ['PREPAREONLY'] = '1'
+    manager.main()
+    for k in params.all_keys():
+      default_value = params.get_default_value(k)
+      if default_value:
+        assert params.get(k) == params.cast(params.get_type(k), default_value, None)
+    assert params.get("OpenpilotEnabledToggle")
+
   @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self, subtests):
     """
