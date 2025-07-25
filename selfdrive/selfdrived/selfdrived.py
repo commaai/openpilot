@@ -45,7 +45,6 @@ IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator, counter: int) -> tuple[int, bool]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
-  calibrator.feed_live_calib(sm['liveCalibration'])
   device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
   accel_calibrated = calibrated_pose.acceleration.x
@@ -249,6 +248,10 @@ class SelfdriveD:
     if self.is_ldw_enabled and self.sm.valid['driverAssistance']:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
+
+    # Check for excessive (longitudinal) actuation
+    if self.sm.updated['liveCalibration']:
+      self.calibrator.feed_live_calib(self.sm['liveCalibration'])
 
     self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.excessive_actuation_counter)
     if not self.excessive_actuation and excessive_actuation:
