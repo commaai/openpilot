@@ -12,7 +12,7 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     steps:
       - name: Checkout

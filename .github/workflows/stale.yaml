@@ -11,7 +11,7 @@ env:
 
 jobs:
   stale:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/stale@v9
         with:
@@ -32,7 +32,7 @@ jobs:
 
   # same as above, but give draft PRs more time
   stale_drafts:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
       - uses: actions/stale@v9
         with:
