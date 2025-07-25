@@ -27,7 +27,9 @@ from openpilot.system.version import get_build_metadata
 REPLAY = "REPLAY" in os.environ
 SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
+
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -39,7 +41,6 @@ ButtonType = car.CarState.ButtonEvent.Type
 SafetyModel = car.CarParams.SafetyModel
 
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
 
 
 def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator, counter: int) -> tuple[int, bool]:
