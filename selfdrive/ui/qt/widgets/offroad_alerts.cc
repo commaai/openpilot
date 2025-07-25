@@ -47,19 +47,7 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
     }
   });
   QObject::connect(action_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
-//  action_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
   action_btn->setStyleSheet("color: white; background-color: #4F4F4F; padding-left: 60px; padding-right: 60px;");
-
-  accept_btn = new QPushButton(tr("Acknowledge Excessive Actuation"));
-  accept_btn->setVisible(false);
-//  accept_btn->setFixedSize(450, 125);
-  accept_btn->setFixedHeight(125);
-  footer_layout->addWidget(accept_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-  QObject::connect(accept_btn, &QPushButton::clicked, [=]() {
-    params.remove("Offroad_ExcessiveActuation");
-  });
-  QObject::connect(accept_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
-  accept_btn->setStyleSheet("color: white; background-color: #4F4F4F; padding-left: 40px; padding-right: 40px;");
 
   if (hasRebootBtn) {
     QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
@@ -126,6 +114,7 @@ int OffroadAlert::refresh() {
     label->setVisible(!text.isEmpty());
     alertCount += !text.isEmpty();
   }
+
   action_btn->setVisible(!alerts["Offroad_ExcessiveActuation"]->text().isEmpty() || !alerts["Offroad_ConnectivityNeeded"]->text().isEmpty());
   if (!alerts["Offroad_ExcessiveActuation"]->text().isEmpty()) {
     action_btn->setText(tr("Acknowledge Excessive Actuation"));
@@ -133,9 +122,6 @@ int OffroadAlert::refresh() {
     action_btn->setText(tr("Snooze Update"));
   }
 
-//  bool show_accept_btn = !alerts["Offroad_ExcessiveActuation"]->text().isEmpty();
-//  accept_btn->setVisible(show_accept_btn);
-//  action_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty() && !show_accept_btn);
   return alertCount;
 }
 
