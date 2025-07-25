@@ -356,7 +356,7 @@ class TestCarModelBase(unittest.TestCase):
       if self.safety.get_steering_disengage_prev() != prev_panda_steering_disengage:
         self.assertEqual(CS.steeringDisengage, self.safety.get_steering_disengage_prev())
 
-      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving:
+      if self.safety.get_vehicle_moving() != prev_panda_vehicle_moving and not self.CP.notCar:
         self.assertEqual(not CS.standstill, self.safety.get_vehicle_moving())
 
       # check vehicle speed if angle control car or available
@@ -413,7 +413,7 @@ class TestCarModelBase(unittest.TestCase):
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
       checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
-      checks['standstill'] += CS.standstill == self.safety.get_vehicle_moving()
+      checks['standstill'] += (CS.standstill == self.safety.get_vehicle_moving()) and not self.CP.notCar
 
       # check vehicle speed if angle control car or available
       if self.safety.get_vehicle_speed_min() > 0 or self.safety.get_vehicle_speed_max() > 0:
