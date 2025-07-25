@@ -94,11 +94,11 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def python2cpp(self, received_type, expected_type, value, key):
-    cast = PYTHON_2_CPP.get((received_type, expected_type))
+  def python2cpp(self, proposed_type, expected_type, value, key):
+    cast = PYTHON_2_CPP.get((proposed_type, expected_type))
     if cast:
       return cast(value)
-    raise TypeError(f"Type mismatch while writing {key}: {received_type=} {expected_type=}")
+    raise TypeError(f"Type mismatch while writing {key}: {proposed_type=} {expected_type=} {value=}")
 
   def cpp2python(self, t, value, default):
     if value is None:
