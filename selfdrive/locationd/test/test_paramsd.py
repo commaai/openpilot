@@ -1,5 +1,6 @@
 import random
 import numpy as np
+import json
 
 from cereal import messaging
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params, migrate_cached_vehicle_params_if_needed
@@ -46,7 +47,7 @@ class TestParamsd:
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     msg = get_random_live_parameters(CP)
-    params.put("LiveParameters", msg.liveParameters.to_dict())
+    params.put("LiveParameters", json.dumps(msg.liveParameters.to_dict()))
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes())
     params.remove("LiveParametersV2")
 
