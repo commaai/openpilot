@@ -93,11 +93,11 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def python2cpp(self, received_type, expected_type, value):
+  def python2cpp(self, received_type, expected_type, value, key):
     cast = PYTHON_2_CPP.get((received_type, expected_type))
     if cast:
       return cast(value)
-    raise TypeError(f"Mismatch between received and expected type ({received_type=} {expected_type=})")
+    raise TypeError(f"Type mismatch while writting {key}: {received_type=} {expected_type=}")
 
   def cpp2python(self, t, value, default):
     if value is None:
@@ -110,11 +110,12 @@ cdef class Params:
   def get(self, key, bool block=False, bool return_default=False):
     cdef string k = self.check_key(key)
     cdef ParamKeyType t = self.p.getKeyType(k)
+    cdef optional[string] default = self.p.getKeyDefaultValue(k)
     cdef string val
     with nogil:
       val = self.p.get(k, block)
 
-    default_val = self.get_default_value(k) if return_default else None
+    default_val = (default.value() if default.has_value() else None) if return_default else None
     if val == b"":
       if block:
         # If we got no value while running in blocked mode
@@ -140,7 +141,7 @@ cdef class Params:
     """
     cdef string k = self.check_key(key)
     cdef ParamKeyType t = self.p.getKeyType(k)
-    cdef string dat_bytes = ensure_bytes(self.python2cpp(type(dat), t, dat))
+    cdef string dat_bytes = ensure_bytes(self.python2cpp(type(dat), t, dat, key))
     with nogil:
       self.p.put(k, dat_bytes)
 
