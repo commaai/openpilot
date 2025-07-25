@@ -47,7 +47,7 @@ class TestParamsd:
     CP = next(m for m in lr if m.which() == "carParams").carParams
 
     msg = get_random_live_parameters(CP)
-    params.put("LiveParameters", json.dumps(msg.liveParameters.to_dict()))
+    params.put("LiveParameters", msg.liveParameters.to_dict())
     params.put("CarParamsPrevRoute", CP.as_builder().to_bytes())
     params.remove("LiveParametersV2")
 
