@@ -244,7 +244,7 @@ class SegmentName:
   def segment_num(self) -> int: return self._num
 
   @property
-  def route_name(self) -> SegmentRange: return self._route_name
+  def route_name(self) -> 'SegmentRange': return self._route_name
 
   @property
   def data_dir(self) -> str | None: return self._data_dir
