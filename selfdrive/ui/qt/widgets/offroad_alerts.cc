@@ -42,15 +42,26 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   QObject::connect(snooze_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
   snooze_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
 
-  accept_btn = new QPushButton(tr("Accept"));
+  accept_btn = new QPushButton(tr("Acknowledge Excessive Actuation"));
   accept_btn->setVisible(false);
-  accept_btn->setFixedSize(450, 125);
+//  accept_btn->setFixedSize(450, 125);
+  accept_btn->setFixedHeight(125);
   footer_layout->addWidget(accept_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-    QObject::connect(accept_btn, &QPushButton::clicked, [=]() {
+  QObject::connect(accept_btn, &QPushButton::clicked, [=]() {
     params.remove("Offroad_ExcessiveActuation");
   });
   QObject::connect(accept_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
-  accept_btn->setStyleSheet(R"(color: white; background-color: #465BEA;)");
+  accept_btn->setStyleSheet(R"(
+    QPushButton {
+      color: white;
+      background-color: #4F4F4F;
+      padding-left: 40px;
+      padding-right: 40px;
+    }
+    QPushButton:pressed {
+      background-color: #616161;
+    }
+  )");
 
   if (hasRebootBtn) {
     QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
