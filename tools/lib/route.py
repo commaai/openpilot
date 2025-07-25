@@ -22,7 +22,7 @@ BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 class Route:
   def __init__(self, name, data_dir=None):
     self._metadata = None
-    self._name = RouteName(name)
+    self._name = SegmentRange(name)
     self.files = None
     if data_dir is not None:
       self._segments = self._get_segments_local(data_dir)
@@ -200,33 +200,6 @@ class Segment:
     return self._events
 
 
-class RouteName:
-  def __init__(self, name_str: str):
-    self._name_str = name_str
-    delim = next(c for c in self._name_str if c in ("|", "/"))
-    self._dongle_id, self._time_str = self._name_str.split(delim)
-
-    assert len(self._dongle_id) == 16, self._name_str
-    assert len(self._time_str) == 20, self._name_str
-    self._canonical_name = f"{self._dongle_id}|{self._time_str}"
-
-  @property
-  def canonical_name(self) -> str: return self._canonical_name
-
-  @property
-  def dongle_id(self) -> str: return self._dongle_id
-
-  @property
-  def log_id(self) -> str: return self._time_str
-
-  @property
-  def time_str(self) -> str: return self._time_str
-
-  @property
-  def azure_prefix(self):
-    return f'{self.dongle_id}/{self.log_id}'
-
-  def __str__(self) -> str: return self._canonical_name
 
 
 
@@ -243,9 +216,9 @@ class SegmentName:
     name_parts = self._name_str.rsplit(seg_num_delim, 1)
     if allow_route_name and len(name_parts) == 1:
       name_parts.append("-1")  # no segment number
-    self._route_name = RouteName(name_parts[0])
+    self._route_name = SegmentRange(name_parts[0])
     self._num = int(name_parts[1])
-    self._canonical_name = f"{self._route_name._dongle_id}|{self._route_name._time_str}--{self._num}"
+    self._canonical_name = f"{self._route_name.dongle_id}|{self._route_name.log_id}--{self._num}"
 
   @property
   def canonical_name(self) -> str: return self._canonical_name
@@ -271,7 +244,7 @@ class SegmentName:
   def segment_num(self) -> int: return self._num
 
   @property
-  def route_name(self) -> RouteName: return self._route_name
+  def route_name(self) -> SegmentRange: return self._route_name
 
   @property
   def data_dir(self) -> str | None: return self._data_dir
@@ -330,6 +303,18 @@ class SegmentRange:
   @property
   def log_id(self) -> str:
     return self.m.group("log_id")
+
+  @property
+  def time_str(self) -> str:
+    return self.m.group("log_id")
+
+  @property
+  def canonical_name(self) -> str:
+    return f"{self.dongle_id}|{self.log_id}"
+
+  @property
+  def azure_prefix(self) -> str:
+    return f'{self.dongle_id}/{self.log_id}'
 
   @property
   def slice(self) -> str:
