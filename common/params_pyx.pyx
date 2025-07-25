@@ -1,5 +1,6 @@
 # distutils: language = c++
 # cython: language_level = 3
+import builtins
 import datetime
 import json
 from libcpp cimport bool
@@ -42,6 +43,24 @@ cdef extern from "common/params.h":
     void clearAll(ParamKeyFlag)
     vector[string] allKeys()
 
+PYTHON_2_CPP = {
+  (str, STRING): lambda v: v,
+  (builtins.bool, BOOL): lambda v: "1" if v else "0",
+  (int, INT): str,
+  (float, FLOAT): str,
+  (datetime.datetime, TIME): lambda v: v.isoformat(),
+  (dict, JSON): json.dumps,
+  (bytes, BYTES): lambda v: v,
+}
+CPP_2_PYTHON = {
+  STRING: lambda v: v.decode("utf-8"),
+  BOOL: lambda v: v == b"1",
+  INT: int,
+  FLOAT: float,
+  TIME: lambda v: datetime.datetime.fromisoformat(v.decode("utf-8")),
+  JSON: json.loads,
+  BYTES: lambda v: v,
+}
 
 def ensure_bytes(v):
   return v.encode() if isinstance(v, str) else v
@@ -74,28 +93,19 @@ cdef class Params:
       raise UnknownKeyName(key)
     return key
 
-  def cast(self, t, value, default):
+  def python2cpp(self, received_type, expected_type, value):
+    cast = PYTHON_2_CPP.get((received_type, expected_type))
+    if cast:
+      return cast(value)
+    raise TypeError(f"Mismatch between received and expected type ({received_type=} {expected_type=})")
+
+  def cpp2python(self, t, value, default):
     if value is None:
       return None
     try:
-      if t == STRING:
-        return value.decode("utf-8")
-      elif t == BOOL:
-        return value == b"1"
-      elif t == INT:
-        return int(value)
-      elif t == FLOAT:
-        return float(value)
-      elif t == TIME:
-        return datetime.datetime.fromisoformat(value.decode("utf-8"))
-      elif t == JSON:
-        return json.loads(value)
-      elif t == BYTES:
-        return value
-      else:
-        raise TypeError()
-    except (TypeError, ValueError):
-      return self.cast(t, default, None)
+      return CPP_2_PYTHON[t](value)
+    except (KeyError, TypeError, ValueError):
+      return self.cpp2python(t, default, None)
 
   def get(self, key, bool block=False, bool return_default=False):
     cdef string k = self.check_key(key)
@@ -111,8 +121,8 @@ cdef class Params:
         # it means we got an interrupt while waiting
         raise KeyboardInterrupt
       else:
-        return self.cast(t, default_val, None)
-    return self.cast(t, val, default_val)
+        return self.cpp2python(t, default_val, None)
+    return self.cpp2python(t, val, default_val)
 
   def get_bool(self, key, bool block=False):
     cdef string k = self.check_key(key)
@@ -129,7 +139,8 @@ cdef class Params:
     in general try to avoid writing params as much as possible.
     """
     cdef string k = self.check_key(key)
-    cdef string dat_bytes = ensure_bytes(dat)
+    cdef ParamKeyType t = self.p.getKeyType(k)
+    cdef string dat_bytes = ensure_bytes(self.python2cpp(type(dat), t, dat))
     with nogil:
       self.p.put(k, dat_bytes)
 
