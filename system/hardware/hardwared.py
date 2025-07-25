@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
 import os
-import json
 import queue
 import struct
 import threading

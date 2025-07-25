@@ -1,5 +1,4 @@
 import pyray as rl
-import json
 import time
 import threading
 
