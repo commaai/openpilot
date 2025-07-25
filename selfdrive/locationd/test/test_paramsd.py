@@ -1,6 +1,5 @@
 import random
 import numpy as np
-import json
 
 from cereal import messaging
 from openpilot.selfdrive.locationd.paramsd import retrieve_initial_vehicle_params, migrate_cached_vehicle_params_if_needed
