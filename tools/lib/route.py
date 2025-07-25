@@ -294,7 +294,9 @@ class SegmentRange:
 
   @property
   def route_name(self) -> str:
-    return self.m.group("route_name")
+    # TODO: this is a compatibility hack to preserve the pipe... pipe needs to go
+    #return self.m.group("route_name")
+    return self.canonical_name()
 
   @property
   def dongle_id(self) -> str:
