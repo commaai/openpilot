@@ -100,7 +100,7 @@ cdef class Params:
     cast = PYTHON_2_CPP.get((proposed_type, expected_type))
     if cast:
       return cast(value)
-    raise TypeError(f"Type mismatch while writing {key}: {proposed_type=} {expected_type=} {value=}")
+    raise TypeError(f"Type mismatch while writing param {key}: {proposed_type=} {expected_type=} {value=}")
 
   def cpp2python(self, t, value, default, key):
     if value is None:
@@ -136,6 +136,11 @@ cdef class Params:
       r = self.p.getBool(k, block)
     return r
 
+  def _put_cast(self, key, dat):
+    cdef string k = self.check_key(key)
+    cdef ParamKeyType t = self.p.getKeyType(k)
+    return ensure_bytes(self.python2cpp(type(dat), t, dat, key))
+
   def put(self, key, dat):
     """
     Warning: This function blocks until the param is written to disk!
@@ -144,8 +149,7 @@ cdef class Params:
     in general try to avoid writing params as much as possible.
     """
     cdef string k = self.check_key(key)
-    cdef ParamKeyType t = self.p.getKeyType(k)
-    cdef string dat_bytes = ensure_bytes(self.python2cpp(type(dat), t, dat, key))
+    cdef string dat_bytes = self._put_cast(key, dat)
     with nogil:
       self.p.put(k, dat_bytes)
 
@@ -156,7 +160,7 @@ cdef class Params:
 
   def put_nonblocking(self, key, dat):
     cdef string k = self.check_key(key)
-    cdef string dat_bytes = ensure_bytes(dat)
+    cdef string dat_bytes = self._put_cast(key, dat)
     with nogil:
       self.p.putNonBlocking(k, dat_bytes)
 
