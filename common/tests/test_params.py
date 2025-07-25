@@ -1,6 +1,5 @@
 import pytest
 import datetime
-import json
 import os
 import threading
 import time
