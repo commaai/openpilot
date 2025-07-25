@@ -176,5 +176,7 @@ cdef class Params:
     return self.p.allKeys()
 
   def get_default_value(self, key):
-    cdef optional[string] default = self.p.getKeyDefaultValue(self.check_key(key))
-    return default.value() if default.has_value() else None
+    cdef string k = self.check_key(key)
+    cdef ParamKeyType t = self.p.getKeyType(k)
+    cdef optional[string] default = self.p.getKeyDefaultValue(k)
+    return self.cpp2python(t, default.value(), None) if default.has_value() else None
