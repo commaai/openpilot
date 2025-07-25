@@ -532,12 +532,12 @@ def getPublicKey() -> str | None:
 
 @dispatcher.add_method
 def getSshAuthorizedKeys() -> str:
-  return cast(str, Params().get("GithubSshKeys", default=""))
+  return cast(str, Params().get("GithubSshKeys") or "")
 
 
 @dispatcher.add_method
 def getGithubUsername() -> str:
-  return cast(str, Params().get("GithubUsername", default=""))
+  return cast(str, Params().get("GithubUsername") or "")
 
 @dispatcher.add_method
 def getSimInfo():

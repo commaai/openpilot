@@ -39,7 +39,7 @@ def manager_init() -> None:
   # set unset params to their default value
   for k in params.all_keys():
     default_value = params.get_default_value(k)
-    if default_value and not params.get(k):
+    if default_value and params.get(k) is None:
       params.put(k, default_value)
 
   # Create folders needed for msgq
