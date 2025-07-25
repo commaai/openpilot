@@ -97,14 +97,14 @@ cdef class Params:
     except (TypeError, ValueError):
       return self.cast(t, default, None)
 
-  def get(self, key, bool block=False, bool default=False):
+  def get(self, key, bool block=False, bool return_default=False):
     cdef string k = self.check_key(key)
     cdef ParamKeyType t = self.p.getKeyType(k)
     cdef string val
     with nogil:
       val = self.p.get(k, block)
 
-    default_val = self.get_default_value(k) if default else None
+    default_val = self.get_default_value(k) if return_default else None
     if val == b"":
       if block:
         # If we got no value while running in blocked mode

@@ -54,7 +54,7 @@ class TogglesLayout(Widget):
         buttons=["Aggressive", "Standard", "Relaxed"],
         button_width=255,
         callback=self._set_longitudinal_personality,
-        selected_index=self._params.get("LongitudinalPersonality", default=True),
+        selected_index=self._params.get("LongitudinalPersonality", return_default=True),
         icon="speed_limit.png"
       ),
       toggle_item(

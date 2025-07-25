@@ -116,11 +116,11 @@ class TestParams:
     self.params.remove("LiveParameters")
 
     assert self.params.get("LanguageSetting") is None
-    assert self.params.get("LanguageSetting", default=False) is None
-    assert isinstance(self.params.get("LanguageSetting", default=True), str)
-    assert isinstance(self.params.get("LongitudinalPersonality", default=True), int)
+    assert self.params.get("LanguageSetting", return_default=False) is None
+    assert isinstance(self.params.get("LanguageSetting", return_default=True), str)
+    assert isinstance(self.params.get("LongitudinalPersonality", return_default=True), int)
     assert self.params.get("LiveParameters") is None
-    assert self.params.get("LiveParameters", default=True) is None
+    assert self.params.get("LiveParameters", return_default=True) is None
 
   def test_params_get_type(self):
     # json
