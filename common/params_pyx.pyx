@@ -98,7 +98,7 @@ cdef class Params:
     cast = PYTHON_2_CPP.get((received_type, expected_type))
     if cast:
       return cast(value)
-    raise TypeError(f"Type mismatch while writting {key}: {received_type=} {expected_type=}")
+    raise TypeError(f"Type mismatch while writing {key}: {received_type=} {expected_type=}")
 
   def cpp2python(self, t, value, default):
     if value is None:
