@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import math
 import time
 import threading
 
@@ -7,7 +8,8 @@ import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
-from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 
 
 from openpilot.common.params import Params
@@ -47,13 +49,21 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
   device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
+
+  # longitudinal
   accel_calibrated = calibrated_pose.acceleration.x
+
+  # lateral
+  yaw_rate = calibrated_pose.angular_velocity.yaw
+  roll = sm['liveParameters'].roll
+  roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
   accel_valid = abs(CS.aEgo - accel_calibrated) < 2
 
-  excessive_actuation = accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2
-  counter = counter + 1 if sm['carControl'].longActive and excessive_actuation and accel_valid else 0
+  excessive_long_actuation = sm['carControl'].longActive and accel_valid and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
+  excessive_lat_actuation = sm['carControl'].latActive and abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2
+  counter = counter + 1 if sm['carControl'].longActive and (excessive_long_actuation or excessive_lat_actuation) else 0
 
   return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
 
