@@ -246,7 +246,7 @@ void loggerd_thread() {
         .counter = 0,
         .freq = it.decimation,
         .encoder = encoder,
-        .user_flag = it.name == "userFlag",
+        .user_flag = (it.name == "bookmarkButton") || (it.name == "heyComma"),
         .record_audio = record_audio,
       };
     }

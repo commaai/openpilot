@@ -66,7 +66,7 @@ void Timeline::buildTimeline(const Route &route, uint64_t route_start_ts, bool l
         auto cs = reader.getRoot<cereal::Event>().getSelfdriveState();
         updateEngagementStatus(cs, current_engaged_idx, seconds);
         updateAlertStatus(cs, current_alert_idx, seconds);
-      } else if (e.which == cereal::Event::Which::USER_FLAG) {
+      } else if ((e.which == cereal::Event::Which::BOOKMARK_BUTTON) || (e.which == cereal::Event::Which::HEY_COMMA)) {
         staging_entries_.emplace_back(Entry{seconds, seconds, TimelineType::UserFlag});
       }
     }
