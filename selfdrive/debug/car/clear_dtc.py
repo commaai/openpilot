@@ -5,7 +5,7 @@ from subprocess import check_output, CalledProcessError
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, MessageTimeoutError, SESSION_TYPE, DTC_GROUP_TYPE
 from opendbc.car.structs import CarParams
-from panda import Panda
+from pandacan import Panda
 
 parser = argparse.ArgumentParser(description="clear DTC status")
 parser.add_argument("addr", type=lambda x: int(x,0), nargs="?", default=0x7DF) # default is functional (broadcast) address
