@@ -1,0 +1,41 @@
+# run two tinygrad matrix example in a loop
+# amdgpu-6.0.5-1581431.20.04
+# NOT fixed in kernel 6.2.14
+
+[  553.016624] gmc_v11_0_process_interrupt: 30 callbacks suppressed
+[  553.016631] amdgpu 0000:0b:00.0: amdgpu: [gfxhub] page fault (src_id:0 ring:24 vmid:9 pasid:32770, for process python3 pid 10001 thread python3 pid 10001)
+[  553.016790] amdgpu 0000:0b:00.0: amdgpu:   in page starting at address 0x00007f0000000000 from client 10
+[  553.016892] amdgpu 0000:0b:00.0: amdgpu: GCVM_L2_PROTECTION_FAULT_STATUS:0x00901A30
+[  553.016974] amdgpu 0000:0b:00.0: amdgpu:      Faulty UTCL2 client ID: SDMA0 (0xd)
+[  553.017051] amdgpu 0000:0b:00.0: amdgpu:      MORE_FAULTS: 0x0
+[  553.017111] amdgpu 0000:0b:00.0: amdgpu:      WALKER_ERROR: 0x0
+[  553.017173] amdgpu 0000:0b:00.0: amdgpu:      PERMISSION_FAULTS: 0x3
+[  553.017238] amdgpu 0000:0b:00.0: amdgpu:      MAPPING_ERROR: 0x0
+[  553.017300] amdgpu 0000:0b:00.0: amdgpu:      RW: 0x0
+[  553.123921] [drm:mes_v11_0_submit_pkt_and_poll_completion.constprop.0 [amdgpu]] *ERROR* MES failed to response msg=2
+[  553.124153] amdgpu: failed to add hardware queue to MES, doorbell=0x1a16
+[  553.124195] amdgpu: MES might be in unrecoverable state, issue a GPU reset
+[  553.124237] amdgpu: Failed to restore queue 2
+[  553.124266] amdgpu: Failed to restore process queues
+[  553.124270] amdgpu: Failed to evict queue 3
+[  553.124297] amdgpu: amdgpu_amdkfd_restore_userptr_worker: Failed to resume KFD
+
+# alternative crash in kernel 6.2.14
+
+[  151.097948] gmc_v11_0_process_interrupt: 30 callbacks suppressed
+[  151.097953] amdgpu 0000:0b:00.0: amdgpu: [gfxhub] page fault (src_id:0 ring:24 vmid:8 pasid:32771, for process python3 pid 7525 thread python3 pid 7525)
+[  151.097993] amdgpu 0000:0b:00.0: amdgpu:   in page starting at address 0x00007f0000000000 from client 10
+[  151.098008] amdgpu 0000:0b:00.0: amdgpu: GCVM_L2_PROTECTION_FAULT_STATUS:0x00801A30
+[  151.098020] amdgpu 0000:0b:00.0: amdgpu:      Faulty UTCL2 client ID: SDMA0 (0xd)
+[  151.098032] amdgpu 0000:0b:00.0: amdgpu:      MORE_FAULTS: 0x0
+[  151.098042] amdgpu 0000:0b:00.0: amdgpu:      WALKER_ERROR: 0x0
+[  151.098052] amdgpu 0000:0b:00.0: amdgpu:      PERMISSION_FAULTS: 0x3
+[  151.098062] amdgpu 0000:0b:00.0: amdgpu:      MAPPING_ERROR: 0x0
+[  151.098071] amdgpu 0000:0b:00.0: amdgpu:      RW: 0x0
+[  151.209517] [drm:mes_v11_0_submit_pkt_and_poll_completion.constprop.0 [amdgpu]] *ERROR* MES failed to response msg=2
+[  151.209724] amdgpu: failed to add hardware queue to MES, doorbell=0x1002
+[  151.209734] amdgpu: MES might be in unrecoverable state, issue a GPU reset
+[  151.209743] amdgpu: Failed to restore queue 1
+[  151.209751] amdgpu: Failed to restore process queues
+[  151.209759] amdgpu: amdgpu_amdkfd_restore_userptr_worker: Failed to resume KFD
+[  151.209858] amdgpu 0000:0b:00.0: amdgpu: GPU reset begin!
