@@ -56,7 +56,7 @@ class PowerMonitoring:
       self.car_battery_capacity_uWh = max(self.car_battery_capacity_uWh, 0)
       self.car_battery_capacity_uWh = min(self.car_battery_capacity_uWh, CAR_BATTERY_CAPACITY_uWh)
       if now - self.last_save_time >= 10:
-        self.params.put_nonblocking("CarBatteryCapacity", str(int(self.car_battery_capacity_uWh)))
+        self.params.put_nonblocking("CarBatteryCapacity", int(self.car_battery_capacity_uWh))
         self.last_save_time = now
 
       # First measurement, set integration time

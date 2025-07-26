@@ -1,5 +1,4 @@
 import pyray as rl
-import json
 import time
 import threading
 
@@ -169,7 +168,7 @@ class FirehoseLayout(Widget):
       if response.status_code == 200:
         data = response.json()
         self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, json.dumps(data))
+        self.params.put(self.PARAM_KEY, data)
     except Exception as e:
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 
