@@ -38,7 +38,7 @@ dependencies = [
 
   # panda (now using pandacan pip package)
   "libusb1",
-  "pandacan[full] @ git+https://github.com/shreyanshjain7174/panda.git@df32ca65",
+  "pandacan[full] @ git+https://github.com/shreyanshjain7174/panda.git@dabaea44",
   "spidev; platform_system == 'Linux'",
 
   # modeld
