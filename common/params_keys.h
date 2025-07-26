@@ -116,7 +116,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"UpdateFailedCount", {CLEAR_ON_MANAGER_START, INT}},
     {"UpdaterAvailableBranches", {PERSISTENT, STRING}},
     {"UpdaterCurrentDescription", {CLEAR_ON_MANAGER_START, STRING}},
-    {"UpdaterCurrentReleaseNotes", {CLEAR_ON_MANAGER_START, STRING}},
+    {"UpdaterCurrentReleaseNotes", {CLEAR_ON_MANAGER_START, BYTES}},
     {"UpdaterFetchAvailable", {CLEAR_ON_MANAGER_START, BOOL}},
     {"UpdaterNewDescription", {CLEAR_ON_MANAGER_START, STRING}},
     {"UpdaterNewReleaseNotes", {CLEAR_ON_MANAGER_START, STRING}},
