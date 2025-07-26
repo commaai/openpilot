@@ -86,7 +86,7 @@ testing = [
   "pytest-cpp",
   "pytest-subtests",
   # https://github.com/pytest-dev/pytest-xdist/pull/1229
-  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@b59e010821a25a2ebb95fc5c31c97022ed94221c",
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
   "pytest-timeout",
   "pytest-randomly",
   "pytest-asyncio",
