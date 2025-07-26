@@ -55,7 +55,7 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
 
   # lateral
   yaw_rate = calibrated_pose.angular_velocity.yaw
-  roll = device_pose.orientation.roll  # TODO: calibrated_pose?
+  roll = sm['liveParameters'].roll
   roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
@@ -83,6 +83,7 @@ class SelfdriveD:
       self.CP = CP
 
     self.car_events = CarSpecificEvents(self.CP)
+    self.calibrator = PoseCalibrator()
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -144,7 +145,6 @@ class SelfdriveD:
     self.excessive_actuation_counter = 0
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
-    self.calibrator = PoseCalibrator()
 
     # some comma three with NVMe experience NVMe dropouts mid-drive that
     # cause loggerd to crash on write, so ignore it only on that platform
