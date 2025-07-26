@@ -55,7 +55,9 @@ class PoseKalman(KalmanFilter):
   obs_noise = {ObservationKind.PHONE_GYRO: np.diag([0.025**2, 0.025**2, 0.025**2]),
                ObservationKind.PHONE_ACCEL: np.diag([.5**2, .5**2, .5**2]),
                ObservationKind.CAMERA_ODO_TRANSLATION: np.diag([0.5**2, 0.5**2, 0.5**2]),
-               ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2])}
+               ObservationKind.CAMERA_ODO_ROTATION: np.diag([0.05**2, 0.05**2, 0.05**2]),
+               ObservationKind.NO_ROT: np.diag([0.005**2, 0.005**2, 0.005**2]),
+               ObservationKind.NO_ACCEL: np.diag([0.05**2, 0.05**2, 0.05**2])}
 
   @staticmethod
   def generate_code(generated_dir):
@@ -92,11 +94,15 @@ class PoseKalman(KalmanFilter):
     h_acc_sym = device_from_ned * gravity + acceleration + centripetal_acceleration + acc_bias
     h_phone_rot_sym = angular_velocity
     h_relative_motion_sym = velocity
+    h_acc_stationary_sym = acceleration
+    h_gyro_stationary_sym = angular_velocity
     obs_eqs = [
       [h_gyro_sym, ObservationKind.PHONE_GYRO, None],
       [h_acc_sym, ObservationKind.PHONE_ACCEL, None],
       [h_relative_motion_sym, ObservationKind.CAMERA_ODO_TRANSLATION, None],
       [h_phone_rot_sym, ObservationKind.CAMERA_ODO_ROTATION, None],
+      [h_acc_stationary_sym, ObservationKind.NO_ACCEL, None],
+      [h_gyro_stationary_sym, ObservationKind.NO_ROT, None],
     ]
     gen_code(generated_dir, name, f_sym, dt, state_sym, obs_eqs, dim_state, dim_state_err)
 
