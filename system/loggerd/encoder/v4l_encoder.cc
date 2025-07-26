@@ -4,17 +4,12 @@
 #include <poll.h>
 
 #include "system/loggerd/encoder/v4l_encoder.h"
+#include "system/loggerd/encoder/v4l_common.h"
 #include "common/util.h"
 #include "common/timing.h"
 
 #include "third_party/libyuv/include/libyuv.h"
 #include "third_party/linux/include/msm_media_info.h"
-
-// has to be in this order
-#include "third_party/linux/include/v4l2-controls.h"
-#include <linux/videodev2.h>
-#define V4L2_QCOM_BUF_FLAG_CODECCONFIG 0x00020000
-#define V4L2_QCOM_BUF_FLAG_EOS 0x02000000
 
 /*
   kernel debugging:
@@ -23,61 +18,6 @@
   echo 0xff > /sys/devices/platform/soc/aa00000.qcom,vidc/video4linux/video33/dev_debug
 */
 const int env_debug_encoder = (getenv("DEBUG_ENCODER") != NULL) ? atoi(getenv("DEBUG_ENCODER")) : 0;
-
-static void checked_ioctl(int fd, unsigned long request, void *argp) {
-  int ret = util::safe_ioctl(fd, request, argp);
-  if (ret != 0) {
-    LOGE("checked_ioctl failed with error %d (%d %lx %p)", errno, fd, request, argp);
-    assert(0);
-  }
-}
-
-static void dequeue_buffer(int fd, v4l2_buf_type buf_type, unsigned int *index=NULL, unsigned int *bytesused=NULL, unsigned int *flags=NULL, struct timeval *timestamp=NULL) {
-  v4l2_plane plane = {0};
-  v4l2_buffer v4l_buf = {
-    .type = buf_type,
-    .memory = V4L2_MEMORY_USERPTR,
-    .m = { .planes = &plane, },
-    .length = 1,
-  };
-  checked_ioctl(fd, VIDIOC_DQBUF, &v4l_buf);
-
-  if (index) *index = v4l_buf.index;
-  if (bytesused) *bytesused = v4l_buf.m.planes[0].bytesused;
-  if (flags) *flags = v4l_buf.flags;
-  if (timestamp) *timestamp = v4l_buf.timestamp;
-  assert(v4l_buf.m.planes[0].data_offset == 0);
-}
-
-static void queue_buffer(int fd, v4l2_buf_type buf_type, unsigned int index, VisionBuf *buf, struct timeval timestamp={}) {
-  v4l2_plane plane = {
-    .length = (unsigned int)buf->len,
-    .m = { .userptr = (unsigned long)buf->addr, },
-    .bytesused = (uint32_t)buf->len,
-    .reserved = {(unsigned int)buf->fd}
-  };
-
-  v4l2_buffer v4l_buf = {
-    .type = buf_type,
-    .index = index,
-    .memory = V4L2_MEMORY_USERPTR,
-    .m = { .planes = &plane, },
-    .length = 1,
-    .flags = V4L2_BUF_FLAG_TIMESTAMP_COPY,
-    .timestamp = timestamp
-  };
-
-  checked_ioctl(fd, VIDIOC_QBUF, &v4l_buf);
-}
-
-static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
-  struct v4l2_requestbuffers reqbuf = {
-    .type = buf_type,
-    .memory = V4L2_MEMORY_USERPTR,
-    .count = count
-  };
-  checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
-}
 
 void V4LEncoder::dequeue_handler(V4LEncoder *e) {
   std::string dequeue_thread_name = "dq-"+std::string(e->encoder_info.publish_name);
