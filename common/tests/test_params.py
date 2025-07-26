@@ -1,6 +1,5 @@
 import pytest
 import datetime
-import json
 import os
 import threading
 import time
@@ -22,7 +21,7 @@ class TestParams:
     assert self.params.get("CarParams") == st
 
   def test_params_get_cleared_manager_start(self):
-    self.params.put("CarParams", "test")
+    self.params.put("CarParams", b"test")
     self.params.put("DongleId", "cb38263377b873ee")
     assert self.params.get("CarParams") == b"test"
 
@@ -45,10 +44,10 @@ class TestParams:
   def test_params_get_block(self):
     def _delayed_writer():
       time.sleep(0.1)
-      self.params.put("CarParams", "test")
+      self.params.put("CarParams", b"test")
     threading.Thread(target=_delayed_writer).start()
     assert self.params.get("CarParams") is None
-    assert self.params.get("CarParams", True) == b"test"
+    assert self.params.get("CarParams", block=True) == b"test"
 
   def test_params_unknown_key_fails(self):
     with pytest.raises(UnknownKeyName):
@@ -78,17 +77,17 @@ class TestParams:
     self.params.put_bool("IsMetric", False)
     assert not self.params.get_bool("IsMetric")
 
-    self.params.put("IsMetric", "1")
+    self.params.put("IsMetric", True)
     assert self.params.get_bool("IsMetric")
 
-    self.params.put("IsMetric", "0")
+    self.params.put("IsMetric", False)
     assert not self.params.get_bool("IsMetric")
 
   def test_put_non_blocking_with_get_block(self):
     q = Params()
     def _delayed_writer():
       time.sleep(0.1)
-      Params().put_nonblocking("CarParams", "test")
+      Params().put_nonblocking("CarParams", b"test")
     threading.Thread(target=_delayed_writer).start()
     assert q.get("CarParams") is None
     assert q.get("CarParams", True) == b"test"
@@ -124,19 +123,19 @@ class TestParams:
 
   def test_params_get_type(self):
     # json
-    self.params.put("ApiCache_FirehoseStats", json.dumps({"a": 0}))
+    self.params.put("ApiCache_FirehoseStats", {"a": 0})
     assert self.params.get("ApiCache_FirehoseStats") == {"a": 0}
 
     # int
-    self.params.put("BootCount", str(1441))
+    self.params.put("BootCount", 1441)
     assert self.params.get("BootCount") == 1441
 
     # bool
-    self.params.put("AdbEnabled", "1")
+    self.params.put("AdbEnabled", True)
     assert self.params.get("AdbEnabled")
     assert isinstance(self.params.get("AdbEnabled"), bool)
 
     # time
     now = datetime.datetime.now(datetime.UTC)
-    self.params.put("InstallDate", str(now))
+    self.params.put("InstallDate", now)
     assert self.params.get("InstallDate") == now

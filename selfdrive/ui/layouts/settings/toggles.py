@@ -92,4 +92,4 @@ class TogglesLayout(Widget):
     self._scroller.render(rect)
 
   def _set_longitudinal_personality(self, button_index: int):
-    self._params.put("LongitudinalPersonality", str(button_index))
+    self._params.put("LongitudinalPersonality", button_index)

@@ -47,7 +47,7 @@ class TestManager:
     for k in params.all_keys():
       default_value = params.get_default_value(k)
       if default_value:
-        assert params.get(k) == params.cast(params.get_type(k), default_value, None)
+        assert params.get(k) == default_value
     assert params.get("OpenpilotEnabledToggle")
 
   @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
