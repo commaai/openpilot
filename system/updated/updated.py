@@ -264,7 +264,7 @@ class Updater:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
   def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
-    self.params.put("UpdateFailedCount", str(failed_count))
+    self.params.put("UpdateFailedCount", failed_count)
     self.params.put("UpdaterTargetBranch", self.target_branch)
 
     self.params.put_bool("UpdaterFetchAvailable", self.update_available)
