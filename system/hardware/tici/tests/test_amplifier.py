@@ -3,7 +3,7 @@ import time
 import random
 import subprocess
 
-from panda import Panda
+from pandacan import Panda
 from openpilot.system.hardware import TICI, HARDWARE
 from openpilot.system.hardware.tici.hardware import Tici
 from openpilot.system.hardware.tici.amplifier import Amplifier

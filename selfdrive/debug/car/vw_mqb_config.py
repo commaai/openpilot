@@ -7,7 +7,7 @@ from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, MessageTimeoutError, NegativeResponseError, SESSION_TYPE,\
   DATA_IDENTIFIER_TYPE, ACCESS_TYPE
 from opendbc.car.structs import CarParams
-from panda import Panda
+from pandacan import Panda
 from datetime import date
 
 # TODO: extend UDS library to allow custom/vendor-defined data identifiers without ignoring type checks

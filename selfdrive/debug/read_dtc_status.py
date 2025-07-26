@@ -5,7 +5,7 @@ from subprocess import check_output, CalledProcessError
 from opendbc.car.carlog import carlog
 from opendbc.car.uds import UdsClient, SESSION_TYPE, DTC_REPORT_TYPE, DTC_STATUS_MASK_TYPE, get_dtc_num_as_str, get_dtc_status_names
 from opendbc.car.structs import CarParams
-from panda import Panda
+from pandacan import Panda
 
 parser = argparse.ArgumentParser(description="read DTC status")
 parser.add_argument("addr", type=lambda x: int(x,0))
