@@ -4,7 +4,7 @@ sys.path.append(os.getcwd())
 
 from io import StringIO
 from contextlib import redirect_stdout
-from tinygrad import Tensor, nn, Device, dtypes
+from tinygrad import Tensor, nn
 from tinygrad.helpers import Timing, colored, getenv, fetch
 from extra.models.llama import Transformer, convert_from_huggingface, fix_bf16
 from sentencepiece import SentencePieceProcessor
@@ -23,8 +23,6 @@ def create_fixed_tokenizer(output_file):
 # echo -en "write 2+2\nwrite hello world\ny\n" | TEMP=0 python3 examples/coder.py
 
 if __name__ == "__main__":
-  Tensor.no_grad = True
-
   # https://huggingface.co/teknium/OpenHermes-2.5-Mistral-7B/blob/main/config.json
   with Timing("create model: "):
     model = Transformer(4096, 14336, n_heads=32, n_layers=32, norm_eps=1e-5, vocab_size=32002, n_kv_heads=8, max_context=4096, jit=getenv("JIT", 1))

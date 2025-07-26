@@ -1,5 +1,5 @@
 import numpy as np
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker
 from opendbc.car import Bus, apply_driver_steer_torque_limits, common_fault_avoidance, make_tester_present_msg
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.subaru import subarucan

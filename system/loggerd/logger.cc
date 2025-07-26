@@ -59,7 +59,7 @@ kj::Array<capnp::word> logger_build_init_data() {
   for (auto& [key, value] : params_map) {
     auto lentry = lparams[j];
     lentry.setKey(key);
-    if ( !(params.getKeyType(key) & DONT_LOG) ) {
+    if ( !(params.getKeyFlag(key) & DONT_LOG) ) {
       lentry.setValue(capnp::Data::Reader((const kj::byte*)value.data(), value.size()));
     }
     j++;

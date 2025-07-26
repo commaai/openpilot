@@ -9,7 +9,6 @@ static void gpio_usb_init(void) {
   GPIOA->OSPEEDR = GPIO_OSPEEDR_OSPEED11 | GPIO_OSPEEDR_OSPEED12;
 }
 
-#ifdef ENABLE_SPI
 void gpio_spi_init(void) {
   set_gpio_alternate(GPIOE, 11, GPIO_AF5_SPI4);
   set_gpio_alternate(GPIOE, 12, GPIO_AF5_SPI4);
@@ -17,7 +16,6 @@ void gpio_spi_init(void) {
   set_gpio_alternate(GPIOE, 14, GPIO_AF5_SPI4);
   register_set_bits(&(GPIOE->OSPEEDR), GPIO_OSPEEDR_OSPEED11 | GPIO_OSPEEDR_OSPEED12 | GPIO_OSPEEDR_OSPEED13 | GPIO_OSPEEDR_OSPEED14);
 }
-#endif
 
 #ifdef BOOTSTUB
 void gpio_usart2_init(void) {

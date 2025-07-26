@@ -39,20 +39,20 @@ static int honda_get_pt_bus(void) {
   return ((honda_hw == HONDA_BOSCH) && !honda_bosch_radarless) ? 1 : 0;
 }
 
-static uint32_t honda_get_checksum(const CANPacket_t *to_push) {
-  int checksum_byte = GET_LEN(to_push) - 1U;
-  return (uint8_t)(GET_BYTE(to_push, checksum_byte)) & 0xFU;
+static uint32_t honda_get_checksum(const CANPacket_t *msg) {
+  int checksum_byte = GET_LEN(msg) - 1U;
+  return (uint8_t)(GET_BYTE(msg, checksum_byte)) & 0xFU;
 }
 
-static uint32_t honda_compute_checksum(const CANPacket_t *to_push) {
-  int len = GET_LEN(to_push);
+static uint32_t honda_compute_checksum(const CANPacket_t *msg) {
+  int len = GET_LEN(msg);
   uint8_t checksum = 0U;
-  unsigned int addr = GET_ADDR(to_push);
+  unsigned int addr = GET_ADDR(msg);
   while (addr > 0U) {
     checksum += (uint8_t)(addr & 0xFU); addr >>= 4;
   }
   for (int j = 0; j < len; j++) {
-    uint8_t byte = GET_BYTE(to_push, j);
+    uint8_t byte = GET_BYTE(msg, j);
     checksum += (uint8_t)(byte & 0xFU) + (byte >> 4U);
     if (j == (len - 1)) {
       checksum -= (byte & 0xFU);  // remove checksum in message
@@ -61,28 +61,27 @@ static uint32_t honda_compute_checksum(const CANPacket_t *to_push) {
   return (uint8_t)((8U - checksum) & 0xFU);
 }
 
-static uint8_t honda_get_counter(const CANPacket_t *to_push) {
-  int counter_byte = GET_LEN(to_push) - 1U;
-  return (GET_BYTE(to_push, counter_byte) >> 4U) & 0x3U;
+static uint8_t honda_get_counter(const CANPacket_t *msg) {
+  int counter_byte = GET_LEN(msg) - 1U;
+  return (GET_BYTE(msg, counter_byte) >> 4U) & 0x3U;
 }
 
-static void honda_rx_hook(const CANPacket_t *to_push) {
+static void honda_rx_hook(const CANPacket_t *msg) {
   const bool pcm_cruise = ((honda_hw == HONDA_BOSCH) && !honda_bosch_long) || (honda_hw == HONDA_NIDEC);
   int pt_bus = honda_get_pt_bus();
 
-  int addr = GET_ADDR(to_push);
-  int bus = GET_BUS(to_push);
+  int addr = GET_ADDR(msg);
+  int bus = GET_BUS(msg);
 
   // sample speed
   if (addr == 0x158) {
-    // first 2 bytes
-    vehicle_moving = GET_BYTE(to_push, 0) | GET_BYTE(to_push, 1);
+    vehicle_moving = GET_BYTE(msg, 0) | GET_BYTE(msg, 1);
   }
 
   // check ACC main state
   // 0x326 for all Bosch and some Nidec, 0x1A6 for some Nidec
   if ((addr == 0x326) || (addr == 0x1A6)) {
-    acc_main_on = GET_BIT(to_push, ((addr == 0x326) ? 28U : 47U));
+    acc_main_on = GET_BIT(msg, ((addr == 0x326) ? 28U : 47U));
     if (!acc_main_on) {
       controls_allowed = false;
     }
@@ -90,7 +89,7 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
 
   // enter controls when PCM enters cruise state
   if (pcm_cruise && (addr == 0x17C)) {
-    const bool cruise_engaged = GET_BIT(to_push, 38U);
+    const bool cruise_engaged = GET_BIT(msg, 38U);
     // engage on rising edge
     if (cruise_engaged && !cruise_engaged_prev) {
       controls_allowed = true;
@@ -107,7 +106,7 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
   // state machine to enter and exit controls for button enabling
   // 0x1A6 for the ILX, 0x296 for the Civic Touring
   if (((addr == 0x1A6) || (addr == 0x296)) && (bus == pt_bus)) {
-    int button = (GET_BYTE(to_push, 0) & 0xE0U) >> 5;
+    int button = (GET_BYTE(msg, 0) & 0xE0U) >> 5;
 
     // enter controls on the falling edge of set or resume
     bool set = (button != HONDA_BTN_SET) && (cruise_button_prev == HONDA_BTN_SET);
@@ -131,26 +130,26 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
   // accord, crv: 0x1BE
   if (honda_alt_brake_msg) {
     if (addr == 0x1BE) {
-      brake_pressed = GET_BIT(to_push, 4U);
+      brake_pressed = GET_BIT(msg, 4U);
     }
   } else {
     if (addr == 0x17C) {
       // also if brake switch is 1 for two CAN frames, as brake pressed is delayed
-      const bool brake_switch = GET_BIT(to_push, 32U);
-      brake_pressed = (GET_BIT(to_push, 53U)) || (brake_switch && honda_brake_switch_prev);
+      const bool brake_switch = GET_BIT(msg, 32U);
+      brake_pressed = (GET_BIT(msg, 53U)) || (brake_switch && honda_brake_switch_prev);
       honda_brake_switch_prev = brake_switch;
     }
   }
 
   if (addr == 0x17C) {
-    gas_pressed = GET_BYTE(to_push, 0) != 0U;
+    gas_pressed = GET_BYTE(msg, 0) != 0U;
   }
 
   // disable stock Honda AEB in alternative experience
   if (!(alternative_experience & ALT_EXP_DISABLE_STOCK_AEB)) {
     if ((bus == 2) && (addr == 0x1FA)) {
-      bool honda_stock_aeb = GET_BIT(to_push, 29U);
-      int honda_stock_brake = (GET_BYTE(to_push, 0) << 2) | (GET_BYTE(to_push, 1) >> 6);
+      bool honda_stock_aeb = GET_BIT(msg, 29U);
+      int honda_stock_brake = (GET_BYTE(msg, 0) << 2) | (GET_BYTE(msg, 1) >> 6);
 
       // Forward AEB when stock braking is higher than openpilot braking
       // only stop forwarding when AEB event is over
@@ -165,7 +164,7 @@ static void honda_rx_hook(const CANPacket_t *to_push) {
   }
 }
 
-static bool honda_tx_hook(const CANPacket_t *to_send) {
+static bool honda_tx_hook(const CANPacket_t *msg) {
 
   const LongitudinalLimits HONDA_BOSCH_LONG_LIMITS = {
     .max_accel = 200,   // accel is used for brakes
@@ -183,16 +182,16 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
   };
 
   bool tx = true;
-  int addr = GET_ADDR(to_send);
-  int bus = GET_BUS(to_send);
+  int addr = GET_ADDR(msg);
+  int bus = GET_BUS(msg);
 
   int bus_pt = honda_get_pt_bus();
   int bus_buttons = (honda_bosch_radarless) ? 2 : bus_pt;  // the camera controls ACC on radarless Bosch cars
 
   // ACC_HUD: safety check (nidec w/o pedal)
   if ((addr == 0x30C) && (bus == bus_pt)) {
-    int pcm_speed = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
-    int pcm_gas = GET_BYTE(to_send, 2);
+    int pcm_speed = (GET_BYTE(msg, 0) << 8) | GET_BYTE(msg, 1);
+    int pcm_gas = GET_BYTE(msg, 2);
 
     bool violation = false;
     violation |= longitudinal_speed_checks(pcm_speed, HONDA_NIDEC_LONG_LIMITS);
@@ -204,7 +203,7 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
 
   // BRAKE: safety check (nidec)
   if ((addr == 0x1FA) && (bus == bus_pt)) {
-    honda_brake = (GET_BYTE(to_send, 0) << 2) + ((GET_BYTE(to_send, 1) >> 6) & 0x3U);
+    honda_brake = (GET_BYTE(msg, 0) << 2) + ((GET_BYTE(msg, 1) >> 6) & 0x3U);
     if (longitudinal_brake_checks(honda_brake, HONDA_NIDEC_LONG_LIMITS)) {
       tx = false;
     }
@@ -215,10 +214,10 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
 
   // BRAKE/GAS: safety check (bosch)
   if ((addr == 0x1DF) && (bus == bus_pt)) {
-    int accel = (GET_BYTE(to_send, 3) << 3) | ((GET_BYTE(to_send, 4) >> 5) & 0x7U);
+    int accel = (GET_BYTE(msg, 3) << 3) | ((GET_BYTE(msg, 4) >> 5) & 0x7U);
     accel = to_signed(accel, 11);
 
-    int gas = (GET_BYTE(to_send, 0) << 8) | GET_BYTE(to_send, 1);
+    int gas = (GET_BYTE(msg, 0) << 8) | GET_BYTE(msg, 1);
     gas = to_signed(gas, 16);
 
     bool violation = false;
@@ -231,7 +230,7 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
 
   // ACCEL: safety check (radarless)
   if ((addr == 0x1C8) && (bus == bus_pt)) {
-    int accel = (GET_BYTE(to_send, 0) << 4) | (GET_BYTE(to_send, 1) >> 4);
+    int accel = (GET_BYTE(msg, 0) << 4) | (GET_BYTE(msg, 1) >> 4);
     accel = to_signed(accel, 12);
 
     bool violation = false;
@@ -244,7 +243,7 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
   // STEER: safety check
   if ((addr == 0xE4) || (addr == 0x194)) {
     if (!controls_allowed) {
-      bool steer_applied = GET_BYTE(to_send, 0) | GET_BYTE(to_send, 1);
+      bool steer_applied = GET_BYTE(msg, 0) | GET_BYTE(msg, 1);
       if (steer_applied) {
         tx = false;
       }
@@ -253,7 +252,7 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
 
   // Bosch supplemental control check
   if (addr == 0xE5) {
-    if ((GET_BYTES(to_send, 0, 4) != 0x10800004U) || ((GET_BYTES(to_send, 4, 4) & 0x00FFFFFFU) != 0x0U)) {
+    if ((GET_BYTES(msg, 0, 4) != 0x10800004U) || ((GET_BYTES(msg, 4, 4) & 0x00FFFFFFU) != 0x0U)) {
       tx = false;
     }
   }
@@ -262,14 +261,14 @@ static bool honda_tx_hook(const CANPacket_t *to_send) {
   // ensuring that only the cancel button press is sent (VAL 2) when controls are off.
   // This avoids unintended engagements while still allowing resume spam
   if ((addr == 0x296) && !controls_allowed && (bus == bus_buttons)) {
-    if (((GET_BYTE(to_send, 0) >> 5) & 0x7U) != 2U) {
+    if (((GET_BYTE(msg, 0) >> 5) & 0x7U) != 2U) {
       tx = false;
     }
   }
 
   // Only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (addr == 0x18DAB0F1) {
-    if ((GET_BYTES(to_send, 0, 4) != 0x00803E02U) || (GET_BYTES(to_send, 4, 4) != 0x0U)) {
+    if ((GET_BYTES(msg, 0, 4) != 0x00803E02U) || (GET_BYTES(msg, 4, 4) != 0x0U)) {
       tx = false;
     }
   }

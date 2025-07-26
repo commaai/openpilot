@@ -19,14 +19,14 @@
 
 static bool subaru_pg_reversed_driver_torque = false;
 
-static void subaru_preglobal_rx_hook(const CANPacket_t *to_push) {
-  const int bus = GET_BUS(to_push);
+static void subaru_preglobal_rx_hook(const CANPacket_t *msg) {
+  const int bus = GET_BUS(msg);
 
   if (bus == SUBARU_PG_MAIN_BUS) {
-    int addr = GET_ADDR(to_push);
+    int addr = GET_ADDR(msg);
     if (addr == MSG_SUBARU_PG_Steering_Torque) {
       int torque_driver_new;
-      torque_driver_new = (GET_BYTE(to_push, 3) >> 5) + (GET_BYTE(to_push, 4) << 3);
+      torque_driver_new = (GET_BYTE(msg, 3) >> 5) + (GET_BYTE(msg, 4) << 3);
       torque_driver_new = to_signed(torque_driver_new, 11);
       torque_driver_new = subaru_pg_reversed_driver_torque ? -torque_driver_new : torque_driver_new;
       update_sample(&torque_driver, torque_driver_new);
@@ -34,26 +34,26 @@ static void subaru_preglobal_rx_hook(const CANPacket_t *to_push) {
 
     // enter controls on rising edge of ACC, exit controls on ACC off
     if (addr == MSG_SUBARU_PG_CruiseControl) {
-      bool cruise_engaged = GET_BIT(to_push, 49U);
+      bool cruise_engaged = GET_BIT(msg, 49U);
       pcm_cruise_check(cruise_engaged);
     }
 
     // update vehicle moving with any non-zero wheel speed
     if (addr == MSG_SUBARU_PG_Wheel_Speeds) {
-      vehicle_moving = ((GET_BYTES(to_push, 0, 4) >> 12) != 0U) || (GET_BYTES(to_push, 4, 4) != 0U);
+      vehicle_moving = ((GET_BYTES(msg, 0, 4) >> 12) != 0U) || (GET_BYTES(msg, 4, 4) != 0U);
     }
 
     if (addr == MSG_SUBARU_PG_Brake_Pedal) {
-      brake_pressed = ((GET_BYTES(to_push, 0, 4) >> 16) & 0xFFU) > 0U;
+      brake_pressed = ((GET_BYTES(msg, 0, 4) >> 16) & 0xFFU) > 0U;
     }
 
     if (addr == MSG_SUBARU_PG_Throttle) {
-      gas_pressed = GET_BYTE(to_push, 0) != 0U;
+      gas_pressed = GET_BYTE(msg, 0) != 0U;
     }
   }
 }
 
-static bool subaru_preglobal_tx_hook(const CANPacket_t *to_send) {
+static bool subaru_preglobal_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits SUBARU_PG_STEERING_LIMITS = {
     .max_torque = 2047,
     .max_rt_delta = 940,
@@ -65,19 +65,18 @@ static bool subaru_preglobal_tx_hook(const CANPacket_t *to_send) {
   };
 
   bool tx = true;
-  int addr = GET_ADDR(to_send);
+  int addr = GET_ADDR(msg);
 
   // steer cmd checks
   if (addr == MSG_SUBARU_PG_ES_LKAS) {
-    int desired_torque = ((GET_BYTES(to_send, 0, 4) >> 8) & 0x1FFFU);
+    int desired_torque = ((GET_BYTES(msg, 0, 4) >> 8) & 0x1FFFU);
     desired_torque = -1 * to_signed(desired_torque, 13);
 
-    bool steer_req = GET_BIT(to_send, 24U);
+    bool steer_req = GET_BIT(msg, 24U);
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, SUBARU_PG_STEERING_LIMITS)) {
       tx = false;
     }
-
   }
   return tx;
 }

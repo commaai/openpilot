@@ -7,7 +7,7 @@ from opendbc.car.tesla.values import TeslaSafetyFlags
 from opendbc.car.tesla.carcontroller import get_max_angle_delta, get_max_angle, get_safety_CP
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel
-from opendbc.can.can_define import CANDefine
+from opendbc.can import CANDefine
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda, MAX_SPEED_DELTA, MAX_WRONG_COUNTERS, away_round, round_speed
@@ -129,38 +129,38 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
   def test_rx_hook(self):
     # counter check
-    for msg in ("angle", "long", "speed", "speed_2"):
+    for msg_type in ("angle", "long", "speed", "speed_2"):
       # send multiple times to verify counter checks
       for i in range(10):
-        if msg == "angle":
-          to_push = self._angle_cmd_msg(0, True, bus=2)
-        elif msg == "long":
-          to_push = self._long_control_msg(0, bus=2)
-        elif msg == "speed":
-          to_push = self._speed_msg(0)
-        elif msg == "speed_2":
-          to_push = self._speed_msg_2(0)
+        if msg_type == "angle":
+          msg = self._angle_cmd_msg(0, True, bus=2)
+        elif msg_type == "long":
+          msg = self._long_control_msg(0, bus=2)
+        elif msg_type == "speed":
+          msg = self._speed_msg(0)
+        elif msg_type == "speed_2":
+          msg = self._speed_msg_2(0)
 
         should_rx = i >= 5
         if not should_rx:
           # mess with checksums
-          if msg == "angle":
-            to_push[0].data[3] = 0
-          elif msg == "long":
-            to_push[0].data[7] = 0
-          elif msg == "speed":
-            to_push[0].data[0] = 0
-          elif msg == "speed_2":
-            to_push[0].data[7] = 0
+          if msg_type == "angle":
+            msg[0].data[3] = 0
+          elif msg_type == "long":
+            msg[0].data[7] = 0
+          elif msg_type == "speed":
+            msg[0].data[0] = 0
+          elif msg_type == "speed_2":
+            msg[0].data[7] = 0
 
         self.safety.set_controls_allowed(True)
-        self.assertEqual(should_rx, self._rx(to_push))
+        self.assertEqual(should_rx, self._rx(msg))
         self.assertEqual(should_rx, self.safety.get_controls_allowed())
 
       # Send static counters
       for i in range(MAX_WRONG_COUNTERS + 1):
         should_rx = i + 1 < MAX_WRONG_COUNTERS
-        self.assertEqual(should_rx, self._rx(to_push))
+        self.assertEqual(should_rx, self._rx(msg))
         self.assertEqual(should_rx, self.safety.get_controls_allowed())
 
   def test_vehicle_speed_measurements(self):
@@ -195,8 +195,8 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
   def test_user_brake_quality_flag(self):
     for quality_flag in (True, False):
-      to_push = self._user_brake_msg(True, quality_flag=quality_flag)
-      self.assertEqual(quality_flag, self._rx(to_push))
+      msg = self._user_brake_msg(True, quality_flag=quality_flag)
+      self.assertEqual(quality_flag, self._rx(msg))
 
   def test_steering_wheel_disengage(self):
     # Tesla disengages when the user forcibly overrides the locked-in angle steering control

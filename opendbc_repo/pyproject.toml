@@ -9,16 +9,12 @@ requires-python = ">=3.9,<3.13"  # pycapnp doesn't work with 3.13
 
 urls = { "homepage" = "https://github.com/commaai/opendbc" }
 
-# setuptools includes distutils which is needed by Cython.
-# distutils was removed in python3.12 from the standard library.
 dependencies = [
   "scons",
   "numpy",
-  "Cython",
   "crcmod",
   "tqdm",
   "pycapnp",
-  "setuptools",
   "pycryptodome",
 ]
 
@@ -40,7 +36,6 @@ testing = [
   "ty",
   "lefthook",
   "cpplint",
-  "cython-lint",
   "codespell",
 ]
 docs = [
@@ -68,10 +63,6 @@ quiet-level = 3
 ignore-words-list = "alo,ba,bu,deque,hda,grey,arange"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
 check-hidden = true
-
-[tool.cython-lint]
-max-line-length = 120
-ignore = ["E111", "E114"]
 
 [tool.mypy]
 # helpful warnings

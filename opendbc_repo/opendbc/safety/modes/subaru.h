@@ -73,36 +73,36 @@
 static bool subaru_gen2 = false;
 static bool subaru_longitudinal = false;
 
-static uint32_t subaru_get_checksum(const CANPacket_t *to_push) {
-  return (uint8_t)GET_BYTE(to_push, 0);
+static uint32_t subaru_get_checksum(const CANPacket_t *msg) {
+  return (uint8_t)GET_BYTE(msg, 0);
 }
 
-static uint8_t subaru_get_counter(const CANPacket_t *to_push) {
-  return (uint8_t)(GET_BYTE(to_push, 1) & 0xFU);
+static uint8_t subaru_get_counter(const CANPacket_t *msg) {
+  return (uint8_t)(GET_BYTE(msg, 1) & 0xFU);
 }
 
-static uint32_t subaru_compute_checksum(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-  int len = GET_LEN(to_push);
+static uint32_t subaru_compute_checksum(const CANPacket_t *msg) {
+  int addr = GET_ADDR(msg);
+  int len = GET_LEN(msg);
   uint8_t checksum = (uint8_t)(addr) + (uint8_t)((unsigned int)(addr) >> 8U);
   for (int i = 1; i < len; i++) {
-    checksum += (uint8_t)GET_BYTE(to_push, i);
+    checksum += (uint8_t)GET_BYTE(msg, i);
   }
   return checksum;
 }
 
-static void subaru_rx_hook(const CANPacket_t *to_push) {
-  const int bus = GET_BUS(to_push);
+static void subaru_rx_hook(const CANPacket_t *msg) {
+  const int bus = GET_BUS(msg);
   const int alt_main_bus = subaru_gen2 ? SUBARU_ALT_BUS : SUBARU_MAIN_BUS;
 
-  int addr = GET_ADDR(to_push);
+  int addr = GET_ADDR(msg);
   if ((addr == MSG_SUBARU_Steering_Torque) && (bus == SUBARU_MAIN_BUS)) {
     int torque_driver_new;
-    torque_driver_new = ((GET_BYTES(to_push, 0, 4) >> 16) & 0x7FFU);
+    torque_driver_new = ((GET_BYTES(msg, 0, 4) >> 16) & 0x7FFU);
     torque_driver_new = -1 * to_signed(torque_driver_new, 11);
     update_sample(&torque_driver, torque_driver_new);
 
-    int angle_meas_new = (GET_BYTES(to_push, 4, 2) & 0xFFFFU);
+    int angle_meas_new = (GET_BYTES(msg, 4, 2) & 0xFFFFU);
     // convert Steering_Torque -> Steering_Angle to centidegrees, to match the ES_LKAS_ANGLE angle request units
     angle_meas_new = ROUND(to_signed(angle_meas_new, 16) * -2.17);
     update_sample(&angle_meas, angle_meas_new);
@@ -110,16 +110,16 @@ static void subaru_rx_hook(const CANPacket_t *to_push) {
 
   // enter controls on rising edge of ACC, exit controls on ACC off
   if ((addr == MSG_SUBARU_CruiseControl) && (bus == alt_main_bus)) {
-    bool cruise_engaged = GET_BIT(to_push, 41U);
+    bool cruise_engaged = GET_BIT(msg, 41U);
     pcm_cruise_check(cruise_engaged);
   }
 
   // update vehicle moving with any non-zero wheel speed
   if ((addr == MSG_SUBARU_Wheel_Speeds) && (bus == alt_main_bus)) {
-    uint32_t fr = (GET_BYTES(to_push, 1, 3) >> 4) & 0x1FFFU;
-    uint32_t rr = (GET_BYTES(to_push, 3, 3) >> 1) & 0x1FFFU;
-    uint32_t rl = (GET_BYTES(to_push, 4, 3) >> 6) & 0x1FFFU;
-    uint32_t fl = (GET_BYTES(to_push, 6, 2) >> 3) & 0x1FFFU;
+    uint32_t fr = (GET_BYTES(msg, 1, 3) >> 4) & 0x1FFFU;
+    uint32_t rr = (GET_BYTES(msg, 3, 3) >> 1) & 0x1FFFU;
+    uint32_t rl = (GET_BYTES(msg, 4, 3) >> 6) & 0x1FFFU;
+    uint32_t fl = (GET_BYTES(msg, 6, 2) >> 3) & 0x1FFFU;
 
     vehicle_moving = (fr > 0U) || (rr > 0U) || (rl > 0U) || (fl > 0U);
 
@@ -127,15 +127,15 @@ static void subaru_rx_hook(const CANPacket_t *to_push) {
   }
 
   if ((addr == MSG_SUBARU_Brake_Status) && (bus == alt_main_bus)) {
-    brake_pressed = GET_BIT(to_push, 62U);
+    brake_pressed = GET_BIT(msg, 62U);
   }
 
   if ((addr == MSG_SUBARU_Throttle) && (bus == SUBARU_MAIN_BUS)) {
-    gas_pressed = GET_BYTE(to_push, 4) != 0U;
+    gas_pressed = GET_BYTE(msg, 4) != 0U;
   }
 }
 
-static bool subaru_tx_hook(const CANPacket_t *to_send) {
+static bool subaru_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits SUBARU_STEERING_LIMITS      = SUBARU_STEERING_LIMITS_GENERATOR(2047, 50, 70);
   const TorqueSteeringLimits SUBARU_GEN2_STEERING_LIMITS = SUBARU_STEERING_LIMITS_GENERATOR(1000, 40, 40);
 
@@ -150,15 +150,15 @@ static bool subaru_tx_hook(const CANPacket_t *to_send) {
   };
 
   bool tx = true;
-  int addr = GET_ADDR(to_send);
+  int addr = GET_ADDR(msg);
   bool violation = false;
 
   // steer cmd checks
   if (addr == MSG_SUBARU_ES_LKAS) {
-    int desired_torque = ((GET_BYTES(to_send, 0, 4) >> 16) & 0x1FFFU);
+    int desired_torque = ((GET_BYTES(msg, 0, 4) >> 16) & 0x1FFFU);
     desired_torque = -1 * to_signed(desired_torque, 13);
 
-    bool steer_req = GET_BIT(to_send, 29U);
+    bool steer_req = GET_BIT(msg, 29U);
 
     const TorqueSteeringLimits limits = subaru_gen2 ? SUBARU_GEN2_STEERING_LIMITS : SUBARU_STEERING_LIMITS;
     violation |= steer_torque_cmd_checks(desired_torque, steer_req, limits);
@@ -166,14 +166,14 @@ static bool subaru_tx_hook(const CANPacket_t *to_send) {
 
   // check es_brake brake_pressure limits
   if (addr == MSG_SUBARU_ES_Brake) {
-    int es_brake_pressure = GET_BYTES(to_send, 2, 2);
+    int es_brake_pressure = GET_BYTES(msg, 2, 2);
     violation |= longitudinal_brake_checks(es_brake_pressure, SUBARU_LONG_LIMITS);
   }
 
   // check es_distance cruise_throttle limits
   if (addr == MSG_SUBARU_ES_Distance) {
-    int cruise_throttle = (GET_BYTES(to_send, 2, 2) & 0x1FFFU);
-    bool cruise_cancel = GET_BIT(to_send, 56U);
+    int cruise_throttle = (GET_BYTES(msg, 2, 2) & 0x1FFFU);
+    bool cruise_cancel = GET_BIT(msg, 56U);
 
     if (subaru_longitudinal) {
       violation |= longitudinal_gas_checks(cruise_throttle, SUBARU_LONG_LIMITS);
@@ -187,16 +187,16 @@ static bool subaru_tx_hook(const CANPacket_t *to_send) {
 
   // check es_status transmission_rpm limits
   if (addr == MSG_SUBARU_ES_Status) {
-    int transmission_rpm = (GET_BYTES(to_send, 2, 2) & 0x1FFFU);
+    int transmission_rpm = (GET_BYTES(msg, 2, 2) & 0x1FFFU);
     violation |= longitudinal_transmission_rpm_checks(transmission_rpm, SUBARU_LONG_LIMITS);
   }
 
   if (addr == MSG_SUBARU_ES_UDS_Request) {
     // tester present ('\x02\x3E\x80\x00\x00\x00\x00\x00') is allowed for gen2 longitudinal to keep eyesight disabled
-    bool is_tester_present = (GET_BYTES(to_send, 0, 4) == 0x00803E02U) && (GET_BYTES(to_send, 4, 4) == 0x0U);
+    bool is_tester_present = (GET_BYTES(msg, 0, 4) == 0x00803E02U) && (GET_BYTES(msg, 4, 4) == 0x0U);
 
     // reading ES button data by identifier (b'\x03\x22\x11\x30\x00\x00\x00\x00') is also allowed (DID 0x1130)
-    bool is_button_rdbi = (GET_BYTES(to_send, 0, 4) == 0x30112203U) && (GET_BYTES(to_send, 4, 4) == 0x0U);
+    bool is_button_rdbi = (GET_BYTES(msg, 0, 4) == 0x30112203U) && (GET_BYTES(msg, 4, 4) == 0x0U);
 
     violation |= !(is_tester_present || is_button_rdbi);
   }

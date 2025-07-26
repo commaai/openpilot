@@ -1,6 +1,7 @@
 import copy
 import numpy as np
 from opendbc.car import CanBusBase
+from opendbc.car.crc import CRC16_XMODEM
 from opendbc.car.hyundai.values import HyundaiFlags
 
 
@@ -231,3 +232,20 @@ def create_adrv_messages(packer, CAN, frame):
     ret.append(packer.make_can_msg("ADRV_0x1da", CAN.ECAN, values))
 
   return ret
+
+
+def hkg_can_fd_checksum(address: int, sig, d: bytearray) -> int:
+  crc = 0
+  for i in range(2, len(d)):
+    crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ d[i]]) & 0xFFFF
+  crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ ((address >> 0) & 0xFF)]) & 0xFFFF
+  crc = ((crc << 8) ^ CRC16_XMODEM[(crc >> 8) ^ ((address >> 8) & 0xFF)]) & 0xFFFF
+  if len(d) == 8:
+    crc ^= 0x5F29
+  elif len(d) == 16:
+    crc ^= 0x041D
+  elif len(d) == 24:
+    crc ^= 0x819D
+  elif len(d) == 32:
+    crc ^= 0x9F5B
+  return crc

@@ -41,16 +41,16 @@ static safety_config volkswagen_mqb_init(uint16_t param) {
                                    BUILD_SAFETY_CFG(volkswagen_mqb_rx_checks, VOLKSWAGEN_MQB_STOCK_TX_MSGS);
 }
 
-static void volkswagen_mqb_rx_hook(const CANPacket_t *to_push) {
-  if (GET_BUS(to_push) == 0U) {
-    int addr = GET_ADDR(to_push);
+static void volkswagen_mqb_rx_hook(const CANPacket_t *msg) {
+  if (GET_BUS(msg) == 0U) {
+    int addr = GET_ADDR(msg);
 
     // Update in-motion state by sampling wheel speeds
     if (addr == MSG_ESP_19) {
       // sum 4 wheel speeds
       int speed = 0;
       for (uint8_t i = 0U; i < 8U; i += 2U) {
-        int wheel_speed = GET_BYTE(to_push, i) | (GET_BYTE(to_push, i + 1U) << 8);
+        int wheel_speed = GET_BYTE(msg, i) | (GET_BYTE(msg, i + 1U) << 8);
         speed += wheel_speed;
       }
       // Check all wheel speeds for any movement
@@ -61,8 +61,8 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *to_push) {
     // Signal: LH_EPS_03.EPS_Lenkmoment (absolute torque)
     // Signal: LH_EPS_03.EPS_VZ_Lenkmoment (direction)
     if (addr == MSG_LH_EPS_03) {
-      int torque_driver_new = GET_BYTE(to_push, 5) | ((GET_BYTE(to_push, 6) & 0x1FU) << 8);
-      int sign = (GET_BYTE(to_push, 6) & 0x80U) >> 7;
+      int torque_driver_new = GET_BYTE(msg, 5) | ((GET_BYTE(msg, 6) & 0x1FU) << 8);
+      int sign = (GET_BYTE(msg, 6) & 0x80U) >> 7;
       if (sign == 1) {
         torque_driver_new *= -1;
       }
@@ -73,7 +73,7 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *to_push) {
       // When using stock ACC, enter controls on rising edge of stock ACC engage, exit on disengage
       // Always exit controls on main switch off
       // Signal: TSK_06.TSK_Status
-      int acc_status = (GET_BYTE(to_push, 3) & 0x7U);
+      int acc_status = (GET_BYTE(msg, 3) & 0x7U);
       bool cruise_engaged = (acc_status == 3) || (acc_status == 4) || (acc_status == 5);
       acc_main_on = cruise_engaged || (acc_status == 2);
 
@@ -91,8 +91,8 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *to_push) {
       // Signal: GRA_ACC_01.GRA_Tip_Setzen
       // Signal: GRA_ACC_01.GRA_Tip_Wiederaufnahme
       if (volkswagen_longitudinal) {
-        bool set_button = GET_BIT(to_push, 16U);
-        bool resume_button = GET_BIT(to_push, 19U);
+        bool set_button = GET_BIT(msg, 16U);
+        bool resume_button = GET_BIT(msg, 19U);
         if ((volkswagen_set_button_prev && !set_button) || (volkswagen_resume_button_prev && !resume_button)) {
           controls_allowed = acc_main_on;
         }
@@ -101,31 +101,31 @@ static void volkswagen_mqb_rx_hook(const CANPacket_t *to_push) {
       }
       // Always exit controls on rising edge of Cancel
       // Signal: GRA_ACC_01.GRA_Abbrechen
-      if (GET_BIT(to_push, 13U)) {
+      if (GET_BIT(msg, 13U)) {
         controls_allowed = false;
       }
     }
 
     // Signal: Motor_20.MO_Fahrpedalrohwert_01
     if (addr == MSG_MOTOR_20) {
-      gas_pressed = ((GET_BYTES(to_push, 0, 4) >> 12) & 0xFFU) != 0U;
+      gas_pressed = ((GET_BYTES(msg, 0, 4) >> 12) & 0xFFU) != 0U;
     }
 
     // Signal: Motor_14.MO_Fahrer_bremst (ECU detected brake pedal switch F63)
     if (addr == MSG_MOTOR_14) {
-      volkswagen_mqb_brake_pedal_switch = (GET_BYTE(to_push, 3) & 0x10U) >> 4;
+      volkswagen_mqb_brake_pedal_switch = (GET_BYTE(msg, 3) & 0x10U) >> 4;
     }
 
     // Signal: ESP_05.ESP_Fahrer_bremst (ESP detected driver brake pressure above platform specified threshold)
     if (addr == MSG_ESP_05) {
-      volkswagen_mqb_brake_pressure_detected = (GET_BYTE(to_push, 3) & 0x4U) >> 2;
+      volkswagen_mqb_brake_pressure_detected = (GET_BYTE(msg, 3) & 0x4U) >> 2;
     }
 
     brake_pressed = volkswagen_mqb_brake_pedal_switch || volkswagen_mqb_brake_pressure_detected;
   }
 }
 
-static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
+static bool volkswagen_mqb_tx_hook(const CANPacket_t *msg) {
   // lateral limits
   const TorqueSteeringLimits VOLKSWAGEN_MQB_STEERING_LIMITS = {
     .max_torque = 300,             // 3.0 Nm (EPS side max of 3.0Nm with fault if violated)
@@ -145,20 +145,20 @@ static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
     .inactive_accel = 3010,  // VW sends one increment above the max range when inactive
   };
 
-  int addr = GET_ADDR(to_send);
+  int addr = GET_ADDR(msg);
   bool tx = true;
 
   // Safety check for HCA_01 Heading Control Assist torque
   // Signal: HCA_01.HCA_01_LM_Offset (absolute torque)
   // Signal: HCA_01.HCA_01_LM_OffSign (direction)
   if (addr == MSG_HCA_01) {
-    int desired_torque = GET_BYTE(to_send, 2) | ((GET_BYTE(to_send, 3) & 0x1U) << 8);
-    bool sign = GET_BIT(to_send, 31U);
+    int desired_torque = GET_BYTE(msg, 2) | ((GET_BYTE(msg, 3) & 0x1U) << 8);
+    bool sign = GET_BIT(msg, 31U);
     if (sign) {
       desired_torque *= -1;
     }
 
-    bool steer_req = GET_BIT(to_send, 30U);
+    bool steer_req = GET_BIT(msg, 30U);
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, VOLKSWAGEN_MQB_STEERING_LIMITS)) {
       tx = false;
@@ -173,13 +173,13 @@ static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
 
     if (addr == MSG_ACC_06) {
       // Signal: ACC_06.ACC_Sollbeschleunigung_02 (acceleration in m/s2, scale 0.005, offset -7.22)
-      desired_accel = ((((GET_BYTE(to_send, 4) & 0x7U) << 8) | GET_BYTE(to_send, 3)) * 5U) - 7220U;
+      desired_accel = ((((GET_BYTE(msg, 4) & 0x7U) << 8) | GET_BYTE(msg, 3)) * 5U) - 7220U;
     } else {
       // Signal: ACC_07.ACC_Folgebeschl (acceleration in m/s2, scale 0.03, offset -4.6)
-      int secondary_accel = (GET_BYTE(to_send, 4) * 30U) - 4600U;
+      int secondary_accel = (GET_BYTE(msg, 4) * 30U) - 4600U;
       violation |= (secondary_accel != 3020);  // enforce always inactive (one increment above max range) at this time
       // Signal: ACC_07.ACC_Sollbeschleunigung_02 (acceleration in m/s2, scale 0.005, offset -7.22)
-      desired_accel = (((GET_BYTE(to_send, 7) << 3) | ((GET_BYTE(to_send, 6) & 0xE0U) >> 5)) * 5U) - 7220U;
+      desired_accel = (((GET_BYTE(msg, 7) << 3) | ((GET_BYTE(msg, 6) & 0xE0U) >> 5)) * 5U) - 7220U;
     }
 
     violation |= longitudinal_accel_checks(desired_accel, VOLKSWAGEN_MQB_LONG_LIMITS);
@@ -193,7 +193,7 @@ static bool volkswagen_mqb_tx_hook(const CANPacket_t *to_send) {
   // This avoids unintended engagements while still allowing resume spam
   if ((addr == MSG_GRA_ACC_01) && !controls_allowed) {
     // disallow resume and set: bits 16 and 19
-    if ((GET_BYTE(to_send, 2) & 0x9U) != 0U) {
+    if ((GET_BYTE(msg, 2) & 0x9U) != 0U) {
       tx = false;
     }
   }

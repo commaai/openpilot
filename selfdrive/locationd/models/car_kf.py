@@ -93,8 +93,9 @@ class CarKalman(KalmanFilter):
     dim_state = CarKalman.initial_x.shape[0]
     name = CarKalman.name
 
-    # vehicle models comes from The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
-    # Model used is in 6.15 with formula from 6.198
+    # Linearized single-track lateral dynamics, equations 7.211-7.213
+    # Massimo Guiggiani, The Science of Vehicle Dynamics: Handling, Braking, and Ride of Road and Race Cars
+    # Springer Cham, 2023. doi: https://doi.org/10.1007/978-3-031-06461-6
 
     # globals
     global_vars = [sp.Symbol(name) for name in CarKalman.global_vars]

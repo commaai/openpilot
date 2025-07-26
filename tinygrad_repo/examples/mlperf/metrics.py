@@ -1,6 +1,6 @@
-import re
-import string
+import re, string
 from collections import Counter
+from tinygrad import Tensor
 
 def levenshtein(a, b):
   n, m = len(a), len(b)
@@ -59,3 +59,11 @@ def f1_score(x, y):
   p = ns / len(xt)
   r = ns / len(yt)
   return 2 * p * r / (p + r)
+
+def log_perplexity(logit:Tensor, target:Tensor, ignore_index:int|None=None):
+  # logit has shape (n_samples, seq_len, vocab_size), target has shape (n_samples, seq_len)
+  assert logit.ndim == 3, logit.ndim
+  assert target.ndim == 2, target.ndim
+  assert logit.shape[:2] == target.shape, f"{logit.shape[:2]=}, {target.shape=}"
+  log_prob = logit.log_softmax(axis=-1)
+  return log_prob.transpose(1, 2).nll_loss(target, ignore_index=ignore_index)

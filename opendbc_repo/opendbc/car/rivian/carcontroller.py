@@ -1,5 +1,5 @@
 import numpy as np
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker
 from opendbc.car import Bus, apply_driver_steer_torque_limits
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.rivian.riviancan import create_lka_steering, create_longitudinal, create_wheel_touch, create_adas_status

@@ -1,4 +1,4 @@
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker
 from opendbc.car import Bus, apply_std_steer_angle_limits, structs
 from opendbc.car.interfaces import CarControllerBase
 from opendbc.car.nissan import nissancan

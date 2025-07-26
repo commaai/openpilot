@@ -46,12 +46,15 @@ BO_ 160 WHEEL_SPEEDS: 24 XXX
  SG_ WHL_SpdRLVal : 96|14@1+ (0.03125,0) [0|0] "km^h" XXX
  SG_ WHL_SpdRRVal : 112|14@1+ (0.03125,0) [0|0] "km^h" XXX
 
-BO_ 203 LFA_ALT: 24 ADRV
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ LKAS_ANGLE_ACTIVE : 29|2@0+ (1,0) [0|1] "" XXX
- SG_ LKAS_ANGLE_CMD : 32|14@1- (0.1,0) [0|511] "" XXX
- SG_ LKAS_ANGLE_MAX_TORQUE : 55|8@0+ (1,0) [0|255] "" XXX
+BO_ 203 ADAS_CMD_35_10ms: 24 CGW_CCU
+ SG_ CHECKSUM : 0|16@1+ (1,0) [0|0] "0" FCU_C,GW_RGW,MDPS,SFA
+ SG_ COUNTER : 16|8@1+ (1,0) [0|0] "0" FCU_C,GW_RGW,MDPS,SFA
+ SG_ ADAS_ActvACISta : 24|4@1+ (1,0) [0|0] "" GW_RGW,MDPS,SFA
+ SG_ ADAS_ActvACILvl2Sta : 28|4@1+ (1,0) [0|0] "" ESC,FCU_C,GW_RGW,MDPS,SFA,VPC_C
+ SG_ ADAS_StrAnglReqVal : 32|14@1- (0.1,0) [0|119.9] "Deg" GW_RGW,MDPS,SFA
+ SG_ ADAS_ACIAnglTqRedcGainVal : 48|8@1+ (0.004,0) [0|1] "" GW_RGW,MDPS,SFA
+ SG_ FCA_ESA_ActvSta : 56|2@1+ (1,0) [0|0] "" GW_RGW,MDPS,SFA
+ SG_ FCA_ESA_TqBstGainVal : 64|8@1+ (0.004,0) [0|0] "" GW_RGW,MDPS,SFA
 
 BO_ 234 MDPS: 24 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -92,9 +95,34 @@ BO_ 272 LKAS_ALT: 32 XXX
  SG_ NEW_SIGNAL_2 : 70|2@0+ (1,0) [0|3] "" XXX
  SG_ LKAS_ANGLE_ACTIVE : 77|2@0+ (1,0) [0|3] "" XXX
  SG_ HAS_LANE_SAFETY : 80|1@0+ (1,0) [0|1] "" XXX
- SG_ LKAS_ANGLE_CMD : 82|14@1- (0.1,0) [0|511] "" XXX
- SG_ LKAS_ANGLE_MAX_TORQUE : 96|8@1+ (1,0) [0|255] "" XXX
+ SG_ ADAS_StrAnglReqVal : 82|14@1- (0.1,0) [0|176.7] "Deg" GW_RGW,MDPS,SFA
+ SG_ ADAS_ACIAnglTqRedcGainVal : 96|8@1+ (0.004,0) [0|1] "" GW_RGW,MDPS,SFA
  SG_ NEW_SIGNAL_3 : 111|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 282 FR_CMR_01_10ms: 16 FR_CMR
+ SG_ FR_CMR_Crc1Val : 0|16@1+ (1,0) [0|0] "" Dummy,IBU_HS,vBDM
+ SG_ FR_CMR_AlvCnt1Val : 16|8@1+ (1,0) [0|0] "" CLU,IBU_HS,vBDM
+ SG_ HBA_SysOptSta : 24|2@1+ (1,0) [0|3] "" CLU,IBU_HS,vBDM
+ SG_ HBA_SysSta : 26|3@1+ (1,0) [0|7] "" CLU,IBU_HS,vBDM
+ SG_ HBA_IndLmpReq : 29|2@1+ (1,0) [0|3] "" CLU,vBDM
+ SG_ iHBAref_VehLftSta : 31|2@1+ (1,0) [0|3] "" IBU_HS,ICU,vBDM
+ SG_ iHBAref_VehCtrSta : 33|2@1+ (1,0) [0|3] "" IBU_HS,ICU,vBDM
+ SG_ iHBAref_VehRtSta : 35|2@1+ (1,0) [0|3] "" IBU_HS,ICU,vBDM
+ SG_ iHBAref_ILLAmbtSta : 37|2@1+ (1,0) [0|3] "" IBU_HS,ICU,vBDM
+ SG_ FCA_Equip_MFC : 39|3@1+ (1,0) [0|0] "" ADAS_DRV,RR_C_RDR,vBDM
+ SG_ HBA_OptUsmSta : 42|2@1+ (1,0) [0|3] "" CLU,H_U_MM
+ SG_ FCAref_FusSta : 45|3@1+ (1,0) [0|0] "" vBDM
+ SG_ DAW_LVDA_PUDis : 48|2@1+ (1,0) [0|0] "" CLU,vBDM
+ SG_ DAW_LVDA_OptUsmSta : 50|2@1+ (1,0) [0|3] "" CLU,H_U_MM,vBDM
+ SG_ DAW_OptUsmSta : 52|3@1+ (1,0) [0|0] "" CLU,H_U_MM
+ SG_ DAW_SysSta : 55|4@1+ (1,0) [0|0] "" CLU
+ SG_ DAW_WrnMsgSta : 59|3@1+ (1,0) [0|0] "" CLU
+ SG_ DAW_TimeRstReq : 62|2@1+ (1,0) [0|0] "" CLU
+ SG_ DAW_SnstvtyModRetVal : 64|3@1+ (1,0) [0|0] "" CLU,H_U_MMz
+ SG_ FR_CMR_SCCEquipSta : 85|2@1+ (1,0) [0|3] "" CGW
+ SG_ FR_CMR_ReqADASMapMsgVal : 96|16@1+ (1,0) [0|65535] "" CGW
+ SG_ FR_CMR_SwVer1Val : 112|4@1+ (1,0) [0|15] "" CGW
+ SG_ FR_CMR_SwVer2Val : 120|8@1+ (1,0) [0|255] "" CGW
 
 BO_ 293 STEERING_SENSORS: 16 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -343,28 +371,23 @@ BO_ 426 CRUISE_BUTTONS_ALT: 16 XXX
  SG_ BYTE14 : 112|8@1+ (1,0) [0|255] "" XXX
  SG_ BYTE15 : 120|8@1+ (1,0) [0|255] "" XXX
 
-BO_ 437 CCNC_0x1B5: 32 CCNC
- SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
- SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
- SG_ LEFT : 24|2@1+ (1,0) [0|3] "" XXX
- SG_ LEFT_LDW : 27|1@0+ (1,0) [0|1] "" XXX
- SG_ LEFT_1 : 29|9@1+ (1,0) [0|511] "" XXX
- SG_ LEFT_2 : 38|5@1+ (1,0) [0|31] "" XXX
- SG_ LEFT_3 : 43|10@1- (1,0) [0|1023] "" XXX
- SG_ LEFT_4 : 64|16@1- (1,0) [0|65535] "" XXX
- SG_ LEFT_5 : 80|16@1- (1,0) [0|65535] "" XXX
- SG_ RIGHT : 96|2@1+ (1,0) [0|3] "" XXX
- SG_ RIGHT_LDW : 99|1@0+ (1,0) [0|1] "" XXX
- SG_ RIGHT_1 : 101|9@1+ (1,0) [0|511] "" XXX
- SG_ RIGHT_2 : 110|5@1+ (1,0) [0|31] "" XXX
- SG_ RIGHT_3 : 115|10@1- (1,0) [0|1023] "" XXX
- SG_ RIGHT_4 : 128|16@1- (1,0) [0|65535] "" XXX
- SG_ RIGHT_5 : 144|16@1- (1,0) [0|65535] "" XXX
- SG_ LEAD : 192|2@1+ (1,0) [0|3] "" XXX
- SG_ LEAD_1 : 194|6@1+ (1,0) [0|63] "" XXX
- SG_ LEAD_2 : 200|11@1- (1,0) [0|4095] "" XXX
- SG_ LEAD_3 : 211|1@0+ (1,0) [0|1] "" XXX
- SG_ LEAD_DISTANCE : 213|11@1+ (0.1,0) [0|204.7] "m" XXX
+BO_ 437 FR_CMR_03_50ms: 32 FR_CMR
+ SG_ FR_CMR_Crc3Val : 0|16@1+ (1,0) [0|65535] "" RR_C_RDR,CGW
+ SG_ FR_CMR_AlvCnt3Val : 16|8@1+ (1,0) [0|255] "" RR_C_RDR,CGW
+ SG_ Info_LftLnQualSta : 24|3@1+ (1,0) [0|7] "" RR_C_RDR,CGW
+ SG_ Info_LftLnDptSta : 27|2@1+ (1,0) [0|3] "" RR_C_RDR,CGW
+ SG_ Info_LftLnPosVal : 29|14@1- (0.0039625,0) [-32.4608|32.4568375] "m" RR_C_RDR,CGW
+ SG_ Info_LftLnHdingAnglVal : 43|10@1- (0.000976563,0) [-0.500000256|0.499023693] "rad" RR_C_RDR,CGW
+ SG_ Info_LftLnCvtrVal : 64|16@1- (1e-06,0) [-0.032768|0.032767] "1/m" CGW
+ SG_ Info_LftLnCrvtrDrvtvVal : 80|16@1- (4e-09,0) [-0.000131072|0.000131068] "1/m2" CGW
+ SG_ Info_RtLnQualSta : 96|3@1+ (1,0) [0|7] "" RR_C_RDR,CGW
+ SG_ Info_RtLnDptSta : 99|2@1+ (1,0) [0|3] "" RR_C_RDR,CGW
+ SG_ Info_RtLnPosVal : 101|14@1- (0.0039625,0) [-32.4608|32.4568375] "m" RR_C_RDR,CGW
+ SG_ Info_RtLnHdingAnglVal : 115|10@1- (0.000976563,0) [-0.500000256|0.499023693] "rad" RR_C_RDR,CGW
+ SG_ Info_RtLnCvtrVal : 128|16@1- (1,0) [0|65535] "" CGW
+ SG_ Info_RtLnCrvtrDrvtvVal : 144|16@1- (1,0) [0|65535] "" CGW
+ SG_ ID_CIPV : 192|7@1+ (1,0) [0|127] "" Dummy
+ SG_ Longitudinal_Distance : 212|12@1+ (0.05,0) [0|204.75] "m" Dummy
 
 BO_ 442 BLINDSPOTS_REAR_CORNERS: 24 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -449,18 +472,36 @@ BO_ 490 ADRV_0x1ea: 32 ADRV
  SG_ SET_ME_TMP_F : 232|5@1+ (1,0) [0|31] "" XXX
  SG_ SET_ME_TMP_F_2 : 240|5@1+ (1,0) [0|31] "" XXX
 
-BO_ 506 CLUSTER_SPEED_LIMIT: 32 XXX
- SG_ SPEED_LIMIT_1 : 39|7@0+ (1,0) [0|255] "" XXX
- SG_ SPEED_LIMIT_2 : 47|7@0+ (1,0) [0|255] "" XXX
- SG_ SECONDARY_LIMIT_1 : 79|8@0+ (1,0) [0|127] "" XXX
- SG_ SECONDARY_LIMIT_2 : 103|8@0+ (1,0) [0|127] "" XXX
- SG_ SPEED_LIMIT_3 : 119|8@0+ (1,0) [0|255] "" XXX
- SG_ ARROW_DOWN : 120|1@0+ (1,0) [0|1] "" XXX
- SG_ ARROW_UP : 121|1@0+ (1,0) [0|1] "" XXX
- SG_ CHIME_2 : 122|2@1+ (1,0) [0|7] "" XXX
- SG_ SPEED_CHANGE_BLINKING : 129|1@1+ (1,0) [0|3] "" XXX
- SG_ CHIME_1 : 133|1@0+ (1,0) [0|1] "" XXX
- SG_ SCHOOL_ZONE : 155|1@0+ (1,0) [0|1] "" XXX
+BO_ 506 FR_CMR_02_100ms: 32 FR_CMR
+ SG_ FR_CMR_Crc2Val : 0|16@1+ (1,0) [0|65535] "" CGW
+ SG_ FR_CMR_AlvCnt2Val : 16|8@1+ (1,0) [0|255] "" CGW
+ SG_ ISLW_OptUsmSta : 24|2@1+ (1,0) [0|3] "" CLU,CGW
+ SG_ ISLW_SysSta : 26|2@1+ (1,0) [0|3] "" CLU,CGW
+ SG_ ISLW_NoPassingInfoDis : 28|3@1+ (1,0) [0|7] "" CLU,CGW
+ SG_ ISLW_OvrlpSignDis : 31|2@1+ (1,0) [0|3] "" CLU,CGW
+ SG_ ISLW_SpdCluMainDis : 33|8@1+ (1,0) [0|255] "" CLU,CGW
+ SG_ ISLW_SpdNaviMainDis : 41|8@1+ (1,0) [0|255] "" CGW
+ SG_ ISLW_SubCondinfoSta1 : 49|4@1+ (1,0) [0|15] "" CLU,CGW
+ SG_ ISLW_SubCondinfoSta2 : 53|4@1+ (1,0) [0|15] "" CLU,CGW
+ SG_ ISLW_SpdCluSubMainDis : 64|8@1+ (1,0) [0|255] "" CLU
+ SG_ ISLW_SpdCluDisSubCond1 : 72|8@1+ (1,0) [0|255] "" CLU,CGW
+ SG_ ISLW_SpdCluDisSubCond2 : 80|8@1+ (1,0) [0|255] "" CLU,CGW
+ SG_ ISLW_SpdNaviSubMainDis : 88|8@1+ (1,0) [0|255] "" CLU
+ SG_ ISLW_SpdNaviDisSubCond1 : 96|8@1+ (1,0) [0|255] "" CLU,CGW
+ SG_ ISLW_SpdNaviDisSubCond2 : 104|8@1+ (1,0) [0|255] "" CLU,CGW
+ SG_ ISLA_SpdwOffst : 112|8@1+ (1,0) [0|255] "" CLU,CGW
+ SG_ ISLA_SwIgnoreReq : 120|2@1+ (1,0) [0|3] "" CGW
+ SG_ ISLA_SpdChgReq : 122|2@1+ (1,0) [0|3] "" CGW
+ SG_ ISLA_SpdWrn : 124|2@1+ (1,0) [0|3] "" CLU,CGW
+ SG_ ISLA_IcyWrn : 126|2@1+ (1,0) [0|3] "" CLU,CGW
+ SG_ ISLA_SymFlashMod : 128|3@1+ (1,0) [0|7] "" CLU,CGW
+ SG_ ISLA_Popup : 131|3@1+ (1,0) [0|7] "" CLU
+ SG_ ISLA_OptUsmSta : 136|3@1+ (1,0) [0|7] "" CLU,CGW
+ SG_ ISLA_OffstUsmSta : 139|3@1+ (1,0) [0|7] "" CLU,CGW
+ SG_ ISLA_AutoUsmSta : 142|2@1+ (1,0) [0|3] "" CLU,CGW
+ SG_ ISLA_Cntry : 144|4@1+ (1,0) [0|15] "" CLU,CGW
+ SG_ ISLA_AddtnlSign : 149|5@1+ (1,0) [0|31] "" CLU,CGW
+ SG_ ISLA_SchoolZone : 154|2@1+ (1,0) [0|3] "" CLU,CGW
 
 BO_ 507 CAM_0x1fb: 32 CAMERA
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -475,6 +516,49 @@ BO_ 512 ADRV_0x200: 8 ADRV
 BO_ 593 RADAR_0x251: 16 FRONT_RADAR
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
  SG_ COUNTER : 16|8@1+ (1,0) [0|255] "" XXX
+
+BO_ 687 HOD_FD_01_100ms: 8 XXX
+ SG_ HOD_Dir_Status : 18|3@0+ (1,0) [0|7] "" XXX
+ SG_ NEW_SIGNAL_2 : 32|8@1+ (1,0) [0|255] "" XXX
+ SG_ NEW_SIGNAL_3 : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ HOD_Option : 48|2@1+ (1,0) [0|255] "" XXX
+
+BO_ 698 FR_CMR_04_40ms: 32 FR_CMR
+ SG_ FR_CMR_Crc4Val : 0|16@1+ (1,0) [0|65535] "" Dummy
+ SG_ FR_CMR_AlvCnt4Val : 16|8@1+ (1,0) [0|255] "" Dummy
+ SG_ IFSref_FR_CMR_Sta : 24|2@1+ (1,0) [0|3] "" CGW
+ SG_ IFSref_VehNumVal : 26|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_ILLAmbtSta : 30|2@1+ (0.1,0) [0|0.3] "" CGW
+ SG_ IFSref_VehLftAngl1Val : 32|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl1Val : 41|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl2Val : 50|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehDst1Val : 59|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehRtAngl2Val : 64|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl3Val : 73|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl3Val : 82|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl4Val : 91|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl4Val : 100|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl5Val : 109|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl5Val : 118|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl6Val : 128|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl6Val : 137|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl7Val : 146|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl7Val : 155|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl8Val : 164|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl8Val : 173|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl9Val : 182|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl9Val : 192|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehLftAngl10Val : 201|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehRtAngl10Val : 210|9@1+ (0.1,-25) [-25|26.1] "Deg" CGW
+ SG_ IFSref_VehDst2Val : 219|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst3Val : 223|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst4Val : 227|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst5Val : 231|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst6Val : 235|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst7Val : 239|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst8Val : 243|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst9Val : 247|4@1+ (1,0) [0|15] "" CGW
+ SG_ IFSref_VehDst10Val : 251|4@1+ (1,0) [0|15] "" CGW
 
 BO_ 736 MANUAL_SPEED_LIMIT_ASSIST: 32 XXX
  SG_ CHECKSUM : 0|16@1+ (1,0) [0|65535] "" XXX
@@ -591,9 +675,16 @@ BO_ 1264 LOCAL_TIME: 8 XXX
 
 CM_ SG_ 96 BRAKE_PRESSURE "User applied brake pedal pressure. Ramps from computer applied pressure on falling edge of cruise. Cruise cancels if !=0";
 CM_ SG_ 101 BRAKE_POSITION "User applied brake pedal position, max is ~700. Signed on some vehicles";
+CM_ SG_ 203 ADAS_ActvACISta "ADAS Active AngleControlInterface State";
+CM_ SG_ 203 ADAS_ActvACILvl2Sta "ADAS Active AngleControlInterface Level 2 State";
+CM_ SG_ 203 ADAS_StrAnglReqVal "(LFA) ADAS Steering Angle Request Value; Capped at 119.9;";
+CM_ SG_ 203 ADAS_ACIAnglTqRedcGainVal "(LFA) ADAS AngleControlInterface Angle Torque Reduction Gain Value";
+CM_ SG_ 203 FCA_ESA_ActvSta "FCA_ESA Active State";
+CM_ SG_ 203 FCA_ESA_TqBstGainVal "FCA_ESA Torque Boost Gain Value";
 CM_ BO_ 272 "Alternative LKAS message, used on cars such as 2023 Ioniq 6, 2nd gen Kona. Matches LKAS except size is 32 bytes";
 CM_ SG_ 272 LKA_AVAILABLE "Angle control cars: 3 when LKA is generally available, goes to 0 during changes with LFA";
-CM_ SG_ 272 LKAS_ANGLE_CMD "tracks MDPS->STEERING_ANGLE when not engaged, not STEERING_SENSORS->STEERING_ANGLE";
+CM_ SG_ 272 ADAS_StrAnglReqVal "(LKAS) ADAS Steering Angle Request Value; Capped at 176.7; tracks MDPS->STEERING_ANGLE when not engaged, not STEERING_SENSORS->STEERING_ANGLE";
+CM_ SG_ 272 ADAS_ACIAnglTqRedcGainVal "(LKAS) ADAS AngleControlInterface Angle Torque Reduction Gain Value";
 CM_ SG_ 298 NEW_SIGNAL_4 "todo: figure out why always set to 9";
 CM_ SG_ 352 SET_ME_9 "has something to do with AEB settings";
 CM_ SG_ 373 ACCEnable "Likely a copy of CAN's TCS13->ACCEnable";
@@ -602,6 +693,7 @@ CM_ SG_ 373 DriverBrakingLowSens "Higher threshold version of DriverBraking";
 CM_ SG_ 373 PROBABLY_EQUIP "aeb equip?";
 CM_ SG_ 416 VSetDis "set speed in display units";
 CM_ SG_ 480 NEW_SIGNAL_5 "todo: figure out why always set to 1";
+CM_ SG_ 687 HOD_Dir_Status "This signal indicates the status of hands on/off";
 CM_ SG_ 736 MAX_SPEED "Display units. Restricts car from driving above this speed unless accelerator pedal is depressed beyond pressure point";
 CM_ BO_ 866 "Contains signals with detailed lane line information. Used by ADAS ECU on HDA 2 vehicles to operate LFA. Used on cars that use message 272.";
 CM_ SG_ 866 LEFT_LANE_LINE "Left lane line confidence";
@@ -616,10 +708,29 @@ VAL_ 64 GEAR 0 "P" 5 "D" 6 "N" 7 "R";
 VAL_ 69 GEAR 0 "P" 5 "D" 6 "N" 7 "R";
 VAL_ 96 TRACTION_AND_STABILITY_CONTROL 0 "On" 5 "Limited" 1 "Off";
 VAL_ 112 GEAR 0 "P" 5 "D" 6 "N" 7 "R";
+VAL_ 203 ADAS_ActvACISta 0 "INIT" 1 "INACTIVE" 2 "ACTIVE35(ACTIVE)" 3 "ACTIVE33(Redundancy)" 4 "RESERVED" 5 "RESERVED" 6 "RESERVED" 7 "RESERVED" 8 "RESERVED" 9 "RESERVED" 10 "RESERVED" 11 "RESERVED" 12 "RESERVED" 13 "RESERVED" 14 "RESERVED" 15 "RESERVED";
+VAL_ 203 ADAS_ActvACILvl2Sta 0 "INIT" 1 "INACTIVE" 2 "ACTIVE35(ACTIVE)" 3 "RESERVED" 4 "RESERVED" 5 "RESERVED" 6 "RESERVED" 7 "RESERVED" 8 "RESERVED" 9 "RESERVED" 10 "RESERVED" 11 "RESERVED" 12 "RESERVED" 13 "RESERVED" 14 "RESERVED" 15 "RESERVED";
+VAL_ 203 ADAS_StrAnglReqVal 0 "0x0x000~0x3FFF:Real Values" 16383 "0x0x000~0x3FFF:Real Values";
+VAL_ 203 ADAS_ACIAnglTqRedcGainVal 0 "0x0x00~0xFA:Real Values" 250 "0x0x00~0xFA:Real Values" 251 "RESERVED" 252 "RESERVED" 253 "RESERVED" 254 "RESERVED" 255 "RESERVED";
+VAL_ 203 FCA_ESA_ActvSta 0 "Inactive" 1 "Active" 2 "RESERVED" 3 "RESERVED";
+VAL_ 203 FCA_ESA_TqBstGainVal 0 "0x0x00~0xFA:Real Values" 250 "0x0x00~0xFA:Real Values" 251 "RESERVED" 252 "RESERVED" 253 "RESERVED" 254 "RESERVED" 255 "RESERVED";
 VAL_ 234 LKA_FAULT 0 "ok" 1 "lka fault";
 VAL_ 272 LKA_MODE 1 "warning only" 2 "assist" 6 "off";
 VAL_ 272 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green";
 VAL_ 272 LKAS_ANGLE_ACTIVE 0 "off" 1 "not active" 2 "active";
+VAL_ 282 HBA_SysOptSta 0 "None HBA Option (Default)" 1 "HBA Option" 2 "Reserved" 3 "Error indicator";
+VAL_ 282 HBA_SysSta 0 "HBA Disable" 1 "HBA Enable & High Beam Off" 2 "HBA Enable & High Beam On" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "System Fail";
+VAL_ 282 HBA_IndLmpReq 0 "HBA Indicator Lamp Off" 1 "HBA Indicator Lamp On" 2 "Reserved" 3 "Error indicator";
+VAL_ 282 FCA_Equip_MFC 0 "No Coding" 1 "Sensor Fusion FCA" 2 "Camera only FCA" 3 "No FCA Option" 4 "ADAS_DRV Option" 5 "Reserved" 6 "Not used" 7 "Error indicator";
+VAL_ 282 HBA_OptUsmSta 0 "None HBA Option (Default)" 1 "HBA Function Off" 2 "HBA Function On" 3 "Invalid (Fail)";
+VAL_ 282 DAW_LVDA_PUDis 0 "Default" 1 "Display “Leading vehicle departure alert”" 2 "Reserved" 3 "Error indicator";
+VAL_ 282 DAW_LVDA_OptUsmSta 0 "No Option (default)" 1 "Off" 2 "On" 3 "Error Indicator";
+VAL_ 282 DAW_OptUsmSta 0 "None DAW Option (Default)" 1 "System Off" 2 "System On" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid (Gray)";
+VAL_ 282 DAW_SysSta 0 "System Off" 1 "Attention Level  1" 2 "Attention Level  2" 3 "Attention Level  3" 4 "Attention Level  4" 5 "Attention Level  5" 6 "Reserved" 7 "Reserved" 8 "Reserved" 9 "Reserved" 10 "Reserved" 11 "Reserved" 12 "Reserved" 13 "Reserved" 14 "System Standby" 15 "System Fail";
+VAL_ 282 DAW_WrnMsgSta 0 "No Warning" 1 "Rest Recommend Warning" 2 "Hands-Off TMS call request" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Error indicator";
+VAL_ 282 DAW_TimeRstReq 0 "No signal" 1 "Time reset" 2 "Reserved" 3 "Error indicator";
+VAL_ 282 DAW_SnstvtyModRetVal 0 "Default" 1 "Late" 2 "Normal" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid";
+VAL_ 282 FR_CMR_SCCEquipSta 0 "Not Applied" 1 "Applied" 2 "Not used" 3 "Error Indicator";
 VAL_ 298 LKA_MODE 1 "warning only" 2 "assist" 6 "off";
 VAL_ 298 LKA_ICON 0 "hidden" 1 "grey" 2 "green" 3 "flashing green";
 VAL_ 304 PARK_BUTTON 1 "Pressed" 2 "Not Pressed";
@@ -693,9 +804,75 @@ VAL_ 362 BLINKER_CONTROL 1 "hazards" 2 "hazards button backlight" 3 "left blinke
 VAL_ 373 ACCEnable 0 "SCC ready" 1 "SCC temp fault" 2 "SCC permanent fault" 3 "SCC permanent fault, communication issue";
 VAL_ 416 ACCMode 0 "off" 1 "enabled" 2 "driver_override" 3 "off_maybe_fault" 4 "cancelled";
 VAL_ 426 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume";
+VAL_ 437 Info_LftLnQualSta 0 "Very Low Quality" 1 "Low Quality" 2 "High Quality" 3 "Very High Quality" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Error indicator";
+VAL_ 437 Info_LftLnDptSta 0 "No Left Line Departure" 1 "Left Line Departure" 2 "Reserved" 3 "Error Indicator";
+VAL_ 437 Info_RtLnQualSta 0 "Very Low Quality" 1 "Low Quality" 2 "High Quality" 3 "Very High Quality" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Error indicator";
+VAL_ 437 Info_RtLnDptSta 0 "No Right Line Departure" 1 "Right Line Departure" 2 "Reserved" 3 "Error Indicator";
+VAL_ 437 Info_RtLnCvtrVal 65534 "Reserved" 65535 "Error indicator";
 VAL_ 463 CRUISE_BUTTONS 0 "none" 1 "res_accel" 2 "set_decel" 3 "gap_distance" 4 "pause_resume";
 VAL_ 463 RIGHT_PADDLE 0 "Not Pulled" 1 "Pulled";
 VAL_ 463 LEFT_PADDLE 0 "Not Pulled" 1 "Pulled";
+VAL_ 506 ISLW_OptUsmSta 0 "None ISLW Option (Default)" 1 "System Disabled by USM" 2 "System Enable by USM" 3 "Invalid";
+VAL_ 506 ISLW_SysSta 0 "Normal (Default)" 1 "System Fail" 2 "ISLW Temporary Unavailable" 3 "Reserved";
+VAL_ 506 ISLW_NoPassingInfoDis 0 "None Display (Default)" 1 "LHD No Passing Zone Display" 2 "RHD No Passing Zone Display" 3 "Reserved" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid";
+VAL_ 506 ISLW_OvrlpSignDis 0 "None (Default)" 1 "Overlap Sign" 2 "Reserved" 3 "Error indicator";
+VAL_ 506 ISLW_SpdCluMainDis 0 "No Recognition (Default)" 253 "Unlimited Speed" 254 "Reserved" 255 "Invalid";
+VAL_ 506 ISLW_SpdNaviMainDis 0 "No Recognition (Default)" 253 "Unlimited Speed" 254 "Reserved" 255 "Invalid";
+VAL_ 506 ISLW_SubCondinfoSta1 0 "None (Default)" 1 "Rain" 2 "Snow" 3 "Snow&Rain" 4 "Trailer" 5 "Reserved" 6 "Reserved" 7 "Reserved" 8 "Reserved" 9 "Reserved" 10 "Reserved" 11 "Reserved" 12 "Reserved" 13 "Reserved" 14 "Generic" 15 "Invalid";
+VAL_ 506 ISLW_SubCondinfoSta2 0 "None (Default)" 1 "Rain" 2 "Snow" 3 "Snow&Rain" 4 "Trailer" 5 "Reserved" 6 "Reserved" 7 "Reserved" 8 "Reserved" 9 "Reserved" 10 "Reserved" 11 "Reserved" 12 "Reserved" 13 "Reserved" 14 "Generic" 15 "Invalid";
+VAL_ 506 ISLW_SpdCluSubMainDis 0 "No Recognition (Default)" 253 "Unlimited Speed" 254 "Reserved" 255 "Invalid";
+VAL_ 506 ISLW_SpdCluDisSubCond1 0 "No Recognition (Default)" 253 "LHD Conditional No Passing ZONE" 254 "RHD Conditional No Passing ZONE" 255 "Invalid";
+VAL_ 506 ISLW_SpdCluDisSubCond2 0 "No Recognition (Default)" 253 "LHD Conditional No Passing ZONE" 254 "RHD Conditional No Passing ZONE" 255 "Invalid";
+VAL_ 506 ISLW_SpdNaviSubMainDis 0 "No Recognition (Default)" 253 "Unlimited Speed" 254 "Reserved" 255 "Invalid";
+VAL_ 506 ISLW_SpdNaviDisSubCond1 0 "No Recognition (Default)" 253 "LHD Conditional No Passing ZONE" 254 "RHD Conditional No Passing ZONE" 255 "Invalid";
+VAL_ 506 ISLW_SpdNaviDisSubCond2 0 "No Recognition (Default)" 253 "LHD Conditional No Passing ZONE" 254 "RHD Conditional No Passing ZONE" 255 "Invalid";
+VAL_ 506 ISLA_SpdwOffst 0 "No Recognition" 253 "Unlimited Speed" 254 "Reserved" 255 "Invalid";
+VAL_ 506 ISLA_SwIgnoreReq 0 "Allow All Switch Inputs (default)" 1 "-(SET) Switch Input Ignore" 2 "+(SET) Switch Input Ignore" 3 "-(SET) & +(SET) Switch Inputs Ignore";
+VAL_ 506 ISLA_SpdChgReq 0 "Default" 1 "Speed Change Request" 2 "Reserved" 3 "Reserved";
+VAL_ 506 ISLA_SpdWrn 0 "No Warning" 1 "Warning" 2 "Reserved" 3 "Reserved";
+VAL_ 506 ISLA_IcyWrn 0 "No Warning" 1 "Warning" 2 "Reserved" 3 "Reserved";
+VAL_ 506 ISLA_SymFlashMod 0 "No Flasing" 1 "Flashing Sign" 2 "Flashing - Arrow Symbol" 3 "Flashing + Arrow Symbol" 4 "Flashing Auto Symbol" 5 "Reserved" 6 "Reserved" 7 "Reserved";
+VAL_ 506 ISLA_Popup 0 "No Popup" 1 "MSLA Speed will Change" 2 "MSLA Speed has Changed" 3 "CC_SCC Speed will Change" 4 "CC_SCC Speed has Changed" 5 "Reserved" 6 "Reserved" 7 "Reserved";
+VAL_ 506 ISLA_OptUsmSta 0 "None ISLA Option (속도 제한 메뉴 삭제)" 1 "Off" 2 "Warning" 3 "Assist" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Invalid (GRAY)";
+VAL_ 506 ISLA_OffstUsmSta 0 "None Offset Function" 1 "-10kph or -5mph" 2 "-5kph or -3mph" 3 "0kph or 0mph" 4 "+5kph or +3mph" 5 "+10kph or +5mph" 6 "Reserved" 7 "Invalid (GRAY)";
+VAL_ 506 ISLA_AutoUsmSta 0 "None Auto Function (Delete Menu)" 1 "Auto Off" 2 "Auto On" 3 "Invalid (GRAY)";
+VAL_ 506 ISLA_Cntry 0 "Europe/Russia/Australia" 1 "Domestic" 2 "China" 3 "USA" 4 "Canada" 5 "Australia" 6 "Reserved" 7 "Reserved" 8 "Reserved" 9 "Reserved" 10 "Reserved" 11 "Reserved" 12 "Reserved" 13 "Reserved" 14 "Reserved" 15 "Initial Value (default)";
+VAL_ 506 ISLA_AddtnlSign 0 "No Recognition (default)" 1 "School Crossing" 16 "Do Not Pass" 17 "Reserved" 18 "Reserved" 19 "Reserved" 20 "Reserved" 21 "Reserved" 22 "Reserved" 23 "Reserved" 24 "Exit" 25 "Roundabout" 26 "Right Curve" 27 "Left Curve" 28 "Winding Road" 29 "Reserved" 30 "Reserved" 31 "Reserved" 2 "Pedestrian Crossing" 3 "Bicycle Crossing" 4 "Reserved" 5 "Reserved" 6 "Reserved" 7 "Reserved" 8 "Stop" 9 "Yield" 10 "Stop Ahead" 11 "Yield Ahead" 12 "Road Construction Ahead" 13 "Lane Reduction" 14 "Reserved" 15 "Reserved";
+VAL_ 506 ISLA_SchoolZone 0 "No School Zone" 1 "School Zone" 2 "Reserved" 3 "Reserved";
+VAL_ 687 HOD_Dir_Status 0 "HANDS OFF" 1 "HAND TOUCH (SOFT)" 2 "HAND TOUCH (STRONG)" 3 "HAND GRIP (SOFT)" 4 "HAND GRIP (STRONG)" 5 "RESERVED" 6 "RESERVED";
+VAL_ 698 IFSref_FR_CMR_Sta 0 "None Option (Default)" 1 "Normal" 2 "Blockage Status" 3 "Error Indicator";
+VAL_ 698 IFSref_VehNumVal 0 "No vehicle" 1 "Number of vehicles" 2 "Number of vehicles" 3 "Number of vehicles" 4 "Number of vehicles" 5 "Number of vehicles" 6 "Number of vehicles" 7 "Number of vehicles" 8 "Number of vehicles" 9 "Number of vehicles" 10 "Number of vehicles" 11 "Over than 10 vehicles" 12 "Reserved" 13 "Reserved" 14 "Default" 15 "Error indicator";
+VAL_ 698 IFSref_ILLAmbtSta 0 "Bright" 1 "Dark" 2 "Not used" 3 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl1Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl1Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl2Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehDst1Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl2Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl3Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl3Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl4Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl4Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl5Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl5Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl6Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl6Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl7Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl7Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl8Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl8Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl9Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl9Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehLftAngl10Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehRtAngl10Val 501 "Not used" 502 "Not used" 503 "Not used" 504 "Not used" 505 "Not used" 506 "Not used" 507 "Not used" 508 "Not used" 509 "Not used" 510 "Default" 511 "Error indicator";
+VAL_ 698 IFSref_VehDst2Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst3Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst4Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst5Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst6Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst7Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst8Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst9Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
+VAL_ 698 IFSref_VehDst10Val 0 "No Value" 1 "1~10m" 2 "11~20m" 3 "21~30m" 4 "31~40m" 5 "41~50m" 6 "51~60m" 7 "61~70m" 8 "71~80m" 9 "81~90m" 10 "91~100m" 11 "101~200m" 12 "201~300m" 13 "301~400m" 14 "401m~" 15 "Error indicator";
 VAL_ 736 MSLA_STATUS 0 "disabled" 1 "active" 2 "paused";
 VAL_ 866 LEFT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";
 VAL_ 866 RIGHT_LANE_LINE 0 "Not Detected" 1 "Low Confidence" 2 "Medium Confidence" 3 "High Confidence";

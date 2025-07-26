@@ -89,7 +89,7 @@ def get_output(s:str, n_threads:int=1):
     "s_waitcnt 0",
     "global_store_b32 v0, v1, s[0:1]",
     "s_nop 0", "s_sendmsg sendmsg(MSG_DEALLOC_VGPRS)", "s_endpgm"])
-  test = Tensor.zeros((n_threads,), dtype=dtypes.uint32).contiguous().realize().lazydata.buffer
+  test = Tensor.zeros((n_threads,), dtype=dtypes.uint32).contiguous().realize().uop.buffer
   prg = get_prg(code, 32, 32)
   prg(test._buf, global_size=(1, 1, 1), local_size=(n_threads, 1, 1), wait=True)
   return test.numpy()

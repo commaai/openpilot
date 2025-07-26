@@ -29,29 +29,29 @@ bool volkswagen_resume_button_prev = false;
 #define MSG_MOTOR_14         0x3BE   // RX from ECU, for brake switch status
 
 
-static uint32_t volkswagen_mqb_meb_get_checksum(const CANPacket_t *to_push) {
-  return (uint8_t)GET_BYTE(to_push, 0);
+static uint32_t volkswagen_mqb_meb_get_checksum(const CANPacket_t *msg) {
+  return (uint8_t)GET_BYTE(msg, 0);
 }
 
-static uint8_t volkswagen_mqb_meb_get_counter(const CANPacket_t *to_push) {
+static uint8_t volkswagen_mqb_meb_get_counter(const CANPacket_t *msg) {
   // MQB/MEB message counters are consistently found at LSB 8.
-  return (uint8_t)GET_BYTE(to_push, 1) & 0xFU;
+  return (uint8_t)GET_BYTE(msg, 1) & 0xFU;
 }
 
-static uint32_t volkswagen_mqb_meb_compute_crc(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-  int len = GET_LEN(to_push);
+static uint32_t volkswagen_mqb_meb_compute_crc(const CANPacket_t *msg) {
+  int addr = GET_ADDR(msg);
+  int len = GET_LEN(msg);
 
-  // This is CRC-8H2F/AUTOSAR with a twist. See the OpenDBC implementation
+  // This is CRC-8H2F/AUTOSAR with a twist. See the opendbc/car/volkswagen/ implementation
   // of this algorithm for a version with explanatory comments.
 
   uint8_t crc = 0xFFU;
   for (int i = 1; i < len; i++) {
-    crc ^= (uint8_t)GET_BYTE(to_push, i);
+    crc ^= (uint8_t)GET_BYTE(msg, i);
     crc = volkswagen_crc8_lut_8h2f[crc];
   }
 
-  uint8_t counter = volkswagen_mqb_meb_get_counter(to_push);
+  uint8_t counter = volkswagen_mqb_meb_get_counter(msg);
   if (addr == MSG_LH_EPS_03) {
     crc ^= (uint8_t[]){0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5, 0xF5}[counter];
   } else if (addr == MSG_ESP_05) {

@@ -8,3 +8,8 @@ Quick start:
 * set `SCALE=1.5` to scale the entire UI by 1.5x
 * https://www.raylib.com/cheatsheet/cheatsheet.html
 * https://electronstudio.github.io/raylib-python-cffi/README.html#quickstart
+
+Style guide:
+* All graphical elements should subclass [`Widget`](/system/ui/widgets/__init__.py).
+  * Prefer a stateful widget over a function for easy migration from QT
+* All internal class variables and functions should be prefixed with `_`

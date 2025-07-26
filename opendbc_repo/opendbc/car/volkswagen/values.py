@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
-from opendbc.can.can_define import CANDefine
+from opendbc.can import CANDefine
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
@@ -140,6 +140,7 @@ class VolkswagenSafetyFlags(IntFlag):
 class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
+  KOMBI_PRESENT = 4
 
   # Static flags
   PQ = 2
@@ -324,7 +325,7 @@ class CAR(Platforms):
     wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_TAOS_MK1 = VolkswagenMQBPlatformConfig(
-    [VWCarDocs("Volkswagen Taos 2022-23")],
+    [VWCarDocs("Volkswagen Taos 2022-24")],
     VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
     chassis_codes={"B2"},
     wmis={WMI.VOLKSWAGEN_MEXICO_SUV, WMI.VOLKSWAGEN_ARGENTINA},
@@ -337,7 +338,7 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Tiguan 2018-23"),
+      VWCarDocs("Volkswagen Tiguan 2018-24"),
       VWCarDocs("Volkswagen Tiguan eHybrid 2021-23"),
     ],
     VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
@@ -383,7 +384,7 @@ class CAR(Platforms):
     wmis={WMI.AUDI_GERMANY_CAR},
   )
   AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig(
-    [VWCarDocs("Audi Q3 2019-23")],
+    [VWCarDocs("Audi Q3 2019-24")],
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
     chassis_codes={"8U", "F3", "FS"},
     wmis={WMI.AUDI_EUROPE_MPV, WMI.AUDI_GERMANY_CAR},

@@ -52,24 +52,24 @@ static int hyundai_canfd_get_lka_addr(void) {
   return hyundai_canfd_lka_steering_alt ? 0x110 : 0x50;
 }
 
-static uint8_t hyundai_canfd_get_counter(const CANPacket_t *to_push) {
+static uint8_t hyundai_canfd_get_counter(const CANPacket_t *msg) {
   uint8_t ret = 0;
-  if (GET_LEN(to_push) == 8U) {
-    ret = GET_BYTE(to_push, 1) >> 4;
+  if (GET_LEN(msg) == 8U) {
+    ret = GET_BYTE(msg, 1) >> 4;
   } else {
-    ret = GET_BYTE(to_push, 2);
+    ret = GET_BYTE(msg, 2);
   }
   return ret;
 }
 
-static uint32_t hyundai_canfd_get_checksum(const CANPacket_t *to_push) {
-  uint32_t chksum = GET_BYTE(to_push, 0) | (GET_BYTE(to_push, 1) << 8);
+static uint32_t hyundai_canfd_get_checksum(const CANPacket_t *msg) {
+  uint32_t chksum = GET_BYTE(msg, 0) | (GET_BYTE(msg, 1) << 8);
   return chksum;
 }
 
-static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
+static void hyundai_canfd_rx_hook(const CANPacket_t *msg) {
+  int bus = GET_BUS(msg);
+  int addr = GET_ADDR(msg);
 
   const int pt_bus = hyundai_canfd_lka_steering ? 1 : 0;
   const int scc_bus = hyundai_camera_scc ? 2 : pt_bus;
@@ -77,7 +77,7 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
   if (bus == pt_bus) {
     // driver torque
     if (addr == 0xea) {
-      int torque_driver_new = ((GET_BYTE(to_push, 11) & 0x1fU) << 8U) | GET_BYTE(to_push, 10);
+      int torque_driver_new = ((GET_BYTE(msg, 11) & 0x1fU) << 8U) | GET_BYTE(msg, 10);
       torque_driver_new -= 4095;
       update_sample(&torque_driver, torque_driver_new);
     }
@@ -88,36 +88,36 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
       bool main_button = false;
       int cruise_button = 0;
       if (addr == 0x1cf) {
-        cruise_button = GET_BYTE(to_push, 2) & 0x7U;
-        main_button = GET_BIT(to_push, 19U);
+        cruise_button = GET_BYTE(msg, 2) & 0x7U;
+        main_button = GET_BIT(msg, 19U);
       } else {
-        cruise_button = (GET_BYTE(to_push, 4) >> 4) & 0x7U;
-        main_button = GET_BIT(to_push, 34U);
+        cruise_button = (GET_BYTE(msg, 4) >> 4) & 0x7U;
+        main_button = GET_BIT(msg, 34U);
       }
       hyundai_common_cruise_buttons_check(cruise_button, main_button);
     }
 
     // gas press, different for EV, hybrid, and ICE models
     if ((addr == 0x35) && hyundai_ev_gas_signal) {
-      gas_pressed = GET_BYTE(to_push, 5) != 0U;
+      gas_pressed = GET_BYTE(msg, 5) != 0U;
     } else if ((addr == 0x105) && hyundai_hybrid_gas_signal) {
-      gas_pressed = GET_BIT(to_push, 103U) || (GET_BYTE(to_push, 13) != 0U) || GET_BIT(to_push, 112U);
+      gas_pressed = GET_BIT(msg, 103U) || (GET_BYTE(msg, 13) != 0U) || GET_BIT(msg, 112U);
     } else if ((addr == 0x100) && !hyundai_ev_gas_signal && !hyundai_hybrid_gas_signal) {
-      gas_pressed = GET_BIT(to_push, 176U);
+      gas_pressed = GET_BIT(msg, 176U);
     } else {
     }
 
     // brake press
     if (addr == 0x175) {
-      brake_pressed = GET_BIT(to_push, 81U);
+      brake_pressed = GET_BIT(msg, 81U);
     }
 
     // vehicle moving
     if (addr == 0xa0) {
-      uint32_t fl = (GET_BYTES(to_push, 8, 2)) & 0x3FFFU;
-      uint32_t fr = (GET_BYTES(to_push, 10, 2)) & 0x3FFFU;
-      uint32_t rl = (GET_BYTES(to_push, 12, 2)) & 0x3FFFU;
-      uint32_t rr = (GET_BYTES(to_push, 14, 2)) & 0x3FFFU;
+      uint32_t fl = (GET_BYTES(msg, 8, 2)) & 0x3FFFU;
+      uint32_t fr = (GET_BYTES(msg, 10, 2)) & 0x3FFFU;
+      uint32_t rl = (GET_BYTES(msg, 12, 2)) & 0x3FFFU;
+      uint32_t rr = (GET_BYTES(msg, 14, 2)) & 0x3FFFU;
       vehicle_moving = (fl > HYUNDAI_STANDSTILL_THRSLD) || (fr > HYUNDAI_STANDSTILL_THRSLD) ||
                        (rl > HYUNDAI_STANDSTILL_THRSLD) || (rr > HYUNDAI_STANDSTILL_THRSLD);
 
@@ -130,14 +130,14 @@ static void hyundai_canfd_rx_hook(const CANPacket_t *to_push) {
     // cruise state
     if ((addr == 0x1a0) && !hyundai_longitudinal) {
       // 1=enabled, 2=driver override
-      int cruise_status = ((GET_BYTE(to_push, 8) >> 4) & 0x7U);
+      int cruise_status = ((GET_BYTE(msg, 8) >> 4) & 0x7U);
       bool cruise_engaged = (cruise_status == 1) || (cruise_status == 2);
       hyundai_common_cruise_state_check(cruise_engaged);
     }
   }
 }
 
-static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
+static bool hyundai_canfd_tx_hook(const CANPacket_t *msg) {
   const TorqueSteeringLimits HYUNDAI_CANFD_STEERING_LIMITS = {
     .max_torque = 270,
     .max_rt_delta = 112,
@@ -156,13 +156,13 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
   };
 
   bool tx = true;
-  int addr = GET_ADDR(to_send);
+  int addr = GET_ADDR(msg);
 
   // steering
   const int steer_addr = (hyundai_canfd_lka_steering && !hyundai_longitudinal) ? hyundai_canfd_get_lka_addr() : 0x12a;
   if (addr == steer_addr) {
-    int desired_torque = (((GET_BYTE(to_send, 6) & 0xFU) << 7U) | (GET_BYTE(to_send, 5) >> 1U)) - 1024U;
-    bool steer_req = GET_BIT(to_send, 52U);
+    int desired_torque = (((GET_BYTE(msg, 6) & 0xFU) << 7U) | (GET_BYTE(msg, 5) >> 1U)) - 1024U;
+    bool steer_req = GET_BIT(msg, 52U);
 
     if (steer_torque_cmd_checks(desired_torque, steer_req, HYUNDAI_CANFD_STEERING_LIMITS)) {
       tx = false;
@@ -171,7 +171,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
 
   // cruise buttons check
   if (addr == 0x1cf) {
-    int button = GET_BYTE(to_send, 2) & 0x7U;
+    int button = GET_BYTE(msg, 2) & 0x7U;
     bool is_cancel = (button == HYUNDAI_BTN_CANCEL);
     bool is_resume = (button == HYUNDAI_BTN_RESUME);
 
@@ -183,15 +183,15 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
 
   // UDS: only tester present ("\x02\x3E\x80\x00\x00\x00\x00\x00") allowed on diagnostics address
   if (((addr == 0x730) && hyundai_canfd_lka_steering) || ((addr == 0x7D0) && !hyundai_camera_scc)) {
-    if ((GET_BYTES(to_send, 0, 4) != 0x00803E02U) || (GET_BYTES(to_send, 4, 4) != 0x0U)) {
+    if ((GET_BYTES(msg, 0, 4) != 0x00803E02U) || (GET_BYTES(msg, 4, 4) != 0x0U)) {
       tx = false;
     }
   }
 
   // ACCEL: safety check
   if (addr == 0x1a0) {
-    int desired_accel_raw = (((GET_BYTE(to_send, 17) & 0x7U) << 8) | GET_BYTE(to_send, 16)) - 1023U;
-    int desired_accel_val = ((GET_BYTE(to_send, 18) << 4) | (GET_BYTE(to_send, 17) >> 4)) - 1023U;
+    int desired_accel_raw = (((GET_BYTE(msg, 17) & 0x7U) << 8) | GET_BYTE(msg, 16)) - 1023U;
+    int desired_accel_val = ((GET_BYTE(msg, 18) << 4) | (GET_BYTE(msg, 17) >> 4)) - 1023U;
 
     bool violation = false;
 
@@ -200,7 +200,7 @@ static bool hyundai_canfd_tx_hook(const CANPacket_t *to_send) {
       violation |= longitudinal_accel_checks(desired_accel_val, HYUNDAI_LONG_LIMITS);
     } else {
       // only used to cancel on here
-      const int acc_mode = (GET_BYTE(to_send, 8) >> 4) & 0x7U;
+      const int acc_mode = (GET_BYTE(msg, 8) >> 4) & 0x7U;
       if (acc_mode != 4) {
         violation = true;
       }

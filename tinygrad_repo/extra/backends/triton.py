@@ -2,7 +2,7 @@ from typing import Dict, List, Final, Callable, DefaultDict
 from collections import defaultdict
 from tinygrad.uop.ops import UnaryOps, BinaryOps, TernaryOps, Op
 from tinygrad.helpers import DType, PtrDType, dtypes, ImageDType, DEBUG, getenv
-from tinygrad.codegen.kernel import  UOp, Ops
+from tinygrad.opt.kernel import  UOp, Ops
 from triton.compiler import compile as triton_compile
 import linecache
 import math
@@ -88,7 +88,7 @@ def uops_to_triton(function_name:str, uops:List[UOp]):
       assert dtype is not None
       if len(vin) == 2: kk(f"{ssa(u, 'val')} = {render_cast(f'tl.load({r[vin[0]]} + { fill_dims_for_idx(r[vin[1]], dims)}, mask = {render_valid(valid)})', dtype)}")
       else: kk(f"{ssa(u, 'val')} = {render_cast(f'tl.where({r[vin[2]]}, tl.load({r[vin[0]]}+{fill_dims_for_idx(r[vin[1]],dims)} , mask={render_valid(valid+[r[vin[2]]])}), 0.0)', dtype)}")
-    elif uop == Ops.DEFINE_ACC: kk(f"{ssa(u, 'acc')} = {define_scalar(local_size, dtype, args).replace('//', '/')}")
+    elif uop == Ops.DEFINE_REG: kk(f"{ssa(u, 'acc')} = {define_scalar(local_size, dtype, args).replace('//', '/')}")
     elif uop == Ops.CONST: r[u] = define_scalar([], dtype, args)
     elif uop == Ops.ASSIGN:
       kk(f"{r[vin[0]]} = {r[vin[1]].replace('//', '/')}")

@@ -84,27 +84,27 @@
     </message>
     <message>
         <source>Prevent large data uploads when on a metered cellular connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Evite cargas de grandes cantidades de datos cuando utilice una conexión celular medida</translation>
     </message>
     <message>
         <source>default</source>
-        <translation type="unfinished"></translation>
+        <translation>por defecto</translation>
     </message>
     <message>
         <source>metered</source>
-        <translation type="unfinished"></translation>
+        <translation>medido</translation>
     </message>
     <message>
         <source>unmetered</source>
-        <translation type="unfinished"></translation>
+        <translation>sin medidor</translation>
     </message>
     <message>
         <source>Wi-Fi Network Metered</source>
-        <translation type="unfinished"></translation>
+        <translation>Red Wi-Fi medida</translation>
     </message>
     <message>
         <source>Prevent large data uploads when on a metered Wi-Fi connection</source>
-        <translation type="unfinished"></translation>
+        <translation>Evite cargas de grandes cantidades de datos cuando esté en una conexión Wi-Fi medida</translation>
     </message>
 </context>
 <context>
@@ -267,10 +267,6 @@
         <translation>Apagar</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot requiere que el dispositivo sea montado entre 4° grados a la izquierda o derecha y entre 5° grados hacia arriba o 9° grados hacia abajo. openpilot está constantemente en calibración, formatear rara vez es necesario.</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Su dispositivo está apuntando %1° %2 y %3° %4.</translation>
     </message>
@@ -308,11 +304,39 @@
     </message>
     <message>
         <source>Disengage to Reset Calibration</source>
-        <translation type="unfinished"></translation>
+        <translation>Desactivar para restablecer la calibración</translation>
     </message>
     <message>
-        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation>openpilot requiere que el dispositivo esté montado dentro de los 4° hacia la izquierda o la derecha y dentro de los 5° hacia arriba o 9° hacia abajo.</translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation>Openpilot se calibra continuamente, por lo que rara vez es necesario reiniciarlo. Restablecer la calibración reiniciará Openpilot si el automóvil está encendido.</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation>
+
+La calibración del retraso de dirección está %1% completada.</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation>
+
+La calibración del retraso de la dirección está completa.</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation> La calibración de la respuesta del par de dirección está %1% completada.</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation> La calibración de la respuesta del par de dirección está completa.</translation>
     </message>
 </context>
 <context>
@@ -335,10 +359,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 Modo Firehose 🔥</translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -369,6 +389,10 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
         <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVO&lt;/span&gt;: conéctate a una red sin límite de datos</translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation>Modo manguera contra incendios</translation>
     </message>
 </context>
 <context>
@@ -459,16 +483,8 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
         <translation>Se está descargando una actualización del sistema operativo de su dispositivo en segundo plano. Se le pedirá que actualice cuando esté listo para instalarse.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>El dispositivo no pudo registrarse. No se conectará ni subirá datos a los servidores de comma.ai y no recibe soporte de comma.ai. Si este es un dispositivo oficial, visite https://comma.ai/support.</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>Unidad NVMe no montada.</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>Se detectó una unidad NVMe incompatible. El dispositivo puede consumir mucha más energía y sobrecalentarse debido a esto.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -477,6 +493,10 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot detectó un cambio en la posición de montaje del dispositivo. Asegúrese de que el dispositivo esté completamente asentado en el soporte y que el soporte esté firmemente asegurado al parabrisas.</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -626,47 +646,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
     </message>
 </context>
 <context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>Formateo fallido. Reinicie para reintentar.</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>formateando dispositivo...
-Esto puede tardar un minuto.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>¿Seguro que quiere formatear su dispositivo?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>Formatear Sistema</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Formateo del sistema activado. Presione confirmar para borrar todo el contenido y la configuración. Presione cancelar para reanudar el inicio.</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancelar</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>Confirmar</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>No es posible montar una partición de datos. La partición podría estar corrompida. Confirme para borrar y formatear su dispositivo.</translation>
-    </message>
-</context>
-<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -790,6 +769,18 @@ Esto puede tardar un minuto.</translation>
     <message>
         <source>Select a language</source>
         <translation>Seleccione un idioma</translation>
+    </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation>ADVERTENCIA: Software personalizado</translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation>Tenga cuidado al instalar software de terceros. El software de terceros no ha sido probado por comma y puede causar daños a su dispositivo y/o vehículo.
+
+Si desea continuar, utilice https://flash.comma.ai para restaurar su dispositivo a un estado de fábrica más tarde.</translation>
     </message>
 </context>
 <context>
@@ -1130,46 +1121,19 @@ Esto puede tardar un minuto.</translation>
     </message>
     <message>
         <source>Use the openpilot system for adaptive cruise control and lane keep driver assistance. Your attention is required at all times to use this feature.</source>
-        <translation type="unfinished"></translation>
+        <translation>Utilice el sistema openpilot para el control de crucero adaptativo y la asistencia al conductor para mantenerse en el carril. Se requiere su atención en todo momento para utilizar esta función.</translation>
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Updater</name>
-    <message>
-        <source>Update Required</source>
-        <translation>Actualización Requerida</translation>
+        <translation> Cambiar esta configuración reiniciará Openpilot si el automóvil está encendido.</translation>
     </message>
     <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Es necesario la actualización del sistema operativo. Conecte su dispositivo al Wi-Fi para una actualización rápida. El tamaño de descarga es de aproximadamente 1GB.</translation>
+        <source>Record and Upload Microphone Audio</source>
+        <translation>Grabar y cargar audio de micrófono</translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conectarse a la Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>Instalar</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Volver</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>Cargando...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>Actualización fallida</translation>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>Graba y almacena el audio del micrófono mientras conduces. El audio se incluirá en el video de la cámara del tablero en comma connect.</translation>
     </message>
 </context>
 <context>

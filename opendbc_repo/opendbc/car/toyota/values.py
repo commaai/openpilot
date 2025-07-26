@@ -6,7 +6,7 @@ from enum import Enum, IntFlag
 from opendbc.car import Bus, CarSpecs, PlatformConfig, Platforms, AngleSteeringLimits
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.structs import CarParams
-from opendbc.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness
+from opendbc.car.docs_definitions import CarFootnote, CarDocs, Column, CarParts, CarHarness, SupportType
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
 
 Ecu = CarParams.Ecu
@@ -76,6 +76,11 @@ class ToyotaFlags(IntFlag):
   RAISED_ACCEL_LIMIT = 1024
   SECOC = 2048
 
+
+def dbc_dict(pt, radar):
+  return {Bus.pt: pt, Bus.radar: radar}
+
+
 class Footnote(Enum):
   CAMRY = CarFootnote(
     "openpilot operates above 28mph for Camry 4CYL L, 4CYL LE and 4CYL SE which don't have Full-Speed Range Dynamic Radar Cruise Control.",
@@ -87,8 +92,12 @@ class ToyotaCarDocs(CarDocs):
   package: str = "All"
   car_parts: CarParts = field(default_factory=CarParts.common([CarHarness.toyota_a]))
 
-def dbc_dict(pt, radar):
-  return {Bus.pt: pt, Bus.radar: radar}
+
+@dataclass
+class ToyotaCommunityCarDocs(ToyotaCarDocs):
+  support_type: SupportType = SupportType.COMMUNITY
+  support_link: str = "#community"
+
 
 @dataclass
 class ToyotaTSS2PlatformConfig(PlatformConfig):
@@ -100,14 +109,12 @@ class ToyotaTSS2PlatformConfig(PlatformConfig):
     if self.flags & ToyotaFlags.RADAR_ACC:
       self.dbc_dict = {Bus.pt: 'toyota_nodsu_pt_generated'}
 
+
 @dataclass
 class ToyotaSecOCPlatformConfig(PlatformConfig):
   dbc_dict: dict = field(default_factory=lambda: dbc_dict('toyota_secoc_pt_generated', 'toyota_tss2_adas'))
 
   def init(self):
-    # don't expose car docs until SecOC cars can be suppressed from the comma website
-    self.car_docs = []
-
     self.flags |= ToyotaFlags.TSS2 | ToyotaFlags.NO_STOP_TIMER | ToyotaFlags.NO_DSU | ToyotaFlags.SECOC
 
     if self.flags & ToyotaFlags.RADAR_ACC:
@@ -278,11 +285,11 @@ class CAR(Platforms):
     flags=ToyotaFlags.RADAR_ACC | ToyotaFlags.ANGLE_CONTROL,
   )
   TOYOTA_RAV4_PRIME = ToyotaSecOCPlatformConfig(
-    [ToyotaCarDocs("Toyota RAV4 Prime 2021-23", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaCommunityCarDocs("Toyota RAV4 Prime 2021-23", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=4372. * CV.LB_TO_KG, wheelbase=2.68, steerRatio=16.88, tireStiffnessFactor=0.5533),
   )
   TOYOTA_YARIS = ToyotaSecOCPlatformConfig(
-    [ToyotaCarDocs("Toyota Yaris 2023 (Non-US only)", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaCommunityCarDocs("Toyota Yaris (Non-US only) 2023", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=1170, wheelbase=2.55, steerRatio=14.80, tireStiffnessFactor=0.5533),
     flags=ToyotaFlags.RADAR_ACC,
   )
@@ -297,7 +304,7 @@ class CAR(Platforms):
     flags=ToyotaFlags.NO_STOP_TIMER,
   )
   TOYOTA_SIENNA_4TH_GEN = ToyotaSecOCPlatformConfig(
-    [ToyotaCarDocs("Toyota Sienna 2021-23", min_enable_speed=MIN_ACC_SPEED)],
+    [ToyotaCommunityCarDocs("Toyota Sienna 2021-23", min_enable_speed=MIN_ACC_SPEED)],
     CarSpecs(mass=4625. * CV.LB_TO_KG, wheelbase=3.06, steerRatio=17.8, tireStiffnessFactor=0.444),
   )
 
@@ -317,7 +324,7 @@ class CAR(Platforms):
   )
   LEXUS_ES_TSS2 = ToyotaTSS2PlatformConfig(
     [
-      ToyotaCarDocs("Lexus ES 2019-24"),
+      ToyotaCarDocs("Lexus ES 2019-25"),
       ToyotaCarDocs("Lexus ES Hybrid 2019-25", video="https://youtu.be/BZ29osRVJeg?t=12"),
     ],
     LEXUS_ES.specs,
@@ -329,7 +336,7 @@ class CAR(Platforms):
     flags=ToyotaFlags.UNSUPPORTED_DSU,
   )
   LEXUS_IS_TSS2 = ToyotaTSS2PlatformConfig(
-    [ToyotaCarDocs("Lexus IS 2022-23")],
+    [ToyotaCarDocs("Lexus IS 2022-24")],
     LEXUS_IS.specs,
   )
   LEXUS_NX = PlatformConfig(
@@ -348,7 +355,7 @@ class CAR(Platforms):
     LEXUS_NX.specs,
   )
   LEXUS_LC_TSS2 = ToyotaTSS2PlatformConfig(
-    [ToyotaCarDocs("Lexus LC 2024")],
+    [ToyotaCarDocs("Lexus LC 2024-25")],
     CarSpecs(mass=4500. * CV.LB_TO_KG, wheelbase=2.87, steerRatio=13.0, tireStiffnessFactor=0.444),
   )
   LEXUS_RC = PlatformConfig(
@@ -599,7 +606,6 @@ FW_QUERY_CONFIG = FwQueryConfig(
   ],
   match_fw_to_car_fuzzy=match_fw_to_car_fuzzy,
 )
-
 
 STEER_THRESHOLD = 100
 

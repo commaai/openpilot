@@ -6,7 +6,7 @@
 #include "opendbc/safety/safety_declarations.h"
 #include "opendbc/safety/board/can.h"
 
-// include the safety policies.
+// all the safety modes
 #include "opendbc/safety/modes/defaults.h"
 #include "opendbc/safety/modes/honda.h"
 #include "opendbc/safety/modes/toyota.h"
@@ -104,10 +104,10 @@ static bool is_msg_valid(RxCheck addr_list[], int index) {
   return valid;
 }
 
-static int get_addr_check_index(const CANPacket_t *to_push, RxCheck addr_list[], const int len) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
-  int length = GET_LEN(to_push);
+static int get_addr_check_index(const CANPacket_t *msg, RxCheck addr_list[], const int len) {
+  int bus = GET_BUS(msg);
+  int addr = GET_ADDR(msg);
+  int length = GET_LEN(msg);
 
   int index = -1;
   for (int i = 0; i < len; i++) {
@@ -151,18 +151,18 @@ static void update_counter(RxCheck addr_list[], int index, uint8_t counter) {
   }
 }
 
-static bool rx_msg_safety_check(const CANPacket_t *to_push,
+static bool rx_msg_safety_check(const CANPacket_t *msg,
                                 const safety_config *cfg,
                                 const safety_hooks *safety_hooks) {
 
-  int index = get_addr_check_index(to_push, cfg->rx_checks, cfg->rx_checks_len);
+  int index = get_addr_check_index(msg, cfg->rx_checks, cfg->rx_checks_len);
   update_addr_timestamp(cfg->rx_checks, index);
 
   if (index != -1) {
     // checksum check
     if ((safety_hooks->get_checksum != NULL) && (safety_hooks->compute_checksum != NULL) && !cfg->rx_checks[index].msg[cfg->rx_checks[index].status.index].ignore_checksum) {
-      uint32_t checksum = safety_hooks->get_checksum(to_push);
-      uint32_t checksum_comp = safety_hooks->compute_checksum(to_push);
+      uint32_t checksum = safety_hooks->get_checksum(msg);
+      uint32_t checksum_comp = safety_hooks->compute_checksum(msg);
       cfg->rx_checks[index].status.valid_checksum = checksum_comp == checksum;
     } else {
       cfg->rx_checks[index].status.valid_checksum = cfg->rx_checks[index].msg[cfg->rx_checks[index].status.index].ignore_checksum;
@@ -170,7 +170,7 @@ static bool rx_msg_safety_check(const CANPacket_t *to_push,
 
     // counter check
     if ((safety_hooks->get_counter != NULL) && (cfg->rx_checks[index].msg[cfg->rx_checks[index].status.index].max_counter > 0U)) {
-      uint8_t counter = safety_hooks->get_counter(to_push);
+      uint8_t counter = safety_hooks->get_counter(msg);
       update_counter(cfg->rx_checks, index, counter);
     } else {
       cfg->rx_checks[index].status.wrong_counters = cfg->rx_checks[index].msg[cfg->rx_checks[index].status.index].ignore_counter ? 0 : MAX_WRONG_COUNTERS;
@@ -178,7 +178,7 @@ static bool rx_msg_safety_check(const CANPacket_t *to_push,
 
     // quality flag check
     if ((safety_hooks->get_quality_flag_valid != NULL) && !cfg->rx_checks[index].msg[cfg->rx_checks[index].status.index].ignore_quality_flag) {
-      cfg->rx_checks[index].status.valid_quality_flag = safety_hooks->get_quality_flag_valid(to_push);
+      cfg->rx_checks[index].status.valid_quality_flag = safety_hooks->get_quality_flag_valid(msg);
     } else {
       cfg->rx_checks[index].status.valid_quality_flag = cfg->rx_checks[index].msg[cfg->rx_checks[index].status.index].ignore_quality_flag;
     }
@@ -186,13 +186,13 @@ static bool rx_msg_safety_check(const CANPacket_t *to_push,
   return is_msg_valid(cfg->rx_checks, index);
 }
 
-bool safety_rx_hook(const CANPacket_t *to_push) {
+bool safety_rx_hook(const CANPacket_t *msg) {
   bool controls_allowed_prev = controls_allowed;
 
-  bool valid = rx_msg_safety_check(to_push, &current_safety_config, current_hooks);
-  bool whitelisted = get_addr_check_index(to_push, current_safety_config.rx_checks, current_safety_config.rx_checks_len) != -1;
+  bool valid = rx_msg_safety_check(msg, &current_safety_config, current_hooks);
+  bool whitelisted = get_addr_check_index(msg, current_safety_config.rx_checks, current_safety_config.rx_checks_len) != -1;
   if (valid && whitelisted) {
-    current_hooks->rx(to_push);
+    current_hooks->rx(msg);
   }
 
   // Handles gas, brake, and regen paddle
@@ -201,8 +201,8 @@ bool safety_rx_hook(const CANPacket_t *to_push) {
   // the relay malfunction hook runs on all incoming rx messages.
   // check all applicable tx msgs for liveness on sending bus.
   // used to detect a relay malfunction or control messages from disabled ECUs like the radar
-  const int bus = GET_BUS(to_push);
-  const int addr = GET_ADDR(to_push);
+  const int bus = GET_BUS(msg);
+  const int addr = GET_ADDR(msg);
   for (int i = 0; i < current_safety_config.tx_msgs_len; i++) {
     const CanMsg *m = &current_safety_config.tx_msgs[i];
     if (m->check_relay) {
@@ -218,10 +218,10 @@ bool safety_rx_hook(const CANPacket_t *to_push) {
   return valid;
 }
 
-static bool tx_msg_safety_check(const CANPacket_t *to_send, const CanMsg msg_list[], int len) {
-  int addr = GET_ADDR(to_send);
-  int bus = GET_BUS(to_send);
-  int length = GET_LEN(to_send);
+static bool tx_msg_safety_check(const CANPacket_t *msg, const CanMsg msg_list[], int len) {
+  int addr = GET_ADDR(msg);
+  int bus = GET_BUS(msg);
+  int length = GET_LEN(msg);
 
   bool whitelisted = false;
   for (int i = 0; i < len; i++) {
@@ -233,15 +233,15 @@ static bool tx_msg_safety_check(const CANPacket_t *to_send, const CanMsg msg_lis
   return whitelisted;
 }
 
-bool safety_tx_hook(CANPacket_t *to_send) {
-  bool whitelisted = tx_msg_safety_check(to_send, current_safety_config.tx_msgs, current_safety_config.tx_msgs_len);
+bool safety_tx_hook(CANPacket_t *msg) {
+  bool whitelisted = tx_msg_safety_check(msg, current_safety_config.tx_msgs, current_safety_config.tx_msgs_len);
   if ((current_safety_mode == SAFETY_ALLOUTPUT) || (current_safety_mode == SAFETY_ELM327)) {
     whitelisted = true;
   }
 
   bool safety_allowed = false;
   if (whitelisted) {
-    safety_allowed = current_hooks->tx(to_send);
+    safety_allowed = current_hooks->tx(msg);
   }
 
   return !relay_malfunction && whitelisted && safety_allowed;

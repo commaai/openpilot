@@ -287,10 +287,9 @@ void board_v2_init(void) {
 void board_v2_tick(void) {}
 
 board board_v2 = {
-  .has_canfd = true,
-  .has_sbu_sense = true,
   .avdd_mV = 3300U,
   .init = &board_v2_init,
+  .init_bootloader = &board_v2_tick,
   .led_GPIO = {GPIOE, GPIOE, GPIOE},
   .led_pin = {4, 3, 2},
   .board_tick = &board_v2_tick,

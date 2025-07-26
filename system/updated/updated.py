@@ -61,15 +61,7 @@ class WaitTimeHelper:
 
 def write_time_to_param(params, param) -> None:
   t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-  params.put(param, t.isoformat().encode('utf8'))
-
-def read_time_from_param(params, param) -> datetime.datetime | None:
-  t = params.get(param, encoding='utf8')
-  try:
-    return datetime.datetime.fromisoformat(t)
-  except (TypeError, ValueError):
-    pass
-  return None
+  params.put(param, t)
 
 def run(cmd: list[str], cwd: str = None) -> str:
   return subprocess.check_output(cmd, cwd=cwd, stderr=subprocess.STDOUT, encoding='utf8')
@@ -242,7 +234,7 @@ class Updater:
 
   @property
   def target_branch(self) -> str:
-    b: str | None = self.params.get("UpdaterTargetBranch", encoding='utf-8')
+    b: str | None = self.params.get("UpdaterTargetBranch")
     if b is None:
       b = self.get_branch(BASEDIR)
     return b
@@ -272,7 +264,7 @@ class Updater:
     return run(["git", "rev-parse", "HEAD"], path).rstrip()
 
   def set_params(self, update_success: bool, failed_count: int, exception: str | None) -> None:
-    self.params.put("UpdateFailedCount", str(failed_count))
+    self.params.put("UpdateFailedCount", failed_count)
     self.params.put("UpdaterTargetBranch", self.target_branch)
 
     self.params.put_bool("UpdaterFetchAvailable", self.update_available)
@@ -283,7 +275,7 @@ class Updater:
     if update_success:
       write_time_to_param(self.params, "LastUpdateTime")
     else:
-      t = read_time_from_param(self.params, "LastUpdateTime")
+      t = self.params.get("LastUpdateTime")
       if t is not None:
         last_update = t
 
@@ -429,8 +421,8 @@ def main() -> None:
       cloudlog.event("update installed")
 
     if not params.get("InstallDate"):
-      t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).isoformat()
-      params.put("InstallDate", t.encode('utf8'))
+      t = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+      params.put("InstallDate", t)
 
     updater = Updater()
     update_failed_count = 0 # TODO: Load from param?
@@ -468,7 +460,7 @@ def main() -> None:
         updater.check_for_update()
 
         # download update
-        last_fetch = read_time_from_param(params, "UpdaterLastFetchTime")
+        last_fetch = params.get("UpdaterLastFetchTime")
         timed_out = last_fetch is None or (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_fetch > datetime.timedelta(days=3))
         user_requested_fetch = wait_helper.user_request == UserRequest.FETCH
         if params.get_bool("NetworkMetered") and not timed_out and not user_requested_fetch:

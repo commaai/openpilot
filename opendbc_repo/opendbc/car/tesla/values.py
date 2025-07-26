@@ -55,6 +55,10 @@ class CAR(Platforms):
      ],
     CarSpecs(mass=2072., wheelbase=2.890, steerRatio=12.0),
   )
+  TESLA_MODEL_X = TeslaPlatformConfig(
+    [TeslaCarDocsHW4("Tesla Model X (with HW4) 2024")],
+    CarSpecs(mass=2495., wheelbase=2.960, steerRatio=12.0),
+  )
 
 
 FW_QUERY_CONFIG = FwQueryConfig(
