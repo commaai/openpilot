@@ -19,29 +19,19 @@
 
 class SdeRotator {
 public:
-  SdeRotator();
+  SdeRotator() = default;
   ~SdeRotator();
-  int configUBWCtoNV12(int width, int height);
-  int configUBWCtoNV12WithOutputBuf(int width, int height, VisionBuf *output_buf);
-  int putFrame(VisionBuf *ubwc);
-  int putFrameWithOutputBuf(VisionBuf *ubwc, VisionBuf *output_buf);
-  VisionBuf* getFrame(int timeout_ms);
-  VisionBuf* getFrameExternal(int timeout_ms);
-  bool queued = false;
   bool init(const char *dev = ROTATOR_DEVICE);
-  int cleanup();
-  int saveFrame(const char* filename, bool append);
-  int convert_ubwc_to_linear(int out_buf_fd,
-                          int width, int height,
-                          unsigned char **linear_data, size_t *linear_size);
+  int configUBWCtoNV12(int width, int height);
+  int putFrame(VisionBuf *ubwc);
+  VisionBuf* getFrame(int timeout_ms);
   void convertStride(VisionBuf *rotated_buf, VisionBuf *user_buf);
-
+  bool queued = false;
 
 private:
   int fd;
   struct v4l2_format fmt_cap = {0}, fmt_out = {0};
   VisionBuf cap_buf;
   struct pollfd pfd;
-  struct v4l2_buffer cap_desc{};       // cached QUERYBUF result
-  VisionBuf *external_output_buf;
+  struct v4l2_buffer cap_desc{};  // cached QUERYBUF result
 };

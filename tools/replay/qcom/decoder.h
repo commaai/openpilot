@@ -1,20 +1,15 @@
 #pragma once
-// #define __user
-// #include "third_party/linux/include/videodev2.h"
 #include <linux/videodev2.h>
 #include <linux/v4l2-controls.h>
 #include <stdint.h>
 #include <limits.h>
 #include <poll.h>
 #include <list>
-#include "third_party/linux/include/media/msm_vidc.h"
 
+#include "third_party/linux/include/media/msm_vidc.h"
 #include "msgq/visionipc/visionbuf.h"
 #include "sde_rotator.h"
 
-// av includes
-//#include <libavformat/avformat.h>
-// #include <libavutil/avutil.h>
 extern "C" {
 	#include <libavcodec/avcodec.h>
 	#include <libavformat/avformat.h>
@@ -128,81 +123,77 @@ enum v4l2_mpeg_vidc_video_dpb_color_format {
 	V4L2_MPEG_VIDC_VIDEO_DPB_COLOR_FMT_TP10_UBWC = 2
 };
 #define V4L2_QCOM_CMD_FLUSH_CAPTURE (1 << 1)
-#define V4L2_QCOM_CMD_FLUSH      (4)
+#define V4L2_QCOM_CMD_FLUSH      		(4)
+
 class MsmVidc {
-  public:
-    MsmVidc();
-    ~MsmVidc();
-    bool init(const char* dev,
-							size_t width, size_t height,
-							uint64_t codec);
-		VisionBuf* decodeFrame(AVPacket *pkt, VisionBuf *buf);
-		AVFormatContext *avctx = nullptr;
-    int fd = 0;
-    int sigfd = 0;
-    uint64_t c = V4L2_PIX_FMT_HEVC;
-  private:
-		bool initialized = false;
-		bool reconfigure_pending = false;
-		bool need_more_frames = false;
-		bool frame_ready = false;
-		VisionBuf *current_output_buf = nullptr;
-    bool setupOutput();
-    bool subscribeEvents();
-    bool setPlaneFormat(v4l2_buf_type type, uint32_t fourcc);
-    bool setFPS(uint32_t fps);
-    bool setControls();
-    bool restartCapture();
-    bool queueCaptureBuffer(int i);
-		bool queueOutputBuffer(int i, size_t size, uint32_t flags);
-    bool setDBP(enum v4l2_mpeg_vidc_video_dpb_color_format format);
-		bool setupPolling();
-		bool sendEOS();
-		bool sendPacket(int buf_index, AVPacket *pkt);
-		int getBufferUnlocked();
-		int handleSignal();
-		VisionBuf* handleCapture();
-		bool handleOutput();
-		bool handleEvent();
+public:
+  MsmVidc() = default;
+  ~MsmVidc();
 
-		SdeRotator rotator; // For converting UBWC to NV12 format.
+  bool init(const char* dev, size_t width, size_t height, uint64_t codec);
+  VisionBuf* decodeFrame(AVPacket* pkt, VisionBuf* buf);
 
-    size_t w = 1928, h = 1208;
+  AVFormatContext* avctx = nullptr;
+  int fd = 0;
+  int sigfd = 0;
 
-    const int out_buf_cnt = OUTPUT_BUFFER_COUNT;
-    //const int cap_buf_cnt = CAPTURE_BUFFER_COUNT;
+private:
+  bool initialized = false;
+  bool reconfigure_pending = false;
+  bool need_more_frames = false;
+  bool frame_ready = false;
 
-    int cap_buf_size = 0, out_buf_size = 0;
-    VisionBuf out_buf; // Single output (input) buffer, all frames are written to this buffer.
-    VisionBuf ext_buf;
-    VisionBuf cap_bufs[CAPTURE_BUFFER_COUNT]; // Capture (output) buffers, one for each frame.
+  VisionBuf* current_output_buf = nullptr;
+  VisionBuf out_buf;                          // Single input buffer
+  VisionBuf ext_buf;
+  VisionBuf cap_bufs[CAPTURE_BUFFER_COUNT];   // Capture (output) buffers
 
-    //int cap_planes_count = CAP_PLANES;
-    size_t cap_plane_off[CAPTURE_BUFFER_COUNT] = {0};
-    size_t cap_plane_stride[CAPTURE_BUFFER_COUNT] = {0};
-    bool cap_buf_flag[CAPTURE_BUFFER_COUNT] = {false};
-		bool out_buf_flag[OUTPUT_BUFFER_COUNT] = {false};
-    uint32_t cap_buf_format = 0; // V4L2_PIX_FMT_NV12_UBWC
-    size_t cap_height = 0, cap_width = 0;
+  size_t w = 1928, h = 1208;
+  size_t cap_height = 0, cap_width = 0;
 
-    size_t ext_buf_off[CAPTURE_BUFFER_COUNT] = {0};
-		size_t out_buf_off[OUTPUT_BUFFER_COUNT] = {0};
-    void *ext_buf_addr[CAPTURE_BUFFER_COUNT] = {0};
-		void *out_buf_addr[OUTPUT_BUFFER_COUNT] = {0};
+  int cap_buf_size = 0;
+  int out_buf_size = 0;
 
-    const int subscriptions[2] = {
-      V4L2_EVENT_MSM_VIDC_FLUSH_DONE,
-      V4L2_EVENT_MSM_VIDC_PORT_SETTINGS_CHANGED_INSUFFICIENT,
-    };
+  size_t cap_plane_off[CAPTURE_BUFFER_COUNT] = {0};
+  size_t cap_plane_stride[CAPTURE_BUFFER_COUNT] = {0};
+  bool cap_buf_flag[CAPTURE_BUFFER_COUNT] = {false};
 
-		enum {
-			EV_VIDEO,
-			EV_DISPLAY,
-			EV_SIGNAL,
-			EV_COUNT
-		};
+  size_t ext_buf_off[CAPTURE_BUFFER_COUNT] = {0};
+  void* ext_buf_addr[CAPTURE_BUFFER_COUNT] = {0};
 
-		struct pollfd pfd[EV_COUNT] = {0};
-		int ev[EV_COUNT] = {-1, -1, -1};
-		int nfds = 0;
+  size_t out_buf_off[OUTPUT_BUFFER_COUNT] = {0};
+  void* out_buf_addr[OUTPUT_BUFFER_COUNT] = {0};
+  bool out_buf_flag[OUTPUT_BUFFER_COUNT] = {false};
+	const int out_buf_cnt = OUTPUT_BUFFER_COUNT;
+
+  uint32_t cap_buf_format = 0;
+
+  const int subscriptions[2] = {
+    V4L2_EVENT_MSM_VIDC_FLUSH_DONE,
+    V4L2_EVENT_MSM_VIDC_PORT_SETTINGS_CHANGED_INSUFFICIENT
+  };
+
+  enum { EV_VIDEO, EV_SIGNAL, EV_COUNT };
+  struct pollfd pfd[EV_COUNT] = {0};
+  int ev[EV_COUNT] = {-1, -1};
+  int nfds = 0;
+
+  bool setupOutput();
+  bool subscribeEvents();
+  bool setPlaneFormat(v4l2_buf_type type, uint32_t fourcc);
+  bool setFPS(uint32_t fps);
+  bool setControls();
+  bool restartCapture();
+  bool queueCaptureBuffer(int i);
+  bool queueOutputBuffer(int i, size_t size);
+  bool setDBP(enum v4l2_mpeg_vidc_video_dpb_color_format format);
+  bool setupPolling();
+  bool sendPacket(int buf_index, AVPacket* pkt);
+  int getBufferUnlocked();
+  int handleSignal();
+  VisionBuf* handleCapture();
+  bool handleOutput();
+  bool handleEvent();
+
+  SdeRotator rotator;
 };

@@ -4,7 +4,6 @@
 #include <string>
 #include <deque>
 
-//#include <sys/ioctl.h>
 #include <assert.h>
 #include "decoder.h"
 #include "common/swaglog.h"
@@ -29,8 +28,14 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
   checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
 }
 
-
-MsmVidc::MsmVidc() {}
+MsmVidc::~MsmVidc() {
+  if (fd > 0) {
+    close(fd);
+  }
+  if (sigfd > 0) {
+    close(sigfd);
+  }
+}
 
 bool MsmVidc::init(const char* dev,
                    size_t width, size_t height,
@@ -38,14 +43,11 @@ bool MsmVidc::init(const char* dev,
   LOG("Initializing msm_vidc device %s", dev);
   this->w = width;
   this->h = height;
-  this->c = codec;
   this->fd = open(dev, O_RDWR, 0);
   if (fd < 0) {
     LOGE("failed to open video device %s", dev);
     return false;
   }
-  struct v4l2_capability cap = {0};
-  checked_ioctl(fd, VIDIOC_QUERYCAP, &cap);
   subscribeEvents();
   v4l2_buf_type out_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   setPlaneFormat(out_type, V4L2_PIX_FMT_HEVC); // Also allocates the output buffer
@@ -57,17 +59,63 @@ bool MsmVidc::init(const char* dev,
   setupPolling();
   rotator.init();
   rotator.configUBWCtoNV12(width, height);
-  initialized = true;
+  this->initialized = true;
   return true;
 }
 
-MsmVidc::~MsmVidc() {
-  if (fd > 0) {
-    close(fd);
+VisionBuf* MsmVidc::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
+  // Decode a single frame, return the output buffer with the decoded frame.
+  assert(initialized && (pkt != nullptr) && (buf != nullptr));
+  this->frame_ready = false;
+  this->current_output_buf = buf;
+  bool sent_packet = false;
+
+  while (!this->frame_ready) {
+    if (!sent_packet) {
+      int buf_index = getBufferUnlocked();
+      if (buf_index >= 0) {
+        assert(buf_index < out_buf_cnt);
+        sendPacket(buf_index, pkt);
+        sent_packet = true;
+      }
+    }
+
+    if (poll(pfd, nfds, -1) < 0) {
+      LOGE("poll() error: %d", errno);
+      break;
+    }
+
+    // Handle events
+    for (int idx = 0; idx < nfds; idx++) {
+      short revents = pfd[idx].revents;
+      if (!revents) {
+        continue; // no events for this fd
+      }
+
+      if (idx == ev[EV_VIDEO]) {
+        if (revents & (POLLIN | POLLRDNORM)) {
+          VisionBuf *result = handleCapture();
+          if (result == this->current_output_buf) {
+            this->frame_ready = true;
+          }
+        }
+        if (revents & (POLLOUT | POLLWRNORM)) {
+          handleOutput();
+        }
+        if (revents & POLLPRI) {
+          handleEvent();
+        }
+
+      } else if (idx == ev[EV_SIGNAL]) {
+        handleSignal();
+        return nullptr;
+      } else {
+        LOGE("Unexpected event on fd %d", pfd[idx].fd);
+        continue;
+      }
+    }
   }
-  if (sigfd > 0) {
-    close(sigfd);
-  }
+  return this->frame_ready ? buf : nullptr;
 }
 
 bool MsmVidc::subscribeEvents() {
@@ -97,7 +145,7 @@ bool MsmVidc::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
     request_buffers(this->fd, type, CAPTURE_BUFFER_COUNT);
     checked_ioctl(fd, VIDIOC_G_FMT, &fmt);
     for (int i = 0; i < CAPTURE_BUFFER_COUNT; i++) {
-      this->cap_bufs[i].allocate_no_cache(pix->plane_fmt[0].sizeimage); // Note that this is mmapped rw which is different from the working implementation.
+      this->cap_bufs[i].allocate_no_cache(pix->plane_fmt[0].sizeimage);
       this->cap_bufs[i].init_yuv(pix->width, pix->height, pix->plane_fmt[0].bytesperline, 0);
     }
     this->cap_buf_format = pix->pixelformat;
@@ -142,14 +190,6 @@ bool MsmVidc::setControls() {
 	control.id = V4L2_CID_MPEG_VIDC_VIDEO_EXTRADATA;
 	control.value = V4L2_MPEG_VIDC_EXTRADATA_FRAME_RATE;
   checked_ioctl(fd, VIDIOC_S_CTRL, &control);
-  #if 0
-  control.id = V4L2_CID_MPEG_VIDC_VIDEO_PICTYPE_DEC_MODE;
-	control.value = V4L2_MPEG_VIDC_VIDEO_PICTYPE_DECODE_ON;
-  checked_ioctl(fd, VIDIOC_S_CTRL, &control);
-	control.id = V4L2_CID_MPEG_VIDC_VIDEO_EXTRADATA;
-	control.value = V4L2_MPEG_VIDC_EXTRADATA_DISPLAY_COLOUR_SEI;
-  checked_ioctl(fd, VIDIOC_S_CTRL, &control);
-  #endif
   LOGD("Set controls: operating rate %d, conceal color 0x%08x, extradata interlace %d, output crop %d, aspect ratio %d, frame rate %d",
     control.value, control.value, control.value, control.value, control.value, control.value);
   return true;
@@ -209,7 +249,7 @@ bool MsmVidc::queueCaptureBuffer(int i) {
   return true;
 }
 
-bool MsmVidc::queueOutputBuffer(int i, size_t size, uint32_t flags) {
+bool MsmVidc::queueOutputBuffer(int i, size_t size) {
   struct v4l2_buffer buf = {0};
   struct v4l2_plane planes[OUT_PLANES] = {0};
 
@@ -228,11 +268,8 @@ bool MsmVidc::queueOutputBuffer(int i, size_t size, uint32_t flags) {
   assert((this->out_buf_off[i] & 0xfff) == 0);          // must be 4 KiB aligned
   assert(this->out_buf_size % 4096 == 0);               // ditto for size
 
-  buf.flags = flags;
-  //buf.timestamp = tv;
   checked_ioctl(this->fd, VIDIOC_QBUF, &buf);
   this->out_buf_flag[i] = true; // mark as queued
-  //LOGD("Queued output buffer %d with size %zu, flags %08x, timestamp %ld.%06lu", i, size, flags, tv.tv_sec, tv.tv_usec);
   return true;
 }
 
@@ -242,10 +279,8 @@ bool MsmVidc::setDBP(v4l2_mpeg_vidc_video_dpb_color_format format) {
 
   control[0].id = V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_MODE;
   control[0].value = V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_PRIMARY;
-
   control[1].id = V4L2_CID_MPEG_VIDC_VIDEO_DPB_COLOR_FORMAT;
   control[1].value = format;
-
   controls.count = 2;
   controls.ctrl_class = V4L2_CTRL_CLASS_MPEG;
   controls.controls = control;
@@ -281,17 +316,13 @@ bool MsmVidc::setupPolling() {
 }
 
 bool MsmVidc::sendPacket(int buf_index, AVPacket *pkt) {
-	int flags = 0;
-	size_t size = 0;
-	uint8_t *data;
   assert(buf_index >= 0 && buf_index < out_buf_cnt);
   assert(pkt != nullptr && pkt->data != nullptr && pkt->size > 0);
   // Prepare output buffer
   memset(this->out_buf_addr[buf_index], 0, this->out_buf_size);
-	data = (uint8_t *)this->out_buf_addr[buf_index];
-  memcpy(data + size, pkt->data, pkt->size);
-  size += pkt->size;
-  queueOutputBuffer(buf_index, size, flags);
+	uint8_t * data = (uint8_t *)this->out_buf_addr[buf_index];
+  memcpy(data, pkt->data, pkt->size);
+  queueOutputBuffer(buf_index, pkt->size);
   return true;
 }
 
@@ -302,63 +333,6 @@ int MsmVidc::getBufferUnlocked() {
     }
   }
   return -1;
-}
-
-VisionBuf* MsmVidc::decodeFrame(AVPacket *pkt, VisionBuf *buf) {
-  // Decode a single frame, return the output buffer with the decoded frame.
-  assert(initialized && (pkt != nullptr) && (buf != nullptr));
-  this->frame_ready = false;
-  this->current_output_buf = buf;
-  bool sent_packet = false;
-
-  while (!this->frame_ready) {
-    if (!sent_packet) {
-      int buf_index = getBufferUnlocked();
-      if (buf_index >= 0) {
-        assert(buf_index < out_buf_cnt);
-        sendPacket(buf_index, pkt);
-        sent_packet = true;
-      }
-    }
-    int p = poll(pfd, nfds, -1);
-
-    if (p < 0) {
-      LOGE("poll() error: %d", errno);
-      break;
-    }
-
-    // Handle events
-    for (int idx = 0; idx < nfds; idx++) {
-      short revents = pfd[idx].revents;
-      if (!revents) {
-        continue; // no events for this fd
-      }
-
-      if (idx == ev[EV_VIDEO]) {
-        if (revents & (POLLIN | POLLRDNORM)) {
-          VisionBuf *result = handleCapture();
-
-          if (result == this->current_output_buf) {
-            this->frame_ready = true;
-          }
-        }
-        if (revents & (POLLOUT | POLLWRNORM)) {
-          handleOutput();
-        }
-        if (revents & POLLPRI) {
-          handleEvent();
-        }
-
-      } else if (idx == ev[EV_SIGNAL]) {
-        handleSignal();
-        return nullptr;
-      } else {
-        LOGE("Unexpected event on fd %d", pfd[idx].fd);
-        continue;
-      }
-    }
-  }
-  return this->frame_ready ? buf : nullptr;
 }
 
 int MsmVidc::handleSignal() {

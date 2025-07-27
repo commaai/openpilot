@@ -26,7 +26,6 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
   checked_ioctl(fd, VIDIOC_REQBUFS, &reqbuf);
 }
 
-SdeRotator::SdeRotator() {}
 
 bool SdeRotator::init(const char *dev) {
   LOGD("Initializing sde_rot device %s", dev);
@@ -44,22 +43,16 @@ bool SdeRotator::init(const char *dev) {
 }
 
 SdeRotator::~SdeRotator() {
-  cleanup();
+  if (fd >= 0) {
+    close(fd);
+    fd = -1;
+  }
+  cap_buf.free();
+  cap_buf.~VisionBuf();
+  new (&cap_buf) VisionBuf();
+  queued = false;
 }
 
-/**
- * @brief Configures the SdeRotator operation for the specified frame dimensions.
- *
- * This function sets up the video output and capture formats, allocates and manages
- * the necessary buffers, and starts streaming on both output and capture devices.
- * It ensures that any previously allocated ION buffer is freed and unmapped if the
- * size has changed, and allocates a new buffer for the current configuration.
- * The function also queries and caches the capture buffer information after allocation.
- *
- * @param width  The width of the video frame to configure.
- * @param height The height of the video frame to configure.
- * @return int Returns 0 on successful configuration, or asserts on failure.
- */
 int SdeRotator::configUBWCtoNV12(int width, int height) {
   // stop streaming if already started
   enum v4l2_buf_type t;
@@ -115,34 +108,6 @@ int SdeRotator::configUBWCtoNV12(int width, int height) {
   return 0;
 }
 
-void SdeRotator::convertStride(VisionBuf *rotated_buf, VisionBuf *user_buf) {
-  // Copy Y plane row by row
-  for (int y = 0; y < user_buf->height; y++) {
-    uint8_t *src_row = (uint8_t*)rotated_buf->y + y * rotated_buf->stride;
-    uint8_t *dst_row = (uint8_t*)user_buf->y + y * user_buf->stride;
-    memcpy(dst_row, src_row, user_buf->width);
-  }
-  // Copy UV plane row by row (NV12: height/2)
-  for (int y = 0; y < user_buf->height / 2; y++) {
-    uint8_t *src_row = (uint8_t*)rotated_buf->uv + y * rotated_buf->stride;
-    uint8_t *dst_row = (uint8_t*)user_buf->uv + y * user_buf->stride;
-    memcpy(dst_row, src_row, user_buf->width);
-  }
-}
-
-int SdeRotator::cleanup() {
-  int err = 0;
-  if (fd >= 0) {
-    err = close(fd);
-    fd = -1;
-  }
-  cap_buf.free();
-  cap_buf.~VisionBuf();
-  new (&cap_buf) VisionBuf();
-  queued = false;
-  return err;
-}
-
 int SdeRotator::putFrame(VisionBuf *ubwc)
 {
   if (ubwc->width != cap_buf.width || ubwc->height != cap_buf.height)
@@ -166,8 +131,7 @@ int SdeRotator::putFrame(VisionBuf *ubwc)
   return 0;
 }
 
-
-VisionBuf* SdeRotator::getFrame(int timeout_ms /* =100 */)
+VisionBuf* SdeRotator::getFrame(int timeout_ms)
 {
   if (!queued)                       // nothing in flight
     return nullptr;
@@ -189,4 +153,19 @@ VisionBuf* SdeRotator::getFrame(int timeout_ms /* =100 */)
 
   queued = false;
   return &cap_buf;
+}
+
+void SdeRotator::convertStride(VisionBuf *rotated_buf, VisionBuf *user_buf) {
+  // Copy Y plane row by row
+  for (int y = 0; y < user_buf->height; y++) {
+    uint8_t *src_row = (uint8_t*)rotated_buf->y + y * rotated_buf->stride;
+    uint8_t *dst_row = (uint8_t*)user_buf->y + y * user_buf->stride;
+    memcpy(dst_row, src_row, user_buf->width);
+  }
+  // Copy UV plane row by row (NV12: height/2)
+  for (int y = 0; y < user_buf->height / 2; y++) {
+    uint8_t *src_row = (uint8_t*)rotated_buf->uv + y * rotated_buf->stride;
+    uint8_t *dst_row = (uint8_t*)user_buf->uv + y * user_buf->stride;
+    memcpy(dst_row, src_row, user_buf->width);
+  }
 }

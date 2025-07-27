@@ -6,8 +6,6 @@
 #include "msgq/visionipc/visionbuf.h"
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
-#include "tools/replay/qcom/sde_rotator.h"
-
 #include "tools/replay/qcom/decoder.h"
 
 extern "C" {
