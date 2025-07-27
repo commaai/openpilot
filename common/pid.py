@@ -1,8 +1,11 @@
 import numpy as np
 from numbers import Number
+from typing import Callable
+
 
 class PIDController:
-  def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit=1e308, neg_limit=-1e308, rate=100):
+  def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit: float | Callable[[float], float] = 1e308,
+               neg_limit: float | Callable[[float], float] = -1e308, rate=100):
     self._k_p = k_p
     self._k_i = k_i
     self._k_d = k_d
@@ -41,7 +44,9 @@ class PIDController:
     self.f = 0.0
     self.control = 0
 
-  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
+  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False,
+                          convert_control: Callable[[float], float] = lambda x: x):
+
     self.speed = speed
     self.p = float(error) * self.k_p
     self.f = feedforward * self.k_f
@@ -51,11 +56,10 @@ class PIDController:
       i = self.i + error * self.k_i * self.i_rate
 
       # Don't allow windup if already clipping
-      test_control = self.p + i + self.d + self.f
+      test_control = convert_control(self.p + i + self.d + self.f)
       i_upperbound = self.i if test_control > self.pos_limit else self.pos_limit
       i_lowerbound = self.i if test_control < self.neg_limit else self.neg_limit
       self.i = np.clip(i, i_lowerbound, i_upperbound)
 
-    control = self.p + self.i + self.d + self.f
-    self.control = np.clip(control, self.neg_limit, self.pos_limit)
+    control = convert_control(self.p + self.i + self.d + self.f)
     return self.control
