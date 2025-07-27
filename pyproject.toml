@@ -38,6 +38,7 @@ dependencies = [
 
   # panda
   "libusb1",
+  "panda @ git+https://github.com/shreyanshjain7174/panda.git@14e67acf",
   "spidev; platform_system == 'Linux'",
 
   # modeld
