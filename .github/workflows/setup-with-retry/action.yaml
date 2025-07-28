@@ -50,12 +50,15 @@ runs:
             CACHE_DIR="$HOME/.openpilot_ci_cache"
             mkdir -p "$CACHE_DIR/pip" "$CACHE_DIR"
             
-            # Minimal pip cache
-            pip3 download pytest numpy pillow psutil -d "$CACHE_DIR/pip" --quiet 2>/dev/null || true
+            # Install pytest system-wide for CI compatibility
+            pip3 install pytest pytest-xdist hypothesis --quiet --disable-pip-version-check 2>/dev/null || true
+            
+            # Minimal pip cache with additional test dependencies
+            pip3 download pytest numpy pillow psutil pytest-xdist hypothesis -d "$CACHE_DIR/pip" --quiet 2>/dev/null || true
             
             # Create minimal venv template
             python3 -m venv "$CACHE_DIR/venv_template" --clear 2>/dev/null || true
-            "$CACHE_DIR/venv_template/bin/python" -m pip install --no-index --find-links="$CACHE_DIR/pip" pytest numpy pillow psutil --disable-pip-version-check --quiet 2>/dev/null || true
+            "$CACHE_DIR/venv_template/bin/python" -m pip install --no-index --find-links="$CACHE_DIR/pip" pytest numpy pillow psutil pytest-xdist hypothesis --disable-pip-version-check --quiet 2>/dev/null || true
             
             # Environment snapshot
             cat > "$CACHE_DIR/env_snapshot.sh" << 'EOF'
@@ -132,7 +135,12 @@ runs:
             fi
           fi
           
-          # Create completion markers instantly
+          # Ensure pytest is available system-wide
+          pip3 install pytest pytest-xdist hypothesis --quiet --disable-pip-version-check 2>/dev/null || true
+          
+          # Create completion markers and required directories instantly
+          mkdir -p /tmp/comma_download_cache
+          chmod 777 /tmp/comma_download_cache
           touch /tmp/.openpilot_ready /tmp/.openpilot_setup_complete 2>/dev/null || true
           
           # Verify setup worked
