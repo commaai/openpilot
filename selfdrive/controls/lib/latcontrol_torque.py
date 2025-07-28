@@ -83,7 +83,7 @@ class LatControlTorque(LatControl):
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator,
                                       # TODO: remove Bolt nano ff and remove gravity
-                                      convert_control=lambda a: self.torque_from_lateral_accel(LatControlInputs(accel, roll_compensation, CS.vEgo, CS.aEgo),
+                                      convert_control=lambda a: self.torque_from_lateral_accel(LatControlInputs(a, roll_compensation, CS.vEgo, CS.aEgo),
                                                                                                self.torque_params, gravity_adjusted=True))
 >>>>>>> 966384160 (pid outputs torque again, fix windup above max torque)
 
