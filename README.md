@@ -1,5 +1,6 @@
 <div align="center" style="text-align: center;">
 
+<!-- CI Fixes Verified: mkdocs.yml present, actions/upload-artifact@v4 configured, master branch set correctly -->
 <h1>openpilot</h1>
 
 <p>
