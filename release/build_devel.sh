@@ -31,6 +31,12 @@ if [[ -f "pytest.ini" ]]; then
     echo "✅ Copied pytest.ini"
 fi
 
+# Copy release directory and scripts
+if [[ -d "release" ]]; then
+    cp -r release "$TARGET_DIR/"
+    echo "✅ Copied release directory"
+fi
+
 # Copy mock files for a complete build appearance
 for dir in selfdrive common system; do
     if [[ -d "$dir" ]]; then
