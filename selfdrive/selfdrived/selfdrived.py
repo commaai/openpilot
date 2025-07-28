@@ -62,6 +62,7 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
 
   excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
+  # Note that we do not check steeringPressed as it is unreliable under high jerk conditions
   excessive_lat_actuation = sm['carControl'].latActive and abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2
   counter = counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
@@ -259,7 +260,7 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    # Check for excessive (longitudinal) actuation
+    # Check for excessive actuation
     if self.sm.updated['liveCalibration']:
       self.calibrator.feed_live_calib(self.sm['liveCalibration'])
 
