@@ -64,7 +64,7 @@ jobs:
         fi
         
         # Count successful methods
-        success_count=$(grep -c "TARGET ACHIEVED\|🎯 TARGET" ci_speed_output.log || echo "0")
+        success_count=$(grep -Ec "TARGET ACHIEVED|TARGET" ci_speed_output.log || echo "0")
         echo "success_count=$success_count" >> $GITHUB_OUTPUT
         
     - name: Performance Verification
@@ -141,7 +141,8 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🎯 **Target Achieved!** Best setup time: ${{ steps.speed-test.outputs.best_time }}s" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Performance Improvement:** $(python3 -c "print(f'{((5.0 - ${{ steps.speed-test.outputs.best_time }}) / 5.0) * 100:.1f}%')")" faster than baseline" >> $GITHUB_STEP_SUMMARY
+          improvement=$(python3 -c "print(f'{((5.0 - ${{ steps.speed-test.outputs.best_time }}) / 5.0) * 100:.1f}%')")
+          echo "**Performance Improvement:** ${improvement} faster than baseline" >> $GITHUB_STEP_SUMMARY
         else
           echo "### ⚠️  Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
