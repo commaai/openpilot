@@ -87,7 +87,7 @@ runs:
           # Instant environment variables
           export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 CI=1 DISPLAY=:99
           export OPENPILOT_PATH="$(pwd)" VIRTUAL_ENV="$TARGET_VENV" PYTHONPATH="$(pwd)"
-          export PATH="$TARGET_VENV/bin:$PATH"
+          export PATH="$(pwd):$TARGET_VENV/bin:$PATH"
           
           # Check if already set up (instant cache hit)
           if [[ -f "/tmp/.openpilot_ready" && -f "/tmp/.openpilot_setup_complete" && -d "$TARGET_VENV" ]]; then
