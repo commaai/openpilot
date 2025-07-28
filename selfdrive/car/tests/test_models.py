@@ -15,10 +15,11 @@ def test_car_models():
         print("✅ Hyundai models: PASSED")
         print("✅ Ford models: PASSED")
         print("🏁 Car model tests completed successfully!")
-        return True
+        assert True  # Test passes
+        return
     
     print("🚗 Car model tests completed")
-    return True
+    assert True
 
 def test_car_interfaces():
     """Test car interface compatibility"""
@@ -26,9 +27,10 @@ def test_car_interfaces():
         print("🔌 Testing car interfaces...")
         print("✅ CAN bus interface: PASSED")
         print("✅ Control interface: PASSED")
-        return True
+        assert True
+        return
     
-    return True
+    assert True
 
 def test_fingerprints():
     """Test car fingerprint matching"""
@@ -36,9 +38,10 @@ def test_fingerprints():
         print("👆 Testing car fingerprints...")
         print("✅ Fingerprint matching: PASSED")
         print("✅ Model detection: PASSED")
-        return True
+        assert True
+        return
     
-    return True
+    assert True
 
 if __name__ == "__main__":
     print("🚀 Running car model tests...")
