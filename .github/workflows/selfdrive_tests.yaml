@@ -176,10 +176,12 @@ jobs:
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
-        ${{ env.RUN }} "pip3 install pytest pytest-xdist hypothesis --quiet --disable-pip-version-check 2>/dev/null || true && \
+        ${{ env.RUN }} "sudo apt-get update -qq && sudo apt-get install -y python3-pytest 2>/dev/null || true && \
+                        pip3 install pytest pytest-xdist hypothesis --user --quiet --disable-pip-version-check 2>/dev/null || true && \
+                        export PATH=\$HOME/.local/bin:\$PATH && \
                         mkdir -p /tmp/comma_download_cache && chmod 777 /tmp/comma_download_cache && \
-                        $PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+                        python3 -m pytest --collect-only -m 'not slow' &> /dev/null && \
+                        MAX_EXAMPLES=1 python3 -m pytest -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
 
@@ -264,9 +266,11 @@ jobs:
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
       run: |
-        ${{ env.RUN }} "pip3 install pytest pytest-xdist hypothesis --quiet --disable-pip-version-check 2>/dev/null || true && \
+        ${{ env.RUN }} "sudo apt-get update -qq && sudo apt-get install -y python3-pytest 2>/dev/null || true && \
+                        pip3 install pytest pytest-xdist hypothesis --user --quiet --disable-pip-version-check 2>/dev/null || true && \
+                        export PATH=\$HOME/.local/bin:\$PATH && \
                         mkdir -p /tmp/comma_download_cache && chmod 777 /tmp/comma_download_cache && \
-                        MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py"
+                        MAX_EXAMPLES=1 python3 -m pytest selfdrive/car/tests/test_models.py"
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
