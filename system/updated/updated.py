@@ -31,8 +31,8 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 
-DAYS_NO_CONNECTIVITY_MAX = 14     # do not allow to engage after this many days
-DAYS_NO_CONNECTIVITY_PROMPT = 10  # send an offroad prompt after this many days
+HOURS_NO_CONNECTIVITY_MAX = 24     # do not allow to engage after this many hours
+HOURS_NO_CONNECTIVITY_PROMPT = 20  # send an offroad prompt after this many hours
 
 class UserRequest:
   NONE = 0
@@ -271,13 +271,11 @@ class Updater:
     if len(self.branches):
       self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
-    last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+    last_update = datetime.datetime.fromtimestamp(self.params.get("UptimeOnroad", return_default=True)).replace(tzinfo=None)
     if update_success:
-      write_time_to_param(self.params, "LastUpdateTime")
+      self.params.put("LastUpdateTimeV2", last_update)
     else:
-      t = self.params.get("LastUpdateTime")
-      if t is not None:
-        last_update = t
+      last_update = self.params.get("LastUpdateTimeV2") or last_update
 
     if exception is None:
       self.params.remove("LastUpdateException")
@@ -315,8 +313,8 @@ class Updater:
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
       set_offroad_alert(alert, False)
 
-    now = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-    dt = now - last_update
+    now = datetime.datetime.fromtimestamp(self.params.get("UptimeOnroad", return_default=True)).replace(tzinfo=None)
+    dt = (now - last_update).total_seconds() / (60*60)
     build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
       if build_metadata.tested_channel:
@@ -325,11 +323,11 @@ class Updater:
         extra_text = exception
       set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
     elif failed_count > 0:
-      if dt.days > DAYS_NO_CONNECTIVITY_MAX:
+      if dt > HOURS_NO_CONNECTIVITY_MAX:
         set_offroad_alert("Offroad_ConnectivityNeeded", True)
-      elif dt.days > DAYS_NO_CONNECTIVITY_PROMPT:
-        remaining = max(DAYS_NO_CONNECTIVITY_MAX - dt.days, 1)
-        set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} day{'' if remaining == 1 else 's'}.")
+      elif dt > HOURS_NO_CONNECTIVITY_PROMPT:
+        remaining = max(HOURS_NO_CONNECTIVITY_MAX - dt, 1)
+        set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} hour{'' if remaining == 1 else 's'}.")
 
   def check_for_update(self) -> None:
     cloudlog.info("checking for updates")
