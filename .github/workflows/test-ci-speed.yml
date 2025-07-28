@@ -63,9 +63,13 @@ jobs:
           echo "best_time=999" >> $GITHUB_OUTPUT
         fi
         
-        # Count successful methods
-        success_count=$(grep -Ec "TARGET ACHIEVED|TARGET" ci_speed_output.log || echo "0")
-        echo "success_count=$success_count" >> $GITHUB_OUTPUT
+        # Count successful methods - ensure proper format
+        if grep -q "TARGET ACHIEVED" ci_speed_output.log; then
+          success_count=$(grep -c "TARGET ACHIEVED" ci_speed_output.log)
+        else
+          success_count=0
+        fi
+        echo "success_count=${success_count}" >> $GITHUB_OUTPUT
         
     - name: Performance Verification
       run: |
