@@ -1,1 +1,0 @@
-getting-started/what-is-openpilot.md
