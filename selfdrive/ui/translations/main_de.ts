@@ -8,10 +8,6 @@
         <translation>Schließen</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>Update pausieren</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>Aktualisieren und neu starten</translation>
     </message>
@@ -492,6 +488,18 @@ Der Firehose-Modus ermöglicht es dir, deine Trainingsdaten-Uploads zu maximiere
     </message>
     <message>
         <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation type="unfinished">Update pausieren</translation>
+    </message>
+    <message>
+        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
