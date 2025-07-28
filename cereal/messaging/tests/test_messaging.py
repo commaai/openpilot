@@ -1,12 +1,22 @@
 import os
-import capnp
-import multiprocessing
-import numbers
 import random
-import threading
 import time
+from threading import Timer
 from parameterized import parameterized
 import pytest
+
+# Lazy imports for performance
+def _get_capnp():
+    import capnp
+    return capnp
+
+def _get_multiprocessing():
+    import multiprocessing
+    return multiprocessing
+
+def _get_numbers():
+    import numbers
+    return numbers
 
 from cereal import log, car
 import cereal.messaging as messaging
@@ -39,6 +49,7 @@ def random_carstate():
 
 # TODO: this should compare any capnp structs
 def assert_carstate(cs1, cs2):
+  numbers = _get_numbers()
   for f in car.CarState.schema.non_union_fields:
     # TODO: check all types
     val1, val2 = getattr(cs1, f), getattr(cs2, f)
@@ -48,7 +59,7 @@ def assert_carstate(cs1, cs2):
 def delayed_send(delay, sock, dat):
   def send_func():
     sock.send(dat)
-  threading.Timer(delay, send_func).start()
+  Timer(delay, send_func).start()
 
 
 class TestMessaging:
@@ -64,6 +75,7 @@ class TestMessaging:
 
   @parameterized.expand(events)
   def test_new_message(self, evt):
+    capnp = _get_capnp()
     try:
       msg = messaging.new_message(evt)
     except capnp.lib.capnp.KjException:
@@ -80,11 +92,17 @@ class TestMessaging:
   def test_sub_sock(self, evt):
     messaging.sub_sock(evt)
 
-  @parameterized.expand([
-    (messaging.drain_sock, capnp._DynamicStructReader),
-    (messaging.drain_sock_raw, bytes),
-  ])
-  def test_drain_sock(self, func, expected_type):
+  def test_drain_sock(self):
+    capnp = _get_capnp()
+    test_cases = [
+      (messaging.drain_sock, capnp._DynamicStructReader),
+      (messaging.drain_sock_raw, bytes),
+    ]
+    
+    for func, expected_type in test_cases:
+      self._test_drain_sock_impl(func, expected_type)
+  
+  def _test_drain_sock_impl(self, func, expected_type):
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=1000)
@@ -106,6 +124,7 @@ class TestMessaging:
     assert len(msgs) == num_msgs
 
   def test_recv_sock(self):
+    capnp = _get_capnp()
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=100)
@@ -125,6 +144,7 @@ class TestMessaging:
     assert_carstate(msg.carState, recvd.carState)
 
   def test_recv_one(self):
+    capnp = _get_capnp()
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock, timeout=1000)
@@ -143,6 +163,7 @@ class TestMessaging:
 
   @pytest.mark.xfail(condition="ZMQ" in os.environ, reason='ZMQ detected')
   def test_recv_one_or_none(self):
+    capnp = _get_capnp()
     sock = "carState"
     pub_sock = messaging.pub_sock(sock)
     sub_sock = messaging.sub_sock(sock)
@@ -160,6 +181,7 @@ class TestMessaging:
     assert_carstate(msg.carState, recvd.carState)
 
   def test_recv_one_retry(self):
+    capnp = _get_capnp()
     sock = "carState"
     sock_timeout = 0.1
     pub_sock = messaging.pub_sock(sock)
@@ -168,6 +190,8 @@ class TestMessaging:
 
     # this test doesn't work with ZMQ since multiprocessing interrupts it
     if "ZMQ" not in os.environ:
+      # get the multiprocessing module
+      multiprocessing = _get_multiprocessing()
       # wait 5 socket timeouts and make sure it's still retrying
       p = multiprocessing.Process(target=messaging.recv_one_retry, args=(sub_sock,))
       p.start()
