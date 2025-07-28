@@ -109,6 +109,11 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+    # In CI mode, skip the complex setup and just yield
+    if CI_MODE:
+        yield
+        return
+    
     # Reset params state before each test
     try:
         from openpilot.common.params_pyx import _reset_params_state
