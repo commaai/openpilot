@@ -6,11 +6,13 @@ runs:
     - shell: bash
       name: Build openpilot with all flags
       run: |
+        export PATH="$(pwd):$PATH"
         ${{ env.RUN }} "scons -j$(nproc)"
         ${{ env.RUN }} "release/check-dirty.sh"
     - shell: bash
       name: Cleanup scons cache and rebuild
       run: |
+          export PATH="$(pwd):$PATH"
           ${{ env.RUN }} "rm -rf /tmp/scons_cache/* && \
                           scons -j$(nproc) --cache-populate"
     - name: Save scons cache
