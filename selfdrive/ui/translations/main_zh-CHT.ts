@@ -8,10 +8,6 @@
         <translation>關閉</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>暫停更新</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>重啟並更新</translation>
     </message>
@@ -495,6 +491,18 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
         <translation>裝置註冊 comma.ai 後端失敗。此裝置將無法連線或上傳資料至 comma.ai 伺服器，也無法獲得 comma.ai 的支援。若此裝置購自 comma.ai/shop，請至 https://comma.ai/support 建立支援請求。</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation type="unfinished">暫停更新</translation>
+    </message>
+    <message>
+        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
