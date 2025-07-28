@@ -59,11 +59,11 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
-  accel_valid = abs(CS.aEgo - accel_calibrated) < 2
+  livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
 
-  excessive_long_actuation = sm['carControl'].longActive and accel_valid and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
+  excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
   excessive_lat_actuation = sm['carControl'].latActive and abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2
-  counter = counter + 1 if sm['carControl'].longActive and (excessive_long_actuation or excessive_lat_actuation) else 0
+  counter = counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
   return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
 
