@@ -19,15 +19,13 @@ concurrency:
 
 env:
   PYTHONWARNINGS: error
-  BASE_IMAGE: openpilot-base
   AZURE_TOKEN: ${{ secrets.AZURE_COMMADATACI_OPENPILOTCI_TOKEN }}
-
-  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: selfdrive/test/docker_build.sh base
-
-  RUN: docker run --shm-size 2G -v $PWD:/tmp/openpilot -w /tmp/openpilot -e CI=1 -e PYTHONWARNINGS=error -e FILEREADER_CACHE=1 -e PYTHONPATH=/tmp/openpilot -e NUM_JOBS -e JOB_ID -e GITHUB_ACTION -e GITHUB_REF -e GITHUB_HEAD_REF -e GITHUB_SHA -e GITHUB_REPOSITORY -e GITHUB_RUN_ID -v $GITHUB_WORKSPACE/.ci_cache/scons_cache:/tmp/scons_cache -v $GITHUB_WORKSPACE/.ci_cache/comma_download_cache:/tmp/comma_download_cache -v $GITHUB_WORKSPACE/.ci_cache/openpilot_cache:/tmp/openpilot_cache $BASE_IMAGE /bin/bash -c
-
-  PYTEST: pytest --continue-on-collection-errors --durations=0 --durations-min=5 -n logical
+  
+  # Ultra-fast direct execution (no Docker)
+  RUN: /bin/bash -c
+  
+  # Optimized pytest with fast collection
+  PYTEST: python -m pytest --continue-on-collection-errors --durations=0 --durations-min=5 -n logical --cache-clear
 
 jobs:
   build_release:
@@ -154,6 +152,21 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
+    
+    # Ultra-fast environment cache restoration
+    - name: Cache complete CI environment
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.venv
+          ~/pip_cache
+          ~/.ci_cache
+          /tmp/.openpilot_ready
+        key: ci-env-ubuntu-20.04-v2-${{ hashFiles('current_requirements.txt', 'setup_ultra_fast.sh') }}
+        restore-keys: |
+          ci-env-ubuntu-20.04-v2-
+          ci-env-ubuntu-20.04-
+    
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
     - name: Build openpilot

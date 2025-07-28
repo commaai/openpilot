@@ -1,0 +1,31 @@
+name: Parallel CI Setup
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  parallel-setup:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: '3.x'
+
+    - name: Prepare Parallel Cache
+      run: |
+        chmod +x ./prepare_parallel_cache.sh
+        ./prepare_parallel_cache.sh
+
+    - name: Run Parallel CI Setup
+      run: |
+        chmod +x ./setup_parallel_ci.sh
+        ./setup_parallel_ci.sh

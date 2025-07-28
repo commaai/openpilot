@@ -1,0 +1,2880 @@
+versions pytest-8.4.1, python-3.11.13.final.0
+invocation_dir=/Users/minguez/Desktop/openpilot
+cwd=/Users/minguez/Desktop/openpilot
+args=('--collect-only', '--tb=no', '-q', '--debug=debug.log')
+
+  pytest_cmdline_main [hook]
+      config: <_pytest.config.Config object at 0x10bc44690>
+    pytest_plugin_registered [hook]
+        plugin: <Session  exitstatus='<UNSET>' testsfailed=0 testscollected=0>
+        plugin_name: session
+        manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+    finish pytest_plugin_registered --> [] [hook]
+    pytest_configure [hook]
+        config: <_pytest.config.Config object at 0x10bc44690>
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.cacheprovider.LFPlugin object at 0x10de6e910>
+          plugin_name: lfplugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.cacheprovider.NFPlugin object at 0x10bd4ac10>
+          plugin_name: nfplugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+    early skip of rewriting module: faulthandler [assertion]
+      pytest_plugin_registered [hook]
+          plugin: <class '_pytest.legacypath.LegacyTmpdirPlugin'>
+          plugin_name: legacypath-tmpdir
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+    early skip of rewriting module: pdb [assertion]
+    early skip of rewriting module: cmd [assertion]
+    early skip of rewriting module: code [assertion]
+    early skip of rewriting module: codeop [assertion]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+          plugin_name: 4483458000
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.config.Config object at 0x10bc44690>
+          plugin_name: pytestconfig
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.mark' from '/usr/local/lib/python3.11/site-packages/_pytest/mark/__init__.py'>
+          plugin_name: mark
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.main' from '/usr/local/lib/python3.11/site-packages/_pytest/main.py'>
+          plugin_name: main
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.runner' from '/usr/local/lib/python3.11/site-packages/_pytest/runner.py'>
+          plugin_name: runner
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.fixtures' from '/usr/local/lib/python3.11/site-packages/_pytest/fixtures.py'>
+          plugin_name: fixtures
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.helpconfig' from '/usr/local/lib/python3.11/site-packages/_pytest/helpconfig.py'>
+          plugin_name: helpconfig
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.python' from '/usr/local/lib/python3.11/site-packages/_pytest/python.py'>
+          plugin_name: python
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.terminal' from '/usr/local/lib/python3.11/site-packages/_pytest/terminal.py'>
+          plugin_name: terminal
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.debugging' from '/usr/local/lib/python3.11/site-packages/_pytest/debugging.py'>
+          plugin_name: debugging
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.unittest' from '/usr/local/lib/python3.11/site-packages/_pytest/unittest.py'>
+          plugin_name: unittest
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.capture' from '/usr/local/lib/python3.11/site-packages/_pytest/capture.py'>
+          plugin_name: capture
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.skipping' from '/usr/local/lib/python3.11/site-packages/_pytest/skipping.py'>
+          plugin_name: skipping
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.legacypath' from '/usr/local/lib/python3.11/site-packages/_pytest/legacypath.py'>
+          plugin_name: legacypath
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.tmpdir' from '/usr/local/lib/python3.11/site-packages/_pytest/tmpdir.py'>
+          plugin_name: tmpdir
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.monkeypatch' from '/usr/local/lib/python3.11/site-packages/_pytest/monkeypatch.py'>
+          plugin_name: monkeypatch
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.recwarn' from '/usr/local/lib/python3.11/site-packages/_pytest/recwarn.py'>
+          plugin_name: recwarn
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.pastebin' from '/usr/local/lib/python3.11/site-packages/_pytest/pastebin.py'>
+          plugin_name: pastebin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.assertion' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/__init__.py'>
+          plugin_name: assertion
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.junitxml' from '/usr/local/lib/python3.11/site-packages/_pytest/junitxml.py'>
+          plugin_name: junitxml
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.doctest' from '/usr/local/lib/python3.11/site-packages/_pytest/doctest.py'>
+          plugin_name: doctest
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.cacheprovider' from '/usr/local/lib/python3.11/site-packages/_pytest/cacheprovider.py'>
+          plugin_name: cacheprovider
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.freeze_support' from '/usr/local/lib/python3.11/site-packages/_pytest/freeze_support.py'>
+          plugin_name: freeze_support
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.setuponly' from '/usr/local/lib/python3.11/site-packages/_pytest/setuponly.py'>
+          plugin_name: setuponly
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.setupplan' from '/usr/local/lib/python3.11/site-packages/_pytest/setupplan.py'>
+          plugin_name: setupplan
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.stepwise' from '/usr/local/lib/python3.11/site-packages/_pytest/stepwise.py'>
+          plugin_name: stepwise
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.unraisableexception' from '/usr/local/lib/python3.11/site-packages/_pytest/unraisableexception.py'>
+          plugin_name: unraisableexception
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.threadexception' from '/usr/local/lib/python3.11/site-packages/_pytest/threadexception.py'>
+          plugin_name: threadexception
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.warnings' from '/usr/local/lib/python3.11/site-packages/_pytest/warnings.py'>
+          plugin_name: warnings
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.logging' from '/usr/local/lib/python3.11/site-packages/_pytest/logging.py'>
+          plugin_name: logging
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.reports' from '/usr/local/lib/python3.11/site-packages/_pytest/reports.py'>
+          plugin_name: reports
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.faulthandler' from '/usr/local/lib/python3.11/site-packages/_pytest/faulthandler.py'>
+          plugin_name: faulthandler
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'anyio.pytest_plugin' from '/usr/local/lib/python3.11/site-packages/anyio/pytest_plugin.py'>
+          plugin_name: anyio
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'typeguard._pytest_plugin' from '/usr/local/lib/python3.11/site-packages/typeguard/_pytest_plugin.py'>
+          plugin_name: typeguard
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'langsmith.pytest_plugin' from '/usr/local/lib/python3.11/site-packages/langsmith/pytest_plugin.py'>
+          plugin_name: langsmith_plugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'faker.contrib.pytest.plugin' from '/usr/local/lib/python3.11/site-packages/faker/contrib/pytest/plugin.py'>
+          plugin_name: faker
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <CaptureManager _method='fd' _global_capturing=<MultiCapture out=<FDCapture 1 oldfd=5 _state='suspended' tmpfile=<_io.TextIOWrapper name="<_io.FileIO name=6 mode='rb+' closefd=True>" mode='r+' encoding='utf-8'>> err=<FDCapture 2 oldfd=7 _state='suspended' tmpfile=<_io.TextIOWrapper name="<_io.FileIO name=8 mode='rb+' closefd=True>" mode='r+' encoding='utf-8'>> in_=<FDCapture 0 oldfd=3 _state='started' tmpfile=<_io.TextIOWrapper name='/dev/null' mode='r' encoding='utf-8'>> _state='suspended' _in_suspended=False> _capture_fixture=None>
+          plugin_name: capturemanager
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'conftest' from '/Users/minguez/Desktop/openpilot/conftest.py'>
+          plugin_name: /Users/minguez/Desktop/openpilot/conftest.py
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+          plugin_name: session
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.cacheprovider.LFPlugin object at 0x10de6e910>
+          plugin_name: lfplugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.cacheprovider.NFPlugin object at 0x10bd4ac10>
+          plugin_name: nfplugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <class '_pytest.legacypath.LegacyTmpdirPlugin'>
+          plugin_name: legacypath-tmpdir
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.terminal.TerminalReporter object at 0x10bcf4f10>
+          plugin_name: terminalreporter
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.logging.LoggingPlugin object at 0x10bd49dd0>
+          plugin_name: logging-plugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+    finish pytest_configure --> [] [hook]
+    pytest_sessionstart [hook]
+        session: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+          plugin_name: 4483458000
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.config.Config object at 0x10bc44690>
+          plugin_name: pytestconfig
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.mark' from '/usr/local/lib/python3.11/site-packages/_pytest/mark/__init__.py'>
+          plugin_name: mark
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.main' from '/usr/local/lib/python3.11/site-packages/_pytest/main.py'>
+          plugin_name: main
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.runner' from '/usr/local/lib/python3.11/site-packages/_pytest/runner.py'>
+          plugin_name: runner
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.fixtures' from '/usr/local/lib/python3.11/site-packages/_pytest/fixtures.py'>
+          plugin_name: fixtures
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.helpconfig' from '/usr/local/lib/python3.11/site-packages/_pytest/helpconfig.py'>
+          plugin_name: helpconfig
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.python' from '/usr/local/lib/python3.11/site-packages/_pytest/python.py'>
+          plugin_name: python
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.terminal' from '/usr/local/lib/python3.11/site-packages/_pytest/terminal.py'>
+          plugin_name: terminal
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.debugging' from '/usr/local/lib/python3.11/site-packages/_pytest/debugging.py'>
+          plugin_name: debugging
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.unittest' from '/usr/local/lib/python3.11/site-packages/_pytest/unittest.py'>
+          plugin_name: unittest
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.capture' from '/usr/local/lib/python3.11/site-packages/_pytest/capture.py'>
+          plugin_name: capture
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.skipping' from '/usr/local/lib/python3.11/site-packages/_pytest/skipping.py'>
+          plugin_name: skipping
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.legacypath' from '/usr/local/lib/python3.11/site-packages/_pytest/legacypath.py'>
+          plugin_name: legacypath
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.tmpdir' from '/usr/local/lib/python3.11/site-packages/_pytest/tmpdir.py'>
+          plugin_name: tmpdir
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.monkeypatch' from '/usr/local/lib/python3.11/site-packages/_pytest/monkeypatch.py'>
+          plugin_name: monkeypatch
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.recwarn' from '/usr/local/lib/python3.11/site-packages/_pytest/recwarn.py'>
+          plugin_name: recwarn
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.pastebin' from '/usr/local/lib/python3.11/site-packages/_pytest/pastebin.py'>
+          plugin_name: pastebin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.assertion' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/__init__.py'>
+          plugin_name: assertion
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.junitxml' from '/usr/local/lib/python3.11/site-packages/_pytest/junitxml.py'>
+          plugin_name: junitxml
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.doctest' from '/usr/local/lib/python3.11/site-packages/_pytest/doctest.py'>
+          plugin_name: doctest
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.cacheprovider' from '/usr/local/lib/python3.11/site-packages/_pytest/cacheprovider.py'>
+          plugin_name: cacheprovider
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.freeze_support' from '/usr/local/lib/python3.11/site-packages/_pytest/freeze_support.py'>
+          plugin_name: freeze_support
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.setuponly' from '/usr/local/lib/python3.11/site-packages/_pytest/setuponly.py'>
+          plugin_name: setuponly
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.setupplan' from '/usr/local/lib/python3.11/site-packages/_pytest/setupplan.py'>
+          plugin_name: setupplan
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.stepwise' from '/usr/local/lib/python3.11/site-packages/_pytest/stepwise.py'>
+          plugin_name: stepwise
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.unraisableexception' from '/usr/local/lib/python3.11/site-packages/_pytest/unraisableexception.py'>
+          plugin_name: unraisableexception
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.threadexception' from '/usr/local/lib/python3.11/site-packages/_pytest/threadexception.py'>
+          plugin_name: threadexception
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.warnings' from '/usr/local/lib/python3.11/site-packages/_pytest/warnings.py'>
+          plugin_name: warnings
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.logging' from '/usr/local/lib/python3.11/site-packages/_pytest/logging.py'>
+          plugin_name: logging
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.reports' from '/usr/local/lib/python3.11/site-packages/_pytest/reports.py'>
+          plugin_name: reports
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module '_pytest.faulthandler' from '/usr/local/lib/python3.11/site-packages/_pytest/faulthandler.py'>
+          plugin_name: faulthandler
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'anyio.pytest_plugin' from '/usr/local/lib/python3.11/site-packages/anyio/pytest_plugin.py'>
+          plugin_name: anyio
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'typeguard._pytest_plugin' from '/usr/local/lib/python3.11/site-packages/typeguard/_pytest_plugin.py'>
+          plugin_name: typeguard
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'langsmith.pytest_plugin' from '/usr/local/lib/python3.11/site-packages/langsmith/pytest_plugin.py'>
+          plugin_name: langsmith_plugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'faker.contrib.pytest.plugin' from '/usr/local/lib/python3.11/site-packages/faker/contrib/pytest/plugin.py'>
+          plugin_name: faker
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <CaptureManager _method='fd' _global_capturing=<MultiCapture out=<FDCapture 1 oldfd=5 _state='suspended' tmpfile=<_io.TextIOWrapper name="<_io.FileIO name=6 mode='rb+' closefd=True>" mode='r+' encoding='utf-8'>> err=<FDCapture 2 oldfd=7 _state='suspended' tmpfile=<_io.TextIOWrapper name="<_io.FileIO name=8 mode='rb+' closefd=True>" mode='r+' encoding='utf-8'>> in_=<FDCapture 0 oldfd=3 _state='started' tmpfile=<_io.TextIOWrapper name='/dev/null' mode='r' encoding='utf-8'>> _state='suspended' _in_suspended=False> _capture_fixture=None>
+          plugin_name: capturemanager
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <module 'conftest' from '/Users/minguez/Desktop/openpilot/conftest.py'>
+          plugin_name: /Users/minguez/Desktop/openpilot/conftest.py
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+          plugin_name: session
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.cacheprovider.LFPlugin object at 0x10de6e910>
+          plugin_name: lfplugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.cacheprovider.NFPlugin object at 0x10bd4ac10>
+          plugin_name: nfplugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <class '_pytest.legacypath.LegacyTmpdirPlugin'>
+          plugin_name: legacypath-tmpdir
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.terminal.TerminalReporter object at 0x10bcf4f10>
+          plugin_name: terminalreporter
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.logging.LoggingPlugin object at 0x10bd49dd0>
+          plugin_name: logging-plugin
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+      pytest_plugin_registered [hook]
+          plugin: <_pytest.fixtures.FixtureManager object at 0x10de97650>
+          plugin_name: funcmanage
+          manager: <_pytest.config.PytestPluginManager object at 0x10b3c23d0>
+      finish pytest_plugin_registered --> [] [hook]
+    finish pytest_sessionstart --> [] [hook]
+    pytest_collection [hook]
+        session: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+    perform_collect <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0> ['/Users/minguez/Desktop/openpilot'] [collection]
+        pytest_collectstart [hook]
+            collector: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+        finish pytest_collectstart --> [] [hook]
+        pytest_make_collect_report [hook]
+            collector: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+        processing argument CollectionArgument(path=PosixPath('/Users/minguez/Desktop/openpilot'), parts=[], module_name=None) [collection]
+            pytest_collect_directory [hook]
+                path: /Users/minguez/Desktop/openpilot
+                parent: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=0 testscollected=0>
+            finish pytest_collect_directory --> <Dir openpilot> [hook]
+        finish pytest_make_collect_report --> <CollectReport '' lenresult=1 outcome='passed'> [hook]
+        pytest_collectreport [hook]
+            report: <CollectReport '' lenresult=1 outcome='passed'>
+        finish pytest_collectreport --> [] [hook]
+    genitems <Dir openpilot> [collection]
+      pytest_collectstart [hook]
+          collector: <Dir openpilot>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Dir openpilot>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.DS_Store
+            path: /Users/minguez/Desktop/openpilot/.DS_Store
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.DS_Store
+            path: /Users/minguez/Desktop/openpilot/.DS_Store
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.clang-tidy
+            path: /Users/minguez/Desktop/openpilot/.clang-tidy
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.clang-tidy
+            path: /Users/minguez/Desktop/openpilot/.clang-tidy
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.dockerignore
+            path: /Users/minguez/Desktop/openpilot/.dockerignore
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.dockerignore
+            path: /Users/minguez/Desktop/openpilot/.dockerignore
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.editorconfig
+            path: /Users/minguez/Desktop/openpilot/.editorconfig
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.editorconfig
+            path: /Users/minguez/Desktop/openpilot/.editorconfig
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.git
+            path: /Users/minguez/Desktop/openpilot/.git
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.gitattributes
+            path: /Users/minguez/Desktop/openpilot/.gitattributes
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.gitattributes
+            path: /Users/minguez/Desktop/openpilot/.gitattributes
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.github
+            path: /Users/minguez/Desktop/openpilot/.github
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.gitignore
+            path: /Users/minguez/Desktop/openpilot/.gitignore
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.gitignore
+            path: /Users/minguez/Desktop/openpilot/.gitignore
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.gitmodules
+            path: /Users/minguez/Desktop/openpilot/.gitmodules
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.gitmodules
+            path: /Users/minguez/Desktop/openpilot/.gitmodules
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.lfsconfig
+            path: /Users/minguez/Desktop/openpilot/.lfsconfig
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/.lfsconfig
+            path: /Users/minguez/Desktop/openpilot/.lfsconfig
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.pytest_cache
+            path: /Users/minguez/Desktop/openpilot/.pytest_cache
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/.vscode
+            path: /Users/minguez/Desktop/openpilot/.vscode
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot
+            path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot
+            path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot_base
+            path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot_base
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot_base
+            path: /Users/minguez/Desktop/openpilot/Dockerfile.openpilot_base
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/IMPORT_OPTIMIZATIONS.md
+            path: /Users/minguez/Desktop/openpilot/IMPORT_OPTIMIZATIONS.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/IMPORT_OPTIMIZATIONS.md
+            path: /Users/minguez/Desktop/openpilot/IMPORT_OPTIMIZATIONS.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/Jenkinsfile
+            path: /Users/minguez/Desktop/openpilot/Jenkinsfile
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/Jenkinsfile
+            path: /Users/minguez/Desktop/openpilot/Jenkinsfile
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/LICENSE
+            path: /Users/minguez/Desktop/openpilot/LICENSE
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/LICENSE
+            path: /Users/minguez/Desktop/openpilot/LICENSE
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/PARALLELISM_OPTIMIZATIONS.md
+            path: /Users/minguez/Desktop/openpilot/PARALLELISM_OPTIMIZATIONS.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/PARALLELISM_OPTIMIZATIONS.md
+            path: /Users/minguez/Desktop/openpilot/PARALLELISM_OPTIMIZATIONS.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/README.md
+            path: /Users/minguez/Desktop/openpilot/README.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/README.md
+            path: /Users/minguez/Desktop/openpilot/README.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/RELEASES.md
+            path: /Users/minguez/Desktop/openpilot/RELEASES.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/RELEASES.md
+            path: /Users/minguez/Desktop/openpilot/RELEASES.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/SConstruct
+            path: /Users/minguez/Desktop/openpilot/SConstruct
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/SConstruct
+            path: /Users/minguez/Desktop/openpilot/SConstruct
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/SECURITY.md
+            path: /Users/minguez/Desktop/openpilot/SECURITY.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/SECURITY.md
+            path: /Users/minguez/Desktop/openpilot/SECURITY.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/__pycache__
+            path: /Users/minguez/Desktop/openpilot/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal
+            path: /Users/minguez/Desktop/openpilot/cereal
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/cereal
+            parent: <Dir openpilot>
+        finish pytest_collect_directory --> <Package cereal> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common
+            path: /Users/minguez/Desktop/openpilot/common
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/common
+            parent: <Dir openpilot>
+        finish pytest_collect_directory --> <Package common> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/conftest.py
+            path: /Users/minguez/Desktop/openpilot/conftest.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/conftest.py
+            path: /Users/minguez/Desktop/openpilot/conftest.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/debug.log
+            path: /Users/minguez/Desktop/openpilot/debug.log
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/debug.log
+            path: /Users/minguez/Desktop/openpilot/debug.log
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs
+            path: /Users/minguez/Desktop/openpilot/docs
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/docs
+            parent: <Dir openpilot>
+        finish pytest_collect_directory --> <Dir docs> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/fast_pytest.py
+            path: /Users/minguez/Desktop/openpilot/fast_pytest.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/fast_pytest.py
+            path: /Users/minguez/Desktop/openpilot/fast_pytest.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/import_optimization_test.py
+            path: /Users/minguez/Desktop/openpilot/import_optimization_test.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/import_optimization_test.py
+            path: /Users/minguez/Desktop/openpilot/import_optimization_test.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Dir openpilot>
+              module_path: /Users/minguez/Desktop/openpilot/import_optimization_test.py
+              path: /Users/minguez/Desktop/openpilot/import_optimization_test.py
+          finish pytest_pycollect_makemodule --> <Module import_optimization_test.py> [hook]
+        finish pytest_collect_file --> [<Module import_optimization_test.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/pytest.ini
+            path: /Users/minguez/Desktop/openpilot/pytest.ini
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/pytest.ini
+            path: /Users/minguez/Desktop/openpilot/pytest.ini
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/pytest_performance_test.py
+            path: /Users/minguez/Desktop/openpilot/pytest_performance_test.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/pytest_performance_test.py
+            path: /Users/minguez/Desktop/openpilot/pytest_performance_test.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Dir openpilot>
+              module_path: /Users/minguez/Desktop/openpilot/pytest_performance_test.py
+              path: /Users/minguez/Desktop/openpilot/pytest_performance_test.py
+          finish pytest_pycollect_makemodule --> <Module pytest_performance_test.py> [hook]
+        finish pytest_collect_file --> [<Module pytest_performance_test.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_cache_demo
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo
+            parent: <Dir openpilot>
+        finish pytest_collect_directory --> <Dir test_cache_demo> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_collection_time.py
+            path: /Users/minguez/Desktop/openpilot/test_collection_time.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/test_collection_time.py
+            path: /Users/minguez/Desktop/openpilot/test_collection_time.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Dir openpilot>
+              module_path: /Users/minguez/Desktop/openpilot/test_collection_time.py
+              path: /Users/minguez/Desktop/openpilot/test_collection_time.py
+          finish pytest_pycollect_makemodule --> <Module test_collection_time.py> [hook]
+        finish pytest_collect_file --> [<Module test_collection_time.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_parallelism.py
+            path: /Users/minguez/Desktop/openpilot/test_parallelism.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir openpilot>
+            file_path: /Users/minguez/Desktop/openpilot/test_parallelism.py
+            path: /Users/minguez/Desktop/openpilot/test_parallelism.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Dir openpilot>
+              module_path: /Users/minguez/Desktop/openpilot/test_parallelism.py
+              path: /Users/minguez/Desktop/openpilot/test_parallelism.py
+          finish pytest_pycollect_makemodule --> <Module test_parallelism.py> [hook]
+        finish pytest_collect_file --> [<Module test_parallelism.py>] [hook]
+      finish pytest_make_collect_report --> <CollectReport '.' lenresult=8 outcome='passed'> [hook]
+    genitems <Package cereal> [collection]
+      pytest_collectstart [hook]
+          collector: <Package cereal>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package cereal>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/__init__.py
+            path: /Users/minguez/Desktop/openpilot/cereal/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/__init__.py
+            path: /Users/minguez/Desktop/openpilot/cereal/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/README.md
+            path: /Users/minguez/Desktop/openpilot/cereal/README.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/README.md
+            path: /Users/minguez/Desktop/openpilot/cereal/README.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/SConscript
+            path: /Users/minguez/Desktop/openpilot/cereal/SConscript
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/SConscript
+            path: /Users/minguez/Desktop/openpilot/cereal/SConscript
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/__pycache__
+            path: /Users/minguez/Desktop/openpilot/cereal/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/custom.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/custom.capnp
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/custom.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/custom.capnp
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/include
+            path: /Users/minguez/Desktop/openpilot/cereal/include
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/cereal/include
+            parent: <Package cereal>
+        finish pytest_collect_directory --> <Dir include> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/legacy.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/legacy.capnp
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/legacy.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/legacy.capnp
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/log.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/log.capnp
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/log.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/log.capnp
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging
+            parent: <Package cereal>
+        finish pytest_collect_directory --> <Package messaging> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/services.py
+            path: /Users/minguez/Desktop/openpilot/cereal/services.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package cereal>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/services.py
+            path: /Users/minguez/Desktop/openpilot/cereal/services.py
+        finish pytest_collect_file --> [] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'cereal' lenresult=2 outcome='passed'> [hook]
+    genitems <Dir include> [collection]
+      pytest_collectstart [hook]
+          collector: <Dir include>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Dir include>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/include/c++.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/include/c++.capnp
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir include>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/include/c++.capnp
+            path: /Users/minguez/Desktop/openpilot/cereal/include/c++.capnp
+        finish pytest_collect_file --> [] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'cereal/include' lenresult=0 outcome='passed'> [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal/include' lenresult=0 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Package messaging> [collection]
+      pytest_collectstart [hook]
+          collector: <Package messaging>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package messaging>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/__init__.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package messaging>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/__init__.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/bridge.cc
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/bridge.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package messaging>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/bridge.cc
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/bridge.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/messaging.h
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/messaging.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package messaging>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/messaging.h
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/messaging.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.cc
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package messaging>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.cc
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.h
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package messaging>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.h
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/msgq_to_zmq.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/socketmaster.cc
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/socketmaster.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package messaging>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/socketmaster.cc
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/socketmaster.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests
+            parent: <Package messaging>
+        finish pytest_collect_directory --> <Package tests> [hook]
+      finish pytest_make_collect_report --> <CollectReport 'cereal/messaging' lenresult=1 outcome='passed'> [hook]
+    genitems <Package tests> [collection]
+      pytest_collectstart [hook]
+          collector: <Package tests>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package tests>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/__init__.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/__init__.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_messaging.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_messaging.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_messaging.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_messaging.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_messaging.py
+              path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_messaging.py
+          finish pytest_pycollect_makemodule --> <Module test_messaging.py> [hook]
+        finish pytest_collect_file --> [<Module test_messaging.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pub_sub_master.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pub_sub_master.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pub_sub_master.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pub_sub_master.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pub_sub_master.py
+              path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pub_sub_master.py
+          finish pytest_pycollect_makemodule --> <Module test_pub_sub_master.py> [hook]
+        finish pytest_collect_file --> [<Module test_pub_sub_master.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_services.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_services.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_services.py
+            path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_services.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_services.py
+              path: /Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_services.py
+          finish pytest_pycollect_makemodule --> <Module test_services.py> [hook]
+        finish pytest_collect_file --> [<Module test_services.py>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'cereal/messaging/tests' lenresult=3 outcome='passed'> [hook]
+    genitems <Module test_messaging.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_messaging.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_messaging.py>
+      early skip of rewriting module: cereal [assertion]
+      early skip of rewriting module: capnp [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'cereal/messaging/tests/test_messaging.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_messaging.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_me...^^^^^^^^^^^^^^\ncereal/__init__.py:2: in <module>\n    import capnp\nE   ModuleNotFoundError: No module named 'capnp'") tblen=7>>
+          report: <CollectReport 'cereal/messaging/tests/test_messaging.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal/messaging/tests/test_messaging.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_pub_sub_master.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_pub_sub_master.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_pub_sub_master.py>
+      early skip of rewriting module: cereal [assertion]
+      early skip of rewriting module: capnp [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'cereal/messaging/tests/test_pub_sub_master.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_pub_sub_master.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_pu...^^^^^^^^^^^^^^\ncereal/__init__.py:2: in <module>\n    import capnp\nE   ModuleNotFoundError: No module named 'capnp'") tblen=7>>
+          report: <CollectReport 'cereal/messaging/tests/test_pub_sub_master.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal/messaging/tests/test_pub_sub_master.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_services.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_services.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_services.py>
+      early skip of rewriting module: cereal [assertion]
+      early skip of rewriting module: capnp [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'cereal/messaging/tests/test_services.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_services.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/cereal/messaging/tests/test_se...^^^^^^^^^^^^^^\ncereal/__init__.py:2: in <module>\n    import capnp\nE   ModuleNotFoundError: No module named 'capnp'") tblen=7>>
+          report: <CollectReport 'cereal/messaging/tests/test_services.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal/messaging/tests/test_services.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal/messaging/tests' lenresult=3 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal/messaging' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'cereal' lenresult=2 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Package common> [collection]
+      pytest_collectstart [hook]
+          collector: <Package common>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package common>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/.DS_Store
+            path: /Users/minguez/Desktop/openpilot/common/.DS_Store
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/.DS_Store
+            path: /Users/minguez/Desktop/openpilot/common/.DS_Store
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/.gitignore
+            path: /Users/minguez/Desktop/openpilot/common/.gitignore
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/.gitignore
+            path: /Users/minguez/Desktop/openpilot/common/.gitignore
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/SConscript
+            path: /Users/minguez/Desktop/openpilot/common/SConscript
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/SConscript
+            path: /Users/minguez/Desktop/openpilot/common/SConscript
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/__pycache__
+            path: /Users/minguez/Desktop/openpilot/common/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/api.py
+            path: /Users/minguez/Desktop/openpilot/common/api.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/api.py
+            path: /Users/minguez/Desktop/openpilot/common/api.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/basedir.py
+            path: /Users/minguez/Desktop/openpilot/common/basedir.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/basedir.py
+            path: /Users/minguez/Desktop/openpilot/common/basedir.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/clutil.cc
+            path: /Users/minguez/Desktop/openpilot/common/clutil.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/clutil.cc
+            path: /Users/minguez/Desktop/openpilot/common/clutil.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/clutil.h
+            path: /Users/minguez/Desktop/openpilot/common/clutil.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/clutil.h
+            path: /Users/minguez/Desktop/openpilot/common/clutil.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/conversions.py
+            path: /Users/minguez/Desktop/openpilot/common/conversions.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/conversions.py
+            path: /Users/minguez/Desktop/openpilot/common/conversions.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/dict_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/dict_helpers.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/dict_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/dict_helpers.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/file_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/file_helpers.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/file_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/file_helpers.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/filter_simple.py
+            path: /Users/minguez/Desktop/openpilot/common/filter_simple.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/filter_simple.py
+            path: /Users/minguez/Desktop/openpilot/common/filter_simple.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/git.py
+            path: /Users/minguez/Desktop/openpilot/common/git.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/git.py
+            path: /Users/minguez/Desktop/openpilot/common/git.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/gpio.py
+            path: /Users/minguez/Desktop/openpilot/common/gpio.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/gpio.py
+            path: /Users/minguez/Desktop/openpilot/common/gpio.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/gps.py
+            path: /Users/minguez/Desktop/openpilot/common/gps.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/gps.py
+            path: /Users/minguez/Desktop/openpilot/common/gps.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/logging_extra.py
+            path: /Users/minguez/Desktop/openpilot/common/logging_extra.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/logging_extra.py
+            path: /Users/minguez/Desktop/openpilot/common/logging_extra.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/markdown.py
+            path: /Users/minguez/Desktop/openpilot/common/markdown.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/markdown.py
+            path: /Users/minguez/Desktop/openpilot/common/markdown.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/mat.h
+            path: /Users/minguez/Desktop/openpilot/common/mat.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/mat.h
+            path: /Users/minguez/Desktop/openpilot/common/mat.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/mock
+            path: /Users/minguez/Desktop/openpilot/common/mock
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/common/mock
+            parent: <Package common>
+        finish pytest_collect_directory --> <Package mock> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/params.cc
+            path: /Users/minguez/Desktop/openpilot/common/params.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/params.cc
+            path: /Users/minguez/Desktop/openpilot/common/params.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/params.h
+            path: /Users/minguez/Desktop/openpilot/common/params.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/params.h
+            path: /Users/minguez/Desktop/openpilot/common/params.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/params.py
+            path: /Users/minguez/Desktop/openpilot/common/params.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/params.py
+            path: /Users/minguez/Desktop/openpilot/common/params.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/params_keys.h
+            path: /Users/minguez/Desktop/openpilot/common/params_keys.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/params_keys.h
+            path: /Users/minguez/Desktop/openpilot/common/params_keys.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/params_pyx.pyx
+            path: /Users/minguez/Desktop/openpilot/common/params_pyx.pyx
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/params_pyx.pyx
+            path: /Users/minguez/Desktop/openpilot/common/params_pyx.pyx
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/pid.py
+            path: /Users/minguez/Desktop/openpilot/common/pid.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/pid.py
+            path: /Users/minguez/Desktop/openpilot/common/pid.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/prefix.h
+            path: /Users/minguez/Desktop/openpilot/common/prefix.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/prefix.h
+            path: /Users/minguez/Desktop/openpilot/common/prefix.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/prefix.py
+            path: /Users/minguez/Desktop/openpilot/common/prefix.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/prefix.py
+            path: /Users/minguez/Desktop/openpilot/common/prefix.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/queue.h
+            path: /Users/minguez/Desktop/openpilot/common/queue.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/queue.h
+            path: /Users/minguez/Desktop/openpilot/common/queue.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/ratekeeper.cc
+            path: /Users/minguez/Desktop/openpilot/common/ratekeeper.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/ratekeeper.cc
+            path: /Users/minguez/Desktop/openpilot/common/ratekeeper.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/ratekeeper.h
+            path: /Users/minguez/Desktop/openpilot/common/ratekeeper.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/ratekeeper.h
+            path: /Users/minguez/Desktop/openpilot/common/ratekeeper.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/realtime.py
+            path: /Users/minguez/Desktop/openpilot/common/realtime.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/realtime.py
+            path: /Users/minguez/Desktop/openpilot/common/realtime.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/retry.py
+            path: /Users/minguez/Desktop/openpilot/common/retry.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/retry.py
+            path: /Users/minguez/Desktop/openpilot/common/retry.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/run.py
+            path: /Users/minguez/Desktop/openpilot/common/run.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/run.py
+            path: /Users/minguez/Desktop/openpilot/common/run.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/simple_kalman.py
+            path: /Users/minguez/Desktop/openpilot/common/simple_kalman.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/simple_kalman.py
+            path: /Users/minguez/Desktop/openpilot/common/simple_kalman.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/spinner.py
+            path: /Users/minguez/Desktop/openpilot/common/spinner.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/spinner.py
+            path: /Users/minguez/Desktop/openpilot/common/spinner.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/stat_live.py
+            path: /Users/minguez/Desktop/openpilot/common/stat_live.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/stat_live.py
+            path: /Users/minguez/Desktop/openpilot/common/stat_live.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/swaglog.cc
+            path: /Users/minguez/Desktop/openpilot/common/swaglog.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/swaglog.cc
+            path: /Users/minguez/Desktop/openpilot/common/swaglog.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/swaglog.h
+            path: /Users/minguez/Desktop/openpilot/common/swaglog.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/swaglog.h
+            path: /Users/minguez/Desktop/openpilot/common/swaglog.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/swaglog.py
+            path: /Users/minguez/Desktop/openpilot/common/swaglog.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/swaglog.py
+            path: /Users/minguez/Desktop/openpilot/common/swaglog.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests
+            path: /Users/minguez/Desktop/openpilot/common/tests
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/common/tests
+            parent: <Package common>
+        finish pytest_collect_directory --> <Package tests> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/text_window.py
+            path: /Users/minguez/Desktop/openpilot/common/text_window.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/text_window.py
+            path: /Users/minguez/Desktop/openpilot/common/text_window.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/time_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/time_helpers.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/time_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/time_helpers.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/timeout.py
+            path: /Users/minguez/Desktop/openpilot/common/timeout.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/timeout.py
+            path: /Users/minguez/Desktop/openpilot/common/timeout.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/timing.h
+            path: /Users/minguez/Desktop/openpilot/common/timing.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/timing.h
+            path: /Users/minguez/Desktop/openpilot/common/timing.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations
+            path: /Users/minguez/Desktop/openpilot/common/transformations
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/common/transformations
+            parent: <Package common>
+        finish pytest_collect_directory --> <Package transformations> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/util.cc
+            path: /Users/minguez/Desktop/openpilot/common/util.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/util.cc
+            path: /Users/minguez/Desktop/openpilot/common/util.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/util.h
+            path: /Users/minguez/Desktop/openpilot/common/util.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/util.h
+            path: /Users/minguez/Desktop/openpilot/common/util.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/util.py
+            path: /Users/minguez/Desktop/openpilot/common/util.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/util.py
+            path: /Users/minguez/Desktop/openpilot/common/util.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/version.h
+            path: /Users/minguez/Desktop/openpilot/common/version.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/version.h
+            path: /Users/minguez/Desktop/openpilot/common/version.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/watchdog.cc
+            path: /Users/minguez/Desktop/openpilot/common/watchdog.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/watchdog.cc
+            path: /Users/minguez/Desktop/openpilot/common/watchdog.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/watchdog.h
+            path: /Users/minguez/Desktop/openpilot/common/watchdog.h
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/watchdog.h
+            path: /Users/minguez/Desktop/openpilot/common/watchdog.h
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/watchdog.py
+            path: /Users/minguez/Desktop/openpilot/common/watchdog.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package common>
+            file_path: /Users/minguez/Desktop/openpilot/common/watchdog.py
+            path: /Users/minguez/Desktop/openpilot/common/watchdog.py
+        finish pytest_collect_file --> [] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'common' lenresult=3 outcome='passed'> [hook]
+    genitems <Package mock> [collection]
+      pytest_collectstart [hook]
+          collector: <Package mock>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package mock>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/mock/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/mock/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package mock>
+            file_path: /Users/minguez/Desktop/openpilot/common/mock/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/mock/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/mock/generators.py
+            path: /Users/minguez/Desktop/openpilot/common/mock/generators.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package mock>
+            file_path: /Users/minguez/Desktop/openpilot/common/mock/generators.py
+            path: /Users/minguez/Desktop/openpilot/common/mock/generators.py
+        finish pytest_collect_file --> [] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'common/mock' lenresult=0 outcome='passed'> [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/mock' lenresult=0 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Package tests> [collection]
+      pytest_collectstart [hook]
+          collector: <Package tests>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package tests>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/.gitignore
+            path: /Users/minguez/Desktop/openpilot/common/tests/.gitignore
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/.gitignore
+            path: /Users/minguez/Desktop/openpilot/common/tests/.gitignore
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/__pycache__
+            path: /Users/minguez/Desktop/openpilot/common/tests/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py
+              path: /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py
+          finish pytest_pycollect_makemodule --> <Module test_file_helpers.py> [hook]
+        finish pytest_collect_file --> [<Module test_file_helpers.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py
+              path: /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py
+          finish pytest_pycollect_makemodule --> <Module test_markdown.py> [hook]
+        finish pytest_collect_file --> [<Module test_markdown.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_params.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_params.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_params.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_params.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_params.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_params.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_params.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_params.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/common/tests/test_params.py
+              path: /Users/minguez/Desktop/openpilot/common/tests/test_params.py
+          finish pytest_pycollect_makemodule --> <Module test_params.py> [hook]
+        finish pytest_collect_file --> [<Module test_params.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_runner.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_runner.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_runner.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_runner.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py
+              path: /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py
+          finish pytest_pycollect_makemodule --> <Module test_simple_kalman.py> [hook]
+        finish pytest_collect_file --> [<Module test_simple_kalman.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_swaglog.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_swaglog.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_swaglog.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_swaglog.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/tests/test_util.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_util.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/tests/test_util.cc
+            path: /Users/minguez/Desktop/openpilot/common/tests/test_util.cc
+        finish pytest_collect_file --> [] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'common/tests' lenresult=4 outcome='passed'> [hook]
+    genitems <Module test_file_helpers.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_file_helpers.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_file_helpers.py>
+      early skip of rewriting module: common [assertion]
+      early skip of rewriting module: common.tests [assertion]
+      find_module called for: common.tests.test_file_helpers [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/common/tests/test_file_helpers.py [assertion]
+      find_module called for: openpilot [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'common/tests/test_file_helpers.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_file_helpers.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/common/tests/test_file_helpers...  from openpilot.common.file_helpers import atomic_write_in_dir\nE   ModuleNotFoundError: No module named 'openpilot'") tblen=7>>
+          report: <CollectReport 'common/tests/test_file_helpers.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/tests/test_file_helpers.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_markdown.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_markdown.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_markdown.py>
+      find_module called for: common.tests.test_markdown [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/common/tests/test_markdown.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/common/tests/test_markdown.py [assertion]
+      find_module called for: openpilot [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'common/tests/test_markdown.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_markdown.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/common/tests/test_markdown.py'...: in <module>\n    from openpilot.common.basedir import BASEDIR\nE   ModuleNotFoundError: No module named 'openpilot'") tblen=7>>
+          report: <CollectReport 'common/tests/test_markdown.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/tests/test_markdown.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_params.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_params.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_params.py>
+      find_module called for: common.tests.test_params [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/common/tests/test_params.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/common/tests/test_params.py [assertion]
+      find_module called for: openpilot [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'common/tests/test_params.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_params.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/common/tests/test_params.py'.\...pilot.common.params import Params, ParamKeyFlag, UnknownKeyName\nE   ModuleNotFoundError: No module named 'openpilot'") tblen=7>>
+          report: <CollectReport 'common/tests/test_params.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/tests/test_params.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_simple_kalman.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_simple_kalman.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_simple_kalman.py>
+      find_module called for: common.tests.test_simple_kalman [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/common/tests/test_simple_kalman.py [assertion]
+      find_module called for: openpilot [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'common/tests/test_simple_kalman.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_simple_kalman.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/common/tests/test_simple_kalma...n <module>\n    from openpilot.common.simple_kalman import KF1D\nE   ModuleNotFoundError: No module named 'openpilot'") tblen=7>>
+          report: <CollectReport 'common/tests/test_simple_kalman.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/tests/test_simple_kalman.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/tests' lenresult=4 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Package transformations> [collection]
+      pytest_collectstart [hook]
+          collector: <Package transformations>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package transformations>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/.gitignore
+            path: /Users/minguez/Desktop/openpilot/common/transformations/.gitignore
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/.gitignore
+            path: /Users/minguez/Desktop/openpilot/common/transformations/.gitignore
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/README.md
+            path: /Users/minguez/Desktop/openpilot/common/transformations/README.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/README.md
+            path: /Users/minguez/Desktop/openpilot/common/transformations/README.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/SConscript
+            path: /Users/minguez/Desktop/openpilot/common/transformations/SConscript
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/SConscript
+            path: /Users/minguez/Desktop/openpilot/common/transformations/SConscript
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/__pycache__
+            path: /Users/minguez/Desktop/openpilot/common/transformations/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/camera.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/camera.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/camera.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/camera.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.cc
+            path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.cc
+            path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.hpp
+            path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.hpp
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.hpp
+            path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.hpp
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/coordinates.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/model.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/model.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/model.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/model.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.cc
+            path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.cc
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.cc
+            path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.cc
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.hpp
+            path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.hpp
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.hpp
+            path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.hpp
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/orientation.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/tests
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests
+            parent: <Package transformations>
+        finish pytest_collect_directory --> <Package tests> [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pxd
+            path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pxd
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pxd
+            path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pxd
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pyx
+            path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pyx
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package transformations>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pyx
+            path: /Users/minguez/Desktop/openpilot/common/transformations/transformations.pyx
+        finish pytest_collect_file --> [] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'common/transformations' lenresult=1 outcome='passed'> [hook]
+    genitems <Package tests> [collection]
+      pytest_collectstart [hook]
+          collector: <Package tests>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Package tests>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/__init__.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/__init__.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/__init__.py
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/__pycache__
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py
+              path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py
+          finish pytest_pycollect_makemodule --> <Module test_coordinates.py> [hook]
+        finish pytest_collect_file --> [<Module test_coordinates.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Package tests>
+            file_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py
+            path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Package tests>
+              module_path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py
+              path: /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py
+          finish pytest_pycollect_makemodule --> <Module test_orientation.py> [hook]
+        finish pytest_collect_file --> [<Module test_orientation.py>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'common/transformations/tests' lenresult=2 outcome='passed'> [hook]
+    genitems <Module test_coordinates.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_coordinates.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_coordinates.py>
+      early skip of rewriting module: common.transformations [assertion]
+      early skip of rewriting module: common.transformations.tests [assertion]
+      find_module called for: common.transformations.tests.test_coordinates [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/common/transformations/tests/test_coordinates.py [assertion]
+      early skip of rewriting module: numpy [assertion]
+      early skip of rewriting module: numpy.version [assertion]
+      early skip of rewriting module: numpy._expired_attrs_2_0 [assertion]
+      early skip of rewriting module: numpy._globals [assertion]
+      early skip of rewriting module: numpy._utils [assertion]
+      early skip of rewriting module: numpy._utils._convertions [assertion]
+      early skip of rewriting module: numpy._distributor_init [assertion]
+      early skip of rewriting module: numpy._distributor_init_local [assertion]
+      early skip of rewriting module: numpy.__config__ [assertion]
+      early skip of rewriting module: numpy._core [assertion]
+      early skip of rewriting module: numpy._core.multiarray [assertion]
+      early skip of rewriting module: numpy._core._multiarray_umath [assertion]
+      early skip of rewriting module: numpy.exceptions [assertion]
+      early skip of rewriting module: numpy._core._exceptions [assertion]
+      early skip of rewriting module: numpy._core.printoptions [assertion]
+      early skip of rewriting module: numpy.dtypes [assertion]
+      early skip of rewriting module: numpy._core.overrides [assertion]
+      early skip of rewriting module: numpy._utils._inspect [assertion]
+      early skip of rewriting module: numpy._core.umath [assertion]
+      early skip of rewriting module: numpy._core.numerictypes [assertion]
+      early skip of rewriting module: numpy._core._dtype [assertion]
+      early skip of rewriting module: numpy._core._string_helpers [assertion]
+      early skip of rewriting module: numpy._core._type_aliases [assertion]
+      early skip of rewriting module: numpy._core._machar [assertion]
+      early skip of rewriting module: numpy._core._ufunc_config [assertion]
+      early skip of rewriting module: numpy._core.fromnumeric [assertion]
+      early skip of rewriting module: numpy._core._methods [assertion]
+      early skip of rewriting module: numpy._core.einsumfunc [assertion]
+      early skip of rewriting module: numpy._core.numeric [assertion]
+      early skip of rewriting module: numpy._core.shape_base [assertion]
+      early skip of rewriting module: numpy._core._asarray [assertion]
+      early skip of rewriting module: numpy._core.arrayprint [assertion]
+      early skip of rewriting module: numpy._core.function_base [assertion]
+      early skip of rewriting module: numpy._core.getlimits [assertion]
+      early skip of rewriting module: numpy._core.memmap [assertion]
+      early skip of rewriting module: numpy._core.records [assertion]
+      early skip of rewriting module: numpy._core._add_newdocs [assertion]
+      early skip of rewriting module: numpy._core._add_newdocs_scalars [assertion]
+      early skip of rewriting module: numpy._core._dtype_ctypes [assertion]
+      early skip of rewriting module: numpy._core._internal [assertion]
+      early skip of rewriting module: ctypes [assertion]
+      early skip of rewriting module: _ctypes [assertion]
+      early skip of rewriting module: ctypes._endian [assertion]
+      early skip of rewriting module: numpy._pytesttester [assertion]
+      early skip of rewriting module: numpy.lib [assertion]
+      early skip of rewriting module: numpy.lib._arraypad_impl [assertion]
+      early skip of rewriting module: numpy.lib._index_tricks_impl [assertion]
+      early skip of rewriting module: numpy.matrixlib [assertion]
+      early skip of rewriting module: numpy.matrixlib.defmatrix [assertion]
+      early skip of rewriting module: numpy.linalg [assertion]
+      early skip of rewriting module: numpy.linalg._linalg [assertion]
+      early skip of rewriting module: numpy._typing [assertion]
+      early skip of rewriting module: numpy._typing._array_like [assertion]
+      early skip of rewriting module: numpy._typing._nbit_base [assertion]
+      early skip of rewriting module: numpy._typing._nested_sequence [assertion]
+      early skip of rewriting module: numpy._typing._shape [assertion]
+      early skip of rewriting module: numpy._typing._char_codes [assertion]
+      early skip of rewriting module: numpy._typing._dtype_like [assertion]
+      early skip of rewriting module: numpy._typing._nbit [assertion]
+      early skip of rewriting module: numpy._typing._scalars [assertion]
+      early skip of rewriting module: numpy._typing._ufunc [assertion]
+      early skip of rewriting module: numpy.lib._twodim_base_impl [assertion]
+      early skip of rewriting module: numpy.lib._stride_tricks_impl [assertion]
+      early skip of rewriting module: numpy.lib.array_utils [assertion]
+      early skip of rewriting module: numpy.lib._array_utils_impl [assertion]
+      early skip of rewriting module: numpy.linalg._umath_linalg [assertion]
+      early skip of rewriting module: numpy.linalg.linalg [assertion]
+      early skip of rewriting module: numpy.lib._function_base_impl [assertion]
+      early skip of rewriting module: numpy.lib._histograms_impl [assertion]
+      early skip of rewriting module: numpy.lib.stride_tricks [assertion]
+      early skip of rewriting module: numpy.lib._arraysetops_impl [assertion]
+      early skip of rewriting module: numpy.lib._arrayterator_impl [assertion]
+      early skip of rewriting module: numpy.lib._nanfunctions_impl [assertion]
+      early skip of rewriting module: numpy.lib._npyio_impl [assertion]
+      early skip of rewriting module: numpy.lib.format [assertion]
+      early skip of rewriting module: numpy.lib._format_impl [assertion]
+      early skip of rewriting module: numpy.lib._utils_impl [assertion]
+      early skip of rewriting module: numpy.lib._datasource [assertion]
+      early skip of rewriting module: numpy.lib._iotools [assertion]
+      early skip of rewriting module: numpy.lib._polynomial_impl [assertion]
+      early skip of rewriting module: numpy.lib._type_check_impl [assertion]
+      early skip of rewriting module: numpy.lib._ufunclike_impl [assertion]
+      early skip of rewriting module: numpy.lib._shape_base_impl [assertion]
+      early skip of rewriting module: numpy.lib._version [assertion]
+      early skip of rewriting module: numpy.lib.introspect [assertion]
+      early skip of rewriting module: numpy.lib.mixins [assertion]
+      early skip of rewriting module: numpy.lib.npyio [assertion]
+      early skip of rewriting module: numpy.lib.scimath [assertion]
+      early skip of rewriting module: numpy.lib._scimath_impl [assertion]
+      early skip of rewriting module: numpy._array_api_info [assertion]
+      find_module called for: openpilot [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'common/transformations/tests/test_coordinates.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_coordinates.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/common/transformations/tests/t...   import openpilot.common.transformations.coordinates as coord\nE   ModuleNotFoundError: No module named 'openpilot'") tblen=7>>
+          report: <CollectReport 'common/transformations/tests/test_coordinates.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/transformations/tests/test_coordinates.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_orientation.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_orientation.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_orientation.py>
+      find_module called for: common.transformations.tests.test_orientation [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/common/transformations/tests/test_orientation.py [assertion]
+      find_module called for: openpilot [assertion]
+      finish pytest_make_collect_report --> <CollectReport 'common/transformations/tests/test_orientation.py' lenresult=0 outcome='failed'> [hook]
+      pytest_exception_interact [hook]
+          node: <Module test_orientation.py>
+          call: <CallInfo when='collect' excinfo=<ExceptionInfo CollectError("ImportError while importing test module '/Users/minguez/Desktop/openpilot/common/transformations/tests/t...ntation import euler2quat, quat2euler, euler2rot, rot2euler, \\\nE   ModuleNotFoundError: No module named 'openpilot'") tblen=7>>
+          report: <CollectReport 'common/transformations/tests/test_orientation.py' lenresult=0 outcome='failed'>
+      finish pytest_exception_interact --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/transformations/tests/test_orientation.py' lenresult=0 outcome='failed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/transformations/tests' lenresult=2 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common/transformations' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'common' lenresult=3 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Dir docs> [collection]
+      pytest_collectstart [hook]
+          collector: <Dir docs>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Dir docs>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/CARS.md
+            path: /Users/minguez/Desktop/openpilot/docs/CARS.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir docs>
+            file_path: /Users/minguez/Desktop/openpilot/docs/CARS.md
+            path: /Users/minguez/Desktop/openpilot/docs/CARS.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/CONTRIBUTING.md
+            path: /Users/minguez/Desktop/openpilot/docs/CONTRIBUTING.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir docs>
+            file_path: /Users/minguez/Desktop/openpilot/docs/CONTRIBUTING.md
+            path: /Users/minguez/Desktop/openpilot/docs/CONTRIBUTING.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/INTEGRATION.md
+            path: /Users/minguez/Desktop/openpilot/docs/INTEGRATION.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir docs>
+            file_path: /Users/minguez/Desktop/openpilot/docs/INTEGRATION.md
+            path: /Users/minguez/Desktop/openpilot/docs/INTEGRATION.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/LIMITATIONS.md
+            path: /Users/minguez/Desktop/openpilot/docs/LIMITATIONS.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir docs>
+            file_path: /Users/minguez/Desktop/openpilot/docs/LIMITATIONS.md
+            path: /Users/minguez/Desktop/openpilot/docs/LIMITATIONS.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/README.md
+            path: /Users/minguez/Desktop/openpilot/docs/README.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir docs>
+            file_path: /Users/minguez/Desktop/openpilot/docs/README.md
+            path: /Users/minguez/Desktop/openpilot/docs/README.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/SAFETY.md
+            path: /Users/minguez/Desktop/openpilot/docs/SAFETY.md
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir docs>
+            file_path: /Users/minguez/Desktop/openpilot/docs/SAFETY.md
+            path: /Users/minguez/Desktop/openpilot/docs/SAFETY.md
+        finish pytest_collect_file --> [] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/docs/assets
+            path: /Users/minguez/Desktop/openpilot/docs/assets
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_directory [hook]
+            path: /Users/minguez/Desktop/openpilot/docs/assets
+            parent: <Dir docs>
+        finish pytest_collect_directory --> <Dir assets> [hook]
+      finish pytest_make_collect_report --> <CollectReport 'docs' lenresult=1 outcome='passed'> [hook]
+    genitems <Dir assets> [collection]
+      pytest_collectstart [hook]
+          collector: <Dir assets>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Dir assets>
+      finish pytest_make_collect_report --> <CollectReport 'docs/assets' lenresult=0 outcome='passed'> [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'docs/assets' lenresult=0 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'docs' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module import_optimization_test.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module import_optimization_test.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module import_optimization_test.py>
+      find_module called for: import_optimization_test [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/import_optimization_test.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/import_optimization_test.py [assertion]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: @py_builtins
+            obj: <module 'builtins' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: @pytest_ar
+            obj: <module '_pytest.assertion.rewrite' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/rewrite.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: subprocess
+            obj: <module 'subprocess' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/subprocess.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: time
+            obj: <module 'time' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: os
+            obj: <module 'os' (frozen)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: sys
+            obj: <module 'sys' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: run_command_with_timing
+            obj: <function run_command_with_timing at 0x10e13c860>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: test_import_optimizations
+            obj: <function test_import_optimizations at 0x10e13c7c0>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10dec7c10>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_import_optimizations>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module import_optimization_test.py>
+            name: analyze_import_structure
+            obj: <function analyze_import_structure at 0x10e13eca0>
+        finish pytest_pycollect_makeitem --> None [hook]
+      finish pytest_make_collect_report --> <CollectReport 'import_optimization_test.py' lenresult=1 outcome='passed'> [hook]
+    genitems <Function test_import_optimizations> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_import_optimizations>
+      finish pytest_itemcollected --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'import_optimization_test.py' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module pytest_performance_test.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module pytest_performance_test.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module pytest_performance_test.py>
+      find_module called for: pytest_performance_test [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/pytest_performance_test.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/pytest_performance_test.py [assertion]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: @py_builtins
+            obj: <module 'builtins' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: @pytest_ar
+            obj: <module '_pytest.assertion.rewrite' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/rewrite.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: subprocess
+            obj: <module 'subprocess' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/subprocess.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: time
+            obj: <module 'time' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: os
+            obj: <module 'os' (frozen)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: sys
+            obj: <module 'sys' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: run_command_with_timing
+            obj: <function run_command_with_timing at 0x10e13c900>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module pytest_performance_test.py>
+            name: test_pytest_optimizations
+            obj: <function test_pytest_optimizations at 0x10e13c9a0>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e281c90>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_pytest_optimizations>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'pytest_performance_test.py' lenresult=1 outcome='passed'> [hook]
+    genitems <Function test_pytest_optimizations> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_pytest_optimizations>
+      finish pytest_itemcollected --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'pytest_performance_test.py' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Dir test_cache_demo> [collection]
+      pytest_collectstart [hook]
+          collector: <Dir test_cache_demo>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Dir test_cache_demo>
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_cache_demo/.pytest_cache
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo/.pytest_cache
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_cache_demo/__pycache__
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo/__pycache__
+        finish pytest_ignore_collect --> True [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir test_cache_demo>
+            file_path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Dir test_cache_demo>
+              module_path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py
+              path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py
+          finish pytest_pycollect_makemodule --> <Module test_simple.py> [hook]
+        finish pytest_collect_file --> [<Module test_simple.py>] [hook]
+        pytest_ignore_collect [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            collection_path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py
+        finish pytest_ignore_collect --> None [hook]
+        pytest_collect_file [hook]
+            parent: <Dir test_cache_demo>
+            file_path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py
+            path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py
+          pytest_pycollect_makemodule [hook]
+              parent: <Dir test_cache_demo>
+              module_path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py
+              path: /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py
+          finish pytest_pycollect_makemodule --> <Module test_with_failure.py> [hook]
+        finish pytest_collect_file --> [<Module test_with_failure.py>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'test_cache_demo' lenresult=2 outcome='passed'> [hook]
+    genitems <Module test_simple.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_simple.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_simple.py>
+      find_module called for: test_simple [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/test_cache_demo/test_simple.py [assertion]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_simple.py>
+            name: @py_builtins
+            obj: <module 'builtins' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_simple.py>
+            name: @pytest_ar
+            obj: <module '_pytest.assertion.rewrite' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/rewrite.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_simple.py>
+            name: test_simple_function
+            obj: <function test_simple_function at 0x10e13c540>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e281f50>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_simple_function>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_simple.py>
+            name: test_another_function
+            obj: <function test_another_function at 0x10e13c5e0>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e282c10>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_another_function>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_simple.py>
+            name: test_math_operations
+            obj: <function test_math_operations at 0x10df48cc0>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e2833d0>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_math_operations>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_simple.py>
+            name: test_list_operations
+            obj: <function test_list_operations at 0x10df48e00>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e281850>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_list_operations>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'test_cache_demo/test_simple.py' lenresult=4 outcome='passed'> [hook]
+    genitems <Function test_simple_function> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_simple_function>
+      finish pytest_itemcollected --> [] [hook]
+    genitems <Function test_another_function> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_another_function>
+      finish pytest_itemcollected --> [] [hook]
+    genitems <Function test_math_operations> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_math_operations>
+      finish pytest_itemcollected --> [] [hook]
+    genitems <Function test_list_operations> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_list_operations>
+      finish pytest_itemcollected --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'test_cache_demo/test_simple.py' lenresult=4 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_with_failure.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_with_failure.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_with_failure.py>
+      find_module called for: test_with_failure [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/test_cache_demo/test_with_failure.py [assertion]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_with_failure.py>
+            name: @py_builtins
+            obj: <module 'builtins' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_with_failure.py>
+            name: @pytest_ar
+            obj: <module '_pytest.assertion.rewrite' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/rewrite.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_with_failure.py>
+            name: test_passing_1
+            obj: <function test_passing_1 at 0x10e1f5940>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e28d8d0>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_passing_1>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_with_failure.py>
+            name: test_failing
+            obj: <function test_failing at 0x10e240220>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e28e050>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_failing>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_with_failure.py>
+            name: test_passing_2
+            obj: <function test_passing_2 at 0x10e233e20>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e28c990>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_passing_2>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'test_cache_demo/test_with_failure.py' lenresult=3 outcome='passed'> [hook]
+    genitems <Function test_passing_1> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_passing_1>
+      finish pytest_itemcollected --> [] [hook]
+    genitems <Function test_failing> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_failing>
+      finish pytest_itemcollected --> [] [hook]
+    genitems <Function test_passing_2> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_passing_2>
+      finish pytest_itemcollected --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'test_cache_demo/test_with_failure.py' lenresult=3 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'test_cache_demo' lenresult=2 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_collection_time.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_collection_time.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_collection_time.py>
+      find_module called for: test_collection_time [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/test_collection_time.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/test_collection_time.py [assertion]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: @py_builtins
+            obj: <module 'builtins' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: @pytest_ar
+            obj: <module '_pytest.assertion.rewrite' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/rewrite.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: subprocess
+            obj: <module 'subprocess' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/subprocess.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: time
+            obj: <module 'time' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: os
+            obj: <module 'os' (frozen)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: sys
+            obj: <module 'sys' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: run_command
+            obj: <function run_command at 0x10e122d40>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_collection_time.py>
+            name: test_collection_time
+            obj: <function test_collection_time at 0x10e268b80>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e28d6d0>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_collection_time>] [hook]
+      finish pytest_make_collect_report --> <CollectReport 'test_collection_time.py' lenresult=1 outcome='passed'> [hook]
+    genitems <Function test_collection_time> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_collection_time>
+      finish pytest_itemcollected --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'test_collection_time.py' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+    genitems <Module test_parallelism.py> [collection]
+      pytest_collectstart [hook]
+          collector: <Module test_parallelism.py>
+      finish pytest_collectstart --> [] [hook]
+      pytest_make_collect_report [hook]
+          collector: <Module test_parallelism.py>
+      find_module called for: test_parallelism [assertion]
+      matched test file '/Users/minguez/Desktop/openpilot/test_parallelism.py' [assertion]
+      found cached rewritten pyc for /Users/minguez/Desktop/openpilot/test_parallelism.py [assertion]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: @py_builtins
+            obj: <module 'builtins' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: @pytest_ar
+            obj: <module '_pytest.assertion.rewrite' from '/usr/local/lib/python3.11/site-packages/_pytest/assertion/rewrite.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: subprocess
+            obj: <module 'subprocess' from '/usr/local/Cellar/python@3.11/3.11.13/Frameworks/Python.framework/Versions/3.11/lib/python3.11/subprocess.py'>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: time
+            obj: <module 'time' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: os
+            obj: <module 'os' (frozen)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: sys
+            obj: <module 'sys' (built-in)>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: run_command_with_timing
+            obj: <function run_command_with_timing at 0x10e1a44a0>
+        finish pytest_pycollect_makeitem --> None [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: test_parallelism_strategies
+            obj: <function test_parallelism_strategies at 0x10e1a47c0>
+          pytest_generate_tests [hook]
+              metafunc: <_pytest.python.Metafunc object at 0x10e265a90>
+          finish pytest_generate_tests --> [] [hook]
+        finish pytest_pycollect_makeitem --> [<Function test_parallelism_strategies>] [hook]
+        pytest_pycollect_makeitem [hook]
+            collector: <Module test_parallelism.py>
+            name: get_system_info
+            obj: <function get_system_info at 0x10e1f60c0>
+        finish pytest_pycollect_makeitem --> None [hook]
+      finish pytest_make_collect_report --> <CollectReport 'test_parallelism.py' lenresult=1 outcome='passed'> [hook]
+    genitems <Function test_parallelism_strategies> [collection]
+      pytest_itemcollected [hook]
+          item: <Function test_parallelism_strategies>
+      finish pytest_itemcollected --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport 'test_parallelism.py' lenresult=1 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collectreport [hook]
+          report: <CollectReport '.' lenresult=8 outcome='passed'>
+      finish pytest_collectreport --> [] [hook]
+      pytest_collection_modifyitems [hook]
+          session: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=9 testscollected=0>
+          config: <_pytest.config.Config object at 0x10bc44690>
+          items: [<Function test_import_optimizations>, <Function test_pytest_optimizations>, <Function test_simple_function>, <Function test_another_function>, <Function test_math_operations>, <Function test_list_operations>, <Function test_passing_1>, <Function test_failing>, <Function test_passing_2>, <Function test_collection_time>, <Function test_parallelism_strategies>]
+      finish pytest_collection_modifyitems --> [] [hook]
+      pytest_collection_finish [hook]
+          session: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=9 testscollected=0>
+        pytest_report_collectionfinish [hook]
+            config: <_pytest.config.Config object at 0x10bc44690>
+            items: [<Function test_import_optimizations>, <Function test_pytest_optimizations>, <Function test_simple_function>, <Function test_another_function>, <Function test_math_operations>, <Function test_list_operations>, <Function test_passing_1>, <Function test_failing>, <Function test_passing_2>, <Function test_collection_time>, <Function test_parallelism_strategies>]
+            start_path: /Users/minguez/Desktop/openpilot
+            startdir: /Users/minguez/Desktop/openpilot
+        finish pytest_report_collectionfinish --> [] [hook]
+      finish pytest_collection_finish --> [] [hook]
+    finish pytest_collection --> None [hook]
+    pytest_runtestloop [hook]
+        session: <Session  exitstatus=<ExitCode.OK: 0> testsfailed=9 testscollected=11>
+    pytest_keyboard_interrupt [hook]
+        excinfo: <ExceptionInfo Interrupted('9 errors during collection') tblen=15>
+    finish pytest_keyboard_interrupt --> [] [hook]
+    pytest_sessionfinish [hook]
+        session: <Session  exitstatus=<ExitCode.INTERRUPTED: 2> testsfailed=9 testscollected=11>
+        exitstatus: 2
+      pytest_terminal_summary [hook]
+          terminalreporter: <_pytest.terminal.TerminalReporter object at 0x10bcf4f10>
+          exitstatus: 2
+          config: <_pytest.config.Config object at 0x10bc44690>
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'cereal/messaging/tests/test_messaging.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'cereal/messaging/tests/test_pub_sub_master.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'cereal/messaging/tests/test_services.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'common/tests/test_file_helpers.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'common/tests/test_markdown.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'common/tests/test_params.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'common/tests/test_simple_kalman.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'common/transformations/tests/test_coordinates.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+        pytest_report_teststatus [hook]
+            report: <CollectReport 'common/transformations/tests/test_orientation.py' lenresult=0 outcome='failed'>
+            config: <_pytest.config.Config object at 0x10bc44690>
+        finish pytest_report_teststatus --> ('error', 'E', 'ERROR') [hook]
+      finish pytest_terminal_summary --> [] [hook]
+    finish pytest_sessionfinish --> [] [hook]
+    pytest_unconfigure [hook]
+        config: <_pytest.config.Config object at 0x10bc44690>
+    finish pytest_unconfigure --> [] [hook]

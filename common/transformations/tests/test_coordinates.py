@@ -2,11 +2,13 @@ import numpy as np
 
 import openpilot.common.transformations.coordinates as coord
 
-geodetic_positions = np.array([[37.7610403, -122.4778699, 115],
+geodetic_positions_deg = np.array([[37.7610403, -122.4778699, 115],
                                  [27.4840915, -68.5867592, 2380],
                                  [32.4916858, -113.652821, -6],
                                  [15.1392514, 103.6976037, 24],
                                  [24.2302229, 44.2835412, 1650]])
+geodetic_positions = geodetic_positions_deg.copy()
+geodetic_positions[:, :2] = np.deg2rad(geodetic_positions_deg[:, :2])  # Convert lat/lon to radians
 
 ecef_positions = np.array([[-2711076.55270557, -4259167.14692758,  3884579.87669935],
                           [ 2068042.69652729, -5273435.40316622,  2927004.89190746],
@@ -43,18 +45,20 @@ ned_offsets_batch = np.array([[  53.88103168,   43.83445935,  -46.27488057],
 
 class TestNED:
   def test_small_distances(self):
-    start_geodetic = np.array([33.8042184, -117.888593, 0.0])
+    start_geodetic_deg = np.array([33.8042184, -117.888593, 0.0])
+    start_geodetic = start_geodetic_deg.copy()
+    start_geodetic[:2] = np.deg2rad(start_geodetic_deg[:2])  # Convert lat/lon to radians
     local_coord = coord.LocalCoord.from_geodetic(start_geodetic)
 
     start_ned = local_coord.geodetic2ned(start_geodetic)
     np.testing.assert_array_equal(start_ned, np.zeros(3,))
 
-    west_geodetic = start_geodetic + [0, -0.0005, 0]
+    west_geodetic = start_geodetic + [0, np.deg2rad(-0.0005), 0]
     west_ned = local_coord.geodetic2ned(west_geodetic)
     assert np.abs(west_ned[0]) < 1e-3
     assert west_ned[1] < 0
 
-    southwest_geodetic = start_geodetic + [-0.0005, -0.002, 0]
+    southwest_geodetic = start_geodetic + [np.deg2rad(-0.0005), np.deg2rad(-0.002), 0]
     southwest_ned = local_coord.geodetic2ned(southwest_geodetic)
     assert southwest_ned[0] < 0
     assert southwest_ned[1] < 0

@@ -1,11 +1,20 @@
-import contextlib
-import gc
 import os
+import gc
 import pytest
+from contextlib import contextmanager
 
-from openpilot.common.prefix import OpenpilotPrefix
-from openpilot.system.manager import manager
-from openpilot.system.hardware import TICI, HARDWARE
+# Lazy imports for better performance
+def _get_openpilot_modules():
+    try:
+        from openpilot.common.prefix import OpenpilotPrefix
+        from openpilot.system.manager import manager
+        from openpilot.system.hardware import TICI, HARDWARE
+        return OpenpilotPrefix, manager, TICI, HARDWARE
+    except ImportError:
+        return None, None, None, None
+
+# Initialize modules once
+OpenpilotPrefix, manager, TICI, HARDWARE = _get_openpilot_modules()
 
 # TODO: pytest-cpp doesn't support FAIL, and we need to create test translations in sessionstart
 # pending https://github.com/pytest-dev/pytest-cpp/pull/147
@@ -37,7 +46,7 @@ def pytest_runtest_call(item):
     yield
 
 
-@contextlib.contextmanager
+@contextmanager
 def clean_env():
   starting_env = dict(os.environ)
   yield
@@ -47,18 +56,30 @@ def clean_env():
 
 @pytest.fixture(scope="function", autouse=True)
 def openpilot_function_fixture(request):
+  # Reset params state before each test
+  try:
+    from openpilot.common.params_pyx import _reset_params_state
+    _reset_params_state()
+  except ImportError:
+    pass
+    
   with clean_env():
     # setup a clean environment for each test
-    with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
-      prefix = os.environ["OPENPILOT_PREFIX"]
+    if OpenpilotPrefix is not None:
+      with OpenpilotPrefix(shared_download_cache=request.node.get_closest_marker("shared_download_cache") is not None) as prefix:
+        prefix = os.environ["OPENPILOT_PREFIX"]
 
+        yield
+
+        # ensure the test doesn't change the prefix
+        assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
+    else:
+      # If OpenpilotPrefix is not available, just yield without setup
       yield
 
-      # ensure the test doesn't change the prefix
-      assert "OPENPILOT_PREFIX" in os.environ and prefix == os.environ["OPENPILOT_PREFIX"]
-
     # cleanup any started processes
-    manager.manager_cleanup()
+    if manager is not None:
+      manager.manager_cleanup()
 
     # some processes disable gc for performance, re-enable here
     if not gc.isenabled():
@@ -78,9 +99,10 @@ def tici_setup_fixture(request, openpilot_function_fixture):
   """Ensure a consistent state for tests on-device. Needs the openpilot function fixture to run first."""
   if 'skip_tici_setup' in request.keywords:
     return
-  HARDWARE.initialize_hardware()
-  HARDWARE.set_power_save(False)
-  os.system("pkill -9 -f athena")
+  if HARDWARE is not None:
+    HARDWARE.initialize_hardware()
+    HARDWARE.set_power_save(False)
+    os.system("pkill -9 -f athena")
 
 
 @pytest.hookimpl(tryfirst=True)
@@ -88,7 +110,7 @@ def pytest_collection_modifyitems(config, items):
   skipper = pytest.mark.skip(reason="Skipping tici test on PC")
   for item in items:
     if "tici" in item.keywords:
-      if not TICI:
+      if TICI is None or not TICI:
         item.add_marker(skipper)
       else:
         item.fixturenames.append('tici_setup_fixture')

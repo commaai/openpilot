@@ -1,0 +1,136 @@
+name: CI Speed Benchmark
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  benchmark-ci-speed:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+        
+    - name: Cache CI Environment
+      uses: actions/cache@v3
+      id: ci-cache
+      with:
+        path: |
+          ~/.openpilot_ci_cache
+          ~/.venv
+        key: parallel-ci-${{ runner.os }}-${{ hashFiles('**/prepare_parallel_cache.sh', 'current_requirements.txt', 'minimal_requirements.txt') }}
+        restore-keys: |
+          parallel-ci-${{ runner.os }}-
+          
+    - name: System Information
+      run: |
+        echo "🖥️  System Information"
+        echo "===================="
+        echo "OS: $(uname -a)"
+        echo "CPU cores: $(nproc)"
+        echo "Memory: $(free -h | grep '^Mem:' | awk '{print $2}')"
+        echo "Python: $(python3 --version)"
+        echo "Disk space: $(df -h . | tail -1 | awk '{print $4}' | sed 's/G/ GB/')"
+        
+    - name: Prepare Parallel Cache (if needed)
+      if: steps.ci-cache.outputs.cache-hit != 'true'
+      run: |
+        echo "🚀 Preparing parallel cache (cache miss)..."
+        chmod +x ./prepare_parallel_cache.sh
+        time ./prepare_parallel_cache.sh
+        
+    - name: Benchmark Setup Methods
+      run: |
+        echo "🏃‍♂️ Running CI setup speed benchmarks..."
+        
+        # Make scripts executable
+        chmod +x ./setup_*.sh ./ci_setup_speed_results.sh
+        
+        # Run comprehensive benchmark
+        ./ci_setup_speed_results.sh
+        
+    - name: Test Parallel Setup (Multiple Runs)
+      run: |
+        echo "🔄 Testing parallel setup consistency..."
+        echo "Test Run | Duration | Status"
+        echo "---------|----------|-------"
+        
+        for i in {1..10}; do
+          # Clean environment
+          rm -rf ~/.venv /tmp/.openpilot_* 2>/dev/null || true
+          
+          # Time the setup
+          start_time=$(python3 -c "import time; print(time.time())")
+          if ./setup_parallel_ci.sh >/dev/null 2>&1; then
+            end_time=$(python3 -c "import time; print(time.time())")
+            duration=$(python3 -c "print(f'{$end_time - $start_time:.6f}')")
+            status="✅"
+            
+            # Check if under target
+            if (( $(python3 -c "print($duration < 1.0)") )); then
+              status="🎯 TARGET"
+            fi
+          else
+            duration="FAILED"
+            status="❌"
+          fi
+          
+          printf "%8d | %8s | %s\n" "$i" "${duration}s" "$status"
+        done
+        
+    - name: Verify Environment
+      run: |
+        echo "🔍 Verifying final environment..."
+        
+        # Test Python environment
+        if python -c "import sys; print(f'Python: {sys.version}')"; then
+          echo "✅ Python environment working"
+        else
+          echo "❌ Python environment issue"
+        fi
+        
+        # Test essential imports
+        if python -c "import pytest, numpy, PIL, psutil; print('✅ All packages imported successfully')"; then
+          echo "✅ All dependencies verified"
+        else
+          echo "❌ Dependency issues detected"
+        fi
+        
+        # Environment variables
+        echo "Environment variables:"
+        echo "  VIRTUAL_ENV: $VIRTUAL_ENV"
+        echo "  PYTHONPATH: $PYTHONPATH"
+        echo "  CI: $CI"
+        
+    - name: Upload Benchmark Results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: ci-benchmark-results-${{ github.run_number }}
+        path: |
+          /tmp/ci_results.tmp
+          /tmp/github_output_test
+        retention-days: 7
+        
+    - name: Performance Summary
+      if: always()
+      run: |
+        echo "## 🚀 CI Setup Performance Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|-------|" >> $GITHUB_STEP_SUMMARY
+        echo "| Runner OS | ${{ runner.os }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| CPU Cores | $(nproc) |" >> $GITHUB_STEP_SUMMARY
+        echo "| Cache Hit | ${{ steps.ci-cache.outputs.cache-hit }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Target Time | < 1.0s |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📊 Results" >> $GITHUB_STEP_SUMMARY
+        echo "Detailed benchmark results are available in the job logs above." >> $GITHUB_STEP_SUMMARY

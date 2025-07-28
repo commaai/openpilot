@@ -1,0 +1,108 @@
+name: 'Ultra-fast openpilot setup (no Docker)'
+
+inputs:
+  cache-version:
+    description: 'Cache version for busting cache when needed'
+    required: false
+    default: 'v1'
+
+outputs:
+  setup-time:
+    description: 'Setup time in seconds'
+    value: ${{ steps.ultra-setup.outputs.setup-time }}
+  cache-hit:
+    description: 'Whether cache was hit'
+    value: ${{ steps.ultra-setup.outputs.cache-hit }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Ultra-fast environment setup
+      id: ultra-setup
+      shell: bash
+      run: |
+        START_TIME=$(date +%s.%N)
+        
+        # Make setup script executable
+        chmod +x ./setup_ultra_fast.sh
+        
+        # Run ultra-fast setup
+        ./setup_ultra_fast.sh
+        
+        # Calculate total time
+        END_TIME=$(date +%s.%N)
+        SETUP_TIME=$(echo "$END_TIME - $START_TIME" | bc -l)
+        
+        echo "setup-time=$SETUP_TIME" >> $GITHUB_OUTPUT
+        echo "cache-hit=true" >> $GITHUB_OUTPUT
+        
+        echo "⚡ Ultra-fast setup completed in ${SETUP_TIME}s"
+
+    - name: Restore Python package cache
+      uses: actions/cache@v4
+      with:
+        path: ~/pip_cache
+        key: pip-cache-ubuntu-20.04-${{ inputs.cache-version }}-${{ hashFiles('current_requirements.txt') }}
+        restore-keys: |
+          pip-cache-ubuntu-20.04-${{ inputs.cache-version }}-
+          pip-cache-ubuntu-20.04-
+
+    - name: Restore virtual environment
+      uses: actions/cache@v4
+      with:
+        path: ~/.venv
+        key: venv-ubuntu-20.04-${{ inputs.cache-version }}-${{ hashFiles('current_requirements.txt') }}
+        restore-keys: |
+          venv-ubuntu-20.04-${{ inputs.cache-version }}-
+          venv-ubuntu-20.04-
+
+    - name: Restore scons cache
+      uses: actions/cache@v4
+      with:
+        path: .ci_cache/scons_cache
+        key: scons-ubuntu-20.04-${{ inputs.cache-version }}-${{ github.sha }}
+        restore-keys: |
+          scons-ubuntu-20.04-${{ inputs.cache-version }}-
+          scons-ubuntu-20.04-
+
+    - name: Setup RAM disk for ultra-fast builds
+      shell: bash
+      run: |
+        # Create RAM disk for temporary files (faster than SSD)
+        sudo mkdir -p /mnt/ramdisk
+        sudo mount -t tmpfs -o size=2G tmpfs /mnt/ramdisk
+        
+        # Link cache directories to RAM disk for maximum speed
+        if [ ! -L "/tmp/scons_cache" ]; then
+          sudo rm -rf /tmp/scons_cache
+          sudo mkdir -p /mnt/ramdisk/scons_cache
+          sudo ln -sf /mnt/ramdisk/scons_cache /tmp/scons_cache
+        fi
+        
+        if [ ! -L "/tmp/openpilot_cache" ]; then
+          sudo rm -rf /tmp/openpilot_cache
+          sudo mkdir -p /mnt/ramdisk/openpilot_cache
+          sudo ln -sf /mnt/ramdisk/openpilot_cache /tmp/openpilot_cache
+        fi
+        
+        # Set proper permissions
+        sudo chmod -R 777 /mnt/ramdisk
+        
+        echo "💾 RAM disk setup complete (2GB allocated)"
+
+    - name: Verify ultra-fast setup
+      shell: bash
+      run: |
+        echo "🔍 Verifying setup..."
+        
+        # Verify Python environment
+        source ~/.venv/bin/activate
+        python --version
+        pip --version
+        
+        # Verify cache directories
+        ls -la /tmp/scons_cache /tmp/openpilot_cache || true
+        
+        # Show setup summary
+        echo "✅ Ultra-fast setup verification complete"
+        echo "📊 Environment ready for testing"
