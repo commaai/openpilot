@@ -11,7 +11,7 @@ jobs:
       ImageOS: ubuntu24
     container:
       image: ghcr.io/commaai/openpilot-base:latest
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     permissions:
       checks: read

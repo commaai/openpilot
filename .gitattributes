@@ -1,5 +1,4 @@
 * text=auto
-
 # to move existing files into LFS:
 # git add --renormalize .
 *.onnx filter=lfs diff=lfs merge=lfs -text
@@ -8,7 +7,6 @@
 *.gif filter=lfs diff=lfs merge=lfs -text
 *.ttf filter=lfs diff=lfs merge=lfs -text
 *.wav filter=lfs diff=lfs merge=lfs -text
-
 selfdrive/car/tests/test_models_segs.txt filter=lfs diff=lfs merge=lfs -text
 system/hardware/tici/updater filter=lfs diff=lfs merge=lfs -text
 third_party/**/*.a filter=lfs diff=lfs merge=lfs -text
@@ -19,3 +17,8 @@ third_party/acados/*/t_renderer filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lrelease filter=lfs diff=lfs merge=lfs -text
 third_party/qt5/larch64/bin/lupdate filter=lfs diff=lfs merge=lfs -text
 third_party/catch2/include/catch2/catch.hpp filter=lfs diff=lfs merge=lfs -text
+*.bz2 filter=lfs diff=lfs merge=lfs -text
+*.zst filter=lfs diff=lfs merge=lfs -text
+*.hevc filter=lfs diff=lfs merge=lfs -text
+*.qcom2 filter=lfs diff=lfs merge=lfs -text
+*.tar filter=lfs diff=lfs merge=lfs -text

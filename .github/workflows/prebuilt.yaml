@@ -11,7 +11,7 @@ env:
 jobs:
   build_prebuilt:
     name: build prebuilt
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     if: github.repository == 'commaai/openpilot'
     env:
       PUSH_IMAGE: true
