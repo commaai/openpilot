@@ -496,15 +496,15 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     </message>
     <message>
         <source>Acknowledge Excessive Actuation</source>
-        <translation type="unfinished"></translation>
+        <translation>Reconhecer Atuação Excessiva</translation>
     </message>
     <message>
         <source>Snooze Update</source>
-        <translation type="unfinished">Adiar Atualização</translation>
+        <translation>Adiar Atualização</translation>
     </message>
     <message>
         <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <translation>O openpilot detectou uma atuação excessiva de %1. Isso pode ser causado por uma falha no software. Por favor, entre em contato com o suporte em https://comma.ai/support.</translation>
     </message>
 </context>
 <context>
