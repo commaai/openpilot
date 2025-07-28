@@ -112,12 +112,13 @@ jobs:
         
     - name: Upload Benchmark Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ci-benchmark-results-${{ github.run_number }}
         path: |
           /tmp/ci_results.tmp
           /tmp/github_output_test
+          /tmp/ci_speed_results.csv
         retention-days: 7
         
     - name: Performance Summary

@@ -118,7 +118,7 @@ jobs:
         
     - name: Upload Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ci-speed-test-results-${{ github.run_number }}
         path: |
@@ -208,7 +208,7 @@ jobs:
         
     - name: Upload macOS Results
       if: always()
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ci-speed-test-macos-${{ github.run_number }}
         path: ci_speed_output_macos.log

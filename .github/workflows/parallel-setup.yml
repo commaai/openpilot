@@ -13,19 +13,37 @@ jobs:
 
     steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
 
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
-        python-version: '3.x'
+        python-version: '3.11'
+
+    - name: Make scripts executable
+      run: |
+        chmod +x ./prepare_parallel_cache.sh
+        chmod +x ./setup_parallel_ci.sh
 
     - name: Prepare Parallel Cache
       run: |
-        chmod +x ./prepare_parallel_cache.sh
+        echo "🚀 Preparing parallel cache..."
         ./prepare_parallel_cache.sh
 
     - name: Run Parallel CI Setup
       run: |
-        chmod +x ./setup_parallel_ci.sh
+        echo "⚡ Running parallel CI setup..."
         ./setup_parallel_ci.sh
+        
+    - name: Verify Setup
+      run: |
+        echo "🔍 Verifying parallel setup..."
+        if [ -d ~/.venv ]; then
+          echo "✅ Virtual environment created"
+          source ~/.venv/bin/activate
+          echo "✅ Environment activated"
+          echo "Python: $(python --version)"
+        else
+          echo "❌ Virtual environment not found"
+          exit 1
+        fi
