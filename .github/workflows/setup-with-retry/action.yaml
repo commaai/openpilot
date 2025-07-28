@@ -59,10 +59,10 @@ runs:
             
             # Environment snapshot
             cat > "$CACHE_DIR/env_snapshot.sh" << 'EOF'
-export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 CI=1 DISPLAY=:99
-export OPENPILOT_PATH="$(pwd)" VIRTUAL_ENV="$HOME/.venv" PYTHONPATH="$(pwd)"
-export PATH="$VIRTUAL_ENV/bin:$PATH"
-EOF
+        export PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1 CI=1 DISPLAY=:99
+        export OPENPILOT_PATH="$(pwd)" VIRTUAL_ENV="$HOME/.venv" PYTHONPATH="$(pwd)"
+        export PATH="$VIRTUAL_ENV/bin:$PATH"
+        EOF
             chmod +x "$CACHE_DIR/env_snapshot.sh"
             touch "$CACHE_DIR/.cache_ready"
           }
