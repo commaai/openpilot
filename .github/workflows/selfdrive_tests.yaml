@@ -176,11 +176,12 @@ jobs:
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
-        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
+        ${{ env.RUN }} "pip3 install pytest pytest-xdist hypothesis --quiet --disable-pip-version-check 2>/dev/null || true && \
+                        mkdir -p /tmp/comma_download_cache && chmod 777 /tmp/comma_download_cache && \
+                        $PYTEST --collect-only -m 'not slow' &> /dev/null && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
-                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
-                        chmod -R 777 /tmp/comma_download_cache"
+                        QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations"
 
   process_replay:
     name: process replay
@@ -209,8 +210,8 @@ jobs:
     - name: Run replay
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.dependency-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
-        ${{ env.RUN }} "selfdrive/test/process_replay/test_processes.py -j$(nproc) && \
-                        chmod -R 777 /tmp/comma_download_cache"
+        ${{ env.RUN }} "mkdir -p /tmp/comma_download_cache && chmod 777 /tmp/comma_download_cache && \
+                        selfdrive/test/process_replay/test_processes.py -j$(nproc)"
     - name: Print diff
       id: print-diff
       if: always()
@@ -263,8 +264,9 @@ jobs:
     - name: Test car models
       timeout-minutes: ${{ contains(runner.name, 'nsc') && (steps.routes-cache.outputs.cache-hit == 'true') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 6 }}
       run: |
-        ${{ env.RUN }} "MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py && \
-                        chmod -R 777 /tmp/comma_download_cache"
+        ${{ env.RUN }} "pip3 install pytest pytest-xdist hypothesis --quiet --disable-pip-version-check 2>/dev/null || true && \
+                        mkdir -p /tmp/comma_download_cache && chmod 777 /tmp/comma_download_cache && \
+                        MAX_EXAMPLES=1 $PYTEST selfdrive/car/tests/test_models.py"
       env:
         NUM_JOBS: 4
         JOB_ID: ${{ matrix.job }}
