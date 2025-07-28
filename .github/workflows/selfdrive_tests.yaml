@@ -279,7 +279,7 @@ jobs:
           ${{ env.RUN }} "scons -j$(nproc)"
           output=$(${{ env.RUN }} "python3 selfdrive/debug/print_docs_diff.py --path /tmp/openpilot_cache/base_car_docs")
           output="${output//$'\n'/'%0A'}"
-          echo "::set-output name=diff::$output"
+          echo "diff=$output" >> $GITHUB_OUTPUT
       - name: Find comment
         if: ${{ env.AZURE_TOKEN != '' }}
         uses: peter-evans/find-comment@3eae4d37986fb5a8592848f6a574fdf654e61f9e

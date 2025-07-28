@@ -36,7 +36,7 @@ jobs:
 
     # Welcome comment
     - name: "First timers PR"
-      uses: actions/first-interaction@v1
+      uses: actions/first-interaction@v1.3.0
       if: github.event.pull_request.head.repo.full_name != 'commaai/openpilot'
       with:
         repo-token: ${{ secrets.GITHUB_TOKEN }}
