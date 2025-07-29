@@ -13,6 +13,7 @@ from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL, ISO_
 
 
 from openpilot.common.params import Params
+from openpilot.common.filter_simple import JerkEstimator3
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
@@ -45,31 +46,38 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator, counter: int) -> tuple[int, bool]:
+# TODO: make class?
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator,
+                              jerk_estimator: JerkEstimator3, counter: int) -> tuple[int, bool]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
   device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
 
   # longitudinal
   accel_calibrated = calibrated_pose.acceleration.x
+  excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
 
   # lateral
   yaw_rate = calibrated_pose.angular_velocity.yaw
   roll = sm['liveParameters'].roll
   roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
+  excessive_lat_actuation = False
+  estimated_jerk = jerk_estimator.update(roll_compensated_lateral_accel)
+  if sm['carControl'].latActive:
+    if not CS.steeringPressed:
+      if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
+        excessive_lat_actuation = True
+
+    # Note that we do not check steeringPressed as it is unreliable under high jerk conditions
+    if abs(estimated_jerk) > ISO_LATERAL_JERK * 2:
+      excessive_lat_actuation = True
+
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
   livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
-
-  excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
-  # Note that we do not check steeringPressed as it is unreliable under high jerk conditions
-  excessive_lat_actuation = sm['carControl'].latActive and abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2
   counter = counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
   return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
-
-
-def estimate_jerk(signal)
 
 
 class SelfdriveD:
@@ -88,6 +96,7 @@ class SelfdriveD:
 
     self.car_events = CarSpecificEvents(self.CP)
     self.calibrator = PoseCalibrator()
+    self.jerk_estimator = JerkEstimator3(DT_CTRL)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -267,7 +276,7 @@ class SelfdriveD:
     if self.sm.updated['liveCalibration']:
       self.calibrator.feed_live_calib(self.sm['liveCalibration'])
 
-    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.excessive_actuation_counter)
+    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.jerk_estimator, self.excessive_actuation_counter)
     if not self.excessive_actuation and excessive_actuation:
       set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
       self.excessive_actuation = True
