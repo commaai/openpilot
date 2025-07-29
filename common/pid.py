@@ -1,5 +1,7 @@
 import numpy as np
 from numbers import Number
+from typing import Callable
+
 
 class PIDController:
   def __init__(self, k_p, k_i, k_f=0., k_d=0., pos_limit=1e308, neg_limit=-1e308, rate=100):
@@ -17,7 +19,6 @@ class PIDController:
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
 
-    self.i_unwind_rate = 0.3 / rate
     self.i_rate = 1.0 / rate
     self.speed = 0.0
 
@@ -37,7 +38,7 @@ class PIDController:
 
   @property
   def error_integral(self):
-    return self.i/self.k_i
+    return self.i/self.k_
 
   def reset(self):
     self.p = 0.0
@@ -46,25 +47,15 @@ class PIDController:
     self.f = 0.0
     self.control = 0
 
-  def update(self, error, error_rate=0.0, speed=0.0, override=False, feedforward=0., freeze_integrator=False):
+  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
     self.speed = speed
-
     self.p = float(error) * self.k_p
     self.f = feedforward * self.k_f
     self.d = error_rate * self.k_d
 
-    if override:
-      self.i -= self.i_unwind_rate * float(np.sign(self.i))
-    else:
-      if not freeze_integrator:
-        self.i = self.i + error * self.k_i * self.i_rate
-
-        # Clip i to prevent exceeding control limits
-        control_no_i = self.p + self.d + self.f
-        control_no_i = np.clip(control_no_i, self.neg_limit, self.pos_limit)
-        self.i = np.clip(self.i, self.neg_limit - control_no_i, self.pos_limit - control_no_i)
+    if not freeze_integrator:
+      self.i = self.i + error * self.k_i * self.i_rate
 
     control = self.p + self.i + self.d + self.f
-
     self.control = np.clip(control, self.neg_limit, self.pos_limit)
     return self.control
