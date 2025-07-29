@@ -287,6 +287,11 @@ function op_adb() {
   op_run_command tools/scripts/adb_ssh.sh
 }
 
+function op_ssh() {
+  op_before_cmd
+  op_run_command tools/scripts/ssh.py "$@"
+}
+
 function op_check() {
   VERBOSE=1
   op_before_cmd
@@ -412,6 +417,7 @@ function op_default() {
   echo -e "  ${BOLD}cabana${NC}       Run Cabana"
   echo -e "  ${BOLD}clip${NC}         Run clip (linux only)"
   echo -e "  ${BOLD}adb${NC}          Run adb shell"
+  echo -e "  ${BOLD}ssh${NC}          comma prime SSH helper"
   echo ""
   echo -e "${BOLD}${UNDERLINE}Commands [Testing]:${NC}"
   echo -e "  ${BOLD}sim${NC}          Run openpilot in a simulator"
@@ -471,6 +477,7 @@ function _op() {
     restart )       shift 1; op_restart "$@" ;;
     post-commit )   shift 1; op_install_post_commit "$@" ;;
     adb )           shift 1; op_adb "$@" ;;
+    ssh )           shift 1; op_ssh "$@" ;;
     * ) op_default "$@" ;;
   esac
 }
