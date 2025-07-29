@@ -21,7 +21,7 @@ MODEL_PKL_PATH = Path(__file__).parent / "models/hey_comma_tinygrad.pkl"
 class StreamingLogMelProcessor:
   def __init__(self, sr: int = 16000, config: dict = None):
     self.sr = sr
-    self.cfg = config
+    self.cfg = config or {"n_fft": 512, "win_length": 400, "hop_length": 160, "n_mels": 26, "fmin": 300, "fmax": 3800}
 
     self.n_fft = self.cfg["n_fft"]
     self.win_length = self.cfg["win_length"] if self.cfg["win_length"] is not None else self.n_fft
@@ -42,13 +42,13 @@ class StreamingLogMelProcessor:
 
     self.mel_basis = self._mel_filter_bank(self.sr, self.n_fft, self.n_mels, self.fmin, self.fmax)
 
-  def _mel_frequencies(self, n_mels: int, fmin: float, fmax: float) -> np.ndarray:
+  def _mel_frequencies(self, n_mels: int, fmin: float, fmax: float):
     mel_min = 2595.0 * np.log10(1.0 + fmin / 700.0)
     mel_max = 2595.0 * np.log10(1.0 + fmax / 700.0)
     mels = np.linspace(mel_min, mel_max, n_mels)
     return 700.0 * (10.0 ** (mels / 2595.0) - 1.0)
 
-  def _mel_filter_bank(self, sr: int, n_fft: int, n_mels: int, fmin: float, fmax: float) -> np.ndarray:
+  def _mel_filter_bank(self, sr: int, n_fft: int, n_mels: int, fmin: float, fmax: float):
     fftfreqs = np.linspace(0, sr / 2, 1 + n_fft // 2, dtype=np.float32)
     mel_f = self._mel_frequencies(n_mels + 2, fmin, fmax)
     fdiff = np.diff(mel_f)[:, np.newaxis]
@@ -61,7 +61,7 @@ class StreamingLogMelProcessor:
     weights *= enorm[:, np.newaxis]
     return weights.astype(np.float32)
 
-  def _power_to_db(self, S: np.ndarray, ref=1.0, amin: float = 1e-10, top_db: float = 80.0) -> np.ndarray:
+  def _power_to_db(self, S: np.ndarray, ref=1.0, amin: float = 1e-10, top_db: float = 80.0):
     S = np.asarray(S, dtype=np.float32)
 
     log_spec = 10 * np.log10(np.maximum(amin, S))
@@ -71,7 +71,7 @@ class StreamingLogMelProcessor:
       log_spec = np.maximum(log_spec, log_spec.max() - top_db)
     return log_spec.astype(np.float32)
 
-  def process_chunk(self, audio_chunk: np.ndarray) -> np.ndarray:
+  def process_chunk(self, audio_chunk: np.ndarray):
     audio_chunk = audio_chunk.astype(np.float32)
     buffer_array = np.concatenate([self.overlap_buffer, audio_chunk])
 
