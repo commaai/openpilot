@@ -23,6 +23,11 @@ class JerkEstimator1:
     self.prev_x = 0.0
     self.initialized = False
     self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
+    self._x = 0.0
+
+  @property
+  def x(self):
+    return self._x
 
   def update(self, x):
     x_filtered = self.filter.update(x)
@@ -30,9 +35,9 @@ class JerkEstimator1:
       self.prev_x = x_filtered
       self.initialized = True
 
-    jerk = (x_filtered - self.prev_x) / self.dt
+    self._x = (x_filtered - self.prev_x) / self.dt
     self.prev_x = x_filtered
-    return jerk
+    return self._x
 
 
 class JerkEstimator2:
@@ -41,6 +46,10 @@ class JerkEstimator2:
     self.prev_x = 0.0
     self.initialized = False
     self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
+
+  @property
+  def x(self):
+    return self.filter.x
 
   def update(self, x):
     if not self.initialized:
@@ -69,9 +78,58 @@ class JerkEstimator3:
     K = get_kalman_gain(DT_CTRL, np.array(A), np.array(C), np.array(Q), R)
     self.kf = KF1D(x0=x0, A=A, C=C[0], K=K)
 
+  @property
+  def x(self):
+    return self.kf.x[1][0] if self.initialized else 0.0
+
   def update(self, x):
     if not self.initialized:
       self.kf.set_x([[x], [0.0]])
       self.initialized = True
     self.kf.update(x)
     return self.kf.x[1][0]
+
+
+class JerkEstimator4:
+  def __init__(self, dt):
+    self.dt = dt
+    self.prev_x = 0.0
+    self.initialized = False
+    self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
+    self._x = 0.0
+
+  @property
+  def x(self):
+    return self._x
+
+  def update(self, x):
+    filtered_x = self.filter.update(x)
+
+    if not self.initialized:
+      self.prev_x = filtered_x
+      self.initialized = True
+
+    self._x = (filtered_x - self.prev_x) / .01
+
+    self.prev_x = filtered_x
+    return self._x
+
+
+class JerkEstimator5:
+  def __init__(self, dt):
+    from collections import deque
+    self.dt = dt
+    self.xs = deque(maxlen=int(0.25 / dt))
+    self._x = 0
+
+  @property
+  def x(self):
+    return self._x
+
+  def update(self, x):
+    self.xs.append(x)
+    if len(self.xs) < 2:
+      return 0.0
+
+    self._x = (self.xs[-1] - self.xs[0]) / ((len(self.xs) - 1) * self.dt)
+    return self._x
