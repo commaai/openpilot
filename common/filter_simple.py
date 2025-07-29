@@ -17,6 +17,7 @@ class FirstOrderFilter:
     return self.x
 
 
+# low pass the raw jerk
 class JerkEstimator1:
   def __init__(self, dt):
     self.dt = dt
@@ -38,6 +39,7 @@ class JerkEstimator1:
     return self.filter.x
 
 
+# use a kalman filter to estimate jerk
 class JerkEstimator2:
   def __init__(self, dt):
     self.dt = dt
@@ -69,34 +71,9 @@ class JerkEstimator2:
 
 class JerkEstimator3:
   def __init__(self, dt):
-    self.dt = dt
-    self.prev_x = 0.0
-    self.initialized = False
-    self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
-    self._x = 0.0
-
-  @property
-  def x(self):
-    return self._x
-
-  def update(self, x):
-    filtered_x = self.filter.update(x)
-
-    if not self.initialized:
-      self.prev_x = filtered_x
-      self.initialized = True
-
-    self._x = (filtered_x - self.prev_x) / self.dt
-
-    self.prev_x = filtered_x
-    return self._x
-
-
-class JerkEstimator4:
-  def __init__(self, dt):
     from collections import deque
     self.dt = dt
-    self.xs = deque(maxlen=int(0.25 / dt))
+    self.xs = deque(maxlen=int(0.2 / dt))
     self._x = 0
 
   @property
@@ -109,4 +86,22 @@ class JerkEstimator4:
       return 0.0
 
     self._x = (self.xs[-1] - self.xs[0]) / ((len(self.xs) - 1) * self.dt)
+    return self._x
+
+
+class JerkEstimator4:
+  def __init__(self, dt):
+    self.dt = dt
+    self.prev_x = 0.0
+    self.initialized = False
+    self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
+    self._x = 0
+
+  @property
+  def x(self):
+    return self._x
+
+  def update(self, x):
+    self.filter.update(x)
+    self._x = (x - self.filter.x) / 0.2
     return self._x
