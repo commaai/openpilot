@@ -1,6 +1,6 @@
 import math
 import matplotlib.pyplot as plt
-from openpilot.common.filter_simple import JerkEstimator1, JerkEstimator2, JerkEstimator3, JerkEstimator4, JerkEstimator5
+from openpilot.common.filter_simple import JerkEstimator2, JerkEstimator3, JerkEstimator4, JerkEstimator5
 from tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
@@ -12,11 +12,11 @@ calibrator = PoseCalibrator()
 
 sm = {}
 
-j1 = JerkEstimator1(0.01)
-j2 = JerkEstimator2(0.01)
-j3 = JerkEstimator3(0.01)
-j4 = JerkEstimator4(0.01)
-j5 = JerkEstimator5(0.01)
+j1 = JerkEstimator1(1/20)
+j2 = JerkEstimator2(1/20)
+j3 = JerkEstimator3(1/100)
+j4 = JerkEstimator4(1/20)
+j5 = JerkEstimator5(1/20)
 
 accels = []
 kf_accels = []
@@ -72,9 +72,9 @@ axs[0].legend()
 
 axs[1].plot(jerks1, label='Jerk Estimator 1')
 axs[1].plot(jerks2, label='Jerk Estimator 2')
-axs[1].plot(jerks3, label='Jerk Estimator 3')
-axs[1].plot(jerks4, label='Jerk Estimator 4')
-axs[1].plot(jerks5, label='Jerk Estimator 5')
+# axs[1].plot(jerks3, label='Jerk Estimator 3')
+# axs[1].plot(jerks4, label='Jerk Estimator 4')
+# axs[1].plot(jerks5, label='Jerk Estimator 5')
 axs[1].set_ylabel('Lateral Jerk (m/s³)')
 axs[1].legend()
 
