@@ -60,6 +60,7 @@ for msg in lr:
     jerks3.append(_j3)
     # jerks4.append(_j4)
     jerks5.append(_j5)
+    kf_accels.append(j2.kf.x[0][0])
     accels.append(roll_compensated_lateral_accel)
 
     print(roll_compensated_lateral_accel)
@@ -68,6 +69,7 @@ for msg in lr:
 fig, axs = plt.subplots(2, sharex=True)
 
 axs[0].plot(accels, label='Lateral Accel')
+axs[0].plot(kf_accels, label='Kalman filter accel')
 axs[0].set_ylabel('Lateral Acceleration (m/s²)')
 axs[0].legend()
 
