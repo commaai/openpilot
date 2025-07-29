@@ -4,15 +4,17 @@ import sys
 import argparse
 import re
 
+from openpilot.common.basedir import BASEDIR
 from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import CommaApi
 
 if __name__ == "__main__":
-  parser = argparse.ArgumentParser()
+  parser = argparse.ArgumentParser(description="A helper for connecting to devices over the comma prime SSH proxy.\
+      Adding your SSH key to your SSH config is recommended for more convenient use; see https://docs.comma.ai/how-to/connect-to-comma/.")
   parser.add_argument("device", help="device name or dongle id")
   parser.add_argument("--host", help="ssh jump server host", default="ssh.comma.ai")
   parser.add_argument("--port", help="ssh jump server port", default=22, type=int)
-  parser.add_argument("--key", help="ssh key", default=os.path.expanduser("~/xx/phone/key/id_rsa"))
+  parser.add_argument("--key", help="ssh key", default=os.path.join(BASEDIR, "system/hardware/tici/id_rsa"))
   parser.add_argument("--debug", help="enable debug output", action="store_true")
   args = parser.parse_args()
 
