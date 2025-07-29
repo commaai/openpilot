@@ -74,7 +74,8 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"LastPowerDropDetected", {CLEAR_ON_MANAGER_START, STRING}},
     {"LastUpdateException", {CLEAR_ON_MANAGER_START, STRING}},
     {"LastUpdateTime", {PERSISTENT, TIME}},
-    {"LastUpdateTimeV2", {PERSISTENT, TIME}},
+    {"LastUpdateUptimeOnroad", {PERSISTENT, FLOAT}},
+    {"LastUpdateRouteCount", {PERSISTENT, INT}},
     {"LiveDelay", {PERSISTENT, BYTES}},
     {"LiveParameters", {PERSISTENT, JSON}},
     {"LiveParametersV2", {PERSISTENT, BYTES}},
@@ -107,7 +108,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"RecordFront", {PERSISTENT, BOOL}},
     {"RecordFrontLock", {PERSISTENT, BOOL}},  // for the internal fleet
     {"SecOCKey", {PERSISTENT | DONT_LOG, STRING}},
-    {"RouteCount", {PERSISTENT, INT}},
+    {"RouteCount", {PERSISTENT, INT, "0"}},
     {"SnoozeUpdate", {CLEAR_ON_MANAGER_START | CLEAR_ON_OFFROAD_TRANSITION, BOOL}},
     {"SshEnabled", {PERSISTENT, BOOL}},
     {"TermsVersion", {PERSISTENT, STRING}},

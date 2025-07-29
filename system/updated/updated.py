@@ -31,8 +31,12 @@ FINALIZED = os.path.join(STAGING_ROOT, "finalized")
 
 OVERLAY_INIT = Path(os.path.join(BASEDIR, ".overlay_init"))
 
-HOURS_NO_CONNECTIVITY_MAX = 24     # do not allow to engage after this many hours onroad
+# do not allow to engage after this many hours onroad and this many routes
+HOURS_NO_CONNECTIVITY_MAX = 24
+ROUTES_NO_CONNECTIVITY_MAX = 24
+
 HOURS_NO_CONNECTIVITY_PROMPT = 20  # send an offroad prompt after this many hours onroad
+
 
 class UserRequest:
   NONE = 0
@@ -271,11 +275,15 @@ class Updater:
     if len(self.branches):
       self.params.put("UpdaterAvailableBranches", ','.join(self.branches.keys()))
 
-    last_update = datetime.datetime.fromtimestamp(self.params.get("UptimeOnroad", return_default=True)).replace(tzinfo=None)
+    last_uptime_onroad = self.params.get("UptimeOnroad", return_default=True)
+    last_route_count = self.params.get("RouteCount", return_default=True)
     if update_success:
-      self.params.put("LastUpdateTimeV2", last_update)
+      self.params.put("LastUpdateTime", datetime.datetime.now(datetime.UTC).replace(tzinfo=None))
+      self.params.put("LastUpdateUptimeOnroad", last_uptime_onroad)
+      self.params.put("LastUpdateRouteCount", last_route_count)
     else:
-      last_update = self.params.get("LastUpdateTimeV2") or last_update
+      last_uptime_onroad = self.params.get("LastUpdateUptimeOnroad") or last_uptime_onroad
+      last_route_count = self.params.get("LastUpdateRouteCount") or last_route_count
 
     if exception is None:
       self.params.remove("LastUpdateException")
@@ -313,8 +321,9 @@ class Updater:
     for alert in ("Offroad_UpdateFailed", "Offroad_ConnectivityNeeded", "Offroad_ConnectivityNeededPrompt"):
       set_offroad_alert(alert, False)
 
-    now = datetime.datetime.fromtimestamp(self.params.get("UptimeOnroad", return_default=True)).replace(tzinfo=None)
-    dt = (now - last_update).total_seconds() / (60*60)
+    dt_uptime_onroad = (self.params.get("UptimeOnroad", return_default=True) - last_uptime_onroad) / 60*60
+    dt_route_count = self.params.get("RouteCount", return_default=True) - last_route_count
+
     build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
       if build_metadata.tested_channel:
@@ -323,10 +332,10 @@ class Updater:
         extra_text = exception
       set_offroad_alert("Offroad_UpdateFailed", True, extra_text=extra_text)
     elif failed_count > 0:
-      if dt > HOURS_NO_CONNECTIVITY_MAX:
+      if dt_uptime_onroad > HOURS_NO_CONNECTIVITY_MAX and dt_route_count > ROUTES_NO_CONNECTIVITY_MAX:
         set_offroad_alert("Offroad_ConnectivityNeeded", True)
-      elif dt > HOURS_NO_CONNECTIVITY_PROMPT:
-        remaining = max(HOURS_NO_CONNECTIVITY_MAX - dt, 1)
+      elif dt_uptime_onroad > HOURS_NO_CONNECTIVITY_PROMPT:
+        remaining = max(HOURS_NO_CONNECTIVITY_MAX - dt_uptime_onroad, 1)
         set_offroad_alert("Offroad_ConnectivityNeededPrompt", True, extra_text=f"{remaining} hour{'' if remaining == 1 else 's'}.")
 
   def check_for_update(self) -> None:
