@@ -231,7 +231,7 @@ function op_setup() {
 
   echo "Getting git submodules..."
   st="$(date +%s)"
-  if ! git submodule update --filter=blob:none --jobs 4 --init --recursive; then
+  if ! git submodule update --jobs 4 --init --recursive; then
     echo -e " ↳ [${RED}✗${NC}] Getting git submodules failed!"
     loge "ERROR_GIT_SUBMODULES"
     return 1
