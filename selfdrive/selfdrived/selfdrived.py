@@ -69,6 +69,9 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
 
 
+def estimate_jerk(signal)
+
+
 class SelfdriveD:
   def __init__(self, CP=None):
     self.params = Params()
