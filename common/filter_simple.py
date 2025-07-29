@@ -17,7 +17,7 @@ class FirstOrderFilter:
     return self.x
 
 
-class JerkEstimator2:
+class JerkEstimator1:
   def __init__(self, dt):
     self.dt = dt
     self.prev_x = 0.0
@@ -38,7 +38,7 @@ class JerkEstimator2:
     return self.filter.x
 
 
-class JerkEstimator3:
+class JerkEstimator2:
   def __init__(self, dt):
     self.dt = dt
     self.initialized = False
@@ -67,7 +67,7 @@ class JerkEstimator3:
     return self.kf.x[1][0]
 
 
-class JerkEstimator4:
+class JerkEstimator3:
   def __init__(self, dt):
     self.dt = dt
     self.prev_x = 0.0
@@ -92,7 +92,7 @@ class JerkEstimator4:
     return self._x
 
 
-class JerkEstimator5:
+class JerkEstimator4:
   def __init__(self, dt):
     from collections import deque
     self.dt = dt

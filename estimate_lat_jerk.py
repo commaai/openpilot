@@ -1,6 +1,6 @@
 import math
 import matplotlib.pyplot as plt
-from openpilot.common.filter_simple import JerkEstimator2, JerkEstimator3, JerkEstimator4, JerkEstimator5
+from openpilot.common.filter_simple import JerkEstimator1, JerkEstimator2, JerkEstimator3, JerkEstimator4
 from tools.lib.logreader import LogReader
 from openpilot.selfdrive.locationd.helpers import PoseCalibrator, Pose
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
@@ -13,14 +13,13 @@ calibrator = PoseCalibrator()
 sm = {}
 
 j1 = JerkEstimator1(1/20)
-j2 = JerkEstimator2(1/20)
-j3 = JerkEstimator3(1/100)
+j2 = JerkEstimator2(1/100)
+j3 = JerkEstimator3(1/20)
 j4 = JerkEstimator4(1/20)
-j5 = JerkEstimator5(1/20)
 
 accels = []
 kf_accels = []
-jerks1, jerks2, jerks3, jerks4, jerks5 = [], [], [], [], []
+jerks1, jerks2, jerks3, jerks4 = [], [], [], []
 lp_updated = False
 
 for msg in lr:
@@ -41,24 +40,22 @@ for msg in lr:
     roll = sm['liveParameters'].roll
     roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
-    _j3 = j3.update(roll_compensated_lateral_accel)
+    _j3 = j2.update(roll_compensated_lateral_accel)
     if lp_updated:
       _j1 = j1.update(roll_compensated_lateral_accel)
       _j2 = j2.update(roll_compensated_lateral_accel)
-      _j4 = j4.update(roll_compensated_lateral_accel)
-      _j5 = j5.update(roll_compensated_lateral_accel)
+      _j4 = j3.update(roll_compensated_lateral_accel)
       lp_updated = False
     else:
       _j1 = j1.x
       _j2 = j2.x
+      _j3 = j3.x
       _j4 = j4.x
-      _j5 = j5.x
 
     jerks1.append(_j1)
     jerks2.append(_j2)
     jerks3.append(_j3)
     jerks4.append(_j4)
-    jerks5.append(_j5)
     accels.append(roll_compensated_lateral_accel)
 
     print(roll_compensated_lateral_accel)
@@ -71,10 +68,9 @@ axs[0].set_ylabel('Lateral Acceleration (m/s²)')
 axs[0].legend()
 
 axs[1].plot(jerks1, label='Jerk Estimator 1')
-axs[1].plot(jerks2, label='Jerk Estimator 2')
-# axs[1].plot(jerks3, label='Jerk Estimator 3')
-# axs[1].plot(jerks4, label='Jerk Estimator 4')
-# axs[1].plot(jerks5, label='Jerk Estimator 5')
+# axs[1].plot(jerks2, label='Jerk Estimator 2')
+axs[1].plot(jerks3, label='Jerk Estimator 3')
+axs[1].plot(jerks4, label='Jerk Estimator 4')
 axs[1].set_ylabel('Lateral Jerk (m/s³)')
 axs[1].legend()
 
