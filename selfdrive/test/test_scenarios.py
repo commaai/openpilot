@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
-import numpy as np
-from collections import defaultdict
 from enum import Enum
-from typing import Callable
+from collections.abc import Callable
 from dataclasses import dataclass
 
 from openpilot.tools.lib.logreader import LogReader
 
 TEST_SEGMENT = "4019fff6e54cf1c7|00000123--4bc0d95ef6/5"
 
-class Assert(enum.Enum):
+class Assert(Enum):
   ENGAGED = 0
   SOFT_DISABLE = 1
 
