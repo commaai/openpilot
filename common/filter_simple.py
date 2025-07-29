@@ -23,7 +23,7 @@ class JerkEstimator1:
     self.dt = dt
     self.prev_x = 0.0
     self.initialized = False
-    self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
+    self.filter = FirstOrderFilter(0.0, 0.08, dt, initialized=False)
 
   @property
   def x(self):
@@ -86,22 +86,4 @@ class JerkEstimator3:
       return 0.0
 
     self._x = (self.xs[-1] - self.xs[0]) / ((len(self.xs) - 1) * self.dt)
-    return self._x
-
-
-class JerkEstimator4:
-  def __init__(self, dt):
-    self.dt = dt
-    self.prev_x = 0.0
-    self.initialized = False
-    self.filter = FirstOrderFilter(0.0, 0.2, dt, initialized=False)
-    self._x = 0
-
-  @property
-  def x(self):
-    return self._x
-
-  def update(self, x):
-    self.filter.update(x)
-    self._x = (x - self.filter.x) / 0.2
     return self._x
