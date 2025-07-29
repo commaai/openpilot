@@ -289,7 +289,7 @@ function op_adb() {
 
 function op_ssh() {
   op_before_cmd
-  op_run_command tools/scripts/ssh.sh "$@"
+  op_run_command tools/scripts/ssh.py "$@"
 }
 
 function op_check() {
