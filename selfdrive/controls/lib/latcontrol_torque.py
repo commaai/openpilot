@@ -31,12 +31,12 @@ class LatControlTorque(LatControl):
                              k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
+    self.torque_maxed = False
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
-    self.torque_maxed = False
 
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
