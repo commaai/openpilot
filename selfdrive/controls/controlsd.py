@@ -11,6 +11,7 @@ from openpilot.common.swaglog import cloudlog
 
 from openpilot.common.realtime import DT_CTRL
 from opendbc.car.car_helpers import interfaces
+from opendbc.car.hyundai.values import CAR
 from opendbc.car.vehicle_model import VehicleModel
 from openpilot.selfdrive.controls.lib.drive_helpers import clip_curvature
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
@@ -150,6 +151,7 @@ class Controls:
 
   def publish(self, CC, lac_log):
     CS = self.sm['carState']
+    model_v2 = self.sm['modelV2']
 
     # Orientation and angle rates can be useful for carcontroller
     # Only calibrated (car) frame is relevant for the carcontroller
@@ -172,9 +174,16 @@ class Controls:
     hudControl.leadVisible = self.sm['longitudinalPlan'].hasLead
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
-
-    hudControl.rightLaneVisible = True
-    hudControl.leftLaneVisible = True
+    if len(model_v2.laneLineProbs) and self.CP.carFingerprint == CAR.KIA_CARNIVAL_4TH_GEN:
+      hudControl.rightLaneProb = model_v2.laneLineProbs[2]
+      hudControl.rightLaneVisible = model_v2.laneLineProbs[2] > 0.5
+      hudControl.leftLaneProb = model_v2.laneLineProbs[1]
+      hudControl.leftLaneVisible = model_v2.laneLineProbs[1] > 0.5
+    else:
+      hudControl.rightLaneProb = 1.0
+      hudControl.rightLaneVisible = True
+      hudControl.leftLaneProb = 1.0
+      hudControl.leftLaneVisible = True
     if self.sm.valid['driverAssistance']:
       hudControl.leftLaneDepart = self.sm['driverAssistance'].leftLaneDeparture
       hudControl.rightLaneDepart = self.sm['driverAssistance'].rightLaneDeparture
