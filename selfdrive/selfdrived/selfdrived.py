@@ -32,7 +32,7 @@ SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.15 / DT_CTRL)  # TODO: needs to be 25 for longitudinal
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -64,20 +64,26 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
 
   excessive_lat_actuation = False
   estimated_jerk = jerk_estimator.update(roll_compensated_lateral_accel)
+  print('vEgo', CS.vEgo, yaw_rate, roll)
+  print('roll_compensated_lateral_accel', roll_compensated_lateral_accel, estimated_jerk)
   if sm['carControl'].latActive:
     if not CS.steeringPressed:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
         excessive_lat_actuation = True
 
     # Note that we do not check steeringPressed as it is unreliable under high jerk conditions
-    if abs(estimated_jerk) > ISO_LATERAL_JERK * 2:
+    if abs(estimated_jerk) > ISO_LATERAL_JERK * 4:
       excessive_lat_actuation = True
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
   livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
+  print('excessive_long_actuation', excessive_long_actuation, 'excessive_lat_actuation', excessive_lat_actuation, 'livepose_valid', livepose_valid)
   counter = counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
-  return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
+  if counter > 0:
+    print('counter', counter, excessive_long_actuation, excessive_lat_actuation, livepose_valid)
+
+  return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT, roll_compensated_lateral_accel
 
 
 class SelfdriveD:
@@ -156,6 +162,7 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
     self.excessive_actuation_counter = 0
+    self.roll_compensated_lateral_accel = 0.0
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -276,12 +283,15 @@ class SelfdriveD:
     if self.sm.updated['liveCalibration']:
       self.calibrator.feed_live_calib(self.sm['liveCalibration'])
 
-    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.jerk_estimator, self.excessive_actuation_counter)
+    self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrator, self.jerk_estimator, self.excessive_actuation_counter)
+    self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
     if not self.excessive_actuation and excessive_actuation:
       set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
       self.excessive_actuation = True
 
     if self.excessive_actuation:
+      print('EXCESSIVE ACTUATION')
+      raise Exception("Excessive actuation detected, please check your hardware and calibration.")
       self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
@@ -502,6 +512,7 @@ class SelfdriveD:
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
+    ss.rollCompensatedLateralAccel = float(self.roll_compensated_lateral_accel)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
 
