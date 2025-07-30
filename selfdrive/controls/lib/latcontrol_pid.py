@@ -35,7 +35,7 @@ class LatControlPID(LatControl):
       ff = self.get_steer_feedforward(angle_steers_des_no_offset, CS.vEgo)
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5 or self.torque_maxed
 
-      output_torque = self.pid.update(pid_log.error,
+      output_torque = self.pid.update(error,
                                 feedforward=ff,
                                 speed=CS.vEgo,
                                 freeze_integrator=freeze_integrator)
