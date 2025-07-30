@@ -19,7 +19,6 @@ class TiciFanController(BaseFanController):
 
     self.last_ignition = False
     self.controller = PIDController(k_p=0, k_i=4e-3, k_f=1, rate=(1 / DT_HW))
-    self.limit_maxxed = False
 
   def update(self, cur_temp: float, ignition: bool) -> int:
     self.controller.pos_limit = 100 if ignition else 30
@@ -32,10 +31,7 @@ class TiciFanController(BaseFanController):
     fan_pwr_out = int(self.controller.update(
                       error=error,
                       feedforward=np.interp(cur_temp, [60.0, 100.0], [0, 100]),
-                      freeze_integrator=self.limit_maxxed,
                     ))
-    self.limit_maxxed = abs(fan_pwr_out - self.controller.control) < 1e-3
-    self.limit_maxxed = self.limit_maxxed or abs(self.controller.neg_limit - fan_pwr_out) < 1e-3
 
     self.last_ignition = ignition
     return fan_pwr_out
