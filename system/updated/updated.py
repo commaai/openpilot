@@ -324,7 +324,6 @@ class Updater:
 
     dt_uptime_onroad = (self.params.get("UptimeOnroad", return_default=True) - last_uptime_onroad) / 60*60
     dt_route_count = self.params.get("RouteCount", return_default=True) - last_route_count
-
     build_metadata = get_build_metadata()
     if failed_count > 15 and exception is not None and self.has_internet:
       if build_metadata.tested_channel:
