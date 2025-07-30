@@ -46,6 +46,5 @@ class TestFanController:
     controller = patched_controller(mocker, controller_class)
     self.wind_down(controller, True)
     for _ in range(10):
-      print(f"Fan power: {controller.update(90, True)}")
-    self.wind_up(controller, True)
+      controller.update(90, True)
     assert controller.update(90, True) >= 60
