@@ -27,7 +27,6 @@ class TiciFanController(BaseFanController):
 
     if ignition != self.last_ignition:
       self.controller.reset()
-    
 
     error = cur_temp - 75
     fan_pwr_out = int(self.controller.update(
