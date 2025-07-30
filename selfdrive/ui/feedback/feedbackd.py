@@ -128,7 +128,7 @@ class ModelState:
   def process_wakeword_detection(self, wakeword_prob):
     current_time = time.monotonic()
 
-    if wakeword_prob > 0.9:
+    if wakeword_prob > 0.8:
       cloudlog.debug(f"Wake word segment detected! Score: {wakeword_prob:.3f}")
       if (current_time - self.last_detection_time) > self.debounce_period:
         cloudlog.info("Wake word detected!")
