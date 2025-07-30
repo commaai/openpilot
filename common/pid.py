@@ -52,12 +52,9 @@ class PIDController:
 
       # Don't allow windup if already clipping
       test_control = self.p + i + self.d + self.f
-      if test_control > self.pos_limit:
-        self.i = np.clip(i, self.neg_limit, self.i)
-      elif test_control < self.neg_limit:
-        self.i = np.clip(i, self.i, self.pos_limit)
-      else:
-        self.i = np.clip(i, self.neg_limit, self.pos_limit)
+      i_upperbound = self.i if test_control > self.pos_limit else self.pos_limit
+      i_lowerbound = self.i if test_control < self.neg_limit else self.neg_limit
+      self.i = np.clip(i, i_lowerbound, i_upperbound)
 
     control = self.p + self.i + self.d + self.f
     self.control = np.clip(control, self.neg_limit, self.pos_limit)
