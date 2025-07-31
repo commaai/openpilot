@@ -410,7 +410,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
 
     if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0 || ir_pwr >= 50.0) {
       panda->set_ir_pwr(ir_pwr);
-      uint16_t ir_percent = util::map_val(static_cast<int>(ir_pwr), static_cast<int>(100*MIN_IR_POWER), static_cast<int>(100*MAX_IR_POWER), 0, 100); 
+      int ir_percent = util::map_val(static_cast<int>(ir_pwr), static_cast<int>(100*MIN_IR_POWER), static_cast<int>(100*MAX_IR_POWER), 0, 100); 
       Hardware::set_ir_power(ir_percent); //Hardware::set_ir_power expects int percentage
       prev_ir_pwr = ir_pwr;
     }
