@@ -407,7 +407,7 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
       ir_pwr = 0;
     }
 
-    if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0 || ir_pwr >= 50.0) {
+    if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0) {
       int16_t ir_panda = util::map_val(ir_pwr, 0, 100, 0, MAX_IR_PANDA_VAL); 
       panda->set_ir_pwr(ir_panda);
       Hardware::set_ir_power(ir_pwr); 
