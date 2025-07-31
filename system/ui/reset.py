@@ -15,6 +15,7 @@ from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 
 NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"
+TIMEOUT = 3*60
 
 
 class ResetMode(IntEnum):
@@ -70,7 +71,7 @@ class Reset(Widget):
     if self._reset_state != self._previous_reset_state:
       self._previous_reset_state = self._reset_state
       self._timeout_st = time.monotonic()
-    elif self._reset_state != ResetState.RESETTING and ((time.monotonic() - self._timeout_st) > (60*3)) and not PC:
+    elif self._reset_state != ResetState.RESETTING and (time.monotonic() - self._timeout_st) > TIMEOUT and not PC:
       os.system("sudo poweroff")
 
   def _render(self, rect: rl.Rectangle):
