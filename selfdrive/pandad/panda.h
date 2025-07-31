@@ -83,6 +83,7 @@ public:
   void set_data_speed_kbps(uint16_t bus, uint16_t speed);
   void set_canfd_non_iso(uint16_t bus, bool non_iso);
   void can_send(const capnp::List<cereal::CanData>::Reader &can_data_list);
+  void notsend();
   bool can_receive(std::vector<can_frame>& out_vec);
   void can_reset_communications();
 

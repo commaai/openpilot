@@ -231,8 +231,13 @@ void Panda::pack_can_buffer(const capnp::List<cereal::CanData>::Reader &can_data
 
 void Panda::can_send(const capnp::List<cereal::CanData>::Reader &can_data_list) {
   pack_can_buffer(can_data_list, [=](uint8_t* data, size_t size) {
-    handle->bulk_write(3, data, size, 5);
+    handle->bulk_write(0xac, data, size, 5);
   });
+}
+
+void Panda::notsend() {
+  static uint8_t junk[0x300];
+  handle->bulk_write(0xac, junk, 0x200, 5);
 }
 
 bool Panda::can_receive(std::vector<can_frame>& out_vec) {

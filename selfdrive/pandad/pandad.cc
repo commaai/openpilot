@@ -85,12 +85,15 @@ void can_send_thread(std::vector<Panda *> pandas, bool fake_send) {
   std::unique_ptr<Context> context(Context::create());
   std::unique_ptr<SubSocket> subscriber(SubSocket::create(context.get(), "sendcan"));
   assert(subscriber != NULL);
-  subscriber->setTimeout(100);
+  subscriber->setTimeout(10);
 
   // run as fast as messages come in
   while (!do_exit && check_all_connected(pandas)) {
     std::unique_ptr<Message> msg(subscriber->receive());
     if (!msg) {
+      for (const auto& panda : pandas) {
+        panda->notsend();
+      }
       continue;
     }
 
