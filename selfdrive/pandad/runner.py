@@ -2,11 +2,11 @@ import os
 import threading
 import time
 from itertools import chain
-from panda import Panda
-from panda.python import PANDA_BUS_CNT
+
 from cereal import car
 from cereal.messaging import SubMaster, PubMaster
 import cereal.messaging as messaging
+from panda import Panda
 from openpilot.common.params import Params
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
@@ -25,7 +25,7 @@ class PandaRunner:
     for panda in self.pandas:
       if os.getenv("BOARDD_LOOPBACK"):
         panda.set_can_loopback(True)
-      for i in range(PANDA_BUS_CNT):
+      for i in range(3):
         panda.set_canfd_auto(i, True)
 
     self.sm = SubMaster(["selfdriveState", "deviceState", "driverCameraState"])
@@ -59,13 +59,13 @@ class PandaRunner:
     with self.lock:
       cans = list(chain.from_iterable(p.can_recv() for p in self.pandas))
 
+    msg = messaging.new_message('can', len(cans) if cans else 0)
+    msg.valid = True
     if cans:
-      msg = messaging.new_message('can', len(cans))
-      msg.valid = True
       for i, can_info in enumerate(cans):
         can = msg.can[i]
         can.address, can.dat, can.src = can_info
-      self.pm.send("can", msg)
+    self.pm.send("can", msg)
 
   def run(self, evt):
     send_thread = threading.Thread(target=self._can_send, args=(evt,))
