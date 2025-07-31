@@ -36,8 +36,7 @@
 // Ignition:
 // - If any of the ignition sources in any panda is high, ignition is high
 
-#define MAX_IR_POWER 0.5f
-#define MIN_IR_POWER 0.0f
+#define MAX_IR_PANDA_VAL 50
 #define CUTOFF_IL 400
 #define SATURATE_IL 1000
 
@@ -371,8 +370,8 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
 
   static uint64_t last_driver_camera_t = 0;
   static uint16_t prev_fan_speed = 999;
-  static uint16_t ir_pwr = 0;
-  static uint16_t prev_ir_pwr = 999;
+  static int ir_pwr = 0;
+  static int prev_ir_pwr = 999;
 
   static FirstOrderFilter integ_lines_filter(0, 30.0, 0.05);
 
@@ -395,11 +394,11 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
       last_driver_camera_t = event.getLogMonoTime();
 
       if (cur_integ_lines <= CUTOFF_IL) {
-        ir_pwr = 100.0 * MIN_IR_POWER;
+        ir_pwr = 0;
       } else if (cur_integ_lines > SATURATE_IL) {
-        ir_pwr = 100.0 * MAX_IR_POWER;
+        ir_pwr = 100;
       } else {
-        ir_pwr = 100.0 * (MIN_IR_POWER + ((cur_integ_lines - CUTOFF_IL) * (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)));
+        ir_pwr = 100 * (cur_integ_lines - CUTOFF_IL) / (SATURATE_IL - CUTOFF_IL);
       }
     }
 
@@ -409,9 +408,9 @@ void process_peripheral_state(Panda *panda, PubMaster *pm, bool no_fan_control) 
     }
 
     if (ir_pwr != prev_ir_pwr || sm.frame % 100 == 0 || ir_pwr >= 50.0) {
-      panda->set_ir_pwr(ir_pwr);
-      int ir_percent = util::map_val(static_cast<int>(ir_pwr), static_cast<int>(100*MIN_IR_POWER), static_cast<int>(100*MAX_IR_POWER), 0, 100); 
-      Hardware::set_ir_power(ir_percent); //Hardware::set_ir_power expects int percentage
+      int16_t ir_panda = util::map_val(ir_pwr, 0, 100, 0, MAX_IR_PANDA_VAL); 
+      panda->set_ir_pwr(ir_panda);
+      Hardware::set_ir_power(ir_pwr); 
       prev_ir_pwr = ir_pwr;
     }
   }
