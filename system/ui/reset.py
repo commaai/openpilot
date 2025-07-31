@@ -2,6 +2,7 @@
 import os
 import sys
 import threading
+import time
 from enum import IntEnum
 
 import pyray as rl
@@ -33,6 +34,7 @@ class Reset(Widget):
   def __init__(self, mode):
     super().__init__()
     self._mode = mode
+    self._previous_reset_state = None
     self._reset_state = ResetState.NONE
     self._cancel_button = Button("Cancel", self._cancel_callback)
     self._confirm_button = Button("Confirm", self._confirm, button_style=ButtonStyle.PRIMARY)
@@ -63,6 +65,13 @@ class Reset(Widget):
   def start_reset(self):
     self._reset_state = ResetState.RESETTING
     threading.Timer(0.1, self._do_erase).start()
+
+  def _update_state(self):
+    if self._reset_state != self._previous_reset_state:
+      self._previous_reset_state = self._reset_state
+      self._timeout_st = time.monotonic()
+    elif self._reset_state != ResetState.RESETTING and ((time.monotonic() - self._timeout_st) > (60*3)):
+      print("os.system('sudo poweroff')")
 
   def _render(self, rect: rl.Rectangle):
     label_rect = rl.Rectangle(rect.x + 140, rect.y, rect.width - 280, 100)
