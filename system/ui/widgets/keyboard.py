@@ -88,17 +88,17 @@ class Keyboard(Widget):
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
-    self.all_keys = {}
+    self._all_keys = {}
     for l in KEYBOARD_LAYOUTS:
       for _, keys in enumerate(KEYBOARD_LAYOUTS[l]):
         for _, key in enumerate(keys):
           if key in self._key_icons:
             texture = self._key_icons[key]
-            self.all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
+            self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
                                         button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL)
           else:
-            self.all_keys[key] = Button(key, partial(self._key_callback, key))
-    self.all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY])
+            self._all_keys[key] = Button(key, partial(self._key_callback, key))
+    self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY])
 
   @property
   def text(self):
@@ -185,11 +185,11 @@ class Keyboard(Widget):
         if key in self._key_icons:
           if key == SHIFT_ACTIVE_KEY and self._caps_lock:
             key = CAPS_LOCK_KEY
-          self.all_keys[key].enabled = is_enabled
-          self.all_keys[key].render(key_rect)
+          self._all_keys[key].enabled = is_enabled
+          self._all_keys[key].render(key_rect)
         else:
-          self.all_keys[key].enabled = is_enabled
-          self.all_keys[key].render(key_rect)
+          self._all_keys[key].enabled = is_enabled
+          self._all_keys[key].render(key_rect)
 
     return self._render_return_status
 
