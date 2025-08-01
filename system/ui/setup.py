@@ -103,6 +103,7 @@ class Setup(Widget):
 
   def _getting_started_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
+    self.start_network_check()
 
   def _software_selection_back_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
