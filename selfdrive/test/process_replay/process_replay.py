@@ -85,7 +85,6 @@ class ReplayContext:
         self.events[pub] = messaging.fake_event_handle(pub, enable=True)
     else:
       self.events = {self.main_pub: messaging.fake_event_handle(self.main_pub, enable=True)}
-    # print('self.events', self.events)
 
   def close_context(self):
     del self.events
@@ -118,7 +117,7 @@ class ReplayContext:
   def wait_for_recv_called(self):
     messaging.wait_for_one_event(self.all_recv_called_events)
 
-  def wait_for_next_recv(self, trigger_empty_recv, v2=False):
+  def wait_for_next_recv(self, trigger_empty_recv):
     index = messaging.wait_for_one_event(self.all_recv_called_events)
     if self.main_pub is not None and self.main_pub_drained and trigger_empty_recv:
       self.all_recv_called_events[index].clear()
@@ -284,20 +283,13 @@ class ProcessContainer:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
-    with self.prefix, Timeout(self.cfg.timeout+10000, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
       end_of_cycle = True
       if self.cfg.should_recv_callback is not None:
         end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
-        # print('end of cycle:', end_of_cycle)
 
       self.msg_queue.append(msg)
       if end_of_cycle:
-        # input('about to wait for recv')
-        # self.rc.wait_for_next_recv(trigger_empty_recv, v2=True)
-        # self.rc.wait_for_next_recv(False, v2=True)
-        # input('second')
-        # self.rc.wait_for_recv_called()
-
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
@@ -327,18 +319,6 @@ class ProcessContainer:
         self.rc.unlock_sockets()
         if trigger_empty_recv:
           self.rc.unlock_sockets()
-        # print('unlocked! waiting...')
-        # input()
-        # TODO: understand what this is doing
-        # TODO: make this just wait for main_pub? hello?
-        # self.rc.wait_for_next_recv(trigger_empty_recv)
-        #
-        # for socket in self.sockets:
-        #   ms = messaging.drain_sock(socket)
-        #   for m in ms:
-        #     m = m.as_builder()
-        #     m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
-        #     output_msgs.append(m.as_reader())
         self.cnt += 1
     assert self.process.proc.is_alive()
 
