@@ -4,7 +4,7 @@ import time
 import copy
 import heapq
 import signal
-from collections import Counter, OrderedDict
+from collections import Counter, OrderedDict, deque
 from dataclasses import dataclass, field
 from typing import Any
 from collections.abc import Callable, Iterable
@@ -272,7 +272,7 @@ class ProcessContainer:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
-    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+    with Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
       end_of_cycle = True
       if self.cfg.should_recv_callback is not None:
         end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
@@ -501,7 +501,7 @@ CONFIGS = [
     subs=["radarState"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),  # it polls ???
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -656,7 +656,7 @@ def replay_process_with_name(name: str | Iterable[str], lr: LogIterable, *args, 
 def replay_process(
   cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, FrameReader] = None,
   fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
-  captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False
+  captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False, t=0
 ) -> list[capnp._DynamicStructReader]:
   if isinstance(cfg, Iterable):
     cfgs = list(cfg)
@@ -667,7 +667,9 @@ def replay_process(
                          manager_states=True,
                          panda_states=any("pandaStates" in cfg.pubs for cfg in cfgs),
                          camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
-  process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, captured_output_store, disable_progress)
+  # return all_msgs
+  process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, captured_output_store, disable_progress, t)
+  return []
 
   if return_all_logs:
     keys = {m.which() for m in process_logs}
@@ -683,7 +685,7 @@ def replay_process(
 
 def _replay_multi_process(
   cfgs: list[ProcessConfig], lr: LogIterable, frs: dict[str, FrameReader] | None, fingerprint: str | None,
-  custom_params: dict[str, Any] | None, captured_output_store: dict[str, dict[str, str]] | None, disable_progress: bool
+  custom_params: dict[str, Any] | None, captured_output_store: dict[str, dict[str, str]] | None, disable_progress: bool, t: float
 ) -> list[capnp._DynamicStructReader]:
   if fingerprint is not None:
     params_config = generate_params_config(lr=lr, fingerprint=fingerprint, custom_params=custom_params)
@@ -692,55 +694,74 @@ def _replay_multi_process(
     CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
     params_config = generate_params_config(lr=lr, CP=CP, custom_params=custom_params)
     env_config = generate_environ_config(CP=CP)
+  print('env config', time.monotonic() - t)
 
   # validate frs and vision pubs
   all_vision_pubs = [pub for cfg in cfgs for pub in cfg.vision_pubs]
   if len(all_vision_pubs) != 0:
     assert frs is not None, "frs must be provided when replaying process using vision streams"
     assert all(meta_from_camera_state(st) is not None for st in all_vision_pubs), \
-                                                          f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
+      f"undefined vision stream spotted, probably misconfigured process: (vision pubs: {all_vision_pubs})"
     required_vision_pubs = {m.camera_state for m in available_streams(lr)} & set(all_vision_pubs)
     assert all(st in frs for st in required_vision_pubs), f"frs for this process must contain following vision streams: {required_vision_pubs}"
+  print('validate frs', time.monotonic() - t)
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
+  containers = []
   try:
-    containers = []
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
 
+    print('created containers', time.monotonic() - t)
+
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
     lr_pubs = all_pubs - all_subs
+    print('all_pubs', all_pubs, 'all_subs', all_subs, 'lr_pubs', lr_pubs)
     pubs_to_containers = {pub: [container for container in containers if pub in container.pubs] for pub in all_pubs}
+
+    print('prepared pubs and subs', time.monotonic() - t)
 
     pub_msgs = [msg for msg in all_msgs if msg.which() in lr_pubs]
     # external queue for messages taken from logs; internal queue for messages generated by processes, which will be republished
-    external_pub_queue: list[capnp._DynamicStructReader] = pub_msgs.copy()
+    external_pub_queue: list[capnp._DynamicStructReader] = deque(pub_msgs)
     internal_pub_queue: list[capnp._DynamicStructReader] = []
     # heap for maintaining the order of messages generated by processes, where each element: (logMonoTime, index in internal_pub_queue)
     internal_pub_index_heap: list[tuple[int, int]] = []
 
+    print('prepared queues', time.monotonic() - t)
+
     pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
+    print('starting looping', time.monotonic() - t)
     while len(external_pub_queue) != 0 or (len(internal_pub_index_heap) != 0 and not all(c.has_empty_queue for c in containers)):
+      # t = time.monotonic()
+      # del external_pub_queue[0]
+      # msg = external_pub_queue.popleft()
       if len(internal_pub_index_heap) == 0 or (len(external_pub_queue) != 0 and external_pub_queue[0].logMonoTime < internal_pub_index_heap[0][0]):
-        msg = external_pub_queue.pop(0)
+        msg = external_pub_queue.popleft()
         pbar.update(1)
       else:
+        raise Exception
         _, index = heapq.heappop(internal_pub_index_heap)
         msg = internal_pub_queue[index]
+      # print('loop pop msg', time.monotonic() - t)
 
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
         output_msgs = container.run_step(msg, frs)
-        for m in output_msgs:
-          if m.which() in all_pubs:
-            internal_pub_queue.append(m)
-            heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
-        log_msgs.extend(output_msgs)
+        # for m in output_msgs:
+        #   if m.which() in all_pubs:
+        #     internal_pub_queue.append(m)
+        #     heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
+        # log_msgs.extend(output_msgs)
+      # print('loop run step', time.monotonic() - t)
+      # print()
   finally:
+    print('final internal_pub_queue len', len(internal_pub_queue))
+    print('loop finished', time.monotonic() - t)
     for container in containers:
       container.stop()
       if captured_output_store is not None:
