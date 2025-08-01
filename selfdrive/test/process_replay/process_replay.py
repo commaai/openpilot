@@ -34,6 +34,7 @@ NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
+
 class DummySocket:
   def __init__(self):
     self.data: list[bytes] = []
@@ -46,6 +47,7 @@ class DummySocket:
 
   def send(self, data: bytes):
     self.data.append(data)
+
 
 class LauncherWithCapture:
   def __init__(self, capture: ProcessOutputCapture, launcher: Callable):
@@ -64,7 +66,7 @@ class ReplayContext:
     self.main_pub = cfg.main_pub
     self.main_pub_drained = cfg.main_pub_drained
     self.unlocked_pubs = cfg.unlocked_pubs
-    assert(len(self.pubs) != 0 or self.main_pub is not None)
+    assert len(self.pubs) != 0 or self.main_pub is not None
 
   def __enter__(self):
     self.open_context()
