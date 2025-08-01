@@ -108,14 +108,16 @@ class ReplayContext:
 
   def unlock_sockets(self):
     expected_sets = len(self.events)
+    # print('events', self.events)
     while expected_sets > 0:
       index = messaging.wait_for_one_event(self.all_recv_called_events)
+      # print('cleared', index)
       self.all_recv_called_events[index].clear()
       self.all_recv_ready_events[index].set()
       expected_sets -= 1
 
   def wait_for_recv_called(self):
-    messaging.wait_for_one_event(self.all_recv_called_events)
+    return messaging.wait_for_one_event(self.all_recv_called_events)
 
   def wait_for_next_recv(self, trigger_empty_recv):
     index = messaging.wait_for_one_event(self.all_recv_called_events)
@@ -281,42 +283,41 @@ class ProcessContainer:
       if end_of_cycle:
         # print('proc replay waiting for recv called')
         # *** for radard, wait for recv to be called on any socket (modelV2, carState, liveTracks) ***
-        got = self.rc.wait_for_recv_called()
-
-        # *** goes through each socket that called recv and clears recv_called event, then sets recv ready event ***
-        self.rc.unlock_sockets()
-
-        # *** wait for recv to be called again? ***
-        # self.rc.wait_for_next_recv(False)
-        return []
-        # print('proc replay recv called done')
-        # print()
+        # TODO: I think this is redundant. from the previous run_step call, we will have waited for sm.update to run!
+        self.rc.wait_for_recv_called()
 
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
             messaging.recv_one_or_none(s)
+        self.cnt += 1
 
         # empty recv on drained pub indicates the end of messages, only do that if there're any
         trigger_empty_recv = False
-        if self.cfg.main_pub and self.cfg.main_pub_drained:
-          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+        # if self.cfg.main_pub and self.cfg.main_pub_drained:
+        #   raise Exception
+        #   trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
 
-        for m in self.msg_queue:
-          self.pm.send(m.which(), m.as_builder())
-          # send frames if needed
-          if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
-            raise Exception
-            camera_state = getattr(m, m.which())
-            camera_meta = meta_from_camera_state(m.which())
-            assert frs is not None
-            img = frs[m.which()].get(camera_state.frameId)
-            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
-                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
-        self.msg_queue = []
+        # for m in self.msg_queue:
+        #   self.pm.send(m.which(), m.as_builder())
+        #   # send frames if needed
+        #   if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
+        #     raise Exception
+        #     camera_state = getattr(m, m.which())
+        #     camera_meta = meta_from_camera_state(m.which())
+        #     assert frs is not None
+        #     img = frs[m.which()].get(camera_state.frameId)
+        #     self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+        #                           camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
+        # self.msg_queue = []
 
+        # input()
+        # *** goes through each socket that called recv and clears recv_called event, then sets recv ready event ***
         self.rc.unlock_sockets()
+        # input()
+        # *** wait for recv to be called again? ***
         self.rc.wait_for_next_recv(trigger_empty_recv)
+        return []
 
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
@@ -324,7 +325,6 @@ class ProcessContainer:
             m = m.as_builder()
             m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
             output_msgs.append(m.as_reader())
-        self.cnt += 1
     assert self.process.proc.is_alive()
 
     return output_msgs
@@ -668,8 +668,10 @@ def replay_process_with_name(name: str | Iterable[str], lr: LogIterable, *args, 
 def replay_process(
   cfg: ProcessConfig | Iterable[ProcessConfig], lr: LogIterable, frs: dict[str, FrameReader] = None,
   fingerprint: str = None, return_all_logs: bool = False, custom_params: dict[str, Any] = None,
-  captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False, t=0
+  captured_output_store: dict[str, dict[str, str]] = None, disable_progress: bool = False, t=None
 ) -> list[capnp._DynamicStructReader]:
+  if t is None:
+    t = time.monotonic()
   if isinstance(cfg, Iterable):
     cfgs = list(cfg)
   else:
