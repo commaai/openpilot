@@ -11,9 +11,8 @@ from cereal import log
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import gui_button, Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 
@@ -65,7 +64,8 @@ class Setup(Widget):
     self._getting_started_button = Button("", self._getting_started_button_callback, button_style=ButtonStyle.PRIMARY, border_radius=0)
     self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
-    self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback, button_style=ButtonStyle.PRIMARY, enabled=False)
+    self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback,
+                                                      button_style=ButtonStyle.PRIMARY, enabled=False)
     self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
 
 
