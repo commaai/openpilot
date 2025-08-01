@@ -2486,6 +2486,11 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
+struct FeedbackState {
+  totalExecutionTime @0 :Float32;
+  wakewordProb @1 :Float32;
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2586,8 +2591,14 @@ struct Event {
     mapRenderState @105: MapRenderState;
 
     # UI services
-    userFlag @93 :UserFlag;
     uiDebug @102 :UIDebug;
+
+    # driving feedback
+    feedbackState @148 :FeedbackState;
+    bookmarkButton @93 :UserFlag;
+    heyComma @149 :UserFlag;
+
+
 
     # *********** debug ***********
     testJoystick @52 :Joystick;
