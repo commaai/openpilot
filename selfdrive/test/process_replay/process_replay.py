@@ -85,7 +85,7 @@ class ReplayContext:
         self.events[pub] = messaging.fake_event_handle(pub, enable=True)
     else:
       self.events = {self.main_pub: messaging.fake_event_handle(self.main_pub, enable=True)}
-    print('self.events', self.events)
+    # print('self.events', self.events)
 
   def close_context(self):
     del self.events
@@ -269,7 +269,18 @@ class ProcessContainer:
       self.prefix.clean_dirs()
       self._clean_env()
 
-  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None) -> list[capnp._DynamicStructReader]:
+  def get_output_msgs(self, start_time: int):
+    self.rc.wait_for_next_recv(False, v2=True)
+    output_msgs = []
+    for socket in self.sockets:
+      ms = messaging.drain_sock(socket)
+      for m in ms:
+        m = m.as_builder()
+        m.logMonoTime = start_time + int(self.cfg.processing_time * 1e9)
+        output_msgs.append(m.as_reader())
+    return output_msgs
+
+  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None, flush=False) -> list[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
@@ -277,9 +288,10 @@ class ProcessContainer:
       end_of_cycle = True
       if self.cfg.should_recv_callback is not None:
         end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
+        # print('end of cycle:', end_of_cycle)
 
       self.msg_queue.append(msg)
-      if end_of_cycle:
+      if end_of_cycle or flush:
         # certain processes use drain_sock. need to cause empty recv to break from this loop
         trigger_empty_recv = False
         if self.cfg.main_pub and self.cfg.main_pub_drained:
@@ -287,7 +299,7 @@ class ProcessContainer:
 
         # input('about to wait for recv')
         # self.rc.wait_for_next_recv(trigger_empty_recv, v2=True)
-        self.rc.wait_for_next_recv(False, v2=True)
+        # self.rc.wait_for_next_recv(False, v2=True)
         # input('second')
         # self.rc.wait_for_recv_called()
 
@@ -298,12 +310,7 @@ class ProcessContainer:
 
         # *** get output msgs from previous inputs ***
         # print('got output')
-        for socket in self.sockets:
-          ms = messaging.drain_sock(socket)
-          for m in ms:
-            m = m.as_builder()
-            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
-            output_msgs.append(m.as_reader())
+        output_msgs = self.get_output_msgs(msg.logMonoTime)
 
         for m in self.msg_queue:
           # print('sending', m.which())
@@ -762,6 +769,12 @@ def _replay_multi_process(
             internal_pub_queue.append(m)
             heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
         log_msgs.extend(output_msgs)
+
+    # flush last set of messages from each process
+    for container in containers:
+      # output_msgs = container.run_step(messaging.new_message(container.cfg.main_pub, 1), frs, last=True)
+      output_msgs = container.get_output_msgs(int(time.time() * 1e9))  # TODO: fix time
+      log_msgs.extend(output_msgs)
   finally:
     for container in containers:
       container.stop()
