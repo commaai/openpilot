@@ -147,7 +147,7 @@ class ProcessConfig:
 
 class ProcessContainer:
   def __init__(self, cfg: ProcessConfig):
-    self.prefix = OpenpilotPrefix(clean_dirs_on_exit=False)
+    self.prefix = OpenpilotPrefix(create_dirs_on_enter=False, clean_dirs_on_exit=False)
     self.cfg = copy.deepcopy(cfg)
     self.process = copy.deepcopy(managed_processes[cfg.proc_name])
     self.msg_queue: list[capnp._DynamicStructReader] = []
@@ -229,6 +229,7 @@ class ProcessContainer:
     fingerprint: str | None, capture_output: bool
   ):
     with self.prefix as p:
+      self.prefix.create_dirs()
       self._setup_env(params_config, environ_config)
 
       if self.cfg.config_callback is not None:
