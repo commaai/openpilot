@@ -292,39 +292,46 @@ class ProcessContainer:
             messaging.recv_one_or_none(s)
         self.cnt += 1
 
-        # empty recv on drained pub indicates the end of messages, only do that if there're any
-        trigger_empty_recv = False
-        # if self.cfg.main_pub and self.cfg.main_pub_drained:
-        #   raise Exception
-        #   trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
-
-        # for m in self.msg_queue:
-        #   self.pm.send(m.which(), m.as_builder())
-        #   # send frames if needed
-        #   if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
-        #     raise Exception
-        #     camera_state = getattr(m, m.which())
-        #     camera_meta = meta_from_camera_state(m.which())
-        #     assert frs is not None
-        #     img = frs[m.which()].get(camera_state.frameId)
-        #     self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
-        #                           camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
-        # self.msg_queue = []
-
-        # input()
-        # *** goes through each socket that called recv and clears recv_called event, then sets recv ready event ***
-        self.rc.unlock_sockets()
-        # input()
-        # *** wait for recv to be called again? ***
-        self.rc.wait_for_next_recv(trigger_empty_recv)
-        return []
-
+        # *** get output msgs from previous inputs ***
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
           for m in ms:
             m = m.as_builder()
             m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
             output_msgs.append(m.as_reader())
+
+        # empty recv on drained pub indicates the end of messages, only do that if there're any
+        trigger_empty_recv = False
+        # if self.cfg.main_pub and self.cfg.main_pub_drained:
+        #   raise Exception
+        #   trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+
+        for m in self.msg_queue:
+          self.pm.send(m.which(), m.as_builder())
+          # send frames if needed
+          if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
+            raise Exception
+            camera_state = getattr(m, m.which())
+            camera_meta = meta_from_camera_state(m.which())
+            assert frs is not None
+            img = frs[m.which()].get(camera_state.frameId)
+            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
+        self.msg_queue = []
+
+        # input()
+        # *** goes through each socket that called recv and clears recv_called event, then sets recv ready event ***
+        self.rc.unlock_sockets()
+        # input()
+        # *** wait for recv to be called again? ***
+        # self.rc.wait_for_next_recv(trigger_empty_recv)
+
+        # for socket in self.sockets:
+        #   ms = messaging.drain_sock(socket)
+        #   for m in ms:
+        #     m = m.as_builder()
+        #     m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
+        #     output_msgs.append(m.as_reader())
     assert self.process.proc.is_alive()
 
     return output_msgs
@@ -683,7 +690,6 @@ def replay_process(
                          camera_states=any(len(cfg.vision_pubs) != 0 for cfg in cfgs))
   # return all_msgs
   process_logs = _replay_multi_process(cfgs, all_msgs, frs, fingerprint, custom_params, captured_output_store, disable_progress, t)
-  return []
 
   if return_all_logs:
     keys = {m.which() for m in process_logs}
@@ -758,7 +764,7 @@ def _replay_multi_process(
         msg = external_pub_queue.popleft()
         pbar.update(1)
       else:
-        raise Exception
+        # raise Exception
         _, index = heapq.heappop(internal_pub_index_heap)
         msg = internal_pub_queue[index]
       # print('loop pop msg', time.monotonic() - t)
@@ -766,11 +772,11 @@ def _replay_multi_process(
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
         output_msgs = container.run_step(msg, frs)
-        # for m in output_msgs:
-        #   if m.which() in all_pubs:
-        #     internal_pub_queue.append(m)
-        #     heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
-        # log_msgs.extend(output_msgs)
+        for m in output_msgs:
+          if m.which() in all_pubs:
+            internal_pub_queue.append(m)
+            heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
+        log_msgs.extend(output_msgs)
       # print('loop run step', time.monotonic() - t)
       # print()
   finally:

@@ -268,10 +268,14 @@ def main() -> None:
   RD = RadarD(CP.radarDelay)
 
   while 1:
+    # print('radard calling update', flush=True)
     sm.update()
+    # print('radard finished calling update', flush=True)
 
     # RD.update(sm, sm['liveTracks'])
+    # print('radard calling RD.update', flush=True)
     RD.publish(pm)
+    # print('radard finished calling RD.update', flush=True)
 
 
 if __name__ == "__main__":
