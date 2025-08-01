@@ -34,6 +34,7 @@ NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
+
 class DummySocket:
   def __init__(self):
     self.data: list[bytes] = []
@@ -46,6 +47,7 @@ class DummySocket:
 
   def send(self, data: bytes):
     self.data.append(data)
+
 
 class LauncherWithCapture:
   def __init__(self, capture: ProcessOutputCapture, launcher: Callable):
@@ -64,7 +66,7 @@ class ReplayContext:
     self.main_pub = cfg.main_pub
     self.main_pub_drained = cfg.main_pub_drained
     self.unlocked_pubs = cfg.unlocked_pubs
-    assert(len(self.pubs) != 0 or self.main_pub is not None)
+    assert len(self.pubs) != 0 or self.main_pub is not None
 
   def __enter__(self):
     self.open_context()
@@ -372,7 +374,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
+    CP = get_car(*can_callbacks, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
   params.put("CarParams", CP.to_bytes())
 
@@ -712,8 +714,8 @@ def _replay_multi_process(
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
+  containers = []
   try:
-    containers = []
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
