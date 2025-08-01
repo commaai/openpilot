@@ -460,6 +460,10 @@ def hardware_thread(end_event, hw_queue) -> None:
       params.put("UptimeOffroad", uptime_offroad)
       params.put("UptimeOnroad", uptime_onroad)
 
+    # kick AGNOS power monitoring watchdog
+    with open("/var/tmp/power_watchdog", "w") as f:
+      f.write(str(now_ts))
+
     count += 1
     should_start_prev = should_start
 
