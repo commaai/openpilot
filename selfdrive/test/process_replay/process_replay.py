@@ -714,8 +714,8 @@ def _replay_multi_process(
 
   all_msgs = sorted(lr, key=lambda msg: msg.logMonoTime)
   log_msgs = []
+  containers = []
   try:
-    containers = []
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
