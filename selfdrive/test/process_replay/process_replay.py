@@ -304,7 +304,6 @@ class ProcessContainer:
         output_msgs = self.get_output_msgs(msg.logMonoTime)
 
         for m in self.msg_queue:
-          # print('sending', m.which())
           self.pm.send(m.which(), m.as_builder())
           # send frames if needed
           if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
