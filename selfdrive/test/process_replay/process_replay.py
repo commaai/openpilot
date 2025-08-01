@@ -270,8 +270,8 @@ class ProcessContainer:
       self._clean_env()
 
   def get_output_msgs(self, start_time: int):
-    self.rc.wait_for_next_recv(False, v2=True)
     output_msgs = []
+    self.rc.wait_for_recv_called()
     for socket in self.sockets:
       ms = messaging.drain_sock(socket)
       for m in ms:
@@ -280,7 +280,7 @@ class ProcessContainer:
         output_msgs.append(m.as_reader())
     return output_msgs
 
-  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None, flush=False) -> list[capnp._DynamicStructReader]:
+  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None) -> list[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
@@ -291,12 +291,7 @@ class ProcessContainer:
         # print('end of cycle:', end_of_cycle)
 
       self.msg_queue.append(msg)
-      if end_of_cycle or flush:
-        # certain processes use drain_sock. need to cause empty recv to break from this loop
-        trigger_empty_recv = False
-        if self.cfg.main_pub and self.cfg.main_pub_drained:
-          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
-
+      if end_of_cycle:
         # input('about to wait for recv')
         # self.rc.wait_for_next_recv(trigger_empty_recv, v2=True)
         # self.rc.wait_for_next_recv(False, v2=True)
@@ -309,7 +304,6 @@ class ProcessContainer:
         #     messaging.recv_one_or_none(s)
 
         # *** get output msgs from previous inputs ***
-        # print('got output')
         output_msgs = self.get_output_msgs(msg.logMonoTime)
 
         for m in self.msg_queue:
@@ -325,7 +319,11 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
-        # input('just sent, about to unlock')
+        # certain processes use drain_sock. need to cause empty recv to break from this loop
+        trigger_empty_recv = False
+        if self.cfg.main_pub and self.cfg.main_pub_drained:
+          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+
         self.rc.unlock_sockets()
         if trigger_empty_recv:
           self.rc.unlock_sockets()
@@ -772,7 +770,6 @@ def _replay_multi_process(
 
     # flush last set of messages from each process
     for container in containers:
-      # output_msgs = container.run_step(messaging.new_message(container.cfg.main_pub, 1), frs, last=True)
       output_msgs = container.get_output_msgs(int(time.time() * 1e9))  # TODO: fix time
       log_msgs.extend(output_msgs)
   finally:
