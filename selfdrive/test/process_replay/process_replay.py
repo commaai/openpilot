@@ -299,9 +299,14 @@ class ProcessContainer:
         # self.rc.wait_for_recv_called()
 
         # call recv to let sub-sockets reconnect, after we know the process is ready
-        # if self.cnt == 0:
-        #   for s in self.sockets:
-        #     messaging.recv_one_or_none(s)
+        if self.cnt == 0:
+          for s in self.sockets:
+            messaging.recv_one_or_none(s)
+
+        # certain processes use drain_sock. need to cause empty recv to break from this loop
+        trigger_empty_recv = False
+        if self.cfg.main_pub and self.cfg.main_pub_drained:
+          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
 
         # *** get output msgs from previous inputs ***
         output_msgs = self.get_output_msgs(msg.logMonoTime)
@@ -318,11 +323,6 @@ class ProcessContainer:
             self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
-
-        # certain processes use drain_sock. need to cause empty recv to break from this loop
-        trigger_empty_recv = False
-        if self.cfg.main_pub and self.cfg.main_pub_drained:
-          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
 
         self.rc.unlock_sockets()
         if trigger_empty_recv:
