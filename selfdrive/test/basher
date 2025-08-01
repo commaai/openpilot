@@ -24,7 +24,7 @@ basher_pull() {
     IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f3 | cut -d':' -f1)"
     TAG="$(echo -n "$REGISTER_NAME_TAG" | rev | cut -d':' -f1 | rev)"
 
-    sudo bash -c "ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR" ; mkdir -p "$ATOMIC_TARGET_DIR" ; mount -t tmpfs -o size=32G tmpfs "$ATOMIC_TARGET_DIR" ; chmod 744 "$ATOMIC_TARGET_DIR"; \
+    sudo bash -c "ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR" ; if cat /proc/mounts | cut -d' ' -f2 | grep "$ATOMIC_TARGET_DIR"; then umount "$ATOMIC_TARGET_DIR"; fi; mkdir -p "$ATOMIC_TARGET_DIR" ; mount -t tmpfs -o size=32G tmpfs "$ATOMIC_TARGET_DIR" ; chmod 744 "$ATOMIC_TARGET_DIR"; \
     mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/distribution/diffid-by-digest/sha256"; \
     mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/distribution/v2metadata-by-diffid/sha256"; \
     chmod 700 "$ATOMIC_TARGET_DIR/image"; \
@@ -40,7 +40,7 @@ basher_pull() {
     mkdir -p "$ATOMIC_TARGET_DIR/overlay2/l"" &
     pid0=$!
 
-    sudo bash -c "TARGET_DIR="$TARGET_DIR" ; systemctl stop docker >/dev/null 2>&1; rm -rf "$TARGET_DIR" ; mkdir -p "$TARGET_DIR" ; chmod 744 "$TARGET_DIR"" &
+    sudo bash -c "TARGET_DIR="$TARGET_DIR" ; ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR" ; systemctl stop docker >/dev/null 2>&1; if cat /proc/mounts | cut -d' ' -f2 | grep "$TARGET_DIR"; then umount "$TARGET_DIR"; fi; rm -rf "$TARGET_DIR" ; mkdir -p "$TARGET_DIR" ; chmod 744 "$TARGET_DIR"" &
     stop_docker_pid=$!
 
     if [ "$PROTOCOL" = "file" ]
@@ -109,13 +109,15 @@ basher_pull() {
 
         buffer_size=32M
         (
-            mediaType1="$mediaType" ; tmp_dir="$tmp_dir" ; sha2561="$sha256" ; buffer_size="$buffer_size"
-            sha256="$(mediaType2="$mediaType1" ; fetch_layer "$sha2561" | \
+            mediaType1="$mediaType" ; tmp_dir="$tmp_dir" ; sha2561="$sha256" ; buffer_size="$buffer_size" ;
+            echo "$mediaType" "$mediaType1"
+            sha256="$( fetch_layer "$sha2561" | \
             { \
-                if [ "$mediaType1" = "application/vnd.docker.image.rootfs.diff.tar.gzip" ]
+                if [ "$mediaType" = "application/vnd.docker.image.rootfs.diff.tar.gzip" ] | [ "$mediaType" = "application/vnd.oci.image.layer.v1.tar+gzip" ]
                 then
+                    echo attempting to decompress gzip
                     f2b="$(head -c 2 | xxd -p)"; echo -n "$f2b" | grep -q '^1f8b' && cat <(echo -n "$f2b" | xxd -r -p) - | pigz -d || cat <(echo -n "$f2b" | xxd -r -p) -;
-                elif [ "$mediaType1" = "application/vnd.docker.image.rootfs.diff.tar.zstd" ]
+                elif [ "$mediaType" = "application/vnd.docker.image.rootfs.diff.tar.zstd" ]  | [ "$mediaType" = "application/vnd.oci.image.layer.v1.tar+zstd" ]
                 then
                     zstd -d
                 else
@@ -168,7 +170,7 @@ basher_pull() {
 
     echo -n "{\"Repositories\":{\"$IMAGE\":{\"$IMAGE:$TAG\":\"sha256:$CONFIG_DIGEST\"}}}" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/repositories.json" >/dev/null
     sudo chmod 600 "$ATOMIC_TARGET_DIR/image/overlay2/repositories.json"
-    sudo bash -c "mount --bind "$ATOMIC_TARGET_DIR" "$TARGET_DIR" ; systemctl start docker"
+    sudo bash -c "mount --bind "$ATOMIC_TARGET_DIR" "$TARGET_DIR" ; umount "$ATOMIC_TARGET_DIR" ; systemctl start docker"
 
     if [ $sete = 1 ]
     then
