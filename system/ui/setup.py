@@ -60,13 +60,15 @@ class Setup(Widget):
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
     self._low_voltage_continue_button = Button("Continue", self._low_voltage_continue_button_callback)
-    self._low_voltage_poweroff_button = Button("Power Off", lambda : HARDWARE.shutdown())
+    self._low_voltage_poweroff_button = Button("Power Off", HARDWARE.shutdown)
     self._getting_started_button = Button("", self._getting_started_button_callback, button_style=ButtonStyle.PRIMARY, border_radius=0)
     self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback,
                                                       button_style=ButtonStyle.PRIMARY, enabled=False)
     self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
+    self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
+    self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
 
 
     try:
@@ -97,7 +99,7 @@ class Setup(Widget):
     self.state = SetupState.GETTING_STARTED
 
   def _getting_started_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _software_selection_back_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
@@ -107,6 +109,9 @@ class Setup(Widget):
       self.download(OPENPILOT_URL)
     else:
       self.state = SetupState.CUSTOM_URL
+
+  def _download_failed_startover_button_callback(self):
+    self.state = SetupState.GETTING_STARTED
 
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
@@ -235,13 +240,8 @@ class Setup(Widget):
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
-
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Reboot device"):
-      HARDWARE.reboot()
-
-    if gui_button(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT), "Start over",
-                  button_style=ButtonStyle.PRIMARY):
-      self.state = SetupState.GETTING_STARTED
+    self._download_failed_reboot_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
+    self._download_failed_startover_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_custom_url(self):
     def handle_keyboard_result(result):
@@ -256,6 +256,7 @@ class Setup(Widget):
       elif result == 0:
         self.state = SetupState.SOFTWARE_SELECTION
 
+    self.keyboard.reset()
     self.keyboard.set_title("Enter URL", "for Custom Software")
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 

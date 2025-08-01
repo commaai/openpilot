@@ -119,6 +119,10 @@ class Keyboard(Widget):
     self.clear()
     self._render_return_status = 0
 
+  def reset(self):
+    self._render_return_status = -1
+    self.clear()
+
   def _key_callback(self, k):
     if k == ENTER_KEY:
       self._render_return_status = 1
