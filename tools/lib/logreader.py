@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import bz2
-from functools import cached_property, cache, partial
+from functools import partial
 import multiprocessing
 import capnp
 import enum
