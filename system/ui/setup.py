@@ -11,7 +11,7 @@ from cereal import log
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, Button, ButtonStyle, ButtonRadio
+from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
@@ -70,7 +70,8 @@ class Setup(Widget):
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
-    self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback, button_style=ButtonStyle.PRIMARY, enabled=False)
+    self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
+                                                 button_style=ButtonStyle.PRIMARY, enabled=False)
 
 
     try:
