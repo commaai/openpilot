@@ -302,7 +302,7 @@ class ProcessContainer:
         if self.cfg.main_pub and self.cfg.main_pub_drained:
           trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
 
-        # *** get output msgs from previous inputs ***
+        # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)
 
         for m in self.msg_queue:
@@ -751,8 +751,8 @@ def _replay_multi_process(
 
     # flush last set of messages from each process
     for container in containers:
-      output_msgs = container.get_output_msgs(int(time.monotonic() * 1e9))  # TODO: fix time
-      log_msgs.extend(output_msgs)
+      last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
+      log_msgs.extend(container.get_output_msgs(last_time))
   finally:
     for container in containers:
       container.stop()
