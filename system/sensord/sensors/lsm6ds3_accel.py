@@ -5,19 +5,34 @@ from cereal import log
 from openpilot.system.sensord.sensors.i2c_sensor import Sensor
 
 class LSM6DS3_Accel(Sensor):
-  LSM6DS3_ACCEL_I2C_REG_DRDY_CFG  = 0x0B
-  LSM6DS3_ACCEL_I2C_REG_INT1_CTRL = 0x0D
-  LSM6DS3_ACCEL_I2C_REG_CTRL1_XL  = 0x10
-  LSM6DS3_ACCEL_I2C_REG_CTRL3_C   = 0x12
-  LSM6DS3_ACCEL_I2C_REG_CTRL5_C   = 0x14
-  LSM6DS3_ACCEL_I2C_REG_STAT_REG  = 0x1E
-  LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL = 0x28
+  LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL1 = 0x06
+  LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL2 = 0x07
+  LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL3 = 0x08
+  LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL5 = 0x0A
+  LSM6DS3_ACCEL_I2C_REG_DRDY_CFG   = 0x0B
+  LSM6DS3_ACCEL_I2C_REG_INT1_CTRL  = 0x0D
+  LSM6DS3_ACCEL_I2C_REG_CTRL1_XL   = 0x10
+  LSM6DS3_ACCEL_I2C_REG_CTRL3_C    = 0x12
+  LSM6DS3_ACCEL_I2C_REG_CTRL5_C    = 0x14
+  LSM6DS3_ACCEL_I2C_REG_CTRL8_XL   = 0x17
+  LSM6DS3_ACCEL_I2C_REG_STAT_REG   = 0x1E
+  LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL  = 0x28
+  LSM6DS3_ACCEL_I2C_REG_FIFO_OUT_L = 0x3E
 
+  LSM6DS3_ACCEL_FIFO_DEC_8      = 0b011
+  LSM6DS3_ACCEL_FIFO_MODE_CONT  = 0b110
+  LSM6DS3_ACCEL_FIFO_ODR_833Hz  = (0b0111 << 3)
   LSM6DS3_ACCEL_ODR_104HZ       = (0b0100 << 4)
+  LSM6DS3_ACCEL_ODR_833HZ       = (0b0111 << 4)
+  LSM6DS3_ACCEL_LPF1_BW_SEL     = (1 << 1)
   LSM6DS3_ACCEL_INT1_DRDY_XL    = 0b1
+  LSM6DS3_ACCEL_INT1_FTH        = (1 << 3)
   LSM6DS3_ACCEL_DRDY_XLDA       = 0b1
   LSM6DS3_ACCEL_DRDY_PULSE_MODE = (1 << 7)
   LSM6DS3_ACCEL_IF_INC          = 0b00000100
+  LSM6DS3_ACCEL_LPF2_XL_EN      = (1 << 7)
+  LSM6DS3_ACCEL_HPCF_XL_ODRDIV9 = (0b10 << 5)
+  LSM6DS3_ACCEL_INPUT_COMPOSITE = (1 << 3)
 
   LSM6DS3_ACCEL_ODR_52HZ        = (0b0011 << 4)
   LSM6DS3_ACCEL_FS_4G           = (0b10 << 2)
@@ -38,6 +53,9 @@ class LSM6DS3_Accel(Sensor):
     else:
       self.source = log.SensorEventData.SensorSource.lsm6ds3
 
+    # reset chip before init
+    self.write(self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, 0b1)
+
     # self-test
     if os.getenv("LSM_SELF_TEST") == "1":
       self.self_test(self.LSM6DS3_ACCEL_POSITIVE_TEST)
@@ -45,17 +63,37 @@ class LSM6DS3_Accel(Sensor):
 
     # actual init
     int1 = self.read(self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, 1)[0]
-    int1 |= self.LSM6DS3_ACCEL_INT1_DRDY_XL
-    self.writes((
-      # Enable continuous update and automatic address increment
-      (self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, self.LSM6DS3_ACCEL_IF_INC),
-      # Set ODR to 104 Hz, FS to ±2g (default)
-      (self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, self.LSM6DS3_ACCEL_ODR_104HZ),
-      # Configure data ready signal to pulse mode
-      (self.LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, self.LSM6DS3_ACCEL_DRDY_PULSE_MODE),
-      # Enable data ready interrupt on INT1 without resetting existing interrupts
-      (self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, int1),
-    ))
+    if self.source == log.SensorEventData.SensorSource.lsm6ds3trc:
+      int1 |= self.LSM6DS3_ACCEL_INT1_FTH
+      self.writes((
+        # Enable continuous update and automatic address increment
+        (self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, self.LSM6DS3_ACCEL_IF_INC),
+        # Set ODR to 833 Hz, FS to ±2g (default)
+        (self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, self.LSM6DS3_ACCEL_ODR_833HZ | self.LSM6DS3_ACCEL_LPF1_BW_SEL),
+        # Enable LPF2
+        (self.LSM6DS3_ACCEL_I2C_REG_CTRL8_XL, self.LSM6DS3_ACCEL_LPF2_XL_EN | self.LSM6DS3_ACCEL_HPCF_XL_ODRDIV9 | self.LSM6DS3_ACCEL_INPUT_COMPOSITE),
+        # Watermark: 3 words + 1
+        (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL1, 7),
+        (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL2, 0),
+        # Decimate in FIFO
+        (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL3, self.LSM6DS3_ACCEL_FIFO_DEC_8),
+        # Other FIFO settings
+        (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL5, self.LSM6DS3_ACCEL_FIFO_ODR_833Hz | self.LSM6DS3_ACCEL_FIFO_MODE_CONT),
+        # Enable data ready interrupt on INT1 without resetting existing interrupts
+        (self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, int1),
+      ))
+    else:
+      int1 |= self.LSM6DS3_ACCEL_INT1_DRDY_XL
+      self.writes((
+        # Enable continuous update and automatic address increment
+        (self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, self.LSM6DS3_ACCEL_IF_INC),
+        # Set ODR to 104 Hz, FS to ±2g (default)
+        (self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, self.LSM6DS3_ACCEL_ODR_104HZ),
+        # Configure data ready signal to pulse mode
+        (self.LSM6DS3_ACCEL_I2C_REG_DRDY_CFG, self.LSM6DS3_ACCEL_DRDY_PULSE_MODE),
+        # Enable data ready interrupt on INT1 without resetting existing interrupts
+        (self.LSM6DS3_ACCEL_I2C_REG_INT1_CTRL, int1),
+      ))
 
   def get_event(self, ts: int | None = None) -> log.SensorEventData:
     assert ts is not None  # must come from the IRQ event
@@ -66,7 +104,8 @@ class LSM6DS3_Accel(Sensor):
       raise self.DataNotReady
 
     scale = 9.81 * 2.0 / (1 << 15)
-    b = self.read(self.LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL, 6)
+    DATA_ADDR = self.LSM6DS3_ACCEL_I2C_REG_FIFO_OUT_L if self.source == log.SensorEventData.SensorSource.lsm6ds3trc else self.LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL
+    b = self.read(DATA_ADDR, 6)
     x = self.parse_16bit(b[0], b[1]) * scale
     y = self.parse_16bit(b[2], b[3]) * scale
     z = self.parse_16bit(b[4], b[5]) * scale
