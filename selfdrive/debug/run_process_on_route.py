@@ -13,7 +13,8 @@ if __name__ == "__main__":
   parser.add_argument("process", nargs='+', help="The process(s) to run")
   args = parser.parse_args()
 
-  cfgs = [c for c in CONFIGS if c.proc_name in args.process]
+  # cfgs = [c for c in CONFIGS if c.proc_name in args.process]
+  cfgs = [c for c in CONFIGS if c.proc_name not in ('dmonitoringmodeld', 'modeld')]
 
   lr = LogReader(args.route)
   inputs = list(lr)

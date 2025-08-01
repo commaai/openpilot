@@ -286,6 +286,14 @@ class ProcessContainer:
           for s in self.sockets:
             messaging.recv_one_or_none(s)
 
+        # *** get output msgs from previous inputs ***
+        for socket in self.sockets:
+          ms = messaging.drain_sock(socket)
+          for m in ms:
+            m = m.as_builder()
+            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
+            output_msgs.append(m.as_reader())
+
         # empty recv on drained pub indicates the end of messages, only do that if there're any
         trigger_empty_recv = False
         if self.cfg.main_pub and self.cfg.main_pub_drained:
@@ -304,14 +312,14 @@ class ProcessContainer:
         self.msg_queue = []
 
         self.rc.unlock_sockets()
-        self.rc.wait_for_next_recv(trigger_empty_recv)
-
-        for socket in self.sockets:
-          ms = messaging.drain_sock(socket)
-          for m in ms:
-            m = m.as_builder()
-            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
-            output_msgs.append(m.as_reader())
+        # self.rc.wait_for_next_recv(trigger_empty_recv)
+        #
+        # for socket in self.sockets:
+        #   ms = messaging.drain_sock(socket)
+        #   for m in ms:
+        #     m = m.as_builder()
+        #     m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
+        #     output_msgs.append(m.as_reader())
         self.cnt += 1
     assert self.process.proc.is_alive()
 
