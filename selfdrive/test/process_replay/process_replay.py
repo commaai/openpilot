@@ -285,10 +285,10 @@ class ProcessContainer:
         if self.cfg.main_pub and self.cfg.main_pub_drained:
           trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
 
-        input('about to wait for recv')
+        # input('about to wait for recv')
         # self.rc.wait_for_next_recv(trigger_empty_recv, v2=True)
         self.rc.wait_for_next_recv(False, v2=True)
-        input('second')
+        # input('second')
         # self.rc.wait_for_recv_called()
 
         # call recv to let sub-sockets reconnect, after we know the process is ready
@@ -297,7 +297,7 @@ class ProcessContainer:
         #     messaging.recv_one_or_none(s)
 
         # *** get output msgs from previous inputs ***
-        print('got output')
+        # print('got output')
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
           for m in ms:
@@ -306,7 +306,7 @@ class ProcessContainer:
             output_msgs.append(m.as_reader())
 
         for m in self.msg_queue:
-          print('sending', m.which())
+          # print('sending', m.which())
           self.pm.send(m.which(), m.as_builder())
           # send frames if needed
           if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
@@ -318,12 +318,12 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
-        input('just sent, about to unlock')
+        # input('just sent, about to unlock')
         self.rc.unlock_sockets()
         if trigger_empty_recv:
           self.rc.unlock_sockets()
-        print('unlocked! waiting...')
-        input()
+        # print('unlocked! waiting...')
+        # input()
         # TODO: understand what this is doing
         # TODO: make this just wait for main_pub? hello?
         # self.rc.wait_for_next_recv(trigger_empty_recv)
