@@ -3,7 +3,7 @@ from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import ButtonStyle, gui_button, Button
+from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
 from openpilot.system.ui.widgets.label import gui_label
 
@@ -74,6 +74,7 @@ class Keyboard(Widget):
     self._backspace_last_repeat: float = 0.0
 
     self._render_return_status = -1
+    self._cancel_button = Button("Cancel", self._cancel_button_callback)
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -111,6 +112,10 @@ class Keyboard(Widget):
     self._title = title
     self._sub_title = sub_title
 
+  def _cancel_button_callback(self):
+    self.clear()
+    self._render_return_status = 0
+
   def _key_callback(self, k):
     if k == ENTER_KEY:
       self._render_return_status = 1
@@ -121,9 +126,7 @@ class Keyboard(Widget):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
     gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
     gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
-    if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
-      self.clear()
-      return 0
+    self._cancel_button.render(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125))
 
     # Draw input box and password toggle
     input_margin = 25
