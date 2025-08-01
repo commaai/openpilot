@@ -306,7 +306,7 @@ class ProcessContainer:
         # certain processes use drain_sock. need to cause empty recv to break from this loop
         trigger_empty_recv = False
         if self.cfg.main_pub and self.cfg.main_pub_drained:
-          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+          trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
         # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)
@@ -752,7 +752,8 @@ def _replay_multi_process(
         _, index = heapq.heappop(internal_pub_index_heap)
         msg = internal_pub_queue[index]
 
-      target_containers = pubs_to_containers[msg.which()]
+      target_containers = pubs_to_containers[msg.which()]  # TODO: we call msg.which() in run_step too, pass it in
+      # TODO: can we wrap capnp and cache msg.which()?
       for container in target_containers:
         output_msgs = container.run_step(msg, frs)
         for m in output_msgs:
