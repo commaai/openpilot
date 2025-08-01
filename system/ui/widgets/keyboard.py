@@ -241,6 +241,10 @@ class Keyboard(Widget):
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
 
+  def reset(self):
+    self._render_return_status = -1
+    self.clear()
+
 
 if __name__ == "__main__":
   gui_app.init_window("Keyboard")
