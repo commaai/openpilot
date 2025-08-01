@@ -136,7 +136,7 @@ class Keyboard(Widget):
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    if not self._all_keys[BACKSPACE_KEY]._is_pressed:
       self._backspace_pressed = False
 
     if self._backspace_pressed:
@@ -172,15 +172,10 @@ class Keyboard(Widget):
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
 
-        # Check for backspace key press-and-hold
-        mouse_pos = rl.get_mouse_position()
-        mouse_over_key = rl.check_collision_point_rec(mouse_pos, key_rect)
-
-        if key == BACKSPACE_KEY and mouse_over_key:
-          if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-            self._backspace_pressed = True
-            self._backspace_press_time = time.monotonic()
-            self._backspace_last_repeat = time.monotonic()
+        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY]._is_pressed and not self._backspace_pressed:
+          self._backspace_pressed = True
+          self._backspace_press_time = time.monotonic()
+          self._backspace_last_repeat = time.monotonic()
 
         if key in self._key_icons:
           if key == SHIFT_ACTIVE_KEY and self._caps_lock:
