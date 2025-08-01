@@ -313,7 +313,8 @@ class ProcessContainer:
 
         self.rc.unlock_sockets()
         # TODO: understand what this is doing
-        # self.rc.wait_for_next_recv(trigger_empty_recv)
+        # TODO: make this just wait for main_pub? hello?
+        self.rc.wait_for_next_recv(trigger_empty_recv)
         #
         # for socket in self.sockets:
         #   ms = messaging.drain_sock(socket)
