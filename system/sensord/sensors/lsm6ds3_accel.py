@@ -33,7 +33,6 @@ class LSM6DS3_Accel(Sensor):
 
   def reset(self):
     self.write(0x12, 0x1 << 7)
-    time.sleep(0.05)
 
   def init(self):
     chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
