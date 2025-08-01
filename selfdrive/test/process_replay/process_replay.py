@@ -360,28 +360,30 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     CarInterface = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
   else:
-    can = DummySocket()
-    sendcan = DummySocket()
-
-    canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
+    # can = DummySocket()
+    # sendcan = DummySocket()
+    #
+    # canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
     cached_params_raw = params.get("CarParamsCache")
     has_cached_cp = cached_params_raw is not None
-    assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
-    assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
-            "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
-
-    for m in canmsgs:
-      can.send(m.as_builder().to_bytes())
-    can_callbacks = can_comm_callbacks(can, sendcan)
+    # print('hi')
+    # assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
+    # assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
+    #         "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
+    #
+    # for m in canmsgs:
+    #   can.send(m.as_builder().to_bytes())
+    # can_callbacks = can_comm_callbacks(can, sendcan)
 
     cached_params = None
     if has_cached_cp:
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(*can_callbacks, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
+    # CP = get_car(*can_callbacks, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
-  params.put("CarParams", CP.to_bytes())
+  print('has cached params:', has_cached_cp, cached_params)
+  params.put("CarParams", cached_params.as_builder().to_bytes())
   print(f"CarParams set in {time.monotonic() - t} seconds")
 
 
