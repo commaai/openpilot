@@ -29,6 +29,10 @@ class LSM6DS3_Gyro(Sensor):
   def device_address(self) -> int:
     return 0x6A
 
+  def reset(self):
+    self.write(0x12, 0x1)
+    time.sleep(0.1)
+
   def init(self):
     chip_id = self.verify_chip_id(0x0F, [0x69, 0x6A])
     if chip_id == 0x6A:
