@@ -210,3 +210,41 @@ class Button(Widget):
     elif self._text_alignment == TextAlignment.RIGHT:
       text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
     rl.draw_text_ex(self._label_font, self._text, text_pos, self._font_size, 0, self._text_color)
+
+class ButtonRadio(Button):
+  def __init__(self,
+               text: str,
+               icon,
+               click_callback: Callable[[], None] = None,
+               font_size: int = DEFAULT_BUTTON_FONT_SIZE,
+               border_radius: int = 10,
+               text_padding: int = 20,
+               ):
+
+    super().__init__(text, click_callback=click_callback, font_size=font_size, border_radius=border_radius, text_padding=text_padding)
+    self._icon = icon
+    self.selected = False
+
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    self.selected = not self.selected
+    if self._click_callback:
+      self._click_callback()
+
+  def _update_state(self):
+    if self.selected:
+      self._background_color = BUTTON_BACKGROUND_COLORS[ButtonStyle.PRIMARY]
+    else:
+      self._background_color = BUTTON_BACKGROUND_COLORS[ButtonStyle.NORMAL]
+
+  def _render(self, _):
+    roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
+    rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
+
+    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
+    text_pos.x = self._rect.x + self._text_padding
+    rl.draw_text_ex(self._label_font, self._text, text_pos, self._font_size, 0, self._text_color)
+
+    if self._icon and self.selected:
+      icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
+      icon_x = self._rect.x + self._rect.width - self._icon.width - self._text_padding - ICON_PADDING
+      rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE if self.enabled else rl.Color(255, 255, 255, 100))
