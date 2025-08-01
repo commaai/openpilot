@@ -165,7 +165,6 @@ class ProcessContainer:
   @property
   def has_empty_queue(self) -> bool:
     return not self.pending_msgs
-    # return len(self.msg_queue) == 0
 
   @property
   def pubs(self) -> list[str]:
@@ -279,9 +278,9 @@ class ProcessContainer:
 
     with self.prefix:
       # empty recv on drained pub indicates the end of messages, only do that if there're any
-      trigger_empty_recv = False
+      self.trigger_empty_recv = False
       if self.cfg.main_pub and self.cfg.main_pub_drained and msg.which() == self.cfg.main_pub:
-        trigger_empty_recv = True
+        self.trigger_empty_recv = True
 
       self.end_of_cycle = True
       if self.cfg.should_recv_callback is not None:
@@ -300,7 +299,6 @@ class ProcessContainer:
 
       if self.end_of_cycle:
         self.rc.unlock_sockets()
-        self.rc.wait_for_next_recv(trigger_empty_recv)
 
   def run_step(self, msg: capnp._DynamicStructReader) -> list[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
@@ -312,17 +310,14 @@ class ProcessContainer:
       self.pending_msgs = False
       with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         self.rc.wait_for_recv_called()
-        # print('hERE!!!')
 
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
             messaging.recv_one_or_none(s)
 
-        # self.rc.unlock_sockets()
-        # if self.trigger_empty_recv:
-        #   self.rc.unlock_sockets()
-        # self.rc.wait_for_next_recv(self.trigger_empty_recv)
+        self.rc.unlock_sockets()
+        self.rc.wait_for_next_recv(self.trigger_empty_recv)
 
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
