@@ -162,7 +162,9 @@ class Car:
   def state_update(self) -> tuple[car.CarState, structs.RadarDataT | None]:
     """carState update loop, driven by can"""
 
+    print('card about to receive can')
     can_strs = messaging.drain_sock_raw(self.can_sock, wait_for_one=True)
+    print('card received can!', len(can_strs), 'packets')
     can_list = can_capnp_to_list(can_strs)
 
     # Update carState from CAN
@@ -173,7 +175,9 @@ class Car:
     # Update radar tracks from CAN
     RD: structs.RadarDataT | None = self.RI.update(can_list)
 
+    print('card about to update sm')
     self.sm.update(0)
+    print('card updated sm')
 
     can_rcv_valid = len(can_strs) > 0
 
@@ -214,6 +218,8 @@ class Car:
     # kick off controlsd step while we actuate the latest carControl packet
     cs_send = messaging.new_message('carState')
     cs_send.valid = CS.canValid
+    CS.vEgo = 99
+    print('vEgo', CS.vEgo)
     cs_send.carState = CS
     cs_send.carState.canErrorCounter = self.can_rcv_cum_timeout_counter
     cs_send.carState.cumLagMs = -self.rk.remaining * 1000.
