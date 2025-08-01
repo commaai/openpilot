@@ -285,7 +285,6 @@ class ProcessContainer:
       self.end_of_cycle = True
       if self.cfg.should_recv_callback is not None:
         self.end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
-      # print('end_of_cycle', self.end_of_cycle)
 
       self.pm.send(msg.which(), msg.as_builder())
       # send frames if needed
@@ -304,7 +303,6 @@ class ProcessContainer:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
-    # print('end_of_cycle', self.end_of_cycle)
     if self.end_of_cycle:
       self.end_of_cycle = False
       self.pending_msgs = False
