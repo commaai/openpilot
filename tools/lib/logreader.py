@@ -56,9 +56,11 @@ class _CachedEvent:
 
   def __init__(self, evt: capnp._DynamicStructReader):
     self._evt = evt
-    self._enum = evt.which()
+    self._enum: str | None = None
 
   def which(self) -> str:
+    if self._enum is None:
+      self._enum = self._evt.which()
     return self._enum
 
   def __getattr__(self, name: str):
@@ -66,7 +68,7 @@ class _CachedEvent:
 
 
 class _LogFileReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
+  def __init__(self, fn, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
     self._only_union_types = only_union_types
 
