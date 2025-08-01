@@ -158,10 +158,14 @@ class ProcessContainer:
     self.vipc_server: VisionIpcServer | None = None
     self.environ_config: dict[str, Any] | None = None
     self.capture: ProcessOutputCapture | None = None
+    self.trigger_empty_recv = False
+    self.end_of_cycle = False
+    self.pending_msgs = False
 
   @property
   def has_empty_queue(self) -> bool:
-    return len(self.msg_queue) == 0
+    return not self.pending_msgs
+    # return len(self.msg_queue) == 0
 
   @property
   def pubs(self) -> list[str]:
@@ -268,43 +272,57 @@ class ProcessContainer:
       self.prefix.clean_dirs()
       self._clean_env()
 
-  def run_step(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None) -> list[capnp._DynamicStructReader]:
+  def send_msg(self, msg: capnp._DynamicStructReader, frs: dict[str, FrameReader] | None):
+    assert self.rc and self.pm and self.sockets and self.process.proc
+
+    self.pending_msgs = True
+
+    with self.prefix:
+      # empty recv on drained pub indicates the end of messages, only do that if there're any
+      trigger_empty_recv = False
+      if self.cfg.main_pub and self.cfg.main_pub_drained and msg.which() == self.cfg.main_pub:
+        trigger_empty_recv = True
+
+      self.end_of_cycle = True
+      if self.cfg.should_recv_callback is not None:
+        self.end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
+      # print('end_of_cycle', self.end_of_cycle)
+
+      self.pm.send(msg.which(), msg.as_builder())
+      # send frames if needed
+      if self.vipc_server is not None and msg.which() in self.cfg.vision_pubs:
+        camera_state = getattr(msg, msg.which())
+        camera_meta = meta_from_camera_state(msg.which())
+        assert frs is not None
+        img = frs[msg.which()].get(camera_state.frameId)
+        self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
+                              camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
+
+      if self.end_of_cycle:
+        self.rc.unlock_sockets()
+        self.rc.wait_for_next_recv(trigger_empty_recv)
+
+  def run_step(self, msg: capnp._DynamicStructReader) -> list[capnp._DynamicStructReader]:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
-    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
-      end_of_cycle = True
-      if self.cfg.should_recv_callback is not None:
-        end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
-
-      self.msg_queue.append(msg)
-      if end_of_cycle:
+    # print('end_of_cycle', self.end_of_cycle)
+    if self.end_of_cycle:
+      self.end_of_cycle = False
+      self.pending_msgs = False
+      with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         self.rc.wait_for_recv_called()
+        # print('hERE!!!')
 
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
             messaging.recv_one_or_none(s)
 
-        # empty recv on drained pub indicates the end of messages, only do that if there're any
-        trigger_empty_recv = False
-        if self.cfg.main_pub and self.cfg.main_pub_drained:
-          trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
-
-        for m in self.msg_queue:
-          self.pm.send(m.which(), m.as_builder())
-          # send frames if needed
-          if self.vipc_server is not None and m.which() in self.cfg.vision_pubs:
-            camera_state = getattr(m, m.which())
-            camera_meta = meta_from_camera_state(m.which())
-            assert frs is not None
-            img = frs[m.which()].get(camera_state.frameId)
-            self.vipc_server.send(camera_meta.stream, img.flatten().tobytes(),
-                                  camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
-        self.msg_queue = []
-
-        self.rc.unlock_sockets()
-        self.rc.wait_for_next_recv(trigger_empty_recv)
+        # self.rc.unlock_sockets()
+        # if self.trigger_empty_recv:
+        #   self.rc.unlock_sockets()
+        # self.rc.wait_for_next_recv(self.trigger_empty_recv)
 
         for socket in self.sockets:
           ms = messaging.drain_sock(socket)
@@ -734,7 +752,10 @@ def _replay_multi_process(
 
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
-        output_msgs = container.run_step(msg, frs)
+        container.send_msg(msg, frs)
+
+      for container in target_containers:
+        output_msgs = container.run_step(msg)
         for m in output_msgs:
           if m.which() in all_pubs:
             internal_pub_queue.append(m)
