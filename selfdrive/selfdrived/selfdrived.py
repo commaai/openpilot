@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import math
 import time
 import threading
 
@@ -7,10 +8,12 @@ import cereal.messaging as messaging
 
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
-from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
+from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
 
 
 from openpilot.common.params import Params
+from openpilot.common.filter_simple import JerkEstimator3
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
@@ -29,7 +32,7 @@ SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.15 / DT_CTRL)  # TODO: needs to be 25 for longitudinal
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -43,19 +46,44 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator, counter: int) -> tuple[int, bool]:
+# TODO: make class?
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator,
+                              jerk_estimator: JerkEstimator3, counter: int) -> tuple[int, bool]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
   device_pose = Pose.from_live_pose(sm['livePose'])
   calibrated_pose = calibrator.build_calibrated_pose(device_pose)
+
+  # longitudinal
   accel_calibrated = calibrated_pose.acceleration.x
+  excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
+
+  # lateral
+  yaw_rate = calibrated_pose.angular_velocity.yaw
+  roll = sm['liveParameters'].roll
+  roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
+
+  excessive_lat_actuation = False
+  estimated_jerk = jerk_estimator.update(roll_compensated_lateral_accel)
+  print('vEgo', CS.vEgo, yaw_rate, roll)
+  print('roll_compensated_lateral_accel', roll_compensated_lateral_accel, estimated_jerk)
+  if sm['carControl'].latActive:
+    if not CS.steeringPressed:
+      if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
+        excessive_lat_actuation = True
+
+    # Note that we do not check steeringPressed as it is unreliable under high jerk conditions
+    if abs(estimated_jerk) > ISO_LATERAL_JERK * 4:
+      excessive_lat_actuation = True
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
-  accel_valid = abs(CS.aEgo - accel_calibrated) < 2
+  livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
+  print('excessive_long_actuation', excessive_long_actuation, 'excessive_lat_actuation', excessive_lat_actuation, 'livepose_valid', livepose_valid)
+  counter = counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
-  excessive_actuation = accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2
-  counter = counter + 1 if sm['carControl'].longActive and excessive_actuation and accel_valid else 0
+  if counter > 0:
+    print('counter', counter, excessive_long_actuation, excessive_lat_actuation, livepose_valid)
 
-  return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT
+  return counter, counter > MIN_EXCESSIVE_ACTUATION_COUNT, roll_compensated_lateral_accel
 
 
 class SelfdriveD:
@@ -74,6 +102,7 @@ class SelfdriveD:
 
     self.car_events = CarSpecificEvents(self.CP)
     self.calibrator = PoseCalibrator()
+    self.jerk_estimator = JerkEstimator3(DT_CTRL)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -133,6 +162,7 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
     self.excessive_actuation_counter = 0
+    self.roll_compensated_lateral_accel = 0.0
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -249,16 +279,19 @@ class SelfdriveD:
       if self.sm['driverAssistance'].leftLaneDeparture or self.sm['driverAssistance'].rightLaneDeparture:
         self.events.add(EventName.ldw)
 
-    # Check for excessive (longitudinal) actuation
+    # Check for excessive actuation
     if self.sm.updated['liveCalibration']:
       self.calibrator.feed_live_calib(self.sm['liveCalibration'])
 
-    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.excessive_actuation_counter)
+    self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrator, self.jerk_estimator, self.excessive_actuation_counter)
+    self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
     if not self.excessive_actuation and excessive_actuation:
       set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
       self.excessive_actuation = True
 
     if self.excessive_actuation:
+      print('EXCESSIVE ACTUATION')
+      raise Exception("Excessive actuation detected, please check your hardware and calibration.")
       self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
@@ -479,6 +512,7 @@ class SelfdriveD:
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
+    ss.rollCompensatedLateralAccel = float(self.roll_compensated_lateral_accel)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
 
