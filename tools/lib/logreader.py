@@ -94,7 +94,6 @@ class _LogFileReader:
     try:
       for e in ents:
         self._ents.append(_CachedEvent(e))
-        # self._ents.append(e)
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
