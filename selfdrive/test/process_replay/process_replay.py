@@ -269,6 +269,8 @@ class ProcessContainer:
       self._clean_env()
 
   def get_output_msgs(self, start_time: int):
+    assert self.rc and self.sockets
+
     output_msgs = []
     self.rc.wait_for_recv_called()
     for socket in self.sockets:
