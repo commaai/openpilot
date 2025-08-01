@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 from cereal import log
-from opendbc.car.lateral import get_friction, FRICTION_THRESHOLD
+from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
 from opendbc.car.interfaces import LatControlInputs
 from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
