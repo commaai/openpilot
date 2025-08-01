@@ -336,7 +336,7 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   t = time.monotonic()
   params = Params()
-  canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
+  canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
 
   # card expects one arbitrary can and pandaState
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
