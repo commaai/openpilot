@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import ButtonStyle, gui_button, Button, TextAlignment
+from openpilot.system.ui.widgets.button import ButtonStyle, Button, TextAlignment
 from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label
@@ -69,6 +69,7 @@ class WifiManagerUI(Widget):
 
     self._networks: list[NetworkInfo] = []
     self._networks_buttons = {}
+    self._forget_networks_buttons = {}
     self._lock = Lock()
     self.wifi_manager = wifi_manager
 
@@ -165,23 +166,22 @@ class WifiManagerUI(Widget):
           self.btn_width,
           80,
         )
-        if isinstance(self.state, StateIdle) and gui_button(forget_btn_rect, "Forget", button_style=ButtonStyle.ACTION) and clicked:
-          self.state = StateShowForgetConfirm(network)
+        self._forget_networks_buttons[network.ssid].render(forget_btn_rect)
 
     self._draw_status_icon(security_icon_rect, network)
     self._draw_signal_strength_icon(signal_icon_rect, network)
 
-    if isinstance(self.state, StateIdle) and rl.check_collision_point_rec(rl.get_mouse_position(), ssid_rect) and clicked:
+  def _networks_buttons_callback(self, network):
+    if self.scroll_panel.is_touch_valid():
       if not network.is_saved and network.security_type != SecurityType.OPEN:
         self.state = StateNeedsAuth(network)
       elif not network.is_connected:
         self.connect_to_network(network)
 
-  def _networks_buttons_callback(self, network):
-    if not network.is_saved and network.security_type != SecurityType.OPEN:
-      self.state = StateNeedsAuth(network)
-    elif not network.is_connected:
-      self.connect_to_network(network)
+  def _forget_networks_buttons_callback(self, network):
+    if self.scroll_panel.is_touch_valid():
+      if isinstance(self.state, StateIdle):
+        self.state = StateShowForgetConfirm(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
     """Draw the status icon based on network's connection state"""
@@ -221,7 +221,9 @@ class WifiManagerUI(Widget):
     with self._lock:
       self._networks = networks
       for n in self._networks:
-        self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT, button_style=ButtonStyle.NO_EFFECT)
+        self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
+                                                button_style=ButtonStyle.NO_EFFECT)
+        self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.ACTION)
 
   def _on_need_auth(self, ssid):
     with self._lock:
