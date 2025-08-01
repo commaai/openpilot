@@ -14,15 +14,15 @@ class OpenpilotPrefix:
     self.msgq_path = os.path.join(Paths.shm_path(), self.prefix)
     self.clean_dirs_on_exit = clean_dirs_on_exit
     self.shared_download_cache = shared_download_cache
+    self.dirs_set_up = False
 
   def __enter__(self):
     self.original_prefix = os.environ.get('OPENPILOT_PREFIX', None)
     os.environ['OPENPILOT_PREFIX'] = self.prefix
-    try:
-      os.mkdir(self.msgq_path)
-    except FileExistsError:
-      pass
-    os.makedirs(Paths.log_root(), exist_ok=True)
+
+    if not self.dirs_set_up:
+      self.dirs_set_up = True
+      self.setup_dirs()
 
     if self.shared_download_cache:
       os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -39,6 +39,13 @@ class OpenpilotPrefix:
     except KeyError:
       pass
     return False
+
+  def setup_dirs(self):
+    try:
+      os.mkdir(self.msgq_path)
+    except FileExistsError:
+      pass
+    os.makedirs(Paths.log_root(), exist_ok=True)
 
   def clean_dirs(self):
     symlink_path = Params().get_param_path()
