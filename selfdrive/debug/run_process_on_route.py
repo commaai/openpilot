@@ -14,7 +14,7 @@ if __name__ == "__main__":
   args = parser.parse_args()
 
   # cfgs = [c for c in CONFIGS if c.proc_name in args.process]
-  cfgs = [c for c in CONFIGS if c.proc_name not in ('dmonitoringmodeld', 'modeld')]
+  cfgs = [c for c in CONFIGS if c.proc_name not in ('dmonitoringmodeld', 'modeld', 'card')]
 
   lr = LogReader(args.route)
   inputs = list(lr)

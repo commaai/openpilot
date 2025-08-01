@@ -312,6 +312,7 @@ class ProcessContainer:
         self.msg_queue = []
 
         self.rc.unlock_sockets()
+        # TODO: understand what this is doing
         # self.rc.wait_for_next_recv(trigger_empty_recv)
         #
         # for socket in self.sockets:
