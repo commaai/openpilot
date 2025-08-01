@@ -231,6 +231,7 @@ class ProcessContainer:
     fingerprint: str | None, capture_output: bool
   ):
     with self.prefix as p:
+      print('got prefix', p.prefix)
       self.prefix.create_dirs()
       self._setup_env(params_config, environ_config)
 
@@ -330,6 +331,7 @@ class ProcessContainer:
 
 def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
+  t = time.monotonic()
   params = Params()
   canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
 
@@ -347,9 +349,12 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
     m = canmsgs.pop(0)
     rc.send_sync(pm, "can", m.as_builder().to_bytes())
     rc.wait_for_next_recv(True)
+  print(f"Fingerprinting done in {time.monotonic() - t} seconds")
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
+  from itertools import islice
+  t = time.monotonic()
   params = Params()
   if fingerprint:
     CarInterface = interfaces[fingerprint]
@@ -358,7 +363,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     can = DummySocket()
     sendcan = DummySocket()
 
-    canmsgs = [msg for msg in msgs if msg.which() == "can"]
+    canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
     cached_params_raw = params.get("CarParamsCache")
     has_cached_cp = cached_params_raw is not None
     assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
@@ -374,9 +379,10 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
+    CP = get_car(*can_callbacks, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
   params.put("CarParams", CP.to_bytes())
+  print(f"CarParams set in {time.monotonic() - t} seconds")
 
 
 def selfdrived_rcv_callback(msg, cfg, frame):
@@ -716,10 +722,13 @@ def _replay_multi_process(
   log_msgs = []
   containers = []
   try:
+    t = time.monotonic()
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
+    print(f"Started {len(containers)} processes in {time.monotonic() - t} seconds")
+    return
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
@@ -756,6 +765,7 @@ def _replay_multi_process(
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
       log_msgs.extend(container.get_output_msgs(last_time))
   finally:
+    return log_msgs
     for container in containers:
       container.stop()
       if captured_output_store is not None:
