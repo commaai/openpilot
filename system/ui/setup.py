@@ -99,7 +99,7 @@ class Setup(Widget):
     self.state = SetupState.GETTING_STARTED
 
   def _getting_started_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
+    self.state = SetupState.NETWORK_SETUP
 
   def _software_selection_back_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
