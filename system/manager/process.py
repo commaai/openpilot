@@ -270,7 +270,7 @@ class DaemonProcess(ManagerProcess):
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
 
-    self.params.put(self.param_name, str(proc.pid))
+    self.params.put(self.param_name, proc.pid)
 
   def stop(self, retry=True, block=True, sig=None) -> None:
     pass
