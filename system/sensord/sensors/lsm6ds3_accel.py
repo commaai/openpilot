@@ -17,9 +17,10 @@ class LSM6DS3_Accel(Sensor):
   LSM6DS3_ACCEL_I2C_REG_CTRL8_XL   = 0x17
   LSM6DS3_ACCEL_I2C_REG_STAT_REG   = 0x1E
   LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL  = 0x28
+  LSM6DS3_ACCEL_I2C_REG_FIFO_STAT2 = 0x3B
   LSM6DS3_ACCEL_I2C_REG_FIFO_OUT_L = 0x3E
 
-  LSM6DS3_ACCEL_FIFO_DEC_8      = 0b011
+  LSM6DS3_ACCEL_FIFO_DEC_8      = 0b101
   LSM6DS3_ACCEL_FIFO_MODE_CONT  = 0b110
   LSM6DS3_ACCEL_FIFO_ODR_833Hz  = (0b0111 << 3)
   LSM6DS3_ACCEL_ODR_104HZ       = (0b0100 << 4)
@@ -33,6 +34,7 @@ class LSM6DS3_Accel(Sensor):
   LSM6DS3_ACCEL_LPF2_XL_EN      = (1 << 7)
   LSM6DS3_ACCEL_HPCF_XL_ODRDIV9 = (0b10 << 5)
   LSM6DS3_ACCEL_INPUT_COMPOSITE = (1 << 3)
+  LSM6DS3_ACCEL_FIFO_WATERM     = (1 << 7)
 
   LSM6DS3_ACCEL_ODR_52HZ        = (0b0011 << 4)
   LSM6DS3_ACCEL_FS_4G           = (0b10 << 2)
@@ -73,8 +75,8 @@ class LSM6DS3_Accel(Sensor):
         (self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, self.LSM6DS3_ACCEL_ODR_833HZ | self.LSM6DS3_ACCEL_LPF1_BW_SEL),
         # Enable LPF2
         (self.LSM6DS3_ACCEL_I2C_REG_CTRL8_XL, self.LSM6DS3_ACCEL_LPF2_XL_EN | self.LSM6DS3_ACCEL_HPCF_XL_ODRDIV9 | self.LSM6DS3_ACCEL_INPUT_COMPOSITE),
-        # Watermark: 3 words + 1
-        (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL1, 7),
+        # Watermark: 3 words
+        (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL1, 3),
         (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL2, 0),
         # Decimate in FIFO
         (self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL3, self.LSM6DS3_ACCEL_FIFO_DEC_8),
@@ -100,12 +102,18 @@ class LSM6DS3_Accel(Sensor):
     assert ts is not None  # must come from the IRQ event
 
     # Check if data is ready since IRQ is shared with gyro
-    status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
-    if (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA) == 0:
-      raise self.DataNotReady
+    if self.source == log.SensorEventData.SensorSource.lsm6ds3trc:
+      DATA_ADDR = self.LSM6DS3_ACCEL_I2C_REG_FIFO_OUT_L
+      status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_FIFO_STAT2, 1)[0]
+      if (status_reg & self.LSM6DS3_ACCEL_FIFO_WATERM) == 0:
+        raise self.DataNotReady
+    else:
+      DATA_ADDR = self.LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL
+      status_reg = self.read(self.LSM6DS3_ACCEL_I2C_REG_STAT_REG, 1)[0]
+      if (status_reg & self.LSM6DS3_ACCEL_DRDY_XLDA) == 0:
+        raise self.DataNotReady
 
     scale = 9.81 * 2.0 / (1 << 15)
-    DATA_ADDR = self.LSM6DS3_ACCEL_I2C_REG_FIFO_OUT_L if self.source == log.SensorEventData.SensorSource.lsm6ds3trc else self.LSM6DS3_ACCEL_I2C_REG_OUTX_L_XL
     b = self.read(DATA_ADDR, 6)
     x = self.parse_16bit(b[0], b[1]) * scale
     y = self.parse_16bit(b[2], b[3]) * scale
