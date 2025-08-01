@@ -4,7 +4,7 @@ import time
 import copy
 import heapq
 import signal
-from collections import Counter, OrderedDict
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import Any
 from collections.abc import Callable, Iterable
@@ -79,7 +79,7 @@ class ReplayContext:
     messaging.set_fake_prefix(self.proc_name)
 
     if self.main_pub is None:
-      self.events = OrderedDict()
+      self.events = {}
       pubs_with_events = [pub for pub in self.pubs if pub not in self.unlocked_pubs]
       for pub in pubs_with_events:
         self.events[pub] = messaging.fake_event_handle(pub, enable=True)
