@@ -69,6 +69,8 @@ class Setup(Widget):
     self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
+    self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
+    self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback, button_style=ButtonStyle.PRIMARY, enabled=False)
 
 
     try:
@@ -112,6 +114,13 @@ class Setup(Widget):
 
   def _download_failed_startover_button_callback(self):
     self.state = SetupState.GETTING_STARTED
+
+  def _network_setup_back_button_callback(self):
+    self.state = SetupState.GETTING_STARTED
+
+  def _network_setup_continue_button_callback(self):
+    self.state = SetupState.SOFTWARE_SELECTION
+    self.stop_network_check_thread.set()
 
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
@@ -178,21 +187,14 @@ class Setup(Widget):
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
-      self.state = SetupState.GETTING_STARTED
+    self._network_setup_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
 
     # Check network connectivity status
     continue_enabled = self.network_connected.is_set()
+    self._network_setup_continue_button.enabled = continue_enabled
     continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
-
-    if gui_button(
-      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
-      continue_text,
-      button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
-      is_enabled=continue_enabled,
-    ):
-      self.state = SetupState.SOFTWARE_SELECTION
-      self.stop_network_check_thread.set()
+    self._network_setup_continue_button._text = continue_text
+    self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
