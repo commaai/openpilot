@@ -56,6 +56,9 @@ class Sensor:
     # unclear whether we need this...
     return (time.monotonic() - self.start_ts) > 0.5
 
+  def interrupt_recovery(self) -> None:
+    pass
+
   # *** helpers ***
   @staticmethod
   def wait():

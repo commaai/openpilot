@@ -43,6 +43,10 @@ def interrupt_loop(sensors: list[tuple[Sensor, str, bool]], event) -> None:
     events = poller.poll(100)
     if not events:
       cloudlog.error("poll timed out")
+
+      for sensor, service, interrupt in sensors:
+        sensor.interrupt_recovery()
+
       continue
     if not (events[0][1] & (select.POLLIN | select.POLLPRI)):
       cloudlog.error("no poll events set")

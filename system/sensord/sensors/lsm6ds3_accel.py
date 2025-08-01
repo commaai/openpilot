@@ -55,6 +55,7 @@ class LSM6DS3_Accel(Sensor):
 
     # reset chip before init
     self.write(self.LSM6DS3_ACCEL_I2C_REG_CTRL3_C, 0b1)
+    time.sleep(0.1)
 
     # self-test
     if os.getenv("LSM_SELF_TEST") == "1":
@@ -131,6 +132,13 @@ class LSM6DS3_Accel(Sensor):
     value = self.read(self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, 1)[0]
     value &= 0x0F
     self.write(self.LSM6DS3_ACCEL_I2C_REG_CTRL1_XL, value)
+
+  def interrupt_recovery(self) -> None:
+    if self.source == log.SensorEventData.SensorSource.lsm6ds3trc:
+      # Blink FIFO into bypass to clear contents
+      self.write(self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL5, self.LSM6DS3_ACCEL_FIFO_ODR_833Hz)
+      time.sleep(0.01)
+      self.write(self.LSM6DS3_ACCEL_I2C_REG_FIFO_CTRL5, self.LSM6DS3_ACCEL_FIFO_ODR_833Hz | self.LSM6DS3_ACCEL_FIFO_MODE_CONT)
 
   # *** self-test stuff ***
   def _wait_for_data_ready(self):
