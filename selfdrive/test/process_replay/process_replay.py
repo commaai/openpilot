@@ -6,6 +6,7 @@ import heapq
 import signal
 from collections import Counter
 from dataclasses import dataclass, field
+from itertools import islice
 from typing import Any
 from collections.abc import Callable, Iterable
 from tqdm import tqdm
@@ -353,7 +354,6 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
-  from itertools import islice
   t = time.monotonic()
   params = Params()
   if fingerprint:
@@ -370,7 +370,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
-    for m in canmsgs[:300]:
+    for m in canmsgs:
       can.send(m.as_builder().to_bytes())
     can_callbacks = can_comm_callbacks(can, sendcan)
 
