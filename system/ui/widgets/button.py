@@ -173,7 +173,6 @@ class Button(Widget):
     self._click_callback = click_callback
     self._label_font = gui_app.font(FontWeight.SEMI_BOLD)
     self._button_style = button_style
-    self._font_size = font_size
     self._border_radius = border_radius
     self._font_size = font_size
     self._text_color = BUTTON_TEXT_COLOR[button_style]
