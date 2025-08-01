@@ -3,7 +3,7 @@ from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import ButtonStyle, gui_button
+from openpilot.system.ui.widgets.button import ButtonStyle, gui_button, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
 from openpilot.system.ui.widgets.label import gui_label
 
@@ -73,6 +73,8 @@ class Keyboard(Widget):
     self._backspace_press_time: float = 0.0
     self._backspace_last_repeat: float = 0.0
 
+    self._render_return_status = -1
+
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
@@ -82,6 +84,18 @@ class Keyboard(Widget):
       CAPS_LOCK_KEY: gui_app.texture("icons/capslock-fill.png", 80, 80),
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
+
+    self.all_keys = {}
+    for l in KEYBOARD_LAYOUTS:
+      for _, keys in enumerate(KEYBOARD_LAYOUTS[l]):
+        for _, key in enumerate(keys):
+          if key in self._key_icons:
+            texture = self._key_icons[key]
+            self.all_keys[key] = Button("", lambda k=key : self._key_callback(k), icon=texture,
+                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL)
+          else:
+            self.all_keys[key] = Button(key, lambda k=key : self._key_callback(k))
+    self.all_keys[CAPS_LOCK_KEY] = Button("", lambda k=CAPS_LOCK_KEY : self.handle_key_press(k), icon=self._key_icons[CAPS_LOCK_KEY])
 
   @property
   def text(self):
@@ -96,6 +110,12 @@ class Keyboard(Widget):
   def set_title(self, title: str, sub_title: str = ""):
     self._title = title
     self._sub_title = sub_title
+
+  def _key_callback(self, k):
+    if k == ENTER_KEY:
+      self._render_return_status = 1
+    else:
+      self.handle_key_press(k)
 
   def _render(self, rect: rl.Rectangle):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
@@ -146,7 +166,6 @@ class Keyboard(Widget):
         start_x += new_width
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
-        result = -1
 
         # Check for backspace key press-and-hold
         mouse_pos = rl.get_mouse_position()
@@ -161,18 +180,13 @@ class Keyboard(Widget):
         if key in self._key_icons:
           if key == SHIFT_ACTIVE_KEY and self._caps_lock:
             key = CAPS_LOCK_KEY
-          texture = self._key_icons[key]
-          result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
+          self.all_keys[key].enabled = is_enabled
+          self.all_keys[key].render(key_rect)
         else:
-          result = gui_button(key_rect, key, KEY_FONT_SIZE, is_enabled=is_enabled)
+          self.all_keys[key].enabled = is_enabled
+          self.all_keys[key].render(key_rect)
 
-        if result:
-          if key == ENTER_KEY:
-            return 1
-          else:
-            self.handle_key_press(key)
-
-    return -1
+    return self._render_return_status
 
   def _render_input_area(self, input_rect: rl.Rectangle):
     if self._show_password_toggle:
