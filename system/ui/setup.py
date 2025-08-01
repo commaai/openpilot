@@ -132,7 +132,6 @@ class Setup(Widget):
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
-    #ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
     self._getting_started_button.render(btn_rect)
     triangle = gui_app.texture("images/button_continue_triangle.png", 54, int(btn_rect.height))
     rl.draw_texture_v(triangle, rl.Vector2(btn_rect.x + btn_rect.width / 2 - triangle.width / 2, btn_rect.height / 2 - triangle.height / 2), rl.WHITE)
