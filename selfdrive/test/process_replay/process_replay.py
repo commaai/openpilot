@@ -751,7 +751,7 @@ def _replay_multi_process(
 
     # flush last set of messages from each process
     for container in containers:
-      output_msgs = container.get_output_msgs(int(time.time() * 1e9))  # TODO: fix time
+      output_msgs = container.get_output_msgs(int(time.monotonic() * 1e9))  # TODO: fix time
       log_msgs.extend(output_msgs)
   finally:
     for container in containers:
