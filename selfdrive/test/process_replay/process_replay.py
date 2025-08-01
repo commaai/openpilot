@@ -279,7 +279,18 @@ class ProcessContainer:
 
       self.msg_queue.append(msg)
       if end_of_cycle:
-        self.rc.wait_for_recv_called()
+        # print('proc replay waiting for recv called')
+        # *** for radard, wait for recv to be called on any socket (modelV2, carState, liveTracks) ***
+        got = self.rc.wait_for_recv_called()
+
+        # *** goes through each socket that called recv and clears recv_called event, then sets recv ready event ***
+        self.rc.unlock_sockets()
+
+        # *** wait for recv to be called again? ***
+        # self.rc.wait_for_next_recv(False)
+        return []
+        # print('proc replay recv called done')
+        # print()
 
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
