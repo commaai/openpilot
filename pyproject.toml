@@ -138,7 +138,7 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore=opendbc/ --ignore=panda/ --ignore=rednose_repo/ --ignore=tinygrad_repo/ --ignore=teleoprtc_repo/ --ignore=msgq/  -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore-glob=opendbc*/ --ignore=panda/ --ignore=rednose*/ --ignore=tinygrad*/ --ignore=teleoprtc*/ --ignore=msgq*/ --ignore provisioning/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
@@ -149,23 +149,23 @@ markers = [
   "tici: tests that are only meant to run on the C3/C3X",
   "skip_tici_setup: mark test to skip tici setup fixture"
 ]
-testpaths = [
-  "common",
-  "selfdrive",
-  "system/updated",
-  "system/athena",
-  "system/camerad",
-  "system/hardware",
-  "system/loggerd",
-  "system/proclogd",
-  "system/tests",
-  "system/ubloxd",
-  "system/webrtc",
-  "tools/lib/tests",
-  "tools/replay",
-  "tools/cabana",
-  "cereal/messaging/tests",
-]
+#testpaths = [
+#  "common",
+#  "selfdrive",
+#  "system/updated",
+#  "system/athena",
+#  "system/camerad",
+#  "system/hardware",
+#  "system/loggerd",
+#  "system/proclogd",
+#  "system/tests",
+#  "system/ubloxd",
+#  "system/webrtc",
+#  "tools/lib/tests",
+#  "tools/replay",
+#  "tools/cabana",
+#  "cereal/messaging/tests",
+#]
 
 [tool.codespell]
 quiet-level = 3
