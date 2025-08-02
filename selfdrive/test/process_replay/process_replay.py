@@ -349,12 +349,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
-      print('hi')
-      t = time.monotonic()
-      ret = [next(can_msgs, [])]
-      print(time.monotonic() - t, 'can_recv took')
-      print('done')
-      return ret
+      return [next(can_msgs, [])]
 
     cached_params = None
     if cached_params_raw is not None:
@@ -703,13 +698,10 @@ def _replay_multi_process(
   log_msgs = []
   containers = []
   try:
-    t = time.monotonic()
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
-    print(f"Started {len(containers)} processes in {time.monotonic() - t} seconds")
-    return []
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
