@@ -133,7 +133,7 @@ class ProcessConfig:
 
   def __post_init__(self):
     # If process is polling a service, we can just lock that one to speed up replay
-    if self.main_pub is None and isinstance(self.should_recv_callback, PolledMsgRecvCallback):
+    if self.main_pub is None and isinstance(self.should_recv_callback, MessageBasedRcvCallback):
       self.main_pub = self.should_recv_callback.trigger_msg_type
 
 
@@ -283,7 +283,7 @@ class ProcessContainer:
 
     self.msg_queue.append(msg)
     if end_of_cycle:
-      with self.prefix, Timeout(self.cfg.timeout + 100000, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+      with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
@@ -294,10 +294,8 @@ class ProcessContainer:
         if self.cfg.main_pub and self.cfg.main_pub_drained:
           trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
-        # input('about to get msgs')
         # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)
-        # input('got msgs!')
 
         for m in self.msg_queue:
           self.pm.send(m.which(), m.as_builder())
@@ -311,14 +309,10 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
-        # input('sent msgs, about to unlock sockets')
-
         self.rc.unlock_sockets()
         if trigger_empty_recv:
           self.rc.unlock_sockets()
         self.cnt += 1
-        # input('unlocked sockets')
-        # print()
     assert self.process.proc.is_alive()
 
     return output_msgs
@@ -407,7 +401,7 @@ class ModeldCameraSyncRcvCallback:
       return False
 
 
-class PolledMsgRecvCallback:
+class MessageBasedRcvCallback:
   def __init__(self, trigger_msg_type: str, first_frame: bool = False):
     self.trigger_msg_type = trigger_msg_type
     self.first_frame = first_frame
@@ -438,7 +432,7 @@ CONFIGS = [
     ignore=["logMonoTime"],
     config_callback=selfdrived_config_callback,
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("carState", True),
+    should_recv_callback=MessageBasedRcvCallback("carState", True),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
@@ -450,7 +444,7 @@ CONFIGS = [
     subs=["carControl", "controlsState"],
     ignore=["logMonoTime", ],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("selfdriveState"),
+    should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -471,7 +465,7 @@ CONFIGS = [
     subs=["radarState"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("modelV2"),
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -479,7 +473,7 @@ CONFIGS = [
     subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("modelV2"),
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -488,14 +482,14 @@ CONFIGS = [
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("cameraOdometry", True),
+    should_recv_callback=MessageBasedRcvCallback("cameraOdometry", True),
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
     pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "selfdriveState"],
     subs=["driverMonitoringState"],
     ignore=["logMonoTime"],
-    should_recv_callback=PolledMsgRecvCallback("driverStateV2"),
+    should_recv_callback=MessageBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -505,7 +499,7 @@ CONFIGS = [
     ],
     subs=["livePose"],
     ignore=["logMonoTime"],
-    should_recv_callback=PolledMsgRecvCallback("cameraOdometry"),
+    should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -514,7 +508,7 @@ CONFIGS = [
     subs=["liveParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("livePose"),
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
@@ -524,7 +518,7 @@ CONFIGS = [
     subs=["liveDelay"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("livePose"),
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -539,7 +533,7 @@ CONFIGS = [
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=PolledMsgRecvCallback("livePose", True),
+    should_recv_callback=MessageBasedRcvCallback("livePose", True),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -560,7 +554,7 @@ CONFIGS = [
     pubs=["liveCalibration", "driverCameraState"],
     subs=["driverStateV2"],
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.gpuExecutionTime"],
-    should_recv_callback=PolledMsgRecvCallback("driverCameraState"),
+    should_recv_callback=MessageBasedRcvCallback("driverCameraState"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
