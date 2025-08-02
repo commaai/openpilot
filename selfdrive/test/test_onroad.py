@@ -55,6 +55,7 @@ PROCS = {
   "selfdrive.locationd.paramsd": 9.0,
   "selfdrive.locationd.lagd": 11.0,
   "selfdrive.ui.soundd": 3.0,
+  "selfdrive.ui.feedback.feedbackd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
   "./proclogd": 2.0,
   "system.logmessaged": 1.0,
