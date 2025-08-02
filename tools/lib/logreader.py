@@ -55,6 +55,7 @@ class CachedReader:
   __slots__ = ("_evt", "_enum")
 
   def __init__(self, evt: capnp._DynamicStructReader):
+    assert not isinstance(evt, CachedReader), "CachedReader should not be nested"
     """All capnp attribute accesses are expensive, and which() is often called multiple times"""
     self._evt = evt
     self._enum: str | None = None
@@ -74,6 +75,8 @@ class CachedReader:
     return self._enum
 
   def __getattr__(self, name: str):
+    if name.startswith("__") and name.endswith("__"):
+      return super().__getattr__(name)
     return getattr(self._evt, name)
 
 

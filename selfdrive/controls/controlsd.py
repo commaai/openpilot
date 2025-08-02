@@ -180,7 +180,7 @@ class Controls:
     dat.valid = CS.canValid
     cs = dat.controlsState
 
-    cs.curvature = self.curvature
+    cs.curvature = 420.69
     cs.longitudinalPlanMonoTime = self.sm.logMonoTime['longitudinalPlan']
     cs.lateralPlanMonoTime = self.sm.logMonoTime['modelV2']
     cs.desiredCurvature = self.desired_curvature

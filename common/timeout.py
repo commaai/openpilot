@@ -20,8 +20,10 @@ class Timeout:
     raise TimeoutException(self.error_msg)
 
   def __enter__(self):
+    # return
     signal.signal(signal.SIGALRM, self.handle_timeout)
     signal.alarm(self.seconds)
 
   def __exit__(self, exc_type, exc_val, exc_tb):
+    # return
     signal.alarm(0)
