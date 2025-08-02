@@ -1,0 +1,10 @@
+ruff
+sympy
+numpy
+scipy
+cffi
+scons
+pre-commit
+Cython
+pytest
+pytest-xdist
