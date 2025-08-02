@@ -247,13 +247,6 @@ class ProcessContainer:
       if self.cfg.init_callback is not None:
         self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
 
-      # # wait for process to startup
-      # with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
-      #   while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
-      #     time.sleep(0)
-
-  def wait(self):
-    with self.prefix as p:
       # wait for process to startup
       with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
         while not all(self.pm.all_readers_updated(s) for s in self.cfg.pubs if s not in self.cfg.ignore_alive_pubs):
@@ -669,8 +662,6 @@ def _replay_multi_process(
       container = ProcessContainer(cfg)
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
-    for container in containers:
-      container.wait()
     print(f'startup took {time.monotonic() - t} seconds')
 
     all_pubs = {pub for container in containers for pub in container.pubs}
