@@ -4,7 +4,7 @@ import time
 import copy
 import heapq
 import signal
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 from itertools import islice
 from typing import Any
@@ -716,7 +716,6 @@ def _replay_multi_process(
     internal_pub_index_heap: list[tuple[int, int]] = []
 
     pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
-    times = defaultdict(list)
     while len(external_pub_queue) != 0 or (len(internal_pub_index_heap) != 0 and not all(c.has_empty_queue for c in containers)):
       if len(internal_pub_index_heap) == 0 or (len(external_pub_queue) != 0 and external_pub_queue[0].logMonoTime < internal_pub_index_heap[0][0]):
         msg = external_pub_queue.pop(0)
@@ -727,19 +726,13 @@ def _replay_multi_process(
 
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
-        t1 = time.monotonic()
         output_msgs = container.run_step(msg, frs)
-        times[container.cfg.proc_name].append(time.monotonic() - t1)
         for m in output_msgs:
           if m.which() in all_pubs:
             internal_pub_queue.append(m)
             heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
         log_msgs.extend(output_msgs)
 
-    print("Total run_step times:")
-    for container, time_list in times.items():
-      print(f"  {container}: {sum(time_list)}s")
-    print('Total run_step time: {:.2f}s'.format(sum(sum(time_list) for time_list in times.values())))
     # flush last set of messages from each process
     for container in containers:
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
