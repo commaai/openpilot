@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import math
-from typing import SupportsFloat
 from numbers import Number
 
 from cereal import car, log
@@ -143,10 +142,7 @@ class Controls:
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
-      # print(f'checking actuators.{p} = {attr}')
-      # if not isinstance(attr, SupportsFloat):
       if not isinstance(attr, Number):
-        # print('continuing')
         continue
 
       if not math.isfinite(attr):
