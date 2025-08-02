@@ -15,7 +15,7 @@ from openpilot.selfdrive.modeld.fill_model_msg import fill_xyz_poly, fill_lane_l
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_encode_index
 from openpilot.selfdrive.controls.lib.longitudinal_planner import get_accel_from_plan, CONTROL_N_T_IDX
 from openpilot.system.manager.process_config import managed_processes
-from openpilot.tools.lib.logreader import LogIterable
+from openpilot.tools.lib.logreader import LogIterable, CachedReader
 
 MessageWithIndex = tuple[int, capnp.lib.capnp._DynamicStructReader]
 MigrationOps = tuple[list[tuple[int, capnp.lib.capnp._DynamicStructReader]], list[capnp.lib.capnp._DynamicStructReader], list[int]]
@@ -75,11 +75,11 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
     del_ops.extend(d_ops)
 
   for index, msg in replace_ops:
-    lr[index] = msg
+    lr[index] = CachedReader(msg)
   for index in sorted(del_ops, reverse=True):
     del lr[index]
   for msg in add_ops:
-    lr.append(msg)
+    lr.append(CachedReader(msg))
   lr = sorted(lr, key=lambda x: x.logMonoTime)
 
   return lr
