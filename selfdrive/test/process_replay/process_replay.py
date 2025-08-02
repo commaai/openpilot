@@ -4,7 +4,7 @@ import time
 import copy
 import heapq
 import signal
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 from itertools import islice
 from typing import Any
@@ -696,7 +696,6 @@ def _replay_multi_process(
 
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
-        t = time.monotonic()
         output_msgs = container.run_step(msg, frs)
         times[container.cfg.proc_name] += time.monotonic() - t
         for m in output_msgs:
@@ -705,10 +704,6 @@ def _replay_multi_process(
             heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
         log_msgs.extend(output_msgs)
 
-    print('Totoal run_step times:')
-    for container, time_taken in sorted(times.items(), key=lambda x: x[1], reverse=True):
-      print(f"  {container}: {time_taken}s")
-    print(f'Total run_step time: {sum(times.values())}s')
     # flush last set of messages from each process
     for container in containers:
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
