@@ -8,8 +8,7 @@ from openpilot.system.hardware import HARDWARE
 
 NO_FAN_CONTROL = os.getenv("NO_FAN_CONTROL") == "1"
 
-MAX_IR_POWER = 0.5
-MIN_IR_POWER = 0.0
+MAX_IR_PANDA_VAL = 50
 CUTOFF_IL = 400
 SATURATE_IL = 1000
 
@@ -73,19 +72,20 @@ class PeripheralManager:
       lines = self.filter.update(state.integLines)
       self.last_camera_t = sm.logMonoTime['driverCameraState']
       if lines <= CUTOFF_IL:
-        self.ir_pwr = 100.0 * MIN_IR_POWER
+        self.ir_pwr = 0
       elif lines > SATURATE_IL:
-        self.ir_pwr = 100.0 * MAX_IR_POWER
+        self.ir_pwr = 100
       else:
-        slope = (MAX_IR_POWER - MIN_IR_POWER) / (SATURATE_IL - CUTOFF_IL)
-        self.ir_pwr = 100.0 * (MIN_IR_POWER + slope * (lines - CUTOFF_IL))
+        self.ir_pwr = 100 * (lines - CUTOFF_IL) / (SATURATE_IL - CUTOFF_IL)
 
     if time.monotonic_ns() - self.last_camera_t > 1e9:
       self.ir_pwr = 0
 
-    if self.ir_pwr != self.prev_ir_pwr or sm.frame % 100 == 0 or self.ir_pwr >= 50:
+    if self.ir_pwr != self.prev_ir_pwr or sm.frame % 100 == 0:
+      # Convert percentage to panda value (0-100 -> 0-50)
+      ir_panda = int(self.ir_pwr * MAX_IR_PANDA_VAL / 100)
       with self.lock:
-        self.panda.set_ir_power(self.ir_pwr)
+        self.panda.set_ir_power(ir_panda)
 
       HARDWARE.set_ir_power(self.ir_pwr)
       self.prev_ir_pwr = self.ir_pwr

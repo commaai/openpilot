@@ -143,6 +143,7 @@ def main() -> None:
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
           panda.reset(reconnect=True)
 
+      evt.clear()
       first_run = False
       runner = PandaRunner(panda_serials, pandas)
       runner.run(evt)

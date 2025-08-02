@@ -1,7 +1,6 @@
 import os
 import threading
 import time
-from itertools import chain
 
 from cereal import car
 from cereal.messaging import SubMaster, PubMaster
@@ -54,7 +53,7 @@ class PandaRunner:
                   # Adjust bus number for the panda (remove offset)
                   adjusted_bus = c.src % 4
                   panda_msgs[panda_idx].append((c.address, c.dat, adjusted_bus))
-              
+
               # Send messages to each panda
               for panda_idx, can_msgs in enumerate(panda_msgs):
                 if can_msgs:
@@ -72,7 +71,15 @@ class PandaRunner:
         bus_offset = panda_idx * 4  # Each panda gets 4 buses
         for address, dat, src in p.can_recv():
           # Apply bus offset to match C++ implementation
-          adjusted_src = src + bus_offset
+          # Handle special bus encodings: rejected (192+), returned (128+), normal (0-2)
+          if src >= 192:  # Rejected message
+            base_bus = src - 192
+            adjusted_src = base_bus + bus_offset + 192
+          elif src >= 128:  # Returned message
+            base_bus = src - 128
+            adjusted_src = base_bus + bus_offset + 128
+          else:  # Normal message
+            adjusted_src = src + bus_offset
           cans.append((address, dat, adjusted_src))
 
     msg = messaging.new_message('can', len(cans) if cans else 0)
