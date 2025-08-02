@@ -232,7 +232,6 @@ class ProcessContainer:
     fingerprint: str | None, capture_output: bool
   ):
     with self.prefix as p:
-      print('got prefix', p.prefix)
       self.prefix.create_dirs()
       self._setup_env(params_config, environ_config)
 
@@ -257,9 +256,7 @@ class ProcessContainer:
       self._start_process()
 
       if self.cfg.init_callback is not None:
-        print('calling init callback', self.cfg.proc_name)
         self.cfg.init_callback(self.rc, self.pm, all_msgs, fingerprint)
-        print('called init callback', self.cfg.proc_name)
 
       # wait for process to startup
       with Timeout(10, error_msg=f"timed out waiting for process to start: {repr(self.cfg.proc_name)}"):
@@ -334,7 +331,6 @@ class ProcessContainer:
 
 def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
-  t = time.monotonic()
   params = Params()
   canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
 
@@ -352,11 +348,9 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
     m = canmsgs.pop(0)
     rc.send_sync(pm, "can", m.as_builder().to_bytes())
     rc.wait_for_next_recv(True)
-  print(f"Fingerprinting done in {time.monotonic() - t} seconds")
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
-  t = time.monotonic()
   params = Params()
   if fingerprint:
     CarInterface = interfaces[fingerprint]
@@ -383,7 +377,6 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     CP = get_car(*can_callbacks, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
   params.put("CarParams", CP.to_bytes())
-  print(f"CarParams set in {time.monotonic() - t} seconds")
 
 
 def selfdrived_rcv_callback(msg, cfg, frame):
@@ -729,7 +722,6 @@ def _replay_multi_process(
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
     print(f"Started {len(containers)} processes in {time.monotonic() - t} seconds")
-    return
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
@@ -752,8 +744,7 @@ def _replay_multi_process(
         _, index = heapq.heappop(internal_pub_index_heap)
         msg = internal_pub_queue[index]
 
-      target_containers = pubs_to_containers[msg.which()]  # TODO: we call msg.which() in run_step too, pass it in
-      # TODO: can we wrap capnp and cache msg.which()?
+      target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
         output_msgs = container.run_step(msg, frs)
         for m in output_msgs:
@@ -767,7 +758,6 @@ def _replay_multi_process(
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
       log_msgs.extend(container.get_output_msgs(last_time))
   finally:
-    return log_msgs
     for container in containers:
       container.stop()
       if captured_output_store is not None:
