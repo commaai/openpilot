@@ -52,7 +52,6 @@ class ReplayContext:
     self.pubs = cfg.pubs
     self.main_pub = cfg.main_pub
     self.main_pub_drained = cfg.main_pub_drained
-    self.unlocked_pubs = cfg.unlocked_pubs
     assert len(self.pubs) != 0 or self.main_pub is not None
 
   def __enter__(self):
@@ -69,8 +68,7 @@ class ReplayContext:
 
     if self.main_pub is None:
       self.events = {}
-      pubs_with_events = [pub for pub in self.pubs if pub not in self.unlocked_pubs]
-      for pub in pubs_with_events:
+      for pub in self.pubs:
         self.events[pub] = messaging.fake_event_handle(pub, enable=True)
     else:
       self.events = {self.main_pub: messaging.fake_event_handle(self.main_pub, enable=True)}
@@ -132,7 +130,11 @@ class ProcessConfig:
   main_pub_drained: bool = False
   vision_pubs: list[str] = field(default_factory=list)
   ignore_alive_pubs: list[str] = field(default_factory=list)
-  unlocked_pubs: list[str] = field(default_factory=list)
+
+  def __post_init__(self):
+    # If the process is polling a service, we can just lock that one to speed up replay
+    if self.main_pub is None and isinstance(self.should_recv_callback, MessageBasedRcvCallback):
+      self.main_pub = self.should_recv_callback.trigger_msg_type
 
 
 class ProcessContainer:
@@ -433,7 +435,6 @@ CONFIGS = [
     should_recv_callback=MessageBasedRcvCallback("carState", True),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
-    main_pub="carState",
   ),
   ProcessConfig(
     proc_name="controlsd",
@@ -500,7 +501,6 @@ CONFIGS = [
     ignore=["logMonoTime"],
     should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
-    unlocked_pubs=["accelerometer", "gyroscope"],
   ),
   ProcessConfig(
     proc_name="paramsd",
