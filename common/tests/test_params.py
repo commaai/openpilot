@@ -37,9 +37,9 @@ class TestParams:
 
   def test_params_two_things(self):
     self.params.put("DongleId", "bob")
-    self.params.put("AthenadPid", "123")
+    self.params.put("AthenadPid", 123)
     assert self.params.get("DongleId") == "bob"
-    assert self.params.get("AthenadPid") == "123"
+    assert self.params.get("AthenadPid") == 123
 
   def test_params_get_block(self):
     def _delayed_writer():

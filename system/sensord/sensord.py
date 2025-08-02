@@ -98,6 +98,13 @@ def main() -> None:
     (MMC5603NJ_Magn(I2C_BUS_IMU), "magnetometer", False),
   ]
 
+  # Reset sensors
+  for sensor, _, _ in sensors_cfg:
+    try:
+      sensor.reset()
+    except Exception:
+      cloudlog.exception(f"Error initializing {sensor} sensor")
+
   # Initialize sensors
   exit_event = threading.Event()
   threads = [
