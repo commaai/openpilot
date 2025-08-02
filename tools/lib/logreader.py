@@ -55,6 +55,7 @@ class CachedReader:
   __slots__ = ("_evt", "_enum")
 
   def __init__(self, evt: capnp._DynamicStructReader):
+    """All capnp attribute accesses are expensive, and which() is often called multiple times"""
     self._evt = evt
     self._enum: str | None = None
 
