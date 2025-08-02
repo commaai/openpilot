@@ -56,7 +56,6 @@ class SimulatedCar:
     msg.append(self.packer.make_can_msg("STEER_MOTOR_TORQUE", 0, {}))
     msg.append(self.packer.make_can_msg("EPB_STATUS", 0, {}))
     msg.append(self.packer.make_can_msg("DOORS_STATUS", 0, {}))
-    msg.append(self.packer.make_can_msg("CRUISE_PARAMS", 0, {}))
     msg.append(self.packer.make_can_msg("CRUISE", 0, {}))
     msg.append(self.packer.make_can_msg("CRUISE_FAULT_STATUS", 0, {}))
     msg.append(self.packer.make_can_msg("SCM_FEEDBACK", 0,
