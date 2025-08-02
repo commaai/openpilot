@@ -104,7 +104,7 @@ class ReplayContext:
       expected_sets -= 1
 
   def wait_for_recv_called(self):
-    return messaging.wait_for_one_event(self.all_recv_called_events)
+    messaging.wait_for_one_event(self.all_recv_called_events)
 
   def wait_for_next_recv(self, trigger_empty_recv):
     index = messaging.wait_for_one_event(self.all_recv_called_events)
@@ -290,7 +290,6 @@ class ProcessContainer:
         if self.cnt == 0:
           for s in self.sockets:
             messaging.recv_one_or_none(s)
-        self.cnt += 1
 
         # certain processes use drain_sock. need to cause empty recv to break from this loop
         trigger_empty_recv = False
