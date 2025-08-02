@@ -73,7 +73,6 @@ class ReplayContext:
       for pub in pubs_with_events:
         self.events[pub] = messaging.fake_event_handle(pub, enable=True)
     else:
-      print(self.proc_name, "main pub", self.main_pub, self.main_pub_drained)
       self.events = {self.main_pub: messaging.fake_event_handle(self.main_pub, enable=True)}
 
   def close_context(self):
@@ -129,17 +128,10 @@ class ProcessConfig:
   timeout: int = 30
   simulation: bool = True
   main_pub: str | None = None
-  main_pub_drained: bool = False
+  main_pub_drained: bool = True
   vision_pubs: list[str] = field(default_factory=list)
   ignore_alive_pubs: list[str] = field(default_factory=list)
   unlocked_pubs: list[str] = field(default_factory=list)
-
-  def __post_init__(self):
-    if self.main_pub is None:
-      if hasattr(self.should_recv_callback, "trigger_msg_type"):
-        self.main_pub = self.should_recv_callback.trigger_msg_type
-      else:
-        self.main_pub = self.pubs[0] if len(self.pubs) > 0 else None
 
 
 class ProcessContainer:
@@ -300,9 +292,7 @@ class ProcessContainer:
           trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
         # get output msgs from previous inputs
-        input('about to get output msgs, press enter to continue...')
         output_msgs = self.get_output_msgs(msg.logMonoTime)
-        input('got output msgs, press enter to continue...')
 
         for m in self.msg_queue:
           self.pm.send(m.which(), m.as_builder())
@@ -316,11 +306,9 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
-        input('about to unlock sockets, press enter to continue...')
         self.rc.unlock_sockets()
         if trigger_empty_recv:
           self.rc.unlock_sockets()
-        input('unlocked sockets, press enter to continue...')
         self.cnt += 1
     assert self.process.proc.is_alive()
 
@@ -484,7 +472,6 @@ CONFIGS = [
           "driverMonitoringState", "onroadEvents", "driverAssistance"],
     subs=["carControl", "controlsState"],
     ignore=["logMonoTime", ],
-    main_pub="selfdriveState",
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
@@ -499,7 +486,6 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",
-    main_pub_drained=True,
   ),
   ProcessConfig(
     proc_name="radard",
@@ -550,7 +536,6 @@ CONFIGS = [
     pubs=["livePose", "liveCalibration", "carState"],
     subs=["liveParameters"],
     ignore=["logMonoTime"],
-    main_pub="livePose",
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
@@ -589,6 +574,7 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
+    main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
     init_callback=get_car_params_callback,
@@ -602,6 +588,7 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
+    main_pub_drained=False,
     vision_pubs=["driverCameraState"],
     ignore_alive_pubs=["driverCameraState"],
   ),
