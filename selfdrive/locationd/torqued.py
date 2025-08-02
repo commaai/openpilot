@@ -248,12 +248,8 @@ def main(demo=False):
   params = Params()
   estimator = TorqueEstimator(messaging.log_from_bytes(params.get("CarParams", block=True), car.CarParams))
 
-  import time
-  t1 = time.monotonic()
   while True:
-    # print('took', time.monotonic() - t1)
     sm.update()
-    t1 = time.monotonic()
     if sm.all_checks():
       for which in sm.updated.keys():
         if sm.updated[which]:
