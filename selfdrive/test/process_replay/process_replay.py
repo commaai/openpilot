@@ -717,7 +717,7 @@ def _replay_multi_process(
     print('Totoal run_step times:')
     for container, time_taken in sorted(times.items(), key=lambda x: x[1], reverse=True):
       print(f"  {container}: {time_taken}s")
-    print('Total run_step time: {:.2f}s'.format(sum(times.values())))
+    print(f'Total run_step time: {sum(times.values())}s')
     # flush last set of messages from each process
     for container in containers:
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
