@@ -281,7 +281,7 @@ class ProcessContainer:
 
     self.msg_queue.append(msg)
     if end_of_cycle:
-      with self.prefix, Timeout(self.cfg.timeout + 100000, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+      with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
