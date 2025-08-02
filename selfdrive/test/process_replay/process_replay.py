@@ -467,8 +467,8 @@ CONFIGS = [
     config_callback=selfdrived_config_callback,
     init_callback=get_car_params_callback,
     should_recv_callback=selfdrived_rcv_callback,
-    main_pub="carState",
-    main_pub_drained=False,
+    # main_pub="carState",
+    # main_pub_drained=False,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
@@ -749,7 +749,7 @@ def _replay_multi_process(
         # print(f'run_step for {container.cfg.proc_name} took {time.monotonic() - t1}s')
       # print(f'all run_steps took {time.monotonic() - t}s')
 
-    print("Average run_step times:")
+    print("Total run_step times:")
     for container, time_list in times.items():
       print(f"  {container}: {sum(time_list)}s")
     print('Total run_step time: {:.2f}s'.format(sum(sum(time_list) for time_list in times.values())))
