@@ -243,7 +243,6 @@ class RadarD:
       self.radar_state.leadTwo = get_lead(self.v_ego, self.ready, self.tracks, leads_v3[1], model_v_ego, low_speed_override=False)
 
   def publish(self, pm: messaging.PubMaster):
-    self.radar_state = log.RadarState.new_message()
     assert self.radar_state is not None
 
     radar_msg = messaging.new_message("radarState")
@@ -268,14 +267,10 @@ def main() -> None:
   RD = RadarD(CP.radarDelay)
 
   while 1:
-    # print('radard calling update', flush=True)
     sm.update()
-    # print('radard finished calling update', flush=True)
 
-    # RD.update(sm, sm['liveTracks'])
-    # print('radard calling RD.update', flush=True)
+    RD.update(sm, sm['liveTracks'])
     RD.publish(pm)
-    # print('radard finished calling RD.update', flush=True)
 
 
 if __name__ == "__main__":
