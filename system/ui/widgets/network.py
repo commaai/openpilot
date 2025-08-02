@@ -9,7 +9,7 @@ from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button, TextAlignment
-from openpilot.system.ui.widgets.confirm_dialog import confirm_dialog
+from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label
 
@@ -72,6 +72,7 @@ class WifiManagerUI(Widget):
     self._forget_networks_buttons = {}
     self._lock = Lock()
     self.wifi_manager = wifi_manager
+    self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
 
     self.wifi_manager.set_callbacks(
       WifiManagerCallbacks(
@@ -97,8 +98,9 @@ class WifiManagerUI(Widget):
           self.keyboard.reset()
           gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
-          gui_app.set_modal_overlay(lambda: confirm_dialog(f'Forget Wi-Fi Network "{network.ssid}"?', "Forget"),
-                                    callback=lambda result: self.on_forgot_confirm_finished(network, result))
+          self._confirm_dialog._text = f'Forget Wi-Fi Network "{network.ssid}"?'
+          self._confirm_dialog.reset()
+          gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(network, result))
         case _:
           self._draw_network_list(rect)
 
