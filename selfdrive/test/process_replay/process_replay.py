@@ -448,15 +448,6 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
-    proc_name="maneuversd",
-    pubs=["carState", "carControl", "controlsState", "selfdriveState", "modelV2"],
-    subs=["longitudinalPlan", "driverAssistance", "alertDebug"],
-    ignore=["logMonoTime", ],
-    init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("modelV2"),
-    tolerance=NUMPY_TOLERANCE,
-  ),
-  ProcessConfig(
     proc_name="card",
     pubs=["pandaStates", "carControl", "onroadEvents", "can"],
     subs=["sendcan", "carState", "carParams", "carOutput", "liveTracks"],
