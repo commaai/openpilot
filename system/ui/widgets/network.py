@@ -41,6 +41,7 @@ class StateConnecting:
 @dataclass
 class StateNeedsAuth:
   network: NetworkInfo
+  retry: bool
   action: Literal["needs_auth"] = "needs_auth"
 
 
@@ -93,8 +94,8 @@ class WifiManagerUI(Widget):
         return
 
       match self.state:
-        case StateNeedsAuth(network):
-          self.keyboard.set_title("Enter password", f"for {network.ssid}")
+        case StateNeedsAuth(network, retry):
+          self.keyboard.set_title("Wrong password" if retry else "Enter password", f"for {network.ssid}")
           self.keyboard.reset()
           gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
@@ -176,7 +177,7 @@ class WifiManagerUI(Widget):
   def _networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
       if not network.is_saved and network.security_type != SecurityType.OPEN:
-        self.state = StateNeedsAuth(network)
+        self.state = StateNeedsAuth(network, False)
       elif not network.is_connected:
         self.connect_to_network(network)
 
@@ -231,7 +232,7 @@ class WifiManagerUI(Widget):
     with self._lock:
       network = next((n for n in self._networks if n.ssid == ssid), None)
       if network:
-        self.state = StateNeedsAuth(network)
+        self.state = StateNeedsAuth(network, True)
 
   def _on_activated(self):
     with self._lock:
