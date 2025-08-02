@@ -292,12 +292,9 @@ class ProcessContainer:
         if self.cfg.main_pub and self.cfg.main_pub_drained:
           trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
-        # input('about to block to recv messages...')
         # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)
-        # print('got output msgs:', len(output_msgs))
 
-        # input('about to send msgs to proc...')
         for m in self.msg_queue:
           self.pm.send(m.which(), m.as_builder())
           # send frames if needed
@@ -310,9 +307,7 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
-        # input('about to unlock sockets...')
         self.rc.unlock_sockets()
-        # input('done...')
         if trigger_empty_recv:
           self.rc.unlock_sockets()
         self.cnt += 1
@@ -722,9 +717,7 @@ def _replay_multi_process(
     internal_pub_index_heap: list[tuple[int, int]] = []
 
     pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
-    times = defaultdict(list)
     while len(external_pub_queue) != 0 or (len(internal_pub_index_heap) != 0 and not all(c.has_empty_queue for c in containers)):
-      t = time.monotonic()
       if len(internal_pub_index_heap) == 0 or (len(external_pub_queue) != 0 and external_pub_queue[0].logMonoTime < internal_pub_index_heap[0][0]):
         msg = external_pub_queue.pop(0)
         pbar.update(1)
@@ -732,26 +725,15 @@ def _replay_multi_process(
         _, index = heapq.heappop(internal_pub_index_heap)
         msg = internal_pub_queue[index]
 
-      # print(f'get msg took {time.monotonic() - t}s')
-
-      t = time.monotonic()
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
-        t1 = time.monotonic()
         output_msgs = container.run_step(msg, frs)
-        times[container.cfg.proc_name].append(time.monotonic() - t1)
         for m in output_msgs:
           if m.which() in all_pubs:
             internal_pub_queue.append(m)
             heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
         log_msgs.extend(output_msgs)
-        # print(f'run_step for {container.cfg.proc_name} took {time.monotonic() - t1}s')
-      # print(f'all run_steps took {time.monotonic() - t}s')
 
-    print("Total run_step times:")
-    for container, time_list in times.items():
-      print(f"  {container}: {sum(time_list)}s")
-    print('Total run_step time: {:.2f}s'.format(sum(sum(time_list) for time_list in times.values())))
     # flush last set of messages from each process
     for container in containers:
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
