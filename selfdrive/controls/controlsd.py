@@ -35,9 +35,13 @@ class Controls:
 
     self.CI = interfaces[self.CP.carFingerprint](self.CP)
 
+    import time
+    print('in controlsd')
+    time.sleep(5)
     self.sm = messaging.SubMaster(['liveParameters', 'liveTorqueParameters', 'modelV2', 'selfdriveState',
                                    'liveCalibration', 'livePose', 'longitudinalPlan', 'carState', 'carOutput',
                                    'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
+    print('after SubMaster')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
     self.steer_limited_by_controls = False
