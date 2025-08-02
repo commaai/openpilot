@@ -318,7 +318,6 @@ class ProcessContainer:
 
 def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
-  t = time.monotonic()
   params = Params()
   canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
 
@@ -336,7 +335,6 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
     m = canmsgs.pop(0)
     rc.send_sync(pm, "can", m.as_builder().to_bytes())
     rc.wait_for_next_recv(True)
-  print(f"fingerprinting done in {time.monotonic() - t}s")
 
 
 def get_car_params_callback(rc, pm, msgs, fingerprint):
@@ -359,9 +357,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    t = time.monotonic()
     CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
-    print(f"INIT car params set in {time.monotonic() - t}s")
 
   params.put("CarParams", CP.to_bytes())
 
@@ -722,7 +718,6 @@ def _replay_multi_process(
     internal_pub_index_heap: list[tuple[int, int]] = []
 
     pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
-    t = time.monotonic()
     while len(external_pub_queue) != 0 or (len(internal_pub_index_heap) != 0 and not all(c.has_empty_queue for c in containers)):
       if len(internal_pub_index_heap) == 0 or (len(external_pub_queue) != 0 and external_pub_queue[0].logMonoTime < internal_pub_index_heap[0][0]):
         msg = external_pub_queue.pop(0)
@@ -745,7 +740,6 @@ def _replay_multi_process(
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
       log_msgs.extend(container.get_output_msgs(last_time))
   finally:
-    print(f'Loop completed in {time.monotonic() - t} seconds')
     for container in containers:
       container.stop()
       if captured_output_store is not None:
