@@ -17,13 +17,13 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
+from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import get_car, interfaces
 from opendbc.car.can_definitions import CanData
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car.card import can_comm_callbacks
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -35,20 +35,6 @@ from openpilot.tools.lib.framereader import FrameReader
 NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
-
-
-class DummySocket:
-  def __init__(self):
-    self.data: list[bytes] = []
-
-  def receive(self, non_blocking: bool = False) -> bytes | None:
-    if non_blocking:
-      return None
-
-    return self.data.pop()
-
-  def send(self, data: bytes):
-    self.data.append(data)
 
 
 class LauncherWithCapture:
@@ -359,23 +345,14 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     CarInterface = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
   else:
-    # can = DummySocket()
-    # sendcan = DummySocket()
-
-    # canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
-    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == 'can')
+    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == "can")
     cached_params_raw = params.get("CarParamsCache")
-    # assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
+    assert next(can_msgs, None), "CAN messages are required for fingerprinting"
     assert os.environ.get("SKIP_FW_QUERY", False) or cached_params_raw is not None, \
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
       return [next(can_msgs, [])]
-
-    # for m in canmsgs:
-    #   can.send(m.as_builder().to_bytes())
-    # _, can_send = can_comm_callbacks(can, sendcan)  # TODO: can_send is unused! just pass empty lambda
-    can_send = lambda x: None
 
     cached_params = None
     if cached_params_raw is not None:
@@ -383,10 +360,10 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
         cached_params = _cached_params
 
     t = time.monotonic()
-    CP = get_car(can_recv, can_send, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
-  #
-  # params.put("CarParams", CP.to_bytes())
+    CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
     print(f"INIT car params set in {time.monotonic() - t}s")
+
+  params.put("CarParams", CP.to_bytes())
 
 
 def selfdrived_rcv_callback(msg, cfg, frame):
