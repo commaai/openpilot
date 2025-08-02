@@ -4,7 +4,7 @@ import time
 import copy
 import heapq
 import signal
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from itertools import islice
 from typing import Any
@@ -477,6 +477,7 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
+    main_pub="selfdriveState",
   ),
   ProcessConfig(
     proc_name="card",
@@ -497,6 +498,7 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
+    main_pub="modelV2",
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -506,6 +508,7 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
+    main_pub="modelV2",
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -514,6 +517,7 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=calibration_rcv_callback,
+    main_pub="cameraOdometry",
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -522,6 +526,7 @@ CONFIGS = [
     ignore=["logMonoTime"],
     should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
+    main_pub="driverStateV2",
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -532,7 +537,8 @@ CONFIGS = [
     ignore=["logMonoTime"],
     should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
-    unlocked_pubs=["accelerometer", "gyroscope"],
+    # unlocked_pubs=["accelerometer", "gyroscope"],  # TODO: needed?
+    main_pub="cameraOdometry",
   ),
   ProcessConfig(
     proc_name="paramsd",
@@ -553,6 +559,7 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
+    main_pub="livePose",
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -568,6 +575,7 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=torqued_rcv_callback,
     tolerance=NUMPY_TOLERANCE,
+    main_pub="livePose",
   ),
   ProcessConfig(
     proc_name="modeld",
@@ -718,6 +726,7 @@ def _replay_multi_process(
     internal_pub_index_heap: list[tuple[int, int]] = []
 
     pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
+    times = defaultdict(int)
     while len(external_pub_queue) != 0 or (len(internal_pub_index_heap) != 0 and not all(c.has_empty_queue for c in containers)):
       if len(internal_pub_index_heap) == 0 or (len(external_pub_queue) != 0 and external_pub_queue[0].logMonoTime < internal_pub_index_heap[0][0]):
         msg = external_pub_queue.pop(0)
@@ -728,13 +737,19 @@ def _replay_multi_process(
 
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
+        t = time.monotonic()
         output_msgs = container.run_step(msg, frs)
+        times[container.cfg.proc_name] += time.monotonic() - t
         for m in output_msgs:
           if m.which() in all_pubs:
             internal_pub_queue.append(m)
             heapq.heappush(internal_pub_index_heap, (m.logMonoTime, len(internal_pub_queue) - 1))
         log_msgs.extend(output_msgs)
 
+    print('Totoal run_step times:')
+    for container, time_taken in sorted(times.items(), key=lambda x: x[1], reverse=True):
+      print(f"  {container}: {time_taken}s")
+    print('Total run_step time: {:.2f}s'.format(sum(times.values())))
     # flush last set of messages from each process
     for container in containers:
       last_time = log_msgs[-1].logMonoTime if len(log_msgs) > 0 else int(time.monotonic() * 1e9)
