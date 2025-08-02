@@ -50,7 +50,7 @@ def decompress_stream(data: bytes):
 
   return decompressed_data
 
-from collections.abc import Sequence
+
 class CachedReader:
   __slots__ = ("_evt", "_enum", "_map")
 
@@ -65,25 +65,7 @@ class CachedReader:
     return self._enum
 
   def __getattr__(self, name: str):
-    # return getattr(self._evt, name)
-    v = self._map.get(name)
-    if v is not None:
-      # print('cached:', name)
-      return v
-    v = getattr(self._evt, name)
-    if isinstance(v, capnp._DynamicStructReader):
-      v = CachedReader(v)
-
-    # 3b) If it’s a sequence of structs, wrap each element
-    elif (
-      isinstance(v, Sequence)
-      and not isinstance(v, (bytes, str))
-      and len(v) > 0
-      and isinstance(v[0], capnp._DynamicStructReader)
-    ):
-      v = [CachedReader(item) for item in v]
-    self._map[name] = v
-    return v
+    return getattr(self._evt, name)
 
 
 class _LogFileReader:
