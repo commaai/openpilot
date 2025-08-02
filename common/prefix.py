@@ -9,20 +9,19 @@ from openpilot.system.hardware.hw import Paths
 from openpilot.system.hardware.hw import DEFAULT_DOWNLOAD_CACHE_ROOT
 
 class OpenpilotPrefix:
-  def __init__(self, prefix: str = None, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):
+  def __init__(self, prefix: str = None, create_dirs_on_enter: bool = True, clean_dirs_on_exit: bool = True, shared_download_cache: bool = False):
     self.prefix = prefix if prefix else str(uuid.uuid4().hex[0:15])
     self.msgq_path = os.path.join(Paths.shm_path(), self.prefix)
+    self.create_dirs_on_enter = create_dirs_on_enter
     self.clean_dirs_on_exit = clean_dirs_on_exit
     self.shared_download_cache = shared_download_cache
 
   def __enter__(self):
     self.original_prefix = os.environ.get('OPENPILOT_PREFIX', None)
     os.environ['OPENPILOT_PREFIX'] = self.prefix
-    try:
-      os.mkdir(self.msgq_path)
-    except FileExistsError:
-      pass
-    os.makedirs(Paths.log_root(), exist_ok=True)
+
+    if self.create_dirs_on_enter:
+      self.create_dirs()
 
     if self.shared_download_cache:
       os.environ["COMMA_CACHE"] = DEFAULT_DOWNLOAD_CACHE_ROOT
@@ -39,6 +38,13 @@ class OpenpilotPrefix:
     except KeyError:
       pass
     return False
+
+  def create_dirs(self):
+    try:
+      os.mkdir(self.msgq_path)
+    except FileExistsError:
+      pass
+    os.makedirs(Paths.log_root(), exist_ok=True)
 
   def clean_dirs(self):
     symlink_path = Params().get_param_path()

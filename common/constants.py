@@ -1,6 +1,7 @@
 import numpy as np
 
-class Conversions:
+# conversions
+class CV:
   # Speed
   MPH_TO_KPH = 1.609344
   KPH_TO_MPH = 1. / MPH_TO_KPH
@@ -17,3 +18,6 @@ class Conversions:
 
   # Mass
   LB_TO_KG = 0.453592
+
+
+ACCELERATION_DUE_TO_GRAVITY = 9.81  # m/s^2
