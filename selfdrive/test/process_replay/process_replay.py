@@ -425,22 +425,6 @@ class MessageBasedRcvCallback:
     return msg.which() == self.trigger_msg_type
 
 
-# TODO: this is used interchangeably with MessageBasedRcvCallback when both procs poll? wtf?
-class FrequencyBasedRcvCallback:
-  def __init__(self, trigger_msg_type):
-    self.trigger_msg_type = trigger_msg_type
-
-  def __call__(self, msg, cfg, frame):
-    if msg.which() != self.trigger_msg_type:
-      return False
-
-    resp_sockets = [
-      s for s in cfg.subs
-      if frame % max(1, int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency)) == 0
-    ]
-    return bool(len(resp_sockets))
-
-
 def selfdrived_config_callback(params, cfg, lr):
   ublox = params.get_bool("UbloxAvailable")
   sub_keys = ({"gpsLocation", } if ublox else {"gpsLocationExternal", })
@@ -494,7 +478,7 @@ CONFIGS = [
     subs=["radarState"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -502,7 +486,7 @@ CONFIGS = [
     subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -518,7 +502,7 @@ CONFIGS = [
     pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "selfdriveState"],
     subs=["driverMonitoringState"],
     ignore=["logMonoTime"],
-    should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
+    should_recv_callback=MessageBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -538,7 +522,7 @@ CONFIGS = [
     subs=["liveParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("livePose"),
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
