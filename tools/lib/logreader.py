@@ -52,12 +52,11 @@ def decompress_stream(data: bytes):
 
 
 class CachedReader:
-  __slots__ = ("_evt", "_enum", "_map")
+  __slots__ = ("_evt", "_enum")
 
   def __init__(self, evt: capnp._DynamicStructReader):
     self._evt = evt
     self._enum: str | None = None
-    self._map = {}
 
   def which(self) -> str:
     if self._enum is None:
@@ -95,7 +94,6 @@ class _LogFileReader:
     try:
       for e in ents:
         self._ents.append(CachedReader(e))
-        # self._ents.append(e)
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
