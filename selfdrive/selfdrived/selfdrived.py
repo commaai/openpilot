@@ -414,7 +414,6 @@ class SelfdriveD:
     CS = _car_state.carState if _car_state else self.CS_prev
 
     self.sm.update(0)
-    self.t = time.monotonic()
 
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
