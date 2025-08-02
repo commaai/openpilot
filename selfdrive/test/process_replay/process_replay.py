@@ -362,10 +362,6 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
   params.put("CarParams", CP.to_bytes())
 
 
-def selfdrived_rcv_callback(msg, cfg, frame):
-  return (frame - 1) == 0 or msg.which() == 'carState'
-
-
 def card_rcv_callback(msg, cfg, frame):
   # no sendcan until card is initialized
   if msg.which() != "can":
@@ -378,21 +374,6 @@ def card_rcv_callback(msg, cfg, frame):
   if "sendcan" in socks and (frame - 1) < 2000:
     socks.remove("sendcan")
   return len(socks) > 0
-
-
-def calibration_rcv_callback(msg, cfg, frame):
-  # calibrationd publishes 1 calibrationData every 5 cameraOdometry packets.
-  # should_recv always true to increment frame
-  return (frame - 1) == 0 or msg.which() == 'cameraOdometry'
-
-
-def torqued_rcv_callback(msg, cfg, frame):
-  # should_recv always true to increment frame
-  return (frame - 1) == 0 or msg.which() == 'livePose'
-
-
-def dmonitoringmodeld_rcv_callback(msg, cfg, frame):
-  return msg.which() == "driverCameraState"
 
 
 class ModeldCameraSyncRcvCallback:
@@ -419,26 +400,13 @@ class ModeldCameraSyncRcvCallback:
 
 
 class MessageBasedRcvCallback:
-  def __init__(self, trigger_msg_type):
+  def __init__(self, trigger_msg_type: str, first_frame: bool = False):
     self.trigger_msg_type = trigger_msg_type
+    self.first_frame = first_frame
 
   def __call__(self, msg, cfg, frame):
-    return msg.which() == self.trigger_msg_type
-
-
-class FrequencyBasedRcvCallback:
-  def __init__(self, trigger_msg_type):
-    self.trigger_msg_type = trigger_msg_type
-
-  def __call__(self, msg, cfg, frame):
-    if msg.which() != self.trigger_msg_type:
-      return False
-
-    resp_sockets = [
-      s for s in cfg.subs
-      if frame % max(1, int(SERVICE_LIST[msg.which()].frequency / SERVICE_LIST[s].frequency)) == 0
-    ]
-    return bool(len(resp_sockets))
+    # publish on first frame or trigger msg
+    return ((frame - 1) == 0 and self.first_frame) or msg.which() == self.trigger_msg_type
 
 
 def selfdrived_config_callback(params, cfg, lr):
@@ -462,7 +430,7 @@ CONFIGS = [
     ignore=["logMonoTime"],
     config_callback=selfdrived_config_callback,
     init_callback=get_car_params_callback,
-    should_recv_callback=selfdrived_rcv_callback,
+    should_recv_callback=MessageBasedRcvCallback("carState", True),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="carState",
@@ -497,8 +465,8 @@ CONFIGS = [
     subs=["radarState"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
-    main_pub="modelV2",
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),
+    main_pub = "modelV2",
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -506,7 +474,7 @@ CONFIGS = [
     subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("modelV2"),
+    should_recv_callback=MessageBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
     main_pub="modelV2",
   ),
@@ -516,15 +484,15 @@ CONFIGS = [
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=calibration_rcv_callback,
-    main_pub="cameraOdometry",
+    should_recv_callback=MessageBasedRcvCallback("cameraOdometry", True),
+    main_pub = "cameraOdometry",
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
     pubs=["driverStateV2", "liveCalibration", "carState", "modelV2", "selfdriveState"],
     subs=["driverMonitoringState"],
     ignore=["logMonoTime"],
-    should_recv_callback=FrequencyBasedRcvCallback("driverStateV2"),
+    should_recv_callback=MessageBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
     main_pub="driverStateV2",
   ),
@@ -546,7 +514,7 @@ CONFIGS = [
     subs=["liveParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=FrequencyBasedRcvCallback("livePose"),
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="livePose",
@@ -573,7 +541,7 @@ CONFIGS = [
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=torqued_rcv_callback,
+    should_recv_callback=MessageBasedRcvCallback("livePose", True),
     tolerance=NUMPY_TOLERANCE,
     main_pub="livePose",
   ),
@@ -595,7 +563,7 @@ CONFIGS = [
     pubs=["liveCalibration", "driverCameraState"],
     subs=["driverStateV2"],
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.gpuExecutionTime"],
-    should_recv_callback=dmonitoringmodeld_rcv_callback,
+    should_recv_callback=MessageBasedRcvCallback("driverCameraState"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
