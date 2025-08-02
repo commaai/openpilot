@@ -75,11 +75,11 @@ def migrate(lr: LogIterable, migration_funcs: list[MigrationFunc]):
     del_ops.extend(d_ops)
 
   for index, msg in replace_ops:
-    lr[index] = CachedReader(msg)
+    lr[index] = msg
   for index in sorted(del_ops, reverse=True):
     del lr[index]
   for msg in add_ops:
-    lr.append(CachedReader(msg))
+    lr.append(msg)
   lr = sorted(lr, key=lambda x: x.logMonoTime)
 
   return lr
