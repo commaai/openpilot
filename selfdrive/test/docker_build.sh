@@ -16,11 +16,48 @@ else
 fi
 
 source $SCRIPT_DIR/docker_common.sh $1 "$TAG_SUFFIX"
+source $SCRIPT_DIR/basher
 
-DOCKER_BUILDKIT=1 docker buildx build --provenance false --pull --platform $PLATFORM --load --cache-to type=inline --cache-from type=registry,ref=$REMOTE_TAG -t $DOCKER_IMAGE:latest -t $REMOTE_TAG -t $LOCAL_TAG -f $OPENPILOT_DIR/$DOCKER_FILE $OPENPILOT_DIR
+#force_rebuild=1
+#force_push=1
 
-if [ -n "$PUSH_IMAGE" ]; then
-  docker push $REMOTE_TAG
-  docker tag $REMOTE_TAG $REMOTE_SHA_TAG
-  docker push $REMOTE_SHA_TAG
+if [ "$force_rebuild" != 1 ]
+then
+  basher_pull "/var/lib/docker" "/var/lib/docker2" "$PLATFORM" https "$REMOTE_TAG:latest"
+  basher_exit_code=$?
+fi
+
+if [ "$notrebuild_flag" != 1 ] || [ "$force_rebuild" = 1 ] || [ $basher_exit_code != 0 ]
+then
+  sha256_docker="$(docker images --no-trunc --format "{{.ID}}" | cut -d':' -f2 | cut -d' ' -f1)"
+  if [ "$sha256_docker" != "$MANIFEST_DIGEST" ] || [ "$force_rebuild" = 1 ]
+  then
+    docker buildx create --name mybuilder --driver docker-container --use
+    docker buildx inspect --bootstrap
+
+    IMAGE_PATH="$HOME/myimage.tar"
+
+    # Zstandard uploading is broken in docker buildx! Therefore we build it this way, and use our hooks for the upload.
+    docker buildx build \
+      --builder mybuilder \
+      --platform $PLATFORM \
+      --output type=docker,dest="$IMAGE_PATH",compression=zstd,force-recompress=true \
+      --progress=plain \
+      -f $OPENPILOT_DIR/$DOCKER_FILE \
+      $OPENPILOT_DIR
+
+    basher_pull "/var/lib/docker" "/var/lib/docker2" "$PLATFORM" file "$REMOTE_TAG:latest" "$IMAGE_PATH" &
+    file_pull_pid=$!
+
+  echo aa "$PUSH_IMAGE" "$force_push" "$basher_exit_code" bb
+    if [ -n "$PUSH_IMAGE" ] || [ "$force_push" = 1 ] || [ $basher_exit_code != 0 ]
+    then
+      basher_push "$IMAGE_PATH" "$REMOTE_TAG"
+    else
+      echo "not pushing"
+    fi
+
+    wait $file_pull_pid
+    rm "$IMAGE_PATH"
+  fi
 fi
