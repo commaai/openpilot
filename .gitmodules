@@ -14,5 +14,5 @@
   path = tinygrad_repo
   url = https://github.com/tinygrad/tinygrad.git
 [submodule "opendbc"]
-	path = MOMIN
-	url = https://github.com/786momin/MOMIN.git
+  path = MOMIN
+  url = https://github.com/786momin/MOMIN.git
