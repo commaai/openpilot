@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import bz2
-from functools import cached_property, cache, partial
+from functools import partial
 import multiprocessing
 import capnp
 import enum
@@ -50,9 +50,8 @@ def decompress_stream(data: bytes):
 
   return decompressed_data
 
-
 class _LogFileReader:
-  def __init__(self, fn, only_union_types=False, sort_by_time=False, dat=None):
+  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
     self._only_union_types = only_union_types
 
