@@ -274,13 +274,13 @@ class ProcessContainer:
     assert self.rc and self.pm and self.sockets and self.process.proc
 
     output_msgs = []
-    with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
-      end_of_cycle = True
-      if self.cfg.should_recv_callback is not None:
-        end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
+    end_of_cycle = True
+    if self.cfg.should_recv_callback is not None:
+      end_of_cycle = self.cfg.should_recv_callback(msg, self.cfg, self.cnt)
 
-      self.msg_queue.append(msg)
-      if end_of_cycle:
+    self.msg_queue.append(msg)
+    if end_of_cycle:
+      with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
