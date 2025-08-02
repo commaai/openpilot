@@ -129,6 +129,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     aeb @92;
     userFlag @95;
     excessiveActuation @96;
+    audioFeedback @97;
 
     soundsUnavailableDEPRECATED @47;
   }
@@ -2486,6 +2487,12 @@ struct AudioData {
   sampleRate @1 :UInt32;
 }
 
+struct AudioFeedback {
+  audio @0 :AudioData;
+  segmentNum @1 :UInt16;
+  earlySend @2 :Bool;
+}
+
 struct Touch {
   sec @0 :Int64;
   usec @1 :Int64;
@@ -2586,8 +2593,12 @@ struct Event {
     mapRenderState @105: MapRenderState;
 
     # UI services
-    userFlag @93 :UserFlag;
     uiDebug @102 :UIDebug;
+
+    # driving feedback
+    userFlag @93 :UserFlag;
+    bookmarkButton @148 :UserFlag;
+    audioFeedback @149 :AudioFeedback;
 
     # *********** debug ***********
     testJoystick @52 :Joystick;
