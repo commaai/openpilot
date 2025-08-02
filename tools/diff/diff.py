@@ -37,7 +37,7 @@ if __name__ == "__main__":
   parser.add_argument("-n", type=int, default=8, help="Number of processes to use")
   args = parser.parse_args()
 
-  cfgs = [c for c in CONFIGS if c.proc_name not in BLACKLIST_PROCS]# and c.proc_name in WHITELIST_PROCS]
+  cfgs = [c for c in CONFIGS if c.proc_name not in BLACKLIST_PROCS and c.proc_name in WHITELIST_PROCS]
 
   t = time.monotonic()
   with ProcessPoolExecutor(max_workers=args.n) as executor:
@@ -45,6 +45,7 @@ if __name__ == "__main__":
     for seg in tqdm(SEG_LIST):
       futures.append(executor.submit(replay, cfgs, seg))
 
+    print('hi')
     for future in tqdm(futures):
       outputs = future.result()
 
@@ -53,4 +54,4 @@ if __name__ == "__main__":
       # fn = f"diff_{seg.replace('/', '_')}.zst"
       # print(f"Saving log to {fn}")
       # save_log(fn, outputs)
-  # print(f"\nTotal time: {time.monotonic() - t} seconds")
+  print(f"\nTotal time: {time.monotonic() - t} seconds")
