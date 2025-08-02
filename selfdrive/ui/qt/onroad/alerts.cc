@@ -5,16 +5,67 @@
 
 #include "selfdrive/ui/qt/util.h"
 
+OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
+  progressAnimation = new QPropertyAnimation(this, "currentProgress");
+  connect(this, SIGNAL(currentProgressChanged(float)), this, SLOT(update()));
+
+  delayTimer = new QTimer(this);
+  delayTimer->setSingleShot(true);
+  connect(delayTimer, &QTimer::timeout, this, &OnroadAlerts::startAnimationAfterDelay);
+}
+
 void OnroadAlerts::updateState(const UIState &s) {
   Alert a = getAlert(*(s.sm), s.scene.started_frame);
   if (!alert.equal(a)) {
     alert = a;
+    progressAnimation->stop();
+    delayTimer->stop();
+
+    if (alert.fastForward) {
+      progressAnimation->setStartValue(currentProgress);
+      progressAnimation->setEndValue(1.0f);
+      progressAnimation->setDuration(alert.durationMs);  // Rapid fill over alert duration
+      progressAnimation->setEasingCurve(QEasingCurve::OutCubic);
+      progressAnimation->start();
+    } else if (alert.progressDurationMs > 0) {
+      int delayMs = alert.durationMs - alert.progressDurationMs;
+      float initialProgress = 0.0f;
+      int remainingDuration = alert.progressDurationMs;
+
+      if (delayMs < 0) {
+        initialProgress = 1.0f - (static_cast<float>(alert.durationMs) / alert.progressDurationMs);
+        initialProgress = qBound(0.0f, initialProgress, 1.0f);
+        delayMs = 0;
+        remainingDuration = alert.durationMs;
+      }
+
+      currentProgress = initialProgress;
+      progressAnimation->setStartValue(initialProgress);
+      progressAnimation->setEndValue(1.0f);
+      progressAnimation->setEasingCurve(QEasingCurve::Linear);
+      progressAnimation->setDuration(remainingDuration);
+
+      if (delayMs > 0) {
+        delayTimer->start(delayMs);
+      } else {
+        startAnimationAfterDelay();
+      }
+    } else {
+      currentProgress = 0.0f;
+    }
     update();
   }
 }
 
+void OnroadAlerts::startAnimationAfterDelay() {
+  progressAnimation->start();
+}
+
 void OnroadAlerts::clear() {
   alert = {};
+  delayTimer->stop();
+  progressAnimation->stop();
+  currentProgress = 0.0f;
   update();
 }
 
@@ -25,7 +76,8 @@ OnroadAlerts::Alert OnroadAlerts::getAlert(const SubMaster &sm, uint64_t started
   Alert a = {};
   if (selfdrive_frame >= started_frame) {  // Don't get old alert.
     a = {ss.getAlertText1().cStr(), ss.getAlertText2().cStr(),
-         ss.getAlertType().cStr(), ss.getAlertSize(), ss.getAlertStatus()};
+         ss.getAlertType().cStr(), ss.getAlertSize(), ss.getAlertStatus(),
+         ss.getAlertDuration() * 10, ss.getAlertProgressDuration() * 10, ss.getAlertFastForward()};
   }
 
   if (!sm.updated("selfdriveState") && (sm.frame - started_frame) > 5 * UI_FREQ) {
@@ -89,6 +141,20 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
   p.setBrush(QBrush(g));
   p.drawRoundedRect(r, radius, radius);
   p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+  if (currentProgress > 0.0f) {
+    const int barHeight = 16;
+    const int barYOffset = r.bottom() - barHeight;
+    QPainterPath clipPath;
+    clipPath.addRoundedRect(r, radius, radius);
+    p.setClipPath(clipPath);
+    int filled = static_cast<int>(r.width() * currentProgress);
+    p.setBrush(QColor(0x40, 0x40, 0x40, 0x80));
+    p.drawRect(r.x(), barYOffset, r.width(), barHeight);
+    p.setBrush(QColor(0x00, 0xFF, 0x00, 0xC0));
+    p.drawRect(r.x(), barYOffset, filled, barHeight);
+    p.setClipping(false);
+  }
 
   // text
   const QPoint c = r.center();

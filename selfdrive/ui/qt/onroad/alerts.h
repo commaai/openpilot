@@ -1,6 +1,8 @@
 #pragma once
 
 #include <QWidget>
+#include <QTimer>
+#include <QPropertyAnimation>
 
 #include "selfdrive/ui/ui.h"
 
@@ -8,7 +10,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {}
+  OnroadAlerts(QWidget *parent = 0);
   void updateState(const UIState &s);
   void clear();
 
@@ -19,9 +21,13 @@ protected:
     QString type;
     cereal::SelfdriveState::AlertSize size;
     cereal::SelfdriveState::AlertStatus status;
+    int durationMs = 0;
+    int progressDurationMs = 0;
+    bool fastForward = false;
 
     bool equal(const Alert &other) const {
-      return text1 == other.text1 && text2 == other.text2 && type == other.type;
+      return text1 == other.text1 && text2 == other.text2 && type == other.type && durationMs == other.durationMs
+             && progressDurationMs == other.progressDurationMs && fastForward == other.fastForward;
     }
   };
 
@@ -36,4 +42,17 @@ protected:
 
   QColor bg;
   Alert alert = {};
+
+private:
+  float currentProgress = 0.0f;
+  QPropertyAnimation *progressAnimation;
+  QTimer *delayTimer;
+
+  Q_PROPERTY(float currentProgress MEMBER currentProgress NOTIFY currentProgressChanged)
+
+signals:
+  void currentProgressChanged(float);
+
+private slots:
+  void startAnimationAfterDelay();
 };

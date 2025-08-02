@@ -11,6 +11,8 @@ from openpilot.common.conversions import Conversions as CV
 from openpilot.common.git import get_short_branch
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
+from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -116,7 +118,9 @@ class Alert:
                visual_alert: car.CarControl.HUDControl.VisualAlert,
                audible_alert: car.CarControl.HUDControl.AudibleAlert,
                duration: float,
-               creation_delay: float = 0.):
+               creation_delay: float = 0.,
+               progress_duration: float = 0.,
+               fast_forward: bool = False):
 
     self.alert_text_1 = alert_text_1
     self.alert_text_2 = alert_text_2
@@ -127,6 +131,8 @@ class Alert:
     self.audible_alert = audible_alert
 
     self.duration = int(duration / DT_CTRL)
+    self.progress_duration = int(progress_duration / DT_CTRL) # shows progress bar for last progress_duration seconds of alert
+    self.fast_forward = fast_forward # fast forwards through the current progress bar state over the last duration
 
     self.creation_delay = creation_delay
 
@@ -196,6 +202,16 @@ class StartupAlert(Alert):
     super().__init__(alert_text_1, alert_text_2,
                      alert_status, AlertSize.mid,
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
+
+class ProgressAlert(Alert):
+  def __init__(self, alert_text_1: str, alert_text_2: str = "", duration: float = 0.2, priority: Priority = Priority.LOWER,
+               audible_alert: car.CarControl.HUDControl.AudibleAlert = AudibleAlert.none, creation_delay: float = 0.,
+               progress_duration: float = 0., fast_forward: bool = False):
+
+    super().__init__(alert_text_1, alert_text_2,
+                     AlertStatus.normal, AlertSize.mid if len(alert_text_2) else AlertSize.small,
+                     priority, VisualAlert.none, audible_alert, duration, creation_delay=creation_delay,
+                     progress_duration=progress_duration, fast_forward=fast_forward)
 
 
 # ********** helper functions **********
@@ -368,6 +384,15 @@ def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messagin
   elif CP.brand == "nissan":
     text = "Disable your car's stock LKAS to engage"
   return NormalPermanentAlert("Invalid LKAS setting", text)
+
+
+def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  fast_forward = sm['audioFeedback'].earlySend
+  duration = FEEDBACK_MAX_DURATION - (sm['audioFeedback'].segmentNum * SAMPLE_BUFFER / SAMPLE_RATE) if not fast_forward else 0.5
+  audible_alert = AudibleAlert.prompt if sm['audioFeedback'].segmentNum == 0 else AudibleAlert.none
+  alert = ProgressAlert("Recording Audio Feedback", "Automatically sends, press again to send early.", duration=duration,
+                        audible_alert=audible_alert, progress_duration=FEEDBACK_MAX_DURATION, fast_forward=fast_forward)
+  return alert
 
 
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
@@ -993,6 +1018,10 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.userFlag: {
     ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
+  },
+
+  EventName.audioFeedback: {
+    ET.PERMANENT: audio_feedback_alert,
   },
 }
 

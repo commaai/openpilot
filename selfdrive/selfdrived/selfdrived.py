@@ -95,7 +95,7 @@ class SelfdriveD:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userFlag'] + \
+                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'bookmarkButton', 'audioFeedback'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
@@ -182,8 +182,11 @@ class SelfdriveD:
       return
 
     # Check for user flag (bookmark) press
-    if self.sm.updated['userFlag']:
+    if self.sm.updated['bookmarkButton']:
       self.events.add(EventName.userFlag)
+
+    if self.sm.updated['audioFeedback']:
+      self.events.add(EventName.audioFeedback)
 
     # Don't add any more events while in dashcam mode
     if self.CP.passive:
@@ -489,7 +492,9 @@ class SelfdriveD:
     ss.alertType = self.AM.current_alert.alert_type
     ss.alertSound = self.AM.current_alert.audible_alert
     ss.alertHudVisual = self.AM.current_alert.visual_alert
-
+    ss.alertFastForward = self.AM.current_alert.fast_forward
+    ss.alertDuration = self.AM.current_alert.duration
+    ss.alertProgressDuration = self.AM.current_alert.progress_duration
     self.pm.send('selfdriveState', ss_msg)
 
     # onroadEvents - logged every second or on change
