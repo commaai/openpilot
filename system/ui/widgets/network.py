@@ -68,8 +68,8 @@ class WifiManagerUI(Widget):
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     self._networks: list[NetworkInfo] = []
-    self._networks_buttons = {}
-    self._forget_networks_buttons = {}
+    self._networks_buttons: dict[str, Button] = {}
+    self._forget_networks_buttons: dict[str, Button] = {}
     self._lock = Lock()
     self.wifi_manager = wifi_manager
     self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
@@ -98,7 +98,7 @@ class WifiManagerUI(Widget):
           self.keyboard.reset()
           gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
-          self._confirm_dialog._text = f'Forget Wi-Fi Network "{network.ssid}"?'
+          self._confirm_dialog.text = f'Forget Wi-Fi Network "{network.ssid}"?'
           self._confirm_dialog.reset()
           gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(network, result))
         case _:
