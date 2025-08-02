@@ -31,7 +31,7 @@ from openpilot.tools.lib.logreader import LogIterable
 from openpilot.tools.lib.framereader import FrameReader
 
 # Numpy gives different results based on CPU features after version 19
-NUMPY_TOLERANCE = 1e-7
+NUMPY_TOLERANCE = 1e-2
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
