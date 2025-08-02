@@ -127,8 +127,9 @@ class ProcessConfig:
   processing_time: float = 0.001
   timeout: int = 30
   simulation: bool = True
+  # Set to service process receives on first
   main_pub: str | None = None
-  main_pub_drained: bool = True
+  main_pub_drained: bool = False
   vision_pubs: list[str] = field(default_factory=list)
   ignore_alive_pubs: list[str] = field(default_factory=list)
   unlocked_pubs: list[str] = field(default_factory=list)
@@ -486,6 +487,7 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
     main_pub="can",
+    main_pub_drained=True,
   ),
   ProcessConfig(
     proc_name="radard",
@@ -574,7 +576,6 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
-    main_pub_drained=False,
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
     init_callback=get_car_params_callback,
@@ -588,7 +589,6 @@ CONFIGS = [
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
-    main_pub_drained=False,
     vision_pubs=["driverCameraState"],
     ignore_alive_pubs=["driverCameraState"],
   ),
