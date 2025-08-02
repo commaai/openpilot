@@ -6,7 +6,7 @@ from cereal import messaging, car
 from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
-from broke.swaglog import cloudlog
+from openpilot.common.swaglog import cloudlog
 
 
 @dataclass
