@@ -68,8 +68,6 @@ class Controls:
   def state_control(self):
     CS = self.sm['carState']
 
-    # t = time.monotonic()
-
     # Update VehicleModel
     lp = self.sm['liveParameters']
     x = max(lp.stiffnessFactor, 0.1)
@@ -101,9 +99,6 @@ class Controls:
     actuators = CC.actuators
     actuators.longControlState = self.LoC.long_control_state
 
-    # print(f'vm and state took {(time.monotonic() - t) * 1000} ms')
-    # t = time.monotonic()
-
     # Enable blinkers while lane changing
     if model_v2.meta.laneChangeState != LaneChangeState.off:
       CC.leftBlinker = model_v2.meta.laneChangeDirection == LaneChangeDirection.left
@@ -114,14 +109,8 @@ class Controls:
     if not CC.longActive:
       self.LoC.reset()
 
-    # print(f'reset took {(time.monotonic() - t) * 1000} ms')
-    # t = time.monotonic()
-
     pid_accel_limits = self.CI.get_pid_accel_limits(self.CP, CS.vEgo, CS.vCruise * CV.KPH_TO_MS)
     actuators.accel = float(self.LoC.update(CC.longActive, CS, long_plan.aTarget, long_plan.shouldStop, pid_accel_limits))
-
-    # print(f'longitudinal control took {(time.monotonic() - t) * 1000} ms')
-    # t = time.monotonic()
 
     # Steering PID loop and lateral MPC
     # Reset desired curvature to current to avoid violating the limits on engage
@@ -133,12 +122,8 @@ class Controls:
                                                        self.steer_limited_by_controls, self.desired_curvature,
                                                        curvature_limited)  # TODO what if not available
 
-    # print(f'lateral control took {(time.monotonic() - t) * 1000} ms')
-    # t = time.monotonic()
-
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
-
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
@@ -149,8 +134,6 @@ class Controls:
         cloudlog.error(f"actuators.{p} not finite {actuators.to_dict()}")
         setattr(actuators, p, 0.0)
 
-    # print(f'check actuators took {(time.monotonic() - t) * 1000} ms')
-    # print()
     return CC, lac_log
 
   def publish(self, CC, lac_log):
@@ -226,26 +209,12 @@ class Controls:
 
   def run(self):
     rk = Ratekeeper(100, print_delay_threshold=None)
-    def _print(s=None):
-      return
-      print(s)
-
     while True:
-      # t = time.monotonic()
       self.update()
-      # _print(f'controls update took {time.monotonic() - t} seconds')
-      t = time.monotonic()
-      self.state_control()
-      _print(f'state_control took {time.monotonic() - t} seconds')
-      t = time.monotonic()
-      # self.publish(CC, lac_log)
-      _print(f'publish took {time.monotonic() - t} seconds')
-      t = time.monotonic()
+      CC, lac_log = self.state_control()
+      self.publish(CC, lac_log)
       rk.monitor_time()
-      _print(f'ratekeeper took {time.monotonic() - t} seconds')
-      _print()
 
-import time
 
 def main():
   config_realtime_process(4, Priority.CTRL_HIGH)
