@@ -134,6 +134,10 @@ class ProcessConfig:
   ignore_alive_pubs: list[str] = field(default_factory=list)
   unlocked_pubs: list[str] = field(default_factory=list)
 
+  def __post_init__(self):
+    if self.main_pub is None and hasattr(self.should_recv_callback, "trigger_msg_type"):
+      self.main_pub = self.should_recv_callback.trigger_msg_type
+
 
 class ProcessContainer:
   def __init__(self, cfg: ProcessConfig):
@@ -439,7 +443,6 @@ CONFIGS = [
     should_recv_callback=MessageBasedRcvCallback("carState", True),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
-    main_pub="carState",
   ),
   ProcessConfig(
     proc_name="controlsd",
@@ -451,7 +454,6 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
-    main_pub="selfdriveState",
   ),
   ProcessConfig(
     proc_name="card",
@@ -472,7 +474,6 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("modelV2"),
-    main_pub="modelV2",
   ),
   ProcessConfig(
     proc_name="plannerd",
@@ -482,7 +483,6 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
-    main_pub="modelV2",
   ),
   ProcessConfig(
     proc_name="calibrationd",
@@ -491,7 +491,6 @@ CONFIGS = [
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("cameraOdometry", True),
-    main_pub="cameraOdometry",
   ),
   ProcessConfig(
     proc_name="dmonitoringd",
@@ -500,7 +499,6 @@ CONFIGS = [
     ignore=["logMonoTime"],
     should_recv_callback=MessageBasedRcvCallback("driverStateV2"),
     tolerance=NUMPY_TOLERANCE,
-    main_pub="driverStateV2",
   ),
   ProcessConfig(
     proc_name="locationd",
@@ -512,7 +510,6 @@ CONFIGS = [
     should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
     # unlocked_pubs=["accelerometer", "gyroscope"],  # TODO: needed?
-    main_pub="cameraOdometry",
   ),
   ProcessConfig(
     proc_name="paramsd",
@@ -523,7 +520,6 @@ CONFIGS = [
     should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
-    main_pub="livePose",
   ),
   ProcessConfig(
     proc_name="lagd",
@@ -533,7 +529,6 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
-    main_pub="livePose",
   ),
   ProcessConfig(
     proc_name="ubloxd",
@@ -549,7 +544,6 @@ CONFIGS = [
     init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("livePose", True),
     tolerance=NUMPY_TOLERANCE,
-    main_pub="livePose",
   ),
   ProcessConfig(
     proc_name="modeld",
