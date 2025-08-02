@@ -6,6 +6,7 @@ import heapq
 import signal
 from collections import Counter, deque
 from dataclasses import dataclass, field
+from itertools import islice
 from typing import Any
 from collections.abc import Callable, Iterable
 from tqdm import tqdm
@@ -16,12 +17,12 @@ import cereal.messaging as messaging
 from cereal import car
 from cereal.services import SERVICE_LIST
 from msgq.visionipc import VisionIpcServer, get_endpoint_name as vipc_get_endpoint_name
+from opendbc.car.can_definitions import CanData
 from opendbc.car.car_helpers import get_car, interfaces
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.common.timeout import Timeout
 from openpilot.common.realtime import DT_CTRL
-from openpilot.selfdrive.car.card import can_comm_callbacks
 from openpilot.system.manager.process_config import managed_processes
 from openpilot.selfdrive.test.process_replay.vision_meta import meta_from_camera_state, available_streams
 from openpilot.selfdrive.test.process_replay.migration import migrate_all
@@ -34,18 +35,6 @@ NUMPY_TOLERANCE = 1e-7
 PROC_REPLAY_DIR = os.path.dirname(os.path.abspath(__file__))
 FAKEDATA = os.path.join(PROC_REPLAY_DIR, "fakedata/")
 
-class DummySocket:
-  def __init__(self):
-    self.data: list[bytes] = []
-
-  def receive(self, non_blocking: bool = False) -> bytes | None:
-    if non_blocking:
-      return None
-
-    return self.data.pop()
-
-  def send(self, data: bytes):
-    self.data.append(data)
 
 class LauncherWithCapture:
   def __init__(self, capture: ProcessOutputCapture, launcher: Callable):
@@ -64,7 +53,7 @@ class ReplayContext:
     self.main_pub = cfg.main_pub
     self.main_pub_drained = cfg.main_pub_drained
     self.unlocked_pubs = cfg.unlocked_pubs
-    assert(len(self.pubs) != 0 or self.main_pub is not None)
+    assert len(self.pubs) != 0 or self.main_pub is not None
 
   def __enter__(self):
     self.open_context()
@@ -311,8 +300,7 @@ class ProcessContainer:
         # certain processes use drain_sock. need to cause empty recv to break from this loop
         trigger_empty_recv = False
         # if self.cfg.main_pub and self.cfg.main_pub_drained:
-        #   raise Exception
-        #   trigger_empty_recv = next((True for m in self.msg_queue if m.which() == self.cfg.main_pub), False)
+        #   trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
         # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)
@@ -344,7 +332,7 @@ class ProcessContainer:
 def card_fingerprint_callback(rc, pm, msgs, fingerprint):
   print("start fingerprinting")
   params = Params()
-  canmsgs = [msg for msg in msgs if msg.which() == "can"][:300]
+  canmsgs = list(islice((m for m in msgs if m.which() == "can"), 300))
 
   # card expects one arbitrary can and pandaState
   rc.send_sync(pm, "can", messaging.new_message("can", 1))
@@ -368,26 +356,21 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     CarInterface = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
   else:
-    can = DummySocket()
-    sendcan = DummySocket()
-
-    canmsgs = [msg for msg in msgs if msg.which() == "can"]
+    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == "can")
     cached_params_raw = params.get("CarParamsCache")
-    has_cached_cp = cached_params_raw is not None
-    assert len(canmsgs) != 0, "CAN messages are required for fingerprinting"
-    assert os.environ.get("SKIP_FW_QUERY", False) or has_cached_cp, \
+    assert next(can_msgs, None), "CAN messages are required for fingerprinting"
+    assert os.environ.get("SKIP_FW_QUERY", False) or cached_params_raw is not None, \
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
-    for m in canmsgs[:300]:
-      can.send(m.as_builder().to_bytes())
-    can_callbacks = can_comm_callbacks(can, sendcan)
+    def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
+      return [next(can_msgs, [])]
 
     cached_params = None
-    if has_cached_cp:
+    if cached_params_raw is not None:
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(*can_callbacks, lambda obd: None, Params().get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
+    CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
 
   params.put("CarParams", CP.to_bytes())
 

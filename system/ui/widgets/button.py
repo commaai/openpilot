@@ -15,6 +15,7 @@ class ButtonStyle(IntEnum):
   TRANSPARENT = 3  # For buttons with transparent background and border
   ACTION = 4
   LIST_ACTION = 5  # For list items with action buttons
+  NO_EFFECT = 6
 
 
 class TextAlignment(IntEnum):
@@ -36,6 +37,7 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.ACTION: rl.Color(0, 0, 0, 255),
   ButtonStyle.LIST_ACTION: rl.Color(228, 228, 228, 255),
+  ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
 }
 
 BUTTON_BACKGROUND_COLORS = {
@@ -45,6 +47,7 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
   ButtonStyle.LIST_ACTION: rl.Color(57, 57, 57, 255),
+  ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
 }
 
 BUTTON_PRESSED_BACKGROUND_COLORS = {
@@ -54,6 +57,7 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.TRANSPARENT: rl.BLACK,
   ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
   ButtonStyle.LIST_ACTION: rl.Color(74, 74, 74, 74),
+  ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
 }
 
 _pressed_buttons: set[str] = set()  # Track mouse press state globally
@@ -166,6 +170,7 @@ class Button(Widget):
                text_alignment: TextAlignment = TextAlignment.CENTER,
                text_padding: int = 20,
                enabled: bool = True,
+               icon = None,
                ):
 
     super().__init__()
@@ -180,6 +185,7 @@ class Button(Widget):
     self._text_size = measure_text_cached(gui_app.font(font_weight), text, font_size)
     self._text_alignment = text_alignment
     self._text_padding = text_padding
+    self._icon = icon
     self.enabled = enabled
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
@@ -202,12 +208,29 @@ class Button(Widget):
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
 
     text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
-    if self._text_alignment == TextAlignment.LEFT:
-      text_pos.x = self._rect.x + self._text_padding
-    elif self._text_alignment == TextAlignment.CENTER:
-      text_pos.x = self._rect.x + (self._rect.width - self._text_size.x) // 2
-    elif self._text_alignment == TextAlignment.RIGHT:
-      text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
+    if self._icon:
+      icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
+      if self._text:
+        if self._text_alignment == TextAlignment.LEFT:
+          icon_x = self._rect.x + self._text_padding
+          text_pos.x = icon_x + self._icon.width + ICON_PADDING
+        elif self._text_alignment == TextAlignment.CENTER:
+          total_width = self._icon.width + ICON_PADDING + self._text_size.x
+          icon_x = self._rect.x + (self._rect.width - total_width) / 2
+          text_pos.x = icon_x + self._icon.width + ICON_PADDING
+        else:
+          text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
+          icon_x = text_pos.x - ICON_PADDING - self._icon.width
+      else:
+        icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
+      rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE if self.enabled else rl.Color(255, 255, 255, 100))
+    else:
+      if self._text_alignment == TextAlignment.LEFT:
+        text_pos.x = self._rect.x + self._text_padding
+      elif self._text_alignment == TextAlignment.CENTER:
+        text_pos.x = self._rect.x + (self._rect.width - self._text_size.x) // 2
+      elif self._text_alignment == TextAlignment.RIGHT:
+        text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
     rl.draw_text_ex(self._label_font, self._text, text_pos, self._font_size, 0, self._text_color)
 
 class ButtonRadio(Button):
@@ -220,8 +243,7 @@ class ButtonRadio(Button):
                text_padding: int = 20,
                ):
 
-    super().__init__(text, click_callback=click_callback, font_size=font_size, border_radius=border_radius, text_padding=text_padding)
-    self._icon = icon
+    super().__init__(text, click_callback=click_callback, font_size=font_size, border_radius=border_radius, text_padding=text_padding, icon=icon)
     self.selected = False
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
