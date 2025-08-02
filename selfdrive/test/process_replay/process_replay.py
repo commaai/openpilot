@@ -400,7 +400,7 @@ class ModeldCameraSyncRcvCallback:
 
 
 class MessageBasedRcvCallback:
-  def __init__(self, trigger_msg_type: str, first_frame: bool):
+  def __init__(self, trigger_msg_type: str, first_frame: bool = False):
     self.trigger_msg_type = trigger_msg_type
     self.first_frame = first_frame
 
@@ -443,7 +443,7 @@ CONFIGS = [
     subs=["carControl", "controlsState"],
     ignore=["logMonoTime", ],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("selfdriveState", False),
+    should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -498,7 +498,7 @@ CONFIGS = [
     ],
     subs=["livePose"],
     ignore=["logMonoTime"],
-    should_recv_callback=MessageBasedRcvCallback("cameraOdometry", False),
+    should_recv_callback=MessageBasedRcvCallback("cameraOdometry"),
     tolerance=NUMPY_TOLERANCE,
     unlocked_pubs=["accelerometer", "gyroscope"],
   ),
@@ -518,7 +518,7 @@ CONFIGS = [
     subs=["liveDelay"],
     ignore=["logMonoTime"],
     init_callback=get_car_params_callback,
-    should_recv_callback=MessageBasedRcvCallback("livePose", False),
+    should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
   ),
   ProcessConfig(
@@ -554,7 +554,7 @@ CONFIGS = [
     pubs=["liveCalibration", "driverCameraState"],
     subs=["driverStateV2"],
     ignore=["logMonoTime", "driverStateV2.modelExecutionTime", "driverStateV2.gpuExecutionTime"],
-    should_recv_callback=MessageBasedRcvCallback("driverCameraState", False),
+    should_recv_callback=MessageBasedRcvCallback("driverCameraState"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.020,
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("driverCameraState").stream),
