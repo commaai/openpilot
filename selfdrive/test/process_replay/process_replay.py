@@ -132,7 +132,7 @@ class ProcessConfig:
   ignore_alive_pubs: list[str] = field(default_factory=list)
 
   def __post_init__(self):
-    # If process is polling a service, we can just lock that one to speed up replay
+    # If the process is polling a service, we can just lock that one to speed up replay
     if self.main_pub is None and isinstance(self.should_recv_callback, MessageBasedRcvCallback):
       self.main_pub = self.should_recv_callback.trigger_msg_type
 
