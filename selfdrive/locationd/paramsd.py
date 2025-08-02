@@ -277,7 +277,9 @@ def main():
   learner = VehicleParamsLearner(CP, steer_ratio, stiffness_factor, np.radians(angle_offset_deg), pInitial)
 
   while True:
+    print('  PARAMSD before sm.update')
     sm.update()
+    print('  PARAMSD after sm.update')
     if sm.all_checks():
       for which in sorted(sm.updated.keys(), key=lambda x: sm.logMonoTime[x]):
         if sm.updated[which]:
