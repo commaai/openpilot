@@ -696,7 +696,6 @@ def _replay_multi_process(
       target_containers = pubs_to_containers[msg.which()]
       for container in target_containers:
         output_msgs = container.run_step(msg, frs)
-        times[container.cfg.proc_name] += time.monotonic() - t
         for m in output_msgs:
           if m.which() in all_pubs:
             internal_pub_queue.append(m)
