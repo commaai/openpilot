@@ -667,10 +667,12 @@ def _replay_multi_process(
   log_msgs = []
   containers = []
   try:
+    t = time.monotonic()
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
+    print(time.monotonic() - t, "s to start all processes")
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
