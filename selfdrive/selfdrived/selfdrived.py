@@ -312,12 +312,13 @@ class SelfdriveD:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
-    if self.sm['radarState'].radarErrors.canError:
-      self.events.add(EventName.canError)
-    elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
-      self.events.add(EventName.radarTempUnavailable)
-    elif any(getattr(self.sm['radarState'].radarErrors, f) for f in self.sm['radarState'].radarErrors.schema.fields):
-      self.events.add(EventName.radarFault)
+    if not self.sm.valid['radarState'] and self.sm.valid['carState'] and self.sm.valid['modelV2']:
+      if self.sm['radarState'].radarErrors.canError:
+        self.events.add(EventName.canError)
+      elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
+        self.events.add(EventName.radarTempUnavailable)
+      else:
+        self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:
