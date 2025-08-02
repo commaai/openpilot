@@ -11,7 +11,7 @@ from cereal import log
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
@@ -57,9 +57,22 @@ class Setup(Widget):
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.keyboard = Keyboard()
     self.selected_radio = None
-
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
+    self._low_voltage_continue_button = Button("Continue", self._low_voltage_continue_button_callback)
+    self._low_voltage_poweroff_button = Button("Power Off", HARDWARE.shutdown)
+    self._getting_started_button = Button("", self._getting_started_button_callback, button_style=ButtonStyle.PRIMARY, border_radius=0)
+    self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
+    self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
+    self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback,
+                                                      button_style=ButtonStyle.PRIMARY, enabled=False)
+    self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
+    self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
+    self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
+    self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
+    self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
+                                                 button_style=ButtonStyle.PRIMARY, enabled=False)
+
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -85,6 +98,32 @@ class Setup(Widget):
     elif self.state == SetupState.DOWNLOAD_FAILED:
       self.render_download_failed(rect)
 
+  def _low_voltage_continue_button_callback(self):
+    self.state = SetupState.GETTING_STARTED
+
+  def _getting_started_button_callback(self):
+    self.state = SetupState.NETWORK_SETUP
+    self.start_network_check()
+
+  def _software_selection_back_button_callback(self):
+    self.state = SetupState.NETWORK_SETUP
+
+  def _software_selection_continue_button_callback(self):
+    if self._software_selection_openpilot_button.selected:
+      self.download(OPENPILOT_URL)
+    else:
+      self.state = SetupState.CUSTOM_URL
+
+  def _download_failed_startover_button_callback(self):
+    self.state = SetupState.GETTING_STARTED
+
+  def _network_setup_back_button_callback(self):
+    self.state = SetupState.GETTING_STARTED
+
+  def _network_setup_continue_button_callback(self):
+    self.state = SetupState.SOFTWARE_SELECTION
+    self.stop_network_check_thread.set()
+
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
 
@@ -97,11 +136,8 @@ class Setup(Widget):
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Power off"):
-      HARDWARE.shutdown()
-
-    if gui_button(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT), "Continue"):
-      self.state = SetupState.GETTING_STARTED
+    self._low_voltage_poweroff_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
+    self._low_voltage_continue_button.render(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT))
 
   def render_getting_started(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + 165, rect.y + 280, rect.width - 265, TITLE_FONT_SIZE)
@@ -112,13 +148,9 @@ class Setup(Widget):
 
     btn_rect = rl.Rectangle(rect.width - NEXT_BUTTON_WIDTH, 0, NEXT_BUTTON_WIDTH, rect.height)
 
-    ret = gui_button(btn_rect, "", button_style=ButtonStyle.PRIMARY, border_radius=0)
+    self._getting_started_button.render(btn_rect)
     triangle = gui_app.texture("images/button_continue_triangle.png", 54, int(btn_rect.height))
     rl.draw_texture_v(triangle, rl.Vector2(btn_rect.x + btn_rect.width / 2 - triangle.width / 2, btn_rect.height / 2 - triangle.height / 2), rl.WHITE)
-
-    if ret:
-      self.state = SetupState.NETWORK_SETUP
-      self.start_network_check()
 
   def check_network_connectivity(self):
     while not self.stop_network_check_thread.is_set():
@@ -157,75 +189,43 @@ class Setup(Widget):
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
-      self.state = SetupState.GETTING_STARTED
+    self._network_setup_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
 
     # Check network connectivity status
     continue_enabled = self.network_connected.is_set()
+    self._network_setup_continue_button.enabled = continue_enabled
     continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
-
-    if gui_button(
-      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
-      continue_text,
-      button_style=ButtonStyle.PRIMARY if continue_enabled else ButtonStyle.NORMAL,
-      is_enabled=continue_enabled,
-    ):
-      self.state = SetupState.SOFTWARE_SELECTION
-      self.stop_network_check_thread.set()
+    self._network_setup_continue_button._text = continue_text
+    self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x + MARGIN, rect.y + MARGIN, rect.width - MARGIN * 2, TITLE_FONT_SIZE)
-    gui_label(title_rect, "Choose Software to Install", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
+    gui_label(title_rect, "Choose Software to Use", TITLE_FONT_SIZE, font_weight=FontWeight.MEDIUM)
 
     radio_height = 230
     radio_spacing = 30
 
+    self._software_selection_continue_button.enabled = False
+
     openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
-    openpilot_selected = self.selected_radio == "openpilot"
+    self._software_selection_openpilot_button.render(openpilot_rect)
 
-    rl.draw_rectangle_rounded(openpilot_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if openpilot_selected else rl.Color(79, 79, 79, 255))
-    gui_label(rl.Rectangle(openpilot_rect.x + 100, openpilot_rect.y, openpilot_rect.width - 200, radio_height), "openpilot", BODY_FONT_SIZE)
-
-    if openpilot_selected:
-      checkmark_pos = rl.Vector2(openpilot_rect.x + openpilot_rect.width - 100 - self.checkmark.width,
-                                 openpilot_rect.y + radio_height / 2 - self.checkmark.height / 2)
-      rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
+    if self._software_selection_openpilot_button.selected:
+      self._software_selection_continue_button.enabled = True
+      self._software_selection_custom_software_button.selected = False
 
     custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
-    custom_selected = self.selected_radio == "custom"
+    self._software_selection_custom_software_button.render(custom_rect)
 
-    rl.draw_rectangle_rounded(custom_rect, 0.1, 10, rl.Color(70, 91, 234, 255) if custom_selected else rl.Color(79, 79, 79, 255))
-    gui_label(rl.Rectangle(custom_rect.x + 100, custom_rect.y, custom_rect.width - 200, radio_height), "Custom Software", BODY_FONT_SIZE)
-
-    if custom_selected:
-      checkmark_pos = rl.Vector2(custom_rect.x + custom_rect.width - 100 - self.checkmark.width, custom_rect.y + radio_height / 2 - self.checkmark.height / 2)
-      rl.draw_texture_v(self.checkmark, checkmark_pos, rl.WHITE)
-
-    mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      if rl.check_collision_point_rec(mouse_pos, openpilot_rect):
-        self.selected_radio = "openpilot"
-      elif rl.check_collision_point_rec(mouse_pos, custom_rect):
-        self.selected_radio = "custom"
+    if self._software_selection_custom_software_button.selected:
+      self._software_selection_continue_button.enabled = True
+      self._software_selection_openpilot_button.selected = False
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
 
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Back"):
-      self.state = SetupState.NETWORK_SETUP
-
-    continue_enabled = self.selected_radio is not None
-    if gui_button(
-      rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT),
-      "Continue",
-      button_style=ButtonStyle.PRIMARY,
-      is_enabled=continue_enabled,
-    ):
-      if continue_enabled:
-        if self.selected_radio == "openpilot":
-          self.download(OPENPILOT_URL)
-        else:
-          self.state = SetupState.CUSTOM_URL
+    self._software_selection_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
+    self._software_selection_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_downloading(self, rect: rl.Rectangle):
     title_rect = rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE)
@@ -244,13 +244,8 @@ class Setup(Widget):
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2
     button_y = rect.height - BUTTON_HEIGHT - MARGIN
-
-    if gui_button(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT), "Reboot device"):
-      HARDWARE.reboot()
-
-    if gui_button(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT), "Start over",
-                  button_style=ButtonStyle.PRIMARY):
-      self.state = SetupState.GETTING_STARTED
+    self._download_failed_reboot_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
+    self._download_failed_startover_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_custom_url(self):
     def handle_keyboard_result(result):
@@ -265,6 +260,7 @@ class Setup(Widget):
       elif result == 0:
         self.state = SetupState.SOFTWARE_SELECTION
 
+    self.keyboard.reset()
     self.keyboard.set_title("Enter URL", "for Custom Software")
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
