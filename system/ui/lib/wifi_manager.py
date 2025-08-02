@@ -461,13 +461,16 @@ class WifiManager:
       for network in self.networks:
         network.is_connected = False
 
+      # BAD PASSWORD
       if new_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self.callbacks.need_auth:
         if self._current_connection_ssid:
+          asyncio.create_task(self.forget_connection(self._current_connection_ssid))
           self.callbacks.need_auth(self._current_connection_ssid)
         else:
           # Try to find the network from active_ap_path
           for network in self.networks:
             if network.path == self.active_ap_path:
+              asyncio.create_task(self.forget_connection(network.ssid))
               self.callbacks.need_auth(network.ssid)
               break
           else:
