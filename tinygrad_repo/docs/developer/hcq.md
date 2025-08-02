@@ -52,7 +52,7 @@ Signals are device-dependent structures used for synchronization and timing in H
 The following Python code demonstrates the usage of signals:
 
 ```python
-signal = your_device.signal_t()
+signal = your_device.new_signal(value=0)
 
 HWQueue().timestamp(signal) \
          .signal(signal, value_to_fire) \

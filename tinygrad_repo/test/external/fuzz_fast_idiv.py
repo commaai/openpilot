@@ -2,7 +2,7 @@ import random
 from z3 import Int, Solver, sat
 from tinygrad import dtypes, Device
 from tinygrad.uop.ops import UOp, Ops, UPat, graph_rewrite, PatternMatcher
-from tinygrad.codegen.devectorizer import fast_idiv
+from tinygrad.codegen.optional import fast_idiv
 random.seed(42)
 
 z3_renderer = PatternMatcher([

@@ -15,8 +15,8 @@ TESTED_BRANCHES = RELEASE_BRANCHES + ['devel', 'devel-staging', 'nightly-dev']
 
 BUILD_METADATA_FILENAME = "build.json"
 
-training_version: bytes = b"0.2.0"
-terms_version: bytes = b"2"
+training_version: str = "0.2.0"
+terms_version: str = "2"
 
 
 def get_version(path: str = BASEDIR) -> str:

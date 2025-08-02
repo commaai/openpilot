@@ -44,7 +44,7 @@ class CAR(Platforms):
     ChryslerCarSpecs(mass=2242., wheelbase=3.089, steerRatio=16.2),
   )
   CHRYSLER_PACIFICA_2019_HYBRID = ChryslerPlatformConfig(
-    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-24")],
+    [ChryslerCarDocs("Chrysler Pacifica Hybrid 2019-25")],
     CHRYSLER_PACIFICA_2018_HYBRID.specs,
   )
   CHRYSLER_PACIFICA_2018 = ChryslerPlatformConfig(

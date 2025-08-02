@@ -9,7 +9,6 @@ static void gpio_usb_init(void) {
   GPIOA->OSPEEDR = GPIO_OSPEEDR_OSPEED11 | GPIO_OSPEEDR_OSPEED12;
 }
 
-#ifdef ENABLE_SPI
 void gpio_spi_init(void) {
   set_gpio_alternate(GPIOE, 11, GPIO_AF5_SPI4);
   set_gpio_alternate(GPIOE, 12, GPIO_AF5_SPI4);
@@ -17,7 +16,6 @@ void gpio_spi_init(void) {
   set_gpio_alternate(GPIOE, 14, GPIO_AF5_SPI4);
   register_set_bits(&(GPIOE->OSPEEDR), GPIO_OSPEEDR_OSPEED11 | GPIO_OSPEEDR_OSPEED12 | GPIO_OSPEEDR_OSPEED13 | GPIO_OSPEEDR_OSPEED14);
 }
-#endif
 
 #ifdef BOOTSTUB
 void gpio_usart2_init(void) {
@@ -110,6 +108,7 @@ void peripherals_init(void) {
 
   // Analog
   RCC->AHB1ENR |= RCC_AHB1ENR_ADC12EN; // Enable ADC12 clocks
+  RCC->AHB4ENR |= RCC_AHB4ENR_ADC3EN; // Enable ADC3 clocks
   RCC->APB1LENR |= RCC_APB1LENR_DAC12EN; // DAC
 
   // Audio
@@ -128,7 +127,6 @@ void peripherals_init(void) {
 
 #ifdef PANDA_JUNGLE
   RCC->AHB3ENR |= RCC_AHB3ENR_SDMMC1EN; // SDMMC
-  RCC->AHB4ENR |= RCC_AHB4ENR_ADC3EN; // Enable ADC3 clocks
 #endif
 }
 

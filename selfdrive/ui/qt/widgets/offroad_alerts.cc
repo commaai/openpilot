@@ -32,15 +32,19 @@ AbstractAlert::AbstractAlert(bool hasRebootBtn, QWidget *parent) : QFrame(parent
   footer_layout->addWidget(dismiss_btn, 0, Qt::AlignBottom | Qt::AlignLeft);
   QObject::connect(dismiss_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
 
-  snooze_btn = new QPushButton(tr("Snooze Update"));
-  snooze_btn->setVisible(false);
-  snooze_btn->setFixedSize(550, 125);
-  footer_layout->addWidget(snooze_btn, 0, Qt::AlignBottom | Qt::AlignRight);
-  QObject::connect(snooze_btn, &QPushButton::clicked, [=]() {
-    params.putBool("SnoozeUpdate", true);
+  action_btn = new QPushButton();
+  action_btn->setVisible(false);
+  action_btn->setFixedHeight(125);
+  footer_layout->addWidget(action_btn, 0, Qt::AlignBottom | Qt::AlignRight);
+  QObject::connect(action_btn, &QPushButton::clicked, [=]() {
+    if (!alerts["Offroad_ExcessiveActuation"]->text().isEmpty()) {
+      params.remove("Offroad_ExcessiveActuation");
+    } else {
+      params.putBool("SnoozeUpdate", true);
+    }
   });
-  QObject::connect(snooze_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
-  snooze_btn->setStyleSheet(R"(color: white; background-color: #4F4F4F;)");
+  QObject::connect(action_btn, &QPushButton::clicked, this, &AbstractAlert::dismiss);
+  action_btn->setStyleSheet("color: white; background-color: #4F4F4F; padding-left: 60px; padding-right: 60px;");
 
   if (hasRebootBtn) {
     QPushButton *rebootBtn = new QPushButton(tr("Reboot and Update"));
@@ -107,7 +111,14 @@ int OffroadAlert::refresh() {
     label->setVisible(!text.isEmpty());
     alertCount += !text.isEmpty();
   }
-  snooze_btn->setVisible(!alerts["Offroad_ConnectivityNeeded"]->text().isEmpty());
+
+  action_btn->setVisible(!alerts["Offroad_ExcessiveActuation"]->text().isEmpty() || !alerts["Offroad_ConnectivityNeeded"]->text().isEmpty());
+  if (!alerts["Offroad_ExcessiveActuation"]->text().isEmpty()) {
+    action_btn->setText(tr("Acknowledge Excessive Actuation"));
+  } else {
+    action_btn->setText(tr("Snooze Update"));
+  }
+
   return alertCount;
 }
 

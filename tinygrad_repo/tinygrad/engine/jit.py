@@ -1,7 +1,7 @@
-from typing import TypeVar, Generic, Callable, Union, cast, Optional, Any
+from typing import TypeVar, Generic, Callable, cast, Any
 import functools, collections
 from tinygrad.tensor import Tensor
-from tinygrad.helpers import flatten, merge_dicts, DEBUG, Context, BEAM, getenv, colored, JIT, dedup, partition, unwrap
+from tinygrad.helpers import flatten, merge_dicts, DEBUG, Context, BEAM, getenv, colored, JIT, JIT_BATCH_SIZE, dedup, partition, unwrap
 from tinygrad.device import Buffer, Compiled, Device, MultiBuffer
 from tinygrad.dtype import DType
 from tinygrad.uop.ops import UOp, Variable, sym_infer, Ops
@@ -21,7 +21,7 @@ def apply_graph_to_jit(jit_cache: list[ExecItem], input_rawbuffers: list[Buffer]
   # This allows the accelerator to run some batches while subsequent graphs are still being updated.
   graphed_jit_cache: list[ExecItem] = []
   current_batch: list[ExecItem] = []
-  current_device: Optional[Compiled] = None
+  current_device: Compiled|None = None
 
   def flush_batch():
     nonlocal current_batch, current_device, max_batch_size
@@ -31,7 +31,7 @@ def apply_graph_to_jit(jit_cache: list[ExecItem], input_rawbuffers: list[Buffer]
       graph_runner = current_device.graph(current_batch, input_rawbuffers, var_vals)
       # clear jit inputs to allow their memory to be freed/reused
       for (j,i) in graph_runner.input_replace.keys(): graph_runner.jit_cache[j].bufs[i] = None
-      graphed_jit_cache.append(ExecItem(graph_runner, cast(list[Optional[Buffer]], input_rawbuffers)))
+      graphed_jit_cache.append(ExecItem(graph_runner, cast(list[Buffer|None], input_rawbuffers)))
       max_batch_size *= 2
       if DEBUG >= 2: print(f"JIT GRAPHing batch with {len(current_batch)} kernels on device {current_device}")
     except GraphException as e:
@@ -42,17 +42,13 @@ def apply_graph_to_jit(jit_cache: list[ExecItem], input_rawbuffers: list[Buffer]
 
   for ji in jit_cache:
     match ji.prg:
-      case CompiledRunner():
-        ji_graph_dev = ji.prg.dev
-        # All GraphRunners can graph CompiledRunners
-        can_be_graphed = ji_graph_dev.graph is not None
-      case BufferXfer():
-        ji_graph_dev = Device[unwrap(ji.bufs[0]).device]
-        # All *Multi*GraphRunner support graphing BufferXfers
-        can_be_graphed = ji_graph_dev.graph is not None and issubclass(graph_class(ji_graph_dev), MultiGraphRunner)
+      case CompiledRunner(): ji_graph_dev = ji.prg.dev
+      case BufferXfer(): ji_graph_dev = Device[unwrap(ji.bufs[0]).device]
+      case BufferCopy(): ji_graph_dev = next((Device[unwrap(b).device] for b in ji.bufs if unwrap(b).device not in {"CPU", "LLVM"}), None)
       case ViewOp(): continue # ViewOps are just ignored
-      case _: can_be_graphed = False # Everything else is not graphed and flushes existing graph if it's being constructed
+      case _: ji_graph_dev = None # Everything else is not graphed and flushes existing graph if it's being constructed
 
+    can_be_graphed = ji_graph_dev is not None and ji_graph_dev.graph is not None and graph_class(ji_graph_dev).supports_exec_item(ji_graph_dev, ji)
     is_multigraph = can_be_graphed and issubclass(graph_class(ji_graph_dev), MultiGraphRunner)
     can_share_graph = can_be_graphed and (type(ji_graph_dev) is type(current_device) if is_multigraph else ji_graph_dev == current_device)
     can_extend_graph_batch = can_share_graph and (max_batch_size == 0 or len(current_batch) < max_batch_size)
@@ -76,7 +72,7 @@ class GraphRunner(Runner):
     self.jit_cache = jit_cache  # NOTE: this is not used, but you have to keep these objects alive for the Graph
     self.input_replace:dict[tuple[int, int], int] = get_input_replace(jit_cache, input_rawbuffers)
     self.var_vals_replace:dict[int, list[tuple[int, int]]] = {}
-    self.launch_dims_replace:dict[int, tuple[Optional[int], Optional[int]]] = {}
+    self.launch_dims_replace:dict[int, tuple[int|None, int|None]] = {}
     self.launch_dims_base:dict[int, tuple[tuple[int, ...], tuple[int, ...]]] = {}
 
     def is_sym_dim(dim) -> bool: return not all(isinstance(d, (int, float)) for d in dim)
@@ -130,8 +126,13 @@ class GraphRunner(Runner):
 
     return list({id(x):x for x in wait_nodes}.values())
 
+  @staticmethod
+  def supports_exec_item(dev, ei:ExecItem) -> bool: return isinstance(ei.prg, CompiledRunner)
+
 # a marker for your graph supporting multiple devices of the same type
-class MultiGraphRunner(GraphRunner): pass
+class MultiGraphRunner(GraphRunner):
+  @staticmethod
+  def supports_exec_item(dev, ei:ExecItem) -> bool: return isinstance(ei.prg, (CompiledRunner, BufferXfer))
 
 def get_out_buffers_for_ei(ei:ExecItem) -> list[Buffer]:
   if isinstance(ei.prg, CompiledRunner): return [cast(Buffer, ei.bufs[out]) for out in ei.prg.p.outs if out not in ei.prg.p.ins]
@@ -149,7 +150,7 @@ class CapturedJit(Generic[ReturnType]):
   jit_cache: list[ExecItem]
   input_replace: dict[tuple[int, int], int]
   extra_view_inputs: list[tuple[int, int, str, int, DType]]
-  expected_names: list[Union[int, str]]
+  expected_names: list[int|str]
   expected_st_vars_dtype_device: list[tuple[ShapeTracker, tuple[Variable, ...], DType, str]]
 
   def __reduce__(self):
@@ -176,7 +177,7 @@ class CapturedJit(Generic[ReturnType]):
     self.__post_init__()   # reset the graph state
 
   def replan_buffers_memory_layout(self):
-    blacklist = [t.lazydata.buffer for t in get_parameters(self.ret)]
+    blacklist = [t.uop.buffer for t in get_parameters(self.ret)]
     asgn = _internal_memory_planner([[b for item in self.jit_cache for b in item.bufs if b is not None and b not in blacklist]], ignore_checks=True)
     self.jit_cache = [ExecItem(item.prg, [asgn.get(b,b) if b is not None else None for b in item.bufs]) for item in self.jit_cache]
     for old, new in asgn.items():
@@ -198,7 +199,7 @@ class CapturedJit(Generic[ReturnType]):
           if b is not None: b.ensure_allocated()
       # create graph if needed
       if JIT < 2:
-        self._jit_cache = apply_graph_to_jit(self.jit_cache, input_buffers, var_vals, max_batch_size=getenv("JIT_BATCH_SIZE", 32))
+        self._jit_cache = apply_graph_to_jit(self.jit_cache, input_buffers, var_vals, max_batch_size=JIT_BATCH_SIZE.value)
         self._input_replace = get_input_replace(self._jit_cache, input_buffers)
       self._first_run = False
 
@@ -210,9 +211,9 @@ class CapturedJit(Generic[ReturnType]):
 def _prepare_jit_inputs(args, kwargs):
   input_tensors: list[tuple[int|str, Tensor]] = [(name,t) for name,t in list(enumerate(args))+sorted(kwargs.items()) if t.__class__ is Tensor]
   names, tensors = [name for name,_ in input_tensors], [t for _,t in input_tensors]
-  if len(unrealized_tensors := [x for x in tensors if not x.lazydata.is_realized]): Tensor.realize(*unrealized_tensors)
+  if len(unrealized_tensors := [x for x in tensors if not x.uop.is_realized]): Tensor.realize(*unrealized_tensors)
   # TODO: this multi unpack stuff is not well tested.
-  lbs: list[UOp] = flatten([t.lazydata.src if t.lazydata.op is Ops.MULTI else [t.lazydata] for t in tensors])
+  lbs: list[UOp] = flatten([t.uop.src if t.uop.op is Ops.MULTI else [t.uop] for t in tensors])
   input_buffers: list[Buffer] = flatten([rb.bufs if isinstance(rb:=lb.base.realized, MultiBuffer) else [rb]
                                          for lb in lbs if lb.base.realized is not None])
   assert len(set(input_buffers)) == len(input_buffers), "duplicate inputs to JIT"
@@ -222,17 +223,17 @@ def _prepare_jit_inputs(args, kwargs):
   return input_buffers, var_vals, names, st_vars_dtype_device
 
 class TinyJit(Generic[ReturnType]):
-  def __init__(self, fxn:Optional[Callable[..., ReturnType]], captured:Optional[CapturedJit]=None, prune=False, optimize=False):
+  def __init__(self, fxn:Callable[..., ReturnType]|None, captured:CapturedJit|None=None, prune=False, optimize=False):
     assert fxn or captured, "need either a function or a CapturedJit"
     self.fxn = fxn
-    self.captured: Optional[CapturedJit] = captured
+    self.captured: CapturedJit|None = captured
     self.cnt: int = 2 if self.fxn is None else 0
     self.prune = prune
     self.optimize = optimize
 
   def add_buffer(self, b:Buffer) -> Buffer:
     if found:=self._buffer_replace.get(b, None): return found
-    if b.is_allocated() or b.lb_refcount > 0: return b
+    if b.is_allocated() or b.uop_refcount > 0: return b
     if b._base is not None:
       self._buffer_replace[b] = ret = Buffer(b.device, b.size, b.dtype, base=self.add_buffer(b._base), offset=b.offset)
     else:

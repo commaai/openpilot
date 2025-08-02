@@ -9,7 +9,7 @@
 
 class Sparkline {
 public:
-  void update(const MessageId &msg_id, const cabana::Signal *sig, double last_msg_ts, int range, QSize size);
+  void update(const cabana::Signal *sig, CanEventIter first, CanEventIter last, int range, QSize size);
   inline double freq() const { return freq_; }
   bool isEmpty() const { return pixmap.isNull(); }
 
@@ -20,6 +20,7 @@ public:
 private:
   void render(const QColor &color, int range, QSize size);
 
-  std::vector<QPointF> points;
+  std::vector<QPointF> points_;
+  std::vector<QPointF> render_points_;
   double freq_ = 0;
 };

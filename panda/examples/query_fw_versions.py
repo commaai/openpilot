@@ -75,7 +75,7 @@ if __name__ == "__main__":
       if args.bus:
         bus = int(args.bus)
       else:
-        bus = 1 if panda.has_obd() else 0
+        bus = 1
       rx_addr = addr + int(args.rxoffset, base=16) if args.rxoffset else None
 
       # Try all sub-addresses for addr. By default, this is None

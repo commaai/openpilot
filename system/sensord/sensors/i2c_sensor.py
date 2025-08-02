@@ -40,6 +40,11 @@ class Sensor:
   def device_address(self) -> int:
     raise NotImplementedError
 
+  def reset(self) -> None:
+    # optional.
+    # not part of init due to shared registers
+    pass
+
   def init(self) -> None:
     raise NotImplementedError
 

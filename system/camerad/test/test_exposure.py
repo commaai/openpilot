@@ -33,8 +33,8 @@ class TestCamerad:
   @with_processes(['camerad'])
   def test_camera_operation(self):
     passed = 0
-    start = time.time()
-    while time.time() - start < TEST_TIME and passed < REPEAT:
+    start = time.monotonic()
+    while time.monotonic() - start < TEST_TIME and passed < REPEAT:
       rpic, dpic = get_snapshots(frame="roadCameraState", front_frame="driverCameraState")
       wpic, _ = get_snapshots(frame="wideRoadCameraState")
 

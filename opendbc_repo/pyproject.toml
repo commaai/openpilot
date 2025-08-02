@@ -9,16 +9,12 @@ requires-python = ">=3.9,<3.13"  # pycapnp doesn't work with 3.13
 
 urls = { "homepage" = "https://github.com/commaai/opendbc" }
 
-# setuptools includes distutils which is needed by Cython.
-# distutils was removed in python3.12 from the standard library.
 dependencies = [
   "scons",
   "numpy",
-  "Cython",
   "crcmod",
   "tqdm",
   "pycapnp",
-  "setuptools",
   "pycryptodome",
 ]
 
@@ -30,7 +26,8 @@ testing = [
   "pytest-coverage",
   "pytest-mock",
   "pytest-randomly",
-  "pytest-xdist",
+  # https://github.com/pytest-dev/pytest-xdist/pull/1229
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
   "pytest-subtests",
   "hypothesis==6.47.*",
   "parameterized>=0.8,<0.9",
@@ -40,7 +37,6 @@ testing = [
   "ty",
   "lefthook",
   "cpplint",
-  "cython-lint",
   "codespell",
 ]
 docs = [
@@ -68,10 +64,6 @@ quiet-level = 3
 ignore-words-list = "alo,ba,bu,deque,hda,grey,arange"
 builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
 check-hidden = true
-
-[tool.cython-lint]
-max-line-length = 120
-ignore = ["E111", "E114"]
 
 [tool.mypy]
 # helpful warnings

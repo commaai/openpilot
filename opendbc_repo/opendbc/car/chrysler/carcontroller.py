@@ -1,5 +1,6 @@
-from opendbc.can.packer import CANPacker
-from opendbc.car import Bus, DT_CTRL, apply_meas_steer_torque_limits
+from opendbc.can import CANPacker
+from opendbc.car import Bus, DT_CTRL
+from opendbc.car.lateral import apply_meas_steer_torque_limits
 from opendbc.car.chrysler import chryslercan
 from opendbc.car.chrysler.values import RAM_CARS, CarControllerParams, ChryslerFlags
 from opendbc.car.interfaces import CarControllerBase

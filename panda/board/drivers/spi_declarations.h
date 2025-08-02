@@ -1,6 +1,6 @@
 #pragma once
 
-#include "crc.h"
+#include "board/crc.h"
 
 #define SPI_TIMEOUT_US 10000U
 
@@ -35,7 +35,7 @@ enum {
   SPI_STATE_DATA_TX
 };
 
-extern uint16_t spi_checksum_error_count;
+extern uint16_t spi_error_count;
 
 #define SPI_HEADER_SIZE 7U
 
@@ -45,8 +45,6 @@ void llspi_mosi_dma(uint8_t *addr, int len);
 void llspi_miso_dma(uint8_t *addr, int len);
 
 void can_tx_comms_resume_spi(void);
-#if defined(ENABLE_SPI) || defined(BOOTSTUB)
 void spi_init(void);
 void spi_rx_done(void);
 void spi_tx_done(bool reset);
-#endif

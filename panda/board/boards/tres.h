@@ -133,7 +133,6 @@ static void tres_init(void) {
 }
 
 static harness_configuration tres_harness_config = {
-  .has_harness = true,
   .GPIO_SBU1 = GPIOC,
   .GPIO_SBU2 = GPIOA,
   .GPIO_relay_SBU1 = GPIOA,
@@ -142,14 +141,13 @@ static harness_configuration tres_harness_config = {
   .pin_SBU2 = 1,
   .pin_relay_SBU1 = 8,
   .pin_relay_SBU2 = 3,
-  .adc_channel_SBU1 = 4, // ADC12_INP4
-  .adc_channel_SBU2 = 17 // ADC1_INP17
+  .adc_signal_SBU1 = ADC_CHANNEL_DEFAULT(ADC1, 4),
+  .adc_signal_SBU2 = ADC_CHANNEL_DEFAULT(ADC1, 17)
 };
 
 board board_tres = {
   .harness_config = &tres_harness_config,
   .has_spi = true,
-  .has_canfd = true,
   .fan_max_rpm = 6600U,
   .fan_max_pwm = 100U,
   .avdd_mV = 1800U,
@@ -161,7 +159,6 @@ board board_tres = {
   .led_GPIO = {GPIOE, GPIOE, GPIOE},
   .led_pin = {4, 3, 2},
   .set_can_mode = tres_set_can_mode,
-  .check_ignition = red_check_ignition,
   .read_voltage_mV = red_read_voltage_mV,
   .read_current_mA = unused_read_current,
   .set_fan_enabled = tres_set_fan_enabled,

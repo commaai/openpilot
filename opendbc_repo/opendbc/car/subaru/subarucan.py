@@ -319,3 +319,14 @@ def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")
 
   return packer.make_can_msg("ES_Distance", CanBus.main, values)
+
+
+def subaru_checksum(address: int, sig, d: bytearray) -> int:
+  s = 0
+  addr = address
+  while addr:
+    s += addr & 0xFF
+    addr >>= 8
+  for i in range(1, len(d)):
+    s += d[i]
+  return s & 0xFF

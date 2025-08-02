@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, AngleSteeringLimits
+from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms
+from opendbc.car.lateral import AngleSteeringLimits
 from opendbc.car.structs import CarParams, CarState
 from opendbc.car.docs_definitions import CarDocs, CarFootnote, CarHarness, CarParts, Column
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries
@@ -54,6 +55,10 @@ class CAR(Platforms):
       TeslaCarDocsHW4("Tesla Model Y (with HW4) 2024"),
      ],
     CarSpecs(mass=2072., wheelbase=2.890, steerRatio=12.0),
+  )
+  TESLA_MODEL_X = TeslaPlatformConfig(
+    [TeslaCarDocsHW4("Tesla Model X (with HW4) 2024")],
+    CarSpecs(mass=2495., wheelbase=2.960, steerRatio=12.0),
   )
 
 

@@ -92,21 +92,21 @@ class TestRivianSafetyBase(common.PandaCarSafetyTest, common.DriverTorqueSteerin
   def test_rx_hook(self):
     # checksum, counter, and quality flag checks
     for quality_flag in (True, False):
-      for msg in ("speed", "speed_2"):
+      for msg_type in ("speed", "speed_2"):
         self.safety.set_controls_allowed(True)
         # send multiple times to verify counter checks
         for _ in range(10):
-          if msg == "speed":
-            to_push = self._speed_msg(0, quality_flag=quality_flag)
-          elif msg == "speed_2":
-            to_push = self._speed_msg_2(0, quality_flag=quality_flag)
+          if msg_type == "speed":
+            msg = self._speed_msg(0, quality_flag=quality_flag)
+          elif msg_type == "speed_2":
+            msg = self._speed_msg_2(0, quality_flag=quality_flag)
 
-          self.assertEqual(quality_flag, self._rx(to_push))
+          self.assertEqual(quality_flag, self._rx(msg))
           self.assertEqual(quality_flag, self.safety.get_controls_allowed())
 
         # Mess with checksum to make it fail
-        to_push[0].data[0] = 0xff
-        self.assertFalse(self._rx(to_push))
+        msg[0].data[0] = 0xff
+        self.assertFalse(self._rx(msg))
         self.assertFalse(self.safety.get_controls_allowed())
 
 

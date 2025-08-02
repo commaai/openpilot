@@ -34,7 +34,7 @@ print(out) # <Tensor <UOp METAL (1,) int (<Ops.ASSIGN: 66>, None)> on METAL with
 The multiply Tensor stays the same because it is fused. The output Tensor's UOp becomes a new ASSIGN UOp:
 
 ```py
-print(out.lazydata)
+print(out.uop)
 ```
 
 The first source is the output BUFFER:
@@ -72,7 +72,7 @@ Once a Tensor is kernelized, all children will LOAD its BUFFER, instead of fusin
 ```py
 child = out+2
 child.kernelize()
-print(child.lazydata.src[1].arg.ast)
+print(child.uop.src[1].arg.ast)
 ```
 
 ```

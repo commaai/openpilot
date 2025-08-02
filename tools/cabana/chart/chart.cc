@@ -45,7 +45,7 @@ ChartView::ChartView(const std::pair<double, double> &x_range, ChartsWidget *par
   createToolButtons();
   setRubberBand(QChartView::HorizontalRubberBand);
   setMouseTracking(true);
-  setTheme(settings.theme == DARK_THEME ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
+  setTheme(utils::isDarkTheme() ? QChart::QChart::ChartThemeDark : QChart::ChartThemeLight);
   signal_value_font.setPointSize(9);
 
   QObject::connect(axis_y, &QValueAxis::rangeChanged, this, &ChartView::resetChartCache);
@@ -747,7 +747,7 @@ void ChartView::drawTimeline(QPainter *painter) {
   QRectF time_str_rect(QPointF(x - time_str_size.width() / 2.0, plot_area.bottom() + AXIS_X_TOP_MARGIN), time_str_size);
   QPainterPath path;
   path.addRoundedRect(time_str_rect, 3, 3);
-  painter->fillPath(path, settings.theme == DARK_THEME ? Qt::darkGray : Qt::gray);
+  painter->fillPath(path, utils::isDarkTheme() ? Qt::darkGray : Qt::gray);
   painter->setPen(palette().color(QPalette::BrightText));
   painter->setFont(axis_x->labelsFont());
   painter->drawText(time_str_rect, Qt::AlignCenter, time_str);

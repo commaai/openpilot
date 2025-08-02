@@ -47,7 +47,7 @@ mutations = random.sample(mutations, 2)  # can remove this once cppcheck is fast
 def test_misra_mutation(fn, rule, transform, should_fail):
   with tempfile.TemporaryDirectory() as tmp:
     shutil.copytree(ROOT, tmp, dirs_exist_ok=True,
-                    ignore=shutil.ignore_patterns('.venv', 'cppcheck', '.git', '*.ctu-info'))
+                    ignore=shutil.ignore_patterns('.venv', 'cppcheck', '.git', '*.ctu-info', '.hypothesis'))
 
     # apply patch
     if fn is not None:

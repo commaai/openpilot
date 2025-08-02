@@ -30,7 +30,7 @@ WORKSIZE_ROW = 16
 WORKSIZE_COL = 1
 LOCAL_SIZE = [32, WORKSIZE_COL, WORKSIZE_ROW]
 GLOBAL_SIZE = [M//(LOCAL_SIZE[0]*LOCAL_SIZE[1]*4), 1, 1]
-prog = MetalProgram(device, "test", MetalCompiler(device).compile(f"""
+prog = MetalProgram(device, "test", MetalCompiler().compile(f"""
 #include <metal_stdlib>
 using namespace metal;
 kernel void test(device float* data0, const device float* data1, const device float* data2, uint3 gid [[threadgroup_position_in_grid]], uint3 lid [[thread_position_in_threadgroup]]) {{

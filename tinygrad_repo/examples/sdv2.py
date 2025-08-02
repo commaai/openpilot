@@ -107,7 +107,6 @@ if __name__ == "__main__":
   assert args.width  % F == 0, f"img_width must be multiple of {F}, got {args.width}"
   assert args.height % F == 0, f"img_height must be multiple of {F}, got {args.height}"
 
-  Tensor.no_grad = True
   if args.seed is not None:
     Tensor.manual_seed(args.seed)
 

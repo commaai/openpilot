@@ -78,7 +78,8 @@ class CarSpecificEvents:
         events.add(EventName.manualRestart)
 
     elif self.CP.brand == 'toyota':
-      events = self.create_common_events(CS, CS_prev)
+      # TODO: when we check for unexpected disengagement, check gear not S1, S2, S3
+      events = self.create_common_events(CS, CS_prev, extra_gears=[GearShifter.sport])
 
       if self.CP.openpilotLongitudinalControl:
         if CS.cruiseState.standstill and not CS.brakePressed:

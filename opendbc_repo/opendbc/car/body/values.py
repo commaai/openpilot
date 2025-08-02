@@ -21,7 +21,7 @@ class CarControllerParams:
 
 class CAR(Platforms):
   COMMA_BODY = PlatformConfig(
-    [CarDocs("comma body", package="All")],
+    [CarDocs("comma body", package="All", video="https://youtu.be/VT-i3yRsX2s?t=2736")],
     CarSpecs(mass=9, wheelbase=0.406, steerRatio=0.5, centerToFrontRatio=0.44),
     {Bus.main: 'comma_body'},
   )

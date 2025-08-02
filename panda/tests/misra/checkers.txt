@@ -5,7 +5,7 @@ Cppcheck checkers list from test_misra.sh:
 
 
 TEST variant options:
---enable=all --disable=unusedFunction -DPANDA --addon=misra -DSTM32F4 -DSTM32F413xx /board/main.c
+--enable=all --disable=unusedFunction --addon=misra -DSTM32F4 -DSTM32F413xx -I /board/stm32f4/inc/ /board/main.c
 
 
 Critical errors
@@ -460,7 +460,7 @@ Not available, Cppcheck Premium is not used
 
 
 TEST variant options:
---enable=all --disable=unusedFunction -DPANDA --addon=misra -DSTM32H7 -DSTM32H725xx /board/main.c
+--enable=all --disable=unusedFunction --addon=misra -DSTM32H7 -DSTM32H725xx -I /board/stm32h7/inc/ /board/main.c
 
 
 Critical errors

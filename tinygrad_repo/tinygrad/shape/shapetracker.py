@@ -2,12 +2,12 @@
 from __future__ import annotations
 from dataclasses import dataclass
 import functools
-from typing import Optional, Callable
+from typing import Callable
 from tinygrad.helpers import merge_dicts, getenv
-from tinygrad.shape.view import View, strides_for_shape, unravel
+from tinygrad.shape.view import View, unravel
 from tinygrad.dtype import dtypes
 from tinygrad.uop.ops import UOp, Ops, graph_rewrite, Variable, sint, sint_to_uop, Context, PatternMatcher, UPat, GroupOp
-from tinygrad.codegen.symbolic import split_uop, symbolic_flat, uop_given_valid, simplify_valid
+from tinygrad.uop.symbolic import split_uop, symbolic_flat, uop_given_valid, simplify_valid
 
 # If a node overflow, its srcs need to be checked to see if this overflow is the result of an ALU operation,
 # or that the node simply inherits the dtype from srcs. Upcast is either `Ops.CAST`+`replace` or just `replace`.
@@ -23,24 +23,25 @@ def handle_upcast(u: UOp) -> UOp|None:
 pm_upcast = PatternMatcher([(UPat(GroupOp.ALU, dtype=dtypes.int, name="u"), handle_upcast),])
 
 @functools.cache
-def views_to_indexed_uops(views: tuple[View, ...], _idxs:Optional[tuple[UOp, ...]]=None) -> tuple[UOp, UOp]:
+def views_to_indexed_uops(views: tuple[View, ...], _idxs:tuple[UOp, ...]|None=None) -> tuple[UOp, UOp]:
   idx, valid = views[-1].to_indexed_uops(_idxs)
   for view in reversed(views[0:-1]):
     view = view.minify()
     idx, valid = view.to_indexed_uops([sint_to_uop(i) for i in unravel(view.shape, idx)], valid)
-  # symbolic
-  idx, valid = graph_rewrite(UOp.sink(idx, valid), symbolic_flat, name="indexing sym @ 1").src
-  # simplify
-  if (newvalid:=simplify_valid(valid)) is not None: valid = newvalid
-  if (newidx:=uop_given_valid(valid, idx)) is not None: idx = newidx
-  # symbolic again, upcast if needed
-  return graph_rewrite(UOp.sink(idx, valid), symbolic_flat+pm_upcast, name="indexing sym @ 2").src
+  with Context(TRACK_MATCH_STATS=0):
+    # symbolic
+    idx, valid = graph_rewrite(UOp.sink(idx, valid), symbolic_flat, name="indexing sym @ 1").src
+    # simplify
+    if (newvalid:=simplify_valid(valid)) is not None: valid = newvalid
+    if (newidx:=uop_given_valid(valid, idx)) is not None: idx = newidx
+    # symbolic again, upcast if needed
+    return graph_rewrite(UOp.sink(idx, valid), symbolic_flat+pm_upcast, name="indexing sym @ 2").src
 
 @functools.cache
-def views_to_real_strides(views: tuple[View, ...], ignore_valid=False) -> tuple[Optional[sint], ...]:
+def views_to_real_strides(views: tuple[View, ...], ignore_valid=False) -> tuple[sint|None, ...]:
   # NOTE: if a stride is not always valid, it will be None
   if len(views) == 1 and views[-1].mask is None: return views[-1].strides
-  ret: list[Optional[sint]] = [None] * len(views[-1].shape)
+  ret: list[sint|None] = [None] * len(views[-1].shape)
   idx, valid = views_to_indexed_uops(views)
   for c in split_uop(idx, Ops.ADD):
     if c.op is Ops.RANGE: ret[c.arg] = 1
@@ -61,7 +62,7 @@ class ShapeTracker:
     for v in st.views: ret = ShapeTracker(ret.views + (v,)).simplify() # one view at a time = better simplification
     return ret
 
-  def invert(self, out_shape:tuple[sint, ...]) -> Optional[ShapeTracker]:
+  def invert(self, out_shape:tuple[sint, ...]) -> ShapeTracker|None:
     inverted_views:list[View] = []
     for v,s in zip(self.views[::-1], [x.shape for x in self.views[::-1][1:]]+[out_shape]):
       if (inverted:= v.invert(s)) is None: return None
@@ -75,9 +76,6 @@ class ShapeTracker:
   def contiguous(self) -> bool: return len(self.views) == 1 and self.views[0].contiguous
 
   @property
-  def consecutive(self) -> bool: return len(self.views) == 1 and (v:=self.views[0]).mask is None and v.strides == strides_for_shape(v.shape)
-
-  @property
   def shape(self) -> tuple[sint, ...]: return self.views[-1].shape
 
   @property
@@ -85,8 +83,7 @@ class ShapeTracker:
 
   def reduce(self, axis:tuple[int, ...]) -> tuple[sint, ...]: return tuple(1 if i in axis else s for i,s in enumerate(self.shape))
 
-  def to_uop(self) -> UOp: return UOp(Ops.VIEW, dtypes.void, (), self)
-  def to_indexed_uops(self, _idxs:Optional[list[UOp]|tuple[UOp, ...]]=None) -> tuple[UOp, UOp]:
+  def to_indexed_uops(self, _idxs:list[UOp]|tuple[UOp, ...]|None=None) -> tuple[UOp, UOp]:
     return views_to_indexed_uops(self.views, tuple(_idxs) if _idxs is not None else None)
 
   # upper bound on buffer size required to fit this shapetracker
@@ -108,7 +105,7 @@ class ShapeTracker:
     return ShapeTracker(tuple(unbound_views)), merge_dicts(var_vals)
   def substitute(self, dvars:dict[UOp, UOp]): return ShapeTracker(tuple(x.substitute(dvars) for x in self.views))
 
-  def real_strides(self, ignore_valid=False) -> tuple[Optional[sint], ...]:
+  def real_strides(self, ignore_valid=False) -> tuple[sint|None, ...]:
     with Context(TRACK_MATCH_STATS=0): return views_to_real_strides(self.views, ignore_valid)
   def unit_stride_axes(self, ignore_valid=False) -> list[int]: return [i for i,st in enumerate(self.real_strides(ignore_valid)) if st == 1]
 

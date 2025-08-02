@@ -62,7 +62,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
           print("waiting for iframe")
         continue
       time_q.append(time.monotonic())
-      network_latency = (int(time.time()*1e9) - evta.unixTimestampNanos)/1e6
+      network_latency = (int(time.time()*1e9) - evta.unixTimestampNanos)/1e6  # noqa: TID251
       frame_latency = ((evta.idx.timestampEof/1e9) - (evta.idx.timestampSof/1e9))*1000
       process_latency = ((evt.logMonoTime/1e9) - (evta.idx.timestampEof/1e9))*1000
 

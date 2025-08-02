@@ -1,9 +1,25 @@
 import unittest
-from tinygrad import Tensor, GlobalCounters, dtypes
+import numpy as np
+from tinygrad import Tensor, GlobalCounters, dtypes, Context, nn
 from tinygrad.uop.ops import Ops
 from tinygrad.helpers import Timing, CI, Profiling, WINO, DEBUG, getenv
-from tinygrad.codegen.kernel import Kernel
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.opt.kernel import Kernel
+from tinygrad.opt.heuristic import hand_coded_optimizations
+
+class TestWinogradClose(unittest.TestCase):
+  def test_close(self):
+    inp = Tensor.rand(1, 16, 16, 16)
+    conv = nn.Conv2d(16, 16, 3)
+    conv(inp).realize() # warmup
+    GlobalCounters.reset()
+    print("non winograd")
+    with Context(WINO=0):
+      cmp = conv(inp).realize() # warmup
+    GlobalCounters.reset()
+    print("winograd")
+    with Context(WINO=1):
+      test = conv(inp).realize()
+    np.testing.assert_allclose(cmp.numpy(), test.numpy(), atol=1e-5)
 
 class TestWinograd(unittest.TestCase):
   def setUp(self):
@@ -28,7 +44,6 @@ class TestWinograd(unittest.TestCase):
       with Timing(f"linearize {i} with {len(ops):4d} ops: "):
         l = Kernel(s.ast)
         l.apply_opts(hand_coded_optimizations(l))
-        l.linearize()
       assert len(l.sts) <= 256  # just the current value to prevent regression
       if DEBUG >= 2: print(f"{len(l.sts):4d} shapetrackers with max {max(len(x.views) for x in l.sts)} views")
       for st in l.sts:

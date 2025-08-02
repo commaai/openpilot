@@ -22,7 +22,7 @@ This will produce a binary in the `extra/remu/target/release` directory.
 
 The latest binaries are released in https://github.com/Qazalin/remu/releases. Alternatively, you can [build locally](#build-locally).
 
-Tinygrad does not yet output RDNA3 kernels directly. You can either install comgr or use `AMD_LLVM=1` if you have [LLVM@19](https://github.com/tinygrad/tinygrad/blob/e2ed673c946c8f1774d816c75e52a994c2dd8a88/.github/actions/setup-tinygrad/action.yml#L208).
+Tinygrad does not yet output RDNA3 kernels directly. You can either install comgr or use `AMD_LLVM=1` (default) if you have [LLVM@19](https://github.com/tinygrad/tinygrad/blob/e2ed673c946c8f1774d816c75e52a994c2dd8a88/.github/actions/setup-tinygrad/action.yml#L208).
 
 `PYTHONPATH="." MOCKGPU=1 AMD=1 python test/test_tiny.py TestTiny.test_plus` runs an emulated RDNA3 kernel with Remu.
 

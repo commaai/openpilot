@@ -9,7 +9,7 @@ if [[ ! $(clang2py -V) ]]; then
   pip install clang==14.0.6
   git clone https://github.com/nimlgen/ctypeslib.git
   cd ctypeslib
-  pip install --user .
+  pip install .
   clang2py -V
   popd
 fi
@@ -83,11 +83,12 @@ generate_kfd() {
   sed -i "/import functools/a from tinygrad.runtime.support.hcq import FileIOInterface" $BASE/kfd.py
   sed -i "s/def _do_ioctl(__idir, __base, __nr, __user_struct, __fd, \*\*kwargs):/def _do_ioctl(__idir, __base, __nr, __user_struct, __fd:FileIOInterface, \*\*kwargs):/g" $BASE/kfd.py
   sed -i "s/fcntl.ioctl(__fd, (__idir<<30)/__fd.ioctl((__idir<<30)/g" $BASE/kfd.py
+  sed -i "s/!!/not not /g" $BASE/kfd.py
   python3 -c "import tinygrad.runtime.autogen.kfd"
 }
 
 generate_cuda() {
-  clang2py /usr/include/cuda.h -o $BASE/cuda.py -l /usr/lib/x86_64-linux-gnu/libcuda.so
+  clang2py /usr/include/cuda.h --clang-args="-D__CUDA_API_VERSION_INTERNAL" -o $BASE/cuda.py -l /usr/lib/x86_64-linux-gnu/libcuda.so
   sed -i "s\import ctypes\import ctypes, ctypes.util\g" $BASE/cuda.py
   sed -i "s\ctypes.CDLL('/usr/lib/x86_64-linux-gnu/libcuda.so')\ctypes.CDLL(ctypes.util.find_library('cuda'))\g" $BASE/cuda.py
   fixup $BASE/cuda.py
@@ -117,7 +118,9 @@ generate_nv() {
   clang2py -k cdefstum \
     extra/nv_gpu_driver/clc6c0qmd.h \
     extra/nv_gpu_driver/clcec0qmd.h \
+    $NVKERN_SRC/src/common/sdk/nvidia/inc/class/cl0000.h \
     $NVKERN_SRC/src/common/sdk/nvidia/inc/class/cl0080.h \
+    $NVKERN_SRC/src/common/sdk/nvidia/inc/class/cl2080.h \
     $NVKERN_SRC/src/common/sdk/nvidia/inc/class/cl2080_notification.h \
     $NVKERN_SRC/src/common/sdk/nvidia/inc/class/clc56f.h \
     $NVKERN_SRC/src/common/sdk/nvidia/inc/class/clc86f.h \
@@ -146,6 +149,7 @@ generate_nv() {
     $NVKERN_SRC/src/common/sdk/nvidia/inc/ctrl/ctrlc36f.h \
     $NVKERN_SRC/src/common/sdk/nvidia/inc/ctrl/ctrlcb33.h \
     $NVKERN_SRC/src/common/sdk/nvidia/inc/ctrl/ctrla06c.h \
+    $NVKERN_SRC/src/common/sdk/nvidia/inc/ctrl/ctrl90f1.h \
     --clang-args="-include $NVKERN_SRC/src/common/sdk/nvidia/inc/nvtypes.h -I$NVKERN_SRC/src/common/inc -I$NVKERN_SRC/kernel-open/nvidia-uvm -I$NVKERN_SRC/kernel-open/common/inc -I$NVKERN_SRC/src/common/sdk/nvidia/inc -I$NVKERN_SRC/src/nvidia/arch/nvalloc/unix/include -I$NVKERN_SRC/src/common/sdk/nvidia/inc/ctrl" \
     -o $BASE/nv_gpu.py
   fixup $BASE/nv_gpu.py
@@ -154,6 +158,7 @@ generate_nv() {
   sed -i 's/#\?\s\([A-Za-z0-9_]\+\) = MW ( \([0-9]\+\) : \([0-9]\+\) )/\1 = (\2 , \3)/' $BASE/nv_gpu.py # NVC6C0_QMDV03_00 processing
   sed -i 's/#\sdef NVC6C0_QMD\([A-Za-z0-9_()]\+\):/def NVC6C0_QMD\1:/' $BASE/nv_gpu.py
   sed -i 's/#\sdef NVCEC0_QMD\([A-Za-z0-9_()]\+\):/def NVCEC0_QMD\1:/' $BASE/nv_gpu.py
+  sed -E -i -n '/^def (NVCEC0_QMDV05_00_RELEASE)(_ENABLE)\(i\):/{p;s//\1'"0"'\2=\1\2(0)\n\1'"1"'\2=\1\2(1)/;H;b};p;${x;s/^\n//;p}' "$BASE/nv_gpu.py"
   sed -i 's/#\s*return MW(\([0-9i()*+]\+\):\([0-9i()*+]\+\))/    return (\1 , \2)/' $BASE/nv_gpu.py
   sed -i 's/#\?\s*\(.*\)\s*=\s*\(NV\)\?BIT\(32\)\?\s*(\s*\([0-9]\+\)\s*)/\1 = (1 << \4)/' $BASE/nv_gpu.py # name = BIT(x) -> name = (1 << x)
   sed -i "s/UVM_\([A-Za-z0-9_]\+\) = \['i', '(', '\([0-9]\+\)', ')'\]/UVM_\1 = \2/" $BASE/nv_gpu.py # UVM_name = ['i', '(', '<num>', ')'] -> UVM_name = <num>
@@ -162,8 +167,30 @@ generate_nv() {
   sed -n '1i\
 nv_status_codes = {}
 /^NV_STATUS_CODE/ { s/^NV_STATUS_CODE(\([^,]*\), *\([^,]*\), *"\([^"]*\)") *.*$/\1 = \2\nnv_status_codes[\1] = "\3"/; p }' $NVKERN_SRC/src/common/sdk/nvidia/inc/nvstatuscodes.h >> $BASE/nv_gpu.py
-
   python3 -c "import tinygrad.runtime.autogen.nv_gpu"
+
+  clang2py -k cdefstum \
+    $NVKERN_SRC/src/nvidia/inc/kernel/gpu/fsp/kern_fsp_cot_payload.h \
+    $NVKERN_SRC/src/nvidia/arch/nvalloc/common/inc/gsp/gspifpub.h \
+    $NVKERN_SRC/src/nvidia/arch/nvalloc/common/inc/gsp/gsp_fw_wpr_meta.h \
+    $NVKERN_SRC/src/nvidia/arch/nvalloc/common/inc/gsp/gsp_fw_sr_meta.h \
+    $NVKERN_SRC/src/nvidia/inc/kernel/gpu/gsp/gsp_init_args.h \
+    $NVKERN_SRC/src/nvidia/inc/kernel/gpu/gsp/gsp_init_args.h \
+    $NVKERN_SRC/src/common/uproc/os/common/include/libos_init_args.h \
+    $NVKERN_SRC/src/nvidia/arch/nvalloc/common/inc/rmRiscvUcode.h \
+    $NVKERN_SRC/src/common/shared/msgq/inc/msgq/msgq_priv.h \
+    $NVKERN_SRC/src/nvidia/inc/kernel/vgpu/rpc_headers.h \
+    $NVKERN_SRC/src/nvidia/inc/kernel/vgpu/rpc_global_enums.h \
+    $NVKERN_SRC/src/nvidia/generated/g_rpc-structures.h \
+    $NVKERN_SRC/src/nvidia/arch/nvalloc/common/inc/fsp/fsp_nvdm_format.h \
+    extra/nv_gpu_driver/g_rpc-message-header.h \
+    extra/nv_gpu_driver/gsp_static_config.h \
+    extra/nv_gpu_driver/vbios.h \
+    --clang-args="-DRPC_MESSAGE_STRUCTURES -DRPC_STRUCTURES -include $NVKERN_SRC/src/common/sdk/nvidia/inc/nvtypes.h -I$NVKERN_SRC/src/nvidia/generated -I$NVKERN_SRC/src/common/inc -I$NVKERN_SRC/src/nvidia/inc -I$NVKERN_SRC/src/nvidia/interface/ -I$NVKERN_SRC/src/nvidia/inc/kernel -I$NVKERN_SRC/src/nvidia/inc/libraries -I$NVKERN_SRC/src/nvidia/arch/nvalloc/common/inc -I$NVKERN_SRC/kernel-open/nvidia-uvm -I$NVKERN_SRC/kernel-open/common/inc -I$NVKERN_SRC/src/common/sdk/nvidia/inc -I$NVKERN_SRC/src/nvidia/arch/nvalloc/unix/include -I$NVKERN_SRC/src/common/sdk/nvidia/inc/ctrl" \
+    -o $BASE/nv/nv.py
+
+  fixup $BASE/nv/nv.py
+  python3 -c "import tinygrad.runtime.autogen.nv.nv"
 }
 
 generate_amd() {
@@ -213,6 +240,21 @@ generate_io_uring() {
   fixup $BASE/io_uring.py
 }
 
+generate_ib() {
+  clang2py -k cdefstum \
+    /usr/include/infiniband/verbs.h \
+    /usr/include/infiniband/verbs_api.h \
+    /usr/include/infiniband/ib_user_ioctl_verbs.h \
+    /usr/include/rdma/ib_user_verbs.h \
+    -o $BASE/ib.py
+
+  sed -i "s\import ctypes\import ctypes, ctypes.util\g" "$BASE/ib.py"
+  sed -i "s\FIXME_STUB\libibverbs\g" "$BASE/ib.py"
+  sed -i "s\FunctionFactoryStub()\ctypes.CDLL(ctypes.util.find_library('ibverbs'), use_errno=True)\g" "$BASE/ib.py"
+
+  fixup $BASE/ib.py
+}
+
 generate_libc() {
   clang2py -k cdefstum \
     $(dpkg -L libc6-dev | grep sys/mman.h) \
@@ -225,7 +267,7 @@ generate_libc() {
 
   sed -i "s\import ctypes\import ctypes, ctypes.util, os\g" $BASE/libc.py
   sed -i "s\FIXME_STUB\libc\g" $BASE/libc.py
-  sed -i "s\FunctionFactoryStub()\None if (libc_path := ctypes.util.find_library('c')) is None else ctypes.CDLL(libc_path)\g" $BASE/libc.py
+  sed -i "s\FunctionFactoryStub()\None if (libc_path := ctypes.util.find_library('c')) is None else ctypes.CDLL(libc_path, use_errno=True)\g" $BASE/libc.py
 
   fixup $BASE/libc.py
 }
@@ -388,8 +430,8 @@ generate_am() {
     $AMKERN_AMD/pm/swsmu/inc/pmfw_if/smu14_driver_if_v14_0.h \
     extra/amdpci/headers/amdgpu_smu.h \
     --clang-args="-include stdint.h" \
-    -o $BASE/am/smu_v14_0_3.py
-  fixup $BASE/am/smu_v14_0_3.py
+    -o $BASE/am/smu_v14_0_2.py
+  fixup $BASE/am/smu_v14_0_2.py
 }
 
 generate_sqtt() {
@@ -417,7 +459,7 @@ generate_libusb() {
     -o $BASE/libusb.py
 
   fixup $BASE/libusb.py
-  sed -i "s\import ctypes\import ctypes, os\g" $BASE/libusb.py
+  sed -i "s\import ctypes\import ctypes, ctypes.util, os\g" $BASE/libusb.py
   sed -i "s/FIXME_STUB/libusb/g" "$BASE/libusb.py"
   sed -i "s/libusb_le16_to_cpu = libusb_cpu_to_le16//g" "$BASE/libusb.py"
   sed -i "s/FunctionFactoryStub()/None if (lib_path:=os.getenv('LIBUSB_PATH', ctypes.util.find_library('usb-1.0'))) is None else ctypes.CDLL(lib_path)/g" "$BASE/libusb.py"
@@ -434,9 +476,11 @@ elif [ "$1" == "kfd" ]; then generate_kfd
 elif [ "$1" == "nv" ]; then generate_nv
 elif [ "$1" == "amd" ]; then generate_amd
 elif [ "$1" == "am" ]; then generate_am
+elif [ "$1" == "nvdrv" ]; then generate_nvdrv
 elif [ "$1" == "sqtt" ]; then generate_sqtt
 elif [ "$1" == "qcom" ]; then generate_qcom
 elif [ "$1" == "io_uring" ]; then generate_io_uring
+elif [ "$1" == "ib" ]; then generate_ib
 elif [ "$1" == "libc" ]; then generate_libc
 elif [ "$1" == "llvm" ]; then generate_llvm
 elif [ "$1" == "kgsl" ]; then generate_kgsl

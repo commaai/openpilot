@@ -128,6 +128,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     personalityChanged @91;
     aeb @92;
     userFlag @95;
+    excessiveActuation @96;
 
     soundsUnavailableDEPRECATED @47;
   }
@@ -492,7 +493,6 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   gpuTempC @27 :List(Float32);
   dspTempC @49 :Float32;
   memoryTempC @28 :Float32;
-  nvmeTempC @35 :List(Float32);
   modemTempC @36 :List(Float32);
   pmicTempC @39 :List(Float32);
   intakeTempC @46 :Float32;
@@ -568,6 +568,7 @@ struct DeviceState @0xa4d8b5af2aa492eb {
   chargingDisabledDEPRECATED @18 :Bool;
   usbOnlineDEPRECATED @12 :Bool;
   ambientTempCDEPRECATED @30 :Float32;
+  nvmeTempCDEPRECATED @35 :List(Float32);
 }
 
 struct PandaState @0xa7649e2575e4591e {
@@ -585,7 +586,7 @@ struct PandaState @0xa7649e2575e4591e {
   fanPower @28 :UInt8;
   fanStallCount @34 :UInt8;
 
-  spiChecksumErrorCount @33 :UInt16;
+  spiErrorCount @33 :UInt16;
 
   harnessStatus @21 :HarnessStatus;
   sbu1Voltage @35 :Float32;
@@ -1083,7 +1084,7 @@ struct ModelDataV2 {
   confidence @23: ConfidenceClass;
 
   # Model perceived motion
-  temporalPose @21 :Pose;
+  temporalPoseDEPRECATED @21 :Pose;
 
   # e2e lateral planner
   action @26: Action;
@@ -2281,6 +2282,7 @@ struct LiveTorqueParametersData {
   points @10 :List(List(Float32));
   version @11 :Int32;
   useParams @12 :Bool;
+  calPerc @13 :Int8;
 }
 
 struct LiveDelayData {
@@ -2291,6 +2293,7 @@ struct LiveDelayData {
   lateralDelayEstimate @3 :Float32;
   lateralDelayEstimateStd @5 :Float32;
   points @4 :List(Float32);
+  calPerc @6 :Int8;
 
   enum Status {
     unestimated @0;
@@ -2468,13 +2471,19 @@ struct DebugAlert {
 struct UserFlag {
 }
 
-struct Microphone {
+struct SoundPressure @0xdc24138990726023 {
   soundPressure @0 :Float32;
 
   # uncalibrated, A-weighted
   soundPressureWeighted @3 :Float32;
   soundPressureWeightedDb @1 :Float32;
-  filteredSoundPressureWeightedDb @2 :Float32;
+
+  filteredSoundPressureWeightedDbDEPRECATED @2 :Float32;
+}
+
+struct AudioData {
+  data @0 :Data;
+  sampleRate @1 :UInt32;
 }
 
 struct Touch {
@@ -2554,7 +2563,8 @@ struct Event {
     livestreamDriverEncodeIdx @119 :EncodeIndex;
 
     # microphone data
-    microphone @103 :Microphone;
+    soundPressure @103 :SoundPressure;
+    rawAudioData @147 :AudioData;
 
     # systems stuff
     androidLog @20 :AndroidLogEntry;

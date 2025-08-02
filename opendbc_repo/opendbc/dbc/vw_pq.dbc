@@ -880,18 +880,31 @@ BO_ 424 Bremse_6: 3 XXX
 BO_ 1192 Bremse_5: 8 XXX
  SG_ CHECKSUM : 56|8@1+ (1,0) [0|0] "" XXX
  SG_ COUNTER : 52|4@1+ (1,0) [0|15] "" XXX
- SG_ Bremslicht_ECD : 51|1@1+ (1,0) [0|0] "" XXX
- SG_ Bremsentemperatur_vorn : 48|3@1+ (125,125) [125|1000] "C" XXX
- SG_ Frei_Bremse_5_5 : 40|8@1+ (1,0) [0|0] "" XXX
- SG_ Offset_Gierrate : 32|8@1+ (0.05,-6.375) [-6.375|6.375] "deg/s" XXX
- SG_ Vorzeichen_Bremsdruck : 31|1@1+ (1,0) [0|0] "" XXX
- SG_ Status_Bremsdruck_durch_ESP_Sys : 30|1@1+ (1,0) [0|0] "" XXX
- SG_ Bremsdruck_ungueltig : 29|1@1+ (1,0) [0|0] "" XXX
- SG_ Frei_Bremse_5_3 : 28|1@1+ (1,0) [0|0] "" XXX
- SG_ Bremsdruck : 16|12@1+ (0.1,0) [0|250] "bar" XXX
- SG_ Vorzeichen_der_Giergeschwindigk : 15|1@1+ (1,0) [0|0] "" XXX
- SG_ Gierrate_ungueltig : 14|1@1+ (1,0) [0|0] "" XXX
- SG_ Giergeschwindigkeit : 0|14@1+ (0.01,0) [0|100] "Grad/sec" XXX
+ SG_ BR5_ECD_Lampe : 51|1@1+ (1,0) [0|0] "" XXX
+ SG_ BR5_ZT_Rueckk_Umsetz : 48|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Anhi_Sta : 40|1@1+ (1,0) [0|1] "" XXX
+ SG_ ESP_Rollenmodus_Deactiveieren : 34|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Sign_Druck : 31|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Sta_Druck : 30|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Druckvalid : 29|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Stillstand : 28|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Bremsdruck : 16|12@1+ (0.1,0) [0|250] "bar" XXX
+ SG_ BR5_Vorzeichen : 15|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Sta_Gierrate : 14|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Giergeschw : 0|14@1+ (0.01,0) [0|100] "Grad/sec" XXX
+ SG_ BR5_ANB_CM_Rueckk_Umsetz : 49|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_HDC_bereit : 50|1@1+ (1,0) [0|1] "" XXX
+ SG_ ESP_Stat_FallBack_eBKV : 35|1@1+ (1,0) [0|1] "" XXX
+ SG_ ESP_Anforderung_EPB : 36|2@1+ (1,0) [0|3] "" XXX
+ SG_ ESP_Autohold_active : 38|1@1+ (1,0) [0|1] "" XXX
+ SG_ ESP_Autohold_Standby : 39|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Anhi_akt : 41|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_v_Ueberw : 42|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Bremslicht : 43|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Notbremsung : 44|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_Fahrer_tritt_ZBR_Schw : 45|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_AWV2_Bremsruck : 46|1@1+ (1,0) [0|1] "" XXX
+ SG_ BR5_AWV2_Fehler : 47|1@1+ (1,0) [0|1] "" XXX
 
 BO_ 672 Bremse_4: 3 XXX
  SG_ Frei_Bremse_4_1 : 17|7@1+ (1,0) [0|0] "" XXX
@@ -1637,7 +1650,7 @@ VAL_ 872 ACS_Fehler 1 "Fehlerspeichereintrag" 0 "kein_Fehlerspeichereintrag" ;
 VAL_ 872 ACS_zul_Regelabw 254 "ADR_nicht_aktiv" 255 "Fehler" ;
 VAL_ 872 ACS_max_AendGrad 254 "Neutralwert" 0 "Neutralwert" 255 "Fehler" ;
 
-VAL_ 978 LH2_Sta_HCA 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active";
+VAL_ 978 LH2_Sta_HCA 0 "disabled" 1 "initializing" 2 "fault" 3 "ready" 4 "rejected" 5 "active" 7 "active";
 VAL_ 1088 Waehlhebelposition__Getriebe_1_ 8 "P" 7 "R" 6 "N" 5 "D" 9 "U" 12 "S" 14 "T" 10 "T" 11 "T";
 
 VAL_ 1386 ACA_StaACC 6 "ACC_rev_aus" 0 "Hauptschalter_aus" 4 "ACC_im_Hintergrund" 3 "ACC_aktiv" 1 "Reserve" 2 "ACC_passiv" 7 "ACC_irrev_aus" 5 "frei" ;

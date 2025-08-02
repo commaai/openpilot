@@ -12,6 +12,7 @@
 #include <iomanip>
 #include <random>
 #include <sstream>
+#include <limits>
 
 #ifdef __linux__
 #include <sys/prctl.h>
@@ -78,8 +79,9 @@ std::string read_file(const std::string& fn) {
   std::ifstream f(fn, std::ios::binary | std::ios::in);
   if (f.is_open()) {
     f.seekg(0, std::ios::end);
-    int size = f.tellg();
-    if (f.good() && size > 0) {
+    std::streamsize size = f.tellg();
+    // seekg and tellg on a directory doesn't return pos_type(-1) but max(streamsize)
+    if (f.good() && size > 0 && size < std::numeric_limits<std::streamsize>::max()) {
       std::string result(size, '\0');
       f.seekg(0, std::ios::beg);
       f.read(result.data(), size);

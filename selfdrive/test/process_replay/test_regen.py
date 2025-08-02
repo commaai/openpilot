@@ -1,6 +1,6 @@
 from parameterized import parameterized
 
-from openpilot.selfdrive.test.process_replay.regen import regen_segment, DummyFrameReader
+from openpilot.selfdrive.test.process_replay.regen import regen_segment
 from openpilot.selfdrive.test.process_replay.process_replay import check_openpilot_enabled
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.logreader import LogReader
@@ -18,7 +18,7 @@ def ci_setup_data_readers(route, sidx):
   lr = LogReader(get_url(route, sidx, "rlog.bz2"))
   frs = {
     'roadCameraState': FrameReader(get_url(route, sidx, "fcamera.hevc")),
-    'driverCameraState': DummyFrameReader.zero_dcamera()
+    'driverCameraState': FrameReader(get_url(route, sidx, "fcamera.hevc")),
   }
   if next((True for m in lr if m.which() == "wideRoadCameraState"), False):
     frs["wideRoadCameraState"] = FrameReader(get_url(route, sidx, "ecamera.hevc"))

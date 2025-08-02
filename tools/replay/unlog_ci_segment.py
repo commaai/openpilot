@@ -42,13 +42,13 @@ def replay(route, segment, loop):
     msg = msgs[i].as_builder()
     next_msg = msgs[i + 1]
 
-    start_time = time.time()
+    start_time = time.monotonic()
     w = msg.which()
 
     if w == 'roadCameraState':
       try:
-        img = fr.get(frame_idx[msg.roadCameraState.frameId], pix_fmt="rgb24")
-        img = img[0][:, :, ::-1]  # Convert RGB to BGR, which is what the camera outputs
+        img = fr.get(frame_idx[msg.roadCameraState.frameId])
+        img = img[:, ::-1]  # Convert RGB to BGR, which is what the camera outputs
         msg.roadCameraState.image = img.flatten().tobytes()
       except (KeyError, ValueError):
         pass
@@ -63,7 +63,7 @@ def replay(route, segment, loop):
       socks[w] = None
 
     lag += (next_msg.logMonoTime - msg.logMonoTime) / 1e9
-    lag -= time.time() - start_time
+    lag -= time.monotonic() - start_time
 
     dt = max(lag, 0.0)
     lag -= dt

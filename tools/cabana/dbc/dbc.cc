@@ -109,7 +109,7 @@ void cabana::Msg::update() {
 
       mask[i] |= ((1ULL << sz) - 1) << shift;
 
-      bits -= size;
+      bits -= sz;
       i = sig->is_little_endian ? i - 1 : i + 1;
     }
   }

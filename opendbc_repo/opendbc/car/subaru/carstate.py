@@ -1,6 +1,5 @@
 import copy
-from opendbc.can.can_define import CANDefine
-from opendbc.can.parser import CANParser
+from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
@@ -23,9 +22,7 @@ class CarState(CarStateBase):
     ret = structs.CarState()
 
     throttle_msg = cp.vl["Throttle"] if not (self.CP.flags & SubaruFlags.HYBRID) else cp_alt.vl["Throttle_Hybrid"]
-    ret.gas = throttle_msg["Throttle_Pedal"] / 255.
-
-    ret.gasPressed = ret.gas > 1e-5
+    ret.gasPressed = throttle_msg["Throttle_Pedal"] > 1e-5
     if self.CP.flags & SubaruFlags.PREGLOBAL:
       ret.brakePressed = cp.vl["Brake_Pedal"]["Brake_Pedal"] > 0
     else:
@@ -43,14 +40,12 @@ class CarState(CarStateBase):
         ret.accFaulted = eyesight_fault
 
     cp_wheels = cp_alt if self.CP.flags & SubaruFlags.GLOBAL_GEN2 else cp
-    ret.wheelSpeeds = self.get_wheel_speeds(
+    self.parse_wheel_speeds(ret,
       cp_wheels.vl["Wheel_Speeds"]["FL"],
       cp_wheels.vl["Wheel_Speeds"]["FR"],
       cp_wheels.vl["Wheel_Speeds"]["RL"],
       cp_wheels.vl["Wheel_Speeds"]["RR"],
     )
-    ret.vEgoRaw = (ret.wheelSpeeds.fl + ret.wheelSpeeds.fr + ret.wheelSpeeds.rl + ret.wheelSpeeds.rr) / 4.
-    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
     ret.standstill = ret.vEgoRaw == 0
 
     # continuous blinker signals for assisted lane change
@@ -131,96 +126,9 @@ class CarState(CarStateBase):
     return ret
 
   @staticmethod
-  def get_common_global_body_messages(CP):
-    messages = [
-      ("Wheel_Speeds", 50),
-      ("Brake_Status", 50),
-    ]
-
-    if not (CP.flags & SubaruFlags.HYBRID):
-      messages.append(("CruiseControl", 20))
-
-    return messages
-
-  @staticmethod
-  def get_common_global_es_messages(CP):
-    messages = [
-      ("ES_Brake", 20),
-    ]
-
-    if not (CP.flags & SubaruFlags.HYBRID):
-      messages += [
-        ("ES_Distance", 20),
-        ("ES_Status", 20)
-      ]
-
-    return messages
-
-  @staticmethod
-  def get_common_preglobal_body_messages():
-    messages = [
-      ("CruiseControl", 50),
-      ("Wheel_Speeds", 50),
-      ("Dash_State2", 1),
-    ]
-
-    return messages
-
-  @staticmethod
   def get_can_parsers(CP):
-    pt_messages = [
-      # sig_address, frequency
-      ("Dashlights", 10),
-      ("Steering_Torque", 50),
-      ("BodyInfo", 1),
-      ("Brake_Pedal", 50),
-    ]
-
-    if not (CP.flags & SubaruFlags.HYBRID):
-      pt_messages += [
-        ("Throttle", 100),
-        ("Transmission", 100)
-      ]
-
-    if CP.enableBsm:
-      pt_messages.append(("BSD_RCTA", 17))
-
-    if not (CP.flags & SubaruFlags.PREGLOBAL):
-      if not (CP.flags & SubaruFlags.GLOBAL_GEN2):
-        pt_messages += CarState.get_common_global_body_messages(CP)
-    else:
-      pt_messages += CarState.get_common_preglobal_body_messages()
-
-    if CP.flags & SubaruFlags.PREGLOBAL:
-      cam_messages = [
-        ("ES_DashStatus", 20),
-        ("ES_Distance", 20),
-      ]
-    else:
-      cam_messages = [
-        ("ES_DashStatus", 10),
-        ("ES_LKAS_State", 10),
-      ]
-
-      if not (CP.flags & SubaruFlags.GLOBAL_GEN2):
-        cam_messages += CarState.get_common_global_es_messages(CP)
-
-      if CP.flags & SubaruFlags.SEND_INFOTAINMENT:
-        cam_messages.append(("ES_Infotainment", 10))
-
-    alt_messages = []
-    if CP.flags & SubaruFlags.GLOBAL_GEN2:
-      alt_messages += CarState.get_common_global_body_messages(CP)
-      alt_messages += CarState.get_common_global_es_messages(CP)
-
-    if CP.flags & SubaruFlags.HYBRID:
-      alt_messages += [
-        ("Throttle_Hybrid", 40),
-        ("Transmission", 100)
-      ]
-
     return {
-      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, CanBus.main),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, CanBus.camera),
-      Bus.alt: CANParser(DBC[CP.carFingerprint][Bus.pt], alt_messages, CanBus.alt)
+      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus.main),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus.camera),
+      Bus.alt: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus.alt)
     }

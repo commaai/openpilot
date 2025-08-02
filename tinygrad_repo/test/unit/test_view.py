@@ -44,6 +44,16 @@ class TestView(unittest.TestCase):
     self.assertIsNotNone(v)
     self.assertEqual(v, View.create((20,), mask=((0,0),)))
 
+  def test_add_0(self):
+    v1 = View.create((2,3,4))
+    v2 = View.create((2,0,4))
+    self.assertEqual(v2, v1+v2)
+
+  def test_add_0_masked(self):
+    v1 = View.create((2,3,4), mask=((0, 0), (0, 0), (0, 0)))
+    v2 = View.create((2,0,4))
+    self.assertEqual(v2, v1+v2)
+
 class TestMergeDims(unittest.TestCase):
   def test_contiguous(self):
     shape = (2, 3, 4)
@@ -171,6 +181,17 @@ class TestMergeViews(unittest.TestCase):
     v0 = View(shape=(5, 1, 24), strides=(20, 0, 1), offset=-2, mask=((0, 5), (0, 1), (2, 22)), contiguous=False)
     v1 = View(shape=(12, 2, 5, 2, 1), strides=(2, 1, 24, 0, 0), offset=0, mask=None, contiguous=False)
     target = View(shape=(12, 2, 5, 2, 1), strides=(2, 1, 20, 0, 0), offset=-2, mask=((1, 11), (0, 2), (0, 5), (0, 2), (0, 1)), contiguous=False)
+    v = v0 + v1
+    self.assertIsNotNone(v)
+    self.assertEqual(v, target)
+
+  def test_merge_views_variable(self):
+    from tinygrad import Variable
+    N = 100
+    start_pos = Variable("start_pos", 1, N-1)
+    v0 = View(shape=(N, 32, 2), strides=(32, 1, 0), offset=0, mask=((0, N), (0, 32), (0, 1)), contiguous=False)
+    v1 = View(shape=(1, 8, 1, 32), strides=(0, 0, 0, 2), offset=start_pos*64, mask=None, contiguous=False)
+    target = View(shape=(1, 8, 1, 32), strides=(0,0,0,1), offset=start_pos*32, mask=None, contiguous=False)
     v = v0 + v1
     self.assertIsNotNone(v)
     self.assertEqual(v, target)
