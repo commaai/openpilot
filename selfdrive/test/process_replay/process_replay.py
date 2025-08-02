@@ -127,6 +127,7 @@ class ProcessConfig:
   processing_time: float = 0.001
   timeout: int = 30
   simulation: bool = True
+  # Set to service process receives on first
   main_pub: str | None = None
   main_pub_drained: bool = False
   vision_pubs: list[str] = field(default_factory=list)
