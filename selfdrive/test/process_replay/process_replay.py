@@ -285,25 +285,17 @@ class ProcessContainer:
 
     self.msg_queue.append(msg)
     if end_of_cycle:
-      with Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+      with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
             messaging.recv_one_or_none(s)
         self.cnt += 1
 
-        # *** get output msgs from previous inputs ***
-        for socket in self.sockets:
-          ms = messaging.drain_sock(socket)
-          for m in ms:
-            m = m.as_builder()
-            m.logMonoTime = msg.logMonoTime + int(self.cfg.processing_time * 1e9)
-            output_msgs.append(m.as_reader())
-
         # certain processes use drain_sock. need to cause empty recv to break from this loop
         trigger_empty_recv = False
-        # if self.cfg.main_pub and self.cfg.main_pub_drained:
-        #   trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
+        if self.cfg.main_pub and self.cfg.main_pub_drained:
+          trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
         # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)

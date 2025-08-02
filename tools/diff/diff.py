@@ -9,7 +9,7 @@ from openpilot.tools.lib.logreader import LogReader, save_log
 
 SEG_LIST = [
   "d9b97c1d3b8c39b2/0000018b--8a62ed4984/1",
-] * 1
+] * 100
 
 # these use cameras/run models which are slow
 BLACKLIST_PROCS = ['modeld', 'dmonitoringmodeld']
