@@ -4,7 +4,7 @@ import time
 import copy
 import heapq
 import signal
-from collections import Counter, defaultdict
+from collections import Counter
 from dataclasses import dataclass, field
 from itertools import islice
 from typing import Any
