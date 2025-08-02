@@ -342,7 +342,7 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
     CarInterface = interfaces[fingerprint]
     CP = CarInterface.get_non_essential_params(fingerprint)
   else:
-    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == 'can')
+    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == "can")
     cached_params_raw = params.get("CarParamsCache")
     assert next(can_msgs, None), "CAN messages are required for fingerprinting"
     assert os.environ.get("SKIP_FW_QUERY", False) or cached_params_raw is not None, \
