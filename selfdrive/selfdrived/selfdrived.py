@@ -60,7 +60,6 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
 
 class SelfdriveD:
   def __init__(self, CP=None):
-    self.t = time.monotonic()
     self.params = Params()
 
     # Ensure the current branch is cached, otherwise the first cycle lags
@@ -411,18 +410,11 @@ class SelfdriveD:
         self.events.add(EventName.personalityChanged)
 
   def data_sample(self):
-    # print('took:', time.monotonic() - self.t)
-    # print('  SELFDRIVED: before carstate recv')
     _car_state = messaging.recv_one(self.car_state_sock)
-    # print('  SELFDRIVED: after carstate recv')
     CS = _car_state.carState if _car_state else self.CS_prev
 
-    # print('  SELFDRIVED: before sm update')
     self.sm.update(0)
-    # print('  SELFDRIVED: after sm update')
-    # print()
     self.t = time.monotonic()
-    return CS
 
     if not self.initialized:
       all_valid = CS.canValid and self.sm.all_checks()
@@ -510,12 +502,12 @@ class SelfdriveD:
 
   def step(self):
     CS = self.data_sample()
-    # self.update_events(CS)
-    # if not self.CP.passive and self.initialized:
-    #   self.enabled, self.active = self.state_machine.update(self.events)
-    # self.update_alerts(CS)
+    self.update_events(CS)
+    if not self.CP.passive and self.initialized:
+      self.enabled, self.active = self.state_machine.update(self.events)
+    self.update_alerts(CS)
 
-    # self.publish_selfdriveState(CS)
+    self.publish_selfdriveState(CS)
 
     self.CS_prev = CS
 
@@ -530,15 +522,15 @@ class SelfdriveD:
 
   def run(self):
     e = threading.Event()
-    # t = threading.Thread(target=self.params_thread, args=(e, ))
+    t = threading.Thread(target=self.params_thread, args=(e, ))
     try:
-      # t.start()
+      t.start()
       while True:
         self.step()
-        # self.rk.monitor_time()
+        self.rk.monitor_time()
     finally:
       e.set()
-      # t.join()
+      t.join()
 
 
 def main():
