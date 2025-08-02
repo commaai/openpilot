@@ -364,6 +364,30 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
   params.put("CarParams", CP.to_bytes())
 
 
+def get_car_params(msgs: LogIterable, fingerprint: str | None, params_dict: dict[str, Any]) -> car.CarParams:
+  if fingerprint:
+    CarInterface = interfaces[fingerprint]
+    CP = CarInterface.get_non_essential_params(fingerprint)
+  else:
+    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == "can")
+    cached_params_raw = params_dict.get("CarParamsCache")
+    assert next(can_msgs, None), "CAN messages are required for fingerprinting"
+    assert os.environ.get("SKIP_FW_QUERY", False) or cached_params_raw is not None, \
+            "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
+
+    def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
+      return [next(can_msgs, [])]
+
+    cached_params = None
+    if cached_params_raw is not None:
+      with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
+        cached_params = _cached_params
+
+    CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
+
+  return CP
+
+
 def card_rcv_callback(msg, cfg, frame):
   # no sendcan until card is initialized
   if msg.which() != "can":
@@ -647,11 +671,11 @@ def _replay_multi_process(
   custom_params: dict[str, Any] | None, captured_output_store: dict[str, dict[str, str]] | None, disable_progress: bool
 ) -> list[capnp._DynamicStructReader]:
   if fingerprint is not None:
-    params_config = generate_params_config(lr=lr, fingerprint=fingerprint, custom_params=custom_params)
+    params_config = generate_params_config(lr, fingerprint=fingerprint, custom_params=custom_params)
     env_config = generate_environ_config(fingerprint=fingerprint)
   else:
     CP = next((m.carParams for m in lr if m.which() == "carParams"), None)
-    params_config = generate_params_config(lr=lr, CP=CP, custom_params=custom_params)
+    params_config = generate_params_config(lr, CP=CP, custom_params=custom_params)
     env_config = generate_environ_config(CP=CP)
 
   # validate frs and vision pubs
@@ -667,10 +691,12 @@ def _replay_multi_process(
   log_msgs = []
   containers = []
   try:
+    t = time.monotonic()
     for cfg in cfgs:
       container = ProcessContainer(cfg)
       containers.append(container)
       container.start(params_config, env_config, all_msgs, frs, fingerprint, captured_output_store is not None)
+    print(f'startup took {time.monotonic() - t} seconds')
 
     all_pubs = {pub for container in containers for pub in container.pubs}
     all_subs = {sub for container in containers for sub in container.subs}
@@ -717,7 +743,8 @@ def _replay_multi_process(
   return log_msgs
 
 
-def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=None) -> dict[str, Any]:
+def generate_params_config(lr: LogIterable, CP: car.carParams | None = None, fingerprint: str | None = None,
+                           custom_params: dict[str, Any] | None = None) -> dict[str, Any]:
   params_dict = {
     "OpenpilotEnabledToggle": True,
     "DisengageOnAccelerator": True,
@@ -726,11 +753,10 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
 
   if custom_params is not None:
     params_dict.update(custom_params)
-  if lr is not None:
-    has_ublox = any(msg.which() == "ubloxGnss" for msg in lr)
-    params_dict["UbloxAvailable"] = has_ublox
-    is_rhd = next((msg.driverMonitoringState.isRHD for msg in lr if msg.which() == "driverMonitoringState"), False)
-    params_dict["IsRhdDetected"] = is_rhd
+  has_ublox = any(msg.which() == "ubloxGnss" for msg in lr)
+  params_dict["UbloxAvailable"] = has_ublox
+  is_rhd = next((msg.driverMonitoringState.isRHD for msg in lr if msg.which() == "driverMonitoringState"), False)
+  params_dict["IsRhdDetected"] = is_rhd
 
   if CP is not None:
     if fingerprint is None:
@@ -742,6 +768,8 @@ def generate_params_config(lr=None, CP=None, fingerprint=None, custom_params=Non
 
     if CP.notCar:
       params_dict["JoystickDebugMode"] = True
+
+  params_dict["CarParams"] = get_car_params(lr, fingerprint, params_dict)
 
   return params_dict
 
