@@ -349,7 +349,12 @@ def get_car_params_callback(rc, pm, msgs, fingerprint):
             "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
 
     def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
-      return [next(can_msgs, [])]
+      print('hi')
+      t = time.monotonic()
+      ret = [next(can_msgs, [])]
+      print(time.monotonic() - t, 'can_recv took')
+      print('done')
+      return ret
 
     cached_params = None
     if cached_params_raw is not None:
