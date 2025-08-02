@@ -425,6 +425,7 @@ class MessageBasedRcvCallback:
     return msg.which() == self.trigger_msg_type
 
 
+# TODO: this is used interchangeably with MessageBasedRcvCallback when both procs poll? wtf?
 class FrequencyBasedRcvCallback:
   def __init__(self, trigger_msg_type):
     self.trigger_msg_type = trigger_msg_type
