@@ -3,6 +3,7 @@ import datetime
 import os
 import signal
 import sys
+import time
 import traceback
 
 from cereal import log
@@ -159,6 +160,14 @@ def manager_thread() -> None:
     msg = messaging.new_message('managerState', valid=True)
     msg.managerState.processes = [p.get_process_state_msg() for p in managed_processes.values()]
     pm.send('managerState', msg)
+
+    # kick AGNOS power monitoring watchdog
+    try:
+      if sm.all_checks(['deviceState']):
+        with open("/var/tmp/power_watchdog", "w") as f:
+          f.write(str(time.monotonic()))
+    except Exception:
+      pass
 
     # Exit main loop when uninstall/shutdown/reboot is needed
     shutdown = False

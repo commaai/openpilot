@@ -2,7 +2,7 @@ import math
 import numpy as np
 
 from cereal import car
-from openpilot.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 
 
 # WARNING: this value was determined based on the model's training distribution,

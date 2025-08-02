@@ -50,8 +50,35 @@ def decompress_stream(data: bytes):
 
   return decompressed_data
 
+
+class CachedReader:
+  __slots__ = ("_evt", "_enum")
+
+  def __init__(self, evt: capnp._DynamicStructReader):
+    """All capnp attribute accesses are expensive, and which() is often called multiple times"""
+    self._evt = evt
+    self._enum: str | None = None
+
+  def __repr__(self):
+    return self._evt.__repr__()
+
+  def __str__(self):
+    return self._evt.__str__()
+
+  def __dir__(self):
+    return dir(self._evt)
+
+  def which(self) -> str:
+    if self._enum is None:
+      self._enum = self._evt.which()
+    return self._enum
+
+  def __getattr__(self, name: str):
+    return getattr(self._evt, name)
+
+
 class _LogFileReader:
-  def __init__(self, fn, canonicalize=True, only_union_types=False, sort_by_time=False, dat=None):
+  def __init__(self, fn, only_union_types=False, sort_by_time=False, dat=None):
     self.data_version = None
     self._only_union_types = only_union_types
 
@@ -76,7 +103,7 @@ class _LogFileReader:
     self._ents = []
     try:
       for e in ents:
-        self._ents.append(e)
+        self._ents.append(CachedReader(e))
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
