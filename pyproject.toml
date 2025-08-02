@@ -152,6 +152,7 @@ markers = [
 testpaths = [
   "common",
   "selfdrive",
+  "system/manager",
   "system/updated",
   "system/athena",
   "system/camerad",
