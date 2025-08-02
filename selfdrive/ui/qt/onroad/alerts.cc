@@ -1,9 +1,11 @@
 #include "selfdrive/ui/qt/onroad/alerts.h"
 
 #include <QPainter>
+#include <QPainterPath>
 #include <map>
 
 #include "selfdrive/ui/qt/util.h"
+
 
 OnroadAlerts::OnroadAlerts(QWidget *parent) : QWidget(parent) {
   progressAnimation = new QPropertyAnimation(this, "currentProgress");
