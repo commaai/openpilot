@@ -4,7 +4,7 @@ from numbers import Number
 
 from cereal import car, log
 import cereal.messaging as messaging
-from openpilot.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
