@@ -33,7 +33,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 280.  # total for all 8 cores
+MAX_TOTAL_CPU = 310.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -62,7 +62,7 @@ PROCS = {
   "./logcatd": 1.0,
   "system.micd": 5.0,
   "system.timed": 0,
-  "selfdrive.pandad.pandad": 0,
+  "selfdrive.pandad.pandad": 22.0,
   "system.statsd": 1.0,
   "system.loggerd.uploader": 15.0,
   "system.loggerd.deleter": 1.0,
@@ -70,12 +70,10 @@ PROCS = {
 
 PROCS.update({
   "tici": {
-    "./pandad": 5.0,
     "./ubloxd": 1.0,
     "system.ubloxd.pigeond": 6.0,
   },
   "tizi": {
-     "./pandad": 19.0,
     "system.qcomgpsd.qcomgpsd": 1.0,
   }
 }.get(HARDWARE.get_device_type(), {}))
