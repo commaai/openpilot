@@ -43,12 +43,22 @@ class PandaRunner:
         data = sock.receive()
         if data:
           msg = messaging.log_from_bytes(data)
-          cans = [(c.address, c.dat, c.src) for c in msg.sendcan]
           age = (time.monotonic_ns() - msg.logMonoTime) / 1e9
           if age < 1 and not FAKE_SEND:
             with self.lock:
-              for p in self.pandas:
-                p.can_send_many(cans)
+              # Group CAN messages by panda based on bus offset
+              panda_msgs = [[] for _ in self.pandas]
+              for c in msg.sendcan:
+                panda_idx = c.src // 4  # Each panda handles 4 buses
+                if panda_idx < len(self.pandas):
+                  # Adjust bus number for the panda (remove offset)
+                  adjusted_bus = c.src % 4
+                  panda_msgs[panda_idx].append((c.address, c.dat, adjusted_bus))
+              
+              # Send messages to each panda
+              for panda_idx, can_msgs in enumerate(panda_msgs):
+                if can_msgs:
+                  self.pandas[panda_idx].can_send_many(can_msgs)
           elif age >= 1:
             cloudlog.error(f"Dropping stale sendcan message, age: {age:.2f}s")
 
@@ -57,7 +67,13 @@ class PandaRunner:
 
   def _can_recv(self):
     with self.lock:
-      cans = list(chain.from_iterable(p.can_recv() for p in self.pandas))
+      cans = []
+      for panda_idx, p in enumerate(self.pandas):
+        bus_offset = panda_idx * 4  # Each panda gets 4 buses
+        for address, dat, src in p.can_recv():
+          # Apply bus offset to match C++ implementation
+          adjusted_src = src + bus_offset
+          cans.append((address, dat, adjusted_src))
 
     msg = messaging.new_message('can', len(cans) if cans else 0)
     msg.valid = True
