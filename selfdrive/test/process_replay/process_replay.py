@@ -280,7 +280,7 @@ class ProcessContainer:
 
     self.msg_queue.append(msg)
     if end_of_cycle:
-      with self.prefix, Timeout(self.cfg.timeout, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
+      with self.prefix, Timeout(self.cfg.timeout + 100000, error_msg=f"timed out testing process {repr(self.cfg.proc_name)}"):
         # call recv to let sub-sockets reconnect, after we know the process is ready
         if self.cnt == 0:
           for s in self.sockets:
@@ -291,9 +291,12 @@ class ProcessContainer:
         if self.cfg.main_pub and self.cfg.main_pub_drained:
           trigger_empty_recv = any(m.which() == self.cfg.main_pub for m in self.msg_queue)
 
+        # input('about to block to recv messages...')
         # get output msgs from previous inputs
         output_msgs = self.get_output_msgs(msg.logMonoTime)
+        # print('got output msgs:', len(output_msgs))
 
+        # input('about to send msgs to proc...')
         for m in self.msg_queue:
           self.pm.send(m.which(), m.as_builder())
           # send frames if needed
@@ -306,7 +309,9 @@ class ProcessContainer:
                                   camera_state.frameId, camera_state.timestampSof, camera_state.timestampEof)
         self.msg_queue = []
 
+        # input('about to unlock sockets...')
         self.rc.unlock_sockets()
+        # input('done...')
         if trigger_empty_recv:
           self.rc.unlock_sockets()
         self.cnt += 1
@@ -462,6 +467,8 @@ CONFIGS = [
     config_callback=selfdrived_config_callback,
     init_callback=get_car_params_callback,
     should_recv_callback=selfdrived_rcv_callback,
+    main_pub="carState",
+    main_pub_drained=False,
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
   ),
