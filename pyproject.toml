@@ -138,7 +138,7 @@ allow-direct-references = true
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-addopts = "--ignore=openpilot/ --ignore-glob=opendbc*/ --ignore=panda/ --ignore=rednose*/ --ignore=tinygrad*/ --ignore=teleoprtc*/ --ignore=msgq*/ --ignore provisioning/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
+addopts = "--ignore=openpilot/ --ignore-glob=opendbc*/ --ignore=panda/ --ignore-glob=rednose*/ --ignore-glob=tinygrad*/ --ignore-glob=teleoprtc*/ --ignore-glob=msgq*/ --ignore provisioning/ -Werror --strict-config --strict-markers --durations=10 -n auto --dist=loadgroup"
 cpp_files = "test_*"
 cpp_harness = "selfdrive/test/cpp_harness.py"
 python_files = "test_*.py"
