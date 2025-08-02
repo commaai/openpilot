@@ -58,6 +58,15 @@ class CachedReader:
     self._evt = evt
     self._enum: str | None = None
 
+  def __repr__(self):
+    return self._evt.__repr__()
+
+  def __str__(self):
+    return self._evt.__str__()
+
+  def __dir__(self):
+    return dir(self._evt)
+
   def which(self) -> str:
     if self._enum is None:
       self._enum = self._evt.which()
