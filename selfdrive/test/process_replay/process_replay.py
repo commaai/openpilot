@@ -339,31 +339,6 @@ def card_fingerprint_callback(rc, pm, msgs, fingerprint):
     rc.wait_for_next_recv(True)
 
 
-def get_car_params_callback(rc, pm, msgs, fingerprint):
-  params = Params()
-  if fingerprint:
-    CarInterface = interfaces[fingerprint]
-    CP = CarInterface.get_non_essential_params(fingerprint)
-  else:
-    can_msgs = ([CanData(can.address, can.dat, can.src) for can in m.can] for m in msgs if m.which() == "can")
-    cached_params_raw = params.get("CarParamsCache")
-    assert next(can_msgs, None), "CAN messages are required for fingerprinting"
-    assert os.environ.get("SKIP_FW_QUERY", False) or cached_params_raw is not None, \
-            "CarParamsCache is required for fingerprinting. Make sure to keep carParams msgs in the logs."
-
-    def can_recv(wait_for_one: bool = False) -> list[list[CanData]]:
-      return [next(can_msgs, [])]
-
-    cached_params = None
-    if cached_params_raw is not None:
-      with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
-        cached_params = _cached_params
-
-    CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
-
-  params.put("CarParams", CP.to_bytes())
-
-
 def get_car_params(msgs: LogIterable, fingerprint: str | None, params_dict: dict[str, Any]) -> car.CarParams:
   if fingerprint:
     CarInterface = interfaces[fingerprint]
@@ -383,7 +358,7 @@ def get_car_params(msgs: LogIterable, fingerprint: str | None, params_dict: dict
       with car.CarParams.from_bytes(cached_params_raw) as _cached_params:
         cached_params = _cached_params
 
-    CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params.get_bool("AlphaLongitudinalEnabled"), False, cached_params=cached_params).CP
+    CP = get_car(can_recv, lambda _msgs: None, lambda obd: None, params_dict.get("AlphaLongitudinalEnabled", False), False, cached_params=cached_params).CP
 
   return CP
 
@@ -455,7 +430,6 @@ CONFIGS = [
     subs=["selfdriveState", "onroadEvents"],
     ignore=["logMonoTime"],
     config_callback=selfdrived_config_callback,
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("carState", True),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
@@ -467,7 +441,6 @@ CONFIGS = [
           "driverMonitoringState", "onroadEvents", "driverAssistance"],
     subs=["carControl", "controlsState"],
     ignore=["logMonoTime", ],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("selfdriveState"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -488,7 +461,6 @@ CONFIGS = [
     pubs=["liveTracks", "carState", "modelV2"],
     subs=["radarState"],
     ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("modelV2"),
   ),
   ProcessConfig(
@@ -496,7 +468,6 @@ CONFIGS = [
     pubs=["modelV2", "carControl", "carState", "controlsState", "liveParameters", "radarState", "selfdriveState"],
     subs=["longitudinalPlan", "driverAssistance"],
     ignore=["logMonoTime", "longitudinalPlan.processingDelay", "longitudinalPlan.solverExecutionTime"],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("modelV2"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -505,7 +476,6 @@ CONFIGS = [
     pubs=["carState", "cameraOdometry"],
     subs=["liveCalibration"],
     ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("cameraOdometry", True),
   ),
   ProcessConfig(
@@ -531,7 +501,6 @@ CONFIGS = [
     pubs=["livePose", "liveCalibration", "carState"],
     subs=["liveParameters"],
     ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
     processing_time=0.004,
@@ -541,7 +510,6 @@ CONFIGS = [
     pubs=["livePose", "liveCalibration", "carState", "carControl", "controlsState"],
     subs=["liveDelay"],
     ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("livePose"),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -556,7 +524,6 @@ CONFIGS = [
     pubs=["livePose", "liveCalibration", "liveDelay", "carState", "carControl", "carOutput"],
     subs=["liveTorqueParameters"],
     ignore=["logMonoTime"],
-    init_callback=get_car_params_callback,
     should_recv_callback=MessageBasedRcvCallback("livePose", True),
     tolerance=NUMPY_TOLERANCE,
   ),
@@ -571,7 +538,6 @@ CONFIGS = [
     main_pub=vipc_get_endpoint_name("camerad", meta_from_camera_state("roadCameraState").stream),
     vision_pubs=["roadCameraState", "wideRoadCameraState"],
     ignore_alive_pubs=["wideRoadCameraState"],
-    init_callback=get_car_params_callback,
   ),
   ProcessConfig(
     proc_name="dmonitoringmodeld",
@@ -743,7 +709,7 @@ def _replay_multi_process(
   return log_msgs
 
 
-def generate_params_config(lr: LogIterable, CP: car.carParams | None = None, fingerprint: str | None = None,
+def generate_params_config(lr: LogIterable, CP: car.CarParams = None, fingerprint: str | None = None,
                            custom_params: dict[str, Any] | None = None) -> dict[str, Any]:
   params_dict = {
     "OpenpilotEnabledToggle": True,
@@ -769,7 +735,7 @@ def generate_params_config(lr: LogIterable, CP: car.carParams | None = None, fin
     if CP.notCar:
       params_dict["JoystickDebugMode"] = True
 
-  params_dict["CarParams"] = get_car_params(lr, fingerprint, params_dict)
+  params_dict["CarParams"] = get_car_params(lr, fingerprint, params_dict).to_bytes()
 
   return params_dict
 
