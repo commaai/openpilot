@@ -1,9 +1,6 @@
 [submodule "panda"]
   path = panda
   url = ../../commaai/panda.git
-[submodule "opendbc"]
-  path = opendbc_repo
-  url = ../../commaai/opendbc.git
 [submodule "msgq"]
   path = msgq_repo
   url = ../../commaai/msgq.git
@@ -16,6 +13,6 @@
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/tinygrad/tinygrad.git
-[submodule "MOMIN"]
+[submodule "opendbc"]
 	path = MOMIN
-	url = https://github.com/786momin/MOMIN
+	url = https://github.com/786momin/MOMIN.git
