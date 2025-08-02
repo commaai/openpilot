@@ -685,7 +685,6 @@ def _replay_multi_process(
     internal_pub_index_heap: list[tuple[int, int]] = []
 
     pbar = tqdm(total=len(external_pub_queue), disable=disable_progress)
-    times = defaultdict(int)
     while len(external_pub_queue) != 0 or (len(internal_pub_index_heap) != 0 and not all(c.has_empty_queue for c in containers)):
       if len(internal_pub_index_heap) == 0 or (len(external_pub_queue) != 0 and external_pub_queue[0].logMonoTime < internal_pub_index_heap[0][0]):
         msg = external_pub_queue.pop(0)
