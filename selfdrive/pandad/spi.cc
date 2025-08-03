@@ -67,24 +67,20 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   // revs of the comma three may not support this speed
   uint32_t spi_speed = 50000000;
 
-  auto fail = [this, serial] {
-    cleanup(); throw std::runtime_error("Error connecting to panda " + serial);
-  };
-
   if (!util::file_exists(SPI_DEVICE)) {
-    fail();
+    goto fail;
   }
 
   spi_fd = open(SPI_DEVICE.c_str(), O_RDWR);
   if (spi_fd < 0) {
     LOGE("failed opening SPI device %d", spi_fd);
-    fail();
+    goto fail;
   }
 
   // SPI settings
-  util::safe_ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode, "failed setting SPI mode", fail);
-  util::safe_ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed, "failed setting SPI speed", fail);
-  util::safe_ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bits_per_word, "failed setting SPI bits per word", fail);
+  util::safe_ioctl(spi_fd, SPI_IOC_WR_MODE, &spi_mode, "failed setting SPI mode");
+  util::safe_ioctl(spi_fd, SPI_IOC_WR_MAX_SPEED_HZ, &spi_speed, "failed setting SPI speed");
+  util::safe_ioctl(spi_fd, SPI_IOC_WR_BITS_PER_WORD, &spi_bits_per_word, "failed setting SPI bits per word");
 
   // get hw UID/serial
   ret = control_read(0xc3, 0, 0, uid, uid_len, 100);
@@ -96,14 +92,18 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
     hw_serial = stream.str();
   } else {
     LOGD("failed to get serial %d", ret);
-    fail();
+    goto fail;
   }
 
   if (!serial.empty() && (serial != hw_serial)) {
-    fail();
+    goto fail;
   }
 
   return;
+
+fail:
+  cleanup();
+  throw std::runtime_error("Error connecting to panda");
 }
 
 PandaSpiHandle::~PandaSpiHandle() {

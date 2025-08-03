@@ -152,17 +152,15 @@ int safe_fflush(FILE *stream) {
   return ret;
 }
 
-int safe_ioctl(int fd, unsigned long request, void *argp, const char* error_msg, std::function<void()> error_callback ) {
+int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_msg) {
   int ret;
   do {
     ret = ioctl(fd, request, argp);
   } while ((ret == -1) && (errno == EINTR));
 
-  if (ret == -1) {
-    LOGE("safe_ioctl error: %s(%d) %s (fd: %d request: %lx argp: %p)", strerror(errno), errno, error_msg, fd, request, argp);
-    if (error_callback) {
-      error_callback();
-    }
+  if (ret == -1 && exception_msg) {
+    LOGE("safe_ioctl error: %s(%d) %s (fd: %d request: %lx argp: %p)", strerror(errno), errno, exception_msg, fd, request, argp);
+    throw std::runtime_error(exception_msg);
   }
   return ret;
 }
