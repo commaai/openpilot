@@ -79,6 +79,8 @@ class Keyboard(Widget):
     self._render_return_status = -1
     self._cancel_button = Button("Cancel", self._cancel_button_callback)
 
+    self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
+
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
@@ -115,6 +117,9 @@ class Keyboard(Widget):
   def set_title(self, title: str, sub_title: str = ""):
     self._title = title
     self._sub_title = sub_title
+
+  def _eye_button_callback(self):
+    self._password_mode = not self._password_mode
 
   def _cancel_button_callback(self):
     self.clear()
@@ -199,16 +204,12 @@ class Keyboard(Widget):
       eye_texture = self._eye_closed_texture if self._password_mode else self._eye_open_texture
 
       eye_rect = rl.Rectangle(input_rect.x + input_rect.width - 90, input_rect.y, 80, input_rect.height)
+      self._eye_button.render(eye_rect)
+
       eye_x = eye_rect.x + (eye_rect.width - eye_texture.width) / 2
       eye_y = eye_rect.y + (eye_rect.height - eye_texture.height) / 2
 
       rl.draw_texture_v(eye_texture, rl.Vector2(eye_x, eye_y), rl.WHITE)
-
-      # Handle click on eye icon
-      if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(
-        rl.get_mouse_position(), eye_rect
-      ):
-        self._password_mode = not self._password_mode
     else:
       self._input_box.render(input_rect)
 
