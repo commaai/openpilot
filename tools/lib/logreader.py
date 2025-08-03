@@ -74,6 +74,8 @@ class CachedReader:
     return self._enum
 
   def __getattr__(self, name: str):
+    if name.startswith("__") and name.endswith("__"):
+      return super().__getattr__(name)
     return getattr(self._evt, name)
 
 
