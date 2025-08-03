@@ -251,7 +251,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
 
   // start encoder
   v4l2_buf_type buf_type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE;
-  util::safe_ioctl(fd, VIDIOC_G_PRIORITY, &buf_type, "VIDIOC_G_PRIORITY failed", [] {assert(0);});
+  util::safe_ioctl(fd, VIDIOC_STREAMON, &buf_type, "VIDIOC_STREAMON failed", [] {assert(0);});
   buf_type = V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE;
   util::safe_ioctl(fd, VIDIOC_STREAMON, &buf_type, "VIDIOC_STREAMON failed", [] {assert(0);});
 
