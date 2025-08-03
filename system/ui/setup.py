@@ -103,10 +103,13 @@ class Setup(Widget):
 
   def _getting_started_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
     self.start_network_check()
 
   def _software_selection_back_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
+    self.start_network_check()
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
