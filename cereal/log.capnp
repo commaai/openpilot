@@ -586,7 +586,7 @@ struct PandaState @0xa7649e2575e4591e {
   fanPower @28 :UInt8;
   fanStallCount @34 :UInt8;
 
-  spiChecksumErrorCount @33 :UInt16;
+  spiErrorCount @33 :UInt16;
 
   harnessStatus @21 :HarnessStatus;
   sbu1Voltage @35 :Float32;

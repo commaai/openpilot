@@ -2,6 +2,8 @@ import os
 import requests
 API_HOST = os.getenv('API_HOST', 'https://api.commadotai.com')
 
+# TODO: this should be merged into common.api
+
 class CommaApi:
   def __init__(self, token=None):
     self.session = requests.Session()
