@@ -67,7 +67,9 @@ PandaSpiHandle::PandaSpiHandle(std::string serial) : PandaCommsHandle(serial) {
   // revs of the comma three may not support this speed
   uint32_t spi_speed = 50000000;
 
-  auto fail = [this, serial] {cleanup(); throw std::runtime_error("Error connecting to panda " + serial);};
+  auto fail = [this, serial] {
+    cleanup(); throw std::runtime_error("Error connecting to panda " + serial);
+  };
 
   if (!util::file_exists(SPI_DEVICE)) {
     fail();
