@@ -1,4 +1,5 @@
 #include "common/util.h"
+#include "common/swaglog.h"
 
 #include <sys/ioctl.h>
 #include <sys/stat.h>
@@ -151,11 +152,18 @@ int safe_fflush(FILE *stream) {
   return ret;
 }
 
-int safe_ioctl(int fd, unsigned long request, void *argp) {
+int safe_ioctl(int fd, unsigned long request, void *argp, const char* error_msg, std::function<void()> error_callback ) {
   int ret;
   do {
     ret = ioctl(fd, request, argp);
   } while ((ret == -1) && (errno == EINTR));
+
+  if (ret == -1) {
+    LOGE("safe_ioctl error: %s(%d) %s (fd: %d request: %lx argp: %p)", strerror(errno), errno, error_msg, fd, request, argp);
+    if (error_callback) {
+      error_callback();
+    }
+  }
   return ret;
 }
 
