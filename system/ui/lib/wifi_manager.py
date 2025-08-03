@@ -557,11 +557,12 @@ class WifiManager:
           )
 
         existing_network = network_dict.get(ssid)
-        existing_network.strength = max(existing_network.strength, strength)
-        if self.active_ap_path == ap_path and self._current_connection_ssid != ssid:
-          existing_network.is_connected = True
+        if existing_network.strength < strength:
+          existing_network.strength = strength
           existing_network.path = ap_path
           existing_network.bssid = bssid
+        if self.active_ap_path == ap_path and self._current_connection_ssid != ssid:
+          existing_network.is_connected = True
 
       except DBusError as e:
         cloudlog.error(f"Error fetching networks: {e}")
