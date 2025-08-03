@@ -535,7 +535,7 @@ class WifiManager:
         props_iface = await self._get_interface(NM, ap_path, NM_PROPERTIES_IFACE)
         properties = await props_iface.call_get_all('org.freedesktop.NetworkManager.AccessPoint')
         ssid_variant = properties['Ssid'].value
-        ssid = ''.join(chr(byte) for byte in ssid_variant)
+        ssid = bytes(ssid_variant).decode('utf-8')
         if not ssid:
           continue
 
