@@ -184,13 +184,18 @@ class Button(Widget):
     self._button_style = button_style
     self._border_radius = border_radius
     self._font_size = font_size
+    self._font_weight = font_weight
     self._text_color = BUTTON_TEXT_COLOR[button_style]
     self._background_color = BUTTON_BACKGROUND_COLORS[button_style]
-    self._text_size = measure_text_cached(gui_app.font(font_weight), text, font_size)
     self._text_alignment = text_alignment
     self._text_padding = text_padding
+    self._text_size = measure_text_cached(gui_app.font(self._font_weight), self._text, self._font_size)
     self._icon = icon
     self.enabled = enabled
+
+  def set_text(self, text):
+    self._text = text
+    self._text_size = measure_text_cached(gui_app.font(self._font_weight), self._text, self._font_size)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._click_callback and self.enabled:
