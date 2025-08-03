@@ -14,7 +14,7 @@ from typing import NoReturn
 from cereal import log, car
 import cereal.messaging as messaging
 from openpilot.system.hardware import HARDWARE
-from openpilot.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process
 from openpilot.common.transformations.orientation import rot_from_euler, euler_from_rot

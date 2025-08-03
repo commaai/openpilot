@@ -13,8 +13,6 @@
 
 class HardwareTici : public HardwareNone {
 public:
-  static constexpr float MAX_VOLUME = 0.9;
-  static constexpr float MIN_VOLUME = 0.1;
   static bool TICI() { return true; }
   static bool AGNOS() { return true; }
   static std::string get_os_version() {

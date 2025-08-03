@@ -16,6 +16,7 @@ class ButtonStyle(IntEnum):
   ACTION = 4
   LIST_ACTION = 5  # For list items with action buttons
   NO_EFFECT = 6
+  KEYBOARD = 7
 
 
 class TextAlignment(IntEnum):
@@ -38,6 +39,7 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.ACTION: rl.Color(0, 0, 0, 255),
   ButtonStyle.LIST_ACTION: rl.Color(228, 228, 228, 255),
   ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
+  ButtonStyle.KEYBOARD: rl.Color(221, 221, 221, 255),
 }
 
 BUTTON_BACKGROUND_COLORS = {
@@ -48,6 +50,7 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
   ButtonStyle.LIST_ACTION: rl.Color(57, 57, 57, 255),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
+  ButtonStyle.KEYBOARD: rl.Color(68, 68, 68, 255),
 }
 
 BUTTON_PRESSED_BACKGROUND_COLORS = {
@@ -58,6 +61,7 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
   ButtonStyle.LIST_ACTION: rl.Color(74, 74, 74, 74),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
+  ButtonStyle.KEYBOARD: rl.Color(51, 51, 51, 255),
 }
 
 _pressed_buttons: set[str] = set()  # Track mouse press state globally
