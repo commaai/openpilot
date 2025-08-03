@@ -179,6 +179,7 @@ class Button(Widget):
                text_padding: int = 20,
                enabled: bool = True,
                icon = None,
+               multi_touch: bool = False,
                ):
 
     super().__init__()
@@ -195,6 +196,7 @@ class Button(Widget):
     self._text_padding = text_padding
     self._text_size = measure_text_cached(gui_app.font(self._font_weight), self._text, self._font_size)
     self._icon = icon
+    self._multi_touch = multi_touch
     self.enabled = enabled
 
   def set_text(self, text):

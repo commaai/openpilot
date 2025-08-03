@@ -143,7 +143,7 @@ class Keyboard(Widget):
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not self._all_keys[BACKSPACE_KEY]._is_pressed:
+    if not any(self._all_keys[BACKSPACE_KEY]._is_pressed):
       self._backspace_pressed = False
 
     if self._backspace_pressed:
