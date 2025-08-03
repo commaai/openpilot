@@ -178,15 +178,15 @@ class Button(Widget):
                ):
 
     super().__init__()
-    self._text = text
+    self.text = text
     self._click_callback = click_callback
     self._label_font = gui_app.font(FontWeight.SEMI_BOLD)
     self._button_style = button_style
     self._border_radius = border_radius
     self._font_size = font_size
+    self._font_weight = font_weight
     self._text_color = BUTTON_TEXT_COLOR[button_style]
     self._background_color = BUTTON_BACKGROUND_COLORS[button_style]
-    self._text_size = measure_text_cached(gui_app.font(font_weight), text, font_size)
     self._text_alignment = text_alignment
     self._text_padding = text_padding
     self._icon = icon
@@ -211,19 +211,20 @@ class Button(Widget):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
 
-    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
+    text_size = measure_text_cached(gui_app.font(self._font_weight), self.text, self._font_size)
+    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - text_size.y) // 2)
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
-      if self._text:
+      if self.text:
         if self._text_alignment == TextAlignment.LEFT:
           icon_x = self._rect.x + self._text_padding
           text_pos.x = icon_x + self._icon.width + ICON_PADDING
         elif self._text_alignment == TextAlignment.CENTER:
-          total_width = self._icon.width + ICON_PADDING + self._text_size.x
+          total_width = self._icon.width + ICON_PADDING + text_size.x
           icon_x = self._rect.x + (self._rect.width - total_width) / 2
           text_pos.x = icon_x + self._icon.width + ICON_PADDING
         else:
-          text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
+          text_pos.x = self._rect.x + self._rect.width - text_size.x - self._text_padding
           icon_x = text_pos.x - ICON_PADDING - self._icon.width
       else:
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
@@ -232,10 +233,10 @@ class Button(Widget):
       if self._text_alignment == TextAlignment.LEFT:
         text_pos.x = self._rect.x + self._text_padding
       elif self._text_alignment == TextAlignment.CENTER:
-        text_pos.x = self._rect.x + (self._rect.width - self._text_size.x) // 2
+        text_pos.x = self._rect.x + (self._rect.width - text_size.x) // 2
       elif self._text_alignment == TextAlignment.RIGHT:
-        text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
-    rl.draw_text_ex(self._label_font, self._text, text_pos, self._font_size, 0, self._text_color)
+        text_pos.x = self._rect.x + self._rect.width - text_size.x - self._text_padding
+    rl.draw_text_ex(self._label_font, self.text, text_pos, self._font_size, 0, self._text_color)
 
 class ButtonRadio(Button):
   def __init__(self,
@@ -265,9 +266,10 @@ class ButtonRadio(Button):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
 
-    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
+    text_size = measure_text_cached(gui_app.font(self._font_weight), self.text, self._font_size)
+    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - text_size.y) // 2)
     text_pos.x = self._rect.x + self._text_padding
-    rl.draw_text_ex(self._label_font, self._text, text_pos, self._font_size, 0, self._text_color)
+    rl.draw_text_ex(self._label_font, self.text, text_pos, self._font_size, 0, self._text_color)
 
     if self._icon and self.selected:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
