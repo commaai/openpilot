@@ -195,7 +195,7 @@ class Setup(Widget):
     continue_enabled = self.network_connected.is_set()
     self._network_setup_continue_button.enabled = continue_enabled
     continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
-    self._network_setup_continue_button._text = continue_text
+    self._network_setup_continue_button.set_text(continue_text)
     self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):
