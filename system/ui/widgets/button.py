@@ -212,7 +212,7 @@ class Button(Widget):
         self._background_color = BUTTON_PRESSED_BACKGROUND_COLORS[self._button_style]
       else:
         self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
-    else:
+    elif self._button_style != ButtonStyle.NO_EFFECT:
       self._background_color = BUTTON_DISABLED_BACKGROUND_COLOR
       self._text_color = BUTTON_DISABLED_TEXT_COLOR
 

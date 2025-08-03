@@ -146,16 +146,20 @@ class WifiManagerUI(Widget):
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    self._networks_buttons[network.ssid].render(ssid_rect)
-
     status_text = ""
     match self.state:
       case StateConnecting(network=connecting):
         if connecting.ssid == network.ssid:
+          self._networks_buttons[network.ssid].enabled = False
           status_text = "CONNECTING..."
       case StateForgetting(network=forgetting):
         if forgetting.ssid == network.ssid:
+          self._networks_buttons[network.ssid].enabled = False
           status_text = "FORGETTING..."
+      case _:
+        self._networks_buttons[network.ssid].enabled = True
+
+    self._networks_buttons[network.ssid].render(ssid_rect)
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
