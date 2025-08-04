@@ -150,7 +150,7 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   assert(fd >= 0);
 
   struct v4l2_capability cap;
-  util::safe_ioctl(fd, VIDIOC_G_PRIORITY, &cap, "VIDIOC_G_PRIORITY failed");
+  util::safe_ioctl(fd, VIDIOC_QUERYCAP, &cap, "VIDIOC_QUERYCAP failed");
   LOGD("opened encoder device %s %s = %d", cap.driver, cap.card, fd);
   assert(strcmp((const char *)cap.driver, "msm_vidc_driver") == 0);
   assert(strcmp((const char *)cap.card, "msm_vidc_venc") == 0);
