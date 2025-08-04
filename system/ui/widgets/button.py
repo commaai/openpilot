@@ -5,6 +5,7 @@ import pyray as rl
 
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
 from openpilot.system.ui.widgets import Widget
 
 
@@ -284,3 +285,34 @@ class ButtonRadio(Button):
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
       icon_x = self._rect.x + self._rect.width - self._icon.width - self._text_padding - ICON_PADDING
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE if self.enabled else rl.Color(255, 255, 255, 100))
+
+class SSID(Button):
+  def __init__(self,
+               text: str,
+               click_callback: Callable[[], None] = None,
+               ):
+
+    super().__init__(text, click_callback=click_callback, font_size=55,
+                     text_alignment=TextAlignment.LEFT, button_style=ButtonStyle.NO_EFFECT)
+    self.selected = False
+    self.emojis = find_emoji(self._text)
+
+  def _render(self, _):
+    roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
+    rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
+
+    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
+    text_pos.x = self._rect.x + self._text_padding
+
+    prev_index = 0
+    for start, end, emoji in self.emojis:
+      text_before = self._text[prev_index:start]
+      width_before = measure_text_cached(gui_app.font(self._font_weight), text_before, self._font_size)
+      rl.draw_text_ex(self._label_font, text_before, text_pos, self._font_size, 0, self._text_color)
+      text_pos.x += width_before.x
+
+      tex = emoji_tex(emoji)
+      rl.draw_texture_ex(tex, text_pos, 0.0, self._font_size / tex.height, self._text_color)
+      text_pos.x += self._font_size
+      prev_index = end
+    rl.draw_text_ex(self._label_font, self._text[prev_index:], text_pos, self._font_size, 0, self._text_color)
