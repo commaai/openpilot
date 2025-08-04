@@ -255,6 +255,16 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
 
 
+def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].segmentNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
+  if duration > 0 and not sm['audioFeedback'].earlySend:
+    return NormalPermanentAlert(
+      "Recording Audio Feedback",
+      f"{round(duration)} second{"s" if round(duration) != 1 else ""} remaining. Press again to save early.")
+  else:
+    return NormalPermanentAlert("Audio Feedback Saved", duration=1.0)
+
+
 # *** debug alerts ***
 
 def out_of_space_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
@@ -372,13 +382,6 @@ def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messagin
     text = "Disable your car's stock LKAS to engage"
   return NormalPermanentAlert("Invalid LKAS setting", text)
 
-
-def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
-  duration = FEEDBACK_MAX_DURATION - (sm['audioFeedback'].segmentNum * SAMPLE_BUFFER / SAMPLE_RATE)
-  audible_alert = AudibleAlert.prompt if sm['audioFeedback'].segmentNum == 0 else AudibleAlert.none
-  alert = Alert("Recording Audio Feedback", f"Recording for {round(duration)} seconds, press again to send early.", AlertStatus.normal, AlertSize.mid,
-                Priority.LOWER, VisualAlert.none, audible_alert, 0.2)
-  return alert
 
 
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
