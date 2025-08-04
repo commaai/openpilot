@@ -2490,7 +2490,7 @@ struct AudioData {
 struct AudioFeedback {
   audio @0 :AudioData;
   segmentNum @1 :UInt16;
-  earlySend @2 :Bool;
+  earlyStop @2 :Bool;
 }
 
 struct Touch {

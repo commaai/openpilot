@@ -63,7 +63,7 @@ def feedbackd_thread():
       msg.audioFeedback.audio.sampleRate = raw_audio.sampleRate
       msg.audioFeedback.segmentNum = segment_num
       if early_send_triggered:
-        msg.audioFeedback.earlySend = True
+        msg.audioFeedback.earlyStop = True
         early_send_triggered = False
         cloudlog.info("Sent early send signal for audio feedback")
       pm.send('audioFeedback', msg)
