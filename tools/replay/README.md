@@ -75,7 +75,7 @@ Options:
   --qcam                 load qcamera
   --no-hw-decoder        disable HW video decoding
   --no-vipc              do not output video
-  --all                  do output all messages including uiDebug, userFlag.
+  --all                  do output all messages including uiDebug, userBookmark.
                          this may causes issues when used along with UI
 
 Arguments:

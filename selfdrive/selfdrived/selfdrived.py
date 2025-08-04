@@ -183,7 +183,7 @@ class SelfdriveD:
 
     # Check for user flag (bookmark) press
     if self.sm.updated['bookmarkButton']:
-      self.events.add(EventName.userFlag)
+      self.events.add(EventName.userBookmark)
 
     if self.sm.updated['audioFeedback']:
       self.events.add(EventName.audioFeedback)

@@ -19,7 +19,7 @@ class MainLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    self._pm = messaging.PubMaster(['userFlag'])
+    self._pm = messaging.PubMaster(['userBookmark'])
 
     self._sidebar = Sidebar()
     self._current_mode = MainState.HOME
@@ -77,9 +77,9 @@ class MainLayout(Widget):
     self.open_settings(PanelType.DEVICE)
 
   def _on_flag_clicked(self):
-    user_flag = messaging.new_message('userFlag')
-    user_flag.valid = True
-    self._pm.send('userFlag', user_flag)
+    user_bookmark = messaging.new_message('userBookmark')
+    user_bookmark.valid = True
+    self._pm.send('userBookmark', user_bookmark)
 
   def _on_onroad_clicked(self):
     self._sidebar.set_visible(not self._sidebar.is_visible)

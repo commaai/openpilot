@@ -9,7 +9,7 @@ FEEDBACK_MAX_DURATION = 10.0
 ButtonType = car.CarState.ButtonEvent.Type
 
 def feedbackd_thread():
-  pm = messaging.PubMaster(['userFlag', 'audioFeedback'])
+  pm = messaging.PubMaster(['userBookmark', 'audioFeedback'])
   sm = messaging.SubMaster(['rawAudioData', 'bookmarkButton', 'carState'])
   should_record_audio = False
   segment_num = 0
@@ -19,7 +19,7 @@ def feedbackd_thread():
 
   while True:
     sm.update()
-    should_send_flag = False
+    should_send_bookmark = False
     current_time = time.monotonic()
 
     if sm.updated['carState'] and sm['carState'].canValid:
@@ -33,7 +33,7 @@ def feedbackd_thread():
               recording_start_time = current_time
               waiting_for_release = False
               early_send_triggered = False
-              should_send_flag = True
+              should_send_bookmark = True
               cloudlog.info("LKAS button pressed - starting 10-second audio feedback")
             elif not waiting_for_release: # Wait for second press release to end early
               waiting_for_release = True
@@ -46,7 +46,7 @@ def feedbackd_thread():
 
     if sm.updated['bookmarkButton']:
       cloudlog.info("Bookmark button pressed!")
-      should_send_flag = True
+      should_send_bookmark = True
 
     # Check for timeout
     if should_record_audio and current_time - recording_start_time >= FEEDBACK_MAX_DURATION:
@@ -69,9 +69,9 @@ def feedbackd_thread():
       pm.send('audioFeedback', msg)
       segment_num += 1
 
-    if should_send_flag:
-      msg = messaging.new_message('userFlag', valid=True)
-      pm.send('userFlag', msg)
+    if should_send_bookmark:
+      msg = messaging.new_message('userBookmark', valid=True)
+      pm.send('userBookmark', msg)
 
 def main():
   feedbackd_thread()
