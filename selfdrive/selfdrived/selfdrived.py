@@ -32,7 +32,7 @@ SIMULATION = "SIMULATION" in os.environ
 TESTING_CLOSET = "TESTING_CLOSET" in os.environ
 
 LONGITUDINAL_PERSONALITY_MAP = {v: k for k, v in log.LongitudinalPersonality.schema.enumerants.items()}
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.15 / DT_CTRL)  # TODO: needs to be 25 for longitudinal
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
 
 ThermalStatus = log.DeviceState.ThermalStatus
 State = log.SelfdriveState.OpenpilotState
@@ -46,8 +46,7 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrated_pose: Pose,
-                              jerk_estimator: JerkEstimator3, counter: int) -> tuple[int, bool]:
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrated_pose: Pose, counter: int) -> tuple[int, bool, float]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
   # longitudinal
   accel_calibrated = calibrated_pose.acceleration.x
@@ -59,17 +58,12 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
   excessive_lat_actuation = False
-  estimated_jerk = jerk_estimator.update(roll_compensated_lateral_accel)
   print('vEgo', CS.vEgo, yaw_rate, roll)
-  print('roll_compensated_lateral_accel', roll_compensated_lateral_accel, estimated_jerk)
+  print('roll_compensated_lateral_accel', roll_compensated_lateral_accel)
   if sm['carControl'].latActive:
     if not CS.steeringPressed:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
         excessive_lat_actuation = True
-
-    # Note that we do not check steeringPressed as it is unreliable under high jerk conditions
-    if abs(estimated_jerk) > ISO_LATERAL_JERK * 4:
-      excessive_lat_actuation = True
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
   livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
@@ -100,7 +94,6 @@ class SelfdriveD:
 
     self.pose_calibrator = PoseCalibrator()
     self.calibrated_pose: Pose | None = None
-    self.jerk_estimator = JerkEstimator3(DT_CTRL)
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -286,7 +279,7 @@ class SelfdriveD:
 
     if self.calibrated_pose is not None:
       self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrated_pose,
-                                                                                                                        self.jerk_estimator, self.excessive_actuation_counter)
+                                                                                                                        self.excessive_actuation_counter)
       self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
       if not self.excessive_actuation and excessive_actuation:
         set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
