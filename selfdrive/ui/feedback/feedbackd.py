@@ -27,7 +27,7 @@ def feedbackd_thread():
         if be.type == ButtonType.lkas:
           if be.pressed:
             if not should_record_audio:
-              # First press: Start recording
+              # Start recording on first press
               should_record_audio = True
               segment_num = 0
               recording_start_time = current_time
@@ -35,31 +35,26 @@ def feedbackd_thread():
               early_send_triggered = False
               should_send_flag = True
               cloudlog.info("LKAS button pressed - starting 10-second audio feedback")
-            elif should_record_audio and not waiting_for_release:
-              # Second press: Trigger rapid finish on release
+            elif not waiting_for_release: # Wait for second press release to end early
               waiting_for_release = True
-              cloudlog.info("LKAS button pressed during recording - will rapid finish on release")
-          else:  # Button released
-            if waiting_for_release and should_record_audio:
-              # Rapid finish triggered
-              early_send_triggered = True
-              should_record_audio = False
-              waiting_for_release = False
-              recording_start_time = None
-              cloudlog.info("LKAS button released - triggering rapid finish")
+          elif waiting_for_release:  # Second press released
+            early_send_triggered = True
+            should_record_audio = False
+            waiting_for_release = False
+            recording_start_time = None
+            cloudlog.info("LKAS button released - ending recording early")
 
     if sm.updated['bookmarkButton']:
       cloudlog.info("Bookmark button pressed!")
       should_send_flag = True
 
     # Check for timeout
-    if should_record_audio and recording_start_time is not None:
-      if current_time - recording_start_time >= FEEDBACK_MAX_DURATION:
-        should_record_audio = False
-        recording_start_time = None
-        waiting_for_release = False
-        early_send_triggered = False
-        cloudlog.info("10-second recording completed - stopping audio feedback")
+    if should_record_audio and current_time - recording_start_time >= FEEDBACK_MAX_DURATION:
+      should_record_audio = False
+      recording_start_time = None
+      waiting_for_release = False
+      early_send_triggered = False
+      cloudlog.info("10-second recording completed - stopping audio feedback")
 
     if (should_record_audio or early_send_triggered) and sm.updated['rawAudioData']:
       raw_audio = sm['rawAudioData']
@@ -70,7 +65,7 @@ def feedbackd_thread():
       if early_send_triggered:
         msg.audioFeedback.earlySend = True
         early_send_triggered = False
-        cloudlog.info("Sent rapid finish signal")
+        cloudlog.info("Sent early send signal for audio feedback")
       pm.send('audioFeedback', msg)
       segment_num += 1
 
