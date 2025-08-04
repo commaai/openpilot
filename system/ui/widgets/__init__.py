@@ -2,7 +2,7 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.system.ui.lib.application import gui_app, MousePos
+from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOT
 
 
 class DialogResult(IntEnum):
@@ -15,7 +15,8 @@ class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._is_pressed = False
+    self._is_pressed = [False] * MAX_TOUCH_SLOT
+    self._multi_touch = False
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
 
@@ -30,6 +31,10 @@ class Widget(abc.ABC):
   @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
+
+  @property
+  def is_pressed(self) -> bool:
+    return any(self._is_pressed)
 
   @property
   def rect(self) -> rl.Rectangle:
@@ -68,17 +73,19 @@ class Widget(abc.ABC):
 
     # Keep track of whether mouse down started within the widget's rectangle
     for mouse_event in gui_app.mouse_events:
+      if not self._multi_touch and mouse_event.slot != 0:
+        continue
       if mouse_event.left_pressed and self._touch_valid():
         if rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._is_pressed = True
+          self._is_pressed[mouse_event.slot] = True
 
       elif not self._touch_valid():
-        self._is_pressed = False
+        self._is_pressed[mouse_event.slot] = False
 
       elif mouse_event.left_released:
-        if self._is_pressed and rl.check_collision_point_rec(mouse_event.pos, self._rect):
+        if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
           self._handle_mouse_release(mouse_event.pos)
-        self._is_pressed = False
+        self._is_pressed[mouse_event.slot] = False
 
     return ret
 

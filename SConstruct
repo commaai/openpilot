@@ -17,7 +17,7 @@ AGNOS = TICI
 
 Decider('MD5-timestamp')
 
-SetOption('num_jobs', int(os.cpu_count()/2))
+SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
 AddOption('--kaitai',
           action='store_true',

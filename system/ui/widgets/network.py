@@ -41,6 +41,7 @@ class StateConnecting:
 @dataclass
 class StateNeedsAuth:
   network: NetworkInfo
+  retry: bool
   action: Literal["needs_auth"] = "needs_auth"
 
 
@@ -93,8 +94,8 @@ class WifiManagerUI(Widget):
         return
 
       match self.state:
-        case StateNeedsAuth(network):
-          self.keyboard.set_title("Enter password", f"for {network.ssid}")
+        case StateNeedsAuth(network, retry):
+          self.keyboard.set_title("Wrong password" if retry else "Enter password", f"for {network.ssid}")
           self.keyboard.reset()
           gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
@@ -145,16 +146,20 @@ class WifiManagerUI(Widget):
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    self._networks_buttons[network.ssid].render(ssid_rect)
-
     status_text = ""
     match self.state:
       case StateConnecting(network=connecting):
         if connecting.ssid == network.ssid:
+          self._networks_buttons[network.ssid].enabled = False
           status_text = "CONNECTING..."
       case StateForgetting(network=forgetting):
         if forgetting.ssid == network.ssid:
+          self._networks_buttons[network.ssid].enabled = False
           status_text = "FORGETTING..."
+      case _:
+        self._networks_buttons[network.ssid].enabled = True
+
+    self._networks_buttons[network.ssid].render(ssid_rect)
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
@@ -176,7 +181,7 @@ class WifiManagerUI(Widget):
   def _networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
       if not network.is_saved and network.security_type != SecurityType.OPEN:
-        self.state = StateNeedsAuth(network)
+        self.state = StateNeedsAuth(network, False)
       elif not network.is_connected:
         self.connect_to_network(network)
 
@@ -225,13 +230,14 @@ class WifiManagerUI(Widget):
       for n in self._networks:
         self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                                 button_style=ButtonStyle.NO_EFFECT)
-        self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.ACTION)
+        self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
+                                                       font_size=45)
 
   def _on_need_auth(self, ssid):
     with self._lock:
       network = next((n for n in self._networks if n.ssid == ssid), None)
       if network:
-        self.state = StateNeedsAuth(network)
+        self.state = StateNeedsAuth(network, True)
 
   def _on_activated(self):
     with self._lock:

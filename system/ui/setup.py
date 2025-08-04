@@ -103,10 +103,13 @@ class Setup(Widget):
 
   def _getting_started_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
     self.start_network_check()
 
   def _software_selection_back_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
+    self.start_network_check()
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
@@ -195,7 +198,7 @@ class Setup(Widget):
     continue_enabled = self.network_connected.is_set()
     self._network_setup_continue_button.enabled = continue_enabled
     continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
-    self._network_setup_continue_button._text = continue_text
+    self._network_setup_continue_button.set_text(continue_text)
     self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_software_selection(self, rect: rl.Rectangle):

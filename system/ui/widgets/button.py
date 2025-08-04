@@ -16,6 +16,8 @@ class ButtonStyle(IntEnum):
   ACTION = 4
   LIST_ACTION = 5  # For list items with action buttons
   NO_EFFECT = 6
+  KEYBOARD = 7
+  FORGET_WIFI = 8
 
 
 class TextAlignment(IntEnum):
@@ -38,6 +40,8 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.ACTION: rl.Color(0, 0, 0, 255),
   ButtonStyle.LIST_ACTION: rl.Color(228, 228, 228, 255),
   ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
+  ButtonStyle.KEYBOARD: rl.Color(221, 221, 221, 255),
+  ButtonStyle.FORGET_WIFI: rl.Color(51, 51, 51, 255),
 }
 
 BUTTON_BACKGROUND_COLORS = {
@@ -48,6 +52,8 @@ BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
   ButtonStyle.LIST_ACTION: rl.Color(57, 57, 57, 255),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
+  ButtonStyle.KEYBOARD: rl.Color(68, 68, 68, 255),
+  ButtonStyle.FORGET_WIFI: rl.Color(189, 189, 189, 255),
 }
 
 BUTTON_PRESSED_BACKGROUND_COLORS = {
@@ -58,6 +64,8 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
   ButtonStyle.LIST_ACTION: rl.Color(74, 74, 74, 74),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
+  ButtonStyle.KEYBOARD: rl.Color(51, 51, 51, 255),
+  ButtonStyle.FORGET_WIFI: rl.Color(130, 130, 130, 255),
 }
 
 _pressed_buttons: set[str] = set()  # Track mouse press state globally
@@ -171,6 +179,7 @@ class Button(Widget):
                text_padding: int = 20,
                enabled: bool = True,
                icon = None,
+               multi_touch: bool = False,
                ):
 
     super().__init__()
@@ -180,13 +189,19 @@ class Button(Widget):
     self._button_style = button_style
     self._border_radius = border_radius
     self._font_size = font_size
+    self._font_weight = font_weight
     self._text_color = BUTTON_TEXT_COLOR[button_style]
     self._background_color = BUTTON_BACKGROUND_COLORS[button_style]
-    self._text_size = measure_text_cached(gui_app.font(font_weight), text, font_size)
     self._text_alignment = text_alignment
     self._text_padding = text_padding
+    self._text_size = measure_text_cached(gui_app.font(self._font_weight), self._text, self._font_size)
     self._icon = icon
+    self._multi_touch = multi_touch
     self.enabled = enabled
+
+  def set_text(self, text):
+    self._text = text
+    self._text_size = measure_text_cached(gui_app.font(self._font_weight), self._text, self._font_size)
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
     if self._click_callback and self.enabled:
@@ -195,11 +210,11 @@ class Button(Widget):
   def _update_state(self):
     if self.enabled:
       self._text_color = BUTTON_TEXT_COLOR[self._button_style]
-      if self._is_pressed:
+      if self.is_pressed:
         self._background_color = BUTTON_PRESSED_BACKGROUND_COLORS[self._button_style]
       else:
         self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
-    else:
+    elif self._button_style != ButtonStyle.NO_EFFECT:
       self._background_color = BUTTON_DISABLED_BACKGROUND_COLOR
       self._text_color = BUTTON_DISABLED_TEXT_COLOR
 

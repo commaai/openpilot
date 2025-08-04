@@ -79,6 +79,8 @@ class Keyboard(Widget):
     self._render_return_status = -1
     self._cancel_button = Button("Cancel", self._cancel_button_callback)
 
+    self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
+
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
     self._key_icons = {
@@ -96,10 +98,11 @@ class Keyboard(Widget):
           if key in self._key_icons:
             texture = self._key_icons[key]
             self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
-                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL)
+                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
           else:
-            self._all_keys[key] = Button(key, partial(self._key_callback, key))
-    self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY])
+            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
+    self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
+                                           button_style=ButtonStyle.KEYBOARD, multi_touch=True)
 
   @property
   def text(self):
@@ -114,6 +117,9 @@ class Keyboard(Widget):
   def set_title(self, title: str, sub_title: str = ""):
     self._title = title
     self._sub_title = sub_title
+
+  def _eye_button_callback(self):
+    self._password_mode = not self._password_mode
 
   def _cancel_button_callback(self):
     self.clear()
@@ -137,7 +143,7 @@ class Keyboard(Widget):
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not self._all_keys[BACKSPACE_KEY]._is_pressed:
+    if not self._all_keys[BACKSPACE_KEY].is_pressed:
       self._backspace_pressed = False
 
     if self._backspace_pressed:
@@ -173,7 +179,7 @@ class Keyboard(Widget):
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
 
-        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY]._is_pressed and not self._backspace_pressed:
+        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY].is_pressed and not self._backspace_pressed:
           self._backspace_pressed = True
           self._backspace_press_time = time.monotonic()
           self._backspace_last_repeat = time.monotonic()
@@ -198,16 +204,12 @@ class Keyboard(Widget):
       eye_texture = self._eye_closed_texture if self._password_mode else self._eye_open_texture
 
       eye_rect = rl.Rectangle(input_rect.x + input_rect.width - 90, input_rect.y, 80, input_rect.height)
+      self._eye_button.render(eye_rect)
+
       eye_x = eye_rect.x + (eye_rect.width - eye_texture.width) / 2
       eye_y = eye_rect.y + (eye_rect.height - eye_texture.height) / 2
 
       rl.draw_texture_v(eye_texture, rl.Vector2(eye_x, eye_y), rl.WHITE)
-
-      # Handle click on eye icon
-      if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(
-        rl.get_mouse_position(), eye_rect
-      ):
-        self._password_mode = not self._password_mode
     else:
       self._input_box.render(input_rect)
 
