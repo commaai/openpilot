@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
     try {
       stream = new PandaStream(&app, {.serial = cmd_parser.value("panda-serial")});
     } catch (std::exception &e) {
-      qWarning() << e.what();
       return 0;
     }
   } else if (SocketCanStream::available() && cmd_parser.isSet("socketcan")) {

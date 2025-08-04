@@ -3,6 +3,7 @@
 #include <QFileDialog>
 #include <QLabel>
 #include <QPushButton>
+#include <QVBoxLayout>
 
 #include "streams/socketcanstream.h"
 #include "tools/cabana/streams/devicestream.h"
