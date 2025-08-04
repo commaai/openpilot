@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import time
 import cereal.messaging as messaging
+from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from cereal import car
 
@@ -9,6 +10,7 @@ FEEDBACK_MAX_DURATION = 10.0
 ButtonType = car.CarState.ButtonEvent.Type
 
 def feedbackd_thread():
+  params = Params()
   pm = messaging.PubMaster(['userBookmark', 'audioFeedback'])
   sm = messaging.SubMaster(['rawAudioData', 'bookmarkButton', 'carState'])
   should_record_audio = False
@@ -17,12 +19,19 @@ def feedbackd_thread():
   waiting_for_release = False
   early_send_triggered = False
 
+  record_audio_feedback = params.get_bool("RecordAudioFeedback")
+  last_refresh_time = time.monotonic()
+
   while True:
     sm.update()
     should_send_bookmark = False
     current_time = time.monotonic()
 
-    if sm.updated['carState'] and sm['carState'].canValid:
+    if current_time - last_refresh_time > 2:
+      record_audio_feedback = params.get_bool("RecordAudioFeedback")
+      last_refresh_time = current_time
+
+    if record_audio_feedback and sm.updated['carState'] and sm['carState'].canValid:
       for be in sm['carState'].buttonEvents:
         if be.type == ButtonType.lkas:
           if be.pressed:
@@ -48,13 +57,13 @@ def feedbackd_thread():
       cloudlog.info("Bookmark button pressed!")
       should_send_bookmark = True
 
-    # Check for timeout
-    if should_record_audio and current_time - recording_start_time >= FEEDBACK_MAX_DURATION:
+    # Check for timeout or flipped RecordAudioFeedback param
+    if should_record_audio and (current_time - recording_start_time >= FEEDBACK_MAX_DURATION or not record_audio_feedback):
       should_record_audio = False
       recording_start_time = None
       waiting_for_release = False
       early_send_triggered = False
-      cloudlog.info("10-second recording completed - stopping audio feedback")
+      cloudlog.info("10-second recording completed or audio feedback disabled - stopping audio feedback")
 
     if (should_record_audio or early_send_triggered) and sm.updated['rawAudioData']:
       raw_audio = sm['rawAudioData']
