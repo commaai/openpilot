@@ -98,11 +98,11 @@ class Keyboard(Widget):
           if key in self._key_icons:
             texture = self._key_icons[key]
             self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
-                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD)
+                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
           else:
-            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85)
+            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
     self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
-                                           button_style=ButtonStyle.KEYBOARD)
+                                           button_style=ButtonStyle.KEYBOARD, multi_touch=True)
 
   @property
   def text(self):
@@ -143,7 +143,7 @@ class Keyboard(Widget):
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not self._all_keys[BACKSPACE_KEY]._is_pressed:
+    if not self._all_keys[BACKSPACE_KEY].is_pressed:
       self._backspace_pressed = False
 
     if self._backspace_pressed:
@@ -179,7 +179,7 @@ class Keyboard(Widget):
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
 
-        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY]._is_pressed and not self._backspace_pressed:
+        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY].is_pressed and not self._backspace_pressed:
           self._backspace_pressed = True
           self._backspace_press_time = time.monotonic()
           self._backspace_last_repeat = time.monotonic()
