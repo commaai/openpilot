@@ -47,8 +47,6 @@ class Reset(Widget):
 
   def _do_erase(self):
     if PC:
-      time.sleep(2)
-      self._reset_state = ResetState.FAILED
       return
 
     # Best effort to wipe NVME
