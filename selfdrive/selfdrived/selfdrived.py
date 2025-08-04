@@ -46,12 +46,9 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator,
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrated_pose: Pose,
                               jerk_estimator: JerkEstimator3, counter: int) -> tuple[int, bool]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
-  device_pose = Pose.from_live_pose(sm['livePose'])
-  calibrated_pose = calibrator.build_calibrated_pose(device_pose)
-
   # longitudinal
   accel_calibrated = calibrated_pose.acceleration.x
   excessive_long_actuation = sm['carControl'].longActive and (accel_calibrated > ACCEL_MAX * 2 or accel_calibrated < ACCEL_MIN * 2)
@@ -100,7 +97,9 @@ class SelfdriveD:
       self.CP = CP
 
     self.car_events = CarSpecificEvents(self.CP)
-    self.calibrator = PoseCalibrator()
+
+    self.pose_calibrator = PoseCalibrator()
+    self.calibrated_pose: Pose | None = None
     self.jerk_estimator = JerkEstimator3(DT_CTRL)
 
     # Setup sockets
@@ -285,15 +284,16 @@ class SelfdriveD:
       device_pose = Pose.from_live_pose(self.sm['livePose'])
       self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
 
-    self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrator, self.jerk_estimator, self.excessive_actuation_counter)
-    self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
-    if not self.excessive_actuation and excessive_actuation:
-      set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
-      self.excessive_actuation = True
+    if self.calibrated_pose is not None:
+      self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrated_pose,
+                                                                                                                        self.jerk_estimator, self.excessive_actuation_counter)
+      self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
+      if not self.excessive_actuation and excessive_actuation:
+        set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
+        self.excessive_actuation = True
 
     if self.excessive_actuation:
       print('EXCESSIVE ACTUATION')
-      raise Exception("Excessive actuation detected, please check your hardware and calibration.")
       self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
