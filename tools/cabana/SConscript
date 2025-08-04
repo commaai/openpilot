@@ -16,10 +16,7 @@ qt_libs = ['qt_util'] + base_libs
 
 cabana_env = qt_env.Clone()
 
-# build cabana's local panda library
-panda_lib = cabana_env.Library('cabana_panda', ['panda/panda.cc'])
-
-cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, panda_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
+cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
@@ -33,7 +30,7 @@ cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcans
                                                'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'utils/export.cc', 'utils/util.cc',
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
-                                               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc',
+                                               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
                                                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 

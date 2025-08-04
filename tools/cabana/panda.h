@@ -23,7 +23,7 @@
 #define RECV_SIZE (0x4000U)
 #define TIMEOUT 0
 
-#define CAN_REJECTED_BUS_OFFSET   0xC0U
+#define CAN_REJECTED_BUS_OFFSET 0xC0U
 #define CAN_RETURNED_BUS_OFFSET 0x80U
 
 #define PANDA_BUS_OFFSET 4
@@ -74,7 +74,6 @@ private:
   // USB connection members
   libusb_context *ctx = nullptr;
   libusb_device_handle *dev_handle = nullptr;
-  std::recursive_mutex hw_lock;
   std::string hw_serial_str;
   std::atomic<bool> connected_flag = true;
   std::atomic<bool> comms_healthy_flag = true;

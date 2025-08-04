@@ -1,4 +1,4 @@
-#include "tools/cabana/panda/panda.h"
+#include "tools/cabana/panda.h"
 
 #include <unistd.h>
 #include <cassert>
@@ -9,8 +9,6 @@
 #include "cereal/messaging/messaging.h"
 #include "common/swaglog.h"
 #include "common/util.h"
-
-const bool PANDAD_MAXOUT = getenv("PANDAD_MAXOUT") != nullptr;
 
 static libusb_context *init_usb_ctx() {
   libusb_context *context = nullptr;
@@ -32,7 +30,7 @@ Panda::Panda(std::string serial, uint32_t bus_offset) : bus_offset(bus_offset) {
   if (!init_usb_connection(serial)) {
     throw std::runtime_error("Error connecting to panda");
   }
-  
+
   LOGW("connected to %s over USB", serial.c_str());
   hw_type = get_hw_type();
   can_reset_communications();
@@ -56,7 +54,7 @@ std::string Panda::hw_serial() {
 
 std::vector<std::string> Panda::list(bool usb_only) {
   static std::unique_ptr<libusb_context, decltype(&libusb_exit)> context(init_usb_ctx(), libusb_exit);
-  
+
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
   std::vector<std::string> serials;
@@ -67,7 +65,7 @@ std::vector<std::string> Panda::list(bool usb_only) {
     LOGE("libusb can't get device list");
     goto finish;
   }
-  
+
   for (size_t i = 0; i < num_devices; ++i) {
     libusb_device *device = dev_list[i];
     libusb_device_descriptor desc;
@@ -130,11 +128,6 @@ bool Panda::can_receive(std::vector<can_frame>& out_vec) {
   int recv = bulk_read(0x81, &receive_buffer[receive_buffer_size], RECV_SIZE);
   if (!comms_healthy()) {
     return false;
-  }
-
-  if (PANDAD_MAXOUT) {
-    static uint8_t junk[RECV_SIZE];
-    bulk_read(0xab, junk, RECV_SIZE - recv);
   }
 
   bool ret = true;
@@ -204,14 +197,14 @@ bool Panda::init_usb_connection(const std::string& serial) {
   ssize_t num_devices;
   libusb_device **dev_list = NULL;
   int err = 0;
-  
+
   ctx = init_usb_ctx();
   if (!ctx) { goto fail; }
 
   // connect by serial
   num_devices = libusb_get_device_list(ctx, &dev_list);
   if (num_devices < 0) { goto fail; }
-  
+
   for (size_t i = 0; i < num_devices; ++i) {
     libusb_device_descriptor desc;
     libusb_get_device_descriptor(dev_list[i], &desc);
@@ -284,7 +277,6 @@ int Panda::control_write(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, uns
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  std::lock_guard lk(hw_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, NULL, 0, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
@@ -301,7 +293,6 @@ int Panda::control_read(uint8_t bRequest, uint16_t wValue, uint16_t wIndex, unsi
     return LIBUSB_ERROR_NO_DEVICE;
   }
 
-  std::lock_guard lk(hw_lock);
   do {
     err = libusb_control_transfer(dev_handle, bmRequestType, bRequest, wValue, wIndex, data, wLength, timeout);
     if (err < 0) handle_usb_issue(err, __func__);
@@ -318,7 +309,6 @@ int Panda::bulk_write(unsigned char endpoint, unsigned char* data, int length, u
     return 0;
   }
 
-  std::lock_guard lk(hw_lock);
   do {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
     if (err == LIBUSB_ERROR_TIMEOUT) {
@@ -340,7 +330,6 @@ int Panda::bulk_read(unsigned char endpoint, unsigned char* data, int length, un
     return 0;
   }
 
-  std::lock_guard lk(hw_lock);
   do {
     err = libusb_bulk_transfer(dev_handle, endpoint, data, length, &transferred, timeout);
     if (err == LIBUSB_ERROR_TIMEOUT) {
