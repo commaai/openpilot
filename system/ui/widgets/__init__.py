@@ -33,6 +33,10 @@ class Widget(abc.ABC):
     return self._is_visible() if callable(self._is_visible) else self._is_visible
 
   @property
+  def is_pressed(self) -> bool:
+    return any(self._is_pressed)
+
+  @property
   def rect(self) -> rl.Rectangle:
     return self._rect
 

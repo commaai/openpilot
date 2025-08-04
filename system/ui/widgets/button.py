@@ -210,7 +210,7 @@ class Button(Widget):
   def _update_state(self):
     if self.enabled:
       self._text_color = BUTTON_TEXT_COLOR[self._button_style]
-      if self._is_pressed:
+      if self.is_pressed:
         self._background_color = BUTTON_PRESSED_BACKGROUND_COLORS[self._button_style]
       else:
         self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
