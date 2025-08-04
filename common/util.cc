@@ -159,7 +159,7 @@ int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_
   } while ((ret == -1) && (errno == EINTR));
 
   if (ret == -1 && exception_msg) {
-    LOGE("safe_ioctl error: %s(%d) %s (fd: %d request: %lx argp: %p)", strerror(errno), errno, exception_msg, fd, request, argp);
+    LOGE("safe_ioctl error: %s %s(%d) (fd: %d request: %lx argp: %p)", exception_msg, strerror(errno), errno, fd, request, argp);
     throw std::runtime_error(exception_msg);
   }
   return ret;
