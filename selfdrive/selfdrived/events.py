@@ -390,7 +390,7 @@ def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
   fast_forward = sm['audioFeedback'].earlySend
   duration = FEEDBACK_MAX_DURATION - (sm['audioFeedback'].segmentNum * SAMPLE_BUFFER / SAMPLE_RATE) if not fast_forward else 0.5
   audible_alert = AudibleAlert.prompt if sm['audioFeedback'].segmentNum == 0 else AudibleAlert.none
-  alert = ProgressAlert("Recording Audio Feedback", "Automatically sends, press again to send early.", duration=duration,
+  alert = ProgressAlert("Recording Audio Feedback", f"Recording for {round(duration)} seconds, press again to send early.", duration=duration,
                         audible_alert=audible_alert, progress_duration=FEEDBACK_MAX_DURATION, fast_forward=fast_forward)
   return alert
 
