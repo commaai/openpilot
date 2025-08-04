@@ -9,11 +9,10 @@ import cereal.messaging as messaging
 from cereal import car, log
 from msgq.visionipc import VisionIpcClient, VisionStreamType
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
-from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL, ISO_LATERAL_JERK
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL
 
 
 from openpilot.common.params import Params
-from openpilot.common.filter_simple import JerkEstimator3
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper, DT_CTRL
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.gps import get_gps_location_service
