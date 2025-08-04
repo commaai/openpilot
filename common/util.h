@@ -4,7 +4,6 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
-#include <functional>
 #include <algorithm>
 #include <atomic>
 #include <chrono>
