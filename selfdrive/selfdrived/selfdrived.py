@@ -46,7 +46,6 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-# TODO: make class?
 def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator,
                               jerk_estimator: JerkEstimator3, counter: int) -> tuple[int, bool]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
@@ -281,7 +280,10 @@ class SelfdriveD:
 
     # Check for excessive actuation
     if self.sm.updated['liveCalibration']:
-      self.calibrator.feed_live_calib(self.sm['liveCalibration'])
+      self.pose_calibrator.feed_live_calib(self.sm['liveCalibration'])
+    if self.sm.updated['livePose']:
+      device_pose = Pose.from_live_pose(self.sm['livePose'])
+      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
 
     self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrator, self.jerk_estimator, self.excessive_actuation_counter)
     self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
@@ -345,13 +347,12 @@ class SelfdriveD:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
-    if not self.sm.valid['radarState']:
-      if self.sm['radarState'].radarErrors.canError:
-        self.events.add(EventName.canError)
-      elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
-        self.events.add(EventName.radarTempUnavailable)
-      else:
-        self.events.add(EventName.radarFault)
+    if self.sm['radarState'].radarErrors.canError:
+      self.events.add(EventName.canError)
+    elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
+      self.events.add(EventName.radarTempUnavailable)
+    elif any(self.sm['radarState'].radarErrors.to_dict().values()):
+      self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:

@@ -24,7 +24,7 @@ bool PandaStream::connect() {
     return false;
   }
 
-  panda->set_safety_model(cereal::CarParams::SafetyModel::SILENT);
+  panda->set_safety_model(cereal::CarParams::SafetyModel::NO_OUTPUT);
   for (int bus = 0; bus < config.bus_config.size(); bus++) {
     panda->set_can_speed_kbps(bus, config.bus_config[bus].can_speed_kbps);
 

@@ -177,8 +177,8 @@ class TestMessaging:
 
     # wait 5 socket timeouts before sending
     msg = random_carstate()
-    delayed_send(sock_timeout*5, pub_sock, msg.to_bytes())
     start_time = time.monotonic()
+    delayed_send(sock_timeout*5, pub_sock, msg.to_bytes())
     recvd = messaging.recv_one_retry(sub_sock)
     assert (time.monotonic() - start_time) >= sock_timeout*5
     assert isinstance(recvd, capnp._DynamicStructReader)
