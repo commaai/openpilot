@@ -261,9 +261,9 @@ def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubM
     return NormalPermanentAlert(
       "Recording Audio Feedback",
       f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
-      Priority = Priority.LOW)
+      priority=Priority.LOW)
   else:
-    return NormalPermanentAlert("Audio Feedback Saved", duration=1.5, Priority = Priority.LOW)
+    return NormalPermanentAlert("Audio Feedback Saved", duration=1.5, priority=Priority.LOW)
 
 
 # *** debug alerts ***
