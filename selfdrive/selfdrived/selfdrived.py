@@ -249,7 +249,6 @@ class SelfdriveD:
         self.excessive_actuation = True
 
     if self.excessive_actuation:
-      print('EXCESSIVE ACTUATION')
       self.events.add(EventName.excessiveActuation)
 
     # Handle lane change
