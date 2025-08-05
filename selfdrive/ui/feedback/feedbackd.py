@@ -9,7 +9,7 @@ FEEDBACK_MAX_DURATION = 10.0
 ButtonType = car.CarState.ButtonEvent.Type
 
 
-def feedbackd_thread():
+def main():
   params = Params()
   pm = messaging.PubMaster(['userBookmark', 'audioFeedback'])
   sm = messaging.SubMaster(['rawAudioData', 'bookmarkButton', 'carState'])
@@ -27,7 +27,7 @@ def feedbackd_thread():
         if be.type == ButtonType.lkas:
           if be.pressed:
             if not should_record_audio:
-              should_send_bookmark = True # send bookmark regardless of toggle status
+              should_send_bookmark = True  # send bookmark regardless of toggle status
               if params.get_bool("RecordAudioFeedback"):  # Start recording on first press if toggle set
                 should_record_audio = True
                 segment_num = 0
@@ -66,10 +66,6 @@ def feedbackd_thread():
     if should_send_bookmark:
       msg = messaging.new_message('userBookmark', valid=True)
       pm.send('userBookmark', msg)
-
-
-def main():
-  feedbackd_thread()
 
 
 if __name__ == '__main__':
