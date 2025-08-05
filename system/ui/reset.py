@@ -87,13 +87,15 @@ class Reset(Widget):
     button_width = (rect.width - button_spacing) / 2.0
 
     if self._reset_state != ResetState.RESETTING:
-      if self._mode == ResetMode.RECOVER or self._reset_state == ResetState.FAILED:
-        self._reboot_button.render(rl.Rectangle(rect.x, button_top, rect.width, button_height))
+      if self._mode == ResetMode.RECOVER:
+        self._reboot_button.render(rl.Rectangle(rect.x, button_top, button_width, button_height))
       elif self._mode == ResetMode.USER_RESET:
         self._cancel_button.render(rl.Rectangle(rect.x, button_top, button_width, button_height))
 
       if self._reset_state != ResetState.FAILED:
         self._confirm_button.render(rl.Rectangle(rect.x + button_width + 50, button_top, button_width, button_height))
+      else:
+        self._reboot_button.render(rl.Rectangle(rect.x, button_top, rect.width, button_height))
 
     return self._render_status
 
