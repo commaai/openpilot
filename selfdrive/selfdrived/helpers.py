@@ -7,8 +7,8 @@ from openpilot.selfdrive.locationd.helpers import Pose
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL
 
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)  # min time above actuation thresholds before triggering
-MIN_LATERAL_ENGAGE_BUFFER = int(1 / DT_CTRL)  # min time after override/engage before checking for excessive actuation
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
+MIN_LATERAL_ENGAGE_BUFFER = int(1 / DT_CTRL)
 
 
 class ExcessiveActuationType(StrEnum):
