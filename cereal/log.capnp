@@ -2489,8 +2489,8 @@ struct AudioData {
 
 struct AudioFeedback {
   audio @0 :AudioData;
-  segmentNum @1 :UInt16;
-  earlyStop @2 :Bool;
+  blockNum @1 :UInt16;
+  lastBlock @2 :Bool;
 }
 
 struct Touch {

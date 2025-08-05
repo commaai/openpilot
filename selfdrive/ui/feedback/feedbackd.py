@@ -14,7 +14,7 @@ def main():
   pm = messaging.PubMaster(['userBookmark', 'audioFeedback'])
   sm = messaging.SubMaster(['rawAudioData', 'bookmarkButton', 'carState'])
   should_record_audio = False
-  segment_num = 0
+  block_num = 0
   waiting_for_release = False
   early_stop_triggered = False
 
@@ -30,7 +30,7 @@ def main():
               should_send_bookmark = True  # send bookmark regardless of toggle status
               if params.get_bool("RecordAudioFeedback"):  # Start recording on first press if toggle set
                 should_record_audio = True
-                segment_num = 0
+                block_num = 0
                 waiting_for_release = False
                 early_stop_triggered = False
                 cloudlog.info("LKAS button pressed - starting 10-second audio feedback")
@@ -41,23 +41,19 @@ def main():
             early_stop_triggered = True
             cloudlog.info("LKAS button released - ending recording early")
 
-    if should_record_audio and (segment_num * SAMPLE_BUFFER / SAMPLE_RATE) >= FEEDBACK_MAX_DURATION:  # Check for timeout
-      should_record_audio = False
-      cloudlog.info("10-second recording completed or audio feedback disabled - stopping audio feedback")
-
     if should_record_audio and sm.updated['rawAudioData']:
       raw_audio = sm['rawAudioData']
       msg = messaging.new_message('audioFeedback', valid=True)
       msg.audioFeedback.audio.data = raw_audio.data
       msg.audioFeedback.audio.sampleRate = raw_audio.sampleRate
-      msg.audioFeedback.segmentNum = segment_num
-      if early_stop_triggered:
-        msg.audioFeedback.earlyStop = True
-        early_stop_triggered = False
+      msg.audioFeedback.blockNum = block_num
+      block_num += 1
+      if (block_num * SAMPLE_BUFFER / SAMPLE_RATE) >= FEEDBACK_MAX_DURATION or early_stop_triggered:  # Check for timeout or early stop
+        msg.audioFeedback.lastBlock = True
         should_record_audio = False
-        cloudlog.info("Sent early stop signal for audio feedback")
+        early_stop_triggered = False
+        cloudlog.info("10-second recording completed or second button press - stopping audio feedback")
       pm.send('audioFeedback', msg)
-      segment_num += 1
 
     if sm.updated['bookmarkButton']:
       cloudlog.info("Bookmark button pressed!")
