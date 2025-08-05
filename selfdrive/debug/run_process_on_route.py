@@ -16,8 +16,7 @@ if __name__ == "__main__":
   parser.add_argument("--blacklist-procs", nargs='*', default=EXCLUDED_PROCS, help="Blacklist given processes (e.g. controlsd)")
   args = parser.parse_args()
 
-  allowed_procs = (ALLOW_PROCS & set(args.whitelist_procs)) - set(args.blacklist_procs)
-
+  allowed_procs = set(args.whitelist_procs) - set(args.blacklist_procs)
   cfgs = [c for c in CONFIGS if c.proc_name in allowed_procs]
 
   inputs = list(LogReader(args.route))
