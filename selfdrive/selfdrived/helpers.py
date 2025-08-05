@@ -40,11 +40,7 @@ class ExcessiveActuationCheck:
 
     # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
     livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
-    # print('excessive_long_actuation', excessive_long_actuation, 'excessive_lat_actuation', excessive_lat_actuation, 'livepose_valid', livepose_valid)
     self._excessive_counter = self._excessive_counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
-
-    # if counter > 0:
-    #   print('counter', counter, excessive_long_actuation, excessive_lat_actuation, livepose_valid)
 
     excessive_type = None
     if self._excessive_counter > MIN_EXCESSIVE_ACTUATION_COUNT:
