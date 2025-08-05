@@ -95,7 +95,7 @@ class SelfdriveD:
     self.sm = messaging.SubMaster(['deviceState', 'pandaStates', 'peripheralState', 'modelV2', 'liveCalibration',
                                    'carOutput', 'driverMonitoringState', 'longitudinalPlan', 'livePose', 'liveDelay',
                                    'managerState', 'liveParameters', 'radarState', 'liveTorqueParameters',
-                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'bookmarkButton', 'audioFeedback'] + \
+                                   'controlsState', 'carControl', 'driverAssistance', 'alertDebug', 'userBookmark', 'audioFeedback'] + \
                                    self.camera_packets + self.sensor_packets + self.gps_packets,
                                   ignore_alive=ignore, ignore_avg_freq=ignore,
                                   ignore_valid=ignore, frequency=int(1/DT_CTRL))
@@ -185,7 +185,7 @@ class SelfdriveD:
     if self.sm.updated['userBookmark']:
       self.events.add(EventName.userBookmark)
 
-    # Check for audioFeedback from LKAS button wpress (higher priority than bookmark)
+    # Check for audioFeedback from LKAS button press (higher priority than bookmark)
     if self.sm.updated['audioFeedback']:
       self.events.add(EventName.audioFeedback)
 
