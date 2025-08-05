@@ -2490,7 +2490,6 @@ struct AudioData {
 struct AudioFeedback {
   audio @0 :AudioData;
   blockNum @1 :UInt16;
-  lastBlock @2 :Bool;
 }
 
 struct Touch {

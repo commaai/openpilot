@@ -181,11 +181,10 @@ class SelfdriveD:
       self.events.add(EventName.selfdriveInitializing)
       return
 
-    # Check for user bookmark press (bookmark button or LKAS feedback)
+    # Check for user bookmark press (bookmark button or end of LKAS button feedback)
     if self.sm.updated['userBookmark']:
       self.events.add(EventName.userBookmark)
 
-    # Check for audioFeedback from LKAS button press (higher priority than bookmark)
     if self.sm.updated['audioFeedback']:
       self.events.add(EventName.audioFeedback)
 

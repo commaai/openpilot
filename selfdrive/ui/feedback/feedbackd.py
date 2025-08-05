@@ -27,13 +27,15 @@ def main():
         if be.type == ButtonType.lkas:
           if be.pressed:
             if not should_record_audio:
-              should_send_bookmark = True  # send bookmark regardless of toggle status
               if params.get_bool("RecordAudioFeedback"):  # Start recording on first press if toggle set
                 should_record_audio = True
                 block_num = 0
                 waiting_for_release = False
                 early_stop_triggered = False
                 cloudlog.info("LKAS button pressed - starting 10-second audio feedback")
+              else:
+                should_send_bookmark = True  # immediately send bookmark if toggle false
+                cloudlog.info("LKAS button pressed - bookmarking")
             elif should_record_audio and not waiting_for_release:  # Wait for release of second press to stop recording early
               waiting_for_release = True
           elif waiting_for_release:  # Second press released
@@ -49,7 +51,7 @@ def main():
       msg.audioFeedback.blockNum = block_num
       block_num += 1
       if (block_num * SAMPLE_BUFFER / SAMPLE_RATE) >= FEEDBACK_MAX_DURATION or early_stop_triggered:  # Check for timeout or early stop
-        msg.audioFeedback.lastBlock = True
+        should_send_bookmark = True  # send bookmark at end of audio segment
         should_record_audio = False
         early_stop_triggered = False
         cloudlog.info("10-second recording completed or second button press - stopping audio feedback")

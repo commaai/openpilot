@@ -257,13 +257,10 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
 
 def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
   duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].blockNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
-  if not sm['audioFeedback'].lastBlock:
-    return NormalPermanentAlert(
-      "Recording Audio Feedback",
-      f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
-      priority=Priority.LOW)
-  else:
-    return NormalPermanentAlert("Audio Feedback Saved", duration=1.5, priority=Priority.LOW)
+  return NormalPermanentAlert(
+    "Recording Audio Feedback",
+    f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
+    priority=Priority.LOW)
 
 
 # *** debug alerts ***
