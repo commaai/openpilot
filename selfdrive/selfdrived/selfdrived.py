@@ -57,25 +57,16 @@ def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibra
   roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
   excessive_lat_actuation = False
-  # print('vEgo', CS.vEgo, yaw_rate, roll)
-  # print('roll_compensated_lateral_accel', roll_compensated_lateral_accel)
+  print('vEgo', CS.vEgo, yaw_rate, roll)
+  print('roll_compensated_lateral_accel', roll_compensated_lateral_accel)
   if sm['carControl'].latActive:
-    output_torque = sm['carOutput'].actuatorsOutput.torque
-    extrapolated_lateral_accel = roll_compensated_lateral_accel / abs(output_torque + 1e-3)
     if not CS.steeringPressed:
-      if abs(output_torque) > 0.5:
-        print('real accel', roll_compensated_lateral_accel, 'extrapolated lateral accel', extrapolated_lateral_accel, 'output_torque', output_torque)
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
         excessive_lat_actuation = True
 
-      if abs(output_torque) > 0.5 and abs(extrapolated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
-        print('WE HERE')
-        excessive_lat_actuation = True
-
-
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
   livepose_valid = abs(CS.aEgo - accel_calibrated) < 2
-  # print('excessive_long_actuation', excessive_long_actuation, 'excessive_lat_actuation', excessive_lat_actuation, 'livepose_valid', livepose_valid)
+  print('excessive_long_actuation', excessive_long_actuation, 'excessive_lat_actuation', excessive_lat_actuation, 'livepose_valid', livepose_valid)
   counter = counter + 1 if livepose_valid and (excessive_long_actuation or excessive_lat_actuation) else 0
 
   if counter > 0:
