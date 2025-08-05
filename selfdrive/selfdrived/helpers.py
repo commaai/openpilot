@@ -32,6 +32,7 @@ class ExcessiveActuationCheck:
     roll = sm['liveParameters'].roll
     roll_compensated_lateral_accel = (CS.vEgo * yaw_rate) - (math.sin(roll) * ACCELERATION_DUE_TO_GRAVITY)
 
+    # Prevent false positives after overriding
     excessive_lat_actuation = False
     self._engaged_counter = self._engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed else 0
     if self._engaged_counter > MIN_LATERAL_ENGAGE_BUFFER:
@@ -46,7 +47,7 @@ class ExcessiveActuationCheck:
     if self._excessive_counter > MIN_EXCESSIVE_ACTUATION_COUNT:
       if excessive_long_actuation:
         excessive_type = ExcessiveActuationType.LONGITUDINAL
-      elif excessive_lat_actuation:
+      else:
         excessive_type = ExcessiveActuationType.LATERAL
 
     return excessive_type
