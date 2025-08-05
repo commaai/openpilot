@@ -7,8 +7,8 @@ from openpilot.selfdrive.locationd.helpers import Pose
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
 from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL
 
-MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
-MIN_ENGAGE_BUFFER = int(1 / DT_CTRL)
+MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)  # min time above actuation thresholds before triggering
+MIN_LATERAL_ENGAGE_BUFFER = int(1 / DT_CTRL)  # min time after override/engage before checking for excessive actuation
 
 
 class ExcessiveActuationType(StrEnum):
@@ -34,7 +34,7 @@ class ExcessiveActuationCheck:
 
     excessive_lat_actuation = False
     self._engaged_counter = self._engaged_counter + 1 if sm['carControl'].latActive and not CS.steeringPressed else 0
-    if self._engaged_counter > MIN_ENGAGE_BUFFER:
+    if self._engaged_counter > MIN_LATERAL_ENGAGE_BUFFER:
       if abs(roll_compensated_lateral_accel) > ISO_LATERAL_ACCEL * 2:
         excessive_lat_actuation = True
 
