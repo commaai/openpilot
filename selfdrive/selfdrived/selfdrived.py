@@ -43,10 +43,8 @@ SafetyModel = car.CarParams.SafetyModel
 IGNORED_SAFETY_MODES = (SafetyModel.silent, SafetyModel.noOutput)
 
 
-def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrator: PoseCalibrator, counter: int) -> tuple[int, bool]:
+def check_excessive_actuation(sm: messaging.SubMaster, CS: car.CarState, calibrated_pose: Pose, counter: int) -> tuple[int, bool]:
   # CS.aEgo can be noisy to bumps in the road, transitioning from standstill, losing traction, etc.
-  device_pose = Pose.from_live_pose(sm['livePose'])
-  calibrated_pose = calibrator.build_calibrated_pose(device_pose)
   accel_calibrated = calibrated_pose.acceleration.x
 
   # livePose acceleration can be noisy due to bad mounting or aliased livePose measurements
@@ -73,7 +71,9 @@ class SelfdriveD:
       self.CP = CP
 
     self.car_events = CarSpecificEvents(self.CP)
-    self.calibrator = PoseCalibrator()
+
+    self.pose_calibrator = PoseCalibrator()
+    self.calibrated_pose: Pose | None = None
 
     # Setup sockets
     self.pm = messaging.PubMaster(['selfdriveState', 'onroadEvents'])
@@ -255,12 +255,16 @@ class SelfdriveD:
 
     # Check for excessive (longitudinal) actuation
     if self.sm.updated['liveCalibration']:
-      self.calibrator.feed_live_calib(self.sm['liveCalibration'])
+      self.pose_calibrator.feed_live_calib(self.sm['liveCalibration'])
+    if self.sm.updated['livePose']:
+      device_pose = Pose.from_live_pose(self.sm['livePose'])
+      self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
 
-    self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrator, self.excessive_actuation_counter)
-    if not self.excessive_actuation and excessive_actuation:
-      set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
-      self.excessive_actuation = True
+    if self.calibrated_pose is not None:
+      self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrated_pose, self.excessive_actuation_counter)
+      if not self.excessive_actuation and excessive_actuation:
+        set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
+        self.excessive_actuation = True
 
     if self.excessive_actuation:
       self.events.add(EventName.excessiveActuation)
@@ -316,13 +320,12 @@ class SelfdriveD:
           self.events.add(EventName.cameraFrameRate)
     if not REPLAY and self.rk.lagging:
       self.events.add(EventName.selfdrivedLagging)
-    if not self.sm.valid['radarState']:
-      if self.sm['radarState'].radarErrors.canError:
-        self.events.add(EventName.canError)
-      elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
-        self.events.add(EventName.radarTempUnavailable)
-      else:
-        self.events.add(EventName.radarFault)
+    if self.sm['radarState'].radarErrors.canError:
+      self.events.add(EventName.canError)
+    elif self.sm['radarState'].radarErrors.radarUnavailableTemporary:
+      self.events.add(EventName.radarTempUnavailable)
+    elif any(self.sm['radarState'].radarErrors.to_dict().values()):
+      self.events.add(EventName.radarFault)
     if not self.sm.valid['pandaStates']:
       self.events.add(EventName.usbError)
     if CS.canTimeout:
