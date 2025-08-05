@@ -818,8 +818,6 @@ struct SelfdriveState {
   active @2 :Bool;
   engageable @9 :Bool;  # can OP be engaged?
 
-  rollCompensatedLateralAccel @13 :Float32;
-
   # UI alerts
   alertText1 @3 :Text;
   alertText2 @4 :Text;

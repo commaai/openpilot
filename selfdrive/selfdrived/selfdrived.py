@@ -119,7 +119,6 @@ class SelfdriveD:
     self.recalibrating_seen = False
     self.excessive_actuation = self.params.get("Offroad_ExcessiveActuation") is not None
     self.excessive_actuation_counter = 0
-    self.roll_compensated_lateral_accel = 0.0
     self.state_machine = StateMachine()
     self.rk = Ratekeeper(100, print_delay_threshold=None)
 
@@ -244,9 +243,7 @@ class SelfdriveD:
       self.calibrated_pose = self.pose_calibrator.build_calibrated_pose(device_pose)
 
     if self.calibrated_pose is not None:
-      self.excessive_actuation_counter, excessive_actuation, roll_compensated_lateral_accel = check_excessive_actuation(self.sm, CS, self.calibrated_pose,
-                                                                                                                        self.excessive_actuation_counter)
-      self.roll_compensated_lateral_accel = roll_compensated_lateral_accel
+      self.excessive_actuation_counter, excessive_actuation = check_excessive_actuation(self.sm, CS, self.calibrated_pose, self.excessive_actuation_counter)
       if not self.excessive_actuation and excessive_actuation:
         set_offroad_alert("Offroad_ExcessiveActuation", True, extra_text="longitudinal")
         self.excessive_actuation = True
@@ -472,7 +469,6 @@ class SelfdriveD:
     ss.active = self.active
     ss.state = self.state_machine.state
     ss.engageable = not self.events.contains(ET.NO_ENTRY)
-    ss.rollCompensatedLateralAccel = float(self.roll_compensated_lateral_accel)
     ss.experimentalMode = self.experimental_mode
     ss.personality = self.personality
 
