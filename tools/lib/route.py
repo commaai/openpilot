@@ -18,8 +18,7 @@ DCAMERA_FILENAMES = ('dcamera.hevc',)
 ECAMERA_FILENAMES = ('ecamera.hevc',)
 BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 
-class FileName(enum.Enum):
-  _value_: tuple[str, ...]
+class FileName:
   #TODO use the ones from route.py
   RLOG = ("rlog.zst", "rlog.bz2")
   QLOG = ("qlog.zst", "qlog.bz2")
