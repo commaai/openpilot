@@ -8,6 +8,7 @@
 - [ ] update RELEASES.md
 - [ ] trigger new nightly build: https://github.com/commaai/openpilot/actions/workflows/release.yaml
 - [ ] update `devel-staging`: `git reset --hard origin/__nightly`
+- [ ] build new userdata partition from `release3-staging`
 - [ ] open a pull request from `devel-staging` to `devel`
 - [ ] post on Discord, tag `@release crew`
 
