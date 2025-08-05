@@ -19,8 +19,6 @@ if __name__ == "__main__":
 
   allowed_procs = (ALLOW_PROCS & set(args.whitelist_procs)) - set(args.blacklist_procs)
 
-  print(allowed_procs)
-
   cfgs = [c for c in CONFIGS if c.proc_name in allowed_procs]
 
   lr = LogReader(args.route)
