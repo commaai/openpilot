@@ -13,7 +13,7 @@ if __name__ == "__main__":
   parser.add_argument("route", help="The route name to use")
   parser.add_argument("--fingerprint", help="The fingerprint to use")
   parser.add_argument("--whitelist-procs", nargs='*', default=ALLOW_PROCS, help="Whitelist given processes (e.g. controlsd)")
-  parser.add_argument("--blacklist-procs", nargs='*', default=EXCLUDED_PROCS, help="Blacklist given processes from the test (e.g. controlsd)")
+  parser.add_argument("--blacklist-procs", nargs='*', default=EXCLUDED_PROCS, help="Blacklist given processes (e.g. controlsd)")
   args = parser.parse_args()
 
   allowed_procs = (ALLOW_PROCS & set(args.whitelist_procs)) - set(args.blacklist_procs)
