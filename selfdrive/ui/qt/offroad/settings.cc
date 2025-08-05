@@ -69,6 +69,13 @@ TogglesPanel::TogglesPanel(SettingsWindow *parent) : ListWidget(parent) {
       true,
     },
     {
+      "RecordAudioFeedback",
+      tr("Record Audio Feedback with LKAS button"),
+      tr("Press the LKAS button to record audio feedback about openpilot. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device's storage."),
+      "../assets/icons/microphone.png",
+      false,
+    },
+    {
       "IsMetric",
       tr("Use Metric System"),
       tr("Display speed in km/h instead of mph."),
