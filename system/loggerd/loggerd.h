@@ -17,7 +17,8 @@ const int LIVESTREAM_BITRATE = 1e6;
 const int QCAM_BITRATE = 256000;
 
 inline std::pair<int, int> get_hevc_bitrate_gop(int in_width) {
-  return (in_width <= 1344) ? std::make_pair(5'000'000, 20) : std::make_pair(10'000'000, 30);}
+  return (in_width <= 1344) ? std::make_pair(5'000'000, 20) : std::make_pair(10'000'000, 30);
+}
 
 #define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
 
