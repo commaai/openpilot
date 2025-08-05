@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
-
 import argparse
 
 from openpilot.selfdrive.test.process_replay.process_replay import CONFIGS, replay_process
+from openpilot.selfdrive.test.process_replay.test_processes import EXCLUDED_PROCS
 from openpilot.tools.lib.logreader import LogReader, save_log
 
 ALLOW_PROCS = {c.proc_name for c in CONFIGS}
-EXCLUDED_PROCS = {"modeld", "dmonitoringmodeld"}
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="Run process on route and create new logs",
