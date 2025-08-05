@@ -4,6 +4,7 @@
 ## release checklist
 
 **Go to `devel-staging`**
+- [ ] make issue to track release
 - [ ] update RELEASES.md
 - [ ] trigger new nightly build: https://github.com/commaai/openpilot/actions/workflows/release.yaml
 - [ ] update `devel-staging`: `git reset --hard origin/__nightly`
