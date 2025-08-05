@@ -26,13 +26,14 @@ def feedbackd_thread():
       for be in sm['carState'].buttonEvents:
         if be.type == ButtonType.lkas:
           if be.pressed:
-            if not should_record_audio and params.get_bool("RecordAudioFeedback"):  # Start recording on first press if toggle set
-              should_record_audio = True
-              segment_num = 0
-              waiting_for_release = False
-              early_stop_triggered = False
-              should_send_bookmark = True
-              cloudlog.info("LKAS button pressed - starting 10-second audio feedback")
+            if not should_record_audio:
+              should_send_bookmark = True # send bookmark regardless of toggle status
+              if params.get_bool("RecordAudioFeedback"):  # Start recording on first press if toggle set
+                should_record_audio = True
+                segment_num = 0
+                waiting_for_release = False
+                early_stop_triggered = False
+                cloudlog.info("LKAS button pressed - starting 10-second audio feedback")
             elif should_record_audio and not waiting_for_release:  # Wait for release of second press to stop recording early
               waiting_for_release = True
           elif waiting_for_release:  # Second press released
