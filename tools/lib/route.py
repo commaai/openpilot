@@ -1,5 +1,6 @@
 import os
 import re
+import enum
 import requests
 from functools import cache
 from urllib.parse import urlparse
@@ -10,14 +11,16 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ('qlog.bz2', 'qlog.zst', 'qlog')
-QCAMERA_FILENAMES = ('qcamera.ts',)
-LOG_FILENAMES = ('rlog.bz2', 'raw_log.bz2', 'rlog.zst', 'rlog')
-CAMERA_FILENAMES = ('fcamera.hevc', 'video.hevc')
-DCAMERA_FILENAMES = ('dcamera.hevc',)
-ECAMERA_FILENAMES = ('ecamera.hevc',)
-BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 
+class FileName(enum.Enum):
+  #TODO use the ones from route.py
+  RLOG = ("rlog.zst", "rlog.bz2")
+  QLOG = ("qlog.zst", "qlog.bz2")
+  QCAMERA = ('qcamera.ts',)
+  FCAMERA = ('fcamera.hevc',)
+  ECAMERA = ('ecamera.hevc',)
+  DCAMERA = ('dcamera.hevc',)
+  BOOTLOG = ('bootlog.zst', 'bootlog.bz2')
 
 class Route:
   def __init__(self, name, data_dir=None):
