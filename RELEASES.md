@@ -2,8 +2,7 @@ Version 0.10.0 (2025-08-05)
 ========================
 * New driving model
   * Lead car ground-truth fixes
-  * Ported over VAE from the MLSIM stack
-  * New training architecture described in CVPR paper
+  * New training objective using MLSIM
 * Enable live-learned steering actuation delay
 * Record driving feedback using LKAS button
 * Opt-in audio recording for dashcam video
