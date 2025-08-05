@@ -36,7 +36,7 @@
        <range right="126.285782" top="1.025000" left="104.907277" bottom="-0.025000" />
        <limitY/>
        <curve name="/carControl/longActive" color="#1f77b4"/>
-       <curve name="/carState/gasPressed" color="#d62728"/>
+       <curve name="/carState/acceleratorPressed" color="#d62728"/>
       </plot>
      </DockArea>
     </DockSplitter>

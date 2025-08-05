@@ -38,7 +38,7 @@
       <plot style="Lines" flip_x="false" mode="TimeSeries" flip_y="false">
        <range top="1.025000" bottom="-0.025000" left="0.018309" right="59.674401"/>
        <limitY/>
-       <curve color="#1ac938" name="/carState/gasPressed"/>
+       <curve color="#1ac938" name="/carState/acceleratorPressed"/>
        <curve color="#ff7f0e" name="/carState/brakePressed"/>
       </plot>
      </DockArea>

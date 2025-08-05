@@ -79,7 +79,7 @@
        <range left="1.253354" top="1.025000" bottom="-0.025000" right="631.055759"/>
        <limitY/>
        <curve color="#009e73" name="/carControl/enabled"/>
-       <curve color="#ffb000" name="/carState/gasPressed"/>
+       <curve color="#ffb000" name="/carState/acceleratorPressed"/>
        <curve color="#dc267f" name="/carState/brakePressed"/>
       </plot>
      </DockArea>
@@ -232,7 +232,7 @@ end</function>
    <linked_source>/carState/aEgo</linked_source>
    <additional_sources>
     <v1>/carState/brakePressed</v1>
-    <v2>/carState/gasPressed</v2>
+    <v2>/carState/acceleratorPressed</v2>
     <v3>/carControl/enabled</v3>
    </additional_sources>
   </snippet>
@@ -256,7 +256,7 @@ end</function>
    <linked_source>/longitudinalPlan/accels/0</linked_source>
    <additional_sources>
     <v1>/carState/brakePressed</v1>
-    <v2>/carState/gasPressed</v2>
+    <v2>/carState/acceleratorPressed</v2>
     <v3>/carControl/enabled</v3>
    </additional_sources>
   </snippet>
@@ -280,7 +280,7 @@ end</function>
    <linked_source>/carControl/actuators/accel</linked_source>
    <additional_sources>
     <v1>/carState/brakePressed</v1>
-    <v2>/carState/gasPressed</v2>
+    <v2>/carState/acceleratorPressed</v2>
     <v3>/carControl/enabled</v3>
    </additional_sources>
   </snippet>

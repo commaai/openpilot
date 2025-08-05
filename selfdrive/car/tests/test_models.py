@@ -319,7 +319,7 @@ class TestCarModelBase(unittest.TestCase):
     for n, dat in enumerate(msgs):
       # due to panda updating state selectively, only edges are expected to match
       # TODO: warm up CarState with real CAN messages to check edge of both sources
-      #  (eg. toyota's gasPressed is the inverse of a signal being set)
+      #  (eg. toyota's acceleratorPressed is the inverse of a signal being set)
       prev_panda_gas = self.safety.get_gas_pressed_prev()
       prev_panda_brake = self.safety.get_brake_pressed_prev()
       prev_panda_regen_braking = self.safety.get_regen_braking_prev()
@@ -339,7 +339,7 @@ class TestCarModelBase(unittest.TestCase):
         continue
 
       if self.safety.get_gas_pressed_prev() != prev_panda_gas:
-        self.assertEqual(CS.gasPressed, self.safety.get_gas_pressed_prev())
+        self.assertEqual(CS.acceleratorPressed, self.safety.get_gas_pressed_prev())
 
       if self.safety.get_brake_pressed_prev() != prev_panda_brake:
         # TODO: remove this exception once this mismatch is resolved
@@ -412,7 +412,7 @@ class TestCarModelBase(unittest.TestCase):
 
       # TODO: check rest of panda's carstate (steering, ACC main on, etc.)
 
-      checks['gasPressed'] += CS.gasPressed != self.safety.get_gas_pressed_prev()
+      checks['acceleratorPressed'] += CS.acceleratorPressed != self.safety.get_gas_pressed_prev()
       checks['standstill'] += (CS.standstill == self.safety.get_vehicle_moving()) and not self.CP.notCar
 
       # check vehicle speed if angle control car or available

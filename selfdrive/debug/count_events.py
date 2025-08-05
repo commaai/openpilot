@@ -30,7 +30,7 @@ if __name__ == "__main__":
       for e in msg.onroadEvents:
         cnt_events[e.name] += 1
 
-      ae = {str(e.name) for e in msg.onroadEvents if e.name not in ('pedalPressed', 'steerOverride', 'gasPressedOverride')}
+      ae = {str(e.name) for e in msg.onroadEvents if e.name not in ('pedalPressed', 'steerOverride', 'acceleratorPressedOverride')}
       if len(events) == 0 or ae != events[-1][1]:
         events.append((t, ae))
 

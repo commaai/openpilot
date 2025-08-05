@@ -168,8 +168,8 @@ class CarSpecificEvents:
       events.add(EventName.steerDisengage)
     if CS.brakePressed and CS.standstill:
       events.add(EventName.preEnableStandstill)
-    if CS.gasPressed:
-      events.add(EventName.gasPressedOverride)
+    if CS.acceleratorPressed:
+      events.add(EventName.acceleratorPressedOverride)
     if CS.vehicleSensorsInvalid:
       events.add(EventName.vehicleSensorsInvalid)
     if CS.invalidLkasSetting:

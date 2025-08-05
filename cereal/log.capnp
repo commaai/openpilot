@@ -46,7 +46,7 @@ struct OnroadEvent @0xc4fa6047f024e718 {
     buttonEnable @10;
     pedalPressed @11;  # exits active state
     preEnableStandstill @12;  # added during pre-enable state with brake
-    gasPressedOverride @13;  # added when user is pressing gas with no disengage on gas
+    acceleratorPressedOverride @13;  # added when user is pressing gas with no disengage on gas
     steerOverride @14;
     steerDisengage @94;  # exits active state
     cruiseDisabled @15;

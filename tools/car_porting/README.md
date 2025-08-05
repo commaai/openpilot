@@ -43,7 +43,7 @@ FAILED selfdrive/car/tests/test_car_interfaces.py::TestCarInterfaces::test_car_i
 
 Given a route, runs most of the car interface to check for common errors like missing signals, blocked panda messages, and safety mismatches.
 
-#### Example: panda safety mismatch for gasPressed
+#### Example: panda safety mismatch for acceleratorPressed
 ```bash
 > python3 tools/car_porting/test_car_model.py '4822a427b188122a|2023-08-14--16-22-21'
 
@@ -54,7 +54,7 @@ Assert that panda safety matches openpilot's carState
 Traceback (most recent call last):
   File "/home/batman/xx/openpilot/openpilot/selfdrive/car/tests/test_models.py", line 380, in test_panda_safety_carstate
     self.assertFalse(len(failed_checks), f"panda safety doesn't agree with openpilot: {failed_checks}")
-AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'gasPressed': 116}
+AssertionError: 1 is not false : panda safety doesn't agree with openpilot: {'acceleratorPressed': 116}
 ```
 
 ## Jupyter notebooks

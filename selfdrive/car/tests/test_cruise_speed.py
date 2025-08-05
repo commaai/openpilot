@@ -127,7 +127,7 @@ class TestVCruiseHelper:
       expected_v_cruise_kph = max(expected_v_cruise_kph, v_ego * CV.MS_TO_KPH)  # clip to min of vEgo
       expected_v_cruise_kph = float(np.clip(round(expected_v_cruise_kph, 1), V_CRUISE_MIN, V_CRUISE_MAX))
 
-      CS = car.CarState(vEgo=float(v_ego), gasPressed=True, cruiseState={"available": True})
+      CS = car.CarState(vEgo=float(v_ego), acceleratorPressed=True, cruiseState={"available": True})
       CS.buttonEvents = [ButtonEvent(type=ButtonType.decelCruise, pressed=False)]
       self.v_cruise_helper.update_v_cruise(CS, enabled=True, is_metric=False)
 

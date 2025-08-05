@@ -110,7 +110,7 @@ def report(platform, route, _description, CP, ID, maneuvers):
       ax[1].legend()
 
       ax[2].plot(t_carControl, longActive, label='longActive', linewidth=6)
-      ax[3].plot(t_carState, [m.gasPressed for m in carState], label='gasPressed', linewidth=6)
+      ax[3].plot(t_carState, [m.acceleratorPressed for m in carState], label='acceleratorPressed', linewidth=6)
       ax[3].plot(t_carState, [m.brakePressed for m in carState], label='brakePressed', linewidth=6)
       for i in (2, 3):
         ax[i].set_yticks([0, 1], minor=False)

@@ -704,7 +704,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
       Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .1, creation_delay=1.),
   },
 
-  EventName.gasPressedOverride: {
+  EventName.acceleratorPressedOverride: {
     ET.OVERRIDE_LONGITUDINAL: Alert(
       "",
       "",
