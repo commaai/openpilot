@@ -1,7 +1,7 @@
 import os
 import re
 import requests
-from typing import TypeAlias  
+from typing import TypeAlias
 from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
