@@ -4,7 +4,7 @@ import re
 from PIL import Image, ImageDraw, ImageFont
 import pyray as rl
 
-_cache = {}
+_cache: dict[str, rl.Texture] = {}
 
 EMOJI_REGEX = re.compile(
 """[\U0001F600-\U0001F64F
