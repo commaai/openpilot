@@ -130,7 +130,7 @@ def populate_car_params(lr: LogReader):
   for cp in entries:
     key, value = cp.key, cp.value
     try:
-      params.put(key, value)
+      params.put(key, params.cpp2python(key, value))
     except UnknownKeyName:
       # forks of openpilot may have other Params keys configured. ignore these
       logger.warning(f"unknown Params key '{key}', skipping")
