@@ -42,7 +42,7 @@
     "severity": 0
   },
   "Offroad_ExcessiveActuation": {
-    "text": "openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.",
+    "text": "openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
     "severity": 1,
     "_comment": "Set extra field to lateral or longitudinal."
   }
