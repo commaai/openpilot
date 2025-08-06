@@ -19,7 +19,7 @@ const int THUMBNAIL_MARGIN = 3;
 static const QColor timeline_colors[] = {
   [(int)TimelineType::None] = QColor(111, 143, 175),
   [(int)TimelineType::Engaged] = QColor(0, 163, 108),
-  [(int)TimelineType::UserFlag] = Qt::magenta,
+  [(int)TimelineType::UserBookmark] = Qt::magenta,
   [(int)TimelineType::AlertInfo] = Qt::green,
   [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
@@ -64,7 +64,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
     Pause/Resume: <span style="background-color:lightGray;color:gray">&nbsp;space&nbsp;</span>
   )").arg(timeline_colors[(int)TimelineType::None].name(),
           timeline_colors[(int)TimelineType::Engaged].name(),
-          timeline_colors[(int)TimelineType::UserFlag].name(),
+          timeline_colors[(int)TimelineType::UserBookmark].name(),
           timeline_colors[(int)TimelineType::AlertInfo].name(),
           timeline_colors[(int)TimelineType::AlertWarning].name(),
           timeline_colors[(int)TimelineType::AlertCritical].name()));
