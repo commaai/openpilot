@@ -3,8 +3,8 @@ Version 0.10.0 (2025-08-05)
 * New driving model
   * New training architecture
      * Architecture outlined in CVPR paper: "Learning to Drive from a World Model"
-     * Longitudinal MPC replaced by E2E planning for experimental mode
-     * Lateral MPC in training replaced by E2E planning
+     * Longitudinal MPC replaced by E2E planning from worldmodel in experimental mode
+     * Action from lateral MPC as training objective replaced by E2E planning from worldmodel
   * Low-speed lead car ground-truth fixes
 
 * Enable live-learned steering actuation delay
