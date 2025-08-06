@@ -18,6 +18,16 @@ DCAMERA_FILENAMES = ('dcamera.hevc',)
 ECAMERA_FILENAMES = ('ecamera.hevc',)
 BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 
+class FileName(enum.Enum):
+  _value_: tuple[str, ...]
+  #TODO use the ones from route.py
+  RLOG = ("rlog.zst", "rlog.bz2")
+  QLOG = ("qlog.zst", "qlog.bz2")
+  QCAMERA = ('qcamera.ts',)
+  FCAMERA = ('fcamera.hevc',)
+  ECAMERA = ('ecamera.hevc',)
+  DCAMERA = ('dcamera.hevc',)
+  BOOTLOG = ('bootlog.zst', 'bootlog.bz2')
 
 class Route:
   def __init__(self, name, data_dir=None):
