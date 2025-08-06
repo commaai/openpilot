@@ -102,7 +102,8 @@ class ReadMode(enum.StrEnum):
 
 
 LogPath = str | None
-Source = Callable[[SegmentRange, tuple[str, ...]], list[LogPath]]
+LogFileName = tuple[str, ...]
+Source = Callable[[SegmentRange, LogFileName], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -111,7 +112,7 @@ class LogsUnavailable(Exception):
   pass
 
 
-def comma_api_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
@@ -121,7 +122,7 @@ def comma_api_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
 
 
-def internal_source(sr: SegmentRange, fns: tuple[str, ...], endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(sr: SegmentRange, fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
@@ -131,11 +132,11 @@ def internal_source(sr: SegmentRange, fns: tuple[str, ...], endpoint_url: str = 
   return eval_source([[get_internal_url(sr, seg, fn) for fn in fns] for seg in sr.seg_idxs])
 
 
-def openpilotci_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
+def openpilotci_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
   return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns] for seg in sr.seg_idxs])
 
 
-def comma_car_segments_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
+def comma_car_segments_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
   return eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs])
 
 

@@ -5,7 +5,8 @@ from cereal import car, messaging
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.helpers import Pose
 from opendbc.car import ACCELERATION_DUE_TO_GRAVITY
-from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX, ISO_LATERAL_ACCEL
+from opendbc.car.lateral import ISO_LATERAL_ACCEL
+from opendbc.car.interfaces import ACCEL_MIN, ACCEL_MAX
 
 MIN_EXCESSIVE_ACTUATION_COUNT = int(0.25 / DT_CTRL)
 MIN_LATERAL_ENGAGE_BUFFER = int(1 / DT_CTRL)
