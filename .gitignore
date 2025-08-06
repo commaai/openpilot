@@ -13,6 +13,7 @@ venv/
 model2.png
 a.out
 .hypothesis
+.cache/
 
 /docs_site/
 
