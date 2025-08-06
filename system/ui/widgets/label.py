@@ -94,11 +94,11 @@ def gui_text_box(
 class Label(Widget):
   def __init__(self,
                text: str,
-               font_size: int = 60,
-               font_weight: FontWeight = FontWeight.MEDIUM,
+               font_size: int = DEFAULT_TEXT_SIZE,
+               font_weight: FontWeight = FontWeight.NORMAL,
                text_alignment: TextAlignment = TextAlignment.CENTER,
                text_padding: int = 20,
-               text_color: rl.Color = rl.Color(228, 228, 228, 255),
+               text_color: rl.Color = DEFAULT_TEXT_COLOR,
                icon = None,
                ):
 
