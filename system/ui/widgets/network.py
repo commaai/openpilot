@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import ButtonStyle, Button, SSID
+from openpilot.system.ui.widgets.button import ButtonStyle, Button, TextAlignment
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import gui_label
@@ -228,7 +228,8 @@ class WifiManagerUI(Widget):
     with self._lock:
       self._networks = networks
       for n in self._networks:
-        self._networks_buttons[n.ssid] = SSID(n.ssid, partial(self._networks_buttons_callback, n))
+        self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
+                                                button_style=ButtonStyle.NO_EFFECT)
         self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                        font_size=45)
 
