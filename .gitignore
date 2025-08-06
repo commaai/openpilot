@@ -16,6 +16,7 @@ a.out
 
 /docs_site/
 
+*.mp4
 *.dylib
 *.DSYM
 *.d
