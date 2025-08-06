@@ -13,11 +13,9 @@
 #include "system/loggerd/logger.h"
 
 constexpr int MAIN_FPS = 20;
+const int MAIN_BITRATE = 1e7;
 const int LIVESTREAM_BITRATE = 1e6;
 const int QCAM_BITRATE = 256000;
-
-inline std::pair<int, int> get_hevc_bitrate_gop(int in_width) {
-  return (in_width <= 1344) ? std::make_pair(5'000'000, 20) : std::make_pair(10'000'000, 30);}
 
 #define NO_CAMERA_PATIENCE 500  // fall back to time-based rotation if all cameras are dead
 
@@ -41,7 +39,7 @@ public:
   int frame_width = -1;
   int frame_height = -1;
   int fps = MAIN_FPS;
-  int bitrate = -1;
+  int bitrate = MAIN_BITRATE;
   cereal::EncodeIndex::Type encode_type = Hardware::PC() ? cereal::EncodeIndex::Type::BIG_BOX_LOSSLESS
                                                          : cereal::EncodeIndex::Type::FULL_H_E_V_C;
   ::cereal::EncodeData::Reader (cereal::Event::Reader::*get_encode_data_func)() const;
