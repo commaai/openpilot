@@ -220,11 +220,16 @@ class ButtonRadio(Button):
                icon,
                click_callback: Callable[[], None] = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
+               text_alignment: TextAlignment = TextAlignment.LEFT,
                border_radius: int = 10,
                text_padding: int = 20,
                ):
 
-    super().__init__(text, click_callback=click_callback, font_size=font_size, border_radius=border_radius, text_padding=text_padding, icon=icon)
+    super().__init__(text, click_callback=click_callback, font_size=font_size,
+                     border_radius=border_radius, text_padding=text_padding,
+                     text_alignment=text_alignment)
+    self._text_padding = text_padding
+    self._icon = icon
     self.selected = False
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
@@ -241,10 +246,7 @@ class ButtonRadio(Button):
   def _render(self, _):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
     rl.draw_rectangle_rounded(self._rect, roundness, 10, self._background_color)
-
-    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
-    text_pos.x = self._rect.x + self._text_padding
-    rl.draw_text_ex(self._label_font, self._text, text_pos, self._font_size, 0, self._text_color)
+    self._label.render(self._rect)
 
     if self._icon and self.selected:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
