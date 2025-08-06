@@ -33,13 +33,12 @@ struct EncoderSettings {
   int gop_size;
   int b_frames = 0; // we don't use b frames
 
-  static EncoderSettings MainEncoderSettings() {
-  //static EncoderSettings MainEncoderSettings(int in_width) {
-    //if (in_width <= 1344) {
-    //  return EncoderSettings{.bitrate = 5'000'000, .gop_size = 20};
-    //} else {
-    return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 10'000'000, .gop_size = 30};
-    //}
+  static EncoderSettings MainEncoderSettings(int in_width) {
+    if (in_width <= 1344) {
+      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 5'000'000, .gop_size = 20};
+    } else {
+      return EncoderSettings{.encode_type = MAIN_ENCODE_TYPE, .bitrate = 10'000'000, .gop_size = 30};
+    }
   }
 
   static EncoderSettings QcamEncoderSettings() {
@@ -61,7 +60,7 @@ public:
   int frame_width = -1;
   int frame_height = -1;
   int fps = MAIN_FPS;
-  EncoderSettings settings;
+  std::function<EncoderSettings(int)> get_settings;
 
   ::cereal::EncodeData::Reader (cereal::Event::Reader::*get_encode_data_func)() const;
   void (cereal::Event::Builder::*set_encode_idx_func)(::cereal::EncodeIndex::Reader);
@@ -80,14 +79,14 @@ const EncoderInfo main_road_encoder_info = {
   .publish_name = "roadEncodeData",
   .thumbnail_name = "thumbnail",
   .filename = "fcamera.hevc",
-  .settings = EncoderSettings::MainEncoderSettings(),
+  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(RoadEncode),
 };
 
 const EncoderInfo main_wide_road_encoder_info = {
   .publish_name = "wideRoadEncodeData",
   .filename = "ecamera.hevc",
-  .settings = EncoderSettings::MainEncoderSettings(),
+  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(WideRoadEncode),
 };
 
@@ -95,7 +94,7 @@ const EncoderInfo main_driver_encoder_info = {
   .publish_name = "driverEncodeData",
   .filename = "dcamera.hevc",
   .record = Params().getBool("RecordFront"),
-  .settings = EncoderSettings::MainEncoderSettings(),
+  .get_settings = [](int in_width){return EncoderSettings::MainEncoderSettings(in_width);},
   INIT_ENCODE_FUNCTIONS(DriverEncode),
 };
 
@@ -103,28 +102,28 @@ const EncoderInfo stream_road_encoder_info = {
   .publish_name = "livestreamRoadEncodeData",
   //.thumbnail_name = "thumbnail",
   .record = false,
-  .settings = EncoderSettings::StreamEncoderSettings(),
+  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamRoadEncode),
 };
 
 const EncoderInfo stream_wide_road_encoder_info = {
   .publish_name = "livestreamWideRoadEncodeData",
   .record = false,
-  .settings = EncoderSettings::StreamEncoderSettings(),
+  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamWideRoadEncode),
 };
 
 const EncoderInfo stream_driver_encoder_info = {
   .publish_name = "livestreamDriverEncodeData",
   .record = false,
-  .settings = EncoderSettings::StreamEncoderSettings(),
+  .get_settings = [](int){return EncoderSettings::StreamEncoderSettings();},
   INIT_ENCODE_FUNCTIONS(LivestreamDriverEncode),
 };
 
 const EncoderInfo qcam_encoder_info = {
   .publish_name = "qRoadEncodeData",
   .filename = "qcamera.ts",
-  .settings = EncoderSettings::QcamEncoderSettings(),
+  .get_settings = [](int){return EncoderSettings::QcamEncoderSettings();},
   .frame_width = 526,
   .frame_height = 330,
   .include_audio = Params().getBool("RecordAudio"),

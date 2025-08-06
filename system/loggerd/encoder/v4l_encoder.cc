@@ -155,7 +155,8 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   assert(strcmp((const char *)cap.driver, "msm_vidc_driver") == 0);
   assert(strcmp((const char *)cap.card, "msm_vidc_venc") == 0);
 
-  bool is_h265 = encoder_info.settings.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C;
+  EncoderSettings encoder_settings = encoder_info.get_settings(in_width);
+  bool is_h265 = encoder_settings.encode_type == cereal::EncodeIndex::Type::FULL_H_E_V_C;
 
   struct v4l2_format fmt_out = {
     .type = V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE,
@@ -207,9 +208,9 @@ V4LEncoder::V4LEncoder(const EncoderInfo &encoder_info, int in_width, int in_hei
   // shared ctrls
   {
     struct v4l2_control ctrls[] = {
-      { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = encoder_info.settings.bitrate},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = encoder_info.settings.gop_size - encoder_info.settings.b_frames - 1},
-      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = encoder_info.settings.b_frames},
+      { .id = V4L2_CID_MPEG_VIDEO_BITRATE, .value = encoder_settings.bitrate},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_P_FRAMES, .value = encoder_settings.gop_size - encoder_settings.b_frames - 1},
+      { .id = V4L2_CID_MPEG_VIDC_VIDEO_NUM_B_FRAMES, .value = encoder_settings.b_frames},
       { .id = V4L2_CID_MPEG_VIDEO_HEADER_MODE, .value = V4L2_MPEG_VIDEO_HEADER_MODE_SEPARATE},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL, .value = V4L2_CID_MPEG_VIDC_VIDEO_RATE_CONTROL_VBR_CFR},
       { .id = V4L2_CID_MPEG_VIDC_VIDEO_PRIORITY, .value = V4L2_MPEG_VIDC_VIDEO_PRIORITY_REALTIME_DISABLE},
