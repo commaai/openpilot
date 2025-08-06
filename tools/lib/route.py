@@ -1,6 +1,5 @@
 import os
 import re
-import enum
 import requests
 from typing import TypeAlias
 from functools import cache
