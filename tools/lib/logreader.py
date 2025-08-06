@@ -21,7 +21,8 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available
-from openpilot.tools.lib.route import Route, SegmentRange, FileName
+from openpilot.tools.lib.route import QCAMERA_FILENAMES, CAMERA_FILENAMES, DCAMERA_FILENAMES, \
+  ECAMERA_FILENAMES, BOOTLOG_FILENAMES, Route, SegmentRange
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 LogMessage = type[capnp._DynamicStructReader]
@@ -99,6 +100,17 @@ class ReadMode(enum.StrEnum):
   QLOG = "q"  # only read qlogs
   AUTO = "a"  # default to rlogs, fallback to qlogs
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
+
+
+class FileName(enum.Enum):
+  #TODO use the ones from route.py
+  RLOG = ("rlog.zst", "rlog.bz2")
+  QLOG = ("qlog.zst", "qlog.bz2")
+  QCAMERA = QCAMERA_FILENAMES
+  FCAMERA = CAMERA_FILENAMES
+  ECAMERA = ECAMERA_FILENAMES
+  DCAMERA = DCAMERA_FILENAMES
+  BOOTLOG = BOOTLOG_FILENAMES
 
 
 LogPath = str | None
