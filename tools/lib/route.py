@@ -13,7 +13,6 @@ from openpilot.tools.lib.helpers import RE
 
 FileNameTuple: TypeAlias = tuple[str, ...]
 class FileName:
-  #TODO use the ones from route.py
   RLOG: FileNameTuple = ("rlog.zst", "rlog.bz2")
   QLOG: FileNameTuple = ("qlog.zst", "qlog.bz2")
   QCAMERA: FileNameTuple = ('qcamera.ts',)
