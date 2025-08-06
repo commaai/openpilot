@@ -46,7 +46,7 @@ FfmpegEncoder::~FfmpegEncoder() {
 }
 
 void FfmpegEncoder::encoder_open() {
-  auto codec_id = encoder_info.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
+  auto codec_id = encoder_info.settings.encode_type == cereal::EncodeIndex::Type::QCAMERA_H264
                       ? AV_CODEC_ID_H264
                       : AV_CODEC_ID_FFVHUFF;
   const AVCodec *codec = avcodec_find_encoder(codec_id);
