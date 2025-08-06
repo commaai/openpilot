@@ -3,6 +3,7 @@
 import sys
 import argparse
 import multiprocessing
+import numpy as np
 import rerun as rr
 import rerun.blueprint as rrb
 from functools import partial
@@ -55,7 +56,7 @@ class Rerunner:
     for topic in sorted(SERVICE_LIST.keys()):
       View = rrb.TimeSeriesView if topic != "thumbnail" else rrb.Spatial2DView
       service_views.append(View(name=topic, origin=f"/{topic}/", visible=False))
-      rr.log(topic, rr.SeriesLine(name=topic), timeless=True)
+      rr.log(topic, rr.Scalars([0.0]), static=True)
 
     center_view = [rrb.Vertical(*service_views, name="streams")]
     if len(self.camera_readers):
@@ -69,6 +70,7 @@ class Rerunner:
       rrb.TimePanel(expanded=False),
     )
     return blueprint
+
 
   @staticmethod
   def _parse_msg(msg, parent_key=''):
@@ -96,12 +98,12 @@ class Rerunner:
       else:
         pass  # Not a plottable value
 
+
   @staticmethod
-  @rr.shutdown_at_exit
-  def _process_log_msgs(blueprint, lr):
+  def _process_log_msgs(lr):
     rr.init(RR_WIN)
-    rr.connect()
-    rr.send_blueprint(blueprint)
+    rr.cleanup_if_forked_child()
+    rr.connect_grpc()
 
     log_msgs = defaultdict(lambda: defaultdict(list))
     for msg in lr:
@@ -111,38 +113,41 @@ class Rerunner:
         continue
 
       for entity_path, dat in Rerunner._parse_msg(msg.to_dict()[msg_type], msg_type):
-        log_msgs[entity_path]["times"].append(msg.logMonoTime)
+        log_msgs[entity_path]["times"].append(np.timedelta64(msg.logMonoTime, 'ns'))
         log_msgs[entity_path]["data"].append(dat)
 
     for entity_path, log_msg in log_msgs.items():
       rr.send_columns(
         entity_path,
-        times=[rr.TimeNanosColumn(RR_TIMELINE_NAME, log_msg["times"])],
-        components=[rr.components.ScalarBatch(log_msg["data"])]
+        indexes=[rr.TimeColumn(RR_TIMELINE_NAME, duration=log_msg["times"])],
+        columns=rr.Scalars.columns(scalars=log_msg["data"])
       )
 
+    rr.disconnect()
     return []
 
+
   @staticmethod
-  @rr.shutdown_at_exit
-  def _process_cam_readers(blueprint, cam_type, h, w, fr):
+  def _process_cam_readers(cam_type, h, w, fr):
     rr.init(RR_WIN)
-    rr.connect()
-    rr.send_blueprint(blueprint)
+    rr.connect_grpc()
 
     for ts, frame in fr:
-      rr.set_time_nanos(RR_TIMELINE_NAME, int(ts * 1e9))
+      rr.set_time(RR_TIMELINE_NAME, duration=ts)
       rr.log(cam_type, rr.Image(bytes=frame, width=w, height=h, pixel_format=rr.PixelFormat.NV12))
+
+    rr.disconnect()
 
   def load_data(self):
     rr.init(RR_WIN, spawn=True)
 
     startup_blueprint = self._create_blueprint()
-    self.lr.run_across_segments(NUM_CPUS, partial(self._process_log_msgs, startup_blueprint), desc="Log messages")
-    for cam_type, cr in self.camera_readers.items():
-      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, startup_blueprint, cam_type, cr.h, cr.w), desc=cam_type)
+    rr.send_blueprint(startup_blueprint)
 
-    rr.send_blueprint(self._create_blueprint())
+    multiprocessing.set_start_method("spawn", force=True) # workaround for error
+    self.lr.run_across_segments(NUM_CPUS, self._process_log_msgs, desc="Log messages")
+    for cam_type, cr in self.camera_readers.items():
+      cr.run_across_segments(NUM_CPUS, partial(self._process_cam_readers, cam_type, cr.h, cr.w), desc=cam_type)
 
 
 if __name__ == '__main__':
