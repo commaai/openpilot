@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import fcntl
 import os
-import json
 import queue
 import struct
 import threading
@@ -172,6 +171,7 @@ def hardware_thread(end_event, hw_queue) -> None:
   onroad_conditions: dict[str, bool] = {
     "ignition": False,
     "not_onroad_cycle": True,
+    "device_temp_good": True,
   }
   startup_conditions: dict[str, bool] = {}
   startup_conditions_prev: dict[str, bool] = {}
@@ -200,6 +200,10 @@ def hardware_thread(end_event, hw_queue) -> None:
 
   params = Params()
   power_monitor = PowerMonitoring()
+
+  uptime_offroad: float = params.get("UptimeOffroad", return_default=True)
+  uptime_onroad: float = params.get("UptimeOnroad", return_default=True)
+  last_uptime_ts: float = time.monotonic()
 
   HARDWARE.initialize_hardware()
   thermal_config = HARDWARE.get_thermal_config()
@@ -302,6 +306,7 @@ def hardware_thread(end_event, hw_queue) -> None:
     # **** starting logic ****
 
     startup_conditions["up_to_date"] = params.get("Offroad_ConnectivityNeeded") is None or params.get_bool("DisableUpdates") or params.get_bool("SnoozeUpdate")
+    startup_conditions["no_excessive_actuation"] = params.get("Offroad_ExcessiveActuation") is None
     startup_conditions["not_uninstalling"] = not params.get_bool("DoUninstall")
     startup_conditions["accepted_terms"] = params.get("HasAcceptedTerms") == terms_version
 
@@ -400,7 +405,7 @@ def hardware_thread(end_event, hw_queue) -> None:
 
     last_ping = params.get("LastAthenaPingTime")
     if last_ping is not None:
-      msg.deviceState.lastAthenaPingTime = int(last_ping)
+      msg.deviceState.lastAthenaPingTime = last_ping
 
     msg.deviceState.thermalStatus = thermal_status
     pm.send("deviceState", msg)
@@ -438,11 +443,22 @@ def hardware_thread(end_event, hw_queue) -> None:
       # save last one before going onroad
       if rising_edge_started:
         try:
-          params.put("LastOffroadStatusPacket", json.dumps(dat))
+          params.put("LastOffroadStatusPacket", dat)
         except Exception:
           cloudlog.exception("failed to save offroad status")
 
     params.put_bool_nonblocking("NetworkMetered", msg.deviceState.networkMetered)
+
+    now_ts = time.monotonic()
+    if off_ts:
+      uptime_offroad += now_ts - max(last_uptime_ts, off_ts)
+    elif started_ts:
+      uptime_onroad += now_ts - max(last_uptime_ts, started_ts)
+    last_uptime_ts = now_ts
+
+    if (count % int(60. / DT_HW)) == 0:
+      params.put("UptimeOffroad", uptime_offroad)
+      params.put("UptimeOnroad", uptime_onroad)
 
     count += 1
     should_start_prev = should_start

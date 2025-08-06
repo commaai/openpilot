@@ -40,5 +40,10 @@
   "Offroad_Recalibration": {
     "text": "openpilot detected a change in the device's mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.",
     "severity": 0
+  },
+  "Offroad_ExcessiveActuation": {
+    "text": "openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device's Dongle ID for troubleshooting.",
+    "severity": 1,
+    "_comment": "Set extra field to lateral or longitudinal."
   }
 }

@@ -6,7 +6,7 @@ from libcpp.string cimport string
 from libcpp cimport bool
 from libc.stdint cimport uint8_t, uint32_t, uint64_t
 
-cdef extern from "opendbc/can/common.h":
+cdef extern from "selfdrive/pandad/can_types.h":
   cdef struct CanFrame:
     long src
     uint32_t address

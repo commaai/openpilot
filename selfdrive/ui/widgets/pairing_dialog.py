@@ -23,7 +23,7 @@ class PairingDialog:
 
   def _get_pairing_url(self) -> str:
     try:
-      dongle_id = self.params.get("DongleId", encoding='utf8') or ""
+      dongle_id = self.params.get("DongleId") or ""
       token = Api(dongle_id).get_token()
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")

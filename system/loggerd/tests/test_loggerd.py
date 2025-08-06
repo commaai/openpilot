@@ -182,7 +182,7 @@ class TestLoggerd:
 
   @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
   def test_rotation(self):
-    Params().put("RecordFront", "1")
+    Params().put("RecordFront", True)
 
     expected_files = {"rlog.zst", "qlog.zst", "qcamera.ts", "fcamera.hevc", "dcamera.hevc", "ecamera.hevc"}
 
@@ -282,15 +282,15 @@ class TestLoggerd:
       sent.clear_write_flag()
       assert sent.to_bytes() == m.as_builder().to_bytes()
 
-  def test_preserving_flagged_segments(self):
-    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userFlag"}
+  def test_preserving_bookmarked_segments(self):
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) | {"userBookmark"}
     self._publish_random_messages(services)
 
     segment_dir = self._get_latest_log_dir()
     assert getxattr(segment_dir, PRESERVE_ATTR_NAME) == PRESERVE_ATTR_VALUE
 
-  def test_not_preserving_unflagged_segments(self):
-    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userFlag"}
+  def test_not_preserving_nonbookmarked_segments(self):
+    services = set(random.sample(CEREAL_SERVICES, random.randint(5, 10))) - {"userBookmark", "audioFeedback"}
     self._publish_random_messages(services)
 
     segment_dir = self._get_latest_log_dir()

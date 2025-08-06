@@ -8,10 +8,6 @@
         <translation>閉じる</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>更新の一時停止</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>再起動してアップデート</translation>
     </message>
@@ -481,10 +477,6 @@ Firehoseモードを有効にすると学習データを最大限アップロー
         <translation>SSDドライブ(NVMe)がマウントされていません。</translation>
     </message>
     <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>非サポートのSSDドライブ(NVMe)が検出されました。このドライブを使用するとデバイスが多大な電力を消費し過熱する可能性があります。</translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation>openpilotが車両を識別できませんでした。車が未対応またはECUが認識されていない可能性があります。該当車両のファームウェアバージョンを追加するためにプルリクエストしてください。サポートが必要な場合は discord.comma.ai に参加することができます。</translation>
     </message>
@@ -498,7 +490,19 @@ Firehoseモードを有効にすると学習データを最大限アップロー
     </message>
     <message>
         <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
+        <translation>製品のcomma.aiへの登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりアップロードを行ったりすることはできず、comma.aiからのサポートも受けられません。もしcomma.ai/shopで購入した場合は、https://comma.ai/support にてサポートチケットをご提出ください。</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation>過剰な作動の検知</translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation>また後で更新する</translation>
+    </message>
+    <message>
+        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <translation>openpilotが過剰な%1の作動を検出しました。ソフトウェアの不具合の可能性があります。https://comma.ai/support からサポートへご連絡下さい。</translation>
     </message>
 </context>
 <context>
@@ -642,47 +646,6 @@ Firehoseモードを有効にすると学習データを最大限アップロー
     <message>
         <source>now</source>
         <translation>たった今</translation>
-    </message>
-</context>
-<context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>初期化に失敗しました。再起動後に再試行してください。</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>初期化してもよろしいですか？</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>システムを初期化</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>キャンセル</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>再起動</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>確認</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>Dataパーティションをマウントできません。パーティションが破損している可能性があります。デバイスを消去してリセットしますので確認を押して下さい。</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>デバイスをリセットしています…
-この処理には最大で1分ほどかかる場合があります。</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>システムリセットの準備が整いました。すべてのデータと設定を消去するには「確認」を押してください。「キャンセル」を押すとブートを再開します。</translation>
     </message>
 </context>
 <context>
@@ -1174,41 +1137,6 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>運転中にマイク音声を録音・保存します。音声は comma connect のドライブレコーダー映像に含まれます。</translation>
-    </message>
-</context>
-<context>
-    <name>Updater</name>
-    <message>
-        <source>Update Required</source>
-        <translation>アップデートが必要です</translation>
-    </message>
-    <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>OSのアップデートが必要です。Wi-Fiに接続してアップデートする事をお勧めします。ダウンロードサイズは約1GBです。</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fiに接続</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>インストール</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>戻る</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>読み込み中...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>再起動</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>更新失敗</translation>
     </message>
 </context>
 <context>

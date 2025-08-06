@@ -15,7 +15,8 @@ else:
 qt_libs = ['qt_util'] + base_libs
 
 cabana_env = qt_env.Clone()
-cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'panda', 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
+
+cabana_libs = [widgets, cereal, messaging, visionipc, replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'usb-1.0'] + qt_libs
 opendbc_path = '-DOPENDBC_FILE_PATH=\'"%s"\'' % (cabana_env.Dir("../../opendbc/dbc").abspath)
 cabana_env['CXXFLAGS'] += [opendbc_path]
 
@@ -29,7 +30,7 @@ cabana_lib = cabana_env.Library("cabana_lib", ['mainwin.cc', 'streams/socketcans
                                                'streams/routes.cc', 'dbc/dbc.cc', 'dbc/dbcfile.cc', 'dbc/dbcmanager.cc',
                                                'utils/export.cc', 'utils/util.cc',
                                                'chart/chartswidget.cc', 'chart/chart.cc', 'chart/signalselector.cc', 'chart/tiplabel.cc', 'chart/sparkline.cc',
-                                               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc',
+                                               'commands.cc', 'messageswidget.cc', 'streamselector.cc', 'settings.cc', 'panda.cc',
                                                'cameraview.cc', 'detailwidget.cc', 'tools/findsimilarbits.cc', 'tools/findsignal.cc', 'tools/routeinfo.cc'], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 cabana_env.Program('cabana', ['cabana.cc', cabana_lib, assets], LIBS=cabana_libs, FRAMEWORKS=base_frameworks)
 
@@ -40,4 +41,4 @@ output_json_file = 'tools/cabana/dbc/car_fingerprint_to_dbc.json'
 generate_dbc = cabana_env.Command('#' + output_json_file,
                                   ['dbc/generate_dbc_json.py'],
                                   "python3 tools/cabana/dbc/generate_dbc_json.py --out " + output_json_file)
-cabana_env.Depends(generate_dbc, ["#common", "#selfdrive/pandad", '#opendbc_repo', "#cereal", "#msgq_repo"])
+cabana_env.Depends(generate_dbc, ["#common", '#opendbc_repo', "#cereal", "#msgq_repo"])

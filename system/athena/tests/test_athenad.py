@@ -66,9 +66,9 @@ class TestAthenadMethods:
   def setup_method(self):
     self.default_params = {
       "DongleId": "0000000000000000",
-      "GithubSshKeys": b"ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
-      "GithubUsername": b"commaci",
-      "AthenadUploadQueue": '[]',
+      "GithubSshKeys": "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC307aE+nuHzTAgaJhzSf5v7ZZQW9gaperjhCmyPyl4PzY7T1mDGenTlVTN7yoVFZ9UfO9oMQqo0n1OwDIiqbIFxqnhrHU0cYfj88rI85m5BEKlNu5RdaVTj1tcbaPpQc5kZEolaI1nDDjzV0lwS7jo5VYDHseiJHlik3HH1SgtdtsuamGR2T80q1SyW+5rHoMOJG73IH2553NnWuikKiuikGHUYBd00K1ilVAK2xSiMWJp55tQfZ0ecr9QjEsJ+J/efL4HqGNXhffxvypCXvbUYAFSddOwXUPo5BTKevpxMtH+2YrkpSjocWA04VnTYFiPG6U4ItKmbLOTFZtPzoez private", # noqa: E501
+      "GithubUsername": "commaci",
+      "AthenadUploadQueue": [],
     }
 
     self.params = Params()
@@ -400,11 +400,11 @@ class TestAthenadMethods:
 
   def test_get_ssh_authorized_keys(self):
     keys = dispatcher["getSshAuthorizedKeys"]()
-    assert keys == self.default_params["GithubSshKeys"].decode('utf-8')
+    assert keys == self.default_params["GithubSshKeys"]
 
   def test_get_github_username(self):
     keys = dispatcher["getGithubUsername"]()
-    assert keys == self.default_params["GithubUsername"].decode('utf-8')
+    assert keys == self.default_params["GithubUsername"]
 
   def test_get_version(self):
     resp = dispatcher["getVersion"]()

@@ -8,10 +8,6 @@
         <translation>Fechar</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>Adiar Atualização</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>Reiniciar e Atualizar</translation>
     </message>
@@ -483,10 +479,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <translation>Unidade NVMe não montada.</translation>
     </message>
     <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>Unidade NVMe não suportada detectada. O dispositivo pode consumir significativamente mais energia e superaquecimento devido ao NVMe não suportado.</translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation>O openpilot não conseguiu identificar o seu carro. Seu carro não é suportado ou seus ECUs não são reconhecidos. Envie um pull request para adicionar as versões de firmware ao veículo adequado. Precisa de ajuda? Junte-se discord.comma.ai.</translation>
     </message>
@@ -501,6 +493,18 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message>
         <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
         <translation>O dispositivo não conseguiu se registrar no backend da comma.ai. Ele não se conecta nem faz upload para os servidores da comma.ai e não recebe suporte da comma.ai. Se este for um dispositivo adquirido em comma.ai/shop, abra um ticket em https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation>Reconhecer Atuação Excessiva</translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation>Adiar Atualização</translation>
+    </message>
+    <message>
+        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <translation>O openpilot detectou uma atuação excessiva de %1. Isso pode ser causado por uma falha no software. Por favor, entre em contato com o suporte em https://comma.ai/support.</translation>
     </message>
 </context>
 <context>
@@ -647,47 +651,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message>
         <source>now</source>
         <translation>agora</translation>
-    </message>
-</context>
-<context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>Reset falhou. Reinicie para tentar novamente.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>Tem certeza que quer resetar seu dispositivo?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>Resetar Sistema</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancelar</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>Confirmar</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>Não é possível montar a partição de dados. Partição corrompida. Confirme para apagar e redefinir o dispositivo.</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>Redefinindo o dispositivo
-Isso pode levar até um minuto.</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Reinicialização do sistema acionada. Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancel para retomar a inicialização.</translation>
     </message>
 </context>
 <context>
@@ -1179,41 +1142,6 @@ Se quiser continuar, use https://flash.comma.ai para restaurar seu dispositivo a
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Grave e armazene o áudio do microfone enquanto estiver dirigindo. O áudio será incluído ao vídeo dashcam no comma connect.</translation>
-    </message>
-</context>
-<context>
-    <name>Updater</name>
-    <message>
-        <source>Update Required</source>
-        <translation>Atualização Necessária</translation>
-    </message>
-    <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Uma atualização do sistema operacional é necessária. Conecte seu dispositivo ao Wi-Fi para a experiência de atualização mais rápida. O tamanho do download é de aproximadamente 1GB.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conecte-se ao Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>Instalar</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Voltar</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>Carregando...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>Falha na atualização</translation>
     </message>
 </context>
 <context>
