@@ -91,14 +91,6 @@ tools/replay/replay <route-name>
 cd selfdrive/ui && ./ui
 ```
 
-## Try Radar Point Visualization with Rerun
-To visualize radar points, run rp_visualization.py while tools/replay/replay is active.
-
-```bash
-tools/replay/replay <route-name>
-python3 replay/rp_visualization.py
-```
-
 ## Work with plotjuggler
 If you want to use replay with plotjuggler, you can stream messages by running:
 
