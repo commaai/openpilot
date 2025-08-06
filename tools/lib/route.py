@@ -1,6 +1,7 @@
 import os
 import re
 import requests
+from typing import TypeAlias  
 from functools import cache
 from urllib.parse import urlparse
 from collections import defaultdict
@@ -18,15 +19,17 @@ DCAMERA_FILENAMES = ('dcamera.hevc',)
 ECAMERA_FILENAMES = ('ecamera.hevc',)
 BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 
+FileNameTuple: TypeAlias = tuple[str, ...]  
 class FileName:
   #TODO use the ones from route.py
-  RLOG = ("rlog.zst", "rlog.bz2")
-  QLOG = ("qlog.zst", "qlog.bz2")
-  QCAMERA = ('qcamera.ts',)
-  FCAMERA = ('fcamera.hevc',)
-  ECAMERA = ('ecamera.hevc',)
-  DCAMERA = ('dcamera.hevc',)
-  BOOTLOG = ('bootlog.zst', 'bootlog.bz2')
+  RLOG: FileNameTuple = ("rlog.zst", "rlog.bz2")
+  QLOG: FileNameTuple = ("qlog.zst", "qlog.bz2")
+  QCAMERA: FileNameTuple = ('qcamera.ts',)
+  FCAMERA: FileNameTuple = ('fcamera.hevc',)
+  ECAMERA: FileNameTuple = ('ecamera.hevc',)
+  DCAMERA: FileNameTuple = ('dcamera.hevc',)
+  BOOTLOG: FileNameTuple = ('bootlog.zst', 'bootlog.bz2')
+
 
 class Route:
   def __init__(self, name, data_dir=None):
