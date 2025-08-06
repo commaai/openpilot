@@ -144,7 +144,7 @@ def internal_source(sr: SegmentRange, fns: tuple[str, ...], endpoint_url: str = 
 
 
 def openpilotci_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
-  return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
+  return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns] for seg in sr.seg_idxs])
 
 
 def comma_car_segments_source(sr: SegmentRange, fns: tuple[str, ...]) -> list[LogPath]:
