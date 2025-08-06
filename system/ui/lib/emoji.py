@@ -37,7 +37,7 @@ def emoji_tex(emoji):
   if emoji not in _cache:
     img = Image.new("RGBA", (128, 128), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    font_path = "/tmp/NotoColorEmoji.ttf"
+    font_path = "/usr/share/fonts/NotoColorEmoji.woff2"
     font = ImageFont.truetype(font_path, 109)
     draw.text((0, 0), emoji, font=font, embedded_color=True)
     buffer = io.BytesIO()
