@@ -19,7 +19,7 @@ class MainLayout(Widget):
   def __init__(self):
     super().__init__()
 
-    self._pm = messaging.PubMaster(['userFlag'])
+    self._pm = messaging.PubMaster(['bookmarkButton'])
 
     self._sidebar = Sidebar()
     self._current_mode = MainState.HOME
@@ -40,7 +40,7 @@ class MainLayout(Widget):
 
   def _setup_callbacks(self):
     self._sidebar.set_callbacks(on_settings=self._on_settings_clicked,
-                                on_flag=self._on_flag_clicked)
+                                on_flag=self._on_bookmark_clicked)
     self._layouts[MainState.HOME]._setup_widget.set_open_settings_callback(lambda: self.open_settings(PanelType.FIREHOSE))
     self._layouts[MainState.SETTINGS].set_callbacks(on_close=self._set_mode_for_state)
     self._layouts[MainState.ONROAD].set_callbacks(on_click=self._on_onroad_clicked)
@@ -76,10 +76,10 @@ class MainLayout(Widget):
   def _on_settings_clicked(self):
     self.open_settings(PanelType.DEVICE)
 
-  def _on_flag_clicked(self):
-    user_flag = messaging.new_message('userFlag')
-    user_flag.valid = True
-    self._pm.send('userFlag', user_flag)
+  def _on_bookmark_clicked(self):
+    user_bookmark = messaging.new_message('bookmarkButton')
+    user_bookmark.valid = True
+    self._pm.send('bookmarkButton', user_bookmark)
 
   def _on_onroad_clicked(self):
     self._sidebar.set_visible(not self._sidebar.is_visible)

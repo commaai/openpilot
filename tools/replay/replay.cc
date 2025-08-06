@@ -20,7 +20,7 @@ Replay::Replay(const std::string &route, std::vector<std::string> allow, std::ve
   std::signal(SIGUSR1, interrupt_sleep_handler);
 
   if (!(flags_ & REPLAY_FLAG_ALL_SERVICES)) {
-    block.insert(block.end(), {"uiDebug", "userFlag"});
+    block.insert(block.end(), {"uiDebug", "userBookmark"});
   }
   setupServices(allow, block);
   setupSegmentManager(!allow.empty() || !block.empty());

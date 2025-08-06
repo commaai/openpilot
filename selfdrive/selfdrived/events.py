@@ -11,6 +11,8 @@ from openpilot.common.constants import CV
 from openpilot.common.git import get_short_branch
 from openpilot.common.realtime import DT_CTRL
 from openpilot.selfdrive.locationd.calibrationd import MIN_SPEED_FILTER
+from openpilot.system.micd import SAMPLE_RATE, SAMPLE_BUFFER
+from openpilot.selfdrive.ui.feedback.feedbackd import FEEDBACK_MAX_DURATION
 
 AlertSize = log.SelfdriveState.AlertSize
 AlertStatus = log.SelfdriveState.AlertStatus
@@ -198,6 +200,7 @@ class StartupAlert(Alert):
                      Priority.LOWER, VisualAlert.none, AudibleAlert.none, 5.),
 
 
+
 # ********** helper functions **********
 def get_display_speed(speed_ms: float, metric: bool) -> str:
   speed = int(round(speed_ms * (CV.MS_TO_KPH if metric else CV.MS_TO_MPH)))
@@ -250,6 +253,14 @@ def calibration_incomplete_alert(CP: car.CarParams, CS: car.CarState, sm: messag
     f"Drive Above {get_display_speed(MIN_SPEED_FILTER, metric)}",
     AlertStatus.normal, AlertSize.mid,
     Priority.LOWEST, VisualAlert.none, AudibleAlert.none, .2)
+
+
+def audio_feedback_alert(CP: car.CarParams, CS: car.CarState, sm: messaging.SubMaster, metric: bool, soft_disable_time: int, personality) -> Alert:
+  duration = FEEDBACK_MAX_DURATION - ((sm['audioFeedback'].blockNum + 1) * SAMPLE_BUFFER / SAMPLE_RATE)
+  return NormalPermanentAlert(
+    "Recording Audio Feedback",
+    f"{round(duration)} second{'s' if round(duration) != 1 else ''} remaining. Press again to save early.",
+    priority=Priority.LOW)
 
 
 # *** debug alerts ***
@@ -368,6 +379,7 @@ def invalid_lkas_setting_alert(CP: car.CarParams, CS: car.CarState, sm: messagin
   elif CP.brand == "nissan":
     text = "Disable your car's stock LKAS to engage"
   return NormalPermanentAlert("Invalid LKAS setting", text)
+
 
 
 EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
@@ -991,8 +1003,12 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
     ET.WARNING: personality_changed_alert,
   },
 
-  EventName.userFlag: {
+  EventName.userBookmark: {
     ET.PERMANENT: NormalPermanentAlert("Bookmark Saved", duration=1.5),
+  },
+
+  EventName.audioFeedback: {
+    ET.PERMANENT: audio_feedback_alert,
   },
 }
 
