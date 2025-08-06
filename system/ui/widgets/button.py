@@ -183,10 +183,9 @@ class Button(Widget):
     self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
 
     self._label = Label(text, font_size, font_weight, text_alignment, text_padding,
-                        BUTTON_TEXT_COLOR[self._button_style])
+                        BUTTON_TEXT_COLOR[self._button_style], icon=icon)
 
     self._click_callback = click_callback
-    self._icon = icon
     self._multi_touch = multi_touch
     self.enabled = enabled
 
