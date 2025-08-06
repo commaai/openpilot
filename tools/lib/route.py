@@ -19,7 +19,7 @@ DCAMERA_FILENAMES = ('dcamera.hevc',)
 ECAMERA_FILENAMES = ('ecamera.hevc',)
 BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
 
-FileNameTuple: TypeAlias = tuple[str, ...]  
+FileNameTuple: TypeAlias = tuple[str, ...]
 class FileName:
   #TODO use the ones from route.py
   RLOG: FileNameTuple = ("rlog.zst", "rlog.bz2")
