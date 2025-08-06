@@ -1,8 +1,12 @@
 Version 0.10.0 (2025-08-05)
 ========================
 * New driving model
-  * Lead car ground-truth fixes
-  * New training objective using MLSIM
+  * New training architecture
+     * Architecture outlined in CVPR paper: "Learning to Drive from a World Model"
+     * Longitudinal MPC replaced by E2E planning for experimental mode
+     * Lateral MPC in training replaced by E2E planning
+  * Low-speed lead car ground-truth fixes
+
 * Enable live-learned steering actuation delay
 * Record driving feedback using LKAS button
 * Opt-in audio recording for dashcam video
