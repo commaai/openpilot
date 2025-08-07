@@ -92,6 +92,7 @@ testing = [
   "pytest-asyncio",
   "pytest-mock",
   "pytest-repeat",
+  "pytest-xvfb",
   "ruff",
   "codespell",
   "pre-commit-hooks",
