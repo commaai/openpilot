@@ -159,7 +159,7 @@ jobs:
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests
-      timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
+      timeout-minutes: 5
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         $PYTEST --collect-only -m 'not slow' &> /dev/null && \
