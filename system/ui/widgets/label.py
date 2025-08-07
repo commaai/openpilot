@@ -112,10 +112,11 @@ class Label(Widget):
     self._text_size = measure_text_cached(self._font, self._text, self._font_size)
     self._text_color = text_color
     self._icon = icon
-    self.emojis = find_emoji(self._text)
+    self._emojis = find_emoji(self._text)
 
   def set_text(self, text):
     self._text = text
+    self._emojis = find_emoji(self._text)
     self._text_size = measure_text_cached(self._font, self._text, self._font_size)
 
   def set_text_color(self, color):
@@ -148,7 +149,7 @@ class Label(Widget):
         text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
 
     prev_index = 0
-    for start, end, emoji in self.emojis:
+    for start, end, emoji in self._emojis:
       text_before = self._text[prev_index:start]
       width_before = measure_text_cached(self._font, text_before, self._font_size)
       rl.draw_text_ex(self._font, text_before, text_pos, self._font_size, 0, self._text_color)
