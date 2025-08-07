@@ -93,14 +93,14 @@ class Widget(abc.ABC):
           self._is_pressed[mouse_event.slot] = True
           self._tracking_is_pressed[mouse_event.slot] = True
 
-      elif mouse_event.left_released:
-        if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._handle_mouse_release(mouse_event.pos)
+      # Callback such as scroll panel signifies user is scrolling
+      elif not self._touch_valid():
         self._is_pressed[mouse_event.slot] = False
         self._tracking_is_pressed[mouse_event.slot] = False
 
-      # Callback such as scroll panel signifies user is scrolling
-      elif not self._touch_valid():
+      elif mouse_event.left_released:
+        if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
+          self._handle_mouse_release(mouse_event.pos)
         self._is_pressed[mouse_event.slot] = False
         self._tracking_is_pressed[mouse_event.slot] = False
 
