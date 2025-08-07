@@ -15,6 +15,7 @@ class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
+    self._start_pressed = [False] * MAX_TOUCH_SLOTS
     self._is_pressed = [False] * MAX_TOUCH_SLOTS
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
@@ -83,18 +84,48 @@ class Widget(abc.ABC):
     for mouse_event in gui_app.mouse_events:
       if not self._multi_touch and mouse_event.slot != 0:
         continue
+
+      # Track if mouse down started within our rect
+      # TODO: move down
       if mouse_event.left_pressed and self._touch_valid():
         if rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._is_pressed[mouse_event.slot] = True
+          self._start_pressed[mouse_event.slot] = True
 
+      # Callback such as scroll panel signifies user is scrolling
       elif not self._touch_valid():
-        self._is_pressed[mouse_event.slot] = False
+        self._start_pressed[mouse_event.slot] = False
+
+      elif mouse_event.left_released:
+        self._start_pressed[mouse_event.slot] = False
+
+      if mouse_event.left_pressed and self._touch_valid():
+        print('left pressed')
+        if rl.check_collision_point_rec(mouse_event.pos, self._rect):
+          self._is_pressed[mouse_event.slot] = True
 
       elif mouse_event.left_released:
         if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
           self._handle_mouse_release(mouse_event.pos)
         self._is_pressed[mouse_event.slot] = False
 
+      elif rl.check_collision_point_rec(mouse_event.pos, self._rect):
+        print('inside rect')
+        if self._start_pressed[mouse_event.slot]:
+          # Mouse/touch is still within our rect
+          self._is_pressed[mouse_event.slot] = True
+
+      # Mouse/touch left our rect
+      elif not rl.check_collision_point_rec(mouse_event.pos, self._rect):
+        self._is_pressed[mouse_event.slot] = False
+
+      # Callback such as scroll panel signifies user is scrolling
+      elif not self._touch_valid():
+        self._is_pressed[mouse_event.slot] = False
+
+      if self.__class__.__name__ == "ExperimentalModeButton":
+        print(f"Widget {self.__class__.__name__}: SLOT: {mouse_event.slot}, pressed: {self._is_pressed[mouse_event.slot]}, start_pressed: {self._start_pressed[mouse_event.slot]}")
+
+        print()
     return ret
 
   @abc.abstractmethod
