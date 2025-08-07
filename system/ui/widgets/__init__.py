@@ -80,20 +80,21 @@ class Widget(abc.ABC):
     ret = self._render(self._rect)
 
     # Keep track of whether mouse down started within the widget's rectangle
-    for mouse_event in gui_app.mouse_events:
-      if not self._multi_touch and mouse_event.slot != 0:
-        continue
-      if mouse_event.left_pressed and self._touch_valid():
-        if rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._is_pressed[mouse_event.slot] = True
+    if self.enabled:
+      for mouse_event in gui_app.mouse_events:
+        if not self._multi_touch and mouse_event.slot != 0:
+          continue
+        if mouse_event.left_pressed and self._touch_valid():
+          if rl.check_collision_point_rec(mouse_event.pos, self._rect):
+            self._is_pressed[mouse_event.slot] = True
 
-      elif not self._touch_valid():
-        self._is_pressed[mouse_event.slot] = False
+        elif not self._touch_valid():
+          self._is_pressed[mouse_event.slot] = False
 
-      elif mouse_event.left_released:
-        if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._handle_mouse_release(mouse_event.pos)
-        self._is_pressed[mouse_event.slot] = False
+        elif mouse_event.left_released:
+          if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
+            self._handle_mouse_release(mouse_event.pos)
+          self._is_pressed[mouse_event.slot] = False
 
     return ret
 
