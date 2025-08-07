@@ -19,7 +19,7 @@ FPS_LOG_INTERVAL = 5  # Seconds between logging FPS drops
 FPS_DROP_THRESHOLD = 0.9  # FPS drop threshold for triggering a warning
 FPS_CRITICAL_THRESHOLD = 0.5  # Critical threshold for triggering strict actions
 MOUSE_THREAD_RATE = 140  # touch controller runs at 140Hz
-MAX_TOUCH_SLOT = 2
+MAX_TOUCH_SLOTS = 2
 
 ENABLE_VSYNC = os.getenv("ENABLE_VSYNC", "0") == "1"
 SHOW_FPS = os.getenv("SHOW_FPS") == "1"
@@ -69,7 +69,7 @@ class MouseEvent(NamedTuple):
 class MouseState:
   def __init__(self):
     self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
-    self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOT
+    self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
     self._rk = Ratekeeper(MOUSE_THREAD_RATE)
     self._lock = threading.Lock()
@@ -100,7 +100,7 @@ class MouseState:
       self._rk.keep_time()
 
   def _handle_mouse_event(self):
-    for slot in range(MAX_TOUCH_SLOT):
+    for slot in range(MAX_TOUCH_SLOTS):
       mouse_pos = rl.get_touch_position(slot)
       ev = MouseEvent(
         MousePos(mouse_pos.x, mouse_pos.y),

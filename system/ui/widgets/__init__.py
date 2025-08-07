@@ -2,7 +2,7 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOT
+from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS
 
 
 class DialogResult(IntEnum):
@@ -15,7 +15,7 @@ class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._is_pressed = [False] * MAX_TOUCH_SLOT  # TODO: rename
+    self._is_pressed = [False] * MAX_TOUCH_SLOTS
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
