@@ -500,7 +500,7 @@ class WifiManager:
   def _extract_ssid(self, settings: dict) -> str | None:
     """Extract SSID from connection settings."""
     ssid_variant = settings.get('802-11-wireless', {}).get('ssid', Variant('ay', b'')).value
-    return ''.join(chr(b) for b in ssid_variant) if ssid_variant else None
+    return bytes(ssid_variant).decode('utf-8') if ssid_variant else None
 
   async def _add_match_rule(self, rule):
     """Add a match rule on the bus."""
