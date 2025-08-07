@@ -99,6 +99,11 @@ class Widget(abc.ABC):
         self._is_pressed[mouse_event.slot] = False
         self._tracking_is_pressed[mouse_event.slot] = False
 
+      # Callback such as scroll panel signifies user is scrolling
+      elif not self._touch_valid():
+        self._is_pressed[mouse_event.slot] = False
+        self._tracking_is_pressed[mouse_event.slot] = False
+
       # Mouse/touch is still within our rect
       elif rl.check_collision_point_rec(mouse_event.pos, self._rect):
         if self._tracking_is_pressed[mouse_event.slot]:
@@ -107,11 +112,6 @@ class Widget(abc.ABC):
       # Mouse/touch left our rect but may come back into focus later
       elif not rl.check_collision_point_rec(mouse_event.pos, self._rect):
         self._is_pressed[mouse_event.slot] = False
-
-      # Callback such as scroll panel signifies user is scrolling
-      elif not self._touch_valid():
-        self._is_pressed[mouse_event.slot] = False
-        self._tracking_is_pressed[mouse_event.slot] = False
 
       if self.__class__.__name__ == "ExperimentalModeButton":
         print(f"Widget {self.__class__.__name__}: SLOT: {mouse_event.slot}, pressed: {self._is_pressed[mouse_event.slot]}, start_pressed: {self._tracking_is_pressed[mouse_event.slot]}")
