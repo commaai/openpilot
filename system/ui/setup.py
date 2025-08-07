@@ -333,7 +333,7 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup")
+    gui_app.init_window("Setup", 20)
     setup = Setup()
     for _ in gui_app.render():
       setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
