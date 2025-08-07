@@ -113,10 +113,6 @@ class Widget(abc.ABC):
       elif not rl.check_collision_point_rec(mouse_event.pos, self._rect):
         self._is_pressed[mouse_event.slot] = False
 
-      if self.__class__.__name__ == "ExperimentalModeButton":
-        print(f"Widget {self.__class__.__name__}: SLOT: {mouse_event.slot}, pressed: {self._is_pressed[mouse_event.slot]}, start_pressed: {self._tracking_is_pressed[mouse_event.slot]}")
-
-        print()
     return ret
 
   @abc.abstractmethod
