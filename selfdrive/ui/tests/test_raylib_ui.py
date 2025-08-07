@@ -9,3 +9,4 @@ def test_raylib_ui():
   #   MainLayout()
   # finally:
   #   gui_app.close()
+  gui_app.close()
