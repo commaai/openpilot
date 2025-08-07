@@ -25,6 +25,8 @@ class MainLayout(Widget):
     self._current_mode = MainState.HOME
     self._prev_onroad = False
 
+    HomeLayout()
+
     # # Initialize layouts
     # self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
     #
