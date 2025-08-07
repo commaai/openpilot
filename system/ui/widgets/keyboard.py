@@ -187,10 +187,10 @@ class Keyboard(Widget):
         if key in self._key_icons:
           if key == SHIFT_ACTIVE_KEY and self._caps_lock:
             key = CAPS_LOCK_KEY
-          self._all_keys[key].enabled = is_enabled
+          self._all_keys[key].set_enabled(is_enabled)
           self._all_keys[key].render(key_rect)
         else:
-          self._all_keys[key].enabled = is_enabled
+          self._all_keys[key].set_enabled(is_enabled)
           self._all_keys[key].render(key_rect)
 
     return self._render_return_status

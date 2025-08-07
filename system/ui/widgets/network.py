@@ -150,14 +150,14 @@ class WifiManagerUI(Widget):
     match self.state:
       case StateConnecting(network=connecting):
         if connecting.ssid == network.ssid:
-          self._networks_buttons[network.ssid].enabled = False
+          self._networks_buttons[network.ssid].set_enabled(False)
           status_text = "CONNECTING..."
       case StateForgetting(network=forgetting):
         if forgetting.ssid == network.ssid:
-          self._networks_buttons[network.ssid].enabled = False
+          self._networks_buttons[network.ssid].set_enabled(False)
           status_text = "FORGETTING..."
       case _:
-        self._networks_buttons[network.ssid].enabled = True
+        self._networks_buttons[network.ssid].set_enabled(True)
 
     self._networks_buttons[network.ssid].render(ssid_rect)
 
