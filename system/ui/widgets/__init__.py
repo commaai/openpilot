@@ -85,28 +85,19 @@ class Widget(abc.ABC):
       if not self._multi_touch and mouse_event.slot != 0:
         continue
 
-      # Track if mouse down started within our rect
-      # TODO: move down
-      if mouse_event.left_pressed and self._touch_valid():
-        if rl.check_collision_point_rec(mouse_event.pos, self._rect):
-          self._start_pressed[mouse_event.slot] = True
-
-      # Callback such as scroll panel signifies user is scrolling
-      elif not self._touch_valid():
-        self._start_pressed[mouse_event.slot] = False
-
-      elif mouse_event.left_released:
-        self._start_pressed[mouse_event.slot] = False
-
+      # Ignores touches/presses that start outside our rect
+      # Allows touch to leave the rect and come back in focus if mouse did not release
       if mouse_event.left_pressed and self._touch_valid():
         print('left pressed')
         if rl.check_collision_point_rec(mouse_event.pos, self._rect):
           self._is_pressed[mouse_event.slot] = True
+          self._start_pressed[mouse_event.slot] = True
 
       elif mouse_event.left_released:
         if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
           self._handle_mouse_release(mouse_event.pos)
         self._is_pressed[mouse_event.slot] = False
+        self._start_pressed[mouse_event.slot] = False
 
       elif rl.check_collision_point_rec(mouse_event.pos, self._rect):
         print('inside rect')
@@ -114,13 +105,14 @@ class Widget(abc.ABC):
           # Mouse/touch is still within our rect
           self._is_pressed[mouse_event.slot] = True
 
-      # Mouse/touch left our rect
+      # Mouse/touch left our rect but may come back into focus later
       elif not rl.check_collision_point_rec(mouse_event.pos, self._rect):
         self._is_pressed[mouse_event.slot] = False
 
       # Callback such as scroll panel signifies user is scrolling
       elif not self._touch_valid():
         self._is_pressed[mouse_event.slot] = False
+        self._start_pressed[mouse_event.slot] = False
 
       if self.__class__.__name__ == "ExperimentalModeButton":
         print(f"Widget {self.__class__.__name__}: SLOT: {mouse_event.slot}, pressed: {self._is_pressed[mouse_event.slot]}, start_pressed: {self._start_pressed[mouse_event.slot]}")
