@@ -187,8 +187,7 @@ class WifiManagerUI(Widget):
 
   def _forget_networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
-      if isinstance(self.state, StateIdle):
-        self.state = StateShowForgetConfirm(network)
+      self.state = StateShowForgetConfirm(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
     """Draw the status icon based on network's connection state"""
