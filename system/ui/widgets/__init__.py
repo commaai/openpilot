@@ -16,6 +16,7 @@ class Widget(abc.ABC):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = [False] * MAX_TOUCH_SLOT
+    self._enabled: bool | Callable[[], bool] = True
     self._multi_touch = False
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
@@ -31,6 +32,13 @@ class Widget(abc.ABC):
   @property
   def is_visible(self) -> bool:
     return self._is_visible() if callable(self._is_visible) else self._is_visible
+
+  def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
+    self._enabled = enabled
+
+  @property
+  def enabled(self) -> bool:
+    return self._enabled() if callable(self._enabled) else self._enabled
 
   @property
   def is_pressed(self) -> bool:
