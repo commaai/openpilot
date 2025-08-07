@@ -1,7 +1,8 @@
-import time
-from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.system.ui.lib.application import gui_app
+from openpilot.selfdrive.ui.layouts.main import MainLayout
 
 
-@with_processes(["raylib_ui"])
-def test_raylib_ui():
-  time.sleep(1)
+def test_ui():
+  """Test initialization of the UI widgets is successful."""
+  gui_app.init_window("UI")
+  MainLayout()
