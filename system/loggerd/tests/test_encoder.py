@@ -19,7 +19,7 @@ from openpilot.system.hardware.hw import Paths
 
 SEGMENT_LENGTH = 2
 FULL_SIZE = 2507572
-hevc_size = lambda w: FULL_SIZE//2 if w <= 1344 else FULL_SIZE
+def hevc_size(w): return FULL_SIZE // 2 if w <= 1344 else FULL_SIZE
 CAMERAS = [
   ("fcamera.hevc", 20, hevc_size, "roadEncodeIdx"),
   ("dcamera.hevc", 20, hevc_size, "driverEncodeIdx"),
