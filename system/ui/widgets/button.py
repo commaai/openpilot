@@ -172,7 +172,6 @@ class Button(Widget):
                border_radius: int = 10,
                text_alignment: TextAlignment = TextAlignment.CENTER,
                text_padding: int = 20,
-               enabled: bool = True,
                icon = None,
                multi_touch: bool = False,
                ):
@@ -187,7 +186,6 @@ class Button(Widget):
 
     self._click_callback = click_callback
     self._multi_touch = multi_touch
-    self.enabled = enabled
 
   def set_text(self, text):
     self._label.set_text(text)

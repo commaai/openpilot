@@ -65,14 +65,15 @@ class Setup(Widget):
     self._software_selection_openpilot_button = ButtonRadio("openpilot", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_custom_software_button = ButtonRadio("Custom Software", self.checkmark, font_size=BODY_FONT_SIZE, text_padding=80)
     self._software_selection_continue_button = Button("Continue", self._software_selection_continue_button_callback,
-                                                      button_style=ButtonStyle.PRIMARY, enabled=False)
+                                                      button_style=ButtonStyle.PRIMARY)
+    self._software_selection_continue_button.set_enabled(False)
     self._software_selection_back_button = Button("Back", self._software_selection_back_button_callback)
     self._download_failed_reboot_button = Button("Reboot device", HARDWARE.reboot)
     self._download_failed_startover_button = Button("Start over", self._download_failed_startover_button_callback, button_style=ButtonStyle.PRIMARY)
     self._network_setup_back_button = Button("Back", self._network_setup_back_button_callback)
     self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
-                                                 button_style=ButtonStyle.PRIMARY, enabled=False)
-
+                                                 button_style=ButtonStyle.PRIMARY)
+    self._network_setup_continue_button.set_enabled(False)
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -196,7 +197,7 @@ class Setup(Widget):
 
     # Check network connectivity status
     continue_enabled = self.network_connected.is_set()
-    self._network_setup_continue_button.enabled = continue_enabled
+    self._network_setup_continue_button.set_enabled(continue_enabled)
     continue_text = ("Continue" if self.wifi_connected.is_set() else "Continue without Wi-Fi") if continue_enabled else "Waiting for internet"
     self._network_setup_continue_button.set_text(continue_text)
     self._network_setup_continue_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
@@ -208,20 +209,20 @@ class Setup(Widget):
     radio_height = 230
     radio_spacing = 30
 
-    self._software_selection_continue_button.enabled = False
+    self._software_selection_continue_button.set_enabled(False)
 
     openpilot_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2, rect.width - MARGIN * 2, radio_height)
     self._software_selection_openpilot_button.render(openpilot_rect)
 
     if self._software_selection_openpilot_button.selected:
-      self._software_selection_continue_button.enabled = True
+      self._software_selection_continue_button.set_enabled(True)
       self._software_selection_custom_software_button.selected = False
 
     custom_rect = rl.Rectangle(rect.x + MARGIN, rect.y + TITLE_FONT_SIZE + MARGIN * 2 + radio_height + radio_spacing, rect.width - MARGIN * 2, radio_height)
     self._software_selection_custom_software_button.render(custom_rect)
 
     if self._software_selection_custom_software_button.selected:
-      self._software_selection_continue_button.enabled = True
+      self._software_selection_continue_button.set_enabled(True)
       self._software_selection_openpilot_button.selected = False
 
     button_width = (rect.width - BUTTON_SPACING - MARGIN * 2) / 2

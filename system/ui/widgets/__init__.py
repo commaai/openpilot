@@ -2,7 +2,7 @@ import abc
 import pyray as rl
 from enum import IntEnum
 from collections.abc import Callable
-from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOT
+from openpilot.system.ui.lib.application import gui_app, MousePos, MAX_TOUCH_SLOTS
 
 
 class DialogResult(IntEnum):
@@ -15,33 +15,15 @@ class Widget(abc.ABC):
   def __init__(self):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
-    self._is_pressed = [False] * MAX_TOUCH_SLOT
-    self._multi_touch = False
+    self._is_pressed = [False] * MAX_TOUCH_SLOTS
+    self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
-
-  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
-    """Set a callback to determine if the widget can be clicked."""
-    self._touch_valid_callback = touch_callback
-
-  def _touch_valid(self) -> bool:
-    """Check if the widget can be touched."""
-    return self._touch_valid_callback() if self._touch_valid_callback else True
-
-  @property
-  def is_visible(self) -> bool:
-    return self._is_visible() if callable(self._is_visible) else self._is_visible
-
-  @property
-  def is_pressed(self) -> bool:
-    return any(self._is_pressed)
+    self._multi_touch = False
 
   @property
   def rect(self) -> rl.Rectangle:
     return self._rect
-
-  def set_visible(self, visible: bool | Callable[[], bool]) -> None:
-    self._is_visible = visible
 
   def set_rect(self, rect: rl.Rectangle) -> None:
     changed = (self._rect.x != rect.x or self._rect.y != rect.y or
@@ -53,6 +35,32 @@ class Widget(abc.ABC):
   def set_parent_rect(self, parent_rect: rl.Rectangle) -> None:
     """Can be used like size hint in QT"""
     self._parent_rect = parent_rect
+
+  @property
+  def is_pressed(self) -> bool:
+    return any(self._is_pressed)
+
+  @property
+  def enabled(self) -> bool:
+    return self._enabled() if callable(self._enabled) else self._enabled
+
+  def set_enabled(self, enabled: bool | Callable[[], bool]) -> None:
+    self._enabled = enabled
+
+  @property
+  def is_visible(self) -> bool:
+    return self._is_visible() if callable(self._is_visible) else self._is_visible
+
+  def set_visible(self, visible: bool | Callable[[], bool]) -> None:
+    self._is_visible = visible
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    """Set a callback to determine if the widget can be clicked."""
+    self._touch_valid_callback = touch_callback
+
+  def _touch_valid(self) -> bool:
+    """Check if the widget can be touched."""
+    return self._touch_valid_callback() if self._touch_valid_callback else True
 
   def set_position(self, x: float, y: float) -> None:
     changed = (self._rect.x != x or self._rect.y != y)
