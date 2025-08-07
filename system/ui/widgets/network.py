@@ -99,7 +99,7 @@ class WifiManagerUI(Widget):
           self.keyboard.reset()
           gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
-          self._confirm_dialog.text = f'Forget Wi-Fi Network "{network.ssid}"?'
+          self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{network.ssid}"?')
           self._confirm_dialog.reset()
           gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(network, result))
         case _:
