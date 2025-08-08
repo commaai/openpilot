@@ -125,6 +125,7 @@ class WifiManager:
       except asyncio.CancelledError:
         pass
     if self.bus:
+      print('DISCONNECTING FROM DBUS')
       self.bus.disconnect()
 
   async def _request_scan(self) -> None:
@@ -664,15 +665,16 @@ class WifiManagerWrapper:
 
   def shutdown(self) -> None:
     if self._running:
-      if self._manager is not None and self._loop:
-        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
-        shutdown_future.result(timeout=3.0)
-
       if self._loop and self._loop.is_running():
         self._loop.call_soon_threadsafe(self._loop.stop)
       if self._thread and self._thread.is_alive():
         self._thread.join(timeout=2.0)
       self._running = False
+
+
+      if self._manager is not None and self._loop:
+        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
+        shutdown_future.result(timeout=3.0)
 
   def is_saved(self, ssid: str) -> bool:
     """Check if a network is saved."""

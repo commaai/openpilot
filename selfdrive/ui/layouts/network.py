@@ -9,14 +9,14 @@ class NetworkLayout(Widget):
   def __init__(self):
     super().__init__()
     self.wifi_manager = WifiManagerWrapper()
-    self.wifi_manager.start()
     self.wifi_manager.connect()
+    self.wifi_manager.start()
+    time.sleep(2)
     # self.wifi_ui = WifiManagerUI(self.wifi_manager)
-    time.sleep(1)
-    self.wifi_manager.shutdown()
+    # self.wifi_manager.shutdown()
 
   def _render(self, rect: rl.Rectangle):
     self.wifi_ui.render(rect)
 
-  # def shutdown(self):
-  #   self.wifi_manager.shutdown()
+  def __del__(self):
+    self.wifi_manager.shutdown()
