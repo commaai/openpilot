@@ -8,6 +8,8 @@ class NetworkLayout(Widget):
   def __init__(self):
     super().__init__()
     self.wifi_manager = WifiManagerWrapper()
+    self.wifi_manager.start()
+    self.wifi_manager.connect()
     # self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.wifi_manager.shutdown()
 
