@@ -128,6 +128,7 @@ class Label(Widget):
     text = self._text[0] if self._text else None
     text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
     text_pos = rl.Vector2(0, (self._rect.y + (self._rect.height - (text_size.y)) // 2))
+
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
       if text:
