@@ -13,5 +13,5 @@ class NetworkLayout(Widget):
   def _render(self, rect: rl.Rectangle):
     self.wifi_ui.render(rect)
 
-  def shutdown(self):
+  def __del__(self):
     self.wifi_manager.shutdown()
