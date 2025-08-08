@@ -7,6 +7,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEX
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.utils import GuiStyleContext
 from openpilot.system.ui.lib.emoji import find_emoji, emoji_tex
+from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 
 ICON_PADDING = 15
@@ -114,15 +115,22 @@ class Label(Widget):
     self.set_text(text)
 
   def set_text(self, text):
-    self._emojis = []
-    self._text_size = []
-    self._text = text.split('\n')
-    for t in self._text:
-      self._emojis.append(find_emoji(t))
-      self._text_size.append(measure_text_cached(self._font, t, self._font_size))
+    self._text_raw = text
+    self._update_text(self._text_raw)
 
   def set_text_color(self, color):
     self._text_color = color
+
+  def _update_layout_rects(self):
+    self._update_text(self._text_raw)
+
+  def _update_text(self, text):
+    self._emojis = []
+    self._text_size = []
+    self._text = wrap_text(self._font, text, self._font_size, self._rect.width)
+    for t in self._text:
+      self._emojis.append(find_emoji(t))
+      self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
   def _render(self, _):
     text = self._text[0] if self._text else None
