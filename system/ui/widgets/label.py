@@ -127,7 +127,7 @@ class Label(Widget):
   def _update_text(self, text):
     self._emojis = []
     self._text_size = []
-    self._text = wrap_text(self._font, text, self._font_size, self._rect.width)
+    self._text = wrap_text(self._font, text, self._font_size, self._rect.width - (self._text_padding*2))
     for t in self._text:
       self._emojis.append(find_emoji(t))
       self._text_size.append(measure_text_cached(self._font, t, self._font_size))
