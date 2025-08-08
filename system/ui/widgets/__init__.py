@@ -16,6 +16,8 @@ class Widget(abc.ABC):
     self._rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._parent_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
     self._is_pressed = [False] * MAX_TOUCH_SLOTS
+    # if current mouse/touch down started within the widget's rectangle
+    self._tracking_is_pressed = [False] * MAX_TOUCH_SLOTS
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
@@ -84,16 +86,32 @@ class Widget(abc.ABC):
       for mouse_event in gui_app.mouse_events:
         if not self._multi_touch and mouse_event.slot != 0:
           continue
+
+        # Ignores touches/presses that start outside our rect
+        # Allows touch to leave the rect and come back in focus if mouse did not release
         if mouse_event.left_pressed and self._touch_valid():
           if rl.check_collision_point_rec(mouse_event.pos, self._rect):
             self._is_pressed[mouse_event.slot] = True
+            self._tracking_is_pressed[mouse_event.slot] = True
 
+        # Callback such as scroll panel signifies user is scrolling
         elif not self._touch_valid():
           self._is_pressed[mouse_event.slot] = False
+          self._tracking_is_pressed[mouse_event.slot] = False
 
         elif mouse_event.left_released:
           if self._is_pressed[mouse_event.slot] and rl.check_collision_point_rec(mouse_event.pos, self._rect):
             self._handle_mouse_release(mouse_event.pos)
+          self._is_pressed[mouse_event.slot] = False
+          self._tracking_is_pressed[mouse_event.slot] = False
+
+        # Mouse/touch is still within our rect
+        elif rl.check_collision_point_rec(mouse_event.pos, self._rect):
+          if self._tracking_is_pressed[mouse_event.slot]:
+            self._is_pressed[mouse_event.slot] = True
+
+        # Mouse/touch left our rect but may come back into focus later
+        elif not rl.check_collision_point_rec(mouse_event.pos, self._rect):
           self._is_pressed[mouse_event.slot] = False
 
     return ret

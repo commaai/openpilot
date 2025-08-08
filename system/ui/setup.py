@@ -13,7 +13,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
-from openpilot.system.ui.widgets.label import gui_label, gui_text_box
+from openpilot.system.ui.widgets.label import gui_label, gui_text_box, Label, TextAlignment
 from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
 
 NetworkType = log.DeviceState.NetworkType
@@ -35,9 +35,10 @@ class SetupState(IntEnum):
   GETTING_STARTED = 1
   NETWORK_SETUP = 2
   SOFTWARE_SELECTION = 3
-  CUSTOM_URL = 4
+  CUSTOM_SOFTWARE = 4
   DOWNLOADING = 5
   DOWNLOAD_FAILED = 6
+  CUSTOM_SOFTWARE_WARNING = 7
 
 
 class Setup(Widget):
@@ -74,6 +75,14 @@ class Setup(Widget):
     self._network_setup_continue_button = Button("Waiting for internet", self._network_setup_continue_button_callback,
                                                  button_style=ButtonStyle.PRIMARY)
     self._network_setup_continue_button.set_enabled(False)
+    self._custom_software_warning_continue_button = Button("Continue", self._custom_software_warning_continue_button_callback)
+    self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
+    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 100, FontWeight.BOLD, TextAlignment.LEFT, text_color=rl.Color(255,89,79,255),
+                                                      text_padding=60)
+    self._custom_software_warning_body_label = Label("Use caution when installing third-party software. Third-party software has not been tested by comma,"
+                                              + " and may cause damage to your device and/or vehicle.\n\nIf you'd like to proceed, use https://flash.comma.ai "
+                                              + "to restore your device to a factory state later.",
+                                             85, text_alignment=TextAlignment.LEFT, text_padding=60)
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -92,8 +101,10 @@ class Setup(Widget):
       self.render_network_setup(rect)
     elif self.state == SetupState.SOFTWARE_SELECTION:
       self.render_software_selection(rect)
-    elif self.state == SetupState.CUSTOM_URL:
-      self.render_custom_url()
+    elif self.state == SetupState.CUSTOM_SOFTWARE_WARNING:
+      self.render_custom_software_warning(rect)
+    elif self.state == SetupState.CUSTOM_SOFTWARE:
+      self.render_custom_software()
     elif self.state == SetupState.DOWNLOADING:
       self.render_downloading(rect)
     elif self.state == SetupState.DOWNLOAD_FAILED:
@@ -101,6 +112,12 @@ class Setup(Widget):
 
   def _low_voltage_continue_button_callback(self):
     self.state = SetupState.GETTING_STARTED
+
+  def _custom_software_warning_back_button_callback(self):
+    self.state = SetupState.SOFTWARE_SELECTION
+
+  def _custom_software_warning_continue_button_callback(self):
+    self.state = SetupState.CUSTOM_SOFTWARE
 
   def _getting_started_button_callback(self):
     self.state = SetupState.NETWORK_SETUP
@@ -116,7 +133,7 @@ class Setup(Widget):
     if self._software_selection_openpilot_button.selected:
       self.download(OPENPILOT_URL)
     else:
-      self.state = SetupState.CUSTOM_URL
+      self.state = SetupState.CUSTOM_SOFTWARE_WARNING
 
   def _download_failed_startover_button_callback(self):
     self.state = SetupState.GETTING_STARTED
@@ -251,7 +268,16 @@ class Setup(Widget):
     self._download_failed_reboot_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
     self._download_failed_startover_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
-  def render_custom_url(self):
+  def render_custom_software_warning(self, rect: rl.Rectangle):
+    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, rect.y + 150, rect.width - 265, TITLE_FONT_SIZE))
+    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, rect.y + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
+
+    button_width = (rect.width - MARGIN * 3) / 2
+    button_y = rect.height - MARGIN - BUTTON_HEIGHT
+    self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
+    self._custom_software_warning_continue_button.render(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT))
+
+  def render_custom_software(self):
     def handle_keyboard_result(result):
       # Enter pressed
       if result == 1:
@@ -333,7 +359,7 @@ class Setup(Widget):
 
 def main():
   try:
-    gui_app.init_window("Setup")
+    gui_app.init_window("Setup", 20)
     setup = Setup()
     for _ in gui_app.render():
       setup.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
