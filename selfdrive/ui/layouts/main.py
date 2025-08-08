@@ -25,17 +25,14 @@ class MainLayout(Widget):
     self._current_mode = MainState.HOME
     self._prev_onroad = False
 
-    HomeLayout()
-    SettingsLayout()
+    # Initialize layouts
+    self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
 
-    # # Initialize layouts
-    # self._layouts = {MainState.HOME: HomeLayout(), MainState.SETTINGS: SettingsLayout(), MainState.ONROAD: AugmentedRoadView()}
-    #
-    # self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
-    # self._content_rect = rl.Rectangle(0, 0, 0, 0)
-    #
-    # # Set callbacks
-    # self._setup_callbacks()
+    self._sidebar_rect = rl.Rectangle(0, 0, 0, 0)
+    self._content_rect = rl.Rectangle(0, 0, 0, 0)
+
+    # Set callbacks
+    self._setup_callbacks()
 
   def _render(self, _):
     self._handle_onroad_transition()
