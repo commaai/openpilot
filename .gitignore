@@ -13,9 +13,11 @@ venv/
 model2.png
 a.out
 .hypothesis
+.cache/
 
 /docs_site/
 
+*.mp4
 *.dylib
 *.DSYM
 *.d

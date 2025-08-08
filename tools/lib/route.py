@@ -10,13 +10,15 @@ from openpilot.tools.lib.auth_config import get_token
 from openpilot.tools.lib.api import APIError, CommaApi
 from openpilot.tools.lib.helpers import RE
 
-QLOG_FILENAMES = ('qlog.bz2', 'qlog.zst', 'qlog')
-QCAMERA_FILENAMES = ('qcamera.ts',)
-LOG_FILENAMES = ('rlog.bz2', 'raw_log.bz2', 'rlog.zst', 'rlog')
-CAMERA_FILENAMES = ('fcamera.hevc', 'video.hevc')
-DCAMERA_FILENAMES = ('dcamera.hevc',)
-ECAMERA_FILENAMES = ('ecamera.hevc',)
-BOOTLOG_FILENAMES = ('bootlog.zst', 'bootlog.bz2', 'bootlog')
+
+class FileName:
+  RLOG = ("rlog.zst", "rlog.bz2")
+  QLOG = ("qlog.zst", "qlog.bz2")
+  QCAMERA = ('qcamera.ts',)
+  FCAMERA = ('fcamera.hevc',)
+  ECAMERA = ('ecamera.hevc',)
+  DCAMERA = ('dcamera.hevc',)
+  BOOTLOG = ('bootlog.zst', 'bootlog.bz2')
 
 
 class Route:
@@ -82,23 +84,23 @@ class Route:
       if segments.get(segment_name):
         segments[segment_name] = Segment(
           segment_name,
-          url if fn in LOG_FILENAMES else segments[segment_name].log_path,
-          url if fn in QLOG_FILENAMES else segments[segment_name].qlog_path,
-          url if fn in CAMERA_FILENAMES else segments[segment_name].camera_path,
-          url if fn in DCAMERA_FILENAMES else segments[segment_name].dcamera_path,
-          url if fn in ECAMERA_FILENAMES else segments[segment_name].ecamera_path,
-          url if fn in QCAMERA_FILENAMES else segments[segment_name].qcamera_path,
+          url if fn in FileName.RLOG else segments[segment_name].log_path,
+          url if fn in FileName.QLOG else segments[segment_name].qlog_path,
+          url if fn in FileName.FCAMERA else segments[segment_name].camera_path,
+          url if fn in FileName.DCAMERA else segments[segment_name].dcamera_path,
+          url if fn in FileName.ECAMERA else segments[segment_name].ecamera_path,
+          url if fn in FileName.QCAMERA else segments[segment_name].qcamera_path,
           self.metadata['url'],
         )
       else:
         segments[segment_name] = Segment(
           segment_name,
-          url if fn in LOG_FILENAMES else None,
-          url if fn in QLOG_FILENAMES else None,
-          url if fn in CAMERA_FILENAMES else None,
-          url if fn in DCAMERA_FILENAMES else None,
-          url if fn in ECAMERA_FILENAMES else None,
-          url if fn in QCAMERA_FILENAMES else None,
+          url if fn in FileName.RLOG else None,
+          url if fn in FileName.QLOG else None,
+          url if fn in FileName.FCAMERA else None,
+          url if fn in FileName.DCAMERA else None,
+          url if fn in FileName.ECAMERA else None,
+          url if fn in FileName.QCAMERA else None,
           self.metadata['url'],
         )
 
@@ -136,32 +138,32 @@ class Route:
     for segment, files in segment_files.items():
 
       try:
-        log_path = next(path for path, filename in files if filename in LOG_FILENAMES)
+        log_path = next(path for path, filename in files if filename in FileName.RLOG)
       except StopIteration:
         log_path = None
 
       try:
-        qlog_path = next(path for path, filename in files if filename in QLOG_FILENAMES)
+        qlog_path = next(path for path, filename in files if filename in FileName.QLOG)
       except StopIteration:
         qlog_path = None
 
       try:
-        camera_path = next(path for path, filename in files if filename in CAMERA_FILENAMES)
+        camera_path = next(path for path, filename in files if filename in FileName.FCAMERA)
       except StopIteration:
         camera_path = None
 
       try:
-        dcamera_path = next(path for path, filename in files if filename in DCAMERA_FILENAMES)
+        dcamera_path = next(path for path, filename in files if filename in FileName.DCAMERA)
       except StopIteration:
         dcamera_path = None
 
       try:
-        ecamera_path = next(path for path, filename in files if filename in ECAMERA_FILENAMES)
+        ecamera_path = next(path for path, filename in files if filename in FileName.ECAMERA)
       except StopIteration:
         ecamera_path = None
 
       try:
-        qcamera_path = next(path for path, filename in files if filename in QCAMERA_FILENAMES)
+        qcamera_path = next(path for path, filename in files if filename in FileName.QCAMERA)
       except StopIteration:
         qcamera_path = None
 

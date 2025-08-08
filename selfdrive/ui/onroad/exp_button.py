@@ -50,7 +50,7 @@ class ExpButton(Widget):
     center_y = int(self._rect.y + self._rect.height // 2)
 
     mouse_over = rl.check_collision_point_rec(rl.get_mouse_position(), self._rect)
-    mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self._is_pressed
+    mouse_down = rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed
     self._white_color.a = 180 if (mouse_down and mouse_over) or not self._engageable else 255
 
     texture = self._txt_exp if self._held_or_actual_mode() else self._txt_wheel

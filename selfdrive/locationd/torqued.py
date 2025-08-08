@@ -32,7 +32,7 @@ MIN_BUCKET_POINTS = np.array([100, 300, 500, 500, 500, 500, 300, 100])
 MIN_ENGAGE_BUFFER = 2  # secs
 
 VERSION = 1  # bump this to invalidate old parameter caches
-ALLOWED_CARS = ['toyota', 'hyundai', 'rivian']
+ALLOWED_CARS = ['toyota', 'hyundai', 'rivian', 'honda']
 
 
 def slope2rot(slope):

@@ -41,8 +41,9 @@ class GuiScrollPanel:
 
   def handle_scroll(self, bounds: rl.Rectangle, content: rl.Rectangle) -> rl.Vector2:
     # TODO: HACK: this class is driven by mouse events, so we need to ensure we have at least one event to process
-    for mouse_event in gui_app.mouse_events or [MouseEvent(MousePos(0, 0), False, False, False, time.monotonic())]:
-      self._handle_mouse_event(mouse_event, bounds, content)
+    for mouse_event in gui_app.mouse_events or [MouseEvent(MousePos(0, 0), 0, False, False, False, time.monotonic())]:
+      if mouse_event.slot == 0:
+        self._handle_mouse_event(mouse_event, bounds, content)
     return self._offset
 
   def _handle_mouse_event(self, mouse_event: MouseEvent, bounds: rl.Rectangle, content: rl.Rectangle):

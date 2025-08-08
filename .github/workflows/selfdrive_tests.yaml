@@ -161,8 +161,9 @@ jobs:
     - name: Run unit tests
       timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
-        ${{ env.RUN }} "$PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
+        ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
+                        $PYTEST --collect-only -m 'not slow' &> /dev/null && \
+                        PYTHONTRACEMALLOC=1 MAX_EXAMPLES=1 $PYTEST -m 'not slow' -k test_raylib_ui && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"
