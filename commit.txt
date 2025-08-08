@@ -1,0 +1,16 @@
+ommit a5c3e7ddf503d79c1a2d82aa4a567f6973dcf074 (HEAD -> genesis-gv80-2021, origin/genesis-gv80-2021)
+Author: magicbear <matt@uucp.ca>
+Date:   Thu Aug 7 11:16:29 2025 -0500
+
+    Update opendbc to include GV80 2021 torque parameters
+
+commit dc378fc6fbf835765f266e3024b0e4c0bc134866
+Author: magicbear <matt@uucp.ca>
+Date:   Thu Aug 7 08:54:38 2025 -0500
+
+    Add Genesis GV80 2021 with HDA II support
+    
+    - Add GENESIS_GV80_2021 to Hyundai values.py with CAN-FD and HDA II configuration
+    - Add firmware fingerprints for camera and radar ECUs
+    - Update CARS.md documentation
+    - Uses Hyundai Q harness
