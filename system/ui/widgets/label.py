@@ -1,4 +1,5 @@
 from enum import IntEnum
+from itertools import zip_longest
 
 import pyray as rl
 
@@ -103,60 +104,66 @@ class Label(Widget):
                ):
 
     super().__init__()
-    self._text = text
     self._font_weight = font_weight
     self._font = gui_app.font(self._font_weight)
     self._font_size = font_size
     self._text_alignment = text_alignment
     self._text_padding = text_padding
-    self._text_size = measure_text_cached(self._font, self._text, self._font_size)
     self._text_color = text_color
     self._icon = icon
-    self._emojis = find_emoji(self._text)
+    self.set_text(text)
 
   def set_text(self, text):
-    self._text = text
-    self._emojis = find_emoji(self._text)
-    self._text_size = measure_text_cached(self._font, self._text, self._font_size)
+    self._emojis = []
+    self._text_size = []
+    self._text = text.split('\n')
+    for t in self._text:
+      self._emojis.append(find_emoji(t))
+      self._text_size.append(measure_text_cached(self._font, t, self._font_size))
 
   def set_text_color(self, color):
     self._text_color = color
 
   def _render(self, _):
-    text_pos = rl.Vector2(0, self._rect.y + (self._rect.height - self._text_size.y) // 2)
+    text = self._text[0] if self._text else None
+    text_size = self._text_size[0] if self._text_size else rl.Vector2(0.0, 0.0)
+    text_pos = rl.Vector2(0, (self._rect.y + (self._rect.height - (text_size.y)) // 2))
+
     if self._icon:
       icon_y = self._rect.y + (self._rect.height - self._icon.height) / 2
-      if self._text:
+      if text:
         if self._text_alignment == TextAlignment.LEFT:
           icon_x = self._rect.x + self._text_padding
-          text_pos.x = icon_x + self._icon.width + ICON_PADDING
+          text_pos.x = self._icon.width + ICON_PADDING
         elif self._text_alignment == TextAlignment.CENTER:
-          total_width = self._icon.width + ICON_PADDING + self._text_size.x
+          total_width = self._icon.width + ICON_PADDING + text_size.x
           icon_x = self._rect.x + (self._rect.width - total_width) / 2
-          text_pos.x = icon_x + self._icon.width + ICON_PADDING
+          text_pos.x = self._icon.width + ICON_PADDING
         else:
-          text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
-          icon_x = text_pos.x - ICON_PADDING - self._icon.width
+          icon_x = (self._rect.x + self._rect.width - text_size.x - self._text_padding) - ICON_PADDING - self._icon.width
       else:
         icon_x = self._rect.x + (self._rect.width - self._icon.width) / 2
       rl.draw_texture_v(self._icon, rl.Vector2(icon_x, icon_y), rl.WHITE)
-    else:
+
+    for text, text_size, emojis in zip_longest(self._text, self._text_size, self._emojis, fillvalue=[]):
+      line_pos = rl.Vector2(text_pos.x, text_pos.y)
       if self._text_alignment == TextAlignment.LEFT:
-        text_pos.x = self._rect.x + self._text_padding
+        line_pos.x += self._rect.x + self._text_padding
       elif self._text_alignment == TextAlignment.CENTER:
-        text_pos.x = self._rect.x + (self._rect.width - self._text_size.x) // 2
+        line_pos.x += self._rect.x + (self._rect.width - text_size.x) // 2
       elif self._text_alignment == TextAlignment.RIGHT:
-        text_pos.x = self._rect.x + self._rect.width - self._text_size.x - self._text_padding
+        line_pos.x += self._rect.x + self._rect.width - text_size.x - self._text_padding
 
-    prev_index = 0
-    for start, end, emoji in self._emojis:
-      text_before = self._text[prev_index:start]
-      width_before = measure_text_cached(self._font, text_before, self._font_size)
-      rl.draw_text_ex(self._font, text_before, text_pos, self._font_size, 0, self._text_color)
-      text_pos.x += width_before.x
+      prev_index = 0
+      for start, end, emoji in emojis:
+        text_before = text[prev_index:start]
+        width_before = measure_text_cached(self._font, text_before, self._font_size)
+        rl.draw_text_ex(self._font, text_before, line_pos, self._font_size, 0, self._text_color)
+        line_pos.x += width_before.x
 
-      tex = emoji_tex(emoji)
-      rl.draw_texture_ex(tex, text_pos, 0.0, self._font_size / tex.height, self._text_color)
-      text_pos.x += self._font_size
-      prev_index = end
-    rl.draw_text_ex(self._font, self._text[prev_index:], text_pos, self._font_size, 0, self._text_color)
+        tex = emoji_tex(emoji)
+        rl.draw_texture_ex(tex, line_pos, 0.0, self._font_size / tex.height, self._text_color)
+        line_pos.x += self._font_size
+        prev_index = end
+      rl.draw_text_ex(self._font, text[prev_index:], line_pos, self._font_size, 0, self._text_color)
+      text_pos.y += text_size.y or self._font_size
