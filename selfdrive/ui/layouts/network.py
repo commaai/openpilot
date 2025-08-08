@@ -2,6 +2,7 @@ import pyray as rl
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.network import WifiManagerUI
+import time
 
 
 class NetworkLayout(Widget):
@@ -11,6 +12,7 @@ class NetworkLayout(Widget):
     self.wifi_manager.start()
     self.wifi_manager.connect()
     # self.wifi_ui = WifiManagerUI(self.wifi_manager)
+    time.sleep(1)
     self.wifi_manager.shutdown()
 
   def _render(self, rect: rl.Rectangle):
