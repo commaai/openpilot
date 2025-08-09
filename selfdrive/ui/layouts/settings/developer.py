@@ -27,26 +27,32 @@ class DeveloperLayout(Widget):
         "Enable ADB",
         description=DESCRIPTIONS["enable_adb"],
         initial_state=self._params.get_bool("AdbEnabled"),
-        callback=self._on_enable_adb,
+        callback=lambda: self._toggle_param("AdbEnabled"),
       ),
       ssh_key_item("SSH Key", description=DESCRIPTIONS["ssh_key"]),
       toggle_item(
         "Joystick Debug Mode",
         description=DESCRIPTIONS["joystick_debug_mode"],
         initial_state=self._params.get_bool("JoystickDebugMode"),
-        callback=self._on_joystick_debug_mode,
+        callback=lambda: self._toggle_param("JoystickDebugMode"),
       ),
       toggle_item(
         "Longitudinal Maneuver Mode",
         description="",
         initial_state=self._params.get_bool("LongitudinalManeuverMode"),
-        callback=self._on_long_maneuver_mode,
+        callback=lambda: self._toggle_param("LongitudinalManeuverMode"),
       ),
       toggle_item(
         "openpilot Longitudinal Control (Alpha)",
         description="",
         initial_state=self._params.get_bool("AlphaLongitudinalEnabled"),
-        callback=self._on_alpha_long_enabled,
+        callback=lambda: self._toggle_param("AlphaLongitudinalEnabled"),
+      ),
+      toggle_item(
+        "Camping Mode",
+        description="Enable offroad Miracast receiver for screen mirroring from phones.",
+        initial_state=self._params.get_bool("CampingMode"),
+        callback=lambda: self._toggle_param("CampingMode"),
       ),
     ]
 
@@ -55,7 +61,6 @@ class DeveloperLayout(Widget):
   def _render(self, rect):
     self._scroller.render(rect)
 
-  def _on_enable_adb(self): pass
-  def _on_joystick_debug_mode(self): pass
-  def _on_long_maneuver_mode(self): pass
-  def _on_alpha_long_enabled(self): pass
+  def _toggle_param(self, key: str):
+    current = self._params.get_bool(key)
+    self._params.put_bool(key, not current)

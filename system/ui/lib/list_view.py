@@ -58,7 +58,12 @@ class ToggleAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
+    # Render and detect state change to notify parent via return True
     self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
+    current_state = self.toggle.get_state()
+    if current_state != self.state:
+      self.state = current_state
+      return True
     return False
 
   def set_state(self, state: bool):
