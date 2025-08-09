@@ -5,6 +5,7 @@ from enum import IntEnum
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.offroad_alerts import UpdateAlert, OffroadAlert
 from openpilot.selfdrive.ui.widgets.exp_mode_button import ExperimentalModeButton
+from openpilot.selfdrive.ui.widgets.camping_button import CampingModeButton
 from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
@@ -54,6 +55,7 @@ class HomeLayout(Widget):
     self._setup_widget = SetupWidget()
 
     self._exp_mode_button = ExperimentalModeButton()
+    self._camping_button = CampingModeButton()
     self._setup_callbacks()
 
   def _setup_callbacks(self):
@@ -184,11 +186,19 @@ class HomeLayout(Widget):
     )
     self._exp_mode_button.render(exp_rect)
 
-    setup_rect = rl.Rectangle(
+    camp_rect = rl.Rectangle(
       self.right_column_rect.x,
       self.right_column_rect.y + exp_height + SPACING,
       self.right_column_rect.width,
-      self.right_column_rect.height - exp_height - SPACING,
+      110,
+    )
+    self._camping_button.render(camp_rect)
+
+    setup_rect = rl.Rectangle(
+      self.right_column_rect.x,
+      self.right_column_rect.y + exp_height + SPACING + 110 + SPACING,
+      self.right_column_rect.width,
+      self.right_column_rect.height - exp_height - SPACING - 110 - SPACING,
     )
     self._setup_widget.render(setup_rect)
 

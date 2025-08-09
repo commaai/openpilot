@@ -40,7 +40,7 @@ def manager_init() -> None:
     ("GsmMetered", "1"),
     ("HasAcceptedTerms", "0"),
     ("LanguageSetting", "main_en"),
-    ("OpenpilotEnabledToggle", "1"),
+    ("OpenpilotEnabledToggle", "0"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
     ("IsMetric", "1"),
     ("SplitLkasAndAcc", "1"),
@@ -75,6 +75,13 @@ def manager_init() -> None:
   params.put_bool("IsTestedBranch", build_metadata.tested_channel)
   params.put_bool("IsReleaseBranch", build_metadata.release_channel)
   params.put("HardwareSerial", serial)
+
+  # Enforce AlwaysBootDisabled if enabled: keep driving disabled at boot
+  try:
+    if params.get_bool("AlwaysBootDisabled"):
+      params.put_bool("OpenpilotEnabledToggle", False)
+  except Exception:
+    pass
 
   # set dongle id
   reg_res = register(show_spinner=True)
