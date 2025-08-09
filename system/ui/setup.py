@@ -384,7 +384,6 @@ class Setup(Widget):
     with open(INSTALLER_URL_PATH, "w") as f:
       f.write(self.download_url)
 
-
 def main():
   try:
     gui_app.init_window("Setup", 20)
@@ -396,6 +395,7 @@ def main():
     print(f"Setup error: {e}")
   finally:
     gui_app.close()
+
 
 if __name__ == "__main__":
   main()
