@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import datetime
 import os
+import shutil
+from pathlib import Path
 import signal
 import sys
 import traceback
@@ -101,6 +103,21 @@ def manager_init() -> None:
   # preimport all processes
   for p in managed_processes.values():
     p.prepare()
+
+  # Auto-install camping binaries on branch install/update
+  try:
+    repo_bins_dir = Path("selfdrive/camping/bin")
+    if repo_bins_dir.is_dir():
+      dest_dir = Path("/data/camping/bin")
+      dest_dir.mkdir(parents=True, exist_ok=True)
+      for src in repo_bins_dir.iterdir():
+        if src.is_file():
+          dst = dest_dir / src.name
+          shutil.copy2(src, dst)
+          os.chmod(dst, 0o755)
+      cloudlog.info("Installed camping binaries to /data/camping/bin")
+  except Exception:
+    cloudlog.exception("camping.install_binaries_failed", error=False)
 
 
 def manager_cleanup() -> None:
