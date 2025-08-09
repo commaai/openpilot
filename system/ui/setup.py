@@ -6,9 +6,13 @@ import time
 import urllib.request
 from urllib.parse import urlparse
 from enum import IntEnum
+from pathlib import Path
+import shutil
+
 import pyray as rl
 
 from cereal import log
+from openpilot.common.git import get_short_branch
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
@@ -29,6 +33,13 @@ BUTTON_SPACING = 50
 
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
+
+OPENPILOT_CACHE = "/data/openpilot.cache"
+
+INSTALLER_SOURCE = "/usr/comma/installer"
+INSTALLER_DESTINATION = "/tmp/installer"
+INSTALLER_URL = "/tmp/installer_url"
+INSTALLER_NO_FETCH_FLAG = "/tmp/installer_no_fetch"
 
 
 class SetupState(IntEnum):
@@ -136,21 +147,19 @@ class Setup(Widget):
     self.state = SetupState.SOFTWARE_SELECTION
 
   def _custom_software_warning_continue_button_callback(self):
-    self.state = SetupState.CUSTOM_SOFTWARE
+    self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
+    self.start_network_check()
 
   def _getting_started_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _software_selection_back_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
+    self.state = SetupState.GETTING_STARTED
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
-      self.download(OPENPILOT_URL)
+      self.use_openpilot()
     else:
       self.state = SetupState.CUSTOM_SOFTWARE_WARNING
 
@@ -158,11 +167,14 @@ class Setup(Widget):
     self.state = SetupState.GETTING_STARTED
 
   def _network_setup_back_button_callback(self):
-    self.state = SetupState.GETTING_STARTED
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _network_setup_continue_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
     self.stop_network_check_thread.set()
+    if self._software_selection_openpilot_button.selected:
+      self.download(OPENPILOT_URL)
+    else:
+      self.state = SetupState.CUSTOM_SOFTWARE
 
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
@@ -299,6 +311,18 @@ class Setup(Widget):
     self.keyboard.set_title("Enter URL", "for Custom Software")
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
+  def use_openpilot(self):
+    if os.path.isdir(OPENPILOT_CACHE) and get_short_branch(OPENPILOT_CACHE) == "release3-staging":
+      shutil.copyfile(INSTALLER_SOURCE, INSTALLER_DESTINATION)
+      self.download_url = OPENPILOT_URL
+      self.prepare_installer()
+      Path(INSTALLER_NO_FETCH_FLAG).touch()
+      gui_app.request_close()
+    else:
+      self.state = SetupState.NETWORK_SETUP
+      self.stop_network_check_thread.clear()
+      self.start_network_check()
+
   def download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
@@ -346,12 +370,8 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
-      os.rename(tmpfile, "/tmp/installer")
-      os.chmod("/tmp/installer", 0o755)
-
-      with open("/tmp/installer_url", "w") as f:
-        f.write(self.download_url)
-
+      os.rename(tmpfile, INSTALLER_DESTINATION)
+      self.prepare_installer()
       gui_app.request_close()
 
     except Exception:
@@ -363,6 +383,10 @@ class Setup(Widget):
     self.failed_reason = reason
     self.state = SetupState.DOWNLOAD_FAILED
 
+  def prepare_installer(self):
+    os.chmod(INSTALLER_DESTINATION, 0o755)
+    with open(INSTALLER_URL, "w") as f:
+      f.write(self.download_url)
 
 def main():
   try:
