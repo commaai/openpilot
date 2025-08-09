@@ -503,7 +503,7 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
         <translation type="unfinished">Posponer Actualización</translation>
     </message>
     <message>
-        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1142,6 +1142,16 @@ Si desea continuar, utilice https://flash.comma.ai para restaurar su dispositivo
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Graba y almacena el audio del micrófono mientras conduces. El audio se incluirá en el video de la cámara del tablero en comma connect.</translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
