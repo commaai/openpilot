@@ -50,14 +50,17 @@ def decompress_stream(data: bytes):
   return decompressed_data
 
 
-def _cached_reader_reducer(schema_id: int, data: bytes, _enum: str):  # schema_id, data
-  evt = capnp.lib.capnp._struct_reducer(schema_id, data)
-  return CachedReader(evt, _enum)
+def _cached_reader_reducer(data: bytes, _enum: str):  # schema_id, data
+  # evt = capnp.lib.capnp._struct_reducer(schema_id, data)
+  # evt = capnp_log.Event.from_bytes(data)
+  with capnp_log.Event.from_bytes(data) as evt:  # TODO: how does this work?
+    return CachedReader(evt, _enum)
   # print('got evt', evt)
   # return CachedReader(capnp._DynamicStructReader(evt[1]))
 
 
 class CachedReader:
+  __slots__ = ('_evt', '_enum')
 
   def __init__(self, evt: capnp._DynamicStructReader, _enum: str | None = None):
     """All capnp attribute accesses are expensive, and which() is often called multiple times"""
@@ -76,7 +79,7 @@ class CachedReader:
   def __reduce_ex__(self, proto):
     # return self._evt.__reduce_ex__(proto)
 
-    return _cached_reader_reducer, (self._evt.schema.node.id, self._evt.as_builder().to_bytes(), self._enum)
+    return _cached_reader_reducer, (self._evt.as_builder().to_bytes(), self._enum)
     # return (self.__class__, (self._evt.__reduce_ex__(proto), self._enum))
 
   def __repr__(self):
