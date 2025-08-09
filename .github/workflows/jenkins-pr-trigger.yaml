@@ -9,6 +9,9 @@ jobs:
   scan-comments:
     runs-on: ubuntu-latest
     if: ${{ github.event.issue.pull_request }}
+    permissions:
+      contents: write
+      issues: write
     steps:
     - name: Check for trigger phrase
       id: check_comment
@@ -43,3 +46,14 @@ jobs:
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
         git checkout -b tmp-jenkins-${{ github.event.issue.number }}
         GIT_LFS_SKIP_PUSH=1 git push -f origin tmp-jenkins-${{ github.event.issue.number }}
+
+    - name: Delete trigger comment
+      if: steps.check_comment.outputs.result == 'true' && always()
+      uses: actions/github-script@v7
+      with:
+        script: |
+          await github.rest.issues.deleteComment({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            comment_id: context.payload.comment.id,
+          });

@@ -41,6 +41,7 @@ class StateConnecting:
 @dataclass
 class StateNeedsAuth:
   network: NetworkInfo
+  retry: bool
   action: Literal["needs_auth"] = "needs_auth"
 
 
@@ -93,12 +94,12 @@ class WifiManagerUI(Widget):
         return
 
       match self.state:
-        case StateNeedsAuth(network):
-          self.keyboard.set_title("Enter password", f"for {network.ssid}")
+        case StateNeedsAuth(network, retry):
+          self.keyboard.set_title("Wrong password" if retry else "Enter password", f"for {network.ssid}")
           self.keyboard.reset()
           gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(network, result))
         case StateShowForgetConfirm(network):
-          self._confirm_dialog.text = f'Forget Wi-Fi Network "{network.ssid}"?'
+          self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{network.ssid}"?')
           self._confirm_dialog.reset()
           gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(network, result))
         case _:
@@ -145,16 +146,20 @@ class WifiManagerUI(Widget):
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
-    self._networks_buttons[network.ssid].render(ssid_rect)
-
     status_text = ""
     match self.state:
       case StateConnecting(network=connecting):
         if connecting.ssid == network.ssid:
+          self._networks_buttons[network.ssid].set_enabled(False)
           status_text = "CONNECTING..."
       case StateForgetting(network=forgetting):
         if forgetting.ssid == network.ssid:
+          self._networks_buttons[network.ssid].set_enabled(False)
           status_text = "FORGETTING..."
+      case _:
+        self._networks_buttons[network.ssid].set_enabled(True)
+
+    self._networks_buttons[network.ssid].render(ssid_rect)
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
@@ -176,14 +181,13 @@ class WifiManagerUI(Widget):
   def _networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
       if not network.is_saved and network.security_type != SecurityType.OPEN:
-        self.state = StateNeedsAuth(network)
+        self.state = StateNeedsAuth(network, False)
       elif not network.is_connected:
         self.connect_to_network(network)
 
   def _forget_networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
-      if isinstance(self.state, StateIdle):
-        self.state = StateShowForgetConfirm(network)
+      self.state = StateShowForgetConfirm(network)
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
     """Draw the status icon based on network's connection state"""
@@ -225,13 +229,14 @@ class WifiManagerUI(Widget):
       for n in self._networks:
         self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                                 button_style=ButtonStyle.NO_EFFECT)
-        self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.ACTION)
+        self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
+                                                       font_size=45)
 
   def _on_need_auth(self, ssid):
     with self._lock:
       network = next((n for n in self._networks if n.ssid == ssid), None)
       if network:
-        self.state = StateNeedsAuth(network)
+        self.state = StateNeedsAuth(network, True)
 
   def _on_activated(self):
     with self._lock:

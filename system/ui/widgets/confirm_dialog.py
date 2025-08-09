@@ -2,7 +2,7 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import DialogResult
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle, Button
-from openpilot.system.ui.widgets.label import gui_text_box
+from openpilot.system.ui.widgets.label import gui_text_box, Label
 from openpilot.system.ui.widgets import Widget
 
 DIALOG_WIDTH = 1520
@@ -15,11 +15,14 @@ BACKGROUND_COLOR = rl.Color(27, 27, 27, 255)
 class ConfirmDialog(Widget):
   def __init__(self, text: str, confirm_text: str, cancel_text: str = "Cancel"):
     super().__init__()
-    self.text = text
+    self._label = Label(text, 70, FontWeight.BOLD)
     self._cancel_button = Button(cancel_text, self._cancel_button_callback)
     self._confirm_button = Button(confirm_text, self._confirm_button_callback, button_style=ButtonStyle.PRIMARY)
     self._dialog_result = DialogResult.NO_ACTION
     self._cancel_text = cancel_text
+
+  def set_text(self, text):
+    self._label.set_text(text)
 
   def reset(self):
     self._dialog_result = DialogResult.NO_ACTION
@@ -46,14 +49,7 @@ class ConfirmDialog(Widget):
     rl.draw_rectangle_rec(dialog_rect, BACKGROUND_COLOR)
 
     text_rect = rl.Rectangle(dialog_rect.x + MARGIN, dialog_rect.y, dialog_rect.width - 2 * MARGIN, dialog_rect.height - TEXT_AREA_HEIGHT_REDUCTION)
-    gui_text_box(
-      text_rect,
-      self.text,
-      font_size=70,
-      alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER,
-      alignment_vertical=rl.GuiTextAlignmentVertical.TEXT_ALIGN_MIDDLE,
-      font_weight=FontWeight.BOLD,
-    )
+    self._label.render(text_rect)
 
     if rl.is_key_pressed(rl.KeyboardKey.KEY_ENTER):
       self._dialog_result = DialogResult.CONFIRM

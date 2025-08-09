@@ -38,9 +38,6 @@ class Toggle(Widget):
     self._state = state
     self._target = 1.0 if state else 0.0
 
-  def set_enabled(self, enabled: bool):
-    self._enabled = enabled
-
   def is_enabled(self):
     return self._enabled
 

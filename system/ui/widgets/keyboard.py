@@ -8,7 +8,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.inputbox import InputBox
-from openpilot.system.ui.widgets.label import gui_label
+from openpilot.system.ui.widgets.label import Label, TextAlignment
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
@@ -62,8 +62,8 @@ class Keyboard(Widget):
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
-    self._title = ""
-    self._sub_title = ""
+    self._title = Label("", 90, FontWeight.BOLD, TextAlignment.LEFT)
+    self._sub_title = Label("", 55, FontWeight.NORMAL, TextAlignment.LEFT)
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
@@ -98,11 +98,11 @@ class Keyboard(Widget):
           if key in self._key_icons:
             texture = self._key_icons[key]
             self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
-                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD)
+                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
           else:
-            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85)
+            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
     self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
-                                           button_style=ButtonStyle.KEYBOARD)
+                                           button_style=ButtonStyle.KEYBOARD, multi_touch=True)
 
   @property
   def text(self):
@@ -115,8 +115,8 @@ class Keyboard(Widget):
     self._backspace_pressed = False
 
   def set_title(self, title: str, sub_title: str = ""):
-    self._title = title
-    self._sub_title = sub_title
+    self._title.set_text(title)
+    self._sub_title.set_text(sub_title)
 
   def _eye_button_callback(self):
     self._password_mode = not self._password_mode
@@ -133,8 +133,8 @@ class Keyboard(Widget):
 
   def _render(self, rect: rl.Rectangle):
     rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
-    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), self._title, 90, font_weight=FontWeight.BOLD)
-    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), self._sub_title, 55, font_weight=FontWeight.NORMAL)
+    self._title.render(rl.Rectangle(rect.x, rect.y, rect.width, 95))
+    self._sub_title.render(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60))
     self._cancel_button.render(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125))
 
     # Draw input box and password toggle
@@ -143,7 +143,7 @@ class Keyboard(Widget):
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not self._all_keys[BACKSPACE_KEY]._is_pressed:
+    if not self._all_keys[BACKSPACE_KEY].is_pressed:
       self._backspace_pressed = False
 
     if self._backspace_pressed:
@@ -179,7 +179,7 @@ class Keyboard(Widget):
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
 
-        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY]._is_pressed and not self._backspace_pressed:
+        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY].is_pressed and not self._backspace_pressed:
           self._backspace_pressed = True
           self._backspace_press_time = time.monotonic()
           self._backspace_last_repeat = time.monotonic()
@@ -187,10 +187,10 @@ class Keyboard(Widget):
         if key in self._key_icons:
           if key == SHIFT_ACTIVE_KEY and self._caps_lock:
             key = CAPS_LOCK_KEY
-          self._all_keys[key].enabled = is_enabled
+          self._all_keys[key].set_enabled(is_enabled)
           self._all_keys[key].render(key_rect)
         else:
-          self._all_keys[key].enabled = is_enabled
+          self._all_keys[key].set_enabled(is_enabled)
           self._all_keys[key].render(key_rect)
 
     return self._render_return_status

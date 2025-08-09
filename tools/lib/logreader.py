@@ -21,8 +21,7 @@ from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available
-from openpilot.tools.lib.route import QCAMERA_FILENAMES, CAMERA_FILENAMES, DCAMERA_FILENAMES, \
-  ECAMERA_FILENAMES, BOOTLOG_FILENAMES, Route, SegmentRange
+from openpilot.tools.lib.route import Route, SegmentRange, FileName
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 LogMessage = type[capnp._DynamicStructReader]
@@ -131,19 +130,9 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-class FileName(enum.Enum):
-  #TODO use the ones from route.py
-  RLOG = ("rlog.zst", "rlog.bz2")
-  QLOG = ("qlog.zst", "qlog.bz2")
-  QCAMERA = QCAMERA_FILENAMES
-  FCAMERA = CAMERA_FILENAMES
-  ECAMERA = ECAMERA_FILENAMES
-  DCAMERA = DCAMERA_FILENAMES
-  BOOTLOG = BOOTLOG_FILENAMES
-
-
 LogPath = str | None
-Source = Callable[[SegmentRange, FileName], list[LogPath]]
+LogFileName = tuple[str, ...]
+Source = Callable[[SegmentRange, LogFileName], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -152,7 +141,7 @@ class LogsUnavailable(Exception):
   pass
 
 
-def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
@@ -162,21 +151,21 @@ def comma_api_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
     return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
 
 
-def internal_source(sr: SegmentRange, fns: FileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(sr: SegmentRange, fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  return eval_source([[get_internal_url(sr, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
+  return eval_source([[get_internal_url(sr, seg, fn) for fn in fns] for seg in sr.seg_idxs])
 
 
-def openpilotci_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
-  return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns.value] for seg in sr.seg_idxs])
+def openpilotci_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
+  return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns] for seg in sr.seg_idxs])
 
 
-def comma_car_segments_source(sr: SegmentRange, fns: FileName) -> list[LogPath]:
+def comma_car_segments_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
   return eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs])
 
 
