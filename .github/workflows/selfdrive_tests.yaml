@@ -163,7 +163,7 @@ jobs:
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
                         $PYTEST --collect-only -m 'not slow' &> /dev/null && \
-                        PYTHONTRACEMALLOC=1 MAX_EXAMPLES=1 $PYTEST -m 'not slow' -k test_raylib_ui && \
+                        MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
                         QT_QPA_PLATFORM=offscreen ./selfdrive/ui/tests/test_translations && \
                         chmod -R 777 /tmp/comma_download_cache"

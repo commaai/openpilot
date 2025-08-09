@@ -4,7 +4,7 @@ import re
 import threading
 import time
 import urllib.request
-import urllib.parse
+from urllib.parse import urlparse
 from enum import IntEnum
 import shutil
 
@@ -324,12 +324,9 @@ class Setup(Widget):
     if re.match("^([^/.]+)/([^/]+)$", url):
       url = f"https://installer.comma.ai/{url}"
 
-    parsed = urllib.parse.urlparse(url, scheme='https')
-    if not parsed.netloc:
-      parsed = urllib.parse.urlparse(f"{'https'}://{url}")
-    url = urllib.parse.urlunparse(parsed)
+    parsed = urlparse(url, scheme='https')
+    self.download_url = (urlparse(f"https://{url}") if not parsed.netloc else parsed).geturl()
 
-    self.download_url = url
     self.state = SetupState.DOWNLOADING
 
     self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
