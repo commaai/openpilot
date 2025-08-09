@@ -33,7 +33,7 @@ BUTTON_SPACING = 50
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-OPENPILOT_CACHE_PATH = "/data/openpilot.cache"
+OPENPILOT_CACHE = "/data/openpilot.cache"
 
 INSTALLER_SOURCE = "/usr/comma/installer"
 INSTALLER_DESTINATION = "/tmp/installer"
@@ -311,7 +311,7 @@ class Setup(Widget):
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
   def use_openpilot(self):
-    if os.path.isdir(OPENPILOT_CACHE_PATH):
+    if os.path.isdir(OPENPILOT_CACHE):
       shutil.copyfile(INSTALLER_SOURCE, INSTALLER_DESTINATION)
       self.download_url = OPENPILOT_URL
       self.prepare_installer()
