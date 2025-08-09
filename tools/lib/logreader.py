@@ -83,7 +83,7 @@ class CachedEventReader:
 
   def __getattr__(self, name: str):
     if name.startswith("__") and name.endswith("__"):
-      return super().__getattr__(name)
+      return getattr(self, name)
     return getattr(self._evt, name)
 
 
