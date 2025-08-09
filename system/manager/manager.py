@@ -160,9 +160,9 @@ def manager_thread() -> None:
     sm.update(1000)
 
     started = sm['deviceState'].started
-    # Offroad Lock: force remain offroad until user disables
+    # Do Not Engage: force remain offroad/inactive until user disables
     try:
-      if params.get_bool("OffroadLock"):
+      if params.get_bool("DoNotEngage"):
         started = False
     except Exception:
       pass

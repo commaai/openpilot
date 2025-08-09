@@ -55,10 +55,10 @@ class DeveloperLayout(Widget):
         callback=lambda: self._toggle_param("CampingMode"),
       ),
       toggle_item(
-        "Offroad Lock",
-        description="Force device to remain offroad until you turn this off.",
-        initial_state=self._params.get_bool("OffroadLock"),
-        callback=lambda: self._toggle_param("OffroadLock"),
+        "Do Not Engage",
+        description="Prevent engagement; device will not switch to driving state until you turn this off.",
+        initial_state=self._params.get_bool("DoNotEngage"),
+        callback=lambda: self._toggle_param("DoNotEngage"),
       ),
     ]
 
