@@ -50,13 +50,34 @@ def decompress_stream(data: bytes):
   return decompressed_data
 
 
-class CachedReader:
-  __slots__ = ("_evt", "_enum")
+def _cached_reader_reducer(schema_id: int, data: bytes, _enum: str):  # schema_id, data
+  evt = capnp.lib.capnp._struct_reducer(schema_id, data)
+  return CachedReader(evt, _enum)
+  # print('got evt', evt)
+  # return CachedReader(capnp._DynamicStructReader(evt[1]))
 
-  def __init__(self, evt: capnp._DynamicStructReader):
+
+class CachedReader:
+
+  def __init__(self, evt: capnp._DynamicStructReader, _enum: str | None = None):
     """All capnp attribute accesses are expensive, and which() is often called multiple times"""
+    # if type(evt) is not capnp._DynamicStructReader:
+    #   self._evt = capnp._DynamicStructReader(evt)
+    # else:
     self._evt = evt
-    self._enum: str | None = None
+    self._enum: str | None = _enum
+
+  # def __reduce__(self):
+  #   # return self._evt.__reduce__()
+  #
+  #   # return (self.__class__, (self._evt.__reduce__(), self._enum))
+  #   return _cached_reader_reducer, (self._evt.schema_id, self._evt.to_bytes())
+
+  def __reduce_ex__(self, proto):
+    # return self._evt.__reduce_ex__(proto)
+
+    return _cached_reader_reducer, (self._evt.schema.node.id, self._evt.as_builder().to_bytes(), self._enum)
+    # return (self.__class__, (self._evt.__reduce_ex__(proto), self._enum))
 
   def __repr__(self):
     return self._evt.__repr__()
@@ -105,6 +126,7 @@ class _LogFileReader:
     try:
       for e in ents:
         self._ents.append(CachedReader(e))
+        # self._ents.append(e)
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 

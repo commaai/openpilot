@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import time
 import os
 import sys
 import platform
@@ -82,9 +83,12 @@ def process(can, lr):
 
 
 def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
+  t = time.monotonic()
   lr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
+  print(f"Loaded log reader in {time.monotonic() - t} seconds")
 
   all_data = lr.run_across_segments(24, partial(process, can))
+  print(f"Processed log data in {time.monotonic() - t} seconds")
   if should_migrate:
     all_data = migrate_all(all_data)
 
