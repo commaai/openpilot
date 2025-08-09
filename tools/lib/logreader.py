@@ -59,7 +59,7 @@ class CachedEventReader:
     self._enum: str | None = _enum
 
   # fast pickle support
-  def __reduce_ex__(self, proto):
+  def __reduce__(self):
     return CachedEventReader._reducer, (self._evt.as_builder().to_bytes(), self._enum)
 
   @staticmethod
