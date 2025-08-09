@@ -113,8 +113,8 @@ procs = [
   PythonProcess("webjoystick", "tools.bodyteleop.web", notcar),
   PythonProcess("joystick", "tools.joystick.joystick_control", and_(joystick, iscar)),
 
-  # offroad-only: Camping mode (simple receiver placeholder)
-  PythonProcess("campingd", "selfdrive.camping.campingd", and_(only_offroad, lambda started, params, CP: params.get_bool("CampingMode"))),
+  # Camping mode (simple receiver placeholder)
+  PythonProcess("campingd", "selfdrive.camping.campingd", lambda started, params, CP: params.get_bool("CampingMode")),
 ]
 
 managed_processes = {p.name: p for p in procs}
