@@ -4,6 +4,7 @@ import re
 import threading
 import time
 import urllib.request
+import urllib.parse
 from enum import IntEnum
 import shutil
 
@@ -322,6 +323,11 @@ class Setup(Widget):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
       url = f"https://installer.comma.ai/{url}"
+
+    parsed = urllib.parse.urlparse(url, scheme='https')
+    if not parsed.netloc:
+      parsed = urllib.parse.urlparse(f"{'https'}://{url}")
+    url = urllib.parse.urlunparse(parsed)
 
     self.download_url = url
     self.state = SetupState.DOWNLOADING
