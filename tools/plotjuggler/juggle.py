@@ -88,9 +88,11 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
   print(f"Loaded log reader in {time.monotonic() - t} seconds")
 
   all_data = lr.run_across_segments(24, partial(process, can))
+  print(type(all_data[0]), len(all_data))
   print(f"Processed log data in {time.monotonic() - t} seconds")
   if should_migrate:
     all_data = migrate_all(all_data)
+  print(f"Migrated log data in {time.monotonic() - t} seconds")
 
   # Infer DBC name from logs
   platform = None
@@ -102,10 +104,13 @@ def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
     except Exception:
       cloudlog.exception("Failed to get DBC name from logs!")
 
+  print(f"Got DBC name in {time.monotonic() - t} seconds: {dbc}")
+
   with tempfile.NamedTemporaryFile(suffix='.rlog', dir=juggle_dir) as tmp:
     save_log(tmp.name, all_data, compress=False)
+    print(f"Saved log data to {tmp.name} in {time.monotonic() - t} seconds")
     del all_data
-    start_juggler(tmp.name, dbc, layout, route_or_segment_name, platform)
+    # start_juggler(tmp.name, dbc, layout, route_or_segment_name, platform)
 
 
 if __name__ == "__main__":
