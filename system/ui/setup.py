@@ -156,7 +156,6 @@ class Setup(Widget):
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
-      self.download_url = OPENPILOT_URL
       self.use_openpilot()
     else:
       self.state = SetupState.CUSTOM_SOFTWARE_WARNING
@@ -312,6 +311,7 @@ class Setup(Widget):
   def use_openpilot(self):
     if os.path.isdir(OPENPILOT_CACHE_PATH):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+      self.download_url = OPENPILOT_URL
       self.prepare_installer()
       gui_app.request_close()
     else:
