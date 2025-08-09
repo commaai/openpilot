@@ -83,7 +83,6 @@ def process(can, lr):
 
 
 def juggle_route(route_or_segment_name, can, layout, dbc, should_migrate):
-  t = time.monotonic()
   lr = LogReader(route_or_segment_name, default_mode=ReadMode.AUTO_INTERACTIVE)
 
   all_data = lr.run_across_segments(24, partial(process, can))
