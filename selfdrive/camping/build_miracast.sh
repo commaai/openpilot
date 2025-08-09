@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Build script for Miraclecast on agnos OS (aarch64)
-# Requires: cmake, meson, ninja, glib2, systemd-dev, readline
+# Requires (on device/agnos): meson, ninja, pkg-config, glib2, systemd-dev, readline, gstreamer devs
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MIRACAST_DIR="$SCRIPT_DIR/miraclecast"
@@ -23,19 +23,24 @@ if [ -d "$BUILD_DIR" ]; then
   rm -rf "$BUILD_DIR"
 fi
 
-# Configure with meson
-echo "Configuring Miraclecast..."
+echo "Configuring MiracleCast..."
 cd "$MIRACAST_DIR"
-meson setup "$BUILD_DIR" \
-  --prefix=/usr \
-  --buildtype=release \
-  --cross-file=/usr/local/share/meson/cross/aarch64-linux-gnu.txt \
-  -Drely-udev=false \
-  -Dbuild-tests=false \
-  -Dbuild-gstreamer=true
+# Prefer native build on device; fallback to cross if present
+MESON_ARGS=(
+  "${BUILD_DIR}"
+  "--prefix=/usr"
+  "--buildtype=release"
+  "-Drely-udev=false"
+  "-Dbuild-tests=false"
+  "-Dbuild-gstreamer=true"
+)
+if [ -f /usr/local/share/meson/cross/aarch64-linux-gnu.txt ]; then
+  MESON_ARGS+=("--cross-file=/usr/local/share/meson/cross/aarch64-linux-gnu.txt")
+fi
+meson setup "${MESON_ARGS[@]}"
 
 # Build
-echo "Building Miraclecast..."
+echo "Building MiracleCast..."
 ninja -C "$BUILD_DIR"
 
 # Copy binaries to output directory

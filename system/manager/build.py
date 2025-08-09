@@ -2,6 +2,7 @@
 import os
 import subprocess
 from pathlib import Path
+import shutil
 
 # NOTE: Do NOT import anything here that needs be built (e.g. params)
 from openpilot.common.basedir import BASEDIR
@@ -85,6 +86,27 @@ def build(spinner: Spinner, dirty: bool = False, minimal: bool = False) -> None:
       break
     cache_size -= f.stat().st_size
     f.unlink()
+
+  # After a successful build, try to build MiracleCast (best effort) and stage binaries
+  try:
+    submodule_dir = BASEDIR / "selfdrive" / "camping" / "miraclecast"
+    build_script = BASEDIR / "selfdrive" / "camping" / "build_miracast.sh"
+    if submodule_dir.exists() and build_script.exists():
+      subprocess.check_call(["git", "submodule", "update", "--init", "--recursive", str(submodule_dir)], cwd=BASEDIR)
+      subprocess.check_call(["bash", str(build_script)], cwd=BASEDIR)
+      # Copy built binaries to /data for runtime
+      repo_bins_dir = BASEDIR / "selfdrive" / "camping" / "bin"
+      dest_dir = Path("/data/camping/bin")
+      if repo_bins_dir.is_dir():
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        for src in repo_bins_dir.iterdir():
+          if src.is_file():
+            dst = dest_dir / src.name
+            shutil.copy2(src, dst)
+            os.chmod(dst, 0o755)
+  except Exception:
+    # non-fatal
+    pass
 
 
 if __name__ == "__main__":

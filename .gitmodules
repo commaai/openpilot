@@ -16,3 +16,6 @@
 [submodule "tinygrad"]
   path = tinygrad_repo
   url = https://github.com/tinygrad/tinygrad.git
+[submodule "miraclecast"]
+  path = selfdrive/camping/miraclecast
+  url = https://github.com/albfan/miraclecast.git
