@@ -155,6 +155,7 @@ class Setup(Widget):
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
+      self.download_url = OPENPILOT_URL
       self.use_openpilot()
     else:
       self.state = SetupState.CUSTOM_SOFTWARE_WARNING
@@ -310,9 +311,7 @@ class Setup(Widget):
   def use_openpilot(self):
     if os.path.isdir(OPENPILOT_CACHE_PATH):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
-      os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
-      with open(INSTALLER_URL_PATH, "w") as f:
-        f.write(OPENPILOT_URL)
+      self.prepare_installer()
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -365,11 +364,7 @@ class Setup(Widget):
         return
 
       os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
-      os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
-
-      with open(INSTALLER_URL_PATH, "w") as f:
-        f.write(self.download_url)
-
+      self.prepare_installer()
       gui_app.request_close()
 
     except Exception:
@@ -380,6 +375,11 @@ class Setup(Widget):
     self.failed_url = url
     self.failed_reason = reason
     self.state = SetupState.DOWNLOAD_FAILED
+
+  def prepare_installer(self):
+    os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
+    with open(INSTALLER_URL_PATH, "w") as f:
+      f.write(self.download_url)
 
 
 def main():
@@ -393,7 +393,6 @@ def main():
     print(f"Setup error: {e}")
   finally:
     gui_app.close()
-
 
 if __name__ == "__main__":
   main()
