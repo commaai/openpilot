@@ -141,6 +141,9 @@ class CameraView(Widget):
 
     self.client = None
 
+  def __del__(self):
+    self.close()
+
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     if not self.frame:
       return np.eye(3)
