@@ -12,6 +12,7 @@ import shutil
 import pyray as rl
 
 from cereal import log
+from openpilot.common.git import get_short_branch
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
@@ -311,7 +312,7 @@ class Setup(Widget):
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
   def use_openpilot(self):
-    if os.path.isdir(OPENPILOT_CACHE):
+    if os.path.isdir(OPENPILOT_CACHE) and get_short_branch(OPENPILOT_CACHE) == "release3-staging":
       shutil.copyfile(INSTALLER_SOURCE, INSTALLER_DESTINATION)
       self.download_url = OPENPILOT_URL
       self.prepare_installer()
