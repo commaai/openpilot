@@ -6,6 +6,7 @@ import time
 import urllib.request
 from urllib.parse import urlparse
 from enum import IntEnum
+from pathlib import Path
 import shutil
 
 import pyray as rl
@@ -34,9 +35,10 @@ USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 OPENPILOT_CACHE_PATH = "/data/openpilot.cache"
 
-INSTALLER_SOURCE_PATH = "/usr/comma/installer"
-INSTALLER_DESTINATION_PATH = "/tmp/installer"
-INSTALLER_URL_PATH = "/tmp/installer_url"
+INSTALLER_SOURCE = "/usr/comma/installer"
+INSTALLER_DESTINATION = "/tmp/installer"
+INSTALLER_URL = "/tmp/installer_url"
+INSTALLER_NO_FETCH_FLAG = "/tmp/installer_no_fetch"
 
 
 class SetupState(IntEnum):
@@ -310,9 +312,10 @@ class Setup(Widget):
 
   def use_openpilot(self):
     if os.path.isdir(OPENPILOT_CACHE_PATH):
-      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+      shutil.copyfile(INSTALLER_SOURCE, INSTALLER_DESTINATION)
       self.download_url = OPENPILOT_URL
       self.prepare_installer()
+      Path(INSTALLER_NO_FETCH_FLAG).touch()
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -366,7 +369,7 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
-      os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
+      os.rename(tmpfile, INSTALLER_DESTINATION)
       self.prepare_installer()
       gui_app.request_close()
 
@@ -380,8 +383,8 @@ class Setup(Widget):
     self.state = SetupState.DOWNLOAD_FAILED
 
   def prepare_installer(self):
-    os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
-    with open(INSTALLER_URL_PATH, "w") as f:
+    os.chmod(INSTALLER_DESTINATION, 0o755)
+    with open(INSTALLER_URL, "w") as f:
       f.write(self.download_url)
 
 def main():
