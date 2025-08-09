@@ -316,10 +316,9 @@ class Setup(Widget):
 
     self.download_url = url
     self.state = SetupState.DOWNLOADING
-    print("DOWNLOADING : " + url)
 
-    #self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
-    #self.download_thread.start()
+    self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
+    self.download_thread.start()
 
   def _download_thread(self):
     try:
