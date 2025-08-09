@@ -16,33 +16,28 @@ def main():
   params = Params()
   cloudlog.event("campingd.start")
 
-  # Launch receiver (best-effort priority order)
+  # Launch Miracast receiver using MiracleCast only
   proc = None
+  sink_proc = None
   try:
     local_bin = "/data/camping/bin"
-    candidates: list[tuple[str, list[str]]] = []
-    def add(bin_path: str, args: list[str] | None = None):
-      if os.path.exists(bin_path) and os.access(bin_path, os.X_OK):
-        candidates.append((os.path.basename(bin_path), [bin_path] + (args or [])))
+    wifid = os.path.join(local_bin, "miracle-wifid")
+    sinkctl = os.path.join(local_bin, "miracle-sinkctl")
 
-    # Preferred: Open Screen cast receiver
-    add(os.path.join(local_bin, "openscreen-cast-receiver"))
-    add("/usr/bin/openscreen-cast-receiver")
-    # DLNA audio fallback
-    add(os.path.join(local_bin, "gmediarender"), ["-f", "openpilot-camping"])
-    add("/usr/bin/gmediarender", ["-f", "openpilot-camping"])
-    # mkchromecast as last resort (sender-like, may not work as receiver)
-    add("/usr/bin/mkchromecast")
-    # Miraclecast daemon (requires Wi-Fi P2P support and privileges)
-    add(os.path.join(local_bin, "miracle-wifid"))
+    if os.path.exists(wifid) and os.access(wifid, os.X_OK):
+      proc = subprocess.Popen([wifid])
+      cloudlog.event("campingd.receiver", name="miracle-wifid")
 
-    if candidates:
-      name, cmd = candidates[0]
-      proc = subprocess.Popen(cmd)
-      cloudlog.event("campingd.receiver", name=name, cmd=" ".join(cmd))
+      # If sink control exists, run in auto-accept mode to act as a sink
+      if os.path.exists(sinkctl) and os.access(sinkctl, os.X_OK):
+        # -a: auto-accept; some builds use --autoconnect, but -a is common
+        try:
+          sink_proc = subprocess.Popen([sinkctl, "-a"])  # non-blocking
+          cloudlog.event("campingd.sinkctl", name="miracle-sinkctl", args="-a")
+        except Exception:
+          cloudlog.exception("campingd.sinkctl_start_failed", error=False)
     else:
-      cloudlog.event("campingd.receiver", name="none_found")
-      proc = None
+      cloudlog.event("campingd.receiver", name="miracast_not_found", path=wifid)
 
     # heartbeat loop
     while True:

@@ -13,11 +13,7 @@ copy_if_exists() {
   fi
 }
 
-# Open Screen cast receiver
-copy_if_exists selfdrive/camping/bin/openscreen-cast-receiver openscreen-cast-receiver
-# DLNA renderer
-copy_if_exists selfdrive/camping/bin/gmediarender gmediarender
-# MiracleCast daemons/tools
+# MiracleCast daemons/tools (Miracast-only)
 copy_if_exists selfdrive/camping/bin/miracle-wifid miracle-wifid
 copy_if_exists selfdrive/camping/bin/miracle-wfdctl miracle-wfdctl
 copy_if_exists selfdrive/camping/bin/miracle-sinkctl miracle-sinkctl
