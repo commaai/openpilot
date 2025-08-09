@@ -29,6 +29,8 @@ BUTTON_SPACING = 50
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
+OPENPILOT_CACHE_PATH = "/data/openpilot.cache"
+
 
 class SetupState(IntEnum):
   LOW_VOLTAGE = 0
@@ -135,21 +137,19 @@ class Setup(Widget):
     self.state = SetupState.SOFTWARE_SELECTION
 
   def _custom_software_warning_continue_button_callback(self):
-    self.state = SetupState.CUSTOM_SOFTWARE
+    self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
+    self.start_network_check()
 
   def _getting_started_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _software_selection_back_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
+    self.state = SetupState.GETTING_STARTED
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
-      self.download(OPENPILOT_URL)
+      self.use_openpilot()
     else:
       self.state = SetupState.CUSTOM_SOFTWARE_WARNING
 
@@ -157,11 +157,14 @@ class Setup(Widget):
     self.state = SetupState.GETTING_STARTED
 
   def _network_setup_back_button_callback(self):
-    self.state = SetupState.GETTING_STARTED
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _network_setup_continue_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
     self.stop_network_check_thread.set()
+    if self._software_selection_openpilot_button.selected:
+      self.download(OPENPILOT_URL)
+    else:
+      self.state = SetupState.CUSTOM_SOFTWARE
 
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
@@ -298,6 +301,14 @@ class Setup(Widget):
     self.keyboard.set_title("Enter URL", "for Custom Software")
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
+  def use_openpilot(self):
+    if os.path.isdir(OPENPILOT_CACHE_PATH):
+      gui_app.request_close()
+    else:
+      self.state = SetupState.NETWORK_SETUP
+      self.stop_network_check_thread.clear()
+      self.start_network_check()
+
   def download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
@@ -305,9 +316,10 @@ class Setup(Widget):
 
     self.download_url = url
     self.state = SetupState.DOWNLOADING
+    print("DOWNLOADING : " + url)
 
-    self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
-    self.download_thread.start()
+    #self.download_thread = threading.Thread(target=self._download_thread, daemon=True)
+    #self.download_thread.start()
 
   def _download_thread(self):
     try:
