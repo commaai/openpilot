@@ -5,6 +5,8 @@ import threading
 import time
 import urllib.request
 from enum import IntEnum
+import shutil
+
 import pyray as rl
 
 from cereal import log
@@ -30,6 +32,10 @@ OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 OPENPILOT_CACHE_PATH = "/data/openpilot.cache"
+
+INSTALLER_SOURCE_PATH = "/usr/comma/installer"
+INSTALLER_DESTINATION_PATH = "/tmp/installer"
+INSTALLER_URL_PATH = "/tmp/installer_url"
 
 
 class SetupState(IntEnum):
@@ -303,6 +309,10 @@ class Setup(Widget):
 
   def use_openpilot(self):
     if os.path.isdir(OPENPILOT_CACHE_PATH):
+      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+      os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
+      with open(INSTALLER_URL_PATH, "w") as f:
+        f.write(OPENPILOT_URL)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
