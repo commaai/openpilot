@@ -3,6 +3,7 @@ import time
 
 DEBUG = False
 
+
 def msg(x):
   if DEBUG:
     print("S:", binascii.hexlify(x))
@@ -10,7 +11,10 @@ def msg(x):
   ret = bytes([len(x)]) + x
   return ret.ljust(8, b"\x00")
 
+
 kmsgs = []
+
+
 def recv(panda, cnt, addr, nbus):
   global kmsgs
   ret = []
@@ -26,6 +30,7 @@ def recv(panda, cnt, addr, nbus):
         nmsgs.append((ids, dat, bus))
     kmsgs = nmsgs[-256:]
   return ret
+
 
 def isotp_recv_subaddr(panda, addr, bus, sendaddr, subaddr):
   msg = recv(panda, 1, addr, bus)[0]
@@ -59,6 +64,7 @@ def isotp_recv_subaddr(panda, addr, bus, sendaddr, subaddr):
   return dat[0:tlen]
 
 # **** import below this line ****
+
 
 def isotp_send(panda, x, addr, bus=0, recvaddr=None, subaddr=None, rate=None):
   if recvaddr is None:
@@ -101,6 +107,7 @@ def isotp_send(panda, x, addr, bus=0, recvaddr=None, subaddr=None, rate=None):
         for dat in sends:
           panda.can_send(addr, dat, bus)
           time.sleep(rate)
+
 
 def isotp_recv(panda, addr, bus=0, sendaddr=None, subaddr=None):
   if sendaddr is None:

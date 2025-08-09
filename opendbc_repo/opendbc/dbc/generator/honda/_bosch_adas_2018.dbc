@@ -42,7 +42,7 @@ BO_ 829 LKAS_HUD: 5 ADAS
  SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
  SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X1 : 30|1@0+ (1,0) [0|1] "" BDY
  SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
 
@@ -50,7 +50,7 @@ CM_ SG_ 479 CONTROL_ON "Set to 5 when car is being controlled";
 CM_ SG_ 479 AEB_STATUS "set for the duration of AEB event";
 CM_ SG_ 479 AEB_BRAKING "set when braking is commanded during AEB event";
 CM_ SG_ 479 AEB_PREPARE "set 1s before AEB";
-CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnngs etc...";
+CM_ SG_ 829 BEEP "beeps are pleasant, chimes are for warnings etc...";
 CM_ SG_ 829 CAM_TEMP_HIGH "Some Driver Assist Systems Cannot Operate: Camera Temperature Too High";
 CM_ SG_ 829 CAMERA_OVERHEAT "Lane Keeping Assist Cannot Operate: Camera Too Hot";
 

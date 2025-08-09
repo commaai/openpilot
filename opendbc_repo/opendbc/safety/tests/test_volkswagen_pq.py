@@ -187,5 +187,6 @@ class TestVolkswagenPqLongSafety(TestVolkswagenPqSafetyBase, common.Longitudinal
       self.assertTrue(self._tx(self._torque_cmd_msg(self.MAX_RATE_UP, steer_req=1, hca_status=enabled_status)),
                       f"torque cmd rejected with {enabled_status=}")
 
+
 if __name__ == "__main__":
   unittest.main()

@@ -2,7 +2,7 @@ from opendbc.car import get_safety_config, structs
 from opendbc.car.interfaces import CarInterfaceBase
 from opendbc.car.tesla.carcontroller import CarController
 from opendbc.car.tesla.carstate import CarState
-from opendbc.car.tesla.values import TeslaSafetyFlags
+from opendbc.car.tesla.values import TeslaSafetyFlags, CAR
 
 
 class CarInterface(CarInterfaceBase):
@@ -30,5 +30,7 @@ class CarInterface(CarInterfaceBase):
       ret.vEgoStopping = 0.1
       ret.vEgoStarting = 0.1
       ret.stoppingDecelRate = 0.3
+
+    ret.dashcamOnly = candidate in (CAR.TESLA_MODEL_X) # dashcam only, pending find invalidLkasSetting signal
 
     return ret

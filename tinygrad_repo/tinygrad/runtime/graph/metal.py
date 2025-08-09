@@ -1,8 +1,8 @@
 from typing import Any, cast
-import ctypes, re
+import ctypes, re, decimal
 from tinygrad.dtype import dtypes
-from tinygrad.helpers import dedup, getenv, merge_dicts
-from tinygrad.device import Buffer
+from tinygrad.helpers import dedup, getenv, merge_dicts, PROFILE
+from tinygrad.device import Buffer, ProfileGraphEntry, ProfileGraphEvent
 from tinygrad.engine.realize import ExecItem, CompiledRunner
 from tinygrad.engine.jit import GraphRunner, GraphException
 from tinygrad.uop.ops import Variable
@@ -63,6 +63,8 @@ class MetalGraph(GraphRunner):
 
   def __call__(self, input_rawbuffers: list[Buffer], var_vals: dict[Variable, int], wait=False) -> float|None:
     if self.command_buffer is not None and self.command_buffer in self.dev.mtl_buffers_in_flight: wait_check(self.command_buffer)
+    # NOTE: old command buffer may not be inflight anymore
+    if self.command_buffer is not None and PROFILE: self.collect_timestamps()
 
     all_resources = dedup(self.all_resources + [input_rawbuffers[input_idx]._buf.buf for input_idx in self.input_replace.values()])
     for (j,i),input_idx in self.input_replace.items():
@@ -100,3 +102,15 @@ class MetalGraph(GraphRunner):
       wait_check(command_buffer)
       return cmdbuf_en_time(command_buffer) - cmdbuf_st_time(command_buffer)
     return None
+
+  def collect_timestamps(self):
+    # create a graph event and evenly space each program
+    st, en = decimal.Decimal(cmdbuf_st_time(self.command_buffer)) * 1000000, decimal.Decimal(cmdbuf_en_time(self.command_buffer)) * 1000000
+    ents = [ProfileGraphEntry(self.device, cast(CompiledRunner, ji.prg)._prg.name, i, i+1, is_copy=False) for i,ji in enumerate(self.jit_cache)]
+    step = (en-st)/len(ents)
+    self.dev.profile_events += [ProfileGraphEvent(ents, [], [st+step*i for i in range(len(ents)+1)])]
+
+  def __del__(self):
+    if PROFILE and self.command_buffer is not None:
+      wait_check(self.command_buffer)
+      self.collect_timestamps()

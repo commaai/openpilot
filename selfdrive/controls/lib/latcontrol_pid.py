@@ -17,7 +17,7 @@ class LatControlPID(LatControl):
     super().reset()
     self.pid.reset()
 
-  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, calibrated_pose, curvature_limited):
+  def update(self, active, CS, VM, params, steer_limited_by_controls, desired_curvature, curvature_limited):
     pid_log = log.ControlsState.LateralPIDState.new_message()
     pid_log.steeringAngleDeg = float(CS.steeringAngleDeg)
     pid_log.steeringRateDeg = float(CS.steeringRateDeg)

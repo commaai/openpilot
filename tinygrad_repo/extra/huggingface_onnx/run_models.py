@@ -13,8 +13,7 @@ def get_config(root_path: Path):
   return ret
 
 def run_huggingface_validate(onnx_model_path, config, rtol, atol):
-  onnx_model = onnx.load(onnx_model_path)
-  onnx_runner = OnnxRunner(onnx_model)
+  onnx_runner = OnnxRunner(onnx_model_path)
   inputs = get_example_inputs(onnx_runner.graph_inputs, config)
   validate(onnx_model_path, inputs, rtol=rtol, atol=atol)
 
@@ -46,7 +45,7 @@ def retrieve_op_stats(models:dict[str, tuple[Path, Path]]) -> dict:
   for model_id, (root_path, relative_path) in models.items():
     print(f"examining {model_id}")
     model_path = root_path / relative_path
-    onnx_runner = OnnxRunner(onnx.load(model_path))
+    onnx_runner = OnnxRunner(model_path)
     for node in onnx_runner.graph_nodes:
       op_counter[node.op] += 1
       if node.op not in supported_ops:
@@ -116,7 +115,7 @@ if __name__ == "__main__":
       # repo id
       # validates all onnx models inside repo
       repo_id = "/".join(path)
-      root_path = Path(snapshot_download(repo_id=repo_id, allow_patterns=["*.onnx", ".onnx_data"], cache_dir=download_dir))
+      root_path = Path(snapshot_download(repo_id=repo_id, allow_patterns=["*.onnx", "*.onnx_data"], cache_dir=download_dir))
       snapshot_download(repo_id=repo_id, allow_patterns=["*config.json"], cache_dir=download_dir)
       config = get_config(root_path)
       for onnx_model in root_path.rglob("*.onnx"):

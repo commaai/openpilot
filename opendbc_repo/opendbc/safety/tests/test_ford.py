@@ -200,24 +200,24 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
   def test_rx_hook(self):
     # checksum, counter, and quality flag checks
     for quality_flag in [True, False]:
-      for msg in ["speed", "speed_2", "yaw"]:
+      for msg_type in ["speed", "speed_2", "yaw"]:
         self.safety.set_controls_allowed(True)
         # send multiple times to verify counter checks
         for _ in range(10):
-          if msg == "speed":
-            to_push = self._speed_msg(0, quality_flag=quality_flag)
-          elif msg == "speed_2":
-            to_push = self._speed_msg_2(0, quality_flag=quality_flag)
-          elif msg == "yaw":
-            to_push = self._yaw_rate_msg(0, 0, quality_flag=quality_flag)
+          if msg_type == "speed":
+            msg = self._speed_msg(0, quality_flag=quality_flag)
+          elif msg_type == "speed_2":
+            msg = self._speed_msg_2(0, quality_flag=quality_flag)
+          elif msg_type == "yaw":
+            msg = self._yaw_rate_msg(0, 0, quality_flag=quality_flag)
 
-          self.assertEqual(quality_flag, self._rx(to_push))
+          self.assertEqual(quality_flag, self._rx(msg))
           self.assertEqual(quality_flag, self.safety.get_controls_allowed())
 
         # Mess with checksum to make it fail, checksum is not checked for 2nd speed
-        to_push[0].data[3] = 0  # Speed checksum & half of yaw signal
-        should_rx = msg == "speed_2" and quality_flag
-        self.assertEqual(should_rx, self._rx(to_push))
+        msg[0].data[3] = 0  # Speed checksum & half of yaw signal
+        should_rx = msg_type == "speed_2" and quality_flag
+        self.assertEqual(should_rx, self._rx(msg))
         self.assertEqual(should_rx, self.safety.get_controls_allowed())
 
   def test_angle_measurements(self):
@@ -287,8 +287,8 @@ class TestFordSafetyBase(common.PandaCarSafetyTest):
                     should_tx = should_tx and abs(curvature) <= curvature_accel_limit_upper
 
                   with self.subTest(controls_allowed=controls_allowed, steer_control_enabled=steer_control_enabled,
-                                    path_offset=path_offset, path_angle=path_angle, curvature_rate=curvature_rate,
-                                    curvature=curvature):
+                                    path_offset=float(path_offset), path_angle=float(path_angle), curvature_rate=float(curvature_rate),
+                                    curvature=float(curvature)):
                     self.assertEqual(should_tx, self._tx(self._lat_ctl_msg(steer_control_enabled, path_offset, path_angle, curvature, curvature_rate)))
 
   def test_curvature_rate_limits(self):

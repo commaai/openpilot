@@ -1,10 +1,14 @@
+from functools import partial
 import time
 from typing import Literal
+
 import pyray as rl
+
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.button import ButtonStyle, gui_button
-from openpilot.system.ui.lib.inputbox import InputBox
-from openpilot.system.ui.lib.label import gui_label
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.button import ButtonStyle, Button
+from openpilot.system.ui.widgets.inputbox import InputBox
+from openpilot.system.ui.widgets.label import Label, TextAlignment
 
 KEY_FONT_SIZE = 96
 DOUBLE_CLICK_THRESHOLD = 0.5  # seconds
@@ -52,11 +56,14 @@ KEYBOARD_LAYOUTS = {
 }
 
 
-class Keyboard:
+class Keyboard(Widget):
   def __init__(self, max_text_size: int = 255, min_text_size: int = 0, password_mode: bool = False, show_password_toggle: bool = False):
+    super().__init__()
     self._layout_name: Literal["lowercase", "uppercase", "numbers", "specials"] = "lowercase"
     self._caps_lock = False
     self._last_shift_press_time = 0
+    self._title = Label("", 90, FontWeight.BOLD, TextAlignment.LEFT)
+    self._sub_title = Label("", 55, FontWeight.NORMAL, TextAlignment.LEFT)
 
     self._max_text_size = max_text_size
     self._min_text_size = min_text_size
@@ -67,7 +74,12 @@ class Keyboard:
     # Backspace key repeat tracking
     self._backspace_pressed: bool = False
     self._backspace_press_time: float = 0.0
-    self._backspace_last_repeat:float = 0.0
+    self._backspace_last_repeat: float = 0.0
+
+    self._render_return_status = -1
+    self._cancel_button = Button("Cancel", self._cancel_button_callback)
+
+    self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -79,6 +91,19 @@ class Keyboard:
       ENTER_KEY: gui_app.texture("icons/arrow-right.png", 80, 80),
     }
 
+    self._all_keys = {}
+    for l in KEYBOARD_LAYOUTS:
+      for _, keys in enumerate(KEYBOARD_LAYOUTS[l]):
+        for _, key in enumerate(keys):
+          if key in self._key_icons:
+            texture = self._key_icons[key]
+            self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
+                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
+          else:
+            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
+    self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
+                                           button_style=ButtonStyle.KEYBOARD, multi_touch=True)
+
   @property
   def text(self):
     return self._input_box.text
@@ -89,13 +114,28 @@ class Keyboard:
     self._input_box.clear()
     self._backspace_pressed = False
 
-  def render(self, title: str, sub_title: str):
-    rect = rl.Rectangle(CONTENT_MARGIN, CONTENT_MARGIN, gui_app.width - 2 * CONTENT_MARGIN, gui_app.height - 2 * CONTENT_MARGIN)
-    gui_label(rl.Rectangle(rect.x, rect.y, rect.width, 95), title, 90, font_weight=FontWeight.BOLD)
-    gui_label(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60), sub_title, 55, font_weight=FontWeight.NORMAL)
-    if gui_button(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125), "Cancel"):
-      self.clear()
-      return 0
+  def set_title(self, title: str, sub_title: str = ""):
+    self._title.set_text(title)
+    self._sub_title.set_text(sub_title)
+
+  def _eye_button_callback(self):
+    self._password_mode = not self._password_mode
+
+  def _cancel_button_callback(self):
+    self.clear()
+    self._render_return_status = 0
+
+  def _key_callback(self, k):
+    if k == ENTER_KEY:
+      self._render_return_status = 1
+    else:
+      self.handle_key_press(k)
+
+  def _render(self, rect: rl.Rectangle):
+    rect = rl.Rectangle(rect.x + CONTENT_MARGIN, rect.y + CONTENT_MARGIN, rect.width - 2 * CONTENT_MARGIN, rect.height - 2 * CONTENT_MARGIN)
+    self._title.render(rl.Rectangle(rect.x, rect.y, rect.width, 95))
+    self._sub_title.render(rl.Rectangle(rect.x, rect.y + 95, rect.width, 60))
+    self._cancel_button.render(rl.Rectangle(rect.x + rect.width - 386, rect.y, 386, 125))
 
     # Draw input box and password toggle
     input_margin = 25
@@ -103,7 +143,7 @@ class Keyboard:
     self._render_input_area(input_box_rect)
 
     # Process backspace key repeat if it's held down
-    if not rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    if not self._all_keys[BACKSPACE_KEY].is_pressed:
       self._backspace_pressed = False
 
     if self._backspace_pressed:
@@ -138,33 +178,22 @@ class Keyboard:
         start_x += new_width
 
         is_enabled = key != ENTER_KEY or len(self._input_box.text) >= self._min_text_size
-        result = -1
 
-        # Check for backspace key press-and-hold
-        mouse_pos = rl.get_mouse_position()
-        mouse_over_key = rl.check_collision_point_rec(mouse_pos, key_rect)
-
-        if key == BACKSPACE_KEY and mouse_over_key:
-          if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-            self._backspace_pressed = True
-            self._backspace_press_time = time.monotonic()
-            self._backspace_last_repeat = time.monotonic()
+        if key == BACKSPACE_KEY and self._all_keys[BACKSPACE_KEY].is_pressed and not self._backspace_pressed:
+          self._backspace_pressed = True
+          self._backspace_press_time = time.monotonic()
+          self._backspace_last_repeat = time.monotonic()
 
         if key in self._key_icons:
           if key == SHIFT_ACTIVE_KEY and self._caps_lock:
             key = CAPS_LOCK_KEY
-          texture = self._key_icons[key]
-          result = gui_button(key_rect, "", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.NORMAL, is_enabled=is_enabled)
+          self._all_keys[key].set_enabled(is_enabled)
+          self._all_keys[key].render(key_rect)
         else:
-          result = gui_button(key_rect, key, KEY_FONT_SIZE, is_enabled=is_enabled)
+          self._all_keys[key].set_enabled(is_enabled)
+          self._all_keys[key].render(key_rect)
 
-        if result:
-          if key == ENTER_KEY:
-            return 1
-          else:
-            self.handle_key_press(key)
-
-    return -1
+    return self._render_return_status
 
   def _render_input_area(self, input_rect: rl.Rectangle):
     if self._show_password_toggle:
@@ -175,16 +204,12 @@ class Keyboard:
       eye_texture = self._eye_closed_texture if self._password_mode else self._eye_open_texture
 
       eye_rect = rl.Rectangle(input_rect.x + input_rect.width - 90, input_rect.y, 80, input_rect.height)
+      self._eye_button.render(eye_rect)
+
       eye_x = eye_rect.x + (eye_rect.width - eye_texture.width) / 2
       eye_y = eye_rect.y + (eye_rect.height - eye_texture.height) / 2
 
       rl.draw_texture_v(eye_texture, rl.Vector2(eye_x, eye_y), rl.WHITE)
-
-      # Handle click on eye icon
-      if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(
-        rl.get_mouse_position(), eye_rect
-      ):
-        self._password_mode = not self._password_mode
     else:
       self._input_box.render(input_rect)
 
@@ -218,12 +243,17 @@ class Keyboard:
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
 
+  def reset(self):
+    self._render_return_status = -1
+    self.clear()
+
 
 if __name__ == "__main__":
   gui_app.init_window("Keyboard")
   keyboard = Keyboard(min_text_size=8, show_password_toggle=True)
   for _ in gui_app.render():
-    result = keyboard.render("Keyboard", "Type here")
+    keyboard.set_title("Keyboard Input", "Type your text below")
+    result = keyboard.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))
     if result == 1:
       print(f"You typed: {keyboard.text}")
       gui_app.request_close()

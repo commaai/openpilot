@@ -76,7 +76,7 @@ class UploaderTestCase:
     self.seg_dir = self.seg_format.format(self.seg_num)
 
     self.params = Params()
-    self.params.put("IsOffroad", "1")
+    self.params.put("IsOffroad", True)
     self.params.put("DongleId", "0000000000000000")
 
   def make_file_with_data(self, f_dir: str, fn: str, size_mb: float = .1, lock: bool = False,

@@ -94,42 +94,20 @@ class TestEmptyTensorEdgeCases(unittest.TestCase):
     out = Tensor([], dtype=dtypes.float32).masked_select(Tensor([], dtype=dtypes.bool))
     np.testing.assert_equal(out.numpy(), torch_out.numpy())
 
-class TestRollEdgeCases(unittest.TestCase):
-  # we don't need more of these
-
-  @unittest.expectedFailure
-  def test_roll_mismatched_dims(self):
-    with self.assertRaises(RuntimeError):
-      torch.roll(torch.arange(9).reshape(3, 3), 1, dims=(0, 1))
-    with self.assertRaises(RuntimeError):
-      Tensor.arange(9).reshape(3, 3).roll(1, dims=(0, 1))
-
-  @unittest.expectedFailure
-  def test_roll_extra_shift(self):
-    # tinygrad ignores extra shift values instead of raising
-    with self.assertRaises(RuntimeError):
-      torch.roll(torch.arange(10), (1, 2), dims=0)
-    with self.assertRaises(RuntimeError):
-      Tensor.arange(10).roll((1, 2), dims=0)
-
 class TestDropoutProbabilityEdgeCases(unittest.TestCase):
   # we don't need more of these
 
-  @unittest.expectedFailure
   def test_dropout_rate_one(self):
-    # out is full of NaNs it should be 0s
     with Tensor.train():
       out = Tensor.ones(100).dropout(1.0)
       np.testing.assert_allclose(out.numpy(), np.zeros(100))
 
-  @unittest.expectedFailure
   def test_dropout_invalid_prob(self):
-    # negative dropout probability should raise an error
     with self.assertRaises(ValueError):
       torch.nn.functional.dropout(torch.ones(10), -0.1, True)
-    with Tensor.train():
-      out = Tensor.ones(10).dropout(-0.1)
-      np.testing.assert_allclose(out.numpy(), np.ones(10))
+    with self.assertRaises(ValueError):
+      with Tensor.train():
+        Tensor.ones(10).dropout(-0.1)
 
 class TestInputValidation(unittest.TestCase):
   # we don't need more of these, input validation bugs are not very interesting, many are WONTFIX

@@ -2,8 +2,8 @@ from collections import defaultdict, namedtuple
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag, StrEnum
 
-from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
-from opendbc.can.can_define import CANDefine
+from opendbc.car import Bus, CanBusBase, CarSpecs, DbcDict, PlatformConfig, Platforms, structs, uds
+from opendbc.can import CANDefine
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column, \
                                                      Device
@@ -15,6 +15,36 @@ NetworkLocation = structs.CarParams.NetworkLocation
 TransmissionType = structs.CarParams.TransmissionType
 GearShifter = structs.CarState.GearShifter
 Button = namedtuple('Button', ['event_type', 'can_addr', 'can_msg', 'values'])
+
+
+class CanBus(CanBusBase):
+  def __init__(self, CP=None, fingerprint=None) -> None:
+    super().__init__(CP, fingerprint)
+
+    self._ext = self.offset
+    if CP is not None:
+      self._ext = self.offset + 2 if CP.networkLocation == NetworkLocation.gateway else self.offset
+
+  @property
+  def pt(self) -> int:
+    # ADAS / Extended CAN, gateway side of the relay
+    return self.offset
+
+  @property
+  def aux(self) -> int:
+    # NetworkLocation.fwdCamera: radar-camera object fusion CAN
+    # NetworkLocation.gateway: powertrain CAN
+    return self.offset + 1
+
+  @property
+  def cam(self) -> int:
+    # ADAS / Extended CAN, camera side of the relay
+    return self.offset + 2
+
+  @property
+  def ext(self) -> int:
+    # ADAS / Extended CAN, side of the relay with the ACC radar
+    return self._ext
 
 
 class CarControllerParams:
@@ -107,11 +137,6 @@ class CarControllerParams:
       }
 
 
-class CANBUS:
-  pt = 0
-  cam = 2
-
-
 class WMI(StrEnum):
   VOLKSWAGEN_USA_SUV = "1V2"
   VOLKSWAGEN_USA_CAR = "1VW"
@@ -140,6 +165,7 @@ class VolkswagenSafetyFlags(IntFlag):
 class VolkswagenFlags(IntFlag):
   # Detected flags
   STOCK_HCA_PRESENT = 1
+  KOMBI_PRESENT = 4
 
   # Static flags
   PQ = 2
@@ -324,7 +350,7 @@ class CAR(Platforms):
     wmis={WMI.VOLKSWAGEN_EUROPE_CAR},
   )
   VOLKSWAGEN_TAOS_MK1 = VolkswagenMQBPlatformConfig(
-    [VWCarDocs("Volkswagen Taos 2022-23")],
+    [VWCarDocs("Volkswagen Taos 2022-24")],
     VolkswagenCarSpecs(mass=1498, wheelbase=2.69),
     chassis_codes={"B2"},
     wmis={WMI.VOLKSWAGEN_MEXICO_SUV, WMI.VOLKSWAGEN_ARGENTINA},
@@ -337,7 +363,7 @@ class CAR(Platforms):
   )
   VOLKSWAGEN_TIGUAN_MK2 = VolkswagenMQBPlatformConfig(
     [
-      VWCarDocs("Volkswagen Tiguan 2018-23"),
+      VWCarDocs("Volkswagen Tiguan 2018-24"),
       VWCarDocs("Volkswagen Tiguan eHybrid 2021-23"),
     ],
     VolkswagenCarSpecs(mass=1715, wheelbase=2.74),
@@ -383,7 +409,7 @@ class CAR(Platforms):
     wmis={WMI.AUDI_GERMANY_CAR},
   )
   AUDI_Q3_MK2 = VolkswagenMQBPlatformConfig(
-    [VWCarDocs("Audi Q3 2019-23")],
+    [VWCarDocs("Audi Q3 2019-24")],
     VolkswagenCarSpecs(mass=1623, wheelbase=2.68),
     chassis_codes={"8U", "F3", "FS"},
     wmis={WMI.AUDI_EUROPE_MPV, WMI.AUDI_GERMANY_CAR},

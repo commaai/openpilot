@@ -40,8 +40,7 @@ if __name__ == "__main__":
 
   panda = Panda()
   panda.set_safety_mode(CarParams.SafetyModel.elm327)
-  bus = 1 if panda.has_obd() else 0
-  uds_client = UdsClient(panda, MQB_EPS_CAN_ADDR, MQB_EPS_CAN_ADDR + RX_OFFSET, bus, timeout=0.2)
+  uds_client = UdsClient(panda, MQB_EPS_CAN_ADDR, MQB_EPS_CAN_ADDR + RX_OFFSET, 1, timeout=0.2)
 
   try:
     uds_client.diagnostic_session_control(SESSION_TYPE.EXTENDED_DIAGNOSTIC)

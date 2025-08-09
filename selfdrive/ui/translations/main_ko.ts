@@ -8,10 +8,6 @@
         <translation>닫기</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>업데이트 일시 중지</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>업데이트 및 재부팅</translation>
     </message>
@@ -247,10 +243,6 @@
         <translation>전원 끄기</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>오픈파일럿 장치는 좌우 4°, 위로 5°, 아래로 9° 이내의 각도로 장착되어야 합니다. 오픈파일럿은 지속적으로 자동 보정되며 재설정은 거의 필요하지 않습니다.</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> 사용자의 장치는 %2 %1° 및 %4 %3° 의 방향으로 장착되어 있습니다.</translation>
     </message>
@@ -311,8 +303,36 @@
         <translation>캘리브레이션을 재설정하려면 해제하세요</translation>
     </message>
     <message>
-        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation> 차량이 전원이 켜진 경우 캘리브레이션 재설정이 오픈파일럿을 재시작합니다.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation>오픈파일럿 장치는 좌우측으로는 4° 또는 위로는 5° 아래로는 9° 이내에 장착해야합니다.</translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation>오픈파일럿은 지속적으로 갤리브레이션되어 재설정이 거의 필요하지 않습니다. 차량과 연결된 경우 캘리브레이션 재설정이 오픈파일럿을 재시작합니다.</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation>
+
+조향 지연 캘리브레이션이 %1% 진행되었습니다.</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation>
+
+조향 지연 캘리브레이션이 완료되었습니다.</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation> 조향 토크 응답 캘리브레이션이 %1% 진행되었습니다.</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation> 조향 토크 응답 캘리브레이션이 완료되었습니다.</translation>
     </message>
 </context>
 <context>
@@ -335,10 +355,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 파이어호스 모드 🔥</translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -368,6 +384,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
         <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;비활성 상태&lt;/span&gt;: 무제한 네트워크에 연결 하세요</translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation>파이어호스 모드</translation>
     </message>
 </context>
 <context>
@@ -453,16 +473,8 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>백그라운드에서 운영 체제에 대한 업데이트가 다운로드되고 있습니다. 설치가 준비되면 업데이트 메시지가 표시됩니다.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>장치를 등록하지 못했습니다. comma.ai 서버에 연결하거나 데이터를 업로드하지 않으며 comma.ai에서 지원을 받지 않습니다. 공식 장치인 경우 https://comma.ai/support 에 방문하여 문의하세요.</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>NVMe 드라이브가 마운트되지 않았습니다.</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>지원되지 않는 NVMe 드라이브가 감지되었습니다. 지원되지 않는 NVMe 드라이브는 많은 전력을 소비하고 장치를 과열시킬 수 있습니다.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -475,6 +487,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>장치 온도가 너무 높습니다. 시작하기 전에 시스템을 냉각하고 있습니다. 현재 내부 구성 요소 온도: %1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation>장치를 comma.ai 백엔드에 등록하지 못했습니다. comma.ai 서버에 연결하거나 업로드하지 않으며 comma.ai로부터 지원을받지 않습니다. comma.ai shop에서 구매 한 장치 인 경우 https://comma.ai/support에서 티켓을 여십시오.</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation>과도한 작동을 인정하십시오</translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation>업데이트 일시 중지</translation>
+    </message>
+    <message>
+        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <translation>오픈파일럿은 과도한 %1 작동을 감지했습니다. 소프트웨어 버그 때문일 수 있습니다. https://comma.ai/support 에 문의하여 지원받으세요.</translation>
     </message>
 </context>
 <context>
@@ -621,47 +649,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
 </context>
 <context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>초기화 실패. 재부팅 후 다시 시도하세요.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>장치를 초기화하시겠습니까?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>장치 초기화</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>취소</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>재부팅</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>확인</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>데이터 파티션을 마운트할 수 없습니다. 파티션이 손상되었을 수 있습니다. 모든 설정을 삭제하고 장치를 초기화하려면 확인을 누르세요.</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>장치를 초기화하는 중...
-최대 1분이 소요될 수 있습니다.</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>시스템 재설정이 시작되었습니다. 모든 콘텐츠와 설정을 지우려면 확인을 누르시고 부팅을 재개하려면 취소를 누르세요.</translation>
-    </message>
-</context>
-<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -785,6 +772,18 @@ This may take up to a minute.</source>
     <message>
         <source>Custom Software</source>
         <translation>커스텀 소프트웨어</translation>
+    </message>
+    <message>
+        <source>WARNING: Custom Software</source>
+        <translation>경고: 커스텀 소프트웨어</translation>
+    </message>
+    <message>
+        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
+
+If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
+        <translation>타사 소프트웨어를 설치할 때는 주의하십시오. 타사 소프트웨어는 comma에 의해 테스트되지 않았으며 장치나 차량에 손상을 줄 수 있습니다.
+
+진행하려면 https://flash.comma.ai를 사용하여 나중에 장치를 공장 초기화하세요.</translation>
     </message>
 </context>
 <context>
@@ -1131,40 +1130,13 @@ This may take up to a minute.</source>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation> 이 설정을 변경하면 차량이 재가동된후 오픈파일럿이 시작됩니다.</translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>업데이트 필요</translation>
+        <source>Record and Upload Microphone Audio</source>
+        <translation>마이크 오디오 녹음 및 업로드</translation>
     </message>
     <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>OS 업데이트가 필요합니다. 장치를 Wi-Fi에 연결하면 가장 빠르게 업데이트할 수 있습니다. 다운로드 크기는 약 1GB입니다.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fi 연결</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>설치</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>뒤로</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>로딩 중...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>재부팅</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>업데이트 실패</translation>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>운전 중에 마이크 오디오를 녹음하고 저장하십시오. 오디오는 comma connect의 대시캠 비디오에 포함됩니다.</translation>
     </message>
 </context>
 <context>

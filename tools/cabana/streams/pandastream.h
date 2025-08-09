@@ -7,7 +7,7 @@
 #include <QFormLayout>
 
 #include "tools/cabana/streams/livestream.h"
-#include "selfdrive/pandad/panda.h"
+#include "tools/cabana/panda.h"
 
 const uint32_t speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U};
 const uint32_t data_speeds[] = {10U, 20U, 50U, 100U, 125U, 250U, 500U, 1000U, 2000U, 5000U};

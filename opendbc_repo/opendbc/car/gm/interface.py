@@ -2,14 +2,14 @@
 import os
 from math import fabs, exp
 
-from opendbc.car import get_safety_config, get_friction, structs
+from opendbc.car import get_safety_config, structs
 from opendbc.car.common.basedir import BASEDIR
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.gm.carcontroller import CarController
 from opendbc.car.gm.carstate import CarState
 from opendbc.car.gm.radar_interface import RadarInterface, RADAR_HEADER_MSG, CAMERA_DATA_HEADER_MSG
 from opendbc.car.gm.values import CAR, CarControllerParams, EV_CAR, CAMERA_ACC_CAR, SDGM_CAR, ALT_ACCS, CanBus, GMSafetyFlags
-from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, FRICTION_THRESHOLD, LatControlInputs, NanoFFModel
+from opendbc.car.interfaces import CarInterfaceBase, TorqueFromLateralAccelCallbackType, LatControlInputs, NanoFFModel
 
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
@@ -46,9 +46,7 @@ class CarInterface(CarInterfaceBase):
       return CarInterfaceBase.get_steer_feedforward_default
 
   def torque_from_lateral_accel_siglin(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
-                                       lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
-    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
-
+                                       gravity_adjusted: bool) -> float:
     def sig(val):
       # https://timvieira.github.io/blog/post/2014/02/11/exp-normalize-trick
       if val >= 0:
@@ -65,15 +63,14 @@ class CarInterface(CarInterfaceBase):
     assert non_linear_torque_params, "The params are not defined"
     a, b, c, _ = non_linear_torque_params
     steer_torque = (sig(latcontrol_inputs.lateral_acceleration * a) * b) + (latcontrol_inputs.lateral_acceleration * c)
-    return float(steer_torque) + friction
+    return float(steer_torque)
 
   def torque_from_lateral_accel_neural(self, latcontrol_inputs: LatControlInputs, torque_params: structs.CarParams.LateralTorqueTuning,
-                                       lateral_accel_error: float, lateral_accel_deadzone: float, friction_compensation: bool, gravity_adjusted: bool) -> float:
-    friction = get_friction(lateral_accel_error, lateral_accel_deadzone, FRICTION_THRESHOLD, torque_params, friction_compensation)
+                                       gravity_adjusted: bool) -> float:
     inputs = list(latcontrol_inputs)
     if gravity_adjusted:
       inputs[0] += inputs[1]
-    return float(self.neural_ff_model.predict(inputs)) + friction
+    return float(self.neural_ff_model.predict(inputs))
 
   def torque_from_lateral_accel(self) -> TorqueFromLateralAccelCallbackType:
     if self.CP.carFingerprint == CAR.CHEVROLET_BOLT_EUV:

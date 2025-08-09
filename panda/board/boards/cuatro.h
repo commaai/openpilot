@@ -26,11 +26,11 @@ static void cuatro_enable_can_transceiver(uint8_t transceiver, bool enabled) {
 }
 
 static uint32_t cuatro_read_voltage_mV(void) {
-  return adc_get_mV(8) * 11U;
+  return adc_get_mV(&(const adc_signal_t) ADC_CHANNEL_DEFAULT(ADC1, 8)) * 11U;
 }
 
 static uint32_t cuatro_read_current_mA(void) {
-  return adc_get_mV(3) * 2U;
+  return adc_get_mV(&(const adc_signal_t) ADC_CHANNEL_DEFAULT(ADC1, 3)) * 2U;
 }
 
 static void cuatro_set_fan_enabled(bool enabled) {
@@ -39,12 +39,27 @@ static void cuatro_set_fan_enabled(bool enabled) {
 
 static void cuatro_set_bootkick(BootState state) {
   set_gpio_output(GPIOA, 0, state != BOOT_BOOTKICK);
-  // TODO: confirm we need this
-  //set_gpio_output(GPIOC, 12, state != BOOT_RESET);
 }
 
-static void cuatro_set_amp_enabled(bool enabled){
-  set_gpio_output(GPIOA, 5, enabled);
+static void cuatro_set_amp_enabled(bool enabled) {
+  // *** tmp, remove soon ***
+  static const uint8_t olds[][12] = {
+    {0x44, 0x00, 0x10, 0x00, 0x19, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x14, 0x00, 0x13, 0x00, 0x18, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x04, 0x00, 0x30, 0x00, 0x18, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x2f, 0x00, 0x14, 0x00, 0x18, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x1e, 0x00, 0x2f, 0x00, 0x18, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x26, 0x00, 0x15, 0x00, 0x19, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x35, 0x00, 0x32, 0x00, 0x18, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+    {0x37, 0x00, 0x2f, 0x00, 0x18, 0x51, 0x32, 0x34, 0x39, 0x37, 0x37, 0x30},
+  };
+  bool is_old = false;
+  for (uint8_t i = 0U; i < (sizeof(olds) / sizeof(olds[0])); i++) {
+    is_old |= (memcmp(olds[i], ((uint8_t *)UID_BASE), 12) == 0);
+  }
+  if (is_old) set_gpio_output(GPIOA, 5, enabled);
+  // *** tmp end ***
+
   set_gpio_output(GPIOB, 0, enabled);
 }
 
@@ -102,7 +117,6 @@ static void cuatro_init(void) {
 }
 
 static harness_configuration cuatro_harness_config = {
-  .has_harness = true,
   .GPIO_SBU1 = GPIOC,
   .GPIO_SBU2 = GPIOA,
   .GPIO_relay_SBU1 = GPIOA,
@@ -111,14 +125,13 @@ static harness_configuration cuatro_harness_config = {
   .pin_SBU2 = 1,
   .pin_relay_SBU1 = 9,
   .pin_relay_SBU2 = 3,
-  .adc_channel_SBU1 = 4, // ADC12_INP4
-  .adc_channel_SBU2 = 17 // ADC1_INP17
+  .adc_signal_SBU1 = ADC_CHANNEL_DEFAULT(ADC1, 4),
+  .adc_signal_SBU2 = ADC_CHANNEL_DEFAULT(ADC1, 17)
 };
 
 board board_cuatro = {
   .harness_config = &cuatro_harness_config,
   .has_spi = true,
-  .has_canfd = true,
   .fan_max_rpm = 12500U,
   .fan_max_pwm = 99U, // it can go up to 14k RPM, but 99% -> 100% is very non-linear
   .avdd_mV = 1800U,
@@ -131,7 +144,6 @@ board board_cuatro = {
   .led_pin = {6, 7, 9},
   .led_pwm_channels = {1, 2, 4},
   .set_can_mode = tres_set_can_mode,
-  .check_ignition = red_check_ignition,
   .read_voltage_mV = cuatro_read_voltage_mV,
   .read_current_mA = cuatro_read_current_mA,
   .set_fan_enabled = cuatro_set_fan_enabled,

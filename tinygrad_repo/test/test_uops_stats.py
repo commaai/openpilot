@@ -1,12 +1,12 @@
 import unittest
 from tinygrad import Tensor
 from tinygrad.helpers import getenv, GlobalCounters
-from tinygrad.engine.realize import lower_schedule_item, ProgramSpec
+from tinygrad.engine.realize import lower_schedule_item, ProgramSpec, get_program
 from tinygrad.renderer import Estimates
 from tinygrad.codegen import full_rewrite
 from tinygrad.uop.ops import Ops, UOp
 from tinygrad.dtype import dtypes
-from tinygrad.codegen.kernel import Kernel, Opt, OptOps, KernelOptError
+from tinygrad.opt.kernel import Kernel, Opt, OptOps, KernelOptError
 from tinygrad.device import Device
 
 def flops_mem(uops, ignore_indexing=False):
@@ -173,7 +173,8 @@ class TestStatsOptimized(unittest.TestCase):
     self.assertEqual(p.estimates.mem, 3*N*N*4) # 3 NxN mats with floats
 
   def test_gemm(self):
-    p = Kernel(self.ast_gemm).to_program()
+    k = Kernel(self.ast_gemm)
+    p = get_program(k.get_optimized_ast(), k.opts)
     self.check_gemm(p)
     self.assertEqual(p.estimates.lds, 2*N*N*N*4 + 4*N*N)
 
@@ -181,7 +182,7 @@ class TestStatsOptimized(unittest.TestCase):
     k = Kernel(self.ast_gemm)
     if not k.apply_tensor_cores(): self.skipTest("no tensor cores")
     k.apply_opt(Opt(OptOps.UNROLL, 0, 2))
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     print(p.src)
     self.check_gemm(p)
 
@@ -190,7 +191,7 @@ class TestStatsOptimized(unittest.TestCase):
   def test_gemm_one_upcasted(self):
     k = Kernel(self.ast_gemm)
     k.apply_opt(Opt(OptOps.UPCAST, 0, 4))
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     self.check_gemm(p)
     self.assertEqual(p.estimates.lds, N*N*N*4 + N*N*N*4//4 + 4*N*N)
 
@@ -199,7 +200,7 @@ class TestStatsOptimized(unittest.TestCase):
     k.apply_opt(Opt(OptOps.UPCAST, 0, 4))
     k.apply_opt(Opt(OptOps.UPCAST, 1, 4))
     k.apply_opt(Opt(OptOps.UNROLL, 0, 4))
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     self.check_gemm(p)
     self.assertEqual(p.estimates.lds, 2*N*N*N*4//4 + 4*N*N)
 
@@ -212,7 +213,7 @@ class TestStatsOptimized(unittest.TestCase):
       k.apply_opt(Opt(OptOps.LOCAL, 1, 5))
     except KernelOptError:
       raise unittest.SkipTest("no locals")
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     self.check_gemm(p)
     self.assertEqual(p.estimates.lds, 2*N*N*N*4//4 + 4*N*N)
 
@@ -223,14 +224,14 @@ class TestStatsOptimized(unittest.TestCase):
     except KernelOptError:
       raise unittest.SkipTest("no locals")
     SZ = N*N*4
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     # NOTE: these are sort of wrong. they aren't honoring the IF statement
     self.check_gemm(p, extra_flops=SZ*4)
     self.assertEqual(p.estimates.lds, 2*N*N*N*4 + SZ*4 + (SZ*4 + 4*N*N)*4)
 
   def test_reduce(self):
     k = Kernel(self.ast_reduce)
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     print(p.name, p.estimates.ops, p.estimates.mem, p.estimates.lds)
     self.assertEqual(p.estimates.ops, N*N)
     self.assertEqual(p.estimates.mem, N*N*4 + 4)
@@ -241,7 +242,7 @@ class TestStatsOptimized(unittest.TestCase):
       k.apply_opt(Opt(OptOps.GROUP, 0, 50))
     except KernelOptError:
       raise unittest.SkipTest("no locals")
-    p = k.to_program()
+    p = get_program(k.get_optimized_ast(), k.opts)
     # NOTE: these are wrong, they don't respect the if statement
     print(p.name, p.estimates.ops, p.estimates.mem, p.estimates.lds)
 

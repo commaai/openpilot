@@ -31,6 +31,7 @@ BO_ {base_id+1} {base_name}_B: 8 Radar
  SG_ Index2 : 63|1@1+ (1,0) [0|1] ""  Autopilot
 """
 
+
 def get_val_definition(base_id):
   return f"""
 VAL_ {base_id+1} MovingState 3 "RADAR_MOVESTATE_STANDING" 2 "RADAR_MOVESTATE_STOPPED" 1 "RADAR_MOVESTATE_MOVING" 0 "RADAR_MOVESTATE_INDETERMINATE" ;

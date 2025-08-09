@@ -3,7 +3,7 @@ import numpy as np
 from dataclasses import dataclass
 
 from cereal import messaging, car
-from opendbc.car.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog

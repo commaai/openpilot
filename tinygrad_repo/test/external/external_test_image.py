@@ -8,7 +8,6 @@ os.environ['GPU'] = '1'
 os.environ['OPT'] = '2'
 from tinygrad.tensor import Tensor
 from tinygrad.nn import Conv2d
-Tensor.no_grad = True
 
 class TestImage(unittest.TestCase):
   def test_create_image(self):

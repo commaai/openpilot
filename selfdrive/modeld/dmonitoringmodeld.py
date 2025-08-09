@@ -1,20 +1,15 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
+os.environ['DEV'] = 'QCOM' if TICI else 'LLVM'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
-if TICI:
-  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-  os.environ['QCOM'] = '1'
-else:
-  os.environ['LLVM'] = '1'
 import math
 import time
 import pickle
 import ctypes
 import numpy as np
 from pathlib import Path
-from setproctitle import setproctitle
 
 from cereal import messaging
 from cereal.messaging import PubMaster, SubMaster
@@ -25,7 +20,7 @@ from openpilot.common.transformations.model import dmonitoringmodel_intrinsics, 
 from openpilot.common.transformations.camera import _ar_ox_fisheye, _os_fisheye
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import CLContext, MonitoringModelFrame
 from openpilot.selfdrive.modeld.parse_model_outputs import sigmoid
-from openpilot.system import sentry
+from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 MODEL_WIDTH, MODEL_HEIGHT = DM_INPUT_SIZE
 CALIB_LEN = 3
@@ -95,7 +90,7 @@ class ModelState:
       self.tensor_inputs['input_img'] = Tensor(self.frame.buffer_from_cl(input_img_cl).reshape((1, MODEL_WIDTH*MODEL_HEIGHT)), dtype=dtypes.uint8).realize()
 
 
-    output = self.model_run(**self.tensor_inputs).numpy().flatten()
+    output = self.model_run(**self.tensor_inputs).contiguous().realize().uop.base.buffer.numpy()
 
     t2 = time.perf_counter()
     return output, t2 - t1
@@ -133,11 +128,7 @@ def get_driverstate_packet(model_output: np.ndarray, frame_id: int, location_ts:
 
 
 def main():
-  setproctitle(PROCESS_NAME)
   config_realtime_process(7, 5)
-
-  sentry.set_tag("daemon", PROCESS_NAME)
-  cloudlog.bind(daemon=PROCESS_NAME)
 
   cl_context = CLContext()
   model = ModelState(cl_context)
@@ -180,7 +171,4 @@ if __name__ == "__main__":
   try:
     main()
   except KeyboardInterrupt:
-    cloudlog.warning(f"child {PROCESS_NAME} got SIGINT")
-  except Exception:
-    sentry.capture_exception()
-    raise
+    cloudlog.warning("got SIGINT")

@@ -149,7 +149,7 @@ def ui_thread(addr):
     plot_arr[-1, name_to_arr_idx['angle_steers']] = sm['carState'].steeringAngleDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_des']] = sm['carControl'].actuators.steeringAngleDeg
     plot_arr[-1, name_to_arr_idx['angle_steers_k']] = angle_steers_k
-    plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gas
+    plot_arr[-1, name_to_arr_idx['gas']] = sm['carState'].gasDEPRECATED
     # TODO gas is deprecated
     plot_arr[-1, name_to_arr_idx['computer_gas']] = np.clip(sm['carControl'].actuators.accel/4.0, 0.0, 1.0)
     plot_arr[-1, name_to_arr_idx['user_brake']] = sm['carState'].brake

@@ -26,7 +26,7 @@ extra/sqtt/rgptool.py create "/tmp/profile.pkl.$USER" -o /tmp/gpu0.rgp
 
 Then load gpu0.rgp into Radeon GPU Profiler. It works just fine both in wine (macos, native version available for linux) and via ssh X forwarding
 
-If multiplle gpus are used you can select which one to export with `-d` like this:
+If multiple gpus are used you can select which one to export with `-d` like this:
 
 ```bash
 extra/sqtt/rgptool.py create "/tmp/profile.pkl.$USER" -d 'AMD:5' -o /tmp/gpu5.rgp

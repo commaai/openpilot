@@ -153,7 +153,7 @@ void HeaderView::paintSection(QPainter *painter, const QRect &rect, int logicalI
     painter->fillRect(rect, bg_role.value<QBrush>());
   }
   QString text = model()->headerData(logicalIndex, Qt::Horizontal, Qt::DisplayRole).toString();
-  painter->setPen(palette().color(settings.theme == DARK_THEME ? QPalette::BrightText : QPalette::Text));
+  painter->setPen(palette().color(utils::isDarkTheme() ? QPalette::BrightText : QPalette::Text));
   painter->drawText(rect.adjusted(5, 3, -5, -3), defaultAlignment(), text.replace(QChar('_'), ' '));
 }
 

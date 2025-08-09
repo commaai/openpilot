@@ -63,7 +63,7 @@ BO_ 829 LKAS_HUD: 5 ADAS
  SG_ LDW_ON : 28|1@0+ (1,0) [0|1] "" BDY
  SG_ LDW_OFF : 27|1@0+ (1,0) [0|1] "" BDY
  SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
- SG_ SET_ME_X48 : 31|8@0+ (1,0) [0|255] "" BDY
+ SG_ SET_ME_X1 : 30|1@0+ (1,0) [0|1] "" BDY
  SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
 

@@ -30,7 +30,7 @@ Options:
       --qcam         Load qcamera
       --no-hw-decoder Disable HW video decoding
       --no-vipc      Do not output video
-      --all          Output all messages including uiDebug, userFlag
+      --all          Output all messages including uiDebug, userBookmark
   -h, --help         Show this help message
 )";
 

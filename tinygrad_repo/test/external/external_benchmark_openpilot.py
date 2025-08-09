@@ -1,25 +1,21 @@
 import time, sys, hashlib
 from pathlib import Path
-import onnx
-from onnx.helper import tensor_dtype_to_np_dtype
 from tinygrad.frontend.onnx import OnnxRunner
 from tinygrad import Tensor, dtypes, TinyJit
 from tinygrad.helpers import IMAGE, GlobalCounters, fetch, colored, getenv, trange
-from tinygrad.tensor import _from_np_dtype
 import numpy as np
 from extra.bench_log import BenchEvent, WallTimeEvent
 
 OPENPILOT_MODEL = sys.argv[1] if len(sys.argv) > 1 else "https://github.com/commaai/openpilot/raw/v0.9.4/selfdrive/modeld/models/supercombo.onnx"
 
 if __name__ == "__main__":
-  onnx_model = onnx.load(onnx_path := fetch(OPENPILOT_MODEL))
-  run_onnx = OnnxRunner(onnx_model)
+  run_onnx = OnnxRunner(fetch(OPENPILOT_MODEL))
 
   Tensor.manual_seed(100)
-  input_shapes = {inp.name:tuple(x.dim_value for x in inp.type.tensor_type.shape.dim) for inp in onnx_model.graph.input}
-  input_types = {inp.name: tensor_dtype_to_np_dtype(inp.type.tensor_type.elem_type) for inp in onnx_model.graph.input}
-  new_inputs = {k:Tensor.randn(*shp, dtype=_from_np_dtype(input_types[k])).mul(8).realize() for k,shp in input_shapes.items()}
-  new_inputs_junk = {k:Tensor.randn(*shp, dtype=_from_np_dtype(input_types[k])).mul(8).realize() for k,shp in input_shapes.items()}
+  input_shapes = {name: spec.shape for name, spec in run_onnx.graph_inputs.items()}
+  input_types = {name: spec.dtype for name, spec in run_onnx.graph_inputs.items()}
+  new_inputs = {k:Tensor.randn(*shp, dtype=input_types[k]).mul(8).realize() for k,shp in input_shapes.items()}
+  new_inputs_junk = {k:Tensor.randn(*shp, dtype=input_types[k]).mul(8).realize() for k,shp in input_shapes.items()}
   new_inputs_junk_numpy = {k:v.numpy() for k,v in new_inputs_junk.items()}
 
   # benchmark

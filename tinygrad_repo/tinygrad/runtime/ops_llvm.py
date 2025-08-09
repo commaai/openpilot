@@ -1,5 +1,7 @@
-import functools, ctypes, platform
-from tinygrad.device import Compiled, Compiler, MallocAllocator, CPUProgram
+import ctypes, platform, functools, queue
+from tinygrad.device import Compiler
+from tinygrad.runtime.support.hcq import HCQCompiled, HCQSignal
+from tinygrad.runtime.ops_cpu import CPUAllocator, CPUProgram, CPUComputeQueue, CPUWorker
 from tinygrad.helpers import OSX, getenv, capstone_flatdump, DEBUG
 from tinygrad.renderer.llvmir import LLVMRenderer
 import tinygrad.runtime.autogen.llvm as llvm
@@ -69,7 +71,8 @@ class HostLLVMCompiler(LLVMCompiler):
     cpu, feats = ctypes.string_at(llvm.LLVMGetHostCPUName()), (b'+reserve-x18,' if OSX else b'') + ctypes.string_at(llvm.LLVMGetHostCPUFeatures())
     super().__init__(cpu.decode(), feats.decode())
 
-class LLVMDevice(Compiled):
-  def __init__(self, device:str):
-    from tinygrad.runtime.graph.cpu import LLVMGraph
-    super().__init__(device, MallocAllocator, LLVMRenderer(), HostLLVMCompiler(), CPUProgram, functools.partial(LLVMGraph, self))
+class LLVMDevice(HCQCompiled):
+  def __init__(self, device:str=""):
+    self.tasks:queue.Queue = queue.Queue()
+    CPUWorker(self).start()
+    super().__init__(device, CPUAllocator(self), LLVMRenderer(), HostLLVMCompiler(), functools.partial(CPUProgram, self), HCQSignal, CPUComputeQueue)

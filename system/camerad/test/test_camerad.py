@@ -84,7 +84,10 @@ class TestCamerad:
 
       # logMonoTime > SOF
       assert np.all((ts[c]['t'] - ts[c]['timestampSof']/1e9) > 1e-7)
-      assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 1e-7)
+
+      # logMonoTime > EOF, needs some tolerance since EOF is (SOF + readout time) but there is noise in the SOF timestamping (done via IRQ)
+      assert np.mean((ts[c]['t'] - ts[c]['timestampEof']/1e9) > 1e-7) > 0.7  # should be mostly logMonoTime > EOF
+      assert np.all((ts[c]['t'] - ts[c]['timestampEof']/1e9) > -0.10)        # when EOF > logMonoTime, it should never be more than two frames
 
   def test_stress_test(self):
     os.environ['SPECTRA_ERROR_PROB'] = '0.008'

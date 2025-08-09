@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from tinygrad import Tensor, Device, TinyJit
 from tinygrad.uop.ops import Ops
-from tinygrad.helpers import GlobalCounters, CI, Context, OSX
+from tinygrad.helpers import GlobalCounters, CI, Context
 from tinygrad.nn import Conv1d, ConvTranspose1d, Conv2d, ConvTranspose2d, Linear, Embedding
 from tinygrad.nn import BatchNorm, LayerNorm, LayerNorm2d, GroupNorm, InstanceNorm, RMSNorm, LSTMCell
 from tinygrad.nn.state import load_state_dict
@@ -13,29 +13,6 @@ from test.helpers import not_support_multi_device
 
 @unittest.skipIf(CI and Device.DEFAULT in {"CUDA", "NV"}, "slow")
 class TestNN(unittest.TestCase):
-  def test_sparse_cat_cross_entropy(self):
-    # create in tinygrad
-    input_tensor = Tensor.randn(6, 5) # not square to test that mean scaling uses the correct dimension
-    target = Tensor([0, 0, 0, 1, 2, 3])  # torch doesn't support target=-1
-    torch_input = torch.tensor(input_tensor.numpy())
-    torch_target = torch.tensor(target.numpy(), dtype=torch.long)
-
-    for smoothing in [0.0, 0.1, 0.5, 1.0]:
-      for ignore_index in [-1, 0, 2]:
-        for reduction in ["none", "sum", "mean"]:
-          loss = input_tensor.sparse_categorical_crossentropy(target, label_smoothing=smoothing, ignore_index=ignore_index, reduction=reduction)
-          torch_loss = torch.nn.CrossEntropyLoss(reduction=reduction, label_smoothing=smoothing, ignore_index=ignore_index)(torch_input, torch_target)
-          np.testing.assert_allclose(loss.numpy(), torch_loss.detach().numpy(), atol=1e-5, rtol=1e-6)
-
-          # also test with a batch dimension (of size 1)
-          loss = input_tensor.unsqueeze(0).sparse_categorical_crossentropy(
-            target.unsqueeze(0), label_smoothing=smoothing, ignore_index=ignore_index, reduction=reduction
-          )
-          torch_loss = torch.nn.CrossEntropyLoss(reduction=reduction, label_smoothing=smoothing, ignore_index=ignore_index)(
-            torch_input.unsqueeze(0).permute(0,2,1), torch_target.unsqueeze(0)
-          )
-          np.testing.assert_allclose(loss.numpy(), torch_loss.detach().numpy(), atol=1e-5, rtol=1e-6)
-
   def test_batchnorm2d(self, training=False, threed=False, track_running_stats=True):
     with Tensor.train(training):
       szs = [4, 8, 16, 32]
@@ -307,7 +284,6 @@ class TestNN(unittest.TestCase):
     torch_z = torch_layer(torch_x)
     np.testing.assert_allclose(z.numpy(), torch_z.detach().numpy(), atol=5e-4, rtol=1e-5)
 
-  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_groupnorm(self):
     BS, H, W, C, G = 20, 10, 10, 6, 3
 
@@ -334,7 +310,6 @@ class TestNN(unittest.TestCase):
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
 
-  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_layernorm(self):
     N, C, H, W = 20, 5, 10, 10
 
@@ -361,7 +336,6 @@ class TestNN(unittest.TestCase):
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
 
-  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_layernorm_2d(self):
     N, C, H, W = 20, 5, 10, 10
 
@@ -388,7 +362,6 @@ class TestNN(unittest.TestCase):
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=5e-4, rtol=5e-4)
 
-  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_instancenorm_2d(self):
     N, C, H, W = 20, 10, 10, 10
 
@@ -415,7 +388,6 @@ class TestNN(unittest.TestCase):
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
 
-  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_instancenorm_3d(self):
     N, C, D, H, W = 20, 10, 10, 10, 10
 
@@ -442,7 +414,6 @@ class TestNN(unittest.TestCase):
       np.testing.assert_allclose(layer.weight.grad.numpy(), torch_layer.weight.grad.detach().numpy(), atol=2e-3, rtol=1e-3)
       np.testing.assert_allclose(layer.bias.grad.numpy(), torch_layer.bias.grad.detach().numpy(), atol=1e-3, rtol=1e-3)
 
-  @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
   def test_rmsnorm(self):
     class TorchRMSNorm(torch.nn.Module):
       # https://github.com/meta-llama/llama/blob/be327c427cc5e89cc1d3ab3d3fec4484df771245/llama/model.py#L34C1-L77C36
@@ -596,9 +567,9 @@ class TestNN(unittest.TestCase):
 
     # sharded model shards the state_dict
     self.assertEqual(layer.weight.device, devices)
-    self.assertEqual(layer.weight.lazydata.axis, 3)
+    self.assertEqual(layer.weight.uop.axis, 3)
     self.assertEqual(layer.bias.device, devices)
-    self.assertEqual(layer.bias.lazydata.axis, None)
+    self.assertEqual(layer.bias.uop.axis, None)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())
 
@@ -634,9 +605,9 @@ class TestNN(unittest.TestCase):
     load_state_dict(layer, state_dict)
 
     self.assertEqual(layer.weight.device, devices)
-    self.assertEqual(layer.weight.lazydata.axis, 3)
+    self.assertEqual(layer.weight.uop.axis, 3)
     self.assertEqual(layer.bias.device, devices)
-    self.assertEqual(layer.bias.lazydata.axis, None)
+    self.assertEqual(layer.bias.uop.axis, None)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())
 
@@ -658,9 +629,9 @@ class TestNN(unittest.TestCase):
 
     # NOTE: model and state_dict shard differently, use the state_dict sharding  # TODO: revisit this?
     self.assertEqual(layer.weight.device, devices)
-    self.assertEqual(layer.weight.lazydata.axis, None)
+    self.assertEqual(layer.weight.uop.axis, None)
     self.assertEqual(layer.bias.device, devices5)
-    self.assertEqual(layer.bias.lazydata.axis, 0)
+    self.assertEqual(layer.bias.uop.axis, 0)
     np.testing.assert_allclose(layer.weight.numpy(), state_dict['weight'].numpy())
     np.testing.assert_allclose(layer.bias.numpy(), state_dict['bias'].numpy())
 

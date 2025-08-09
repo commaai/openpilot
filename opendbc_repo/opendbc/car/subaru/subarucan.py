@@ -25,6 +25,7 @@ def create_steering_control_angle(packer, apply_torque, steer_req):
 def create_steering_status(packer):
   return packer.make_can_msg("ES_LKAS_State", 0, {})
 
+
 def create_es_distance(packer, frame, es_distance_msg, bus, pcm_cancel_cmd, long_enabled = False, brake_cmd = False, cruise_throttle = 0):
   values = {s: es_distance_msg[s] for s in [
     "CHECKSUM",
@@ -129,6 +130,7 @@ def create_es_lkas_state(packer, frame, es_lkas_state_msg, enabled, visual_alert
 
   return packer.make_can_msg("ES_LKAS_State", CanBus.main, values)
 
+
 def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, long_active, lead_visible):
   values = {s: dashstatus_msg[s] for s in [
     "CHECKSUM",
@@ -177,6 +179,7 @@ def create_es_dashstatus(packer, frame, dashstatus_msg, enabled, long_enabled, l
 
   return packer.make_can_msg("ES_DashStatus", CanBus.main, values)
 
+
 def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brake_value):
   values = {s: es_brake_msg[s] for s in [
     "CHECKSUM",
@@ -202,6 +205,7 @@ def create_es_brake(packer, frame, es_brake_msg, long_enabled, long_active, brak
     values["Cruise_Brake_Lights"] = brake_value >= 70
 
   return packer.make_can_msg("ES_Brake", CanBus.main, values)
+
 
 def create_es_status(packer, frame, es_status_msg, long_enabled, long_active, cruise_rpm):
   values = {s: es_status_msg[s] for s in [
@@ -319,3 +323,14 @@ def create_preglobal_es_distance(packer, cruise_button, es_distance_msg):
   values["Checksum"] = subaru_preglobal_checksum(packer, values, "ES_Distance")
 
   return packer.make_can_msg("ES_Distance", CanBus.main, values)
+
+
+def subaru_checksum(address: int, sig, d: bytearray) -> int:
+  s = 0
+  addr = address
+  while addr:
+    s += addr & 0xFF
+    addr >>= 8
+  for i in range(1, len(d)):
+    s += d[i]
+  return s & 0xFF

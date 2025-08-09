@@ -1,25 +1,25 @@
 [
   {
     "name": "xbl",
-    "url": "https://commadist.azureedge.net/agnosupdate/xbl-6710967ca9701f205d7ab19c3a9b0dd2f547e65b3d96048b7c2b03755aafa0f1.img.xz",
-    "hash": "6710967ca9701f205d7ab19c3a9b0dd2f547e65b3d96048b7c2b03755aafa0f1",
-    "hash_raw": "6710967ca9701f205d7ab19c3a9b0dd2f547e65b3d96048b7c2b03755aafa0f1",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl-effa23294138e2297b85a5b482a885184c437b5ab25d74f2a62d4fce4e68f63b.img.xz",
+    "hash": "effa23294138e2297b85a5b482a885184c437b5ab25d74f2a62d4fce4e68f63b",
+    "hash_raw": "effa23294138e2297b85a5b482a885184c437b5ab25d74f2a62d4fce4e68f63b",
     "size": 3282256,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "003a17ab1be68a696f7efe4c9938e8be511d4aacfc2f3211fc896bdc1681d089"
+    "ondevice_hash": "ed61a650bea0c56652dd0fc68465d8fc722a4e6489dc8f257630c42c6adcdc89"
   },
   {
     "name": "xbl_config",
-    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-63922cfbfdf4ab87986c4ba8f3a4df5bf28414b3f71a29ec5947336722215535.img.xz",
-    "hash": "63922cfbfdf4ab87986c4ba8f3a4df5bf28414b3f71a29ec5947336722215535",
-    "hash_raw": "63922cfbfdf4ab87986c4ba8f3a4df5bf28414b3f71a29ec5947336722215535",
+    "url": "https://commadist.azureedge.net/agnosupdate/xbl_config-63d019efed684601f145ef37628e62c8da73f5053a8e51d7de09e72b8b11f97c.img.xz",
+    "hash": "63d019efed684601f145ef37628e62c8da73f5053a8e51d7de09e72b8b11f97c",
+    "hash_raw": "63d019efed684601f145ef37628e62c8da73f5053a8e51d7de09e72b8b11f97c",
     "size": 98124,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "2a855dd636cc94718b64bea83a44d0a31741ecaa8f72a63613ff348ec7404091"
+    "ondevice_hash": "b12801ffaa81e58e3cef914488d3b447e35483ba549b28c6cd9deb4814c3265f"
   },
   {
     "name": "abl",
@@ -56,28 +56,28 @@
   },
   {
     "name": "boot",
-    "url": "https://commadist.azureedge.net/agnosupdate/boot-4de8f892dbac3fa3fee1efe68ca76e23e75812e81a6577d00d52e2da1ef624ef.img.xz",
-    "hash": "4de8f892dbac3fa3fee1efe68ca76e23e75812e81a6577d00d52e2da1ef624ef",
-    "hash_raw": "4de8f892dbac3fa3fee1efe68ca76e23e75812e81a6577d00d52e2da1ef624ef",
-    "size": 18479104,
+    "url": "https://commadist.azureedge.net/agnosupdate/boot-0191529aa97d90d1fa04b472d80230b777606459e1e1e9e2323c9519839827b4.img.xz",
+    "hash": "0191529aa97d90d1fa04b472d80230b777606459e1e1e9e2323c9519839827b4",
+    "hash_raw": "0191529aa97d90d1fa04b472d80230b777606459e1e1e9e2323c9519839827b4",
+    "size": 18515968,
     "sparse": false,
     "full_check": true,
     "has_ab": true,
-    "ondevice_hash": "8d7094d774faa4e801e36b403a31b53b913b31d086f4dc682d2f64710c557e8a"
+    "ondevice_hash": "492ae27f569e8db457c79d0e358a7a6297d1a1c685c2b1ae6deba7315d3a6cb0"
   },
   {
     "name": "system",
-    "url": "https://commadist.azureedge.net/agnosupdate/system-4bc3951f4aa3f70c53837dc2542d8b0666d37103b353fd81417cc7de1bbebe39.img.xz",
-    "hash": "cccd7073d067027396f2afd49874729757db0bbbc79853a0bf2938bd356fe164",
-    "hash_raw": "4bc3951f4aa3f70c53837dc2542d8b0666d37103b353fd81417cc7de1bbebe39",
+    "url": "https://commadist.azureedge.net/agnosupdate/system-18100d9065bb44a315262041b9fb6bfd9e59179981876e442200cc1284d43643.img.xz",
+    "hash": "49faee0e9b084abf0ea46f87722e3366bbd0435fb6b25cce189295c1ff368da1",
+    "hash_raw": "18100d9065bb44a315262041b9fb6bfd9e59179981876e442200cc1284d43643",
     "size": 5368709120,
     "sparse": true,
     "full_check": false,
     "has_ab": true,
-    "ondevice_hash": "c7707f16ce7d977748677cc354e250943b4ff6c21b9a19a492053d32397cf9ec",
+    "ondevice_hash": "db07761be0130e35a9d3ea6bec8df231260d3e767ae770850f18f10e14d0ab3f",
     "alt": {
-      "hash": "4bc3951f4aa3f70c53837dc2542d8b0666d37103b353fd81417cc7de1bbebe39",
-      "url": "https://commadist.azureedge.net/agnosupdate/system-4bc3951f4aa3f70c53837dc2542d8b0666d37103b353fd81417cc7de1bbebe39.img",
+      "hash": "18100d9065bb44a315262041b9fb6bfd9e59179981876e442200cc1284d43643",
+      "url": "https://commadist.azureedge.net/agnosupdate/system-18100d9065bb44a315262041b9fb6bfd9e59179981876e442200cc1284d43643.img",
       "size": 5368709120
     }
   }

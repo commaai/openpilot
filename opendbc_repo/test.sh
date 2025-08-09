@@ -7,7 +7,7 @@ cd $DIR
 source ./setup.sh
 
 # *** build ***
-scons -j8 "$@"
+scons -j8
 
 # *** lint + test ***
 lefthook run test

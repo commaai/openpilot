@@ -45,11 +45,6 @@ class CanBus(CanBusBase):
     return self.offset
 
 
-def get_cruise_speed_conversion(car_fingerprint: str, is_metric: bool) -> float:
-  # on certain cars, CRUISE_SPEED changes to imperial with car's unit setting
-  return CV.MPH_TO_MS if car_fingerprint in (HONDA_BOSCH_RADARLESS | HONDA_BOSCH_CANFD) and not is_metric else CV.KPH_TO_MS
-
-
 def create_brake_command(packer, CAN, apply_brake, pump_on, pcm_override, pcm_cancel_cmd, fcw, car_fingerprint, stock_brake):
   # TODO: do we loose pressure if we keep pump off for long?
   brakelights = apply_brake > 0
@@ -184,7 +179,8 @@ def create_ui_commands(packer, CAN, CP, enabled, pcm_speed, hud, is_metric, acc_
       lkas_hud_values['LKAS_PROBLEM'] = lkas_hud['LKAS_PROBLEM']
 
   if not (CP.flags & HondaFlags.BOSCH_EXT_HUD):
-    lkas_hud_values['SET_ME_X48'] = 0x48
+    lkas_hud_values['LDW_OFF'] = 1
+    lkas_hud_values['SET_ME_X1'] = 1
 
   if CP.flags & HondaFlags.BOSCH_EXT_HUD and not CP.openpilotLongitudinalControl:
     commands.append(packer.make_can_msg('LKAS_HUD_A', CAN.lkas, lkas_hud_values))
@@ -213,3 +209,21 @@ def spam_buttons_command(packer, CAN, button_val, car_fingerprint):
   # send buttons to camera on radarless (camera does ACC) cars
   bus = CAN.camera if car_fingerprint in HONDA_BOSCH_RADARLESS else CAN.pt
   return packer.make_can_msg("SCM_BUTTONS", bus, values)
+
+
+def honda_checksum(address: int, sig, d: bytearray) -> int:
+  s = 0
+  extended = address > 0x7FF
+  addr = address
+  while addr:
+    s += addr & 0xF
+    addr >>= 4
+  for i in range(len(d)):
+    x = d[i]
+    if i == len(d) - 1:
+      x >>= 4
+    s += (x & 0xF) + (x >> 4)
+  s = 8 - s
+  if extended:
+    s += 3
+  return s & 0xF

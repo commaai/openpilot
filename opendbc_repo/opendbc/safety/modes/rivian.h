@@ -2,37 +2,32 @@
 
 #include "opendbc/safety/safety_declarations.h"
 
-static uint8_t rivian_get_counter(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-
+static uint8_t rivian_get_counter(const CANPacket_t *msg) {
   uint8_t cnt = 0;
-  if ((addr == 0x208) || (addr == 0x150)) {
+  if ((msg->addr == 0x208U) || (msg->addr == 0x150U)) {
     // Signal: ESP_Status_Counter, VDM_PropStatus_Counter
-    cnt = GET_BYTE(to_push, 1) & 0xFU;
-  } else {
+    cnt = msg->data[1] & 0xFU;
   }
   return cnt;
 }
 
-static uint32_t rivian_get_checksum(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-
+static uint32_t rivian_get_checksum(const CANPacket_t *msg) {
   uint8_t chksum = 0;
-  if ((addr == 0x208) || (addr == 0x150)) {
+  if ((msg->addr == 0x208U) || (msg->addr == 0x150U)) {
     // Signal: ESP_Status_Checksum, VDM_PropStatus_Checksum
-    chksum = GET_BYTE(to_push, 0);
+    chksum = msg->data[0];
   } else {
   }
   return chksum;
 }
 
-static uint8_t _rivian_compute_checksum(const CANPacket_t *to_push, uint8_t poly, uint8_t xor_output) {
-  int len = GET_LEN(to_push);
+static uint8_t _rivian_compute_checksum(const CANPacket_t *msg, uint8_t poly, uint8_t xor_output) {
+  int len = GET_LEN(msg);
 
   uint8_t crc = 0;
   // Skip the checksum byte
   for (int i = 1; i < len; i++) {
-    crc ^= GET_BYTE(to_push, i);
+    crc ^= msg->data[i];
     for (int j = 0; j < 8; j++) {
       if ((crc & 0x80U) != 0U) {
         crc = (crc << 1) ^ poly;
@@ -44,75 +39,69 @@ static uint8_t _rivian_compute_checksum(const CANPacket_t *to_push, uint8_t poly
   return crc ^ xor_output;
 }
 
-static uint32_t rivian_compute_checksum(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-
+static uint32_t rivian_compute_checksum(const CANPacket_t *msg) {
   uint8_t chksum = 0;
-  if (addr == 0x208) {
-    chksum = _rivian_compute_checksum(to_push, 0x1D, 0xB1);
-  } else if (addr == 0x150) {
-    chksum = _rivian_compute_checksum(to_push, 0x1D, 0x9A);
+  if (msg->addr == 0x208U) {
+    chksum = _rivian_compute_checksum(msg, 0x1D, 0xB1);
+  } else if (msg->addr == 0x150U) {
+    chksum = _rivian_compute_checksum(msg, 0x1D, 0x9A);
   } else {
   }
   return chksum;
 }
 
-static bool rivian_get_quality_flag_valid(const CANPacket_t *to_push) {
-  int addr = GET_ADDR(to_push);
-
+static bool rivian_get_quality_flag_valid(const CANPacket_t *msg) {
   bool valid = false;
-  if (addr == 0x208) {
-    valid = ((GET_BYTE(to_push, 3) >> 3) & 0x3U) == 0x1U;  // ESP_Vehicle_Speed_Q
-  } else if (addr == 0x150) {
-    valid = (GET_BYTE(to_push, 1) >> 6) == 0x1U;  // VDM_VehicleSpeedQ
+  if (msg->addr == 0x208U) {
+    valid = ((msg->data[3] >> 3) & 0x3U) == 0x1U;  // ESP_Vehicle_Speed_Q
+  } else if (msg->addr == 0x150U) {
+    valid = (msg->data[1] >> 6) == 0x1U;  // VDM_VehicleSpeedQ
   } else {
   }
   return valid;
 }
 
-static void rivian_rx_hook(const CANPacket_t *to_push) {
-  int bus = GET_BUS(to_push);
-  int addr = GET_ADDR(to_push);
+static void rivian_rx_hook(const CANPacket_t *msg) {
 
-  if (bus == 0)  {
+  if (msg->bus == 0U)  {
     // Vehicle speed
-    if (addr == 0x208) {
-      float speed = ((GET_BYTE(to_push, 6) << 8) | GET_BYTE(to_push, 7)) * 0.01;
+    if (msg->addr == 0x208U) {
+      float speed = ((msg->data[6] << 8) | msg->data[7]) * 0.01;
       vehicle_moving = speed > 0.0;
       UPDATE_VEHICLE_SPEED(speed * KPH_TO_MS);
     }
 
     // Gas pressed and second speed source for variable torque limit
-    if (addr == 0x150) {
-      gas_pressed = GET_BYTE(to_push, 3) | (GET_BYTE(to_push, 4) & 0xC0U);
+    if (msg->addr == 0x150U) {
+      gas_pressed = msg->data[3] | (msg->data[4] & 0xC0U);
 
       // Disable controls if speeds from VDM and ESP ECUs are too far apart.
-      float vdm_speed = ((GET_BYTE(to_push, 5) << 8) | GET_BYTE(to_push, 6)) * 0.01 * KPH_TO_MS;
+      float vdm_speed = ((msg->data[5] << 8) | msg->data[6]) * 0.01 * KPH_TO_MS;
       speed_mismatch_check(vdm_speed);
     }
 
     // Driver torque
-    if (addr == 0x380) {
-      int torque_driver_new = (((GET_BYTE(to_push, 2) << 4) | (GET_BYTE(to_push, 3) >> 4))) - 2050U;
+    if (msg->addr == 0x380U) {
+      int torque_driver_new = (((msg->data[2] << 4) | (msg->data[3] >> 4))) - 2050U;
       update_sample(&torque_driver, torque_driver_new);
     }
 
     // Brake pressed
-    if (addr == 0x38f) {
-      brake_pressed = GET_BIT(to_push, 23U);
+    if (msg->addr == 0x38fU) {
+      brake_pressed = (msg->data[2] >> 7) & 1U;
     }
   }
 
-  if (bus == 2) {
+  if (msg->bus == 2U) {
     // Cruise state
-    if (addr == 0x100) {
-      const int feature_status = GET_BYTE(to_push, 2) >> 5U;
+    if (msg->addr == 0x100U) {
+      const int feature_status = msg->data[2] >> 5U;
       pcm_cruise_check(feature_status == 1);
     }
   }
 }
 
-static bool rivian_tx_hook(const CANPacket_t *to_send) {
+static bool rivian_tx_hook(const CANPacket_t *msg) {
   // Rivian utilizes more torque at low speed to maintain the same lateral accel
   const TorqueSteeringLimits RIVIAN_STEERING_LIMITS = {
     .max_torque = 350,
@@ -136,15 +125,12 @@ static bool rivian_tx_hook(const CANPacket_t *to_send) {
   };
 
   bool tx = true;
-  int bus = GET_BUS(to_send);
 
-  if (bus == 0) {
-    int addr = GET_ADDR(to_send);
-
+  if (msg->bus == 0U) {
     // Steering control
-    if (addr == 0x120) {
-      int desired_torque = ((GET_BYTE(to_send, 2) << 3U) | (GET_BYTE(to_send, 3) >> 5U)) - 1024U;
-      bool steer_req = GET_BIT(to_send, 28U);
+    if (msg->addr == 0x120U) {
+      int desired_torque = ((msg->data[2] << 3U) | (msg->data[3] >> 5U)) - 1024U;
+      bool steer_req = (msg->data[3] >> 4) & 1U;
 
       if (steer_torque_cmd_checks(desired_torque, steer_req, RIVIAN_STEERING_LIMITS)) {
         tx = false;
@@ -152,8 +138,8 @@ static bool rivian_tx_hook(const CANPacket_t *to_send) {
     }
 
     // Longitudinal control
-    if (addr == 0x160) {
-      int raw_accel = ((GET_BYTE(to_send, 2) << 3) | (GET_BYTE(to_send, 3) >> 5)) - 1024U;
+    if (msg->addr == 0x160U) {
+      int raw_accel = ((msg->data[2] << 3) | (msg->data[3] >> 5)) - 1024U;
       if (longitudinal_accel_checks(raw_accel, RIVIAN_LONG_LIMITS)) {
         tx = false;
       }
@@ -172,11 +158,11 @@ static safety_config rivian_init(uint16_t param) {
   static const CanMsg RIVIAN_LONG_TX_MSGS[] = {{0x120, 0, 8, .check_relay = true}, {0x321, 2, 7, .check_relay = true}, {0x160, 0, 5, .check_relay = true}};
 
   static RxCheck rivian_rx_checks[] = {
-    {.msg = {{0x208, 0, 8, .frequency = 50U, .max_counter = 14U}, { 0 }, { 0 }}},                                                             // ESP_Status (speed)
-    {.msg = {{0x150, 0, 7, .frequency = 50U, .max_counter = 14U}, { 0 }, { 0 }}},                                                             // VDM_PropStatus (gas pedal & 2nd speed)
-    {.msg = {{0x380, 0, 5, .frequency = 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // EPAS_SystemStatus (driver torque)
-    {.msg = {{0x38f, 0, 6, .frequency = 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},   // iBESP2 (brakes)
-    {.msg = {{0x100, 2, 8, .frequency = 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // ACM_Status (cruise state)
+    {.msg = {{0x208, 0, 8, 50U, .max_counter = 14U}, { 0 }, { 0 }}},                                                             // ESP_Status (speed)
+    {.msg = {{0x150, 0, 7, 50U, .max_counter = 14U}, { 0 }, { 0 }}},                                                             // VDM_PropStatus (gas pedal & 2nd speed)
+    {.msg = {{0x380, 0, 5, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // EPAS_SystemStatus (driver torque)
+    {.msg = {{0x38f, 0, 6, 50U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},   // iBESP2 (brakes)
+    {.msg = {{0x100, 2, 8, 100U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},  // ACM_Status (cruise state)
   };
 
   bool rivian_longitudinal = false;

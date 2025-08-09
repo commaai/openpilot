@@ -14,7 +14,8 @@ def get_comma_car_segments_database():
 
   ret = {}
   for platform in database:
-    ret[MIGRATION.get(platform, platform)] = database[platform]
+    # TODO: remove this when commaCarSegments is updated to remove selector
+    ret[MIGRATION.get(platform, platform)] = [s.rstrip('/s') for s in database[platform]]
 
   return ret
 
@@ -86,5 +87,5 @@ def get_repo_url(path):
     return get_repo_raw_url(path)
 
 
-def get_url(route, segment, file="rlog.bz2"):
+def get_url(route, segment, file="rlog.zst"):
   return get_repo_url(f"segments/{route.replace('|', '/')}/{segment}/{file}")

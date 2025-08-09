@@ -1,4 +1,4 @@
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import CarStateBase
 from opendbc.car.body.values import DBC
@@ -32,9 +32,4 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers(CP):
-    messages = [
-      ("MOTORS_DATA", 100),
-      ("VAR_VALUES", 10),
-      ("BODY_DATA", 1),
-    ]
-    return {Bus.main: CANParser(DBC[CP.carFingerprint][Bus.main], messages, 0)}
+    return {Bus.main: CANParser(DBC[CP.carFingerprint][Bus.main], [], 0)}

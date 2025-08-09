@@ -292,6 +292,31 @@ BO_ 923 DAS_status: 8 PARTY
  SG_ DAS_blindSpotRearLeft : 4|2@1+ (1,0) [0|3] ""  aps
  SG_ DAS_autopilotState : 0|4@1+ (1,0) [0|15] ""  aps
 
+BO_ 325 ESP_status: 8 PARTY
+ SG_ ESP_absBrakeEvent2: 22|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_absFaultLamp: 17|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_brakeApply: 31|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_brakeDiscWipingActive: 28|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_brakeLamp: 21|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_brakeTorqueTarget: 51|13@1+ (2,0) [0|0] "Nm" X
+ SG_ ESP_btcTargetState: 38|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_cdpStatus: 34|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_driverBrakeApply: 29|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_ebdFaultLamp: 16|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_ebrStandstillSkid: 48|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_ebrStatus: 49|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_espFaultLamp: 18|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_espLampFlash: 20|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_espModeActive: 12|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_hydraulicBoostEnabled: 19|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_lateralAccelQF: 25|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_longitudinalAccelQF: 24|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_ptcTargetState: 36|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_stabilityControlSts2: 14|2@1+ (1,0) [0|0] "" X
+ SG_ ESP_statusChecksum: 0|8@1+ (1,0) [0|0] "" X
+ SG_ ESP_statusCounter: 8|4@1+ (1,0) [0|0] "" X
+ SG_ ESP_steeringAngleQF: 27|1@1+ (1,0) [0|0] "" X
+ SG_ ESP_yawRateQF: 26|1@1+ (1,0) [0|0] "" X
 
 CM_ BO_ 605 "Bytes change when toggling between FSD and AP, as well as Traffic Light and Stop Sign Control in TACC";
 
@@ -440,3 +465,24 @@ VAL_ 923 DAS_fusedSpeedLimit 31 "NONE" 0 "UNKNOWN_SNA" ;
 VAL_ 923 DAS_blindSpotRearRight 3 "SNA" 0 "NO_WARNING" 1 "WARNING_LEVEL_1" 2 "WARNING_LEVEL_2" ;
 VAL_ 923 DAS_blindSpotRearLeft 3 "SNA" 0 "NO_WARNING" 1 "WARNING_LEVEL_1" 2 "WARNING_LEVEL_2" ;
 VAL_ 923 DAS_autopilotState 15 "SNA" 8 "ABORTING" 3 "ACTIVE_NOMINAL" 0 "DISABLED" 4 "ACTIVE_RESTRICTED" 5 "ACTIVE_NAV" 14 "FAULT" 1 "UNAVAILABLE" 9 "ABORTED" 2 "AVAILABLE" ;
+VAL_ 325 ESP_absBrakeEvent2 0 "NOT_ACTIVE" 1 "ACTIVE_FRONT_REAR" 2 "ACTIVE_FRONT" 3 "ACTIVE_REAR";
+VAL_ 325 ESP_absFaultLamp 0 "OFF" 1 "ON";
+VAL_ 325 ESP_brakeApply 0 "INACTIVE" 1 "ACTIVE";
+VAL_ 325 ESP_brakeDiscWipingActive 0 "INACTIVE" 1 "ACTIVE";
+VAL_ 325 ESP_brakeLamp 0 "OFF" 1 "ON";
+VAL_ 325 ESP_brakeTorqueTarget 8191 "SNA";
+VAL_ 325 ESP_btcTargetState 0 "OFF" 1 "BACKUP" 2 "ON" 3 "SNA";
+VAL_ 325 ESP_cdpStatus 0 "CDP_IS_NOT_AVAILABLE" 1 "CDP_IS_AVAILABLE" 2 "ACTUATING_EPB_CDP" 3 "CDP_COMMAND_INVALID";
+VAL_ 325 ESP_driverBrakeApply 0 "NotInit_orOff" 1 "Not_Applied" 2 "Driver_applying_brakes" 3 "Faulty_SNA";
+VAL_ 325 ESP_ebdFaultLamp 0 "OFF" 1 "ON";
+VAL_ 325 ESP_ebrStandstillSkid 0 "NO_STANDSTILL_SKID" 1 "STANDSTILL_SKID_DETECTED";
+VAL_ 325 ESP_ebrStatus 0 "EBR_IS_NOT_AVAILABLE" 1 "EBR_IS_AVAILABLE" 2 "ACTUATING_DI_EBR" 3 "EBR_COMMAND_INVALID";
+VAL_ 325 ESP_espFaultLamp 0 "OFF" 1 "ON";
+VAL_ 325 ESP_espLampFlash 0 "OFF" 1 "FLASH";
+VAL_ 325 ESP_espModeActive 0 "00_NORMAL" 1 "01" 2 "02" 3 "03";
+VAL_ 325 ESP_lateralAccelQF 0 "UNDEFINABLE_ACCURACY" 1 "IN_SPEC";
+VAL_ 325 ESP_longitudinalAccelQF 0 "UNDEFINABLE_ACCURACY" 1 "IN_SPEC";
+VAL_ 325 ESP_ptcTargetState 0 "FAULT" 1 "BACKUP" 2 "ON" 3 "SNA";
+VAL_ 325 ESP_stabilityControlSts2 0 "INIT" 1 "ON" 2 "ENGAGED" 3 "FAULTED";
+VAL_ 325 ESP_steeringAngleQF 0 "UNDEFINABLE_ACCURACY" 1 "IN_SPEC";
+VAL_ 325 ESP_yawRateQF 0 "UNDEFINABLE_ACCURACY" 1 "IN_SPEC";

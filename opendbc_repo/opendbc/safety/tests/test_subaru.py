@@ -9,6 +9,7 @@ import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda
 from functools import partial
 
+
 class SubaruMsg(enum.IntEnum):
   Brake_Status      = 0x13c
   CruiseControl     = 0x240
@@ -41,9 +42,11 @@ def lkas_tx_msgs(alt_bus, lkas_msg=SubaruMsg.ES_LKAS):
           [SubaruMsg.ES_LKAS_State,     SUBARU_MAIN_BUS],
           [SubaruMsg.ES_Infotainment,   SUBARU_MAIN_BUS]]
 
+
 def long_tx_msgs(alt_bus):
   return [[SubaruMsg.ES_Brake,          alt_bus],
           [SubaruMsg.ES_Status,         alt_bus]]
+
 
 def gen2_long_additional_tx_msgs():
   return [[SubaruMsg.ES_UDS_Request,    SUBARU_CAM_BUS],
@@ -51,8 +54,10 @@ def gen2_long_additional_tx_msgs():
           [SubaruMsg.ES_STATIC_1,       SUBARU_MAIN_BUS],
           [SubaruMsg.ES_STATIC_2,       SUBARU_MAIN_BUS]]
 
+
 def fwd_blacklisted_addr(lkas_msg=SubaruMsg.ES_LKAS):
   return {SUBARU_CAM_BUS: [lkas_msg, SubaruMsg.ES_DashStatus, SubaruMsg.ES_LKAS_State, SubaruMsg.ES_Infotainment]}
+
 
 class TestSubaruSafetyBase(common.PandaCarSafetyTest):
   FLAGS = 0

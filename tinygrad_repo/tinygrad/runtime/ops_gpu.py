@@ -1,8 +1,8 @@
 from __future__ import annotations
-from typing import Optional, cast
-import ctypes, functools, hashlib, contextlib
+from typing import cast
+import ctypes, functools, hashlib
 from tinygrad.runtime.autogen import opencl as cl
-from tinygrad.helpers import init_c_var, to_char_p_p, from_mv, OSX, DEBUG, getenv, mv_address
+from tinygrad.helpers import init_c_var, to_char_p_p, from_mv, OSX, DEBUG, getenv, mv_address, suppress_finalizing
 from tinygrad.renderer.cstyle import OpenCLRenderer, IntelRenderer
 from tinygrad.device import BufferSpec, LRUAllocator, Compiled, Compiler, CompileError
 
@@ -41,15 +41,19 @@ class CLProgram:
     self.kernel = checked(cl.clCreateKernel(self.program, name.encode(), status := ctypes.c_int32()), status)
 
   def __del__(self):
-    with contextlib.suppress(TypeError, AttributeError): check(cl.clReleaseKernel(self.kernel))
-    with contextlib.suppress(TypeError, AttributeError): check(cl.clReleaseProgram(self.program))
+    try: check(cl.clReleaseKernel(self.kernel))
+    except (TypeError, AttributeError): pass
+    try: check(cl.clReleaseProgram(self.program))
+    except (TypeError, AttributeError): pass
 
-  def __call__(self, *bufs:tuple[ctypes._CData, BufferSpec], global_size:tuple[int,int,int]=(1,1,1), local_size:Optional[tuple[int,int,int]]=None, vals:tuple[int, ...]=(), wait=False) -> Optional[float]:  # noqa: E501
+  def __call__(self, *bufs:tuple[ctypes._CData, BufferSpec], global_size:tuple[int,int,int]=(1,1,1), local_size:tuple[int,int,int]|None=None,
+               vals:tuple[int, ...]=(), wait=False) -> float|None:
     for i,(b,_) in enumerate(bufs): cl.clSetKernelArg(self.kernel, i, ctypes.sizeof(b), ctypes.byref(b))
     for i,v in enumerate(vals,start=len(bufs)): cl.clSetKernelArg(self.kernel, i, 4, ctypes.byref(ctypes.c_int32(v)))
     if local_size is not None: global_size = cast(tuple[int,int,int], tuple(int(g*l) for g,l in zip(global_size, local_size)))
     event = cl.cl_event() if wait else None
-    check(cl.clEnqueueNDRangeKernel(self.dev.queue, self.kernel, len(global_size), None, (ctypes.c_size_t * len(global_size))(*global_size), (ctypes.c_size_t * len(local_size))(*local_size) if local_size else None, 0, None, event))  # noqa: E501
+    check(cl.clEnqueueNDRangeKernel(self.dev.queue, self.kernel, len(global_size), None, (ctypes.c_size_t * len(global_size))(*global_size),
+                                    (ctypes.c_size_t * len(local_size))(*local_size) if local_size else None, 0, None, event))
     if wait:
       assert event is not None
       check(cl.clWaitForEvents(1, event))
@@ -65,6 +69,7 @@ class CLAllocator(LRUAllocator['CLDevice']):
                                         cl.cl_image_format(cl.CL_RGBA, {2: cl.CL_HALF_FLOAT, 4: cl.CL_FLOAT}[options.image.itemsize]),
                                         options.image.shape[1], options.image.shape[0], 0, None, status := ctypes.c_int32()), status), options)
     return (checked(cl.clCreateBuffer(self.dev.context, cl.CL_MEM_READ_WRITE, size, None, status := ctypes.c_int32()), status), options)
+  @suppress_finalizing
   def _free(self, opaque:tuple[ctypes._CData, BufferSpec], options:BufferSpec): check(cl.clReleaseMemObject(opaque[0]))
   def _copyin(self, dest:tuple[ctypes._CData, BufferSpec], src:memoryview):
     if dest[1].image is not None:

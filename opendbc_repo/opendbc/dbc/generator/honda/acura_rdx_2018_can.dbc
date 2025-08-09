@@ -3,7 +3,7 @@ CM_ "IMPORT _nidec_common.dbc";
 CM_ "IMPORT _steering_sensors_b.dbc";
 CM_ "IMPORT _steering_control_b.dbc";
 
-BO_ 392 GEARBOX: 6 XXX
+BO_ 392 GEARBOX_AUTO: 6 XXX
  SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" XXX
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" XXX
  SG_ GEAR_SHIFTER : 27|4@0+ (1,0) [0|15] "" EON

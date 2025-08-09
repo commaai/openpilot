@@ -3,11 +3,12 @@ import random
 import unittest
 import numpy as np
 
-from opendbc.car.tesla.values import TeslaSafetyFlags
-from opendbc.car.tesla.carcontroller import get_max_angle_delta, get_max_angle, get_safety_CP
+from opendbc.car.tesla.values import TeslaSafetyFlags, CarControllerParams
+from opendbc.car.lateral import get_max_angle_delta_vm, get_max_angle_vm
+from opendbc.car.tesla.carcontroller import get_safety_CP
 from opendbc.car.structs import CarParams
 from opendbc.car.vehicle_model import VehicleModel
-from opendbc.can.can_define import CANDefine
+from opendbc.can import CANDefine
 from opendbc.safety.tests.libsafety import libsafety_py
 import opendbc.safety.tests.common as common
 from opendbc.safety.tests.common import CANPackerPanda, MAX_SPEED_DELTA, MAX_WRONG_COUNTERS, away_round, round_speed
@@ -35,6 +36,9 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
   # Angle control limits
   STEER_ANGLE_MAX = 360  # deg
   DEG_TO_CAN = 10
+  ANGLE_LIMITS = CarControllerParams.ANGLE_LIMITS
+  MAX_LATERAL_ACCEL = CarControllerParams.ANGLE_LIMITS.MAX_LATERAL_ACCEL
+  MAX_LATERAL_JERK = CarControllerParams.ANGLE_LIMITS.MAX_LATERAL_JERK
 
   # Tesla uses get_max_angle_delta and get_max_angle for real lateral accel and jerk limits
   # TODO: integrate this into AngleSteeringSafetyTest
@@ -56,7 +60,7 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
   packer: CANPackerPanda
 
   def _get_steer_cmd_angle_max(self, speed):
-    return get_max_angle(max(speed, 1), self.VM)
+    return get_max_angle_vm(max(speed, 1), self.VM, self.MAX_LATERAL_ACCEL)
 
   def setUp(self):
     self.VM = VehicleModel(get_safety_CP())
@@ -129,38 +133,38 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
   def test_rx_hook(self):
     # counter check
-    for msg in ("angle", "long", "speed", "speed_2"):
+    for msg_type in ("angle", "long", "speed", "speed_2"):
       # send multiple times to verify counter checks
       for i in range(10):
-        if msg == "angle":
-          to_push = self._angle_cmd_msg(0, True, bus=2)
-        elif msg == "long":
-          to_push = self._long_control_msg(0, bus=2)
-        elif msg == "speed":
-          to_push = self._speed_msg(0)
-        elif msg == "speed_2":
-          to_push = self._speed_msg_2(0)
+        if msg_type == "angle":
+          msg = self._angle_cmd_msg(0, True, bus=2)
+        elif msg_type == "long":
+          msg = self._long_control_msg(0, bus=2)
+        elif msg_type == "speed":
+          msg = self._speed_msg(0)
+        elif msg_type == "speed_2":
+          msg = self._speed_msg_2(0)
 
         should_rx = i >= 5
         if not should_rx:
           # mess with checksums
-          if msg == "angle":
-            to_push[0].data[3] = 0
-          elif msg == "long":
-            to_push[0].data[7] = 0
-          elif msg == "speed":
-            to_push[0].data[0] = 0
-          elif msg == "speed_2":
-            to_push[0].data[7] = 0
+          if msg_type == "angle":
+            msg[0].data[3] = 0
+          elif msg_type == "long":
+            msg[0].data[7] = 0
+          elif msg_type == "speed":
+            msg[0].data[0] = 0
+          elif msg_type == "speed_2":
+            msg[0].data[7] = 0
 
         self.safety.set_controls_allowed(True)
-        self.assertEqual(should_rx, self._rx(to_push))
+        self.assertEqual(should_rx, self._rx(msg))
         self.assertEqual(should_rx, self.safety.get_controls_allowed())
 
       # Send static counters
       for i in range(MAX_WRONG_COUNTERS + 1):
         should_rx = i + 1 < MAX_WRONG_COUNTERS
-        self.assertEqual(should_rx, self._rx(to_push))
+        self.assertEqual(should_rx, self._rx(msg))
         self.assertEqual(should_rx, self.safety.get_controls_allowed())
 
   def test_vehicle_speed_measurements(self):
@@ -195,8 +199,8 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
   def test_user_brake_quality_flag(self):
     for quality_flag in (True, False):
-      to_push = self._user_brake_msg(True, quality_flag=quality_flag)
-      self.assertEqual(quality_flag, self._rx(to_push))
+      msg = self._user_brake_msg(True, quality_flag=quality_flag)
+      self.assertEqual(quality_flag, self._rx(msg))
 
   def test_steering_wheel_disengage(self):
     # Tesla disengages when the user forcibly overrides the locked-in angle steering control
@@ -297,14 +301,14 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
         angle_unit_offset = -1 if sign == -1 else 0
 
         # at limit (safety tolerance adds 1)
-        max_angle = round_angle(get_max_angle(speed, self.VM), angle_unit_offset + 1) * sign
+        max_angle = round_angle(get_max_angle_vm(speed, self.VM, self.MAX_LATERAL_ACCEL), angle_unit_offset + 1) * sign
         max_angle = np.clip(max_angle, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
         self.safety.set_desired_angle_last(round(max_angle * self.DEG_TO_CAN))
 
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle, True)))
 
         # 1 unit above limit
-        max_angle_raw = round_angle(get_max_angle(speed, self.VM), angle_unit_offset + 2) * sign
+        max_angle_raw = round_angle(get_max_angle_vm(speed, self.VM, self.MAX_LATERAL_ACCEL), angle_unit_offset + 2) * sign
         max_angle = np.clip(max_angle_raw, -self.STEER_ANGLE_MAX, self.STEER_ANGLE_MAX)
         self._tx(self._angle_cmd_msg(max_angle, True))
 
@@ -327,7 +331,8 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
         # Stay within limits
         # Up
-        max_angle_delta = round_angle(get_max_angle_delta(speed, self.VM), angle_unit_offset) * sign
+        max_angle_delta = get_max_angle_delta_vm(speed, CarControllerParams.STEER_STEP, self.VM, self.MAX_LATERAL_JERK)
+        max_angle_delta = round_angle(max_angle_delta, angle_unit_offset) * sign
         self.assertTrue(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Don't change
@@ -338,7 +343,8 @@ class TestTeslaSafetyBase(common.PandaCarSafetyTest, common.AngleSteeringSafetyT
 
         # Inject too high rates
         # Up
-        max_angle_delta = round_angle(get_max_angle_delta(speed, self.VM), angle_unit_offset + 1) * sign
+        max_angle_delta = get_max_angle_delta_vm(speed, CarControllerParams.STEER_STEP, self.VM, self.MAX_LATERAL_JERK)
+        max_angle_delta = round_angle(max_angle_delta, angle_unit_offset + 1) * sign
         self.assertFalse(self._tx(self._angle_cmd_msg(max_angle_delta, True)))
 
         # Don't change
