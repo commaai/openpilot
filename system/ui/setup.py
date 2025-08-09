@@ -364,10 +364,10 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
-      os.rename(tmpfile, "/tmp/installer")
-      os.chmod("/tmp/installer", 0o755)
+      os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
+      os.chmod(INSTALLER_DESTINATION_PATH, 0o755)
 
-      with open("/tmp/installer_url", "w") as f:
+      with open(INSTALLER_URL_PATH, "w") as f:
         f.write(self.download_url)
 
       gui_app.request_close()
