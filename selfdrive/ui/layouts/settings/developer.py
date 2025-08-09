@@ -54,6 +54,12 @@ class DeveloperLayout(Widget):
         initial_state=self._params.get_bool("CampingMode"),
         callback=lambda: self._toggle_param("CampingMode"),
       ),
+      toggle_item(
+        "Offroad Lock",
+        description="Force device to remain offroad until you turn this off.",
+        initial_state=self._params.get_bool("OffroadLock"),
+        callback=lambda: self._toggle_param("OffroadLock"),
+      ),
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)

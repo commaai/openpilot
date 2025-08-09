@@ -40,7 +40,7 @@ def manager_init() -> None:
     ("GsmMetered", "1"),
     ("HasAcceptedTerms", "0"),
     ("LanguageSetting", "main_en"),
-    ("OpenpilotEnabledToggle", "0"),
+    ("OpenpilotEnabledToggle", "1"),
     ("LongitudinalPersonality", str(log.LongitudinalPersonality.standard)),
     ("IsMetric", "1"),
     ("SplitLkasAndAcc", "1"),
@@ -76,12 +76,7 @@ def manager_init() -> None:
   params.put_bool("IsReleaseBranch", build_metadata.release_channel)
   params.put("HardwareSerial", serial)
 
-  # Enforce AlwaysBootDisabled if enabled: keep driving disabled at boot
-  try:
-    if params.get_bool("AlwaysBootDisabled"):
-      params.put_bool("OpenpilotEnabledToggle", False)
-  except Exception:
-    pass
+  # No special boot override; Offroad Lock handled in manager loop
 
   # set dongle id
   reg_res = register(show_spinner=True)
@@ -165,6 +160,12 @@ def manager_thread() -> None:
     sm.update(1000)
 
     started = sm['deviceState'].started
+    # Offroad Lock: force remain offroad until user disables
+    try:
+      if params.get_bool("OffroadLock"):
+        started = False
+    except Exception:
+      pass
 
     if started and not started_prev:
       params.clear_all(ParamKeyType.CLEAR_ON_ONROAD_TRANSITION)
