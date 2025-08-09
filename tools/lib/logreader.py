@@ -50,7 +50,7 @@ def decompress_stream(data: bytes):
   return decompressed_data
 
 
-class CachedReader:
+class CachedEventReader:
   __slots__ = ('_evt', '_enum')
 
   def __init__(self, evt: capnp._DynamicStructReader, _enum: str | None = None):
@@ -60,12 +60,12 @@ class CachedReader:
 
   # fast pickle support
   def __reduce_ex__(self, proto):
-    return CachedReader._reducer, (self._evt.as_builder().to_bytes(), self._enum)
+    return CachedEventReader._reducer, (self._evt.as_builder().to_bytes(), self._enum)
 
   @staticmethod
   def _reducer(data: bytes, _enum: str | None = None):
     with capnp_log.Event.from_bytes(data) as evt:
-      return CachedReader(evt, _enum)
+      return CachedEventReader(evt, _enum)
 
   def __repr__(self):
     return self._evt.__repr__()
@@ -113,7 +113,7 @@ class _LogFileReader:
     self._ents = []
     try:
       for e in ents:
-        self._ents.append(CachedReader(e))
+        self._ents.append(CachedEventReader(e))
     except capnp.KjException:
       warnings.warn("Corrupted events detected", RuntimeWarning, stacklevel=1)
 
