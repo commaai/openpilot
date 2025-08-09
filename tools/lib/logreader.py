@@ -50,37 +50,22 @@ def decompress_stream(data: bytes):
   return decompressed_data
 
 
-def _cached_reader_reducer(data: bytes, _enum: str):  # schema_id, data
-  # evt = capnp.lib.capnp._struct_reducer(schema_id, data)
-  # evt = capnp_log.Event.from_bytes(data)
-  with capnp_log.Event.from_bytes(data) as evt:  # TODO: how does this work?
-    return CachedReader(evt, _enum)
-  # print('got evt', evt)
-  # return CachedReader(capnp._DynamicStructReader(evt[1]))
-
-
 class CachedReader:
   __slots__ = ('_evt', '_enum')
 
   def __init__(self, evt: capnp._DynamicStructReader, _enum: str | None = None):
     """All capnp attribute accesses are expensive, and which() is often called multiple times"""
-    # if type(evt) is not capnp._DynamicStructReader:
-    #   self._evt = capnp._DynamicStructReader(evt)
-    # else:
     self._evt = evt
     self._enum: str | None = _enum
 
-  # def __reduce__(self):
-  #   # return self._evt.__reduce__()
-  #
-  #   # return (self.__class__, (self._evt.__reduce__(), self._enum))
-  #   return _cached_reader_reducer, (self._evt.schema_id, self._evt.to_bytes())
-
+  # fast pickle support
   def __reduce_ex__(self, proto):
-    # return self._evt.__reduce_ex__(proto)
+    return CachedReader._reducer, (self._evt.as_builder().to_bytes(), self._enum)
 
-    return _cached_reader_reducer, (self._evt.as_builder().to_bytes(), self._enum)
-    # return (self.__class__, (self._evt.__reduce_ex__(proto), self._enum))
+  @staticmethod
+  def _reducer(data: bytes, _enum: str | None = None):
+    with capnp_log.Event.from_bytes(data) as evt:
+      return CachedReader(evt, _enum)
 
   def __repr__(self):
     return self._evt.__repr__()
