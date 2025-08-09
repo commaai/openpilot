@@ -1,6 +1,6 @@
 import pyray as rl
 import time
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.system.ui.lib.application import gui_app, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets import Widget
 
@@ -107,9 +107,6 @@ class InputBox(Widget):
     self._visible_width = rect.width
     self._font_size = font_size
 
-    # Handle mouse input
-    self._handle_mouse_input(rect, font_size)
-
     # Draw input box
     rl.draw_rectangle_rec(rect, color)
 
@@ -169,30 +166,27 @@ class InputBox(Widget):
 
     return masked_text
 
-  def _handle_mouse_input(self, rect, font_size):
-    """Handle mouse clicks to position cursor."""
-    mouse_pos = rl.get_mouse_position()
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT) and rl.check_collision_point_rec(mouse_pos, rect):
-      # Calculate cursor position from click
-      if len(self._input_text) > 0:
-        font = gui_app.font()
-        display_text = self._get_display_text()
+  def _handle_mouse_release(self, mouse_pos: MousePos):
+    # Calculate cursor position from click
+    if len(self._input_text) > 0:
+      font = gui_app.font()
+      display_text = self._get_display_text()
 
-        # Find the closest character position to the click
-        relative_x = mouse_pos.x - (rect.x + 10) + self._text_offset
-        best_pos = 0
-        min_distance = float('inf')
+      # Find the closest character position to the click
+      relative_x = mouse_pos.x - (self._rect.x + 10) + self._text_offset
+      best_pos = 0
+      min_distance = float('inf')
 
-        for i in range(len(self._input_text) + 1):
-          char_width = measure_text_cached(font, display_text[:i], font_size).x
-          distance = abs(relative_x - char_width)
-          if distance < min_distance:
-            min_distance = distance
-            best_pos = i
+      for i in range(len(self._input_text) + 1):
+        char_width = measure_text_cached(font, display_text[:i], self._font_size).x
+        distance = abs(relative_x - char_width)
+        if distance < min_distance:
+          min_distance = distance
+          best_pos = i
 
-        self.set_cursor_position(best_pos)
-      else:
-        self.set_cursor_position(0)
+      self.set_cursor_position(best_pos)
+    else:
+      self.set_cursor_position(0)
 
   def _handle_keyboard_input(self):
     # Handle navigation keys
