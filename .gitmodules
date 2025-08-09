@@ -19,3 +19,6 @@
 [submodule "miraclecast"]
   path = selfdrive/camping/miraclecast
   url = https://github.com/albfan/miraclecast.git
+[submodule "selfdrive/camping/miraclecast"]
+	path = selfdrive/camping/miraclecast
+	url = https://github.com/albfan/miraclecast.git
