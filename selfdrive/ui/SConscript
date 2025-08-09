@@ -102,7 +102,3 @@ if GetOption('extras'):
       f = raylib_env.Program(f"installer/installers/installer_{name}", [obj, cont, inter], LIBS=raylib_libs)
       # keep installers small
       assert f[0].get_size() < 1900*1e3, f[0].get_size()
-
-# build watch3
-if arch in ['x86_64', 'aarch64', 'Darwin'] or GetOption('extras'):
-  qt_env.Program("watch3", ["watch3.cc"], LIBS=qt_libs + ['common', 'msgq', 'visionipc'])
