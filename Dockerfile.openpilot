@@ -1,5 +1,7 @@
 FROM ghcr.io/commaai/openpilot-base:latest
 
+COPY Dockerfile.openpilot /Dockerfile
+
 ENV PYTHONUNBUFFERED=1
 
 ENV OPENPILOT_PATH=/home/batman/openpilot

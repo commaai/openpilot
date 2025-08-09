@@ -1,0 +1,320 @@
+assign_id(){
+    sha256="$1"
+    new_id="$(echo -n "$sha256" | dd bs=64 count=1 2>/dev/null | sha256sum - | cut -d' ' -f1)"
+}
+
+basher_pull() {
+    sete=0
+    if [[ "$-" == *e* ]]
+    then
+        sete=1
+        set +e
+    fi
+
+    TARGET_DIR="$1"
+    ATOMIC_TARGET_DIR="$2"
+    _PLATFORM="$3"
+    PROTOCOL="$4"
+    REGISTER_NAME_TAG="$5"
+    FILE="$6"
+
+    REGISTER_HOSTNAME="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f1 | cut -d':' -f1)"
+    REPO="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2)"
+    REPO_IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2- | cut -d':' -f1)"
+    IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f3 | cut -d':' -f1)"
+    TAG="$(echo -n "$REGISTER_NAME_TAG" | rev | cut -d':' -f1 | rev)"
+
+    sudo bash -c "ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR" ; if cat /proc/mounts | cut -d' ' -f2 | grep -Fxq "$ATOMIC_TARGET_DIR"; then umount "$ATOMIC_TARGET_DIR"; fi; mkdir -p "$ATOMIC_TARGET_DIR" ; mount -t tmpfs -o size=32G tmpfs "$ATOMIC_TARGET_DIR" ; chmod 744 "$ATOMIC_TARGET_DIR"; \
+    mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/distribution/diffid-by-digest/sha256"; \
+    mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/distribution/v2metadata-by-diffid/sha256"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/distribution"; \
+    mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256"; \
+    mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/tmp"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/layerdb"; \
+    mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content"; \
+    chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256"; \
+    mkdir -p "$ATOMIC_TARGET_DIR/overlay2/l"" &
+    pid0=$!
+
+    sudo bash -c "TARGET_DIR="$TARGET_DIR" ; ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR" ; systemctl stop docker >/dev/null 2>&1; if cat /proc/mounts | cut -d' ' -f2 | grep -Fxq "$TARGET_DIR"; then umount "$TARGET_DIR"; fi; rm -rf "$TARGET_DIR" ; mkdir -p "$TARGET_DIR" ; chmod 744 "$TARGET_DIR"" &
+    stop_docker_pid=$!
+
+    if [ "$PROTOCOL" = "file" ]
+    then
+        MANIFEST_DIGEST="$(tar -xOf "$FILE" index.json | jq -r '.manifests[0].digest' | cut -d':' -f2)"
+        MANIFEST="$(tar -xOf "$FILE" "blobs/sha256/$MANIFEST_DIGEST")"
+
+        CONFIG_DIGEST="$(echo -n "$MANIFEST" | jq -r .config.digest | cut -d ':' -f2)"
+
+        CONFIG="$(tar -xOf "$FILE" "blobs/sha256/$CONFIG_DIGEST")"
+    else
+        REGISTER_PROTOCOL="://"
+        REGISTER_URL="$PROTOCOL://$REGISTER_HOSTNAME"
+
+        TOKEN="$(curl -L -s "$REGISTER_URL/token?scope=repository:$REPO_IMAGE:pull" | jq -r .token)"
+
+        MANIFEST="$(curl -L -s -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json" \
+            "$REGISTER_URL/v2/$REPO_IMAGE/manifests/$TAG")"
+
+        CONFIG_DIGEST="$(echo -n "$MANIFEST" | jq -r .config.digest | cut -d ':' -f2)"
+
+        CONFIG="$(curl -L -s -H "Authorization: Bearer $TOKEN" $FETCH_CONFIG "$REGISTER_URL/v2/$REPO_IMAGE/blobs/sha256:$CONFIG_DIGEST")"
+    fi
+
+    fetch_layer() {
+        layer_hash="$1"
+
+        if [ "$PROTOCOL" = "file" ]
+        then
+            tar -xOf "$FILE" "blobs/sha256/$layer_hash"
+        else
+            curl -s -L -H "Authorization: Bearer $TOKEN" "$REGISTER_URL/v2/$REPO_IMAGE/blobs/sha256:$layer_hash"
+        fi
+    }
+
+    wait $pid0
+
+    MANIFEST_DIGEST="$(echo -n "$MANIFEST" | jq -r '.config.digest' | cut -d':' -f2)"
+    if ! [ -e "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256/$MANIFEST_DIGEST" ]
+    then
+        echo -n "$CONFIG" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256/$(basename "$MANIFEST_DIGEST")" >/dev/null
+        sudo chmod 600 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256/$(basename "$MANIFEST_DIGEST")"
+    else
+        echo "error: the image is already there"
+        return 2
+    fi
+
+    layers="$(echo -n "$MANIFEST" | jq -r '.layers[]' | tr -d '\n' | sed 's/}/} \n/g')"
+
+    i=0
+    prev_sha256=
+    prev_chain_id=
+    prev_new_ids=
+    prev_new_ids2=
+    declare -a tmp_dirs
+    declare -a sha256s
+    declare -a pids
+    while read layer
+    do
+        sha256="$(echo -n "$layer" | jq -r '.digest' | cut -d':' -f2)"
+        mediaType="$(echo -n "$layer" | jq -r '.mediaType')"
+
+        tmp_dir=$$_$i
+        sudo mkdir -p "$ATOMIC_TARGET_DIR/$tmp_dir"
+
+        buffer_size=32M
+        (
+            sha2561="$sha256"
+            sha256="$( fetch_layer "$sha2561" | \
+            { \
+                if [ "$mediaType" = "application/vnd.docker.image.rootfs.diff.tar.gzip" ] || [ "$mediaType" = "application/vnd.oci.image.layer.v1.tar+gzip" ]
+                then
+                    f2b="$(head -c 2 | xxd -p)"; echo -n "$f2b" | grep -q '^1f8b' && cat <(echo -n "$f2b" | xxd -r -p) - | pigz -d || cat <(echo -n "$f2b" | xxd -r -p) -;
+                elif [ "$mediaType" = "application/vnd.docker.image.rootfs.diff.tar.zstd" ]  || [ "$mediaType" = "application/vnd.oci.image.layer.v1.tar+zstd" ]
+                then
+                    zstd -d
+                else
+                    cat -
+                fi
+            } \
+            | dd bs=$buffer_size 2>/dev/null | tee >(wc -c | tr -d '\n' | sudo tee "$ATOMIC_TARGET_DIR/${tmp_dir}_size" >/dev/null) >(dd bs=$buffer_size 2>/dev/null | sudo tar -xf - -C "$ATOMIC_TARGET_DIR/$tmp_dir") | dd bs=$buffer_size 2>/dev/null | sha256sum - | cut -d' ' -f1 )" ; sudo mv "$ATOMIC_TARGET_DIR/$tmp_dir" "$ATOMIC_TARGET_DIR/${sha2561}_$sha256" ; sudo mv "$ATOMIC_TARGET_DIR/${tmp_dir}_size" "$ATOMIC_TARGET_DIR/${sha2561}_${sha256}_size" \
+        ) &
+        pids+=($!)
+
+        tmp_dirs+=($var)
+        sha256s+=($sha256)
+
+        ((++i))
+    done <<< "$layers"
+
+    for pid in ${pids[@]}
+    do
+        wait $pid
+    done
+
+    NOTREBUILD_FLAG=0
+    i=0
+    while read layer
+    do
+        orgsha256=${sha256s[$i]}
+        var=${tmp_dirs[$i]}
+
+        _src=$ATOMIC_TARGET_DIR/${orgsha256}_*
+        newsha256="$(echo -n $_src | cut -d' ' -f1 | cut -d'_' -f2)"
+
+        assign_id "$newsha256"
+
+        sudo mkdir -p "$ATOMIC_TARGET_DIR/overlay2/$new_id"
+        sudo mv "$ATOMIC_TARGET_DIR/${orgsha256}_${newsha256}" "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff"
+
+        basher_layer
+
+        if sudo stat "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff/Dockerfile" &>/dev/null && \
+            sudo diff -q "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff/Dockerfile" \
+                "$(dirname "$0")/../../Dockerfile.openpilot_base" >/dev/null
+        then
+            NOTREBUILD_FLAG=1
+        fi
+
+        ((++i))
+    done <<< "$layers"
+
+    wait $stop_docker_pid
+
+    echo -n "{\"Repositories\":{\"$IMAGE\":{\"$IMAGE:$TAG\":\"sha256:$CONFIG_DIGEST\"}}}" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/repositories.json" >/dev/null
+    sudo chmod 600 "$ATOMIC_TARGET_DIR/image/overlay2/repositories.json"
+    sudo bash -c "mount --bind "$ATOMIC_TARGET_DIR" "$TARGET_DIR" ; umount "$ATOMIC_TARGET_DIR" ; systemctl start docker"
+
+    if [ $sete = 1 ]
+    then
+        set -e
+    fi
+}
+
+basher_layer() {
+    if [ $i = 0 ]
+    then
+        prev_new_ids="$new_id"
+    else
+        prev_new_ids="$prev_new_ids:$new_id"
+    fi
+
+    new_id2="$(echo -n "$prev_new_ids" | sha256sum | cut -d' ' -f1 | base64 -w 0 | tr +/ -_ | cut -c1-26)"
+
+    if [ $i = 0 ]
+    then
+        chain_id="$sha256"
+    else
+        chain_id="$(echo -n "sha256:$chain_id sha256:$sha256" | sha256sum - | cut -d' ' -f1)"
+    fi
+
+    if [ -e "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id" ]
+    then
+        echo "error: the image is already there"
+        return 3
+    fi
+    
+    sudo mkdir -p "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff"
+    sudo mkdir -p "$ATOMIC_TARGET_DIR/overlay2/$new_id/work"
+    sudo chmod 710 "$ATOMIC_TARGET_DIR/overlay2/$new_id"
+    sudo chmod 700 "$ATOMIC_TARGET_DIR/overlay2/$new_id/work"
+
+    echo -n "$new_id2" | sudo tee "$ATOMIC_TARGET_DIR/overlay2/$new_id/link" >/dev/null
+    sudo ln -s "../$new_id/diff" "$ATOMIC_TARGET_DIR/overlay2/l/$new_id2"
+
+    if [ $i = 0 ]
+    then
+        prev_new_ids2="l/$new_id2"
+    else
+        echo -n "$prev_new_ids2" | sudo tee "$ATOMIC_TARGET_DIR/overlay2/$new_id/lower" >/dev/null
+    
+        prev_new_ids2="$prev_new_ids2:l/$new_id2"
+    fi
+
+    if [ "$i" = 1 ]
+    then
+        sudo touch "$ATOMIC_TARGET_DIR/overlay2/$new_id/committed"
+        sudo chmod 600 "$ATOMIC_TARGET_DIR/overlay2/$new_id/committed"
+    fi
+
+    sudo mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id"
+    sudo chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id"
+    
+    echo -n "$new_id" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/cache-id" >/dev/null
+    echo -n "sha256:$sha256" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/diff" >/dev/null
+
+    sudo mv "$ATOMIC_TARGET_DIR/${orgsha256}_${newsha256}_size" "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/size"
+
+    if [ "$i" != 0 ]
+    then
+        echo -n "sha256:$sha256" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/diff" >/dev/null
+        echo -n "sha256:$prev_chain_id" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/parent" >/dev/null
+    fi
+
+    echo -n "[{\"Digest\":\"sha256:$sha256\",\"SourceRepository\":\"$REGISTER_NAME_TAG\",\"HMAC\":\"\"}]" \
+        | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/distribution/v2metadata-by-diffid/sha256/$sha256" >/dev/null
+    
+    echo -n "sha256:$sha256" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/distribution/diffid-by-digest/sha256/$sha256" >/dev/null
+    
+    prev_sha256="$sha256"
+    prev_chain_id="$chain_id"
+}
+
+basher_push() {
+    IMAGE_FILE="$1"
+    REGISTER_NAME_TAG="$2"
+
+    REGISTER_PROTOCOL="https://"
+    REGISTER_HOSTNAME="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f1)"
+    REPO="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2)"
+    REPO_IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2- | cut -d':' -f1)"
+    IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f3 | cut -d':' -f1)"
+    TAG="$(echo -n "$REGISTER_NAME_TAG" | rev | cut -d':' -f1 | rev)"
+    REGISTER_URL="$REGISTER_PROTOCOL$REGISTER_HOSTNAME"
+
+    credentials="$(jq -r ".auths.\"$REGISTER_HOSTNAME\".auth" "$HOME/.docker/config.json" | base64 -d)"
+    USERNAME="$(echo -n "$credentials" | cut -d':' -f1)"
+    PASSWORD="$(echo -n "$credentials" | cut -d':' -f2)"
+
+    TOKEN="$(curl -L -s -u "$USERNAME:$PASSWORD" \
+        "$REGISTER_URL/token?scope=repository:$REPO:push" | jq -r .token)"
+    if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]
+    then
+        echo "error: docker register credentials are unknown, make sure you've ran \`docker login\` before!"
+        return 1
+    fi
+
+    MANIFEST_DIGEST="$(tar -xOf "$IMAGE_FILE" index.json | jq -r '.manifests[0].digest' | cut -d':' -f2)"
+    MANIFEST="$(tar -xOf "$IMAGE_FILE" "blobs/sha256/$MANIFEST_DIGEST")"
+    layers="$(echo -n "$MANIFEST" | jq -r '.layers[]' | tr -d '\n' | sed 's/}/} \n/g')"
+
+    config_mediaType="$(echo -n "$MANIFEST" | jq -r '.config.mediaType')"
+    config_digest="$(echo -n "$MANIFEST" | jq -r '.config.digest' | cut -d':' -f2)"
+
+    declare -a pids
+    i=0
+    while read layer
+    do
+        sha256="$(echo -n "$layer" | jq -r '.digest' | cut -d':' -f2)"
+        mediaType="$(echo -n "$layer" | jq -r '.mediaType')"
+        
+        location="$(curl -s -D /proc/self/fd/1 -X POST \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/octet-stream" \
+        "$REGISTER_URL/v2/$REPO_IMAGE/blobs/uploads/" | tr -d '\r' | grep location | cut -d':' -f2 | cut -d' ' -f2)"
+
+        tar -xOf "$IMAGE_FILE" "blobs/sha256/$sha256" | curl -X PUT \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/octet-stream" \
+        --data-binary @- "$REGISTER_URL$location?digest=sha256:$sha256" &
+        pids+=($!)
+
+        ((++i))
+    done <<< "$layers"
+
+    for pid in ${pids[@]}
+    do
+        wait $pid
+    done
+
+    location="$(curl -s -D /proc/self/fd/1 -X POST \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/octet-stream" \
+            "$REGISTER_URL/v2/$REPO_IMAGE/blobs/uploads/" | tr -d '\r' | grep location | cut -d':' -f2 | cut -d' ' -f2)"
+
+    tar -xOf "$IMAGE_FILE" "blobs/sha256/$config_digest" | curl -X PUT \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/octet-stream" \
+        --data-binary @- "$REGISTER_URL$location?digest=sha256:$config_digest"
+
+    tar -xOf "$IMAGE_FILE" "blobs/sha256/$MANIFEST_DIGEST" | curl -X PUT \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/vnd.docker.distribution.manifest.v2+json" \
+        --data-binary @- \
+        "$REGISTER_URL/v2/$REPO_IMAGE/manifests/$TAG"
+}
