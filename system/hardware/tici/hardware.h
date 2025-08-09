@@ -66,19 +66,6 @@ public:
     std::ofstream("/sys/class/backlight/panel0-backlight/bl_power") << (on ? "0" : "4") << "\n";
   }
 
-  static void set_ir_power(int percent) {
-    auto device = get_device_type();
-    if (device == cereal::InitData::DeviceType::TICI ||
-        device == cereal::InitData::DeviceType::TIZI) {
-      return;
-    }
-
-    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 300);
-    std::ofstream("/sys/class/leds/led:switch_2/brightness") << 0 << "\n";
-    std::ofstream("/sys/class/leds/led:torch_2/brightness") << value << "\n";
-    std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
-  }
-
   static std::map<std::string, std::string> get_init_logs() {
     std::map<std::string, std::string> ret = {
       {"/BUILD", util::read_file("/BUILD")},
