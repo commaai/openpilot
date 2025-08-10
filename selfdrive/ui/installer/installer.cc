@@ -88,6 +88,7 @@ int cachedFetch(const std::string &cache) {
 
   renderProgress(10);
   if (util::file_exists(NO_FETCH_FLAG)) {
+    run(util::string_format("cd %s && git update-ref refs/remotes/origin/%s refs/remotes/origin/release3-staging", TMP_INSTALL_PATH, BRANCH_STR.c_str()).c_str());
     return 0;
   } else {
     return executeGitCommand(util::string_format("cd %s && git fetch --progress origin %s 2>&1", TMP_INSTALL_PATH, BRANCH_STR.c_str()));
