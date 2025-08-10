@@ -6,12 +6,12 @@ import time
 import urllib.request
 from urllib.parse import urlparse
 from enum import IntEnum
-from pathlib import Path
 import shutil
 
 import pyray as rl
 
 from cereal import log
+from openpilot.common.run import run_cmd, run_cmd_default
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
@@ -33,12 +33,10 @@ BUTTON_SPACING = 50
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
-OPENPILOT_CACHE = "/data/openpilot.cache"
-
-INSTALLER_SOURCE = "/usr/comma/installer"
-INSTALLER_DESTINATION = "/tmp/installer"
-INSTALLER_URL = "/tmp/installer_url"
-INSTALLER_NO_FETCH_FLAG = "/tmp/installer_no_fetch"
+INSTALL_PATH = "/tmp/openpilot"
+TMP_INSTALL_PATH = "/tmp/tmppilot"
+CACHE_PATH = "/tmp/openpilot.cache"
+BRANCH = "release3"
 
 
 class SetupState(IntEnum):
@@ -311,11 +309,21 @@ class Setup(Widget):
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
   def use_openpilot(self):
-    if os.path.isdir(OPENPILOT_CACHE):
-      shutil.copyfile(INSTALLER_SOURCE, INSTALLER_DESTINATION)
-      self.download_url = OPENPILOT_URL
-      self.prepare_installer()
-      Path(INSTALLER_NO_FETCH_FLAG).touch()
+    if os.path.isdir(CACHE_PATH):
+      shutil.rmtree(TMP_INSTALL_PATH, ignore_errors=True)
+      shutil.rmtree(INSTALL_PATH, ignore_errors=True)
+
+      shutil.copytree(CACHE_PATH, TMP_INSTALL_PATH, symlinks=True)
+
+      run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], TMP_INSTALL_PATH)
+      run_cmd_default(["git", "update-ref", f"refs/remotes/origin/{BRANCH}", "refs/remotes/origin/release3-staging"], cwd=TMP_INSTALL_PATH)
+      run_cmd(["git", "checkout", BRANCH], TMP_INSTALL_PATH)
+      run_cmd(["git", "reset", "--hard", f"origin/{BRANCH}"], TMP_INSTALL_PATH)
+      run_cmd(["git", "submodule", "update", "--init"], TMP_INSTALL_PATH)
+      run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], TMP_INSTALL_PATH)
+
+      shutil.move(TMP_INSTALL_PATH, INSTALL_PATH)
+
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -369,11 +377,15 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
-      os.rename(tmpfile, INSTALLER_DESTINATION)
-      self.prepare_installer()
+      os.rename(tmpfile, "/tmp/installer")
+      os.chmod("/tmp/installer", 0o755)
+      with open("/tmp/installer_url", "w") as f:
+        f.write(self.download_url)
+
       gui_app.request_close()
 
-    except Exception:
+    except Exception as e:
+      print(e)
       error_msg = "Ensure the entered URL is valid, and the device's internet connection is good."
       self.download_failed(self.download_url, error_msg)
 
@@ -381,11 +393,6 @@ class Setup(Widget):
     self.failed_url = url
     self.failed_reason = reason
     self.state = SetupState.DOWNLOAD_FAILED
-
-  def prepare_installer(self):
-    os.chmod(INSTALLER_DESTINATION, 0o755)
-    with open(INSTALLER_URL, "w") as f:
-      f.write(self.download_url)
 
 def main():
   try:
