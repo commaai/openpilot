@@ -430,9 +430,7 @@ class TestCarModelBase(unittest.TestCase):
         if self.CP.carFingerprint in (HONDA.HONDA_PILOT, HONDA.HONDA_RIDGELINE) and CS.brake > 0.05:
           brake_pressed = False
       checks['brakePressed'] += brake_pressed != self.safety.get_brake_pressed_prev()
-      # TODO: remove this exception before closing commaai/opendbc#1100
-      if not (self.CP.brand == "honda" and self.CP.flags & HondaFlags.BOSCH):
-        checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
+      checks['regenBraking'] += CS.regenBraking != self.safety.get_regen_braking_prev()
       checks['steeringDisengage'] += CS.steeringDisengage != self.safety.get_steering_disengage_prev()
 
       if self.CP.pcmCruise:
