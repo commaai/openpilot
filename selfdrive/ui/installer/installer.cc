@@ -25,7 +25,6 @@ const std::string BRANCH_STR = get_str(BRANCH "?                                
 #define CONTINUE_PATH "/data/continue.sh"
 
 const std::string CACHE_PATH = "/data/openpilot.cache";
-const std::string NO_FETCH_FLAG = "/tmp/installer_no_fetch";
 
 #define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
@@ -87,12 +86,8 @@ int cachedFetch(const std::string &cache) {
   run(util::string_format("cd %s && git remote set-branches --add origin %s", TMP_INSTALL_PATH, BRANCH_STR.c_str()).c_str());
 
   renderProgress(10);
-  if (util::file_exists(NO_FETCH_FLAG)) {
-    run(util::string_format("cd %s && git update-ref refs/remotes/origin/%s refs/remotes/origin/release3-staging", TMP_INSTALL_PATH, BRANCH_STR.c_str()).c_str());
-    return 0;
-  } else {
-    return executeGitCommand(util::string_format("cd %s && git fetch --progress origin %s 2>&1", TMP_INSTALL_PATH, BRANCH_STR.c_str()));
-  }
+
+  return executeGitCommand(util::string_format("cd %s && git fetch --progress origin %s 2>&1", TMP_INSTALL_PATH, BRANCH_STR.c_str()));
 }
 
 int executeGitCommand(const std::string &cmd) {
