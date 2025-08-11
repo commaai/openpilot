@@ -101,8 +101,8 @@ class WifiManager:
     """Connect to the DBus system bus."""
     try:
       self.bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
-      if not await self._find_wifi_device():
-        raise ValueError("No Wi-Fi device found")
+      while not await self._find_wifi_device():
+        await asyncio.sleep(1)
 
       await self._setup_signals(self.device_path)
       self.active_ap_path = await self.get_active_access_point()
