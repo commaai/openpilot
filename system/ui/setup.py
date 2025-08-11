@@ -33,10 +33,18 @@ BUTTON_SPACING = 50
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
+CONTINUE_PATH = "/tmp/continue.sh"
+TMP_CONTINUE_PATH = "/tmp/continue.sh.new"
 INSTALL_PATH = "/tmp/openpilot"
 TMP_INSTALL_PATH = "/tmp/tmppilot"
 CACHE_PATH = "/tmp/openpilot.cache"
 BRANCH = "release3"
+
+CONTINUE = """#!/usr/bin/env bash
+
+cd /data/openpilot
+exec ./launch_openpilot.sh
+"""
 
 
 class SetupState(IntEnum):
@@ -323,6 +331,11 @@ class Setup(Widget):
       run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], TMP_INSTALL_PATH)
 
       shutil.move(TMP_INSTALL_PATH, INSTALL_PATH)
+
+      with open(TMP_CONTINUE_PATH, "w") as f:
+        f.write(CONTINUE)
+      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
+      shutil.move("/tmp/continue.sh.new", CONTINUE_PATH)
 
       gui_app.request_close()
     else:
