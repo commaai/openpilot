@@ -335,7 +335,7 @@ class Setup(Widget):
       with open(TMP_CONTINUE_PATH, "w") as f:
         f.write(CONTINUE)
       run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-      shutil.move("/tmp/continue.sh.new", CONTINUE_PATH)
+      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
 
       gui_app.request_close()
     else:
