@@ -11,7 +11,7 @@ import shutil
 import pyray as rl
 
 from cereal import log
-from openpilot.common.run import run_cmd, run_cmd_default
+from openpilot.common.run import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
@@ -34,8 +34,9 @@ OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 CONTINUE_PATH = "/data/continue.sh"
+TMP_CONTINUE_PATH = "/data/continue.sh.new"
 INSTALL_PATH = "/data/openpilot"
-CACHE_PATH = "/data/openpilot.cache"
+VALID_CACHE_PATH = "/data/.openpilot_cache"
 BRANCH = "release3"
 
 CONTINUE = """#!/usr/bin/env bash
@@ -314,18 +315,12 @@ class Setup(Widget):
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
   def use_openpilot(self):
-    if os.path.isdir(CACHE_PATH):
-      shutil.rmtree(INSTALL_PATH, ignore_errors=True)
-      shutil.move(CACHE_PATH, INSTALL_PATH)
-
-      run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], INSTALL_PATH)
-      run_cmd_default(["git", "update-ref", f"refs/remotes/origin/{BRANCH}", "refs/remotes/origin/release3-staging"], cwd=INSTALL_PATH)
-      run_cmd(["git", "branch", "-m", BRANCH], INSTALL_PATH)
-      run_cmd(["git", "branch", f"--set-upstream-to=origin/{BRANCH}", BRANCH], INSTALL_PATH)
-
-      with open(CONTINUE_PATH, "w") as f:
+    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
+      with open(TMP_CONTINUE_PATH, "w") as f:
         f.write(CONTINUE)
-      run_cmd(["chmod", "+x", CONTINUE_PATH])
+      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
+      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
+      os.remove(VALID_CACHE_PATH)
 
       gui_app.request_close()
     else:
