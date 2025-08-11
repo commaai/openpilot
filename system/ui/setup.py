@@ -321,6 +321,7 @@ class Setup(Widget):
       run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], INSTALL_PATH)
       run_cmd_default(["git", "update-ref", f"refs/remotes/origin/{BRANCH}", "refs/remotes/origin/release3-staging"], cwd=INSTALL_PATH)
       run_cmd(["git", "branch", "-m", BRANCH], INSTALL_PATH)
+      run_cmd(["git", "branch", f"--set-upstream-to=origin/{BRANCH}", BRANCH], INSTALL_PATH)
 
       with open(CONTINUE_PATH, "w") as f:
         f.write(CONTINUE)
