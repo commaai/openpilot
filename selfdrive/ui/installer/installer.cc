@@ -24,9 +24,9 @@ const std::string BRANCH_STR = get_str(BRANCH "?                                
 #define GIT_SSH_URL "git@github.com:commaai/openpilot.git"
 #define CONTINUE_PATH "/data/continue.sh"
 
-const std::string CACHE_PATH = "/data/openpilot.cache";
+const std::string INSTALL_PATH = "/data/openpilot";
+const std::string VALID_CACHE_PATH = "/data/.openpilot_cache";
 
-#define INSTALL_PATH "/data/openpilot"
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
@@ -62,11 +62,11 @@ int doInstall() {
   }
 
   // cleanup previous install attempts
-  run("rm -rf " TMP_INSTALL_PATH " " INSTALL_PATH);
+  run("rm -rf " TMP_INSTALL_PATH);
 
   // do the install
-  if (util::file_exists(CACHE_PATH)) {
-    return cachedFetch(CACHE_PATH);
+  if (util::file_exists(INSTALL_PATH) && util::file_exists(VALID_CACHE_PATH)) {
+    return cachedFetch(INSTALL_PATH);
   } else {
     return freshClone();
   }
@@ -76,6 +76,7 @@ int freshClone() {
   LOGD("Doing fresh clone");
   std::string cmd = util::string_format("git clone --progress %s -b %s --depth=1 --recurse-submodules %s 2>&1",
                                         GIT_URL.c_str(), BRANCH_STR.c_str(), TMP_INSTALL_PATH);
+
   return executeGitCommand(cmd);
 }
 
@@ -135,7 +136,9 @@ void cloneFinished(int exitCode) {
   run("git submodule update --init");
 
   // move into place
-  run("mv " TMP_INSTALL_PATH " " INSTALL_PATH);
+  run(("rm -f " + VALID_CACHE_PATH).c_str());
+  run(("rm -rf " + INSTALL_PATH).c_str());
+  run(util::string_format("mv %s %s", TMP_INSTALL_PATH, INSTALL_PATH.c_str()).c_str());
 
 #ifdef INTERNAL
   run("mkdir -p /data/params/d/");
@@ -153,9 +156,9 @@ void cloneFinished(int exitCode) {
     param << value;
     param.close();
   }
-  run("cd " INSTALL_PATH " && "
+  run(("cd " + INSTALL_PATH + " && "
       "git remote set-url origin --push " GIT_SSH_URL " && "
-      "git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"");
+      "git config --replace-all remote.origin.fetch \"+refs/heads/*:refs/remotes/origin/*\"").c_str());
 #endif
 
   // write continue.sh
