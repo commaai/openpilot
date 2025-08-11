@@ -384,8 +384,7 @@ class Setup(Widget):
 
       gui_app.request_close()
 
-    except Exception as e:
-      print(e)
+    except Exception:
       error_msg = "Ensure the entered URL is valid, and the device's internet connection is good."
       self.download_failed(self.download_url, error_msg)
 
@@ -393,6 +392,7 @@ class Setup(Widget):
     self.failed_url = url
     self.failed_reason = reason
     self.state = SetupState.DOWNLOAD_FAILED
+
 
 def main():
   try:
