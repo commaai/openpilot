@@ -32,7 +32,7 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.PRIMARY: rl.Color(228, 228, 228, 255),
   ButtonStyle.DANGER: rl.Color(228, 228, 228, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
-  ButtonStyle.ACTION: rl.Color(0, 0, 0, 255),
+  ButtonStyle.ACTION: rl.BLACK,
   ButtonStyle.LIST_ACTION: rl.Color(228, 228, 228, 255),
   ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
   ButtonStyle.KEYBOARD: rl.Color(221, 221, 221, 255),
