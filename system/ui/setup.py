@@ -46,7 +46,6 @@ cd /data/openpilot
 exec ./launch_openpilot.sh
 """
 
-
 class SetupState(IntEnum):
   LOW_VOLTAGE = 0
   GETTING_STARTED = 1
