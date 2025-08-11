@@ -37,7 +37,6 @@ CONTINUE_PATH = "/data/continue.sh"
 TMP_CONTINUE_PATH = "/data/continue.sh.new"
 INSTALL_PATH = "/data/openpilot"
 VALID_CACHE_PATH = "/data/.openpilot_cache"
-BRANCH = "release3"
 
 CONTINUE = """#!/usr/bin/env bash
 
