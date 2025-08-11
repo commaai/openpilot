@@ -3,7 +3,6 @@ import os
 import re
 import threading
 import time
-import queue
 import urllib.request
 from urllib.parse import urlparse
 from enum import IntEnum
@@ -37,7 +36,6 @@ USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 CONTINUE_PATH = "/data/continue.sh"
 TMP_CONTINUE_PATH = "/data/continue.sh.new"
 INSTALL_PATH = "/data/openpilot"
-TMP_INSTALL_PATH = "/data/tmppilot"
 CACHE_PATH = "/data/openpilot.cache"
 BRANCH = "release3"
 
@@ -56,7 +54,6 @@ class SetupState(IntEnum):
   DOWNLOADING = 5
   DOWNLOAD_FAILED = 6
   CUSTOM_SOFTWARE_WARNING = 7
-  INSTALLING = 8
 
 
 class Setup(Widget):
@@ -68,12 +65,10 @@ class Setup(Widget):
     self.wifi_connected = threading.Event()
     self.stop_network_check_thread = threading.Event()
     self.failed_url = ""
-    self.installing_progress = queue.Queue()
     self.failed_reason = ""
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self.install_thread = None
     self.wifi_manager = WifiManagerWrapper()
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
     self.keyboard = Keyboard()
@@ -147,8 +142,6 @@ class Setup(Widget):
       self.render_downloading(rect)
     elif self.state == SetupState.DOWNLOAD_FAILED:
       self.render_download_failed(rect)
-    elif self.state == SetupState.INSTALLING:
-      self.render_installing(rect)
 
   def _low_voltage_continue_button_callback(self):
     self.state = SetupState.GETTING_STARTED
@@ -282,15 +275,6 @@ class Setup(Widget):
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE))
 
-  def render_installing(self, rect: rl.Rectangle):
-    rl.draw_text_ex(gui_app.font(), "Finishing setup...", (150, 290), 110, 0, rl.WHITE)
-    bar = rl.Rectangle(150, 570, gui_app.width - 300, 72)
-    rl.draw_rectangle_rec(bar, rl.Color(41, 41, 41, 255))
-    progress = max(0, min(self.installing_progress.get(), 100))
-    bar.width *= (progress / 100.0)
-    rl.draw_rectangle_rec(bar, rl.Color(70, 91, 234, 255))
-    rl.draw_text_ex(gui_app.font(), f"{progress}%", (150, 670), 85, 0, rl.WHITE)
-
   def render_download_failed(self, rect: rl.Rectangle):
     self._download_failed_title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE))
     self._download_failed_url_label.set_text(self.failed_url)
@@ -332,39 +316,22 @@ class Setup(Widget):
 
   def use_openpilot(self):
     if os.path.isdir(CACHE_PATH):
-      self.state = SetupState.INSTALLING
-      self.install_thread = threading.Thread(target=self._install_thread, daemon=True)
-      self.install_thread.start()
+      shutil.rmtree(INSTALL_PATH, ignore_errors=True)
+      shutil.move(CACHE_PATH, INSTALL_PATH)
+
+      run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], INSTALL_PATH)
+      run_cmd_default(["git", "update-ref", f"refs/remotes/origin/{BRANCH}", "refs/remotes/origin/release3-staging"], cwd=INSTALL_PATH)
+      run_cmd(["git", "branch", "-m", BRANCH], INSTALL_PATH)
+
+      with open(CONTINUE_PATH, "w") as f:
+        f.write(CONTINUE)
+      run_cmd(["chmod", "+x", CONTINUE_PATH])
+
+      gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
       self.stop_network_check_thread.clear()
       self.start_network_check()
-
-  def _install_thread(self):
-    self.installing_progress.put(0)
-    shutil.rmtree(TMP_INSTALL_PATH, ignore_errors=True)
-    shutil.rmtree(INSTALL_PATH, ignore_errors=True)
-
-    shutil.copytree(CACHE_PATH, TMP_INSTALL_PATH, symlinks=True)
-    self.installing_progress.put(20)
-
-    run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], TMP_INSTALL_PATH)
-    run_cmd_default(["git", "update-ref", f"refs/remotes/origin/{BRANCH}", "refs/remotes/origin/release3-staging"], cwd=TMP_INSTALL_PATH)
-    run_cmd(["git", "checkout", BRANCH], TMP_INSTALL_PATH)
-    self.installing_progress.put(50)
-    run_cmd(["git", "reset", "--hard", f"origin/{BRANCH}"], TMP_INSTALL_PATH)
-    run_cmd(["git", "submodule", "update", "--init"], TMP_INSTALL_PATH)
-    run_cmd(["git", "remote", "set-branches", "--add", "origin", BRANCH], TMP_INSTALL_PATH)
-
-    shutil.move(TMP_INSTALL_PATH, INSTALL_PATH)
-    self.installing_progress.put(90)
-
-    with open(TMP_CONTINUE_PATH, "w") as f:
-      f.write(CONTINUE)
-    run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
-    shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-    self.installing_progress.put(100)
-    gui_app.request_close()
 
   def download(self, url: str):
     # autocomplete incomplete URLs
