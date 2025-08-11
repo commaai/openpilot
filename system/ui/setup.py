@@ -392,6 +392,7 @@ class Setup(Widget):
 
       os.rename(tmpfile, "/tmp/installer")
       os.chmod("/tmp/installer", 0o755)
+
       with open("/tmp/installer_url", "w") as f:
         f.write(self.download_url)
 
