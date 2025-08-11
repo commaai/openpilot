@@ -1,0 +1,41 @@
+name: 'setup-cache'
+
+inputs:
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: false
+    default: ''
+  sleep_time:
+    description: 'Time to sleep between retries'
+    required: false
+    default: 30
+
+outputs:
+  duration:
+    description: 'Duration of the setup process in seconds'
+    value: ${{ steps.get_duration.outputs.duration }}
+
+runs:
+  using: "composite"
+  steps:
+    # build cache
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+    - shell: bash
+      run: echo "$CACHE_COMMIT_DATE"
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
+    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
+    - id: normalize-file-permissions
+      shell: bash
+      name: Normalize file permissions to ensure a consistent docker build cache
+      run: |
+        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
+        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;

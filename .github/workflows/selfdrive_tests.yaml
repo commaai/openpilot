@@ -30,6 +30,15 @@ env:
   PYTEST: pytest --continue-on-collection-errors --durations=0 --durations-min=5 -n logical
 
 jobs:
+  setup-cache:
+    name: setup cache
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: setup-cache
+        uses: ./.github/workflows/setup-cache
   build_release:
     name: build release
     runs-on: ${{
@@ -40,6 +49,7 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       STRIPPED_DIR: /tmp/releasepilot
+    needs: [setup-cache]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -76,6 +86,7 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
+    needs: [setup-cache]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -133,6 +144,7 @@ jobs:
       || fromJSON('["ubuntu-24.04"]') }}
     env:
       PYTHONWARNINGS: default
+    needs: [setup-cache]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -150,6 +162,7 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
+    needs: [setup-cache]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -175,6 +188,7 @@ jobs:
       (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
+    needs: [setup-cache]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -225,6 +239,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
     if: (github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))
+    needs: [setup-cache]
     steps:
     - uses: actions/checkout@v4
       with:
@@ -251,6 +266,7 @@ jobs:
       && fromJSON('["namespace-profile-amd64-8x16", "namespace-experiments:docker.builds.local-cache=separate"]')
       || fromJSON('["ubuntu-24.04"]') }}
     if: false  # FIXME: FrameReader is broken on CI runners
+    needs: [setup-cache]
     steps:
       - uses: actions/checkout@v4
         with:
