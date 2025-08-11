@@ -34,7 +34,6 @@ OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
 CONTINUE_PATH = "/data/continue.sh"
-TMP_CONTINUE_PATH = "/data/continue.sh.new"
 INSTALL_PATH = "/data/openpilot"
 CACHE_PATH = "/data/openpilot.cache"
 BRANCH = "release3"
