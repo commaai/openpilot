@@ -1,6 +1,9 @@
 import os
 import capnp
+import capnpy
 from importlib.resources import as_file, files
+
+capnpy.load_schema
 
 capnp.remove_import_hook()
 

@@ -94,6 +94,68 @@ class StructType:
 
   __call__ = new_builder  # so car.CarState() returns a Builder
 
+  # --- pycapnp-compatible: read a stream of concatenated messages ---
+  def read_multiple_bytes(self, data: bytes):
+    """
+    Yield Readers for each Cap'n Proto message in `data`.
+    Supports the standard (unpacked) stream framing with a segment table.
+    First pass: single-segment messages only. Multi-segment -> KjException.
+    """
+    from cereal.capnpy import KjException  # local import to avoid cycle
+    mv = memoryview(data)
+    pos, n = 0, len(mv)
+
+    while True:
+      if pos + 4 > n:
+        return  # done
+      # segment count - 1 (uint32)
+      seg_count_minus1 = int.from_bytes(mv[pos:pos+4], "little"); pos += 4
+      seg_count = seg_count_minus1 + 1
+      if seg_count <= 0:
+        raise KjException(f"bad segment count {seg_count}")
+
+      # segment sizes (uint32 words)
+      need = 4 * seg_count
+      if pos + need > n:
+        raise KjException("truncated segment table")
+      sizes = [int.from_bytes(mv[pos+i*4:pos+(i+1)*4], "little") for i in range(seg_count)]
+      pos += need
+
+      # table padding to 8-byte boundary: (1 + seg_count) must be even
+      if ((1 + seg_count) & 1) == 1:
+        if pos + 4 > n: raise KjException("missing segment table padding")
+        pos += 4
+
+      # data bytes for all segments
+      total_words = sum(sizes)
+      total_bytes = total_words * 8
+      if pos + total_bytes > n:
+        raise KjException("truncated segments")
+
+      # first pass: require single segment (no far pointers yet)
+      if seg_count != 1:
+        pos += total_bytes
+        raise KjException("multi-segment message not supported yet")
+
+      seg0_off = pos
+      seg0_end = pos + total_bytes
+
+      # root pointer is first word of segment 0
+      root_word = int.from_bytes(mv[seg0_off:seg0_off+8], "little")
+      kind = root_word & 3
+      if kind != 0:   # expect struct ptr
+        pos = seg0_end
+        raise KjException("root pointer is not a struct")
+
+      off_words = (root_word >> 2) & ((1 << 30) - 1)
+      if off_words & (1 << 29):
+        off_words -= (1 << 30)
+      base = seg0_off + 8 + off_words * 8
+
+      yield Reader(self, mv, base)
+
+      pos = seg0_end
+
 @dataclass
 class Schema:
   structs: Dict[str, StructType]
@@ -115,6 +177,10 @@ class Reader:
 
   def __getattr__(self, name: str) -> Any:
     return self.get(name)
+
+  def which(self):
+    # Placeholder for pycapnp-compat probes
+    return None
 
   def get(self, field_name: str) -> Any:
     c = self._cache
@@ -164,7 +230,6 @@ class Builder:
     object.__setattr__(self, "_base", base)
     object.__setattr__(self, "_reader_cache", None)
 
-  # attribute GET on builder reads current value (via a cached Reader)
   def __getattr__(self, name: str) -> Any:
     if name in ("_st","_mv","_base","_reader_cache"):
       return object.__getattribute__(self, name)
@@ -175,7 +240,6 @@ class Builder:
       object.__setattr__(self, "_reader_cache", r)
     return getattr(r, name)
 
-  # attribute SET on builder sets primitive fields
   def __setattr__(self, name: str, value: Any) -> None:
     if name in ("_st","_mv","_base","_reader_cache"):
       object.__setattr__(self, name, value); return
@@ -187,7 +251,6 @@ class Builder:
     if rc and name in rc._cache:
       del rc._cache[name]
 
-  # optional explicit setter
   def set(self, field_name: str, value: Any) -> None:
     setattr(self, field_name, value)
 

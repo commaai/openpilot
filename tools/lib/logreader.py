@@ -16,9 +16,12 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import cast
 from urllib.parse import parse_qs, urlparse
 
-from cereal import log as capnp_log
-from openpilot.common.swaglog import cloudlog
-from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
+# from cereal import log as capnp_log
+# import cereal.capnpy as capnpy
+import cereal.capnpy as capnpy
+capnp_log = capnpy.load("cereal/log.capnp")
+# from openpilot.common.swaglog import cloudlog
+# from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
 from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available
 from openpilot.tools.lib.route import Route, SegmentRange, FileName
