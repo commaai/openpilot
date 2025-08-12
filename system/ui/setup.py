@@ -37,6 +37,8 @@ CONTINUE_PATH = "/data/continue.sh"
 TMP_CONTINUE_PATH = "/data/continue.sh.new"
 INSTALL_PATH = "/data/openpilot"
 VALID_CACHE_PATH = "/data/.openpilot_cache"
+INSTALLER_SOURCE_PATH = "/user/comma/installer"
+INSTALLER_DESTINATION_PATH = "/tmp/installer"
 
 CONTINUE = """#!/usr/bin/env bash
 
@@ -320,6 +322,7 @@ class Setup(Widget):
       run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
       shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
       os.remove(VALID_CACHE_PATH)
+      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       gui_app.request_close()
     else:
