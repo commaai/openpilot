@@ -325,7 +325,7 @@ class Setup(Widget):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
-      time.sleep(5)
+      time.sleep(1)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
