@@ -4,12 +4,7 @@ import numpy as np
 from cereal import log
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
 from opendbc.car.interfaces import LatControlInputs
-<<<<<<< HEAD
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
-=======
-from opendbc.car.interfaces import ISO_LATERAL_ACCEL
-from opendbc.car.vehicle_model import ACCELERATION_DUE_TO_GRAVITY
->>>>>>> 3be94c561 (little confusing but works)
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController
 
@@ -68,16 +63,7 @@ class LatControlTorque(LatControl):
       ff = gravity_adjusted_lateral_accel
       ff += get_friction(desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
-<<<<<<< HEAD
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
-      output_accel = self.pid.update(pid_log.error,
-                                     feedforward=ff,
-                                     speed=CS.vEgo,
-                                     freeze_integrator=freeze_integrator)
-      output_torque = self.torque_from_lateral_accel(LatControlInputs(output_accel, roll_compensation, CS.vEgo, CS.aEgo), self.torque_params,
-                                                     gravity_adjusted=True)  # TODO: remove Bolt nano ff and remove this
-=======
-      freeze_integrator = steer_limited_by_controls or CS.steeringPressed or CS.vEgo < 5
       output_torque = self.pid.update(pid_log.error,
                                       feedforward=ff,
                                       speed=CS.vEgo,
@@ -85,8 +71,6 @@ class LatControlTorque(LatControl):
                                       # TODO: remove Bolt nano ff and remove gravity
                                       convert_control=lambda a: self.torque_from_lateral_accel(LatControlInputs(a, roll_compensation, CS.vEgo, CS.aEgo),
                                                                                                self.torque_params, gravity_adjusted=True))
->>>>>>> 966384160 (pid outputs torque again, fix windup above max torque)
-
       pid_log.active = True
       pid_log.p = float(self.pid.p)
       pid_log.i = float(self.pid.i)
@@ -95,11 +79,7 @@ class LatControlTorque(LatControl):
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
       pid_log.actualLateralAccel = float(actual_lateral_accel)
       pid_log.desiredLateralAccel = float(desired_lateral_accel)
-<<<<<<< HEAD
-      pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_accel) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
-=======
-      pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_controls, curvature_limited))
->>>>>>> 966384160 (pid outputs torque again, fix windup above max torque)
+      pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
     return -output_torque, 0.0, pid_log
