@@ -60,5 +60,6 @@ class PIDController:
       i_lowerbound = self.i if test_control < self.neg_limit else self.neg_limit
       self.i = np.clip(i, i_lowerbound, i_upperbound)
 
-    self.control = convert_control(self.p + self.i + self.d + self.f)
+    control = convert_control(self.p + self.i + self.d + self.f)
+    self.control = np.clip(control, self.neg_limit, self.pos_limit)
     return self.control
