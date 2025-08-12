@@ -91,8 +91,6 @@ class Parser:
     self.parse_mdn('lane_lines', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_LANE_LINES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
     self.parse_mdn('road_edges', outs, in_N=0, out_N=0, out_shape=(ModelConstants.NUM_ROAD_EDGES,ModelConstants.IDX_N,ModelConstants.LANE_LINES_WIDTH))
     self.parse_binary_crossentropy('lane_lines_prob', outs)
-    self.parse_mdn('lead', outs, in_N=0, out_N=0,
-                   out_shape=(ModelConstants.LEAD_MHP_SELECTION, ModelConstants.LEAD_TRAJ_LEN,ModelConstants.LEAD_WIDTH))
     if outs['lead'].shape[1] == 2 * ModelConstants.LEAD_MHP_SELECTION *ModelConstants.LEAD_TRAJ_LEN * ModelConstants.LEAD_WIDTH:
       self.parse_mdn('lead', outs, in_N=0, out_N=0,
                      out_shape=(ModelConstants.LEAD_MHP_SELECTION, ModelConstants.LEAD_TRAJ_LEN,ModelConstants.LEAD_WIDTH))
