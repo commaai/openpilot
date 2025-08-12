@@ -324,6 +324,8 @@ class Setup(Widget):
       os.remove(VALID_CACHE_PATH)
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
+      # give time for installer UI to take over
+      time.sleep(1)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -377,8 +379,8 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
+      os.chmod(tmpfile, 0o755)
       os.rename(tmpfile, "/tmp/installer")
-      os.chmod("/tmp/installer", 0o755)
 
       with open("/tmp/installer_url", "w") as f:
         f.write(self.download_url)
