@@ -380,6 +380,8 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
+      # AGNOS might try to execute the installer before this process exits.
+      # Therefore, important to close the fd before renaming the installer.
       os.close(fd)
       os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
 
