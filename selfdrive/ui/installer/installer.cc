@@ -41,6 +41,16 @@ void run(const char* cmd) {
   assert(err == 0);
 }
 
+void finishInstall() {
+  BeginDrawing();
+    ClearBackground(BLACK);
+    const char *m = "Finishing install...";
+    int text_width = MeasureText(m, 120);
+    DrawTextEx(font, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + 120, (float)GetScreenHeight()/2 - 120}, 120, 0, WHITE);
+  EndDrawing();
+  util::sleep_for(60 * 1000);
+}
+
 void renderProgress(int progress) {
   BeginDrawing();
     ClearBackground(BLACK);
@@ -173,17 +183,22 @@ void cloneFinished(int exitCode) {
   run("mv /data/continue.sh.new " CONTINUE_PATH);
 
   // wait for the installed software's UI to take over
-  util::sleep_for(60 * 1000);
+  finishInstall();
 }
 
 int main(int argc, char *argv[]) {
   InitWindow(2160, 1080, "Installer");
   font = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, 120, NULL, 0);
   SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
-  renderProgress(0);
-  int result = doInstall();
-  cloneFinished(result);
-  CloseWindow();
-  UnloadFont(font);
-  return 0;
+
+  if (util::file_exists(CONTINUE_PATH)) {
+    finishInstall();
+  } else {
+    renderProgress(0);
+    int result = doInstall();
+    cloneFinished(result);
+    CloseWindow();
+    UnloadFont(font);
+    return 0;
+  }
 }
