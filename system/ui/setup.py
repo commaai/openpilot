@@ -53,6 +53,7 @@ class SetupState(IntEnum):
   DOWNLOADING = 5
   DOWNLOAD_FAILED = 6
   CUSTOM_SOFTWARE_WARNING = 7
+  FINISHING = 8
 
 
 class Setup(Widget):
@@ -115,6 +116,7 @@ class Setup(Widget):
                                               + "to restore your device to a factory state later.",
                                              85, text_alignment=TextAlignment.LEFT, text_padding=60)
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
+    self._finishing_body_label = Label("Finishing setup...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
 
     try:
       with open("/sys/class/hwmon/hwmon1/in1_input") as f:
@@ -141,6 +143,8 @@ class Setup(Widget):
       self.render_downloading(rect)
     elif self.state == SetupState.DOWNLOAD_FAILED:
       self.render_download_failed(rect)
+    elif self.state == SetupState.FINISHING:
+      self.render_finishing(rect)
 
   def _low_voltage_continue_button_callback(self):
     self.state = SetupState.GETTING_STARTED
@@ -274,6 +278,12 @@ class Setup(Widget):
   def render_downloading(self, rect: rl.Rectangle):
     self._downloading_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE))
 
+  def render_finishing(self, rect: rl.Rectangle):
+    if (time.monotonic() - self.finish_time) > 15:
+      gui_app.request_close()
+    else:
+      self._finishing_body_label.render(rl.Rectangle(rect.x, rect.y + rect.height / 2 - TITLE_FONT_SIZE / 2, rect.width, TITLE_FONT_SIZE))
+
   def render_download_failed(self, rect: rl.Rectangle):
     self._download_failed_title_label.render(rl.Rectangle(rect.x + 117, rect.y + 185, rect.width - 117, TITLE_FONT_SIZE))
     self._download_failed_url_label.set_text(self.failed_url)
@@ -320,8 +330,8 @@ class Setup(Widget):
       run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
       shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
       os.remove(VALID_CACHE_PATH)
-
-      gui_app.request_close()
+      self.state = SetupState.FINISHING
+      self.finish_time = time.monotonic()
     else:
       self.state = SetupState.NETWORK_SETUP
       self.stop_network_check_thread.clear()
@@ -380,6 +390,7 @@ class Setup(Widget):
       with open("/tmp/installer_url", "w") as f:
         f.write(self.download_url)
 
+      time.sleep(15)
       gui_app.request_close()
 
     except Exception:
