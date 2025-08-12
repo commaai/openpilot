@@ -39,6 +39,7 @@ INSTALL_PATH = "/data/openpilot"
 VALID_CACHE_PATH = "/data/.openpilot_cache"
 INSTALLER_SOURCE_PATH = "/usr/comma/installer"
 INSTALLER_DESTINATION_PATH = "/tmp/installer"
+INSTALLER_URL_PATH = "/tmp/installer_url"
 
 CONTINUE = """#!/usr/bin/env bash
 
@@ -380,9 +381,9 @@ class Setup(Widget):
         return
 
       os.close(fd)
-      os.rename(tmpfile, "/tmp/installer")
+      os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
 
-      with open("/tmp/installer_url", "w") as f:
+      with open(INSTALLER_URL_PATH, "w") as f:
         f.write(self.download_url)
 
       # give time for installer UI to take over
