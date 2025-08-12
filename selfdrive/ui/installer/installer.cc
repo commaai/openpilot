@@ -29,6 +29,8 @@ const std::string VALID_CACHE_PATH = "/data/.openpilot_cache";
 
 #define TMP_INSTALL_PATH "/data/tmppilot"
 
+const int FONT_SIZE = 120;
+
 extern const uint8_t str_continue[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_start");
 extern const uint8_t str_continue_end[] asm("_binary_selfdrive_ui_installer_continue_openpilot_sh_end");
 extern const uint8_t inter_ttf[] asm("_binary_selfdrive_ui_installer_inter_ascii_ttf_start");
@@ -45,8 +47,8 @@ void finishInstall() {
   BeginDrawing();
     ClearBackground(BLACK);
     const char *m = "Finishing install...";
-    int text_width = MeasureText(m, 120);
-    DrawTextEx(font, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + 120, (float)GetScreenHeight()/2 - 120}, 120, 0, WHITE);
+    int text_width = MeasureText(m, FONT_SIZE);
+    DrawTextEx(font, m, (Vector2){(float)(GetScreenWidth() - text_width)/2 + FONT_SIZE, (float)(GetScreenHeight() - FONT_SIZE)/2}, FONT_SIZE, 0, WHITE);
   EndDrawing();
   util::sleep_for(60 * 1000);
 }
@@ -188,7 +190,7 @@ void cloneFinished(int exitCode) {
 
 int main(int argc, char *argv[]) {
   InitWindow(2160, 1080, "Installer");
-  font = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, 120, NULL, 0);
+  font = LoadFontFromMemory(".ttf", inter_ttf, inter_ttf_end - inter_ttf, FONT_SIZE, NULL, 0);
   SetTextureFilter(font.texture, TEXTURE_FILTER_BILINEAR);
 
   if (util::file_exists(CONTINUE_PATH)) {
