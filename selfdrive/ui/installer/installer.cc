@@ -197,8 +197,9 @@ int main(int argc, char *argv[]) {
     renderProgress(0);
     int result = doInstall();
     cloneFinished(result);
-    CloseWindow();
-    UnloadFont(font);
-    return 0;
   }
+
+  CloseWindow();
+  UnloadFont(font);
+  return 0;
 }
