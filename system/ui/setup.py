@@ -325,7 +325,7 @@ class Setup(Widget):
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
-      time.sleep(1)
+      time.sleep(5)
       gui_app.request_close()
     else:
       self.state = SetupState.NETWORK_SETUP
@@ -349,7 +349,7 @@ class Setup(Widget):
     try:
       import tempfile
 
-      _, tmpfile = tempfile.mkstemp(prefix="installer_")
+      fd, tmpfile = tempfile.mkstemp(prefix="installer_")
 
       headers = {"User-Agent": USER_AGENT, "X-openpilot-serial": HARDWARE.get_serial()}
       req = urllib.request.Request(self.download_url, headers=headers)
@@ -379,12 +379,14 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
-      os.chmod(tmpfile, 0o755)
+      os.close(fd)
       os.rename(tmpfile, "/tmp/installer")
 
       with open("/tmp/installer_url", "w") as f:
         f.write(self.download_url)
 
+      # give time for installer UI to take over
+      time.sleep(5)
       gui_app.request_close()
 
     except Exception:
