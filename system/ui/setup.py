@@ -317,11 +317,11 @@ class Setup(Widget):
 
   def use_openpilot(self):
     if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
+      os.remove(VALID_CACHE_PATH)
       with open(TMP_CONTINUE_PATH, "w") as f:
         f.write(CONTINUE)
       run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
       shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
-      os.remove(VALID_CACHE_PATH)
       shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
 
       # give time for installer UI to take over
