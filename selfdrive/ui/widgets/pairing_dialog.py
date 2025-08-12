@@ -23,7 +23,7 @@ class PairingDialog:
 
   def _get_pairing_url(self) -> str:
     try:
-      dongle_id = self.params.get("DongleId", encoding='utf8') or ""
+      dongle_id = self.params.get("DongleId") or ""
       token = Api(dongle_id).get_token()
     except Exception as e:
       cloudlog.warning(f"Failed to get pairing token: {e}")
@@ -55,7 +55,7 @@ class PairingDialog:
       self.qr_texture = None
 
   def _check_qr_refresh(self) -> None:
-    current_time = time.time()
+    current_time = time.monotonic()
     if current_time - self.last_qr_generation >= self.QR_REFRESH_INTERVAL:
       self._generate_qr_code()
       self.last_qr_generation = current_time

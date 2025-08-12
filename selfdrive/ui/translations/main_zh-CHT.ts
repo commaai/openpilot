@@ -8,10 +8,6 @@
         <translation>關閉</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>暫停更新</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>重啟並更新</translation>
     </message>
@@ -308,31 +304,35 @@
     </message>
     <message>
         <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 要求裝置的安裝角度，左右偏移須在 4° 以內，上下角度則須介於仰角 5° 至俯角 9° 之間。</translation>
     </message>
     <message>
         <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 會持續進行校準，因此很少需要重設。若車輛電源開啟，重設校準將會重新啟動 openpilot。</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+轉向延遲校準已完成 %1%。</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+轉向延遲校準已完成。</translation>
     </message>
     <message>
         <source> Steering torque response calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation> 轉向扭矩反應校準已完成 %1%。</translation>
     </message>
     <message>
         <source> Steering torque response calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation> 轉向扭矩反應校準已完成。</translation>
     </message>
 </context>
 <context>
@@ -361,11 +361,11 @@ Steering lag calibration is complete.</source>
 Firehose Mode allows you to maximize your training data uploads to improve openpilot&apos;s driving models. More data means bigger models, which means better Experimental Mode.</source>
         <translation>openpilot 透過觀察人類駕駛（包括您）來學習如何駕駛。
 
-「訓練資料上傳模式」可讓您最大化上傳訓練數據，以改進 openpilot 的駕駛模型。更多數據代表更強大的模型，也就意味著更優秀的「實驗模式」。</translation>
+「Firehose 模式」可讓您最大化上傳訓練數據，以改進 openpilot 的駕駛模型。更多數據代表更強大的模型，也就意味著更優秀的「實驗模式」。</translation>
     </message>
     <message>
         <source>Firehose Mode: ACTIVE</source>
-        <translation>訓練資料上傳模式：啟用中</translation>
+        <translation>Firehose 模式：啟用中</translation>
     </message>
     <message>
         <source>ACTIVE</source>
@@ -373,7 +373,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>For maximum effectiveness, bring your device inside and connect to a good USB-C adapter and Wi-Fi weekly.&lt;br&gt;&lt;br&gt;Firehose Mode can also work while you&apos;re driving if connected to a hotspot or unlimited SIM card.&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;Frequently Asked Questions&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter how or where I drive?&lt;/i&gt; Nope, just drive as you normally would.&lt;br&gt;&lt;br&gt;&lt;i&gt;Do all of my segments get pulled in Firehose Mode?&lt;/i&gt; No, we selectively pull a subset of your segments.&lt;br&gt;&lt;br&gt;&lt;i&gt;What&apos;s a good USB-C adapter?&lt;/i&gt; Any fast phone or laptop charger should be fine.&lt;br&gt;&lt;br&gt;&lt;i&gt;Does it matter which software I run?&lt;/i&gt; Yes, only upstream openpilot (and particular forks) are able to be used for training.</source>
-        <translation>為了達到最佳效果，請每週將您的裝置帶回室內，並連接至優質的 USB-C 充電器與 Wi-Fi。&lt;br&gt;&lt;br&gt;訓練資料上傳模式在行駛時也能運作，但需連接至行動熱點或使用不限流量的 SIM 卡。&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;常見問題&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;我開車的方式或地點有影響嗎？&lt;/i&gt; 不會，請像平常一樣駕駛即可。&lt;br&gt;&lt;br&gt;&lt;i&gt;訓練資料上傳模式會上傳所有的駕駛片段嗎？&lt;/i&gt;不會，我們會選擇性地上傳部分片段。&lt;br&gt;&lt;br&gt;&lt;i&gt;什麼是好的 USB-C 充電器？&lt;/i&gt;任何快速手機或筆電充電器都應該適用。&lt;br&gt;&lt;br&gt;&lt;i&gt;我使用的軟體版本有影響嗎？&lt;/i&gt;有的，只有官方 openpilot（以及特定的分支）可以用於訓練。</translation>
+        <translation>為了達到最佳效果，請每週將您的裝置帶回室內，並連接至優質的 USB-C 充電器與 Wi-Fi。&lt;br&gt;&lt;br&gt;訓練資料上傳模式在行駛時也能運作，但需連接至行動熱點或使用不限流量的 SIM 卡。&lt;br&gt;&lt;br&gt;&lt;br&gt;&lt;b&gt;常見問題&lt;/b&gt;&lt;br&gt;&lt;br&gt;&lt;i&gt;我開車的方式或地點有影響嗎？&lt;/i&gt; 不會，請像平常一樣駕駛即可。&lt;br&gt;&lt;br&gt;&lt;i&gt;Firehose 模式會上傳所有的駕駛片段嗎？&lt;/i&gt;不會，我們會選擇性地上傳部分片段。&lt;br&gt;&lt;br&gt;&lt;i&gt;什麼是好的 USB-C 充電器？&lt;/i&gt;任何快速手機或筆電充電器都應該適用。&lt;br&gt;&lt;br&gt;&lt;i&gt;我使用的軟體版本有影響嗎？&lt;/i&gt;有的，只有官方 openpilot（以及特定的分支）可以用於訓練。</translation>
     </message>
     <message numerus="yes">
         <source>&lt;b&gt;%n segment(s)&lt;/b&gt; of your driving is in the training dataset so far.</source>
@@ -387,7 +387,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Firehose Mode</source>
-        <translation type="unfinished"></translation>
+        <translation>Firehose 模式</translation>
     </message>
 </context>
 <context>
@@ -473,16 +473,8 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>一個有關操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>裝置註冊失敗。它將無法連接或上傳至 comma.ai 伺服器，並且無法獲得 comma.ai 的支援。如果這是一個官方裝置，請訪問 https://comma.ai/support 。</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>NVMe 固態硬碟未被掛載。</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>檢測到不支援的 NVMe 固態硬碟。您的裝置因為使用了不支援的 NVMe 固態硬碟可能會消耗更多電力並更易過熱。</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -495,6 +487,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>裝置溫度過高。系統正在冷卻中，等冷卻完畢後才會啟動。目前內部組件溫度：%1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation>裝置註冊 comma.ai 後端失敗。此裝置將無法連線或上傳資料至 comma.ai 伺服器，也無法獲得 comma.ai 的支援。若此裝置購自 comma.ai/shop，請至 https://comma.ai/support 建立支援請求。</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation type="unfinished">暫停更新</translation>
+    </message>
+    <message>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -641,47 +649,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
 </context>
 <context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>重設失敗。請重新啟動後再試。</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>您確定要重設你的裝置嗎？</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>系統重設</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>取消</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>重新啟動</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>確認</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>無法掛載資料分割區。分割區可能已經毀損。請確認是否要刪除並重置。</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>重置中…
-這可能需要一分鐘的時間。</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>系統重設已啟動。按下「確認」以清除所有內容和設定，或按下「取消」以繼續開機。</translation>
-    </message>
-</context>
-<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -709,7 +676,7 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Firehose</source>
-        <translation>訓練上傳</translation>
+        <translation>Firehose</translation>
     </message>
 </context>
 <context>
@@ -808,13 +775,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>警告：自訂軟體</translation>
     </message>
     <message>
         <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
 
 If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
+        <translation>請謹慎安裝第三方軟體。第三方軟體未經 comma 測試，可能會損壞您的裝置及車輛。
+
+若您仍要繼續，日後可使用 https://flash.comma.ai 將您的裝置恢復至出廠狀態。</translation>
     </message>
 </context>
 <context>
@@ -1159,50 +1128,25 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
-        <translation>若車輛電源為開啟狀態，變更此設定將會重新啟動 openpilot。</translation>
+        <translation> 若車輛電源為開啟狀態，變更此設定將會重新啟動 openpilot。</translation>
     </message>
     <message>
         <source>Record and Upload Microphone Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>錄製並上傳麥克風音訊</translation>
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>在駕駛時錄製並儲存麥克風音訊。此音訊將會收錄在 comma connect 的行車記錄器影片中。</translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>系統更新</translation>
-    </message>
-    <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>需要進行作業系統更新。建議將您的裝置連接上 Wi-Fi 獲得更快的更新下載。下載大小約為 1GB。</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>連接到無線網路</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>安裝</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>回上頁</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>載入中…</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>重新啟動</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>更新失敗</translation>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1217,7 +1161,7 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose Mode &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</source>
-        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; 訓練資料上傳模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
+        <translation>&lt;span style=&apos;font-family: &quot;Noto Color Emoji&quot;;&apos;&gt;🔥&lt;/span&gt; Firehose 模式 &lt;span style=&apos;font-family: Noto Color Emoji;&apos;&gt;🔥&lt;/span&gt;</translation>
     </message>
 </context>
 <context>

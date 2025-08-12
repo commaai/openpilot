@@ -128,7 +128,7 @@ class Car:
       except Exception:
         pass
 
-      secoc_key = self.params.get("SecOCKey", encoding='utf8')
+      secoc_key = self.params.get("SecOCKey")
       if secoc_key is not None:
         saved_secoc_key = bytes.fromhex(secoc_key.strip())
         if len(saved_secoc_key) == 16:

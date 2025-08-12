@@ -8,10 +8,6 @@
         <translation>Fermer</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>Reporter la mise à jour</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>Redémarrer et mettre à jour</translation>
     </message>
@@ -477,16 +473,8 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>Une mise à jour du système d&apos;exploitation de votre appareil est en cours de téléchargement en arrière-plan. Vous serez invité à effectuer la mise à jour lorsqu&apos;elle sera prête à être installée.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>L&apos;appareil n&apos;a pas réussi à s&apos;enregistrer. Il ne se connectera pas aux serveurs de comma.ai, n&apos;enverra rien et ne recevra aucune assistance de comma.ai. S&apos;il s&apos;agit d&apos;un appareil officiel, visitez https://comma.ai/support.</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>Le disque NVMe n&apos;est pas monté.</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>Disque NVMe non supporté détecté. L&apos;appareil peut consommer beaucoup plus d&apos;énergie et surchauffer en raison du NVMe non supporté.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -495,6 +483,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot a détecté un changement dans la position de montage de l&apos;appareil. Assurez-vous que l&apos;appareil est totalement inséré dans le support et que le support est fermement fixé au pare-brise.</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation type="unfinished">Reporter la mise à jour</translation>
+    </message>
+    <message>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -641,47 +645,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>now</source>
         <translation>maintenant</translation>
-    </message>
-</context>
-<context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>Réinitialisation échouée. Redémarrez pour réessayer.</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>Réinitialisation de l&apos;appareil...
-Cela peut prendre jusqu&apos;à une minute.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>Êtes-vous sûr de vouloir réinitialiser votre appareil ?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>Réinitialisation du système</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Annuler</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Redémarrer</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>Confirmer</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>Impossible de monter la partition data. La partition peut être corrompue. Appuyez sur confirmer pour effacer et réinitialiser votre appareil.</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Réinitialisation système déclenchée. Appuyez sur confirmer pour effacer tout le contenu et les paramètres. Appuyez sur annuler pour reprendre le démarrage.</translation>
     </message>
 </context>
 <context>
@@ -1172,40 +1135,15 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>Mise à jour requise</translation>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Une mise à jour du système d&apos;exploitation est requise. Connectez votre appareil au Wi-Fi pour une mise à jour plus rapide. La taille du téléchargement est d&apos;environ 1 Go.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Se connecter au Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>Installer</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Retour</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>Chargement...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Redémarrer</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>Échec de la mise à jour</translation>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

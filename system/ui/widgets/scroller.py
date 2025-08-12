@@ -1,6 +1,6 @@
 import pyray as rl
-from openpilot.system.ui.lib.widget import Widget
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
+from openpilot.system.ui.widgets import Widget
 
 ITEM_SPACING = 40
 LINE_COLOR = rl.GRAY

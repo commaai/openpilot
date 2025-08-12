@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 import math
-from typing import SupportsFloat
+from numbers import Number
 
 from cereal import car, log
 import cereal.messaging as messaging
-from openpilot.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 from openpilot.common.params import Params
 from openpilot.common.realtime import config_realtime_process, Priority, Ratekeeper
 from openpilot.common.swaglog import cloudlog
@@ -40,7 +40,7 @@ class Controls:
                                    'driverMonitoringState', 'onroadEvents', 'driverAssistance'], poll='selfdriveState')
     self.pm = messaging.PubMaster(['carControl', 'controlsState'])
 
-    self.steer_limited_by_controls = False
+    self.steer_limited_by_safety = False
     self.curvature = 0.0
     self.desired_curvature = 0.0
 
@@ -120,14 +120,14 @@ class Controls:
 
     actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
-                                                       self.steer_limited_by_controls, self.desired_curvature,
-                                                       self.calibrated_pose, curvature_limited)  # TODO what if not available
+                                                       self.steer_limited_by_safety, self.desired_curvature,
+                                                       curvature_limited)  # TODO what if not available
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
     # Ensure no NaNs/Infs
     for p in ACTUATOR_FIELDS:
       attr = getattr(actuators, p)
-      if not isinstance(attr, SupportsFloat):
+      if not isinstance(attr, Number):
         continue
 
       if not math.isfinite(attr):
@@ -148,10 +148,7 @@ class Controls:
 
     CC.cruiseControl.override = CC.enabled and not CC.longActive and self.CP.openpilotLongitudinalControl
     CC.cruiseControl.cancel = CS.cruiseState.enabled and (not CC.enabled or not self.CP.pcmCruise)
-
-    speeds = self.sm['longitudinalPlan'].speeds
-    if len(speeds):
-      CC.cruiseControl.resume = CC.enabled and CS.cruiseState.standstill and speeds[-1] > 0.1
+    CC.cruiseControl.resume = CC.enabled and CS.cruiseState.standstill and not self.sm['longitudinalPlan'].shouldStop
 
     hudControl = CC.hudControl
     hudControl.setSpeed = float(CS.vCruiseCluster * CV.KPH_TO_MS)
@@ -170,10 +167,10 @@ class Controls:
     if self.sm['selfdriveState'].active:
       CO = self.sm['carOutput']
       if self.CP.steerControlType == car.CarParams.SteerControlType.angle:
-        self.steer_limited_by_controls = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
+        self.steer_limited_by_safety = abs(CC.actuators.steeringAngleDeg - CO.actuatorsOutput.steeringAngleDeg) > \
                                               STEER_ANGLE_SATURATION_THRESHOLD
       else:
-        self.steer_limited_by_controls = abs(CC.actuators.torque - CO.actuatorsOutput.torque) > 1e-2
+        self.steer_limited_by_safety = abs(CC.actuators.torque - CO.actuatorsOutput.torque) > 1e-2
 
     # TODO: both controlsState and carControl valids should be set by
     #       sm.all_checks(), but this creates a circular dependency

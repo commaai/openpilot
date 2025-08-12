@@ -47,15 +47,15 @@ if __name__ == "__main__":
 
   num_pandas = len(messaging.recv_one_retry(pandaStates_sock).pandaStates)
 
-  t = time.time()
+  t = time.monotonic()
   print("Getting vin...")
   set_obd_multiplexing(True)
   vin_rx_addr, vin_rx_bus, vin = get_vin(*can_callbacks, (0, 1))
   print(f'RX: {hex(vin_rx_addr)}, BUS: {vin_rx_bus}, VIN: {vin}')
-  print(f"Getting VIN took {time.time() - t:.3f} s")
+  print(f"Getting VIN took {time.monotonic() - t:.3f} s")
   print()
 
-  t = time.time()
+  t = time.monotonic()
   fw_vers = get_fw_versions(*can_callbacks, set_obd_multiplexing, query_brand=args.brand, extra=extra, num_pandas=num_pandas, progress=True)
   _, candidates = match_fw_to_car(fw_vers, vin)
 
@@ -71,4 +71,4 @@ if __name__ == "__main__":
 
   print()
   print("Possible matches:", candidates)
-  print(f"Getting fw took {time.time() - t:.3f} s")
+  print(f"Getting fw took {time.monotonic() - t:.3f} s")

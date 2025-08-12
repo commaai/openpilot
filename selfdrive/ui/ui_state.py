@@ -1,12 +1,20 @@
 import pyray as rl
+import numpy as np
 import time
+import threading
 from collections.abc import Callable
 from enum import Enum
 from cereal import messaging, log
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.params import Params, UnknownKeyName
+from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.ui.lib.prime_state import PrimeState
+from openpilot.system.ui.lib.application import DEFAULT_FPS
+from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.application import gui_app
 
 UI_BORDER_SIZE = 30
+BACKLIGHT_OFFROAD = 50
 
 
 class UIStatus(Enum):
@@ -139,10 +147,15 @@ class UIState:
 class Device:
   def __init__(self):
     self._ignition = False
-    self._interaction_time: float = 0.0
+    self._interaction_time: float = -1
     self._interactive_timeout_callbacks: list[Callable] = []
     self._prev_timed_out = False
-    self.reset_interactive_timeout()
+    self._awake = False
+
+    self._offroad_brightness: int = BACKLIGHT_OFFROAD
+    self._last_brightness: int = 0
+    self._brightness_filter = FirstOrderFilter(BACKLIGHT_OFFROAD, 10.00, 1 / DEFAULT_FPS)
+    self._brightness_thread: threading.Thread | None = None
 
   def reset_interactive_timeout(self, timeout: int = -1) -> None:
     if timeout == -1:
@@ -153,17 +166,63 @@ class Device:
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
+    # do initial reset
+    if self._interaction_time <= 0:
+      self.reset_interactive_timeout()
+
+    self._update_brightness()
+    self._update_wakefulness()
+
+  def set_offroad_brightness(self, brightness: int):
+    # TODO: not yet used, should be used in prime widget for QR code, etc.
+    self._offroad_brightness = min(max(brightness, 0), 100)
+
+  def _update_brightness(self):
+    clipped_brightness = self._offroad_brightness
+
+    if ui_state.started and ui_state.light_sensor >= 0:
+      clipped_brightness = ui_state.light_sensor
+
+      # CIE 1931 - https://www.photonstophotos.net/GeneralTopics/Exposure/Psychometric_Lightness_and_Gamma.htm
+      if clipped_brightness <= 8:
+        clipped_brightness = clipped_brightness / 903.3
+      else:
+        clipped_brightness = ((clipped_brightness + 16.0) / 116.0) ** 3.0
+
+      clipped_brightness = float(np.clip(100 * clipped_brightness, 10, 100))
+
+    brightness = round(self._brightness_filter.update(clipped_brightness))
+    if not self._awake:
+      brightness = 0
+
+    if brightness != self._last_brightness:
+      if self._brightness_thread is None or not self._brightness_thread.is_alive():
+        cloudlog.debug(f"setting display brightness {brightness}")
+        self._brightness_thread = threading.Thread(target=HARDWARE.set_screen_brightness, args=(brightness,))
+        self._brightness_thread.start()
+        self._last_brightness = brightness
+
+  def _update_wakefulness(self):
     # Handle interactive timeout
     ignition_just_turned_off = not ui_state.ignition and self._ignition
     self._ignition = ui_state.ignition
 
-    interaction_timeout = time.monotonic() > self._interaction_time
-    if ignition_just_turned_off or rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT):
+    if ignition_just_turned_off or any(ev.left_down for ev in gui_app.mouse_events):
       self.reset_interactive_timeout()
-    elif interaction_timeout and not self._prev_timed_out:
+
+    interaction_timeout = time.monotonic() > self._interaction_time
+    if interaction_timeout and not self._prev_timed_out:
       for callback in self._interactive_timeout_callbacks:
         callback()
     self._prev_timed_out = interaction_timeout
+
+    self._set_awake(ui_state.ignition or not interaction_timeout)
+
+  def _set_awake(self, on: bool):
+    if on != self._awake:
+      self._awake = on
+      cloudlog.debug(f"setting display power {int(on)}")
+      HARDWARE.set_display_power(on)
 
 
 # Global instance

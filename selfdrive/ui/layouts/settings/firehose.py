@@ -1,17 +1,16 @@
 import pyray as rl
-import json
 import time
 import threading
 
 from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 from openpilot.system.ui.lib.application import gui_app, FontWeight
-from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.widget import Widget
-from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.system.ui.lib.wrap_text import wrap_text
+from openpilot.system.ui.widgets import Widget
 
 
 TITLE = "Firehose Mode"
@@ -51,11 +50,11 @@ class FirehoseLayout(Widget):
     self.last_update_time = 0
 
   def _get_segment_count(self) -> int:
-    stats = self.params.get(self.PARAM_KEY, encoding='utf8')
+    stats = self.params.get(self.PARAM_KEY)
     if not stats:
       return 0
     try:
-      return int(json.loads(stats).get("firehose", 0))
+      return int(stats.get("firehose", 0))
     except Exception:
       cloudlog.exception(f"Failed to decode firehose stats: {stats}")
       return 0
@@ -161,7 +160,7 @@ class FirehoseLayout(Widget):
 
   def _fetch_firehose_stats(self):
     try:
-      dongle_id = self.params.get("DongleId", encoding='utf8')
+      dongle_id = self.params.get("DongleId")
       if not dongle_id or dongle_id == UNREGISTERED_DONGLE_ID:
         return
       identity_token = Api(dongle_id).get_token()
@@ -169,7 +168,7 @@ class FirehoseLayout(Widget):
       if response.status_code == 200:
         data = response.json()
         self.segment_count = data.get("firehose", 0)
-        self.params.put(self.PARAM_KEY, json.dumps(data))
+        self.params.put(self.PARAM_KEY, data)
     except Exception as e:
       cloudlog.error(f"Failed to fetch firehose stats: {e}")
 

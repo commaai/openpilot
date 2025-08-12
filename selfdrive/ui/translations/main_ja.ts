@@ -8,10 +8,6 @@
         <translation>閉じる</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>更新の一時停止</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>再起動してアップデート</translation>
     </message>
@@ -318,21 +314,25 @@
         <source>
 
 Steering lag calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+ステアリング遅延のキャリブレーションが%1％完了。</translation>
     </message>
     <message>
         <source>
 
 Steering lag calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>
+
+ステアリング遅延のキャリブレーション完了。</translation>
     </message>
     <message>
         <source> Steering torque response calibration is %1% complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>ステアリングトルク応答のキャリブレーションが%1％完了。</translation>
     </message>
     <message>
         <source> Steering torque response calibration is complete.</source>
-        <translation type="unfinished"></translation>
+        <translation>ステアリングトルク応答のキャリブレーション完了。</translation>
     </message>
 </context>
 <context>
@@ -473,16 +473,8 @@ Firehoseモードを有効にすると学習データを最大限アップロー
         <translation>オペレーティングシステムがバックグラウンドでダウンロードされています。インストールの準備が整うと更新を促されます。</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりデータをアップロードしたりできません。またcomma.aiのサポートも受けられません。公式デバイスである場合は https://comma.ai/support に問い合わせて下さい。</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>SSDドライブ(NVMe)がマウントされていません。</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>非サポートのSSDドライブ(NVMe)が検出されました。このドライブを使用するとデバイスが多大な電力を消費し過熱する可能性があります。</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -495,6 +487,22 @@ Firehoseモードを有効にすると学習データを最大限アップロー
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>デバイスの温度が高すぎるためシステム起動前の冷却中です。現在のデバイス内部温度: %1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation>製品のcomma.aiへの登録に失敗しました。このデバイスはcomma.aiのサーバーに接続したりアップロードを行ったりすることはできず、comma.aiからのサポートも受けられません。もしcomma.ai/shopで購入した場合は、https://comma.ai/support にてサポートチケットをご提出ください。</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation>過剰な作動の検知</translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation>また後で更新する</translation>
+    </message>
+    <message>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -641,47 +649,6 @@ Firehoseモードを有効にすると学習データを最大限アップロー
     </message>
 </context>
 <context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>初期化に失敗しました。再起動後に再試行してください。</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>初期化してもよろしいですか？</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>システムを初期化</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>キャンセル</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>再起動</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>確認</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>Dataパーティションをマウントできません。パーティションが破損している可能性があります。デバイスを消去してリセットしますので確認を押して下さい。</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>デバイスをリセットしています…
-この処理には最大で1分ほどかかる場合があります。</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>システムリセットの準備が整いました。すべてのデータと設定を消去するには「確認」を押してください。「キャンセル」を押すとブートを再開します。</translation>
-    </message>
-</context>
-<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -808,13 +775,15 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
+        <translation>警告: カスタムソフトウェア</translation>
     </message>
     <message>
         <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
 
 If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
+        <translation>サードパーティ製ソフトウェアをインストールする際は注意してください。サードパーティ製ソフトウェアはcommaによってテストされておらず、あなたのデバイスや車両に損害を与える可能性があります。
+
+続行したい場合は、後でデバイスを工場出荷時の状態に戻すために https://flash.comma.ai を使用してください。</translation>
     </message>
 </context>
 <context>
@@ -1163,46 +1132,21 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Record and Upload Microphone Audio</source>
-        <translation type="unfinished"></translation>
+        <translation>マイク音声の録音とアップロード</translation>
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>運転中にマイク音声を録音・保存します。音声は comma connect のドライブレコーダー映像に含まれます。</translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>アップデートが必要です</translation>
-    </message>
-    <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>OSのアップデートが必要です。Wi-Fiに接続してアップデートする事をお勧めします。ダウンロードサイズは約1GBです。</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fiに接続</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>インストール</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>戻る</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>読み込み中...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>再起動</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>更新失敗</translation>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -8,10 +8,6 @@
         <translation>ปิด</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>เลื่อนการอัปเดต</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>รีบูตและอัปเดต</translation>
     </message>
@@ -477,16 +473,8 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>กำลังดาวน์โหลดอัปเดทสำหรับระบบปฏิบัติการอยู่เบื้องหลัง คุณจะได้รับการแจ้งเตือนเมื่อระบบพร้อมสำหรับการติดตั้ง</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>ไม่สามารถลงทะเบียนอุปกรณ์ได้ อุปกรณ์จะไม่สามารถเชื่อมต่อหรืออัปโหลดไปยังเซิร์ฟเวอร์ของ comma.ai ได้และจะไม่ได้รับการสนับสนุนจาก comma.ai ถ้านี่คืออุปกรณ์อย่างเป็นทางการ กรุณาติดต่อ https://comma.ai/support</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>ไม่ได้ติดตั้งไดร์ฟ NVMe</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>ตรวจพบไดร์ฟ NVMe ที่ไม่รองรับ อุปกรณ์อาจใช้พลังงานมากขึ้นและร้อนเกินไปเนื่องจากไดร์ฟ NVMe ที่ไม่รองรับ</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -495,6 +483,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
         <translation>openpilot ตรวจพบการเปลี่ยนแปลงของตำแหน่งที่ติดตั้ง กรุณาตรวจสอบว่าได้เลื่อนอุปกรณ์เข้ากับจุดติดตั้งจนสุดแล้ว และจุดติดตั้งได้ยึดติดกับกระจกหน้าอย่างแน่นหนา</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation type="unfinished">เลื่อนการอัปเดต</translation>
+    </message>
+    <message>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -638,47 +642,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>now</source>
         <translation>ตอนนี้</translation>
-    </message>
-</context>
-<context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>การรีเซ็ตล้มเหลว รีบูตเพื่อลองอีกครั้ง</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>คุณแน่ใจหรือไม่ว่าต้องการรีเซ็ตอุปกรณ์?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>รีเซ็ตระบบ</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>ยกเลิก</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>รีบูต</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>ยืนยัน</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>กำลังรีเซ็ตอุปกรณ์...
-อาจใช้เวลาถึงหนึ่งนาที</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>ไม่สามารถเมานต์พาร์ติชั่นข้อมูลได้ พาร์ติชั่นอาจเสียหาย กดยืนยันเพื่อลบและรีเซ็ตอุปกรณ์ของคุณ</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>ระบบถูกรีเซ็ต กดยืนยันเพื่อลบข้อมูลและการตั้งค่าทั้งหมด กดยกเลิกเพื่อบูตต่อ</translation>
     </message>
 </context>
 <context>
@@ -1169,40 +1132,15 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>จำเป็นต้องอัปเดต</translation>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>จำเป็นต้องมีการอัปเดตระบบปฏิบัติการ เชื่อมต่ออุปกรณ์ของคุณกับ Wi-Fi เพื่อประสบการณ์การอัปเดตที่เร็วที่สุด ขนาดดาวน์โหลดประมาณ 1GB</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>เชื่อมต่อกับ Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Install</source>
-        <translation>ติดตั้ง</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>ย้อนกลับ</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>กำลังโหลด...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>รีบูต</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>การอัปเดตล้มเหลว</translation>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

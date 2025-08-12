@@ -1,8 +1,8 @@
-from openpilot.system.ui.lib.list_view import toggle_item
-from openpilot.system.ui.lib.scroller import Scroller
-from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
 from openpilot.selfdrive.ui.widgets.ssh_key import ssh_key_item
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.list_view import toggle_item
+from openpilot.system.ui.widgets.scroller import Scroller
 
 # Description constants
 DESCRIPTIONS = {

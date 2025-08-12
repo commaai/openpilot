@@ -28,6 +28,7 @@ public:
 
   VideoDecoder *decoder_ = nullptr;
   AVFormatContext *input_ctx = nullptr;
+  int video_stream_idx_ = -1;
   int prev_idx = -1;
   struct PacketInfo {
     int flags;

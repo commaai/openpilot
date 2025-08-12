@@ -1,16 +1,11 @@
 #!/usr/bin/env python3
 import os
 from openpilot.system.hardware import TICI
+os.environ['DEV'] = 'QCOM' if TICI else 'LLVM'
 USBGPU = "USBGPU" in os.environ
 if USBGPU:
-  os.environ['AMD'] = '1'
+  os.environ['DEV'] = 'AMD'
   os.environ['AMD_IFACE'] = 'USB'
-elif TICI:
-  from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
-  os.environ['QCOM'] = '1'
-else:
-  os.environ['LLVM'] = '1'
-  os.environ['JIT'] = '2'
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 import time
@@ -34,6 +29,7 @@ from openpilot.selfdrive.modeld.parse_model_outputs import Parser
 from openpilot.selfdrive.modeld.fill_model_msg import fill_model_msg, fill_pose_msg, PublishState
 from openpilot.selfdrive.modeld.constants import ModelConstants, Plan
 from openpilot.selfdrive.modeld.models.commonmodel_pyx import DrivingModelFrame, CLContext
+from openpilot.selfdrive.modeld.runners.tinygrad_helpers import qcom_tensor_from_opencl_address
 
 
 PROCESS_NAME = "selfdrive.modeld.modeld"
@@ -163,14 +159,14 @@ class ModelState:
     if prepare_only:
       return None
 
-    self.vision_output = self.vision_run(**self.vision_inputs).numpy().flatten()
+    self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
     self.full_features_buffer[0,:-1] = self.full_features_buffer[0,1:]
     self.full_features_buffer[0,-1] = vision_outputs_dict['hidden_state'][0, :]
     self.numpy_inputs['features_buffer'][:] = self.full_features_buffer[0, self.temporal_idxs]
 
-    self.policy_output = self.policy_run(**self.policy_inputs).numpy().flatten()
+    self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
 
     # TODO model only uses last value now

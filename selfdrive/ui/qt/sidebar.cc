@@ -29,6 +29,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
   flag_img = loadPixmap("../assets/images/button_flag.png", home_btn.size());
   settings_img = loadPixmap("../assets/images/button_settings.png", settings_btn.size(), Qt::IgnoreAspectRatio);
   mic_img = loadPixmap("../assets/icons/microphone.png", QSize(30, 30));
+  link_img = loadPixmap("../assets/icons/link.png", QSize(60, 60));
 
   connect(this, &Sidebar::valueChanged, [=] { update(); });
 
@@ -38,7 +39,7 @@ Sidebar::Sidebar(QWidget *parent) : QFrame(parent), onroad(false), flag_pressed(
 
   QObject::connect(uiState(), &UIState::uiUpdate, this, &Sidebar::updateState);
 
-  pm = std::make_unique<PubMaster>(std::vector<const char*>{"userFlag"});
+  pm = std::make_unique<PubMaster>(std::vector<const char*>{"bookmarkButton"});
 }
 
 void Sidebar::mousePressEvent(QMouseEvent *event) {
@@ -61,8 +62,8 @@ void Sidebar::mouseReleaseEvent(QMouseEvent *event) {
   }
   if (onroad && home_btn.contains(event->pos())) {
     MessageBuilder msg;
-    msg.initEvent().initUserFlag();
-    pm->send("userFlag", msg);
+    msg.initEvent().initBookmarkButton();
+    pm->send("bookmarkButton", msg);
   } else if (settings_btn.contains(event->pos())) {
     emit openSettings();
   } else if (recording_audio && mic_indicator_btn.contains(event->pos())) {
@@ -150,7 +151,12 @@ void Sidebar::paintEvent(QPaintEvent *event) {
   p.setFont(InterFont(35));
   p.setPen(QColor(0xff, 0xff, 0xff));
   const QRect r = QRect(58, 247, width() - 100, 50);
-  p.drawText(r, Qt::AlignLeft | Qt::AlignVCenter, net_type);
+
+  if (net_type == "Hotspot") {
+    p.drawPixmap(r.x(), r.y() + (r.height() - link_img.height()) / 2, link_img);
+  } else {
+    p.drawText(r, Qt::AlignLeft | Qt::AlignVCenter, net_type);
+  }
 
   // metrics
   drawMetric(p, temp_status.first, temp_status.second, 338);

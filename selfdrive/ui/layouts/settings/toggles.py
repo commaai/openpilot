@@ -1,7 +1,7 @@
-from openpilot.system.ui.lib.list_view import multiple_button_item, toggle_item
-from openpilot.system.ui.lib.scroller import Scroller
-from openpilot.system.ui.lib.widget import Widget
 from openpilot.common.params import Params
+from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.list_view import multiple_button_item, toggle_item
+from openpilot.system.ui.widgets.scroller import Scroller
 
 # Description constants
 DESCRIPTIONS = {
@@ -23,6 +23,10 @@ DESCRIPTIONS = {
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
   "RecordAudio": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.",
+  "RecordAudioFeedback": (
+    "Press the LKAS button to record audio feedback about openpilot. When this toggle is disabled, the button acts as a bookmark button. " +
+    "The event will be highlighted in comma connect and the segment will be preserved on your device's storage."
+  ),
 }
 
 
@@ -54,7 +58,7 @@ class TogglesLayout(Widget):
         buttons=["Aggressive", "Standard", "Relaxed"],
         button_width=255,
         callback=self._set_longitudinal_personality,
-        selected_index=int(self._params.get("LongitudinalPersonality") or 0),
+        selected_index=self._params.get("LongitudinalPersonality", return_default=True),
         icon="speed_limit.png"
       ),
       toggle_item(
@@ -82,7 +86,13 @@ class TogglesLayout(Widget):
         icon="microphone.png",
       ),
       toggle_item(
-        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="monitoring.png"
+        "Record Audio Feedback with LKAS button",
+        DESCRIPTIONS["RecordAudioFeedback"],
+        self._params.get_bool("RecordAudioFeedback"),
+        icon="microphone.png",
+      ),
+      toggle_item(
+        "Use Metric System", DESCRIPTIONS["IsMetric"], self._params.get_bool("IsMetric"), icon="metric.png"
       ),
     ]
 
@@ -92,4 +102,4 @@ class TogglesLayout(Widget):
     self._scroller.render(rect)
 
   def _set_longitudinal_personality(self, button_index: int):
-    self._params.put("LongitudinalPersonality", str(button_index))
+    self._params.put("LongitudinalPersonality", button_index)

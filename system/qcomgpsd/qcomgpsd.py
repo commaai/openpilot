@@ -286,7 +286,7 @@ def main() -> NoReturn:
       continue
 
     if DEBUG:
-      print(f"{time.time():.4f}: got log: {log_type} len {len(log_payload)}")
+      print(f"{time.time():.4f}: got log: {log_type} len {len(log_payload)}")  # noqa: TID251
 
     if log_type == LOG_GNSS_OEMDRE_MEASUREMENT_REPORT:
       msg = messaging.new_message('qcomGnss', valid=True)

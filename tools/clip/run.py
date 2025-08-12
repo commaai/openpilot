@@ -29,7 +29,7 @@ FRAMERATE = 20
 PIXEL_DEPTH = '24'
 RESOLUTION = '2160x1080'
 SECONDS_TO_WARM = 2
-PROC_WAIT_SECONDS = 30
+PROC_WAIT_SECONDS = 30*10
 
 OPENPILOT_FONT = str(Path(BASEDIR, 'selfdrive/assets/fonts/Inter-Regular.ttf').resolve())
 REPLAY = str(Path(BASEDIR, 'tools/replay/replay').resolve())
@@ -130,7 +130,7 @@ def populate_car_params(lr: LogReader):
   for cp in entries:
     key, value = cp.key, cp.value
     try:
-      params.put(key, value)
+      params.put(key, params.cpp2python(key, value))
     except UnknownKeyName:
       # forks of openpilot may have other Params keys configured. ignore these
       logger.warning(f"unknown Params key '{key}', skipping")
@@ -188,6 +188,7 @@ def clip(
   out: str,
   start: int,
   end: int,
+  speed: int,
   target_mb: int,
   title: str | None,
 ):
@@ -211,6 +212,12 @@ def clip(
   ]
   if title:
     overlays.append(f"drawtext=text='{escape_ffmpeg_text(title)}':fontfile={OPENPILOT_FONT}:fontcolor=white:fontsize=32:{box_style}:x=(w-text_w)/2:y=53")
+
+  if speed > 1:
+    overlays += [
+      f"setpts=PTS/{speed}",
+      "fps=60",
+    ]
 
   ffmpeg_cmd = [
     'ffmpeg', '-y',
@@ -289,6 +296,7 @@ def main():
   p.add_argument('-o', '--output', help='output clip to (.mp4)', type=validate_output_file, default=DEFAULT_OUTPUT)
   p.add_argument('-p', '--prefix', help='openpilot prefix', default=f'clip_{randint(100, 99999)}')
   p.add_argument('-q', '--quality', help='quality of camera (low = qcam, high = hevc)', choices=['low', 'high'], default='high')
+  p.add_argument('-x', '--speed', help='record the clip at this speed multiple', type=int, default=1)
   p.add_argument('-s', '--start', help='start clipping at <start> seconds', type=int)
   p.add_argument('-t', '--title', help='overlay this title on the video (e.g. "Chill driving across the Golden Gate Bridge")', type=validate_title)
   args = parse_args(p)
@@ -302,6 +310,7 @@ def main():
       out=args.output,
       start=args.start,
       end=args.end,
+      speed=args.speed,
       target_mb=args.file_size,
       title=args.title,
     )
