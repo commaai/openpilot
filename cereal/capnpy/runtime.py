@@ -1,3 +1,4 @@
+# cereal/capnpy/runtime.py
 from __future__ import annotations
 import math, struct
 from dataclasses import dataclass, field as dc_field
@@ -12,13 +13,14 @@ class TypeKind(Enum):
   STRUCT = auto()
 
 @dataclass
-class PrimType: name: str
+class PrimType:  name: str
 @dataclass
-class TextType: ...
+class TextType:  ...
 @dataclass
-class DataType: ...
+class DataType:  ...
 @dataclass
 class StructRef: name: str
+
 @dataclass
 class ListOf:
   elem_kind: TypeKind
@@ -26,10 +28,10 @@ class ListOf:
 
 PRIM_SIZES = {
   "Bool": (1, False),
-  "Int8": (8, True),  "UInt8": (8, False),
-  "Int16": (16, True),"UInt16": (16, False),
-  "Int32": (32, True),"UInt32": (32, False),
-  "Int64": (64, True),"UInt64": (64, False),
+  "Int8": (8, True),   "UInt8": (8, False),
+  "Int16": (16, True), "UInt16": (16, False),
+  "Int32": (32, True), "UInt32": (32, False),
+  "Int64": (64, True), "UInt64": (64, False),
   "Float32": (32, None), "Float64": (64, None),
 }
 
@@ -38,6 +40,7 @@ class Field:
   name: str
   kind: TypeKind
   typ: Any
+  # filled by layout:
   data_bit_off: Optional[int] = None
   bits: Optional[int] = None
   float_: Optional[bool] = None
@@ -50,6 +53,7 @@ class StructType:
   fields: List[Field] = dc_field(default_factory=list)
   data_size_bytes: int = 0
   ptr_count: int = 0
+  _field_map: Dict[str, Field] = dc_field(default_factory=dict, init=False, repr=False)
 
   def compute_layout(self) -> None:
     data_bits = 0
@@ -57,7 +61,7 @@ class StructType:
     ptr_idx = 0
     for f in self.fields:
       if f.kind == TypeKind.PRIM:
-        b, signed_or_float = PRIM_SIZES[f.typ.name]
+        b, sf = PRIM_SIZES[f.typ.name]
         if f.typ.name == "Bool":
           f.data_bit_off, f.bits, f.float_ = bool_cursor, 1, False
           bool_cursor += 1
@@ -65,7 +69,7 @@ class StructType:
         else:
           data_bits = _align_up(max(data_bits, bool_cursor), b)
           f.data_bit_off, f.bits = data_bits, b
-          f.float_ = (signed_or_float is None)
+          f.float_ = (sf is None)
           data_bits += b
       else:
         f.ptr_index = ptr_idx
@@ -75,15 +79,20 @@ class StructType:
           f.list_stride_bits = _align_up(ebits, 8)
     self.data_size_bytes = int(_align_up(data_bits, 64) // 8)
     self.ptr_count = ptr_idx
+    self._field_map = {f.name: f for f in self.fields}
 
+  # Reader from a struct body (not a whole message envelope)
   def from_bytes(self, buf: bytes, offset: int = 0) -> "Reader":
     return Reader(self, memoryview(buf), offset)
 
+  # Builder factory; call-style: CarState() → Builder
   def new_builder(self, data_bytes: Optional[int] = None, extra_ptrs: int = 0) -> "Builder":
     data_len = data_bytes if data_bytes is not None else self.data_size_bytes
     total = data_len + (self.ptr_count + extra_ptrs) * 8
     mv = memoryview(bytearray(total))
     return Builder(self, mv, 0)
+
+  __call__ = new_builder  # so car.CarState() returns a Builder
 
 @dataclass
 class Schema:
@@ -113,7 +122,7 @@ class Reader:
     f = _field(self._st, field_name)
     if f.kind == TypeKind.PRIM:
       val = _read_prim(self._mv, self._base*8 + (f.data_bit_off or 0), f.bits or 0, f.float_, f.typ.name)
-    elif f.kind == TypeKind.TEXT or f.kind == TypeKind.DATA:
+    elif f.kind in (TypeKind.TEXT, TypeKind.DATA):
       ptr_off, word = _ptr_word(self._base, self._st, self._mv, f)
       _assert_list(word)
       base, count = _list_base_count(self._mv, ptr_off, word)
@@ -122,11 +131,11 @@ class Reader:
     elif f.kind == TypeKind.LIST:
       ptr_off, word = _ptr_word(self._base, self._st, self._mv, f)
       _assert_list(word)
-      if f.typ.elem_kind == TypeKind.PRIM:
+      if isinstance(f.typ, ListOf) and f.typ.elem_kind == TypeKind.PRIM:
         ebits, _ = PRIM_SIZES[f.typ.elem_type.name]
         base, count = _list_base_count(self._mv, ptr_off, word)
         val = _PrimListView(self._mv, base, count, ebits)
-      elif f.typ.elem_kind == TypeKind.STRUCT:
+      elif isinstance(f.typ, ListOf) and f.typ.elem_kind == TypeKind.STRUCT:
         base = _list_base(self._mv, ptr_off, word)
         tag = int.from_bytes(self._mv[base:base+8], "little")
         count = tag & 0xffffffff
@@ -134,14 +143,12 @@ class Reader:
         ptrs = (tag >> 48) & 0xffff
         stride = data_words*8 + ptrs*8
         first = base + 8
-        val = _StructListView(self._mv, first, count, f.typ.elem_type, stride, data_words*8, ptrs)
+        val = _StructListView(self._mv, first, count, f.typ.elem_type, stride)
       else:
-        raise NotImplementedError("List of non-prim/non-struct")
+        raise NotImplementedError("List of this kind")
     elif f.kind == TypeKind.STRUCT:
       ptr_off, word = _ptr_word(self._base, self._st, self._mv, f)
       _assert_struct(word)
-      data_bytes = ((word >> 32) & 0xffff) * 8
-      ptrs = (word >> 48) & 0xffff
       base = ptr_off + 8 + _signed30((word >> 2) & ((1<<30)-1)) * 8
       val = Reader(f.typ, self._mv, base)
     else:
@@ -150,22 +157,49 @@ class Reader:
     return val
 
 class Builder:
-  __slots__ = ("_st","_mv","_base")
+  __slots__ = ("_st","_mv","_base","_reader_cache")
   def __init__(self, st: StructType, mv: memoryview, base: int):
-    self._st, self._mv, self._base = st, mv, base
-  def set(self, field_name: str, value: Any) -> None:
-    f = _field(self._st, field_name)
+    object.__setattr__(self, "_st", st)
+    object.__setattr__(self, "_mv", mv)
+    object.__setattr__(self, "_base", base)
+    object.__setattr__(self, "_reader_cache", None)
+
+  # attribute GET on builder reads current value (via a cached Reader)
+  def __getattr__(self, name: str) -> Any:
+    if name in ("_st","_mv","_base","_reader_cache"):
+      return object.__getattribute__(self, name)
+    f = _field(self._st, name)
+    r = self._reader_cache
+    if r is None:
+      r = Reader(self._st, self._mv, self._base)
+      object.__setattr__(self, "_reader_cache", r)
+    return getattr(r, name)
+
+  # attribute SET on builder sets primitive fields
+  def __setattr__(self, name: str, value: Any) -> None:
+    if name in ("_st","_mv","_base","_reader_cache"):
+      object.__setattr__(self, name, value); return
+    f = _field(self._st, name)
     if f.kind != TypeKind.PRIM:
-      raise NotImplementedError("Only primitive setters in first pass")
+      raise NotImplementedError("Only primitive field assignment supported in first pass")
     _write_prim(self._mv, self._base*8 + (f.data_bit_off or 0), f.bits or 0, f.float_, f.typ.name, value)
+    rc = self._reader_cache
+    if rc and name in rc._cache:
+      del rc._cache[name]
+
+  # optional explicit setter
+  def set(self, field_name: str, value: Any) -> None:
+    setattr(self, field_name, value)
+
   def to_bytes(self) -> bytes:
     return bytes(self._mv)
 
 # --- helpers ---
 def _field(st: StructType, name: str) -> Field:
-  for f in st.fields:
-    if f.name == name: return f
-  raise KeyError(name)
+  try:
+    return st._field_map[name]
+  except KeyError:
+    raise KeyError(name)
 
 def _ptr_word(base: int, st: StructType, mv: memoryview, f: Field):
   off = base + st.data_size_bytes + 8*(f.ptr_index or 0)
@@ -196,12 +230,10 @@ def _read_prim(mv: memoryview, bit_off: int, nbits: int, is_float: Optional[bool
 def _write_prim(mv: memoryview, bit_off: int, nbits: int, is_float: Optional[bool], prim_name: str, value: Any):
   if is_float:
     off = bit_off // 8
-    struct.pack_into("<f" if nbits==32 else "<d", mv, off, float(value))
-    return
+    struct.pack_into("<f" if nbits==32 else "<d", mv, off, float(value)); return
   if nbits == 1:
     _write_bits(mv, bit_off, 1, 1 if value else 0); return
-  signed = prim_name.startswith("Int")
-  _write_bits(mv, bit_off, nbits, int(value) & ((1<<nbits)-1))
+  _write_bits(mv, bit_off, nbits, int(value))
 
 def _read_bits(mv: memoryview, bit_off: int, nbits: int, signed: bool) -> int:
   byte_off = bit_off // 8
@@ -240,10 +272,10 @@ class _PrimListView:
     raise NotImplementedError
 
 class _StructListView:
-  __slots__ = ("_mv","_base","_count","_st","_stride","_data_bytes","_ptrs")
-  def __init__(self, mv, base, count, st: StructType, stride, data_bytes, ptrs):
+  __slots__ = ("_mv","_base","_count","_st","_stride")
+  def __init__(self, mv, base, count, st: StructType, stride):
     self._mv, self._base, self._count, self._st = mv, base, count, st
-    self._stride, self._data_bytes, self._ptrs = stride, data_bytes, ptrs
+    self._stride = stride
   def __len__(self): return self._count
   def __getitem__(self, i):
     if not (0 <= i < self._count): raise IndexError
