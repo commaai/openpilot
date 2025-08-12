@@ -24,18 +24,18 @@ NetworkType = log.DeviceState.NetworkType
 # Color scheme
 class Colors:
   SIDEBAR_BG = rl.Color(57, 57, 57, 255)
-  WHITE = rl.Color(255, 255, 255, 255)
+  WHITE = rl.WHITE
   WHITE_DIM = rl.Color(255, 255, 255, 85)
   GRAY = rl.Color(84, 84, 84, 255)
 
   # Status colors
-  GOOD = rl.Color(255, 255, 255, 255)
+  GOOD = rl.WHITE
   WARNING = rl.Color(218, 202, 37, 255)
   DANGER = rl.Color(201, 34, 49, 255)
 
   # UI elements
   METRIC_BORDER = rl.Color(255, 255, 255, 85)
-  BUTTON_NORMAL = rl.Color(255, 255, 255, 255)
+  BUTTON_NORMAL = rl.WHITE
   BUTTON_PRESSED = rl.Color(255, 255, 255, 166)
 
 
