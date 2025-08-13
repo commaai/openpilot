@@ -85,6 +85,12 @@ class Parser:
     outs[name + '_stds'] = pred_std_final.reshape(final_shape)
 
   def parse_vision_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
+    self.parse_mdn('plan_xyz', outs, in_N=0, out_N=0, out_shape=(99,))
+    self.parse_mdn('plan_velocity', outs, in_N=0, out_N=0, out_shape=(33,))
+    self.parse_mdn('plan_yaw', outs, in_N=0, out_N=0, out_shape=(33,))
+    self.parse_mdn('plan_motion', outs, in_N=0, out_N=0, out_shape=(9,))
+
+
     self.parse_mdn('pose', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
     self.parse_mdn('wide_from_device_euler', outs, in_N=0, out_N=0, out_shape=(ModelConstants.WIDE_FROM_DEVICE_WIDTH,))
     self.parse_mdn('road_transform', outs, in_N=0, out_N=0, out_shape=(ModelConstants.POSE_WIDTH,))
@@ -103,12 +109,12 @@ class Parser:
     return outs
 
   def parse_policy_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    if outs['plan'].shape[1] == 2 * ModelConstants.IDX_N * ModelConstants.PLAN_WIDTH:
-      self.parse_mdn('plan', outs, in_N=0, out_N=0,
-                     out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
-    else:
-      self.parse_mdn('plan', outs, in_N=ModelConstants.PLAN_MHP_N, out_N=ModelConstants.PLAN_MHP_SELECTION,
-                     out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
+    #if outs['plan'].shape[1] == 2 * ModelConstants.IDX_N * ModelConstants.PLAN_WIDTH:
+    #  self.parse_mdn('plan', outs, in_N=0, out_N=0,
+    #                 out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
+    #else:
+    #  self.parse_mdn('plan', outs, in_N=ModelConstants.PLAN_MHP_N, out_N=ModelConstants.PLAN_MHP_SELECTION,
+    #                out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
     if 'desired_curvature' in outs:
       self.parse_mdn('desired_curvature', outs, in_N=0, out_N=0, out_shape=(ModelConstants.DESIRED_CURV_WIDTH,))
     self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
