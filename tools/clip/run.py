@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import atexit
 import logging
 import os
 import platform
@@ -11,7 +10,7 @@ from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Sequence
 from pathlib import Path
 from random import randint
-from subprocess import Popen, PIPE
+from subprocess import Popen, PIPE, TimeoutExpired
 from typing import Literal
 
 from cereal.messaging import SubMaster
@@ -257,31 +256,41 @@ def clip(
     env = os.environ.copy()
     env['DISPLAY'] = display
 
-    xvfb_proc = start_proc(xvfb_cmd, env)
-    atexit.register(lambda: xvfb_proc.terminate())
-    ui_proc = start_proc(ui_cmd, env)
-    atexit.register(lambda: ui_proc.terminate())
-    replay_proc = start_proc(replay_cmd, env)
-    atexit.register(lambda: replay_proc.terminate())
-    procs = [replay_proc, ui_proc, xvfb_proc]
+    procs = []
+    try:
+      xvfb_proc = start_proc(xvfb_cmd, env)
+      procs.append(xvfb_proc)
+      ui_proc = start_proc(ui_cmd, env)
+      procs.append(ui_proc)
+      replay_proc = start_proc(replay_cmd, env)
+      procs.append(replay_proc)
 
-    logger.info('waiting for replay to begin (loading segments, may take a while)...')
-    wait_for_frames(procs)
+      logger.info('waiting for replay to begin (loading segments, may take a while)...')
+      wait_for_frames(procs)
 
-    logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
-    time.sleep(SECONDS_TO_WARM)
-    for proc in procs:
-      check_for_failure(proc)
+      logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
+      time.sleep(SECONDS_TO_WARM)
+      for proc in procs:
+        check_for_failure(proc)
 
-    ffmpeg_proc = start_proc(ffmpeg_cmd, env)
-    procs.append(ffmpeg_proc)
-    atexit.register(lambda: ffmpeg_proc.terminate())
+      ffmpeg_proc = start_proc(ffmpeg_cmd, env)
+      procs.append(ffmpeg_proc)
 
-    logger.info(f'recording in progress ({duration}s)...')
-    ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-    for proc in procs:
-      check_for_failure(proc)
-    logger.info(f'recording complete: {Path(out).resolve()}')
+      logger.info(f'recording in progress ({duration}s)...')
+      ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
+      for proc in procs:
+        check_for_failure(proc)
+      logger.info(f'recording complete: {Path(out).resolve()}')
+    finally:
+      for p in reversed(procs):
+        if p.poll() is None:
+          p.terminate()
+      for p in reversed(procs):
+        try:
+          p.wait(timeout=5)
+        except TimeoutExpired:
+          p.kill()
+          logger.warning(f"Process {p.args} did not terminate in time; killed.")
 
 
 def main():
@@ -319,9 +328,7 @@ def main():
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
     logger.exception('encountered error', exc_info=e)
-  finally:
-    atexit._run_exitfuncs()
-    sys.exit(exit_code)
+  sys.exit(exit_code)
 
 
 if __name__ == '__main__':
