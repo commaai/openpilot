@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import atexit
 import logging
 import os
 import platform
@@ -11,13 +10,14 @@ from argparse import ArgumentParser, ArgumentTypeError
 from collections.abc import Sequence
 from pathlib import Path
 from random import randint
-from subprocess import Popen, PIPE
+from subprocess import Popen
 from typing import Literal
 
 from cereal.messaging import SubMaster
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params, UnknownKeyName
 from openpilot.common.prefix import OpenpilotPrefix
+from openpilot.common.run import managed_proc
 from openpilot.tools.lib.route import Route
 from openpilot.tools.lib.logreader import LogReader
 
@@ -38,22 +38,23 @@ UI = str(Path(BASEDIR, 'selfdrive/ui/ui').resolve())
 logger = logging.getLogger('clip.py')
 
 
-def check_for_failure(proc: Popen):
-  exit_code = proc.poll()
-  if exit_code is not None and exit_code != 0:
-    cmd = str(proc.args)
-    if isinstance(proc.args, str):
-      cmd = proc.args
-    elif isinstance(proc.args, Sequence):
-      cmd = str(proc.args[0])
-    msg = f'{cmd} failed, exit code {exit_code}'
-    logger.error(msg)
-    stdout, stderr = proc.communicate()
-    if stdout:
-      logger.error(stdout.decode())
-    if stderr:
-      logger.error(stderr.decode())
-    raise ChildProcessError(msg)
+def check_for_failure(procs: list[Popen]):
+  for proc in procs:
+    exit_code = proc.poll()
+    if exit_code is not None and exit_code != 0:
+      cmd = str(proc.args)
+      if isinstance(proc.args, str):
+        cmd = proc.args
+      elif isinstance(proc.args, Sequence):
+        cmd = str(proc.args[0])
+      msg = f'{cmd} failed, exit code {exit_code}'
+      logger.error(msg)
+      stdout, stderr = proc.communicate()
+      if stdout:
+        logger.error(stdout.decode())
+      if stderr:
+        logger.error(stderr.decode())
+      raise ChildProcessError(msg)
 
 
 def escape_ffmpeg_text(value: str):
@@ -137,10 +138,6 @@ def populate_car_params(lr: LogReader):
   logger.debug('persisted CarParams')
 
 
-def start_proc(args: list[str], env: dict[str, str]):
-  return Popen(args, env=env, stdout=PIPE, stderr=PIPE)
-
-
 def validate_env(parser: ArgumentParser):
   if platform.system() not in ['Linux']:
     parser.exit(1, f'clip.py: error: {platform.system()} is not a supported operating system\n')
@@ -176,8 +173,7 @@ def wait_for_frames(procs: list[Popen]):
   while no_frames_drawn:
     sm.update()
     no_frames_drawn = sm['uiDebug'].drawTimeMillis == 0.
-    for proc in procs:
-      check_for_failure(proc)
+    check_for_failure(procs)
 
 
 def clip(
@@ -253,35 +249,22 @@ def clip(
 
   with OpenpilotPrefix(prefix, shared_download_cache=True):
     populate_car_params(lr)
-
     env = os.environ.copy()
     env['DISPLAY'] = display
 
-    xvfb_proc = start_proc(xvfb_cmd, env)
-    atexit.register(lambda: xvfb_proc.terminate())
-    ui_proc = start_proc(ui_cmd, env)
-    atexit.register(lambda: ui_proc.terminate())
-    replay_proc = start_proc(replay_cmd, env)
-    atexit.register(lambda: replay_proc.terminate())
-    procs = [replay_proc, ui_proc, xvfb_proc]
-
-    logger.info('waiting for replay to begin (loading segments, may take a while)...')
-    wait_for_frames(procs)
-
-    logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
-    time.sleep(SECONDS_TO_WARM)
-    for proc in procs:
-      check_for_failure(proc)
-
-    ffmpeg_proc = start_proc(ffmpeg_cmd, env)
-    procs.append(ffmpeg_proc)
-    atexit.register(lambda: ffmpeg_proc.terminate())
-
-    logger.info(f'recording in progress ({duration}s)...')
-    ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
-    for proc in procs:
-      check_for_failure(proc)
-    logger.info(f'recording complete: {Path(out).resolve()}')
+    with managed_proc(xvfb_cmd, env) as xvfb_proc, managed_proc(ui_cmd, env) as ui_proc, managed_proc(replay_cmd, env) as replay_proc:
+      procs = [xvfb_proc, ui_proc, replay_proc]
+      logger.info('waiting for replay to begin (loading segments, may take a while)...')
+      wait_for_frames(procs)
+      logger.debug(f'letting UI warm up ({SECONDS_TO_WARM}s)...')
+      time.sleep(SECONDS_TO_WARM)
+      check_for_failure(procs)
+      with managed_proc(ffmpeg_cmd, env) as ffmpeg_proc:
+        procs.append(ffmpeg_proc)
+        logger.info(f'recording in progress ({duration}s)...')
+        ffmpeg_proc.wait(duration + PROC_WAIT_SECONDS)
+        check_for_failure(procs)
+        logger.info(f'recording complete: {Path(out).resolve()}')
 
 
 def main():
@@ -319,9 +302,7 @@ def main():
     logger.exception('interrupted by user', exc_info=e)
   except Exception as e:
     logger.exception('encountered error', exc_info=e)
-  finally:
-    atexit._run_exitfuncs()
-    sys.exit(exit_code)
+  sys.exit(exit_code)
 
 
 if __name__ == '__main__':
