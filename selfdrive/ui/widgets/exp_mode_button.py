@@ -37,7 +37,7 @@ class ExperimentalModeButton(Widget):
     self.params.put_bool("ExperimentalMode", self.experimental_mode)
 
   def _render(self, rect):
-    rl.draw_rectangle_rounded(rect, 0.08, 20, rl.Color(255, 255, 255, 255))
+    rl.draw_rectangle_rounded(rect, 0.08, 20, rl.WHITE)
 
     rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(rect.height))
     self._draw_gradient_background(rect)
@@ -53,7 +53,7 @@ class ExperimentalModeButton(Widget):
     text_x = rect.x + self.horizontal_padding
     text_y = rect.y + rect.height / 2 - 45 // 2  # Center vertically
 
-    rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), text, rl.Vector2(int(text_x), int(text_y)), 45, 0, rl.Color(0, 0, 0, 255))
+    rl.draw_text_ex(gui_app.font(FontWeight.NORMAL), text, rl.Vector2(int(text_x), int(text_y)), 45, 0, rl.BLACK)
 
     # Draw icon (right aligned)
     icon_x = rect.x + rect.width - self.horizontal_padding - self.img_width
@@ -63,4 +63,4 @@ class ExperimentalModeButton(Widget):
     # Draw current mode icon
     current_icon = self.experimental_pixmap if self.experimental_mode else self.chill_pixmap
     source_rect = rl.Rectangle(0, 0, current_icon.width, current_icon.height)
-    rl.draw_texture_pro(current_icon, source_rect, icon_rect, rl.Vector2(0, 0), 0, rl.Color(255, 255, 255, 255))
+    rl.draw_texture_pro(current_icon, source_rect, icon_rect, rl.Vector2(0, 0), 0, rl.WHITE)
