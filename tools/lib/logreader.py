@@ -238,7 +238,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
       except Exception as e:
         exceptions[source.__name__] = e
-        raise
 
     if fn == try_fns[0]:
       missing_logs = list(valid_files.values()).count(None)
@@ -300,8 +299,7 @@ class LogReader:
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                sources: list[Source] = None, sort_by_time=False, only_union_types=False):
     if sources is None:
-      sources = [internal_source, comma_api_source, openpilotci_source]
-      # sources = [comma_car_segments_source]
+      sources = [internal_source, comma_api_source, openpilotci_source, comma_car_segments_source]
 
     self.default_mode = default_mode
     self.sources = sources
