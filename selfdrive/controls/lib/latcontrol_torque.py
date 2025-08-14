@@ -3,7 +3,6 @@ import numpy as np
 
 from cereal import log
 from opendbc.car.lateral import FRICTION_THRESHOLD, get_friction
-from opendbc.car.interfaces import LatControlInputs
 from openpilot.common.constants import ACCELERATION_DUE_TO_GRAVITY
 from openpilot.selfdrive.controls.lib.latcontrol import LatControl
 from openpilot.common.pid import PIDController
@@ -69,7 +68,7 @@ class LatControlTorque(LatControl):
                                       speed=CS.vEgo,
                                       freeze_integrator=freeze_integrator,
                                       # TODO: remove Bolt nano ff and remove gravity
-                                      convert_control=lambda a: self.torque_from_lateral_accel(LatControlInputs(a, roll_compensation, CS.vEgo, CS.aEgo),
+                                      convert_control=lambda a: self.torque_from_lateral_accel(a,
                                                                                                self.torque_params, gravity_adjusted=True))
       pid_log.active = True
       pid_log.p = float(self.pid.p)
