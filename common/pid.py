@@ -1,6 +1,5 @@
 import numpy as np
 from numbers import Number
-from typing import Callable
 
 
 class PIDController:
@@ -47,7 +46,6 @@ class PIDController:
     self.neg_limit = neg_limit
 
   def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
-
     self.speed = speed
     self.p = float(error) * self.k_p
     self.f = feedforward * self.k_f
