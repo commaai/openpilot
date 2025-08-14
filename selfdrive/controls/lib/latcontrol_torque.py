@@ -27,19 +27,24 @@ class LatControlTorque(LatControl):
     super().__init__(CP, CI)
     self.torque_params = CP.lateralTuning.torque.as_builder()
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
+    self.lateral_accel_from_torque = CI.lateral_accel_from_torque()
     self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
-                             k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
+                             k_f=self.torque_params.kf)
+    self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
+    self.update_limits()
 
-    self.pid.set_limits(self.torque_from_lateral_accel(self.steer_max, self.torque_params),
-                        self.torque_from_lateral_accel(-self.steer_max, self.torque_params))
+  def update_limits(self):
+    self.pid.set_limits(self.lateral_accel_from_torque(self.steer_max, self.torque_params),
+                        self.lateral_accel_from_torque(-self.steer_max, self.torque_params))
 
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited):
+    print("LatControlTorque.update called with active:", active, "CS.vEgo:", CS.vEgo, "desired_curvature:", desired_curvature)
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -80,6 +85,7 @@ class LatControlTorque(LatControl):
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
       pid_log.actualLateralAccel = float(actual_lateral_accel)
       pid_log.desiredLateralAccel = float(desired_lateral_accel)
+      print('LatControlTorque.update output_torque:', output_torque, self.pid.pos_limit, self.pid.neg_limit, output_lataccel, output_torque)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
