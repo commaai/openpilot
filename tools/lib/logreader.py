@@ -142,7 +142,7 @@ class ReadMode(enum.StrEnum):
 
 LogPath = str | None
 LogFileName = tuple[str, ...]
-Source = Callable[[SegmentRange, list[int], LogFileName], list[LogPath]]
+Source = Callable[[SegmentRange, list[int], LogFileName], dict[int, LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -151,37 +151,37 @@ class LogsUnavailable(Exception):
   pass
 
 
-def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
   if fns == FileName.RLOG:
-    return [route.log_paths()[seg] if seg in seg_idxs else None for seg in sr.seg_idxs]
+    return {seg: route.log_paths()[seg] for seg in seg_idxs}
   else:
-    return [route.qlog_paths()[seg] if seg in seg_idxs else None for seg in sr.seg_idxs]
+    return {seg: route.qlog_paths()[seg] for seg in sr.seg_idxs}
 
 
-def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> dict[int, LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  return eval_source([[get_internal_url(sr, seg, fn) for fn in fns] if seg in seg_idxs else [] for seg in sr.seg_idxs])
+  return eval_source({seg: [get_internal_url(sr, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
+def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
   t = time.monotonic()
-  urls = [[get_url(sr.route_name, seg, fn) for fn in fns] if seg in seg_idxs else [] for seg in sr.seg_idxs]
+  urls = {seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs}
   # print(time.monotonic() - t, "seconds to get openpilotci urls for")
   print('openpilotci urls', urls)
   return eval_source(urls)
 
 
-def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
+def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
   # t = time.monotonic()
-  urls = [get_comma_segments_url(sr.route_name, seg) if seg in seg_idxs else None for seg in sr.seg_idxs]
+  urls = {seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs}
   # print(time.monotonic() - t, "seconds to get comma car segments urls")
   return eval_source(urls)
 
@@ -190,11 +190,11 @@ def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
 
-def eval_source(files: list[list[str] | str]) -> list[LogPath]:
+def eval_source(files: dict[int, list[str] | str]) -> dict[int, LogPath]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
-  valid_files: list[LogPath] = []
+  valid_files: dict[int, LogPath] = {}
 
-  for urls in files:
+  for seg, urls in files.items():
     if isinstance(urls, str):
       urls = [urls]
 
@@ -202,10 +202,10 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
       # print('file exists?', url)
       if file_exists(url):
         # print('file exists! breaking:', url)
-        valid_files.append(url)
+        valid_files[seg] = url
         break
     else:
-      valid_files.append(None)
+      valid_files[seg] = None
 
   return valid_files
 
@@ -239,10 +239,10 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         print(time.monotonic() - t, "seconds to evaluate source")
 
         # Check every source returns an expected number of files
-        assert len(files) == len(valid_files) or len(valid_files) == 0, f"Source {source.__name__} returned unexpected number of files"
+        # assert len(files) == len(valid_files) or len(valid_files) == 0, f"Source {source.__name__} returned unexpected number of files"
 
         # Build a dict of valid files
-        for idx, f in enumerate(files):
+        for idx, f in files.items():
           if valid_files.get(idx) is None:
             valid_files[idx] = f
             # del needed_seg_idxs[needed_seg_idxs.index(idx)]
