@@ -44,7 +44,6 @@ class LatControlTorque(LatControl):
                         self.lateral_accel_from_torque(-self.steer_max, self.torque_params))
 
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited):
-    print("LatControlTorque.update called with active:", active, "CS.vEgo:", CS.vEgo, "desired_curvature:", desired_curvature)
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
