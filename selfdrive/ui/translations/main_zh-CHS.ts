@@ -494,15 +494,15 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Acknowledge Excessive Actuation</source>
-        <translation type="unfinished"></translation>
+        <translation>确认过度作动</translation>
     </message>
     <message>
         <source>Snooze Update</source>
-        <translation type="unfinished">暂停更新</translation>
+        <translation>推迟更新</translation>
     </message>
     <message>
         <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 在您上一次驾驶中，检测到过度的 %1 作动。请访问 https://comma.ai/support 联系客服，并提供您设备的 Dongle ID 以便进行故障排查。</translation>
     </message>
 </context>
 <context>
@@ -1033,13 +1033,15 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Record Audio Feedback with LKAS button</source>
-        <translation type="unfinished"></translation>
+        <translation>使用“车道保持”按钮录制音频反馈</translation>
     </message>
     <message>
         <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
 
 Note that this feature is only compatible with select cars.</source>
-        <translation type="unfinished"></translation>
+        <translation>按下“车道保持”按钮，即可录制并分享驾驶反馈给 openpilot 团队。当此开关禁用时，该按钮将用作书签按钮。该事件将在 comma connect 中高亮显示，且对应的视频片段将被保留在您的设备存储空间中。
+
+请注意，此功能仅兼容部分车型。</translation>
     </message>
 </context>
 <context>
