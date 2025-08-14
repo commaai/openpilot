@@ -238,9 +238,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         files = source(sr, needed_seg_idxs, fn)
         print(time.monotonic() - t, "seconds to evaluate source")
 
-        # Check every source returns an expected number of files
-        # assert len(files) == len(valid_files) or len(valid_files) == 0, f"Source {source.__name__} returned unexpected number of files"
-
         # Build a dict of valid files
         for idx, f in files.items():
           if valid_files.get(idx) is None:
