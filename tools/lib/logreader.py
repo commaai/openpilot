@@ -158,7 +158,7 @@ def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) ->
   if fns == FileName.RLOG:
     return {seg: route.log_paths()[seg] for seg in seg_idxs}
   else:
-    return {seg: route.qlog_paths()[seg] for seg in sr.seg_idxs}
+    return {seg: route.qlog_paths()[seg] for seg in seg_idxs}
 
 
 def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> dict[int, LogPath]:
@@ -216,8 +216,8 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
   sr = SegmentRange(identifier)
   needed_seg_idxs = sr.seg_idxs
-  mode = default_mode if sr.selector is None else ReadMode(sr.selector)
 
+  mode = default_mode if sr.selector is None else ReadMode(sr.selector)
   if mode == ReadMode.QLOG:
     try_fns = [FileName.QLOG]
   else:
