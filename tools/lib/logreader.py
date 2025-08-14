@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import bz2
+import time
 from functools import partial
 import multiprocessing
 import capnp
@@ -141,7 +142,7 @@ class ReadMode(enum.StrEnum):
 
 LogPath = str | None
 LogFileName = tuple[str, ...]
-Source = Callable[[SegmentRange, LogFileName], list[LogPath]]
+Source = Callable[[SegmentRange, list[int], LogFileName], list[LogPath]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -150,32 +151,39 @@ class LogsUnavailable(Exception):
   pass
 
 
-def comma_api_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
+def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
   if fns == FileName.RLOG:
-    return [route.log_paths()[seg] for seg in sr.seg_idxs]
+    return [route.log_paths()[seg] if seg in seg_idxs else None for seg in sr.seg_idxs]
   else:
-    return [route.qlog_paths()[seg] for seg in sr.seg_idxs]
+    return [route.qlog_paths()[seg] if seg in seg_idxs else None for seg in sr.seg_idxs]
 
 
-def internal_source(sr: SegmentRange, fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
+def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> list[LogPath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
   def get_internal_url(sr: SegmentRange, seg, file):
     return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
 
-  return eval_source([[get_internal_url(sr, seg, fn) for fn in fns] for seg in sr.seg_idxs])
+  return eval_source([[get_internal_url(sr, seg, fn) for fn in fns] if seg in seg_idxs else [] for seg in sr.seg_idxs])
 
 
-def openpilotci_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
-  return eval_source([[get_url(sr.route_name, seg, fn) for fn in fns] for seg in sr.seg_idxs])
+def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
+  t = time.monotonic()
+  urls = [[get_url(sr.route_name, seg, fn) for fn in fns] if seg in seg_idxs else [] for seg in sr.seg_idxs]
+  print(time.monotonic() - t, "seconds to get openpilotci urls for")
+  print('openpilotci urls', urls)
+  return eval_source(urls)
 
 
-def comma_car_segments_source(sr: SegmentRange, fns: LogFileName) -> list[LogPath]:
-  return eval_source([get_comma_segments_url(sr.route_name, seg) for seg in sr.seg_idxs])
+def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
+  t = time.monotonic()
+  urls = [get_comma_segments_url(sr.route_name, seg) if seg in seg_idxs else None for seg in sr.seg_idxs]
+  print(time.monotonic() - t, "seconds to get comma car segments urls")
+  return eval_source(urls)
 
 
 def direct_source(file_or_url: str) -> list[str]:
@@ -187,11 +195,14 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
   valid_files: list[LogPath] = []
 
   for urls in files:
+    print('evaluating urls')
     if isinstance(urls, str):
       urls = [urls]
 
     for url in urls:
+      print('file exists?', url)
       if file_exists(url):
+        print('file exists! breaking:', url)
         valid_files.append(url)
         break
     else:
@@ -204,6 +215,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   exceptions = {}
 
   sr = SegmentRange(identifier)
+  needed_seg_idxs = sr.seg_idxs
   mode = default_mode if sr.selector is None else ReadMode(sr.selector)
 
   if mode == ReadMode.QLOG:
@@ -220,8 +232,11 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
   valid_files: dict[int, LogPath] = {}
   for fn in try_fns:
     for source in sources:
+      print('evaluating source', source.__name__, 'for', sr, fn)
+      t = time.monotonic()
       try:
-        files = source(sr, fn)
+        files = source(sr, needed_seg_idxs, fn)
+        print(time.monotonic() - t, "seconds to evaluate source")
 
         # Check every source returns an expected number of files
         assert len(files) == len(valid_files) or len(valid_files) == 0, f"Source {source.__name__} returned unexpected number of files"
@@ -230,6 +245,12 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         for idx, f in enumerate(files):
           if valid_files.get(idx) is None:
             valid_files[idx] = f
+            # del needed_seg_idxs[needed_seg_idxs.index(idx)]
+
+        # Clear needed_seg_idxs if we got them back
+        needed_seg_idxs = [idx for idx in needed_seg_idxs if valid_files.get(idx) is None]
+        print('needed_seg_idxs', (needed_seg_idxs, files, valid_files))
+        print()
 
         # We've found all files, return them
         if all(f is not None for f in valid_files.values()):
@@ -237,6 +258,8 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
       except Exception as e:
         exceptions[source.__name__] = e
+        print(time.monotonic() - t, "seconds to evaluate source")
+        raise
 
     if fn == try_fns[0]:
       missing_logs = list(valid_files.values()).count(None)
@@ -298,7 +321,8 @@ class LogReader:
   def __init__(self, identifier: str | list[str], default_mode: ReadMode = ReadMode.RLOG,
                sources: list[Source] = None, sort_by_time=False, only_union_types=False):
     if sources is None:
-      sources = [internal_source, openpilotci_source, comma_api_source, comma_car_segments_source]
+      sources = [internal_source, comma_api_source, openpilotci_source]
+      # sources = [comma_car_segments_source]
 
     self.default_mode = default_mode
     self.sources = sources
