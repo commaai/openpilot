@@ -26,15 +26,18 @@ class LatControlTorque(LatControl):
   def __init__(self, CP, CI):
     super().__init__(CP, CI)
     self.torque_params = CP.lateralTuning.torque.as_builder()
+    self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.pid = PIDController(self.torque_params.kp, self.torque_params.ki,
                              k_f=self.torque_params.kf, pos_limit=self.steer_max, neg_limit=-self.steer_max)
-    self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
     self.torque_params.latAccelOffset = latAccelOffset
     self.torque_params.friction = friction
+
+    self.pid.set_limits(self.torque_from_lateral_accel(self.steer_max, self.torque_params),
+                        self.torque_from_lateral_accel(-self.steer_max, self.torque_params))
 
   def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
@@ -63,13 +66,12 @@ class LatControlTorque(LatControl):
       ff += get_friction(desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
-      output_torque = self.pid.update(pid_log.error,
+      output_lataccel = self.pid.update(pid_log.error,
                                       feedforward=ff,
                                       speed=CS.vEgo,
-                                      freeze_integrator=freeze_integrator,
-                                      # TODO: remove Bolt nano ff and remove gravity
-                                      convert_control=lambda a: self.torque_from_lateral_accel(a,
-                                                                                               self.torque_params, gravity_adjusted=True))
+                                      freeze_integrator=freeze_integrator)
+      output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
+
       pid_log.active = True
       pid_log.p = float(self.pid.p)
       pid_log.i = float(self.pid.i)

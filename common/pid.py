@@ -16,8 +16,7 @@ class PIDController:
     if isinstance(self._k_d, Number):
       self._k_d = [[0], [self._k_d]]
 
-    self.pos_limit = pos_limit
-    self.neg_limit = neg_limit
+    self.set_limits(pos_limit, neg_limit)
 
     self.i_rate = 1.0 / rate
     self.speed = 0.0
@@ -43,8 +42,11 @@ class PIDController:
     self.f = 0.0
     self.control = 0
 
-  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False,
-                          convert_control: Callable[[float], float] = lambda x: x):
+  def set_limits(self, pos_limit, neg_limit):
+    self.pos_limit = pos_limit
+    self.neg_limit = neg_limit
+
+  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
 
     self.speed = speed
     self.p = float(error) * self.k_p
@@ -55,11 +57,11 @@ class PIDController:
       i = self.i + error * self.k_i * self.i_rate
 
       # Don't allow windup if already clipping
-      test_control = convert_control(self.p + i + self.d + self.f)
+      test_control = self.p + i + self.d + self.f
       i_upperbound = self.i if test_control > self.pos_limit else self.pos_limit
       i_lowerbound = self.i if test_control < self.neg_limit else self.neg_limit
       self.i = np.clip(i, i_lowerbound, i_upperbound)
 
-    control = convert_control(self.p + self.i + self.d + self.f)
+    control = self.p + self.i + self.d + self.f
     self.control = np.clip(control, self.neg_limit, self.pos_limit)
     return self.control
