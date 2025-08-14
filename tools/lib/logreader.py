@@ -171,13 +171,11 @@ def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, end
 
 
 def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
-  urls = {seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs}
-  return eval_source(urls)
+  return eval_source({seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
 def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
-  urls = {seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs}
-  return eval_source(urls)
+  return eval_source({seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs})
 
 
 def direct_source(file_or_url: str) -> list[str]:
