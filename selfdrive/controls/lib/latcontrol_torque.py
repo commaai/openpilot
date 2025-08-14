@@ -85,7 +85,6 @@ class LatControlTorque(LatControl):
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
       pid_log.actualLateralAccel = float(actual_lateral_accel)
       pid_log.desiredLateralAccel = float(desired_lateral_accel)
-      print('LatControlTorque.update output_torque:', output_torque, self.pid.pos_limit, self.pid.neg_limit, output_lataccel, output_torque)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
