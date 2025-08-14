@@ -174,15 +174,15 @@ def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, end
 def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
   t = time.monotonic()
   urls = [[get_url(sr.route_name, seg, fn) for fn in fns] if seg in seg_idxs else [] for seg in sr.seg_idxs]
-  print(time.monotonic() - t, "seconds to get openpilotci urls for")
+  # print(time.monotonic() - t, "seconds to get openpilotci urls for")
   print('openpilotci urls', urls)
   return eval_source(urls)
 
 
 def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> list[LogPath]:
-  t = time.monotonic()
+  # t = time.monotonic()
   urls = [get_comma_segments_url(sr.route_name, seg) if seg in seg_idxs else None for seg in sr.seg_idxs]
-  print(time.monotonic() - t, "seconds to get comma car segments urls")
+  # print(time.monotonic() - t, "seconds to get comma car segments urls")
   return eval_source(urls)
 
 
@@ -195,14 +195,13 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
   valid_files: list[LogPath] = []
 
   for urls in files:
-    print('evaluating urls')
     if isinstance(urls, str):
       urls = [urls]
 
     for url in urls:
-      print('file exists?', url)
+      # print('file exists?', url)
       if file_exists(url):
-        print('file exists! breaking:', url)
+        # print('file exists! breaking:', url)
         valid_files.append(url)
         break
     else:
@@ -212,6 +211,7 @@ def eval_source(files: list[list[str] | str]) -> list[LogPath]:
 
 
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
+  t1 = time.monotonic()
   exceptions = {}
 
   sr = SegmentRange(identifier)
@@ -249,7 +249,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
         # Clear needed_seg_idxs if we got them back
         needed_seg_idxs = [idx for idx in needed_seg_idxs if valid_files.get(idx) is None]
-        print('needed_seg_idxs', (needed_seg_idxs, files, valid_files))
+        # print('needed_seg_idxs', (needed_seg_idxs, files, valid_files))
         print()
 
         # We've found all files, return them
@@ -269,6 +269,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
           break
 
+  print('Took ', time.monotonic() - t1, 'seconds to evaluate sources')
   missing_logs = list(valid_files.values()).count(None)
   raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} logs were not found, please ensure all logs " +
                         "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
