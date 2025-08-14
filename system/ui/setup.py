@@ -6,9 +6,12 @@ import time
 import urllib.request
 from urllib.parse import urlparse
 from enum import IntEnum
+import shutil
+
 import pyray as rl
 
 from cereal import log
+from openpilot.common.run import run_cmd
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
@@ -30,6 +33,19 @@ BUTTON_SPACING = 50
 OPENPILOT_URL = "https://openpilot.comma.ai"
 USER_AGENT = f"AGNOSSetup-{HARDWARE.get_os_version()}"
 
+CONTINUE_PATH = "/data/continue.sh"
+TMP_CONTINUE_PATH = "/data/continue.sh.new"
+INSTALL_PATH = "/data/openpilot"
+VALID_CACHE_PATH = "/data/.openpilot_cache"
+INSTALLER_SOURCE_PATH = "/usr/comma/installer"
+INSTALLER_DESTINATION_PATH = "/tmp/installer"
+INSTALLER_URL_PATH = "/tmp/installer_url"
+
+CONTINUE = """#!/usr/bin/env bash
+
+cd /data/openpilot
+exec ./launch_openpilot.sh
+"""
 
 class SetupState(IntEnum):
   LOW_VOLTAGE = 0
@@ -136,21 +152,19 @@ class Setup(Widget):
     self.state = SetupState.SOFTWARE_SELECTION
 
   def _custom_software_warning_continue_button_callback(self):
-    self.state = SetupState.CUSTOM_SOFTWARE
+    self.state = SetupState.NETWORK_SETUP
+    self.stop_network_check_thread.clear()
+    self.start_network_check()
 
   def _getting_started_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _software_selection_back_button_callback(self):
-    self.state = SetupState.NETWORK_SETUP
-    self.stop_network_check_thread.clear()
-    self.start_network_check()
+    self.state = SetupState.GETTING_STARTED
 
   def _software_selection_continue_button_callback(self):
     if self._software_selection_openpilot_button.selected:
-      self.download(OPENPILOT_URL)
+      self.use_openpilot()
     else:
       self.state = SetupState.CUSTOM_SOFTWARE_WARNING
 
@@ -158,11 +172,14 @@ class Setup(Widget):
     self.state = SetupState.GETTING_STARTED
 
   def _network_setup_back_button_callback(self):
-    self.state = SetupState.GETTING_STARTED
+    self.state = SetupState.SOFTWARE_SELECTION
 
   def _network_setup_continue_button_callback(self):
-    self.state = SetupState.SOFTWARE_SELECTION
     self.stop_network_check_thread.set()
+    if self._software_selection_openpilot_button.selected:
+      self.download(OPENPILOT_URL)
+    else:
+      self.state = SetupState.CUSTOM_SOFTWARE
 
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
@@ -299,6 +316,23 @@ class Setup(Widget):
     self.keyboard.set_title("Enter URL", "for Custom Software")
     gui_app.set_modal_overlay(self.keyboard, callback=handle_keyboard_result)
 
+  def use_openpilot(self):
+    if os.path.isdir(INSTALL_PATH) and os.path.isfile(VALID_CACHE_PATH):
+      os.remove(VALID_CACHE_PATH)
+      with open(TMP_CONTINUE_PATH, "w") as f:
+        f.write(CONTINUE)
+      run_cmd(["chmod", "+x", TMP_CONTINUE_PATH])
+      shutil.move(TMP_CONTINUE_PATH, CONTINUE_PATH)
+      shutil.copyfile(INSTALLER_SOURCE_PATH, INSTALLER_DESTINATION_PATH)
+
+      # give time for installer UI to take over
+      time.sleep(1)
+      gui_app.request_close()
+    else:
+      self.state = SetupState.NETWORK_SETUP
+      self.stop_network_check_thread.clear()
+      self.start_network_check()
+
   def download(self, url: str):
     # autocomplete incomplete URLs
     if re.match("^([^/.]+)/([^/]+)$", url):
@@ -316,7 +350,7 @@ class Setup(Widget):
     try:
       import tempfile
 
-      _, tmpfile = tempfile.mkstemp(prefix="installer_")
+      fd, tmpfile = tempfile.mkstemp(prefix="installer_")
 
       headers = {"User-Agent": USER_AGENT, "X-openpilot-serial": HARDWARE.get_serial()}
       req = urllib.request.Request(self.download_url, headers=headers)
@@ -346,12 +380,16 @@ class Setup(Widget):
         self.download_failed(self.download_url, "No custom software found at this URL.")
         return
 
-      os.rename(tmpfile, "/tmp/installer")
-      os.chmod("/tmp/installer", 0o755)
+      # AGNOS might try to execute the installer before this process exits.
+      # Therefore, important to close the fd before renaming the installer.
+      os.close(fd)
+      os.rename(tmpfile, INSTALLER_DESTINATION_PATH)
 
-      with open("/tmp/installer_url", "w") as f:
+      with open(INSTALLER_URL_PATH, "w") as f:
         f.write(self.download_url)
 
+      # give time for installer UI to take over
+      time.sleep(5)
       gui_app.request_close()
 
     except Exception:

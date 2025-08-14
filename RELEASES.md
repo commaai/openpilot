@@ -13,6 +13,10 @@ Version 0.10.0 (2025-08-05)
 * Enable live-learned steering actuation delay
 * Record driving feedback using LKAS button
 * Opt-in audio recording for dashcam video
+* Acura MDX 2025 support thanks to vanillagorillaa and MVL!
+* Honda Accord 2023-25 support thanks to vanillagorillaa and MVL!
+* Honda CR-V 2023-25 support thanks to vanillagorillaa and MVL!
+* Honda Pilot 2023-25 support thanks to vanillagorillaa and MVL!
 
 Version 0.9.9 (2025-05-23)
 ========================

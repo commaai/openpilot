@@ -494,15 +494,15 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Acknowledge Excessive Actuation</source>
-        <translation type="unfinished"></translation>
+        <translation>确认过度作动</translation>
     </message>
     <message>
         <source>Snooze Update</source>
-        <translation type="unfinished">暂停更新</translation>
+        <translation>推迟更新</translation>
     </message>
     <message>
         <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
-        <translation type="unfinished"></translation>
+        <translation>openpilot 在您上一次驾驶中，检测到过度的 %1 作动。请访问 https://comma.ai/support 联系客服，并提供您设备的 Dongle ID 以便进行故障排查。</translation>
     </message>
 </context>
 <context>
@@ -677,113 +677,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Firehose</source>
         <translation>Firehose</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>警告：低电压</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>请使用car harness线束为您的设备供电，或自行承担风险。</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>关机</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>继续</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>开始设置</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>开始旅程之前，让我们完成安装并介绍一些细节。</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>连接到WiFi</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>返回</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>不连接WiFi并继续</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>等待网络连接</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>输入网址</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>以下载自定义软件</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>正在下载……</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>下载失败</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>请确保互联网连接良好且输入的URL有效。</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>重启设备</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>重来</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>在此网址找不到自定义软件。</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>发生了一些错误。请重新启动您的设备。</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>选择语言</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>选择要安装的软件</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>定制软件</translation>
-    </message>
-    <message>
-        <source>WARNING: Custom Software</source>
-        <translation>警告：自定义软件</translation>
-    </message>
-    <message>
-        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
-
-If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation>请谨慎安装第三方软件。第三方软件未经 comma 测试，可能会损害您的设备和车辆。
-
-如果您决定继续，后续可通过 https://flash.comma.ai 将设备恢复到出厂状态。</translation>
     </message>
 </context>
 <context>
@@ -1140,13 +1033,15 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Record Audio Feedback with LKAS button</source>
-        <translation type="unfinished"></translation>
+        <translation>使用“车道保持”按钮录制音频反馈</translation>
     </message>
     <message>
         <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
 
 Note that this feature is only compatible with select cars.</source>
-        <translation type="unfinished"></translation>
+        <translation>按下“车道保持”按钮，即可录制并分享驾驶反馈给 openpilot 团队。当此开关禁用时，该按钮将用作书签按钮。该事件将在 comma connect 中高亮显示，且对应的视频片段将被保留在您的设备存储空间中。
+
+请注意，此功能仅兼容部分车型。</translation>
     </message>
 </context>
 <context>
