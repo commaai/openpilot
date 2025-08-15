@@ -47,6 +47,7 @@ cd /data/openpilot
 exec ./launch_openpilot.sh
 """
 
+
 class SetupState(IntEnum):
   LOW_VOLTAGE = 0
   GETTING_STARTED = 1
@@ -287,7 +288,7 @@ class Setup(Widget):
           + " and may cause damage to your device and/or vehicle.\n\nIf you'd like to proceed, use https://flash.comma.ai "
           + "to restore your device to a factory state later.",
           85, text_alignment=TextAlignment.LEFT, text_padding=60).render(
-      rl.Rectangle(rect.x + 50, rect.y + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
+      rl.Rectangle(rect.x + 50, rect.y + 200, rect.width - 50, BODY_FONT_SIZE * 3))
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
