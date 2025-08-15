@@ -186,16 +186,17 @@ def eval_source(files: dict[int, list[str] | str]) -> dict[int, LogPath]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
   valid_files: dict[int, LogPath] = {}
 
-  for seg, urls in files.items():
+  for seg_idx, urls in files.items():
     if isinstance(urls, str):
       urls = [urls]
 
+    # Add first valid file URL or None
     for url in urls:
       if file_exists(url):
-        valid_files[seg] = url
+        valid_files[seg_idx] = url
         break
     else:
-      valid_files[seg] = None
+      valid_files[seg_idx] = None
 
   return valid_files
 

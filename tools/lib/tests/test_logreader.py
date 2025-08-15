@@ -36,12 +36,12 @@ def setup_source_scenario(mocker, is_internal=False):
   comma_api_source_mock.__name__ = comma_api_source_mock._mock_name
 
   if is_internal:
-    internal_source_mock.return_value = [QLOG_FILE]
+    internal_source_mock.return_value = {3: QLOG_FILE}
   else:
     internal_source_mock.side_effect = InternalUnavailableException
 
-  openpilotci_source_mock.return_value = [None]
-  comma_api_source_mock.return_value = [QLOG_FILE]
+  openpilotci_source_mock.return_value = {3: None}
+  comma_api_source_mock.return_value = {3: QLOG_FILE}
 
   yield
 
