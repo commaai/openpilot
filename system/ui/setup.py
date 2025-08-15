@@ -78,9 +78,6 @@ class Setup(Widget):
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
     self.checkmark = gui_app.texture("icons/circled_check.png", 100, 100)
 
-    self._low_voltage_title_label = Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, TextAlignment.LEFT, text_color=rl.Color(255, 89, 79, 255))
-    self._low_voltage_body_label = Label("Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE,
-                                         text_alignment=TextAlignment.LEFT)
     self._low_voltage_continue_button = Button("Continue", self._low_voltage_continue_button_callback)
     self._low_voltage_poweroff_button = Button("Power Off", HARDWARE.shutdown)
 
@@ -111,12 +108,6 @@ class Setup(Widget):
 
     self._custom_software_warning_continue_button = Button("Continue", self._custom_software_warning_continue_button_callback)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
-    self._custom_software_warning_title_label = Label("WARNING: Custom Software", 100, FontWeight.BOLD, TextAlignment.LEFT, text_color=rl.Color(255,89,79,255),
-                                                      text_padding=60)
-    self._custom_software_warning_body_label = Label("Use caution when installing third-party software. Third-party software has not been tested by comma,"
-                                              + " and may cause damage to your device and/or vehicle.\n\nIf you'd like to proceed, use https://flash.comma.ai "
-                                              + "to restore your device to a factory state later.",
-                                             85, text_alignment=TextAlignment.LEFT, text_padding=60)
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
 
     try:
@@ -184,8 +175,10 @@ class Setup(Widget):
   def render_low_voltage(self, rect: rl.Rectangle):
     rl.draw_texture(self.warning, int(rect.x + 150), int(rect.y + 110), rl.WHITE)
 
-    self._low_voltage_title_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE))
-    self._low_voltage_body_label.render(rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 150, rect.width - 500, BODY_FONT_SIZE * 3))
+    Label("WARNING: Low Voltage", TITLE_FONT_SIZE, FontWeight.MEDIUM, TextAlignment.LEFT, text_color=rl.Color(255, 89, 79, 255)).render(
+      rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 100, rect.width - 500 - 150, TITLE_FONT_SIZE))
+    Label("Power your device in a car with a harness or proceed at your own risk.", BODY_FONT_SIZE, text_alignment=TextAlignment.LEFT).render(
+      rl.Rectangle(rect.x + 150, rect.y + 110 + 150 + 150, rect.width - 500, BODY_FONT_SIZE * 3))
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
@@ -291,8 +284,13 @@ class Setup(Widget):
     self._download_failed_startover_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_custom_software_warning(self, rect: rl.Rectangle):
-    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, rect.y + 150, rect.width - 265, TITLE_FONT_SIZE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, rect.y + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
+    Label("WARNING: Custom Software", 100, FontWeight.BOLD, TextAlignment.LEFT, text_color=rl.Color(255, 89, 79, 255), text_padding=60).render(
+      rl.Rectangle(rect.x + 50, rect.y + 150, rect.width - 265, TITLE_FONT_SIZE))
+    Label("Use caution when installing third-party software. Third-party software has not been tested by comma,"
+          + " and may cause damage to your device and/or vehicle.\n\nIf you'd like to proceed, use https://flash.comma.ai "
+          + "to restore your device to a factory state later.",
+          85, text_alignment=TextAlignment.LEFT, text_padding=60).render(
+      rl.Rectangle(rect.x + 50, rect.y + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
