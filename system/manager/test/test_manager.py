@@ -46,9 +46,10 @@ class TestManager:
     manager.main()
     for k in params.all_keys():
       default_value = params.get_default_value(k)
-      if default_value:
+      if default_value is not None:
         assert params.get(k) == default_value
     assert params.get("OpenpilotEnabledToggle")
+    assert params.get("RouteCount") == 0
 
   @pytest.mark.skip("this test is flaky the way it's currently written, should be moved to test_onroad")
   def test_clean_exit(self, subtests):
