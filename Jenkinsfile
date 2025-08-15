@@ -167,7 +167,7 @@ node {
   env.GIT_COMMIT = checkout(scm).GIT_COMMIT
 
   def excludeBranches = ['__nightly', 'devel', 'devel-staging', 'release3', 'release3-staging',
-                         'testing-closet*', 'hotfix-*']
+                         'release-tici', 'testing-closet*', 'hotfix-*']
   def excludeRegex = excludeBranches.join('|').replaceAll('\\*', '.*')
 
   if (env.BRANCH_NAME != 'master' && !env.BRANCH_NAME.contains('__jenkins_loop_')) {

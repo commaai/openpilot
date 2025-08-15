@@ -242,6 +242,9 @@ class Updater:
     b: str | None = self.params.get("UpdaterTargetBranch")
     if b is None:
       b = self.get_branch(BASEDIR)
+    b = {
+      ("tici", "release3"): "release-tici"
+    }.get((HARDWARE.get_device_type(), b), b)
     return b
 
   @property
