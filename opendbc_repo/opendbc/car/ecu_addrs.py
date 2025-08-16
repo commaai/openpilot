@@ -7,10 +7,11 @@ from opendbc.car.fw_query_definitions import EcuAddrBusType
 
 
 def _is_tester_present_response(msg: CanData, subaddr: int = None) -> bool:
-  # ISO-TP messages are always padded to 8 bytes
+  # ISO-TP messages may use CAN frame optimization (not always 8 bytes)
   # tester present response is always a single frame
   dat_offset = 1 if subaddr is not None else 0
-  if len(msg.dat) == 8 and 1 <= msg.dat[dat_offset] <= 7:
+  min_length = 4 if subaddr is not None else 3  # bytes: frame len, (pos/neg) sid, (optional negative sid)/0x00 sub-function
+  if min_length <= len(msg.dat) <= 8 and 1 <= msg.dat[dat_offset] <= 7:
     # success response
     if msg.dat[dat_offset + 1] == (uds.SERVICE_TYPE.TESTER_PRESENT + 0x40):
       return True

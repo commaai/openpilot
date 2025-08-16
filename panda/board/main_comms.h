@@ -12,8 +12,7 @@ static int get_health_pkt(void *dat) {
   health->voltage_pkt = current_board->read_voltage_mV();
   health->current_pkt = current_board->read_current_mA();
 
-  // Use the GPIO pin to determine ignition or use a CAN based logic
-  health->ignition_line_pkt = (uint8_t)(current_board->check_ignition());
+  health->ignition_line_pkt = (uint8_t)(harness_check_ignition());
   health->ignition_can_pkt = ignition_can;
 
   health->controls_allowed_pkt = controls_allowed;
@@ -29,7 +28,9 @@ static int get_health_pkt(void *dat) {
   health->heartbeat_lost_pkt = heartbeat_lost;
   health->safety_rx_checks_invalid_pkt = safety_rx_checks_invalid;
 
-  health->spi_checksum_error_count_pkt = spi_checksum_error_count;
+  #ifndef STM32F4
+  health->spi_error_count_pkt = spi_error_count;
+  #endif
 
   health->fault_status_pkt = fault_status;
   health->faults_pkt = faults;
@@ -97,7 +98,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       resp[1] = ((fan_state.rpm & 0xFF00U) >> 8U);
       resp_len = 2;
       break;
-    // **** 0xc0: reset communications
+    // **** 0xc0: reset communications state
     case 0xc0:
       comms_can_reset();
       break;
@@ -212,17 +213,14 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xdb: set OBD CAN multiplexing mode
     case 0xdb:
-      if (current_board->harness_config->has_harness) {
-        if (req->param1 == 1U) {
-          // Enable OBD CAN
-          current_board->set_can_mode(CAN_MODE_OBD_CAN2);
-        } else {
-          // Disable OBD CAN
-          current_board->set_can_mode(CAN_MODE_NORMAL);
-        }
+      if (req->param1 == 1U) {
+        // Enable OBD CAN
+        current_board->set_can_mode(CAN_MODE_OBD_CAN2);
+      } else {
+        // Disable OBD CAN
+        current_board->set_can_mode(CAN_MODE_NORMAL);
       }
       break;
-
     // **** 0xdc: set safety mode
     case 0xdc:
       set_safety_mode(req->param1, (uint16_t)req->param2);
@@ -263,47 +261,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         ++resp_len;
       }
       break;
-    // **** 0xe1: uart set baud rate
-    case 0xe1:
-      ur = get_ring_by_number(req->param1);
-      if (!ur) {
-        break;
-      }
-      uart_set_baud(ur->uart, req->param2);
-      break;
-    // **** 0xe2: uart set parity
-    case 0xe2:
-      ur = get_ring_by_number(req->param1);
-      if (!ur) {
-        break;
-      }
-      switch (req->param2) {
-        case 0:
-          // disable parity, 8-bit
-          ur->uart->CR1 &= ~(USART_CR1_PCE | USART_CR1_M);
-          break;
-        case 1:
-          // even parity, 9-bit
-          ur->uart->CR1 &= ~USART_CR1_PS;
-          ur->uart->CR1 |= USART_CR1_PCE | USART_CR1_M;
-          break;
-        case 2:
-          // odd parity, 9-bit
-          ur->uart->CR1 |= USART_CR1_PS;
-          ur->uart->CR1 |= USART_CR1_PCE | USART_CR1_M;
-          break;
-        default:
-          break;
-      }
-      break;
-    // **** 0xe4: uart set baud rate extended
-    case 0xe4:
-      ur = get_ring_by_number(req->param1);
-      if (!ur) {
-        break;
-      }
-      uart_set_baud(ur->uart, (int)req->param2*300);
-      break;
     // **** 0xe5: set CAN loopback (for testing)
     case 0xe5:
       can_loopback = req->param1 > 0U;
@@ -333,16 +290,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
         print("Clearing CAN CAN ring buffer failed: wrong bus number\n");
       }
       break;
-    // **** 0xf2: Clear UART ring buffer.
-    case 0xf2:
-      {
-        uart_ring * rb = get_ring_by_number(req->param1);
-        if (rb != NULL) {
-          print("Clearing UART queue.\n");
-          clear_uart_buff(rb);
-        }
-        break;
-      }
     // **** 0xf3: Heartbeat. Resets heartbeat counter.
     case 0xf3:
       {
@@ -369,7 +316,6 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
     // **** 0xf9: set CAN FD data bitrate
     case 0xf9:
       if ((req->param1 < PANDA_CAN_CNT) &&
-           current_board->has_canfd &&
            is_speed_valid(req->param2, data_speeds, sizeof(data_speeds)/sizeof(data_speeds[0]))) {
         bus_config[req->param1].can_data_speed = req->param2;
         bus_config[req->param1].canfd_enabled = (req->param2 >= bus_config[req->param1].can_speed);
@@ -380,7 +326,7 @@ int comms_control_handler(ControlPacket_t *req, uint8_t *resp) {
       break;
     // **** 0xfc: set CAN FD non-ISO mode
     case 0xfc:
-      if ((req->param1 < PANDA_CAN_CNT) && current_board->has_canfd) {
+      if (req->param1 < PANDA_CAN_CNT) {
         bus_config[req->param1].canfd_non_iso = (req->param2 != 0U);
         bool ret = can_init(CAN_NUM_FROM_BUS_NUM(req->param1));
         UNUSED(ret);

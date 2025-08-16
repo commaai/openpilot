@@ -60,5 +60,6 @@ def create_all(output_path: str):
       #print(filename)
       create_dbc(src_dir, filename, output_path)
 
+
 if __name__ == "__main__":
   create_all(opendbc_root)

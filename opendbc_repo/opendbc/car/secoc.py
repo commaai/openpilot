@@ -3,6 +3,7 @@ import struct
 from Crypto.Hash import CMAC
 from Crypto.Cipher import AES
 
+
 def add_mac(key, trip_cnt, reset_cnt, msg_cnt, msg):
   # TODO: clean up conversion to and from hex
 
@@ -31,6 +32,7 @@ def add_mac(key, trip_cnt, reset_cnt, msg_cnt, msg):
   payload = bytes.fromhex(msg)
 
   return (addr, payload, bus)
+
 
 def build_sync_mac(key, trip_cnt, reset_cnt, id_=0xf):
   id_ = struct.pack('>H', id_) # 16

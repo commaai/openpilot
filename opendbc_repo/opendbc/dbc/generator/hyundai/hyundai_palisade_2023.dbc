@@ -1,4 +1,4 @@
-CM_ "IMPORT _hyundai_common.dbc";
+CM_ "IMPORT _hyundai_canfd_common.dbc";
 
 BO_ 67 DATC13: 8 XXX
  SG_ CF_Datc_AcDisp : 22|2@1+ (1,0) [0|0] "" XXX

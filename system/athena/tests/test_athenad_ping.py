@@ -28,7 +28,7 @@ class TestAthenadPing:
   exit_event: threading.Event
 
   def _get_ping_time(self) -> str | None:
-    return cast(str | None, self.params.get("LastAthenaPingTime", encoding="utf-8"))
+    return cast(str | None, self.params.get("LastAthenaPingTime"))
 
   def _clear_ping_time(self) -> None:
     self.params.remove("LastAthenaPingTime")
@@ -42,7 +42,7 @@ class TestAthenadPing:
 
   def setup_method(self) -> None:
     self.params = Params()
-    self.dongle_id = self.params.get("DongleId", encoding="utf-8")
+    self.dongle_id = self.params.get("DongleId")
 
     wifi_radio(True)
     self._clear_ping_time()

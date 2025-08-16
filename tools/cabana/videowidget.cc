@@ -19,7 +19,7 @@ const int THUMBNAIL_MARGIN = 3;
 static const QColor timeline_colors[] = {
   [(int)TimelineType::None] = QColor(111, 143, 175),
   [(int)TimelineType::Engaged] = QColor(0, 163, 108),
-  [(int)TimelineType::UserFlag] = Qt::magenta,
+  [(int)TimelineType::UserBookmark] = Qt::magenta,
   [(int)TimelineType::AlertInfo] = Qt::green,
   [(int)TimelineType::AlertWarning] = QColor(255, 195, 0),
   [(int)TimelineType::AlertCritical] = QColor(199, 0, 57),
@@ -64,7 +64,7 @@ VideoWidget::VideoWidget(QWidget *parent) : QFrame(parent) {
     Pause/Resume: <span style="background-color:lightGray;color:gray">&nbsp;space&nbsp;</span>
   )").arg(timeline_colors[(int)TimelineType::None].name(),
           timeline_colors[(int)TimelineType::Engaged].name(),
-          timeline_colors[(int)TimelineType::UserFlag].name(),
+          timeline_colors[(int)TimelineType::UserBookmark].name(),
           timeline_colors[(int)TimelineType::AlertInfo].name(),
           timeline_colors[(int)TimelineType::AlertWarning].name(),
           timeline_colors[(int)TimelineType::AlertCritical].name()));
@@ -261,14 +261,23 @@ void Slider::paintEvent(QPaintEvent *ev) {
 
   QStyleOptionSlider opt;
   initStyleOption(&opt);
-  QRect r = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
-  p.fillRect(r, timeline_colors[(int)TimelineType::None]);
+  QRect handle_rect = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this);
+  QRect groove_rect = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
+
+  // Adjust groove height to match handle height
+  int handle_height = handle_rect.height();
+  groove_rect.setHeight(handle_height * 0.5);
+  groove_rect.moveCenter(QPoint(groove_rect.center().x(), rect().center().y()));
+
+  p.fillRect(groove_rect, timeline_colors[(int)TimelineType::None]);
 
   double min = minimum() / factor;
   double max = maximum() / factor;
 
   auto fillRange = [&](double begin, double end, const QColor &color) {
     if (begin > max || end < min) return;
+
+    QRect r = groove_rect;
     r.setLeft(((std::max(min, begin) - min) / (max - min)) * width());
     r.setRight(((std::min(max, end) - min) / (max - min)) * width());
     p.fillRect(r, color);

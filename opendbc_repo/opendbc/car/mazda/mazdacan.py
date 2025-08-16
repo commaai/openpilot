@@ -23,12 +23,12 @@ def create_steering_control(packer, CP, frame, apply_torque, lkas):
   tmp = steering_angle + 2048
   ahi = tmp >> 10
   amd = (tmp & 0x3FF) >> 2
-  amd = (amd >> 4) | (( amd & 0xF) << 4)
+  amd = (amd >> 4) | ((amd & 0xF) << 4)
   alo = (tmp & 0x3) << 2
 
   ctr = frame % 16
   # bytes:     [    1  ] [ 2 ] [             3               ]  [           4         ]
-  csum = 249 - ctr - hi - lo - (lnv << 3) - er1 - (ldw << 7) - ( er2 << 4) - (b1 << 5)
+  csum = 249 - ctr - hi - lo - (lnv << 3) - er1 - (ldw << 7) - (er2 << 4) - (b1 << 5)
 
   # bytes      [ 5 ] [ 6 ] [    7   ]
   csum = csum - ahi - amd - alo - b2
@@ -50,7 +50,7 @@ def create_steering_control(packer, CP, frame, apply_torque, lkas):
       "LKAS_REQUEST": apply_torque,
       "CTR": ctr,
       "ERR_BIT_1": er1,
-      "LINE_NOT_VISIBLE" : lnv,
+      "LINE_NOT_VISIBLE": lnv,
       "LDW": ldw,
       "BIT_1": b1,
       "ERR_BIT_2": er2,

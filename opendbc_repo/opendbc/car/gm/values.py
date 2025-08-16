@@ -106,6 +106,7 @@ class GMASCMPlatformConfig(GMPlatformConfig):
     # ASCM is supported, but due to a janky install and hardware configuration, we are not showing in the car docs
     self.car_docs = []
 
+
 @dataclass
 class GMSDGMPlatformConfig(GMPlatformConfig):
   def init(self):
@@ -202,11 +203,13 @@ class CruiseButtons:
   MAIN = 5
   CANCEL = 6
 
+
 class AccState:
   OFF = 0
   ACTIVE = 1
   FAULTED = 3
   STANDSTILL = 4
+
 
 class CanBus:
   POWERTRAIN = 0

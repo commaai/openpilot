@@ -3,7 +3,7 @@ from enum import Enum, IntFlag
 
 from opendbc.car import Bus, CarSpecs, DbcDict, PlatformConfig, Platforms, uds
 from opendbc.car.structs import CarParams
-from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Tool, Column
+from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, StdQueries, p16
 
 Ecu = CarParams.Ecu
@@ -101,8 +101,6 @@ class SubaruCarDocs(CarDocs):
   footnotes: list[Enum] = field(default_factory=lambda: [Footnote.GLOBAL])
 
   def init_make(self, CP: CarParams):
-    self.car_parts.parts.extend([Tool.socket_8mm_deep, Tool.pry_tool])
-
     if CP.alphaLongitudinalAvailable:
       self.footnotes.append(Footnote.EXP_LONG)
 

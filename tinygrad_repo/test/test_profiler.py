@@ -1,7 +1,7 @@
-import unittest, struct, contextlib, statistics
+import unittest, struct, contextlib, statistics, time, gc
 from tinygrad import Device, Tensor, dtypes, TinyJit
-from tinygrad.helpers import CI, getenv, Context
-from tinygrad.device import Buffer, BufferSpec, Compiled, ProfileRangeEvent, ProfileDeviceEvent, ProfileGraphEvent
+from tinygrad.helpers import CI, getenv, Context, ProfileRangeEvent, cpu_profile, cpu_events
+from tinygrad.device import Buffer, BufferSpec, Compiled, ProfileDeviceEvent, ProfileGraphEvent
 from tinygrad.runtime.support.hcq import HCQCompiled
 from tinygrad.engine.realize import get_runner
 
@@ -10,7 +10,11 @@ MOCKGPU = getenv("MOCKGPU")
 @contextlib.contextmanager
 def helper_collect_profile(*devs):
   for dev in devs: dev.synchronize()
-  Compiled.profile_events = [x for x in Compiled.profile_events if isinstance(x, ProfileDeviceEvent) and x.device.startswith("METAL")]
+  saved = [x for x in Compiled.profile_events if isinstance(x, ProfileDeviceEvent) and x.device.startswith("METAL")]
+  Compiled.profile_events.clear()
+  for x in saved: Compiled.profile_events.append(x)
+
+  cpu_events.clear()
 
   profile_list = []
   with Context(PROFILE=1):
@@ -18,6 +22,7 @@ def helper_collect_profile(*devs):
     for dev in devs: dev.synchronize()
     for dev in devs: dev._at_profile_finalize()
     for x in Compiled.profile_events: profile_list.append(x)
+    profile_list.extend(cpu_events)
 
 def helper_profile_filter_device(profile, device:str):
   assert any(getattr(x, "device", None) == device and isinstance(x, ProfileDeviceEvent) for x in profile), f"device {device} is not registred"
@@ -25,7 +30,10 @@ def helper_profile_filter_device(profile, device:str):
   assert len(dev_events) == 1, "only one device registration event is expected"
   return [x for x in profile if getattr(x, "device", None) == device], dev_events[0]
 
-@unittest.skipUnless(issubclass(type(Device[Device.DEFAULT]), HCQCompiled) or Device.DEFAULT in {"METAL"}, "HCQ device required to run")
+# TODO: support in HCQCompiled
+is_cpu_hcq = Device.DEFAULT in {"CPU", "LLVM"}
+
+@unittest.skipUnless((issubclass(type(Device[Device.DEFAULT]), HCQCompiled) and not is_cpu_hcq) or Device.DEFAULT in {"METAL"}, "Dev not supported")
 class TestProfiler(unittest.TestCase):
   @classmethod
   def setUpClass(self):
@@ -36,12 +44,12 @@ class TestProfiler(unittest.TestCase):
     si = self.b.schedule()[-1]
 
     TestProfiler.runner = get_runner(TestProfiler.d0.device, si.ast)
-    TestProfiler.b.lazydata.buffer.allocate()
+    TestProfiler.b.uop.buffer.allocate()
 
   def test_profile_kernel_run(self):
     runner_name = TestProfiler.runner._prg.name
     with helper_collect_profile(TestProfiler.d0) as profile:
-      TestProfiler.runner([TestProfiler.b.lazydata.buffer, TestProfiler.a.lazydata.buffer], var_vals={})
+      TestProfiler.runner([TestProfiler.b.uop.buffer, TestProfiler.a.uop.buffer], var_vals={})
 
     profile, _ = helper_profile_filter_device(profile, TestProfiler.d0.device)
     kernel_runs = [x for x in profile if isinstance(x, ProfileRangeEvent)]
@@ -66,20 +74,22 @@ class TestProfiler(unittest.TestCase):
 
     with helper_collect_profile(TestProfiler.d0) as profile:
       buf1.copyin(memoryview(bytearray(struct.pack("ff", 0, 1))))
-      TestProfiler.runner([buf1, TestProfiler.a.lazydata.buffer], var_vals={})
+      TestProfiler.runner([buf1, TestProfiler.a.uop.buffer], var_vals={})
       buf1.copyout(memoryview(bytearray(buf1.nbytes)))
 
     profile, _ = helper_profile_filter_device(profile, TestProfiler.d0.device)
     evs = [x for x in profile if isinstance(x, ProfileRangeEvent)]
 
     assert len(evs) == 3, "3 kernel runs are expected"
-    assert evs[0].is_copy, "kernel should be copy"
-    assert evs[1].name == runner_name, "kernel name is not correct"
-    assert not evs[1].is_copy, "kernel should not be copy"
-    assert evs[2].is_copy, "kernel should be copy"
+    # NOTE: order of events does not matter, the tool is responsible for sorting them
+    copy_events = [e for e in evs if e.is_copy]
+    self.assertEqual(len(copy_events), 2)
 
-    for i in range(1, 3):
-      assert evs[i].st > evs[i-1].en, "timestamp not aranged"
+    prg_events = [e for e in evs if not e.is_copy]
+    assert prg_events[0].name == runner_name, "kernel name is not correct"
+
+    #for i in range(1, 3):
+    #  assert evs[i].st > evs[i-1].en, "timestamp not aranged"
 
   def test_profile_multidev(self):
     d1 = Device[f"{Device.DEFAULT}:1"]
@@ -158,6 +168,46 @@ class TestProfiler(unittest.TestCase):
       jitter_matrix[i1][i2] = statistics.median(_sync_d2d(d1, d2) - _sync_d2d(d2, d1) for _ in range(20)) / 2 - cpu_diff
       assert abs(jitter_matrix[i1][i2]) < 0.5, "jitter should be less than 0.5ms"
     print("pairwise clock jitter matrix (us):\n" + '\n'.join([''.join([f'{float(item):8.3f}' for item in row]) for row in jitter_matrix]))
+
+  def test_cpu_profile(self):
+    def test_fxn(err=False):
+      time.sleep(0.1)
+      if err: raise Exception()
+      time.sleep(0.1)
+
+    with helper_collect_profile(dev:=TestProfiler.d0) as profile:
+      with cpu_profile("test_1", dev.device):
+        test_fxn(err=False)
+      with self.assertRaises(Exception):
+        with cpu_profile("test_2", dev.device):
+          test_fxn(err=True)
+
+    range_events = [p for p in profile if isinstance(p, ProfileRangeEvent)]
+    self.assertEqual(len(range_events), 2)
+    # record start/end time up to exit (error or success)
+    for e in range_events:
+      self.assertGreater(e.en, e.st)
+    e1, e2 = range_events
+    self.assertEqual([e1.name, e2.name], ["test_1", "test_2"])
+    # TODO: this is flaky
+    #self.assertLess(e1.st, e2.st)
+    #self.assertGreater(e1.en-e1.st, e2.en-e2.st)
+
+  @unittest.skipUnless(Device[Device.DEFAULT].graph is not None, "graph support required")
+  def test_graph(self):
+    from test.test_graph import helper_alloc_rawbuffer, helper_exec_op, helper_test_graphs
+    device = TestProfiler.d0.device
+    bufs = [helper_alloc_rawbuffer(device, fill=True) for _ in range(5)]
+    graphs = [[helper_exec_op(device, bufs[0], [bufs[1], bufs[2]]), helper_exec_op(device, bufs[0], [bufs[3], bufs[4]]),]]
+    with helper_collect_profile(dev:=TestProfiler.d0) as profile:
+      helper_test_graphs(dev.graph, graphs, runs:=2)
+      # NOTE: explicitly trigger deletion of all graphs
+      graphs.clear()
+      gc.collect()
+    graphs = [e for e in profile if isinstance(e, ProfileGraphEvent)]
+    self.assertEqual(len(graphs), runs)
+    for ge in graphs:
+      self.assertEqual(len(ge.ents), len(graphs))
 
 if __name__ == "__main__":
   unittest.main()

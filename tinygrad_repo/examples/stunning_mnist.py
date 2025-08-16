@@ -7,7 +7,7 @@
 from examples.beautiful_mnist import Model
 from tinygrad import Tensor, nn, getenv, GlobalCounters, Variable
 from tinygrad.nn.datasets import mnist
-from tinygrad.helpers import trange, DEBUG
+from tinygrad.helpers import trange
 
 # STEPS=70 python3 examples/stunning_mnist.py
 # NOTE: it's broken with STACK=1, why?
@@ -45,8 +45,7 @@ if __name__ == "__main__":
   print("*** scheduled training")
 
   # evaluate the model
-  with Tensor.test():
-    test_acc = ((model(X_test).argmax(axis=1) == Y_test).mean()*100)
+  test_acc = ((model(X_test).argmax(axis=1) == Y_test).mean()*100)
   print("*** scheduled eval")
 
   # NOTE: there's no kernels run in the scheduling phase

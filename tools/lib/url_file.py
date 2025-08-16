@@ -131,13 +131,13 @@ class URLFile:
       download_range = True
 
     if self._debug:
-      t1 = time.time()
+      t1 = time.monotonic()
 
     response = self._request('GET', self._url, headers=headers)
     ret = response.data
 
     if self._debug:
-      t2 = time.time()
+      t2 = time.monotonic()
       if t2 - t1 > 0.1:
         print(f"get {self._url} {headers!r} {t2 - t1:.3f} slow")
 

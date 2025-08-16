@@ -2,7 +2,7 @@ import numpy as np
 from tinygrad import dtypes, Tensor
 from tinygrad.helpers import getenv, get_single_element
 from tinygrad.dtype import _to_np_dtype
-from tinygrad.codegen.kernel import OptOps
+from tinygrad.codegen.opt.kernel import OptOps
 from tinygrad.engine.realize import lower_schedule
 
 dtype_in = dtypes.half if getenv("HALF") else dtypes.bfloat16 if getenv("BFLOAT16") else dtypes.float

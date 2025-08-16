@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import os
-import json
 import numpy as np
 import capnp
 
@@ -207,12 +206,11 @@ def migrate_cached_vehicle_params_if_needed(params: Params):
     return
 
   try:
-    last_parameters_dict = json.loads(last_parameters_data_old)
     last_parameters_msg = messaging.new_message('liveParameters')
     last_parameters_msg.liveParameters.valid = True
-    last_parameters_msg.liveParameters.steerRatio = last_parameters_dict['steerRatio']
-    last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_dict['stiffnessFactor']
-    last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_dict['angleOffsetAverageDeg']
+    last_parameters_msg.liveParameters.steerRatio = last_parameters_data_old['steerRatio']
+    last_parameters_msg.liveParameters.stiffnessFactor = last_parameters_data_old['stiffnessFactor']
+    last_parameters_msg.liveParameters.angleOffsetAverageDeg = last_parameters_data_old['angleOffsetAverageDeg']
     params.put("LiveParametersV2", last_parameters_msg.to_bytes())
   except Exception as e:
     cloudlog.error(f"Failed to perform parameter migration: {e}")

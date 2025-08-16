@@ -1,5 +1,5 @@
 from cereal import log
-from openpilot.common.conversions import Conversions as CV
+from openpilot.common.constants import CV
 from openpilot.common.realtime import DT_MDL
 
 LaneChangeState = log.LaneChangeState

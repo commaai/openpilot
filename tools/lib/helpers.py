@@ -9,7 +9,7 @@ class RE:
 
   INDEX = r'-?[0-9]+'
   SLICE = fr'(?P<start>{INDEX})?:?(?P<end>{INDEX})?:?(?P<step>{INDEX})?'
-  SEGMENT_RANGE = fr'{ROUTE_NAME}(?:(--|/)(?P<slice>({SLICE})))?(?:/(?P<selector>([qras])))?'
+  SEGMENT_RANGE = fr'{ROUTE_NAME}(?:(--|/)(?P<slice>({SLICE})))?(?:/(?P<selector>([qra])))?'
 
   BOOTLOG_NAME = ROUTE_NAME
 

@@ -1,7 +1,7 @@
 import unittest
 import pathlib
 from examples.whisper import init_whisper, load_file_waveform, transcribe_file, transcribe_waveform
-from tinygrad.helpers import CI, fetch, Context
+from tinygrad.helpers import CI, fetch
 from tinygrad import Device, dtypes
 from tinygrad.device import is_dtype_supported
 
@@ -24,24 +24,14 @@ class TestWhisper(unittest.TestCase):
     model, enc = init_whisper("tiny.en", batch_size=2)
     cls.model = model
     cls.enc = enc
-    # TODO: whisper has out of bounds access somewhere
-    cls.context = Context(IGNORE_OOB=1)
-    cls.context.__enter__()
 
   @classmethod
   def tearDownClass(cls):
-    cls.context.__exit__(None, None, None)
     del cls.model
     del cls.enc
 
   def test_transcribe_file1(self):
     self.assertEqual(transcribe_file(self.model, self.enc, TEST_FILE_1),  TRANSCRIPTION_1)
-
-  @unittest.expectedFailure  # Test for out of bounds access
-  @unittest.skip("TODO: flaky")
-  def test_transcribe_file1_OOB(self):
-    with Context(IGNORE_OOB=0):
-      self.assertEqual(transcribe_file(self.model, self.enc, TEST_FILE_1),  TRANSCRIPTION_1)
 
   @unittest.skipIf(CI or Device.DEFAULT == "LLVM", "too many tests for CI")
   def test_transcribe_file2(self):

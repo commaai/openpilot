@@ -1,12 +1,9 @@
-from typing import List
 from extra.models.resnet import ResNet50
-from tinygrad import Tensor, nn
-from tinygrad.helpers import Profiling, Timing, getenv, BEAM, NOOPT, DEBUG, Context, ansilen
+from tinygrad import Tensor, nn, Device
+from tinygrad.helpers import Profiling, Timing, getenv
 from tinygrad.uop.ops import Ops
-from tinygrad.codegen.kernel import Kernel
-from tinygrad.codegen.heuristic import hand_coded_optimizations
-from tinygrad.codegen import get_rewrites_for_renderer, apply_rewrites
-from tinygrad.engine.search import beam_search, bufs_from_lin
+from tinygrad.codegen import get_rewrites_for_renderer, apply_rewrites, rewrites_for_linearizer
+from tinygrad.uop.spec import type_verify
 
 if __name__ == "__main__":
   mdl = ResNet50()
@@ -24,30 +21,25 @@ if __name__ == "__main__":
 
     if not FORWARD_ONLY:
       with Timing("***** model schedule in  "):
-        sched = out.schedule()
+        with Profiling(PROFILE >= 3):
+          sched = out.schedule()
 
       if not SCHEDULE_ONLY:
         asts = list({x.ast.key:x.ast for x in sched if x.ast.op is Ops.SINK}.values())
         if (restrict_kernel := getenv("RESTRICT_KERNEL", -1)) != -1: asts = asts[restrict_kernel:restrict_kernel+1]
-        kernels: List[Kernel] = []
-        with Timing(f"***** model opts({len(asts):2d}) in  "):
-          with Profiling(PROFILE >= 3):
-            for ast in asts:
-              k = Kernel(ast)
-              if BEAM:
-                with Context(DEBUG=max(2, DEBUG.value)): k = beam_search(k, bufs_from_lin(k), BEAM.value)
-              elif NOOPT: pass
-              else: k.apply_opts(hand_coded_optimizations(k))
-              kernels.append(k)
 
-        with Timing("***** model prep in      "):
-          kernels = [(k, k.get_optimized_ast(), get_rewrites_for_renderer(k.opts, linearizer=LINEARIZE)) for k in kernels]
-
+        rewrites = get_rewrites_for_renderer(Device.default.renderer, linearizer=False)
         with Profiling(PROFILE, fn="/tmp/rewrite.prof"):
           with Timing("***** model rewrite in   "):
             rewritten_uops = []
-            for i,(k,u,rewrites) in enumerate(kernels):
-              with Timing(f"rewrite {i:2d} {k.name}{' '*(50-ansilen(k.name))}", enabled=getenv("VERBOSE", 0)):
-                rewritten_uops.append(apply_rewrites(u, rewrites))
-            uops = rewritten_uops
-        if LINEARIZE: print(sum(len(u.arg.lst) for u in uops))
+            for u in asts:
+              rewritten_uops.append(apply_rewrites(u, rewrites))
+
+        if LINEARIZE:
+          with Timing("***** model linearize in "):
+            uops_line = []
+            for u in rewritten_uops:
+              uops_line.append(apply_rewrites(u, rewrites_for_linearizer))
+          with Timing("***** model verify in    "):
+            for u in uops_line: type_verify(u.arg.lst)
+          print(sum(len(u.arg.lst) for u in uops_line))

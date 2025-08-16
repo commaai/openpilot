@@ -95,6 +95,7 @@ class TestChryslerRamDTSafety(TestChryslerSafety):
     values = {"Vehicle_Speed": speed}
     return self.packer.make_can_msg_panda("ESP_8", 0, values)
 
+
 class TestChryslerRamHDSafety(TestChryslerSafety):
   TX_MSGS = [[0x275, 0], [0x276, 0], [0x23A, 2]]
   RELAY_MALFUNCTION_ADDRS = {0: (0x276, 0x275)}

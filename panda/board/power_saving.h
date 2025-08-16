@@ -7,7 +7,7 @@ int power_save_status = POWER_SAVE_STATUS_DISABLED;
 
 void enable_can_transceivers(bool enabled) {
   // Leave main CAN always on for CAN-based ignition detection
-  uint8_t main_bus = (current_board->harness_config->has_harness && (harness.status == HARNESS_STATUS_FLIPPED)) ? 3U : 1U;
+  uint8_t main_bus = (harness.status == HARNESS_STATUS_FLIPPED) ? 3U : 1U;
   for(uint8_t i=1U; i<=4U; i++){
     current_board->enable_can_transceiver(i, (i == main_bus) || enabled);
   }

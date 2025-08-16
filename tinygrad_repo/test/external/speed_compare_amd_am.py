@@ -2,9 +2,9 @@ from tinygrad import Device, dtypes
 from tinygrad.helpers import getenv, colorize_float, DEBUG
 from extra.optimization.helpers import load_worlds, ast_str_to_lin
 from test.external.fuzz_linearizer import get_fuzz_rawbufs
-from tinygrad.codegen.heuristic import hand_coded_optimizations
-from tinygrad.engine.search import bufs_from_lin
-from tinygrad.engine.realize import CompiledRunner
+from tinygrad.codegen.opt.heuristic import hand_coded_optimizations
+from tinygrad.codegen.opt.search import bufs_from_lin
+from tinygrad.engine.realize import CompiledRunner, get_program
 from tinygrad.tensor import _to_np_dtype
 from tinygrad.runtime.ops_amd import AMDDevice
 from contextlib import contextmanager
@@ -77,9 +77,9 @@ if __name__ == "__main__":
     with run_amd():
       amdlin = ast_str_to_lin(ast, opts=amddev.renderer)
       amdlin.apply_opts(hand_coded_optimizations(amdlin))
-      has_bf16 = any(b.dtype == dtypes.bfloat16 for b in amdlin.membufs)
+      has_bf16 = any(b.dtype == dtypes.bfloat16 for b in amdlin.bufs)
 
-      amd_prg = CompiledRunner(amdlin.to_program())
+      amd_prg = CompiledRunner(get_program(amdlin.get_optimized_ast(), amdlin.opts))
       amdbufs = bufs_from_lin(amdlin)
       test_amdbufs = get_fuzz_rawbufs(amdlin) if not has_bf16 else amdbufs
       if not has_bf16: contents = [buf.as_buffer() for buf in test_amdbufs]
@@ -89,7 +89,7 @@ if __name__ == "__main__":
       rdr.device = "AMD:1"
       amlin = ast_str_to_lin(ast, opts=amdev.renderer)
       amlin.apply_opts(hand_coded_optimizations(amlin))
-      am_prg = CompiledRunner(amlin.to_program())
+      am_prg = CompiledRunner(get_program(amlin.get_optimized_ast(), amlin.opts))
       ambufs = bufs_from_lin(amlin)
       test_ambufs = get_fuzz_rawbufs(amlin) if not has_bf16 else ambufs
       if not has_bf16:
@@ -100,7 +100,7 @@ if __name__ == "__main__":
       cpu_rdr.device = "CPU"
       cpulin = ast_str_to_lin(ast, opts=cpu_rdr)
       cpulin.apply_opts(hand_coded_optimizations(cpulin))
-      cpu_prg = CompiledRunner(cpulin.to_program())
+      cpu_prg = CompiledRunner(get_program(cpulin.get_optimized_ast(), cpulin.opts))
       cpubufs = bufs_from_lin(cpulin)
       test_cpubufs = get_fuzz_rawbufs(cpulin) if not has_bf16 else ambufs
       if not has_bf16:

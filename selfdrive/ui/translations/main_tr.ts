@@ -8,10 +8,6 @@
         <translation>Kapat</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>Güncellemeyi sessize al</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>Güncelle ve Yeniden başlat</translation>
     </message>
@@ -247,10 +243,6 @@
         <translation>Sistemi kapat</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>openpilot, cihazın 4° sola veya 5° yukarı yada 9° aşağı bakıcak şekilde monte edilmesi gerekmektedir. openpilot sürekli kendisini kalibre edilmektedir ve nadiren sıfırlama gerebilir.</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Cihazınız %1° %2 ve %3° %4 yönünde ayarlı</translation>
     </message>
@@ -311,7 +303,31 @@
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -335,10 +351,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation type="unfinished"></translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -365,6 +377,10 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -454,15 +470,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -471,6 +479,22 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>openpilot detected a change in the device&apos;s mounting position. Ensure the device is fully seated in the mount and the mount is firmly secured to the windshield.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation type="unfinished">Güncellemeyi sessize al</translation>
+    </message>
+    <message>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -618,46 +642,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
 </context>
 <context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>Sıfırlama başarız oldu. Cihazı yeniden başlatın ve tekrar deneyin.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>Cihazı sıfırlamak istediğinizden eminmisiniz ?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>Sistemi sıfırla</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>İptal</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Yeniden başlat</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>Onayla</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -685,101 +669,6 @@ This may take up to a minute.</source>
     </message>
     <message>
         <source>Firehose</source>
-        <translation type="unfinished"></translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>UYARI: Düşük voltaj</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Cihazınızı emniyet kemeri olan bir arabada çalıştırın veya riski kabul ederek devam edin.</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>Sistemi kapat</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Devam et</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>Başlarken</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>Yola çıkmadan önce kurulumu bitirin ve bazı detayları gözden geçirin..</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fi ile bağlan</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Geri</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>Wi-Fi bağlantısı olmadan devam edin</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>İnternet bağlantısı bekleniyor.</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>URL girin</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>özel yazılım için</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>İndiriliyor...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>İndirme başarısız.</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Girilen URL nin geçerli olduğundan ve cihazın internet bağlantısının olduğunu kontrol edin</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>Cihazı yeniden başlat</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>Zacznij od początku</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>Dil seçin</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation type="unfinished">openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -1127,40 +1016,23 @@ This may take up to a minute.</source>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation type="unfinished"></translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>Güncelleme yapılması gerekli</translation>
+        <source>Record and Upload Microphone Audio</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>İşletim sistemi güncellemesi gerekmektedir. Lütfen Cihazı daha hızlı günceleyebilmesi için bir sonraki başlatılışında çekilir. Wi-Fi ağına bağlayın. Dosyanın boyutu yaklaşık 1GB dır. </translation>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fi ağına bağlan</translation>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>Install</source>
-        <translation>Yükle</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Geri</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>Yükleniyor...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Yeniden başlat</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>Güncelleme başarız oldu</translation>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

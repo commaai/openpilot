@@ -19,6 +19,13 @@ class ToyotaSecurityCarDocs(ExtraCarDocs):
 
 
 @dataclass
+class GMSecurityCarDocs(ExtraCarDocs):
+  def init_make(self, CP: structs.CarParams):
+    self.support_type = SupportType.INCOMPATIBLE
+    self.support_link = "#can-bus-security"
+
+
+@dataclass
 class FlexRayCarDocs(ExtraCarDocs):
   def init_make(self, CP: structs.CarParams):
     self.support_type = SupportType.INCOMPATIBLE
@@ -30,13 +37,19 @@ class CAR(Platforms):
 
   EXTRA_HONDA = ExtraPlatformConfig(
     [
-      CommunityCarDocs("Acura Integra 2024", "All"),
-      CommunityCarDocs("Honda Accord 2023-24", "All"),
+      CommunityCarDocs("Acura Integra 2023-25", "All"),
+      CommunityCarDocs("Acura MDX 2015-16", "Advance Package"),
+      CommunityCarDocs("Acura MDX 2017-20", "All"),
+      CommunityCarDocs("Acura RDX 2022-25", "All"),
+      CommunityCarDocs("Acura RLX 2017", "Advance Package or Technology Package"),
+      CommunityCarDocs("Acura TLX 2015-17", "Advance Package"),
+      CommunityCarDocs("Acura TLX 2018-20", "All"),
+      GMSecurityCarDocs("Acura ZDX 2024", "All"),
+      CommunityCarDocs("Honda Accord 2016-17", "Honda Sensing"),
       CommunityCarDocs("Honda Clarity 2018-21", "All"),
-      CommunityCarDocs("Honda CR-V 2024", "All"),
-      CommunityCarDocs("Honda CR-V Hybrid 2024", "All"),
       CommunityCarDocs("Honda Odyssey 2021-25", "All"),
-      CommunityCarDocs("Honda Pilot 2023-24", "All"),
+      CommunityCarDocs("Honda Passport 2026", "All"),
+      GMSecurityCarDocs("Honda Prologue 2024-25", "All"),
     ],
   )
 
@@ -55,10 +68,8 @@ class CAR(Platforms):
       ToyotaSecurityCarDocs("Toyota Camry 2025"),
       ToyotaSecurityCarDocs("Toyota Corolla Cross 2022-25"),
       ToyotaSecurityCarDocs("Toyota Highlander 2025"),
-      CommunityCarDocs("Toyota RAV4 Prime 2021-23"),
       ToyotaSecurityCarDocs("Toyota RAV4 Prime 2024-25"),
       ToyotaSecurityCarDocs("Toyota Sequoia 2023-25"),
-      CommunityCarDocs("Toyota Sienna 2021-23"),
       ToyotaSecurityCarDocs("Toyota Sienna 2024-25"),
       ToyotaSecurityCarDocs("Toyota Tundra 2022-25"),
       ToyotaSecurityCarDocs("Toyota Venza 2021-25"),

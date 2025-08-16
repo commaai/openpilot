@@ -5,25 +5,26 @@
 import unittest
 import numpy as np
 import functools
-from typing import List, Optional, Union, cast
+from typing import cast
+from hypothesis import assume, given, settings, strategies as strat
 
 from tinygrad import nn, dtypes, Device, Tensor
 from tinygrad.device import is_dtype_supported
 from tinygrad.dtype import DType, ImageDType
 from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.uop.ops import PatternMatcher, UOp, Ops, GroupOp, UPat, graph_rewrite, track_rewrites
-from tinygrad.codegen.symbolic import symbolic_simple
+from tinygrad.uop.symbolic import symbolic_simple
 from tinygrad.helpers import CI, DEBUG, FUSE_ARANGE, SPLIT_REDUCEOP, GlobalCounters, Context, getenv, all_same, temp
-from tinygrad.engine.grouper import view_left, view_right, sym, get_kernelize_map, Kernel, create_ast, merge_views, create_kernels
-from tinygrad.engine.schedule import ScheduleItem, create_schedule_with_vars
+from tinygrad.schedule.kernelize import merge_views, get_kernelize_map, Kernel
+from tinygrad.engine.schedule import create_schedule_with_vars
 from tinygrad.engine.realize import CompiledRunner, run_schedule, lower_schedule
 
 class KernelCountException(Exception): pass
-def check_schedule(t:Union[Tensor, List[Tensor], UOp], allowed:int, to_prerealize:Optional[List[Tensor]]=None, filter_sink=True):
+def check_schedule(t:Tensor|list[Tensor]|UOp, allowed:int, to_prerealize:list[Tensor]|None=None, filter_sink=True):
   if to_prerealize:
     with Context(DEBUG=0, TRACK_MATCH_STATS=0): Tensor.realize(*to_prerealize)
   if isinstance(t, Tensor): sched = t.schedule()
-  elif isinstance(t, List) and isinstance(t[0], Tensor): sched = Tensor.schedule(*t)
+  elif isinstance(t, list) and isinstance(t[0], Tensor): sched = Tensor.schedule(*t)
   else:
     assert isinstance(t, UOp), f"can't schedule {t}"
     sink = UOp.sink(t) if t.op is not Ops.SINK else t
@@ -65,10 +66,50 @@ def _test_conv2d(allowed:int, dtype:DType=dtypes.float, **kwargs):
     np.testing.assert_allclose(img.grad.numpy(), ref_img.grad.detach().numpy(), atol=1e-6 if dtype == dtypes.float else 1e-2)
     np.testing.assert_allclose(w.grad.numpy(), ref_w.grad.detach().numpy(), atol=1e-6 if dtype == dtypes.float else 1e-2)
 
-@track_rewrites(named=True)
-def schedule_graph_rewrite(big_sink:UOp): return graph_rewrite(big_sink, merge_views+sym, {})
+@track_rewrites(name=True)
+def schedule_graph_rewrite(big_sink:UOp): return get_kernelize_map(big_sink)[big_sink]
 
 class TestSchedule(unittest.TestCase):
+  def test_arange_avgpool2d(self, kcount=1):
+    x = Tensor.arange(25).reshape(1,1,5,5).cast(dtypes.float32)
+    t = x.avg_pool2d(padding=1)
+    sched = t.schedule()
+    self.assertEqual(len(sched), kcount)
+    run_schedule(sched)
+    import torch
+    torch_out = torch.nn.functional.avg_pool2d(torch.arange(25).reshape(1,1,5,5).float(), kernel_size=(2,2), padding=1).numpy()
+    np.testing.assert_allclose(t.numpy(), torch_out)
+
+  def test_arange_avgpool2d_fused_noopt(self):
+    with Context(FUSE_ARANGE=1, NOOPT=1): self.test_arange_avgpool2d(kcount=1)
+
+  # linearizer error
+  @unittest.skip("recursion error no longer raised")
+  @unittest.skipUnless(Device[Device.DEFAULT].renderer.supports_float4, "needs supports_float4 to fail")
+  def test_arange_avgpool2d_fused(self):
+    with self.assertRaises(RecursionError):
+      with Context(FUSE_ARANGE=1, NOOPT=0): self.test_arange_avgpool2d(kcount=1)
+
+  # when we're fusing a reduce, all ReduceOps must have the same N in the dimensions
+  # all permutes, reshapes, expands and shrinks push through the reduce
+  def test_arange_sum(self):
+    a = Tensor.arange(6).reshape(3, 2).sum(axis=1)
+    with Context(FUSE_ARANGE=1):
+      run_schedule(check_schedule(a, 1))
+    self.assertListEqual(a.tolist(), [1, 5, 9])
+
+  def test_arange_sum_alt(self):
+    a = (Tensor.arange(5).reshape(1,5).expand(6,5)*Tensor(2)).reshape(1,6,5).sum(axis=2)
+    with Context(FUSE_ARANGE=1):
+      run_schedule(check_schedule(a, 1))
+    np.testing.assert_equal(a.numpy(), 20)
+
+  def test_permute_arange(self):
+    a = Tensor.arange(6).reshape(6, 1, 1).permute(2, 0, 1).sum(axis=1)
+    with Context(FUSE_ARANGE=1):
+      run_schedule(check_schedule(a, 1))
+    self.assertListEqual(a.tolist(), [[15]])
+
   @unittest.skipIf(Device.DEFAULT == "CPU", "devices must mismatch")
   def test_error_on_device_mismatch(self):
     a = Tensor.empty(10)
@@ -109,13 +150,15 @@ class TestSchedule(unittest.TestCase):
         root = root + functools.reduce(lambda a,b:a+b, bufs[i:i+X])
       self.assertEqual(root.item(), sum(range(N)))
 
-  @unittest.expectedFailure # TODO: failing because of can_chase
-  def test_indexing_scalars_multiple_dims(self):
-    X = Tensor.randn(2, 3).realize()
-    xt = X[Tensor(0)][Tensor(1)]
+  @given(strat.sampled_from(range(2,4)), strat.sampled_from(range(2,4)), strat.sampled_from(range(0,4)), strat.sampled_from(range(0,4)))
+  @settings(deadline=None)
+  def test_indexing_scalars(self, x, y, a, b):
+    assume(a<x and b<y)
+    X = Tensor.randn(x, y).realize()
+    xt = X[Tensor(a)][Tensor(b)]
     with Context(FUSE_ARANGE=1):
       run_schedule(check_schedule(xt, 2))
-    np.testing.assert_equal(xt.numpy(), X.numpy()[0][1])
+    np.testing.assert_equal(xt.numpy(), X.numpy()[a][b])
 
   def test_push_pads_elementwise(self):
     x = Tensor.full((4,4), 2.).contiguous().realize()
@@ -133,39 +176,25 @@ class TestSchedule(unittest.TestCase):
 
   def test_rand(self):
     x = Tensor.rand(32)
-    check_schedule(x, 3, [Tensor._device_rng_counters[x.device]])
+    check_schedule(x, 4, [Tensor._device_rng_counters[x.device]])
 
   def test_rand_recompute_arange(self):
     x = Tensor.rand(32)
     with Context(DONT_GROUP_REDUCES=1):
-      check_schedule(x, 2, [Tensor._device_rng_counters[x.device]])
-
-  @unittest.skip("TODO: do not divide by zero given x.idiv(VALID)")
-  def test_rand_handcoded(self):
-    Tensor.manual_seed(0)
-    x = Tensor.rand(32)
-    # pre-realize shared seed
-    Tensor._device_rng_counters[x.device].realize()
-    # run custom kernelized kernel
-    sched_sink = graph_rewrite(x.lazydata, create_kernels, ctx={u:None for u in x.lazydata.toposort() if u.op is Ops.COPY}, bottom_up=True)
-    y = Tensor(graph_rewrite(sched_sink, create_ast, bottom_up=True))
-    run_schedule(check_schedule(y, 1))
-    # compare against reference
-    run_schedule(check_schedule(x, 3))
-    np.testing.assert_allclose(y.numpy(), x.numpy())
+      check_schedule(x, 3, [Tensor._device_rng_counters[x.device]])
 
   def test_empty_is_not_realized(self):
     a = Tensor.empty(10)
     child = a+2
-    assert not a.lazydata.is_realized
+    assert not a.uop.is_realized
     child.realize()
-    assert a.lazydata.is_realized
+    assert a.uop.is_realized
 
   # NOTE: because empty does not have an ExecItem if realize is called on a childless empty, it never gets allocated.
   def test_childless_empty_never_allocates(self):
     a = Tensor.empty(10)
     a.realize()
-    assert not a.lazydata.is_realized
+    assert not a.uop.is_realized
 
   def test_simplify_padded_const(self):
     a = Tensor.empty(1022).cummax(axis=0)
@@ -363,7 +392,7 @@ class TestSchedule(unittest.TestCase):
     sched = check_schedule([a, b], 1)
     run_schedule(sched)
     # a and b share the same underlying device memory
-    self.assertIs(a.lazydata.realized, b.lazydata.realized)
+    self.assertIs(a.uop.realized, b.uop.realized)
 
   def test_clone_doesnt_dedup(self):
     src = Tensor.ones(4).contiguous().realize()
@@ -372,7 +401,7 @@ class TestSchedule(unittest.TestCase):
     sched = check_schedule([a, b], 2, filter_sink=False)
     run_schedule(sched)
     # a and b are assigned to the same device Buffer
-    self.assertIsNot(a.lazydata.realized, b.lazydata.realized)
+    self.assertIsNot(a.uop.realized, b.uop.realized)
 
   # EMPTY is assigned to a unique device Buffer
 
@@ -381,7 +410,7 @@ class TestSchedule(unittest.TestCase):
     b = Tensor.empty((4,))
     # NOTE: empty does not have any schedule
     check_schedule([a, b], 0, filter_sink=False)
-    self.assertIsNot(a.lazydata.buffer, b.lazydata.buffer)
+    self.assertIsNot(a.uop.buffer, b.uop.buffer)
 
   def test_dedup_outputs(self):
     a = Tensor.full((4, 4), 1.).contiguous().realize()
@@ -671,16 +700,15 @@ class TestSchedule(unittest.TestCase):
     prev_a = (a+1).contiguous()
     a.assign(Tensor([2]))
     a.kernelize(prev_a)
-    assert prev_a.lazydata in a.lazydata.src, "contiguous usage must run before assign"
+    assert prev_a.uop in a.uop.src, "contiguous usage must run before assign"
     self.assertEqual((prev_a+a*3).item(), 1+2*3)
 
   def test_multioutput_ast(self):
-    a = Tensor.zeros(1, dtype=dtypes.int).contiguous().realize().lazydata
-    b = Tensor.zeros(1, dtype=dtypes.int).contiguous().realize().lazydata
-    c = Tensor.arange(4).realize().lazydata
+    a = Tensor.zeros(1, dtype=dtypes.int).contiguous().realize().uop
+    b = Tensor.zeros(1, dtype=dtypes.int).contiguous().realize().uop
+    c = Tensor.arange(4).realize().uop
     kernel = UOp(Ops.KERNEL, src=(a, b, c.base), arg=Kernel(UOp.sink(c.r(Ops.ADD, (0,))+1, c.r(Ops.ADD, (0,))*2)))
     assert all(s.op is Ops.BUFFER for s in kernel.src), f"views are not allowed here {kernel}"
-    kernel = graph_rewrite(kernel, create_ast)
     run_schedule(check_schedule(UOp.sink(a.assign(kernel), b.assign(kernel)), 1))
     self.assertEqual(a.buffer.numpy(), [7])
     self.assertEqual(b.buffer.numpy(), [12])
@@ -1000,21 +1028,21 @@ class TestSchedule(unittest.TestCase):
     Tensor.manual_seed(0)
     x = Tensor.randn(4, 32).realize()
     out = x.argmin(-1)
-    run_schedule(check_schedule(out, 3))
+    run_schedule(check_schedule(out, 2))
     np.testing.assert_equal(out.numpy(), x.numpy().argmin(axis=-1))
 
   def test_argmax_multireduce_fusion(self):
     Tensor.manual_seed(0)
     x = Tensor.randn(4, 32).realize()
     out = x.argmax(-1)
-    run_schedule(check_schedule(out, 3))
+    run_schedule(check_schedule(out, 2))
     np.testing.assert_equal(out.numpy(), x.numpy().argmax(axis=-1))
 
   def test_scaled_dot_product_attention_multireduce_fusion(self):
     Tensor.manual_seed(0)
-    q = Tensor.randn(32,8,16,64).realize()
-    k = Tensor.randn(32,8,16,64).realize()
-    v = Tensor.randn(32,8,16,64).realize()
+    q = Tensor.randn(32,8,16,8).realize()
+    k = Tensor.randn(32,8,16,8).realize()
+    v = Tensor.randn(32,8,16,8).realize()
     out = Tensor.scaled_dot_product_attention(q,k,v)
     run_schedule(check_schedule(out, 5))
     if getenv("CHECK", 1):
@@ -1192,8 +1220,8 @@ class TestSchedule(unittest.TestCase):
 
   def test_adam_step_fusion(self):
     with Tensor.train():
-      x = Tensor.empty(4, 64, 768)
-      layer = nn.Linear(768, 768*4)
+      x = Tensor.empty(4, 64, 32)
+      layer = nn.Linear(32, 32*4)
       _realize_weights(layer)
       opt = nn.optim.Adam(nn.state.get_parameters(layer), lr=1e-4)
       layer(x).relu().sum().backward()
@@ -1255,7 +1283,7 @@ class TestSchedule(unittest.TestCase):
 
   def test_sgd_4convs_fuse(self):
     with Tensor.train():
-      img = Tensor.empty(2,3,64,64)
+      img = Tensor.empty(2,3,16,16)
       c1 = nn.Conv2d(3,4,3,bias=False)
       c2 = nn.Conv2d(4,8,3,bias=False)
       c3 = nn.Conv2d(8,16,3,bias=False)
@@ -1268,7 +1296,7 @@ class TestSchedule(unittest.TestCase):
 
   def test_sgd_4convs_fuse_conv_bw(self):
     with Tensor.train():
-      img = Tensor.empty(2,3,64,64)
+      img = Tensor.empty(2,3,16,16)
       c1 = nn.Conv2d(3,4,3,bias=False)
       c2 = nn.Conv2d(4,8,3,bias=False)
       c3 = nn.Conv2d(8,16,3,bias=False)
@@ -1326,8 +1354,7 @@ class TestSchedule(unittest.TestCase):
     r = a.sum(0) + 6
     b = r.sum(0) * 4
     c = r.sum(1) * 2
-    schedule = check_schedule([b, c], 3)
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.ADD)
+    check_schedule([b, c], 3)
 
   def test_multireduce_simple_chase(self):
     Tensor.manual_seed(0)
@@ -1349,8 +1376,7 @@ class TestSchedule(unittest.TestCase):
     r = a.sum(2) + b
     d = r.T * 4
     e = r * d
-    schedule = check_schedule([d, e], 3)
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.ADD)
+    check_schedule([d, e], 3)
 
   def test_multireduce_push_permute_chase(self):
     Tensor.manual_seed(0)
@@ -1360,7 +1386,6 @@ class TestSchedule(unittest.TestCase):
     d = r.T * 4
     e = r * (d + a).sum(2)
     schedule = check_schedule([d, e], 3) # make sure it doesn't fuse
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.ADD)
     run_schedule(schedule)
     np.testing.assert_allclose(d.numpy(), (a.numpy().sum(2) + b.numpy()).T * 4, atol=1e-4, rtol=1e-4)
     np.testing.assert_allclose(e.numpy(), (a.numpy().sum(2) + b.numpy()) * (d.numpy() + a.numpy()).sum(2), atol=1e-4, rtol=1e-4)
@@ -1371,8 +1396,7 @@ class TestSchedule(unittest.TestCase):
     c = Tensor.empty(16, )
     r = a.sum(1) + c
     d = r[:4] * b
-    schedule = check_schedule(d, 2)
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.ADD)
+    check_schedule(d, 2)
 
   def test_multireduce_push_shrink_chase(self):
     Tensor.manual_seed(0)
@@ -1384,15 +1408,13 @@ class TestSchedule(unittest.TestCase):
     out = r[:4] * b + d.sum(1)[:4]
     # schedule = check_schedule(out, 2)
     schedule = check_schedule(out, 3)
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.ADD)
     run_schedule(schedule)
     np.testing.assert_allclose(out.numpy(), (a.numpy().sum(1) + c.numpy())[:4] * b.numpy() + d.numpy().sum(1)[:4], atol=1e-4, rtol=1e-4)
 
   def test_midreduce_nochase(self):
     a = Tensor.empty(16, 16)
     b = (a.sum(0) + a.max(1)) + 2
-    schedule = check_schedule(b, 2)
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.REDUCE_AXIS)
+    check_schedule(b, 2)
 
   def test_multireduce_midreduce_nochase(self):
     Tensor.manual_seed(0)
@@ -1400,7 +1422,6 @@ class TestSchedule(unittest.TestCase):
     b = (a.sum(0)+a.max(0) + a.max(1)+a.sum(1)) + 2
     # schedule = check_schedule(b, 2)
     schedule = check_schedule(b, 4)
-    self.assertIs(schedule[0].ast.src[0].src[2].op, Ops.REDUCE_AXIS)
     run_schedule(schedule)
     np.testing.assert_allclose(b.numpy(), a.numpy().sum(0)+a.numpy().max(0) + a.numpy().max(1)+a.numpy().sum(1)+2, atol=1e-4, rtol=1e-4)
 
@@ -1582,7 +1603,7 @@ class TestSchedule(unittest.TestCase):
 
   @unittest.skip("disabling subbuffer manually isn't supported anymore")
   def test_bitcast_disable_subbufer(self):
-    x = cast(UOp, Tensor.empty(1, dtype=dtypes.float32).realize().lazydata)
+    x = cast(UOp, Tensor.empty(1, dtype=dtypes.float32).realize().uop)
     a = x.alu(Ops.EXP2).cast(dtypes.int32, True, allow_buffer_view=False)
     b = x.cast(dtypes.int32, True, allow_buffer_view=False)
     b = a.alu(Ops.ADD, b)
@@ -1592,10 +1613,10 @@ class TestSchedule(unittest.TestCase):
     Tensor.manual_seed(0)
     x = Tensor.randn(10, 20).realize()
     out = x.argmax(1)
-    run_schedule(check_schedule(out, 3)) # TODO: push a reduceop through a reshape
+    run_schedule(check_schedule(out, 2))
 
   def test_conv2d(self): _test_conv2d(7)
-  def test_conv2d_fused(self): _test_conv2d(6, FUSE_CONV_BW=1)
+  def test_conv2d_fused(self): _test_conv2d(5, FUSE_CONV_BW=1)
 
   @unittest.skipUnless(is_dtype_supported(dtypes.half) and is_dtype_supported(dtypes.ulong), "need half and ulong")
   def test_conv2d_half(self): _test_conv2d(7, dtype=dtypes.half)
@@ -1604,22 +1625,6 @@ class TestSchedule(unittest.TestCase):
   @unittest.expectedFailure
   def test_conv2d_fused_half(self): _test_conv2d(5, dtype=dtypes.half)
 
-  @unittest.skip("splitting kernels exceeding device buffer count is not yet supported")
-  def _test_buf_cnt(self, cnt:int, allowed:int):
-    alu = functools.reduce(lambda x,y: x+y, [Tensor.ones((1, 1)).contiguous().realize() for _ in range(cnt-1)])
-    s = alu.schedule()
-    assert len(s) == allowed
-    run_schedule(s)
-    expected = functools.reduce(lambda x,y: x+y, [np.ones((1, 1)) for _ in range(cnt-1)])
-    np.testing.assert_equal(alu.numpy(), expected)
-
-  def test_buf_cnt_at_limit(self): self._test_buf_cnt(31, allowed=1)
-  @unittest.expectedFailure
-  def test_buf_cnt_over_limit(self): self._test_buf_cnt(32, allowed=2)
-  @unittest.expectedFailure
-  def test_buf_cnt_over_limit_alt(self): self._test_buf_cnt(63, allowed=3)
-
-  @unittest.skipIf(getenv("VIZ"), "TODO: VIZ blocks gc")
   def test_schedule_mem_used(self):
     base = GlobalCounters.mem_used
     Tensor.ones(256).contiguous().realize()
@@ -1634,11 +1639,11 @@ class TestSchedule(unittest.TestCase):
     self.assertEqual(GlobalCounters.mem_used-base, 1024)
 
   def test_const_schedule(self):
-    constv = Tensor.empty(2, 2).lazydata.const_like(10)
+    constv = Tensor.empty(2, 2).uop.const_like(10)
     check_schedule(constv, 0)
 
   def test_const_schedule_contig(self):
-    constv = Tensor.empty(2, 2).lazydata.const_like(10).contiguous()
+    constv = Tensor.empty(2, 2).uop.const_like(10).contiguous()
     check_schedule(constv, 1)
 
   @unittest.skipIf(Device.DEFAULT != "GPU", "image only supported on GPU")
@@ -1650,8 +1655,8 @@ class TestSchedule(unittest.TestCase):
       run_schedule(check_schedule(out, 3))
       np.testing.assert_allclose(out.numpy(), x.numpy()@y.numpy(), atol=1e-4, rtol=1e-4)
       self.assertIsInstance(out.dtype, ImageDType)
-      self.assertIsNotNone(out.lazydata.base.realized)
-      self.assertIsInstance(out.lazydata.base.realized.dtype, ImageDType)
+      self.assertIsNotNone(out.uop.base.realized)
+      self.assertIsInstance(out.uop.base.realized.dtype, ImageDType)
 
   def _test_fusion(self, shapes, f, cnt):
     with Context(DEBUG=0, TRACK_MATCH_STATS=0): args = [Tensor.randn(s).realize() for s in shapes]
@@ -1681,9 +1686,9 @@ class TestSchedule(unittest.TestCase):
     a = Tensor.arange(4).reshape(1, 4)
     casted_view = a.pad(((0, 1), (0, 0))).cast(dtypes.float)
     casted_view.realize()
-    self.assertEqual(casted_view.lazydata.base.realized.size, 4)
+    self.assertEqual(casted_view.uop.base.realized.size, 4)
     realized_view = casted_view.contiguous().realize()
-    self.assertEqual(realized_view.lazydata.base.realized.size, 8)
+    self.assertEqual(realized_view.uop.base.realized.size, 8)
     self.assertListEqual(realized_view.tolist(), [[0.0, 1.0, 2.0, 3.0], [0.0, 0.0, 0.0, 0.0]])
 
   # NOTE: we only reorder CAST if it's an EXPAND
@@ -1691,36 +1696,39 @@ class TestSchedule(unittest.TestCase):
     a = Tensor.arange(4).reshape(1, 4)
     casted_view = a.shrink(((0, 1), (0, 2))).cast(dtypes.float)
     casted_view.realize()
-    self.assertEqual(casted_view.lazydata.base.realized.size, 2)
+    self.assertEqual(casted_view.uop.base.realized.size, 2)
     realized_view = casted_view.contiguous().realize()
-    self.assertEqual(realized_view.lazydata.base.realized.size, 2)
+    self.assertEqual(realized_view.uop.base.realized.size, 2)
     self.assertListEqual(realized_view.tolist(), [[0, 1]])
 
   def test_cast_const_view(self):
     a = Tensor.ones((4, 4), dtype=dtypes.float32)
     casted_view = a.cast(dtypes.int32)
     run_schedule(check_schedule(casted_view, 0))
-    self.assertIsNone(casted_view.lazydata.base.realized)
+    self.assertIsNone(casted_view.uop.base.realized)
     realized_const_view = casted_view.contiguous()
     run_schedule(check_schedule(realized_const_view, 1))
     self.assertListEqual(realized_const_view.tolist(), [[1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]])
 
-  def test_cast_padded_const(self):
-    a = Tensor(1, dtype=dtypes.int32).reshape(1, 1).pad(((1, 1), None))
-    casted_view = a.cast(dtypes.float32)
+  @given(strat.sampled_from(dtypes.all), strat.sampled_from(dtypes.all))
+  def test_cast_padded_const(self, dt1, dt2):
+    assume(is_dtype_supported(dt1) and is_dtype_supported(dt2))
+    a = Tensor(1, dtype=dt1).reshape(1, 1).pad(((1, 1), None))
+    casted_view = a.cast(dt2)
     run_schedule(check_schedule(casted_view, 0))
     realized_const_view = casted_view.contiguous()
     run_schedule(check_schedule(realized_const_view, 1))
-    self.assertListEqual(realized_const_view.tolist(), [[0], [1], [0]])
+    np.testing.assert_equal(realized_const_view.numpy(), [[0], [1], [0]])
 
 class TestIndexing(unittest.TestCase):
-  def check_schedule(self, xt:Union[Tensor,List[Tensor]], cnt:int):
+  def check_schedule(self, xt:Tensor|list[Tensor], cnt:int):
     with Context(FUSE_ARANGE=getenv("FUSE_ARANGE", 1)):
       lst = [xt] if isinstance(xt, Tensor) else xt
       s = Tensor.schedule(*lst)
       lowered = [x[1] for x in lower_schedule(s.copy())]
       kernels = [ei for ei in list(lowered) if isinstance(ei.prg, CompiledRunner)]
-      if FUSE_ARANGE: self.assertEqual(len(kernels), cnt)
+      if FUSE_ARANGE and len(kernels) != cnt:
+        raise KernelCountException(f"{len(kernels)} != {cnt}")
       for ei in lowered: ei.run(do_update_stats=True)
     return s
 
@@ -1733,26 +1741,26 @@ class TestIndexing(unittest.TestCase):
 
   def test_simple_indexing_alt(self):
     X = Tensor.arange(16).reshape(4, 4)
-    xt = X[[1, 2], [1, 2]]
-    self.check_schedule(xt, 5)
-    np.testing.assert_equal(xt.numpy(), (np.arange(16).reshape(4, 4))[[1, 2], [1, 2]])
+    xt = X[[1, 2], [-1, 2]]
+    self.check_schedule(xt, 1)
+    np.testing.assert_equal(xt.numpy(), (np.arange(16).reshape(4, 4))[[1, 2], [-1, 2]])
 
   def test_advanced_indexing(self):
     X = Tensor.arange(10)+1
-    xt = X[[0]]
-    self.check_schedule(xt, 2)
-    np.testing.assert_equal(xt.numpy(), (np.arange(10)+1)[[0]])
+    xt = X[[0, -1]]
+    self.check_schedule(xt, 1)
+    np.testing.assert_equal(xt.numpy(), (np.arange(10)+1)[[0, -1]])
 
   def test_advanced_indexing_alt(self):
     X = Tensor.arange(6).reshape(3, 2)+1
     xt = X[[Tensor([2]), Tensor([1])]]
-    self.check_schedule(xt, 6)
+    self.check_schedule(xt, 3)
     np.testing.assert_equal(xt.numpy(), 6)
 
   def test_advanced_simple_indexing_combined(self):
     X = Tensor.arange(16).reshape(4, 4)
-    xt = X[1:2, [1, 2]]
-    self.check_schedule(xt, 4)
+    xt = X[1:2, [-1, 2]]
+    self.check_schedule(xt, 1)
 
   def test_push_through_reshape(self):
     Tensor.manual_seed(0)
@@ -1889,8 +1897,6 @@ class TestIndexing(unittest.TestCase):
     a = Tensor.arange(4).reshape(2, 2, 1).expand(2, 2, 2).contiguous().to("CPU")
     sched = self.check_schedule(a, 2) # NOTE: there is a contiguous between REDUCE_AXIS and COPY
     self.assertIs(sched[2].ast.op, Ops.COPY)
-    self.assertIs(sched[1].ast.src[0].src[2].op, Ops.LOAD)
-    self.assertIs(sched[0].ast.src[0].src[2].op, Ops.ADD)
     np.testing.assert_equal(a.numpy(), [[[0, 0], [1, 1]], [[2, 2], [3, 3]]])
 
   @unittest.skipUnless(is_dtype_supported(dtypes.half), "need half")
@@ -1970,31 +1976,12 @@ class TestIndexing(unittest.TestCase):
   def test_recursive_swizzle(self):
     a = Tensor([1,2,3,4]).realize()
     for _ in range(24): a = a + a
-    new_uop = swizzle_rewrite(a.lazydata.reshape((4, 1)))
+    new_uop = a.reshape(4,1).realize().uop
     self.assertEqual(new_uop.st, ShapeTracker.from_shape((4,)).reshape((4, 1)))
     self.assertEqual(swizzle_cnt(new_uop), 0)
 
-  def test_no_rewrite_elementwise(self):
-    a = Tensor.empty(32, 32)
-    b = Tensor.empty(32, 32)
-    sink = (a+b).schedule()[0].ast
-    self.assertEqual(swizzle_cnt(sink), 0)
-
-  def test_simple_store_reshape(self):
-    a = Tensor.empty(32, 32).sum(axis=1)+Tensor.empty(1,32)
-    ast = a.schedule()[0].ast
-    self.assertEqual(ast.shape, (32, 1))
-    self.assertEqual(a.lazydata.shape, (1, 32))
-
-  def test_no_reshape_reduceop(self):
-    a = Tensor.empty(32, 32).sum(axis=(1,)).contiguous()
-    ast = a.schedule()[0].ast
-    self.assertEqual(ast.shape, (32, 1))
-    self.assertEqual(a.lazydata.shape, (32,))
-
-@track_rewrites(named=True)
-def swizzle_rewrite(u:UOp) -> UOp: return graph_rewrite(graph_rewrite(u, view_left), view_right)
-def swizzle_cnt(u:UOp) -> int: return len([x for x in u.toposort() if x.op is Ops.VIEW and len(x.src) != 0 and x.src[0].op is not Ops.BUFFER])
+def swizzle_cnt(u:UOp) -> int:
+  return len([x for x in u.toposort() if x.op is Ops.VIEW and len(x.src) != 0 and x.src[0].op not in {Ops.BUFFER, Ops.DEFINE_GLOBAL, Ops.ASSIGN}])
 
 class TestSwizzle(unittest.TestCase):
   def test_swizzle_simple(self):
@@ -2080,7 +2067,6 @@ class TestSwizzle(unittest.TestCase):
     np.testing.assert_allclose(t.numpy(), x.numpy().sum(axis=1)+y.numpy().sum(axis=1), atol=1e-6, rtol=1e-3)
 
   # kernels can only have 1 or n in each dim
-  @unittest.expectedFailure
   def test_dont_parallelize_different_n(self):
     Tensor.manual_seed(0)
     x = Tensor.randn(4, 2, 2).realize()
@@ -2096,7 +2082,6 @@ class TestSwizzle(unittest.TestCase):
     run_schedule(check_schedule(t, 3))
     np.testing.assert_equal(t.numpy(), [[0.5, 0.5], [0.5, 0.5], [0., 0.]])
 
-def store_val(si:ScheduleItem): return si.ast.src[0].src[2]
 zero_pm = UPat(Ops.CONST, arg=0)
 class TestView(unittest.TestCase):
   def test_all_masked_out(self):
@@ -2105,7 +2090,6 @@ class TestView(unittest.TestCase):
     # all masked out, degrades to const 0
     b = a.pad(((0, 10), None))[10:]
     sched = check_schedule(b.contiguous(), 1)
-    assert zero_pm.match(store_val(sched[-1]), {})
     run_schedule(sched)
     np.testing.assert_equal(b.numpy(), 0)
 
@@ -2116,7 +2100,6 @@ class TestView(unittest.TestCase):
     assert b.shape == (10, 10)
     sched = check_schedule(b.contiguous(), 1)
     self.assertEqual(sched[-1].ast.full_shape, (10, 10))
-    assert zero_pm.match(store_val(sched[-1]), {})
     run_schedule(sched)
     np.testing.assert_equal(b.numpy(), 0)
 
@@ -2131,8 +2114,6 @@ class TestView(unittest.TestCase):
     b = a.pad(((0, 5), None))[5:]
     assert b.shape == (10, 10)
     sched = check_schedule(b.contiguous(), 1)
-    self.assertEqual(store_val(sched[-1]).op, Ops.LOAD)
-    self.assertEqual(store_val(sched[-1]).st_arg, b.lazydata.st)
     run_schedule(sched)
     np.testing.assert_allclose(b.numpy(), np.pad(a.numpy(), ((0, 5), (0, 0)))[5:])
 
@@ -2146,9 +2127,9 @@ class TestView(unittest.TestCase):
     late_mul = a*bv
     check_schedule(late_mul, 0)
     # the arange doesn't realize
-    self.assertIsNone(b.lazydata.base.realized)
+    self.assertIsNone(b.uop.base.realized)
     # mul doesn't realize
-    self.assertIsNone(late_mul.lazydata.base.realized)
+    self.assertIsNone(late_mul.uop.base.realized)
     self.assertEqual(late_mul.tolist(), [0, 0])
 
   # SINK has two branches:
@@ -2163,13 +2144,13 @@ class TestView(unittest.TestCase):
     other_child = b+2
     s = check_schedule([late_mul, other_child], 2)
     # the arange becomes a BUFFER
-    self.assertIs(b.lazydata.base.op, Ops.BUFFER)
+    self.assertIs(b.uop.base.op, Ops.BUFFER)
     # mul still collapses
-    self.assertIs(late_mul.lazydata.base.op, Ops.CONST)
+    self.assertIs(late_mul.uop.base.op, Ops.CONST)
     run_schedule(s)
     self.assertEqual(other_child.tolist(), [2, 3, 4])
 
-def tensor_rewrite(t) -> UOp: return graph_rewrite(t.lazydata.base, merge_views+symbolic_simple)
+def tensor_rewrite(t) -> UOp: return graph_rewrite(t.uop.base, merge_views+symbolic_simple)
 class TestSimplifier(unittest.TestCase):
   def test_sink_childless_const(self):
     x = Tensor(0)
@@ -2193,8 +2174,8 @@ class TestSimplifier(unittest.TestCase):
     a = Tensor.empty(4, 4, dtype=dtypes.int)
     sink = tensor_rewrite(a*0)
     assert UPat(Ops.CONST, arg=0).match(sink, {})
-    self.assertIs(tensor_rewrite(a*1).base, a.lazydata.base)
-    self.assertIs(tensor_rewrite(a+0).base, a.lazydata.base)
+    self.assertIs(tensor_rewrite(a*1).base, a.uop.base)
+    self.assertIs(tensor_rewrite(a+0).base, a.uop.base)
 
   def test_cast_folding(self):
     a = Tensor(1.0).cast(dtypes.int)
@@ -2228,14 +2209,14 @@ class TestConst(unittest.TestCase):
 
   def test_tensor_const(self):
     a = Tensor(1)
-    print(a.lazydata)
-    self.assertTrue(tensor_const_pm.rewrite(a.lazydata))
+    print(a.uop)
+    self.assertTrue(tensor_const_pm.rewrite(a.uop))
 
   def test_tensor_variable(self):
     vv = UOp.variable("a", 0, 10).bind(1)
     a = Tensor(vv)
-    print(a.lazydata)
-    self.assertTrue(tensor_const_pm.rewrite(a.lazydata))
+    print(a.uop)
+    self.assertTrue(tensor_const_pm.rewrite(a.uop))
 
   def test_const_schedule(self):
     a = Tensor.ones((4, 4))
@@ -2247,24 +2228,6 @@ class TestConst(unittest.TestCase):
     a = Tensor.ones((4,)).contiguous()
     sched = a.schedule()
     self.assertEqual(len(sched), 1)
-
-  def test_const_ast(self):
-    a = Tensor.ones((4,)).pad((1, 1)).contiguous()
-    sched = a.schedule()
-    print(sched[0].ast)
-    const_ast_pattern = UPat(Ops.SINK, src=(UPat.store(UPat(), UPat(), UPat.where(UPat(Ops.VALID), UPat.cvar("x"), UPat(Ops.CONST, arg=0))),))
-    self.assertEqual(len(const_ast_pattern.match(sched[0].ast, {})), 1)
-    run_schedule(sched)
-    self.assertListEqual(a.tolist(), [0, 1, 1, 1, 1, 0])
-
-  def test_unmasked_const_ast(self):
-    a = Tensor.ones((4,)).contiguous()
-    sched = a.schedule()
-    print(sched[0].ast)
-    const_ast_pattern = UPat(Ops.SINK, src=(UPat.store(UPat(), UPat(), UPat(Ops.CONST)),))
-    self.assertEqual(len(const_ast_pattern.match(sched[0].ast, {})), 1)
-    run_schedule(sched)
-    self.assertListEqual(a.tolist(), [1, 1, 1, 1])
 
   # ** part 2: scheduler behavior when const folding happens later
 
@@ -2282,7 +2245,7 @@ class TestConst(unittest.TestCase):
     sched = add.schedule()
     self.assertEqual(len(sched), 0)
     # b+0 and b share the same underlying device memory
-    self.assertIs(add.lazydata.buffer, b.lazydata.buffer)
+    self.assertIs(add.uop.buffer, b.uop.buffer)
     self.assertListEqual(add.tolist(), [2, 2, 2, 2])
 
   def test_src_masked_const_folding(self):
@@ -2295,7 +2258,7 @@ class TestConst(unittest.TestCase):
     self.assertEqual(len(sched), 1)
     run_schedule(sched)
     # add gets assigned to a new buffer
-    self.assertIsNot(add.lazydata.base.realized, b.lazydata.base.realized)
+    self.assertIsNot(add.uop.base.realized, b.uop.base.realized)
     self.assertListEqual(add.tolist(), [4, 2, 2, 2, 2, 4])
 
   # ** part 3: Tensor variable bindings
@@ -2330,15 +2293,14 @@ class TestCopyFolding(unittest.TestCase):
     self.assertListEqual(b.tolist(), [0, 0, 0])
 
   def test_alu_after_copy(self):
-    a = Tensor.ones((4,)).to("CPU").lazydata
-    b = Tensor.empty(4, device="CPU").lazydata
+    a = Tensor.ones((4,)).to("CPU")
+    b = Tensor.empty(4, device="CPU")
     add = a+b
-    add = schedule_graph_rewrite(add)
-    assert all_same([x.device for x in add.src]), f"ALU has different devices! {[x.device for x in add.src]}"
+    add.kernelize()
+    assert all_same([x.device for x in add.uop.src]), f"ALU has different devices! {[x.device for x in add.src]}"
 
-  @unittest.skip("this is just clone now")
   def test_copy_to_same_device(self):
-    a = Tensor.empty(4).lazydata
+    a = Tensor.empty(4).uop
     b = a.copy_to_device(a.device)
     check_schedule(b, 0, filter_sink=False)
     b = schedule_graph_rewrite(b)
@@ -2346,9 +2308,8 @@ class TestCopyFolding(unittest.TestCase):
     # in the scheduler because buffer already has shape (4,)
     self.assertIs(b, a.base)
 
-  @unittest.skip("this is just clone now")
   def test_copy_to_same_device_alt(self):
-    a = Tensor.empty(4, 4).lazydata
+    a = Tensor.empty(4, 4).uop
     b = a.copy_to_device(a.device)
     check_schedule(b, 0, filter_sink=False)
     b = schedule_graph_rewrite(b)
@@ -2365,8 +2326,8 @@ class TestCopyFolding(unittest.TestCase):
     b = view.clone()
     # NOTE: this was sort of a bug making this 2
     run_schedule(check_schedule(b, 2, filter_sink=False))
-    self.assertEqual(b.lazydata.base.buffer.size, 2)
-    self.assertEqual(b.lazydata.size, 2)
+    self.assertEqual(b.uop.base.buffer.size, 2)
+    self.assertEqual(b.uop.size, 2)
     self.assertListEqual(b.tolist(), [0, 1])
 
   def test_expanded_copy(self):
@@ -2374,8 +2335,8 @@ class TestCopyFolding(unittest.TestCase):
     view = a.reshape(2, 1).expand(2, 2)
     b = view.clone()
     run_schedule(check_schedule(b, 2, filter_sink=False))
-    self.assertEqual(b.lazydata.base.buffer.size, 4)
-    self.assertEqual(b.lazydata.size, 4)
+    self.assertEqual(b.uop.base.buffer.size, 4)
+    self.assertEqual(b.uop.size, 4)
     self.assertListEqual(b.tolist(), [[0, 0], [1, 1]])
 
   def test_permuted_copy(self):
@@ -2385,7 +2346,7 @@ class TestCopyFolding(unittest.TestCase):
     self.assertListEqual(b.tolist(), [[0, 2], [1, 3]])
 
   def test_permute_on_disk(self):
-    with open(temp('dt_arange_4_permute'), "wb") as f: f.write(Tensor.arange(4).realize().lazydata.base.buffer.as_buffer())
+    with open(temp('dt_arange_4_permute'), "wb") as f: f.write(Tensor.arange(4).realize().uop.base.buffer.as_buffer())
     a = Tensor.empty(4, dtype=dtypes.int32, device=f"disk:{temp('dt_arange_4_permute')}")
     b = a.reshape(2, 2).permute(1, 0).to("CPU")
     b.realize()
@@ -2401,95 +2362,72 @@ class TestCopyFolding(unittest.TestCase):
   # TODO: this is wrong because of the permute
   @unittest.expectedFailure
   def test_permute_after_shrink_on_disk(self):
-    with open(temp('dt_arange_5_permute'), "wb") as f: f.write(Tensor.arange(5).realize().lazydata.base.buffer.as_buffer())
+    with open(temp('dt_arange_5_permute'), "wb") as f: f.write(Tensor.arange(5).realize().uop.base.buffer.as_buffer())
     a = Tensor.empty(5, dtype=dtypes.int32, device=f"disk:{temp('dt_arange_5_permute')}")
     b = a.shrink(((0, 4),)).reshape(2, 2).permute(1, 0).to("CPU")
     b.realize()
     self.assertListEqual(b.tolist(), [[0, 2], [1, 3]])
 
-class TestTensorUOpSpec(unittest.TestCase):
-  def test_const_must_be_unmasked(self):
-    a = Tensor.ones((4, 4)).pad((2, 2))
-    unsafe_push_views = PatternMatcher([
-      (UPat.cvar("root").view(name="view"), lambda root,view: root.replace(src=tuple(x.view(view.st) for x in root.src))),
-    ])
-    a.lazydata = graph_rewrite(a.lazydata.sink(), merge_views+merge_views+unsafe_push_views)
-    with self.assertRaisesRegex(RuntimeError, "UOp verification failed"):
-      a.schedule()
-
-  def test_expanded_const_ok(self):
-    a = Tensor.ones((4, 4))
-    t = graph_rewrite(a.lazydata.sink(), merge_views+merge_views)
-    create_schedule_with_vars(t)
-
-  # NOTE: changing symbolic CONST VIEWs is not allowed
-  @unittest.expectedFailure
-  def test_symbolic_shape_ok(self):
-    a = Tensor.ones(4)
-    vi = UOp.variable("i", 1, 10).bind(4)
-    a.lazydata = graph_rewrite(a.reshape(vi).sum().lazydata, merge_views+merge_views)
-    a.schedule()
-
 class TestBufferUOp(unittest.TestCase):
   # BUFFER has a ShapeTracker of shape=(n,) and stride=(1,)
   def test_buffer_has_buffer(self):
     buf = Tensor.empty(10)
-    self.assertIsNotNone(buf.lazydata.buffer)
-    self.assertEqual(buf.lazydata.st, ShapeTracker.from_shape((10,)))
+    self.assertIsNotNone(buf.uop.buffer)
+    self.assertEqual(buf.uop.st, ShapeTracker.from_shape((10,)))
     # the device Buffer remains unallocated until it's we run the schedule
-    self.assertFalse(buf.lazydata.buffer.is_allocated())
+    self.assertFalse(buf.uop.buffer.is_allocated())
     add = buf+1
     sched = add.schedule()
-    self.assertFalse(buf.lazydata.buffer.is_allocated())
+    self.assertFalse(buf.uop.buffer.is_allocated())
     run_schedule(sched)
-    self.assertTrue(buf.lazydata.buffer.is_allocated())
+    self.assertTrue(buf.uop.buffer.is_allocated())
 
   def test_buffer_has_unique_buffer(self):
     buf = Tensor.empty(10)
-    buf1 = buf.lazydata.buffer
-    buf2 = buf.lazydata.buffer
+    buf1 = buf.uop.buffer
+    buf2 = buf.uop.buffer
     self.assertIs(buf1, buf2)
 
   # we also allow VIEW(BUFFER) to access the underlying device Buffer, as long as it's contiguous
   def test_buffer_view_allowed(self):
     add = Tensor.empty(1, 1)+Tensor.empty(1, 1)
     add.realize()
-    self.assertIsNotNone(add.lazydata.buffer)
-    self.assertEqual(add.lazydata.shape, (1, 1))
+    self.assertIsNotNone(add.uop.buffer)
+    self.assertEqual(add.uop.shape, (1, 1))
 
   def test_buffer_view_not_allowed(self):
     permuted_view = Tensor.empty(1, 2, 3).permute(0, 2, 1)
-    merged = graph_rewrite(permuted_view.lazydata, merge_views)
+    merged = graph_rewrite(permuted_view.uop, merge_views)
     with self.assertRaisesRegex(AssertionError, "VIEW only works here if it's contiguous"):
       merged.buffer # cannot access Buffer of a non contiguous VIEW
 
   def test_buffer_only_after_realize(self):
     a = Tensor([1])+Tensor([2])
     # accessing realized will return None
-    self.assertIsNone(a.lazydata.realized)
+    self.assertIsNone(a.uop.realized)
     # accessing Buffer will assert
     with self.assertRaisesRegex(AssertionError, "must be BUFFER"):
-      a.lazydata.buffer # there is no BUFFER on an unrealized ADD
+      a.uop.buffer # there is no BUFFER on an unrealized ADD
     # Buffer only exists once we realize it
     a.realize()
-    self.assertIsNotNone(a.lazydata.buffer)
+    self.assertIsNotNone(a.uop.buffer)
 
   def test_const_does_not_realize(self):
     a = Tensor(1)+Tensor(2)
     run_schedule(check_schedule(a, 0))
-    self.assertIsNone(a.lazydata.base.realized)
+    self.assertIsNone(a.uop.base.realized)
 
   def test_var_does_not_realize(self):
     a = Tensor(UOp.variable("a", 0, 10).bind(1))
     run_schedule(check_schedule(a, 0))
-    self.assertIsNone(a.lazydata.base.realized)
+    self.assertIsNone(a.uop.base.realized)
 
   def test_view_does_not_realize(self):
     a = Tensor.randn(1, 4).expand(4, 4)
     a.realize()
-    self.assertEqual(a.lazydata.base.realized.size, 4)
+    self.assertEqual(a.uop.base.realized.size, 4)
     a2 = a.contiguous().realize()
-    self.assertEqual(a2.lazydata.base.realized.size, 16)
+    self.assertEqual(a2.uop.base.realized.size, 16)
 
 class TestContiguous(unittest.TestCase):
   def test_contiguous_buffer(self):
@@ -2521,13 +2459,13 @@ class TestContiguous(unittest.TestCase):
     a = Tensor.empty(4)
     b = a.expand((4, 4))
     check_schedule(b, 0)
-    self.assertEqual(b.lazydata.base.buffer.size, 4)
+    self.assertEqual(b.uop.base.buffer.size, 4)
 
   def test_contiguous_view_realizes(self):
     a = Tensor.empty(4)
     b = a.expand((4, 4)).contiguous()
     check_schedule(b, 1)
-    self.assertEqual(b.lazydata.base.buffer.size, 16)
+    self.assertEqual(b.uop.base.buffer.size, 16)
 
 class TestUOpBecome(unittest.TestCase):
   # the simplest case, if we create a new BUFFER for this tensor UOp
@@ -2537,21 +2475,21 @@ class TestUOpBecome(unittest.TestCase):
     add = a+b
     check_schedule(add, 1)
     # NOTE: realized base is always a flat buffer
-    assert UPat(Ops.BUFFER).match(add.lazydata.base, {})
+    assert UPat(Ops.BUFFER).match(add.uop.base, {})
     # the Tensor UOp can optionally stack a VIEW on top of the BUFFER, in this case to preserve the (4, 4) shape of the tensor
-    assert add.lazydata is not add.lazydata.base
-    self.assertEqual(add.lazydata.size, 16)
-    self.assertEqual(add.lazydata.shape, (4, 4))
+    assert add.uop is not add.uop.base
+    self.assertEqual(add.uop.size, 16)
+    self.assertEqual(add.uop.shape, (4, 4))
 
   def test_new_buffer_view(self):
     a = Tensor.empty(4, 4)
     b = Tensor.empty(4, 4)
     add = (a+b).reshape(8, 2)
     check_schedule(add, 1)
-    assert UPat(Ops.BUFFER).match(add.lazydata.base, {})
+    assert UPat(Ops.BUFFER).match(add.uop.base, {})
     # the shape is preserverd in the becomes_map.
-    self.assertEqual(add.lazydata.shape, (8, 2))
-    assert add.lazydata is not add.lazydata.base
+    self.assertEqual(add.uop.shape, (8, 2))
+    assert add.uop is not add.uop.base
 
   def test_new_flat_buffer(self):
     a = Tensor.empty(4,)
@@ -2559,7 +2497,7 @@ class TestUOpBecome(unittest.TestCase):
     add = a+b
     check_schedule(add, 1)
     # BUFFER already has a shape (4,), this tensor just becomes a contiguous BUFFER
-    assert UPat(Ops.BUFFER).match(add.lazydata, {})
+    assert UPat(Ops.BUFFER).match(add.uop, {})
 
   # sometimes we prefer to perform an op before movement ops, in this case we should stack the mops on top of the new buffer
 
@@ -2568,8 +2506,8 @@ class TestUOpBecome(unittest.TestCase):
     a = Tensor.empty(4, 1)
     b = a.expand(4, 4).reciprocal()
     check_schedule(b, 1)
-    self.assertEqual(b.lazydata.base.buffer.size, 16)
-    self.assertEqual(b.lazydata.st, ShapeTracker.from_shape((4, 4)))
+    self.assertEqual(b.uop.base.buffer.size, 16)
+    self.assertEqual(b.uop.st, ShapeTracker.from_shape((4, 4)))
 
   def test_reorder_expand_alt(self):
     x = Tensor.empty(4, 1)
@@ -2581,95 +2519,95 @@ class TestUOpBecome(unittest.TestCase):
   def test_become_existing_buffer(self):
     a = Tensor.empty(4, 4)
     b = a*1
-    assert UPat(Ops.MUL).match(b.lazydata, {}) # before scheduling it's a mul
+    assert UPat(Ops.MUL).match(b.uop, {}) # before scheduling it's a mul
     check_schedule(b, 0)
-    assert UPat(Ops.VIEW, src=(UPat(Ops.BUFFER))).match(b.lazydata, {}) # scheduling merges all MovementOps into a single VIEW
-    self.assertIs(a.lazydata.base.buffer, b.lazydata.base.buffer)
+    assert UPat(Ops.VIEW, src=(UPat(Ops.BUFFER))).match(b.uop, {}) # scheduling merges all MovementOps into a single VIEW
+    self.assertIs(a.uop.base.buffer, b.uop.base.buffer)
 
   def test_become_buf_with_mops(self):
     a = Tensor.empty(2, 4, 2)
     noop = a.shrink(((1, 2), (0, 4), (0, 2))).reshape(4, 2)*1+0
     # before realizing, this tensor is base
-    assert noop.lazydata is noop.lazydata.base
+    assert noop.uop is noop.uop.base
     noop.realize()
     # it becomes a realized view after realize
-    assert noop.lazydata is not noop.lazydata.base
-    assert noop.lazydata.base.op is Ops.BUFFER
+    assert noop.uop is not noop.uop.base
+    assert noop.uop.base.op is Ops.BUFFER
     late_add = noop+2
     late_add.realize()
 
   def test_become_const_in_base(self):
     a = Tensor.empty(4)
     b = a*0
-    assert UPat(Ops.MUL).match(b.lazydata, {}) # before scheduling it's a mul
+    assert UPat(Ops.MUL).match(b.uop, {}) # before scheduling it's a mul
     check_schedule(b, 0)
-    assert UPat(Ops.CONST, arg=0).match(b.lazydata.base, {}) # scheduling replaces the tensor lazydata with a VIEW(BUFFER)
+    assert UPat(Ops.CONST, arg=0).match(b.uop.base, {}) # scheduling replaces the tensor uop with a VIEW(BUFFER)
 
   def test_become_const_in_view(self):
     # if we shrink the base down to a size 0, only the VIEW becomes CONST, base is unchanged.
     add = Tensor.empty(2, 2)+Tensor.empty(2, 2)
     b = add.shrink(((0, 1), (0, 0)))
     check_schedule(b, 0)
-    assert UPat(Ops.CONST, arg=0).match(b.lazydata, {})
+    assert UPat(Ops.CONST, arg=0).match(b.uop, {})
     self.assertEqual(b.shape, (1, 0))
     # the base is untouched.
-    assert UPat(Ops.ADD).match(add.lazydata, {})
+    assert UPat(Ops.ADD).match(add.uop, {})
 
   def test_become_const_from_const(self):
     const_add = Tensor(1)+Tensor(2)
-    assert UPat(Ops.ADD).match(const_add.lazydata, {})
+    assert UPat(Ops.ADD).match(const_add.uop, {})
     check_schedule(const_add, 0)
-    assert UPat(Ops.CONST, arg=3).match(const_add.lazydata.base, {})
+    assert UPat(Ops.CONST, arg=3).match(const_add.uop.base, {})
 
   # tensors can become another realized tensor source
   def test_become_existing_buf_simple(self):
     a = Tensor.empty(4, 4)
     b = a+0
     check_schedule(b, 0)
-    assert b.lazydata.base.op is Ops.BUFFER
-    self.assertIs(a.lazydata, b.lazydata)
+    assert b.uop.base.op is Ops.BUFFER
+    self.assertIs(a.uop, b.uop)
 
   # they can also chain other movement ops on top of the tensor source
   def test_become_existing_buf_view(self):
     a = Tensor.empty(4, 4)
     b = a.permute((1, 0))+0
     check_schedule(b, 0)
-    self.assertEqual(b.lazydata.st, a.lazydata.permute((1, 0)).st)
+    self.assertEqual(b.uop.st, a.uop.permute((1, 0)).st)
 
   def test_become_existing_buf_view_alt(self):
     a = Tensor.empty(4, 4)
     b = a.permute((1, 0)).reshape((8, 2))+0
     check_schedule(b, 0)
-    self.assertEqual(b.lazydata.st, a.lazydata.permute((1, 0)).reshape((8, 2)).st)
+    self.assertEqual(b.uop.st, a.uop.permute((1, 0)).reshape((8, 2)).st)
 
   # they can also have other base parents that simplified, in that case we just backtrack to the chained mops
   def test_become_existing_buf_complex(self):
     a = Tensor.empty(4, 4)
     b = (a.permute((1, 0))+0).reshape((8, 2))+0
     check_schedule(b, 0)
-    self.assertEqual(b.lazydata.st, a.lazydata.permute((1, 0)).reshape((8, 2)).st)
-    assert b.lazydata.base.op is Ops.BUFFER
+    self.assertEqual(b.uop.st, a.uop.permute((1, 0)).reshape((8, 2)).st)
+    assert b.uop.base.op is Ops.BUFFER
 
   def test_become_multiple_choices(self):
     a = Tensor.empty(16)
     b = (a.reshape(1, 1, 4, 1, 4)+0).reshape(1, 1, 4, 4).shrink(((0, 1), (0, 1), (0, 3), (0, 3)))+0
     c = (a.reshape(1, 1, 4, 4)+0).shrink(((0, 1), (0, 1), (0, 3), (0, 3)))+0
     check_schedule([b, c], 0)
-    assert all_same([x.lazydata.base.realized for x in [a,b,c]])
+    assert all_same([x.uop.base.realized for x in [a,b,c]])
     # these movement ops result in the same ShapeTracker
-    assert b.lazydata.st == c.lazydata.st
-    assert b.lazydata is c.lazydata
-    assert UPat(Ops.VIEW, src=(UPat(Ops.BUFFER),)).match(c.lazydata, {})
+    assert b.uop.st == c.uop.st
+    assert b.uop is c.uop
+    assert UPat(Ops.VIEW, src=(UPat(Ops.BUFFER),)).match(c.uop, {})
 
   def test_setitem_becomes_subbuffer(self):
     a = Tensor.full((4,), 2.).contiguous().realize()
     b = a.shrink(((0, 2),)).assign(Tensor.full((2,), 1.0))
     b.realize()
-    assert a.lazydata.is_realized
-    assert a.lazydata.buffer._base is None
+    assert a.uop.is_realized
+    assert a.uop.buffer._base is None
     # b is a subbuffer of a
-    assert b.lazydata.op is Ops.BUFFER_VIEW
-    assert b.lazydata.src[0] is a.lazydata
+    assert b.uop.op is Ops.BUFFER_VIEW
+    assert b.uop.src[0] is a.uop
 
   def test_setitem_offset(self):
     a = Tensor.full((16,), 0.).contiguous().realize()

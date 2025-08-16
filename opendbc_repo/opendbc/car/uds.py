@@ -36,11 +36,13 @@ class SERVICE_TYPE(IntEnum):
   TRANSFER_DATA = 0x36
   REQUEST_TRANSFER_EXIT = 0x37
 
+
 class SESSION_TYPE(IntEnum):
   DEFAULT = 1
   PROGRAMMING = 2
   EXTENDED_DIAGNOSTIC = 3
   SAFETY_SYSTEM_DIAGNOSTIC = 4
+
 
 class RESET_TYPE(IntEnum):
   HARD = 1
@@ -49,9 +51,11 @@ class RESET_TYPE(IntEnum):
   ENABLE_RAPID_POWER_SHUTDOWN = 4
   DISABLE_RAPID_POWER_SHUTDOWN = 5
 
+
 class ACCESS_TYPE(IntEnum):
   REQUEST_SEED = 1
   SEND_KEY = 2
+
 
 class CONTROL_TYPE(IntEnum):
   ENABLE_RX_ENABLE_TX = 0
@@ -59,10 +63,12 @@ class CONTROL_TYPE(IntEnum):
   DISABLE_RX_ENABLE_TX = 2
   DISABLE_RX_DISABLE_TX = 3
 
+
 class MESSAGE_TYPE(IntEnum):
   NORMAL = 1
   NETWORK_MANAGEMENT = 2
   NORMAL_AND_NETWORK_MANAGEMENT = 3
+
 
 class TIMING_PARAMETER_TYPE(IntEnum):
   READ_EXTENDED_SET = 1
@@ -70,9 +76,11 @@ class TIMING_PARAMETER_TYPE(IntEnum):
   READ_CURRENTLY_ACTIVE = 3
   SET_TO_GIVEN_VALUES = 4
 
+
 class DTC_SETTING_TYPE(IntEnum):
   ON = 1
   OFF = 2
+
 
 class RESPONSE_EVENT_TYPE(IntEnum):
   STOP_RESPONSE_ON_EVENT = 0
@@ -84,10 +92,12 @@ class RESPONSE_EVENT_TYPE(IntEnum):
   CLEAR_RESPONSE_ON_EVENT = 6
   ON_COMPARISON_OF_VALUES = 7
 
+
 class LINK_CONTROL_TYPE(IntEnum):
   VERIFY_BAUDRATE_TRANSITION_WITH_FIXED_BAUDRATE = 1
   VERIFY_BAUDRATE_TRANSITION_WITH_SPECIFIC_BAUDRATE = 2
   TRANSITION_BAUDRATE = 3
+
 
 class BAUD_RATE_TYPE(IntEnum):
   PC9600 = 1
@@ -99,6 +109,7 @@ class BAUD_RATE_TYPE(IntEnum):
   CAN250000 = 17
   CAN500000 = 18
   CAN1000000 = 19
+
 
 class DATA_IDENTIFIER_TYPE(IntEnum):
   BOOT_SOFTWARE_IDENTIFICATION = 0xF180
@@ -133,16 +144,19 @@ class DATA_IDENTIFIER_TYPE(IntEnum):
   ODX_FILE = 0xF19E
   ENTITY = 0xF19F
 
+
 class TRANSMISSION_MODE_TYPE(IntEnum):
   SEND_AT_SLOW_RATE = 1
   SEND_AT_MEDIUM_RATE = 2
   SEND_AT_FAST_RATE = 3
   STOP_SENDING = 4
 
+
 class DYNAMIC_DEFINITION_TYPE(IntEnum):
   DEFINE_BY_IDENTIFIER = 1
   DEFINE_BY_MEMORY_ADDRESS = 2
   CLEAR_DYNAMICALLY_DEFINED_DATA_IDENTIFIER = 3
+
 
 class ISOTP_FRAME_TYPE(IntEnum):
   SINGLE = 0
@@ -150,15 +164,18 @@ class ISOTP_FRAME_TYPE(IntEnum):
   CONSECUTIVE = 2
   FLOW = 3
 
+
 class DynamicSourceDefinition(NamedTuple):
   data_identifier: int
   position: int
   memory_size: int
   memory_address: int
 
+
 class DTC_GROUP_TYPE(IntEnum):
   EMISSIONS = 0x000000
   ALL = 0xFFFFFF
+
 
 class DTC_REPORT_TYPE(IntEnum):
   NUMBER_OF_DTC_BY_STATUS_MASK = 0x01
@@ -183,6 +200,7 @@ class DTC_REPORT_TYPE(IntEnum):
   DTC_FAULT_DETECTION_COUNTER = 0x14
   DTC_WITH_PERMANENT_STATUS = 0x15
 
+
 class DTC_STATUS_MASK_TYPE(IntEnum):
   TEST_FAILED = 0x01
   TEST_FAILED_THIS_OPERATION_CYCLE = 0x02
@@ -194,11 +212,13 @@ class DTC_STATUS_MASK_TYPE(IntEnum):
   WARNING_INDICATOR_REQUESTED = 0x80
   ALL = 0xFF
 
+
 class DTC_SEVERITY_MASK_TYPE(IntEnum):
   MAINTENANCE_ONLY = 0x20
   CHECK_AT_NEXT_HALT = 0x40
   CHECK_IMMEDIATELY = 0x80
   ALL = 0xE0
+
 
 class CONTROL_PARAMETER_TYPE(IntEnum):
   RETURN_CONTROL_TO_ECU = 0
@@ -206,18 +226,22 @@ class CONTROL_PARAMETER_TYPE(IntEnum):
   FREEZE_CURRENT_STATE = 2
   SHORT_TERM_ADJUSTMENT = 3
 
+
 class ROUTINE_CONTROL_TYPE(IntEnum):
   START = 1
   STOP = 2
   REQUEST_RESULTS = 3
+
 
 class ROUTINE_IDENTIFIER_TYPE(IntEnum):
   ERASE_MEMORY = 0xFF00
   CHECK_PROGRAMMING_DEPENDENCIES = 0xFF01
   ERASE_MIRROR_MEMORY_DTCS = 0xFF02
 
+
 class MessageTimeoutError(Exception):
   pass
+
 
 class NegativeResponseError(Exception):
   def __init__(self, message, service_id, error_code):
@@ -229,14 +253,18 @@ class NegativeResponseError(Exception):
   def __str__(self):
     return self.message
 
+
 class InvalidServiceIdError(Exception):
   pass
+
 
 class InvalidSubFunctionError(Exception):
   pass
 
+
 class InvalidSubAddressError(Exception):
   pass
+
 
 _negative_response_codes = {
     0x00: 'positive response',
@@ -282,6 +310,7 @@ _negative_response_codes = {
     0x93: 'voltage too low',
 }
 
+
 def get_dtc_num_as_str(dtc_num_bytes):
   # ISO 15031-6
   designator = {
@@ -294,6 +323,7 @@ def get_dtc_num_as_str(dtc_num_bytes):
   n = bytes([dtc_num_bytes[0] & 0x3F]) + dtc_num_bytes[1:]
   return d + n.hex()
 
+
 def get_dtc_status_names(status):
   result = list()
   for m in DTC_STATUS_MASK_TYPE:
@@ -302,6 +332,7 @@ def get_dtc_status_names(status):
     if status & m.value:
       result.append(m.name)
   return result
+
 
 class CanClient:
   def __init__(self, can_send: Callable[[int, bytes, int], None], can_recv: Callable[[], list[tuple[int, bytes, int]]],
@@ -382,6 +413,7 @@ class CanClient:
       # prevent rx buffer from overflowing on large tx
       if i % 10 == 9:
         self._recv_buffer()
+
 
 class IsoTpMessage:
   def __init__(self, can_client: CanClient, timeout: float = 1, single_frame_mode: bool = False, separation_time: float = 0):

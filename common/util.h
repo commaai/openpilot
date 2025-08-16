@@ -88,7 +88,7 @@ int write_file(const char* path, const void* data, size_t size, int flags = O_WR
 FILE* safe_fopen(const char* filename, const char* mode);
 size_t safe_fwrite(const void * ptr, size_t size, size_t count, FILE * stream);
 int safe_fflush(FILE *stream);
-int safe_ioctl(int fd, unsigned long request, void *argp);
+int safe_ioctl(int fd, unsigned long request, void *argp, const char* exception_msg = nullptr);
 
 std::string readlink(const std::string& path);
 bool file_exists(const std::string& fn);

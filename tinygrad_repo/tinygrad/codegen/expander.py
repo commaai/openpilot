@@ -49,7 +49,7 @@ def do_expand(root:UOp):
       if root.op is Ops.IF:
         # for the first arg of IF, just pass them through ignoring UNROLLS
         new_srcs.append(src)
-      elif root.op is Ops.REDUCE and src.op is Ops.RANGE:
+      elif root.op in {Ops.REDUCE, Ops.STORE} and src.op is Ops.RANGE:
         # for any range args of REDUCE, pass them through
         new_srcs.append(src)
       elif src.dtype.count > 1:
@@ -83,12 +83,9 @@ expander = PatternMatcher([
   (UPat(Ops.UNROLL, name="outer", src=(UPat(Ops.UNROLL, name="inner"),)),
    lambda outer, inner: UOp(Ops.UNROLL, outer.dtype, (inner.src[0],), inner.arg+outer.arg)),
   # do expansion
-  (UPat((*GroupOp.ALU, Ops.CAST, Ops.BITCAST, Ops.GEP, Ops.WMMA, Ops.LOAD, Ops.STORE, Ops.INDEX, Ops.ASSIGN,
+  (UPat((*GroupOp.ALU, Ops.CAST, Ops.BITCAST, Ops.GEP, Ops.WMMA, Ops.LOAD, Ops.STORE, Ops.INDEX,
          Ops.VECTORIZE, Ops.IF, Ops.REDUCE), name="root", custom_early_reject=set([Ops.UNROLL])), do_expand),
   (UPat(Ops.CONTRACT, name="con"), do_contract),
-  # vectorize DEFINE_ACC
-  (UPat(Ops.VECTORIZE, src=UPat(Ops.DEFINE_ACC, name="acc"), name="v"),
-    lambda acc,v: acc.replace(dtype=v.dtype, src=(acc.src[0].broadcast(v.dtype.count),)+acc.src[1:])),
   # BARRIERs aren't actually expanded
   (UPat(Ops.BARRIER, src=(UPat(Ops.UNROLL, name="ex"),)),
    lambda ex: UOp(Ops.UNROLL, src=(UOp(Ops.BARRIER, src=ex.src),)*len(ex.src), arg=ex.arg)),
@@ -113,26 +110,4 @@ def create_gate(root:UOp) -> UOp|None:
 migrate_indexing = PatternMatcher([
   # create gate MUST BE BEFORE expander
   (UPat(Ops.STORE, name="root"), create_gate),
-])
-
-# **** IGNORE support ****
-
-pm_store_ignore = PatternMatcher([
-  (UPat().index(UPat(), UPat(name="mask")).store(UPat()).named("store"),
-   lambda store,mask: store.replace(src=(store.src[0], UOp(Ops.IGNORE, src=(store.src[1], mask)))) if store.src[1].op is not Ops.IGNORE else None),
-])
-
-pm_move_ignore = PatternMatcher([
-  # IGNORE on SELF is nothing
-  (UPat(Ops.IGNORE, src=(UPat(name="x"), UPat(name="x"))), lambda x: x.const_like(True)),
-  # IGNORE on a CONST is nothing
-  (UPat(Ops.IGNORE, src=(UPat((Ops.CONST, Ops.VCONST), name="c"), UPat())), lambda c: c),
-  # move the IGNOREs
-  (UPat(Ops.IGNORE, src=(UPat((*GroupOp.ALU, Ops.CAST, Ops.VECTORIZE), name="alu"), UPat.var("mask")), name="ig"),
-   lambda ig,alu,mask: alu.replace(src=tuple(UOp(Ops.IGNORE, x.dtype, (x, mask)) for x in alu.src))),
-])
-
-pm_delete_ignore = PatternMatcher([
-  # IGNORE on SELF is nothing
-  (UPat(Ops.IGNORE, src=(UPat(name="x"), UPat())), lambda x: x),
 ])

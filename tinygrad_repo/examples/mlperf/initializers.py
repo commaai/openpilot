@@ -39,7 +39,7 @@ class LinearBert(nn.Linear):
   def __init__(self, in_features, out_features, bias=True, std=0.02):
     self.weight = std * rand_truncn(out_features, in_features, dtype=dtypes.float32)
     self.bias = Tensor.zeros(out_features, dtype=dtypes.float32) if bias else None
-  
+
   def __call__(self, x:Tensor):
     return x.cast(dtypes.default_float).linear(self.weight.cast(dtypes.default_float).transpose(), self.bias.cast(dtypes.default_float) if self.bias is not None else None)
 

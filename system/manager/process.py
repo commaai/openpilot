@@ -16,9 +16,8 @@ import openpilot.system.sentry as sentry
 from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.hardware.hw import Paths
+from openpilot.common.watchdog import WATCHDOG_FN
 
-WATCHDOG_FN = f"{Paths.shm_path()}/wd_"
 ENABLE_WATCHDOG = os.getenv("NO_WATCHDOG") is None
 
 
@@ -252,7 +251,7 @@ class DaemonProcess(ManagerProcess):
     if self.params is None:
       self.params = Params()
 
-    pid = self.params.get(self.param_name, encoding='utf-8')
+    pid = self.params.get(self.param_name)
     if pid is not None:
       try:
         os.kill(int(pid), 0)
@@ -271,7 +270,7 @@ class DaemonProcess(ManagerProcess):
                                stderr=open('/dev/null', 'w'),
                                preexec_fn=os.setpgrp)
 
-    self.params.put(self.param_name, str(proc.pid))
+    self.params.put(self.param_name, proc.pid)
 
   def stop(self, retry=True, block=True, sig=None) -> None:
     pass

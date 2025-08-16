@@ -1,6 +1,7 @@
 from typing import Callable
 import unittest, math
 import torch
+import numpy as np
 from tinygrad import Tensor
 from tinygrad.dtype import dtypes
 from tinygrad.uop.ops import UOp
@@ -112,22 +113,35 @@ class TestTensorGradient(unittest.TestCase):
 class TestRealizeMeansRealize(unittest.TestCase):
   def test_randn_realizes(self):
     x = Tensor.randn(2, 3, 64, 64, requires_grad=True).realize()
-    assert x.lazydata is not x.lazydata.base
-    assert x.lazydata.is_realized
+    assert x.uop is not x.uop.base
+    assert x.uop.is_realized
 
   #@unittest.expectedFailure
   # update: passing after delete_forced_realize
   def test_uniform_realizes(self):
     x = Tensor.uniform(16, 3, 3, 3, requires_grad=True).realize()
-    print(x.lazydata)
-    assert x.lazydata is not x.lazydata.base
-    assert x.lazydata.is_realized
+    print(x.uop)
+    assert x.uop is not x.uop.base
+    assert x.uop.is_realized
 
   # NOTE: even though it doesn't realize, this seems fine
   def test_uniform_gradient(self):
     x = Tensor.uniform(16, 3, 3, 3, requires_grad=True).realize()
     y = x * 2
     y.sum().gradient(x)[0].realize()
+
+class TestViewGradient(unittest.TestCase):
+  def test_expand(self):
+    # this test shows that if Tensors collapse to the views and create a disconnected graph
+    # there's no way to recover the proper gradient
+    x = Tensor.randn(5,2)
+    a = Tensor([3.], requires_grad=True)
+    aex = a.expand(10)
+    (aex.reshape(5,2) * x).sum().backward()
+    np.testing.assert_allclose(aex.grad.numpy(), x.reshape(10).numpy())
+    # NOTE: aex.grad is *not* a.grad.expand(10)!
+    with self.assertRaises(AssertionError):
+      np.testing.assert_allclose(aex.grad.numpy(), a.grad.expand(10).numpy())
 
 if __name__ == '__main__':
   unittest.main()

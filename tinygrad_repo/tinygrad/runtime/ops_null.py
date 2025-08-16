@@ -18,6 +18,7 @@ class NullAllocator(Allocator['NullDevice']):
   def _copyin(self, dest, src:memoryview): pass
   def _copyout(self, dest:memoryview, src): pass
   def _transfer(self, dest, src, sz:int, src_dev, dest_dev): pass
+  def _offset(self, buf, offset:int, size:int): pass
 
 class NullGraph(MultiGraphRunner):
   def __call__(self, input_rawbuffers, var_vals, wait=False) -> float|None: return 1e-3

@@ -1,6 +1,7 @@
 # panda safety helpers, from safety_helpers.c
 from typing import Protocol
 
+
 def setup_safety_helpers(ffi):
   ffi.cdef("""
   void set_controls_allowed(bool c);
@@ -52,6 +53,7 @@ def setup_safety_helpers(ffi):
   int get_honda_hw(void);
   """)
 
+
 class PandaSafety(Protocol):
   def set_controls_allowed(self, c: bool) -> None: ...
   def get_controls_allowed(self) -> bool: ...
@@ -100,5 +102,3 @@ class PandaSafety(Protocol):
   def set_honda_alt_brake_msg(self, c: bool) -> None: ...
   def set_honda_bosch_long(self, c: bool) -> None: ...
   def get_honda_hw(self) -> int: ...
-
-

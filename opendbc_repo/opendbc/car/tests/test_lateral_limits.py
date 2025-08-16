@@ -7,7 +7,8 @@ import sys
 
 from opendbc.car import DT_CTRL
 from opendbc.car.car_helpers import interfaces
-from opendbc.car.interfaces import ISO_LATERAL_ACCEL, get_torque_params
+from opendbc.car.interfaces import get_torque_params
+from opendbc.car.lateral import ISO_LATERAL_ACCEL
 from opendbc.car.values import PLATFORMS
 
 # ISO 11270 - allowed up jerk is strictly lower than recommended limits

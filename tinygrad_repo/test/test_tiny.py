@@ -100,7 +100,7 @@ class TestTiny(unittest.TestCase):
       lambda x: x.flatten(1), nn.Linear(576, 10)]
 
     # replace random weights with ones
-    for p in nn.state.get_parameters(layers): p.replace(Tensor.ones_like(p).contiguous()).realize()
+    Tensor.realize(*[p.replace(Tensor.ones_like(p).contiguous()) for p in nn.state.get_parameters(layers)])
 
     # run model inference
     probs = Tensor.rand(1, 1, 28, 28).sequential(layers).tolist()

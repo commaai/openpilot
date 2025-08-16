@@ -36,7 +36,7 @@ def helper_alloc_rawbuffer(device, fill=False):
   if fill:
     with Context(DEBUG=0):
       data = np.random.randint(-10000, 10000, size=rawbuf.size, dtype=_to_np_dtype(rawbuf.dtype))
-      rawbuf.copyin(Tensor(data).realize().lazydata.base.realized.as_buffer())
+      rawbuf.copyin(Tensor(data).realize().uop.base.realized.as_buffer())
   return rawbuf
 
 def helper_create_offset_rawbuffer(base, offset=0):
@@ -107,8 +107,9 @@ class TestGraph(unittest.TestCase):
     helper_test_graphs(Device[d0].graph, graphs)
 
   def skip_if_not_multigraph(self):
-    graph = g.func if isinstance(g:=Device[Device.DEFAULT].graph, functools.partial) else g
+    graph = g.func if isinstance(g:=(d:=Device[Device.DEFAULT]).graph, functools.partial) else g
     if not issubclass(graph, MultiGraphRunner): self.skipTest("graph is not supported (not MultiGraphRunner)")
+    if not hasattr(d.allocator, '_transfer'): self.skipTest("device is not supported (no transfers)")
 
   def test_order_copy_writed(self):
     self.skip_if_not_multigraph()

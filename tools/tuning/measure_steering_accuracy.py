@@ -49,7 +49,7 @@ class SteeringAccuracyTool:
     active = sm['controlsState'].active
     steer = sm['carOutput'].actuatorsOutput.torque
     standstill = sm['carState'].standstill
-    steer_limited_by_controls = abs(sm['carControl'].actuators.torque - sm['carControl'].actuatorsOutput.torque) > 1e-2
+    steer_limited_by_safety = abs(sm['carControl'].actuators.torque - sm['carControl'].actuatorsOutput.torque) > 1e-2
     overriding = sm['carState'].steeringPressed
     changing_lanes = sm['modelV2'].meta.laneChangeState != 0
     model_points = sm['modelV2'].position.y
@@ -77,7 +77,7 @@ class SteeringAccuracyTool:
             self.speed_group_stats[group][angle_abs]["steer"] += abs(steer)
             if len(model_points):
               self.speed_group_stats[group][angle_abs]["dpp"] += abs(model_points[0])
-            if steer_limited_by_controls:
+            if steer_limited_by_safety:
               self.speed_group_stats[group][angle_abs]["limited"] += 1
             if control_state.saturated:
               self.speed_group_stats[group][angle_abs]["saturated"] += 1

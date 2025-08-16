@@ -7,6 +7,7 @@ from opendbc.car.carlog import carlog
 from opendbc.safety.tests.libsafety import libsafety_py
 from opendbc.safety.tests.safety_replay.helpers import package_can_msg, init_segment
 
+
 # replay a drive to check for safety violations
 def replay_drive(msgs, safety_mode, param, alternative_experience):
   safety = libsafety_py.libsafety
@@ -36,8 +37,8 @@ def replay_drive(msgs, safety_mode, param, alternative_experience):
 
     if msg.which() == 'sendcan':
       for canmsg in msg.sendcan:
-        to_send = package_can_msg(canmsg)
-        sent = safety.safety_tx_hook(to_send)
+        _msg = package_can_msg(canmsg)
+        sent = safety.safety_tx_hook(_msg)
         if not sent:
           tx_blocked += 1
           tx_controls_blocked += safety.get_controls_allowed()
@@ -50,8 +51,8 @@ def replay_drive(msgs, safety_mode, param, alternative_experience):
       # ignore msgs we sent
       for canmsg in filter(lambda m: m.src < 128, msg.can):
         safety.safety_fwd_hook(canmsg.src, canmsg.address)
-        to_push = package_can_msg(canmsg)
-        recv = safety.safety_rx_hook(to_push)
+        _msg = package_can_msg(canmsg)
+        recv = safety.safety_rx_hook(_msg)
         if not recv:
           rx_invalid += 1
           invalid_addrs.add(canmsg.address)
@@ -70,6 +71,7 @@ def replay_drive(msgs, safety_mode, param, alternative_experience):
   print("blocked addrs:", blocked_addrs)
 
   return tx_controls_blocked == 0 and rx_invalid == 0 and not safety_tick_rx_invalid
+
 
 if __name__ == "__main__":
   from openpilot.tools.lib.logreader import LogReader

@@ -372,7 +372,8 @@ c__EA_hsa_extension_t__enumvalues = {
     512: 'HSA_EXTENSION_AMD_PROFILER',
     513: 'HSA_EXTENSION_AMD_LOADER',
     514: 'HSA_EXTENSION_AMD_AQLPROFILE',
-    514: 'HSA_AMD_LAST_EXTENSION',
+    515: 'HSA_EXTENSION_AMD_PC_SAMPLING',
+    515: 'HSA_AMD_LAST_EXTENSION',
 }
 HSA_EXTENSION_FINALIZER = 0
 HSA_EXTENSION_IMAGES = 1
@@ -383,7 +384,8 @@ HSA_AMD_FIRST_EXTENSION = 512
 HSA_EXTENSION_AMD_PROFILER = 512
 HSA_EXTENSION_AMD_LOADER = 513
 HSA_EXTENSION_AMD_AQLPROFILE = 514
-HSA_AMD_LAST_EXTENSION = 514
+HSA_EXTENSION_AMD_PC_SAMPLING = 515
+HSA_AMD_LAST_EXTENSION = 515
 c__EA_hsa_extension_t = ctypes.c_uint32 # enum
 hsa_extension_t = c__EA_hsa_extension_t
 hsa_extension_t__enumvalues = c__EA_hsa_extension_t__enumvalues
@@ -2088,6 +2090,7 @@ c__EA_hsa_code_symbol_info_t__enumvalues = {
     15: 'HSA_CODE_SYMBOL_INFO_KERNEL_DYNAMIC_CALLSTACK',
     18: 'HSA_CODE_SYMBOL_INFO_KERNEL_CALL_CONVENTION',
     16: 'HSA_CODE_SYMBOL_INFO_INDIRECT_FUNCTION_CALL_CONVENTION',
+    19: 'HSA_CODE_SYMBOL_INFO_KERNEL_WAVEFRONT_SIZE',
 }
 HSA_CODE_SYMBOL_INFO_TYPE = 0
 HSA_CODE_SYMBOL_INFO_NAME_LENGTH = 1
@@ -2108,6 +2111,7 @@ HSA_CODE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE = 14
 HSA_CODE_SYMBOL_INFO_KERNEL_DYNAMIC_CALLSTACK = 15
 HSA_CODE_SYMBOL_INFO_KERNEL_CALL_CONVENTION = 18
 HSA_CODE_SYMBOL_INFO_INDIRECT_FUNCTION_CALL_CONVENTION = 16
+HSA_CODE_SYMBOL_INFO_KERNEL_WAVEFRONT_SIZE = 19
 c__EA_hsa_code_symbol_info_t = ctypes.c_uint32 # enum
 hsa_code_symbol_info_t = c__EA_hsa_code_symbol_info_t
 hsa_code_symbol_info_t__enumvalues = c__EA_hsa_code_symbol_info_t__enumvalues
@@ -2594,6 +2598,7 @@ c__Ea_HSA_STATUS_ERROR_INVALID_MEMORY_POOL__enumvalues = {
     43: 'HSA_STATUS_ERROR_MEMORY_FAULT',
     44: 'HSA_STATUS_CU_MASK_REDUCED',
     45: 'HSA_STATUS_ERROR_OUT_OF_REGISTERS',
+    46: 'HSA_STATUS_ERROR_RESOURCE_BUSY',
 }
 HSA_STATUS_ERROR_INVALID_MEMORY_POOL = 40
 HSA_STATUS_ERROR_MEMORY_APERTURE_VIOLATION = 41
@@ -2601,6 +2606,7 @@ HSA_STATUS_ERROR_ILLEGAL_INSTRUCTION = 42
 HSA_STATUS_ERROR_MEMORY_FAULT = 43
 HSA_STATUS_CU_MASK_REDUCED = 44
 HSA_STATUS_ERROR_OUT_OF_REGISTERS = 45
+HSA_STATUS_ERROR_RESOURCE_BUSY = 46
 c__Ea_HSA_STATUS_ERROR_INVALID_MEMORY_POOL = ctypes.c_uint32 # enum
 
 # values for enumeration 'c__EA_hsa_amd_iommu_version_t'
@@ -2976,9 +2982,11 @@ hsa_amd_memory_pool_info_t__enumvalues = c__EA_hsa_amd_memory_pool_info_t__enumv
 hsa_amd_memory_pool_flag_s__enumvalues = {
     0: 'HSA_AMD_MEMORY_POOL_STANDARD_FLAG',
     1: 'HSA_AMD_MEMORY_POOL_PCIE_FLAG',
+    2: 'HSA_AMD_MEMORY_POOL_CONTIGUOUS_FLAG',
 }
 HSA_AMD_MEMORY_POOL_STANDARD_FLAG = 0
 HSA_AMD_MEMORY_POOL_PCIE_FLAG = 1
+HSA_AMD_MEMORY_POOL_CONTIGUOUS_FLAG = 2
 hsa_amd_memory_pool_flag_s = ctypes.c_uint32 # enum
 hsa_amd_memory_pool_flag_t = hsa_amd_memory_pool_flag_s
 hsa_amd_memory_pool_flag_t__enumvalues = hsa_amd_memory_pool_flag_s__enumvalues
@@ -3525,6 +3533,12 @@ try:
 except AttributeError:
     pass
 try:
+    hsa_amd_vmem_address_reserve_align = _libraries['libhsa-runtime64.so'].hsa_amd_vmem_address_reserve_align
+    hsa_amd_vmem_address_reserve_align.restype = hsa_status_t
+    hsa_amd_vmem_address_reserve_align.argtypes = [ctypes.POINTER(ctypes.POINTER(None)), size_t, uint64_t, uint64_t, uint64_t]
+except AttributeError:
+    pass
+try:
     hsa_amd_vmem_address_free = _libraries['libhsa-runtime64.so'].hsa_amd_vmem_address_free
     hsa_amd_vmem_address_free.restype = hsa_status_t
     hsa_amd_vmem_address_free.argtypes = [ctypes.POINTER(None), size_t]
@@ -3625,6 +3639,23 @@ try:
     hsa_amd_agent_set_async_scratch_limit = _libraries['libhsa-runtime64.so'].hsa_amd_agent_set_async_scratch_limit
     hsa_amd_agent_set_async_scratch_limit.restype = hsa_status_t
     hsa_amd_agent_set_async_scratch_limit.argtypes = [hsa_agent_t, size_t]
+except AttributeError:
+    pass
+
+# values for enumeration 'c__EA_hsa_queue_info_attribute_t'
+c__EA_hsa_queue_info_attribute_t__enumvalues = {
+    0: 'HSA_AMD_QUEUE_INFO_AGENT',
+    1: 'HSA_AMD_QUEUE_INFO_DOORBELL_ID',
+}
+HSA_AMD_QUEUE_INFO_AGENT = 0
+HSA_AMD_QUEUE_INFO_DOORBELL_ID = 1
+c__EA_hsa_queue_info_attribute_t = ctypes.c_uint32 # enum
+hsa_queue_info_attribute_t = c__EA_hsa_queue_info_attribute_t
+hsa_queue_info_attribute_t__enumvalues = c__EA_hsa_queue_info_attribute_t__enumvalues
+try:
+    hsa_amd_queue_get_info = _libraries['libhsa-runtime64.so'].hsa_amd_queue_get_info
+    hsa_amd_queue_get_info.restype = hsa_status_t
+    hsa_amd_queue_get_info.argtypes = [ctypes.POINTER(struct_hsa_queue_s), hsa_queue_info_attribute_t, ctypes.POINTER(None)]
 except AttributeError:
     pass
 amd_queue_properties32_t = ctypes.c_uint32
@@ -5077,6 +5108,7 @@ __all__ = \
     'HSA_AMD_MEMORY_POOL_ACCESS_ALLOWED_BY_DEFAULT',
     'HSA_AMD_MEMORY_POOL_ACCESS_DISALLOWED_BY_DEFAULT',
     'HSA_AMD_MEMORY_POOL_ACCESS_NEVER_ALLOWED',
+    'HSA_AMD_MEMORY_POOL_CONTIGUOUS_FLAG',
     'HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_COARSE_GRAINED',
     'HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_EXTENDED_SCOPE_FINE_GRAINED',
     'HSA_AMD_MEMORY_POOL_GLOBAL_FLAG_FINE_GRAINED',
@@ -5096,10 +5128,10 @@ __all__ = \
     'HSA_AMD_MEMORY_POOL_PCIE_FLAG',
     'HSA_AMD_MEMORY_POOL_STANDARD_FLAG',
     'HSA_AMD_MEMORY_PROPERTY_AGENT_IS_APU',
-    'HSA_AMD_PACKET_TYPE_BARRIER_VALUE',
-    'HSA_AMD_QUEUE_PRIORITY_HIGH', 'HSA_AMD_QUEUE_PRIORITY_LOW',
-    'HSA_AMD_QUEUE_PRIORITY_NORMAL', 'HSA_AMD_REGION_INFO_BASE',
-    'HSA_AMD_REGION_INFO_BUS_WIDTH',
+    'HSA_AMD_PACKET_TYPE_BARRIER_VALUE', 'HSA_AMD_QUEUE_INFO_AGENT',
+    'HSA_AMD_QUEUE_INFO_DOORBELL_ID', 'HSA_AMD_QUEUE_PRIORITY_HIGH',
+    'HSA_AMD_QUEUE_PRIORITY_LOW', 'HSA_AMD_QUEUE_PRIORITY_NORMAL',
+    'HSA_AMD_REGION_INFO_BASE', 'HSA_AMD_REGION_INFO_BUS_WIDTH',
     'HSA_AMD_REGION_INFO_HOST_ACCESSIBLE',
     'HSA_AMD_REGION_INFO_MAX_CLOCK_FREQUENCY',
     'HSA_AMD_SDMA_ENGINE_0', 'HSA_AMD_SDMA_ENGINE_1',
@@ -5149,6 +5181,7 @@ __all__ = \
     'HSA_CODE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_ALIGNMENT',
     'HSA_CODE_SYMBOL_INFO_KERNEL_KERNARG_SEGMENT_SIZE',
     'HSA_CODE_SYMBOL_INFO_KERNEL_PRIVATE_SEGMENT_SIZE',
+    'HSA_CODE_SYMBOL_INFO_KERNEL_WAVEFRONT_SIZE',
     'HSA_CODE_SYMBOL_INFO_LINKAGE',
     'HSA_CODE_SYMBOL_INFO_MODULE_NAME',
     'HSA_CODE_SYMBOL_INFO_MODULE_NAME_LENGTH',
@@ -5192,8 +5225,9 @@ __all__ = \
     'HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_SEGMENT',
     'HSA_EXECUTABLE_SYMBOL_INFO_VARIABLE_SIZE',
     'HSA_EXTENSION_AMD_AQLPROFILE', 'HSA_EXTENSION_AMD_LOADER',
-    'HSA_EXTENSION_AMD_PROFILER', 'HSA_EXTENSION_FINALIZER',
-    'HSA_EXTENSION_IMAGES', 'HSA_EXTENSION_PERFORMANCE_COUNTERS',
+    'HSA_EXTENSION_AMD_PC_SAMPLING', 'HSA_EXTENSION_AMD_PROFILER',
+    'HSA_EXTENSION_FINALIZER', 'HSA_EXTENSION_IMAGES',
+    'HSA_EXTENSION_PERFORMANCE_COUNTERS',
     'HSA_EXTENSION_PROFILING_EVENTS', 'HSA_EXTENSION_STD_LAST',
     'HSA_EXT_AGENT_INFO_IMAGE_1DA_MAX_ELEMENTS',
     'HSA_EXT_AGENT_INFO_IMAGE_1DB_MAX_ELEMENTS',
@@ -5366,6 +5400,7 @@ __all__ = \
     'HSA_STATUS_ERROR_OUT_OF_REGISTERS',
     'HSA_STATUS_ERROR_OUT_OF_RESOURCES',
     'HSA_STATUS_ERROR_REFCOUNT_OVERFLOW',
+    'HSA_STATUS_ERROR_RESOURCE_BUSY',
     'HSA_STATUS_ERROR_RESOURCE_FREE',
     'HSA_STATUS_ERROR_VARIABLE_ALREADY_DEFINED',
     'HSA_STATUS_ERROR_VARIABLE_UNDEFINED', 'HSA_STATUS_INFO_BREAK',
@@ -5496,12 +5531,13 @@ __all__ = \
     'c__EA_hsa_machine_model_t', 'c__EA_hsa_packet_header_t',
     'c__EA_hsa_packet_header_width_t', 'c__EA_hsa_packet_type_t',
     'c__EA_hsa_profile_t', 'c__EA_hsa_queue_feature_t',
-    'c__EA_hsa_queue_type_t', 'c__EA_hsa_region_global_flag_t',
-    'c__EA_hsa_region_info_t', 'c__EA_hsa_region_segment_t',
-    'c__EA_hsa_round_method_t', 'c__EA_hsa_signal_condition_t',
-    'c__EA_hsa_status_t', 'c__EA_hsa_symbol_kind_t',
-    'c__EA_hsa_symbol_linkage_t', 'c__EA_hsa_system_info_t',
-    'c__EA_hsa_variable_allocation_t', 'c__EA_hsa_variable_segment_t',
+    'c__EA_hsa_queue_info_attribute_t', 'c__EA_hsa_queue_type_t',
+    'c__EA_hsa_region_global_flag_t', 'c__EA_hsa_region_info_t',
+    'c__EA_hsa_region_segment_t', 'c__EA_hsa_round_method_t',
+    'c__EA_hsa_signal_condition_t', 'c__EA_hsa_status_t',
+    'c__EA_hsa_symbol_kind_t', 'c__EA_hsa_symbol_linkage_t',
+    'c__EA_hsa_system_info_t', 'c__EA_hsa_variable_allocation_t',
+    'c__EA_hsa_variable_segment_t',
     'c__EA_hsa_ven_amd_aqlprofile_att_marker_channel_t',
     'c__EA_hsa_ven_amd_aqlprofile_block_name_t',
     'c__EA_hsa_ven_amd_aqlprofile_event_type_t',
@@ -5595,7 +5631,8 @@ __all__ = \
     'hsa_amd_profiling_get_dispatch_time',
     'hsa_amd_profiling_set_profiler_enabled',
     'hsa_amd_queue_cu_get_mask', 'hsa_amd_queue_cu_set_mask',
-    'hsa_amd_queue_priority_s', 'hsa_amd_queue_priority_t',
+    'hsa_amd_queue_get_info', 'hsa_amd_queue_priority_s',
+    'hsa_amd_queue_priority_t',
     'hsa_amd_queue_priority_t__enumvalues',
     'hsa_amd_queue_set_priority', 'hsa_amd_region_info_s',
     'hsa_amd_region_info_t', 'hsa_amd_region_info_t__enumvalues',
@@ -5616,7 +5653,9 @@ __all__ = \
     'hsa_amd_svm_model_t__enumvalues', 'hsa_amd_svm_prefetch_async',
     'hsa_amd_system_event_callback_t',
     'hsa_amd_vendor_packet_header_t', 'hsa_amd_vmem_address_free',
-    'hsa_amd_vmem_address_reserve', 'hsa_amd_vmem_alloc_handle_t',
+    'hsa_amd_vmem_address_reserve',
+    'hsa_amd_vmem_address_reserve_align',
+    'hsa_amd_vmem_alloc_handle_t',
     'hsa_amd_vmem_export_shareable_handle', 'hsa_amd_vmem_get_access',
     'hsa_amd_vmem_get_alloc_properties_from_handle',
     'hsa_amd_vmem_handle_create', 'hsa_amd_vmem_handle_release',
@@ -5741,6 +5780,8 @@ __all__ = \
     'hsa_queue_cas_write_index_screlease', 'hsa_queue_create',
     'hsa_queue_destroy', 'hsa_queue_feature_t',
     'hsa_queue_feature_t__enumvalues', 'hsa_queue_inactivate',
+    'hsa_queue_info_attribute_t',
+    'hsa_queue_info_attribute_t__enumvalues',
     'hsa_queue_load_read_index_acquire',
     'hsa_queue_load_read_index_relaxed',
     'hsa_queue_load_read_index_scacquire',

@@ -13,8 +13,6 @@
 
 class HardwareTici : public HardwareNone {
 public:
-  static constexpr float MAX_VOLUME = 0.9;
-  static constexpr float MIN_VOLUME = 0.1;
   static bool TICI() { return true; }
   static bool AGNOS() { return true; }
   static std::string get_os_version() {
@@ -75,7 +73,7 @@ public:
       return;
     }
 
-    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 255);
+    int value = util::map_val(std::clamp(percent, 0, 100), 0, 100, 0, 300);
     std::ofstream("/sys/class/leds/led:switch_2/brightness") << 0 << "\n";
     std::ofstream("/sys/class/leds/led:torch_2/brightness") << value << "\n";
     std::ofstream("/sys/class/leds/led:switch_2/brightness") << value << "\n";
