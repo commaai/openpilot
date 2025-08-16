@@ -13,6 +13,7 @@ import pyray as rl
 from cereal import log
 from openpilot.common.run import run_cmd
 from openpilot.system.hardware import HARDWARE
+from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
@@ -109,14 +110,21 @@ class Setup(Widget):
     self._network_setup_continue_button.set_enabled(False)
     self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT)
 
-    self._custom_software_warning_continue_button = Button("Continue", self._custom_software_warning_continue_button_callback)
+    self._custom_software_warning_continue_button = Button("Scroll to continue", self._custom_software_warning_continue_button_callback,
+                                                           button_style=ButtonStyle.PRIMARY)
+    self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
     self._custom_software_warning_title_label = Label("WARNING: Custom Software", 100, FontWeight.BOLD, TextAlignment.LEFT, text_color=rl.Color(255,89,79,255),
                                                       text_padding=60)
-    self._custom_software_warning_body_label = Label("Use caution when installing third-party software. Third-party software has not been tested by comma,"
-                                              + " and may cause damage to your device and/or vehicle.\n\nIf you'd like to proceed, use https://flash.comma.ai "
+    self._custom_software_warning_body_label = Label("Use caution when installing third-party software.\n\n"
+                                              + "⚠️ It has not been tested by comma.\n\n"
+                                              + "⚠️ It may not comply with relevant safety standards.\n\n"
+                                              + "⚠️ It may cause damage to your device and/or vehicle.\n\n"
+                                              + "If you'd like to proceed, use https://flash.comma.ai "
                                               + "to restore your device to a factory state later.",
                                              85, text_alignment=TextAlignment.LEFT, text_padding=60)
+    self._custom_software_warning_body_scroll_panel = GuiScrollPanel()
+
     self._downloading_body_label = Label("Downloading...", TITLE_FONT_SIZE, FontWeight.MEDIUM)
 
     try:
@@ -291,13 +299,23 @@ class Setup(Widget):
     self._download_failed_startover_button.render(rl.Rectangle(rect.x + MARGIN + button_width + BUTTON_SPACING, button_y, button_width, BUTTON_HEIGHT))
 
   def render_custom_software_warning(self, rect: rl.Rectangle):
-    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, rect.y + 150, rect.width - 265, TITLE_FONT_SIZE))
-    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, rect.y + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
+    warn_rect = rl.Rectangle(rect.x, rect.y, rect.width, 1500)
+    offset = self._custom_software_warning_body_scroll_panel.handle_scroll(rect, warn_rect)
 
     button_width = (rect.width - MARGIN * 3) / 2
     button_y = rect.height - MARGIN - BUTTON_HEIGHT
+
+    rl.begin_scissor_mode(int(rect.x), int(rect.y), int(rect.width), int(button_y - BODY_FONT_SIZE))
+    y_offset = rect.y + offset.y
+    self._custom_software_warning_title_label.render(rl.Rectangle(rect.x + 50, y_offset + 150, rect.width - 265, TITLE_FONT_SIZE))
+    self._custom_software_warning_body_label.render(rl.Rectangle(rect.x + 50, y_offset + 200 , rect.width - 50, BODY_FONT_SIZE * 3))
+    rl.end_scissor_mode()
+
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
     self._custom_software_warning_continue_button.render(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT))
+    if offset.y < (rect.height - warn_rect.height):
+      self._custom_software_warning_continue_button.set_enabled(True)
+      self._custom_software_warning_continue_button.set_text("Continue")
 
   def render_custom_software(self):
     def handle_keyboard_result(result):
