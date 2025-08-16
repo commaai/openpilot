@@ -3,14 +3,13 @@
 import os
 import usb1
 import time
-import signal
-import subprocess
-
+import threading
 from panda import Panda, PandaDFU, PandaProtocolMismatch, FW_PATH
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
+from openpilot.common.realtime import config_realtime_process
 from openpilot.system.hardware import HARDWARE
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.pandad.runner import PandaRunner
 
 
 def get_expected_signature(panda: Panda) -> bytes:
@@ -62,24 +61,17 @@ def flash_panda(panda_serial: str) -> Panda:
 
 
 def main() -> None:
+  config_realtime_process(3, 54)
+
   # signal pandad to close the relay and exit
-  def signal_handler(signum, frame):
-    cloudlog.info(f"Caught signal {signum}, exiting")
-    nonlocal do_exit
-    do_exit = True
-    if process is not None:
-      process.send_signal(signal.SIGINT)
-
-  process = None
-  do_exit = False
-  signal.signal(signal.SIGINT, signal_handler)
-
+  evt = threading.Event()
   count = 0
   first_run = True
   params = Params()
   no_internal_panda_count = 0
+  pandas: list[Panda] = []
 
-  while not do_exit:
+  while True:
     try:
       count += 1
       cloudlog.event("pandad.flash_and_connect", count=count)
@@ -116,9 +108,7 @@ def main() -> None:
       cloudlog.info(f"{len(panda_serials)} panda(s) found, connecting - {panda_serials}")
 
       # Flash pandas
-      pandas: list[Panda] = []
-      for serial in panda_serials:
-        pandas.append(flash_panda(serial))
+      pandas = [flash_panda(serial) for serial in panda_serials]
 
       # Ensure internal panda is present if expected
       internal_pandas = [panda for panda in pandas if panda.is_internal()]
@@ -151,11 +141,22 @@ def main() -> None:
         if first_run:
           # reset panda to ensure we're in a good state
           cloudlog.info(f"Resetting panda {panda.get_usb_serial()}")
-          panda.reset(reconnect=True)
+
+          # TODO: this hangs now, but nothing should've changed here
+          #panda.reset(reconnect=True)
+
+      evt.clear()
+      first_run = False
+      runner = PandaRunner(panda_serials, pandas)
+      runner.run(evt)
 
       for p in pandas:
         p.close()
     # TODO: wrap all panda exceptions in a base panda exception
+    except KeyboardInterrupt:
+      cloudlog.info("Caught Ctrl+C, exiting")
+      evt.set()
+      break
     except (usb1.USBErrorNoDevice, usb1.USBErrorPipe):
       # a panda was disconnected while setting everything up. let's try again
       cloudlog.exception("Panda USB exception while setting up")
@@ -166,14 +167,13 @@ def main() -> None:
     except Exception:
       cloudlog.exception("pandad.uncaught_exception")
       continue
-
-    first_run = False
-
-    # run pandad with all connected serials as arguments
-    os.environ['MANAGER_DAEMON'] = 'pandad'
-    process = subprocess.Popen(["./pandad", *panda_serials], cwd=os.path.join(BASEDIR, "selfdrive/pandad"))
-    process.wait()
-
+    finally:
+      for p in pandas:
+        try:
+          p.close()
+        except Exception:
+          cloudlog.exception("Error closing panda connection")
+      pandas = []
 
 if __name__ == "__main__":
   main()
