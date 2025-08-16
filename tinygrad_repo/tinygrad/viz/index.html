@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>tinygrad viz</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="data:;base64,iVBORw0KGgo=">
+  <script src="assets/d3js.org/d3.v7.min.js" charset="utf-8"></script>
+  <script src="assets/dagrejs.github.io/project/dagre/latest/dagre.min.js"></script>
+  <link rel="stylesheet" href="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/styles/default.min.css">
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/highlight.min.js"></script>
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/python.min.js"></script>
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/cpp.min.js"></script>
+  <script src="assets/cdnjs.cloudflare.com/ajax/libs/highlight.js/11.10.0/languages/x86asm.min.js"></script>
+  <link rel="stylesheet" href="assets/unpkg.com/@highlightjs/cdn-assets@11.10.0/styles/tokyo-night-dark.min.css" />
+  <style>
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  html, body {
+    color: #f0f0f5;
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+    font-size: 14px;
+    overflow: hidden;
+    background-color: #08090e;
+  }
+  a {
+    color: #4a90e2;
+  }
+  ul {
+    padding: 0;
+    opacity: 0.6;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+  ul.active {
+    opacity: 1;
+  }
+  ul > ul {
+    display: none;
+  }
+  ul.expanded > ul {
+    display: block;
+  }
+  ul.disabled {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  label {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .graph svg {
+    width: 100%;
+    height: 100%;
+  }
+  svg * {
+    cursor: default;
+    user-select: none;
+  }
+  g.clickable * {
+    cursor: pointer;
+    user-select: auto;
+  }
+  g.tag circle {
+    r: 5;
+    fill: #FFD700;
+    stroke: #B8860B;
+    stroke-width: 0.8;
+  }
+  g.tag text {
+    text-anchor: middle;
+    font-size: 6px;
+    fill: black;
+  }
+  .label :is(text, p) {
+    color: #08090e;
+    font-weight: 350;
+  }
+  .edgePath {
+    stroke: #4a4b57;
+    fill: none;
+    stroke-width: 1.4px;
+  }
+  .main-container {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    position: relative;
+  }
+  .container {
+    flex: 0 0 auto;
+    background-color: #0f1018;
+    padding: 20px;
+    z-index: 2;
+    position: relative;
+    height: 100%;
+  }
+  .metadata > * + *, .rewrite-container > * + *, .ctx-list > * + * {
+    margin-top: 12px;
+  }
+  .stats-list > * + * {
+    margin-top: 8px;
+  }
+  .stats-list > p > * + * {
+    margin-top: 12px;
+  }
+  .stats-list {
+    width: 100%;
+    max-height: 240px;
+    overflow: auto;
+  }
+  .ctx-list > ul > * + * {
+    margin-top: 4px;
+  }
+  .graph {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+  }
+  .profiler {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+    height: calc(100% - 50px);
+    margin-top: 50px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+  }
+  .ctx-list-parent {
+    width: 15%;
+    padding-top: 50px;
+    border-right: 1px solid #4a4b56;
+  }
+  .ctx-list, .metadata {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+  }
+  .metadata-parent {
+    width: 20%;
+    border-left: 1px solid #4a4b56;
+    margin-left: auto;
+  }
+  .resize-handle {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 20px;
+    height: 100%;
+    cursor: col-resize;
+    z-index: 3;
+    background-color: transparent;
+  }
+  .floating-container {
+    position: fixed;
+    top: 10px;
+    left: 20px;
+    z-index: 4;
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+  }
+  .btn {
+    outline: none;
+    background-color: #1a1b26;
+    border: 1px solid #4a4b56;
+    color: #f0f0f5;
+    border-radius: 4px;
+    padding: 6px;
+    cursor: pointer;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+  }
+  .btn:hover {
+    background-color: #2a2b36;
+  }
+  .collapsed .container {
+    display: none;
+  }
+  .rewrite-list {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .rewrite-list > ul {
+    padding: 2px;
+  }
+  .wrap {
+    word-wrap: break-word;
+    white-space: pre-wrap;
+  }
+  pre code.hljs {
+    overflow-y: auto;
+    max-height: 30vh;
+    padding: 8px;
+  }
+  #progress-message {
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    top: 2%;
+    color: #ffd230;
+    display: none;
+  }
+  #tooltip {
+    position: absolute;
+    z-index: 4;
+    background-color: #1e2029;
+    padding: 4px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    display: none;
+    font-size: 10px;
+    white-space: pre;
+  }
+  #device-list > div {
+    min-height: 32px;
+    max-width: 100px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+    display: flex;
+  }
+  #device-list > div:hover {
+    background-color: rgba(20, 23, 35, 0.3);
+  }
+  .raw-text {
+    padding: 0 8px;
+    width: 100%;
+    height: 100%;
+    max-height: 100vh;
+    overflow-x: auto;
+  }
+  .raw-text code {
+    max-height: none !important;
+  }
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background-color: #1a1b26;
+    color: #f0f0f5;
+    font-size: 0.95em;
+  }
+  table td {
+    border-bottom: 1px solid #4a4b56;
+    vertical-align: top;
+  }
+  table tr:last-child > td {
+     border-bottom: none;
+  }
+  tr.main-row:hover {
+    background-color: #2a2d3a;
+  }
+  tr.sub-row {
+    max-width: 150px;
+  }
+  tr.main-row > td, tr.sub-row > td {
+    padding: 8px 12px;
+  }
+  tr.code-row > td:first-child {
+    font-family: monospace;
+  }
+  td.pct-row > div {
+    height: 12px;
+    width: 100%;
+    display: flex;
+  }
+  td.pct-row > div > div {
+    height: 100%;
+  }
+  thead {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: #20222e;
+  }
+  thead th {
+    text-align: left;
+    padding: 10px 12px;
+    font-weight: 600;
+    border-bottom: 1px solid #4a4b56;
+    font-size: 0.95em;
+    letter-spacing: 0.03em;
+  }
+  .legend {
+    display: flex;
+    align-items: center;
+  }
+  .legend > div {
+    width: 0.95em;
+    height: 0.95em;
+    margin-right: 4px;
+  }
+  </style>
+</head>
+<body>
+  <div class="main-container">
+    <div class="floating-container">
+      <button class="btn collapse-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20"><path d="M15 19l-7-7 7-7"/></svg>
+      </button>
+      <button class="btn" id="zoom-to-fit-btn" aria-label="Fit graph">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="20">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M7.5 3.75H6A2.25 2.25 0 0 0 3.75 6v1.5M16.5 3.75H18A2.25 2.25 0 0 1 20.25 6v1.5m0 9V18A2.25 2.25 0 0 1 18 20.25h-1.5m-9 0H6A2.25 2.25 0 0 1 3.75 18v-1.5M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+        </svg>
+      </button>
+    </div>
+    <div id="progress-message"></div>
+    <div class="container ctx-list-parent"><div class="ctx-list"></div></div>
+    <div class="view profiler"></div>
+    <div class="view graph">
+      <svg id="graph-svg" preserveAspectRatio="xMidYMid meet">
+        <g id="render">
+          <g id="edges"></g>
+          <g id="nodes"></g>
+          <g id="edge-labels"></g> <!-- NOTE: this ensures edge labels are always on top -->
+        </g>
+        <defs>
+          <marker id="arrowhead" viewBox="0 -5 10 10" refX="10" refY="0" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M0,-5L10,0L0,5" fill="#4a4b57"></path>
+          </marker>
+        </defs>
+      </svg>
+    </div>
+    <div class="container metadata-parent"><div class="metadata"></div></div>
+  </div>
+  <div id="tooltip"></div>
+  <script src="/js/index.js"></script>
+</body>
+</html>
