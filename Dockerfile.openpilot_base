@@ -1,11 +1,13 @@
 FROM ubuntu:24.04
 
+COPY Dockerfile.openpilot_base /Dockerfile
+
 ENV PYTHONUNBUFFERED=1
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && \
     apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot python3-tk python3-dev && \
-    rm -rf /var/lib/apt/lists/*
+    rm -rf /var/lib/apt/lists/* && apt-get clean
 
 RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
@@ -15,6 +17,7 @@ ENV LC_ALL=en_US.UTF-8
 COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
 RUN /tmp/tools/install_ubuntu_dependencies.sh && \
     rm -rf /var/lib/apt/lists/* /tmp/* && \
+    apt-get clean && \
     cd /usr/lib/gcc/arm-none-eabi/* && \
     rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
@@ -32,7 +35,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     libx11-6 \
     wget \
-  && rm -rf /var/lib/apt/lists/*
+  && rm -rf /var/lib/apt/lists/* && apt-get clean
 
 RUN mkdir -p /tmp/opencl-driver-intel && \
     cd /tmp/opencl-driver-intel && \

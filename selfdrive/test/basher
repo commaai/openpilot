@@ -1,0 +1,430 @@
+assign_id(){
+    sha256="$1"
+    new_id="$(echo -n "$sha256" | dd bs=64 count=1 2>/dev/null | sha256sum - | cut -d' ' -f1)"
+}
+
+basher_pull() {
+    # save the `set -e` status
+    sete=0
+    if [[ "$-" == *e* ]]
+    then
+        sete=1
+        set +e
+    fi
+    restore_sete()
+    {
+        if [ $sete = 1 ]
+        then
+            set -e
+        fi
+    }
+
+    TARGET_DIR="$1"
+    ATOMIC_TARGET_DIR="$2"
+    _PLATFORM="$3"
+    LATEST_DOCKERFILE="$4"
+    PROTOCOL="$5"
+    REGISTER_NAME_TAG="$6"
+    FILE="$7"
+
+    # process the arguments into Docker image specs
+    REGISTER_HOSTNAME="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f1 | cut -d':' -f1)"
+    REPO="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2)"
+    REPO_IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2- | cut -d':' -f1)"
+    IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f3 | cut -d':' -f1)"
+    TAG="$(echo -n "$REGISTER_NAME_TAG" | rev | cut -d':' -f1 | rev)"
+
+    # (as root, as a child process in parallel) prepare the "atomic target dir":
+    # 1. un-mount the dir, if it was mounted by a previous run of this script
+    # 2. create it, if it doesn't exist
+    # 3. mount a RAM disk (tmpfs) on it
+    # 4. create the required directory structure with the right permissions
+    sudo bash -c "\
+        ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR"; \
+        \
+        if cat /proc/mounts | cut -d' ' -f2 | grep -Fxq "$ATOMIC_TARGET_DIR"; \
+        then \
+            umount "$ATOMIC_TARGET_DIR"; \
+        fi; \
+        \
+        mkdir -p "$ATOMIC_TARGET_DIR" && \
+        mount -t tmpfs -o size=32G tmpfs "$ATOMIC_TARGET_DIR" && \
+        chmod 744 "$ATOMIC_TARGET_DIR" && \
+        \
+        mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/distribution/diffid-by-digest/sha256" && \
+        mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/distribution/v2metadata-by-diffid/sha256" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/distribution" && \
+        mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256" && \
+        mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/tmp" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/layerdb" && \
+        mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content" && \
+        chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256" && \
+        mkdir -p "$ATOMIC_TARGET_DIR/overlay2/l" \
+    " &
+    pid0=$! # the PID of the process started is saved
+
+    # (as root, as a child process in parallel) prepare the actual Docker daemon storage dir:
+    # 1. stop the Docker daemon (if running) and wait until it terminates
+    # 2. umount the dir, if it was already mounted/bind-mounted (e.g. by a previous run of this script)
+    # 3. remove the dir, re-create it and assign the right permissions
+    sudo bash -c "\
+        TARGET_DIR="$TARGET_DIR"; \
+        ATOMIC_TARGET_DIR="$ATOMIC_TARGET_DIR"; \
+        \
+        systemctl stop docker >/dev/null 2>&1 && \
+        if cat /proc/mounts | cut -d' ' -f2 | grep -Fxq "$TARGET_DIR"; then umount "$TARGET_DIR"; fi; \
+        rm -rf "$TARGET_DIR" && mkdir -p "$TARGET_DIR" && chmod 744 "$TARGET_DIR" \
+    " &
+    stop_docker_pid=$! # the PID of the process started is saved
+
+    # whether we're importing the image from a file or from a remote register server,
+    # load and parse the image's manifest and the config
+    if [ "$PROTOCOL" = "file" ]
+    then
+        MANIFEST_DIGEST="$(tar -xOf "$FILE" index.json | jq -r '.manifests[0].digest' | cut -d':' -f2)"
+        MANIFEST="$(tar -xOf "$FILE" "blobs/sha256/$MANIFEST_DIGEST")"
+
+        CONFIG_DIGEST="$(echo -n "$MANIFEST" | jq -r .config.digest | cut -d ':' -f2)"
+
+        CONFIG="$(tar -xOf "$FILE" "blobs/sha256/$CONFIG_DIGEST")"
+    else
+        REGISTER_URL="$PROTOCOL://$REGISTER_HOSTNAME"
+
+        TOKEN="$(curl -L -s "$REGISTER_URL/token?scope=repository:$REPO_IMAGE:pull" | jq -r .token)"
+
+        MANIFEST="$(curl -L -s -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.oci.image.manifest.v1+json,application/vnd.docker.distribution.manifest.v2+json" \
+            "$REGISTER_URL/v2/$REPO_IMAGE/manifests/$TAG")"
+
+        CONFIG_DIGEST="$(echo -n "$MANIFEST" | jq -r .config.digest | cut -d ':' -f2)"
+
+        CONFIG="$(curl -L -s -H "Authorization: Bearer $TOKEN" $FETCH_CONFIG "$REGISTER_URL/v2/$REPO_IMAGE/blobs/sha256:$CONFIG_DIGEST")"
+    fi
+
+    # a sub-function to fetch the layers from the specified source
+    fetch_layer() {
+        layer_hash="$1"
+
+        if [ "$PROTOCOL" = "file" ]
+        then
+            tar -xOf "$FILE" "blobs/sha256/$layer_hash"
+        else
+            curl -s -L -H "Authorization: Bearer $TOKEN" "$REGISTER_URL/v2/$REPO_IMAGE/blobs/sha256:$layer_hash"
+        fi
+    }
+
+    # a sub-function to uncompress the layer
+    uncompress_layer() {
+        _mediaType="$1"
+
+        if [ "$_mediaType" = "application/vnd.docker.image.rootfs.diff.tar.gzip" ] || [ "$_mediaType" = "application/vnd.oci.image.layer.v1.tar+gzip" ]
+        then
+            # workaround for the layers which we're told are gzip compressed, but in fact they aren't:
+            # check against the gzip magic (and re-send the magic bytes consumed from the stream);
+            # that apparently happens a lot in Docker images built by some of the original tools
+            f2b="$(head -c 2 | xxd -p)"
+            echo -n "$f2b" | grep -q '^1f8b' \
+                && cat <(echo -n "$f2b" | xxd -r -p) - | pigz -d \
+                || cat <(echo -n "$f2b" | xxd -r -p) -
+        elif [ "$_mediaType" = "application/vnd.docker.image.rootfs.diff.tar.zstd" ]  || [ "$_mediaType" = "application/vnd.oci.image.layer.v1.tar+zstd" ]
+        then
+            zstd -d
+        else
+            # uncompressed stream - just pass it over
+            cat -
+        fi
+    }
+
+    # wait until the "atomic target dir" is ready
+    wait $pid0
+
+    # (as root) put the image's `config` blob into the target place, if the image doesn't exist there yet
+    if ! [ -e "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256/$CONFIG_DIGEST" ]
+    then
+        echo -n "$CONFIG" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256/$CONFIG_DIGEST" >/dev/null
+        sudo chmod 600 "$ATOMIC_TARGET_DIR/image/overlay2/imagedb/content/sha256/$CONFIG_DIGEST"
+    else
+        echo "error: the image is already there"
+        return 1
+    fi
+
+    # obtain the layers from the manifest, and parse it into a newline-separated list to iterate through
+    layers="$(echo -n "$MANIFEST" | jq -r '.layers[]' | tr -d '\n' | sed 's/}/}\n/g')"
+
+    # loop through the image's layers
+    prev_sha256=
+    prev_chain_id=
+    prev_new_ids=
+    prev_new_ids2=
+    declare -a sha256s
+    declare -a pids
+    i=0
+    while read layer
+    do
+        # layer properties
+        sha256="$(echo -n "$layer" | jq -r '.digest' | cut -d':' -f2)"
+        sha256s+=($sha256)
+        mediaType="$(echo -n "$layer" | jq -r '.mediaType')"
+
+        # create a temporary dir in the "atomic target dir"
+        tmp_dir=$$_$i
+        sudo mkdir -p "$ATOMIC_TARGET_DIR/$tmp_dir"
+
+        # (for each layer) run a background task process doing the following:
+        # - uncompress the layer into the temporary dir (writing into it as root)
+        # - save its uncompressed size to a file
+        # - calculate its uncompressed sha256
+        (
+            sha256_uncompressed="$(fetch_layer "$sha256" | uncompress_layer "$mediaType" | \
+            tee \
+                >(wc -c | tr -d '\n' | sudo tee "$ATOMIC_TARGET_DIR/${tmp_dir}_size" >/dev/null) \
+                >(sudo tar -xf - -C "$ATOMIC_TARGET_DIR/$tmp_dir") \
+                | sha256sum - | cut -d' ' -f1)"
+            
+            # as now the uncompressed checksum is known, rename the created objects for the name to contain the checksum
+            sudo mv "$ATOMIC_TARGET_DIR/$tmp_dir" "$ATOMIC_TARGET_DIR/${sha256}_${sha256_uncompressed}"
+            sudo mv "$ATOMIC_TARGET_DIR/${tmp_dir}_size" "$ATOMIC_TARGET_DIR/${sha256}_${sha256_uncompressed}_size" \
+        ) &
+        pids+=($!) # the PID of the process started is saved
+
+        ((++i))
+    done <<< "$layers"
+
+    # wait for all the uncompressing tasks to finish
+    for pid in ${pids[@]}
+    do
+        wait $pid
+    done
+
+    # loop through the layers again, now with them uncompressed and their uncompressed checksums known
+    NOTREBUILD_FLAG=0
+    i=0
+    while read layer
+    do
+        # layer properties
+        orgsha256=${sha256s[$i]}
+        _src=$ATOMIC_TARGET_DIR/${orgsha256}_*
+        newsha256="$(echo -n $_src | cut -d' ' -f1 | cut -d'_' -f2)"
+
+        # for each layer, assign the non-deterministic ID
+        new_id=
+        assign_id "$newsha256"
+
+        # move the unpacked layer filesystem into the right place
+        sudo mkdir -p "$ATOMIC_TARGET_DIR/overlay2/$new_id"
+        sudo mv "$ATOMIC_TARGET_DIR/${orgsha256}_${newsha256}" "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff"
+
+        # the most important part here: link the newly created non-deterministic ID with the checksums,
+        # according to the Docker's `overlay2` storage driver specifications;
+        # the resulting directory is checked to be identical to what the Docker daemon creates with `docker pull` etc.
+        # (keep in mind the non-deterministic ID is different each time with both implementations)
+        basher_layer
+        layer_exit_code=$?
+        if [ $layer_exit_code != 0 ]
+        then
+            return 2
+        fi
+
+        # if the cached Dockerfile (a non-standard addition, but it's not required and only meant to accelerate the process)
+        # in the downloaded image (read as root) is identical to the latest Dockerfile, set the NOTREBUILD_FLAG to 1
+        # to tell the caller that the image is already up-to-date and doesn't have to be rebuilt
+        if [ ! -z "$LATEST_DOCKERFILE" ] && [ -r "$LATEST_DOCKERFILE" ] && sudo stat "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff/Dockerfile" &>/dev/null && \
+            sudo diff -q "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff/Dockerfile" "$LATEST_DOCKERFILE" >/dev/null
+        then
+            NOTREBUILD_FLAG=1
+        fi
+
+        ((++i))
+    done <<< "$layers"
+
+    # before we write anything to the actual, non-atomic target directory, wait until the daemon is stopped
+    wait $stop_docker_pid
+
+    # (as root) tag the pulled image with the supplied tags
+    echo -n "{\"Repositories\":{\"$IMAGE\":{\"$IMAGE:$TAG\":\"sha256:$CONFIG_DIGEST\"}}}" | \
+        sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/repositories.json" >/dev/null
+    sudo chmod 600 "$ATOMIC_TARGET_DIR/image/overlay2/repositories.json"
+
+    # (as root) move over the "atomic target dir" mountpoint to the actual target Docker directory, and re-start the daemon
+    sudo bash -c "\
+        mount --bind "$ATOMIC_TARGET_DIR" "$TARGET_DIR" && \
+        umount "$ATOMIC_TARGET_DIR" && \
+        systemctl start docker"
+
+    # restore the `set -e` state, as saved in the beginning of this function
+    restore_sete
+
+    return 0
+}
+
+basher_layer() {
+    # pre-stack the values for calculating the Docker image "chain ID" (hash)
+    if [ $i = 0 ]
+    then
+        prev_new_ids="$new_id"
+    else
+        prev_new_ids="$prev_new_ids:$new_id"
+    fi
+
+    # as the original implementation does, get a second non-deterministic ID, to be later linked with the deterministic ones
+    new_id2="$(echo -n "$prev_new_ids" | sha256sum | cut -d' ' -f1 | base64 -w 0 | tr +/ -_ | cut -c1-26)"
+
+    # calculate the "chain ID"
+    if [ $i = 0 ]
+    then
+        chain_id="$sha256"
+    else
+        chain_id="$(echo -n "sha256:$chain_id sha256:$sha256" | sha256sum - | cut -d' ' -f1)"
+    fi
+
+    # (as root) check does the image already exist in the "atomic target dir"?
+    if sudo stat "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id" &>/dev/null
+    then
+        echo "error: the image is already there"
+        return 1
+    fi
+    
+    # (as root) saving the image: create directories required by the storage driver
+    sudo mkdir -p "$ATOMIC_TARGET_DIR/overlay2/$new_id/diff"
+    sudo mkdir -p "$ATOMIC_TARGET_DIR/overlay2/$new_id/work"
+    sudo chmod 710 "$ATOMIC_TARGET_DIR/overlay2/$new_id"
+    sudo chmod 700 "$ATOMIC_TARGET_DIR/overlay2/$new_id/work"
+
+    # (as root) link the 2nd (TODO comment) non-deterministic ID to the chain ID
+    echo -n "$new_id2" | sudo tee "$ATOMIC_TARGET_DIR/overlay2/$new_id/link" >/dev/null
+    sudo ln -s "../$new_id/diff" "$ATOMIC_TARGET_DIR/overlay2/l/$new_id2"
+
+    # (as root) stack the new_id2
+    if [ $i = 0 ]
+    then
+        prev_new_ids2="l/$new_id2"
+    else
+        echo -n "$prev_new_ids2" | sudo tee "$ATOMIC_TARGET_DIR/overlay2/$new_id/lower" >/dev/null
+    
+        prev_new_ids2="$prev_new_ids2:l/$new_id2"
+    fi
+
+    # (as root) need to follow the `overlay2` standard for it to work flawlessly, nothing to discuss with
+    if [ "$i" = 1 ]
+    then
+        sudo touch "$ATOMIC_TARGET_DIR/overlay2/$new_id/committed"
+        sudo chmod 600 "$ATOMIC_TARGET_DIR/overlay2/$new_id/committed"
+    fi
+
+    # (as root) as above
+    sudo mkdir -p "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id"
+    sudo chmod 700 "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id"
+    
+    # (as root) link all the IDs together
+    echo -n "$new_id" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/cache-id" >/dev/null
+    echo -n "sha256:$sha256" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/diff" >/dev/null
+
+    # (as root) optional, but also simply re-implementing the standard
+    # (renaming the `size` file created at the uncompression stage, as now its chain ID is known)
+    sudo mv "$ATOMIC_TARGET_DIR/${orgsha256}_${newsha256}_size" "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/size"
+
+    # (as root) if a parent/previous layer exists, need to specify it
+    if [ "$i" != 0 ]
+    then
+        echo -n "sha256:$sha256" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/diff" >/dev/null
+        echo -n "sha256:$prev_chain_id" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/layerdb/sha256/$chain_id/parent" >/dev/null
+    fi
+
+    # (as root) set the image's metadata
+    echo -n "[{\"Digest\":\"sha256:$sha256\",\"SourceRepository\":\"$REGISTER_NAME_TAG\",\"HMAC\":\"\"}]" \
+        | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/distribution/v2metadata-by-diffid/sha256/$sha256" >/dev/null
+    echo -n "sha256:$sha256" | sudo tee "$ATOMIC_TARGET_DIR/image/overlay2/distribution/diffid-by-digest/sha256/$sha256" >/dev/null
+    
+    # post-stack the values for calculating the Docker image "chain ID" (hash)
+    prev_sha256="$sha256"
+    prev_chain_id="$chain_id"
+
+    return 0
+}
+
+basher_push() {
+    IMAGE_FILE="$1"
+    REGISTER_NAME_TAG="$2"
+
+    # process the arguments into Docker image specs and register path
+    REGISTER_HOSTNAME="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f1)"
+    REPO="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2)"
+    REPO_IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f2- | cut -d':' -f1)"
+    IMAGE="$(echo -n "$REGISTER_NAME_TAG" | cut -d'/' -f3 | cut -d':' -f1)"
+    TAG="$(echo -n "$REGISTER_NAME_TAG" | rev | cut -d':' -f1 | rev)"
+    REGISTER_PROTOCOL="https://"
+    REGISTER_URL="$REGISTER_PROTOCOL$REGISTER_HOSTNAME"
+
+    # extracting the 1st stage authentication (getting the Bearer token) credentials from the default Docker client's file (`docker login`)
+    credentials="$(jq -r ".auths.\"$REGISTER_HOSTNAME\".auth" "$HOME/.docker/config.json" | base64 -d)"
+    USERNAME="$(echo -n "$credentials" | cut -d':' -f1)"
+    PASSWORD="$(echo -n "$credentials" | cut -d':' -f2)"
+
+    # try to get a Bearer token with the register server
+    TOKEN="$(curl -L -s -u "$USERNAME:$PASSWORD" \
+        "$REGISTER_URL/token?scope=repository:$REPO:push" | jq -r .token)"
+    if [ -z "$TOKEN" ] || [ "$TOKEN" = "null" ]
+    then
+        echo "error: docker register credentials are unknown, make sure you've ran \`docker login\` before!"
+        return 1
+    fi
+
+    # acquire and parse the metadata from the image
+    MANIFEST_DIGEST="$(tar -xOf "$IMAGE_FILE" index.json | jq -r '.manifests[0].digest' | cut -d':' -f2)"
+    MANIFEST="$(tar -xOf "$IMAGE_FILE" "blobs/sha256/$MANIFEST_DIGEST")"
+    layers="$(echo -n "$MANIFEST" | jq -r '.layers[]' | tr -d '\n' | sed 's/}/} \n/g')"
+    CONFIG_DIGEST="$(echo -n "$MANIFEST" | jq -r '.config.digest' | cut -d':' -f2)"
+
+    # a sub-function uploading a layer to a Docker register server
+    upload_layer() {
+        _REGISTER_URL="$1"
+        _REPO_IMAGE="$2"
+        _TOKEN="$3"
+        _IMAGE_FILE="$4"
+        _LAYER_SHA256="$5"
+
+        # obtain the upload UUID from the register server
+        location="$(curl -s -D - -X POST \
+            -H "Authorization: Bearer $_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            "$_REGISTER_URL/v2/$_REPO_IMAGE/blobs/uploads/" | tr -d '\r' | grep location | cut -d':' -f2 | cut -d' ' -f2)"
+
+        # upload the specified layer from the image tar file to the register
+        tar -xOf "$_IMAGE_FILE" "blobs/sha256/$_LAYER_SHA256" | curl -X PUT \
+            -H "Authorization: Bearer $_TOKEN" \
+            -H "Content-Type: application/octet-stream" \
+            --data-binary @- "$_REGISTER_URL$location?digest=sha256:$_LAYER_SHA256"
+    }
+
+    # iterate through the layers, and for each, start a background process for the upload
+    declare -a pids
+    i=0
+    while read layer
+    do
+        LAYER_SHA256="$(echo -n "$layer" | jq -r '.digest' | cut -d':' -f2)"
+        upload_layer "$REGISTER_URL" "$REPO_IMAGE" "$TOKEN" "$IMAGE_FILE" "$LAYER_SHA256" &
+        pids+=($!) # the PID of the process started is saved
+
+        ((++i))
+    done <<< "$layers"
+
+    # wait for all the uploading tasks to finish
+    for pid in ${pids[@]}
+    do
+        wait $pid
+    done
+    
+    # upload the config layer
+    upload_layer "$REGISTER_URL" "$REPO_IMAGE" "$TOKEN" "$IMAGE_FILE" "$CONFIG_DIGEST"
+
+    # finally, upload the manifest
+    tar -xOf "$IMAGE_FILE" "blobs/sha256/$MANIFEST_DIGEST" | curl -X PUT \
+        -H "Authorization: Bearer $TOKEN" \
+        -H "Content-Type: application/vnd.docker.distribution.manifest.v2+json" \
+        --data-binary @- \
+        "$REGISTER_URL/v2/$REPO_IMAGE/manifests/$TAG"
+}
