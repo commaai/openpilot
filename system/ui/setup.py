@@ -110,7 +110,7 @@ class Setup(Widget):
     self._network_setup_continue_button.set_enabled(False)
     self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT)
 
-    self._custom_software_warning_continue_button = Button("Scroll to the bottom to continue", self._custom_software_warning_continue_button_callback,
+    self._custom_software_warning_continue_button = Button("Scroll to continue", self._custom_software_warning_continue_button_callback,
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
