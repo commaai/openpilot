@@ -110,7 +110,7 @@ class Setup(Widget):
     self._network_setup_continue_button.set_enabled(False)
     self._network_setup_title_label = Label("Connect to Wi-Fi", TITLE_FONT_SIZE, FontWeight.BOLD, TextAlignment.LEFT)
 
-    self._custom_software_warning_continue_button = Button("Scroll to the end to continue", self._custom_software_warning_continue_button_callback,
+    self._custom_software_warning_continue_button = Button("Scroll to the bottom to continue", self._custom_software_warning_continue_button_callback,
                                                            button_style=ButtonStyle.PRIMARY)
     self._custom_software_warning_continue_button.set_enabled(False)
     self._custom_software_warning_back_button = Button("Back", self._custom_software_warning_back_button_callback)
@@ -313,7 +313,7 @@ class Setup(Widget):
 
     self._custom_software_warning_back_button.render(rl.Rectangle(rect.x + MARGIN, button_y, button_width, BUTTON_HEIGHT))
     self._custom_software_warning_continue_button.render(rl.Rectangle(rect.x + MARGIN * 2 + button_width, button_y, button_width, BUTTON_HEIGHT))
-    if offset.y < -max(warn_rect.height - rect.height, 0):
+    if offset.y < (rect.height - warn_rect.height):
       self._custom_software_warning_continue_button.set_enabled(True)
       self._custom_software_warning_continue_button.set_text("Continue")
 
