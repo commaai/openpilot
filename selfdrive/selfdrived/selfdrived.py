@@ -257,7 +257,7 @@ class SelfdriveD:
     if self.excessive_actuation:
       self.events.add(EventName.excessiveActuation)
     # ******************************************************************************************
-    
+
     # Handle lane change
     if self.sm['modelV2'].meta.laneChangeState == LaneChangeState.preLaneChange:
       direction = self.sm['modelV2'].meta.laneChangeDirection
