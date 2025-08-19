@@ -116,7 +116,7 @@ class ModelState:
     self.vision_output = np.zeros(vision_output_size, dtype=np.float32)
     self.policy_inputs = {k: Tensor(v, device='NPY').realize() for k,v in self.numpy_inputs.items()}
     self.policy_output = np.zeros(policy_output_size, dtype=np.float32)
-    self.parser = Parser(ignore_missing=('desired_curvature',))
+    self.parser = Parser()
 
     with open(VISION_PKL_PATH, "rb") as f:
       self.vision_run = pickle.load(f)
