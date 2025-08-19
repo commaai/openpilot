@@ -23,7 +23,8 @@ class Parser:
     self.ignore_missing_patterns = [re.compile(p) for p in ignore_missing]
 
   def check_missing(self, outs, name):
-    if (missing := name not in outs) and not any(p.fullmatch(name) for p in self.ignore_missing_patterns):
+    missing = name not in outs
+    if missing and not any(p.fullmatch(name) for p in self.ignore_missing_patterns):
       raise ValueError(f"Missing output {name}")
     return missing
 
