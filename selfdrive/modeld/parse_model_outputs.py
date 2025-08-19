@@ -1,4 +1,3 @@
-import re
 import numpy as np
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
@@ -19,12 +18,12 @@ def softmax(x, axis=-1):
   return x
 
 class Parser:
-  def __init__(self, ignore_missing=()):
-    self.ignore_missing_patterns = [re.compile(p) for p in ignore_missing]
+  def __init__(self, ignore_missing=False):
+    self.ignore_missing = ignore_missing
 
   def check_missing(self, outs, name):
     missing = name not in outs
-    if missing and not any(p.fullmatch(name) for p in self.ignore_missing_patterns):
+    if missing and not self.ignore_missing:
       raise ValueError(f"Missing output {name}")
     return missing
 
@@ -115,7 +114,6 @@ class Parser:
     plan_mhp = self.is_mhp(outs, 'plan',  ModelConstants.IDX_N * ModelConstants.PLAN_WIDTH)
     plan_in_N, plan_out_N = (ModelConstants.PLAN_MHP_N, ModelConstants.PLAN_MHP_SELECTION) if plan_mhp else (0, 0)
     self.parse_mdn('plan', outs, in_N=plan_in_N, out_N=plan_out_N, out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
-    self.parse_mdn('desired_curvature', outs, in_N=0, out_N=0, out_shape=(ModelConstants.DESIRED_CURV_WIDTH,))
     self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
     return outs
 
