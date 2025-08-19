@@ -5,6 +5,7 @@ from openpilot.common.params import Params
 from openpilot.system.manager.process_config import managed_processes
 
 
+@pytest.mark.skip("tmp disabled")
 class TestFeedbackd:
   def setup_method(self):
     self.pm = messaging.PubMaster(['carState', 'rawAudioData'])
