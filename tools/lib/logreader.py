@@ -147,6 +147,7 @@ def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
 
+# TODO this should apply to camera files as well
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
   exceptions = {}
 
