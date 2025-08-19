@@ -237,15 +237,15 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         exceptions[source.__name__] = e
 
     if fn == try_fns[0]:
-      missing_logs = list(valid_files.values()).count(None)
+      missing_logs = len(needed_seg_idxs)
       if mode == ReadMode.AUTO:
-        cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
+        cloudlog.warning(f"{missing_logs}/{len(sr.seg_idxs)} rlogs were not found, falling back to qlogs for those segments...")
       elif mode == ReadMode.AUTO_INTERACTIVE:
-        if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
+        if input(f"{missing_logs}/{len(sr.seg_idxs)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
           break
 
-  missing_logs = list(valid_files.values()).count(None)
-  raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} logs were not found, please ensure all logs " +
+  missing_logs = len(needed_seg_idxs)
+  raise LogsUnavailable(f"{missing_logs}/{len(sr.seg_idxs)} logs were not found, please ensure all logs " +
                         "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
                         "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
