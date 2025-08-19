@@ -16,6 +16,8 @@ from collections.abc import Callable, Iterable, Iterator
 from typing import cast
 from urllib.parse import parse_qs, urlparse
 
+from fontTools.cffLib.width import missingdict
+
 from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
@@ -238,6 +240,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
     if fn == try_fns[0]:
       missing_logs = list(valid_files.values()).count(None)
+      # missing_logs = len(needed_seg_idxs)
       if mode == ReadMode.AUTO:
         cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
       elif mode == ReadMode.AUTO_INTERACTIVE:
