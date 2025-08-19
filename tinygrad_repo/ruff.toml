@@ -1,0 +1,52 @@
+indent-width = 2
+preview = true
+target-version = "py310"
+
+lint.select = [
+  "F",  # Pyflakes
+  "W6",
+  "E71",
+  "E72",
+  "E112",   # no-indented-block
+  "E113",   # unexpected-indentation
+  # "E124",
+  "E203",   # whitespace-before-punctuation
+  "E272",   # multiple-spaces-before-keyword
+  "E275",   # missing-whitespace-after-keyword
+  "E303",   # too-many-blank-lines
+  "E304",   # blank-line-after-decorator
+  "E501",   # line-too-long
+  # "E502",
+  "E702",   # multiple-statements-on-one-line-semicolon
+  "E703",   # useless-semicolon
+  "E731",   # lambda-assignment
+  "W191",   # tab-indentation
+  "W291",   # trailing-whitespace
+  "W293",   # blank-line-with-whitespace
+  "UP039",  # unnecessary-class-parentheses
+  "C416",   # unnecessary-comprehension
+  "RET506", # superfluous-else-raise
+  "RET507", # superfluous-else-continue
+  "A",      # builtin-variable-shadowing, builtin-argument-shadowing, builtin-attribute-shadowing
+  "FURB110",# if-exp-instead-of-or-operator
+  "RUF018", # assignment-in-assert
+]
+
+line-length = 150
+
+exclude = [
+  "docs/",
+  "extra/",
+  "tinygrad/runtime/autogen",
+  "test/external/mlperf_resnet",
+  "test/external/mlperf_unet3d",
+]
+
+# detect unused imports in examples
+[lint.per-file-ignores]
+"examples/**/*.py" = [
+  "W6", "E71", "E72", "E112", "E113", "E203", "E272", "E275",
+  "E303", "E304", "E501", "E702", "E703", "E731", "W191",
+  "W291", "W293", "UP039", "C416", "RET506", "RET507", "A",
+  "FURB110", "RUF018", "F541", "F841"
+]
