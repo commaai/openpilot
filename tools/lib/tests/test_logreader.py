@@ -10,7 +10,8 @@ import requests
 from parameterized import parameterized
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode
+from openpilot.tools.lib.file_sources import InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
