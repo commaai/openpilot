@@ -140,9 +140,8 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-LogPath = str | None
 LogFileName = tuple[str, ...]
-Source = Callable[[SegmentRange, list[int], LogFileName], dict[int, LogPath]]
+Source = Callable[[SegmentRange, list[int], LogFileName], dict[int, str]]
 
 InternalUnavailableException = Exception("Internal source not available")
 
@@ -151,17 +150,17 @@ class LogsUnavailable(Exception):
   pass
 
 
-def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
+def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, str]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
   if fns == FileName.RLOG:
-    return {seg: route.log_paths()[seg] for seg in seg_idxs}
+    return {seg: route.log_paths()[seg] for seg in seg_idxs if route.log_paths()[seg] is not None}
   else:
-    return {seg: route.qlog_paths()[seg] for seg in seg_idxs}
+    return {seg: route.qlog_paths()[seg] for seg in seg_idxs if route.qlog_paths()[seg] is not None}
 
 
-def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> dict[int, LogPath]:
+def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> dict[int, str]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
@@ -171,11 +170,11 @@ def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, end
   return eval_source({seg: [get_internal_url(sr, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
+def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, str]:
   return eval_source({seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
+def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, str]:
   return eval_source({seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs})
 
 
@@ -183,9 +182,9 @@ def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
 
-def eval_source(files: dict[int, list[str] | str]) -> dict[int, LogPath]:
+def eval_source(files: dict[int, list[str] | str]) -> dict[int, str]:
   # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
-  valid_files: dict[int, LogPath] = {}
+  valid_files: dict[int, str] = {}
 
   for seg_idx, urls in files.items():
     if isinstance(urls, str):
@@ -196,8 +195,6 @@ def eval_source(files: dict[int, list[str] | str]) -> dict[int, LogPath]:
       if file_exists(url):
         valid_files[seg_idx] = url
         break
-    else:
-      valid_files[seg_idx] = None
 
   return valid_files
 
@@ -220,22 +217,28 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
   # Build a dict of valid files as we evaluate each source. May contain mix of rlogs, qlogs, and None.
   # This function only returns when we've sourced all files, or throws an exception
-  valid_files: dict[int, LogPath] = {}
+  valid_files: dict[int, str] = {}
   for fn in try_fns:
     for source in sources:
       try:
         files = source(sr, needed_seg_idxs, fn)
+        print('got files from source', source.__name__, files)
 
         # Build a dict of valid files
-        for idx, f in files.items():
-          if valid_files.get(idx) is None:
-            valid_files[idx] = f
+        valid_files |= files
+        print('valid_files', valid_files)
+        # for idx, f in files.items():
+        #   if valid_files.get(idx) is None:
+        #     valid_files[idx] = f
 
         # Don't check for segment files that have already been found
         needed_seg_idxs = [idx for idx in needed_seg_idxs if valid_files.get(idx) is None]
+        print('needed_seg_idxs', needed_seg_idxs)
 
         # We've found all files, return them
-        if all(f is not None for f in valid_files.values()):
+        # if all(f is not None for f in valid_files.values()):
+        print()
+        if len(needed_seg_idxs) == 0:
           return cast(list[str], list(valid_files.values()))
 
       except Exception as e:
