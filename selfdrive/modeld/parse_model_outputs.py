@@ -1,3 +1,4 @@
+import re
 import numpy as np
 from openpilot.selfdrive.modeld.constants import ModelConstants
 
@@ -18,13 +19,13 @@ def softmax(x, axis=-1):
   return x
 
 class Parser:
-  def __init__(self, ignore_missing=False):
-    self.ignore_missing = ignore_missing
+  def __init__(self, ignore_missing=()):
+    self.ignore_missing_patterns = [re.compile(p) for p in ignore_missing]
 
   def check_missing(self, outs, name):
-    if name not in outs and not self.ignore_missing:
+    if (missing := name not in outs) and not any(p.fullmatch(name) for p in self.ignore_missing_patterns):
       raise ValueError(f"Missing output {name}")
-    return name not in outs
+    return missing
 
   def parse_categorical_crossentropy(self, name, outs, out_shape=None):
     if self.check_missing(outs, name):
@@ -101,15 +102,16 @@ class Parser:
     self.parse_categorical_crossentropy('desire_pred', outs, out_shape=(ModelConstants.DESIRE_PRED_LEN,ModelConstants.DESIRE_PRED_WIDTH))
     self.parse_binary_crossentropy('meta', outs)
     self.parse_binary_crossentropy('lead_prob', outs)
-    lead_in_N, lead_out_N = (ModelConstants.LEAD_MHP_N, ModelConstants.LEAD_MHP_SELECTION) if self.is_mhp(outs, 'lead', ModelConstants.LEAD_MHP_SELECTION * ModelConstants.LEAD_TRAJ_LEN * ModelConstants.LEAD_WIDTH) else (0, 0)
+    lead_mhp = self.is_mhp(outs, 'lead', ModelConstants.LEAD_MHP_SELECTION * ModelConstants.LEAD_TRAJ_LEN * ModelConstants.LEAD_WIDTH)
+    lead_in_N, lead_out_N = (ModelConstants.LEAD_MHP_N, ModelConstants.LEAD_MHP_SELECTION) if lead_mhp else (0, 0)
     self.parse_mdn('lead', outs, in_N=lead_in_N, out_N=lead_out_N, out_shape=(ModelConstants.LEAD_MHP_SELECTION, ModelConstants.LEAD_TRAJ_LEN, ModelConstants.LEAD_WIDTH))
     return outs
 
   def parse_policy_outputs(self, outs: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
-    plan_in_N, plan_out_N = (ModelConstants.PLAN_MHP_N, ModelConstants.PLAN_MHP_SELECTION) if self.is_mhp(outs, 'plan',  ModelConstants.IDX_N * ModelConstants.PLAN_WIDTH) else (0, 0)
+    plan_mhp = self.is_mhp(outs, 'plan',  ModelConstants.IDX_N * ModelConstants.PLAN_WIDTH)
+    plan_in_N, plan_out_N = (ModelConstants.PLAN_MHP_N, ModelConstants.PLAN_MHP_SELECTION) if plan_mhp else (0, 0)
     self.parse_mdn('plan', outs, in_N=plan_in_N, out_N=plan_out_N, out_shape=(ModelConstants.IDX_N,ModelConstants.PLAN_WIDTH))
-    if 'desired_curvature' in outs:
-      self.parse_mdn('desired_curvature', outs, in_N=0, out_N=0, out_shape=(ModelConstants.DESIRED_CURV_WIDTH,))
+    self.parse_mdn('desired_curvature', outs, in_N=0, out_N=0, out_shape=(ModelConstants.DESIRED_CURV_WIDTH,))
     self.parse_categorical_crossentropy('desire_state', outs, out_shape=(ModelConstants.DESIRE_PRED_WIDTH,))
     return outs
 
