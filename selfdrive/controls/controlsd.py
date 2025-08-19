@@ -160,10 +160,10 @@ class Controls:
     hudControl.leadDistanceBars = self.sm['selfdriveState'].personality.raw + 1
     hudControl.visualAlert = self.sm['selfdriveState'].alertHudVisual
 
-    desire_prediction = model_v2.meta.desirePrediction
-    if len(desire_prediction):
-      hudControl.leftLaneVisible = bool(model_v2.laneLines[1] and model_v2.laneLineProbs[1] > 0.5)
-      hudControl.rightLaneVisible = bool(model_v2.laneLines[2] and model_v2.laneLineProbs[2] > 0.5)
+    LaneVisible = len(model_v2.laneLines) > 2 and len(model_v2.laneLineProbs) > 2
+    hudControl.leftLaneVisible = bool(LaneVisible and model_v2.laneLines[1] and model_v2.laneLineProbs[1] > 0.5)
+    hudControl.rightLaneVisible = bool(LaneVisible and model_v2.laneLines[2] and model_v2.laneLineProbs[2] > 0.5)
+
     if self.sm.valid['driverAssistance']:
       hudControl.leftLaneDepart = self.sm['driverAssistance'].leftLaneDeparture
       hudControl.rightLaneDepart = self.sm['driverAssistance'].rightLaneDeparture
