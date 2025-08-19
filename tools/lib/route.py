@@ -231,7 +231,6 @@ class RouteName:
   def __str__(self) -> str: return self._canonical_name
 
 
-
 class SegmentName:
   # TODO: add constructor that takes dongle_id, time_str, segment_num and then create instances
   # of this class instead of manually constructing a segment name (use canonical_name prop instead)
@@ -252,7 +251,7 @@ class SegmentName:
   @property
   def canonical_name(self) -> str: return self._canonical_name
 
-  #TODO should only use one name
+  # TODO should only use one name
   @property
   def data_name(self) -> str: return f"{self._route_name.canonical_name}/{self._num}"
 
@@ -283,7 +282,7 @@ class SegmentName:
   @staticmethod
   def from_file_name(file_name):
     # ??????/xxxxxxxxxxxxxxxx|1111-11-11-11--11-11-11/1/rlog.bz2
-    dongle_id, route_name, segment_num = file_name.replace('|','/').split('/')[-4:-1]
+    dongle_id, route_name, segment_num = file_name.replace('|', '/').split('/')[-4:-1]
     return SegmentName(dongle_id + "|" + route_name + "--" + segment_num)
 
   @staticmethod
@@ -303,6 +302,7 @@ class SegmentName:
     # xxxxxxxx/1111-11-11-11--11-11-11/0
     dongle_id, route_name, segment_num = prefix.split("/")
     return SegmentName(dongle_id + "|" + route_name + "--" + segment_num)
+
 
 @cache
 def get_max_seg_number_cached(sr: 'SegmentRange') -> int:
@@ -365,4 +365,3 @@ class SegmentRange:
 
   def __repr__(self) -> str:
     return self.__str__()
-

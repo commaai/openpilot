@@ -40,6 +40,7 @@ def save_log(dest, log_msgs, compress=True):
   with open(dest, "wb") as f:
     f.write(dat)
 
+
 def decompress_stream(data: bytes):
   dctx = zstd.ZstdDecompressor()
   decompressed_data = b""
@@ -352,6 +353,7 @@ class LogReader:
   @property
   def time_series(self):
     return msgs_to_time_series(self)
+
 
 if __name__ == "__main__":
   import codecs
