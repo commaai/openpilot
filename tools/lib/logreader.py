@@ -222,19 +222,14 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
     for source in sources:
       try:
         files = source(sr, needed_seg_idxs, fn)
-        print('got files from source', source.__name__, files)
 
         # Build a dict of valid files
         valid_files |= files
-        print('valid_files', valid_files)
 
         # Don't check for segment files that have already been found
-        needed_seg_idxs = [idx for idx in needed_seg_idxs if valid_files.get(idx) is None]
-        print('needed_seg_idxs', needed_seg_idxs)
+        needed_seg_idxs = [idx for idx in needed_seg_idxs if idx not in valid_files]
 
         # We've found all files, return them
-        # if all(f is not None for f in valid_files.values()):
-        print()
         if len(needed_seg_idxs) == 0:
           return cast(list[str], list(valid_files.values()))
 
