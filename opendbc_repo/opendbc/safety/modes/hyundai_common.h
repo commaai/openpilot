@@ -6,7 +6,7 @@ extern uint16_t hyundai_canfd_crc_lut[256];
 uint16_t hyundai_canfd_crc_lut[256];
 
 static const uint8_t HYUNDAI_PREV_BUTTON_SAMPLES = 8;  // roughly 160 ms
-                                                       //
+
 extern const uint32_t HYUNDAI_STANDSTILL_THRSLD;
 const uint32_t HYUNDAI_STANDSTILL_THRSLD = 12;  // 0.375 kph
 
@@ -113,14 +113,14 @@ void hyundai_common_cruise_buttons_check(const int cruise_button, const bool mai
 }
 
 #ifdef CANFD
-uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *to_push) {
-  int len = GET_LEN(to_push);
-  uint32_t address = GET_ADDR(to_push);
+uint32_t hyundai_common_canfd_compute_checksum(const CANPacket_t *msg) {
+  int len = GET_LEN(msg);
+  uint32_t address = msg->addr;
 
   uint16_t crc = 0;
 
   for (int i = 2; i < len; i++) {
-    crc = (crc << 8U) ^ hyundai_canfd_crc_lut[(crc >> 8U) ^ GET_BYTE(to_push, i)];
+    crc = (crc << 8U) ^ hyundai_canfd_crc_lut[(crc >> 8U) ^ msg->data[i]];
   }
 
   // Add address to crc

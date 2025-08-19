@@ -1,8 +1,9 @@
 import unittest, math
 from tinygrad import dtypes
 from tinygrad.helpers import all_same
-from tinygrad.uop.ops import GroupOp, UOp, Ops, exec_alu
+from tinygrad.uop.ops import GroupOp, UOp, Ops, exec_alu, PatternMatcher, TrackedPatternMatcher, UPat
 from tinygrad.codegen import full_rewrite_to_sink
+from hypothesis import given, strategies as strat
 
 # Helper function to apply the graph rewrite
 def apply_rewrite(expr):
@@ -204,7 +205,7 @@ class TestGEPAndVectorizeRewrite(unittest.TestCase):
 
 import inspect
 from tinygrad.uop.ops import graph_rewrite, _substitute, track_rewrites
-from tinygrad.codegen.symbolic import symbolic_simple
+from tinygrad.uop.symbolic import symbolic_simple
 
 class TestBottomUpRewrite(unittest.TestCase):
   def test_const_folding(self):
@@ -253,6 +254,7 @@ class TestSubstitute(unittest.TestCase):
 
   # broken due to infinite recursion
   # NOTE: VIZ hangs and doesn't recover if you click this one
+  @unittest.skip("recursion error no longer raised")
   def test_assert_inf_recurse(self):
     a = UOp.variable('a', 0, 10)
     n1 = a.sin()
@@ -275,6 +277,58 @@ class TestSubstitute(unittest.TestCase):
     ret = substitute(ret, {a.sin():a.sqrt(), n1.sin():n1.sqrt()})
     self.assertIs(ret, a.sqrt().sqrt())
 
+  def test_tagged_replace(self):
+    a = UOp.variable('a', 0, 10)
+    b = UOp.variable('b', 0, 10)
+    ret = (a+4).replace(tag=1)
+    ret = substitute(ret, {a:b})
+    # the srcs are rewritten but we keep tag
+    self.assertIs(ret, (b+4).replace(tag=1))
+
+matchers = strat.sampled_from([PatternMatcher, TrackedPatternMatcher])
+
+class TestRecurse(unittest.TestCase):
+  @given(matchers)
+  def test_no_inf_loop(self, PatternMatcher):
+    a = UOp.variable('a', 0, 10)
+    pm = PatternMatcher([(UPat(Ops.DEFINE_VAR, name="x"), lambda x: x)])
+    graph_rewrite(a, pm)
+
+  @given(matchers)
+  def test_no_inf_loop_bottom_up(self, PatternMatcher):
+    a = UOp.variable('a', 0, 10)
+    pm = PatternMatcher([(UPat(Ops.DEFINE_VAR, name="x"), lambda x: x)])
+    graph_rewrite(a, pm, bottom_up=True)
+
+  def test_inf_loop(self):
+    a = UOp.variable('a', 0, 10)
+    pm = PatternMatcher([
+      (UPat(Ops.DEFINE_VAR, name="x"), lambda x: x.replace(op=Ops.CONST)),
+      (UPat(Ops.CONST, name="x"), lambda x: x.replace(op=Ops.DEFINE_VAR)),
+    ])
+    with self.assertRaises(RuntimeError):
+      graph_rewrite(a, pm)
+
+  def test_inf_loop_bottom_up(self):
+    a = UOp.variable('a', 0, 10)
+    pm = PatternMatcher([
+      (UPat(Ops.DEFINE_VAR, name="x"), lambda x: x.replace(op=Ops.CONST)),
+      (UPat(Ops.CONST, name="x"), lambda x: x.replace(op=Ops.DEFINE_VAR)),
+    ])
+    with self.assertRaises(RuntimeError):
+      graph_rewrite(a, pm, bottom_up=True)
+
+def bidir_append(ctx, x, b): ctx.append((x.arg if x.op is Ops.CONST else "+", b))
+class TestBidirectional(unittest.TestCase):
+  def test_simple(self):
+    a = UOp.const(dtypes.int, 1)
+    b = UOp.const(dtypes.int, 2)
+    c = a + b
+    pm = PatternMatcher([ (UPat(GroupOp.All, name="x"), lambda ctx,x: bidir_append(ctx, x, False)) ])
+    bpm = PatternMatcher([ (UPat(GroupOp.All, name="x"), lambda ctx,x: bidir_append(ctx, x, True)) ])
+    ctx_list = []
+    graph_rewrite(c, pm, ctx=ctx_list, bpm=bpm)
+    self.assertListEqual(ctx_list, [('+', True), (1, True), (1, False), (2, True), (2, False), ('+', False)])
 
 if __name__ == '__main__':
   unittest.main()

@@ -56,7 +56,7 @@ cppcheck() {
 PANDA_OPTS=" --enable=all --enable=unusedFunction --addon=misra"
 
 printf "\n${GREEN}** Safety with CANFD **${NC}\n"
-cppcheck $PANDA_OPTS -DCANFD $BASEDIR/opendbc/safety/main.c
+cppcheck $PANDA_OPTS -DCANFD $BASEDIR/opendbc/safety/tests/misra/main.c
 
 printf "\n${GREEN}Success!${NC} took $SECONDS seconds\n"
 

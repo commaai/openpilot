@@ -1,4 +1,4 @@
-import time
+import time, math
 start = time.perf_counter()
 from pathlib import Path
 import numpy as np
@@ -9,7 +9,6 @@ from extra.bench_log import BenchEvent, WallTimeEvent
 def tlog(x): print(f"{x:25s}  @ {time.perf_counter()-start:5.2f}s")
 
 def eval_resnet():
-  Tensor.no_grad = True
   with WallTimeEvent(BenchEvent.FULL):
     # Resnet50-v1.5
     from extra.models.resnet import ResNet50
@@ -242,10 +241,37 @@ def eval_mrcnn():
   evaluate_predictions_on_coco(bbox_output, iou_type='bbox')
   evaluate_predictions_on_coco(mask_output, iou_type='segm')
 
+def eval_llama3():
+  from extra.models.llama import Transformer
+  from examples.llama3 import MODEL_PARAMS
+  from tinygrad.helpers import tqdm
+
+  bs = 4
+  sequence_length = 512
+
+  model = Transformer(**(MODEL_PARAMS[getenv("LLAMA3_SIZE", "8B")]["args"]|{"vocab_size": 32000}), max_context=sequence_length, jit=False, disable_kv_cache=True)
+
+  @TinyJit
+  def eval_step(model, tokens):
+    logits:Tensor = model(tokens[:, :-1], start_pos=0, temperature=math.nan)
+    loss = logits.sparse_categorical_crossentropy(tokens[:, 1:])
+    return loss.flatten()
+
+  from examples.mlperf.dataloader import batch_load_llama3
+  iter = batch_load_llama3(bs, 5760, sequence_length, Path(getenv("BASEDIR", "/raid/datasets/c4/")), True)
+
+  losses = []
+  for tokens in tqdm(iter, total=5760//bs):
+    GlobalCounters.reset()
+    losses += eval_step(model, tokens).tolist()
+    tqdm.write(f"loss: {np.mean(losses)}")
+
+  log_perplexity = Tensor(losses).mean()
+  print(f"Log Perplexity: {log_perplexity.item()}")
+
 if __name__ == "__main__":
   # inference only
   Tensor.training = False
-  Tensor.no_grad = True
 
   models = getenv("MODEL", "resnet,retinanet,unet3d,rnnt,bert,mrcnn").split(",")
   for m in models:

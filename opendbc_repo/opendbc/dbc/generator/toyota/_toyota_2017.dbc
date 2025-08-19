@@ -188,12 +188,19 @@ BO_ 869 DSU_CRUISE : 7 DSU
  SG_ CRUISE_REQUEST : 31|8@0+ (100,-12800) [0|0] "N" XXX
  SG_ LEAD_DISTANCE : 39|8@0+ (1,0) [0|0] "m" XXX
 
+BO_ 898 AIR_CONDITIONER: 8 XXX
+ SG_ CLIMATE_SET_POINT : 5|6@0+ (1,0) [5|33] "" XXX
+ SG_ AIR_CONDITIONER_STATE : 48|7@1+ (1,0) [0|127] "" XXX
+
 BO_ 921 PCM_CRUISE_SM: 8 XXX
  SG_ MAIN_ON : 4|1@0+ (1,0) [0|1] "" XXX
  SG_ CRUISE_CONTROL_STATE : 11|4@0+ (1,0) [0|15] "" XXX
  SG_ DISTANCE_LINES : 14|2@0+ (1,0) [0|3] "" XXX
  SG_ TEMP_ACC_FAULTED : 15|1@0+ (1,0) [0|1] "" XXX
  SG_ UI_SET_SPEED : 31|8@0+ (1,0) [0|255] "" XXX
+
+BO_ 944 AIR_CONDITIONER_2: 8 XXX
+ SG_ WINDSCREEN_DEFOG : 43|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 951 ESP_CONTROL: 8 ESP
  SG_ TC_DISABLED : 13|1@0+ (1,0) [0|1] "" XXX
@@ -385,12 +392,15 @@ BO_ 1568 BODY_CONTROL_STATE: 8 XXX
  SG_ DOOR_OPEN_FR : 44|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1570 LIGHT_STALK: 8 SCM
- SG_ AUTO_HIGH_BEAM : 37|1@0+ (1,0) [0|1] "" XXX
+ SG_ LIGHT_STALK_MOVED : 15|1@0+ (1,0) [0|1] "" XXX
+ SG_ TAIL_LIGHT : 19|1@0+ (1,0) [0|1] "" XXX
+ SG_ HEADLIGHT_MODE : 21|3@1+ (1,0) [0|7] "" XXX
  SG_ FRONT_FOG : 27|1@0+ (1,0) [0|1] "" XXX
  SG_ PARKING_LIGHT : 28|1@0+ (1,0) [0|1] "" XXX
  SG_ LOW_BEAM : 29|1@0+ (1,0) [0|1] "" XXX
  SG_ HIGH_BEAM : 30|1@0+ (1,0) [0|1] "" XXX
  SG_ DAYTIME_RUNNING_LIGHT : 31|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_HIGH_BEAM : 37|1@0+ (1,0) [0|1] "" XXX
 
 BO_ 1571 CERTIFICATION_ECU: 8 CGW
  SG_ DOOR_LOCK_FEEDBACK_LIGHT : 15|1@0+ (1,0) [0|0] "" XXX
@@ -431,8 +441,6 @@ CM_ SG_ 581 GAS_PEDAL "it seems slightly filtered";
 CM_ SG_ 608 STEER_TORQUE_DRIVER "driver torque";
 CM_ SG_ 608 STEER_OVERRIDE "set when driver torque exceeds a certain value";
 CM_ SG_ 614 ANGLE "set to measured angle when ipas control isn't active";
-CM_ SG_ 800 SLOPE_ANGLE "potentially used by the PCM to compensate for road pitch";
-CM_ SG_ 800 ACCEL "filtered ego acceleration";
 CM_ SG_ 835 ACC_TYPE "if 2, car is likely to have a permanent low speed lockout. 1 is ok";
 CM_ SG_ 835 RADAR_DIRTY "Display Clean Radar Sensor message on HUD";
 CM_ SG_ 835 ACC_MALFUNCTION "display ACC fault on dash if set to 1";
@@ -447,6 +455,7 @@ CM_ SG_ 865 GAS_PEDAL_ALT "copy of main GAS_PEDAL. Both use 8 bits. Might indica
 CM_ SG_ 865 CLUTCH_RELEASED "boolean of clutch for 6MT.";
 CM_ SG_ 865 ACCEL_NET "net positive acceleration (gas) applied by the system if on flat ground, may not include creeping force";
 CM_ SG_ 865 ACC_FAULTED "1 when ACC is faulted and the PCM disallows engagement. Also describes a lockout when the ACC_CONTROL->ACC_MALFUNCTION bit is set.";
+CM_ SG_ 898 AIR_CONDITIONER_STATE "very difficult to parse with some air register motors operating without user-inputs";
 CM_ SG_ 921 UI_SET_SPEED "set speed shown in the vehicle's UI with the vehicle's unit";
 CM_ SG_ 921 TEMP_ACC_FAULTED "1 when the UI is displaying or playing fault-related alerts or sounds. Also 1 when pressing main on.";
 CM_ SG_ 951 BRAKE_LIGHTS_ACC "brake lights when ACC commands decel";
@@ -508,6 +517,8 @@ VAL_ 835 ACC_MALFUNCTION 1 "faulted" 0 "ok";
 VAL_ 835 ACC_CUT_IN 1 "CUT-IN Detected" 0 "clear";
 VAL_ 835 ALLOW_LONG_PRESS 2 "set speed increase by 5 speed units regardless" 1 "set speed increase by 1 speed unit on short press, 5 speed units on long press";
 VAL_ 865 CLUTCH_RELEASED 0 "clutch pressed any amount" 1 "clutch released";
+VAL_ 898 CLIMATE_SET_POINT 0 "CLIMATE LO MODE" 55 "CLIMATE HI MODE" 57 "CLIMATE OFF";
+VAL_ 898 AIR_CONDITIONER_STATE 20 "CLIMATE OFF";
 VAL_ 921 CRUISE_CONTROL_STATE 2 "disabled" 11 "hold" 10 "hold_waiting_user_cmd" 6 "enabled" 5 "faulted";
 VAL_ 921 DISTANCE_LINES 0 "not displayed" 1 "close" 2 "medium" 3 "far";
 VAL_ 956 SPORT_ON 0 "off" 1 "on";
@@ -545,4 +556,5 @@ VAL_ 1552 UNITS 1 "km (km/L)" 2 "km (L/100km)" 3 "miles (MPG US)" 4 "miles (MPG 
 VAL_ 1553 UNITS 1 "km" 2 "miles";
 VAL_ 1556 TURN_SIGNALS 3 "none" 2 "right" 1 "left";
 VAL_ 1556 BLINKER_BUTTON_PRESSED 1 "button pressed" 0 "not pressed";
+VAL_ 1570 HEADLIGHT_MODE 0 "headlights off" 2 "force parking lights" 4 "force low beams" 7 "auto low beams" 6 "auto parking lights";
 VAL_ 1592 LOCK_STATUS 0 "locked" 1 "unlocked";

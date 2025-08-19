@@ -79,7 +79,6 @@ if __name__ == "__main__":
 
   resnet18 = load()
 
-  @Tensor.test()
   def _forward(im): return resnet18(im)
   forward = TinyJit(_forward, prune=True)
 

@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Conversions:
   # Speed
   MPH_TO_KPH = 1.609344

@@ -10,11 +10,11 @@ from tinygrad.shape.shapetracker import ShapeTracker
 from tinygrad.shape.view import View
 from tinygrad.uop.ops import Variable
 inf, nan = float('inf'), float('nan')
-from tinygrad.codegen.kernel import Opt, OptOps
+from tinygrad.codegen.opt.kernel import Opt, OptOps
 
 # more stuff
-from tinygrad.codegen.kernel import Kernel
-from tinygrad.engine.search import actions
+from tinygrad.codegen.opt.kernel import Kernel
+from tinygrad.codegen.opt.search import actions
 from extra.optimization.helpers import lin_to_feats
 from extra.optimization.pretrain_valuenet import ValueNet
 from tinygrad.nn.optim import Adam
@@ -104,7 +104,7 @@ if __name__ == "__main__":
       ys.append(Y[sel])
     return Tensor(xs), Tensor(ys)
 
-  Tensor.no_grad, Tensor.training = False, True
+  Tensor.training = True
   losses = []
   test_losses = []
   test_loss = float('inf')

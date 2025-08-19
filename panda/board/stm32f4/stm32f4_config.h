@@ -1,5 +1,5 @@
-#include "stm32f4/inc/stm32f4xx.h"
-#include "stm32f4/inc/stm32f4xx_hal_gpio_ex.h"
+#include "stm32f4xx.h"
+#include "stm32f4xx_hal_gpio_ex.h"
 #define MCU_IDCODE 0x463U
 
 #define CORE_FREQ 96U // in MHz
@@ -30,44 +30,46 @@
 #define PROVISION_CHUNK_ADDRESS 0x1FFF79E0U
 #define DEVICE_SERIAL_NUMBER_ADDRESS 0x1FFF79C0U
 
-#include "can.h"
-#include "comms_definitions.h"
+#include "board/can.h"
+#include "board/comms_definitions.h"
 
 #ifndef BOOTSTUB
-  #include "main_definitions.h"
+  #include "board/main_definitions.h"
 #else
-  #include "bootstub_declarations.h"
+  #include "board/bootstub_declarations.h"
 #endif
 
-#include "libc.h"
-#include "critical.h"
-#include "faults.h"
-#include "utils.h"
+#include "board/libc.h"
+#include "board/critical.h"
+#include "board/faults.h"
+#include "board/utils.h"
 
-#include "drivers/registers.h"
-#include "drivers/interrupts.h"
-#include "drivers/gpio.h"
-#include "stm32f4/peripherals.h"
-#include "stm32f4/interrupt_handlers.h"
-#include "drivers/timers.h"
-#include "stm32f4/board.h"
-#include "stm32f4/clock.h"
-
-#include "drivers/spi.h"
-#include "stm32f4/llspi.h"
+#include "board/drivers/registers.h"
+#include "board/drivers/interrupts.h"
+#include "board/drivers/gpio.h"
+#include "board/stm32f4/peripherals.h"
+#include "board/stm32f4/interrupt_handlers.h"
+#include "board/drivers/timers.h"
+#include "board/stm32f4/board.h"
+#include "board/stm32f4/clock.h"
 
 #if !defined(BOOTSTUB)
-  #include "drivers/uart.h"
-  #include "stm32f4/lluart.h"
+  #include "board/drivers/uart.h"
+  #include "board/stm32f4/lluart.h"
 #endif
 
 #ifdef BOOTSTUB
-  #include "stm32f4/llflash.h"
+  #include "board/stm32f4/llflash.h"
 #else
-  #include "stm32f4/llbxcan.h"
+  #include "board/stm32f4/llbxcan.h"
 #endif
 
-#include "stm32f4/llusb.h"
+#include "board/stm32f4/llusb.h"
+
+// unused
+void spi_init(void) {};
+void sound_tick(void) {};
+void can_tx_comms_resume_spi(void) {};
 
 void early_gpio_float(void) {
   RCC->AHB1ENR = RCC_AHB1ENR_GPIOAEN | RCC_AHB1ENR_GPIOBEN | RCC_AHB1ENR_GPIOCEN;

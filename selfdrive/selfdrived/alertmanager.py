@@ -17,7 +17,7 @@ def set_offroad_alert(alert: str, show_alert: bool, extra_text: str = None) -> N
   if show_alert:
     a = copy.copy(OFFROAD_ALERTS[alert])
     a['extra'] = extra_text or ''
-    Params().put(alert, json.dumps(a))
+    Params().put(alert, a)
   else:
     Params().remove(alert)
 

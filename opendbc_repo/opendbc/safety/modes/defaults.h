@@ -4,8 +4,8 @@
 
 // GCOV_EXCL_START
 // Unreachable by design (doesn't define any rx msgs)
-void default_rx_hook(const CANPacket_t *to_push) {
-  UNUSED(to_push);
+void default_rx_hook(const CANPacket_t *msg) {
+  UNUSED(msg);
 }
 // GCOV_EXCL_STOP
 
@@ -18,8 +18,8 @@ static safety_config nooutput_init(uint16_t param) {
 
 // GCOV_EXCL_START
 // Unreachable by design (doesn't define any tx msgs)
-static bool nooutput_tx_hook(const CANPacket_t *to_send) {
-  UNUSED(to_send);
+static bool nooutput_tx_hook(const CANPacket_t *msg) {
+  UNUSED(msg);
   return false;
 }
 // GCOV_EXCL_STOP
@@ -39,8 +39,8 @@ static safety_config alloutput_init(uint16_t param) {
   return (safety_config){NULL, 0, NULL, 0, !alloutput_passthrough}; // NOLINT(readability/braces)
 }
 
-static bool alloutput_tx_hook(const CANPacket_t *to_send) {
-  UNUSED(to_send);
+static bool alloutput_tx_hook(const CANPacket_t *msg) {
+  UNUSED(msg);
   return true;
 }
 

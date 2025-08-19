@@ -240,7 +240,6 @@ class LLaMa:
             #elif k.endswith('.weight'): v.shard_(device, axis=-1)
             #elif 'norm.' in k: v.shard_(device, axis=-1)
             else: v.shard_(device, axis=None)
-            #print(k, v.shape, v.lazydata.axis)
 
         # replace weights in model
         load_state_dict(model, weights, strict=False, consume=True)
@@ -331,7 +330,6 @@ int main()
 \end{code}
 """
 if __name__ == "__main__":
-  Tensor.no_grad = True
   print(f"using {Device.DEFAULT} backend")
 
   parser = argparse.ArgumentParser(description="Run LLaMA in tinygrad", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
@@ -447,7 +445,7 @@ After you are done speaking, output [EOS]. You are not Chad.
   print(f"using LLaMA{LLAMA_SUFFIX}-{args.size} model")
   device = tuple(f"{Device.DEFAULT}:{i}" for i in range(args.shard)) if args.shard > 1 else Device.DEFAULT
   llama = LLaMa.build(MODEL_PATH, TOKENIZER_PATH, model_gen=args.gen, model_size=args.size, quantize=args.quantize, device=device)
-  param_bytes = sum(x.lazydata.size * x.dtype.itemsize for x in get_parameters(llama.model))
+  param_bytes = sum(x.uop.size * x.dtype.itemsize for x in get_parameters(llama.model))
 
   outputted = pre_prompt if chatbot else args.prompt
   start_pos, toks = 0, [llama.tokenizer.bos_id()] + llama.tokenizer.encode(outputted)

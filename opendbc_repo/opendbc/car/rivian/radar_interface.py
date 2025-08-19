@@ -1,12 +1,13 @@
 import math
 
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.rivian.values import DBC
 
 RADAR_START_ADDR = 0x500
 RADAR_MSG_COUNT = 32
+
 
 def get_radar_can_parser(CP):
   messages = [(f"RADAR_TRACK_{addr:x}", 20) for addr in range(RADAR_START_ADDR, RADAR_START_ADDR + RADAR_MSG_COUNT)]
@@ -27,7 +28,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.radar_off_can or (self.rcp is None):
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

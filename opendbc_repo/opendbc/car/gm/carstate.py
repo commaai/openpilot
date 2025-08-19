@@ -1,7 +1,5 @@
 import copy
-import numpy as np
-from opendbc.can.can_define import CANDefine
-from opendbc.can.parser import CANParser
+from opendbc.can import CANDefine, CANParser
 from opendbc.car import Bus, create_button_events, structs
 from opendbc.car.common.conversions import Conversions as CV
 from opendbc.car.interfaces import CarStateBase
@@ -11,7 +9,7 @@ ButtonType = structs.CarState.ButtonEvent.Type
 TransmissionType = structs.CarParams.TransmissionType
 NetworkLocation = structs.CarParams.NetworkLocation
 
-STANDSTILL_THRESHOLD = 10 * 0.0311 * CV.KPH_TO_MS
+STANDSTILL_THRESHOLD = 10 * 0.0311
 
 BUTTONS_DICT = {CruiseButtons.RES_ACCEL: ButtonType.accelCruise, CruiseButtons.DECEL_SET: ButtonType.decelCruise,
                 CruiseButtons.MAIN: ButtonType.mainCruise, CruiseButtons.CANCEL: ButtonType.cancel}
@@ -68,16 +66,16 @@ class CarState(CarStateBase):
     # An Equinox has been seen with an unsupported status (3), so only check if either wheel is in reverse (2)
     left_whl_sign = -1 if pt_cp.vl["EBCMWheelSpdRear"]["RLWheelDir"] == 2 else 1
     right_whl_sign = -1 if pt_cp.vl["EBCMWheelSpdRear"]["RRWheelDir"] == 2 else 1
-    ret.wheelSpeeds = self.get_wheel_speeds(
+    self.parse_wheel_speeds(ret,
       left_whl_sign * pt_cp.vl["EBCMWheelSpdFront"]["FLWheelSpd"],
       right_whl_sign * pt_cp.vl["EBCMWheelSpdFront"]["FRWheelSpd"],
       left_whl_sign * pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"],
       right_whl_sign * pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"],
     )
-    ret.vEgoRaw = float(np.mean([ret.wheelSpeeds.fl, ret.wheelSpeeds.fr, ret.wheelSpeeds.rl, ret.wheelSpeeds.rr]))
-    ret.vEgo, ret.aEgo = self.update_speed_kf(ret.vEgoRaw)
-    # sample rear wheel speeds, standstill=True if ECM allows engagement with brake
-    ret.standstill = abs(ret.wheelSpeeds.rl) <= STANDSTILL_THRESHOLD and abs(ret.wheelSpeeds.rr) <= STANDSTILL_THRESHOLD
+    # sample rear wheel speeds to match the safety which only uses the rear CAN message
+    # standstill=True if ECM allows engagement with brake
+    ret.standstill = abs(pt_cp.vl["EBCMWheelSpdRear"]["RLWheelSpd"]) <= STANDSTILL_THRESHOLD and \
+                     abs(pt_cp.vl["EBCMWheelSpdRear"]["RRWheelSpd"]) <= STANDSTILL_THRESHOLD
 
     if pt_cp.vl["ECMPRDNL2"]["ManualMode"] == 1:
       ret.gearShifter = self.parse_gear_shifter("T")
@@ -98,8 +96,7 @@ class CarState(CarStateBase):
     if self.CP.transmissionType == TransmissionType.direct:
       ret.regenBraking = pt_cp.vl["EBCMRegenPaddle"]["RegenPaddle"] != 0
 
-    ret.gas = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254.
-    ret.gasPressed = ret.gas > 1e-5
+    ret.gasPressed = pt_cp.vl["AcceleratorPedal2"]["AcceleratorPedal2"] / 254. > 1e-5
 
     ret.steeringAngleDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelAngle"]
     ret.steeringRateDeg = pt_cp.vl["PSCMSteeringAngle"]["SteeringWheelRate"]
@@ -165,55 +162,18 @@ class CarState(CarStateBase):
 
   @staticmethod
   def get_can_parsers(CP):
-    pt_messages = [
-      ("BCMTurnSignals", 1),
-      ("ECMPRDNL2", 10),
-      ("PSCMStatus", 10),
-      ("ESPStatus", 10),
-      ("BCMDoorBeltStatus", 10),
-      ("BCMGeneralPlatformStatus", 10),
-      ("EBCMWheelSpdFront", 20),
-      ("EBCMWheelSpdRear", 20),
-      ("EBCMFrictionBrakeStatus", 20),
-      ("AcceleratorPedal2", 33),
-      ("ASCMSteeringButton", 33),
-      ("ECMEngineStatus", 100),
-      ("PSCMSteeringAngle", 100),
-      ("ECMAcceleratorPos", 80),
-    ]
-
-    if CP.transmissionType == TransmissionType.direct:
-      pt_messages.append(("EBCMRegenPaddle", 50))
-
-    if CP.enableBsm:
-      pt_messages.append(("BCMBlindSpotMonitor", 10))
-
-    cam_messages = []
+    pt_messages = []
     if CP.networkLocation == NetworkLocation.fwdCamera:
       pt_messages += [
-        ("ASCMLKASteeringCmd", 0),
+        ("ASCMLKASteeringCmd", float('nan')),
       ]
-      cam_messages += [
-        ("ASCMLKASteeringCmd", 10),
-      ]
-
-      if CP.carFingerprint in ALT_ACCS:
-        pt_messages.append(("ECMCruiseControl", 10))
-      else:
-        cam_messages.append(("ASCMActiveCruiseControlStatus", 25))
-
-      if CP.carFingerprint not in SDGM_CAR:
-        cam_messages += [
-          ("AEBCmd", 10),
-        ]
 
     loopback_messages = [
-      ("ASCMLKASteeringCmd", 0),
+      ("ASCMLKASteeringCmd", float('nan')),
     ]
 
     return {
       Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], pt_messages, 0),
-      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], cam_messages, 2),
+      Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], 2),
       Bus.loopback: CANParser(DBC[CP.carFingerprint][Bus.pt], loopback_messages, 128),
     }
-

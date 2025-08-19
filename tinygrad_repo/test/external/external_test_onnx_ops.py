@@ -4,12 +4,17 @@
 
 from typing import Any
 import unittest, onnx, tempfile
-from tinygrad import dtypes
+from tinygrad import dtypes, Tensor
 from tinygrad.frontend.onnx import OnnxRunner
 import numpy as np
 from extra.onnx_helpers import validate
 from onnx.defs import ONNX_DOMAIN, AI_ONNX_PREVIEW_TRAINING_DOMAIN
 MICROSOFT_CONTRIB_OPS_DOMAIN = "com.microsoft"
+# TODO: remove this once ORT supports 1.18.0
+from onnx.helper import VERSION_TABLE
+VERSION_MAP = {row[0]: row[1:] for row in VERSION_TABLE}
+IR_VERSION, ai_onnx, ai_onnx_ml, ai_onnx_training = VERSION_MAP["1.17.0"]
+
 
 class TestOnnxOps(unittest.TestCase):
   DOMAIN = None
@@ -18,7 +23,14 @@ class TestOnnxOps(unittest.TestCase):
     onnx_outputs = [onnx.helper.make_empty_tensor_value_info(name) for name in outs]
     nodes = [onnx.helper.make_node(op, list(inps), list(outs), domain=self.DOMAIN, **opts)]
     graph = onnx.helper.make_graph(nodes, f"test_{op.lower()}", onnx_inputs, onnx_outputs)
-    model = onnx.helper.make_model(graph, producer_name=f"test_{op.lower()}")
+    #model = onnx.helper.make_model(graph, producer_name=f"test_{op.lower()}")
+    # TODO: remove this once ORT supports 1.18.0
+    opset_id = None
+    if type(self).__name__ == "TestMainOnnxOps": opset_id = ai_onnx
+    if type(self).__name__ == "TestTrainingOnnxOps": opset_id = ai_onnx_training
+    if type(self).__name__ == "TestContribOnnxOps": opset_id = 1
+    model = onnx.helper.make_model(graph, producer_name=f"test_{op.lower()}", ir_version=IR_VERSION,
+                                    opset_imports=[onnx.helper.make_opsetid(self.DOMAIN, opset_id)])
     return model
 
   def helper_test_single_op(self, op:str, inps:dict[str, np.ndarray], opts:dict[str, Any], outs:list[str], rtol=1e-3, atol=1e-6):
@@ -63,6 +75,49 @@ class TestMainOnnxOps(TestOnnxOps):
     outputs = ["y"]
     self.helper_test_single_op("Gather", inputs, attributes, outputs)
 
+  # NOTE: resize OP is sensitive to numerical errors
+  def _test_resize_scales(self, scale_values, **kwargs):
+    for sc in scale_values:
+      for ct_mode in ["half_pixel", "align_corners", "asymmetric", "pytorch_half_pixel", "half_pixel_symmetric"]:
+        with self.subTest(coordinate_transformation_mode=ct_mode, scale=sc, **kwargs):
+          X = np.array([[[[1, 2, 3, 4],
+                          [5, 6, 7, 8],
+                          [9,10,11,12]]]], dtype=np.float32)
+          scales = np.array([1.0, 1.0, sc, sc], dtype=np.float32)
+          inputs = {"X": X, "roi": np.array([], dtype=np.float32), "scales": scales}
+          attributes = {"coordinate_transformation_mode": ct_mode, **kwargs}
+          outputs = ["out"]
+          self.helper_test_single_op("Resize", inputs, attributes, outputs)
+
+  def test_resize_linear_mode(self):
+    self._test_resize_scales([0.01, 0.25, 0.5, 0.51, 0.6, 1.0, 1.5, 2.0, 3.5, 20.0], mode="linear")
+
+  def test_resize_nearest_mode(self):
+    # excluded 3.5 because some values divide into slight numerical differences, which when rounded gives wrong results
+    self._test_resize_scales([0.01, 0.25, 0.5, 0.51, 0.6, 1.0, 1.5, 2.0, 20.0], mode="nearest")
+
+  def test_resize_cubic_mode(self):
+    self._test_resize_scales([0.01, 0.25, 0.5, 0.51, 0.6, 1.0, 1.5, 2.0, 3.5, 20.0], mode="cubic", exclude_outside=1)
+    self._test_resize_scales([0.01, 0.25, 0.5, 0.51, 0.6, 1.0, 1.5, 2.0, 3.5, 20.0], mode="cubic", exclude_outside=0)
+
+  def test_resize_downsample_scales_linear_align_corners(self):
+    # https://github.com/onnx/onnx/blob/main/docs/Operators.md#examples-131
+    X = np.array([[[[1, 2, 3, 4], [5, 6, 7, 8]]]], dtype=np.float32)
+    scales = np.array([1.0, 1.0, 0.6, 0.6], dtype=np.float32)
+    inputs = {"X": X, "roi": np.array([], dtype=np.float32), "scales": scales}
+    attributes = {"mode": "linear", "coordinate_transformation_mode": "align_corners"}
+    outputs = ["out"]
+    self.helper_test_single_op("Resize", inputs, attributes, outputs)
+
+  def test_resize_downsample_scales_cubic_align_corners(self):
+    # https://github.com/onnx/onnx/blob/main/docs/Operators.md#examples-131
+    X = np.array([[[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12], [13, 14, 15, 16]]]], dtype=np.float32)
+    scales = np.array([1.0, 1.0, 0.8, 0.8], dtype=np.float32)
+    inputs = {"X": X, "roi": np.array([], dtype=np.float32), "scales": scales}
+    attributes = {"mode": "cubic", "coordinate_transformation_mode": "align_corners"}
+    outputs = ["out"]
+    self.helper_test_single_op("Resize", inputs, attributes, outputs)
+
   def test_maxunpool_export_with_output_shape(self):
     # https://github.com/onnx/onnx/blob/main/docs/Operators.md#examples-91
     xT = np.array([[[[5, 6], [7, 8]]]], dtype=np.float32)
@@ -88,7 +143,8 @@ class TestMainOnnxOps(TestOnnxOps):
     attributes = {"detect_negative":1, "detect_positive":1}
     outputs = ["y"]
     model = self.helper_build_model("IsInf", inputs, attributes, outputs)
-    outputs = OnnxRunner(model)(inputs)
+    runner = OnnxRunner(Tensor(model.SerializeToString(), device="PYTHON"))
+    outputs = runner(inputs)
     assert outputs["y"].dtype is dtypes.bool
 
   def test_quantize_linear(self):
@@ -203,7 +259,7 @@ class TestTrainingOnnxOps(TestOnnxOps):
   def _validate_training(self, op:str, onnx_fxn, inps:dict[str, np.ndarray], opts:dict[str, Any], outs:list[str]):
     model = self.helper_build_model(op, inps, opts, outs)
     if op == "Momentum": del opts['mode']
-    runner = OnnxRunner(model)
+    runner = OnnxRunner(Tensor(model.SerializeToString(), device="PYTHON"))
     tiny_out = runner(inps)
     onnx_out = onnx_fxn(**inps, **opts)
     for (nm, t_out), o_out in  zip(tiny_out.items(), onnx_out):

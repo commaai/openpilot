@@ -1,46 +1,13 @@
 from __future__ import annotations
-from typing import Optional, Callable, cast
-import functools, math
-from enum import Enum, auto
+from typing import Callable, cast, TYPE_CHECKING
+import functools, itertools
 from dataclasses import dataclass, field, replace
 from tinygrad.helpers import to_function_name, dedup, prod
 from tinygrad.uop.ops import Ops, UOp, sym_infer, sint, Variable, ssimplify, GroupOp, PatternMatcher
-from tinygrad.dtype import DType
-
-class OptOps(Enum):
-  TC = auto(); UPCAST = auto(); UNROLL = auto(); LOCAL = auto() # noqa: E702
-  GROUP = auto(); GROUPTOP = auto(); NOLOCALS = auto(); PADTO = auto(); SWAP = auto() # noqa: E702
-  def __lt__(self, x:OptOps): return self.value < x.value
-
-@dataclass(frozen=True, order=True)
-class Opt:
-  op: OptOps
-  axis: Optional[int] = None
-  arg: Optional[int | tuple] = None
-  def __repr__(self): return f"Opt(op={self.op}, axis={self.axis}, arg={self.arg})"
-
-@dataclass(frozen=True)
-class TensorCore: # D = A * B + C, A is (M x K), B is (K x N), C and D are (M x N)
-  dims: tuple[int,int,int] # N, M, K
-  threads: int # number of threads that construct the warp
-  elements_per_thread: tuple[int, int, int] # elements per-thread to load/store from A/B/C
-  dtype_in: DType # dtype for A and B
-  dtype_out: DType # dtype for C and D
-  opts: tuple[str, ...] # ordered tuple of "ux" or "lx" specifing kernel opts to perform. "ux" upcasts dim x and "lx" localizes dim x
-  swizzle: tuple[Optional[tuple[tuple[int, ...], tuple[int, ...]]], Optional[tuple[tuple[int, ...], tuple[int, ...]]]] = (None, None)
-  def get_reduce_axes(self): return [(i, 2) for i in range(int(math.log2(self.dims[2])))]
-  def get_upcast_axes(self): return [opt for opt in self.opts if opt[0] == "u"]
-  def get_local_axes(self): return [opt for opt in self.opts if opt[0] == "l"]
-  def __str__(self): return "_".join(["WMMA"] + list(map(str, self.dims)) + [self.dtype_in.name, self.dtype_out.name])
-  def __post_init__(self):
-    local_axes, upcast_axes, reduce_axes = len(self.get_local_axes()), len(self.get_upcast_axes()), len(self.get_reduce_axes())
-    assert self.dims[0] * self.dims[1] == 2**(local_axes + upcast_axes), (
-      f"N({self.dims[0]}) x M({self.dims[1]}) != local({2**local_axes}) x upcast({2**upcast_axes}) with opts({self.opts})")
-    assert 2**local_axes == self.threads, f"{self.threads} threads construct the warp but found {2**local_axes} in {self.opts}"
-    assert 2**upcast_axes == self.elements_per_thread[2], (
-      f"{self.elements_per_thread[2]} elements from C are processed per thread but found {2**upcast_axes} in {self.opts}")
-    assert all(len(perm[0]) == local_axes and len(perm[1]) == reduce_axes + upcast_axes for perm in self.swizzle if perm), (
-      f"swizzle perm should be of len (({local_axes})({reduce_axes + upcast_axes}))")
+from tinygrad.dtype import AddrSpace, PtrDType
+if TYPE_CHECKING:
+  from tinygrad.codegen.opt.tc import TensorCore
+  from tinygrad.codegen.opt.kernel import Opt
 
 @dataclass(frozen=True)
 class Estimates:
@@ -61,7 +28,7 @@ class Estimates:
     dont_count: set[UOp] = set()
     if ignore_indexing:
       for u in uops:
-        if u.op in {Ops.LOAD, Ops.STORE}:
+        if u.op in {Ops.LOAD, Ops.STORE} and (not isinstance(u.src[0].dtype, PtrDType) or u.src[0].dtype.addrspace != AddrSpace.REG):
           dont_count = dont_count.union(u.src[0].toposort())
           if len(u.src) > 2: dont_count = dont_count.union(u.src[2].toposort())
         elif u.op is Ops.IF:
@@ -74,8 +41,10 @@ class Estimates:
         mults = mults.substitute({x:x.const_like(0) for x in mults.toposort() if x.op is Ops.SPECIAL}) if isinstance(mults, UOp) else mults
       elif u.op is Ops.ENDRANGE: mults = mult_stack.pop(-1)
       elif u.op is Ops.SPECIAL: mults *= u.arg[1] # NOTE: we don't push to the mult_stack here, you can't end these
-      elif u.op is Ops.LOAD: lds += u.dtype.itemsize * mults
-      elif u.op is Ops.STORE: lds += u.src[1].dtype.itemsize * mults
+      elif u.op is Ops.LOAD and (not isinstance(u.src[0].dtype, PtrDType) or u.src[0].dtype.addrspace != AddrSpace.REG):
+        lds += u.dtype.itemsize * mults
+      elif u.op is Ops.STORE and (not isinstance(u.src[0].dtype, PtrDType) or u.src[0].dtype.addrspace != AddrSpace.REG):
+        lds += u.src[1].dtype.itemsize * mults
       elif u.op in GroupOp.ALU and u not in dont_count: flops += (mults * (2 if u.op is Ops.MULACC else 1)) * u.dtype.count
       elif u.op is Ops.WMMA and u not in dont_count: flops += 2 * prod(u.arg[1]) // u.arg[5] * mults
     return Estimates(flops, lds, lds) # TODO: properly track memory, lds is always a high estimate
@@ -86,13 +55,11 @@ class ProgramSpec:
   src:str
   device:str
   ast:UOp  # save the base ast (this is method cache key)
-  uops:Optional[list[UOp]]=None
-  applied_opts:Optional[list[Opt]]=None
-  mem_estimate:sint=0  # TODO: get this from the load/store uops once min/max are good
+  uops:list[UOp]|None=None
 
   # filled in from uops (if we have uops)
-  global_size:Optional[list[int]]=None
-  local_size:Optional[list[int]]=None
+  global_size:list[int]|None=None
+  local_size:list[int]|None=None
   vars:list[Variable]=field(default_factory=list)
   globals:list[int]=field(default_factory=list)
   outs:list[int]=field(default_factory=list)
@@ -118,11 +85,23 @@ class ProgramSpec:
       self._ran_post_init = True
 
   @functools.cached_property
+  def mem_estimate(self) -> sint:
+    # group non-local bufs by the op type (LOAD or STORE) and the buffer arg. take the max access of that buffer in bytes
+    # TODO: these max and min don't work on symbolic, and results are very wrong.
+    return sum(max(x.src[0].dtype.nbytes() for x in group)
+      for _, group in itertools.groupby([x for x in self.ast.toposort() if x.op in {Ops.LOAD, Ops.STORE} and x.src[0].base.op is Ops.DEFINE_GLOBAL],
+                        key=lambda x: (x.op, x.src[0].base.arg)))
+
+  @functools.cached_property
   def estimates(self) -> Estimates:
     return replace(Estimates() if self.uops is None else Estimates.from_uops(self.uops, ignore_indexing=True), mem=self.mem_estimate)
 
   @functools.cached_property
   def function_name(self) -> str: return to_function_name(self.name)
+
+  @property
+  def applied_opts(self) -> tuple[Opt, ...]|None: return self.uops[-1].arg.applied_opts if \
+    self.uops is not None and self.uops[-1].op is Ops.SINK and self.uops[-1].arg is not None else None
 
   def launch_dims(self, var_vals:dict[Variable, int]):
     global_size = [sym_infer(sz, var_vals) for sz in self.global_size] if self.global_size is not None else None
@@ -137,12 +116,12 @@ class Renderer:
   has_local: bool = True
   has_shared: bool = True
   # NOTE: these two should be in (x,y,z) order to match the max_sizes argument in get_grouped_dims
-  global_max: Optional[tuple[int, ...]] = (0x8FFFFFFF,) * (3) # TODO: Ops.SPECIAL int32 indexes right now
-  local_max: Optional[tuple[int, ...]] = (0x8FFFFFFF,) * (3) # TODO: Ops.SPECIAL int32 indexes right now
+  global_max: tuple[int, ...]|None = (0x8FFFFFFF,) * (3) # TODO: Ops.SPECIAL int32 indexes right now
+  local_max: tuple[int, ...]|None = (0x8FFFFFFF,) * (3) # TODO: Ops.SPECIAL int32 indexes right now
   shared_max: int = 32768
   tensor_cores: list[TensorCore] = []
-  pre_matcher: Optional[PatternMatcher] = None
-  extra_matcher: Optional[PatternMatcher] = None
+  pre_matcher: PatternMatcher|None = None
+  extra_matcher: PatternMatcher|None = None
   code_for_op: dict[Ops, Callable] = {}
 
   def __reduce__(self): return self.__class__, ()

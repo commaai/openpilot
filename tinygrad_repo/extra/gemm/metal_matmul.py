@@ -26,7 +26,7 @@ metalalloc._copyin(c,nc.tobytes())
 FLOPS = N*N*N*2
 BW = N*N*3*4
 
-prog = MetalProgram(device, "test", MetalCompiler(device).compile(f"""
+prog = MetalProgram(device, "test", MetalCompiler().compile(f"""
 #include <metal_stdlib>
 #include <metal_simdgroup_matrix>  // Available from Metal version 2.3 released with OS X 11.0+
 using namespace metal;

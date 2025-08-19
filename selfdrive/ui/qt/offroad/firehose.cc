@@ -20,7 +20,7 @@ FirehosePanel::FirehosePanel(SettingsWindow *parent) : QWidget((QWidget*)parent)
   layout->setSpacing(20);
 
   // header
-  QLabel *title = new QLabel(tr("🔥 Firehose Mode 🔥"));
+  QLabel *title = new QLabel(tr("Firehose Mode"));
   title->setStyleSheet("font-size: 100px; font-weight: 500; font-family: 'Noto Color Emoji';");
   layout->addWidget(title, 0, Qt::AlignCenter);
 

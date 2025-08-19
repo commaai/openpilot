@@ -2,8 +2,6 @@ import sys
 import random
 import json
 import numpy
-from pathlib import Path
-from PIL import Image
 from tinygrad.tensor import Tensor
 from tinygrad.nn.optim import SGD
 from tinygrad.nn.state import safe_save, safe_load, get_state_dict, load_state_dict

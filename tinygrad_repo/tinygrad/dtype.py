@@ -1,10 +1,11 @@
 from __future__ import annotations
-from typing import Final, Optional, ClassVar, Union, Callable, Literal
+from typing import Final, ClassVar, Callable, Literal
 import math, struct, ctypes, functools
 from dataclasses import dataclass, fields
 from tinygrad.helpers import getenv, prod
+from enum import Enum, auto
 
-ConstType = Union[float, int, bool]
+ConstType = float|int|bool
 
 FmtStr = Literal['?', 'b', 'B', 'h', 'H', 'i', 'I', 'q', 'Q', 'e', 'f', 'd']
 
@@ -16,16 +17,18 @@ class DTypeMetaClass(type):
     DTypeMetaClass.dcache[args] = ret = super().__call__(*args)
     return ret
 
+class AddrSpace(Enum): GLOBAL = auto(); LOCAL = auto(); REG = auto()  # noqa: E702
+
 @dataclass(frozen=True, eq=False)
 class DType(metaclass=DTypeMetaClass):
   priority: int  # this determines when things get upcasted
   itemsize: int
   name: str
-  fmt: Optional[FmtStr]
+  fmt: FmtStr|None
   count: int
-  _scalar: Optional[DType]
+  _scalar: DType|None
   @staticmethod
-  def new(priority:int, itemsize:int, name:str, fmt:Optional[FmtStr]): return DType(priority, itemsize, name, fmt, 1, None)
+  def new(priority:int, itemsize:int, name:str, fmt:FmtStr|None): return DType(priority, itemsize, name, fmt, 1, None)
   def __reduce__(self): return type(self), tuple(getattr(self, f.name) for f in fields(self))
   def __repr__(self): return f"dtypes.{INVERSE_DTYPES_DICT[self.scalar().name]}"+(f".vec({self.count})" if self.count > 1 else "")
   def __lt__(self, o:DType): return (self.priority, self.itemsize, self.name, self.fmt, self.count) < (o.priority, o.itemsize, o.name, o.fmt, o.count)
@@ -38,15 +41,19 @@ class DType(metaclass=DTypeMetaClass):
     assert self.count == 1, f"can't vectorize {self} with size {sz}"
     if sz == 1 or self == dtypes.void: return self  # void doesn't vectorize, and sz=1 is scalar
     return DType(self.priority, self.itemsize*sz, f"{INVERSE_DTYPES_DICT[self.name]}{sz}", None, sz, self)
-  def ptr(self, size=-1, local=False) -> PtrDType:
-    return PtrDType(self.priority, self.itemsize, self.name, self.fmt, self.count, None, self, local, 1, size)
+  def ptr(self, size=-1, addrspace=AddrSpace.GLOBAL) -> PtrDType:
+    return PtrDType(self.priority, self.itemsize, self.name, self.fmt, self.count, None, self, addrspace, 1, size)
   def scalar(self) -> DType: return self._scalar if self._scalar is not None else self
   def nbytes(self): raise RuntimeError("only ptr types have nbytes")
+  @property
+  def min(self): return dtypes.min(self)
+  @property
+  def max(self): return dtypes.max(self)
 
 @dataclass(frozen=True, eq=False)
 class PtrDType(DType):
   _base: DType
-  local: bool
+  addrspace: AddrSpace
   v: int
   size: int = -1  # -1 is unlimited size
   @property
@@ -56,22 +63,23 @@ class PtrDType(DType):
     assert self.v == 1, f"can't vectorize ptr {self} with size {sz}"
     if sz == 1: return self  # sz=1 is a scalar
     if isinstance(self, ImageDType):
-      return ImageDType(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.local, sz, self.size, self.shape)
-    return type(self)(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.local, sz, self.size)
-  def ptr(self, size=-1, local=False): raise RuntimeError("can't make a pointer from a pointer")
+      return ImageDType(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.addrspace, sz, self.size, self.shape)
+    return type(self)(self.priority, self.itemsize, self.name, self.fmt, self.count, self, self._base, self.addrspace, sz, self.size)
+  def ptr(self, size=-1, addrspace=AddrSpace.GLOBAL): raise RuntimeError("can't make a pointer from a pointer")
   def nbytes(self) -> int:
     if self.size == -1: return 0  # TODO: this should be an exception
     return self.size*self.itemsize
   @property
   def vcount(self): return self.v
   def __repr__(self):
-    return f"{self.base.__repr__()}.ptr({self.size}{', local=True' if self.local else ''})" + (f'.vec({self.v})' if self.v != 1 else '')
+    return f"{self.base.__repr__()}.ptr({self.size}{', '+str(self.addrspace) if self.addrspace != AddrSpace.GLOBAL else ''})" + \
+      (f'.vec({self.v})' if self.v != 1 else '')
 
 @dataclass(frozen=True, eq=False)
 class ImageDType(PtrDType):
   shape: tuple[int, ...] = ()   # shape of the Image
-  def ptr(self, size=-1, local=False) -> PtrDType:
-    assert not local, "images can't be local"
+  def ptr(self, size=-1, addrspace=AddrSpace.GLOBAL) -> PtrDType:
+    assert addrspace == AddrSpace.GLOBAL, "images can't be local"
     return self
   def __repr__(self): return f"dtypes.{self.name}({self.shape})" + (f'.vec({self.v})' if self.v != 1 else '')
 
@@ -145,9 +153,9 @@ class dtypes:
 
   # NOTE: these are image dtypes
   @staticmethod
-  def imageh(shp): return ImageDType(100, 2, "imageh", 'e', 1, None, dtypes.float32, False, 1, prod(shp), shp)
+  def imageh(shp): return ImageDType(100, 2, "imageh", 'e', 1, None, dtypes.float32, AddrSpace.GLOBAL, 1, prod(shp), shp)
   @staticmethod
-  def imagef(shp): return ImageDType(100, 4, "imagef", 'f', 1, None, dtypes.float32, False, 1, prod(shp), shp)
+  def imagef(shp): return ImageDType(100, 4, "imagef", 'f', 1, None, dtypes.float32, AddrSpace.GLOBAL, 1, prod(shp), shp)
 
   default_float: ClassVar[DType] = float32
   default_int: ClassVar[DType] = int32
@@ -163,7 +171,7 @@ if (env_default_float := getenv("DEFAULT_FLOAT", "")):
   dtypes.default_float = getattr(dtypes, env_default_float.lower())
   assert dtypes.is_float(dtypes.default_float), f"{env_default_float} is not a float dtype"
 
-DTypeLike = Union[str, DType]
+DTypeLike = str|DType
 def to_dtype(dtype:DTypeLike) -> DType: return dtype if isinstance(dtype, DType) else getattr(dtypes, dtype.lower())
 
 # https://jax.readthedocs.io/en/latest/jep/9407-type-promotion.html
@@ -184,6 +192,21 @@ def least_upper_float(dt:DType) -> DType: return dt if dtypes.is_float(dt) else 
 
 DTYPES_DICT = {k: v for k, v in dtypes.__dict__.items() if isinstance(v, DType) and not k.startswith(("default", "void"))}
 INVERSE_DTYPES_DICT = {**{v.name:k for k,v in DTYPES_DICT.items()}, "void": "void"}
+
+@functools.cache
+def can_safe_cast(dt0:DType, dt1:DType) -> bool:
+  # return if dt1 preserves value of dt0
+  # https://numpy.org/doc/stable/reference/generated/numpy.can_cast.html
+  if dt0 == dt1 or dt0 == dtypes.bool: return True
+  match dt1:
+    case dtypes.double: return dt0 in (dtypes.float, dtypes.half, dtypes.bfloat16)
+    case dtypes.float: return dt0 in (dtypes.half, dtypes.bfloat16)
+    case dtypes.uint64: return dt0 in (dtypes.uint32, dtypes.uint16, dtypes.uint8)
+    case dtypes.uint32: return dt0 in (dtypes.uint16, dtypes.uint8)
+    case dtypes.int64: return dt0 in (dtypes.uint32, dtypes.uint16, dtypes.uint8, dtypes.int32, dtypes.int16, dtypes.int8)
+    case dtypes.int32: return dt0 in (dtypes.uint16, dtypes.uint8, dtypes.int16, dtypes.int8)
+    case dtypes.int16: return dt0 in (dtypes.uint8, dtypes.int8)
+    case _: return False
 
 def sum_acc_dtype(dt:DType):
   # default acc dtype for sum
@@ -275,7 +298,7 @@ truncate: dict[DType, Callable] = {dtypes.bool: bool,
 
 # numpy and torch dtype interop
 
-def _to_np_dtype(dtype:DType) -> Optional[type]:
+def _to_np_dtype(dtype:DType) -> type|None:
   import numpy as np
   return np.dtype(dtype.fmt).type if dtype.fmt is not None else None
 def _from_np_dtype(npdtype:'np.dtype') -> DType: # type: ignore [name-defined] # noqa: F821
@@ -283,7 +306,7 @@ def _from_np_dtype(npdtype:'np.dtype') -> DType: # type: ignore [name-defined] #
   return dtypes.fields()[np.dtype(npdtype).name]
 
 @functools.cache
-def _to_torch_dtype(dtype:DType) -> Optional['torch.dtype']:  # type: ignore [name-defined] # noqa: F821
+def _to_torch_dtype(dtype:DType) -> 'torch.dtype'|None:  # type: ignore [name-defined] # noqa: F821
   import numpy as np, torch
   # NOTE: torch doesn't expose this mapping with a stable API
   try: return torch.from_numpy(np.array([], dtype=_to_np_dtype(dtype))).dtype

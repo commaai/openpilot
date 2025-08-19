@@ -29,7 +29,3 @@ void uart_tx_ring(uart_ring *q){
 #define DIVMANT_(_PCLK_, _BAUD_)                (DIV_((_PCLK_), (_BAUD_)) / 100U)
 #define DIVFRAQ_(_PCLK_, _BAUD_)                ((((DIV_((_PCLK_), (_BAUD_)) - (DIVMANT_((_PCLK_), (_BAUD_)) * 100U)) * 16U) + 50U) / 100U)
 #define USART_BRR_(_PCLK_, _BAUD_)              ((DIVMANT_((_PCLK_), (_BAUD_)) << 4) | (DIVFRAQ_((_PCLK_), (_BAUD_)) & 0x0FU))
-
-void uart_set_baud(USART_TypeDef *u, unsigned int baud) {
-  u->BRR = USART_BRR_(APB1_FREQ*1000000U, baud);
-}

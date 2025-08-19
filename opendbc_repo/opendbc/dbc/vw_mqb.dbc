@@ -1304,6 +1304,23 @@ BO_ 294 HCA_01: 8 Frontsensorik
  SG_ EA_Ruckfreigabe : 40|1@1+ (1,0) [0|1] "" Vector__XXX
  SG_ EA_ACC_Wunschgeschwindigkeit : 41|10@1+ (0.32,0) [0|327.04] "Unit_KiloMeterPerHour"  Frontradar
 
+BO_ 810 LH_EPS_01: 8 XXX
+ SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ EPS_SpannungsAnf : 12|2@1+ (1.0,0.0) [0.0|3] "" XXX
+ SG_ EPS_Endanschlag : 14|2@1+ (1.0,0.0) [0.0|3] "" XXX
+ SG_ EPS_Akustiksignal : 16|1@1+ (1.0,0.0) [0.0|1] "" XXX
+ SG_ EPS_Fehlerlampe : 17|1@1+ (1.0,0.0) [0.0|1] "" XXX
+ SG_ EPS_Warnungen : 19|3@1+ (1.0,0.0) [0.0|7] "" XXX
+ SG_ EPS_PLA_Abbruch : 22|4@1+ (1,0) [0|15] "" XXX
+ SG_ EPS_PLA_Fehler : 26|4@1+ (1,0) [0|15] "" XXX
+ SG_ EPS_PLA_Status : 30|4@1+ (1.0,0.0) [0.0|15] "" XXX
+ SG_ EPS_Charisma_FahrPr : 34|4@1+ (1.0,0.0) [0.0|15] "" XXX
+ SG_ EPS_Charisma_Status : 38|2@1+ (1.0,0.0) [0.0|3] "" XXX
+ SG_ EPS_Lenkerposition : 41|2@1+ (1.0,0.0) [0.0|3] "" XXX
+ SG_ EPS_Anf_KL : 43|1@1+ (1.0,0.0) [0.0|1] "" XXX
+ SG_ EPS_ARA_Status : 44|4@1+ (1.0,0.0) [0.0|15] "" XXX
+
 BO_ 159 LH_EPS_03: 8 XXX
  SG_ CHECKSUM : 0|8@1+ (1,0) [0|255] ""  XXX
  SG_ COUNTER : 8|4@1+ (1,0) [0|15] ""  XXX

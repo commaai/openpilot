@@ -3,6 +3,7 @@ import numpy as np
 from tinygrad import Tensor, Variable, Device
 from tinygrad.helpers import OSX
 
+# TODO: still fails with MAX_KERNEL_BUFFERS
 @unittest.skipIf(Device.DEFAULT == "WEBGPU" and not OSX, "WEBGPU Vulkan can only run kernels with up to 10 buffers")
 class TestSample(unittest.TestCase):
   def test_sample(self):

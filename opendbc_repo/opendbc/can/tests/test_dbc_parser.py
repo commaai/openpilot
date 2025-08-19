@@ -1,4 +1,4 @@
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.can.tests import ALL_DBCS
 
 

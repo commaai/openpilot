@@ -80,7 +80,13 @@ bool FrameReader::loadFromFile(CameraType type, const std::string &file, bool no
   }
   input_ctx->probesize = 10 * 1024 * 1024;  // 10MB
 
-  decoder_ = decoder_manager.acquire(type, input_ctx->streams[0]->codecpar, !no_hw_decoder);
+  video_stream_idx_ = av_find_best_stream(input_ctx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+  if (video_stream_idx_ < 0) {
+    rError("No video stream found in file");
+    return false;
+  }
+
+  decoder_ = decoder_manager.acquire(type, input_ctx->streams[video_stream_idx_]->codecpar, !no_hw_decoder);
   if (!decoder_) {
     return false;
   }
@@ -90,7 +96,9 @@ bool FrameReader::loadFromFile(CameraType type, const std::string &file, bool no
   AVPacket pkt;
   packets_info.reserve(60 * 20);  // 20fps, one minute
   while (!(abort && *abort) && av_read_frame(input_ctx, &pkt) == 0) {
-    packets_info.emplace_back(PacketInfo{.flags = pkt.flags, .pos = pkt.pos});
+    if (pkt.stream_index == video_stream_idx_) {
+      packets_info.emplace_back(PacketInfo{.flags = pkt.flags, .pos = pkt.pos});
+    }
     av_packet_unref(&pkt);
   }
   avio_seek(input_ctx->pb, 0, SEEK_SET);
@@ -168,17 +176,17 @@ bool VideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
 }
 
 bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
-  int from_idx = idx;
+  int current_idx = idx;
   if (idx != reader->prev_idx + 1) {
     // seeking to the nearest key frame
     for (int i = idx; i >= 0; --i) {
       if (reader->packets_info[i].flags & AV_PKT_FLAG_KEY) {
-        from_idx = i;
+        current_idx = i;
         break;
       }
     }
 
-    auto pos = reader->packets_info[from_idx].pos;
+    auto pos = reader->packets_info[current_idx].pos;
     int ret = avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE);
     if (ret < 0) {
       rError("Failed to seek to byte position %lld: %d", pos, AVERROR(ret));
@@ -188,18 +196,27 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   }
   reader->prev_idx = idx;
 
-  bool result = false;
   AVPacket pkt;
-  for (int i = from_idx; i <= idx; ++i) {
-    if (av_read_frame(reader->input_ctx, &pkt) == 0) {
-      AVFrame *f = decodeFrame(&pkt);
-      if (f && i == idx) {
-        result = copyBuffer(f, buf);
-      }
+  while (av_read_frame(reader->input_ctx, &pkt) >= 0) {
+    // Skip non-video packets
+    if (pkt.stream_index != reader->video_stream_idx_) {
       av_packet_unref(&pkt);
+      continue;
+    }
+
+    AVFrame *frame = decodeFrame(&pkt);
+    av_packet_unref(&pkt);
+    if (!frame) {
+      rError("Failed to decode frame at index %d", current_idx);
+      return false;
+    }
+
+    if (current_idx++ == idx) {
+      return copyBuffer(frame, buf);
     }
   }
-  return result;
+  rError("Failed to find frame at index %d", idx);
+  return false;
 }
 
 AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {

@@ -1,6 +1,5 @@
 import copy
-from opendbc.can.parser import CANParser
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker, CANParser
 
 
 class TestCanChecksums:
@@ -16,14 +15,14 @@ class TestCanChecksums:
 
     for data in test_messages:
       expected_msg = (msg_addr, data, 0)
-      parser.update_strings([0, [expected_msg]])
+      parser.update([0, [expected_msg]])
       expected = copy.deepcopy(parser.vl[msg_name])
 
       modified = copy.deepcopy(expected)
       modified.pop(checksum_field, None)
       modified_msg = packer.make_can_msg(msg_name, 0, modified)
 
-      parser.update_strings([0, [modified_msg]])
+      parser.update([0, [modified_msg]])
       tested = parser.vl[msg_name]
       with subtests.test(counter=expected[counter_field]):
         assert tested[checksum_field] == expected[checksum_field]
@@ -85,7 +84,7 @@ class TestCanChecksums:
         packer.make_can_msg("LKAS_HUD", 0, values),
         packer.make_can_msg("LKAS_HUD_A", 0, values),
       ]
-      parser.update_strings([0, msgs])
+      parser.update([0, msgs])
 
       assert parser.vl['LKAS_HUD']['CHECKSUM'] == std
       assert parser.vl['LKAS_HUD_A']['CHECKSUM'] == ext

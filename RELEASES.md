@@ -1,10 +1,24 @@
+Version 0.10.0 (2025-08-05)
+========================
+* New driving model
+  * New training architecture
+     * Described in our CVPR paper: "Learning to Drive from a World Model"
+     * Longitudinal MPC replaced by E2E planning from World Model in Experimental Mode
+     * Action from lateral MPC as training objective replaced by E2E planning from World Model
+  * Low-speed lead car ground-truth fixes
+* Enable live-learned steering actuation delay
+* Opt-in audio recording for dashcam video
+* Acura MDX 2025 support thanks to vanillagorillaa and MVL!
+* Honda Accord 2023-25 support thanks to vanillagorillaa and MVL!
+* Honda CR-V 2023-25 support thanks to vanillagorillaa and MVL!
+* Honda Pilot 2023-25 support thanks to vanillagorillaa and MVL!
+
 Version 0.9.9 (2025-05-23)
 ========================
 * New driving model
   * New training architecture using parts from MLSIM
 * Steering actuation delay is now learned online
 * Ford Escape 2023-24 support thanks to incognitojam!
-* Ford Expedition 2022-24 support thanks to alan-polk!
 * Ford Kuga 2024 support thanks to incognitojam!
 * Hyundai Nexo 2021 support thanks to sunnyhaibin!
 * Tesla Model 3 and Y support thanks to lukasloetkolben!

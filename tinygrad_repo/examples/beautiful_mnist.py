@@ -1,12 +1,12 @@
 # model based off https://medium.com/data-science/going-beyond-99-mnist-handwritten-digits-recognition-cfff96337392
-from typing import List, Callable
+from typing import Callable
 from tinygrad import Tensor, TinyJit, nn, GlobalCounters
 from tinygrad.helpers import getenv, colored, trange
 from tinygrad.nn.datasets import mnist
 
 class Model:
   def __init__(self):
-    self.layers: List[Callable[[Tensor], Tensor]] = [
+    self.layers: list[Callable[[Tensor], Tensor]] = [
       nn.Conv2d(1, 32, 5), Tensor.relu,
       nn.Conv2d(32, 32, 5), Tensor.relu,
       nn.BatchNorm(32), Tensor.max_pool2d,
@@ -21,20 +21,17 @@ if __name__ == "__main__":
   X_train, Y_train, X_test, Y_test = mnist(fashion=getenv("FASHION"))
 
   model = Model()
-  opt = nn.optim.Adam(nn.state.get_parameters(model))
+  opt = (nn.optim.Adam if not getenv("MUON") else nn.optim.Muon)(nn.state.get_parameters(model))
 
   @TinyJit
   @Tensor.train()
   def train_step() -> Tensor:
     opt.zero_grad()
     samples = Tensor.randint(getenv("BS", 512), high=X_train.shape[0])
-    # TODO: this "gather" of samples is very slow. will be under 5s when this is fixed
     loss = model(X_train[samples]).sparse_categorical_crossentropy(Y_train[samples]).backward()
-    opt.step()
-    return loss
+    return loss.realize(*opt.schedule_step())
 
   @TinyJit
-  @Tensor.test()
   def get_test_acc() -> Tensor: return (model(X_test).argmax(axis=1) == Y_test).mean()*100
 
   test_acc = float('nan')

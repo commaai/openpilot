@@ -53,7 +53,7 @@ class TestPickle(unittest.TestCase):
   def test_pickle_realized_tensor_alt2(self):
     print("** init")
     t = Tensor.rand(10, 10).to("CPU").realize()
-    tensor_uop = t.lazydata
+    tensor_uop = t.uop
     assert tensor_uop.is_realized, f"expected {tensor_uop} to be realized"
     t_values = t.numpy()
     # pickle
@@ -63,13 +63,13 @@ class TestPickle(unittest.TestCase):
     del tensor_uop
     print("** post pickle")
     t2:Tensor = pickle.loads(st)
-    assert t2.lazydata.is_realized, f"expected {t2.lazydata} to be realized"
+    assert t2.uop.is_realized, f"expected {t2.uop} to be realized"
     np.testing.assert_equal(t_values, t2.numpy())
 
   # NOTE: currently Buffer exists on the uop, not tensor
   def test_pickle_buffer_uop(self):
     t = Tensor.arange(4).realize()
-    a = t.lazydata
+    a = t.uop
     assert a.op is Ops.BUFFER
     self.assertIsNotNone(buffer:=a.realized)
     s = pickle.dumps(a)
@@ -98,12 +98,12 @@ class TestPickle(unittest.TestCase):
   def test_pickle_buffer_view(self):
     t = Tensor.arange(10, device="CPU").contiguous().realize()
     vt = t[3:5].contiguous().realize()
-    assert hasattr(vt.lazydata.buffer, 'base')
+    assert hasattr(vt.uop.buffer, 'base')
     ref_value = vt.tolist()
     st = pickle.dumps(vt)
     del t, vt
     vt2 = pickle.loads(st)
-    assert hasattr(vt2.lazydata.buffer, 'base')
+    assert hasattr(vt2.uop.buffer, 'base')
     assert ref_value == vt2.tolist()
 
   def test_pickle_numpy(self):

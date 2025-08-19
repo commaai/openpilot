@@ -1,24 +1,25 @@
 from __future__ import annotations
-import ctypes, collections, time, dataclasses, functools, fcntl, os, hashlib
-from tinygrad.helpers import mv_address, getenv, round_up, DEBUG, temp, fetch
+import ctypes, collections, dataclasses, functools, os, hashlib
+from tinygrad.helpers import mv_address, getenv, DEBUG, fetch
 from tinygrad.runtime.autogen.am import am
 from tinygrad.runtime.support.hcq import MMIOInterface
 from tinygrad.runtime.support.amd import AMDReg, import_module, import_asic_regs
-from tinygrad.runtime.support.allocator import TLSFAllocator
+from tinygrad.runtime.support.memory import TLSFAllocator, MemoryManager
+from tinygrad.runtime.support.system import System, PCIDevImplBase
 from tinygrad.runtime.support.am.ip import AM_SOC, AM_GMC, AM_IH, AM_PSP, AM_SMU, AM_GFX, AM_SDMA
 
 AM_DEBUG = getenv("AM_DEBUG", 0)
 
-@dataclasses.dataclass(frozen=True)
+@dataclasses.dataclass
 class AMRegister(AMDReg):
   adev:AMDev
 
-  def read(self): return self.adev.rreg(self.addr)
-  def read_bitfields(self) -> dict[str, int]: return self.decode(self.read())
+  def read(self, inst=0): return self.adev.rreg(self.addr[inst])
+  def read_bitfields(self, inst=0) -> dict[str, int]: return self.decode(self.read(inst=inst))
 
-  def write(self, _am_val:int=0, **kwargs): self.adev.wreg(self.addr, _am_val | self.encode(**kwargs))
+  def write(self, _am_val:int=0, inst=0, **kwargs): self.adev.wreg(self.addr[inst], _am_val | self.encode(**kwargs))
 
-  def update(self, **kwargs): self.write(self.encode(**{**self.read_bitfields(), **kwargs}))
+  def update(self, inst=0, **kwargs): self.write(self.read(inst=inst) & ~self.fields_mask(*kwargs.keys()), inst=inst, **kwargs)
 
 class AMFirmware:
   def __init__(self, adev):
@@ -28,7 +29,7 @@ class AMFirmware:
     # Load SOS firmware
     self.sos_fw = {}
 
-    blob, sos_hdr = self.load_fw(f"psp_{fmt_ver(am.MP0_HWIP)}_sos.bin", am.struct_psp_firmware_header_v2_0)
+    blob, sos_hdr = self.load_fw(f"psp_{fmt_ver(am.MP0_HWIP)}_sos.bin", versioned_header='struct_psp_firmware_header')
     fw_bin = sos_hdr.psp_fw_bin
 
     for fw_i in range(sos_hdr.psp_fw_bin_count):
@@ -44,11 +45,11 @@ class AMFirmware:
     self.smu_psp_desc = self.desc(blob, hdr.header.ucode_array_offset_bytes, hdr.header.ucode_size_bytes, am.GFX_FW_TYPE_SMU)
 
     # SDMA firmware
-    blob, hdr, hdr_v3 = self.load_fw(f"sdma_{fmt_ver(am.SDMA0_HWIP)}.bin", am.struct_sdma_firmware_header_v2_0, am.struct_sdma_firmware_header_v3_0)
+    blob, hdr = self.load_fw(f"sdma_{fmt_ver(am.SDMA0_HWIP)}.bin", versioned_header='struct_sdma_firmware_header')
     if hdr.header.header_version_major < 3:
       self.descs += [self.desc(blob, hdr.ctl_ucode_offset, hdr.ctl_ucode_size_bytes, am.GFX_FW_TYPE_SDMA_UCODE_TH1)]
       self.descs += [self.desc(blob, hdr.header.ucode_array_offset_bytes, hdr.ctx_ucode_size_bytes, am.GFX_FW_TYPE_SDMA_UCODE_TH0)]
-    else: self.descs += [self.desc(blob, hdr_v3.header.ucode_array_offset_bytes, hdr_v3.ucode_size_bytes, am.GFX_FW_TYPE_SDMA_UCODE_TH0)]
+    else: self.descs += [self.desc(blob, hdr.header.ucode_array_offset_bytes, hdr.ucode_size_bytes, am.GFX_FW_TYPE_SDMA_UCODE_TH0)]
 
     # PFP, ME, MEC firmware
     for (fw_name, fw_cnt) in ([('PFP', 1), ('ME', 1)] if self.adev.ip_ver[am.GC_HWIP] >= (12,0,0) else []) + [('MEC', 1)]:
@@ -82,16 +83,16 @@ class AMFirmware:
 
     self.descs += [self.desc(blob, hdr0.header.ucode_array_offset_bytes, hdr0.header.ucode_size_bytes, am.GFX_FW_TYPE_RLC_G)]
 
-  def load_fw(self, fname:str, *headers):
+  def load_fw(self, fname:str, *headers, versioned_header:str|None=None):
     fpath = fetch(f"https://gitlab.com/kernel-firmware/linux-firmware/-/raw/45f59212aebd226c7630aff4b58598967c0c8c91/amdgpu/{fname}", subdir="fw")
     blob = memoryview(bytearray(fpath.read_bytes()))
     if AM_DEBUG >= 1: print(f"am {self.adev.devfmt}: loading firmware {fname}: {hashlib.sha256(blob).hexdigest()}")
+    if versioned_header:
+      chdr = am.struct_common_firmware_header.from_address(mv_address(blob))
+      headers += (getattr(am, versioned_header + f"_v{chdr.header_version_major}_{chdr.header_version_minor}"),)
     return tuple([blob] + [hdr.from_address(mv_address(blob)) for hdr in headers])
 
   def desc(self, blob:memoryview, offset:int, size:int, *types:int) -> tuple[list[int], memoryview]: return (list(types), blob[offset:offset+size])
-
-@dataclasses.dataclass(frozen=True)
-class AMMapping: va_addr:int; size:int; paddrs:list[tuple[int, int]]; uncached:bool=False; system:bool=False; snooped:bool=False # noqa: E702
 
 class AMPageTableEntry:
   def __init__(self, adev, paddr, lv): self.adev, self.paddr, self.lv, self.entries = adev, paddr, lv, adev.vram.view(paddr, 0x1000, fmt='Q')
@@ -100,157 +101,26 @@ class AMPageTableEntry:
     assert paddr & self.adev.gmc.address_space_mask == paddr, f"Invalid physical address {paddr:#x}"
     self.entries[entry_id] = self.adev.gmc.get_pte_flags(self.lv, table, frag, uncached, system, snooped, valid) | (paddr & 0x0000FFFFFFFFF000)
 
-class AMPageTableTraverseContext:
-  def __init__(self, adev, pt, vaddr, create_pts=False, free_pts=False, boot=False):
-    self.adev, self.vaddr, self.create_pts, self.free_pts, self.boot = adev, vaddr - adev.gmc.vm_base, create_pts, free_pts, boot
-    self.pt_stack:list[tuple[AMPageTableEntry, int, int]] = [(pt, self._pt_pte_idx(pt, vaddr), self._pt_pte_size(pt))]
+  def entry(self, entry_id:int) -> int: return self.entries[entry_id]
+  def valid(self, entry_id:int) -> bool: return (self.entries[entry_id] & am.AMDGPU_PTE_VALID) != 0
+  def address(self, entry_id:int) -> int: return self.entries[entry_id] & 0x0000FFFFFFFFF000
+  def is_huge_page(self, entry_id:int) -> bool: return self.lv == am.AMDGPU_VM_PTB or self.adev.gmc.is_pte_huge_page(self.entries[entry_id])
+  def supports_huge_page(self, paddr:int): return self.lv >= am.AMDGPU_VM_PDB2
 
-  def _pt_pte_size(self, pt): return (1 << ((9 * (3-pt.lv)) + 12))
-  def _pt_pte_idx(self, pt, va): return (va // self._pt_pte_size(pt)) % 512
+class AMMemoryManager(MemoryManager):
+  va_allocator = TLSFAllocator(512 * (1 << 30), base=0x200000000000) # global for all devices.
 
-  def level_down(self):
-    pt, pte_idx, _ = self.pt_stack[-1]
-    if (entry:=pt.entries[pte_idx]) & am.AMDGPU_PTE_VALID == 0:
-      assert self.create_pts, "Not allowed to create new page table"
-      pt.set_entry(pte_idx, self.adev.mm.palloc(0x1000, zero=True, boot=self.boot), table=True, valid=True)
-      entry = pt.entries[pte_idx]
-
-    assert not self.adev.gmc.is_pte_huge_page(entry), f"Must be table pt={pt.paddr:#x}, {pte_idx=} {entry=:#x}"
-    child_page_table = AMPageTableEntry(self.adev, entry & 0x0000FFFFFFFFF000, lv=pt.lv+1)
-
-    self.pt_stack.append((child_page_table, self._pt_pte_idx(child_page_table, self.vaddr), self._pt_pte_size(child_page_table)))
-    return self.pt_stack[-1]
-
-  def _try_free_pt(self) -> bool:
-    pt, _, _ = self.pt_stack[-1]
-    if self.free_pts and pt != self.adev.mm.root_page_table and all(pt.entries[i] & am.AMDGPU_PTE_VALID == 0 for i in range(512)):
-      self.adev.mm.pfree(pt.paddr)
-      parent_pt, parent_pte_idx, _ = self.pt_stack[-2]
-      parent_pt.set_entry(parent_pte_idx, 0x0, valid=False)
-      return True
-    return False
-
-  def level_up(self):
-    while self._try_free_pt() or self.pt_stack[-1][1] == 512:
-      _, pt_cnt, _ = self.pt_stack.pop()
-      if pt_cnt == 512: self.pt_stack[-1] = (self.pt_stack[-1][0], self.pt_stack[-1][1] + 1, self.pt_stack[-1][2])
-
-  def next(self, size:int, off=0):
-    while size > 0:
-      pt, pte_idx, pte_covers = self.pt_stack[-1]
-      if self.create_pts:
-        while pte_covers > size: pt, pte_idx, pte_covers = self.level_down()
-      else:
-        while pt.lv!=am.AMDGPU_VM_PTB and not self.adev.gmc.is_pte_huge_page(pt.entries[pte_idx]): pt, pte_idx, pte_covers = self.level_down()
-
-      entries = min(size // pte_covers, 512 - pte_idx)
-      assert entries > 0, "Invalid entries"
-      yield off, pt, pte_idx, entries, pte_covers
-
-      size, off, self.vaddr = size - entries * pte_covers, off + entries * pte_covers, self.vaddr + entries * pte_covers
-      self.pt_stack[-1] = (pt, pte_idx + entries, pte_covers)
-      self.level_up()
-
-class AMMemoryManager:
-  va_allocator = TLSFAllocator(512 * (1 << 30), base=0x7F0000000000) # global for all devices.
-
-  def __init__(self, adev:AMDev, vram_size:int):
-    self.adev, self.vram_size = adev, vram_size
-    self.boot_allocator = TLSFAllocator(32 << 20, base=0) # per device
-    self.pa_allocator = TLSFAllocator(vram_size - (64 << 20), base=self.boot_allocator.size) # per device
-    self.root_page_table = AMPageTableEntry(self.adev, self.palloc(0x1000, zero=not self.adev.smi_dev, boot=True), lv=am.AMDGPU_VM_PDB1)
-
-  def _frag_size(self, va, sz, must_cover=True):
-    """
-    Calculate the tlb fragment size for a given virtual address and size.
-    If must_cover is True, the fragment size must cover the size, otherwise the biggest fragment size that fits the size is returned.
-    Fragment 0 is 4KB, 1 is 8KB and so on.
-    """
-    va_pwr2_div, sz_pwr2_div, sz_pwr2_max = va & -(va) if va > 0 else (1 << 63), sz & -(sz), (1 << (sz.bit_length() - 1))
-    return (min(va_pwr2_div, sz_pwr2_div) if must_cover else min(va_pwr2_div, sz_pwr2_max)).bit_length() - 1 - 12
-
-  def map_range(self, vaddr:int, size:int, paddrs:list[tuple[int, int]], uncached=False, system=False, snooped=False, boot=False) -> AMMapping:
-    if AM_DEBUG >= 2: print(f"am {self.adev.devfmt}: mapping {vaddr=:#x} ({size=:#x})")
-
-    assert size == sum(p[1] for p in paddrs), f"Size mismatch {size=} {sum(p[1] for p in paddrs)=}"
-
-    ctx = AMPageTableTraverseContext(self.adev, self.root_page_table, vaddr, create_pts=True, boot=boot)
-    for paddr, psize in paddrs:
-      for off, pt, pte_idx, pte_cnt, pte_covers in ctx.next(psize):
-        for pte_off in range(pte_cnt):
-          assert pt.entries[pte_idx + pte_off] & am.AMDGPU_PTE_VALID == 0, f"PTE already mapped: {pt.entries[pte_idx + pte_off]:#x}"
-          pt.set_entry(pte_idx + pte_off, paddr + off + pte_off * pte_covers, uncached=uncached, system=system, snooped=snooped,
-                       frag=self._frag_size(ctx.vaddr+off, pte_cnt * pte_covers), valid=True)
-
+  def on_range_mapped(self):
     # Invalidate TLB after mappings.
-    self.adev.gmc.flush_tlb(ip='GC', vmid=0)
-    self.adev.gmc.flush_tlb(ip='MM', vmid=0)
-    return AMMapping(vaddr, size, paddrs, uncached=uncached, system=system, snooped=snooped)
+    self.dev.gmc.flush_tlb(ip='GC', vmid=0)
+    self.dev.gmc.flush_tlb(ip='MM', vmid=0)
 
-  def unmap_range(self, vaddr:int, size:int):
-    if AM_DEBUG >= 2: print(f"am {self.adev.devfmt}: unmapping {vaddr=:#x} ({size=:#x})")
+class AMDev(PCIDevImplBase):
+  Version = 0xA0000006
 
-    ctx = AMPageTableTraverseContext(self.adev, self.root_page_table, vaddr, free_pts=True)
-    for off, pt, pte_idx, pte_cnt, pte_covers in ctx.next(size):
-      for pte_id in range(pte_idx, pte_idx + pte_cnt):
-        assert pt.entries[pte_id] & am.AMDGPU_PTE_VALID == am.AMDGPU_PTE_VALID, f"PTE not mapped: {pt.entries[pte_id]:#x}"
-        pt.set_entry(pte_id, paddr=0x0, valid=False)
-
-  @staticmethod
-  def alloc_vaddr(size:int, align=0x1000) -> int: return AMMemoryManager.va_allocator.alloc(size, max((1 << (size.bit_length() - 1)), align))
-
-  def valloc(self, size:int, align=0x1000, uncached=False, contigous=False) -> AMMapping:
-    # Alloc physical memory and map it to the virtual address
-    va = self.alloc_vaddr(size:=round_up(size, 0x1000), align)
-
-    if contigous: paddrs = [(self.palloc(size, zero=True), size)]
-    else:
-      # Traverse the PT to find the largest contiguous sizes we need to allocate. Try to allocate the longest segment to reduce TLB pressure.
-      paddrs = []
-      ctx = AMPageTableTraverseContext(self.adev, self.root_page_table, va, create_pts=True)
-      for off, _, _, seg_cnt, seg_size in ctx.next(size):
-        rem_len = seg_cnt * seg_size
-        while rem_len > 0:
-          # Try to allocate as long segment (power of 2) as possible
-          cont_seg_sz, paddr = 1 << (self._frag_size(ctx.vaddr+off, rem_len) + 12), None
-          while cont_seg_sz >= 0x1000:
-            try: paddr = self.palloc(cont_seg_sz, zero=False)
-            except MemoryError: cont_seg_sz //= 2
-            else: break
-
-          if paddr is not None: paddrs += [(paddr, cont_seg_sz)]
-          else:
-            for paddr, _ in paddrs: self.pa_allocator.free(paddr)
-            raise MemoryError(f"Failed to allocate a contiguous page. (allocation size={size:#x})")
-          rem_len, off = rem_len - cont_seg_sz, off + cont_seg_sz
-
-    return self.map_range(va, size, paddrs, uncached=uncached)
-
-  def vfree(self, vm:AMMapping):
-    self.unmap_range(vm.va_addr, vm.size)
-    self.va_allocator.free(vm.va_addr)
-    for paddr, _ in vm.paddrs: self.pa_allocator.free(paddr)
-
-  def palloc(self, size:int, align:int=0x1000, zero=True, boot=False) -> int:
-    assert self.adev.is_booting == boot, "During booting, only boot memory can be allocated"
-    paddr = (self.boot_allocator if boot else self.pa_allocator).alloc(round_up(size, 0x1000), align)
-    if zero: self.adev.vram[paddr:paddr+size] = bytes(size)
-    return paddr
-
-  def pfree(self, paddr:int): self.pa_allocator.free(paddr)
-
-class AMDev:
   def __init__(self, devfmt, vram:MMIOInterface, doorbell:MMIOInterface, mmio:MMIOInterface, dma_regions:list[tuple[int, MMIOInterface]]|None=None):
     self.devfmt, self.vram, self.doorbell64, self.mmio, self.dma_regions = devfmt, vram, doorbell, mmio, dma_regions
-
-    os.umask(0) # Set umask to 0 to allow creating files with 0666 permissions
-
-    # Avoid O_CREAT because we don’t want to re-create/replace an existing file (triggers extra perms checks) when opening as non-owner.
-    if os.path.exists(lock_name:=temp(f"am_{self.devfmt}.lock")): self.lock_fd = os.open(lock_name, os.O_RDWR)
-    else: self.lock_fd = os.open(lock_name, os.O_RDWR | os.O_CREAT | os.O_CLOEXEC, 0o666)
-
-    try: fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-    except OSError: raise RuntimeError(f"Failed to open AM device {self.devfmt}. It's already in use.")
+    self.lock_fd = System.flock_acquire(f"am_{self.devfmt}.lock")
 
     self._run_discovery()
     self._build_regs()
@@ -264,28 +134,13 @@ class AMDev:
     # To enable this, AM uses a separate boot memory that is guaranteed not to be overwritten. This physical memory is utilized for
     # all blocks that are initialized only during the initial AM boot.
     # To determine if the GPU is in the third state, AM uses regSCRATCH_REG7 as a flag.
-    self.is_booting, self.smi_dev = True, False # During boot only boot memory can be allocated. This flag is to validate this.
-    self.partial_boot = (self.reg("regSCRATCH_REG7").read() == (am_version:=0xA0000004)) and (getenv("AM_RESET", 0) != 1)
+    self.is_booting = True
+    self.init_sw(smi_dev=False)
 
-    # Memory manager & firmware
-    self.mm = AMMemoryManager(self, self.vram_size)
-    self.fw = AMFirmware(self)
-
-    # Initialize IP blocks
-    self.soc:AM_SOC = AM_SOC(self)
-    self.gmc:AM_GMC = AM_GMC(self)
-    self.ih:AM_IH = AM_IH(self)
-    self.psp:AM_PSP = AM_PSP(self)
-    self.smu:AM_SMU = AM_SMU(self)
-    self.gfx:AM_GFX = AM_GFX(self)
-    self.sdma:AM_SDMA = AM_SDMA(self)
-
-    if self.partial_boot and (self.reg("regGCVM_CONTEXT0_CNTL").read() != 0):
-      if DEBUG >= 2: print(f"am {self.devfmt}: MEC is active. Issue a full reset.")
+    self.partial_boot = (self.reg("regSCRATCH_REG7").read() == AMDev.Version) and (getenv("AM_RESET", 0) != 1)
+    if self.partial_boot and (self.reg("regGCVM_CONTEXT0_CNTL").read() != 0 or self.reg(self.gmc.pf_status_reg("GC")).read() != 0):
+      if DEBUG >= 2: print(f"am {self.devfmt}: Malformed state. Issuing a full reset.")
       self.partial_boot = False
-
-    # Init sw for all IP blocks
-    for ip in [self.soc, self.gmc, self.ih, self.psp, self.smu, self.gfx, self.sdma]: ip.init_sw()
 
     # Init hw for IP blocks where it is needed
     if not self.partial_boot:
@@ -304,8 +159,29 @@ class AMDev:
 
     self.smu.set_clocks(level=-1) # last level, max perf.
     for ip in [self.soc, self.gfx]: ip.set_clockgating_state()
-    self.reg("regSCRATCH_REG7").write(am_version)
+    self.reg("regSCRATCH_REG7").write(AMDev.Version)
     if DEBUG >= 2: print(f"am {self.devfmt}: boot done")
+
+  def init_sw(self, smi_dev=False):
+    self.smi_dev = smi_dev # During boot only boot memory can be allocated. This flag is to validate this.
+
+    # Memory manager & firmware
+    self.mm = AMMemoryManager(self, self.vram_size, boot_size=(32 << 20), pt_t=AMPageTableEntry, va_shifts=[12, 21, 30, 39], va_bits=48,
+      first_lv=am.AMDGPU_VM_PDB2, va_base=AMMemoryManager.va_allocator.base,
+      palloc_ranges=[(1 << (i + 12), 0x1000) for i in range(9 * (3 - am.AMDGPU_VM_PDB2), -1, -1)])
+    self.fw = AMFirmware(self)
+
+    # Initialize IP blocks
+    self.soc:AM_SOC = AM_SOC(self)
+    self.gmc:AM_GMC = AM_GMC(self)
+    self.ih:AM_IH = AM_IH(self)
+    self.psp:AM_PSP = AM_PSP(self)
+    self.smu:AM_SMU = AM_SMU(self)
+    self.gfx:AM_GFX = AM_GFX(self)
+    self.sdma:AM_SDMA = AM_SDMA(self)
+
+    # Init sw for all IP blocks
+    for ip in [self.soc, self.gmc, self.ih, self.psp, self.smu, self.gfx, self.sdma]: ip.init_sw()
 
   def fini(self):
     if DEBUG >= 2: print(f"am {self.devfmt}: Finalizing")
@@ -341,12 +217,6 @@ class AMDev:
     self.reg("regBIF_BX_PF0_RSMU_INDEX").write(reg)
     self.reg("regBIF_BX_PF0_RSMU_DATA").write(val)
 
-  def wait_reg(self, reg:AMRegister, value:int, mask=0xffffffff, timeout=10000) -> int:
-    start_time = int(time.perf_counter() * 1000)
-    while int(time.perf_counter() * 1000) - start_time < timeout:
-      if ((rval:=reg.read()) & mask) == value: return rval
-    raise RuntimeError(f'wait_reg timeout reg=0x{reg.addr:X} mask=0x{mask:X} value=0x{value:X} last_val=0x{rval}')
-
   def _run_discovery(self):
     # NOTE: Fixed register to query memory size without known ip bases to find the discovery table.
     #       The table is located at the end of VRAM - 64KB and is 10KB in size.
@@ -356,7 +226,7 @@ class AMDev:
 
     self.bhdr = am.struct_binary_header.from_buffer(bytearray(self.vram.view(tmr_offset, tmr_size)[:]))
     ihdr = am.struct_ip_discovery_header.from_address(ctypes.addressof(self.bhdr) + self.bhdr.table_list[am.IP_DISCOVERY].offset)
-    assert ihdr.signature == am.DISCOVERY_TABLE_SIGNATURE and not ihdr.base_addr_64_bit, f"0x{ihdr.signature:X} != 0x{am.DISCOVERY_TABLE_SIGNATURE:X}"
+    assert self.bhdr.binary_signature == am.BINARY_SIGNATURE and ihdr.signature == am.DISCOVERY_TABLE_SIGNATURE, "discovery signatures mismatch"
 
     # Mapping of HW IP to Discovery HW IP
     hw_id_map = {am.__dict__[x]: int(y) for x,y in am.hw_id_map}
@@ -387,6 +257,5 @@ class AMDev:
       ("nbio" if self.ip_ver[am.GC_HWIP] < (12,0,0) else "nbif", am.NBIO_HWIP)]
 
     for prefix, hwip in mods:
-      self.__dict__.update(import_asic_regs(prefix, self.ip_ver[hwip], cls=functools.partial(AMRegister, adev=self, bases=self.regs_offset[hwip][0])))
-    self.__dict__.update(import_asic_regs('mp', (11, 0), cls=functools.partial(AMRegister, adev=self, bases=self.regs_offset[am.MP1_HWIP][0])))
-
+      self.__dict__.update(import_asic_regs(prefix, self.ip_ver[hwip], cls=functools.partial(AMRegister, adev=self, bases=self.regs_offset[hwip])))
+    self.__dict__.update(import_asic_regs('mp', (11, 0), cls=functools.partial(AMRegister, adev=self, bases=self.regs_offset[am.MP1_HWIP])))

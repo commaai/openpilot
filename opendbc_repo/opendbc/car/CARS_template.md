@@ -47,20 +47,11 @@ Supported Models' section of each make [on our wiki](https://wiki.comma.ai/).
 
 Some notable works-in-progress:
 * Honda
-  * 2024 Acura Integra, commaai/openpilot#32056
-  * 2023-24 Honda Accord (CAN-FD), commaai/openpilot#32229
-  * 2024 Honda CR-V (CAN-FD), commaai/openpilot#32806
-  * 2024 Honda CR-V Hybrid (CAN-FD), commaai/openpilot#31527
-    * Depends on commaai/opendbc#1100
-  * 2021-25 Honda Odyssey, commaai/opendbc#1330
-  * 2023-24 Honda Pilot (CAN-FD), commaai/openpilot#30324
-  * Camera ACC stability improvements, commaai/openpilot#31022
-    * Depends on commaai/panda#1814
-    * Depends on commaai/opendbc#998
-    * These are being reworked for full-time proxy through openpilot
-  * Manual transmission support (Civic, Integra)
-    * Depends on commaai/opendbc#1034 (merged)
-    * Car port support PR not yet filed
+  * 2025 Acura MDX (CAN-FD), commaai/opendbc#2129
+  * 2022-25 Acura RDX, commaai/opendbc#1967
+  * 2021-25 Honda Odyssey, commaai/opendbc#2170
+  * Camera ACC stability improvements, commaai/opendbc#2192
+  * Alpha longitudinal stability improvements, commaai/opendbc#2347 and commaai/opendbc#2165
 
 ## Incompatible
 

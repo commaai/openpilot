@@ -8,10 +8,6 @@
         <translation>Fechar</translation>
     </message>
     <message>
-        <source>Snooze Update</source>
-        <translation>Adiar Atualização</translation>
-    </message>
-    <message>
         <source>Reboot and Update</source>
         <translation>Reiniciar e Atualizar</translation>
     </message>
@@ -247,10 +243,6 @@
         <translation>Desligar</translation>
     </message>
     <message>
-        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down. openpilot is continuously calibrating, resetting is rarely required.</source>
-        <translation>O openpilot requer que o dispositivo seja montado dentro de 4° esquerda ou direita e dentro de 5° para cima ou 9° para baixo. O openpilot está continuamente calibrando, resetar raramente é necessário.</translation>
-    </message>
-    <message>
         <source> Your device is pointed %1° %2 and %3° %4.</source>
         <translation> Seu dispositivo está montado %1° %2 e %3° %4.</translation>
     </message>
@@ -311,8 +303,36 @@
         <translation>Desacione para Resetar a Calibração</translation>
     </message>
     <message>
-        <source> Resetting calibration will restart openpilot if the car is powered on.</source>
-        <translation> Resetar a calibração fará com que o openpilot reinicie se o carro estiver ligado.</translation>
+        <source>openpilot requires the device to be mounted within 4° left or right and within 5° up or 9° down.</source>
+        <translation>O openpilot exige que o dispositivo seja montado dentro de 4° para a esquerda ou direita e dentro de 5° para cima ou 9° para baixo.</translation>
+    </message>
+    <message>
+        <source>openpilot is continuously calibrating, resetting is rarely required. Resetting calibration will restart openpilot if the car is powered on.</source>
+        <translation>O openpilot está em constante calibração, raramente sendo necessário redefini-lo. Redefinir a calibração reiniciará o openpilot se o carro estiver ligado.</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is %1% complete.</source>
+        <translation>
+
+A calibração do atraso da direção está %1% concluída.</translation>
+    </message>
+    <message>
+        <source>
+
+Steering lag calibration is complete.</source>
+        <translation>
+
+A calibração do atraso da direção foi concluída.</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is %1% complete.</source>
+        <translation> A calibração da resposta de torque da direção está %1% concluída.</translation>
+    </message>
+    <message>
+        <source> Steering torque response calibration is complete.</source>
+        <translation> A calibração da resposta do torque da direção foi concluída.</translation>
     </message>
 </context>
 <context>
@@ -335,10 +355,6 @@
 </context>
 <context>
     <name>FirehosePanel</name>
-    <message>
-        <source>🔥 Firehose Mode 🔥</source>
-        <translation>🔥 Modo Firehose 🔥</translation>
-    </message>
     <message>
         <source>openpilot learns to drive by watching humans, like you, drive.
 
@@ -369,6 +385,10 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message>
         <source>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INACTIVE&lt;/span&gt;: connect to an unmetered network</source>
         <translation>&lt;span stylesheet=&apos;font-size: 60px; font-weight: bold; color: #e74c3c;&apos;&gt;INATIVO&lt;/span&gt;: conecte-se a uma rede sem limite &lt;br&gt; de dados</translation>
+    </message>
+    <message>
+        <source>Firehose Mode</source>
+        <translation>Modo Firehose</translation>
     </message>
 </context>
 <context>
@@ -455,16 +475,8 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <translation>Uma atualização para o sistema operacional do seu dispositivo está sendo baixada em segundo plano. Você será solicitado a atualizar quando estiver pronto para instalar.</translation>
     </message>
     <message>
-        <source>Device failed to register. It will not connect to or upload to comma.ai servers, and receives no support from comma.ai. If this is an official device, visit https://comma.ai/support.</source>
-        <translation>Falha ao registrar o dispositivo. Ele não se conectará ou fará upload para os servidores comma.ai e não receberá suporte da comma.ai. Se este for um dispositivo oficial, visite https://comma.ai/support.</translation>
-    </message>
-    <message>
         <source>NVMe drive not mounted.</source>
         <translation>Unidade NVMe não montada.</translation>
-    </message>
-    <message>
-        <source>Unsupported NVMe drive detected. Device may draw significantly more power and overheat due to the unsupported NVMe.</source>
-        <translation>Unidade NVMe não suportada detectada. O dispositivo pode consumir significativamente mais energia e superaquecimento devido ao NVMe não suportado.</translation>
     </message>
     <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
@@ -477,6 +489,22 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message>
         <source>Device temperature too high. System cooling down before starting. Current internal component temperature: %1</source>
         <translation>Temperatura do dispositivo muito alta. O sistema está sendo resfriado antes de iniciar. A temperatura atual do componente interno é: %1</translation>
+    </message>
+    <message>
+        <source>Device failed to register with the comma.ai backend. It will not connect or upload to comma.ai servers, and receives no support from comma.ai. If this is a device purchased at comma.ai/shop, open a ticket at https://comma.ai/support.</source>
+        <translation>O dispositivo não conseguiu se registrar no backend da comma.ai. Ele não se conecta nem faz upload para os servidores da comma.ai e não recebe suporte da comma.ai. Se este for um dispositivo adquirido em comma.ai/shop, abra um ticket em https://comma.ai/support.</translation>
+    </message>
+    <message>
+        <source>Acknowledge Excessive Actuation</source>
+        <translation>Reconhecer Atuação Excessiva</translation>
+    </message>
+    <message>
+        <source>Snooze Update</source>
+        <translation>Adiar Atualização</translation>
+    </message>
+    <message>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation>openpilot detectou atuação excessiva de %1 na sua última condução. Entre em contato com o suporte em https://comma.ai/support e compartilhe o Dongle ID do seu dispositivo para solução de problemas.</translation>
     </message>
 </context>
 <context>
@@ -626,47 +654,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     </message>
 </context>
 <context>
-    <name>Reset</name>
-    <message>
-        <source>Reset failed. Reboot to try again.</source>
-        <translation>Reset falhou. Reinicie para tentar novamente.</translation>
-    </message>
-    <message>
-        <source>Are you sure you want to reset your device?</source>
-        <translation>Tem certeza que quer resetar seu dispositivo?</translation>
-    </message>
-    <message>
-        <source>System Reset</source>
-        <translation>Resetar Sistema</translation>
-    </message>
-    <message>
-        <source>Cancel</source>
-        <translation>Cancelar</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Confirm</source>
-        <translation>Confirmar</translation>
-    </message>
-    <message>
-        <source>Unable to mount data partition. Partition may be corrupted. Press confirm to erase and reset your device.</source>
-        <translation>Não é possível montar a partição de dados. Partição corrompida. Confirme para apagar e redefinir o dispositivo.</translation>
-    </message>
-    <message>
-        <source>Resetting device...
-This may take up to a minute.</source>
-        <translation>Redefinindo o dispositivo
-Isso pode levar até um minuto.</translation>
-    </message>
-    <message>
-        <source>System reset triggered. Press confirm to erase all content and settings. Press cancel to resume boot.</source>
-        <translation>Reinicialização do sistema acionada. Pressione confirmar para apagar todo o conteúdo e configurações. Pressione cancel para retomar a inicialização.</translation>
-    </message>
-</context>
-<context>
     <name>SettingsWindow</name>
     <message>
         <source>×</source>
@@ -695,101 +682,6 @@ Isso pode levar até um minuto.</translation>
     <message>
         <source>Firehose</source>
         <translation>Firehose</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>ALERTA: Baixa Voltagem</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Ligue seu dispositivo em um carro com um chicote ou prossiga por sua conta e risco.</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>Desligar</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Continuar</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>Começando</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>Antes de pegarmos a estrada, vamos terminar a instalação e cobrir alguns detalhes.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conectar ao Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Voltar</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>Continuar sem Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>Esperando pela internet</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>Preencher URL</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>para o Software Customizado</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>Baixando...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>Download Falhou</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Garanta que a URL inserida é valida, e uma boa conexão à internet.</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>Reiniciar Dispositivo</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>Inicializar</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>Não há software personalizado nesta URL.</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>Algo deu errado. Reinicie o dispositivo.</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>Selecione o Idioma</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>Escolha o Software a ser Instalado</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Software Customizado</translation>
     </message>
 </context>
 <context>
@@ -1136,40 +1028,25 @@ Isso pode levar até um minuto.</translation>
         <source> Changing this setting will restart openpilot if the car is powered on.</source>
         <translation> Alterar esta configuração fará com que o openpilot reinicie se o carro estiver ligado.</translation>
     </message>
-</context>
-<context>
-    <name>Updater</name>
     <message>
-        <source>Update Required</source>
-        <translation>Atualização Necessária</translation>
+        <source>Record and Upload Microphone Audio</source>
+        <translation>Gravar e Fazer Upload do Áudio do Microfone</translation>
     </message>
     <message>
-        <source>An operating system update is required. Connect your device to Wi-Fi for the fastest update experience. The download size is approximately 1GB.</source>
-        <translation>Uma atualização do sistema operacional é necessária. Conecte seu dispositivo ao Wi-Fi para a experiência de atualização mais rápida. O tamanho do download é de aproximadamente 1GB.</translation>
+        <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation>Grave e armazene o áudio do microfone enquanto estiver dirigindo. O áudio será incluído ao vídeo dashcam no comma connect.</translation>
     </message>
     <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conecte-se ao Wi-Fi</translation>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation>Gravar feedback de áudio com o botão LKAS</translation>
     </message>
     <message>
-        <source>Install</source>
-        <translation>Instalar</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Voltar</translation>
-    </message>
-    <message>
-        <source>Loading...</source>
-        <translation>Carregando...</translation>
-    </message>
-    <message>
-        <source>Reboot</source>
-        <translation>Reiniciar</translation>
-    </message>
-    <message>
-        <source>Update failed</source>
-        <translation>Falha na atualização</translation>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation>Pressione o botão LKAS para gravar e compartilhar feedback de direção com a equipe do openpilot. Quando esta opção estiver desativada, o botão funcionará como um botão de marcador. O evento será destacado no comma connect e o segmento será preservado no armazenamento do seu dispositivo.
+
+Observe que este recurso é compatível apenas com alguns modelos de carros.</translation>
     </message>
 </context>
 <context>

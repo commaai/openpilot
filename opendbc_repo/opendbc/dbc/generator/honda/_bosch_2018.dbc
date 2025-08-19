@@ -37,13 +37,18 @@ BO_ 399 STEER_STATUS: 7 EPS
  SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
  SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
 
-BO_ 450 EPB_STATUS: 8 EPB
- SG_ EPB_ACTIVE : 3|1@0+ (1,0) [0|1] "" EON
- SG_ EPB_STATE : 29|2@0+ (1,0) [0|3] "" EON
- SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
- SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+BO_ 446 BRAKE_MODULE: 3 VSA
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRUISE_FAULT : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
 
-BO_ 545 XXX_16: 6 SCM
+BO_ 506 LEGACY_BRAKE_COMMAND: 8 ADAS
+ SG_ CHIME : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 545 ECON_STATUS: 6 SCM
  SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" XXX
  SG_ DRIVE_MODE : 37|2@0+ (1,0) [0|3] "" XXX
  SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" BDY
@@ -133,6 +138,8 @@ BO_ 662 SCM_BUTTONS: 4 SCM
 
 BO_ 806 SCM_FEEDBACK: 8 SCM
  SG_ DRIVERS_DOOR_OPEN : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ REVERSE_LIGHT : 18|1@0+ (1,0) [0|1] "" EON
+ SG_ PARKING_BRAKE_ON : 29|1@0+ (1,0) [0|1] "" XXX
  SG_ MAIN_ON : 28|1@0+ (1,0) [0|1] "" EON
  SG_ RIGHT_BLINKER : 27|1@0+ (1,0) [0|1] "" EON
  SG_ LEFT_BLINKER : 26|1@0+ (1,0) [0|1] "" EON
@@ -209,7 +216,6 @@ BO_ 13275 LKAS_HUD_B: 8 ADAS
  SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
  SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
 
-CM_ SG_ 450 EPB_STATE "3: On, 2: Disengaging, 1: Engaging, 0: Off";
 CM_ SG_ 576 LINE_DISTANCE_VISIBLE "Length of line visible, undecoded";
 CM_ SG_ 577 LINE_FAR_EDGE_POSITION "Appears to be a measure of line thickness, indicates location of the portion of the line furthest from the car, undecoded";
 CM_ SG_ 577 LINE_PARAMETER "Unclear if this is low quality line curvature rate or if this is something else, but it is correlated with line curvature, undecoded";
@@ -217,5 +223,8 @@ CM_ SG_ 577 LINE_DASHED "1 = line is dashed";
 CM_ SG_ 577 LINE_SOLID "1 = line is solid";
 
 VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal";
+VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
+VAL_ 806 CMBS_STATES 3 "pressed" 0 "released" ;
 VAL_ 862 SPEED_LIMIT_SIGN 97 "SPEED_LIMIT_5" 98 "SPEED_LIMIT_10" 99 "SPEED_LIMIT_15" 100 "SPEED_LIMIT_20" 101 "SPEED_LIMIT_25" 102 "SPEED_LIMIT_30" 103 "SPEED_LIMIT_35" 104 "SPEED_LIMIT_40" 105 "SPEED_LIMIT_45" 106 "SPEED_LIMIT_50" 107 "SPEED_LIMIT_55" 108 "SPEED_LIMIT_60" 109 "SPEED_LIMIT_65" 110 "SPEED_LIMIT_70" 111 "SPEED_LIMIT_75" 112 "SPEED_LIMIT_80" 113 "SPEED_LIMIT_85" 125 "SPEED_LIMIT_NA" 0 "STOP_SIGN";
 VAL_ 862 ROAD_SIGN 0 "NO_SIGN" 89 "STOP_SIGN";

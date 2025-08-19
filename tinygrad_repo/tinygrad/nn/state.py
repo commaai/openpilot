@@ -1,6 +1,6 @@
 import json, pathlib, zipfile, pickle, tarfile, struct, functools, io
 from collections import OrderedDict
-from typing import Union, Optional, Any, Callable, BinaryIO, Iterable
+from typing import Any, Callable, BinaryIO, Iterable
 from tinygrad.tensor import Tensor
 from tinygrad.dtype import dtypes
 from tinygrad.helpers import prod, argsort, DEBUG, Timing, CI, unwrap, GlobalCounters, tqdm, round_up, T
@@ -35,9 +35,9 @@ safe_dtypes = {"BOOL":dtypes.bool, "I8":dtypes.int8, "U8":dtypes.uint8, "I16":dt
                "I64":dtypes.int64, "U64":dtypes.uint64, "F16":dtypes.float16, "BF16":dtypes.bfloat16, "F32":dtypes.float32, "F64":dtypes.float64}
 inverse_safe_dtypes = {v:k for k,v in safe_dtypes.items()}
 
-def accept_filename(func: Callable[[Tensor], T]) -> Callable[[Union[Tensor, str, pathlib.Path]], T]:
+def accept_filename(func: Callable[[Tensor], T]) -> Callable[[Tensor|str|pathlib.Path], T]:
   @functools.wraps(func)
-  def wrapper(fn: Union[Tensor, str, pathlib.Path]) -> T: return func(Tensor(pathlib.Path(fn)) if not isinstance(fn, Tensor) else fn)
+  def wrapper(fn: Tensor|str|pathlib.Path) -> T: return func(Tensor(pathlib.Path(fn)) if not isinstance(fn, Tensor) else fn)
   return wrapper
 
 @accept_filename
@@ -48,7 +48,7 @@ def safe_load_metadata(t:Tensor) -> tuple[Tensor, int, dict[str, Any]]:
   data_start = int.from_bytes(t[0:8].data(), "little") + 8
   return t, data_start, json.loads(t[8:data_start].data().tobytes())
 
-def safe_load(fn:Union[Tensor, str, pathlib.Path]) -> dict[str, Tensor]:
+def safe_load(fn:Tensor|str|pathlib.Path) -> dict[str, Tensor]:
   """
   Loads a .safetensor file, returning the `state_dict`.
 
@@ -61,7 +61,7 @@ def safe_load(fn:Union[Tensor, str, pathlib.Path]) -> dict[str, Tensor]:
   return { k: data[v['data_offsets'][0]:v['data_offsets'][1]].bitcast(safe_dtypes[v['dtype']]).reshape(v['shape'])
           for k, v in metadata.items() if k != "__metadata__" }
 
-def safe_save(tensors:dict[str, Tensor], fn:str, metadata:Optional[dict[str, Any]]=None):
+def safe_save(tensors:dict[str, Tensor], fn:str, metadata:dict[str, Any]|None=None):
   """
   Saves a `state_dict` to disk in a .safetensor file with optional metadata.
 
@@ -155,7 +155,7 @@ def load_state_dict(model, state_dict:dict[str, Tensor], strict=True, verbose=Tr
         raise ValueError(f'Shape mismatch in layer `{k}`: Expected shape {v.shape}, but found {state_dict[k].shape} in state dict.')
       if isinstance(v.device, tuple):
         if isinstance(state_dict[k].device, tuple): v.replace(state_dict[k])
-        else: v.replace(state_dict[k].shard(v.device, v.lazydata.axis))
+        else: v.replace(state_dict[k].shard(v.device, v.uop.axis))
       else: v.replace(state_dict[k].to(v.device))
       if realize: v.realize()
       if consume: del state_dict[k]
@@ -193,8 +193,8 @@ def torch_load(t:Tensor) -> dict[str, Tensor]:
   state_dict = nn.state.torch_load("test.pth")
   ```
   """
-  offsets: dict[Union[str, int], int] = {}
-  lens: dict[Union[str, int], int] = {}
+  offsets: dict[str|int, int] = {}
+  lens: dict[str|int, int] = {}
   def _rebuild_tensor_v2(storage, storage_offset, size, stride, requires_grad=None, backward_hooks=None, metadata=None):
     #print(storage, storage_offset, size, stride, requires_grad, backward_hooks, metadata)
     lens[storage[2]] = storage[4] * storage[1].itemsize

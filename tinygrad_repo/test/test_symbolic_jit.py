@@ -197,6 +197,18 @@ class TestSymbolicJit(unittest.TestCase):
       np.testing.assert_allclose(symbolic, expected, atol=1e-6, rtol=1e-6)
     assert_jit_cache_len(jf, 1)
 
+  def test_slice_var_shape(self):
+    def f(a): return (a+1).realize()
+    jf = TinyJit(f)
+    for i in range(1, 5):
+      vi = Variable("i", 1, 10).bind(i)
+      a = Tensor.ones(vi, 11).contiguous()
+      symbolic = a[:, 1:2]
+      symbolic = jf(symbolic).reshape(i, 1).numpy()
+      expected = f(a.reshape(i, 11)[:, 1:2]).numpy()
+      np.testing.assert_allclose(symbolic, expected, atol=1e-6, rtol=1e-6)
+    assert_jit_cache_len(jf, 1)
+
   def test_ones_sum(self):
     def f(a): return a.sum().realize()
     jf = TinyJit(f)

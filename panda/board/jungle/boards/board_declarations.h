@@ -2,6 +2,7 @@
 typedef void (*board_init)(void);
 typedef void (*board_board_tick)(void);
 typedef bool (*board_get_button)(void);
+typedef void (*board_init_bootloader)(void);
 typedef void (*board_set_panda_power)(bool enabled);
 typedef void (*board_set_panda_individual_power)(uint8_t port_num, bool enabled);
 typedef void (*board_set_ignition)(bool enabled);
@@ -17,12 +18,11 @@ struct board {
   GPIO_TypeDef * const led_GPIO[3];
   const uint8_t led_pin[3];
   const uint8_t led_pwm_channels[3]; // leave at 0 to disable PWM
-  const bool has_canfd;
-  const bool has_sbu_sense;
   const uint16_t avdd_mV;
   board_init init;
   board_board_tick board_tick;
   board_get_button get_button;
+  board_init_bootloader init_bootloader;
   board_set_panda_power set_panda_power;
   board_set_panda_individual_power set_panda_individual_power;
   board_set_ignition set_ignition;
@@ -40,7 +40,6 @@ struct board {
 
 // ******************* Definitions ********************
 #define HW_TYPE_UNKNOWN 0U
-#define HW_TYPE_V1 1U
 #define HW_TYPE_V2 2U
 
 // CAN modes
@@ -59,18 +58,3 @@ struct board {
 uint8_t harness_orientation = HARNESS_ORIENTATION_NONE;
 uint8_t can_mode = CAN_MODE_NORMAL;
 uint8_t ignition = 0U;
-
-
-void unused_set_individual_ignition(uint8_t bitmask) {
-  UNUSED(bitmask);
-}
-
-void unused_board_enable_header_pin(uint8_t pin_num, bool enabled) {
-  UNUSED(pin_num);
-  UNUSED(enabled);
-}
-
-void unused_set_panda_individual_power(uint8_t port_num, bool enabled) {
-  UNUSED(port_num);
-  UNUSED(enabled);
-}

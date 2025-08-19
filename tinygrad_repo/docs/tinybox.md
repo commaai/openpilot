@@ -47,8 +47,8 @@ Reboot after making these changes or restart the `displayservice.service` servic
 
 The [default tinybox image](https://github.com/tinygrad/tinyos) ships with tinygrad and PyTorch. While we develop tinygrad, the box is universal hardware. Use whatever framework you desire, run notebooks, download demos, install more things, train, inference, live, laugh, love, you aren't paying per hour for this box so the only limit is your imagination.
 
-## tinychat
+## Building the OS image
 
-Since LLMs are so popular, we ship with a built in tinygrad based chatbot using a LLaMA-3 finetune. Visit the IP (not the BMC IP) of your tinybox in a web browser on your computer or phone, and you'll find a friendly looking chat interface. This chatbot also provides an OpenAI compatible LLM API on that port, so you can script it.
+The OS image is built using `ubuntu-image` from <https://github.com/tinygrad/tinyos>.
 
-The conversations you have with this chatbot are between you and your tinybox. Also, the history in the web app is saved on the client, not the tinybox.
+After cloning, run `make green` or `make red` to build a tinybox green or tinybox red image respectively.

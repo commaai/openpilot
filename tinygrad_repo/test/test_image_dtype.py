@@ -13,7 +13,7 @@ IMAGE_SUPPORTED_DEVICES = ("QCOM", "GPU")
 class TestImageCopy(unittest.TestCase):
   def test_image_copyout_1x1(self, img_type=dtypes.imagef):
     it = Tensor.arange(4).cast(img_type((1,1,4))).realize()
-    buf = it.lazydata.buffer
+    buf = it.uop.buffer
     out = buf.as_buffer()
     np.testing.assert_equal(out.cast(it.dtype.fmt).tolist(), np.arange(4))
 
@@ -27,18 +27,18 @@ class TestImageCopy(unittest.TestCase):
 
   def test_image_copyout_2x3(self):
     it = Tensor.arange(2*3*4).cast(dtypes.imagef((2,3,4))).realize()
-    buf = it.lazydata.buffer
+    buf = it.uop.buffer
     out = buf.as_buffer()
     np.testing.assert_equal(out.cast('f').tolist(), np.arange(2*3*4))
 
   def test_image_roundtrip(self):
     sz = (4,2,4)
     it = Tensor.rand(prod(sz)).cast(dtypes.imagef(sz)).realize()
-    buf = it.lazydata.buffer
+    buf = it.uop.buffer
     out = buf.as_buffer()
 
     it2 = Tensor.rand(prod(sz)).cast(dtypes.imagef(sz)).realize()
-    buf2 = it2.lazydata.buffer
+    buf2 = it2.uop.buffer
     buf2.copyin(out)
 
     assert (it == it2).sum().item() == prod(sz)
@@ -49,7 +49,7 @@ class TestImageDType(unittest.TestCase):
     data = Tensor.randn(9*27*4).realize()
     tst = data.numpy()
     it = data.cast(dtypes.imagef((9,27,4))).contiguous().realize()
-    assert isinstance(it.lazydata.base.realized.dtype, ImageDType)
+    assert isinstance(it.uop.base.realized.dtype, ImageDType)
     np.testing.assert_equal(tst, it.numpy())
 
   @unittest.expectedFailure # this isn't supported anymore, CAST to ImageDType stays ImageDType
@@ -58,14 +58,14 @@ class TestImageDType(unittest.TestCase):
     tst = data.numpy()
     it = data.cast(dtypes.imagef((9,27,4))).realize()
     # the underlying UOp is identical
-    self.assertIs(it.lazydata.base.realized, data.lazydata.base.realized)
+    self.assertIs(it.uop.base.realized, data.uop.base.realized)
     np.testing.assert_equal(tst, it.numpy())
 
   def test_image_and_back_wrong_shape(self):
     data = Tensor.randn(9*27*4).realize()
     tst = data.numpy()
     it = data.cast(dtypes.imagef((9,12,4))).realize()
-    assert not isinstance(it.lazydata.base.realized.dtype, ImageDType)
+    assert not isinstance(it.uop.base.realized.dtype, ImageDType)
     np.testing.assert_equal(tst, it.numpy())
 
   def test_shrink_load_float(self):
@@ -77,7 +77,7 @@ class TestImageDType(unittest.TestCase):
     # NOTE: contiguous is needed otherwise this folds
     it = Tensor.randn(4).cast(dtypes.imagef((1,1,4))).contiguous().realize()
     out = (it*2).realize()
-    assert isinstance(out.lazydata.base.realized.dtype, ImageDType)
+    assert isinstance(out.uop.base.realized.dtype, ImageDType)
 
   def test_sum(self):
     it = Tensor.rand(8).cast(dtypes.imagef((1,2,4))).realize()
@@ -98,26 +98,26 @@ class TestImageDType(unittest.TestCase):
   def test_lru_alloc(self):
     data = Tensor.randn(9*27*4).realize()
     it = data.cast(dtypes.imagef((9,27,4))).realize()
-    b1 = it.lazydata.base.realized._buf
+    b1 = it.uop.base.realized._buf
     del it
     it = data.cast(dtypes.imagef((9,27,4))).realize()
-    assert it.lazydata.base.realized._buf == b1
+    assert it.uop.base.realized._buf == b1
 
   def test_no_lru_alloc(self):
     data = Tensor.randn(9*27*4).realize()
     it = data.cast(dtypes.imagef((9,27,4))).contiguous().realize()
-    b1 = it.lazydata.base.realized._buf
+    b1 = it.uop.base.realized._buf
     del it
     it = data.cast(dtypes.imagef((10,27,4))).contiguous().realize()
-    assert it.lazydata.base.realized._buf != b1
+    assert it.uop.base.realized._buf != b1
 
   def test_no_lru_alloc_dtype(self):
     data = Tensor.randn(9*27*4).realize()
     it = data.cast(dtypes.imagef((9,27,4))).contiguous().realize()
-    b1 = it.lazydata.base.realized._buf
+    b1 = it.uop.base.realized._buf
     del it
     it = data.cast(dtypes.imageh((9,27,4))).realize()
-    assert it.lazydata.base.realized._buf != b1
+    assert it.uop.base.realized._buf != b1
 
   # issue caused by: don't realize image to image casts. this is part of a larger problem
   #@unittest.expectedFailure
@@ -137,8 +137,8 @@ class TestImageDType(unittest.TestCase):
           print(lst)
           assert not np.any(np.isnan(lst))
       # NOTE: the w1 grad must realize to a seperate kernel
-      assert w1.grad.lazydata.is_realized, f"never realized {w1.grad}"
-      self.assertEqual(w1.grad.lazydata.base.buffer.dtype, dtypes.float32)
+      assert w1.grad.uop.is_realized, f"never realized {w1.grad}"
+      self.assertEqual(w1.grad.uop.base.buffer.dtype, dtypes.float32)
       self.assertEqual(len(sched), 10)
 
 @unittest.skipUnless(REAL_DEV in IMAGE_SUPPORTED_DEVICES, "Images not supported")

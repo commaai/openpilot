@@ -2,14 +2,14 @@
 # a python uops emulator
 # works to test the tensor cores, and all the uops in general
 # this is the (living) definition of uops
-from typing import Optional, Any, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 import pickle, base64, itertools, time, struct, sys
 from tinygrad.dtype import DType, dtypes, ImageDType, PtrDType, truncate
 from tinygrad.helpers import all_same, getenv, flatten, get_single_element
 from tinygrad.device import Compiled, Compiler, Allocator
+from tinygrad.codegen.opt import tc
 from tinygrad.uop.ops import exec_alu, Ops, UOp, GroupOp
 from tinygrad.renderer import Renderer
-from tinygrad.renderer.cstyle import CUDARenderer, MetalRenderer, AMDRenderer, IntelRenderer, ClangRenderer
 
 def _load(m, i):
   if i is None: return 0.0
@@ -26,7 +26,7 @@ def _store(m, i, v):
 
 class PythonProgram:
   def __init__(self, name:str, lib:bytes):
-    self.uops: list[tuple[Ops, Optional[DType], list[int], Any]] = pickle.loads(lib)
+    self.uops: list[tuple[Ops, DType|None, list[int], Any]] = pickle.loads(lib)
   def __call__(self, *bufs, global_size:tuple[int,int,int]=(1,1,1), local_size:tuple[int,int,int]=(1,1,1), vals:tuple[int, ...]=(), wait=False):
     st = time.perf_counter()
     warp = list(itertools.product(*[range(x) for x in local_size[::-1]]))
@@ -40,45 +40,42 @@ class PythonProgram:
       loop_ends: dict[int, int] = {}
       while i < len(self.uops):
         uop, dtype, idp, arg = self.uops[i]
-        void_ops = {Ops.STORE, Ops.ENDRANGE, Ops.BARRIER, Ops.IF, Ops.ENDIF, Ops.SINK}
-        if uop is Ops.DEFINE_ACC: idp = [idp[0]]
+        void_ops = {Ops.ENDRANGE, Ops.BARRIER, Ops.IF, Ops.ENDIF, Ops.SINK, Ops.NOOP, Ops.STORE}
         inp = [ul[v] for v in idp if self.uops[v][0] not in void_ops]
         dtp = [dl[v] for v in idp if self.uops[v][0] not in void_ops]
         if getenv("TRACE"): print(i, uop, dtype, arg, inp, dtp)
-        if uop is Ops.STORE:
-          assert len(inp) == 2, "expected store is ([(memory, offset, gate)], [value])"
-          if dtp[1].count > 1:
-            for j,val in enumerate(inp[1]):
-              for (m,o,g),v in zip(inp[0], val):
-                if g: _store(m, o+j, v)
-          else:
-            for (m,o,g),v in zip(*inp):
-              if g: _store(m, o, v)
-          i += 1
-          continue
         if uop is Ops.ENDRANGE:
           loop_ends[idp[0]] = i
           i = idp[0]
           continue
-        if uop in (Ops.BARRIER, Ops.IF, Ops.ENDIF, Ops.SINK):
+        if uop in (Ops.BARRIER, Ops.IF, Ops.ENDIF, Ops.SINK, Ops.NOOP):
           # in the python emulator, the warp is always in sync
           i += 1
           continue
         assert dtype is not None, f"{uop} is missing a dtype"
         dl[i] = dtype
-        if uop in {Ops.DEFINE_GLOBAL, Ops.DEFINE_LOCAL}:
-          assert dtype.fmt is not None and isinstance(dtype, PtrDType)
+        if uop is Ops.STORE:
+          for j,val in enumerate(inp[1] if dtp[1].count > 1 else [inp[1]]):
+            for (m,o,g),v in zip(inp[0], val):
+              if g: _store(m, o+j, v)
+          i += 1
+          continue
+        if uop in {Ops.DEFINE_GLOBAL, Ops.DEFINE_LOCAL, Ops.DEFINE_REG}:
+          assert isinstance(dtype, PtrDType), dtype
+          if dtype.fmt is None: raise RuntimeError(f"{dtype=} is not supported")
           if TYPE_CHECKING or sys.version_info < (3, 12): assert dtype.fmt != "e"
-          buf = memoryview(bytearray(dtype.size*dtype.itemsize)) if uop is Ops.DEFINE_LOCAL else pbufs.pop(0)
-          ul[i] = [buf.cast(dtype.fmt)] * warp_size
+          if uop is Ops.DEFINE_REG:
+            # REGs are per thread
+            ul[i] = [memoryview(bytearray(dtype.size*dtype.itemsize)).cast(dtype.fmt) for _ in range(warp_size)]
+          else:
+            buf = memoryview(bytearray(dtype.size*dtype.itemsize)) if uop is not Ops.DEFINE_GLOBAL else pbufs.pop(0)
+            ul[i] = [buf.cast(dtype.fmt)] * warp_size
         elif uop is Ops.DEFINE_VAR:
           ul[i] = [pvals.pop(0)] * warp_size
         elif uop is Ops.SPECIAL:
           if arg[0][0] == 'g': ul[i] = [idxs[2-int(arg[0][-1])]] * warp_size
           elif arg[0][0] == 'l': ul[i] = [x[2-int(arg[0][-1])] for x in warp]
         elif uop is Ops.CONST: ul[i] = [arg] * warp_size
-        elif uop is Ops.DEFINE_ACC:
-          ul[i] = [[inp[0][0][0]] * warp_size for _ in range(dtype.count)] if dtype.count > 1 else [inp[0][0]] * warp_size
         elif uop is Ops.INDEX:
           ret:list = []
           if isinstance(dtp[0], ImageDType):
@@ -111,9 +108,6 @@ class PythonProgram:
             ul[i] = [load([inp[i][j] if i != 0 and dtp[i].count > 1 else inp[i] for i in range(len(inp))], j) for j in range(dtype.count)]
           else:
             ul[i] = load(inp)
-        elif uop is Ops.ASSIGN:
-          for j in range(len(inp[0])): inp[0][j] = inp[1][j]
-          ul[i] = inp[0]
         elif uop is Ops.GEP: ul[i] = inp[0][get_single_element(arg)]
         elif uop is Ops.WMMA:
           # here are the models for the WMMA instruction on the different hardware
@@ -130,24 +124,27 @@ class PythonProgram:
                   out[elem_idx][goff+lane_id] += sum(a_elem(inp[0], _k, c_j, goff) * b_elem(inp[1], c_i, _k, goff) for _k in range(K))
             return out
 
+          first_src_dtype = self.uops[idp[0]][1]
+          assert isinstance(first_src_dtype, DType) # mypy
+          dims, dtype_in, device, threads = arg[1], first_src_dtype.scalar(), arg[4], arg[5]
           # TODO: refactor these to a shared TensorCoreLayout in kernel.py
-          if arg[4] == "METAL":
+          if device == "METAL":
             # A (2 elements on 32 threads): row major
             def a_b_elem(x, i, j, goff): return x[(i%2)][goff+(i//2)%2+(j%4)*2+(i//4)*8+(j//4)*16]
             # (i, j), C, D (2 elements on 32 threads): row major same as A/B
             def c_map(lane, elem): return (elem + ((lane%2)*2) + ((lane//8)%2)*4, ((lane//2)%4) + (lane//16)*4)
             ul[i] = wmma_helper(32, 8, 2, 2, 2, a_b_elem, a_b_elem, c_map)
-          elif arg[4] == "AMD" and arg[5] == 64:
+          elif device == "AMD" and threads == 64:
             def a_elem(x, k, row, goff): return x[k%4][goff + (k//4)*16 + row]
             def b_elem(x, col, k, goff): return a_elem(x, k, col, goff) # pylint: disable=arguments-out-of-order
             def c_map(lane, elem): return (lane%16, (lane//16)*4 + elem)
             ul[i] = wmma_helper(64, 16, 4, 4, 4, a_elem, b_elem, c_map)
-          elif arg[4] == "AMD" and len(inp[0]) == 8: # RDNA4
+          elif device == "AMD" and len(inp[0]) == 8: # RDNA4
             def a_elem(x, k, row, goff): return x[k - [0, 4, 4, 8][k//4]][goff + row + [0, 16, 0, 16][k//4]]
             def b_elem(x, col, k, goff): return a_elem(x, k, col, goff)
             def c_map(lane, elem): return (lane%16, (lane//16)*8 + elem)
             ul[i] = wmma_helper(32, 16, 8, 8, 8, a_elem, b_elem, c_map)
-          elif arg[4] == "AMD":
+          elif device == "AMD":
             # A (16 elements on 32 threads): col major, lane 16-32 == lane 0-15
             def a_elem(x, k, row, goff):
               assert x[k][goff+row] == x[k][goff+row+16], "warp elements not duplicated properly across lanes"
@@ -156,27 +153,27 @@ class PythonProgram:
             def b_elem(x, col, k, goff): return a_elem(x, k, col, goff)  # pylint: disable=arguments-out-of-order
             def c_map(lane, elem): return (lane%16, lane//16+elem*2) # (i, j), C, D (8 elements on 32 threads): row major
             ul[i] = wmma_helper(32, 16, 16, 16, 8, a_elem, b_elem, c_map)
-          elif arg[4] == "CUDA":
+          elif device == "CUDA":
             # (col, row) given (lane, elem) for C & D (4 elements on 32 threads); shared by all tc shapes with M=16 N=8
             def c_map(lane, elem): return (elem%2 + (lane%4)*2, lane//4 + (elem//2)*8)
 
-            if arg[1] == (8,16,16):
+            if dims == (8,16,16):
               def a_elem(x, k, row, goff): return x[k%2 + (row//8)*2 + (k//8)*4][goff + (k//2)%4 + (row%8)*4]
               def b_elem(x, col, k, goff): return x[k%2 + (k//8)*2][goff + (k//2)%4 + col*4]
               ul[i] = wmma_helper(32, 16, 8, 4, 4, a_elem, b_elem, c_map)
 
-            elif arg[1] == (8,16,8) and arg[2] == dtypes.half:
+            elif dims == (8,16,8) and dtype_in == dtypes.half:
               def a_elem(x, k, row, goff): return x[k%2 + (row//8)*2][goff + k//2 + (row%8)*4]
               def b_elem(x, col, k, goff): return x[k%2][goff + k//2 + col*4]
               ul[i] = wmma_helper(32, 8, 4, 2, 4, a_elem, b_elem, c_map)
 
-            elif arg[1] == (8,16,8) and arg[2] == dtypes.float:
+            elif dims == (8,16,8) and dtype_in == dtypes.float:
               def a_elem(x, k, row, goff): return x[(k//4)*2 + row//8][goff + k%4 + (row%8)*4]
               def b_elem(x, col, k, goff): return x[k//4][goff + k%4 + col*4]
               ul[i] = wmma_helper(32, 8, 4, 2, 4, a_elem, b_elem, c_map)
 
             else: raise NotImplementedError(f"unimplemented tensor core {arg}")
-          elif arg[4] == "INTEL":
+          elif device == "INTEL":
             # A (16 elements on 8 threads)
             def a_elem(x, k, row, goff): return x[k%2+row*2][goff+k//2]
             # B (16 elements on 8 threads)
@@ -184,7 +181,7 @@ class PythonProgram:
             # C, D (8 elements on 8 threads)
             def c_map(lane, elem): return (lane, elem)
             ul[i] = wmma_helper(8, 16, 16, 16, 8, a_elem, b_elem, c_map)
-          elif arg[4] == "CPU":
+          elif device == "CPU":
             def elem(x, col, row, _): return x[col+row][0] # k is always 0
             def c_map(_, elem): return (elem%16, elem//16)
             ul[i] = wmma_helper(1, 1, 16, 16, 256, elem, elem, c_map)
@@ -200,14 +197,14 @@ class PythonProgram:
 class PythonRenderer(Renderer):
   device = "PYTHON"
   def __init__(self):
-    if getenv("EMULATE_METAL"): self.device, self.tensor_cores = "METAL", MetalRenderer.tensor_cores
-    if getenv("EMULATE_AMD"): self.device, self.tensor_cores = "AMD", AMDRenderer.tensor_cores
-    if getenv("EMULATE_AMD_MFMA"): self.device, self.tensor_cores = "AMD", AMDRenderer.tensor_cores_mfma
-    if getenv("EMULATE_AMD_RDNA4"): self.device, self.tensor_cores = "AMD", AMDRenderer.tensor_cores_rdna4
-    if getenv("EMULATE_CUDA"): self.device, self.tensor_cores = "CUDA", CUDARenderer.tc_sm80
-    if getenv("EMULATE_CUDA_SM75"): self.device, self.tensor_cores = "CUDA", CUDARenderer.tc_sm75
-    if getenv("EMULATE_INTEL"): self.device, self.suffix, self.tensor_cores = "INTEL", "INTEL", IntelRenderer.tensor_cores
-    if getenv("EMULATE_AMX"): self.device, self.tensor_cores = "CPU", ClangRenderer.tensor_cores
+    if getenv("EMULATE_METAL"): self.device, self.tensor_cores = "METAL", tc.metal
+    if getenv("EMULATE_AMD"): self.device, self.tensor_cores = "AMD", tc.amd_rdna3
+    if getenv("EMULATE_AMD_MFMA"): self.device, self.tensor_cores = "AMD", tc.amd_cdna
+    if getenv("EMULATE_AMD_RDNA4"): self.device, self.tensor_cores = "AMD", tc.amd_rdna4
+    if getenv("EMULATE_CUDA"): self.device, self.tensor_cores = "CUDA", tc.cuda_sm80
+    if getenv("EMULATE_CUDA_SM75"): self.device, self.tensor_cores = "CUDA", tc.cuda_sm75
+    if getenv("EMULATE_INTEL"): self.device, self.suffix, self.tensor_cores = "INTEL", "INTEL", tc.intel
+    if getenv("EMULATE_AMX"): self.device, self.tensor_cores = "CPU", tc.amx
 
   def render(self, uops:list[UOp]) -> str:
     lops = [(u.op, u.dtype, [uops.index(v) for v in u.src], u.arg) for u in uops]

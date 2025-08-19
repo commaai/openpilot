@@ -14,12 +14,15 @@ setup(
   license='MIT',
   package_data={'': ['helpers/chi2_lookup_table.npy', 'templates/*']},
   install_requires=[
-    'sympy',
     'numpy',
-    'scipy',
-    'tqdm',
     'cffi',
+    'sympy',
   ],
+  extras_require={
+    'dev': [
+      'scipy',
+    ],
+  },
   ext_modules=[],
   description="Kalman filter library",
   long_description='See https://github.com/commaai/rednose',

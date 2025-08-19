@@ -827,39 +827,6 @@ class TestShapeTrackerSize(unittest.TestCase):
     st = ShapeTracker.from_shape((10,10)).pad(((2,4), (3,1))).flip((True, True))
     self.assertEqual(st.real_size(), 100)
 
-class TestConsecutive(unittest.TestCase):
-  @classmethod
-  def setUpClass(self):
-    from tinygrad.tensor import Tensor  # easier test setup
-    self.t = Tensor([[1, 2, 3, 4], [5, 6, 7, 8]])
-    self.const = Tensor(2)
-    self.ones = Tensor.ones(2, 4)
-
-  def test_unmodified(self):
-    assert self.t.lazydata.st.consecutive
-    assert self.t.reshape(4, 2).lazydata.st.consecutive
-    assert self.t.reshape(1, 8).lazydata.st.consecutive
-
-  def test_sliced(self):
-    assert self.t[0].lazydata.st.consecutive
-    assert self.t[0, 1:2].lazydata.st.consecutive
-    assert self.t[1].lazydata.st.consecutive
-    assert not self.t[:, 0].lazydata.st.consecutive
-    assert not self.t[:, 1].lazydata.st.consecutive
-
-  def test_padded(self):
-    assert not self.t.pad(((1, 1), None)).lazydata.st.consecutive
-    assert not self.t.pad((None, (1, 1))).lazydata.st.consecutive
-
-  def test_const(self):
-    assert self.const.lazydata.st.consecutive
-
-  def test_ones(self):
-    assert not self.ones.lazydata.st.consecutive
-    assert not self.ones[0, :].lazydata.st.consecutive
-    # consecutive if sliced into size 1
-    assert self.ones[0, 0].lazydata.st.consecutive
-
 class TestRender(unittest.TestCase):
   def test_render(self):
     st = ShapeTracker.from_shape((2, 3))
@@ -871,6 +838,47 @@ class TestRender(unittest.TestCase):
     idx, valid = st.to_indexed_uops()
     self.assertEqual(idx.render(), "((ridx0*3)+ridx1)")
     self.assertEqual(valid.render(), "(ridx0<2)")
+
+class TestVariableReshape(unittest.TestCase):
+  def test_reshape(self):
+    st = ShapeTracker.from_shape((3,))
+    st = st.reshape((Variable("i", 1, 10),))
+    assert len(st.views) == 1
+
+  def test_reshape_stride_0(self):
+    st = ShapeTracker.from_shape((3,), (0,))
+    st = st.reshape((Variable("i", 1, 10).bind(3),))
+    assert len(st.views) == 1, f"multiview {st}"
+
+  def test_reshape_bound(self):
+    st = ShapeTracker.from_shape((3,))
+    st = st.reshape((Variable("i", 1, 10).bind(3),))
+    assert len(st.views) == 1
+
+  def test_add(self):
+    st1 = ShapeTracker.from_shape((3,))
+    st2 = ShapeTracker.from_shape((Variable("i", 1, 10),))
+    st = st1+st2
+    assert len(st.views) == 1
+
+  def test_add_stride_0(self):
+    st1 = ShapeTracker.from_shape((3,), (0,))
+    st2 = ShapeTracker.from_shape((Variable("i", 1, 10).bind(3),), (0,))
+    st = st1+st2
+    assert len(st.views) == 1, f"multiview {st}"
+
+  def test_add_bound(self):
+    st1 = ShapeTracker.from_shape((3,))
+    st2 = ShapeTracker.from_shape((Variable("i", 1, 10).bind(3),))
+    st = st1+st2
+    assert len(st.views) == 1
+
+  def test_simplify(self):
+    st1 = ShapeTracker.from_shape((3,))
+    st2 = ShapeTracker.from_shape((Variable("i", 1, 10).bind(3),))
+    st = ShapeTracker((st1.views[0], st2.views[0]))
+    st = st.simplify()
+    assert len(st.views) == 1
 
 if __name__ == '__main__':
   unittest.main()

@@ -5,7 +5,7 @@
 
 from tinygrad import Tensor, TinyJit, dtypes, GlobalCounters
 from tinygrad.nn import Conv2d, GroupNorm
-from tinygrad.nn.state import safe_load, load_state_dict, get_state_dict
+from tinygrad.nn.state import safe_load, load_state_dict
 from tinygrad.helpers import fetch, trange, colored, Timing
 from extra.models.clip import Embedder, FrozenClosedClipEmbedder, FrozenOpenClipEmbedder
 from extra.models.unet import UNetModel, Upsample, Downsample, timestep_embedding
@@ -376,23 +376,24 @@ if __name__ == "__main__":
   parser.add_argument('--weights',  type=str,   help="Custom path to weights")
   parser.add_argument('--timing',   action='store_true', help="Print timing per step")
   parser.add_argument('--noshow',   action='store_true', help="Don't show the image")
+  parser.add_argument('--fakeweights',  action='store_true', help="Load fake weights")
   args = parser.parse_args()
 
-  Tensor.no_grad = True
   if args.seed is not None:
     Tensor.manual_seed(args.seed)
 
   model = SDXL(configs["SDXL_Base"])
 
-  default_weight_url = 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors'
-  weights = args.weights if args.weights else fetch(default_weight_url, 'sd_xl_base_1.0.safetensors')
-  loaded_weights = load_state_dict(model, safe_load(weights), strict=False, verbose=False, realize=False)
+  if not args.fakeweights:
+    default_weight_url = 'https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors'
+    weights = args.weights if args.weights else fetch(default_weight_url, 'sd_xl_base_1.0.safetensors')
+    loaded_weights = load_state_dict(model, safe_load(weights), strict=False, verbose=False, realize=False)
 
-  start_mem_used = GlobalCounters.mem_used
-  with Timing("loaded weights in ", lambda et_ns: f", {(B:=(GlobalCounters.mem_used-start_mem_used))/1e9:.2f} GB loaded at {B/et_ns:.2f} GB/s"):
-    with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
-      Tensor.realize(*loaded_weights)
-    del loaded_weights
+    start_mem_used = GlobalCounters.mem_used
+    with Timing("loaded weights in ", lambda et_ns: f", {(B:=(GlobalCounters.mem_used-start_mem_used))/1e9:.2f} GB loaded at {B/et_ns:.2f} GB/s"):
+      with WallTimeEvent(BenchEvent.LOAD_WEIGHTS):
+        Tensor.realize(*loaded_weights)
+      del loaded_weights
 
   N = 1
   C = 4

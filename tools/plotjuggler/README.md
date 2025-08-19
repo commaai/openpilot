@@ -13,14 +13,13 @@ Once you've [set up the openpilot environment](../README.md), this command will 
 ```
 $ ./juggle.py -h
 usage: juggle.py [-h] [--demo] [--can] [--stream] [--layout [LAYOUT]] [--install] [--dbc DBC]
-                 [route_or_segment_name] [segment_count]
+                 [route_or_segment_name]
 
 A helper to run PlotJuggler on openpilot routes
 
 positional arguments:
   route_or_segment_name
                         The route or segment name to plot (cabana share URL accepted) (default: None)
-  segment_count         The number of segments to plot (default: None)
 
 optional arguments:
   -h, --help            show this help message and exit
@@ -34,15 +33,19 @@ optional arguments:
 
 ```
 
-Examples using route name:
+Example using route name:
 
 `./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19"`
 
-Examples using segment range:
+Examples using segment:
 
 `./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1"`
 
 `./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/1/q" # use qlogs`
+
+Example using segment range:
+
+`./juggle.py "a2a0ccea32023010/2023-07-27--13-01-19/0:1"`
 
 ## Streaming
 

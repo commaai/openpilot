@@ -42,16 +42,17 @@ class Resetter():
   def enable_boot(self, enabled):
     self._handle.controlWrite((usb1.ENDPOINT_OUT | usb1.TYPE_VENDOR | usb1.RECIPIENT_DEVICE), 0xff, 0, enabled, b'')
 
-  def cycle_power(self, delay=5, dfu=False, ports=None):
+  def cycle_power(self, dfu=False, ports=None):
     if ports is None:
       ports = [1, 2, 3]
 
     self.enable_boot(dfu)
     for port in ports:
       self.enable_power(port, False)
-    time.sleep(0.5)
+    time.sleep(0.05)
 
     for port in ports:
       self.enable_power(port, True)
-    time.sleep(delay)
+    time.sleep(0.05)
     self.enable_boot(False)
+    time.sleep(0.12)  # takes the kernel this long to detect the disconnect

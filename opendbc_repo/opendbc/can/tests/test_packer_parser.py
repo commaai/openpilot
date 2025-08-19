@@ -1,8 +1,7 @@
 import pytest
 import random
 
-from opendbc.can.parser import CANParser
-from opendbc.can.packer import CANPacker
+from opendbc.can import CANPacker, CANParser
 from opendbc.can.tests import TEST_DBC
 
 MAX_BAD_COUNTER = 5
@@ -28,7 +27,7 @@ class TestCanParserPacker:
     # packer should increment the counter
     for i in range(1000):
       msg = packer.make_can_msg("CAN_FD_MESSAGE", 0, {})
-      parser.update_strings([0, [msg]])
+      parser.update([0, [msg]])
       assert parser.vl["CAN_FD_MESSAGE"]["COUNTER"] == (i % 256)
 
     # setting COUNTER should override
@@ -38,14 +37,14 @@ class TestCanParserPacker:
         "COUNTER": cnt,
         "SIGNED": 0
       })
-      parser.update_strings([0, [msg]])
+      parser.update([0, [msg]])
       assert parser.vl["CAN_FD_MESSAGE"]["COUNTER"] == cnt
 
     # then, should resume counting from the override value
     cnt = parser.vl["CAN_FD_MESSAGE"]["COUNTER"]
     for i in range(100):
       msg = packer.make_can_msg("CAN_FD_MESSAGE", 0, {})
-      parser.update_strings([0, [msg]])
+      parser.update([0, [msg]])
       assert parser.vl["CAN_FD_MESSAGE"]["COUNTER"] == ((cnt + i) % 256)
 
   def test_parser_can_valid(self):
@@ -58,14 +57,14 @@ class TestCanParserPacker:
 
     # not valid until the message is seen
     for _ in range(100):
-      parser.update_strings([0, []])
+      parser.update([0, []])
       assert not parser.can_valid
 
     # valid once seen
     for i in range(1, 100):
       t = int(0.01 * i * 1e9)
       msg = packer.make_can_msg("CAN_FD_MESSAGE", 0, {})
-      parser.update_strings([t, [msg]])
+      parser.update([t, [msg]])
       assert parser.can_valid
 
   def test_parser_updated_list(self):
@@ -74,10 +73,10 @@ class TestCanParserPacker:
     packer = CANPacker(TEST_DBC)
 
     msg = packer.make_can_msg("CAN_FD_MESSAGE", 0, {})
-    ret = parser.update_strings([0, [msg]])
+    ret = parser.update([0, [msg]])
     assert ret == {245}
 
-    ret = parser.update_strings([])
+    ret = parser.update([])
     assert len(ret) == 0
 
   def test_parser_counter_can_valid(self):
@@ -95,12 +94,12 @@ class TestCanParserPacker:
 
     # bad static counter, invalid once it's seen MAX_BAD_COUNTER messages
     for idx in range(0x1000):
-      parser.update_strings([0, [msg]])
+      parser.update([0, [msg]])
       assert ((idx + 1) < MAX_BAD_COUNTER) == parser.can_valid
 
     # one to recover
     msg = packer.make_can_msg("STEERING_CONTROL", 0, {"COUNTER": 1})
-    parser.update_strings([0, [msg]])
+    parser.update([0, [msg]])
     assert parser.can_valid
 
   def test_parser_no_partial_update(self):
@@ -123,7 +122,7 @@ class TestCanParserPacker:
         dat[4] = (dat[4] & 0xF0) | ((dat[4] & 0x0F) + 1)
         msg = (msg[0], bytes(dat), msg[2])
 
-      parser.update_strings([0, [msg]])
+      parser.update([0, [msg]])
 
     rx_steering_msg({"STEER_TORQUE": 100}, bad_checksum=False)
     assert parser.vl["STEERING_CONTROL"]["STEER_TORQUE"] == 100
@@ -166,7 +165,7 @@ class TestCanParserPacker:
         }
 
         msgs = [packer.make_can_msg(k, 0, v) for k, v in values.items()]
-        parser.update_strings([0, msgs])
+        parser.update([0, msgs])
 
         for k, v in values.items():
           for key, val in v.items():
@@ -186,7 +185,7 @@ class TestCanParserPacker:
     for brake in range(100):
       values = {"USER_BRAKE": brake}
       msgs = packer.make_can_msg("VSA_STATUS", 0, values)
-      parser.update_strings([0, [msgs]])
+      parser.update([0, [msgs]])
 
       assert parser.vl["VSA_STATUS"]["USER_BRAKE"] == pytest.approx(brake)
 
@@ -210,7 +209,7 @@ class TestCanParserPacker:
         }
 
         msgs = packer.make_can_msg("ES_LKAS", 0, values)
-        parser.update_strings([0, [msgs]])
+        parser.update([0, [msgs]])
 
         assert parser.vl["ES_LKAS"]["LKAS_Output"] == pytest.approx(steer)
         assert parser.vl["ES_LKAS"]["LKAS_Request"] == pytest.approx(active)
@@ -229,6 +228,7 @@ class TestCanParserPacker:
     packer = CANPacker(dbc_file)
 
     i = 0
+
     def send_msg(blank=False):
       nonlocal i
       i += 1
@@ -239,7 +239,7 @@ class TestCanParserPacker:
       else:
         msgs = [packer.make_can_msg("VSA_STATUS", 0, {}), ]
 
-      parser.update_strings([t, msgs])
+      parser.update([t, msgs])
 
     # all good, no timeout
     for _ in range(1000):
@@ -277,7 +277,7 @@ class TestCanParserPacker:
           can_msgs[frame].append(packer.make_can_msg("VSA_STATUS", 0, values))
           idx += 1
 
-      parser.update_strings([[0, m] for m in can_msgs])
+      parser.update([[0, m] for m in can_msgs])
       vl_all = parser.vl_all["VSA_STATUS"]["USER_BRAKE"]
 
       assert vl_all == user_brake_vals
@@ -312,7 +312,7 @@ class TestCanParserPacker:
         log_mono_time = int(0.01 * i * 1e+9)
         can_msg = packer.make_can_msg("VSA_STATUS", 0, {})
         can_strings.append((log_mono_time, [can_msg]))
-      parser.update_strings(can_strings)
+      parser.update(can_strings)
 
       ts_nanos = parser.ts_nanos["VSA_STATUS"].values()
       assert set(ts_nanos) == {log_mono_time}
@@ -324,13 +324,13 @@ class TestCanParserPacker:
     existing_messages = ("STEERING_CONTROL", 228, "CAN_FD_MESSAGE", 245)
 
     for msg in existing_messages:
-      CANParser(TEST_DBC, [(msg, 0)])
+      CANParser(TEST_DBC, [(msg, 0)], 0)
       with pytest.raises(RuntimeError):
         new_msg = msg + "1" if isinstance(msg, str) else msg + 1
-        CANParser(TEST_DBC, [(new_msg, 0)])
+        CANParser(TEST_DBC, [(new_msg, 0)], 0)
 
   def test_track_all_signals(self):
-    parser = CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 0)])
+    parser = CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 0)], 0)
     assert parser.vl["ACC_CONTROL"] == {
       "ACCEL_CMD": 0,
       "ALLOW_LONG_PRESS": 0,
@@ -350,13 +350,13 @@ class TestCanParserPacker:
     }
 
   def test_disallow_duplicate_messages(self):
-    CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 5)])
+    CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 5)], 0)
 
     with pytest.raises(RuntimeError):
-      CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 5), ("ACC_CONTROL", 10)])
+      CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 5), ("ACC_CONTROL", 10)], 0)
 
     with pytest.raises(RuntimeError):
-      CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 10), ("ACC_CONTROL", 10)])
+      CANParser("toyota_nodsu_pt_generated", [("ACC_CONTROL", 10), ("ACC_CONTROL", 10)], 0)
 
   def test_allow_undefined_msgs(self):
     # TODO: we should throw an exception for these, but we need good

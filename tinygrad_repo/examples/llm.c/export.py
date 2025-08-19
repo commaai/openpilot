@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 import os
 if "NOOPT" not in os.environ: os.environ["NOOPT"] = "1"
-from tinygrad import Device, nn, Tensor, dtypes, Variable
+from tinygrad import Device, nn, Tensor, dtypes
 Device.DEFAULT = "CPU"
 from train_gpt2 import GPT, GPTConfig
-from tinygrad.helpers import dedup, to_function_name, flatten, getenv, GlobalCounters, ansilen, to_function_name
-from tinygrad.engine.realize import get_kernel, run_schedule
+from tinygrad.helpers import dedup, flatten, getenv, GlobalCounters, to_function_name
+from tinygrad.engine.realize import get_kernel
 from tinygrad.engine.memory import memory_planner
 from tinygrad.uop.ops import Ops
 
@@ -16,7 +16,7 @@ if __name__ == "__main__":
   #model.load_pretrained()
   for p in nn.state.get_parameters(model): p.replace(Tensor.empty(p.shape, dtype=p.dtype)) # fake load pretrained
 
-  #early_sched = create_schedule([x.lazydata for x in nn.state.get_parameters(model)])
+  #early_sched = create_schedule([x.uop for x in nn.state.get_parameters(model)])
   #print(f"built model {len(early_sched)}")
 
   #B, T = Variable("B", 1, 128).bind(4), 64 #Variable("T", 1, 1024).bind(64)
@@ -56,7 +56,7 @@ if __name__ == "__main__":
   state_dict.update({'X': X, 'Y': Y, 'loss': loss})
   grad_state_dict = {}
   for k,v in state_dict.items():
-    if v.lazydata.base.buffer not in used_buffers: print(f"UNUSED: {k}")
+    if v.uop.base.buffer not in used_buffers: print(f"UNUSED: {k}")
     if v.grad is not None: grad_state_dict['grad_'+k] = v.grad
   state_dict.update(grad_state_dict)
   state_dict.update({'adam_b1_t': optimizer.b1_t, 'adam_b2_t': optimizer.b2_t, 'adam_lr': optimizer.lr})
@@ -65,7 +65,7 @@ if __name__ == "__main__":
     nm = inverse_state_dict[p]
     state_dict["adam_m_"+nm] = m
     state_dict["adam_v_"+nm] = v
-  named_buffers = {v.lazydata.base.buffer:k.replace(".", "_") for k,v in state_dict.items()}
+  named_buffers = {v.uop.base.buffer:k.replace(".", "_") for k,v in state_dict.items()}
 
   c_code = ["#include <stdlib.h>", "#include <tgmath.h>", "#include <stdbool.h>"]
   if TIMING: c_code += ["#include <stdio.h>", "#include <time.h>"]

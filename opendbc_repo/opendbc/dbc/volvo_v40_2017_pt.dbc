@@ -315,7 +315,7 @@ CM_ SG_ 192 TransmissionGear "0 = 1st gear, 1= 2nd gear...";
 CM_ SG_ 681 TurnSignal "0 = Nothing, 1= Left, 3=Right";
 CM_ SG_ 681 HighBeamOn "1=HighBeam On, 0=HighBeam Off";
 CM_ SG_ 48 ACCStatusTracking "ACC Tracking vehicle, distance control.";
-CM_ SG_ 48 ACCStatusOnOff "Turns one after pressing on/off button on steering wheeel";
+CM_ SG_ 48 ACCStatusOnOff "Turns one after pressing on/off button on steering wheel";
 CM_ SG_ 48 ACCStatusActive "ACC Active";
 CM_ SG_ 48 FCWSomething "All bit set during fcw";
 CM_ SG_ 48 StatusSomething "Some status changes when zeroing DTCs";
@@ -358,6 +358,6 @@ CM_ SG_ 114 NEW_SIGNAL_1 "Jumped from 0 -> 120 during start. Makes triangle from
 CM_ SG_ 608 NEW_SIGNAL_1 "Status?";
 CM_ SG_ 608 NEW_SIGNAL_2 "Classification of object?";
 CM_ SG_ 608 Distance "Distance to object in front.";
-CM_ SG_ 968 PassengerSeatBelt "1 = Seatbalt latched";
+CM_ SG_ 968 PassengerSeatBelt "1 = Seatbelt latched";
 CM_ SG_ 968 DriverSeatBelt "1=Seatbelt latched";
 VAL_ 64 GearShifter 0 "P" 1 "R" 2 "N" 3 "D" ;

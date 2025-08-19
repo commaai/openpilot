@@ -17,5 +17,5 @@ mypy python/
 
 # *** test ***
 
-# TODO: make xdist and randomly work
-pytest -n0 --randomly-dont-reorganize tests/
+# TODO: make randomly work
+pytest --randomly-dont-reorganize tests/

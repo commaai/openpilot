@@ -25,7 +25,7 @@ class TestStunning(unittest.TestCase):
     nv = a[12].cat(a[76]).tolist()
 
     vi = Variable('i', 0, a.shape[0]-1)
-    with self.assertRaisesRegex(AssertionError, "different values for the same key"):
+    with self.assertRaisesRegex(AssertionError, "bind mismatch on"):
       wv = a[vi.bind(12)].cat(a[vi.bind(76)]).tolist()
       self.assertListEqual(nv, wv)
 

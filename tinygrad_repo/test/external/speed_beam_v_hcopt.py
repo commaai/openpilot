@@ -1,7 +1,7 @@
 from tinygrad import Device
 from tinygrad.helpers import getenv, DEBUG, BEAM
-from tinygrad.engine.search import beam_search, bufs_from_lin
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.codegen.opt.search import beam_search, bufs_from_lin
+from tinygrad.codegen.opt.heuristic import hand_coded_optimizations
 from extra.optimization.helpers import load_worlds, ast_str_to_lin, time_linearizer
 
 if __name__ == "__main__":

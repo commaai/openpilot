@@ -4,10 +4,10 @@ from tinygrad import Device, Context, Tensor, GlobalCounters
 from tinygrad.device import Buffer
 from tinygrad.helpers import getenv, BEAM
 from tinygrad.engine.jit import TinyJit
-from tinygrad.engine.realize import CompiledRunner, ExecItem, ScheduleItem, lower_schedule_item
+from tinygrad.engine.realize import CompiledRunner, ExecItem, ScheduleItem, lower_schedule_item, get_program
 from tinygrad.renderer import ProgramSpec
-from tinygrad.codegen.kernel import Kernel, Opt, OptOps
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.codegen.opt.kernel import Kernel, Opt, OptOps
+from tinygrad.codegen.opt.heuristic import hand_coded_optimizations
 import numpy as np
 
 def move_jit_captured_to_dev(captured, device="DSP"):
@@ -58,7 +58,7 @@ if __name__ == "__main__":
             GlobalCounters.kernel_count -= 1
 
         if not getenv("NOOPT"): k.apply_opts(hand_coded_optimizations(k))
-        p2 = k.to_program()
+        p2 = get_program(k.get_optimized_ast(), k.opts)
         new_ei = replace(ei, prg=CompiledRunner(p2))
         new_ei.run()
         new_jit.append(new_ei)

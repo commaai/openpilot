@@ -8,21 +8,21 @@ realized_pattern = UPat(Ops.BUFFER)
 buffer_view_pattern = UPat(Ops.RESHAPE, src=(UPat(Ops.BUFFER),))
 const_pattern = UPat(Ops.CONST, src=(UPat(Ops.VIEW, src=(UPat(Ops.DEVICE),),)))
 def is_pattern_uop(u:UOp, pat:UPat): assert pat.match(u, {}), f"{u}\nis not\n{pat}"
-def is_pattern(ten:Tensor, pat:UPat): is_pattern_uop(ten.lazydata, pat)
+def is_pattern(ten:Tensor, pat:UPat): is_pattern_uop(ten.uop, pat)
 
 class TestTensorMutates(unittest.TestCase):
   def test_mutate_add(self):
     a = Tensor([1,2,3])
     b = Tensor([4,5,6])
     ret = a+b
-    pa = a.lazydata
-    pb = b.lazydata
-    pr = ret.lazydata
+    pa = a.uop
+    pb = b.uop
+    pr = ret.uop
     ret.schedule()
-    self.assertIsNot(pa, a.lazydata)
-    self.assertIsNot(pb, b.lazydata)
-    self.assertIsNot(pr, ret.lazydata)
-    for t in [a,b,ret]: is_pattern_uop(t.lazydata.base, realized_pattern)
+    self.assertIsNot(pa, a.uop)
+    self.assertIsNot(pb, b.uop)
+    self.assertIsNot(pr, ret.uop)
+    for t in [a,b,ret]: is_pattern_uop(t.uop.base, realized_pattern)
 
   def test_reshape_is_same_parent(self):
     a = Tensor([1,2,3])
@@ -30,11 +30,11 @@ class TestTensorMutates(unittest.TestCase):
     c = a+b
     d = (a+b).reshape(3,1)
     d.realize()
-    is_pattern_uop(d.lazydata.base, realized_pattern)
-    is_pattern_uop(c.lazydata.base, realized_pattern)
+    is_pattern_uop(d.uop.base, realized_pattern)
+    is_pattern_uop(c.uop.base, realized_pattern)
     # NOTE: we keep movement ops on top of the buffer view
-    is_pattern_uop(c.lazydata, UPat(Ops.BUFFER))
-    is_pattern_uop(d.lazydata, UPat(Ops.VIEW, src=(realized_pattern,)))
+    is_pattern_uop(c.uop, UPat(Ops.BUFFER))
+    is_pattern_uop(d.uop, UPat(Ops.VIEW, src=(realized_pattern,)))
 
   def test_reshape_is_same_child(self):
     a = Tensor([1,2,3])
@@ -42,78 +42,55 @@ class TestTensorMutates(unittest.TestCase):
     c = a+b
     d = (a+b).reshape(3,1)
     c.realize()
-    is_pattern_uop(c.lazydata.base, realized_pattern)
-    is_pattern_uop(d.lazydata.base, realized_pattern)
+    is_pattern_uop(c.uop.base, realized_pattern)
+    is_pattern_uop(d.uop.base, realized_pattern)
 
 class TestTensorUopRepresentation(unittest.TestCase):
   def test_realized(self):
     a = Tensor([1.,2,3]).realize()
-    print(a.lazydata)
-    is_pattern_uop(a.lazydata.base, realized_pattern)
+    print(a.uop)
+    is_pattern_uop(a.uop.base, realized_pattern)
 
   def test_add_realized(self):
     a = Tensor([1.,2,3]).realize()
     b = Tensor([4.,5,6]).realize()
     c = a+b
-    print(c.lazydata)
+    print(c.uop)
     is_pattern(c, UPat(Ops.ADD, src=(realized_pattern, realized_pattern)))
 
   def test_const_pattern(self):
     a = Tensor(1)
-    print(a.lazydata)
+    print(a.uop)
     is_pattern(a, const_pattern) # const in tensor has a DEVICE and VIEW src
     is_pattern(a, UPat.cvar("x")) # even cvar works!
 
   def test_consts_do_not_realize(self):
     a = Tensor(1)
-    print(a.lazydata)
-    pre_realize = a.lazydata
+    print(a.uop)
+    pre_realize = a.uop
     a.realize()
-    assert a.lazydata is pre_realize
+    assert a.uop is pre_realize
 
   def test_viewed_consts_do_not_realize(self):
     a = Tensor.ones(10, 10)
-    print(a.lazydata)
+    print(a.uop)
     a.realize()
     is_pattern(a, const_pattern)
-    self.assertEqual(a.lazydata.shape, (10, 10))
+    self.assertEqual(a.uop.shape, (10, 10))
 
-  # currently, CONSTs have a "fake" BUFFER. this should be fixed
-  # current:
-  # UOp(Ops.EXPAND, dtypes.float, arg=(10, 10), src=(
-  #   UOp(Ops.RESHAPE, dtypes.float, arg=(1, 1), src=(
-  #     UOp(Ops.VIEW, dtypes.float, arg=ShapeTracker(views=(View(shape=(), strides=(), offset=0, mask=None, contiguous=True),)), src=(
-  #       UOp(Ops.BUFFER, dtypes.float, arg=(-1, 'METAL', 1), src=()),
-  #       UOp(Ops.CONST, dtypes.float, arg=1.0, src=()),)),)),))
-  # expected:
-  # UOp(Ops.EXPAND, dtypes.float, arg=(10, 10), src=(
-  #   UOp(Ops.RESHAPE, dtypes.float, arg=(1, 1), src=(
-  #     UOp(Ops.VIEW, dtypes.float, arg=ShapeTracker(views=(View(shape=(), strides=(), offset=0, mask=None, contiguous=True),)), src=(
-  #       UOp(Ops.CONST, dtypes.float, arg=1.0, src=(
-  #         UOp(Ops.DEVICE, dtypes.void, arg="METAL", src=()),)),)),))
+  # CONST is EXPAND -> RESHAPE -> CONST -> DEVICE
   def test_consts_dont_have_buffers(self):
     a = Tensor.ones(10, 10)
-    print(a.lazydata)
-    buffers_in_parents = [x.op for x in a.lazydata.toposort() if x.op is Ops.BUFFER]
+    buffers_in_parents = [x.op for x in a.uop.toposort() if x.op is Ops.BUFFER]
     self.assertEqual(len(buffers_in_parents), 0)
+    is_pattern(a, UPat(Ops.EXPAND, src=(UPat(Ops.RESHAPE, src=(const_pattern,)),)))
 
-  # currently, COPY has an extra BUFFER on the output
-  # current:
-  # UOp(Ops.VIEW, dtypes.float, arg=ShapeTracker(views=(View(shape=(3,), strides=(1,), offset=0, mask=None, contiguous=True),)), src=(
-  #   UOp(Ops.BUFFER, dtypes.float, arg=(2, 'TEST', 3), src=()),
-  #   UOp(Ops.COPY, dtypes.float, arg=('TEST', False), src=(
-  #     UOp(Ops.VIEW, dtypes.float, arg=ShapeTracker(views=(View(shape=(3,), strides=(1,), offset=0, mask=None, contiguous=True),)), src=(
-  #       UOp(Ops.BUFFER, dtypes.float, arg=(1, 'METAL', 3), src=()),)),)),))
-  # expected:
-  # UOp(Ops.COPY, dtypes.float, arg=('TEST', False), src=(
-  #   UOp(Ops.VIEW, dtypes.float, arg=ShapeTracker(views=(View(shape=(3,), strides=(1,), offset=0, mask=None, contiguous=True),)), src=(
-  #     UOp(Ops.BUFFER, dtypes.float, arg=(1, 'METAL', 3), src=()),))
-  # update: now the arg is just a single bool, the first source is a device.
+  # COPY has a copyin source and a device.
   def test_copyin(self):
     a = Tensor([1.,2,3]).realize()
     c = a.to("TEST")   # NOTE: this isn't checked
-    print(c.lazydata)
-    is_pattern(c, UPat(Ops.COPY, src=(realized_pattern, UPat(Ops.DEVICE))))
+    print(c.uop)
+    is_pattern(c, UPat(Ops.COPY, src=(realized_pattern, UPat(Ops.DEVICE)), arg=None))
 
   def test_empty_buf(self):
     a = Tensor.empty(3, 3)
@@ -121,7 +98,7 @@ class TestTensorUopRepresentation(unittest.TestCase):
     vi = UOp.variable("i", 1, 3).bind(1)
     a = Tensor.empty(3, vi)
     is_pattern(a, UPat(Ops.RESHAPE, src=(UPat(Ops.BUFFER),)))
-    self.assertEqual(a.lazydata.base.buffer.size, 9)
+    self.assertEqual(a.uop.base.buffer.size, 9)
 
 if __name__ == '__main__':
   unittest.main()

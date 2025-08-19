@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from opendbc.can.parser import CANParser
+from opendbc.can import CANParser
 from opendbc.car import Bus, structs
 from opendbc.car.interfaces import RadarInterfaceBase
 from opendbc.car.chrysler.values import DBC
@@ -8,6 +8,7 @@ RADAR_MSGS_C = list(range(0x2c2, 0x2d4+2, 2))  # c_ messages 706,...,724
 RADAR_MSGS_D = list(range(0x2a2, 0x2b4+2, 2))  # d_ messages
 LAST_MSG = max(RADAR_MSGS_C + RADAR_MSGS_D)
 NUMBER_MSGS = len(RADAR_MSGS_C) + len(RADAR_MSGS_D)
+
 
 def _create_radar_can_parser(car_fingerprint):
   if Bus.radar not in DBC[car_fingerprint]:
@@ -28,12 +29,14 @@ def _create_radar_can_parser(car_fingerprint):
 
   return CANParser(DBC[car_fingerprint][Bus.radar], messages, 1)
 
+
 def _address_to_track(address):
   if address in RADAR_MSGS_C:
     return (address - RADAR_MSGS_C[0]) // 2
   if address in RADAR_MSGS_D:
     return (address - RADAR_MSGS_D[0]) // 2
   raise ValueError("radar received unexpected address %d" % address)
+
 
 class RadarInterface(RadarInterfaceBase):
   def __init__(self, CP):
@@ -46,7 +49,7 @@ class RadarInterface(RadarInterfaceBase):
     if self.rcp is None or self.CP.radarUnavailable:
       return super().update(None)
 
-    vls = self.rcp.update_strings(can_strings)
+    vls = self.rcp.update(can_strings)
     self.updated_messages.update(vls)
 
     if self.trigger_msg not in self.updated_messages:

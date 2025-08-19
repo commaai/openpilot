@@ -1,10 +1,10 @@
 import itertools
 from tinygrad import Device
-from tinygrad.engine.realize import CompiledRunner
-from tinygrad.codegen.heuristic import hand_coded_optimizations
+from tinygrad.engine.realize import CompiledRunner, get_program
+from tinygrad.codegen.opt.heuristic import hand_coded_optimizations
 from tinygrad.helpers import getenv, colorize_float
 from extra.optimization.helpers import load_worlds, ast_str_to_lin
-from tinygrad.engine.search import bufs_from_lin
+from tinygrad.codegen.opt.search import bufs_from_lin
 from tinygrad.runtime.ops_cuda import PTXCompiler, PTXRenderer, CUDACompiler
 
 if __name__ == "__main__":
@@ -25,7 +25,7 @@ if __name__ == "__main__":
     dev.compiler = CUDACompiler(dev.arch)
     lin = ast_str_to_lin(ast, opts=dev.renderer)
     lin.apply_opts(hand_coded_optimizations(lin))
-    cuda_prg = CompiledRunner(lin.to_program())
+    cuda_prg = CompiledRunner(get_program(lin.get_optimized_ast(), lin.opts))
 
     bufs = bufs_from_lin(lin)
 
@@ -33,8 +33,7 @@ if __name__ == "__main__":
     dev.compiler = PTXCompiler(dev.arch)
     lin = ast_str_to_lin(ast, opts=ptx)
     lin.apply_opts(hand_coded_optimizations(lin))
-    lin.linearize()
-    ptx_prg = CompiledRunner(lin.to_program())
+    ptx_prg = CompiledRunner(get_program(lin.get_optimized_ast(), lin.opts))
 
     # warmup
     try:

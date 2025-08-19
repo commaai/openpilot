@@ -52,8 +52,6 @@ def load_model(model_path:Path, model_params:Dict[str, Union[int, float]]) -> Tr
 
 
 if __name__ == "__main__":
-  Tensor.no_grad = True
-
   parser = argparse.ArgumentParser(description="Run QwQ in tinygrad", formatter_class=argparse.ArgumentDefaultsHelpFormatter)
   parser.add_argument("--size", choices=["32B"], default="32B", help="Model size")
   parser.add_argument("--count", type=int, default=30, help="Max number of tokens to generate")
@@ -68,7 +66,7 @@ if __name__ == "__main__":
   model_path = Path(args.weights) if args.weights else download_weights(model_info["total_num_weights"])
   transformer = load_model(model_path, model_info["model_params"])
   tokenizer = AutoTokenizer.from_pretrained(model_info["tokenizer"])
-  param_bytes = sum(x.lazydata.size * x.dtype.itemsize for x in get_parameters(transformer))
+  param_bytes = sum(x.uop.size * x.dtype.itemsize for x in get_parameters(transformer))
 
   outputted = args.prompt
   start_pos, toks = 0, tokenizer(outputted)["input_ids"]

@@ -4,7 +4,6 @@ import pytest
 from panda import Panda
 
 pytestmark = [
-  pytest.mark.skip_panda_types(Panda.HW_TYPE_UNO),
   pytest.mark.test_panda_types(Panda.INTERNAL_DEVICES)
 ]
 

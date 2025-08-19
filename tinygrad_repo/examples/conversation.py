@@ -159,7 +159,6 @@ def init_vits(
   text_mapper = TextMapper(apply_cleaners=True, symbols=symbols)
 
   # Load the model.
-  Tensor.no_grad = True
   if seed is not None:
     Tensor.manual_seed(seed)
     np.random.seed(seed)
@@ -221,7 +220,6 @@ def mp_output_stream(q: mp.Queue, counter: mp.Value, num_channels: int, sample_r
 if __name__ == "__main__":
   import nltk
   nltk.download("punkt")
-  Tensor.no_grad = True
   # Parse CLI arguments
   parser = argparse.ArgumentParser("Have a tiny conversation with tinygrad")
 

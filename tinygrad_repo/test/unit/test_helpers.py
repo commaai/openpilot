@@ -1,9 +1,9 @@
-import gzip, unittest
+import ctypes, gzip, unittest, timeit
 from tinygrad import Variable
-from tinygrad.helpers import Context, ContextVar
+from tinygrad.helpers import Context, ContextVar, argfix, colored, word_wrap, is_numpy_ndarray, CI, mv_address
 from tinygrad.helpers import merge_dicts, strip_parens, prod, round_up, fetch, fully_flatten, from_mv, to_mv, polyN, time_to_str, cdiv, cmod, getbits
-from tinygrad.tensor import get_shape
-from tinygrad.codegen.lowerer import get_contraction, get_contraction_with_reduce
+from tinygrad.tensor import Tensor, get_shape
+from tinygrad.shape.view import get_contraction, get_contraction_with_reduce
 import numpy as np
 
 VARIABLE = ContextVar("VARIABLE", 0)
@@ -182,9 +182,41 @@ class TestMemoryview(unittest.TestCase):
   def test_from_mv_to_mv(self):
     base = memoryview(bytearray(b"\x11\x22\x33"*40))
     ct = from_mv(base)
-    mv = to_mv(ct, len(base))
+    mv = to_mv(ctypes.addressof(ct), len(base))
     mv[0] = 2
     assert base[0] == 2
+
+  @unittest.skipIf(CI, "dangerous for CI, it allocates tons of memory")
+  def test_to_mv(self):
+    sizes = [
+      (16, "16 B"),
+      (64, "64 B"),
+      (256, "256 B"),
+      (1024, "1 KB"),
+      (4 * 1024, "4 KB"),
+      (16 * 1024, "16 KB"),
+      (64 * 1024, "64 KB"),
+      (256 * 1024, "256 KB"),
+      (1 * 1024 * 1024, "1 MB"),
+      (10 * 1024 * 1024, "10 MB"),
+      (200 * 1024 * 1024, "200 MB"),
+    ]
+
+    for sz, label in sizes:
+      buf = np.random.randint(0, 256, sz, dtype=np.uint8)
+      ptr = buf.ctypes.data
+
+      iters = 100_000
+      t_us = timeit.timeit(lambda: to_mv(ptr, sz), number=iters) * 1e6 / iters
+      print(f"Size {label:>9} | Time: {t_us:8.3f} µs")
+
+  def test_speed_from_mv_vs_mv_address(self):
+    x = memoryview(bytearray(1))
+
+    iters = 100000
+    fmv_us = timeit.timeit(lambda: from_mv(x), number=iters) * 1e6 / iters
+    mva_us = timeit.timeit(lambda: mv_address(x), number=iters) * 1e6 / iters
+    print(f"from_mv vs mv_address: {fmv_us:8.3f} µs vs {mva_us:8.3f} µs")
 
 class TestGetContraction(unittest.TestCase):
   def test_contraction_with_reduce(self):
@@ -351,6 +383,57 @@ class TestGetBits(unittest.TestCase):
 
   def test_single_bit(self):
     self.assertEqual(getbits(0b100000000, 8, 8), 1)
+
+class TestArgFix(unittest.TestCase):
+  def test_none(self):
+    self.assertEqual(argfix(None), (None, ))
+    self.assertEqual(argfix(None, None), (None, None))
+  def test_positional_arguments(self):
+    self.assertEqual(argfix(1, 2, 3), (1, 2, 3))
+  def test_tuple(self):
+    self.assertEqual(argfix((1., 2., 3.)), (1., 2., 3.))
+  def test_list(self):
+    self.assertEqual(argfix([True, False]), (True, False))
+
+class TestWordWrap(unittest.TestCase):
+  def test_wrap_simple(self):
+    wrap = 10
+    st = "x"*wrap*2
+    st2 = word_wrap(st, wrap)
+    self.assertEqual(len(st2.splitlines()), 2)
+
+  def test_wrap_colored(self):
+    wrap = 10
+    st = colored("x"*wrap*2, "red")
+    st2 = word_wrap(st, wrap=wrap)
+    self.assertEqual(len(st2.splitlines()), 2)
+
+  def test_wrap_explicit_newline(self):
+    wrap = 10
+    st = "\n".join(["x"*wrap, "x"*wrap, "x"*wrap])
+    st2 = word_wrap(st, wrap=wrap)
+    self.assertEqual(len(st2.splitlines()), len(st.splitlines()))
+
+    st = "\n".join(["x"*(wrap+1), "x"*wrap, "x"*wrap])
+    st2 = word_wrap(st, wrap=wrap)
+    self.assertEqual(len(st2.splitlines()), len(st.splitlines())+1)
+
+    st = "\n".join(["x"*(wrap+1), "x"*(wrap+1), "x"*(wrap+1)])
+    st2 = word_wrap(st, wrap=wrap)
+    self.assertEqual(len(st2.splitlines()), len(st.splitlines())+3)
+
+class TestIsNumpyNdarray(unittest.TestCase):
+  def test_ndarray(self):
+    self.assertTrue(is_numpy_ndarray(np.array([1, 2, 3])))
+  def test_ndarray_tolist(self):
+    self.assertFalse(is_numpy_ndarray(np.array([1, 2, 3]).tolist()))
+  def test_list(self):
+    self.assertFalse(is_numpy_ndarray([1, 2, 3]))
+  def test_tensor(self):
+    self.assertFalse(is_numpy_ndarray(Tensor([1, 2, 3])))
+    self.assertFalse(is_numpy_ndarray(Tensor(np.array([1, 2, 3]))))
+  def test_tensor_numpy(self):
+    self.assertTrue(is_numpy_ndarray(Tensor([1, 2, 3]).numpy()))
 
 if __name__ == '__main__':
   unittest.main()

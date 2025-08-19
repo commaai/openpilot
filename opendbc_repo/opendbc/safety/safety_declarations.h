@@ -30,11 +30,11 @@
 #define SAFETY_FAW 26U
 #define SAFETY_BODY 27U
 #define SAFETY_HYUNDAI_CANFD 28U
+#define SAFETY_PSA 31U
 #define SAFETY_RIVIAN 33U
 #define SAFETY_VOLKSWAGEN_MEB 34U
 
 #define GET_BIT(msg, b) ((bool)!!(((msg)->data[((b) / 8U)] >> ((b) % 8U)) & 0x1U))
-#define GET_BYTE(msg, b) ((msg)->data[(b)])
 #define GET_FLAG(value, mask) (((__typeof__(mask))(value) & (mask)) == (mask)) // cppcheck-suppress misra-c2012-1.2; allow __typeof__
 
 #define BUILD_SAFETY_CFG(rx, tx) ((safety_config){(rx), (sizeof((rx)) / sizeof((rx)[0])), \
@@ -83,7 +83,7 @@ struct lookup_t {
 
 typedef struct {
   int addr;
-  int bus;
+  unsigned int bus;
   int len;
   bool check_relay;              // if true, trigger relay malfunction if existence on destination bus and block forwarding to destination bus
   bool disable_static_blocking;  // if true, static blocking is disabled so safety mode can dynamically handle it (e.g. selective AEB pass-through)
@@ -167,13 +167,13 @@ typedef struct {
 
 typedef struct {
   const int addr;
-  const int bus;
+  const unsigned int bus;
   const int len;
+  const uint32_t frequency;          // expected frequency of the message [Hz]
   const bool ignore_checksum;        // checksum check is not performed when set to true
   const bool ignore_counter;         // counter check is not performed when set to true
   const uint8_t max_counter;         // maximum value of the counter. 0 means that the counter check is skipped
   const bool ignore_quality_flag;    // true if quality flag check is skipped
-  const uint32_t frequency;          // expected frequency of the message [Hz]
 } CanMsgCheck;
 
 typedef struct {
@@ -202,14 +202,14 @@ typedef struct {
   bool disable_forwarding;
 } safety_config;
 
-typedef uint32_t (*get_checksum_t)(const CANPacket_t *to_push);
-typedef uint32_t (*compute_checksum_t)(const CANPacket_t *to_push);
-typedef uint8_t (*get_counter_t)(const CANPacket_t *to_push);
-typedef bool (*get_quality_flag_valid_t)(const CANPacket_t *to_push);
+typedef uint32_t (*get_checksum_t)(const CANPacket_t *msg);
+typedef uint32_t (*compute_checksum_t)(const CANPacket_t *msg);
+typedef uint8_t (*get_counter_t)(const CANPacket_t *msg);
+typedef bool (*get_quality_flag_valid_t)(const CANPacket_t *msg);
 
 typedef safety_config (*safety_hook_init)(uint16_t param);
-typedef void (*rx_hook)(const CANPacket_t *to_push);
-typedef bool (*tx_hook)(const CANPacket_t *to_send);  // returns true if the message is allowed
+typedef void (*rx_hook)(const CANPacket_t *msg);
+typedef bool (*tx_hook)(const CANPacket_t *msg);  // returns true if the message is allowed
 typedef bool (*fwd_hook)(int bus_num, int addr);      // returns true if the message should be blocked from forwarding
 
 typedef struct {
@@ -223,8 +223,8 @@ typedef struct {
   get_quality_flag_valid_t get_quality_flag_valid;
 } safety_hooks;
 
-bool safety_rx_hook(const CANPacket_t *to_push);
-bool safety_tx_hook(CANPacket_t *to_send);
+bool safety_rx_hook(const CANPacket_t *msg);
+bool safety_tx_hook(CANPacket_t *msg);
 int to_signed(int d, int bits);
 void update_sample(struct sample_t *sample, int sample_new);
 bool get_longitudinal_allowed(void);
@@ -341,3 +341,4 @@ extern const safety_hooks toyota_hooks;
 extern const safety_hooks volkswagen_mqb_hooks;
 extern const safety_hooks volkswagen_pq_hooks;
 extern const safety_hooks rivian_hooks;
+extern const safety_hooks psa_hooks;

@@ -171,7 +171,7 @@ class ASM24Controller:
     if fmt_type == 0x60 and size == 4 and self._is_pci_cacheable(address) and self._pci_cache.get(address) == value: return []
 
     assert fmt_type >> 8 == 0 and size > 0 and size <= 4, f"Invalid fmt_type {fmt_type} or size {size}"
-    if DEBUG >= 3: print("pcie_request", hex(fmt_type), hex(address), value, size)
+    if DEBUG >= 5: print("pcie_request", hex(fmt_type), hex(address), value, size)
 
     masked_address, offset = address & 0xFFFFFFFC, address & 0x3
     assert size + offset <= 4 and (value is None or value >> (8 * size) == 0)

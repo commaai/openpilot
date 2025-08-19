@@ -100,11 +100,29 @@ class TestTiny(unittest.TestCase):
       lambda x: x.flatten(1), nn.Linear(576, 10)]
 
     # replace random weights with ones
-    for p in nn.state.get_parameters(layers): p.replace(Tensor.ones_like(p).contiguous()).realize()
+    Tensor.realize(*[p.replace(Tensor.ones_like(p).contiguous()) for p in nn.state.get_parameters(layers)])
 
     # run model inference
     probs = Tensor.rand(1, 1, 28, 28).sequential(layers).tolist()
     self.assertEqual(len(probs[0]), 10)
+
+  # TODO: this is failing because of how swizzling rewrites the ShapeTracker of the final STORE
+  @unittest.skipIf(IMAGE>0 or (CI and Device.DEFAULT == "DSP"), "failing because of make things that can't be images not images")
+  def test_mnist_backward(self):
+    # NOTE: we don't have the whole model here for speed
+    layers = [
+      nn.Conv2d(1, 32, 5), Tensor.relu,
+      nn.Conv2d(32, 32, 5), Tensor.relu]
+
+    # replace random weights with ones
+    # TODO: there's a bug here where it's tying two of the biases together. we need UNIQUE const
+    #Tensor.realize(*[p.replace(Tensor.ones_like(p).contiguous()) for p in nn.state.get_parameters(layers)])
+    for p in nn.state.get_parameters(layers): p.replace(Tensor.empty(p.shape))
+
+    # realize gradients
+    for x in nn.state.get_parameters(layers): x.requires_grad_()
+    Tensor.empty(4, 1, 28, 28).sequential(layers).sum().backward()
+    Tensor.realize(*[x.grad for x in nn.state.get_parameters(layers) if x.grad is not None])
 
   # *** image ***
 

@@ -6,7 +6,7 @@
 # POINTER_SIZE is: 8
 # LONGDOUBLE_SIZE is: 16
 #
-import ctypes, os
+import ctypes, ctypes.util, os
 
 
 class FunctionFactoryStub:

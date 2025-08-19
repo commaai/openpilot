@@ -26,7 +26,7 @@ std::optional<uint64_t> Timeline::find(double cur_ts, FindFlag flag) const {
         return entry.end_time;
       }
     } else if (entry.start_time > cur_ts) {
-      if ((flag == FindFlag::nextUserFlag && entry.type == TimelineType::UserFlag) ||
+      if ((flag == FindFlag::nextUserBookmark && entry.type == TimelineType::UserBookmark) ||
           (flag == FindFlag::nextInfo && entry.type == TimelineType::AlertInfo) ||
           (flag == FindFlag::nextWarning && entry.type == TimelineType::AlertWarning) ||
           (flag == FindFlag::nextCritical && entry.type == TimelineType::AlertCritical)) {
@@ -66,8 +66,8 @@ void Timeline::buildTimeline(const Route &route, uint64_t route_start_ts, bool l
         auto cs = reader.getRoot<cereal::Event>().getSelfdriveState();
         updateEngagementStatus(cs, current_engaged_idx, seconds);
         updateAlertStatus(cs, current_alert_idx, seconds);
-      } else if (e.which == cereal::Event::Which::USER_FLAG) {
-        staging_entries_.emplace_back(Entry{seconds, seconds, TimelineType::UserFlag});
+      } else if (e.which == cereal::Event::Which::USER_BOOKMARK) {
+        staging_entries_.emplace_back(Entry{seconds, seconds, TimelineType::UserBookmark});
       }
     }
 

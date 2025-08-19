@@ -139,18 +139,16 @@ class TestBitcastConstFolding(unittest.TestCase):
 class TestIndexingConstFolding(unittest.TestCase):
   def test_scalar_index(self):
     t = Tensor.arange(16).float().reshape(1,1,4,4).realize()
-    # TODO: fold these
-    _check_ast_count(2, t[:,:,Tensor(1),:])
-    _check_ast_count(2, t[:,:,Tensor(1)+2,:])
-    _check_ast_count(2, t[:,:,Tensor(1),Tensor(0)])
+    _check_ast_count(1, t[:,:,Tensor(1),:])
+    _check_ast_count(1, t[:,:,Tensor(1)+2,:])
+    _check_ast_count(1, t[:,:,Tensor(1),Tensor(0)])
 
-  @unittest.expectedFailure
   def test_const_tensor_index(self):
-    # TODO: implement const tensor folded indexing
+    # TODO: these can be 0, implement const tensor folded indexing
     t = Tensor.arange(16).float().reshape(1,1,4,4).realize()
-    _check_ast_count(0, t[:,:,Tensor.ones(2,1),:])
-    _check_ast_count(0, t[:,:,Tensor.ones(1,2)+2,:])
-    _check_ast_count(0, t[:,:,Tensor.ones(1,1),Tensor.zeros(2,1,2)])
+    _check_ast_count(1, t[:,:,Tensor.ones(2,1,dtype=dtypes.int),:])
+    _check_ast_count(1, t[:,:,Tensor.ones(1,2,dtype=dtypes.int)+2,:])
+    _check_ast_count(1, t[:,:,Tensor.ones(1,1,dtype=dtypes.int),Tensor.zeros(2,1,2,dtype=dtypes.int)])
 
 class TestMovedConstFolding(unittest.TestCase):
   def test_add_shrunk_zero(self):
@@ -174,9 +172,9 @@ class TestMovedConstFolding(unittest.TestCase):
     if is_dtype_supported(dtypes.uint16):
       _check_ast_count(0, Tensor.full(4, fill_value=-1).pad(((1, 1),)).cast(dtypes.uint16))
       np.testing.assert_equal(Tensor.full(4, fill_value=-1).pad(((1, 1),)).cast(dtypes.uint16).numpy(), [0, 65535, 65535, 65535, 65535, 0])
-    # not folded
+    # folded
     if is_dtype_supported(dtypes.int64):
-      _check_ast_count(1, Tensor.ones(4).pad(((1, 1),)).cast(dtypes.int64))
+      _check_ast_count(0, Tensor.ones(4).pad(((1, 1),)).cast(dtypes.int64))
       np.testing.assert_equal(Tensor.ones(4).pad(((1, 1),)).cast(dtypes.int64).numpy(), [0, 1, 1, 1, 1, 0])
 
 class TestReduceOpsConstFolding(unittest.TestCase):
@@ -221,7 +219,7 @@ class TestReduceOpsConstFolding(unittest.TestCase):
     # contiguous folded const can still schedule
     a = Tensor.empty(1, 0).sum().contiguous()
     _check_ast_count(2, a+2)
-    self.assertIs(a.lazydata.base.op, Ops.BUFFER)
+    self.assertIs(a.uop.base.op, Ops.BUFFER)
     np.testing.assert_equal((Tensor.empty(1, 0).sum().contiguous()+2).numpy(), 2)
     # otherwise we just fuse it
     _check_ast_count(1, (Tensor.empty(1, 0).sum()+2).contiguous())
@@ -291,17 +289,12 @@ class TestMultiConstFolding(unittest.TestCase):
     np.testing.assert_equal((t + zero).numpy(), np.arange(16))
     np.testing.assert_equal((t * zero).numpy(), [0] * 16)
     np.testing.assert_equal((t * one).numpy(), np.arange(16))
-
-  def test_multi_todo_pow(self):
-    ds = tuple(f"{Device.DEFAULT}:{i}" for i in range(4))
-    t = Tensor.arange(16).float().to(ds).realize()
-    zero = Tensor.zeros(16).to(ds).realize()
-    one = Tensor.ones(16).to(ds).realize()
-
-    # TODO: fix pow folding
     _check_ast_count(0, t ** zero)
     _check_ast_count(0, t ** one)
     _check_ast_count(0, one ** t)
+    np.testing.assert_equal((t ** zero).numpy(), [1] * 16)
+    np.testing.assert_equal((t ** one).numpy(), np.arange(16))
+    np.testing.assert_equal((one ** t).numpy(), [1] * 16)
 
 class TestTautologicalCompare(unittest.TestCase):
   # without const folding, these would have triggered -Wtautological-compare in clang

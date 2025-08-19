@@ -103,6 +103,27 @@ class TestTorchBackend(unittest.TestCase):
     expected = np.array([[4.7, 12.9, 12.3], [16.9, 24.9, 23.6]], dtype=np.float32)
     np.testing.assert_equal(y3.cpu().numpy(), expected)
 
+
+  def test_amin(self):
+    x = torch.tensor([[[ 1.5,  2.3,  3.1,  4.7],
+                       [ 5.2,  6.8,  7.4,  12.9],
+                       [ 9.0, 12.3, 11.6, 10.1]],
+                      [[13.2, 16.9, 15.5, 14.1],
+                       [17.1, 24.9, 19.8, 20.2],
+                       [21.0, 22.3, 23.6, 18.4]]], device=device)
+
+    y1 = torch.amin(x)
+    expected = np.array([1.5], dtype=np.float32)
+    np.testing.assert_equal(y1.cpu().numpy(), expected)
+
+    y2 = torch.amin(x, dim=(1,2))
+    expected = np.array([1.5, 13.2], dtype=np.float32)
+    np.testing.assert_equal(y2.cpu().numpy(), expected)
+
+    y3 = torch.amin(x, dim=2)
+    expected = np.array([[1.5, 5.2, 9.0], [13.2, 17.1, 18.4]], dtype=np.float32)
+    np.testing.assert_equal(y3.cpu().numpy(), expected)
+
   def test_isfinite(self):
     a = torch.ones(4, device=device)
     np.testing.assert_equal(torch.isfinite(a).cpu().numpy(), [True, True, True, True])
@@ -114,7 +135,7 @@ class TestTorchBackend(unittest.TestCase):
     print(c.cpu())
 
   def test_maxpool2d_backward(self):
-    x = torch.arange(3*3, device=device).reshape(1, 1, 3, 3).requires_grad_(True)
+    x = torch.arange(3*3, dtype=torch.float32, device=device).reshape(1, 1, 3, 3).requires_grad_(True)
     torch.nn.functional.max_pool2d(x, kernel_size=2, stride=1).sum().backward()
     np.testing.assert_equal(x.grad.squeeze().cpu().numpy(), [[0, 0, 0], [0, 1, 1], [0, 1, 1]])
 
@@ -170,6 +191,24 @@ class TestTorchBackend(unittest.TestCase):
     assert torch.equal(tensor_a, tensor_b)
     assert not torch.equal(tensor_a, tensor_c)
 
+  def test_linalg_eigh(self):
+    a = torch.tensor([[1, 2], [2, 1]], dtype=torch.float32, device=device)
+    w, v = torch.linalg.eigh(a)
+    np.testing.assert_equal(w.cpu().numpy(), [-1, 3])
+    recon = (v @ torch.diag(w) @ v.T).cpu().numpy()
+    np.testing.assert_allclose(recon, a.cpu().numpy(), atol=1e-6)
+
+  def test_linalg_det(self):
+    a = torch.diag(torch.tensor([1,2,3,4,5], dtype = torch.float32, device=device))
+    b = torch.linalg.det(a)
+    np.testing.assert_equal(b.cpu().numpy(), 120.0)
+
+  def test_linalg_cross(self):
+    a = torch.tensor([[1, 0, 0], [0, 1, 0]], dtype=torch.float32, device=device)
+    b = torch.tensor([[0, 0, 1]], dtype=torch.float32, device=device)
+    cross = torch.linalg.cross(a, b)
+    np.testing.assert_equal(cross.cpu().numpy(), np.array([[0, -1, 0], [1, 0, 0]], dtype=np.float32))
+
   def test_scalar_assign(self):
     a = torch.tensor([1, 2, 3], device=device)
     a[1] = 4
@@ -198,6 +237,17 @@ class TestTorchBackend(unittest.TestCase):
       X,Y = X_train[samples], Y_train[samples]
       X.cpu(), Y.cpu()
       self.assertLessEqual(GlobalCounters.global_ops, 10_000_000)
+
+  def _test_diagonal(self, *shape):
+    a = torch.randn(*shape, dtype=torch.float32, device=device)
+    ref = np.diagonal(a.cpu().numpy(), axis1=-2, axis2=-1)
+    diag = torch.linalg.diagonal(a)
+    np.testing.assert_equal(diag.cpu().numpy(), ref)
+    np.testing.assert_equal(diag[-1].cpu().numpy(), ref[-1])
+
+  def test_diagonal_cube(self): self._test_diagonal(3, 3, 3)
+  def test_diagonal_rectangular(self): self._test_diagonal(4, 5, 6)
+  def test_diagonal_4d(self): self._test_diagonal(2, 3, 4, 5)
 
 if __name__ == "__main__":
   unittest.main()

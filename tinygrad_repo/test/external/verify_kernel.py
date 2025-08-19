@@ -3,7 +3,7 @@ from collections import defaultdict
 from extra.optimization.helpers import kern_str_to_lin, time_linearizer
 from test.external.fuzz_linearizer import compare_linearizer
 from tinygrad.helpers import colored
-from tinygrad.codegen.kernel import Kernel
+from tinygrad.codegen.opt.kernel import Kernel
 
 # Use this with the LOGKERNS options to verify that all executed kernels are valid and evaluate to the same ground truth results
 

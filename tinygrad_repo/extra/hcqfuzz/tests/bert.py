@@ -8,7 +8,6 @@ bert_train_params = {
   "BS": 96,
   "EVAL_BS": 96,
   "FUSE_ARANGE": 1,
-  "FUSE_ARANGE_UINT": 0,
   "BASEDIR": "/raid/datasets/wiki",
 }
 

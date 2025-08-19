@@ -10,6 +10,7 @@ import tensorflow as tf
 import tf2onnx
 from tinygrad.frontend.onnx import OnnxRunner
 from tinygrad.tensor import Tensor
+from tinygrad.helpers import to_mv
 from extra.export_model import export_model_clang, compile_net, jit_model
 
 def get_uncompiled_model2(dataset_size=32, output_size=4):
@@ -25,7 +26,7 @@ class TinyOnnx:
   def __init__(self, keras_model):
     input_signature = [tf.TensorSpec([1,32], tf.float32, name='x')]
     onnx_model, _ = tf2onnx.convert.from_keras(keras_model, input_signature, opset=13)
-    self.run_onnx = OnnxRunner(onnx_model)
+    self.run_onnx = OnnxRunner(Tensor(onnx_model.SerializeToString(), device="PYTHON"))
 
   def forward(self, x):
     return self.run_onnx({"x": x}, debug=False)['predictions']
@@ -47,8 +48,8 @@ def compile_onnx_model(onnx_model):
   cprog.append("void initialize(float *weights) {")
   weights = bytes()
   for name,cl in bufs_to_save.items():
-    cprog.append(f"memcpy({name}, weights + {len(weights)//4}, {len(cl._buf)*4});")
-    weights += bytes(cl._buf)
+    cprog.append(f"memcpy({name}, weights + {len(weights)//4}, {cl._buf.size});")
+    weights += bytes(to_mv(cl._buf.va_addr, cl._buf.size))
   cprog.append("}")
 
   # write the weights to disk

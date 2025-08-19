@@ -78,10 +78,7 @@ if __name__ == "__main__":
 
   @TinyJit
   def get_action(obs:Tensor) -> Tensor:
-    # TODO: with no_grad
-    Tensor.no_grad = True
     ret = model(obs)[0].exp().multinomial().realize()
-    Tensor.no_grad = False
     return ret
 
   st, steps = time.perf_counter(), 0

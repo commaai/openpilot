@@ -136,9 +136,7 @@ class TestRandomness(unittest.TestCase):
     jr = np.array([0.9614430665969849, 0.059279561042785645, 0.01909029483795166, 0.47882091999053955, 0.9677121639251709,
                    0.36863112449645996, 0.3102607727050781, 0.06608951091766357, 0.35329878330230713, 0.26518797874450684], dtype=np.float32)
     r = Tensor.rand(10).numpy()
-    # TODO: this failed because increment happened before _threefry_random_bits
-    with self.assertRaises(AssertionError):
-      np.testing.assert_allclose(r, jr, atol=1e-5, rtol=1e-5)
+    np.testing.assert_allclose(r, jr, atol=1e-5, rtol=1e-5)
 
   @unittest.skipIf(not_support_multi_device(), "no multi")
   def test_threefry_tensors_cnt(self):
@@ -253,6 +251,9 @@ class TestRandomness(unittest.TestCase):
     self.assertTrue(normal_test(Tensor.randn))
     self.assertTrue(equal_distribution(Tensor.randn, torch.randn, lambda x: np.random.randn(*x)))
 
+  def test_randn_device(self):
+    self.assertEqual(Tensor.randn(3,3,device="CPU").device, "CPU")
+
   @given(strat.sampled_from([dtypes.float, dtypes.float16, dtypes.bfloat16]))
   @unittest.skipIf(Device.DEFAULT in ["HSA", "AMD"], "bfloat16 local buffer broken in HSA")
   def test_randn_finite(self, default_float):
@@ -260,7 +261,7 @@ class TestRandomness(unittest.TestCase):
     old_default_float = dtypes.default_float
     # low precision can result in inf from randn
     dtypes.default_float = default_float
-    t = Tensor.randn(1024, 1024)
+    t = Tensor.randn(256, 256)
     mx = t.max().numpy().item()
     mn = t.min().numpy().item()
     print(f"testing with {default_float=}")
@@ -303,11 +304,11 @@ class TestRandomness(unittest.TestCase):
                                                               lambda x: np.random.uniform(-1, 1, size=x) * math.sqrt(6 / (x[0] + math.prod(x[1:])))))
 
   def test_kaiming_uniform(self):
-    for shape in [(256, 128, 3, 3), (80, 44), (3, 55, 35)]:
+    for shape in [(32, 128, 3, 3), (80, 44), (3, 55, 35)]:
       self.assertTrue(equal_distribution(Tensor.kaiming_uniform, lambda x: torch.nn.init.kaiming_uniform_(torch.empty(x)), shape=shape))
 
   def test_kaiming_normal(self):
-    for shape in [(256, 128, 3, 3), (80, 44), (3, 55, 35)]:
+    for shape in [(32, 128, 3, 3), (80, 44), (3, 55, 35)]:
       self.assertTrue(equal_distribution(Tensor.kaiming_normal, lambda x: torch.nn.init.kaiming_normal_(torch.empty(x)), shape=shape))
 
   def test_multinomial(self):

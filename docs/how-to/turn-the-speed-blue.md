@@ -1,11 +1,11 @@
 # Turn the speed blue
 *A getting started guide for openpilot development*
 
-In 30 minutes, we'll get an openpilot development environment setup on your computer and make some changes to openpilot's UI.
+In 30 minutes, we'll get an openpilot development environment set up on your computer and make some changes to openpilot's UI.
 
 And if you have a comma 3/3X, we'll deploy the change to your device for testing.
 
-## 1. Setup your development environment
+## 1. Set up your development environment
 
 Run this to clone openpilot and install all the dependencies:
 ```bash

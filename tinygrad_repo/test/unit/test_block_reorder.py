@@ -54,7 +54,7 @@ class TestBlockReorder(unittest.TestCase):
     sink = c.store(sum(loads)).sink()
 
     # determine golden order
-    golden = block_reorder(sink.toposort())
+    golden = block_reorder(list(sink.toposort()))
 
     # render for test
     print(self._test_render(golden))

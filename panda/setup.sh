@@ -12,11 +12,17 @@ if [[ $PLATFORM == "Darwin" ]]; then
   brew install --cask gcc-arm-embedded
   brew install python3 gcc@13
 elif [[ $PLATFORM == "Linux" ]]; then
+  # for AGNOS since we clear the apt lists
+  if [[ ! -d /"var/lib/apt/" ]]; then
+    sudo apt update
+  fi
+
   sudo apt-get install -y --no-install-recommends \
-    curl \
+    curl ca-certificates \
     make g++ git libnewlib-arm-none-eabi \
     libusb-1.0-0 \
-    gcc-arm-none-eabi python3-pip python3-venv python3-dev
+    gcc-arm-none-eabi \
+    python3-dev python3-pip python3-venv
 else
   echo "WARNING: unsupported platform. skipping apt/brew install."
 fi

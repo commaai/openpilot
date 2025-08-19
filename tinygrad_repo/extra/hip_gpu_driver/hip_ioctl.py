@@ -5,7 +5,7 @@ start = time.perf_counter()
 # *** ioctl lib ***
 libc = ctypes.CDLL(ctypes.util.find_library("c"))
 # platform.processor calls `uname -p` which can return `unknown` on some systems
-processor = os.getenv("IOCTL_PROCESSOR") or platform.processor()
+processor = os.getenv("IOCTL_PROCESSOR") or platform.processor() or platform.machine()
 IOCTL_SYSCALL = {"aarch64": 0x1d, "x86_64":16}[processor]
 
 def get_struct(argp, stype):

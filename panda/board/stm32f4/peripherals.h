@@ -9,16 +9,8 @@ static void gpio_usb_init(void) {
   GPIOA->OSPEEDR = GPIO_OSPEEDER_OSPEEDR11 | GPIO_OSPEEDER_OSPEEDR12;
 }
 
-#ifdef ENABLE_SPI
 void gpio_spi_init(void) {
-  // A4-A7: SPI
-  set_gpio_alternate(GPIOA, 4, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 5, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 6, GPIO_AF5_SPI1);
-  set_gpio_alternate(GPIOA, 7, GPIO_AF5_SPI1);
-  register_set_bits(&(GPIOA->OSPEEDR), GPIO_OSPEEDER_OSPEEDR4 | GPIO_OSPEEDER_OSPEEDR5 | GPIO_OSPEEDER_OSPEEDR6 | GPIO_OSPEEDER_OSPEEDR7);
 }
-#endif
 
 #ifdef BOOTSTUB
 void gpio_usart2_init(void) {
@@ -30,8 +22,6 @@ void gpio_usart2_init(void) {
 
 // Common GPIO initialization
 void common_init_gpio(void) {
-  // TODO: Is this block actually doing something???
-  // pull low to hold ESP in reset??
   // enable OTG out tied to ground
   GPIOA->ODR = 0;
   GPIOB->ODR = 0;

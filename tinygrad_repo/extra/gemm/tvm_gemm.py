@@ -37,10 +37,10 @@ B = Tensor.rand(K, N, device="CPU")
 C = (A.reshape(M, 1, K) * B.permute(1,0).reshape(1, N, K)).sum(axis=2)
 
 sched = C.schedule()
-from tinygrad.codegen.kernel import Kernel
+from tinygrad.codegen.opt.kernel import Kernel
 from tinygrad.device import CompilerOptions
 lin = Kernel(sched[-1].ast, CompilerOptions(has_local=False, supports_float4=False))
-lin.linearize()
+lin.to_program()
 from tinygrad.runtime.ops_cpu import renderer
 src = renderer("mmult", lin.uops)
 print(src)

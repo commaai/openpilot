@@ -62,7 +62,6 @@ class TestNaNEdgeCases(unittest.TestCase):
 class TestEmptyTensorEdgeCases(unittest.TestCase):
   # we don't need more of these
 
-  @unittest.expectedFailure
   def test_sort_empty(self):
     # Sorting an empty tensor works in PyTorch and should return empty
     # values and indices. tinygrad raises an error instead.
@@ -94,42 +93,20 @@ class TestEmptyTensorEdgeCases(unittest.TestCase):
     out = Tensor([], dtype=dtypes.float32).masked_select(Tensor([], dtype=dtypes.bool))
     np.testing.assert_equal(out.numpy(), torch_out.numpy())
 
-class TestRollEdgeCases(unittest.TestCase):
-  # we don't need more of these
-
-  @unittest.expectedFailure
-  def test_roll_mismatched_dims(self):
-    with self.assertRaises(RuntimeError):
-      torch.roll(torch.arange(9).reshape(3, 3), 1, dims=(0, 1))
-    with self.assertRaises(RuntimeError):
-      Tensor.arange(9).reshape(3, 3).roll(1, dims=(0, 1))
-
-  @unittest.expectedFailure
-  def test_roll_extra_shift(self):
-    # tinygrad ignores extra shift values instead of raising
-    with self.assertRaises(RuntimeError):
-      torch.roll(torch.arange(10), (1, 2), dims=0)
-    with self.assertRaises(RuntimeError):
-      Tensor.arange(10).roll((1, 2), dims=0)
-
 class TestDropoutProbabilityEdgeCases(unittest.TestCase):
   # we don't need more of these
 
-  @unittest.expectedFailure
   def test_dropout_rate_one(self):
-    # out is full of NaNs it should be 0s
     with Tensor.train():
       out = Tensor.ones(100).dropout(1.0)
       np.testing.assert_allclose(out.numpy(), np.zeros(100))
 
-  @unittest.expectedFailure
   def test_dropout_invalid_prob(self):
-    # negative dropout probability should raise an error
     with self.assertRaises(ValueError):
       torch.nn.functional.dropout(torch.ones(10), -0.1, True)
-    with Tensor.train():
-      out = Tensor.ones(10).dropout(-0.1)
-      np.testing.assert_allclose(out.numpy(), np.ones(10))
+    with self.assertRaises(ValueError):
+      with Tensor.train():
+        Tensor.ones(10).dropout(-0.1)
 
 class TestInputValidation(unittest.TestCase):
   # we don't need more of these, input validation bugs are not very interesting, many are WONTFIX
@@ -241,7 +218,6 @@ class TestAssignIssues(unittest.TestCase):
     t.shrink(((1, 3), (1, 3))).assign(Tensor.ones(2, 2))
     np.testing.assert_allclose(t.numpy(), torch_tensor.numpy())
 
-  @unittest.expectedFailure
   def test_assign_broadcast(self):
     # broadcasting during assign should behave like PyTorch
     torch_tensor = torch.zeros(3, 5)
@@ -280,12 +256,11 @@ class TestEdgeCases(unittest.TestCase):
     out = Tensor(arr).pad((1, -1, 1, -1), mode='circular')
     np.testing.assert_equal(out.numpy(), torch_out.numpy())
 
-  @unittest.expectedFailure
   def test_arange_float_step(self):
     # float steps should match PyTorch exactly
     torch_out = torch.arange(0, 2, 0.3).numpy()
     out = Tensor.arange(0, 2, 0.3).numpy()
-    np.testing.assert_allclose(out, torch_out)
+    np.testing.assert_allclose(out, torch_out, atol=1e-7)
 
   @unittest.skip("this is flaky")
   @unittest.expectedFailure
