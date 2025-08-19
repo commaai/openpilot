@@ -12,21 +12,24 @@ import urllib.parse
 import warnings
 import zstandard as zstd
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from typing import cast
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
-from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available, FilePath
-from openpilot.tools.lib.file_sources import comma_api_source
-from openpilot.tools.lib.route import Route, SegmentRange, FileName
+from openpilot.tools.lib.filereader import FileReader, FilePath
+from openpilot.tools.lib.file_sources import comma_api_source, direct_source, comma_car_segments_source, openpilotci_source, internal_source, Source
+from openpilot.tools.lib.route import SegmentRange, FileName
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 LogMessage = type[capnp._DynamicStructReader]
 LogIterable = Iterable[LogMessage]
 RawLogIterable = Iterable[bytes]
 
+
+class LogsUnavailable(Exception):
+  pass
 
 def save_log(dest, log_msgs, compress=True):
   dat = b"".join(msg.as_builder().to_bytes() for msg in log_msgs)

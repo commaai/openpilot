@@ -1,15 +1,16 @@
+from collections.abc import Callable
+
 from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
 from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available, FilePath
+from openpilot.tools.lib.filereader import DATA_ENDPOINT, file_exists, internal_source_available, FilePath
 from openpilot.tools.lib.route import Route, SegmentRange, FileName
 
 FileNames = tuple[str, ...]
 Source = Callable[[SegmentRange, list[int], FileNames], dict[int, FilePath]]
+InternalUnavailableException = Exception("Internal source not available")
 
-class LogsUnavailable(Exception):
-  pass
 
-def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, FilePath]:
+def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> dict[int, FilePath]:
   route = Route(sr.route_name)
 
   # comma api will have already checked if the file exists
@@ -19,7 +20,7 @@ def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) ->
     return {seg: route.qlog_paths()[seg] for seg in seg_idxs}
 
 
-def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> dict[int, FilePath]:
+def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames, endpoint_url: str = DATA_ENDPOINT) -> dict[int, FilePath]:
   if not internal_source_available(endpoint_url):
     raise InternalUnavailableException
 
@@ -29,11 +30,11 @@ def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, end
   return eval_source({seg: [get_internal_url(sr, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, FilePath]:
+def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> dict[int, FilePath]:
   return eval_source({seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs})
 
 
-def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, FilePath]:
+def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: FileNames) -> dict[int, FilePath]:
   return eval_source({seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs})
 
 
