@@ -1,0 +1,46 @@
+# on Windows -- $env:SKIP="tests,example"
+repos:
+  - repo: local
+    hooks:
+      - id: ruff
+        name: ruff
+        entry: python3 -m ruff check .
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: tiny
+        name: tiny tests
+        entry: python3 -m pytest test/test_tiny.py
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: mypy
+        name: mypy
+        entry: python3 -m mypy tinygrad/ --strict-equality
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: devicetests
+        name: select GPU tests
+        entry: env GPU=1 PYTHONPATH="." python3 -m pytest test/test_uops.py test/test_search.py
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: tests
+        name: subset of tests
+        entry: env PYTHONPATH="." python3 -m pytest -n=4 test/test_ops.py test/test_dtype.py test/test_schedule.py test/test_assign.py
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: example
+        name: multi device tests
+        entry: python3 test/external/external_test_example.py
+        language: system
+        always_run: true
+        pass_filenames: false
+      - id: pylint
+        name: pylint
+        entry: python3 -m pylint tinygrad/
+        language: system
+        always_run: true
+        pass_filenames: false

@@ -1,0 +1,16 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _nidec_scm_group_a.dbc";
+CM_ "IMPORT _steering_sensors_b.dbc";
+CM_ "IMPORT _steering_control_b.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+BO_ 399 STEER_STATUS: 6 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|12@0- (-1,0) [-2047.5|2047.5] "tbd"  EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-0.1,0) [-31000|31000] "deg/s" EON
+ SG_ STEER_CONTROL_ACTIVE : 36|1@0+ (1,0) [0|1] ""  EON
+ SG_ STEER_STATUS : 35|4@0+ (1,0) [0|15] ""  EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] ""  EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] ""  EON
+
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;

@@ -1,0 +1,1124 @@
+[
+    {
+        "command": "clang++ -o common/params.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/params.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/params.cc",
+        "output": "/data/openpilot/common/params.o"
+    },
+    {
+        "command": "clang++ -o common/swaglog.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/swaglog.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/swaglog.cc",
+        "output": "/data/openpilot/common/swaglog.o"
+    },
+    {
+        "command": "clang++ -o common/util.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/util.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/util.cc",
+        "output": "/data/openpilot/common/util.o"
+    },
+    {
+        "command": "clang++ -o common/watchdog.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/watchdog.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/watchdog.cc",
+        "output": "/data/openpilot/common/watchdog.o"
+    },
+    {
+        "command": "clang++ -o common/ratekeeper.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/ratekeeper.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/ratekeeper.cc",
+        "output": "/data/openpilot/common/ratekeeper.o"
+    },
+    {
+        "command": "clang++ -o common/clutil.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/clutil.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/clutil.cc",
+        "output": "/data/openpilot/common/clutil.o"
+    },
+    {
+        "command": "clang++ -o common/params_pyx.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include common/params_pyx.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/params_pyx.cpp",
+        "output": "/data/openpilot/common/params_pyx.o"
+    },
+    {
+        "command": "clang++ -o common/transformations/orientation.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/transformations/orientation.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/transformations/orientation.cc",
+        "output": "/data/openpilot/common/transformations/orientation.o"
+    },
+    {
+        "command": "clang++ -o common/transformations/coordinates.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq common/transformations/coordinates.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/transformations/coordinates.cc",
+        "output": "/data/openpilot/common/transformations/coordinates.o"
+    },
+    {
+        "command": "clang++ -o common/transformations/transformations.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include common/transformations/transformations.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/common/transformations/transformations.cpp",
+        "output": "/data/openpilot/common/transformations/transformations.o"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/ipc.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/ipc.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/ipc.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/ipc.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/event.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/event.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/event.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/event.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/impl_zmq.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/impl_zmq.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/impl_zmq.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/impl_zmq.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/impl_msgq.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/impl_msgq.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/impl_msgq.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/impl_msgq.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/impl_fake.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/impl_fake.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/impl_fake.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/impl_fake.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/msgq.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/msgq.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/msgq.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/msgq.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/ipc_pyx.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include msgq_repo/msgq/ipc_pyx.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/ipc_pyx.cpp",
+        "output": "/data/openpilot/msgq_repo/msgq/ipc_pyx.o"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/visionipc/visionipc.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/visionipc/visionipc.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/visionipc/visionipc_server.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/visionipc/visionipc_server.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc_server.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc_server.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/visionipc/visionipc_client.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/visionipc/visionipc_client.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc_client.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc_client.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/visionipc/visionbuf.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/visionipc/visionbuf.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/visionipc/visionbuf.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/visionipc/visionbuf.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/visionipc/visionbuf_ion.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DSWAGLOG=\"\\\"common/swaglog.h\\\"\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq msgq_repo/msgq/visionipc/visionbuf_ion.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/visionipc/visionbuf_ion.cc",
+        "output": "/data/openpilot/msgq_repo/msgq/visionipc/visionbuf_ion.os"
+    },
+    {
+        "command": "clang++ -o msgq_repo/msgq/visionipc/visionipc_pyx.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include msgq_repo/msgq/visionipc/visionipc_pyx.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc_pyx.cpp",
+        "output": "/data/openpilot/msgq_repo/msgq/visionipc/visionipc_pyx.o"
+    },
+    {
+        "command": "clang++ -o cereal/gen/cpp/log.capnp.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/gen/cpp/log.capnp.c++",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/gen/cpp/log.capnp.c++",
+        "output": "/data/openpilot/cereal/gen/cpp/log.capnp.o"
+    },
+    {
+        "command": "clang++ -o cereal/gen/cpp/car.capnp.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/gen/cpp/car.capnp.c++",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/gen/cpp/car.capnp.c++",
+        "output": "/data/openpilot/cereal/gen/cpp/car.capnp.o"
+    },
+    {
+        "command": "clang++ -o cereal/gen/cpp/legacy.capnp.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/gen/cpp/legacy.capnp.c++",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/gen/cpp/legacy.capnp.c++",
+        "output": "/data/openpilot/cereal/gen/cpp/legacy.capnp.o"
+    },
+    {
+        "command": "clang++ -o cereal/gen/cpp/custom.capnp.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/gen/cpp/custom.capnp.c++",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/gen/cpp/custom.capnp.c++",
+        "output": "/data/openpilot/cereal/gen/cpp/custom.capnp.o"
+    },
+    {
+        "command": "clang++ -o cereal/messaging/bridge.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/messaging/bridge.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/messaging/bridge.cc",
+        "output": "/data/openpilot/cereal/messaging/bridge.o"
+    },
+    {
+        "command": "clang++ -o cereal/messaging/msgq_to_zmq.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/messaging/msgq_to_zmq.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/messaging/msgq_to_zmq.cc",
+        "output": "/data/openpilot/cereal/messaging/msgq_to_zmq.o"
+    },
+    {
+        "command": "clang++ -o cereal/messaging/socketmaster.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq cereal/messaging/socketmaster.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/cereal/messaging/socketmaster.cc",
+        "output": "/data/openpilot/cereal/messaging/socketmaster.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -mcpu=cortex-m4 -mhard-float -DSTM32F4 -DSTM32F413xx -Iboard/stm32f4/inc -mfpu=fpv4-sp-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32f4/stm32f4_flash.ld -fsingle-precision-constant -Os -g -o panda/board/stm32f4/board/obj/pandastartup_stm32f413xx.o -c panda/board/stm32f4/startup_stm32f413xx.s",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/stm32f4/startup_stm32f413xx.s",
+        "output": "/data/openpilot/panda/board/stm32f4/board/obj/pandastartup_stm32f413xx.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/crypto/board/obj/pandarsa.o -c -mcpu=cortex-m4 -mhard-float -DSTM32F4 -DSTM32F413xx -Iboard/stm32f4/inc -mfpu=fpv4-sp-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32f4/stm32f4_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/crypto/rsa.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/crypto/rsa.c",
+        "output": "/data/openpilot/panda/crypto/board/obj/pandarsa.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/crypto/board/obj/pandasha.o -c -mcpu=cortex-m4 -mhard-float -DSTM32F4 -DSTM32F413xx -Iboard/stm32f4/inc -mfpu=fpv4-sp-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32f4/stm32f4_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/crypto/sha.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/crypto/sha.c",
+        "output": "/data/openpilot/panda/crypto/board/obj/pandasha.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/board/board/obj/pandabootstub.o -c -mcpu=cortex-m4 -mhard-float -DSTM32F4 -DSTM32F413xx -Iboard/stm32f4/inc -mfpu=fpv4-sp-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32f4/stm32f4_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/board/bootstub.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/bootstub.c",
+        "output": "/data/openpilot/panda/board/board/obj/pandabootstub.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/board/board/obj/pandamain.o -c -mcpu=cortex-m4 -mhard-float -DSTM32F4 -DSTM32F413xx -Iboard/stm32f4/inc -mfpu=fpv4-sp-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32f4/stm32f4_flash.ld -fsingle-precision-constant -Os -g -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/board/main.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/main.c",
+        "output": "/data/openpilot/panda/board/board/obj/pandamain.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -o panda/board/stm32h7/board/obj/panda_h7startup_stm32h7x5xx.o -c panda/board/stm32h7/startup_stm32h7x5xx.s",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/stm32h7/startup_stm32h7x5xx.s",
+        "output": "/data/openpilot/panda/board/stm32h7/board/obj/panda_h7startup_stm32h7x5xx.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/crypto/board/obj/panda_h7rsa.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/crypto/rsa.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/crypto/rsa.c",
+        "output": "/data/openpilot/panda/crypto/board/obj/panda_h7rsa.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/crypto/board/obj/panda_h7sha.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/crypto/sha.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/crypto/sha.c",
+        "output": "/data/openpilot/panda/crypto/board/obj/panda_h7sha.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/board/board/obj/panda_h7bootstub.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/board/bootstub.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/bootstub.c",
+        "output": "/data/openpilot/panda/board/board/obj/panda_h7bootstub.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/board/board/obj/panda_h7main.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/board/main.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/main.c",
+        "output": "/data/openpilot/panda/board/board/obj/panda_h7main.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DPANDA_JUNGLE -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -o panda/board/stm32h7/board/obj/panda_jungle_h7startup_stm32h7x5xx.o -c panda/board/stm32h7/startup_stm32h7x5xx.s",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/stm32h7/startup_stm32h7x5xx.s",
+        "output": "/data/openpilot/panda/board/stm32h7/board/obj/panda_jungle_h7startup_stm32h7x5xx.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/crypto/board/obj/panda_jungle_h7rsa.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DPANDA_JUNGLE -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/crypto/rsa.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/crypto/rsa.c",
+        "output": "/data/openpilot/panda/crypto/board/obj/panda_jungle_h7rsa.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/crypto/board/obj/panda_jungle_h7sha.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DPANDA_JUNGLE -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/crypto/sha.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/crypto/sha.c",
+        "output": "/data/openpilot/panda/crypto/board/obj/panda_jungle_h7sha.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/board/board/obj/panda_jungle_h7bootstub.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DPANDA_JUNGLE -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -DBOOTSTUB -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/board/bootstub.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/bootstub.c",
+        "output": "/data/openpilot/panda/board/board/obj/panda_jungle_h7bootstub.o"
+    },
+    {
+        "command": "arm-none-eabi-gcc -o panda/board/jungle/board/obj/panda_jungle_h7main.o -c -mcpu=cortex-m7 -mhard-float -DSTM32H7 -DSTM32H725xx -Iboard/stm32h7/inc -mfpu=fpv5-d16 -DPANDA_JUNGLE -DALLOW_DEBUG -Wall -Wextra -Wstrict-prototypes -Werror -mlittle-endian -mthumb -nostdlib -fno-builtin -std=gnu11 -fmax-errors=1 -Tpanda/board/stm32h7/stm32h7x5_flash.ld -fsingle-precision-constant -Os -g -Ipanda -Ipanda/board/stm32f4/inc -Ipanda/board/stm32h7/inc -Iopendbc_repo panda/board/jungle/main.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/panda/board/jungle/main.c",
+        "output": "/data/openpilot/panda/board/jungle/board/obj/panda_jungle_h7main.o"
+    },
+    {
+        "command": "clang++ -o rednose/helpers/ekf_load.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq rednose/helpers/ekf_load.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/rednose/helpers/ekf_load.cc",
+        "output": "/data/openpilot/rednose/helpers/ekf_load.os"
+    },
+    {
+        "command": "clang++ -o rednose/helpers/ekf_sym.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq rednose/helpers/ekf_sym.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/rednose/helpers/ekf_sym.cc",
+        "output": "/data/openpilot/rednose/helpers/ekf_sym.os"
+    },
+    {
+        "command": "clang++ -o rednose/helpers/ekf_sym_pyx.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include rednose/helpers/ekf_sym_pyx.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/rednose/helpers/ekf_sym_pyx.cpp",
+        "output": "/data/openpilot/rednose/helpers/ekf_sym_pyx.o"
+    },
+    {
+        "command": "clang++ -o system/ubloxd/generated/glonass.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/ubloxd/generated/glonass.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/ubloxd/generated/glonass.cpp",
+        "output": "/data/openpilot/system/ubloxd/generated/glonass.o"
+    },
+    {
+        "command": "clang++ -o system/ubloxd/ubloxd.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/ubloxd/ubloxd.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/ubloxd/ubloxd.cc",
+        "output": "/data/openpilot/system/ubloxd/ubloxd.o"
+    },
+    {
+        "command": "clang++ -o system/ubloxd/ublox_msg.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/ubloxd/ublox_msg.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/ubloxd/ublox_msg.cc",
+        "output": "/data/openpilot/system/ubloxd/ublox_msg.o"
+    },
+    {
+        "command": "clang++ -o system/ubloxd/generated/ubx.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/ubloxd/generated/ubx.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/ubloxd/generated/ubx.cpp",
+        "output": "/data/openpilot/system/ubloxd/generated/ubx.o"
+    },
+    {
+        "command": "clang++ -o system/ubloxd/generated/gps.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/ubloxd/generated/gps.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/ubloxd/generated/gps.cpp",
+        "output": "/data/openpilot/system/ubloxd/generated/gps.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/logger.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/logger.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/logger.cc",
+        "output": "/data/openpilot/system/loggerd/logger.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/zstd_writer.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/zstd_writer.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/zstd_writer.cc",
+        "output": "/data/openpilot/system/loggerd/zstd_writer.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/video_writer.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/video_writer.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/video_writer.cc",
+        "output": "/data/openpilot/system/loggerd/video_writer.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/encoder/encoder.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/encoder/encoder.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/encoder/encoder.cc",
+        "output": "/data/openpilot/system/loggerd/encoder/encoder.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/encoder/v4l_encoder.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/encoder/v4l_encoder.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/encoder/v4l_encoder.cc",
+        "output": "/data/openpilot/system/loggerd/encoder/v4l_encoder.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/encoder/jpeg_encoder.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/encoder/jpeg_encoder.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/encoder/jpeg_encoder.cc",
+        "output": "/data/openpilot/system/loggerd/encoder/jpeg_encoder.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/loggerd.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/loggerd.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/loggerd.cc",
+        "output": "/data/openpilot/system/loggerd/loggerd.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/encoderd.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/encoderd.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/encoderd.cc",
+        "output": "/data/openpilot/system/loggerd/encoderd.o"
+    },
+    {
+        "command": "clang++ -o system/loggerd/bootlog.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/loggerd/bootlog.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/loggerd/bootlog.cc",
+        "output": "/data/openpilot/system/loggerd/bootlog.o"
+    },
+    {
+        "command": "clang++ -o system/logcatd/logcatd_systemd.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/logcatd/logcatd_systemd.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/logcatd/logcatd_systemd.cc",
+        "output": "/data/openpilot/system/logcatd/logcatd_systemd.o"
+    },
+    {
+        "command": "clang++ -o system/proclogd/main.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/proclogd/main.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/proclogd/main.cc",
+        "output": "/data/openpilot/system/proclogd/main.o"
+    },
+    {
+        "command": "clang++ -o system/proclogd/proclog.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/proclogd/proclog.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/proclogd/proclog.cc",
+        "output": "/data/openpilot/system/proclogd/proclog.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/cameras/camera_qcom2.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/cameras/camera_qcom2.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/cameras/camera_qcom2.cc",
+        "output": "/data/openpilot/system/camerad/cameras/camera_qcom2.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/cameras/camera_common.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/cameras/camera_common.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/cameras/camera_common.cc",
+        "output": "/data/openpilot/system/camerad/cameras/camera_common.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/cameras/spectra.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/cameras/spectra.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/cameras/spectra.cc",
+        "output": "/data/openpilot/system/camerad/cameras/spectra.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/cameras/cdm.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/cameras/cdm.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/cameras/cdm.cc",
+        "output": "/data/openpilot/system/camerad/cameras/cdm.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/sensors/ar0231.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/sensors/ar0231.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/sensors/ar0231.cc",
+        "output": "/data/openpilot/system/camerad/sensors/ar0231.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/sensors/ox03c10.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/sensors/ox03c10.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/sensors/ox03c10.cc",
+        "output": "/data/openpilot/system/camerad/sensors/ox03c10.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/sensors/os04c10.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/sensors/os04c10.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/sensors/os04c10.cc",
+        "output": "/data/openpilot/system/camerad/sensors/os04c10.o"
+    },
+    {
+        "command": "clang++ -o system/camerad/main.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq system/camerad/main.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/system/camerad/main.cc",
+        "output": "/data/openpilot/system/camerad/main.o"
+    },
+    {
+        "command": "clang++ -o third_party/json11/json11.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unqualified-std-cast-call -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq third_party/json11/json11.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/third_party/json11/json11.cpp",
+        "output": "/data/openpilot/third_party/json11/json11.o"
+    },
+    {
+        "command": "clang++ -o third_party/kaitai/kaitaistream.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -DKS_STR_ENCODING_NONE -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq third_party/kaitai/kaitaistream.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/third_party/kaitai/kaitaistream.cpp",
+        "output": "/data/openpilot/third_party/kaitai/kaitaistream.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/panda.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/panda.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/panda.cc",
+        "output": "/data/openpilot/selfdrive/pandad/panda.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/panda_comms.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/panda_comms.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/panda_comms.cc",
+        "output": "/data/openpilot/selfdrive/pandad/panda_comms.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/spi.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/spi.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/spi.cc",
+        "output": "/data/openpilot/selfdrive/pandad/spi.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/main.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/main.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/main.cc",
+        "output": "/data/openpilot/selfdrive/pandad/main.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/pandad.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/pandad.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/pandad.cc",
+        "output": "/data/openpilot/selfdrive/pandad/pandad.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/panda_safety.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/panda_safety.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/panda_safety.cc",
+        "output": "/data/openpilot/selfdrive/pandad/panda_safety.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/can_list_to_can_capnp.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/pandad/can_list_to_can_capnp.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/can_list_to_can_capnp.cc",
+        "output": "/data/openpilot/selfdrive/pandad/can_list_to_can_capnp.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/pandad/pandad_api_impl.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include selfdrive/pandad/pandad_api_impl.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/pandad/pandad_api_impl.cpp",
+        "output": "/data/openpilot/selfdrive/pandad/pandad_api_impl.o"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_solver_lat.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_solver_lat.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_solver_lat.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_solver_lat.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_ode_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_ode_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_ode_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_ode_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_vde_forw.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_vde_forw.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_vde_forw.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_model/lat_expl_vde_forw.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun_jac_ut_xt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun_jac_ut_xt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun_jac_ut_xt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_fun_jac_ut_xt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_hess.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_hess.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_hess.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_hess.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun_jac_ut_xt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun_jac_ut_xt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun_jac_ut_xt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_fun_jac_ut_xt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_hess.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_hess.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_hess.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_e_hess.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun_jac_ut_xt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun_jac_ut_xt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun_jac_ut_xt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_fun_jac_ut_xt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_hess.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_hess.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_hess.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/lat_cost/lat_cost_y_0_hess.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_ocp_solver_pyx.o -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_ocp_solver_pyx.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_ocp_solver_pyx.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/lateral_mpc_lib/c_generated_code/acados_ocp_solver_pyx.o"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_solver_long.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_solver_long.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_solver_long.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_solver_long.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_ode_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_ode_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_ode_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_ode_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_vde_forw.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_vde_forw.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_vde_forw.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_model/long_expl_vde_forw.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun_jac_ut_xt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun_jac_ut_xt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun_jac_ut_xt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_fun_jac_ut_xt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_hess.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_hess.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_hess.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_hess.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun_jac_ut_xt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun_jac_ut_xt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun_jac_ut_xt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_fun_jac_ut_xt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_hess.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_hess.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_hess.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_e_hess.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun_jac_ut_xt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun_jac_ut_xt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun_jac_ut_xt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_fun_jac_ut_xt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_hess.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_hess.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_hess.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_cost/long_cost_y_0_hess.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun_jac_uxt_zt.os -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -DACADOS_WITH_QPOASES -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-unused -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun_jac_uxt_zt.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun_jac_uxt_zt.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/long_constraints/long_constr_h_fun_jac_uxt_zt.os"
+    },
+    {
+        "command": "clang -o selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_ocp_solver_pyx.o -c -std=gnu11 -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_ocp_solver_pyx.c",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_ocp_solver_pyx.c",
+        "output": "/data/openpilot/selfdrive/controls/lib/longitudinal_mpc_lib/c_generated_code/acados_ocp_solver_pyx.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/locationd/models/generated/pose.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/locationd/models/generated/pose.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/locationd/models/generated/pose.cpp",
+        "output": "/data/openpilot/selfdrive/locationd/models/generated/pose.os"
+    },
+    {
+        "command": "clang++ -o selfdrive/locationd/models/generated/car.os -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -fPIC -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/locationd/models/generated/car.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/locationd/models/generated/car.cpp",
+        "output": "/data/openpilot/selfdrive/locationd/models/generated/car.os"
+    },
+    {
+        "command": "clang++ -o selfdrive/modeld/models/commonmodel.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DTRANSFORM_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/transform.cl\\\" -DLOADYUV_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/loadyuv.cl\\\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/modeld/models/commonmodel.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/modeld/models/commonmodel.cc",
+        "output": "/data/openpilot/selfdrive/modeld/models/commonmodel.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/modeld/transforms/loadyuv.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DTRANSFORM_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/transform.cl\\\" -DLOADYUV_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/loadyuv.cl\\\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/modeld/transforms/loadyuv.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/modeld/transforms/loadyuv.cc",
+        "output": "/data/openpilot/selfdrive/modeld/transforms/loadyuv.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/modeld/transforms/transform.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DTRANSFORM_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/transform.cl\\\" -DLOADYUV_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/loadyuv.cl\\\" -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq selfdrive/modeld/transforms/transform.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/modeld/transforms/transform.cc",
+        "output": "/data/openpilot/selfdrive/modeld/transforms/transform.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/modeld/models/commonmodel_pyx.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -DTRANSFORM_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/transform.cl\\\" -DLOADYUV_PATH=\\\"/data/openpilot/selfdrive/modeld/transforms/loadyuv.cl\\\" -g -fPIC -O2 -Wunused -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Wno-#warnings -Wno-shadow -Wno-deprecated-declarations -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include/python3.12 -I/usr/local/venv/lib/python3.12/site-packages/numpy/_core/include selfdrive/modeld/models/commonmodel_pyx.cpp",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/modeld/models/commonmodel_pyx.cpp",
+        "output": "/data/openpilot/selfdrive/modeld/models/commonmodel_pyx.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/api.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/api.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/api.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/api.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/util.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/util.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/util.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/util.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_api.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_api.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_api.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_api.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_util.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_util.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_util.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_util.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/input.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/input.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/input.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/input.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/wifi.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/wifi.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/wifi.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/wifi.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/prime_state.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/prime_state.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/prime_state.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/prime_state.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/ssh_keys.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/ssh_keys.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/ssh_keys.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/ssh_keys.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/toggle.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/toggle.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/toggle.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/toggle.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/controls.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/controls.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/controls.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/controls.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/offroad_alerts.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/offroad_alerts.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/offroad_alerts.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/offroad_alerts.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/prime.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/prime.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/prime.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/prime.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/keyboard.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/keyboard.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/keyboard.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/keyboard.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/scrollview.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/scrollview.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/scrollview.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/scrollview.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/cameraview.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/cameraview.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/cameraview.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/cameraview.o"
+    },
+    {
+        "command": "clang++ -o third_party/qrcode/QrCode.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode third_party/qrcode/QrCode.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/third_party/qrcode/QrCode.cc",
+        "output": "/data/openpilot/third_party/qrcode/QrCode.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/request_repeater.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/request_repeater.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/request_repeater.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/request_repeater.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/qt_window.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/qt_window.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/qt_window.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/qt_window.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/network/networking.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/network/networking.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/network/networking.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/network/networking.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/network/wifi_manager.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/network/wifi_manager.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/network/wifi_manager.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/network/wifi_manager.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_input.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_input.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_input.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_input.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_wifi.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_wifi.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_wifi.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_wifi.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_prime_state.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_prime_state.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_prime_state.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_prime_state.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_ssh_keys.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_ssh_keys.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_ssh_keys.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_ssh_keys.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_toggle.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_toggle.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_toggle.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_toggle.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_controls.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_controls.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_controls.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_controls.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_offroad_alerts.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_offroad_alerts.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_offroad_alerts.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_offroad_alerts.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_prime.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_prime.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_prime.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_prime.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_keyboard.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_keyboard.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_keyboard.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_keyboard.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_scrollview.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_scrollview.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_scrollview.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_scrollview.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/widgets/moc_cameraview.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/widgets/moc_cameraview.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/widgets/moc_cameraview.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/widgets/moc_cameraview.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/network/moc_networking.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/network/moc_networking.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/network/moc_networking.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/network/moc_networking.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/network/moc_wifi_manager.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/network/moc_wifi_manager.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/network/moc_wifi_manager.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/network/moc_wifi_manager.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/assets.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/assets/assets.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/assets/assets.cc",
+        "output": "/data/openpilot/selfdrive/ui/assets.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/main.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/main.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/main.cc",
+        "output": "/data/openpilot/selfdrive/ui/main.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/ui.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/ui.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/ui.cc",
+        "output": "/data/openpilot/selfdrive/ui/ui.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/sidebar.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/sidebar.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/sidebar.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/sidebar.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/body.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/body.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/body.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/body.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/window.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/window.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/window.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/window.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/home.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/home.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/home.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/home.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/settings.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/settings.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/settings.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/settings.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/software_settings.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/software_settings.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/software_settings.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/software_settings.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/developer_panel.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/developer_panel.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/developer_panel.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/developer_panel.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/onboarding.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/onboarding.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/onboarding.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/onboarding.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/driverview.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/driverview.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/driverview.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/driverview.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/experimental_mode.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/experimental_mode.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/experimental_mode.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/experimental_mode.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/firehose.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/firehose.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/firehose.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/firehose.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/onroad_home.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/onroad_home.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/onroad_home.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/onroad_home.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/annotated_camera.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/annotated_camera.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/annotated_camera.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/annotated_camera.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/model.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/model.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/model.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/model.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/buttons.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/buttons.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/buttons.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/buttons.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/alerts.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/alerts.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/alerts.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/alerts.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/driver_monitoring.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/driver_monitoring.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/driver_monitoring.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/driver_monitoring.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/hud.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/hud.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/hud.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/hud.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/moc_ui.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/moc_ui.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/moc_ui.cc",
+        "output": "/data/openpilot/selfdrive/ui/moc_ui.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_sidebar.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_sidebar.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_sidebar.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_sidebar.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_body.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_body.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_body.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_body.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_window.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_window.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_window.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_window.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/moc_home.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/moc_home.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/moc_home.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/moc_home.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/moc_settings.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/moc_settings.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/moc_settings.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/moc_settings.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/moc_developer_panel.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/moc_developer_panel.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/moc_developer_panel.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/moc_developer_panel.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/moc_onboarding.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/moc_onboarding.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/moc_onboarding.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/moc_onboarding.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/moc_driverview.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/moc_driverview.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/moc_driverview.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/moc_driverview.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/moc_experimental_mode.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/moc_experimental_mode.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/moc_experimental_mode.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/moc_experimental_mode.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/offroad/moc_firehose.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/offroad/moc_firehose.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/offroad/moc_firehose.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/offroad/moc_firehose.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/moc_onroad_home.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/moc_onroad_home.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/moc_onroad_home.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/moc_onroad_home.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/moc_annotated_camera.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/moc_annotated_camera.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/moc_annotated_camera.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/moc_annotated_camera.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/moc_buttons.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/moc_buttons.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/moc_buttons.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/moc_buttons.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/moc_alerts.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/moc_alerts.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/moc_alerts.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/moc_alerts.o"
+    },
+    {
+        "command": "clang++ -o selfdrive/ui/qt/onroad/moc_hud.o -c -std=c++1z -DQCOM2 -mcpu=cortex-a57 -D_REENTRANT -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_GUI_LIB -DQT_CORE_LIB -DQT_MESSAGELOGCONTEXT -Wno-deprecated-declarations -g -fPIC -O2 -Wunused -Werror -Wshadow -Wno-unknown-warning-option -Wno-inconsistent-missing-override -Wno-c99-designator -Wno-reorder-init-list -Wno-vla-cxx-extension -DQCOM2 -mcpu=cortex-a57 -Ithird_party/opencl/include -I. -Ithird_party/acados/include -Ithird_party/acados/include/blasfeo/include -Ithird_party/acados/include/hpipm/include -Ithird_party/catch2/include -Ithird_party/libyuv/include -Ithird_party/json11 -Ithird_party/linux/include -Ithird_party -Imsgq -I/usr/include -I/usr/include/aarch64-linux-gnu/qt5 -I/usr/include/aarch64-linux-gnu/qt5/QtGui/5.12.8/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtWidgets -I/usr/include/aarch64-linux-gnu/qt5/QtGui -I/usr/include/aarch64-linux-gnu/qt5/QtCore -I/usr/include/aarch64-linux-gnu/qt5/QtNetwork -I/usr/include/aarch64-linux-gnu/qt5/QtConcurrent -I/usr/include/aarch64-linux-gnu/qt5/QtDBus -I/usr/include/aarch64-linux-gnu/qt5/QtXml -Ithird_party/qrcode selfdrive/ui/qt/onroad/moc_hud.cc",
+        "directory": "/data/openpilot",
+        "file": "/data/openpilot/selfdrive/ui/qt/onroad/moc_hud.cc",
+        "output": "/data/openpilot/selfdrive/ui/qt/onroad/moc_hud.o"
+    }
+]
