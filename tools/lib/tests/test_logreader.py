@@ -90,7 +90,7 @@ class TestLogReader:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_direct_parsing(self, mocker, cache_enabled):
-    file_exists_mock = mocker.patch("openpilot.tools.lib.logreader.file_exists")
+    file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 

@@ -138,8 +138,6 @@ class ReadMode(enum.StrEnum):
   AUTO = "a"  # default to rlogs, fallback to qlogs
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
-InternalUnavailableException = Exception("Internal source not available")
-
 
 # TODO this should apply to camera files as well
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
