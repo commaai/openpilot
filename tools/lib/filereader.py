@@ -9,7 +9,6 @@ from openpilot.tools.lib.url_file import URLFile
 
 DATA_ENDPOINT = os.getenv("DATA_ENDPOINT", "http://data-raw.comma.internal/")
 
-FilePath = str | None
 
 @cache
 @retry(delay=0.0)
