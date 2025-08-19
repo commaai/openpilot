@@ -157,7 +157,7 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
   # Build a dict of valid files as we evaluate each source. May contain mix of rlogs, qlogs, and None.
   # This function only returns when we've sourced all files, or throws an exception
-  valid_files: dict[int, LogPath] = {}
+  valid_files: dict[int, FilePath] = {}
   for fn in try_fns:
     for source in sources:
       try:
