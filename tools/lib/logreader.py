@@ -227,9 +227,6 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
         # Build a dict of valid files
         valid_files |= files
         print('valid_files', valid_files)
-        # for idx, f in files.items():
-        #   if valid_files.get(idx) is None:
-        #     valid_files[idx] = f
 
         # Don't check for segment files that have already been found
         needed_seg_idxs = [idx for idx in needed_seg_idxs if valid_files.get(idx) is None]
