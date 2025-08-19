@@ -1,7 +1,3 @@
-Version 0.10.1 (2025-09-08)
-========================
-* Record driving feedback using LKAS button
-
 Version 0.10.0 (2025-08-05)
 ========================
 * New driving model
