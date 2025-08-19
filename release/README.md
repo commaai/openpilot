@@ -4,8 +4,8 @@
 ## release checklist
 
 **Go to staging**
-- [ ] make an issue to track release
-- [ ] create release master branch, e.g. "010release"
+- [ ] make a GitHub issue to track release
+- [ ] create release master branch
 - [ ] update RELEASES.md
 - [ ] bump version on master: `common/version.h` and `RELEASES.md`
 - [ ] build new userdata partition from `release3-staging`
