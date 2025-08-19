@@ -190,7 +190,7 @@ def eval_source(files: dict[int, list[str] | str]) -> dict[int, str]:
     if isinstance(urls, str):
       urls = [urls]
 
-    # Add first valid file URL or None
+    # Add first valid file URL
     for url in urls:
       if file_exists(url):
         valid_files[seg_idx] = url
