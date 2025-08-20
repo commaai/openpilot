@@ -40,7 +40,7 @@ def setup_source_scenario(mocker, is_internal=False):
   else:
     internal_source_mock.side_effect = InternalUnavailableException
 
-  openpilotci_source_mock.return_value = {3: None}
+  openpilotci_source_mock.return_value = {}
   comma_api_source_mock.return_value = {3: QLOG_FILE}
 
   yield
@@ -208,13 +208,12 @@ class TestLogReader:
       assert qlog_len == log_len
 
   @pytest.mark.parametrize("is_internal", [True, False])
-  @pytest.mark.slow
   def test_auto_source_scenarios(self, mocker, is_internal):
     lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
 
     with setup_source_scenario(mocker, is_internal=is_internal):
-      lr = LogReader(f"{TEST_ROUTE}/0/q")
+      lr = LogReader(f"{TEST_ROUTE}/3/q")
       log_len = len(list(lr))
       assert qlog_len == log_len
 
