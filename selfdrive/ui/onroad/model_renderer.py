@@ -211,12 +211,11 @@ class ModelRenderer(Widget):
       lin_grad_point = 1 - (track_y - self._rect.y) / self._rect.height
 
       # speed up: 120, slow down: 0
-      path_hue = max(min(60 + self._acceleration_x[i] * 35, 120), 0)
-      path_hue = int(path_hue * 100 + 0.5) / 100
+      path_hue = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
 
       saturation = min(abs(self._acceleration_x[i] * 1.5), 1)
-      lightness = self._map_val(saturation, 0.0, 1.0, 0.95, 0.62)
-      alpha = self._map_val(lin_grad_point, 0.75 / 2.0, 0.75, 0.4, 0.0)
+      lightness = np.interp(saturation, [0.0, 1.0], [0.95, 0.62])
+      alpha = np.interp(lin_grad_point, [0.75 / 2.0, 0.75], [0.4, 0.0])
 
       # Use HSL to RGB conversion
       color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
@@ -408,13 +407,6 @@ class ModelRenderer(Widget):
       right_screen = right_screen[:, keep]
 
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
-
-  @staticmethod
-  def _map_val(x, x0, x1, y0, y1):
-    x = np.clip(x, x0, x1)
-    ra = x1 - x0
-    rb = y1 - y0
-    return (x - x0) * rb / ra + y0 if ra != 0 else y0
 
   @staticmethod
   def _hsla_to_color(h, s, l, a):
