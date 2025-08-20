@@ -238,9 +238,10 @@ class ModelRenderer(Widget):
     self._exp_gradient['stops'] = gradient_stops
 
     # add 0 and 1 stops of duplicate colors
+    # ensure gradient starts at the complete bottom to prevent undefined colors in shader
     if len(segment_colors):
-      self._exp_gradient['colors'] = [segment_colors[0]] + self._exp_gradient['colors'] + [segment_colors[-1]]
-      self._exp_gradient['stops'] = [0.0] + self._exp_gradient['stops'] + [1.0]
+      self._exp_gradient['colors'].insert(0, segment_colors[0])
+      self._exp_gradient['stops'].insert(0, 0.0)
 
     for idx, (c, stop) in enumerate(zip(segment_colors, gradient_stops)):
       print(idx, c, stop)
@@ -250,7 +251,7 @@ class ModelRenderer(Widget):
       y = height * (1 - stop)
       # print('stop', stop, y)
       y_next = height * (1 - gradient_stops[idx + 1])
-      rl.draw_circle(x, y, 5, c)
+      rl.draw_circle(int(x), int(y), 5, c)
 
       print('y', y, 'y_next', y_next, 'height', height)
 
