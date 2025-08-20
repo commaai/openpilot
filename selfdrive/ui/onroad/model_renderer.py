@@ -207,8 +207,7 @@ class ModelRenderer(Widget):
         i += 1
         continue
 
-      # Calculate color based on acceleration
-      # 0 is bottom, 1 is top
+      # Calculate color based on acceleration (0 is bottom, 1 is top)
       lin_grad_point = 1 - (track_y - self._rect.y) / self._rect.height
 
       # speed up: 120, slow down: 0
