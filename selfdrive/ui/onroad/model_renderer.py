@@ -203,17 +203,15 @@ class ModelRenderer(Widget):
 
     i = 0
     while i < max_len:
-      print()
       # Some points are out of frame
-      track_idx = i  # max_len - i - 1  # flip idx to start from bottom right
-      track_y = self._path.projected_points[track_idx][1]
+      track_y = self._path.projected_points[i][1]
       if track_y < 0 or track_y > height:
         i += 1
         continue
 
       # Calculate color based on acceleration
+      # 0 is bottom, 1 is top
       lin_grad_point = (height - track_y) / height
-      # print('track_y', track_y, height, 'lin_grad_point', lin_grad_point)
 
       # speed up: 120, slow down: 0
       path_hue = max(min(60 + self._acceleration_x[i] * 35, 120), 0)
@@ -225,7 +223,6 @@ class ModelRenderer(Widget):
 
       # Use HSL to RGB conversion
       color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
-      # print('got color', (color.r, color.g, color.b, color.a), 'acceleration', self._acceleration_x[i])
 
       gradient_stops.append(lin_grad_point)
       segment_colors.append(color)
@@ -242,36 +239,6 @@ class ModelRenderer(Widget):
     if len(segment_colors):
       self._exp_gradient['colors'].insert(0, segment_colors[0])
       self._exp_gradient['stops'].insert(0, 0.0)
-
-    for idx, (c, stop) in enumerate(zip(segment_colors, gradient_stops)):
-      print(idx, c, stop)
-      if idx >= len(segment_colors) - 1:
-        continue
-      x = 50
-      y = height * (1 - stop)
-      # print('stop', stop, y)
-      y_next = height * (1 - gradient_stops[idx + 1])
-      rl.draw_circle(int(x), int(y), 5, c)
-
-      print('y', y, 'y_next', y_next, 'height', height)
-
-      rl.draw_rectangle_gradient_v(x * 2, y_next, 25, y - y_next,
-                                   segment_colors[idx + 1], c)
-
-    if len(self._path.projected_points):
-      min_track_y = min(self._path.projected_points[:, 1])
-    else:
-      min_track_y = 0.0
-    print(min_track_y, height)
-    print(min_track_y / height, 1 - min_track_y / height)
-
-    # 0 is bottom, 1 is top
-    # self._exp_gradient['colors'] = [rl.Color(255, 255, 255, 255),
-    #                                 rl.Color(0, 0, 0, 255)]
-    # self._exp_gradient['stops'] = [0.0, 1 - min_track_y / height]
-
-    print('\n')
-
 
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
     speed_buff, lead_buff = 10.0, 40.0
