@@ -144,7 +144,7 @@ if __name__ == "__main__":
   parser.add_argument("addr", help="Address of comma three")
   parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
-  parser.add_argument("--server_name", default="camerad", help="choose vipc server name")
+  parser.add_argument("--server", default="camerad", help="choose vipc server name")
   parser.add_argument("--silent", action="store_true", help="Suppress debug output")
   args = parser.parse_args()
 
@@ -155,7 +155,7 @@ if __name__ == "__main__":
   ]
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
-  cvipc = CompressedVipc(args.addr, vsts, args.server_name, args.nvidia, debug=(not args.silent))
+  cvipc = CompressedVipc(args.addr, vsts, args.server, args.nvidia, debug=(not args.silent))
 
   # register exit handler
   signal.signal(signal.SIGINT, lambda sig, frame: cvipc.kill())
