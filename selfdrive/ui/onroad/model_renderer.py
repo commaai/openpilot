@@ -4,6 +4,7 @@ import pyray as rl
 from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
+from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import DEFAULT_FPS
@@ -112,7 +113,7 @@ class ModelRenderer(Widget):
 
     # Update model data when needed
     model_updated = sm.updated['modelV2']
-    if model_updated or sm.updated['radarState'] or self._transform_dirty:
+    if model_updated or sm.updated['radarState'] or self._transform_dirty or True:
       if model_updated:
         self._update_raw_points(model)
 
@@ -190,6 +191,7 @@ class ModelRenderer(Widget):
     self._update_experimental_gradient(self._rect.height)
 
   def _update_experimental_gradient(self, height):
+    height = gui_app.height
     """Pre-calculate experimental mode gradient colors"""
     if not self._experimental_mode:
       return
@@ -201,7 +203,9 @@ class ModelRenderer(Widget):
 
     i = 0
     while i < max_len:
-      track_idx = max_len - i - 1  # flip idx to start from bottom right
+      print()
+      # Some points are out of frame
+      track_idx = i  # max_len - i - 1  # flip idx to start from bottom right
       track_y = self._path.projected_points[track_idx][1]
       if track_y < 0 or track_y > height:
         i += 1
@@ -209,6 +213,7 @@ class ModelRenderer(Widget):
 
       # Calculate color based on acceleration
       lin_grad_point = (height - track_y) / height
+      # print('track_y', track_y, height, 'lin_grad_point', lin_grad_point)
 
       # speed up: 120, slow down: 0
       path_hue = max(min(60 + self._acceleration_x[i] * 35, 120), 0)
@@ -220,6 +225,7 @@ class ModelRenderer(Widget):
 
       # Use HSL to RGB conversion
       color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
+      # print('got color', (color.r, color.g, color.b, color.a), 'acceleration', self._acceleration_x[i])
 
       gradient_stops.append(lin_grad_point)
       segment_colors.append(color)
@@ -230,6 +236,41 @@ class ModelRenderer(Widget):
     # Store the gradient in the path object
     self._exp_gradient['colors'] = segment_colors
     self._exp_gradient['stops'] = gradient_stops
+
+    # add 0 and 1 stops of duplicate colors
+    if len(segment_colors):
+      self._exp_gradient['colors'] = [segment_colors[0]] + self._exp_gradient['colors'] + [segment_colors[-1]]
+      self._exp_gradient['stops'] = [0.0] + self._exp_gradient['stops'] + [1.0]
+
+    for idx, (c, stop) in enumerate(zip(segment_colors, gradient_stops)):
+      print(idx, c, stop)
+      if idx >= len(segment_colors) - 1:
+        continue
+      x = 50
+      y = height * (1 - stop)
+      # print('stop', stop, y)
+      y_next = height * (1 - gradient_stops[idx + 1])
+      rl.draw_circle(x, y, 5, c)
+
+      print('y', y, 'y_next', y_next, 'height', height)
+
+      rl.draw_rectangle_gradient_v(x * 2, y_next, 25, y - y_next,
+                                   segment_colors[idx + 1], c)
+
+    if len(self._path.projected_points):
+      min_track_y = min(self._path.projected_points[:, 1])
+    else:
+      min_track_y = 0.0
+    print(min_track_y, height)
+    print(min_track_y / height, 1 - min_track_y / height)
+
+    # 0 is bottom, 1 is top
+    # self._exp_gradient['colors'] = [rl.Color(255, 255, 255, 255),
+    #                                 rl.Color(0, 0, 0, 255)]
+    # self._exp_gradient['stops'] = [0.0, 1 - min_track_y / height]
+
+    print('\n')
+
 
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
     speed_buff, lead_buff = 10.0, 40.0
@@ -280,7 +321,7 @@ class ModelRenderer(Widget):
 
     if self._experimental_mode:
       # Draw with acceleration coloring
-      if len(self._exp_gradient['colors']) > 2:
+      if len(self._exp_gradient['colors']) > 1:
         draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
       else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
