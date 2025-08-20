@@ -409,13 +409,6 @@ class ModelRenderer(Widget):
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
 
   @staticmethod
-  def _map_val(x, x0, x1, y0, y1):
-    x = np.clip(x, x0, x1)
-    ra = x1 - x0
-    rb = y1 - y0
-    return (x - x0) * rb / ra + y0 if ra != 0 else y0
-
-  @staticmethod
   def _hsla_to_color(h, s, l, a):
     rgb = colorsys.hls_to_rgb(h, l, s)
     return rl.Color(
