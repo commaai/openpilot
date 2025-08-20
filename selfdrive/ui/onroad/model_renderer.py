@@ -187,9 +187,9 @@ class ModelRenderer(Widget):
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
     )
 
-    self._update_experimental_gradient(self._rect.height)
+    self._update_experimental_gradient()
 
-  def _update_experimental_gradient(self, height):
+  def _update_experimental_gradient(self):
     """Pre-calculate experimental mode gradient colors"""
     if not self._experimental_mode:
       return
@@ -201,14 +201,14 @@ class ModelRenderer(Widget):
 
     i = 0
     while i < max_len:
-      track_idx = max_len - i - 1  # flip idx to start from bottom right
-      track_y = self._path.projected_points[track_idx][1]
-      if track_y < 0 or track_y > height:
+      # Some points are out of frame
+      track_y = self._path.projected_points[i][1]
+      if track_y < self._rect.y or track_y > self._rect.height:
         i += 1
         continue
 
-      # Calculate color based on acceleration
-      lin_grad_point = (height - track_y) / height
+      # Calculate color based on acceleration (0 is bottom, 1 is top)
+      lin_grad_point = 1 - (track_y - self._rect.y) / self._rect.height
 
       # speed up: 120, slow down: 0
       path_hue = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
@@ -279,7 +279,7 @@ class ModelRenderer(Widget):
 
     if self._experimental_mode:
       # Draw with acceleration coloring
-      if len(self._exp_gradient['colors']) > 2:
+      if len(self._exp_gradient['colors']) > 1:
         draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
       else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
