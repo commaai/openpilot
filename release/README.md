@@ -3,7 +3,7 @@
 ```
 ## release checklist
 
-**Go to staging**
+### Go to staging
 - [ ] make a GitHub issue to track release
 - [ ] create release master branch
 - [ ] update RELEASES.md
@@ -11,11 +11,12 @@
 - [ ] build new userdata partition from `release3-staging`
 - [ ] post on Discord, tag `@release crew`
 
-Updates to staging:
-- [ ] either rebase on master or cherry-pick changes
-- [ ] run this to update: `BRANCH=devel-staging release/build_devel.sh`
+Updating staging:
+1. either rebase on master or cherry-pick changes
+2. run this to update: `BRANCH=devel-staging release/build_devel.sh`
+3.  build new userdata partition from `release3-staging`
 
-**Go to release**
+### Go to release
 - [ ] before going to release, test the following:
   - [ ] update from previous release -> new release
   - [ ] update from new release -> previous release
