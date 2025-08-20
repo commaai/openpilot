@@ -10,7 +10,6 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from tabulate import tabulate
 
-
 from cereal import log
 import cereal.messaging as messaging
 from cereal.services import SERVICE_LIST
