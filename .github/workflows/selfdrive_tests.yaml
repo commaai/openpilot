@@ -162,7 +162,6 @@ jobs:
       timeout-minutes: ${{ contains(runner.name, 'nsc') && ((steps.setup-step.outputs.duration < 18) && 1 || 2) || 20 }}
       run: |
         ${{ env.RUN }} "source selfdrive/test/setup_xvfb.sh && \
-                        # Pre-compile Python so each pytest worker doesn't need to
                         python -m compileall -q -x '\.venv|\.git' . && \
                         MAX_EXAMPLES=1 $PYTEST -m 'not slow' && \
                         ./selfdrive/ui/tests/create_test_translations.sh && \
