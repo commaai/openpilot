@@ -233,12 +233,6 @@ class ModelRenderer(Widget):
     self._exp_gradient['colors'] = segment_colors
     self._exp_gradient['stops'] = gradient_stops
 
-    # add 0 and 1 stops of duplicate colors
-    # ensure gradient starts at the complete bottom to prevent undefined colors in shader
-    if len(segment_colors):
-      self._exp_gradient['colors'].insert(0, segment_colors[0])
-      self._exp_gradient['stops'].insert(0, 0.0)
-
     for idx, (c, stop) in enumerate(zip(segment_colors, gradient_stops)):
       # print(idx, c, stop)
       if idx >= len(segment_colors) - 1:
