@@ -334,6 +334,7 @@ class TestOnroad:
             assert np.all(eof_sof_diff < 50*1e6)
 
         first_fid = {min(self.ts[c]['frameId']) for c in cams}
+        print(first_fid)
         assert len(first_fid) == 1, "Cameras don't start on same frame ID"
         if cam.endswith('CameraState'):
           # camerad guarantees that all cams start on frame ID 0
@@ -343,6 +344,13 @@ class TestOnroad:
         # we don't do a full segment rotation, so these might not match exactly
         last_fid = {max(self.ts[c]['frameId']) for c in cams}
         assert max(last_fid) - min(last_fid) < 10
+        print(first_fid, last_fid)
+        print(first_fid, last_fid)
+        print(first_fid, last_fid)
+        print(first_fid, last_fid)
+        print(first_fid, last_fid)
+        print(first_fid, last_fid)
+        print(first_fid, last_fid)
 
         start, end = min(first_fid), min(last_fid)
         for i in range(end-start):
