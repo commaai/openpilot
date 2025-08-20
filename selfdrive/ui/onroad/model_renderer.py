@@ -201,9 +201,9 @@ class ModelRenderer(Widget):
 
     i = 0
     while i < max_len:
-      # Some points are out of frame
+      # Some points (screen space) are out of frame (rect space)
       track_y = self._path.projected_points[i][1]
-      if track_y < self._rect.y or track_y > self._rect.height:
+      if track_y < self._rect.y or track_y > (self._rect.y + self._rect.height):
         i += 1
         continue
 
