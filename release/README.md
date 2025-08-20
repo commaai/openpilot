@@ -14,7 +14,7 @@
 Updating staging:
 1. either rebase on master or cherry-pick changes
 2. run this to update: `BRANCH=devel-staging release/build_devel.sh`
-3.  build new userdata partition from `release3-staging`
+3. build new userdata partition from `release3-staging`
 
 ### Go to release
 - [ ] before going to release, test the following:
