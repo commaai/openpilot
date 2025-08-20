@@ -4,7 +4,6 @@ import pyray as rl
 from cereal import messaging, car
 from dataclasses import dataclass, field
 from openpilot.common.params import Params
-from openpilot.system.ui.lib.application import gui_app
 from openpilot.selfdrive.locationd.calibrationd import HEIGHT_INIT
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.system.ui.lib.application import DEFAULT_FPS
@@ -233,40 +232,6 @@ class ModelRenderer(Widget):
     self._exp_gradient['colors'] = segment_colors
     self._exp_gradient['stops'] = gradient_stops
 
-    for idx, (c, stop) in enumerate(zip(segment_colors, gradient_stops)):
-      # print(idx, c, stop)
-      if idx >= len(segment_colors) - 1:
-        continue
-      x = 50
-      y = gui_app.height * (1 - stop)
-      # print('stop', stop, y)
-      y_next = gui_app.height * (1 - gradient_stops[idx + 1])
-      rl.draw_circle(int(x), int(y), 5, c)
-
-      # print('y', y, 'y_next', y_next, 'self._rect.height', self._rect.height)
-
-      rl.draw_rectangle_gradient_v(x * 2, y_next, 25, y - y_next,
-                                   segment_colors[idx + 1], c)
-
-    if len(self._path.projected_points):
-      min_track_y = min(self._path.projected_points[:, 1])
-    else:
-      min_track_y = 0.0
-    # print(min_track_y, self._rect.height)
-    # print(min_track_y / self._rect.height, 1 - min_track_y / self._rect.height)
-
-    if len(self._path.projected_points):
-      ys = self._path.projected_points[:, 1]
-      print("rect.y..y+h", self._rect.y, self._rect.y + self._rect.height,
-            "min/max projected y", float(ys.min()), float(ys.max()))
-
-    # 0 is bottom, 1 is top
-    # self._exp_gradient['colors'] = [rl.Color(255, 255, 255, 255),
-    #                                 rl.Color(0, 0, 0, 255)]
-    # self._exp_gradient['stops'] = [0.0, 1 - min_track_y / self._rect.height]
-
-    # print('\n')
-
   def _update_lead_vehicle(self, d_rel, v_rel, point, rect):
     speed_buff, lead_buff = 10.0, 40.0
 
@@ -317,10 +282,7 @@ class ModelRenderer(Widget):
     if self._experimental_mode:
       # Draw with acceleration coloring
       if len(self._exp_gradient['colors']) > 1:
-        # rect = rl.Rectangle(self._rect.x, self._rect.y + self._rect.height // 2, self._rect.width, self._rect.height)
-        rect = self._rect
-        # print(rect.x, rect.y, rect.width, rect.height)
-        draw_polygon(rect, self._path.projected_points, gradient=self._exp_gradient)
+        draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
       else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
     else:
