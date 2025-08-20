@@ -1,5 +1,4 @@
 <div align="center" style="text-align: center;">
-t
 
 <h1>openpilot</h1>
 
