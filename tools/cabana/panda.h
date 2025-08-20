@@ -15,8 +15,8 @@
 
 #include "cereal/gen/cpp/car.capnp.h"
 #include "cereal/gen/cpp/log.capnp.h"
-#include "panda/board/health.h"
-#include "panda/board/can.h"
+#include "health.h"
+#include "can.h"
 
 #define USB_TX_SOFT_LIMIT   (0x100U)
 #define USBPACKET_MAX_SIZE  (0x40)

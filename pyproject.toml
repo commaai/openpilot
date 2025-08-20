@@ -39,6 +39,7 @@ dependencies = [
   # panda
   "libusb1",
   "spidev; platform_system == 'Linux'",
+  "pandacan >= 0.0.10",
 
   # modeld
   "onnx >= 1.14.0",

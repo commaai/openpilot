@@ -152,6 +152,46 @@ ccflags_option = GetOption('ccflags')
 if ccflags_option:
   ccflags += ccflags_option.split(' ')
 
+# Add panda package path for C++ headers
+try:
+  import panda
+  from packaging import version
+
+  # Check minimum pandacan version
+  panda_version = "unknown"
+  try:
+    import importlib.metadata
+    panda_version = importlib.metadata.version('pandacan')
+  except:
+    # For development installs, try to find version in nested dist-info
+    try:
+      panda_path = os.path.dirname(panda.__file__)
+      # Handle nested .venv structure in development installs
+      nested_metadata = os.path.join(panda_path, '.venv/lib/python3.11/site-packages/pandacan-0.0.10.dist-info/METADATA')
+      if os.path.exists(nested_metadata):
+        with open(nested_metadata, 'r') as f:
+          for line in f:
+            if line.startswith('Version:'):
+              panda_version = line.split(':', 1)[1].strip()
+              break
+    except:
+      pass
+
+  min_version = "0.0.10"
+  if panda_version != "unknown" and version.parse(panda_version) < version.parse(min_version):
+    print(f"Error: pandacan {min_version} or higher is required, but {panda_version} is installed")
+    Exit(1)
+  elif panda_version == "unknown":
+    print("Warning: Could not determine pandacan version, assuming it meets minimum requirement")
+
+  panda_path = os.path.dirname(panda.__file__)
+  cpppath.append(os.path.join(panda_path, 'board'))
+  print(f"Using pandacan {panda_version} from {panda_path}")
+except ImportError:
+  print("Error: pandacan package is required for building openpilot")
+  print("Please install with: pip install pandacan>=0.0.10")
+  Exit(1)
+
 env = Environment(
   ENV=lenv,
   CCFLAGS=[
@@ -328,7 +368,7 @@ Export('messaging')
 
 
 # Build other submodules
-SConscript(['panda/SConscript'])
+# SConscript(['panda/SConscript'])  # Removed: now using pandacan pip package
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
