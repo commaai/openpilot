@@ -211,20 +211,11 @@ class ModelRenderer(Widget):
       lin_grad_point = (height - track_y) / height
 
       # speed up: 120, slow down: 0
-      path_hue = max(min(60 + self._acceleration_x[i] * 35, 120), 0)
-      path_hue2 = np.interp(self._acceleration_x[i], [-60 / 35, 60 / 35], [0, 120])
-      path_hue3 = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
-      assert abs(path_hue - path_hue2) < 0.01, f"Path hue mismatch: {path_hue} vs {path_hue2}"
-      assert abs(path_hue - path_hue3) < 0.01, f"Path hue mismatch: {path_hue} vs {path_hue3}"
+      path_hue = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
 
       saturation = min(abs(self._acceleration_x[i] * 1.5), 1)
-      lightness = self._map_val(saturation, 0.0, 1.0, 0.95, 0.62)
-      lightness2 = np.interp(saturation, [0.0, 1.0], [0.95, 0.62])
-      assert abs(lightness - lightness2) < 0.01, f"Lightness mismatch: {lightness} vs {lightness2}"
-      alpha = self._map_val(lin_grad_point, 0.75 / 2.0, 0.75, 0.4, 0.0)
-      alpha2 = np.interp(lin_grad_point, [0.75 / 2.0, 0.75], [0.4, 0.0])
-      assert abs(alpha - alpha2) < 0.01, f"Alpha mismatch: {alpha} vs {alpha2}"
-      print(path_hue, path_hue2, path_hue3, saturation, lightness, lightness2, alpha, alpha2)
+      lightness = np.interp(saturation, [0.0, 1.0], [0.95, 0.62])
+      alpha = np.interp(lin_grad_point, [0.75 / 2.0, 0.75], [0.4, 0.0])
 
       # Use HSL to RGB conversion
       color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
