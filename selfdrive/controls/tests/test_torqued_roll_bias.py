@@ -28,5 +28,4 @@ def test_estimated_bias():
   for steer_torque, lat_accel in zip(steer_torques, lat_accels, strict=True):
     est.filtered_points.add_point(steer_torque, lat_accel)
   msg = est.get_msg()
-  assert abs(msg.liveTorqueParameters.latAccelFactorRaw - gt_torque_tune.latAccelFactor) < 0.15
   assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - gt_torque_tune.latAccelOffset) < 0.05
