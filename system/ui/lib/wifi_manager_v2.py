@@ -123,9 +123,13 @@ class WifiManager:
     self._networks_updated = networks_updated
     self._connection_failed = connection_failed
 
+  def __del__(self):
+    self.stop()
+
   def stop(self):
     self._running = False
     self._thread.join()
+    self._bus.close()
 
   def _run(self):
     while True:
@@ -189,49 +193,52 @@ class WifiManager:
     return wifi_device
 
   def connect_to_network(self, ssid: str, password: str | None):
-    t = time.monotonic()
+    def worker():
+      t = time.monotonic()
 
-    # Clear all connections that may already exist to the network we are connecting
-    self.forget_connection(ssid)
+      # Clear all connections that may already exist to the network we are connecting
+      self.forget_connection(ssid)
 
-    is_hidden = False
+      is_hidden = False
 
-    connection = {
-      'connection': {
-        'type': '802-11-wireless',
-        'uuid': str(uuid.uuid4()),
-        'id': f'openpilot connection {ssid}',
-        'autoconnect-retries': 0,
-      },
-      '802-11-wireless': {
-        'ssid': dbus.ByteArray(ssid.encode("utf-8")),
-        'hidden': is_hidden,
-        'mode': 'infrastructure',
-      },
-      'ipv4': {
-        'method': 'auto',
-        'dns-priority': 600,
-      },
-      'ipv6': {'method': 'ignore'},
-    }
-
-    if password is not None:
-      connection['802-11-wireless-security'] = {
-        'key-mgmt': 'wpa-psk',
-        'auth-alg': 'open',
-        'psk': password,
+      connection = {
+        'connection': {
+          'type': '802-11-wireless',
+          'uuid': str(uuid.uuid4()),
+          'id': f'openpilot connection {ssid}',
+          'autoconnect-retries': 0,
+        },
+        '802-11-wireless': {
+          'ssid': dbus.ByteArray(ssid.encode("utf-8")),
+          'hidden': is_hidden,
+          'mode': 'infrastructure',
+        },
+        'ipv4': {
+          'method': 'auto',
+          'dns-priority': 600,
+        },
+        'ipv6': {'method': 'ignore'},
       }
 
-    settings = dbus.Interface(
-      self._bus.get_object(NM, NM_SETTINGS_PATH),
-      NM_SETTINGS_IFACE
-    )
+      if password is not None:
+        connection['802-11-wireless-security'] = {
+          'key-mgmt': 'wpa-psk',
+          'auth-alg': 'open',
+          'psk': password,
+        }
 
-    conn_path = settings.AddConnection(connection)
+      settings = dbus.Interface(
+        self._bus.get_object(NM, NM_SETTINGS_PATH),
+        NM_SETTINGS_IFACE
+      )
 
-    print('Added connection', conn_path)
+      conn_path = settings.AddConnection(connection)
 
-    print(f'Connecting to network took {time.monotonic() - t}s')
+      print('Added connection', conn_path)
+
+      print(f'Connecting to network took {time.monotonic() - t}s')
+
+    threading.Thread(target=worker, daemon=True).start()
 
   def _get_connections(self) -> list[dbus.ObjectPath]:
     settings_iface = dbus.Interface(self._bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
