@@ -7,6 +7,7 @@ import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
+from openpilot.system.ui.lib.wifi_manager_v2 import WifiManager, Network
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button, TextAlignment
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
@@ -61,31 +62,33 @@ UIState = StateIdle | StateConnecting | StateNeedsAuth | StateShowForgetConfirm 
 
 
 class WifiManagerUI(Widget):
-  def __init__(self, wifi_manager: WifiManagerWrapper):
+  def __init__(self, wifi_manager: WifiManager):
     super().__init__()
+    self.wifi_manager = wifi_manager
     self.state: UIState = StateIdle()
     self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
-    self._networks: list[NetworkInfo] = []
+    self._networks: list[Network] = []
     self._networks_buttons: dict[str, Button] = {}
     self._forget_networks_buttons: dict[str, Button] = {}
     self._lock = Lock()
-    self.wifi_manager = wifi_manager
     self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
 
-    self.wifi_manager.set_callbacks(
-      WifiManagerCallbacks(
-        need_auth=self._on_need_auth,
-        activated=self._on_activated,
-        forgotten=self._on_forgotten,
-        networks_updated=self._on_network_updated,
-        connection_failed=self._on_connection_failed
-      )
-    )
-    self.wifi_manager.start()
-    self.wifi_manager.connect()
+    self.wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+
+    # self.wifi_manager.set_callbacks(
+    #   WifiManagerCallbacks(
+    #     need_auth=self._on_need_auth,
+    #     activated=self._on_activated,
+    #     forgotten=self._on_forgotten,
+    #     networks_updated=self._on_network_updated,
+    #     connection_failed=self._on_connection_failed
+    #   )
+    # )
+    # self.wifi_manager.start()
+    # self.wifi_manager.connect()
 
   def _render(self, rect: rl.Rectangle):
     with self._lock:
@@ -223,7 +226,7 @@ class WifiManagerUI(Widget):
     network.is_saved = False
     self.wifi_manager.forget_connection(network.ssid)
 
-  def _on_network_updated(self, networks: list[NetworkInfo]):
+  def _on_network_updated(self, networks: list[Network]):
     with self._lock:
       self._networks = networks
       for n in self._networks:

@@ -69,6 +69,21 @@ class Network:
   security_type: SecurityType  # TODO
   is_saved: bool = False  # TODO
 
+  @classmethod
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], active_ap_path: dbus.ObjectPath) -> "Network":
+    # we only want to show the strongest AP for each Network/SSID
+    strongest_ap = max(aps, key=lambda ap: ap.strength)
+
+    is_connected = any(ap.ap_path == active_ap_path for ap in aps)
+
+    return cls(
+      ssid=ssid,
+      strength=strongest_ap.strength,
+      is_connected=is_connected,
+      security_type=SecurityType.UNSUPPORTED,  # TODO
+      is_saved=False,  # TODO
+    )
+
 
 @dataclass(frozen=True)
 class AccessPoint:
@@ -123,8 +138,14 @@ class WifiManager:
     self._nm = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_IFACE)
     self._props = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
+    # Callbacks
+    self._networks_updated: Callable[[list[Network]], None] | None = None
+
     self._thread = threading.Thread(target=self._run, daemon=True)
     self._thread.start()
+
+  def set_callbacks(self, networks_updated: Callable[[list[Network]], None]):
+    self._networks_updated = networks_updated
 
   def stop(self):
     self._running = False
@@ -158,7 +179,7 @@ class WifiManager:
         wifi_device = device_path
         break
 
-    print(f"Got wifi device in {time.monotonic() - t}s: {wifi_device}")
+    # print(f"Got wifi device in {time.monotonic() - t}s: {wifi_device}")
     return wifi_device
 
   def _update_networks(self):
@@ -185,21 +206,9 @@ class WifiManager:
 
       aps[ap.ssid].append(ap)
 
-    networks = []
-    for ssid, ap_list in aps.items():
-      # we only want to show the strongest AP for each SSID
-      strongest_ap = max(ap_list, key=lambda ap: ap.strength)
-
-      is_connected = any(ap.ap_path == active_ap_path for ap in ap_list)
-
-      networks.append(Network(
-        ssid=ssid,
-        strength=strongest_ap.strength,
-        is_connected=is_connected,
-      ))
-
-    # TODO: lock this? i don't think so since this is atomic replace right?!!?!
-    self._networks = networks
+    self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path) for ssid, ap_list in aps.items()]
+    if self._networks_updated is not None:
+      self._networks_updated(self._networks)
 
   def get_networks(self):
     return self._networks
