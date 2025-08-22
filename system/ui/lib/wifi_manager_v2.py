@@ -186,35 +186,13 @@ class WifiManager:
     aps: dict[str, list[AccessPoint]] = {}
 
     for ap_path in wifi_iface.GetAllAccessPoints():
-      # TODO: ap_path to AccessPoint function, or actually dataclass has function to do this?
       ap_props = dbus.Interface(self._bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
-
-
-      # ssid = bytes(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Ssid")).decode("utf-8", "replace")
-      # bssid = str(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "HwAddress"))
-      # strength = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Strength"))
-      # flags = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Flags"))
-      # wpa_flags = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "WpaFlags"))
-      # rsn_flags = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "RsnFlags"))
-      # is_connected = ap_path == active_ap_path
-      #
-
       ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
       if ap.ssid not in aps:
         aps[ap.ssid] = []
       aps[ap.ssid].append(ap)
       print('ap:', ap)
-      #
-      # aps[ssid].append(AccessPoint(
-      #   ssid=ssid,
-      #   bssid=bssid,
-      #   strength=strength,
-      #   is_connected=is_connected,
-      #   flags=flags,
-      #   wpa_flags=wpa_flags,
-      #   rsn_flags=rsn_flags,
-      #   ap_path=ap_path,
-      # ))
+
 
     networks: dict[str, Network] = {}
     for ssid, ap_list in aps.items():
