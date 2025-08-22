@@ -104,13 +104,12 @@ class AccessPoint:
     flags = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "Flags"))
     wpa_flags = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "WpaFlags"))
     rsn_flags = int(ap_props.Get("org.freedesktop.NetworkManager.AccessPoint", "RsnFlags"))
-    is_connected = ap_path == active_ap_path
 
     return cls(
       ssid=ssid,
       bssid=bssid,
       strength=strength,
-      is_connected=is_connected,
+      is_connected=ap_path == active_ap_path,
       flags=flags,
       wpa_flags=wpa_flags,
       rsn_flags=rsn_flags,
