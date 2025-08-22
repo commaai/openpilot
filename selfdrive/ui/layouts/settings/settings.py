@@ -8,6 +8,7 @@ from openpilot.selfdrive.ui.layouts.settings.firehose import FirehoseLayout
 from openpilot.selfdrive.ui.layouts.settings.software import SoftwareLayout
 from openpilot.selfdrive.ui.layouts.settings.toggles import TogglesLayout
 from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
+from openpilot.system.ui.lib.wifi_manager_v2 import WifiManager
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.network import WifiManagerUI
@@ -58,6 +59,8 @@ class SettingsLayout(Widget):
     self.wifi_manager = WifiManagerWrapper()
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
 
+    self.wifi_manager2 = WifiManager()
+
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout()),
       PanelType.NETWORK: PanelInfo("Network", self.wifi_ui),
@@ -79,6 +82,8 @@ class SettingsLayout(Widget):
     self._close_callback = on_close
 
   def _render(self, rect: rl.Rectangle):
+    print(self.wifi_manager2.get_aps())
+
     # Calculate layout
     sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
     panel_rect = rl.Rectangle(rect.x + SIDEBAR_WIDTH, rect.y, rect.width - SIDEBAR_WIDTH, rect.height)
