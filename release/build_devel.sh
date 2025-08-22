@@ -30,6 +30,7 @@ git reset --hard __nightly
 git checkout __nightly
 git reset --hard origin/devel
 git clean -xdff
+git submodule foreach --recursive git clean -xdff
 git lfs uninstall
 
 # remove everything except .git

@@ -67,7 +67,8 @@ class MouseEvent(NamedTuple):
 
 
 class MouseState:
-  def __init__(self):
+  def __init__(self, scale: float = 1.0):
+    self._scale = scale
     self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
@@ -102,8 +103,10 @@ class MouseState:
   def _handle_mouse_event(self):
     for slot in range(MAX_TOUCH_SLOTS):
       mouse_pos = rl.get_touch_position(slot)
+      x = mouse_pos.x / self._scale if self._scale != 1.0 else mouse_pos.x
+      y = mouse_pos.y / self._scale if self._scale != 1.0 else mouse_pos.y
       ev = MouseEvent(
-        MousePos(mouse_pos.x, mouse_pos.y),
+        MousePos(x, y),
         slot,
         rl.is_mouse_button_pressed(slot),
         rl.is_mouse_button_released(slot),
@@ -133,7 +136,7 @@ class GuiApplication:
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
 
-    self._mouse = MouseState()
+    self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
 
     # Debug variables

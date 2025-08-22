@@ -1,5 +1,7 @@
 Version 0.10.1 (2025-09-08)
 ========================
+* Record driving feedback using LKAS button
+* Honda City 2023 support thanks to drFritz!
 
 Version 0.10.0 (2025-08-05)
 ========================
@@ -10,7 +12,6 @@ Version 0.10.0 (2025-08-05)
      * Action from lateral MPC as training objective replaced by E2E planning from World Model
   * Low-speed lead car ground-truth fixes
 * Enable live-learned steering actuation delay
-* Record driving feedback using LKAS button
 * Opt-in audio recording for dashcam video
 * Acura MDX 2025 support thanks to vanillagorillaa and MVL!
 * Honda Accord 2023-25 support thanks to vanillagorillaa and MVL!

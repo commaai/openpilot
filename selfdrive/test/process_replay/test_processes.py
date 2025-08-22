@@ -61,7 +61,7 @@ segments = [
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
-excluded_interfaces = ["mock", "body"]
+excluded_interfaces = ["mock", "body", "psa"]
 
 BASE_URL = "https://commadataci.blob.core.windows.net/openpilotci/"
 REF_COMMIT_FN = os.path.join(PROC_REPLAY_DIR, "ref_commit")

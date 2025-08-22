@@ -6,7 +6,7 @@ Development is coordinated through [Discord](https://discord.comma.ai) and GitHu
 
 ### Getting Started
 
-* Setup your [development environment](../tools/)
+* Set up your [development environment](/tools/)
 * Join our [Discord](https://discord.comma.ai)
 * Docs are at https://docs.comma.ai and https://blog.comma.ai
 
