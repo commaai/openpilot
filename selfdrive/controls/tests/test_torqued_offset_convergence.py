@@ -30,5 +30,3 @@ def test_estimated_offset():
   msg = est.get_msg()
   # TODO add lataccelfactor and friction check when we have more accurate estimates
   assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - gt_torque_tune.latAccelOffset) < 0.03
-
-test_estimated_offset()
