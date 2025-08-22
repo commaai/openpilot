@@ -117,15 +117,6 @@ class AccessPoint:
     )
 
 
-@dataclass
-class WifiManagerCallbacks:
-  need_auth: Callable[[str], None] | None = None
-  activated: Callable[[], None] | None = None
-  forgotten: Callable[[str], None] | None = None
-  networks_updated: Callable[[list[Network]], None] | None = None
-  connection_failed: Callable[[str, str], None] | None = None  # Added for error feedback
-
-
 class WifiManager:
   def __init__(self):
     self._networks = []  # a network can be comprised of multiple APs
