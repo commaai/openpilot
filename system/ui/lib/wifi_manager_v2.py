@@ -64,7 +64,7 @@ class Network:
       strength=strongest_ap.strength,
       is_connected=is_connected,
       security_type=security_type,
-      is_saved=False,  # TODO
+      is_saved=True,  # TODO
     )
 
 
@@ -159,14 +159,55 @@ class WifiManager:
     return wifi_device
 
   def connect_to_network(self, ssid: str, password: str | None):
-    self._forget_connection(ssid)
-    ...
+    t = time.monotonic()
+
+    # Clear all connections that may already exist to the network we are connecting
+    self.forget_connection(ssid)
+
+    is_hidden = False
+
+    connection = {
+      'connection': {
+        'type': '802-11-wireless',
+        'uuid': str(uuid.uuid4()),
+        'id': f'openpilot connection {ssid}',
+        'autoconnect-retries': 0,
+      },
+      '802-11-wireless': {
+        'ssid': dbus.ByteArray(ssid.encode("utf-8")),
+        'hidden': is_hidden,
+        'mode': 'infrastructure',
+      },
+      'ipv4': {
+        'method': 'auto',
+        'dns-priority': 600,
+      },
+      'ipv6': {'method': 'ignore'},
+    }
+
+    if password is not None:
+      connection['802-11-wireless-security'] = {
+        'key-mgmt': 'wpa-psk',
+        'auth-alg': 'open',
+        'psk': password,
+      }
+
+    settings = dbus.Interface(
+      self._bus.get_object(NM, NM_SETTINGS_PATH),
+      NM_SETTINGS_IFACE
+    )
+
+    conn_path = settings.AddConnection(connection)
+
+    print('Added connection', conn_path)
+
+    print(f'Connecting to network took {time.monotonic() - t}s')
 
   def _get_connections(self) -> list[dbus.ObjectPath]:
     settings_iface = dbus.Interface(self._bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
     return settings_iface.ListConnections()
 
-  def _forget_connection(self, ssid: str):
+  def forget_connection(self, ssid: str):
     for conn_path in self._get_connections():
       conn_props = dbus.Interface(self._bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
       settings = conn_props.GetSettings()
