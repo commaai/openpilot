@@ -150,6 +150,7 @@ class WifiManager:
     # TODO: cache if slow
     t = time.monotonic()
     device_paths = self._nm.GetDevices()
+    # print(f'DEVICE PATHS: {device_paths}')
 
     wifi_device = None
     for device_path in device_paths:
@@ -165,12 +166,7 @@ class WifiManager:
 
   def _update_networks(self):
     # TODO: only run this function on scan complete!
-    self._get_wifi_device()
     print('UPDATING NETWORKS!!!!')
-    device_paths = self._nm.GetDevices()
-    print(f'DEVICE PATHS: {device_paths}')
-
-    all_networks: dict[str, Network] = {}
 
     device_path = self._get_wifi_device()
     if device_path is None:
@@ -181,34 +177,32 @@ class WifiManager:
     dev_props = dbus.Interface(self._bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
     active_ap_path = dev_props.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
 
-    print('active', active_ap_path)
-
     aps: dict[str, list[AccessPoint]] = {}
 
     for ap_path in wifi_iface.GetAllAccessPoints():
       ap_props = dbus.Interface(self._bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
+
       ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
       if ap.ssid not in aps:
         aps[ap.ssid] = []
+
       aps[ap.ssid].append(ap)
-      print('ap:', ap)
 
-
-    networks: dict[str, Network] = {}
+    networks = []
     for ssid, ap_list in aps.items():
       # we only want to show the strongest AP for each SSID
       strongest_ap = max(ap_list, key=lambda ap: ap.strength)
 
       is_connected = any(ap.ap_path == active_ap_path for ap in ap_list)
-      print('ssid', ssid, is_connected)
 
-      networks[ssid] = Network(
+      networks.append(Network(
         ssid=ssid,
         strength=strongest_ap.strength,
         is_connected=is_connected,
-      )
+      ))
 
-    print('networks:', networks)
+    # TODO: lock this? i don't think so since this is atomic replace right?!!?!
+    self._networks = networks
 
   def get_networks(self):
     return self._networks

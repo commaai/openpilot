@@ -82,7 +82,7 @@ class SettingsLayout(Widget):
     self._close_callback = on_close
 
   def _render(self, rect: rl.Rectangle):
-    print(self.wifi_manager2.get_aps())
+    # print(self.wifi_manager2.get_networks())
 
     # Calculate layout
     sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
