@@ -2,6 +2,8 @@ import pyray as rl
 from dataclasses import dataclass
 from enum import IntEnum
 from collections.abc import Callable
+from openpilot.system.ui.widgets.network import WifiManagerUI
+from openpilot.system.ui.lib.wifi_manager import WifiManagerWrapper
 from openpilot.selfdrive.ui.layouts.network import NetworkLayout
 from openpilot.selfdrive.ui.layouts.settings.developer import DeveloperLayout
 from openpilot.selfdrive.ui.layouts.settings.device import DeviceLayout
@@ -53,9 +55,13 @@ class SettingsLayout(Widget):
     self._current_panel = PanelType.DEVICE
 
     # Panel configuration
+
+    self.wifi_manager = WifiManagerWrapper()
+    self.wifi_ui = WifiManagerUI(self.wifi_manager)
+
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout()),
-      PanelType.NETWORK: PanelInfo("Network", NetworkLayout()),
+      PanelType.NETWORK: PanelInfo("Network", self.wifi_ui),
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout()),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout()),
       PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout()),
@@ -66,6 +72,9 @@ class SettingsLayout(Widget):
 
     # Callbacks
     self._close_callback: Callable | None = None
+
+  def __del__(self):
+    self.wifi_manager.shutdown()
 
   def set_callbacks(self, on_close: Callable):
     self._close_callback = on_close
