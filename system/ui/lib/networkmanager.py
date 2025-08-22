@@ -15,6 +15,7 @@ class NMDeviceState(IntEnum):
 NM = "org.freedesktop.NetworkManager"
 NM_PATH = '/org/freedesktop/NetworkManager'
 NM_IFACE = 'org.freedesktop.NetworkManager'
+NM_ACCESS_POINT_IFACE = 'org.freedesktop.NetworkManager.AccessPoint'
 NM_SETTINGS_PATH = '/org/freedesktop/NetworkManager/Settings'
 NM_SETTINGS_IFACE = 'org.freedesktop.NetworkManager.Settings'
 NM_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Settings.Connection'

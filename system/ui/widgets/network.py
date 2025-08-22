@@ -76,7 +76,8 @@ class WifiManagerUI(Widget):
     self._lock = Lock()
     self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
 
-    self.wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+    self.wifi_manager.set_callbacks(networks_updated=self._on_network_updated,
+                                    connection_failed=self._on_connection_failed,)
 
     # self.wifi_manager.set_callbacks(
     #   WifiManagerCallbacks(
