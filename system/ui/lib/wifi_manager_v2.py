@@ -158,6 +158,36 @@ class WifiManager:
     # print(f"Got wifi device in {time.monotonic() - t}s: {wifi_device}")
     return wifi_device
 
+  def _get_wifi_device2(self) -> str:
+    # jeepney version
+    t = time.monotonic()
+    msg = new_method_call(self._nm2, "GetDevices")
+    device_paths = self._bus2.send_and_get_reply(msg).body[0]
+    # print(f'DEVICE PATHS: {device_paths}')
+
+    wifi_device = None
+    for device_path in device_paths:
+      # Create a DBusAddress for the device
+      dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_PROPERTIES_IFACE)
+      print('dev_addr', dev_addr)
+
+      # Build the Get(DeviceType) call
+      msg = new_method_call(dev_addr, "Get", signature="ss", body=(NM_DEVICE_IFACE, "DeviceType"))
+
+      # Send the message and get the reply
+      reply = self._bus2.send_and_get_reply(msg)
+
+      # The property value is wrapped in a variant, so extract it
+      dev_type = reply.body[0][1]
+      print(f'Device {device_path} type: {dev_type}')
+      # print(f'Device {device_path} type: {dev_type} is wifi? {dev_type == NM_DEVICE_TYPE_WIFI}')
+
+      if dev_type == NM_DEVICE_TYPE_WIFI:
+        wifi_device = device_path
+        break
+    print(f"Got wifi device2 in {time.monotonic() - t}s: {wifi_device}")
+    return wifi_device
+
   def connect_to_network(self, ssid: str, password: str | None):
     t = time.monotonic()
 
