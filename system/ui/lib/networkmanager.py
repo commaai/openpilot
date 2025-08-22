@@ -1,3 +1,16 @@
+from enum import IntEnum
+
+
+# NetworkManager device states
+class NMDeviceState(IntEnum):
+  UNKNOWN = 0
+  DISCONNECTED = 30
+  PREPARE = 40
+  NEED_AUTH = 60
+  IP_CONFIG = 70
+  ACTIVATED = 100
+
+
 # NetworkManager constants
 NM = "org.freedesktop.NetworkManager"
 NM_PATH = '/org/freedesktop/NetworkManager'
@@ -9,13 +22,9 @@ NM_WIRELESS_IFACE = 'org.freedesktop.NetworkManager.Device.Wireless'
 NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
 NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
 
-NM_DEVICE_STATE_UNKNOWN = 0
-NM_DEVICE_STATE_ACTIVATED = 100
-NM_DEVICE_STATE_NEED_AUTH = 60
 NM_DEVICE_TYPE_WIFI = 2
 NM_DEVICE_TYPE_MODEM = 8
 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
-DBUS_TIMEOUT = 100
 
 # https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
 NM_802_11_AP_FLAGS_NONE = 0x0

@@ -20,15 +20,6 @@ TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 
 
-# NetworkManager device states
-class NMDeviceState(IntEnum):
-  DISCONNECTED = 30
-  PREPARE = 40
-  NEED_AUTH = 60
-  IP_CONFIG = 70
-  ACTIVATED = 100
-
-
 class SecurityType(IntEnum):
   OPEN = 0
   WPA = 1
