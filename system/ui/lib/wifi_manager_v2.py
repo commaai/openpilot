@@ -64,7 +64,7 @@ class Network:
       strength=strongest_ap.strength,
       is_connected=is_connected,
       security_type=security_type,
-      is_saved=True,  # TODO
+      is_saved=False,  # TODO
     )
 
 
