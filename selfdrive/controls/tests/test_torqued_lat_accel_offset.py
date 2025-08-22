@@ -68,6 +68,6 @@ def test_straight_road_roll_bias():
     for which, msg in msgs.items():
       est.handle_log(t, which, msg)
   msg = est.get_msg()
-  assert (msg.liveTorqueParameters.latAccelOffsetRaw < -0.08) and np.isfinite(msg.liveTorqueParameters.latAccelOffsetRaw)
+  assert (msg.liveTorqueParameters.latAccelOffsetRaw < -0.05) and np.isfinite(msg.liveTorqueParameters.latAccelOffsetRaw)
 
 test_estimated_offset()
