@@ -66,11 +66,8 @@ class Network:
   ssid: str
   strength: int
   is_connected: bool
-  # security_type: SecurityType
-  # network_path: dbus.ObjectPath
-  # bssid: str
-  # is_saved: bool = False
-  # saved_path: str
+  security_type: SecurityType  # TODO
+  is_saved: bool = False  # TODO
 
 
 @dataclass(frozen=True)
