@@ -242,11 +242,15 @@ class WifiManager:
     for ap_path in wifi_iface.GetAllAccessPoints():
       ap_props = dbus.Interface(self._bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
 
-      ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
-      if ap.ssid not in aps:
-        aps[ap.ssid] = []
+      try:
+        ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
+        if ap.ssid not in aps:
+          aps[ap.ssid] = []
 
-      aps[ap.ssid].append(ap)
+        aps[ap.ssid].append(ap)
+      except dbus.exceptions.DBusException:
+        # some APs have been seen dropping off during iteration
+        cloudlog.exception(f"Failed to get AP properties for {ap_path}")
 
     self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path) for ssid, ap_list in aps.items()]
     if self._networks_updated is not None:
