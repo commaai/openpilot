@@ -49,10 +49,10 @@ class Network:
   strength: int
   is_connected: bool
   security_type: SecurityType
-  is_saved: bool = False  # TODO
+  is_saved: bool
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], active_ap_path: dbus.ObjectPath) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], active_ap_path: dbus.ObjectPath, is_saved: bool) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
 
@@ -64,7 +64,7 @@ class Network:
       strength=strongest_ap.strength,
       is_connected=is_connected,
       security_type=security_type,
-      is_saved=False,  # TODO
+      is_saved=is_saved,
     )
 
 
@@ -252,7 +252,9 @@ class WifiManager:
         # some APs have been seen dropping off during iteration
         cloudlog.exception(f"Failed to get AP properties for {ap_path}")
 
-    self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path) for ssid, ap_list in aps.items()]
+    known_connections = self._get_connections()
+    self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
+                      for ssid, ap_list in aps.items()]
     if self._networks_updated is not None:
       self._networks_updated(self._networks)
 
