@@ -142,7 +142,6 @@ class WifiManagerUI(Widget):
 
   def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
     spacing = 50
-    # rl.draw_rectangle_lines_ex(rect, 10, rl.GREEN)
     ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
@@ -161,8 +160,6 @@ class WifiManagerUI(Widget):
         self._networks_buttons[network.ssid].set_enabled(True)
 
     self._networks_buttons[network.ssid].render(ssid_rect)
-    # rl.draw_rectangle_lines_ex(ssid_rect, 10, rl.RED)
-    # return
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
