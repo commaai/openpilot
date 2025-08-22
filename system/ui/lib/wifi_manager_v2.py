@@ -1,7 +1,4 @@
-import asyncio
-import concurrent.futures
 import copy
-from collections import defaultdict
 import dbus
 import threading
 import time
@@ -9,36 +6,15 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
-from typing import TypeVar
 
-from dbus_next.aio import MessageBus
-from dbus_next import BusType, Variant, Message
-from dbus_next.errors import DBusError
-from dbus_next.constants import MessageType
+from openpilot.common.swaglog import cloudlog
+from openpilot.system.ui.lib.networkmanager import *
 
 try:
   from openpilot.common.params import Params
 except ImportError:
   # Params/Cythonized modules are not available in zipapp
   Params = None
-from openpilot.common.swaglog import cloudlog
-
-T = TypeVar("T")
-
-# NetworkManager constants
-NM = "org.freedesktop.NetworkManager"
-NM_PATH = '/org/freedesktop/NetworkManager'
-NM_IFACE = 'org.freedesktop.NetworkManager'
-NM_SETTINGS_PATH = '/org/freedesktop/NetworkManager/Settings'
-NM_SETTINGS_IFACE = 'org.freedesktop.NetworkManager.Settings'
-NM_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Settings.Connection'
-NM_WIRELESS_IFACE = 'org.freedesktop.NetworkManager.Device.Wireless'
-NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
-NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
-
-NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
-
-NM_DEVICE_TYPE_WIFI = 2
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
