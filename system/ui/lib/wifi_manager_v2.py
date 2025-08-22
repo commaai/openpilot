@@ -112,14 +112,26 @@ class WifiManager:
     self._props = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
     # Callbacks
+    # TODO: some of these are called from threads, either:
+    # 1. make sure this is fine
+    # 2. add callback event list that user can call from main thread to get callbacks safely
+    self._need_auth: Callable[[str], None] | None = None
+    self._activated: Callable[[], None] | None = None
+    self._forgotten: Callable[[str], None] | None = None
     self._networks_updated: Callable[[list[Network]], None] | None = None
     self._connection_failed: Callable[[str, str], None] | None = None
 
     self._thread = threading.Thread(target=self._run, daemon=True)
     self._thread.start()
 
-  def set_callbacks(self, networks_updated: Callable[[list[Network]], None],
+  def set_callbacks(self, need_auth: Callable[[str], None],
+                    activated: Callable[[], None] | None,
+                    forgotten: Callable[[str], None],
+                    networks_updated: Callable[[list[Network]], None],
                     connection_failed: Callable[[str, str], None]):
+    self._need_auth = need_auth
+    self._activated = activated
+    self._forgotten = forgotten
     self._networks_updated = networks_updated
     self._connection_failed = connection_failed
 
@@ -167,7 +179,7 @@ class WifiManager:
       t = time.monotonic()
 
       # Clear all connections that may already exist to the network we are connecting
-      self.forget_connection(ssid)
+      self.forget_connection(ssid, block=True)
 
       is_hidden = False
 
@@ -208,21 +220,55 @@ class WifiManager:
 
       print(f'Connecting to network took {time.monotonic() - t}s')
 
+      self.activate_connection(ssid)
+
     threading.Thread(target=worker, daemon=True).start()
 
   def _get_connections(self) -> list[dbus.ObjectPath]:
     settings_iface = dbus.Interface(self._bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
     return settings_iface.ListConnections()
 
-  def forget_connection(self, ssid: str):
-    for conn_path in self._get_connections():
+  def _connection_by_ssid(self, ssid: str, known_connections: list[dbus.ObjectPath] | None = None) -> dbus.ObjectPath | None:
+    for conn_path in known_connections or self._get_connections():
       conn_props = dbus.Interface(self._bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
       settings = conn_props.GetSettings()
       if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
+        return conn_path
+    return None
+
+  def forget_connection(self, ssid: str, block: bool = False):
+    def worker():
+      t = time.monotonic()
+      conn_path = self._connection_by_ssid(ssid)
+      print(f'Finding connection by SSID took {time.monotonic() - t}s: {conn_path}')
+      if conn_path is not None:
         conn_iface = dbus.Interface(self._bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
         conn_iface.Delete()
-        print('deleted', ssid)
-        break
+        print(f'Forgetting connection took {time.monotonic() - t}s')
+        if self._forgotten is not None:
+          self._forgotten(ssid)
+
+    # TODO: make a helper when it makes sense
+    if block:
+      worker()
+    else:
+      threading.Thread(target=worker, daemon=True).start()
+
+  def activate_connection(self, ssid: str):
+    t = time.monotonic()
+    conn_path = self._connection_by_ssid(ssid)
+    if conn_path is not None:
+      device_path = self._get_wifi_device()
+      if device_path is None:
+        cloudlog.warning("No WiFi device found")
+        return
+
+      print(f'Activating connection to {ssid}')
+      self._nm.ActivateConnection(conn_path, device_path, dbus.ObjectPath("/"))
+      print(f"Activated connection in {time.monotonic() - t}s")
+      # FIXME: deadlock issue with ui
+      # if self._activated is not None:
+      #   self._activated()
 
   def _update_networks(self):
     # TODO: only run this function on scan complete!
