@@ -7,6 +7,9 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
 
+from jeepney import DBusAddress, new_method_call
+from jeepney.io.blocking import open_dbus_connection
+
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import *
 
@@ -111,6 +114,17 @@ class WifiManager:
     self._nm = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_IFACE)
     self._props = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
+    # jeepney version
+    self._bus2 = open_dbus_connection(bus="SYSTEM")
+    self._nm2 = DBusAddress(NM_PATH,
+                            bus_name=NM,
+                            interface=NM_IFACE)
+    self._props2 = DBusAddress(NM_PATH,
+                               bus_name=NM,
+                               interface=NM_PROPERTIES_IFACE)
+
+    print('DBUS2', self._bus2, self._nm2, self._props2)
+
     # Callbacks
     self._networks_updated: Callable[[list[Network]], None] | None = None
     self._connection_failed: Callable[[str, str], None] | None = None
@@ -130,6 +144,7 @@ class WifiManager:
     self._running = False
     self._thread.join()
     self._bus.close()
+    self._bus2.close()
 
   def _run(self):
     while True:
@@ -258,7 +273,7 @@ class WifiManager:
     # TODO: only run this function on scan complete!
     print('UPDATING NETWORKS!!!!')
 
-    device_path = self._get_wifi_device()
+    device_path = self._get_wifi_device2()
     if device_path is None:
       cloudlog.warning("No WiFi device found")
       return
