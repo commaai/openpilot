@@ -9,7 +9,6 @@ from openpilot.common.params import Params
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.athena.registration import UNREGISTERED_DONGLE_ID
 
-
 TOKEN_EXPIRY_HOURS = 2
 
 
