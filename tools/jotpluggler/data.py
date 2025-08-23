@@ -2,6 +2,7 @@ import threading
 import numpy as np
 from abc import ABC, abstractmethod
 from typing import Any
+from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
@@ -28,12 +29,13 @@ class LogReaderSource(DataSource):
     raw_time_series = msgs_to_time_series(lr)
     processed_data = self._expand_list_fields(raw_time_series)
 
-    # Calculate timing information
-    times = [data['t'] for data in processed_data.values() if 't' in data and len(data['t']) > 0]
-    if times:
-      all_times = np.concatenate(times)
-      self._start_time_mono = all_times.min()
-      self._duration = all_times.max() - self._start_time_mono
+    min_time = float('inf')
+    max_time = float('-inf')
+    for data in processed_data.values():
+      min_time = min(min_time, data['t'][0])
+      max_time = max(max_time, data['t'][-1])
+    self._start_time_mono = min_time
+    self._duration = max_time - min_time
 
     return {'time_series_data': processed_data, 'route_start_time_mono': self._start_time_mono, 'duration': self._duration}
 
@@ -50,7 +52,7 @@ class LogReaderSource(DataSource):
           expanded_data[msg_type]['t'] = values
           continue
 
-        if isinstance(values, np.ndarray) and values.dtype == object:  # ragged array
+        if values.dtype == object:  # ragged array
           lens = np.fromiter((len(v) for v in values), dtype=int, count=len(values))
           max_len = lens.max() if lens.size else 0
           if max_len > 0:
@@ -60,7 +62,7 @@ class LogReaderSource(DataSource):
             for i in range(max_len):
               sub_arr = arr[:, i]
               expanded_data[msg_type][f"{field}/{i}"] = sub_arr
-        elif isinstance(values, np.ndarray) and values.ndim > 1:  # regular array
+        elif values.ndim > 1:  # regular multidimensional array
           for i in range(values.shape[1]):
             col_data = values[:, i]
             expanded_data[msg_type][f"{field}/{i}"] = col_data
@@ -173,7 +175,7 @@ class DataManager:
 
       self._notify_observers(DataLoadedEvent(data))
 
-    except Exception as e:
-      print(f"Error loading route: {e}")
+    except Exception:
+      cloudlog.exception("Error loading route:")
     finally:
       self.loading = False
