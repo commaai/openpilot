@@ -162,16 +162,6 @@ class WifiManager:
     print('SETTING ACTIVE', active)
     self._active = active
 
-  def _wait_for_wifi_device(self) -> dbus.ObjectPath:
-    with self._lock:
-      device_path: dbus.ObjectPath | None = None
-      while not self._exit:
-        device_path = self._get_wifi_device()
-        if device_path is not None:
-          break
-        time.sleep(1)
-      return device_path
-
   def _monitor_state(self):
     device_path: dbus.ObjectPath = self._wait_for_wifi_device()
     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
@@ -225,6 +215,16 @@ class WifiManager:
         self._request_scan()
 
       time.sleep(5)
+
+  def _wait_for_wifi_device(self) -> dbus.ObjectPath:
+    with self._lock:
+      device_path: dbus.ObjectPath | None = None
+      while not self._exit:
+        device_path = self._get_wifi_device()
+        if device_path is not None:
+          break
+        time.sleep(1)
+      return device_path
 
   def _get_wifi_device(self) -> dbus.ObjectPath | None:
     if self._wifi_device is not None:
