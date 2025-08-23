@@ -124,7 +124,7 @@ class WifiManagerUI(Widget):
     ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
-    print('rects took', time.monotonic() - t)
+    # print('rects took', time.monotonic() - t)
 
     status_text = ""
     if self.state == UIState.CONNECTING and self._state_network:
@@ -140,11 +140,11 @@ class WifiManagerUI(Widget):
     else:
       self._networks_buttons[network.ssid].set_enabled(True)
 
-    print('state took', time.monotonic() - t)
+    # print('state took', time.monotonic() - t)
 
     self._networks_buttons[network.ssid].render(ssid_rect)
 
-    print('button render took', time.monotonic() - t)
+    # print('button render took', time.monotonic() - t)
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
@@ -160,11 +160,11 @@ class WifiManagerUI(Widget):
         )
         self._forget_networks_buttons[network.ssid].render(forget_btn_rect)
 
-    print('text render took', time.monotonic() - t)
+    # print('text render took', time.monotonic() - t)
 
     self._draw_status_icon(security_icon_rect, network)
     self._draw_signal_strength_icon(signal_icon_rect, network)
-    print('icons took', time.monotonic() - t)
+    # print('icons took', time.monotonic() - t)
 
   def _networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
