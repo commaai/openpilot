@@ -6,9 +6,9 @@ from openpilot.tools.jotpluggler.views import ViewPanel, TimeSeriesPanel
 
 
 class LayoutNode(ABC):
-  def __init__(self, node_id: str = None):
+  def __init__(self, node_id: str | None = None):
     self.node_id = node_id or str(uuid.uuid4())
-    self.tag = None
+    self.tag: str | None = None
 
   @abstractmethod
   def create_ui(self, parent_tag: str, width: int = -1, height: int = -1):
@@ -88,14 +88,12 @@ class LeafNode(LayoutNode):
 
 
 class SplitterNode(LayoutNode):
-  """Splitter node that contains multiple child nodes"""
-
-  def __init__(self, children: list[LayoutNode], orientation: str = "horizontal", node_id: str = None):
+  def __init__(self, children: list[LayoutNode], orientation: str = "horizontal", node_id: str | None = None):
     super().__init__(node_id)
     self.children = children if children else []
     self.orientation = orientation
     self.child_proportions = [1.0 / len(self.children) for _ in self.children] if self.children else []
-    self.child_container_tags = []  # Track container tags for resizing (different from child tag)
+    self.child_container_tags: list[str] = []  # Track container tags for resizing
 
   def preserve_data(self):
     for child in self.children:
@@ -194,7 +192,6 @@ class PlotLayoutManager:
     self.data_manager = data_manager
     self.playback_manager = playback_manager
     self.scale = scale
-    self.root_node: LayoutNode = None
     self.container_tag = "plot_layout_container"
     self._initialize_default_layout()
 
@@ -207,9 +204,8 @@ class PlotLayoutManager:
       dpg.delete_item(self.container_tag)
 
     with dpg.child_window(tag=self.container_tag, parent=parent_tag, border=False, width=-1, height=-1, no_scrollbar=True):
-      if self.root_node:
-        container_width, container_height = dpg.get_item_rect_size(self.container_tag)
-        self.root_node.create_ui(self.container_tag, container_width, container_height)
+      container_width, container_height = dpg.get_item_rect_size(self.container_tag)
+      self.root_node.create_ui(self.container_tag, container_width, container_height)
 
   def on_viewport_resize(self):
     if isinstance(self.root_node, SplitterNode):
@@ -290,8 +286,8 @@ class PlotLayoutManager:
           parent_width, parent_height = dpg.get_item_rect_size(parent_container)
           node.create_ui(parent_container, parent_width, parent_height)
 
-  def _find_parent_and_index(self, target_node: LayoutNode) -> tuple:  # TODO: probably can be stored in child
-    def search_recursive(node: LayoutNode, parent: LayoutNode = None, index: int = 0):
+  def _find_parent_and_index(self, target_node: LayoutNode):  # TODO: probably can be stored in child
+    def search_recursive(node: LayoutNode | None, parent: LayoutNode | None = None, index: int = 0):
       if node == target_node:
         return parent, index
       if isinstance(node, SplitterNode):

@@ -32,21 +32,19 @@ class ViewPanel(ABC):
 
 
 class TimeSeriesPanel(ViewPanel, Observer):
-  def __init__(self, data_manager: DataManager, playback_manager, panel_id: str = None):
+  def __init__(self, data_manager: DataManager, playback_manager, panel_id: str | None = None):
     super().__init__(panel_id)
     self.data_manager = data_manager
     self.playback_manager = playback_manager
     self.title = "Time Series Plot"
     self.plotted_series: set[str] = set()
-    self.plot_tag = None
-    self.x_axis_tag = None
-    self.y_axis_tag = None
-    self.timeline_indicator_tag = None
+    self.plot_tag: str | None = None
+    self.x_axis_tag: str | None = None
+    self.y_axis_tag: str | None = None
+    self.timeline_indicator_tag: str | None = None
     self._ui_created = False
-
-    # Store series data for restoration and legend management
-    self._preserved_series_data = []  # TODO: the way we do this right now doesn't make much sense
-    self._series_legend_tags = {}  # Maps series_path to legend tag
+    self._preserved_series_data: list[tuple[str, tuple]] = []  # TODO: the way we do this right now doesn't make much sense
+    self._series_legend_tags: dict[str, str] = {}  # Maps series_path to legend tag
 
     self.data_manager.add_observer(self)
 
@@ -110,7 +108,7 @@ class TimeSeriesPanel(ViewPanel, Observer):
           if dpg.does_item_exist(series_tag):
             dpg.configure_item(series_tag, label=legend_label)
 
-  def _add_series_with_data(self, series_path: str, rel_time_array, value_array):
+  def _add_series_with_data(self, series_path: str, rel_time_array, value_array) -> bool:
     if series_path in self.plotted_series:
       return False
 
@@ -163,7 +161,7 @@ class TimeSeriesPanel(ViewPanel, Observer):
     for series_path in self.plotted_series.copy():
       self._update_series_data(series_path)
 
-  def _update_series_data(self, series_path: str):
+  def _update_series_data(self, series_path: str) -> bool:
     time_value_data = self.data_manager.get_time_series_data(series_path)
     if time_value_data is None:
       return False
@@ -189,9 +187,8 @@ class DataTreeNode:
   def __init__(self, name: str, full_path: str = ""):
     self.name = name
     self.full_path = full_path
-    self.children = {}
+    self.children: dict[str, DataTreeNode] = {}
     self.is_leaf = False
-
 
 class DataTreeView(Observer):
   def __init__(self, data_manager: DataManager, ui_lock: threading.Lock):
@@ -199,7 +196,7 @@ class DataTreeView(Observer):
     self.ui_lock = ui_lock
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
-    self.active_leaf_nodes = []
+    self.active_leaf_nodes: list[DataTreeNode] = []
     self.data_manager.add_observer(self)
 
   def on_data_loaded(self, event: DataLoadedEvent):

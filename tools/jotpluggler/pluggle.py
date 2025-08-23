@@ -34,7 +34,7 @@ class PlaybackManager:
     self.current_time_s = max(0.0, min(time_s, self.duration_s))
     self.last_indices.clear()
 
-  def update_time(self, delta_t: float) -> float:
+  def update_time(self, delta_t: float):
     if self.is_playing:
       self.current_time_s = min(self.current_time_s + delta_t, self.duration_s)
       if self.current_time_s >= self.duration_s:
