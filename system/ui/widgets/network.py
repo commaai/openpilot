@@ -80,19 +80,7 @@ class WifiManagerUI(Widget):
                                     activated=self._on_activated,
                                     forgotten=self._on_forgotten,
                                     networks_updated=self._on_network_updated,
-                                    connection_failed=self._on_connection_failed)
-
-    # self.wifi_manager.set_callbacks(
-    #   WifiManagerCallbacks(
-    #     need_auth=self._on_need_auth,
-    #     activated=self._on_activated,
-    #     forgotten=self._on_forgotten,
-    #     networks_updated=self._on_network_updated,
-    #     connection_failed=self._on_connection_failed
-    #   )
-    # )
-    # self.wifi_manager.start()
-    # self.wifi_manager.connect()
+                                    disconnected=self._on_disconnected)
 
   def _render(self, rect: rl.Rectangle):
     with self._lock:
@@ -231,6 +219,7 @@ class WifiManagerUI(Widget):
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
+    # TODO: wifimanager has a nonblocking getter, we don't need to use callbacks nearly as much
     with self._lock:
       self._networks = networks
       for n in self._networks:
@@ -255,7 +244,7 @@ class WifiManagerUI(Widget):
       if isinstance(self.state, StateForgetting):
         self.state = StateIdle()
 
-  def _on_connection_failed(self, ssid: str, error: str):
+  def _on_disconnected(self):
     with self._lock:
       if isinstance(self.state, StateConnecting):
         self.state = StateIdle()
@@ -263,13 +252,13 @@ class WifiManagerUI(Widget):
 
 def main():
   gui_app.init_window("Wi-Fi Manager")
-  wifi_manager = WifiManagerWrapper()
+  wifi_manager = WifiManager()
   wifi_ui = WifiManagerUI(wifi_manager)
 
   for _ in gui_app.render():
     wifi_ui.render(rl.Rectangle(50, 50, gui_app.width - 100, gui_app.height - 100))
 
-  wifi_manager.shutdown()
+  wifi_manager.stop()
   gui_app.close()
 
 

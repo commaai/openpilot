@@ -125,7 +125,7 @@ class WifiManager:
     self._activated: Callable[[], None] | None = None
     self._forgotten: Callable[[str], None] | None = None
     self._networks_updated: Callable[[list[Network]], None] | None = None
-    self._connection_failed: Callable[[str, str], None] | None = None
+    self._disconnected: Callable[[], None] | None = None
 
     self._thread = threading.Thread(target=self._run, daemon=True)
     self._thread.start()
@@ -174,6 +174,8 @@ class WifiManager:
           elif dev_state == NMDeviceState.DISCONNECTED:
             print('------ DISCONNECTED')
             self._connecting_to_ssid = ""
+            if self._disconnected is not None:
+              self._disconnected()
 
           print()
 
@@ -188,12 +190,12 @@ class WifiManager:
                     activated: Callable[[], None] | None,
                     forgotten: Callable[[str], None],
                     networks_updated: Callable[[list[Network]], None],
-                    connection_failed: Callable[[str, str], None]):
+                    disconnected: Callable[[], None]):
     self._need_auth = need_auth
     self._activated = activated
     self._forgotten = forgotten
     self._networks_updated = networks_updated
-    self._connection_failed = connection_failed
+    self._disconnected = disconnected
 
   def _run(self):
     while self._running:
