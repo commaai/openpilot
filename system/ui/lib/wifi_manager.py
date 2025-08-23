@@ -121,7 +121,7 @@ class WifiManager:
     self._nm = dbus.Interface(self._main_bus.get_object(NM, NM_PATH), NM_IFACE)
     self._props = dbus.Interface(self._main_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
-    # cache wifi device path
+    # store wifi device path
     self._wifi_device: dbus.ObjectPath | None = None
 
     # State
