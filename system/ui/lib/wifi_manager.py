@@ -1,5 +1,4 @@
 import atexit
-import copy
 import dbus
 import threading
 import time
@@ -9,7 +8,15 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.networkmanager import *
+from openpilot.system.ui.lib.networkmanager import (NM, NM_PROPERTIES_IFACE, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
+                                                    NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
+                                                    NM_802_11_AP_SEC_GROUP_WEP104, NM_802_11_AP_SEC_KEY_MGMT_PSK,
+                                                    NM_802_11_AP_SEC_KEY_MGMT_802_1X, NM_802_11_AP_FLAGS_NONE,
+                                                    NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
+                                                    NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
+                                                    NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NMDeviceState)
 
 try:
   from openpilot.common.params import Params
@@ -33,7 +40,8 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
   wpa_props = wpa_flags | rsn_flags
 
   # obtained by looking at flags of networks in the office as reported by an Android phone
-  supports_wpa = NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 | NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK;
+  supports_wpa = (NM_802_11_AP_SEC_PAIR_WEP40 | NM_802_11_AP_SEC_PAIR_WEP104 | NM_802_11_AP_SEC_GROUP_WEP40 |
+                  NM_802_11_AP_SEC_GROUP_WEP104 | NM_802_11_AP_SEC_KEY_MGMT_PSK)
 
   if (flags == NM_802_11_AP_FLAGS_NONE) or ((flags & NM_802_11_AP_FLAGS_WPS) and not (wpa_props & supports_wpa)):
     return SecurityType.OPEN
@@ -104,15 +112,17 @@ class AccessPoint:
 class WifiManager:
   def __init__(self):
     self._networks = []  # a network can be comprised of multiple APs
-    self._active = True  # used to not run this cycle when not in settings
-    self._running = True
+    self._active = True  # used to not run when not in settings
+    self._exit = False
 
     # DBus and NetworkManager setup
-    self._bus = dbus.SystemBus()
-    self._nm = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_IFACE)
-    self._props = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
+    self._main_bus = dbus.SystemBus()
+    self._monitor_bus = dbus.SystemBus(private=True)
+    self._nm = dbus.Interface(self._main_bus.get_object(NM, NM_PATH), NM_IFACE)
+    self._props = dbus.Interface(self._main_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
-    self._bus2 = dbus.SystemBus(private=True)
+    # cache wifi device path
+    self._wifi_device: dbus.ObjectPath | None = None
 
     # State
     self._connecting_to_ssid: str = ""
@@ -127,32 +137,37 @@ class WifiManager:
     self._networks_updated: Callable[[list[Network]], None] | None = None
     self._disconnected: Callable[[], None] | None = None
 
-    self._thread = threading.Thread(target=self._run, daemon=True)
-    self._thread.start()
+    self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
+    self._scan_thread.start()
 
     self._state_thread = threading.Thread(target=self._monitor_state, daemon=True)
     self._state_thread.start()
 
     atexit.register(self.stop)
 
-  def __del__(self):
-    self.stop()
+  def set_callbacks(self, need_auth: Callable[[str], None],
+                    activated: Callable[[], None] | None,
+                    forgotten: Callable[[str], None],
+                    networks_updated: Callable[[list[Network]], None],
+                    disconnected: Callable[[], None]):
+    self._need_auth = need_auth
+    self._activated = activated
+    self._forgotten = forgotten
+    self._networks_updated = networks_updated
+    self._disconnected = disconnected
 
-  def stop(self):
-    self._running = False
-    self._thread.join()
-    self._state_thread.join()
-    self._bus.close()
-    self._bus2.close()
+  def set_active(self, active: bool):
+    print('SETTING ACTIVE', active)
+    self._active = active
 
   def _monitor_state(self):
-    prev_state = -1
-
+    # TODO: retry for wifi device in case ui starts before network stack is ready
     device_path = self._get_wifi_device()
-    props_dev = dbus.Interface(self._bus2.get_object(NM, device_path), NM_PROPERTIES_IFACE)
-    _props = dbus.Interface(self._bus2.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
+    props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
+    _props = dbus.Interface(self._monitor_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
-    while self._running:
+    prev_state = -1
+    while not self._exit:
       if self._active:
         print('moritring state ACTivE!!1')
         dev_state = int(props_dev.Get(NM_DEVICE_IFACE, "State"))
@@ -187,52 +202,46 @@ class WifiManager:
 
       time.sleep(1 / 2.)
 
-  def set_callbacks(self, need_auth: Callable[[str], None],
-                    activated: Callable[[], None] | None,
-                    forgotten: Callable[[str], None],
-                    networks_updated: Callable[[list[Network]], None],
-                    disconnected: Callable[[], None]):
-    self._need_auth = need_auth
-    self._activated = activated
-    self._forgotten = forgotten
-    self._networks_updated = networks_updated
-    self._disconnected = disconnected
-
-  def _run(self):
-    i = 0
-    while self._running:
+  def _network_scanner(self):
+    while not self._exit:
       if self._active:
         print('we;re acti!!!!!!!!!!!!')
         # Scan for networks every 5 seconds
-        if i % 5 == 0:
-          # TODO: should watch when scan is complete, but this is more than good enough for now
-          self._update_networks()
-          self._request_scan()
+        # TODO: should watch when scan is complete, but this is more than good enough for now
+        self._update_networks()
+        self._request_scan()
 
-      i += 1
-      time.sleep(1)
-
-  def set_active(self, active: bool):
-    print('SETTING ACTIVE', active)
-    self._active = active
+      time.sleep(5)
 
   def _get_wifi_device(self) -> dbus.ObjectPath | None:
-    # TODO: cache if slow
+    if self._wifi_device is not None:
+      return self._wifi_device
+
     t = time.monotonic()
     device_paths = self._nm.GetDevices()
-    # print(f'DEVICE PATHS: {device_paths}')
 
-    wifi_device = None
     for device_path in device_paths:
-      dev_props = dbus.Interface(self._bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
+      dev_props = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
       dev_type = dev_props.Get(NM_DEVICE_IFACE, "DeviceType")
 
       if dev_type == NM_DEVICE_TYPE_WIFI:
-        wifi_device = device_path
+        self._wifi_device = device_path
         break
 
-    # print(f"Got wifi device in {time.monotonic() - t}s: {wifi_device}")
-    return wifi_device
+    print(f"Got wifi device in {time.monotonic() - t}s: {self._wifi_device}")
+    return self._wifi_device
+
+  def _get_connections(self) -> list[dbus.ObjectPath]:
+    settings_iface = dbus.Interface(self._main_bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
+    return settings_iface.ListConnections()
+
+  def _connection_by_ssid(self, ssid: str, known_connections: list[dbus.ObjectPath] | None = None) -> dbus.ObjectPath | None:
+    for conn_path in known_connections or self._get_connections():
+      conn_props = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
+      settings = conn_props.GetSettings()
+      if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
+        return conn_path
+    return None
 
   def connect_to_network(self, ssid: str, password: str | None):
     def worker():
@@ -271,7 +280,7 @@ class WifiManager:
         }
 
       settings = dbus.Interface(
-        self._bus.get_object(NM, NM_SETTINGS_PATH),
+        self._main_bus.get_object(NM, NM_SETTINGS_PATH),
         NM_SETTINGS_IFACE
       )
 
@@ -281,21 +290,9 @@ class WifiManager:
 
       print(f'Connecting to network took {time.monotonic() - t}s')
 
-      self.activate_connection(ssid)
+      self.activate_connection(ssid, block=True)
 
     threading.Thread(target=worker, daemon=True).start()
-
-  def _get_connections(self) -> list[dbus.ObjectPath]:
-    settings_iface = dbus.Interface(self._bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
-    return settings_iface.ListConnections()
-
-  def _connection_by_ssid(self, ssid: str, known_connections: list[dbus.ObjectPath] | None = None) -> dbus.ObjectPath | None:
-    for conn_path in known_connections or self._get_connections():
-      conn_props = dbus.Interface(self._bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
-      settings = conn_props.GetSettings()
-      if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
-        return conn_path
-    return None
 
   def forget_connection(self, ssid: str, block: bool = False):
     def worker():
@@ -303,7 +300,7 @@ class WifiManager:
       conn_path = self._connection_by_ssid(ssid)
       print(f'Finding connection by SSID took {time.monotonic() - t}s: {conn_path}')
       if conn_path is not None:
-        conn_iface = dbus.Interface(self._bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
+        conn_iface = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
         conn_iface.Delete()
         print(f'Forgetting connection took {time.monotonic() - t}s')
         if self._forgotten is not None:
@@ -315,22 +312,29 @@ class WifiManager:
     else:
       threading.Thread(target=worker, daemon=True).start()
 
-  def activate_connection(self, ssid: str):
-    t = time.monotonic()
-    conn_path = self._connection_by_ssid(ssid)
-    if conn_path is not None:
-      self._connecting_to_ssid = ssid
-      device_path = self._get_wifi_device()
-      if device_path is None:
-        cloudlog.warning("No WiFi device found")
-        return
+  def activate_connection(self, ssid: str, block: bool = False):
+    def worker():
+      t = time.monotonic()
+      conn_path = self._connection_by_ssid(ssid)
+      if conn_path is not None:
+        self._connecting_to_ssid = ssid
+        device_path = self._get_wifi_device()
+        if device_path is None:
+          cloudlog.warning("No WiFi device found")
+          return
 
-      print(f'Activating connection to {ssid}')
-      self._nm.ActivateConnection(conn_path, device_path, dbus.ObjectPath("/"))
-      print(f"Activated connection in {time.monotonic() - t}s")
-      # FIXME: deadlock issue with ui
-      # if self._activated is not None:
-      #   self._activated()
+        print(f'Activating connection to {ssid}')
+        self._nm.ActivateConnection(conn_path, device_path, dbus.ObjectPath("/"))
+        print(f"Activated connection in {time.monotonic() - t}s")
+        # FIXME: deadlock issue with ui
+        # if self._activated is not None:
+        #   self._activated()
+
+    # TODO: make a helper when it makes sense
+    if block:
+      worker()
+    else:
+      threading.Thread(target=worker, daemon=True).start()
 
   def _request_scan(self):
     device_path = self._get_wifi_device()
@@ -338,7 +342,7 @@ class WifiManager:
       cloudlog.warning("No WiFi device found")
       return
 
-    wifi_iface = dbus.Interface(self._bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
+    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
     try:
       wifi_iface.RequestScan({})
       print('Requested scan')
@@ -358,14 +362,14 @@ class WifiManager:
       cloudlog.warning("No WiFi device found")
       return
 
-    wifi_iface = dbus.Interface(self._bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
-    dev_props = dbus.Interface(self._bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
+    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
+    dev_props = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
     active_ap_path = dev_props.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
 
     aps: dict[str, list[AccessPoint]] = {}
 
     for ap_path in wifi_iface.GetAllAccessPoints():
-      ap_props = dbus.Interface(self._bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
+      ap_props = dbus.Interface(self._main_bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
 
       try:
         ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
@@ -383,8 +387,16 @@ class WifiManager:
     known_connections = self._get_connections()
     self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
                       for ssid, ap_list in aps.items()]
+
     if self._networks_updated is not None:
       self._networks_updated(self._networks)
 
-  def get_networks(self):
-    return self._networks
+  def __del__(self):
+    self.stop()
+
+  def stop(self):
+    self._exit = True
+    self._scan_thread.join()
+    self._state_thread.join()
+    self._main_bus.close()
+    self._monitor_bus.close()

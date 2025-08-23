@@ -44,7 +44,7 @@ class PanelType(IntEnum):
 @dataclass
 class PanelInfo:
   name: str
-  instance: object
+  instance: Widget
   button_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
 
 
@@ -54,8 +54,6 @@ class SettingsLayout(Widget):
     self._current_panel = PanelType.DEVICE
 
     # Panel configuration
-
-    # self.wifi_manager = WifiManagerWrapper()
     self.wifi_manager = WifiManager()
     self.wifi_manager.set_active(False)
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
@@ -81,8 +79,6 @@ class SettingsLayout(Widget):
     self._close_callback = on_close
 
   def _render(self, rect: rl.Rectangle):
-    # print(self.wifi_manager2.get_networks())
-
     # Calculate layout
     sidebar_rect = rl.Rectangle(rect.x, rect.y, SIDEBAR_WIDTH, rect.height)
     panel_rect = rl.Rectangle(rect.x + SIDEBAR_WIDTH, rect.y, rect.width - SIDEBAR_WIDTH, rect.height)
@@ -168,10 +164,3 @@ class SettingsLayout(Widget):
   def hide_event(self):
     for panel_info in self._panels.values():
       panel_info.instance.hide_event()
-
-  # def close_settings(self):
-  #   print("Closing settings")
-  #   self.hide_event()
-  #
-  #   if self._close_callback:
-  #     self._close_callback()
