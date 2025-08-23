@@ -1,6 +1,7 @@
 from enum import IntEnum
 from functools import partial
 from threading import Lock
+from typing import cast
 
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
@@ -72,7 +73,7 @@ class WifiManagerUI(Widget):
       if self.state == UIState.NEEDS_AUTH and self._state_network:
         self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
         self.keyboard.reset()
-        gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(self._state_network, result))
+        gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(NetworkInfo, self._state_network), result))
       elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
         self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{self._state_network.ssid}"?')
         self._confirm_dialog.reset()
