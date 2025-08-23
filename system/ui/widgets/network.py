@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass
 from functools import partial
 from threading import Lock
@@ -231,12 +232,14 @@ class WifiManagerUI(Widget):
   def _on_network_updated(self, networks: list[Network]):
     # TODO: wifimanager has a nonblocking getter, we don't need to use callbacks nearly as much
     with self._lock:
+      t = time.monotonic()
       self._networks = networks
       for n in self._networks:
         self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                                 button_style=ButtonStyle.NO_EFFECT)
         self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                        font_size=45)
+      print(f"WifiManagerUI: networks updated, {len(networks)} networks, took {time.monotonic() - t}s")
 
   def _on_need_auth(self, ssid):
     with self._lock:
