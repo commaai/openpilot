@@ -114,49 +114,6 @@ class AccessPoint:
     )
 
 
-NM = "org.freedesktop.NetworkManager"
-NM_PATH = "/org/freedesktop/NetworkManager"
-NM_IFACE = "org.freedesktop.NetworkManager"
-PROPS_IFACE = "org.freedesktop.DBus.Properties"
-DEV_IFACE = "org.freedesktop.NetworkManager.Device"
-
-
-def wait_props_changed(device_path: str):
-  conn = open_dbus_connection(bus="SYSTEM")
-  try:
-    # Subscribe to PropertiesChanged on that device
-    rule = MatchRule(
-      type="signal",
-      interface=PROPS_IFACE,
-      member="StateChanged",
-      path=device_path,
-    )
-    rule_props = MatchRule(type="signal", sender=NM, interface=PROPS_IFACE, member="PropertiesChanged", path=device_path)
-    rule_state = MatchRule(type="signal", sender=NM, interface=DEV_IFACE, member="StateChanged", path=device_path)
-    rule.add_arg_condition(0, DEV_IFACE)  # only changes for Device iface
-
-    # Tell the bus we want these signals
-    conn.send_and_get_reply(message_bus.AddMatch(rule_props))
-    conn.send_and_get_reply(message_bus.AddMatch(rule_state))
-
-    # Block until a matching signal arrives
-    while True:
-      msg = conn.receive(timeout=None)
-      print(msg)
-
-    with conn.filter(rule, queue=deque(maxlen=1)) as q:
-      msg = conn.recv_until_filtered(q, timeout=None)
-      iface, changed, invalidated = msg.body  # iface:str, changed:a{sv}, invalidated:as
-      # changed is a dict of {prop_name: Variant(...)} – pull what you need:
-      print('changed', changed)
-      state = changed.get("State")
-      if state is not None:
-        # state.value if you’re wrapping Variants; else plain int depending on your helpers
-        print("New device state:", state)
-  finally:
-    conn.close()
-
-
 class WifiManager:
   def __init__(self):
     self._networks = []  # a network can be comprised of multiple APs
@@ -214,6 +171,41 @@ class WifiManager:
       self._update_networks()
 
   def _monitor_state(self):
+    device_path: dbus.ObjectPath = self._wait_for_wifi_device()
+
+    conn = open_dbus_connection(bus="SYSTEM")
+
+    # Subscribe to PropertiesChanged on that device
+    rule = MatchRule(
+      type="signal",
+      interface=NM_PROPERTIES_IFACE,
+      member="PropertiesChanged",
+      path=device_path,
+    )
+    rule.add_arg_condition(0, NM_DEVICE_IFACE)  # only changes for Device iface
+
+    conn.send_and_get_reply(message_bus.AddMatch(rule))
+
+    try:
+      while not self._exit:
+        if not self._active:
+          time.sleep(1)
+
+        # Tell the bus we want these signals
+
+        # Block until a matching signal arrives
+        with conn.filter(rule, queue=deque(maxlen=1)) as q:
+          msg = conn.recv_until_filtered(q)
+          iface, changed, invalidated = msg.body  # iface:str, changed:a{sv}, invalidated:as
+          # changed is a dict of {prop_name: Variant(...)} – pull what you need:
+          state = changed.get("State")
+          if state is not None:
+            # state.value if you’re wrapping Variants; else plain int depending on your helpers
+            print("New device state:", state[1])
+    finally:
+      conn.close()
+
+  def _monitor_state_old(self):
     device_path: dbus.ObjectPath = self._wait_for_wifi_device()
     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
 
