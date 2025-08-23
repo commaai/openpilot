@@ -10,6 +10,7 @@ class NMDeviceState(IntEnum):
   NEED_AUTH = 60
   IP_CONFIG = 70
   ACTIVATED = 100
+  DEACTIVATING = 110
 
 
 # NetworkManager constants
@@ -27,6 +28,7 @@ NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
 NM_DEVICE_TYPE_WIFI = 2
 NM_DEVICE_TYPE_MODEM = 8
 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
+NM_DEVICE_STATE_REASON_NEW_ACTIVATION = 60
 
 # https://developer.gnome.org/NetworkManager/1.26/nm-dbus-types.html#NM80211ApFlags
 NM_802_11_AP_FLAGS_NONE = 0x0

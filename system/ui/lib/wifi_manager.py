@@ -21,6 +21,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_PROPERTIES_IFACE, NM_
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
                                                     NM_DEVICE_TYPE_WIFI, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NM_DEVICE_STATE_REASON_NEW_ACTIVATION,
                                                     NMDeviceState)
 
 try:
@@ -175,79 +176,53 @@ class WifiManager:
 
     conn = open_dbus_connection(bus="SYSTEM")
 
-    # Subscribe to PropertiesChanged on that device
     rule = MatchRule(
       type="signal",
-      interface=NM_PROPERTIES_IFACE,
-      member="PropertiesChanged",
+      interface=NM_DEVICE_IFACE,
+      member="StateChanged",
       path=device_path,
     )
-    rule.add_arg_condition(0, NM_DEVICE_IFACE)  # only changes for Device iface
+    # rule.add_arg_condition(0, NM_DEVICE_IFACE)  # only changes for Device iface
 
+    # Filter for StateChanged signal
     conn.send_and_get_reply(message_bus.AddMatch(rule))
 
     try:
       while not self._exit:
+        # TODO: now that we have a nice poller we can run always?
+        # TODO: actually nah since it affects UI currently? or not?
         if not self._active:
           time.sleep(1)
-
-        # Tell the bus we want these signals
+          continue
 
         # Block until a matching signal arrives
         with conn.filter(rule, queue=deque(maxlen=1)) as q:
           msg = conn.recv_until_filtered(q)
-          iface, changed, invalidated = msg.body  # iface:str, changed:a{sv}, invalidated:as
-          # changed is a dict of {prop_name: Variant(...)} – pull what you need:
-          state = changed.get("State")
-          if state is not None:
-            # state.value if you’re wrapping Variants; else plain int depending on your helpers
-            print("New device state:", state[1])
-    finally:
-      conn.close()
+          print('msg.body', msg.body)
+          new_state, previous_state, change_reason = msg.body
 
-  def _monitor_state_old(self):
-    device_path: dbus.ObjectPath = self._wait_for_wifi_device()
-    props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
-
-    prev_state = -1
-    while not self._exit:
-      if self._active:
-        print('moritring state ACTivE!!1')
-        dev_state = int(props_dev.Get(NM_DEVICE_IFACE, "State"))
-        state_reason = props_dev.Get(NM_DEVICE_IFACE, "StateReason")  # (u state, u reason)
-        reason = int(state_reason[1]) if isinstance(state_reason, (list, tuple)) and len(state_reason) == 2 else 0
-
-        print(f"Device state: {dev_state}, reason: {state_reason}")
-
-        if dev_state != prev_state:
-          print(f"------------ WiFi device state change: {dev_state}, reason: {reason}")
-          if dev_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self._connecting_to_ssid:
+          print(f"------------ WiFi device state change: {new_state}, change reason: {change_reason}")
+          if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
             print('------ NEED AUTH - SUPPLICANT DISCONNECT')
             self.forget_connection(self._connecting_to_ssid, block=True)
             if self._need_auth is not None:
               self._need_auth(self._connecting_to_ssid)
             self._connecting_to_ssid = ""
-          elif dev_state == NMDeviceState.ACTIVATED:
+          elif new_state == NMDeviceState.ACTIVATED:
             print('------ ACTIVATED')
             if self._activated is not None:
               self._update_networks()
               print('CALLING ACTIVATED CALLBACK1')
               self._activated()
             self._connecting_to_ssid = ""
-          elif dev_state == NMDeviceState.DISCONNECTED:
+          elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
             print('------ DISCONNECTED')
             self._connecting_to_ssid = ""
             if self._disconnected is not None:
               self._disconnected()
 
-          print()
-
-        if self._connecting_to_ssid:
-          print('    CONNECTING', self._connecting_to_ssid)
-
-        prev_state = dev_state
-
-      time.sleep(1 / 2.)
+    finally:
+      conn.close()
 
   def _network_scanner(self):
     self._wait_for_wifi_device()
