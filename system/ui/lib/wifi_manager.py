@@ -223,7 +223,7 @@ class WifiManager:
       time.sleep(1 / 2.)
 
   def _network_scanner(self):
-    device_path: dbus.ObjectPath = self._wait_for_wifi_device()
+    self._wait_for_wifi_device()
 
     while not self._exit:
       if self._active:
