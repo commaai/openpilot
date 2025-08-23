@@ -52,7 +52,7 @@ jobs:
         command: git lfs pull
     - name: Build devel
       timeout-minutes: 1
-      run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
+      run: TARGET_DIR=$STRIPPED_DIR release/build_stripped.sh
     - uses: ./.github/workflows/setup-with-retry
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
