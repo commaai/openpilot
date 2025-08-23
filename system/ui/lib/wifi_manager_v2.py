@@ -144,12 +144,9 @@ class WifiManager:
     self._bus.close()
 
   def _run(self):
-    while True:
+    while self._running:
       if self._active:
         self._update_networks()
-
-      if not self._running:
-        break
 
       time.sleep(1)
 
@@ -290,6 +287,9 @@ class WifiManager:
 
       try:
         ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
+        if ap.ssid == "":
+          continue
+
         if ap.ssid not in aps:
           aps[ap.ssid] = []
 
