@@ -182,7 +182,6 @@ class WifiManager:
       member="StateChanged",
       path=device_path,
     )
-    # rule.add_arg_condition(0, NM_DEVICE_IFACE)  # only changes for Device iface
 
     # Filter for StateChanged signal
     conn.send_and_get_reply(message_bus.AddMatch(rule))
