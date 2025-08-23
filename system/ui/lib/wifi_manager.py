@@ -420,9 +420,10 @@ class WifiManager:
         cloudlog.exception(f"Failed to get AP properties for {ap_path}")
 
     known_connections = self._get_connections()
-    self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
-                      for ssid, ap_list in aps.items()]
-    self._networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
+    networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
+                for ssid, ap_list in aps.items()]
+    networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
+    self._networks = networks
 
     if self._networks_updated is not None:
       self._networks_updated(self._networks)
