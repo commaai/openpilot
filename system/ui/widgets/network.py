@@ -183,7 +183,7 @@ class WifiManagerUI(Widget):
   def _draw_status_icon(self, rect, network: Network):
     """Draw the status icon based on network's connection state"""
     icon_file = None
-    if network.is_connected:
+    if network.is_connected and self.state != UIState.CONNECTING:
       icon_file = "icons/checkmark.png"
     elif network.security_type == SecurityType.UNSUPPORTED:
       icon_file = "icons/circled_slash.png"
