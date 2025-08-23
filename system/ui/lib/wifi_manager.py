@@ -161,6 +161,9 @@ class WifiManager:
   def set_active(self, active: bool):
     print('SETTING ACTIVE', active)
     self._active = active
+    # fast refresh when going active
+    if active:
+      self._update_networks()
 
   def _monitor_state(self):
     device_path: dbus.ObjectPath = self._wait_for_wifi_device()
