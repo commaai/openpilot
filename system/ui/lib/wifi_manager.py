@@ -256,6 +256,59 @@ class WifiManager:
         return conn_path
     return None
 
+  def _request_scan(self):
+    if self._wifi_device is None:
+      cloudlog.warning("No WiFi device found")
+      return
+
+    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
+    try:
+      wifi_iface.RequestScan({})
+      print('Requested scan')
+    except dbus.exceptions.DBusException as e:
+      # TODO: copilot is wrong, this never happens
+      if "org.freedesktop.NetworkManager.Device.Error.AlreadyScanning" in str(e):
+        print('Already scanning, skipping')
+      else:
+        cloudlog.exception("Failed to request scan")
+
+  def _update_networks(self):
+    # TODO: only run this function on scan complete!
+    print('UPDATING NETWORKS!!!!')
+
+    if self._wifi_device is None:
+      cloudlog.warning("No WiFi device found")
+      return
+
+    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
+    dev_props = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_PROPERTIES_IFACE)
+    active_ap_path = dev_props.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
+
+    aps: dict[str, list[AccessPoint]] = {}
+
+    for ap_path in wifi_iface.GetAllAccessPoints():
+      ap_props = dbus.Interface(self._main_bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
+
+      try:
+        ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
+        if ap.ssid == "":
+          continue
+
+        if ap.ssid not in aps:
+          aps[ap.ssid] = []
+
+        aps[ap.ssid].append(ap)
+      except dbus.exceptions.DBusException:
+        # some APs have been seen dropping off during iteration
+        cloudlog.exception(f"Failed to get AP properties for {ap_path}")
+
+    known_connections = self._get_connections()
+    self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
+                      for ssid, ap_list in aps.items()]
+
+    if self._networks_updated is not None:
+      self._networks_updated(self._networks)
+
   def connect_to_network(self, ssid: str, password: str):
     def worker():
       t = time.monotonic()
@@ -347,59 +400,6 @@ class WifiManager:
       worker()
     else:
       threading.Thread(target=worker, daemon=True).start()
-
-  def _request_scan(self):
-    if self._wifi_device is None:
-      cloudlog.warning("No WiFi device found")
-      return
-
-    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
-    try:
-      wifi_iface.RequestScan({})
-      print('Requested scan')
-    except dbus.exceptions.DBusException as e:
-      # TODO: copilot is wrong, this never happens
-      if "org.freedesktop.NetworkManager.Device.Error.AlreadyScanning" in str(e):
-        print('Already scanning, skipping')
-      else:
-        cloudlog.exception("Failed to request scan")
-
-  def _update_networks(self):
-    # TODO: only run this function on scan complete!
-    print('UPDATING NETWORKS!!!!')
-
-    if self._wifi_device is None:
-      cloudlog.warning("No WiFi device found")
-      return
-
-    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
-    dev_props = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_PROPERTIES_IFACE)
-    active_ap_path = dev_props.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
-
-    aps: dict[str, list[AccessPoint]] = {}
-
-    for ap_path in wifi_iface.GetAllAccessPoints():
-      ap_props = dbus.Interface(self._main_bus.get_object(NM, ap_path), NM_PROPERTIES_IFACE)
-
-      try:
-        ap = AccessPoint.from_dbus(ap_props, ap_path, active_ap_path)
-        if ap.ssid == "":
-          continue
-
-        if ap.ssid not in aps:
-          aps[ap.ssid] = []
-
-        aps[ap.ssid].append(ap)
-      except dbus.exceptions.DBusException:
-        # some APs have been seen dropping off during iteration
-        cloudlog.exception(f"Failed to get AP properties for {ap_path}")
-
-    known_connections = self._get_connections()
-    self._networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
-                      for ssid, ap_list in aps.items()]
-
-    if self._networks_updated is not None:
-      self._networks_updated(self._networks)
 
   def __del__(self):
     self.stop()
