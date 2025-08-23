@@ -4,7 +4,7 @@ import uuid
 import threading
 import dearpygui.dearpygui as dpg
 from abc import ABC, abstractmethod
-from openpilot.tools.jotpluggler.data import Observer, DataLoadedEvent, DataManager
+from openpilot.tools.jotpluggler.data import DataManager
 
 
 class ViewPanel(ABC):
@@ -31,7 +31,7 @@ class ViewPanel(ABC):
     pass
 
 
-class TimeSeriesPanel(ViewPanel, Observer):
+class TimeSeriesPanel(ViewPanel):
   def __init__(self, data_manager: DataManager, playback_manager, panel_id: str | None = None):
     super().__init__(panel_id)
     self.data_manager = data_manager
@@ -45,14 +45,13 @@ class TimeSeriesPanel(ViewPanel, Observer):
     self._ui_created = False
     self._preserved_series_data: list[tuple[str, tuple]] = []  # TODO: the way we do this right now doesn't make much sense
     self._series_legend_tags: dict[str, str] = {}  # Maps series_path to legend tag
-
-    self.data_manager.add_observer(self)
+    self.data_manager.add_callback(self.on_data_loaded)
 
   def preserve_data(self):
     self._preserved_series_data = []
     if self.plotted_series and self._ui_created:
       for series_path in self.plotted_series:
-        time_value_data = self.data_manager.get_time_series_data(series_path)
+        time_value_data = self.data_manager.get_time_series(series_path)
         if time_value_data:
           self._preserved_series_data.append((series_path, time_value_data))
 
@@ -88,7 +87,7 @@ class TimeSeriesPanel(ViewPanel, Observer):
     if self.plotted_series:  # update legend labels with current values
       for series_path in self.plotted_series:
         last_index = self.playback_manager.last_indices.get(series_path)
-        value, new_idx = self.data_manager.get_current_value_for_path(series_path, current_time_s, last_index)
+        value, new_idx = self.data_manager.get_current_value(series_path, current_time_s, last_index)
 
         if value is not None:
           self.playback_manager.update_index(series_path, new_idx)
@@ -126,7 +125,7 @@ class TimeSeriesPanel(ViewPanel, Observer):
     if self.plot_tag and dpg.does_item_exist(self.plot_tag):
       dpg.delete_item(self.plot_tag)
 
-    # self.data_manager.remove_observer(self)
+    # self.data_manager.remove_callback(self.on_data_loaded)
     self._series_legend_tags.clear()
     self._ui_created = False
 
@@ -137,7 +136,7 @@ class TimeSeriesPanel(ViewPanel, Observer):
     if series_path in self.plotted_series:
       return False
 
-    time_value_data = self.data_manager.get_time_series_data(series_path)
+    time_value_data = self.data_manager.get_time_series(series_path)
     if time_value_data is None:
       return False
 
@@ -157,12 +156,12 @@ class TimeSeriesPanel(ViewPanel, Observer):
       if series_path in self._series_legend_tags:  # Clean up legend tag mapping
         del self._series_legend_tags[series_path]
 
-  def on_data_loaded(self, event: DataLoadedEvent):
+  def on_data_loaded(self, data: dict):
     for series_path in self.plotted_series.copy():
       self._update_series_data(series_path)
 
   def _update_series_data(self, series_path: str) -> bool:
-    time_value_data = self.data_manager.get_time_series_data(series_path)
+    time_value_data = self.data_manager.get_time_series(series_path)
     if time_value_data is None:
       return False
 
@@ -190,16 +189,16 @@ class DataTreeNode:
     self.children: dict[str, DataTreeNode] = {}
     self.is_leaf = False
 
-class DataTreeView(Observer):
+class DataTreeView:
   def __init__(self, data_manager: DataManager, ui_lock: threading.Lock):
     self.data_manager = data_manager
     self.ui_lock = ui_lock
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
     self.active_leaf_nodes: list[DataTreeNode] = []
-    self.data_manager.add_observer(self)
+    self.data_manager.add_callback(self.on_data_loaded)
 
-  def on_data_loaded(self, event: DataLoadedEvent):
+  def on_data_loaded(self, data: dict):
     with self.ui_lock:
       self.populate_data_tree()
 

@@ -6,7 +6,7 @@ import subprocess
 import dearpygui.dearpygui as dpg
 import threading
 from openpilot.common.basedir import BASEDIR
-from openpilot.tools.jotpluggler.data import DataManager, Observer, DataLoadedEvent
+from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.views import DataTreeView
 from openpilot.tools.jotpluggler.layout import PlotLayoutManager, SplitterNode, LeafNode
 
@@ -61,7 +61,7 @@ def format_and_truncate(value, available_width: float, avg_char_width: float) ->
   return s
 
 
-class MainController(Observer):
+class MainController:
   def __init__(self, scale: float = 1.0):
     self.ui_lock = threading.Lock()
     self.scale = scale
@@ -70,7 +70,7 @@ class MainController(Observer):
     self._create_global_themes()
     self.data_tree_view = DataTreeView(self.data_manager, self.ui_lock)
     self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, scale=self.scale)
-    self.data_manager.add_observer(self)
+    self.data_manager.add_callback(self.on_data_loaded)
     self.avg_char_width = None
 
   def _create_global_themes(self):
@@ -85,12 +85,12 @@ class MainController(Observer):
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, scaled_thickness, category=dpg.mvThemeCat_Plots)
         dpg.add_theme_color(dpg.mvPlotCol_Line, (255, 0, 0, 128), category=dpg.mvThemeCat_Plots)
 
-  def on_data_loaded(self, event: DataLoadedEvent):
-    self.playback_manager.set_route_duration(event.data['duration'])
-    num_msg_types = len(event.data['time_series_data'])
+  def on_data_loaded(self, data: dict):
+    self.playback_manager.set_route_duration(data['duration'])
+    num_msg_types = len(data['time_series_data'])
     dpg.set_value("load_status", f"Loaded {num_msg_types} message types")
     dpg.configure_item("load_button", enabled=True)
-    dpg.configure_item("timeline_slider", max_value=event.data['duration'])
+    dpg.configure_item("timeline_slider", max_value=data['duration'])
 
   def setup_ui(self):
     with dpg.item_handler_registry(tag="tree_node_handler"):
@@ -180,7 +180,7 @@ class MainController(Observer):
 
       if dpg.does_item_exist(value_tag) and dpg.is_item_visible(value_tag):
         last_index = self.playback_manager.last_indices.get(path)
-        value, new_idx = self.data_manager.get_current_value_for_path(path, self.playback_manager.current_time_s, last_index)
+        value, new_idx = self.data_manager.get_current_value(path, self.playback_manager.current_time_s, last_index)
 
         if value is not None:
           self.playback_manager.update_index(path, new_idx)
