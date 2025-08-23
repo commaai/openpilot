@@ -71,7 +71,7 @@ class Network:
     return cls(
       ssid=ssid,
       strength=strongest_ap.strength,
-      is_connected=is_connected,
+      is_connected=is_connected and is_saved,
       security_type=security_type,
       is_saved=is_saved,
     )
