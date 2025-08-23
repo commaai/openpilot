@@ -130,6 +130,8 @@ class WifiManagerUI(Widget):
       if self._state_network.ssid == network.ssid:
         self._networks_buttons[network.ssid].set_enabled(False)
         status_text = "FORGETTING..."
+    elif network.security_type == SecurityType.UNSUPPORTED:
+      self._networks_buttons[network.ssid].set_enabled(False)
     else:
       self._networks_buttons[network.ssid].set_enabled(True)
 
