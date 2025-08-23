@@ -265,7 +265,7 @@ class WifiManager:
         return conn_path
     return None
 
-  def connect_to_network(self, ssid: str, password: str | None):
+  def connect_to_network(self, ssid: str, password: str):
     def worker():
       t = time.monotonic()
 
@@ -294,7 +294,7 @@ class WifiManager:
         'ipv6': {'method': 'ignore'},
       }
 
-      if password is not None:
+      if password:
         connection['802-11-wireless-security'] = {
           'key-mgmt': 'wpa-psk',
           'auth-alg': 'open',
