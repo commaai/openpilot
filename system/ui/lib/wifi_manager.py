@@ -255,10 +255,14 @@ class WifiManager:
 
   def _connection_by_ssid(self, ssid: str, known_connections: list[dbus.ObjectPath] | None = None) -> dbus.ObjectPath | None:
     for conn_path in known_connections or self._get_connections():
-      conn_props = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
-      settings = conn_props.GetSettings()
-      if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
-        return conn_path
+      try:
+        conn_props = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
+        settings = conn_props.GetSettings()
+        if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
+          return conn_path
+      except dbus.exceptions.DBusException:
+        # ignore connections removed during iteration (need auth, etc.)
+        cloudlog.exception(f"Failed to get connection properties for {conn_path}")
     return None
 
   def connect_to_network(self, ssid: str, password: str):
