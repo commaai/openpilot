@@ -82,12 +82,10 @@ class WifiManagerUI(Widget):
                                     disconnected=self._on_disconnected)
 
   def show_event(self):
-    print('networking widget shown, stasrting wifisz scaing')
     # start/stop scanning when widget is visible
     self.wifi_manager.set_active(True)
 
   def hide_event(self):
-    print('networkign widet hidden, stopping wifisz')
     self.wifi_manager.set_active(False)
 
   def _render(self, rect: rl.Rectangle):
