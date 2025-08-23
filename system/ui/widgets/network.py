@@ -160,7 +160,6 @@ class WifiManagerUI(Widget):
         self.state = UIState.NEEDS_AUTH
         self._state_network = network
         self._password_retry = False
-
       elif not network.is_connected:
         self.connect_to_network(network)
 
