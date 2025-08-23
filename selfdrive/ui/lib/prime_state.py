@@ -2,6 +2,7 @@ from enum import IntEnum
 import os
 import threading
 import time
+from functools import cache
 
 from openpilot.common.api import Api, api_get
 from openpilot.common.params import Params
@@ -18,6 +19,12 @@ class PrimeType(IntEnum):
   BLUE = 3,
   MAGENTA_NEW = 4,
   PURPLE = 5,
+
+
+@cache
+def get_token(dongle_id: str, t: int):
+  print('getting token')
+  return Api(dongle_id).get_token(expiry_hours=1)
 
 
 class PrimeState:
@@ -49,7 +56,8 @@ class PrimeState:
       return
 
     try:
-      identity_token = Api(dongle_id).get_token()
+      # identity_token = Api(dongle_id).get_token()
+      identity_token = get_token(dongle_id, time.monotonic() // 3600)
       response = api_get(f"v1.1/devices/{dongle_id}", timeout=self.API_TIMEOUT, access_token=identity_token)
       if response.status_code == 200:
         data = response.json()
@@ -68,7 +76,9 @@ class PrimeState:
 
   def _worker_thread(self) -> None:
     while self._running:
+      t = time.monotonic()
       self._fetch_prime_status()
+      print('prime took', time.monotonic() - t)
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:
