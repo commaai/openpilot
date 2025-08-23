@@ -178,6 +178,8 @@ class WifiManager:
         state_reason = props_dev.Get(NM_DEVICE_IFACE, "StateReason")  # (u state, u reason)
         reason = int(state_reason[1]) if isinstance(state_reason, (list, tuple)) and len(state_reason) == 2 else 0
 
+        print(f"Device state: {dev_state}, reason: {state_reason}")
+
         if dev_state != prev_state:
           print(f"------------ WiFi device state change: {dev_state}, reason: {reason}")
           if dev_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self._connecting_to_ssid:
