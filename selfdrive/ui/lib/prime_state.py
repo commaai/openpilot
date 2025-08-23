@@ -79,9 +79,7 @@ class PrimeState:
 
   def _worker_thread(self) -> None:
     while self._running:
-      t = time.monotonic()
       self._fetch_prime_status()
-      print('prime took', time.monotonic() - t)
 
       for _ in range(int(self.FETCH_INTERVAL / self.SLEEP_INTERVAL)):
         if not self._running:
