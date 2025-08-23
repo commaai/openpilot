@@ -1,18 +1,23 @@
+#!/usr/bin/env python3
 import argparse
+import os
 import pyautogui
 import subprocess
 import dearpygui.dearpygui as dpg
 import threading
+from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager, Observer, DataLoadedEvent
 from openpilot.tools.jotpluggler.views import DataTreeView
 from openpilot.tools.jotpluggler.layout import PlotLayoutManager, SplitterNode, LeafNode
+
+DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 
 class PlaybackManager:
   def __init__(self):
     self.is_playing = False
     self.current_time_s = 0.0
-    self.duration_s = 100.0
+    self.duration_s = 0.0
     self.last_indices = {}
 
   def set_route_duration(self, duration: float):
@@ -206,7 +211,7 @@ def main(route_to_load=None):
     scale = 1
 
   with dpg.font_registry():
-    default_font = dpg.add_font("selfdrive/assets/fonts/Inter-Regular.ttf", int(13 * scale))
+    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/Inter-Regular.ttf"), int(13 * scale))
   dpg.bind_font(default_font)
 
   viewport_width, viewport_height = int(1200 * scale), int(800 * scale)
@@ -235,6 +240,8 @@ def main(route_to_load=None):
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for visualizing openpilot logs.")
+  parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
   parser.add_argument("route", nargs='?', default=None, help="Optional route name to load on startup.")
   args = parser.parse_args()
-  main(route_to_load=args.route)
+  route = DEMO_ROUTE if args.demo else args.route
+  main(route_to_load=route)

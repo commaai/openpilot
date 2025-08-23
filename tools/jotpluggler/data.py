@@ -85,7 +85,7 @@ class DataManager:
     self.time_series_data = {}
     self.loading = False
     self.route_start_time_mono = 0.0
-    self.duration = 100.0
+    self.duration = 0.0
     self._observers: list[Observer] = []
 
   def add_observer(self, observer: Observer):
