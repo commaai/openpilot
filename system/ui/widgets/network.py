@@ -142,6 +142,7 @@ class WifiManagerUI(Widget):
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
 
     status_text = ""
+    # TODO: rm, wtf is this class initialization each time state system
     match self.state:
       case StateConnecting(network=connecting):
         if connecting.ssid == network.ssid:
@@ -153,6 +154,9 @@ class WifiManagerUI(Widget):
           status_text = "FORGETTING..."
       case _:
         self._networks_buttons[network.ssid].set_enabled(True)
+
+    if network.security_type == SecurityType.UNSUPPORTED:
+      self._networks_buttons[network.ssid].set_enabled(False)
 
     self._networks_buttons[network.ssid].render(ssid_rect)
 
@@ -225,8 +229,6 @@ class WifiManagerUI(Widget):
       for n in self._networks:
         self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                                 button_style=ButtonStyle.NO_EFFECT)
-        if n.security_type == SecurityType.UNSUPPORTED:
-          self._networks_buttons[n.ssid].set_enabled(False)
         self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                        font_size=45)
 
