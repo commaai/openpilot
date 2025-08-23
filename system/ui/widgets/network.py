@@ -39,7 +39,7 @@ class WifiManagerUI(Widget):
   def __init__(self, wifi_manager: WifiManagerWrapper):
     super().__init__()
     self.state: UIState = UIState.IDLE
-    self._state_network: NetworkInfo | None = None  # for CONNECTING / FORGETTING / SHOW_FORGET_CONFIRM / NEEDS_AUTH
+    self._state_network: NetworkInfo | None = None  # for CONNECTING / NEEDS_AUTH / SHOW_FORGET_CONFIRM / FORGETTING
     self._password_retry: bool = False  # for NEEDS_AUTH
     self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
