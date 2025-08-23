@@ -6,8 +6,7 @@ from typing import Literal
 import pyray as rl
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.wifi_manager import NetworkInfo, WifiManagerCallbacks, WifiManagerWrapper, SecurityType
-from openpilot.system.ui.lib.wifi_manager_v2 import WifiManager, Network
+from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button, TextAlignment
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
@@ -35,26 +34,26 @@ class StateIdle:
 
 @dataclass
 class StateConnecting:
-  network: NetworkInfo
+  network: Network
   action: Literal["connecting"] = "connecting"
 
 
 @dataclass
 class StateNeedsAuth:
-  network: NetworkInfo
+  network: Network
   retry: bool
   action: Literal["needs_auth"] = "needs_auth"
 
 
 @dataclass
 class StateShowForgetConfirm:
-  network: NetworkInfo
+  network: Network
   action: Literal["show_forget_confirm"] = "show_forget_confirm"
 
 
 @dataclass
 class StateForgetting:
-  network: NetworkInfo
+  network: Network
   action: Literal["forgetting"] = "forgetting"
 
 
@@ -109,7 +108,7 @@ class WifiManagerUI(Widget):
         case _:
           self._draw_network_list(rect)
 
-  def _on_password_entered(self, network: NetworkInfo, result: int):
+  def _on_password_entered(self, network: Network, result: int):
     if result == 1:
       password = self.keyboard.text
       self.keyboard.clear()
@@ -144,7 +143,7 @@ class WifiManagerUI(Widget):
 
     rl.end_scissor_mode()
 
-  def _draw_network_item(self, rect, network: NetworkInfo, clicked: bool):
+  def _draw_network_item(self, rect, network: Network, clicked: bool):
     spacing = 50
     ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
@@ -197,7 +196,7 @@ class WifiManagerUI(Widget):
     if self.scroll_panel.is_touch_valid():
       self.state = StateShowForgetConfirm(network)
 
-  def _draw_status_icon(self, rect, network: NetworkInfo):
+  def _draw_status_icon(self, rect, network: Network):
     """Draw the status icon based on network's connection state"""
     icon_file = None
     if network.is_connected:
@@ -214,19 +213,19 @@ class WifiManagerUI(Widget):
     icon_rect = rl.Vector2(rect.x, rect.y + (ICON_SIZE - texture.height) / 2)
     rl.draw_texture_v(texture, icon_rect, rl.WHITE)
 
-  def _draw_signal_strength_icon(self, rect: rl.Rectangle, network: NetworkInfo):
+  def _draw_signal_strength_icon(self, rect: rl.Rectangle, network: Network):
     """Draw the Wi-Fi signal strength icon based on network's signal strength"""
     strength_level = max(0, min(3, round(network.strength / 33.0)))
     rl.draw_texture_v(gui_app.texture(STRENGTH_ICONS[strength_level], ICON_SIZE, ICON_SIZE), rl.Vector2(rect.x, rect.y), rl.WHITE)
 
-  def connect_to_network(self, network: NetworkInfo, password=''):
+  def connect_to_network(self, network: Network, password=''):
     self.state = StateConnecting(network)
     if network.is_saved and not password:
       self.wifi_manager.activate_connection(network.ssid)
     else:
       self.wifi_manager.connect_to_network(network.ssid, password)
 
-  def forget_network(self, network: NetworkInfo):
+  def forget_network(self, network: Network):
     self.state = StateForgetting(network)
     # network.is_saved = False
     self.wifi_manager.forget_connection(network.ssid)
