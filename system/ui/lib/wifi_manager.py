@@ -187,15 +187,15 @@ class WifiManager:
     conn.send_and_get_reply(message_bus.AddMatch(rule))
 
     try:
-      while not self._exit:
-        # TODO: now that we have a nice poller we can run always?
-        # TODO: actually nah since it affects UI currently? or not?
-        if not self._active:
-          time.sleep(1)
-          continue
+      with conn.filter(rule, queue=deque(maxlen=10)) as q:  # TODO: not sure what to choose for this
+        while not self._exit:
+          # TODO: now that we have a nice poller we can run always?
+          # TODO: actually nah since it affects UI currently? or not?
+          if not self._active:
+            time.sleep(1)
+            continue
 
-        # Block until a matching signal arrives
-        with conn.filter(rule, queue=deque(maxlen=1)) as q:
+          # Block until a matching signal arrives
           msg = conn.recv_until_filtered(q)
           print('msg.body', msg.body)
           new_state, previous_state, change_reason = msg.body
