@@ -6,8 +6,8 @@ class NMDeviceState(IntEnum):
   UNKNOWN = 0
   DISCONNECTED = 30
   PREPARE = 40
-  NEED_AUTH = 60
   STATE_CONFIG = 50
+  NEED_AUTH = 60
   IP_CONFIG = 70
   ACTIVATED = 100
 

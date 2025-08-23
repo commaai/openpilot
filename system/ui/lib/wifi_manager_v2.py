@@ -1,3 +1,4 @@
+import atexit
 import copy
 import dbus
 import threading
@@ -111,6 +112,11 @@ class WifiManager:
     self._nm = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_IFACE)
     self._props = dbus.Interface(self._bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
+    self._bus2 = dbus.SystemBus(private=True)
+
+    # State
+    self._connecting_to_ssid: str = ""
+
     # Callbacks
     # TODO: some of these are called from threads, either:
     # 1. make sure this is fine
@@ -124,6 +130,60 @@ class WifiManager:
     self._thread = threading.Thread(target=self._run, daemon=True)
     self._thread.start()
 
+    self._state_thread = threading.Thread(target=self._monitor_state, daemon=True)
+    self._state_thread.start()
+
+    atexit.register(self.stop)
+
+  def __del__(self):
+    self.stop()
+
+  def stop(self):
+    self._running = False
+    self._thread.join()
+    self._state_thread.join()
+    self._bus.close()
+    self._bus2.close()
+
+  def _monitor_state(self):
+    prev_state = -1
+
+    device_path = self._get_wifi_device()
+    props_dev = dbus.Interface(self._bus2.get_object(NM, device_path), NM_PROPERTIES_IFACE)
+    _props = dbus.Interface(self._bus2.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
+
+    while self._running:
+      if self._active:
+        dev_state = int(props_dev.Get(NM_DEVICE_IFACE, "State"))
+        state_reason = props_dev.Get(NM_DEVICE_IFACE, "StateReason")  # (u state, u reason)
+        reason = int(state_reason[1]) if isinstance(state_reason, (list, tuple)) and len(state_reason) == 2 else 0
+
+        if dev_state != prev_state:
+          print(f"    WiFi device state change: {dev_state}, reason: {reason}")
+          if dev_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self._connecting_to_ssid:
+            print('------ NEED AUTH - SUPPLICANT DISCONNECT')
+            self.forget_connection(self._connecting_to_ssid, block=True)
+            if self._need_auth is not None:
+              self._need_auth(self._connecting_to_ssid)
+            self._connecting_to_ssid = ""
+          elif dev_state == NMDeviceState.ACTIVATED:
+            print('------ ACTIVATED')
+            if self._activated is not None:
+              self._activated()
+            self._connecting_to_ssid = ""
+          elif dev_state == NMDeviceState.DISCONNECTED:
+            print('------ DISCONNECTED')
+            self._connecting_to_ssid = ""
+
+          print()
+
+        if self._connecting_to_ssid:
+          print('    CONNECTING', self._connecting_to_ssid)
+
+        prev_state = dev_state
+
+      time.sleep(1 / 2.)
+
   def set_callbacks(self, need_auth: Callable[[str], None],
                     activated: Callable[[], None] | None,
                     forgotten: Callable[[str], None],
@@ -135,20 +195,12 @@ class WifiManager:
     self._networks_updated = networks_updated
     self._connection_failed = connection_failed
 
-  def __del__(self):
-    self.stop()
-
-  def stop(self):
-    self._running = False
-    self._thread.join()
-    self._bus.close()
-
   def _run(self):
     while self._running:
       if self._active:
         self._update_networks()
 
-      time.sleep(1)
+      time.sleep(3)
 
   def set_active(self, active: bool):
     self._active = active
@@ -176,6 +228,7 @@ class WifiManager:
       t = time.monotonic()
 
       # Clear all connections that may already exist to the network we are connecting
+      self._connecting_to_ssid = ssid
       self.forget_connection(ssid, block=True)
 
       is_hidden = False
@@ -255,6 +308,7 @@ class WifiManager:
     t = time.monotonic()
     conn_path = self._connection_by_ssid(ssid)
     if conn_path is not None:
+      self._connecting_to_ssid = ssid
       device_path = self._get_wifi_device()
       if device_path is None:
         cloudlog.warning("No WiFi device found")
