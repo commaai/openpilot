@@ -58,8 +58,8 @@ class SettingsLayout(Widget):
 
     # self.wifi_manager = WifiManagerWrapper()
     self.wifi_manager = WifiManager()
+    self.wifi_manager.set_active(False)
     self.wifi_ui = WifiManagerUI(self.wifi_manager)
-
 
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout()),
@@ -76,7 +76,7 @@ class SettingsLayout(Widget):
     self._close_callback: Callable | None = None
 
   # def __del__(self):
-    # self.wifi_manager.shutdown()
+    # self.wifi_manager.stop()
 
   def set_callbacks(self, on_close: Callable):
     self._close_callback = on_close
@@ -162,7 +162,9 @@ class SettingsLayout(Widget):
 
   def set_current_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:
+      self._panels[self._current_panel].instance.hide_event()
       self._current_panel = panel_type
+      self._panels[self._current_panel].instance.show_event()
 
   def close_settings(self):
     if self._close_callback:

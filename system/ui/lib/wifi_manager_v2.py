@@ -154,6 +154,7 @@ class WifiManager:
 
     while self._running:
       if self._active:
+        print('moritring state ACTivE!!1')
         dev_state = int(props_dev.Get(NM_DEVICE_IFACE, "State"))
         state_reason = props_dev.Get(NM_DEVICE_IFACE, "StateReason")  # (u state, u reason)
         reason = int(state_reason[1]) if isinstance(state_reason, (list, tuple)) and len(state_reason) == 2 else 0
@@ -198,11 +199,17 @@ class WifiManager:
     self._disconnected = disconnected
 
   def _run(self):
+    i = 0
     while self._running:
       if self._active:
-        self._update_networks()
+        print('we;re acti!!!!!!!!!!!!')
+        # Scan for networks every 5 seconds
+        if i % 5 == 0:
+          self._update_networks()
+          self._request_scan()
 
-      time.sleep(3)
+      i += 1
+      time.sleep(1)
 
   def set_active(self, active: bool):
     self._active = active
@@ -322,6 +329,23 @@ class WifiManager:
       # FIXME: deadlock issue with ui
       # if self._activated is not None:
       #   self._activated()
+
+  def _request_scan(self):
+    device_path = self._get_wifi_device()
+    if device_path is None:
+      cloudlog.warning("No WiFi device found")
+      return
+
+    wifi_iface = dbus.Interface(self._bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
+    try:
+      wifi_iface.RequestScan({})
+      print('Requested scan')
+    except dbus.exceptions.DBusException as e:
+      # TODO: copilot is wrong, this never happens
+      if "org.freedesktop.NetworkManager.Device.Error.AlreadyScanning" in str(e):
+        print('Already scanning, skipping')
+      else:
+        cloudlog.exception("Failed to request scan")
 
   def _update_networks(self):
     # TODO: only run this function on scan complete!
