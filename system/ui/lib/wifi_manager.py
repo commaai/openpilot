@@ -174,21 +174,12 @@ class WifiManager:
 
   def _monitor_state(self):
     device_path: dbus.ObjectPath = self._wait_for_wifi_device()
-    # # TODO: retry for wifi device in case ui starts before network stack is ready
-    # # device_path = self._get_wifi_device()
-    # device_path: dbus.ObjectPath | None = None
     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
     _props = dbus.Interface(self._monitor_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
     prev_state = -1
     while not self._exit:
       if self._active:
-        # if device_path is None:
-        #   device_path = self._get_wifi_device()
-        #   if device_path is not None:
-        #     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
-        #     _props = dbus.Interface(self._monitor_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
-
         print('moritring state ACTivE!!1')
         dev_state = int(props_dev.Get(NM_DEVICE_IFACE, "State"))
         state_reason = props_dev.Get(NM_DEVICE_IFACE, "StateReason")  # (u state, u reason)
@@ -340,13 +331,12 @@ class WifiManager:
       conn_path = self._connection_by_ssid(ssid)
       if conn_path is not None:
         self._connecting_to_ssid = ssid
-        device_path = self._get_wifi_device()
-        if device_path is None:
+        if self._wifi_device is None:
           cloudlog.warning("No WiFi device found")
           return
 
         print(f'Activating connection to {ssid}')
-        self._nm.ActivateConnection(conn_path, device_path, dbus.ObjectPath("/"))
+        self._nm.ActivateConnection(conn_path, self._wifi_device, dbus.ObjectPath("/"))
         print(f"Activated connection in {time.monotonic() - t}s")
         # FIXME: deadlock issue with ui
         # if self._activated is not None:
@@ -359,12 +349,11 @@ class WifiManager:
       threading.Thread(target=worker, daemon=True).start()
 
   def _request_scan(self):
-    device_path = self._get_wifi_device()
-    if device_path is None:
+    if self._wifi_device is None:
       cloudlog.warning("No WiFi device found")
       return
 
-    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
+    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
     try:
       wifi_iface.RequestScan({})
       print('Requested scan')
@@ -379,13 +368,12 @@ class WifiManager:
     # TODO: only run this function on scan complete!
     print('UPDATING NETWORKS!!!!')
 
-    device_path = self._get_wifi_device()
-    if device_path is None:
+    if self._wifi_device is None:
       cloudlog.warning("No WiFi device found")
       return
 
-    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_WIRELESS_IFACE)
-    dev_props = dbus.Interface(self._main_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
+    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
+    dev_props = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_PROPERTIES_IFACE)
     active_ap_path = dev_props.Get(NM_WIRELESS_IFACE, "ActiveAccessPoint")
 
     aps: dict[str, list[AccessPoint]] = {}
