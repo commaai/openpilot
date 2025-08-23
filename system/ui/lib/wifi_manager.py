@@ -137,6 +137,8 @@ class WifiManager:
     self._networks_updated: Callable[[list[Network]], None] | None = None
     self._disconnected: Callable[[], None] | None = None
 
+    self._lock = threading.Lock()
+
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._scan_thread.start()
 
@@ -160,15 +162,33 @@ class WifiManager:
     print('SETTING ACTIVE', active)
     self._active = active
 
+  def _wait_for_wifi_device(self) -> dbus.ObjectPath:
+    with self._lock:
+      device_path: dbus.ObjectPath | None = None
+      while not self._exit:
+        device_path = self._get_wifi_device()
+        if device_path is not None:
+          break
+        time.sleep(1)
+      return device_path
+
   def _monitor_state(self):
-    # TODO: retry for wifi device in case ui starts before network stack is ready
-    device_path = self._get_wifi_device()
+    device_path: dbus.ObjectPath = self._wait_for_wifi_device()
+    # # TODO: retry for wifi device in case ui starts before network stack is ready
+    # # device_path = self._get_wifi_device()
+    # device_path: dbus.ObjectPath | None = None
     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
     _props = dbus.Interface(self._monitor_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
     prev_state = -1
     while not self._exit:
       if self._active:
+        # if device_path is None:
+        #   device_path = self._get_wifi_device()
+        #   if device_path is not None:
+        #     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
+        #     _props = dbus.Interface(self._monitor_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
+
         print('moritring state ACTivE!!1')
         dev_state = int(props_dev.Get(NM_DEVICE_IFACE, "State"))
         state_reason = props_dev.Get(NM_DEVICE_IFACE, "StateReason")  # (u state, u reason)
@@ -203,6 +223,8 @@ class WifiManager:
       time.sleep(1 / 2.)
 
   def _network_scanner(self):
+    device_path: dbus.ObjectPath = self._wait_for_wifi_device()
+
     while not self._exit:
       if self._active:
         print('we;re acti!!!!!!!!!!!!')
