@@ -217,6 +217,7 @@ class WifiManagerUI(Widget):
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
+    print('CALLBACK: _on_network_updated')
     # TODO: wifimanager has a nonblocking getter, we don't need to use callbacks nearly as much
     with self._lock:
       t = time.monotonic()
@@ -229,6 +230,7 @@ class WifiManagerUI(Widget):
       print(f"WifiManagerUI: networks updated, {len(networks)} networks, took {time.monotonic() - t}s")
 
   def _on_need_auth(self, ssid):
+    print('CALLBACK: _on_need_auth')
     with self._lock:
       network = next((n for n in self._networks if n.ssid == ssid), None)
       if network:
@@ -237,16 +239,19 @@ class WifiManagerUI(Widget):
         self._password_retry = True
 
   def _on_activated(self):
+    print('CALLBACK: _on_activated')
     with self._lock:
       if self.state == UIState.CONNECTING:
         self.state = UIState.IDLE
 
   def _on_forgotten(self, ssid):
+    print('CALLBACK: _on_forgotten')
     with self._lock:
       if self.state == UIState.FORGETTING:
         self.state = UIState.IDLE
 
   def _on_disconnected(self):
+    print('CALLBACK: _on_disconnected')
     with self._lock:
       if self.state == UIState.CONNECTING:
         self.state = UIState.IDLE
