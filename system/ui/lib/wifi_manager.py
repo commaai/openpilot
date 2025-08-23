@@ -196,7 +196,11 @@ class WifiManager:
             continue
 
           # Block until a matching signal arrives
-          msg = conn.recv_until_filtered(q)
+          try:
+            msg = conn.recv_until_filtered(q, timeout=1)
+          except TimeoutError:
+            continue
+
           print('msg.body', msg.body)
           new_state, previous_state, change_reason = msg.body
 
