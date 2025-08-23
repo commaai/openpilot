@@ -168,7 +168,6 @@ class WifiManager:
   def _monitor_state(self):
     device_path: dbus.ObjectPath = self._wait_for_wifi_device()
     props_dev = dbus.Interface(self._monitor_bus.get_object(NM, device_path), NM_PROPERTIES_IFACE)
-    _props = dbus.Interface(self._monitor_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
     prev_state = -1
     while not self._exit:
