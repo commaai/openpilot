@@ -189,6 +189,8 @@ class WifiManager:
           elif dev_state == NMDeviceState.ACTIVATED:
             print('------ ACTIVATED')
             if self._activated is not None:
+              self._update_networks()
+              print('CALLING ACTIVATED CALLBACK1')
               self._activated()
             self._connecting_to_ssid = ""
           elif dev_state == NMDeviceState.DISCONNECTED:
@@ -320,6 +322,7 @@ class WifiManager:
         conn_iface.Delete()
         print(f'Forgetting connection took {time.monotonic() - t}s')
         if self._forgotten is not None:
+          self._update_networks()
           self._forgotten(ssid)
 
     # TODO: make a helper when it makes sense
@@ -341,9 +344,6 @@ class WifiManager:
         print(f'Activating connection to {ssid}')
         self._nm.ActivateConnection(conn_path, self._wifi_device, dbus.ObjectPath("/"))
         print(f"Activated connection in {time.monotonic() - t}s")
-        # FIXME: deadlock issue with ui
-        # if self._activated is not None:
-        #   self._activated()
 
     # TODO: make a helper when it makes sense
     if block:
@@ -368,7 +368,6 @@ class WifiManager:
         cloudlog.exception("Failed to request scan")
 
   def _update_networks(self):
-    # TODO: only run this function on scan complete!
     print('UPDATING NETWORKS!!!!')
 
     if self._wifi_device is None:
