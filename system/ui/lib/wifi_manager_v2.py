@@ -205,6 +205,7 @@ class WifiManager:
         print('we;re acti!!!!!!!!!!!!')
         # Scan for networks every 5 seconds
         if i % 5 == 0:
+          # TODO: should watch when scan is complete, but this is more than good enough for now
           self._update_networks()
           self._request_scan()
 
@@ -212,6 +213,7 @@ class WifiManager:
       time.sleep(1)
 
   def set_active(self, active: bool):
+    print('SETTING ACTIVE', active)
     self._active = active
 
   def _get_wifi_device(self) -> dbus.ObjectPath | None:

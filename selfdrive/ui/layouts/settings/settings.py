@@ -166,6 +166,13 @@ class SettingsLayout(Widget):
       self._current_panel = panel_type
       self._panels[self._current_panel].instance.show_event()
 
-  def close_settings(self):
-    if self._close_callback:
-      self._close_callback()
+  def hide_event(self):
+    for panel_info in self._panels.values():
+      panel_info.instance.hide_event()
+
+  # def close_settings(self):
+  #   print("Closing settings")
+  #   self.hide_event()
+  #
+  #   if self._close_callback:
+  #     self._close_callback()
