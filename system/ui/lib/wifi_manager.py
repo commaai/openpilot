@@ -52,13 +52,6 @@ def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityTyp
     return SecurityType.UNSUPPORTED
 
 
-def run_blocking(func: Callable, block: bool):
-  if block:
-    func()
-  else:
-    threading.Thread(target=func, daemon=True).start()
-
-
 @dataclass(frozen=True)
 class Network:
   ssid: str
@@ -326,7 +319,11 @@ class WifiManager:
         if self._forgotten is not None:
           self._forgotten(ssid)
 
-    run_blocking(worker, block)
+    # TODO: make a helper when it makes sense
+    if block:
+      worker()
+    else:
+      threading.Thread(target=worker, daemon=True).start()
 
   def activate_connection(self, ssid: str, block: bool = False):
     def worker():
@@ -345,7 +342,11 @@ class WifiManager:
         # if self._activated is not None:
         #   self._activated()
 
-    run_blocking(worker, block)
+    # TODO: make a helper when it makes sense
+    if block:
+      worker()
+    else:
+      threading.Thread(target=worker, daemon=True).start()
 
   def _request_scan(self):
     if self._wifi_device is None:
