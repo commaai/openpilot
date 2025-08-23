@@ -28,14 +28,10 @@ def test_estimated_offset():
   lat_accels = gt_torque_tune.latAccelFactor*steer_torques + gt_torque_tune.latAccelOffset + frictions
   steer_torques += rng.normal(scale=IN_OUT_STD, size=steer_torques.size)
   lat_accels += rng.normal(scale=IN_OUT_STD, size=steer_torques.size)
-  import matplotlib.pyplot as plt
-  plt.scatter(lat_accels, steer_torques)
-  plt.savefig('a.png')
   est = TorqueEstimator(car.CarParams())
   for steer_torque, lat_accel in zip(steer_torques, lat_accels, strict=True):
     est.filtered_points.add_point(steer_torque, lat_accel)
   msg = est.get_msg()
-  print(msg)
   # TODO add lataccelfactor and friction check when we have more accurate estimates
   assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - gt_torque_tune.latAccelOffset) < 0.05
 
