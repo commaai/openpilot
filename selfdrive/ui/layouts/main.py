@@ -63,14 +63,25 @@ class MainLayout(Widget):
       # Don't hide sidebar from interactive timeout
       if self._current_mode != MainState.ONROAD:
         self._sidebar.set_visible(False)
-      self._current_mode = MainState.ONROAD
+
+      # TODO: helper
+      if self._current_mode != MainState.ONROAD:
+        self._layouts[self._current_mode].hide_event()
+        self._current_mode = MainState.ONROAD
+        self._layouts[self._current_mode].show_event()
     else:
-      self._current_mode = MainState.HOME
+      if self._current_mode != MainState.HOME:
+        self._layouts[self._current_mode].hide_event()
+        self._current_mode = MainState.HOME
+        self._layouts[self._current_mode].show_event()
+
       self._sidebar.set_visible(True)
 
   def open_settings(self, panel_type: PanelType):
     self._layouts[MainState.SETTINGS].set_current_panel(panel_type)
+    self._layouts[self._current_mode].hide_event()
     self._current_mode = MainState.SETTINGS
+    self._layouts[self._current_mode].show_event()
     self._sidebar.set_visible(False)
 
   def _on_settings_clicked(self):

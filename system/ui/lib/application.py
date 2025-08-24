@@ -72,7 +72,7 @@ class MouseState:
     self._events: deque[MouseEvent] = deque(maxlen=MOUSE_THREAD_RATE)  # bound event list
     self._prev_mouse_event: list[MouseEvent | None] = [None] * MAX_TOUCH_SLOTS
 
-    self._rk = Ratekeeper(MOUSE_THREAD_RATE)
+    self._rk = Ratekeeper(MOUSE_THREAD_RATE, print_delay_threshold=None)
     self._lock = threading.Lock()
     self._exit_event = threading.Event()
     self._thread = None
@@ -135,6 +135,8 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+
+    self._rk = Ratekeeper(60, print_delay_threshold=None)
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -304,6 +306,7 @@ class GuiApplication:
 
         rl.end_drawing()
         self._monitor_fps()
+        self._rk.monitor_time()
     except KeyboardInterrupt:
       pass
 
