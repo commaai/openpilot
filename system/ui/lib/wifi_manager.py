@@ -37,7 +37,7 @@ NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
 NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
-DEFAULT_TETHERING_PASSWORD = "12345678"
+DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 
 
 # NetworkManager device states
@@ -101,8 +101,8 @@ class WifiManager:
     """Connect to the DBus system bus."""
     try:
       self.bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
-      if not await self._find_wifi_device():
-        raise ValueError("No Wi-Fi device found")
+      while not await self._find_wifi_device():
+        await asyncio.sleep(1)
 
       await self._setup_signals(self.device_path)
       self.active_ap_path = await self.get_active_access_point()
@@ -441,20 +441,19 @@ class WifiManager:
     settings_iface.on_connection_removed(self._on_connection_removed)
 
   def _on_properties_changed(self, interface: str, changed: dict, invalidated: list):
-    if 'LastScan' in changed:
+    if interface == NM_WIRELESS_IFACE and 'LastScan' in changed:
       asyncio.create_task(self._refresh_networks())
     elif interface == NM_WIRELESS_IFACE and "ActiveAccessPoint" in changed:
       new_ap_path = changed["ActiveAccessPoint"].value
       if self.active_ap_path != new_ap_path:
         self.active_ap_path = new_ap_path
-        asyncio.create_task(self._refresh_networks())
 
   def _on_state_changed(self, new_state: int, old_state: int, reason: int):
     if new_state == NMDeviceState.ACTIVATED:
       if self.callbacks.activated:
         self.callbacks.activated()
-      asyncio.create_task(self._refresh_networks())
       self._current_connection_ssid = None
+      asyncio.create_task(self._refresh_networks())
     elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
       for network in self.networks:
         network.is_connected = False
@@ -487,9 +486,6 @@ class WifiManager:
 
         if self.callbacks.forgotten:
           self.callbacks.forgotten(ssid)
-
-        # Update network list to reflect the removed saved connection
-        asyncio.create_task(self._refresh_networks())
         break
 
   async def _add_saved_connection(self, path: str) -> None:
@@ -498,14 +494,13 @@ class WifiManager:
       settings = await self._get_connection_settings(path)
       if ssid := self._extract_ssid(settings):
         self.saved_connections[ssid] = path
-        await self._refresh_networks()
     except DBusError as e:
       cloudlog.error(f"Failed to add connection {path}: {e}")
 
   def _extract_ssid(self, settings: dict) -> str | None:
     """Extract SSID from connection settings."""
     ssid_variant = settings.get('802-11-wireless', {}).get('ssid', Variant('ay', b'')).value
-    return ''.join(chr(b) for b in ssid_variant) if ssid_variant else None
+    return bytes(ssid_variant).decode('utf-8') if ssid_variant else None
 
   async def _add_match_rule(self, rule):
     """Add a match rule on the bus."""

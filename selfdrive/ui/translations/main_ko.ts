@@ -501,8 +501,8 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>업데이트 일시 중지</translation>
     </message>
     <message>
-        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
-        <translation>오픈파일럿은 과도한 %1 작동을 감지했습니다. 소프트웨어 버그 때문일 수 있습니다. https://comma.ai/support 에 문의하여 지원받으세요.</translation>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -677,113 +677,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Firehose</source>
         <translation>파이어호스</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>경고: 전압이 낮습니다</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>장치를 하네스를 통해 차량 전원에 연결하세요. USB 전원에서는 예상치 못한 문제가 생길 수 있습니다.</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>전원 끄기</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>계속</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>시작하기</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>출발 전 설정을 완료하고 세부 사항을 살펴봅니다.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Wi-Fi 연결</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>뒤로</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>Wi-Fi 연결 없이 진행</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>인터넷 연결 대기 중</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>URL 입력</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>커스텀 소프트웨어</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>다운로드 중...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>다운로드 실패</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>입력된 URL이 유효하고 인터넷 연결이 원활한지 확인하세요.</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>장치 재부팅</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>다시 시작</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>문제가 발생했습니다. 장치를 재부팅하세요.</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>이 URL에서 커스텀 소프트웨어를 찾을 수 없습니다.</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>언어를 선택하세요</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>설치할 소프트웨어 선택</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>오픈파일럿</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>커스텀 소프트웨어</translation>
-    </message>
-    <message>
-        <source>WARNING: Custom Software</source>
-        <translation>경고: 커스텀 소프트웨어</translation>
-    </message>
-    <message>
-        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
-
-If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation>타사 소프트웨어를 설치할 때는 주의하십시오. 타사 소프트웨어는 comma에 의해 테스트되지 않았으며 장치나 차량에 손상을 줄 수 있습니다.
-
-진행하려면 https://flash.comma.ai를 사용하여 나중에 장치를 공장 초기화하세요.</translation>
     </message>
 </context>
 <context>
@@ -1137,6 +1030,16 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>운전 중에 마이크 오디오를 녹음하고 저장하십시오. 오디오는 comma connect의 대시캠 비디오에 포함됩니다.</translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

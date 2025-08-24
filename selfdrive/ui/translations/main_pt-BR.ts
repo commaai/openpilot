@@ -503,8 +503,8 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <translation>Adiar Atualização</translation>
     </message>
     <message>
-        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
-        <translation>O openpilot detectou uma atuação excessiva de %1. Isso pode ser causado por uma falha no software. Por favor, entre em contato com o suporte em https://comma.ai/support.</translation>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
+        <translation>openpilot detectou atuação excessiva de %1 na sua última condução. Entre em contato com o suporte em https://comma.ai/support e compartilhe o Dongle ID do seu dispositivo para solução de problemas.</translation>
     </message>
 </context>
 <context>
@@ -682,113 +682,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
     <message>
         <source>Firehose</source>
         <translation>Firehose</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>ALERTA: Baixa Voltagem</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Ligue seu dispositivo em um carro com um chicote ou prossiga por sua conta e risco.</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>Desligar</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Continuar</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>Começando</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>Antes de pegarmos a estrada, vamos terminar a instalação e cobrir alguns detalhes.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conectar ao Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Voltar</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>Continuar sem Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>Esperando pela internet</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>Preencher URL</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>para o Software Customizado</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>Baixando...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>Download Falhou</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Garanta que a URL inserida é valida, e uma boa conexão à internet.</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>Reiniciar Dispositivo</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>Inicializar</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>Não há software personalizado nesta URL.</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>Algo deu errado. Reinicie o dispositivo.</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>Selecione o Idioma</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>Escolha o Software a ser Instalado</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Software Customizado</translation>
-    </message>
-    <message>
-        <source>WARNING: Custom Software</source>
-        <translation>AVISO: Software Personalizado</translation>
-    </message>
-    <message>
-        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
-
-If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation>Tenha cuidado ao instalar software de terceiros. Softwares de terceiros não foram testados pela comma e podem causar danos ao seu dispositivo e/ou veículo.
-
-Se quiser continuar, use https://flash.comma.ai para restaurar seu dispositivo ao estado de fábrica mais tarde.</translation>
     </message>
 </context>
 <context>
@@ -1142,6 +1035,18 @@ Se quiser continuar, use https://flash.comma.ai para restaurar seu dispositivo a
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Grave e armazene o áudio do microfone enquanto estiver dirigindo. O áudio será incluído ao vídeo dashcam no comma connect.</translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation>Gravar feedback de áudio com o botão LKAS</translation>
+    </message>
+    <message>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation>Pressione o botão LKAS para gravar e compartilhar feedback de direção com a equipe do openpilot. Quando esta opção estiver desativada, o botão funcionará como um botão de marcador. O evento será destacado no comma connect e o segmento será preservado no armazenamento do seu dispositivo.
+
+Observe que este recurso é compatível apenas com alguns modelos de carros.</translation>
     </message>
 </context>
 <context>

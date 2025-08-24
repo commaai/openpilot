@@ -499,7 +499,7 @@ Der Firehose-Modus ermöglicht es dir, deine Trainingsdaten-Uploads zu maximiere
         <translation type="unfinished">Update pausieren</translation>
     </message>
     <message>
-        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -678,111 +678,6 @@ Der Firehose-Modus ermöglicht es dir, deine Trainingsdaten-Uploads zu maximiere
     <message>
         <source>Firehose</source>
         <translation>Firehose</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>Warnung: Batteriespannung niedrig</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Versorge dein Gerät über einen Kabelbaum im Auto mit Strom, oder fahre auf eigene Gefahr fort.</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>Ausschalten</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Fortsetzen</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>Loslegen</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>Bevor wir uns auf die Straße begeben, lass uns die Installation fertigstellen und einige Details prüfen.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Mit WLAN verbinden</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Zurück</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>Ohne WLAN fortsetzen</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>Auf Internet warten</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>URL eingeben</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>für spezifische Software</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>Herunterladen...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>Herunterladen fehlgeschlagen</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Stelle sicher, dass die eingegebene URL korrekt ist und dein Gerät eine stabile Internetverbindung hat.</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>Gerät neustarten</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>Von neuem beginnen</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>Keine benutzerdefinierte Software unter dieser URL gefunden.</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>Etwas ist schiefgelaufen. Starte das Gerät neu.</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>Sprache wählen</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>Wähle die zu installierende Software</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Benutzerdefinierte Software</translation>
-    </message>
-    <message>
-        <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
-
-If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1137,6 +1032,16 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

@@ -503,7 +503,7 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
         <translation type="unfinished">Posponer Actualización</translation>
     </message>
     <message>
-        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -682,113 +682,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
     <message>
         <source>Firehose</source>
         <translation>Firehose</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>Algo ha ido mal. Reinicie el dispositivo.</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>Asegúrese de que la URL insertada es válida y que el dispositivo tiene buena conexión.</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>No encontramos software personalizado en esta URL.</translation>
-    </message>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>ALERTA: Voltaje bajo</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>Encienda su dispositivo en un auto con el arnés o proceda bajo su propio riesgo.</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>Apagar</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>Continuar</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>Comenzando</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>Antes de ponernos en marcha, terminemos la instalación y cubramos algunos detalles.</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>Conectarse al Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>Volver</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>Continuar sin Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>Esperando conexión a internet</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>Elija el software a instalar</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>Software personalizado</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>Insertar URL</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>para Software personalizado</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>Descargando...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>Descarga fallida</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>Reiniciar Dispositivo</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>Comenzar de nuevo</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>Seleccione un idioma</translation>
-    </message>
-    <message>
-        <source>WARNING: Custom Software</source>
-        <translation>ADVERTENCIA: Software personalizado</translation>
-    </message>
-    <message>
-        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
-
-If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation>Tenga cuidado al instalar software de terceros. El software de terceros no ha sido probado por comma y puede causar daños a su dispositivo y/o vehículo.
-
-Si desea continuar, utilice https://flash.comma.ai para restaurar su dispositivo a un estado de fábrica más tarde.</translation>
     </message>
 </context>
 <context>
@@ -1142,6 +1035,16 @@ Si desea continuar, utilice https://flash.comma.ai para restaurar su dispositivo
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Graba y almacena el audio del micrófono mientras conduces. El audio se incluirá en el video de la cámara del tablero en comma connect.</translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
+        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>

@@ -497,7 +497,7 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation type="unfinished">เลื่อนการอัปเดต</translation>
     </message>
     <message>
-        <source>openpilot has detected excessive %1 actuation. This may be due to a software bug. Please contact support at https://comma.ai/support.</source>
+        <source>openpilot detected excessive %1 actuation on your last drive. Please contact support at https://comma.ai/support and share your device&apos;s Dongle ID for troubleshooting.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
@@ -673,111 +673,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Firehose</source>
         <translation>สายยางดับเพลิง</translation>
-    </message>
-</context>
-<context>
-    <name>Setup</name>
-    <message>
-        <source>WARNING: Low Voltage</source>
-        <translation>คำเตือน: แรงดันแบตเตอรี่ต่ำ</translation>
-    </message>
-    <message>
-        <source>Power your device in a car with a harness or proceed at your own risk.</source>
-        <translation>โปรดต่ออุปกรณ์ของคุณเข้ากับสายควบคุมในรถยนต์ หรือดำเนินการด้วยความเสี่ยงของคุณเอง</translation>
-    </message>
-    <message>
-        <source>Power off</source>
-        <translation>ปิดเครื่อง</translation>
-    </message>
-    <message>
-        <source>Continue</source>
-        <translation>ดำเนินการต่อ</translation>
-    </message>
-    <message>
-        <source>Getting Started</source>
-        <translation>เริ่มกันเลย</translation>
-    </message>
-    <message>
-        <source>Before we get on the road, let’s finish installation and cover some details.</source>
-        <translation>ก่อนออกเดินทาง เรามาทำการติดตั้งซอฟต์แวร์ และตรวจสอบการตั้งค่า</translation>
-    </message>
-    <message>
-        <source>Connect to Wi-Fi</source>
-        <translation>เชื่อมต่อ Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Back</source>
-        <translation>ย้อนกลับ</translation>
-    </message>
-    <message>
-        <source>Continue without Wi-Fi</source>
-        <translation>ดำเนินการต่อโดยไม่ใช้ Wi-Fi</translation>
-    </message>
-    <message>
-        <source>Waiting for internet</source>
-        <translation>กำลังรอสัญญาณอินเตอร์เน็ต</translation>
-    </message>
-    <message>
-        <source>Enter URL</source>
-        <translation>ป้อน URL</translation>
-    </message>
-    <message>
-        <source>for Custom Software</source>
-        <translation>สำหรับซอฟต์แวร์ที่กำหนดเอง</translation>
-    </message>
-    <message>
-        <source>Downloading...</source>
-        <translation>กำลังดาวน์โหลด...</translation>
-    </message>
-    <message>
-        <source>Download Failed</source>
-        <translation>ดาวน์โหลดล้มเหลว</translation>
-    </message>
-    <message>
-        <source>Ensure the entered URL is valid, and the device’s internet connection is good.</source>
-        <translation>ตรวจสอบให้แน่ใจว่า URL ที่ป้อนนั้นถูกต้อง และอุปกรณ์เชื่อมต่ออินเทอร์เน็ตอยู่</translation>
-    </message>
-    <message>
-        <source>Reboot device</source>
-        <translation>รีบูตอุปกรณ์</translation>
-    </message>
-    <message>
-        <source>Start over</source>
-        <translation>เริ่มต้นใหม่</translation>
-    </message>
-    <message>
-        <source>Something went wrong. Reboot the device.</source>
-        <translation>มีบางอย่างผิดพลาด รีบูตอุปกรณ์</translation>
-    </message>
-    <message>
-        <source>No custom software found at this URL.</source>
-        <translation>ไม่พบซอฟต์แวร์ที่กำหนดเองที่ URL นี้</translation>
-    </message>
-    <message>
-        <source>Select a language</source>
-        <translation>เลือกภาษา</translation>
-    </message>
-    <message>
-        <source>Choose Software to Install</source>
-        <translation>เลือกซอฟต์แวร์ที่จะติดตั้ง</translation>
-    </message>
-    <message>
-        <source>openpilot</source>
-        <translation>openpilot</translation>
-    </message>
-    <message>
-        <source>Custom Software</source>
-        <translation>ซอฟต์แวร์ที่กำหนดเอง</translation>
-    </message>
-    <message>
-        <source>WARNING: Custom Software</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Use caution when installing third-party software. Third-party software has not been tested by comma, and may cause damage to your device and/or vehicle.
-
-If you&apos;d like to proceed, use https://flash.comma.ai to restore your device to a factory state later.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
@@ -1130,6 +1025,16 @@ If you&apos;d like to proceed, use https://flash.comma.ai to restore your device
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Record Audio Feedback with LKAS button</source>
+        <translation type="unfinished"></translation>
+    </message>
+    <message>
+        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
+
+Note that this feature is only compatible with select cars.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

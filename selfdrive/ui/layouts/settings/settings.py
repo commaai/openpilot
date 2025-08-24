@@ -28,7 +28,7 @@ PANEL_COLOR = rl.Color(41, 41, 41, 255)
 CLOSE_BTN_COLOR = rl.Color(41, 41, 41, 255)
 CLOSE_BTN_PRESSED = rl.Color(59, 59, 59, 255)
 TEXT_NORMAL = rl.Color(128, 128, 128, 255)
-TEXT_SELECTED = rl.Color(255, 255, 255, 255)
+TEXT_SELECTED = rl.WHITE
 
 
 class PanelType(IntEnum):

@@ -39,6 +39,10 @@ vec4 getGradientColor(vec2 pos) {
   float t = clamp(dot(pos - gradientStart, normalizedDir) / gradientLength, 0.0, 1.0);
 
   if (gradientColorCount <= 1) return gradientColors[0];
+
+  // handle t before first / after last stop
+  if (t <= gradientStops[0]) return gradientColors[0];
+  if (t >= gradientStops[gradientColorCount-1]) return gradientColors[gradientColorCount-1];
   for (int i = 0; i < gradientColorCount - 1; i++) {
     if (t >= gradientStops[i] && t <= gradientStops[i+1]) {
       float segmentT = (t - gradientStops[i]) / (gradientStops[i+1] - gradientStops[i]);
