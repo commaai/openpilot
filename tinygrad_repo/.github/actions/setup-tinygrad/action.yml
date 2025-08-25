@@ -1,0 +1,276 @@
+name: Setup Python & Install
+description: Sets up Python and installs project dependencies.
+inputs:
+  python-version:
+    description: 'Python version to use'
+    required: false
+    default: '3.12'
+  key:
+    description: 'Key for the python cache'
+    required: false
+    default: ''  # if you don't set a key, it doesn't cache
+  deps:
+    description: 'Extra dependency groups (comma separated)'
+    required: false
+    default: ''
+  pydeps:
+    description: 'Extra Python dependency groups (space separated)'
+    required: false
+    default: ''
+  opencl:
+    description: "Install OpenCL?"
+    required: false
+    default: 'false'
+  amd:
+    description: "Install AMD?"
+    required: false
+    default: 'false'
+  cuda:
+    description: "Install CUDA?"
+    required: false
+    default: 'false'
+  ocelot:
+    description: "Install gpuocelot?"
+    required: false
+    default: 'false'
+  webgpu:
+    description: "Install webgpu?"
+    required: false
+    default: 'false'
+  llvm:
+    description: "Install LLVM?"
+    required: false
+    default: 'false'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python ${{ inputs.python-version }}
+      id: setup-python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    # **** Caching packages ****
+
+    - name: Cache Python packages
+      id: restore-venv
+      uses: actions/cache@v4
+      with:
+        path: ${{ github.workspace }}/.venv
+        key: venv-${{ runner.os }}-python-${{ steps.setup-python.outputs.python-version }}-${{ inputs.deps }}-${{ inputs.pydeps }}-${{ hashFiles('**/setup.py') }}-${{ env.PYTHON_CACHE_VERSION }}
+
+    # **** Caching downloads ****
+
+    - name: Cache downloads (Linux)
+      if: inputs.key != '' && runner.os == 'Linux'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/tinygrad/downloads/
+        key: downloads-cache-${{ inputs.key }}-${{ env.DOWNLOAD_CACHE_VERSION }}
+    - name: Cache downloads (macOS)
+      if: inputs.key != '' && runner.os == 'macOS'
+      uses: actions/cache@v4
+      with:
+        path: ~/Library/Caches/tinygrad/downloads/
+        key: osx-downloads-cache-${{ inputs.key }}-${{ env.DOWNLOAD_CACHE_VERSION }}
+
+    # **** Python deps ****
+
+    - name: Install dependencies in venv (with extra)
+      if: inputs.deps != '' && steps.restore-venv.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        python -m venv .venv
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          . .venv/bin/activate
+        fi
+        python -m pip install -e ".[${{ inputs.deps }}]" ${{ inputs.pydeps }} --extra-index-url https://download.pytorch.org/whl/cpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/Triton-Nightly/pypi/simple/
+    - name: Install dependencies in venv (without extra)
+      if: inputs.deps == '' && steps.restore-venv.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        python -m venv .venv
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          source .venv/Scripts/activate
+        else
+          . .venv/bin/activate
+        fi
+        python -m pip install -e . ${{ inputs.pydeps }}
+    - name: Set up venv environment
+      shell: bash
+      run: |
+        echo "VIRTUAL_ENV=${{ github.workspace }}/.venv" >> "$GITHUB_ENV"
+        echo "OMP_NUM_THREADS=1" >> "$GITHUB_ENV"
+        # no buffers should be over 300MB in CI
+        echo "MAX_BUFFER_SIZE=300000000" >> "$GITHUB_ENV"
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          echo "${{ github.workspace }}/.venv/Scripts" >> "$GITHUB_PATH"
+        else
+          echo "${{ github.workspace }}/.venv/bin" >> "$GITHUB_PATH"
+        fi
+
+    # ******************* apt *******************
+    - name: Setup apt
+      if: runner.os == 'Linux' && (inputs.opencl == 'true' || inputs.amd == 'true' || inputs.cuda == 'true' || inputs.webgpu == 'true' || inputs.llvm == 'true')
+      shell: bash
+      run: |
+        sudo chown -R $USER:$USER /var/cache/apt/archives
+
+        echo 'Acquire::GzipIndexes "true";' | sudo tee /etc/apt/apt.conf.d/gzip
+        echo 'Acquire::http::Pipeline-Depth "5";' | sudo tee -a /etc/apt/apt.conf.d/99parallel
+        echo 'Binary::apt::APT::Keep-Downloaded-Packages "true";' | sudo tee -a /etc/apt/apt.conf.d/99keep-debs
+    
+    - name: Add OpenCL Repo
+      if: inputs.opencl == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: echo "deb [ allow-insecure=yes ] https://apt.repos.intel.com/oneapi all main" | sudo tee /etc/apt/sources.list.d/oneAPI.list
+
+    - name: Add AMD Repo (Linux)
+      if: inputs.amd == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | gpg --dearmor | sudo tee /etc/apt/keyrings/rocm.gpg > /dev/null
+        sudo tee /etc/apt/sources.list.d/rocm.list <<EOF
+        deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/6.2 $(lsb_release -cs) main
+        EOF
+        echo -e 'Package: *\nPin: release o=repo.radeon.com\nPin-Priority: 600' | sudo tee /etc/apt/preferences.d/rocm-pin-600
+
+    - name: Add LLVM Repo (Linux)
+      if: inputs.llvm == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        wget -qO- https://apt.llvm.org/llvm-snapshot.gpg.key | sudo tee /etc/apt/trusted.gpg.d/apt.llvm.org.asc
+        echo "deb http://apt.llvm.org/$(lsb_release -cs)/ llvm-toolchain-$(lsb_release -cs)-20 main" | sudo tee /etc/apt/sources.list.d/llvm.list
+
+    - name: Compute Package List + Hash
+      if: runner.os == 'Linux' && (inputs.opencl == 'true' || inputs.amd == 'true' || inputs.cuda == 'true' || inputs.webgpu == 'true' || inputs.llvm == 'true')
+      id: apt-pkgs
+      shell: bash
+      run: |
+        pkgs=""
+        # **** OpenCL ****
+        if [[ "${{ inputs.opencl }}" == "true" ]]; then
+          pkgs+=" opencl-headers \
+            intel-oneapi-runtime-openmp=2023.2.1-16 intel-oneapi-runtime-compilers-common=2023.2.1-16 intel-oneapi-runtime-compilers=2023.2.1-16 \
+            intel-oneapi-runtime-dpcpp-sycl-opencl-cpu=2023.2.1-16 intel-oneapi-runtime-tbb-common=2021.10.0-49541 \
+            intel-oneapi-runtime-tbb=2021.10.0-49541 intel-oneapi-runtime-opencl=2023.2.1-16"
+        fi
+        # **** AMD ****
+        if [[ "${{ inputs.amd }}" == "true" ]]; then
+          pkgs+=" hsa-rocr comgr hsa-rocr-dev liburing-dev libibverbs-dev libc6-dev"
+        fi
+        # **** CUDA ****
+        if [[ "${{ inputs.cuda }}" == "true" ]]; then
+          pkgs+=" git g++ cmake ninja-build llvm-15-dev zlib1g-dev libglew-dev \
+            flex bison libfl-dev libboost-thread-dev libboost-filesystem-dev nvidia-cuda-toolkit-gcc libzstd-dev"
+        fi
+        # **** WebGPU (dependencies for software-based vulkan) ****
+        if [[ "${{ inputs.webgpu }}" == "true" ]]; then
+          pkgs+=" libgl1 libglx-mesa0 libgl1-mesa-dri libxcb-xfixes0-dev mesa-vulkan-drivers"
+        fi
+        # **** LLVM ****
+        if [[ "${{ inputs.llvm }}" == "true" ]]; then
+          pkgs+=" libllvm20 clang-20 lld-20"
+        fi
+        
+        echo "pkgs=$pkgs" >> "$GITHUB_OUTPUT"
+        echo "hash=$(echo -n "$pkgs" | sha256sum | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+
+    - name: Cache apt
+      if: runner.os == 'Linux' && (inputs.opencl == 'true' || inputs.amd == 'true' || inputs.cuda == 'true' || inputs.webgpu == 'true' || inputs.llvm == 'true')
+      uses: actions/cache@v4
+      with:
+        path: /var/cache/apt/archives/
+        key: ${{ runner.os }}-apt-${{ steps.apt-pkgs.outputs.hash }}
+
+    - name: Run apt Update + Install
+      if: runner.os == 'Linux' && (inputs.opencl == 'true' || inputs.amd == 'true' || inputs.cuda == 'true' || inputs.webgpu == 'true' || inputs.llvm == 'true')
+      shell: bash
+      run: |
+        sudo apt -qq update || true
+        
+        # ******** do install ********
+        if [[ -n "${{ steps.apt-pkgs.outputs.pkgs }}" ]]; then
+          sudo apt-get -y --allow-unauthenticated --no-install-recommends install ${{ steps.apt-pkgs.outputs.pkgs }}
+        fi
+        
+        sudo chown -R $USER:$USER /var/cache/apt/archives/
+    
+    # **** AMD ****
+    - name: Setup AMD (Linux)
+      if: inputs.amd == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        cargo build --release --manifest-path ./extra/remu/Cargo.toml
+        sudo ln -sf ${{ github.workspace }}/extra/remu/target/release/libremu.so /usr/local/lib/libremu.so
+        sudo tee --append /etc/ld.so.conf.d/rocm.conf <<'EOF'
+          /opt/rocm/lib
+          /opt/rocm/lib64
+        EOF
+        sudo ldconfig
+    - name: Setup AMD comgr+remu (macOS)
+      if: inputs.amd == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        sudo mkdir -p /usr/local/lib
+        curl -s -H "Authorization: token $GH_TOKEN" curl -s https://api.github.com/repos/nimlgen/amdcomgr_dylib/releases/latest | \
+          jq -r '.assets[] | select(.name == "libamd_comgr.dylib").browser_download_url' | \
+          sudo xargs curl -L -o /usr/local/lib/libamd_comgr.dylib
+        cargo build --release --manifest-path ./extra/remu/Cargo.toml
+
+    # **** gpuocelot ****
+
+    - name: Install gpuocelot dependencies (MacOS)
+      if: inputs.ocelot == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: brew install --quiet cmake ninja llvm@15 zlib glew flex bison boost zstd ncurses
+    - name: Cache gpuocelot
+      if: inputs.ocelot == 'true'
+      id: cache-build
+      uses: actions/cache@v4
+      env:
+        cache-name: cache-gpuocelot-build
+      with:
+        path: ${{ github.workspace }}/gpuocelot/ocelot
+        key: ${{ runner.os }}-gpuocelot-b16039dc940dc6bc4ea0a98380495769ff35ed99-rebuild-0
+    - name: Clone/compile gpuocelot
+      if: inputs.ocelot == 'true' && steps.cache-build.outputs.cache-hit != 'true'
+      shell: bash
+      run: |
+        git clone --recurse-submodules https://github.com/gpuocelot/gpuocelot.git ${{ github.workspace }}/gpuocelot
+        cd ${{ github.workspace }}/gpuocelot/ocelot
+        git checkout b16039dc940dc6bc4ea0a98380495769ff35ed99
+        mkdir build
+        cd build
+        cmake .. -Wno-dev -G Ninja -DOCELOT_BUILD_TOOLS=OFF -DCMAKE_BUILD_ALWAYS=0 -DBUILD_TESTS_CUDA=OFF -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+        ninja
+    - name: Install gpuocelot
+      if: inputs.ocelot == 'true'
+      shell: bash
+      run: |
+        cd ${{ github.workspace }}/gpuocelot/ocelot/build
+        sudo cp libgpuocelot.${{ runner.os == 'macOS' && 'dylib' || 'so' }} /usr/${{ runner.os == 'macOS' && 'local/' || '' }}lib/
+
+    # **** WebGPU ****
+
+    - name: Install WebGPU dawn (Linux)
+      if: inputs.webgpu == 'true' && runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo curl -L https://github.com/wpmed92/pydawn/releases/download/v0.1.6/libwebgpu_dawn.so -o /usr/local/lib/libwebgpu_dawn.so
+        sudo ldconfig
+    - name: Install WebGPU dawn (macOS)
+      if: inputs.webgpu == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: |
+        brew tap wpmed92/dawn
+        brew install dawn
+
+    # **** LLVM ****
+
+    - name: Install LLVM (macOS)
+      if: inputs.llvm == 'true' && runner.os == 'macOS'
+      shell: bash
+      run: brew install llvm@20
