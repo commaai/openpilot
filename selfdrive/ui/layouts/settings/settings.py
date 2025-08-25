@@ -12,6 +12,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.widgets.network import WifiManagerUI
 from openpilot.system.ui.widgets import Widget
+from openpilot.system.ui.widgets.network import WifiManagerUI
 
 # Settings close button
 SETTINGS_CLOSE_TEXT = "×"
@@ -157,6 +158,10 @@ class SettingsLayout(Widget):
       self._current_panel = panel_type
       self._panels[self._current_panel].instance.show_event()
 
+  def show_event(self):
+    super().show_event()
+    self._panels[self._current_panel].instance.show_event()
+
   def hide_event(self):
-    for panel_info in self._panels.values():
-      panel_info.instance.hide_event()
+    super().hide_event()
+    self._panels[self._current_panel].instance.hide_event()

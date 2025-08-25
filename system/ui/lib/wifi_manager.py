@@ -24,6 +24,11 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_PROPERTIES_IFACE, NM_
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION,
                                                     NMDeviceState)
 
+from openpilot.system.ui.lib.networkmanager import (NM, NM_PATH, NM_IFACE, NM_SETTINGS_PATH, NM_SETTINGS_IFACE,
+                                                    NM_CONNECTION_IFACE, NM_WIRELESS_IFACE, NM_PROPERTIES_IFACE,
+                                                    NM_DEVICE_IFACE, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NMDeviceState)
+
 try:
   from openpilot.common.params import Params
 except ImportError:
