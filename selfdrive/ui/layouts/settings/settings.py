@@ -44,7 +44,7 @@ class PanelType(IntEnum):
 @dataclass
 class PanelInfo:
   name: str
-  instance: object
+  instance: Widget
   button_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
 
 
@@ -153,8 +153,14 @@ class SettingsLayout(Widget):
 
   def set_current_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:
+      self._panels[self._current_panel].instance.hide_event()
       self._current_panel = panel_type
+      self._panels[self._current_panel].instance.show_event()
 
-  def close_settings(self):
-    if self._close_callback:
-      self._close_callback()
+  def show_event(self):
+    super().show_event()
+    self._panels[self._current_panel].instance.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._panels[self._current_panel].instance.hide_event()
