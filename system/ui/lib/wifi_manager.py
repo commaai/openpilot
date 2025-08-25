@@ -23,19 +23,6 @@ from openpilot.common.swaglog import cloudlog
 
 T = TypeVar("T")
 
-# NetworkManager constants
-NM = "org.freedesktop.NetworkManager"
-NM_PATH = '/org/freedesktop/NetworkManager'
-NM_IFACE = 'org.freedesktop.NetworkManager'
-NM_SETTINGS_PATH = '/org/freedesktop/NetworkManager/Settings'
-NM_SETTINGS_IFACE = 'org.freedesktop.NetworkManager.Settings'
-NM_CONNECTION_IFACE = 'org.freedesktop.NetworkManager.Settings.Connection'
-NM_WIRELESS_IFACE = 'org.freedesktop.NetworkManager.Device.Wireless'
-NM_PROPERTIES_IFACE = 'org.freedesktop.DBus.Properties'
-NM_DEVICE_IFACE = "org.freedesktop.NetworkManager.Device"
-
-NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT = 8
-
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 
