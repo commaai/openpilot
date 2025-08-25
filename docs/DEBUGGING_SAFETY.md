@@ -62,4 +62,4 @@ This enables the debug flags:
 
 ### Video
 
-[demo safety debug.mp4](assets/demo%20safety%20debug.mp4)
+View a demo of this workflow on the PR that added it: https://github.com/commaai/openpilot/pull/36055#issue-3352911578
