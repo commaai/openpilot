@@ -116,6 +116,26 @@ class Tici(HardwareBase):
   def get_serial(self):
     return self.get_cmdline()['androidboot.serialno']
 
+  def get_voltage(self):
+    with open("/sys/class/hwmon/hwmon1/in1_input") as f:
+      return int(f.read())
+
+  def get_current(self):
+    with open("/sys/class/hwmon/hwmon1/curr1_input") as f:
+      return int(f.read())
+
+  def set_ir_power(self, percent: int):
+    if self.get_device_type() in ("tici", "tizi"):
+      return
+
+    value = int((percent / 100) * 300)
+    with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
+      f.write(f"0\n")
+    with open("/sys/class/leds/led:torch_2/brightness", "w") as f:
+      f.write(f"{value}\n")
+    with open("/sys/class/leds/led:switch_2/brightness", "w") as f:
+      f.write(f"{value}\n")
+
   def get_network_type(self):
     try:
       primary_connection = self.nm.Get(NM, 'PrimaryConnection', dbus_interface=DBUS_PROPS, timeout=TIMEOUT)
@@ -426,8 +446,8 @@ class Tici(HardwareBase):
     # pandad core
     affine_irq(3, "spi_geni")         # SPI
     if "tici" in self.get_device_type():
-      affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
-      affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
+      affine_irq(2, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
+      affine_irq(2, "xhci-hcd:usb1")  # internal panda USB (also modem)
     try:
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
