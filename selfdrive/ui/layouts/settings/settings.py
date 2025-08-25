@@ -136,9 +136,18 @@ class SettingsLayout(Widget):
     if panel.instance:
       panel.instance.render(content_rect)
 
+  def show_event(self):
+    super().show_event()
+    self._panels[self._current_panel].instance.show_event()
+
+  def hide_event(self):
+    super().hide_event()
+    self._panels[self._current_panel].instance.hide_event()
+
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     # Check close button
     if rl.check_collision_point_rec(mouse_pos, self._close_btn_rect):
+      # self._panels[self._current_panel].instance.hide_event()
       if self._close_callback:
         self._close_callback()
       return True
@@ -153,8 +162,6 @@ class SettingsLayout(Widget):
 
   def set_current_panel(self, panel_type: PanelType):
     if panel_type != self._current_panel:
+      self._panels[self._current_panel].instance.hide_event()
       self._current_panel = panel_type
-
-  def close_settings(self):
-    if self._close_callback:
-      self._close_callback()
+      self._panels[self._current_panel].instance.show_event()
