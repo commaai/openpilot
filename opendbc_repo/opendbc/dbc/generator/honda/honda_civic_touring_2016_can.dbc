@@ -1,0 +1,37 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _nidec_scm_group_b.dbc";
+CM_ "IMPORT _steering_sensors_a.dbc";
+CM_ "IMPORT _steering_control_a.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+BO_ 399 STEER_STATUS: 7 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|16@0- (-1,0) [-31000|31000] "tbd" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-0.1,0) [-31000|31000] "deg/s" EON
+ SG_ STEER_STATUS : 39|4@0+ (1,0) [0|15] "" EON
+ SG_ STEER_CONTROL_ACTIVE : 35|1@0+ (1,0) [0|1] "" EON
+ SG_ STEER_CONFIG_INDEX : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|3] "" EON
+
+BO_ 493 HUD_SETTING: 5 XXX
+ SG_ IMPERIAL_UNIT : 5|1@0+ (1,0) [0|1] "" EON
+
+BO_ 545 ECON_STATUS: 6 XXX
+ SG_ ECON_ON_2 : 37|2@0+ (1,0) [0|3] "" EON
+ SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" EON
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" EON
+
+BO_ 862 HIGHBEAM_CONTROL: 8 ADAS
+ SG_ ZEROS_BOH : 7|50@0+ (1,0) [0|127] "" BDY
+ SG_ ZEROS_BOH_2 : 48|4@1+ (1,0) [0|15] "" XXX
+ SG_ HIGHBEAMS_ON : 52|1@0+ (1,0) [0|1] "" XXX
+ SG_ AUTO_HIGHBEAMS_ACTIVE : 53|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+CM_ SG_ 806 REVERSE_LIGHT "Might be reverse gear selected and not the lights";
+
+VAL_ 399 STEER_STATUS 7 "permanent_fault" 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal" ;
+VAL_ 545 ECON_ON_2 0 "off" 3 "on" ;
