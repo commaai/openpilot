@@ -132,9 +132,7 @@ class Widget(abc.ABC):
 
   def show_event(self):
     """Optionally handle show event. Parent must manually call this"""
-    print(f"{self.__class__.__name__} got show_event")
 
   def hide_event(self):
     """Optionally handle hide event. Parent must manually call this"""
-    print(f"{self.__class__.__name__} got hide_event")
 
