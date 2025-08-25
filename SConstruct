@@ -61,6 +61,10 @@ AddOption('--minimal',
           default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
+AddOption('--unoptimized',
+          action='store_true',
+          help='makes unoptimized code special to debug panda line by line')
+
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
 ## - aarch64: linux pc aarch64
