@@ -16,7 +16,8 @@ from dbus_next.constants import MessageType
 
 from openpilot.system.ui.lib.networkmanager import (NM, NM_PATH, NM_IFACE, NM_SETTINGS_PATH, NM_SETTINGS_IFACE,
                                                     NM_CONNECTION_IFACE, NM_WIRELESS_IFACE, NM_PROPERTIES_IFACE,
-                                                    NM_DEVICE_IFACE, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT)
+                                                    NM_DEVICE_IFACE, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NMDeviceState)
 
 try:
   from openpilot.common.params import Params
@@ -29,15 +30,6 @@ T = TypeVar("T")
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
-
-
-# NetworkManager device states
-class NMDeviceState(IntEnum):
-  DISCONNECTED = 30
-  PREPARE = 40
-  NEED_AUTH = 60
-  IP_CONFIG = 70
-  ACTIVATED = 100
 
 
 class SecurityType(IntEnum):
