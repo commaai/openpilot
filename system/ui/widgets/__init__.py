@@ -135,3 +135,4 @@ class Widget(abc.ABC):
 
   def hide_event(self):
     """Optionally handle hide event. Parent must manually call this"""
+
