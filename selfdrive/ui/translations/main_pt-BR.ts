@@ -1036,18 +1036,6 @@ O Modo Firehose permite maximizar o envio de dados de treinamento para melhorar 
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Grave e armazene o áudio do microfone enquanto estiver dirigindo. O áudio será incluído ao vídeo dashcam no comma connect.</translation>
     </message>
-    <message>
-        <source>Record Audio Feedback with LKAS button</source>
-        <translation>Gravar feedback de áudio com o botão LKAS</translation>
-    </message>
-    <message>
-        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
-
-Note that this feature is only compatible with select cars.</source>
-        <translation>Pressione o botão LKAS para gravar e compartilhar feedback de direção com a equipe do openpilot. Quando esta opção estiver desativada, o botão funcionará como um botão de marcador. O evento será destacado no comma connect e o segmento será preservado no armazenamento do seu dispositivo.
-
-Observe que este recurso é compatível apenas com alguns modelos de carros.</translation>
-    </message>
 </context>
 <context>
     <name>WiFiPromptWidget</name>
