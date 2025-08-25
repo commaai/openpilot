@@ -44,7 +44,7 @@ class PanelType(IntEnum):
 @dataclass
 class PanelInfo:
   name: str
-  instance: object
+  instance: Widget
   button_rect: rl.Rectangle = rl.Rectangle(0, 0, 0, 0)
 
 
