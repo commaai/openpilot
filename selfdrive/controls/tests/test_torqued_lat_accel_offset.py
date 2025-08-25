@@ -39,24 +39,21 @@ def get_warmed_up_estimator(steer_torques, lat_accels):
   return est
 
 def simulate_straight_road_msgs(est):
-  rng = np.random.default_rng(0)
   carControl = messaging.new_message('carControl').carControl
-  carControl.latActive = True
   carOutput = messaging.new_message('carOutput').carOutput
   carState = messaging.new_message('carState').carState
+  livePose = messaging.new_message('livePose').livePose
+  carControl.latActive = True
   carState.vEgo = V_EGO
   carState.steeringPressed = False
-  livePose = messaging.new_message('livePose').livePose
-  for i in range(2*POINTS_PER_BUCKET):
-    t = i*DT_MDL
-    sgn = (-1)**(i < POINTS_PER_BUCKET)
-    steer_torque = sgn * rng.uniform(STRAIGHT_ROAD_LA_BOUNDS[0], STRAIGHT_ROAD_LA_BOUNDS[1])
-    lat_accel = TORQUE_TUNE.latAccelFactor * steer_torque
-    carOutput.actuatorsOutput.torque = -steer_torque
+  ts = DT_MDL*np.arange(2*POINTS_PER_BUCKET)
+  steer_torques = np.concat((np.linspace(-0.03, -0.02, POINTS_PER_BUCKET), np.linspace(0.02, 0.03, POINTS_PER_BUCKET)))
+  lat_accels = TORQUE_TUNE.latAccelFactor * steer_torques
+  for t, steer_torque, lat_accel in zip(ts, steer_torques, lat_accels, strict=True):
+    carOutput.actuatorsOutput.torque = float(-steer_torque)
     livePose.orientationNED.x = float(np.deg2rad(ROLL_BIAS_DEG))
-    livePose.angularVelocityDevice.z = lat_accel / V_EGO
-    msgs = {'carControl': carControl, 'carOutput': carOutput, 'carState': carState, 'livePose': livePose}
-    for which, msg in msgs.items():
+    livePose.angularVelocityDevice.z = float(lat_accel / V_EGO)
+    for which, msg in (('carControl', carControl), ('carOutput', carOutput), ('carState', carState), ('livePose', livePose)):
       est.handle_log(t, which, msg)
 
 def test_estimated_offset():
