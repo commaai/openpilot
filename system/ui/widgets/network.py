@@ -1,3 +1,4 @@
+import time
 from enum import IntEnum
 from functools import partial
 from threading import Lock
@@ -170,6 +171,7 @@ class WifiManagerUI(Widget):
       self._state_network = network
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
+    t = time.monotonic()
     """Draw the status icon based on network's connection state"""
     icon_file = None
     if network.is_connected:
@@ -185,6 +187,9 @@ class WifiManagerUI(Widget):
     texture = gui_app.texture(icon_file, ICON_SIZE, ICON_SIZE)
     icon_rect = rl.Vector2(rect.x, rect.y + (ICON_SIZE - texture.height) / 2)
     rl.draw_texture_v(texture, icon_rect, rl.WHITE)
+    dt = time.monotonic() - t
+    if dt > 0.001:
+      print(f"Warning: drawing status icon took too long: {dt}s")
 
   def _draw_signal_strength_icon(self, rect: rl.Rectangle, network: NetworkInfo):
     """Draw the Wi-Fi signal strength icon based on network's signal strength"""
