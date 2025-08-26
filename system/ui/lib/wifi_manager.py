@@ -157,7 +157,7 @@ class WifiManager:
     self._lock = threading.Lock()
 
     self._tmp_init()
-    sys.exit()
+    # sys.exit()
 
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._scan_thread.start()
@@ -168,6 +168,15 @@ class WifiManager:
     atexit.register(self.stop)
 
   def _tmp_init(self):
+    return
+    t = time.monotonic()
+    self.connect_to_network_old('...', '...')
+    print('first', time.monotonic() - t)
+    t = time.monotonic()
+    self.connect_to_network('...', '...')
+    print('second', time.monotonic() - t)
+
+    return
     self._wait_for_wifi_device()
     self._update_networks_old()
     import copy
@@ -351,36 +360,33 @@ class WifiManager:
 
       connection = {
         'connection': {
-          'type': '802-11-wireless',
-          'uuid': str(uuid.uuid4()),
-          'id': f'openpilot connection {ssid}',
-          'autoconnect-retries': 0,
+          'type': ('s', '802-11-wireless'),
+          'uuid': ('s', str(uuid.uuid4())),
+          'id': ('s', f'openpilot connection {ssid}'),
+          'autoconnect-retries': ('i', 0),
         },
         '802-11-wireless': {
-          'ssid': dbus.ByteArray(ssid.encode("utf-8")),
-          'hidden': is_hidden,
-          'mode': 'infrastructure',
+          'ssid': ('ay', ssid.encode("utf-8")),
+          'hidden': ('b', is_hidden),
+          'mode': ('s', 'infrastructure'),
         },
         'ipv4': {
-          'method': 'auto',
-          'dns-priority': 600,
+          'method': ('s', 'auto'),
+          'dns-priority': ('i', 600),
         },
-        'ipv6': {'method': 'ignore'},
+        'ipv6': {'method': ('s', 'ignore')},
       }
 
       if password:
         connection['802-11-wireless-security'] = {
-          'key-mgmt': 'wpa-psk',
-          'auth-alg': 'open',
-          'psk': password,
+          'key-mgmt': ('s', 'wpa-psk'),
+          'auth-alg': ('s', 'open'),
+          'psk': ('s', password),
         }
 
-      settings = dbus.Interface(
-        self._main_bus.get_object(NM, NM_SETTINGS_PATH),
-        NM_SETTINGS_IFACE
-      )
+      settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
 
-      conn_path = settings.AddConnection(connection)
+      conn_path = self._conn_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
       print('Added connection', conn_path)
 
