@@ -1,4 +1,3 @@
-from typing import Any
 import atexit
 import threading
 import time
@@ -6,6 +5,7 @@ import uuid
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
+from typing import Any
 
 from jeepney import DBusAddress, new_method_call
 from jeepney.bus_messages import MatchRule, message_bus
@@ -29,7 +29,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
-SCAN_PERIOD_SECONDS = 5
+SCAN_PERIOD_SECONDS = 10
 
 
 class SecurityType(IntEnum):
@@ -128,6 +128,7 @@ class WifiManager:
 
     # State
     self._connecting_to_ssid: str = ""
+    self._last_network_update: float = 0.0
 
     # Callbacks
     # TODO: implement a callback queue to avoid blocking UI thread
@@ -159,8 +160,10 @@ class WifiManager:
     self._disconnected = disconnected
 
   def set_active(self, active: bool):
-    print('SETTING ACTIVE', active)
     self._active = active
+    # Scan immediately if we haven't scanned in a while
+    if active and time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS / 2:
+      self._last_network_update = 0.0
 
   def _monitor_state(self):
     device_path = self._wait_for_wifi_device()
@@ -215,12 +218,13 @@ class WifiManager:
 
     while not self._exit:
       if self._active:
-        # Scan for networks every 5 seconds
-        # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
-        self._update_networks()
-        self._request_scan()
-
-      time.sleep(SCAN_PERIOD_SECONDS)
+        if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
+          # Scan for networks every 10 seconds
+          # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
+          self._update_networks()
+          self._request_scan()
+          self._last_network_update = time.monotonic()
+      time.sleep(1 / 2.)
 
   def _wait_for_wifi_device(self) -> str | None:
     with self._lock:
