@@ -264,12 +264,12 @@ class WifiManager:
 
     return self._wifi_device
 
-  def _get_connections(self) -> list[str]:
+  def _get_connections(self) -> dict[str, str]:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-    return list(self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0])
+    known_connections = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
-  def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
-    for conn_path in known_connections or self._get_connections():
+    conns: dict[str, str] = {}
+    for conn_path in known_connections:
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
       reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings"))
 
@@ -279,9 +279,11 @@ class WifiManager:
         continue
 
       settings = reply.body[0]
-      if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
-        return conn_path
-    return None
+      if "802-11-wireless" in settings:
+        ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
+        if ssid != "":
+          conns[ssid] = conn_path
+    return conns
 
   def connect_to_network(self, ssid: str, password: str):
     def worker():
@@ -325,7 +327,7 @@ class WifiManager:
 
   def forget_connection(self, ssid: str, block: bool = False):
     def worker():
-      conn_path = self._connection_by_ssid(ssid)
+      conn_path = self._get_connections().get(ssid, None)
       if conn_path is not None:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
@@ -341,7 +343,7 @@ class WifiManager:
 
   def activate_connection(self, ssid: str, block: bool = False):
     def worker():
-      conn_path = self._connection_by_ssid(ssid)
+      conn_path = self._get_connections().get(ssid, None)
       if conn_path is not None:
         if self._wifi_device is None:
           cloudlog.warning("No WiFi device found")
@@ -402,8 +404,7 @@ class WifiManager:
         cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
     known_connections = self._get_connections()
-    networks = [Network.from_dbus(ssid, ap_list, self._connection_by_ssid(ssid, known_connections) is not None)
-                for ssid, ap_list in aps.items()]
+    networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
     networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
     self._networks = networks
 
