@@ -169,7 +169,6 @@ class WifiManager:
   def process_callbacks(self):
     # Call from UI thread to run any pending callbacks
     to_run, self._callback_queue = self._callback_queue, []
-    print('processing', len(to_run), 'callbacks', to_run)
     for cb in to_run:
       cb()
 
@@ -197,15 +196,19 @@ class WifiManager:
 
     with self._conn_monitor.filter(rule, bufsize=SIGNAL_QUEUE_SIZE) as q:
       while not self._exit:
+        if not self._active:
+          time.sleep(1)
+          continue
+
         # Block until a matching signal arrives
         try:
           msg = self._conn_monitor.recv_until_filtered(q, timeout=1)
-          new_state, previous_state, change_reason = msg.body
         except TimeoutError:
           continue
 
+        new_state, previous_state, change_reason = msg.body
+
         # BAD PASSWORD
-        print('new_state', new_state, 'prev', previous_state, 'reason', change_reason)
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
           self.forget_connection(self._connecting_to_ssid, block=True)
           if self._need_auth is not None:
@@ -367,10 +370,6 @@ class WifiManager:
   def _update_networks(self):
     if self._wifi_device is None:
       cloudlog.warning("No WiFi device found")
-      return
-
-    if not self._active:
-      cloudlog.debug("Skipping network update, not active")
       return
 
     # returns '/' if no active AP
