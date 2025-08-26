@@ -5,8 +5,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_LOGIN: docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-  BUILD: selfdrive/test/docker_build.sh prebuilt
+  BUILD: selfdrive/test/build.sh prebuilt
 
 jobs:
   build_prebuilt:
@@ -33,7 +32,6 @@ jobs:
       with:
         submodules: true
     - run: git lfs pull
-    - name: Build and Push docker image
+    - name: Build and Push rootfs image
       run: |
-        $DOCKER_LOGIN
         eval "$BUILD"
