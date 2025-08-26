@@ -2,7 +2,7 @@ import time
 from functools import lru_cache
 from openpilot.common.api import Api
 
-TOKEN_EXPIRY_HOURS = 6
+TOKEN_EXPIRY_HOURS = 2
 
 
 @lru_cache(maxsize=1)
