@@ -133,6 +133,7 @@ class WifiManager:
     # State
     self._connecting_to_ssid: str = ""
     self._last_network_update: float = 0.0
+    self._callback_queue: list[Callable] = []
 
     # Callbacks
     # TODO: implement a callback queue to avoid blocking UI thread
@@ -162,6 +163,12 @@ class WifiManager:
     self._forgotten = forgotten
     self._networks_updated = networks_updated
     self._disconnected = disconnected
+
+  def process_callbacks(self):
+    for cb in self._callback_queue:
+      print('calling wifi cb', cb.__name__)
+      cb()
+    self._callback_queue.clear()
 
   def set_active(self, active: bool):
     self._active = active
@@ -204,19 +211,19 @@ class WifiManager:
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
           self.forget_connection(self._connecting_to_ssid, block=True)
           if self._need_auth is not None:
-            self._need_auth(self._connecting_to_ssid)
+            self._callback_queue.append(lambda: self._need_auth(self._connecting_to_ssid))
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.ACTIVATED:
           if self._activated is not None:
             self._update_networks()
-            self._activated()
+            self._callback_queue.append(self._activated)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
           self._connecting_to_ssid = ""
           if self._disconnected is not None:
-            self._disconnected()
+            self._callback_queue.append(self._disconnected)
 
   def _network_scanner(self):
     self._wait_for_wifi_device()
@@ -324,7 +331,7 @@ class WifiManager:
 
         if self._forgotten is not None:
           self._update_networks()
-          self._forgotten(ssid)
+          self._callback_queue.append(lambda: self._forgotten(ssid))
 
     if block:
       worker()
@@ -400,7 +407,7 @@ class WifiManager:
     self._networks = networks
 
     if self._networks_updated is not None:
-      self._networks_updated(self._networks)
+      self._callback_queue.append(lambda: self._networks_updated(self._networks))
 
   def __del__(self):
     self.stop()

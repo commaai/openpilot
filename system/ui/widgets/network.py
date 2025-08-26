@@ -71,6 +71,8 @@ class WifiManagerUI(Widget):
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
   def _render(self, rect: rl.Rectangle):
+    self.wifi_manager.process_callbacks()
+
     with self._lock:
       if not self._networks:
         gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
@@ -220,6 +222,7 @@ class WifiManagerUI(Widget):
                                                        font_size=45)
 
   def _on_need_auth(self, ssid):
+    print('need auth for', ssid)
     with self._lock:
       network = next((n for n in self._networks if n.ssid == ssid), None)
       if network:
