@@ -277,31 +277,6 @@ class WifiManager:
     except Exception:
       return False
 
-  async def _periodic_scan(self):
-    while self.running:
-      try:
-        await self._request_scan()
-        await asyncio.sleep(30)
-      except asyncio.CancelledError:
-        break
-      except DBusError as e:
-        cloudlog.error(f"Scan failed: {e}")
-        await asyncio.sleep(5)
-
-  async def _setup_signals(self, device_path: str) -> None:
-    rules = [
-      f"type='signal',interface='{NM_PROPERTIES_IFACE}',member='PropertiesChanged',path='{device_path}'",
-      f"type='signal',interface='{NM_DEVICE_IFACE}',member='StateChanged',path='{device_path}'",
-      f"type='signal',interface='{NM_SETTINGS_IFACE}',member='NewConnection',path='{NM_SETTINGS_PATH}'",
-      f"type='signal',interface='{NM_SETTINGS_IFACE}',member='ConnectionRemoved',path='{NM_SETTINGS_PATH}'",
-    ]
-    for rule in rules:
-      await self._add_match_rule(rule)
-
-    # Set up signal handlers
-    self.device_proxy.get_interface(NM_PROPERTIES_IFACE).on_properties_changed(self._on_properties_changed)
-    self.device_proxy.get_interface(NM_DEVICE_IFACE).on_state_changed(self._on_state_changed)
-
   def _extract_ssid(self, settings: dict) -> str | None:
     """Extract SSID from connection settings."""
     ssid_variant = settings.get('802-11-wireless', {}).get('ssid', Variant('ay', b'')).value
@@ -323,20 +298,6 @@ class WifiManager:
 
     assert reply.message_type == MessageType.METHOD_RETURN
     return reply
-
-  async def _get_connection_settings(self, path):
-    """Fetch connection settings for a specific connection path."""
-    try:
-      settings = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
-      return await settings.call_get_settings()
-    except DBusError as e:
-      cloudlog.error(f"Failed to get settings for {path}: {str(e)}")
-      return {}
-
-  async def _process_chunk(self, paths_chunk):
-    """Process a chunk of connection paths."""
-    tasks = [self._get_connection_settings(path) for path in paths_chunk]
-    return await asyncio.gather(*tasks, return_exceptions=True)
 
   async def _get_interface(self, bus_name: str, path: str, name: str):
     introspection = await self.bus.introspect(bus_name, path)
