@@ -283,7 +283,7 @@ class WifiManager:
       settings = reply.body[0]
       if "802-11-wireless" in settings:
         ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
-        if len(ssid):
+        if ssid != "":
           conns[ssid] = conn_path
     return conns
 
@@ -416,8 +416,7 @@ class WifiManager:
     print('built ap list', time.monotonic() - t)
 
     known_connections = self._get_connections()
-    networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections)
-                for ssid, ap_list in aps.items()]
+    networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
     networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
     self._networks = networks
     print('built network list', time.monotonic() - t)
