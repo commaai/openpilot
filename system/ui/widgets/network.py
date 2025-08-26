@@ -208,7 +208,6 @@ class WifiManagerUI(Widget):
   def forget_network(self, network: Network):
     self.state = UIState.FORGETTING
     self._state_network = network
-    # network.is_saved = False
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
