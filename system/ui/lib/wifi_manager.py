@@ -383,7 +383,7 @@ class WifiManager:
     wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
     active_ap_path = self._router_main.send_and_get_reply(Properties(wifi_addr).get('ActiveAccessPoint')).body[0][1]
     ap_paths = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'GetAllAccessPoints')).body[0]
-    print('ap paths', time.monotonic() - t)
+    print('ap paths', time.monotonic() - t, len(ap_paths))
 
     aps: dict[str, list[AccessPoint]] = {}
 
