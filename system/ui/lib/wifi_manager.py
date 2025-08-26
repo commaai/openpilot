@@ -1,4 +1,3 @@
-import sys
 from typing import Any
 import atexit
 import threading
@@ -8,7 +7,6 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
 
-from collections import deque
 from jeepney import DBusAddress, new_method_call
 from jeepney.wrappers import Properties
 from jeepney.bus_messages import message_bus, MatchRule
@@ -30,6 +28,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
+SIGNAL_QUEUE_SIZE = 10
 
 
 class SecurityType(IntEnum):
@@ -142,9 +141,6 @@ class WifiManager:
 
     self._lock = threading.Lock()
 
-    self._tmp_init()
-    # sys.exit()
-
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._scan_thread.start()
 
@@ -152,79 +148,6 @@ class WifiManager:
     self._state_thread.start()
 
     atexit.register(self.stop)
-
-  def _tmp_init(self):
-    return
-
-    def worker1():
-      while 1:
-        try:
-          print('hi')
-          conn_path = self._connection_by_ssid('unifi')
-          print(conn_path)
-          assert conn_path == '/org/freedesktop/NetworkManager/Settings/143', conn_path
-        except Exception as e:
-          print(e)
-          raise e
-
-    def worker2():
-      while 1:
-        try:
-          print('hi')
-          conn_path = self._connection_by_ssid('FBI Security Van')
-          print(conn_path)
-          assert conn_path == '/org/freedesktop/NetworkManager/Settings/141', conn_path
-        except Exception as e:
-          print(e)
-          raise e
-
-    threading.Thread(target=worker1, daemon=True).start()
-    threading.Thread(target=worker2, daemon=True).start()
-    time.sleep(10)
-
-    t = time.monotonic()
-    self.connect_to_network_old('...', '...')
-    print('first', time.monotonic() - t)
-    t = time.monotonic()
-    self.connect_to_network('...', '...')
-    print('second', time.monotonic() - t)
-
-    return
-    self._wait_for_wifi_device()
-    self._update_networks_old()
-    import copy
-    nets = copy.deepcopy(self._networks)
-    self._update_networks()
-    print('networks match:', nets == self._networks)
-    return
-    t = time.monotonic()
-    self.forget_connection('unifi', block=True)
-    print('initial activation took', time.monotonic() - t)
-
-    t = time.monotonic()
-    self.forget_connection_jeepney('unifi', block=True)
-    print('initial activation2 took', time.monotonic() - t)
-
-    return
-    print('conn by ssid')
-    t = time.monotonic()
-    print('got conn', self._connection_by_ssid("unifi"))
-    print('took', time.monotonic() - t)
-    t = time.monotonic()
-    print('got conn2', self._connection_by_ssid_jeepney("unifi"))
-    print('took2', time.monotonic() - t)
-
-    t = time.monotonic()
-    a = self._get_connections()
-    print(time.monotonic() - t)
-
-    time.sleep(1)
-
-    t = time.monotonic()
-    b = self._get_connections_jeepney()
-    print(time.monotonic() - t)
-
-    print(a == b)
 
   def set_callbacks(self, need_auth: Callable[[str], None],
                     activated: Callable[[], None] | None,
@@ -254,7 +177,7 @@ class WifiManager:
     # Filter for StateChanged signal
     self._conn_monitor.send_and_get_reply(message_bus.AddMatch(rule))
 
-    with self._conn_monitor.filter(rule, queue=deque(maxlen=10)) as q:  # TODO: not sure what to choose for this
+    with self._conn_monitor.filter(rule, bufsize=SIGNAL_QUEUE_SIZE) as q:
       while not self._exit:
         # TODO: always run, and ensure callbacks don't block UI thread
         if not self._active:
@@ -292,9 +215,8 @@ class WifiManager:
 
     while not self._exit:
       if self._active:
-        print('we;re acti!!!!!!!!!!!!')
         # Scan for networks every 5 seconds
-        # TODO: should watch when scan is complete (PropertiesChanged), but this is more than good enough for now
+        # TODO: should update when scan is complete (PropertiesChanged), but this is more than good enough for now
         self._update_networks()
         self._request_scan()
 
@@ -450,8 +372,6 @@ class WifiManager:
       return
 
   def _update_networks(self):
-    print('UPDATING NETWORKS!!!!')
-
     if self._wifi_device is None:
       cloudlog.warning("No WiFi device found")
       return
