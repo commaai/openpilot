@@ -210,6 +210,7 @@ class WifiManager:
           new_state, previous_state, change_reason = msg.body
 
           print(f"------------ WiFi device state change: {new_state}, change reason: {change_reason}")
+          # BAD PASSWORD
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
             print('------ NEED AUTH - SUPPLICANT DISCONNECT')
             self.forget_connection(self._connecting_to_ssid, block=True)
@@ -239,7 +240,7 @@ class WifiManager:
       if self._active:
         print('we;re acti!!!!!!!!!!!!')
         # Scan for networks every 5 seconds
-        # TODO: should watch when scan is complete, but this is more than good enough for now
+        # TODO: should watch when scan is complete (PropertiesChanged), but this is more than good enough for now
         self._update_networks()
         self._request_scan()
 
@@ -348,6 +349,10 @@ class WifiManager:
       if conn_path is not None:
         conn_iface = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
         conn_iface.Delete()
+
+        if self._connecting_to_ssid == ssid:
+          self._connecting_to_ssid = ""
+
         print(f'Forgetting connection took {time.monotonic() - t}s')
         if self._forgotten is not None:
           self._update_networks()

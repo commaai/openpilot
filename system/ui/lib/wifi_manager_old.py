@@ -80,25 +80,6 @@ class WifiManager:
     self.running: bool = True
     self._current_connection_ssid: str | None = None
 
-  async def connect(self) -> None:
-    """Connect to the DBus system bus."""
-    try:
-      self.bus = await MessageBus(bus_type=BusType.SYSTEM).connect()
-      while not await self._find_wifi_device():
-        await asyncio.sleep(1)
-
-      await self._setup_signals(self.device_path)
-      self.active_ap_path = await self.get_active_access_point()
-      await self.add_tethering_connection(self._tethering_ssid, DEFAULT_TETHERING_PASSWORD)
-      self.saved_connections = await self._get_saved_connections()
-      self.scan_task = asyncio.create_task(self._periodic_scan())
-    except DBusError as e:
-      cloudlog.error(f"Failed to connect to DBus: {e}")
-      raise
-    except Exception as e:
-      cloudlog.error(f"Unexpected error during connect: {e}")
-      raise
-
   async def shutdown(self) -> None:
     self.running = False
     if self.scan_task:
@@ -125,39 +106,6 @@ class WifiManager:
     except DBusError as e:
       cloudlog.error(f"Error fetching active access point: {str(e)}")
       return ''
-
-  async def forget_connection(self, ssid: str) -> bool:
-    path = self.saved_connections.get(ssid)
-    if not path:
-      return False
-
-    try:
-      nm_iface = await self._get_interface(NM, path, NM_CONNECTION_IFACE)
-      await nm_iface.call_delete()
-
-      if self._current_connection_ssid == ssid:
-        self._current_connection_ssid = None
-
-      if ssid in self.saved_connections:
-        del self.saved_connections[ssid]
-
-      for network in self.networks:
-        if network.ssid == ssid:
-          network.is_saved = False
-          network.is_connected = False
-          break
-
-      # Notify UI of forgotten connection
-      if self.callbacks.networks_updated:
-        self.callbacks.networks_updated(copy.deepcopy(self.networks))
-
-      return True
-    except DBusError as e:
-      cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
-      return False
-
-  def is_saved(self, ssid: str) -> bool:
-    return ssid in self.saved_connections
 
   async def _find_wifi_device(self) -> bool:
     nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
@@ -354,67 +302,6 @@ class WifiManager:
     self.device_proxy.get_interface(NM_PROPERTIES_IFACE).on_properties_changed(self._on_properties_changed)
     self.device_proxy.get_interface(NM_DEVICE_IFACE).on_state_changed(self._on_state_changed)
 
-    settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
-    settings_iface.on_new_connection(self._on_new_connection)
-    settings_iface.on_connection_removed(self._on_connection_removed)
-
-  def _on_properties_changed(self, interface: str, changed: dict, invalidated: list):
-    if interface == NM_WIRELESS_IFACE and 'LastScan' in changed:
-      asyncio.create_task(self._refresh_networks())
-    elif interface == NM_WIRELESS_IFACE and "ActiveAccessPoint" in changed:
-      new_ap_path = changed["ActiveAccessPoint"].value
-      if self.active_ap_path != new_ap_path:
-        self.active_ap_path = new_ap_path
-
-  def _on_state_changed(self, new_state: int, old_state: int, reason: int):
-    if new_state == NMDeviceState.ACTIVATED:
-      if self.callbacks.activated:
-        self.callbacks.activated()
-      self._current_connection_ssid = None
-      asyncio.create_task(self._refresh_networks())
-    elif new_state in (NMDeviceState.DISCONNECTED, NMDeviceState.NEED_AUTH):
-      for network in self.networks:
-        network.is_connected = False
-
-      # BAD PASSWORD
-      if new_state == NMDeviceState.NEED_AUTH and reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and self.callbacks.need_auth:
-        if self._current_connection_ssid:
-          asyncio.create_task(self.forget_connection(self._current_connection_ssid))
-          self.callbacks.need_auth(self._current_connection_ssid)
-        else:
-          # Try to find the network from active_ap_path
-          for network in self.networks:
-            if network.path == self.active_ap_path:
-              asyncio.create_task(self.forget_connection(network.ssid))
-              self.callbacks.need_auth(network.ssid)
-              break
-          else:
-            # Couldn't identify the network that needs auth
-            cloudlog.error("Network needs authentication but couldn't identify which one")
-
-  def _on_new_connection(self, path: str) -> None:
-    """Callback for NewConnection signal."""
-    asyncio.create_task(self._add_saved_connection(path))
-
-  def _on_connection_removed(self, path: str) -> None:
-    """Callback for ConnectionRemoved signal."""
-    for ssid, p in list(self.saved_connections.items()):
-      if path == p:
-        del self.saved_connections[ssid]
-
-        if self.callbacks.forgotten:
-          self.callbacks.forgotten(ssid)
-        break
-
-  async def _add_saved_connection(self, path: str) -> None:
-    """Add a new saved connection to the dictionary."""
-    try:
-      settings = await self._get_connection_settings(path)
-      if ssid := self._extract_ssid(settings):
-        self.saved_connections[ssid] = path
-    except DBusError as e:
-      cloudlog.error(f"Failed to add connection {path}: {e}")
-
   def _extract_ssid(self, settings: dict) -> str | None:
     """Extract SSID from connection settings."""
     ssid_variant = settings.get('802-11-wireless', {}).get('ssid', Variant('ay', b'')).value
@@ -437,65 +324,6 @@ class WifiManager:
     assert reply.message_type == MessageType.METHOD_RETURN
     return reply
 
-  async def _refresh_networks(self):
-    """Get a list of available networks via NetworkManager."""
-    wifi_iface = self.device_proxy.get_interface(NM_WIRELESS_IFACE)
-    access_points = await wifi_iface.get_access_points()
-    self.active_ap_path = await self.get_active_access_point()
-    network_dict = {}
-    for ap_path in access_points:
-      try:
-        props_iface = await self._get_interface(NM, ap_path, NM_PROPERTIES_IFACE)
-        properties = await props_iface.call_get_all('org.freedesktop.NetworkManager.AccessPoint')
-        ssid_variant = properties['Ssid'].value
-        ssid = bytes(ssid_variant).decode('utf-8')
-        if not ssid:
-          continue
-
-        bssid = properties.get('HwAddress', Variant('s', '')).value
-        strength = properties['Strength'].value
-        flags = properties['Flags'].value
-        wpa_flags = properties['WpaFlags'].value
-        rsn_flags = properties['RsnFlags'].value
-
-        # May be multiple access points for each SSID. Use first for ssid
-        # and security type, then update the rest using all APs
-        if ssid not in network_dict:
-          network_dict[ssid] = NetworkInfo(
-            ssid=ssid,
-            strength=0,
-            security_type=self._get_security_type(flags, wpa_flags, rsn_flags),
-            path="",
-            bssid="",
-            is_connected=False,
-            is_saved=ssid in self.saved_connections
-          )
-
-        existing_network = network_dict.get(ssid)
-        if existing_network.strength < strength:
-          existing_network.strength = strength
-          existing_network.path = ap_path
-          existing_network.bssid = bssid
-        if self.active_ap_path == ap_path:
-          existing_network.is_connected = self._current_connection_ssid != ssid
-
-      except DBusError as e:
-        cloudlog.error(f"Error fetching networks: {e}")
-      except Exception as e:
-        cloudlog.error({e})
-
-    self.networks = sorted(
-      network_dict.values(),
-      key=lambda network: (
-        not network.is_connected,
-        -network.strength,  # Higher signal strength first
-        network.ssid.lower(),
-      ),
-    )
-
-    if self.callbacks.networks_updated:
-      self.callbacks.networks_updated(copy.deepcopy(self.networks))
-
   async def _get_connection_settings(self, path):
     """Fetch connection settings for a specific connection path."""
     try:
@@ -509,24 +337,6 @@ class WifiManager:
     """Process a chunk of connection paths."""
     tasks = [self._get_connection_settings(path) for path in paths_chunk]
     return await asyncio.gather(*tasks, return_exceptions=True)
-
-  async def _get_saved_connections(self) -> dict[str, str]:
-    try:
-      settings_iface = await self._get_interface(NM, NM_SETTINGS_PATH, NM_SETTINGS_IFACE)
-      connection_paths = await settings_iface.call_list_connections()
-      saved_ssids: dict[str, str] = {}
-      batch_size = 20
-      for i in range(0, len(connection_paths), batch_size):
-        chunk = connection_paths[i : i + batch_size]
-        results = await self._process_chunk(chunk)
-        for path, config in zip(chunk, results, strict=True):
-          if isinstance(config, dict) and '802-11-wireless' in config:
-            if ssid := self._extract_ssid(config):
-              saved_ssids[ssid] = path
-      return saved_ssids
-    except DBusError as e:
-      cloudlog.error(f"Error fetching saved connections: {str(e)}")
-      return {}
 
   async def _get_interface(self, bus_name: str, path: str, name: str):
     introspection = await self.bus.introspect(bus_name, path)
@@ -545,91 +355,3 @@ class WifiManager:
     if wpa_flags:  # WPA flags indicate WPA
       return SecurityType.WPA
     return SecurityType.UNSUPPORTED
-
-
-class WifiManagerWrapper:
-  def __init__(self):
-    self._manager: WifiManager | None = None
-    self._callbacks: WifiManagerCallbacks = WifiManagerCallbacks()
-
-    self._thread = threading.Thread(target=self._run, daemon=True)
-    self._loop: asyncio.EventLoop | None = None
-    self._running = False
-
-  def set_callbacks(self, callbacks: WifiManagerCallbacks):
-    self._callbacks = callbacks
-
-  def start(self) -> None:
-    if not self._running:
-      self._thread.start()
-      while self._thread is not None and not self._running:
-        time.sleep(0.1)
-
-  def _run(self):
-    self._loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(self._loop)
-
-    try:
-      self._manager = WifiManager(self._callbacks)
-      self._running = True
-      self._loop.run_forever()
-    except Exception as e:
-      cloudlog.error(f"Error in WifiManagerWrapper thread: {e}")
-    finally:
-      if self._loop.is_running():
-        self._loop.stop()
-      self._running = False
-
-  def shutdown(self) -> None:
-    if self._running:
-      if self._manager is not None and self._loop:
-        shutdown_future = asyncio.run_coroutine_threadsafe(self._manager.shutdown(), self._loop)
-        shutdown_future.result(timeout=3.0)
-
-      if self._loop and self._loop.is_running():
-        self._loop.call_soon_threadsafe(self._loop.stop)
-      if self._thread and self._thread.is_alive():
-        self._thread.join(timeout=2.0)
-      self._running = False
-
-  def is_saved(self, ssid: str) -> bool:
-    """Check if a network is saved."""
-    return self._run_coroutine_sync(lambda manager: manager.is_saved(ssid), default=False)
-
-  def connect(self):
-    """Connect to DBus and start Wi-Fi scanning."""
-    if not self._manager:
-      return
-    self._run_coroutine(self._manager.connect())
-
-  def forget_connection(self, ssid: str):
-    """Forget a saved Wi-Fi connection."""
-    if not self._manager:
-      return
-    self._run_coroutine(self._manager.forget_connection(ssid))
-
-  def _run_coroutine(self, coro):
-    """Run a coroutine in the async thread."""
-    if not self._running or not self._loop:
-      cloudlog.error("WifiManager thread is not running")
-      return
-    asyncio.run_coroutine_threadsafe(coro, self._loop)
-
-  def _run_coroutine_sync(self, func: Callable[[WifiManager], T], default: T) -> T:
-    """Run a function synchronously in the async thread."""
-    if not self._running or not self._loop or not self._manager:
-      return default
-    future = concurrent.futures.Future[T]()
-
-    def wrapper(manager: WifiManager) -> None:
-      try:
-        future.set_result(func(manager))
-      except Exception as e:
-        future.set_exception(e)
-
-    try:
-      self._loop.call_soon_threadsafe(wrapper, self._manager)
-      return future.result(timeout=1.0)
-    except Exception as e:
-      cloudlog.error(f"WifiManagerWrapper property access failed: {e}")
-      return default
