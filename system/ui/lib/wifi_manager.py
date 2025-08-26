@@ -29,12 +29,6 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_PATH, NM_IFACE, NM_SE
                                                     NM_DEVICE_IFACE, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
                                                     NMDeviceState)
 
-try:
-  from openpilot.common.params import Params
-except ImportError:
-  # Params/Cythonized modules are not available in zipapp
-  Params = None
-
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 
