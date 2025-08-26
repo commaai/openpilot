@@ -29,6 +29,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
 SIGNAL_QUEUE_SIZE = 10
+SCAN_PERIOD_SECONDS = 5
 
 
 class SecurityType(IntEnum):
@@ -219,7 +220,7 @@ class WifiManager:
         self._update_networks()
         self._request_scan()
 
-      time.sleep(5)
+      time.sleep(SCAN_PERIOD_SECONDS)
 
   def _wait_for_wifi_device(self) -> str | None:
     with self._lock:
@@ -235,9 +236,7 @@ class WifiManager:
     if self._wifi_device is not None:
       return self._wifi_device
 
-    t = time.monotonic()
     device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
-
     for device_path in device_paths:
       dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
       dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0]
@@ -246,7 +245,6 @@ class WifiManager:
         self._wifi_device = device_path
         break
 
-    print(f"Got wifi device in {time.monotonic() - t}s: {self._wifi_device}")
     return self._wifi_device
 
   def _get_connections(self) -> list[str]:
@@ -270,8 +268,6 @@ class WifiManager:
 
   def connect_to_network(self, ssid: str, password: str):
     def worker():
-      t = time.monotonic()
-
       # Clear all connections that may already exist to the network we are connecting
       self._connecting_to_ssid = ssid
       self.forget_connection(ssid, block=True)
@@ -306,31 +302,22 @@ class WifiManager:
 
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
 
-      conn_path = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
-
-      print('Added connection', conn_path)
-
-      print(f'Connecting to network took {time.monotonic() - t}s')
-
+      self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
       self.activate_connection(ssid, block=True)
 
     threading.Thread(target=worker, daemon=True).start()
 
   def forget_connection(self, ssid: str, block: bool = False):
     def worker():
-      t = time.monotonic()
       conn_path = self._connection_by_ssid(ssid)
-      print(f'Finding connection by SSID took {time.monotonic() - t}s: {conn_path}')
       if conn_path is not None:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-        print(f'Forgetting connection took {time.monotonic() - t}s')
         if self._forgotten is not None:
           self._update_networks()
           self._forgotten(ssid)
 
-    # TODO: make a helper when it makes sense
     if block:
       worker()
     else:
@@ -338,20 +325,16 @@ class WifiManager:
 
   def activate_connection(self, ssid: str, block: bool = False):
     def worker():
-      t = time.monotonic()
       conn_path = self._connection_by_ssid(ssid)
       if conn_path is not None:
-        self._connecting_to_ssid = ssid
         if self._wifi_device is None:
           cloudlog.warning("No WiFi device found")
           return
 
-        print(f'Activating connection to {ssid}')
-        self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
-                                                             (conn_path, self._wifi_device, "/")))
-        print(f"Activated connection in {time.monotonic() - t}s")
+        self._connecting_to_ssid = ssid
+        self._router_main.send(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                               (conn_path, self._wifi_device, "/")))
 
-    # TODO: make a helper when it makes sense
     if block:
       worker()
     else:
@@ -364,7 +347,6 @@ class WifiManager:
 
     wifi_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_WIRELESS_IFACE)
     reply = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
-    print('Requested scan')
 
     if reply.header.message_type == MessageType.error:
       cloudlog.warning(f"Failed to request scan: {reply}")
@@ -409,7 +391,6 @@ class WifiManager:
                 for ssid, ap_list in aps.items()]
     networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
     self._networks = networks
-    print('self._networks', self._networks)
 
     if self._networks_updated is not None:
       self._networks_updated(self._networks)
