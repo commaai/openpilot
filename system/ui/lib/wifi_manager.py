@@ -376,6 +376,7 @@ class WifiManager:
         return
 
       t = time.monotonic()
+      t_start = t
 
       # returns '/' if no active AP
       wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
@@ -385,6 +386,7 @@ class WifiManager:
 
       aps: dict[str, list[AccessPoint]] = {}
 
+      t = time.monotonic()
       for ap_path in ap_paths:
         ap_addr = DBusAddress(ap_path, NM, interface=NM_ACCESS_POINT_IFACE)
         ap_props = self._router_main.send_and_get_reply(Properties(ap_addr).get_all())
@@ -408,13 +410,16 @@ class WifiManager:
           # catch all for parsing errors
           cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
-      print('built ap list', time.monotonic() - t)
+      dt = time.monotonic() - t
+      print('built ap list', dt, len(ap_paths), dt / (len(ap_paths) or 1))
 
+      t = time.monotonic()
       known_connections = self._get_connections()
       networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
       networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
       self._networks = networks
       print('built network list', time.monotonic() - t)
+      print('total update time', time.monotonic() - t_start, len(ap_paths))
 
       if self._networks_updated is not None:
         self._enqueue_callback(self._networks_updated, self._networks)
