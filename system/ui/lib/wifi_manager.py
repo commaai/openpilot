@@ -117,7 +117,6 @@ class WifiManager:
 
     # DBus and NetworkManager setup
     self._main_bus = dbus.SystemBus()
-    self._monitor_bus = dbus.SystemBus(private=True)
     self._nm = dbus.Interface(self._main_bus.get_object(NM, NM_PATH), NM_IFACE)
     self._props = dbus.Interface(self._main_bus.get_object(NM, NM_PATH), NM_PROPERTIES_IFACE)
 
@@ -435,4 +434,3 @@ class WifiManager:
     self._scan_thread.join()
     self._state_thread.join()
     self._main_bus.close()
-    self._monitor_bus.close()
