@@ -64,11 +64,10 @@ class Network:
   is_saved: bool
 
   @classmethod
-  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], active_ap_path: str, is_saved: bool) -> "Network":
+  def from_dbus(cls, ssid: str, aps: list["AccessPoint"], is_saved: bool) -> "Network":
     # we only want to show the strongest AP for each Network/SSID
     strongest_ap = max(aps, key=lambda ap: ap.strength)
-
-    is_connected = any(ap.ap_path == active_ap_path for ap in aps)  # TODO: just any is_connected aps!
+    is_connected = any(ap.is_connected for ap in aps)
     security_type = get_security_type(strongest_ap.flags, strongest_ap.wpa_flags, strongest_ap.rsn_flags)
 
     return cls(
@@ -123,16 +122,14 @@ class WifiManager:
     self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
     self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
 
-    # store wifi device path
+    # Store wifi device path
     self._wifi_device: str | None = None
 
     # State
     self._connecting_to_ssid: str = ""
 
     # Callbacks
-    # TODO: some of these are called from threads, either:
-    # 1. make sure this is fine
-    # 2. add callback event list that user can call from main thread to get callbacks safely
+    # TODO: implement a callback queue to avoid blocking UI thread
     self._need_auth: Callable[[str], None] | None = None
     self._activated: Callable[[], None] | None = None
     self._forgotten: Callable[[str], None] | None = None
@@ -406,7 +403,7 @@ class WifiManager:
         cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
     known_connections = self._get_connections()
-    networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
+    networks = [Network.from_dbus(ssid, ap_list, self._connection_by_ssid(ssid, known_connections) is not None)
                 for ssid, ap_list in aps.items()]
     networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
     self._networks = networks
