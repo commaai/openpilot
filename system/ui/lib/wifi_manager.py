@@ -416,11 +416,6 @@ class WifiManager:
       self._networks = networks
       print('built network list', time.monotonic() - t)
 
-      known_connections = self._get_connections()
-      networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections) for ssid, ap_list in aps.items()]
-      networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
-      self._networks = networks
-
       if self._networks_updated is not None:
         self._enqueue_callback(self._networks_updated, self._networks)
 
