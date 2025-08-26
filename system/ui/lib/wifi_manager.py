@@ -82,7 +82,7 @@ class Network:
 
 @dataclass(frozen=True)
 class AccessPoint:
-  ssid: str
+  ssid: bytes
   bssid: str
   strength: int
   is_connected: bool
@@ -93,7 +93,7 @@ class AccessPoint:
 
   @classmethod
   def from_dbus(cls, ap_props: dict[str, tuple[str, Any]], ap_path: str, active_ap_path: str) -> "AccessPoint":
-    ssid = bytes(ap_props['Ssid'][1]).decode("utf-8", "replace")
+    ssid = ap_props['Ssid'][1]
     bssid = str(ap_props['HwAddress'][1])
     strength = int(ap_props['Strength'][1])
     flags = int(ap_props['Flags'][1])
@@ -399,14 +399,16 @@ class WifiManager:
       try:
         ap = AccessPoint.from_dbus(ap_props.body[0], ap_path, active_ap_path)
         # print('ssid', ap.ssid)
-        if ap.ssid == "":
+        if ap.ssid == b"":
           # print('skipping!')
           continue
 
-        if ap.ssid not in aps:
-          aps[ap.ssid] = []
+        ssid = ap.ssid.decode("utf-8", "replace")
 
-        aps[ap.ssid].append(ap)
+        if ssid not in aps:
+          aps[ssid] = []
+
+        aps[ssid].append(ap)
       except Exception:
         # catch all for parsing errors
         cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
