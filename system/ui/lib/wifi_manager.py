@@ -205,6 +205,7 @@ class WifiManager:
           continue
 
         # BAD PASSWORD
+        print('new_state', new_state, 'prev', previous_state, 'reason', change_reason)
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
           self.forget_connection(self._connecting_to_ssid, block=True)
           if self._need_auth is not None:
