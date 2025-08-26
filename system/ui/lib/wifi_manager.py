@@ -504,6 +504,7 @@ class WifiManager:
                 for ssid, ap_list in aps.items()]
     networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
     self._networks = networks
+    print('self._networks', self._networks)
 
     if self._networks_updated is not None:
       self._networks_updated(self._networks)
