@@ -161,6 +161,7 @@ class WifiManager:
 
   def set_active(self, active: bool):
     self._active = active
+
     # Scan immediately if we haven't scanned in a while
     if active and time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS / 2:
       self._last_network_update = 0.0
@@ -243,9 +244,9 @@ class WifiManager:
     device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
     for device_path in device_paths:
       dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
-      dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0]
+      dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
 
-      if dev_type[1] == NM_DEVICE_TYPE_WIFI:
+      if dev_type == NM_DEVICE_TYPE_WIFI:
         self._wifi_device = device_path
         break
 
@@ -272,7 +273,7 @@ class WifiManager:
 
   def connect_to_network(self, ssid: str, password: str):
     def worker():
-      # Clear all connections that may already exist to the network we are connecting
+      # Clear all connections that may already exist to the network we are connecting to
       self._connecting_to_ssid = ssid
       self.forget_connection(ssid, block=True)
 
@@ -305,7 +306,6 @@ class WifiManager:
         }
 
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-
       self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
       self.activate_connection(ssid, block=True)
 
@@ -354,7 +354,6 @@ class WifiManager:
 
     if reply.header.message_type == MessageType.error:
       cloudlog.warning(f"Failed to request scan: {reply}")
-      return
 
   def _update_networks(self):
     if self._wifi_device is None:
