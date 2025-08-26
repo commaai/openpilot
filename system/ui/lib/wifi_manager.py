@@ -92,8 +92,8 @@ class AccessPoint:
   ap_path: str
 
   @classmethod
-  def from_dbus(cls, ssid: bytes, ap_props: dict[str, tuple[str, Any]], ap_path: str, active_ap_path: str) -> "AccessPoint":
-    ssid = ssid.decode("utf-8", "replace")
+  def from_dbus(cls, ap_props: dict[str, tuple[str, Any]], ap_path: str, active_ap_path: str) -> "AccessPoint":
+    ssid = bytes(ap_props['Ssid'][1]).decode("utf-8", "replace")
     bssid = str(ap_props['HwAddress'][1])
     strength = int(ap_props['Strength'][1])
     flags = int(ap_props['Flags'][1])
@@ -389,19 +389,6 @@ class WifiManager:
 
     for ap_path in ap_paths:
       ap_addr = DBusAddress(ap_path, NM, interface=NM_ACCESS_POINT_IFACE)
-
-      reply = self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid'))
-
-      # some APs have been seen dropping off during iteration
-      if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f"Failed to get AP SSID for {ap_path}")
-        continue
-
-      # skip hidden networks, useless and reduces computation
-      ssid = bytes(reply.body[0][1])
-      if ssid == b"":
-        continue
-
       ap_props = self._router_main.send_and_get_reply(Properties(ap_addr).get_all())
 
       # some APs have been seen dropping off during iteration
@@ -410,9 +397,15 @@ class WifiManager:
         continue
 
       try:
-        ap = AccessPoint.from_dbus(ssid, ap_props.body[0], ap_path, active_ap_path)
+        ap = AccessPoint.from_dbus(ap_props.body[0], ap_path, active_ap_path)
+        # print('ssid', ap.ssid)
+        if ap.ssid == "":
+          # print('skipping!')
+          continue
+
         if ap.ssid not in aps:
           aps[ap.ssid] = []
+
         aps[ap.ssid].append(ap)
       except Exception:
         # catch all for parsing errors
