@@ -45,6 +45,7 @@ class WifiManagerUI(Widget):
     self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
+    self._load_icons()
 
     self._networks: list[NetworkInfo] = []
     self._networks_buttons: dict[str, Button] = {}
@@ -64,6 +65,12 @@ class WifiManagerUI(Widget):
     )
     self.wifi_manager.start()
     self.wifi_manager.connect()
+
+  def _load_icons(self):
+    t = time.monotonic()
+    for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
+      gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
+    print(time.monotonic() - t, 's to load icons')
 
   def _render(self, rect: rl.Rectangle):
     with self._lock:
@@ -171,7 +178,6 @@ class WifiManagerUI(Widget):
       self._state_network = network
 
   def _draw_status_icon(self, rect, network: NetworkInfo):
-    t = time.monotonic()
     """Draw the status icon based on network's connection state"""
     icon_file = None
     if network.is_connected:
@@ -187,9 +193,6 @@ class WifiManagerUI(Widget):
     texture = gui_app.texture(icon_file, ICON_SIZE, ICON_SIZE)
     icon_rect = rl.Vector2(rect.x, rect.y + (ICON_SIZE - texture.height) / 2)
     rl.draw_texture_v(texture, icon_rect, rl.WHITE)
-    dt = time.monotonic() - t
-    if dt > 0.001:
-      print(f"Warning: drawing status icon took too long: {dt}s")
 
   def _draw_signal_strength_icon(self, rect: rl.Rectangle, network: NetworkInfo):
     """Draw the Wi-Fi signal strength icon based on network's signal strength"""
