@@ -285,25 +285,6 @@ class WifiManager:
           conns[ssid] = conn_path
     return conns
 
-  # def _get_connections(self) -> list[str]:
-  #   settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-  #   return list(self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0])
-  #
-  # def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
-  #   for conn_path in known_connections or self._get_connections():
-  #     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-  #     reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings"))
-  #
-  #     # ignore connections removed during iteration (need auth, etc.)
-  #     if reply.header.message_type == MessageType.error:
-  #       cloudlog.warning(f"Failed to get connection properties for {conn_path}")
-  #       continue
-  #
-  #     settings = reply.body[0]
-  #     if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
-  #       return conn_path
-  #   return None
-
   def connect_to_network(self, ssid: str, password: str):
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
