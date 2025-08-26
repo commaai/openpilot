@@ -281,7 +281,7 @@ class WifiManager:
       settings = reply.body[0]
       if "802-11-wireless" in settings:
         ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
-        if len(ssid):
+        if ssid != "":
           conns[ssid] = conn_path
     return conns
 
