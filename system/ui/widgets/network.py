@@ -1,4 +1,3 @@
-import time
 from enum import IntEnum
 from functools import partial
 from threading import Lock
@@ -67,10 +66,8 @@ class WifiManagerUI(Widget):
     self.wifi_manager.connect()
 
   def _load_icons(self):
-    t = time.monotonic()
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
-    print(time.monotonic() - t, 's to load icons')
 
   def _render(self, rect: rl.Rectangle):
     with self._lock:
