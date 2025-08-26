@@ -162,7 +162,9 @@ class WifiManager:
     self._active = active
 
   def _monitor_state(self):
-    device_path: str = self._wait_for_wifi_device()
+    device_path = self._wait_for_wifi_device()
+    if device_path is None:
+      return
 
     rule = MatchRule(
       type="signal",
@@ -219,7 +221,7 @@ class WifiManager:
 
       time.sleep(5)
 
-  def _wait_for_wifi_device(self) -> str:
+  def _wait_for_wifi_device(self) -> str | None:
     with self._lock:
       device_path: str | None = None
       while not self._exit:
@@ -249,7 +251,7 @@ class WifiManager:
 
   def _get_connections(self) -> list[str]:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-    return self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
+    return list(self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0])
 
   def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
     for conn_path in known_connections or self._get_connections():
