@@ -1,6 +1,5 @@
 from enum import IntEnum
 from functools import partial
-from threading import Lock
 from typing import cast
 
 import pyray as rl
@@ -50,7 +49,6 @@ class WifiManagerUI(Widget):
     self._networks: list[Network] = []
     self._networks_buttons: dict[str, Button] = {}
     self._forget_networks_buttons: dict[str, Button] = {}
-    self._lock = Lock()
     self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
 
     self.wifi_manager.set_callbacks(need_auth=self._on_need_auth,
@@ -71,21 +69,22 @@ class WifiManagerUI(Widget):
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
   def _render(self, rect: rl.Rectangle):
-    with self._lock:
-      if not self._networks:
-        gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
-        return
+    self.wifi_manager.process_callbacks()
 
-      if self.state == UIState.NEEDS_AUTH and self._state_network:
-        self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
-        self.keyboard.reset()
-        gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
-      elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
-        self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{self._state_network.ssid}"?')
-        self._confirm_dialog.reset()
-        gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
-      else:
-        self._draw_network_list(rect)
+    if not self._networks:
+      gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+      return
+
+    if self.state == UIState.NEEDS_AUTH and self._state_network:
+      self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
+      self.keyboard.reset()
+      gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
+    elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
+      self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{self._state_network.ssid}"?')
+      self._confirm_dialog.reset()
+      gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
+    else:
+      self._draw_network_list(rect)
 
   def _on_password_entered(self, network: Network, result: int):
     if result == 1:
@@ -211,36 +210,31 @@ class WifiManagerUI(Widget):
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
-    with self._lock:
-      self._networks = networks
-      for n in self._networks:
-        self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
-                                                button_style=ButtonStyle.NO_EFFECT)
-        self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
-                                                       font_size=45)
+    self._networks = networks
+    for n in self._networks:
+      self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
+                                              button_style=ButtonStyle.NO_EFFECT)
+      self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
+                                                     font_size=45)
 
   def _on_need_auth(self, ssid):
-    with self._lock:
-      network = next((n for n in self._networks if n.ssid == ssid), None)
-      if network:
-        self.state = UIState.NEEDS_AUTH
-        self._state_network = network
-        self._password_retry = True
+    network = next((n for n in self._networks if n.ssid == ssid), None)
+    if network:
+      self.state = UIState.NEEDS_AUTH
+      self._state_network = network
+      self._password_retry = True
 
   def _on_activated(self):
-    with self._lock:
-      if self.state == UIState.CONNECTING:
-        self.state = UIState.IDLE
+    if self.state == UIState.CONNECTING:
+      self.state = UIState.IDLE
 
-  def _on_forgotten(self, ssid):
-    with self._lock:
-      if self.state == UIState.FORGETTING:
-        self.state = UIState.IDLE
+  def _on_forgotten(self):
+    if self.state == UIState.FORGETTING:
+      self.state = UIState.IDLE
 
   def _on_disconnected(self):
-    with self._lock:
-      if self.state == UIState.CONNECTING:
-        self.state = UIState.IDLE
+    if self.state == UIState.CONNECTING:
+      self.state = UIState.IDLE
 
 
 def main():

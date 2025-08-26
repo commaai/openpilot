@@ -133,12 +133,12 @@ class WifiManager:
     # State
     self._connecting_to_ssid: str = ""
     self._last_network_update: float = 0.0
+    self._callback_queue: list[Callable] = []
 
     # Callbacks
-    # TODO: implement a callback queue to avoid blocking UI thread
     self._need_auth: Callable[[str], None] | None = None
     self._activated: Callable[[], None] | None = None
-    self._forgotten: Callable[[str], None] | None = None
+    self._forgotten: Callable[[], None] | None = None
     self._networks_updated: Callable[[list[Network]], None] | None = None
     self._disconnected: Callable[[], None] | None = None
 
@@ -154,7 +154,7 @@ class WifiManager:
 
   def set_callbacks(self, need_auth: Callable[[str], None],
                     activated: Callable[[], None] | None,
-                    forgotten: Callable[[str], None],
+                    forgotten: Callable[[], None],
                     networks_updated: Callable[[list[Network]], None],
                     disconnected: Callable[[], None]):
     self._need_auth = need_auth
@@ -162,6 +162,15 @@ class WifiManager:
     self._forgotten = forgotten
     self._networks_updated = networks_updated
     self._disconnected = disconnected
+
+  def _enqueue_callback(self, cb: Callable, *args):
+    self._callback_queue.append(lambda: cb(*args))
+
+  def process_callbacks(self):
+    # Call from UI thread to run any pending callbacks
+    to_run, self._callback_queue = self._callback_queue, []
+    for cb in to_run:
+      cb()
 
   def set_active(self, active: bool):
     self._active = active
@@ -187,7 +196,6 @@ class WifiManager:
 
     with self._conn_monitor.filter(rule, bufsize=SIGNAL_QUEUE_SIZE) as q:
       while not self._exit:
-        # TODO: always run, and ensure callbacks don't block UI thread
         if not self._active:
           time.sleep(1)
           continue
@@ -204,19 +212,19 @@ class WifiManager:
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
           self.forget_connection(self._connecting_to_ssid, block=True)
           if self._need_auth is not None:
-            self._need_auth(self._connecting_to_ssid)
+            self._enqueue_callback(self._need_auth, self._connecting_to_ssid)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.ACTIVATED:
           if self._activated is not None:
             self._update_networks()
-            self._activated()
+            self._enqueue_callback(self._activated)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
           self._connecting_to_ssid = ""
           if self._disconnected is not None:
-            self._disconnected()
+            self._enqueue_callback(self._disconnected)
 
   def _network_scanner(self):
     self._wait_for_wifi_device()
@@ -324,7 +332,7 @@ class WifiManager:
 
         if self._forgotten is not None:
           self._update_networks()
-          self._forgotten(ssid)
+          self._enqueue_callback(self._forgotten)
 
     if block:
       worker()
@@ -400,7 +408,7 @@ class WifiManager:
     self._networks = networks
 
     if self._networks_updated is not None:
-      self._networks_updated(self._networks)
+      self._enqueue_callback(self._networks_updated, self._networks)
 
   def __del__(self):
     self.stop()
