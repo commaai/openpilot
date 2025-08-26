@@ -208,6 +208,13 @@ node {
           step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
         ])
       },
+      'onroad tests': {
+        deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
+          step("build openpilot", "cd system/manager && ./build.py"),
+          step("check dirty", "release/check-dirty.sh"),
+          step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
+        ])
+      },
       'HW + Unit Tests': {
         deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
