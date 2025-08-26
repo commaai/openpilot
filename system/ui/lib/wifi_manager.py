@@ -374,10 +374,13 @@ class WifiManager:
       cloudlog.warning("No WiFi device found")
       return
 
+    t = time.monotonic()
+
     # returns '/' if no active AP
     wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
     active_ap_path = self._router_main.send_and_get_reply(Properties(wifi_addr).get('ActiveAccessPoint')).body[0][1]
     ap_paths = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'GetAllAccessPoints')).body[0]
+    print('ap paths', time.monotonic() - t)
 
     aps: dict[str, list[AccessPoint]] = {}
 
@@ -403,11 +406,14 @@ class WifiManager:
         # catch all for parsing errors
         cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
+    print('built ap list', time.monotonic() - t)
+
     known_connections = self._get_connections()
     networks = [Network.from_dbus(ssid, ap_list, ssid in known_connections)
                 for ssid, ap_list in aps.items()]
     networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
     self._networks = networks
+    print('built network list', time.monotonic() - t)
 
     if self._networks_updated is not None:
       self._enqueue_callback(self._networks_updated, self._networks)
