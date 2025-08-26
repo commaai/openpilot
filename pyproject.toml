@@ -101,7 +101,7 @@ dev = [
   "av",
   "azure-identity",
   "azure-storage-blob",
-  "dbus-next",
+  "dbus-next",  # TODO: remove this
   "dictdiffer",
   "matplotlib",
   "opencv-python-headless",

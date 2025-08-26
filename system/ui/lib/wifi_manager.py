@@ -1,3 +1,4 @@
+import sys
 import atexit
 import dbus
 import threading
@@ -146,6 +147,8 @@ class WifiManager:
 
     self._lock = threading.Lock()
 
+    self._tmp_init()
+
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
     self._scan_thread.start()
 
@@ -153,6 +156,21 @@ class WifiManager:
     self._state_thread.start()
 
     atexit.register(self.stop)
+
+    sys.exit()
+
+  def _tmp_init(self):
+    t = time.monotonic()
+    a = self._get_connections()
+    print(time.monotonic() - t)
+
+    time.sleep(1)
+
+    t = time.monotonic()
+    b = self._get_connections_jeepney()
+    print(time.monotonic() - t)
+
+    print(a == b)
 
   def set_callbacks(self, need_auth: Callable[[str], None],
                     activated: Callable[[], None] | None,
@@ -273,6 +291,10 @@ class WifiManager:
   def _get_connections(self) -> list[dbus.ObjectPath]:
     settings_iface = dbus.Interface(self._main_bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
     return settings_iface.ListConnections()
+
+  def _get_connections_jeepney(self) -> list[str]:
+    settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
+    return self._conn_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
   def _connection_by_ssid(self, ssid: str, known_connections: list[dbus.ObjectPath] | None = None) -> dbus.ObjectPath | None:
     for conn_path in known_connections or self._get_connections():
