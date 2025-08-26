@@ -13,6 +13,7 @@ from jeepney import DBusAddress, new_method_call
 from jeepney.wrappers import DBusErrorResponse, Properties
 from jeepney.bus_messages import message_bus, MatchRule
 from jeepney.io.blocking import open_dbus_connection
+from jeepney.io.threading import open_dbus_router, DBusRouter  # , open_dbus_connection
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_PROPERTIES_IFACE, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
@@ -124,8 +125,14 @@ class WifiManager:
 
     # Jeepney DBus connections
     # TODO: can we use one? or will the signal blocking not work properly?
+    # TODO: chadder is saying we should lock the main connection since jeepney doesn't provide any multithreaded guarantees
+    # TODO: which seems correct, router might be what we want instead: https://jeepney.readthedocs.io/en/latest/api/threading.html
     self._conn_main = open_dbus_connection(bus="SYSTEM")  # used by scanner / general method calls
     self._conn_monitor = open_dbus_connection(bus="SYSTEM")  # used by state monitor thread
+
+    # TODO: use open_dbus_router if we don't lock
+    # self._conn_main = open_dbus_connection(bus="SYSTEM")  # TODO: use the one from threading or blocking?!
+    # self._router_main = DBusRouter(self._conn_main)
 
     self._nmj = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
 
@@ -160,6 +167,16 @@ class WifiManager:
     sys.exit()
 
   def _tmp_init(self):
+    return
+    t = time.monotonic()
+    self.forget_connection('unifi', block=True)
+    print('initial activation took', time.monotonic() - t)
+
+    t = time.monotonic()
+    self.forget_connection_jeepney('unifi', block=True)
+    print('initial activation2 took', time.monotonic() - t)
+
+    return
     print('conn by ssid')
     t = time.monotonic()
     print('got conn', self._connection_by_ssid("unifi"))
@@ -168,7 +185,6 @@ class WifiManager:
     print('got conn2', self._connection_by_ssid_jeepney("unifi"))
     print('took2', time.monotonic() - t)
 
-    return
     t = time.monotonic()
     a = self._get_connections()
     print(time.monotonic() - t)
@@ -236,6 +252,7 @@ class WifiManager:
           # BAD PASSWORD
           if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
             print('------ NEED AUTH - SUPPLICANT DISCONNECT')
+            # TODO: this didn't show wrong password dialog but we were here
             self.forget_connection(self._connecting_to_ssid, block=True)
             if self._need_auth is not None:
               self._need_auth(self._connecting_to_ssid)
@@ -301,31 +318,15 @@ class WifiManager:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
     return self._conn_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
-  def _connection_by_ssid(self, ssid: str, known_connections: list[dbus.ObjectPath] | None = None) -> dbus.ObjectPath | None:
-    for conn_path in known_connections or self._get_connections():
-      try:
-        conn_props = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
-        settings = conn_props.GetSettings()
-        if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
-          return conn_path
-      except dbus.exceptions.DBusException:
-        # ignore connections removed during iteration (need auth, etc.)
-        cloudlog.exception(f"Failed to get connection properties for {conn_path}")
-    return None
-
-  def _connection_by_ssid_jeepney(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
+  def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
     for conn_path in known_connections or self._get_connections():
       # try:
-      # conn_props = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
-      # settings = conn_props.GetSettings()
-      # if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
-      #   return conn_path
-
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
       settings = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings")).body[0]
       if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
         return conn_path
 
+      # TODO: add back once we see it again
       # except dbus.exceptions.DBusException:
       #   # ignore connections removed during iteration (need auth, etc.)
       #   cloudlog.exception(f"Failed to get connection properties for {conn_path}")
@@ -388,8 +389,8 @@ class WifiManager:
       conn_path = self._connection_by_ssid(ssid)
       print(f'Finding connection by SSID took {time.monotonic() - t}s: {conn_path}')
       if conn_path is not None:
-        conn_iface = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
-        conn_iface.Delete()
+        conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+        self._conn_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
         if self._connecting_to_ssid == ssid:
           self._connecting_to_ssid = ""
@@ -416,7 +417,8 @@ class WifiManager:
           return
 
         print(f'Activating connection to {ssid}')
-        self._nm.ActivateConnection(conn_path, self._wifi_device, dbus.ObjectPath("/"))
+        self._conn_main.send_and_get_reply(new_method_call(self._nmj, 'ActivateConnection', 'ooo',
+                                                           (conn_path, self._wifi_device, "/")))
         print(f"Activated connection in {time.monotonic() - t}s")
 
     # TODO: make a helper when it makes sense
