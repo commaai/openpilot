@@ -256,8 +256,7 @@ class WifiManager:
 
     with self._conn_monitor.filter(rule, queue=deque(maxlen=10)) as q:  # TODO: not sure what to choose for this
       while not self._exit:
-        # TODO: now that we have a nice poller we can run always?
-        # TODO: actually nah since it affects UI currently? or not?
+        # TODO: always run, and ensure callbacks don't block UI thread
         if not self._active:
           time.sleep(1)
           continue
@@ -268,32 +267,22 @@ class WifiManager:
         except TimeoutError:
           continue
 
-        print('msg.body', msg.body)
         new_state, previous_state, change_reason = msg.body
 
-        print(f"------------ WiFi device state change: {new_state}, change reason: {change_reason}")
         # BAD PASSWORD
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
-          print('------ NEED AUTH - SUPPLICANT DISCONNECT')
-          # TODO: this didn't show wrong password dialog but we were here
-          print('forgetting connection to', self._connecting_to_ssid)
           self.forget_connection(self._connecting_to_ssid, block=True)
-          print('forgot successful')
-          print('need auth is none?', self._need_auth is None)
           if self._need_auth is not None:
-            print('CALLING NEED AUTH CALLBACK')
             self._need_auth(self._connecting_to_ssid)
-            print('done calling')
           self._connecting_to_ssid = ""
+
         elif new_state == NMDeviceState.ACTIVATED:
-          print('------ ACTIVATED')
           if self._activated is not None:
             self._update_networks()
-            print('CALLING ACTIVATED CALLBACK1')
             self._activated()
           self._connecting_to_ssid = ""
+
         elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
-          print('------ DISCONNECTED')
           self._connecting_to_ssid = ""
           if self._disconnected is not None:
             self._disconnected()
