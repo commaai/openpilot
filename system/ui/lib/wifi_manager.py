@@ -169,6 +169,7 @@ class WifiManager:
   def process_callbacks(self):
     # Call from UI thread to run any pending callbacks
     to_run, self._callback_queue = self._callback_queue, []
+    print('processing', len(to_run), 'callbacks', to_run)
     for cb in to_run:
       cb()
 
