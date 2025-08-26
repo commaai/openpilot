@@ -44,6 +44,7 @@ class WifiManagerUI(Widget):
     self.btn_width: int = 200
     self.scroll_panel = GuiScrollPanel()
     self.keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
+    self._load_icons()
 
     self._networks: list[NetworkInfo] = []
     self._networks_buttons: dict[str, Button] = {}
@@ -63,6 +64,10 @@ class WifiManagerUI(Widget):
     )
     self.wifi_manager.start()
     self.wifi_manager.connect()
+
+  def _load_icons(self):
+    for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
+      gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
   def _render(self, rect: rl.Rectangle):
     with self._lock:
