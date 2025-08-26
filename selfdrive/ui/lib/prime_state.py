@@ -25,7 +25,6 @@ class PrimeType(IntEnum):
 
 @lru_cache(maxsize=1)
 def get_token(dongle_id: str, t: int):
-  print('getting token')
   return Api(dongle_id).get_token(expiry_hours=TOKEN_EXPIRY_HOURS)
 
 
