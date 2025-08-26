@@ -160,6 +160,15 @@ class WifiManager:
     sys.exit()
 
   def _tmp_init(self):
+    print('conn by ssid')
+    t = time.monotonic()
+    print('got conn', self._connection_by_ssid("unifi"))
+    print('took', time.monotonic() - t)
+    t = time.monotonic()
+    print('got conn2', self._connection_by_ssid_jeepney("unifi"))
+    print('took2', time.monotonic() - t)
+
+    return
     t = time.monotonic()
     a = self._get_connections()
     print(time.monotonic() - t)
@@ -288,11 +297,7 @@ class WifiManager:
     print(f"Got wifi device in {time.monotonic() - t}s: {self._wifi_device}")
     return self._wifi_device
 
-  def _get_connections(self) -> list[dbus.ObjectPath]:
-    settings_iface = dbus.Interface(self._main_bus.get_object(NM, NM_SETTINGS_PATH), NM_SETTINGS_IFACE)
-    return settings_iface.ListConnections()
-
-  def _get_connections_jeepney(self) -> list[str]:
+  def _get_connections(self) -> list[str]:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
     return self._conn_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
@@ -306,6 +311,24 @@ class WifiManager:
       except dbus.exceptions.DBusException:
         # ignore connections removed during iteration (need auth, etc.)
         cloudlog.exception(f"Failed to get connection properties for {conn_path}")
+    return None
+
+  def _connection_by_ssid_jeepney(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
+    for conn_path in known_connections or self._get_connections():
+      # try:
+      # conn_props = dbus.Interface(self._main_bus.get_object(NM, conn_path), NM_CONNECTION_IFACE)
+      # settings = conn_props.GetSettings()
+      # if "802-11-wireless" in settings and bytes(settings["802-11-wireless"]["ssid"]).decode("utf-8", "replace") == ssid:
+      #   return conn_path
+
+      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+      settings = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings")).body[0]
+      if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
+        return conn_path
+
+      # except dbus.exceptions.DBusException:
+      #   # ignore connections removed during iteration (need auth, etc.)
+      #   cloudlog.exception(f"Failed to get connection properties for {conn_path}")
     return None
 
   def connect_to_network(self, ssid: str, password: str):
