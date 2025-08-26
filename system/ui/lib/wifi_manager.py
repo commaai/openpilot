@@ -15,7 +15,7 @@ from jeepney.io.blocking import DBusConnection, open_dbus_connection
 from jeepney.io.threading import open_dbus_router, DBusRouter  # , open_dbus_connection
 
 from openpilot.common.swaglog import cloudlog
-from openpilot.system.ui.lib.networkmanager import (NM, NM_PROPERTIES_IFACE, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
+from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
                                                     NM_802_11_AP_SEC_PAIR_WEP104, NM_802_11_AP_SEC_GROUP_WEP40,
                                                     NM_802_11_AP_SEC_GROUP_WEP104, NM_802_11_AP_SEC_KEY_MGMT_PSK,
                                                     NM_802_11_AP_SEC_KEY_MGMT_802_1X, NM_802_11_AP_FLAGS_NONE,
@@ -330,16 +330,15 @@ class WifiManager:
 
   def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
     for conn_path in known_connections or self._get_connections():
-      # try:
-      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-      settings = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings")).body[0]
-      if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
-        return conn_path
+      try:
+        conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+        settings = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings")).body[0]
+        if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
+          return conn_path
 
-      # TODO: add back once we see it again
-      # except dbus.exceptions.DBusException:
-      #   # ignore connections removed during iteration (need auth, etc.)
-      #   cloudlog.exception(f"Failed to get connection properties for {conn_path}")
+      except DBusErrorResponse:
+        # ignore connections removed during iteration (need auth, etc.)
+        cloudlog.exception(f"Failed to get connection properties for {conn_path}")
     return None
 
   def connect_to_network(self, ssid: str, password: str):
@@ -461,19 +460,18 @@ class WifiManager:
     aps: dict[str, list[AccessPoint]] = {}
 
     for ap_path in ap_paths:
-      # try:
-      ap = AccessPoint.from_dbus(self._conn_main, ap_path, active_ap_path)
-      if ap.ssid == "":
-        continue
+      try:
+        ap = AccessPoint.from_dbus(self._conn_main, ap_path, active_ap_path)
+        if ap.ssid == "":
+          continue
 
-      if ap.ssid not in aps:
-        aps[ap.ssid] = []
+        if ap.ssid not in aps:
+          aps[ap.ssid] = []
 
-      aps[ap.ssid].append(ap)
-      # TODO: add back when seen
-      # except dbus.exceptions.DBusException:
-      #   # some APs have been seen dropping off during iteration
-      #   cloudlog.exception(f"Failed to get AP properties for {ap_path}")
+        aps[ap.ssid].append(ap)
+      except DBusErrorResponse:
+        # some APs have been seen dropping off during iteration
+        cloudlog.exception(f"Failed to get AP properties for {ap_path}")
 
     known_connections = self._get_connections()
     networks = [Network.from_dbus(ssid, ap_list, active_ap_path, self._connection_by_ssid(ssid, known_connections) is not None)
