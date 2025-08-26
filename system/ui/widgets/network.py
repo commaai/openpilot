@@ -1,4 +1,3 @@
-import time
 from enum import IntEnum
 from functools import partial
 from threading import Lock
@@ -124,12 +123,10 @@ class WifiManagerUI(Widget):
     rl.end_scissor_mode()
 
   def _draw_network_item(self, rect, network: Network, clicked: bool):
-    t = time.monotonic()
     spacing = 50
     ssid_rect = rl.Rectangle(rect.x, rect.y, rect.width - self.btn_width * 2, ITEM_HEIGHT)
     signal_icon_rect = rl.Rectangle(rect.x + rect.width - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
     security_icon_rect = rl.Rectangle(signal_icon_rect.x - spacing - ICON_SIZE, rect.y + (ITEM_HEIGHT - ICON_SIZE) / 2, ICON_SIZE, ICON_SIZE)
-    # print('rects took', time.monotonic() - t)
 
     status_text = ""
     if self.state == UIState.CONNECTING and self._state_network:
@@ -145,11 +142,9 @@ class WifiManagerUI(Widget):
     else:
       self._networks_buttons[network.ssid].set_enabled(True)
 
-    # print('state took', time.monotonic() - t)
 
     self._networks_buttons[network.ssid].render(ssid_rect)
 
-    # print('button render took', time.monotonic() - t)
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
@@ -165,11 +160,9 @@ class WifiManagerUI(Widget):
         )
         self._forget_networks_buttons[network.ssid].render(forget_btn_rect)
 
-    # print('text render took', time.monotonic() - t)
 
     self._draw_status_icon(security_icon_rect, network)
     self._draw_signal_strength_icon(signal_icon_rect, network)
-    # print('icons took', time.monotonic() - t)
 
   def _networks_buttons_callback(self, network):
     if self.scroll_panel.is_touch_valid():
@@ -222,20 +215,15 @@ class WifiManagerUI(Widget):
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
-    print('CALLBACK: _on_network_updated')
-    # TODO: wifimanager has a nonblocking getter, we don't need to use callbacks nearly as much
     with self._lock:
-      t = time.monotonic()
       self._networks = networks
       for n in self._networks:
         self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                                 button_style=ButtonStyle.NO_EFFECT)
         self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                        font_size=45)
-      print(f"WifiManagerUI: networks updated, {len(networks)} networks, took {time.monotonic() - t}s")
 
   def _on_need_auth(self, ssid):
-    print('CALLBACK: _on_need_auth')
     with self._lock:
       network = next((n for n in self._networks if n.ssid == ssid), None)
       if network:
@@ -244,19 +232,16 @@ class WifiManagerUI(Widget):
         self._password_retry = True
 
   def _on_activated(self):
-    print('CALLBACK: _on_activated')
     with self._lock:
       if self.state == UIState.CONNECTING:
         self.state = UIState.IDLE
 
   def _on_forgotten(self, ssid):
-    print('CALLBACK: _on_forgotten')
     with self._lock:
       if self.state == UIState.FORGETTING:
         self.state = UIState.IDLE
 
   def _on_disconnected(self):
-    print('CALLBACK: _on_disconnected')
     with self._lock:
       if self.state == UIState.CONNECTING:
         self.state = UIState.IDLE
