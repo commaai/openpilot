@@ -398,7 +398,9 @@ class WifiManager:
 
       try:
         ap = AccessPoint.from_dbus(ap_props.body[0], ap_path, active_ap_path)
+        print('ssid', ap.ssid)
         if ap.ssid == "":
+          print('skipping!')
           continue
 
         if ap.ssid not in aps:
