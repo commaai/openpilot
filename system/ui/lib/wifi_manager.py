@@ -399,10 +399,11 @@ class WifiManager:
     self.stop()
 
   def stop(self):
-    self._exit = True
-    self._scan_thread.join()
-    self._state_thread.join()
+    if not self._exit:
+      self._exit = True
+      self._scan_thread.join()
+      self._state_thread.join()
 
-    self._router_main.close()
-    self._router_main.conn.close()
-    self._conn_monitor.close()
+      self._router_main.close()
+      self._router_main.conn.close()
+      self._conn_monitor.close()

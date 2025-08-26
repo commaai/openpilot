@@ -142,9 +142,7 @@ class WifiManagerUI(Widget):
     else:
       self._networks_buttons[network.ssid].set_enabled(True)
 
-
     self._networks_buttons[network.ssid].render(ssid_rect)
-
 
     if status_text:
       status_text_rect = rl.Rectangle(security_icon_rect.x - 410, rect.y, 410, ITEM_HEIGHT)
@@ -159,7 +157,6 @@ class WifiManagerUI(Widget):
           80,
         )
         self._forget_networks_buttons[network.ssid].render(forget_btn_rect)
-
 
     self._draw_status_icon(security_icon_rect, network)
     self._draw_signal_strength_icon(signal_icon_rect, network)
