@@ -12,9 +12,9 @@ from collections import deque
 from jeepney import DBusAddress, new_method_call
 from jeepney.wrappers import Properties
 from jeepney.bus_messages import message_bus, MatchRule
-from jeepney.io.blocking import DBusConnection, open_dbus_connection
+from jeepney.io.blocking import open_dbus_connection as open_dbus_connection_blocking
 from jeepney.low_level import MessageType
-from jeepney.io.threading import open_dbus_router, DBusRouter  # , open_dbus_connection
+from jeepney.io.threading import DBusRouter, open_dbus_connection as open_dbus_connection_threading
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
@@ -120,17 +120,9 @@ class WifiManager:
     self._exit = False
 
     # DBus connections
-    # TODO: can we use one? or will the signal blocking not work properly?
-    # TODO: chadder is saying we should lock the main connection since jeepney doesn't provide any multithreaded guarantees
-    # TODO: which seems correct, router might be what we want instead: https://jeepney.readthedocs.io/en/latest/api/threading.html
-    self._conn_main = open_dbus_connection(bus="SYSTEM")  # used by scanner / general method calls
-    self._conn_monitor = open_dbus_connection(bus="SYSTEM")  # used by state monitor thread
-
-    # TODO: use open_dbus_router if we don't lock
-    # self._conn_main = open_dbus_connection(bus="SYSTEM")  # TODO: use the one from threading or blocking?!
-    # self._router_main = DBusRouter(self._conn_main)
-
-    self._nmj = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
+    self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
+    self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
+    self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
 
     # store wifi device path
     self._wifi_device: str | None = None
@@ -163,6 +155,33 @@ class WifiManager:
 
   def _tmp_init(self):
     return
+
+    def worker1():
+      while 1:
+        try:
+          print('hi')
+          conn_path = self._connection_by_ssid('unifi')
+          print(conn_path)
+          assert conn_path == '/org/freedesktop/NetworkManager/Settings/143', conn_path
+        except Exception as e:
+          print(e)
+          raise e
+
+    def worker2():
+      while 1:
+        try:
+          print('hi')
+          conn_path = self._connection_by_ssid('FBI Security Van')
+          print(conn_path)
+          assert conn_path == '/org/freedesktop/NetworkManager/Settings/141', conn_path
+        except Exception as e:
+          print(e)
+          raise e
+
+    threading.Thread(target=worker1, daemon=True).start()
+    threading.Thread(target=worker2, daemon=True).start()
+    time.sleep(10)
+
     t = time.monotonic()
     self.connect_to_network_old('...', '...')
     print('first', time.monotonic() - t)
@@ -311,11 +330,11 @@ class WifiManager:
       return self._wifi_device
 
     t = time.monotonic()
-    device_paths = self._conn_main.send_and_get_reply(new_method_call(self._nmj, 'GetDevices')).body[0]
+    device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
 
     for device_path in device_paths:
       dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
-      dev_type = self._conn_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0]
+      dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0]
 
       if dev_type[1] == NM_DEVICE_TYPE_WIFI:
         self._wifi_device = device_path
@@ -326,12 +345,12 @@ class WifiManager:
 
   def _get_connections(self) -> list[str]:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-    return self._conn_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
+    return self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
   def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
     for conn_path in known_connections or self._get_connections():
       conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-      reply = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings"))
+      reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings"))
 
       # ignore connections removed during iteration (need auth, etc.)
       if reply.header.message_type == MessageType.error:
@@ -381,7 +400,7 @@ class WifiManager:
 
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
 
-      conn_path = self._conn_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
+      conn_path = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
       print('Added connection', conn_path)
 
@@ -398,7 +417,7 @@ class WifiManager:
       print(f'Finding connection by SSID took {time.monotonic() - t}s: {conn_path}')
       if conn_path is not None:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-        self._conn_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
+        self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
         if self._connecting_to_ssid == ssid:
           self._connecting_to_ssid = ""
@@ -425,8 +444,8 @@ class WifiManager:
           return
 
         print(f'Activating connection to {ssid}')
-        self._conn_main.send_and_get_reply(new_method_call(self._nmj, 'ActivateConnection', 'ooo',
-                                                           (conn_path, self._wifi_device, "/")))
+        self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo',
+                                                             (conn_path, self._wifi_device, "/")))
         print(f"Activated connection in {time.monotonic() - t}s")
 
     # TODO: make a helper when it makes sense
@@ -441,7 +460,7 @@ class WifiManager:
       return
 
     wifi_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_WIRELESS_IFACE)
-    reply = self._conn_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
+    reply = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
     print('Requested scan')
 
     if reply.header.message_type == MessageType.error:
@@ -457,14 +476,14 @@ class WifiManager:
 
     # returns '/' if no active AP
     wifi_addr = DBusAddress(self._wifi_device, NM, interface=NM_WIRELESS_IFACE)
-    active_ap_path = self._conn_main.send_and_get_reply(Properties(wifi_addr).get('ActiveAccessPoint')).body[0][1]
-    ap_paths = self._conn_main.send_and_get_reply(new_method_call(wifi_addr, 'GetAllAccessPoints')).body[0]
+    active_ap_path = self._router_main.send_and_get_reply(Properties(wifi_addr).get('ActiveAccessPoint')).body[0][1]
+    ap_paths = self._router_main.send_and_get_reply(new_method_call(wifi_addr, 'GetAllAccessPoints')).body[0]
 
     aps: dict[str, list[AccessPoint]] = {}
 
     for ap_path in ap_paths:
       ap_addr = DBusAddress(ap_path, NM, interface=NM_ACCESS_POINT_IFACE)
-      ap_props = self._conn_main.send_and_get_reply(Properties(ap_addr).get_all())
+      ap_props = self._router_main.send_and_get_reply(Properties(ap_addr).get_all())
 
       # some APs have been seen dropping off during iteration
       if ap_props.header.message_type == MessageType.error:
@@ -501,5 +520,6 @@ class WifiManager:
     self._scan_thread.join()
     self._state_thread.join()
 
-    self._conn_main.close()
+    self._router_main.close()
+    self._router_main.conn.close()
     self._conn_monitor.close()
