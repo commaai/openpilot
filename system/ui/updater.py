@@ -43,8 +43,7 @@ class Updater(Widget):
     self.show_reboot_button = False
     self.process = None
     self.update_thread = None
-    self.wifi_manager = WifiManager()
-    self.wifi_manager_ui = WifiManagerUI(self.wifi_manager)
+    self.wifi_manager_ui = WifiManagerUI(WifiManager())
 
   def install_update(self):
     self.current_screen = Screen.PROGRESS

@@ -72,8 +72,7 @@ class Setup(Widget):
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self.wifi_manager = WifiManager()
-    self.wifi_ui = WifiManagerUI(self.wifi_manager)
+    self.wifi_ui = WifiManagerUI(WifiManager())
     self.keyboard = Keyboard()
     self.selected_radio = None
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
