@@ -9,7 +9,7 @@ from enum import IntEnum
 
 from collections import deque
 from jeepney import DBusAddress, new_method_call
-from jeepney.wrappers import Properties
+from jeepney.wrappers import DBusErrorResponse, Properties
 from jeepney.bus_messages import message_bus, MatchRule
 from jeepney.io.blocking import open_dbus_connection
 
@@ -385,16 +385,12 @@ class WifiManager:
       cloudlog.warning("No WiFi device found")
       return
 
-    wifi_iface = dbus.Interface(self._main_bus.get_object(NM, self._wifi_device), NM_WIRELESS_IFACE)
+    wifi_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_WIRELESS_IFACE)
     try:
-      wifi_iface.RequestScan({})
+      self._conn_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
       print('Requested scan')
-    except dbus.exceptions.DBusException as e:
-      # TODO: copilot is wrong, this never happens
-      if "org.freedesktop.NetworkManager.Device.Error.AlreadyScanning" in str(e):
-        print('Already scanning, skipping')
-      else:
-        cloudlog.exception("Failed to request scan")
+    except DBusErrorResponse:
+      cloudlog.exception("Failed to request scan")
 
   def _update_networks(self):
     print('UPDATING NETWORKS!!!!')
