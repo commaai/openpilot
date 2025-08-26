@@ -217,8 +217,7 @@ class WifiManager:
 
         elif new_state == NMDeviceState.ACTIVATED:
           if self._activated is not None:
-            # self._update_networks()
-            self._last_network_update = time.monotonic()
+            self._update_networks()
             self._enqueue_callback(self._activated)
           self._connecting_to_ssid = ""
 
@@ -334,8 +333,7 @@ class WifiManager:
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
         if self._forgotten is not None:
-          # self._update_networks()
-          self._last_network_update = 0.0
+          self._update_networks()
           self._enqueue_callback(self._forgotten)
 
     if block:
