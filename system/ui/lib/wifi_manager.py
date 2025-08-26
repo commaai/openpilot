@@ -119,9 +119,13 @@ class WifiManager:
     self._exit = False
 
     # DBus connections
-    self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
-    self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
-    self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
+    try:
+      self._router_main = DBusRouter(open_dbus_connection_threading(bus="SYSTEM"))  # used by scanner / general method calls
+      self._conn_monitor = open_dbus_connection_blocking(bus="SYSTEM")  # used by state monitor thread
+      self._nm = DBusAddress(NM_PATH, bus_name=NM, interface=NM_IFACE)
+    except FileNotFoundError:
+      cloudlog.exception("Failed to connect to system D-Bus")
+      self._exit = True
 
     # Store wifi device path
     self._wifi_device: str | None = None
