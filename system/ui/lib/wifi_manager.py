@@ -419,9 +419,6 @@ class WifiManager:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-        if self._connecting_to_ssid == ssid:
-          self._connecting_to_ssid = ""
-
         print(f'Forgetting connection took {time.monotonic() - t}s')
         if self._forgotten is not None:
           self._update_networks()
