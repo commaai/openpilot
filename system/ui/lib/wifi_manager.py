@@ -8,11 +8,11 @@ from dataclasses import dataclass
 from enum import IntEnum
 
 from jeepney import DBusAddress, new_method_call
-from jeepney.wrappers import Properties
-from jeepney.bus_messages import message_bus, MatchRule
+from jeepney.bus_messages import MatchRule, message_bus
 from jeepney.io.blocking import open_dbus_connection as open_dbus_connection_blocking
-from jeepney.low_level import MessageType
 from jeepney.io.threading import DBusRouter, open_dbus_connection as open_dbus_connection_threading
+from jeepney.low_level import MessageType
+from jeepney.wrappers import Properties
 
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_802_11_AP_SEC_PAIR_WEP40,
