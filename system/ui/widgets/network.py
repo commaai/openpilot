@@ -210,7 +210,6 @@ class WifiManagerUI(Widget):
     self.wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
-    print('networks updated', [n.ssid for n in networks])
     self._networks = networks
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
@@ -219,7 +218,6 @@ class WifiManagerUI(Widget):
                                                      font_size=45)
 
   def _on_need_auth(self, ssid):
-    print('need auth for', ssid)
     network = next((n for n in self._networks if n.ssid == ssid), None)
     if network:
       self.state = UIState.NEEDS_AUTH
@@ -227,12 +225,10 @@ class WifiManagerUI(Widget):
       self._password_retry = True
 
   def _on_activated(self):
-    print('_on_activated')
     if self.state == UIState.CONNECTING:
       self.state = UIState.IDLE
 
   def _on_forgotten(self):
-    print('_on_forgotten')
     if self.state == UIState.FORGETTING:
       self.state = UIState.IDLE
 
