@@ -156,71 +156,6 @@ class WifiManager:
       cloudlog.error(f"Failed to delete connection for SSID: {ssid}. Error: {e}")
       return False
 
-  async def activate_connection(self, ssid: str) -> bool:
-    connection_path = self.saved_connections.get(ssid)
-    if not connection_path:
-      return False
-    try:
-      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
-      await nm_iface.call_activate_connection(connection_path, self.device_path, "/")
-      return True
-    except DBusError as e:
-      cloudlog.error(f"Failed to activate connection {ssid}: {str(e)}")
-      return False
-
-  async def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False) -> None:
-    """Connect to a selected Wi-Fi network."""
-    try:
-      self._current_connection_ssid = ssid
-
-      if ssid in self.saved_connections:
-        # Forget old connection if new password provided
-        if password:
-          await self.forget_connection(ssid)
-          await asyncio.sleep(0.2)  # NetworkManager delay
-        else:
-          # Just activate existing connection
-          await self.activate_connection(ssid)
-          return
-
-      connection = {
-        'connection': {
-          'type': Variant('s', '802-11-wireless'),
-          'uuid': Variant('s', str(uuid.uuid4())),
-          'id': Variant('s', f'openpilot connection {ssid}'),
-          'autoconnect-retries': Variant('i', 0),
-        },
-        '802-11-wireless': {
-          'ssid': Variant('ay', ssid.encode('utf-8')),
-          'hidden': Variant('b', is_hidden),
-          'mode': Variant('s', 'infrastructure'),
-        },
-        'ipv4': {
-          'method': Variant('s', 'auto'),
-          'dns-priority': Variant('i', 600),
-        },
-        'ipv6': {'method': Variant('s', 'ignore')},
-      }
-
-      if bssid:
-        connection['802-11-wireless']['bssid'] = Variant('ay', bssid.encode('utf-8'))
-
-      if password:
-        connection['802-11-wireless-security'] = {
-          'key-mgmt': Variant('s', 'wpa-psk'),
-          'auth-alg': Variant('s', 'open'),
-          'psk': Variant('s', password),
-        }
-
-      nm_iface = await self._get_interface(NM, NM_PATH, NM_IFACE)
-      await nm_iface.call_add_and_activate_connection(connection, self.device_path, "/")
-    except Exception as e:
-      self._current_connection_ssid = None
-      cloudlog.error(f"Error connecting to network: {e}")
-      # Notify UI of failure
-      if self.callbacks.connection_failed:
-        self.callbacks.connection_failed(ssid, str(e))
-
   def is_saved(self, ssid: str) -> bool:
     return ssid in self.saved_connections
 
@@ -672,18 +607,6 @@ class WifiManagerWrapper:
     if not self._manager:
       return
     self._run_coroutine(self._manager.forget_connection(ssid))
-
-  def activate_connection(self, ssid: str):
-    """Activate an existing Wi-Fi connection."""
-    if not self._manager:
-      return
-    self._run_coroutine(self._manager.activate_connection(ssid))
-
-  def connect_to_network(self, ssid: str, password: str = None, bssid: str = None, is_hidden: bool = False):
-    """Connect to a Wi-Fi network."""
-    if not self._manager:
-      return
-    self._run_coroutine(self._manager.connect_to_network(ssid, password, bssid, is_hidden))
 
   def _run_coroutine(self, coro):
     """Run a coroutine in the async thread."""
