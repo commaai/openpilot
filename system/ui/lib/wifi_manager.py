@@ -10,7 +10,7 @@ from enum import IntEnum
 
 from collections import deque
 from jeepney import DBusAddress, new_method_call
-from jeepney.wrappers import DBusErrorResponse, Properties
+from jeepney.wrappers import Properties
 from jeepney.bus_messages import message_bus, MatchRule
 from jeepney.io.blocking import DBusConnection, open_dbus_connection
 from jeepney.low_level import MessageType
@@ -330,15 +330,17 @@ class WifiManager:
 
   def _connection_by_ssid(self, ssid: str, known_connections: list[str] | None = None) -> str | None:
     for conn_path in known_connections or self._get_connections():
-      try:
-        conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-        settings = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings")).body[0]
-        if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
-          return conn_path
+      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+      reply = self._conn_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings"))
 
-      except DBusErrorResponse:
-        # ignore connections removed during iteration (need auth, etc.)
-        cloudlog.exception(f"Failed to get connection properties for {conn_path}")
+      # ignore connections removed during iteration (need auth, etc.)
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f"Failed to get connection properties for {conn_path}")
+        continue
+
+      settings = reply.body[0]
+      if "802-11-wireless" in settings and settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace") == ssid:
+        return conn_path
     return None
 
   def connect_to_network(self, ssid: str, password: str):
@@ -439,11 +441,12 @@ class WifiManager:
       return
 
     wifi_addr = DBusAddress(self._wifi_device, bus_name=NM, interface=NM_WIRELESS_IFACE)
-    try:
-      self._conn_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
-      print('Requested scan')
-    except DBusErrorResponse:
-      cloudlog.exception("Failed to request scan")
+    reply = self._conn_main.send_and_get_reply(new_method_call(wifi_addr, 'RequestScan', 'a{sv}', ({},)))
+    print('Requested scan')
+
+    if reply.header.message_type == MessageType.error:
+      cloudlog.warning(f"Failed to request scan: {reply}")
+      return
 
   def _update_networks(self):
     print('UPDATING NETWORKS!!!!')
@@ -463,6 +466,7 @@ class WifiManager:
       ap_addr = DBusAddress(ap_path, NM, interface=NM_ACCESS_POINT_IFACE)
       ap_props = self._conn_main.send_and_get_reply(Properties(ap_addr).get_all())
 
+      # some APs have been seen dropping off during iteration
       if ap_props.header.message_type == MessageType.error:
         cloudlog.warning(f"Failed to get AP properties for {ap_path}")
         continue
@@ -477,7 +481,7 @@ class WifiManager:
 
         aps[ap.ssid].append(ap)
       except Exception:
-        # some APs have been seen dropping off during iteration
+        # catch all for parsing errors
         cloudlog.exception(f"Failed to parse AP properties for {ap_path}")
 
     known_connections = self._get_connections()
