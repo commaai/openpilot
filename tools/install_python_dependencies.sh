@@ -5,8 +5,9 @@ set -e
 export PIP_DEFAULT_TIMEOUT=200
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
-ROOT="$DIR"/../
-cd "$ROOT"
+echo DIR "$DIR"
+#ROOT="$DIR"/../
+#cd "$ROOT"
 
 if ! command -v "uv" > /dev/null 2>&1; then
   echo "installing uv..."
@@ -21,7 +22,7 @@ uv self update || true
 
 echo "installing python packages..."
 uv sync --frozen --all-extras
-source .venv/bin/activate
+source $HOME/.venv/bin/activate
 
 if [[ "$(uname)" == 'Darwin' ]]; then
   touch "$ROOT"/.env
