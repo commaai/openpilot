@@ -85,7 +85,9 @@ class WifiManagerUI(Widget):
       self._confirm_dialog.reset()
       gui_app.set_modal_overlay(self._confirm_dialog, callback=lambda result: self.on_forgot_confirm_finished(self._state_network, result))
     else:
+      t = time.monotonic()
       self._draw_network_list(rect)
+      print('draw network list took', time.monotonic() - t)
 
   def _on_password_entered(self, network: Network, result: int):
     if result == 1:
@@ -226,8 +228,10 @@ class WifiManagerUI(Widget):
     t = time.monotonic()
     self._networks = networks
     for n in self._networks:
+      t = time.monotonic()
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
                                               button_style=ButtonStyle.NO_EFFECT)
+      print('button crate took', time.monotonic() - t)
       self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)
     print(f"WifiManagerUI: networks updated, {len(networks)} networks, took {time.monotonic() - t}s")

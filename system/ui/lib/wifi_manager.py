@@ -240,9 +240,6 @@ class WifiManager:
   def set_active(self, active: bool):
     print('SETTING ACTIVE', active)
     self._active = active
-    # fast refresh when going active
-    if active:
-      threading.Thread(target=self._update_networks, daemon=True).start()
 
   def _monitor_state(self):
     device_path: str = self._wait_for_wifi_device()
