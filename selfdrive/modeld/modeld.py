@@ -192,7 +192,6 @@ class ModelState:
     inputs['desire'][0] = 0
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
-    self.full_input_queues.enqueue({'desire': new_desire})
 
     imgs_cl = {name: self.frames[name].prepare(bufs[name], transforms[name].flatten()) for name in self.vision_input_names}
 
@@ -212,7 +211,7 @@ class ModelState:
     self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
-    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :]})
+    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :], 'desire': new_desire})
     inputs_from_queues = self.full_input_queues.get('desire', 'features_buffer')
     self.numpy_inputs['features_buffer'][:] = inputs_from_queues['features_buffer']
     self.numpy_inputs['desire'][:] = inputs_from_queues['desire']
