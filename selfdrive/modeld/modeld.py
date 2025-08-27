@@ -139,9 +139,6 @@ class InputQueuesHandler:
           out[k] = queue[:, idxs]
       return out
 
-  def get_single(self, name) -> np.ndarray:
-    return self.get(name)[name]
-
 class ModelState:
   frames: dict[str, DrivingModelFrame]
   inputs: dict[str, np.ndarray]
@@ -195,11 +192,8 @@ class ModelState:
     inputs['desire'][0] = 0
     new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
     self.prev_desire[:] = inputs['desire']
-
     self.full_input_queues.enqueue({'desire': new_desire})
-    self.numpy_inputs['desire'][:] = self.full_input_queues.get_single('desire')
 
-    self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
     imgs_cl = {name: self.frames[name].prepare(bufs[name], transforms[name].flatten()) for name in self.vision_input_names}
 
     if TICI and not USBGPU:
@@ -219,7 +213,10 @@ class ModelState:
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :]})
-    self.numpy_inputs['features_buffer'][:] = self.full_input_queues.get_single('features_buffer')
+    inputs_from_queues = self.full_input_queues.get('desire', 'features_buffer')
+    self.numpy_inputs['features_buffer'][:] = inputs_from_queues['features_buffer']
+    self.numpy_inputs['desire'][:] = inputs_from_queues['desire']
+    self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
 
     self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
     policy_outputs_dict = self.parser.parse_policy_outputs(self.slice_outputs(self.policy_output, self.policy_output_slices))
