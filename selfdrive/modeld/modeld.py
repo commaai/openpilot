@@ -130,7 +130,7 @@ class InputQueues:
         shape = list(queue.shape)
         if 'img' in k:
           n_channels = shape[1] // (self.env_fps // self.model_fps + (self.n_frames_input - 1))
-          out[k] = np.concatenate([queue[:, i*n_channels:(i+1)*n_channels] for i in np.linspace(0, shape[1]//n_channels - 1, self.n_frames_input, dtype=int)], axis=1)
+          out[k] = np.concatenate([queue[:, s:s+n_channels] for s in np.linspace(0, shape[1] - n_channels, self.n_frames_input, dtype=int)], axis=1)
         elif 'pulse' in k:
           # any pulse within interval counts
           out[k] = queue.reshape((shape[0], shape[1] * self.model_fps // self.env_fps, self.env_fps // self.model_fps, -1)).max(axis=2)
