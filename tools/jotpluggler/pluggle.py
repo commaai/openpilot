@@ -66,6 +66,8 @@ class MainController:
     self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
     self.avg_char_width = None
+    self.visible_paths = set()
+    self.check_index = 0
 
   def _create_global_themes(self):
     with dpg.theme(tag="global_line_theme"):
@@ -94,9 +96,6 @@ class MainController:
     dpg.configure_item("timeline_slider", max_value=duration)
 
   def setup_ui(self):
-    with dpg.item_handler_registry(tag="tree_node_handler"):
-      dpg.add_item_toggled_open_handler(callback=self.data_tree_view.update_active_nodes_list)
-
     dpg.set_viewport_resize_callback(callback=self.on_viewport_resize)
 
     with dpg.window(tag="Primary Window"):
@@ -158,32 +157,53 @@ class MainController:
   def update_frame(self, font):
     with self.ui_lock:
       if self.avg_char_width is None:
-        self.avg_char_width = calculate_avg_char_width(font)  # must be calculated after first frame
+        self.avg_char_width = calculate_avg_char_width(font)
+      self.data_tree_view.update_frame()
 
       new_time = self.playback_manager.update_time(dpg.get_delta_time())
       if not dpg.is_item_active("timeline_slider"):
         dpg.set_value("timeline_slider", new_time)
 
       self._update_timeline_indicators(new_time)
+
       if not self.data_manager.loading and self.avg_char_width:
+        self._update_visible_set()
         self._update_data_values()
 
       dpg.set_value("fps_counter", f"{dpg.get_frame_rate():.1f} FPS")
 
-  def _update_data_values(self):
-    pool_width = dpg.get_item_rect_size("data_pool_window")[0]
-    value_column_width = pool_width * 0.5
-    active_nodes = self.data_tree_view.active_leaf_nodes
-
-    for node in active_nodes:
-      path = node.full_path
+  def _update_visible_set(self): # for some reason, dpg has no way to easily check for visibility, and checking is slow...
+    all_paths = list(self.data_tree_view.created_leaf_paths)
+    if not all_paths:
+      self.visible_paths.clear()
+      return
+    chunk_size = min(50, len(all_paths)) # check up to 50 paths per frame
+    end_index = min(self.check_index + chunk_size, len(all_paths))
+    for i in range(self.check_index, end_index):
+      path = all_paths[i]
       value_tag = f"value_{path}"
-
       if dpg.does_item_exist(value_tag) and dpg.is_item_visible(value_tag):
-        value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
-        if value is not None:
-          formatted_value = format_and_truncate(value, value_column_width, self.avg_char_width)
-          dpg.set_value(value_tag, formatted_value)
+        self.visible_paths.add(path)
+      else:
+        self.visible_paths.discard(path)
+    self.check_index = end_index if end_index < len(all_paths) else 0
+
+  def _update_data_values(self):
+    value_column_width = dpg.get_item_rect_size("data_pool_window")[0] // 2
+
+    for path in self.visible_paths.copy(): # avoid modification during iteration
+      value_tag = f"value_{path}"
+      group_tag = f"group_{path}"
+
+      if not dpg.does_item_exist(value_tag) or not dpg.does_item_exist(group_tag):
+        self.visible_paths.discard(path)
+        continue
+
+      dpg.configure_item(group_tag, xoffset=value_column_width)
+      value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
+      if value is not None:
+        formatted_value = format_and_truncate(value, value_column_width, self.avg_char_width)
+        dpg.set_value(value_tag, formatted_value)
 
   def _update_timeline_indicators(self, current_time_s: float):
     def update_node_recursive(node):
