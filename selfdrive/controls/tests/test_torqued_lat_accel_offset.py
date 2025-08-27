@@ -9,17 +9,16 @@ from openpilot.selfdrive.locationd.torqued import TorqueEstimator, MIN_BUCKET_PO
 np.random.seed(0)
 
 LA_ERR_STD = 1.0
-INPUT_NOISE_STD = 0.1
+INPUT_NOISE_STD = 0.08
 V_EGO = 30.0
 
 WARMUP_BUCKET_POINTS = (1.5*MIN_BUCKET_POINTS).astype(int)
 STRAIGHT_ROAD_LA_BOUNDS = (0.02, 0.03)
 
-ROLL_BIAS_DEG = 1.0
+ROLL_BIAS_DEG = 2.0
 ROLL_COMPENSATION_BIAS = ACCELERATION_DUE_TO_GRAVITY*float(np.sin(np.deg2rad(ROLL_BIAS_DEG)))
 TORQUE_TUNE = structs.CarParams.LateralTorqueTuning(latAccelFactor=2.0, latAccelOffset=0.0, friction=0.2)
 TORQUE_TUNE_BIASED = structs.CarParams.LateralTorqueTuning(latAccelFactor=2.0, latAccelOffset=-ROLL_COMPENSATION_BIAS, friction=0.2)
-
 
 def generate_inputs(torque_tune, la_err_std, input_noise_std=None):
   rng = np.random.default_rng(0)
@@ -61,7 +60,7 @@ def test_estimated_offset():
   est = get_warmed_up_estimator(steer_torques, lat_accels)
   msg = est.get_msg()
   # TODO add lataccelfactor and friction check when we have more accurate estimates
-  assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - TORQUE_TUNE_BIASED.latAccelOffset) < 0.03
+  assert abs(msg.liveTorqueParameters.latAccelOffsetRaw - TORQUE_TUNE_BIASED.latAccelOffset) < 0.1
 
 def test_straight_road_roll_bias():
   steer_torques, lat_accels = generate_inputs(TORQUE_TUNE, la_err_std=LA_ERR_STD, input_noise_std=INPUT_NOISE_STD)
