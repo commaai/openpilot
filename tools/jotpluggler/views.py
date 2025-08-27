@@ -202,13 +202,78 @@ class DataTreeView:
     self.visible_expanded_nodes: set[str] = set()
     self.created_leaf_paths: set[str] = set()
     self._all_paths_cache: list[str] = []
+    self._previous_paths_set: set[str] = set()
     self.data_manager.add_observer(self._on_data_loaded)
 
   def _on_data_loaded(self, data: dict):
-    if data.get('loading_complete'):
-      with self.ui_lock:
-        self._all_paths_cache = self.data_manager.get_all_paths()
-        self._populate_tree()
+    with self.ui_lock:
+      if data.get('segment_added'):
+        current_paths = set(self.data_manager.get_all_paths())
+        new_paths = current_paths - self._previous_paths_set
+        if new_paths:
+          self._all_paths_cache = list(current_paths)
+          if not self._previous_paths_set:
+            self._populate_tree()
+          else:
+            self._add_paths_to_tree(new_paths, incremental=True)
+          self._previous_paths_set = current_paths.copy()
+
+  def _populate_tree(self):
+    self._clear_ui()
+    search_term = self.current_search.strip().lower()
+    self.data_tree = self._add_paths_to_tree(self._all_paths_cache, incremental=False)
+    for child in sorted(self.data_tree.children.values(), key=self._natural_sort_key):
+      self.ui_render_queue.append((child, "data_tree_container", search_term, child.is_leaf))
+
+
+  def _add_paths_to_tree(self, paths, incremental=False):
+    search_term = self.current_search.strip().lower()
+    filtered_paths = [path for path in paths if self._should_show_path(path, search_term)]
+
+    if not filtered_paths:
+      return
+
+    nodes_to_update = set() if incremental else None
+    target_tree = self.data_tree if incremental else DataTreeNode(name="root")
+
+    for path in sorted(filtered_paths):
+      parts = path.split('/')
+      current_node = target_tree
+      current_path_prefix = ""
+
+      for i, part in enumerate(parts):
+        current_path_prefix = f"{current_path_prefix}/{part}" if current_path_prefix else part
+
+        if part not in current_node.children:
+          current_node.children[part] = DataTreeNode(name=part, full_path=current_path_prefix)
+          if incremental:
+            nodes_to_update.add(current_node)
+
+        current_node = current_node.children[part]
+        if incremental and i < len(parts) - 1:
+          nodes_to_update.add(current_node)
+
+      if not current_node.is_leaf:
+        current_node.is_leaf = True
+        if incremental:
+          nodes_to_update.add(current_node)
+
+    self._calculate_child_counts(target_tree)
+    if incremental:
+      self._queue_new_ui_items(filtered_paths, search_term)
+    return target_tree
+
+  def _queue_new_ui_items(self, new_paths, search_term):
+    for path in new_paths:
+      parts = path.split('/')
+      parent_path = '/'.join(parts[:-1]) if len(parts) > 1 else ""
+      if parent_path == "" or parent_path in self.visible_expanded_nodes:
+        parent_tag = "data_tree_container" if parent_path == "" else f"tree_{parent_path}"
+        if dpg.does_item_exist(parent_tag):
+          node = self.data_tree
+          for part in parts:
+            node = node.children[part]
+          self.ui_render_queue.append((node, parent_tag, search_term, True))
 
   def update_frame(self):
     items_processed = 0
@@ -223,39 +288,14 @@ class DataTreeView:
   def search_data(self, search_term: str):
     self.current_search = search_term
     self._all_paths_cache = self.data_manager.get_all_paths()
+    self._previous_paths_set = set(self._all_paths_cache)  # Reset tracking after search
     self._populate_tree()
-
-  def _populate_tree(self):
-    self._clear_ui()
-    search_term = self.current_search.strip().lower()
-    self.data_tree = self._build_tree_structure(search_term)
-    for child in sorted(self.data_tree.children.values(), key=self._natural_sort_key): # queue top level nodes
-      self.ui_render_queue.append((child, "data_tree_container", search_term, child.is_leaf))
 
   def _clear_ui(self):
     dpg.delete_item("data_tree_container", children_only=True)
     self.ui_render_queue.clear()
     self.visible_expanded_nodes.clear()
     self.created_leaf_paths.clear()
-
-  def _build_tree_structure(self, search_term: str) -> DataTreeNode:
-    root = DataTreeNode(name="root")
-    for path in sorted(self._all_paths_cache):
-      if not self._should_show_path(path, search_term):
-        continue
-
-      parts = path.split('/')
-      current_node = root
-      current_path_prefix = ""
-
-      for part in parts:
-        current_path_prefix = f"{current_path_prefix}/{part}" if current_path_prefix else part
-        if part not in current_node.children:
-          current_node.children[part] = DataTreeNode(name=part, full_path=current_path_prefix)
-        current_node = current_node.children[part]
-      current_node.is_leaf = True
-    self._calculate_child_counts(root)
-    return root
 
   def _calculate_child_counts(self, node: DataTreeNode):
     if node.is_leaf:
@@ -272,6 +312,8 @@ class DataTreeView:
       self._create_tree_node_ui(node, parent_tag, search_term)
 
   def _create_tree_node_ui(self, node: DataTreeNode, parent_tag: str, search_term: str):
+    if not dpg.does_item_exist(parent_tag):
+      return
     node_tag = f"tree_{node.full_path}"
     node.ui_tag = node_tag
 
@@ -290,6 +332,8 @@ class DataTreeView:
       self._queue_children(node, node_tag, search_term)
 
   def _create_leaf_ui(self, node: DataTreeNode, parent_tag: str):
+    if not dpg.does_item_exist(parent_tag):
+      return
     half_split_size = dpg.get_item_rect_size("data_pool_window")[0] // 2
     with dpg.group(parent=parent_tag, horizontal=True, xoffset=half_split_size, tag=f"group_{node.full_path}") as draggable_group:
       dpg.add_text(node.name)

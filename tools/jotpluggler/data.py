@@ -289,7 +289,7 @@ class DataManager:
       observers = self._observers.copy()
 
     for callback in observers:
-      callback({'segment_added': True, 'duration': self._duration})
+      callback({'segment_added': True, 'duration': self._duration, 'segment_count': len(self._segments)})
 
   def _finalize_loading(self):
     with self._lock:
