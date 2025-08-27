@@ -107,17 +107,15 @@ class InputQueues:
     self.q = {k: np.zeros(self.shapes[k], dtype=self.dtypes[k]) for k in self.dtypes.keys()}
 
   def enqueue(self, inputs:dict[str, np.ndarray]) -> None:
-    for key in inputs.keys():
-      if key not in self.q.keys():
-        raise ValueError(f'{key!r} is not a valid model input')
-      # inputs are always batch first
-      # infer t from the inputs and enqueue t inputs
-      input_shape = list(self.shapes[key])
+    for k in inputs.keys():
+      if inputs[k].dtype != self.dtypes[k]:
+        raise ValueError(f'supplied input <{k}({inputs[k].dtype})> has wrong dtype, expected {self.dtypes[k]}')
+      input_shape = list(self.shapes[k])
       input_shape[1] = -1
-      single_input = inputs[key].reshape(tuple(input_shape)).astype(self.dtypes[key])
-      t = single_input.shape[1]
-      self.q[key][:,:-t] = self.q[key][:,t:]
-      self.q[key][:,-t:] = single_input
+      single_input = inputs[k].reshape(tuple(input_shape))
+      sz = single_input.shape[1]
+      self.q[k][:,:-sz] = self.q[k][:,sz:]
+      self.q[k][:,-sz:] = single_input
 
   def get(self, *names) -> dict[str, np.ndarray]:
     if self.env_fps == self.model_fps:
@@ -209,7 +207,7 @@ class ModelState:
     self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
-    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :], 'desire_pulse': new_desire})
+    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'], 'desire_pulse': new_desire})
     for k in ['desire_pulse', 'features_buffer']:
       self.numpy_inputs[k][:] = self.full_input_queues.get(k)[k]
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
