@@ -18,7 +18,6 @@ class PlaybackManager:
     self.is_playing = False
     self.current_time_s = 0.0
     self.duration_s = 0.0
-    self.last_indices = {}
 
   def set_route_duration(self, duration: float):
     self.duration_s = duration
@@ -32,7 +31,6 @@ class PlaybackManager:
   def seek(self, time_s: float):
     self.is_playing = False
     self.current_time_s = max(0.0, min(time_s, self.duration_s))
-    self.last_indices.clear()
 
   def update_time(self, delta_t: float):
     if self.is_playing:
@@ -40,10 +38,6 @@ class PlaybackManager:
       if self.current_time_s >= self.duration_s:
         self.is_playing = False
     return self.current_time_s
-
-  def update_index(self, path: str, new_idx: int | None):
-    if new_idx is not None:
-      self.last_indices[path] = new_idx
 
 
 def calculate_avg_char_width(font):
@@ -70,7 +64,7 @@ class MainController:
     self._create_global_themes()
     self.data_tree_view = DataTreeView(self.data_manager, self.ui_lock)
     self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, scale=self.scale)
-    self.data_manager.add_callback(self.on_data_loaded)
+    self.data_manager.add_observer(self.on_data_loaded)
     self.avg_char_width = None
 
   def _create_global_themes(self):
@@ -86,11 +80,18 @@ class MainController:
         dpg.add_theme_color(dpg.mvPlotCol_Line, (255, 0, 0, 128), category=dpg.mvThemeCat_Plots)
 
   def on_data_loaded(self, data: dict):
-    self.playback_manager.set_route_duration(data['duration'])
-    num_msg_types = len(data['time_series_data'])
-    dpg.set_value("load_status", f"Loaded {num_msg_types} message types")
-    dpg.configure_item("load_button", enabled=True)
-    dpg.configure_item("timeline_slider", max_value=data['duration'])
+    duration = data.get('duration', 0.0)
+    self.playback_manager.set_route_duration(duration)
+
+    if data.get('loading_complete'):
+      num_paths = len(self.data_manager.get_all_paths())
+      dpg.set_value("load_status", f"Loaded {num_paths} data paths")
+      dpg.configure_item("load_button", enabled=True)
+    elif data.get('segment_added'):
+      segment_count = data.get('segment_count', 0)
+      dpg.set_value("load_status", f"Loading... {segment_count} segments processed")
+
+    dpg.configure_item("timeline_slider", max_value=duration)
 
   def setup_ui(self):
     with dpg.item_handler_registry(tag="tree_node_handler"):
@@ -179,11 +180,8 @@ class MainController:
       value_tag = f"value_{path}"
 
       if dpg.does_item_exist(value_tag) and dpg.is_item_visible(value_tag):
-        last_index = self.playback_manager.last_indices.get(path)
-        value, new_idx = self.data_manager.get_current_value(path, self.playback_manager.current_time_s, last_index)
-
+        value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
         if value is not None:
-          self.playback_manager.update_index(path, new_idx)
           formatted_value = format_and_truncate(value, value_column_width, self.avg_char_width)
           dpg.set_value(value_tag, formatted_value)
 

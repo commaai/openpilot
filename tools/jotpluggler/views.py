@@ -45,13 +45,13 @@ class TimeSeriesPanel(ViewPanel):
     self._ui_created = False
     self._preserved_series_data: list[tuple[str, tuple]] = []  # TODO: the way we do this right now doesn't make much sense
     self._series_legend_tags: dict[str, str] = {}  # Maps series_path to legend tag
-    self.data_manager.add_callback(self.on_data_loaded)
+    self.data_manager.add_observer(self.on_data_loaded)
 
   def preserve_data(self):
     self._preserved_series_data = []
     if self.plotted_series and self._ui_created:
       for series_path in self.plotted_series:
-        time_value_data = self.data_manager.get_time_series(series_path)
+        time_value_data = self.data_manager.get_timeseries(series_path)
         if time_value_data:
           self._preserved_series_data.append((series_path, time_value_data))
 
@@ -86,12 +86,9 @@ class TimeSeriesPanel(ViewPanel):
 
     if self.plotted_series:  # update legend labels with current values
       for series_path in self.plotted_series:
-        last_index = self.playback_manager.last_indices.get(series_path)
-        value, new_idx = self.data_manager.get_current_value(series_path, current_time_s, last_index)
+        value = self.data_manager.get_value_at(series_path, current_time_s)
 
         if value is not None:
-          self.playback_manager.update_index(series_path, new_idx)
-
           if isinstance(value, (int, float)):
             if isinstance(value, float):
               formatted_value = f"{value:.4f}" if abs(value) < 1000 else f"{value:.3e}"
@@ -100,7 +97,6 @@ class TimeSeriesPanel(ViewPanel):
           else:
             formatted_value = str(value)
 
-          # Update the series label to include current value
           series_tag = f"series_{self.panel_id}_{series_path.replace('/', '_')}"
           legend_label = f"{series_path}: {formatted_value}"
 
@@ -125,7 +121,6 @@ class TimeSeriesPanel(ViewPanel):
     if self.plot_tag and dpg.does_item_exist(self.plot_tag):
       dpg.delete_item(self.plot_tag)
 
-    # self.data_manager.remove_callback(self.on_data_loaded)
     self._series_legend_tags.clear()
     self._ui_created = False
 
@@ -136,7 +131,7 @@ class TimeSeriesPanel(ViewPanel):
     if series_path in self.plotted_series:
       return False
 
-    time_value_data = self.data_manager.get_time_series(series_path)
+    time_value_data = self.data_manager.get_timeseries(series_path)
     if time_value_data is None:
       return False
 
@@ -153,7 +148,7 @@ class TimeSeriesPanel(ViewPanel):
       if dpg.does_item_exist(series_tag):
         dpg.delete_item(series_tag)
       self.plotted_series.remove(series_path)
-      if series_path in self._series_legend_tags:  # Clean up legend tag mapping
+      if series_path in self._series_legend_tags:
         del self._series_legend_tags[series_path]
 
   def on_data_loaded(self, data: dict):
@@ -161,7 +156,7 @@ class TimeSeriesPanel(ViewPanel):
       self._update_series_data(series_path)
 
   def _update_series_data(self, series_path: str) -> bool:
-    time_value_data = self.data_manager.get_time_series(series_path)
+    time_value_data = self.data_manager.get_timeseries(series_path)
     if time_value_data is None:
       return False
 
@@ -196,7 +191,7 @@ class DataTreeView:
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
     self.active_leaf_nodes: list[DataTreeNode] = []
-    self.data_manager.add_callback(self.on_data_loaded)
+    self.data_manager.add_observer(self.on_data_loaded)
 
   def on_data_loaded(self, data: dict):
     with self.ui_lock:
@@ -246,7 +241,7 @@ class DataTreeView:
 
     for child in sorted_children:
       if child.is_leaf:
-        is_plottable = self.data_manager.is_path_plottable(child.full_path)
+        is_plottable = self.data_manager.is_plottable(child.full_path)
 
         # Create draggable item
         with dpg.group(parent=parent_tag) as draggable_group:
@@ -265,10 +260,6 @@ class DataTreeView:
       else:
         node_tag = f"tree_{child.full_path}"
         label = child.name
-
-        if '/' not in child.full_path:
-          sample_count = len(self.data_manager.time_series_data.get(child.full_path, {}).get('t', []))
-          label = f"{child.name} ({sample_count} samples)"
 
         should_open = bool(search_term) and len(search_term) > 1 and any(search_term in path for path in self._get_all_descendant_paths(child))
 
