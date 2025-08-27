@@ -120,23 +120,21 @@ class InputQueues:
       self.q[key][:,-t:] = single_input
 
   def get(self, *names) -> dict[str, np.ndarray]:
-    queues = {k: self.q[k] for k in names if k in self.q}
     if self.env_fps == self.model_fps:
-      return queues
+      return {k: self.q[k] for k in names}
     else:
       out = {}
-      for k in queues:
-        queue = queues[k]
-        shape = list(queue.shape)
+      for k in names:
+        shape = self.shapes[k]
         if 'img' in k:
           n_channels = shape[1] // (self.env_fps // self.model_fps + (self.n_frames_input - 1))
-          out[k] = np.concatenate([queue[:, s:s+n_channels] for s in np.linspace(0, shape[1] - n_channels, self.n_frames_input, dtype=int)], axis=1)
+          out[k] = np.concatenate([self.q[k][:, s:s+n_channels] for s in np.linspace(0, shape[1] - n_channels, self.n_frames_input, dtype=int)], axis=1)
         elif 'pulse' in k:
           # any pulse within interval counts
-          out[k] = queue.reshape((shape[0], shape[1] * self.model_fps // self.env_fps, self.env_fps // self.model_fps, -1)).max(axis=2)
+          out[k] = self.q[k].reshape((shape[0], shape[1] * self.model_fps // self.env_fps, self.env_fps // self.model_fps, -1)).max(axis=2)
         else:
           idxs = np.arange(-1, -shape[1], -self.env_fps // self.model_fps)[::-1]
-          out[k] = queue[:, idxs]
+          out[k] = self.q[k][:, idxs]
       return out
 
 class ModelState:
