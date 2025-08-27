@@ -10,7 +10,6 @@
 #include "media/cam_sensor.h"
 
 #include "cereal/gen/cpp/log.capnp.h"
-#include "system/camerad/sensors/ar0231_registers.h"
 #include "system/camerad/sensors/ox03c10_registers.h"
 #include "system/camerad/sensors/os04c10_registers.h"
 
@@ -86,17 +85,6 @@ public:
   const int num() const {
     return static_cast<int>(image_sensor);
   };
-};
-
-class AR0231 : public SensorInfo {
-public:
-  AR0231();
-  std::vector<i2c_random_wr_payload> getExposureRegisters(int exposure_time, int new_exp_g, bool dc_gain_enabled) const override;
-  float getExposureScore(float desired_ev, int exp_t, int exp_g_idx, float exp_gain, int gain_idx) const override;
-  int getSlaveAddress(int port) const override;
-
-private:
-  mutable std::map<uint16_t, std::pair<int, int>> ar0231_register_lut;
 };
 
 class OX03C10 : public SensorInfo {
