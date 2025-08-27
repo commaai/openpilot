@@ -107,7 +107,7 @@ def decoder(addr, vipc_server, vst, nvidia, W, H, debug=False):
 
 
 class CompressedVipc:
-  def __init__(self, addr, vision_streams, nvidia=False, debug=False):
+  def __init__(self, addr, vision_streams, server_name, nvidia=False, debug=False):
     print("getting frame sizes")
     os.environ["ZMQ"] = "1"
     messaging.reset_context()
@@ -117,7 +117,7 @@ class CompressedVipc:
     os.environ.pop("ZMQ")
     messaging.reset_context()
 
-    self.vipc_server = VisionIpcServer("camerad")
+    self.vipc_server = VisionIpcServer(server_name)
     for vst in vision_streams:
       ed = sm[ENCODE_SOCKETS[vst]]
       self.vipc_server.create_buffers(vst, 4, ed.width, ed.height)
@@ -144,6 +144,7 @@ if __name__ == "__main__":
   parser.add_argument("addr", help="Address of comma three")
   parser.add_argument("--nvidia", action="store_true", help="Use nvidia instead of ffmpeg")
   parser.add_argument("--cams", default="0,1,2", help="Cameras to decode")
+  parser.add_argument("--server", default="camerad", help="choose vipc server name")
   parser.add_argument("--silent", action="store_true", help="Suppress debug output")
   args = parser.parse_args()
 
@@ -154,7 +155,7 @@ if __name__ == "__main__":
   ]
 
   vsts = [vision_streams[int(x)] for x in args.cams.split(",")]
-  cvipc = CompressedVipc(args.addr, vsts, args.nvidia, debug=(not args.silent))
+  cvipc = CompressedVipc(args.addr, vsts, args.server, args.nvidia, debug=(not args.silent))
 
   # register exit handler
   signal.signal(signal.SIGINT, lambda sig, frame: cvipc.kill())

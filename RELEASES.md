@@ -1,6 +1,7 @@
 Version 0.10.1 (2025-09-08)
 ========================
 * Record driving feedback using LKAS button
+* Honda City 2023 support thanks to drFritz!
 
 Version 0.10.0 (2025-08-05)
 ========================
