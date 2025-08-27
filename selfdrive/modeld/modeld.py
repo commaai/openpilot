@@ -131,7 +131,7 @@ class InputQueues:
         if 'img' in k:
           n_channels = shape[1] // (self.env_fps // self.model_fps + (self.n_frames_input - 1))
           out[k] = np.concatenate([queue[:, i*n_channels:(i+1)*n_channels] for i in np.linspace(0, shape[1]//n_channels - 1, self.n_frames_input, dtype=int)], axis=1)
-        elif 'desire' in k:
+        elif 'pulse' in k:
           # any pulse within interval counts
           out[k] = queue.reshape((shape[0], shape[1] * self.model_fps // self.env_fps, self.env_fps // self.model_fps, -1)).max(axis=2)
         else:
@@ -165,7 +165,7 @@ class ModelState:
     # policy inputs
     self.numpy_inputs = {k: np.zeros(self.policy_input_shapes[k], dtype=np.float32) for k in self.policy_input_shapes}
     self.full_input_queues = InputQueues(ModelConstants.MODEL_CONTEXT_FREQ, ModelConstants.MODEL_RUN_FREQ, ModelConstants.N_FRAMES)
-    for k in ['desire', 'features_buffer']:
+    for k in ['desire_pulse', 'features_buffer']:
       self.full_input_queues.update_dtypes_and_shapes({k: self.numpy_inputs[k].dtype}, {k: self.numpy_inputs[k].shape})
     self.full_input_queues.reset()
 
@@ -189,9 +189,9 @@ class ModelState:
   def run(self, bufs: dict[str, VisionBuf], transforms: dict[str, np.ndarray],
                 inputs: dict[str, np.ndarray], prepare_only: bool) -> dict[str, np.ndarray] | None:
     # Model decides when action is completed, so desire input is just a pulse triggered on rising edge
-    inputs['desire'][0] = 0
-    new_desire = np.where(inputs['desire'] - self.prev_desire > .99, inputs['desire'], 0)
-    self.prev_desire[:] = inputs['desire']
+    inputs['desire_pulse'][0] = 0
+    new_desire = np.where(inputs['desire_pulse'] - self.prev_desire > .99, inputs['desire_pulse'], 0)
+    self.prev_desire[:] = inputs['desire_pulse']
 
     imgs_cl = {name: self.frames[name].prepare(bufs[name], transforms[name].flatten()) for name in self.vision_input_names}
 
@@ -211,10 +211,10 @@ class ModelState:
     self.vision_output = self.vision_run(**self.vision_inputs).contiguous().realize().uop.base.buffer.numpy()
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
-    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :], 'desire': new_desire})
-    inputs_from_queues = self.full_input_queues.get('desire', 'features_buffer')
+    self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :], 'desire_pulse': new_desire})
+    inputs_from_queues = self.full_input_queues.get('desire_pulse', 'features_buffer')
     self.numpy_inputs['features_buffer'][:] = inputs_from_queues['features_buffer']
-    self.numpy_inputs['desire'][:] = inputs_from_queues['desire']
+    self.numpy_inputs['desire_pulse'][:] = inputs_from_queues['desire_pulse']
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
 
     self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
@@ -368,7 +368,7 @@ def main(demo=False):
     bufs = {name: buf_extra if 'big' in name else buf_main for name in model.vision_input_names}
     transforms = {name: model_transform_extra if 'big' in name else model_transform_main for name in model.vision_input_names}
     inputs:dict[str, np.ndarray] = {
-      'desire': vec_desire,
+      'desire_pulse': vec_desire,
       'traffic_convention': traffic_convention,
     }
 
