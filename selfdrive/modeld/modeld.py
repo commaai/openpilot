@@ -212,9 +212,8 @@ class ModelState:
     vision_outputs_dict = self.parser.parse_vision_outputs(self.slice_outputs(self.vision_output, self.vision_output_slices))
 
     self.full_input_queues.enqueue({'features_buffer': vision_outputs_dict['hidden_state'][0, :], 'desire_pulse': new_desire})
-    inputs_from_queues = self.full_input_queues.get('desire_pulse', 'features_buffer')
-    self.numpy_inputs['features_buffer'][:] = inputs_from_queues['features_buffer']
-    self.numpy_inputs['desire_pulse'][:] = inputs_from_queues['desire_pulse']
+    for k in ['desire_pulse', 'features_buffer']:
+      self.numpy_inputs[k][:] = self.full_input_queues.get(k)[k]
     self.numpy_inputs['traffic_convention'][:] = inputs['traffic_convention']
 
     self.policy_output = self.policy_run(**self.policy_inputs).contiguous().realize().uop.base.buffer.numpy()
