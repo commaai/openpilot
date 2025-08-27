@@ -245,7 +245,7 @@ node {
         ])
       },
       'sensord': {
-        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
+        deviceStage("LSM + MMC", "tizi-lsmc", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test sensord", "pytest system/sensord/tests/test_sensord.py"),
         ])
