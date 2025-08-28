@@ -185,7 +185,7 @@ class DataTreeNode:
     self.children: dict[str, DataTreeNode] = {}
     self.is_leaf = False
     self.child_count = 0
-    self.is_plottable_cached = None
+    self.is_plottable_cached: bool | None = None
     self.ui_created = False
     self.ui_tag: str | None = None
 
@@ -229,12 +229,12 @@ class DataTreeView:
   def _add_paths_to_tree(self, paths, incremental=False):
     search_term = self.current_search.strip().lower()
     filtered_paths = [path for path in paths if self._should_show_path(path, search_term)]
+    target_tree = self.data_tree if incremental else DataTreeNode(name="root")
 
     if not filtered_paths:
-      return
+      return target_tree
 
     nodes_to_update = set() if incremental else None
-    target_tree = self.data_tree if incremental else DataTreeNode(name="root")
 
     for path in sorted(filtered_paths):
       parts = path.split('/')
@@ -339,13 +339,12 @@ class DataTreeView:
       dpg.add_text(node.name)
       dpg.add_text("N/A", tag=f"value_{node.full_path}")
 
-    if node.is_plottable_cached is None:
-      node.is_plottable_cached = self.data_manager.is_plottable(node.full_path)
+      if node.is_plottable_cached is None:
+        node.is_plottable_cached = self.data_manager.is_plottable(node.full_path)
 
-    if node.is_plottable_cached:
-      with dpg.drag_payload(parent=draggable_group, drag_data=node.full_path,
-                            payload_type="TIMESERIES_PAYLOAD"):
-        dpg.add_text(f"Plot: {node.full_path}")
+      if node.is_plottable_cached:
+        with dpg.drag_payload(parent=draggable_group, drag_data=node.full_path, payload_type="TIMESERIES_PAYLOAD"):
+          dpg.add_text(f"Plot: {node.full_path}")
 
     node.ui_created = True
     node.ui_tag = f"value_{node.full_path}"
@@ -371,7 +370,7 @@ class DataTreeView:
       self._remove_children_from_queue(node.full_path)
 
   def _remove_children_from_queue(self, collapsed_node_path: str):
-    new_queue = deque()
+    new_queue: deque[tuple] = deque()
     for node, parent_tag, search_term, is_leaf in self.ui_render_queue:
       # Keep items that are not children of the collapsed node
       if not node.full_path.startswith(collapsed_node_path + "/"):

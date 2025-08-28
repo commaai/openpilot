@@ -3,7 +3,6 @@ import threading
 import multiprocessing
 import bisect
 from collections import defaultdict
-from typing import Any
 import tqdm
 from openpilot.common.swaglog import cloudlog
 from openpilot.tools.lib.logreader import _LogFileReader, LogReader
@@ -11,7 +10,7 @@ from openpilot.tools.lib.logreader import _LogFileReader, LogReader
 
 def flatten_dict(d: dict, sep: str = "/", prefix: str = None) -> dict:
   result = {}
-  stack = [(d, prefix)]
+  stack: list[tuple] = [(d, prefix)]
 
   while stack:
     obj, current_prefix = stack.pop()
@@ -164,7 +163,7 @@ def msgs_to_time_series(msgs):
   return final_result, min_time or 0.0, max_time or 0.0
 
 
-def _process_segment(segment_identifier: str) -> tuple[dict[str, Any], float, float]:
+def _process_segment(segment_identifier: str):
   try:
     lr = _LogFileReader(segment_identifier, sort_by_time=True)
     return msgs_to_time_series(lr)

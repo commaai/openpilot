@@ -66,7 +66,7 @@ class MainController:
     self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
     self.avg_char_width = None
-    self.visible_paths = set()
+    self.visible_paths: set[str] = set()
     self.check_index = 0
 
   def _create_global_themes(self):
