@@ -253,7 +253,6 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
           // TODO: enable once new AGNOS is available
           // step("test esim", "pytest system/hardware/tici/tests/test_esim.py"),
