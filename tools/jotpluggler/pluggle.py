@@ -5,6 +5,7 @@ import pyautogui
 import subprocess
 import dearpygui.dearpygui as dpg
 import threading
+import numpy as np
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.views import DataTreeView
@@ -48,7 +49,7 @@ def calculate_avg_char_width(font):
 
 
 def format_and_truncate(value, available_width: float, avg_char_width: float) -> str:
-  s = str(value)
+  s = f"{value:.5f}" if np.issubdtype(type(value), np.floating) else str(value)
   max_chars = int(available_width / avg_char_width) - 3
   if len(s) > max_chars:
     return s[: max(0, max_chars)] + "..."

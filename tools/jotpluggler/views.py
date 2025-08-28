@@ -75,8 +75,8 @@ class TimeSeriesPanel(ViewPanel):
         value = value_array[position]
 
       if value is not None:
-        if isinstance(value, float):
-          formatted_value = f"{value:.4f}" if abs(value) < 1000 else f"{value:.3e}"
+        if np.issubdtype(type(value), np.floating):
+          formatted_value = f"{value:.5f}"
         else:
           formatted_value = str(value)
 
@@ -228,7 +228,7 @@ class DataTreeView:
 
   def update_frame(self):
     items_processed = 0
-    while self.ui_render_queue and items_processed < self.MAX_ITEMS_PER_FRAME: # process up to MAX_ITEMS_PER_FRAME to maintain perforamnce
+    while self.ui_render_queue and items_processed < self.MAX_ITEMS_PER_FRAME: # process up to MAX_ITEMS_PER_FRAME to maintain performance
       node, parent_tag, search_term, is_leaf = self.ui_render_queue.popleft()
       if is_leaf:
         self._create_leaf_ui(node, parent_tag)

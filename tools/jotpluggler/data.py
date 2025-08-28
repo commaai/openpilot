@@ -266,7 +266,7 @@ class DataManager:
           pbar.update(1)
           if segment_result:
             self._add_segment(segment_result, start_time, end_time)
-    except Exception as e:
+    except Exception:
       cloudlog.exception(f"Error loading route {route}:")
     finally:
       self._finalize_loading()
