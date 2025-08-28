@@ -166,7 +166,7 @@ class MainController:
 
       self._update_timeline_indicators(new_time)
 
-      if not self.data_manager.loading and self.avg_char_width:
+      if self.avg_char_width:
         self._update_visible_set()
         self._update_data_values()
 

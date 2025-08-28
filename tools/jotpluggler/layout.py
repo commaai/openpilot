@@ -18,10 +18,6 @@ class LayoutNode(ABC):
   def destroy_ui(self):
     pass
 
-  @abstractmethod
-  def preserve_data(self):
-    pass
-
 
 class LeafNode(LayoutNode):
   """Leaf node that contains a single ViewPanel with controls"""
@@ -31,9 +27,6 @@ class LeafNode(LayoutNode):
     self.panel = panel
     self.layout_manager = layout_manager
     self.scale = scale
-
-  def preserve_data(self):
-    self.panel.preserve_data()
 
   def create_ui(self, parent_tag: str, width: int = -1, height: int = -1):
     """Create UI container with controls and panel"""
@@ -94,10 +87,6 @@ class SplitterNode(LayoutNode):
     self.orientation = orientation
     self.child_proportions = [1.0 / len(self.children) for _ in self.children] if self.children else []
     self.child_container_tags: list[str] = []  # Track container tags for resizing
-
-  def preserve_data(self):
-    for child in self.children:
-      child.preserve_data()
 
   def add_child(self, child: LayoutNode, index: int = None):
     if index is None:
@@ -219,14 +208,12 @@ class PlotLayoutManager:
     parent_node, child_index = self._find_parent_and_index(node)
 
     if parent_node is None:  # root node - create new splitter as root
-      node.preserve_data()
       self.root_node = SplitterNode([node, new_leaf], orientation)
       self._update_ui_for_node(self.root_node, self.container_tag)
     elif isinstance(parent_node, SplitterNode) and parent_node.orientation == orientation:  # same orientation - add to existing splitter
       parent_node.add_child(new_leaf, child_index + 1)
       self._update_ui_for_node(parent_node)
     else:  # different orientation - replace node with new splitter
-      node.preserve_data()
       new_splitter = SplitterNode([node, new_leaf], orientation)
       self._replace_child_in_parent(parent_node, node, new_splitter)
 
@@ -244,7 +231,6 @@ class PlotLayoutManager:
         grandparent_node, parent_index = self._find_parent_and_index(parent_node)
 
         if grandparent_node is None:  # promote remaining child to root
-          remaining_child.preserve_data()
           parent_node.children.remove(remaining_child)
           self.root_node = remaining_child
           parent_node.destroy_ui()
@@ -255,8 +241,6 @@ class PlotLayoutManager:
         self._update_ui_for_node(parent_node)
 
   def _replace_child_in_parent(self, parent_node: SplitterNode, old_child: LayoutNode, new_child: LayoutNode):
-    old_child.preserve_data()  # save data and for when recreating ui for the node
-
     child_index = parent_node.children.index(old_child)
     child_container_tag = f"child_container_{parent_node.node_id}_{child_index}"
 
@@ -272,8 +256,6 @@ class PlotLayoutManager:
       new_child.create_ui(child_container_tag, container_width, container_height)
 
   def _update_ui_for_node(self, node: LayoutNode, container_tag: str = None):
-    node.preserve_data()
-
     if container_tag:  #  update node in a specific container (usually root)
       dpg.delete_item(container_tag, children_only=True)
       container_width, container_height = dpg.get_item_rect_size(container_tag)

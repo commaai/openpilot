@@ -200,7 +200,7 @@ class DataManager:
           values.append(segment[msg_type][field])
 
       if not times:
-        return None
+        return [], []
 
       combined_times = np.concatenate(times) - self._start_time
       if len(values) > 1 and any(arr.dtype != values[0].dtype for arr in values):

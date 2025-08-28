@@ -2,6 +2,7 @@ import os
 import re
 import uuid
 import threading
+import numpy as np
 from collections import deque
 import dearpygui.dearpygui as dpg
 from abc import ABC, abstractmethod
@@ -27,10 +28,6 @@ class ViewPanel(ABC):
   def get_panel_type(self) -> str:
     pass
 
-  @abstractmethod
-  def preserve_data(self):
-    pass
-
 
 class TimeSeriesPanel(ViewPanel):
   def __init__(self, data_manager: DataManager, playback_manager, panel_id: str | None = None):
@@ -38,23 +35,13 @@ class TimeSeriesPanel(ViewPanel):
     self.data_manager = data_manager
     self.playback_manager = playback_manager
     self.title = "Time Series Plot"
-    self.plotted_series: set[str] = set()
     self.plot_tag: str | None = None
     self.x_axis_tag: str | None = None
     self.y_axis_tag: str | None = None
     self.timeline_indicator_tag: str | None = None
     self._ui_created = False
-    self._preserved_series_data: list[tuple[str, tuple]] = []  # TODO: the way we do this right now doesn't make much sense
-    self._series_legend_tags: dict[str, str] = {}  # Maps series_path to legend tag
+    self._series_data: dict[str, tuple] = {}
     self.data_manager.add_observer(self.on_data_loaded)
-
-  def preserve_data(self):
-    self._preserved_series_data = []
-    if self.plotted_series and self._ui_created:
-      for series_path in self.plotted_series:
-        time_value_data = self.data_manager.get_timeseries(series_path)
-        if time_value_data:
-          self._preserved_series_data.append((series_path, time_value_data))
 
   def create_ui(self, parent_tag: str):
     self.plot_tag = f"plot_{self.panel_id}"
@@ -64,18 +51,13 @@ class TimeSeriesPanel(ViewPanel):
 
     with dpg.plot(height=-1, width=-1, tag=self.plot_tag, parent=parent_tag, drop_callback=self._on_series_drop, payload_type="TIMESERIES_PAYLOAD"):
       dpg.add_plot_legend()
-      dpg.add_plot_axis(dpg.mvXAxis, label="", tag=self.x_axis_tag)
-      dpg.add_plot_axis(dpg.mvYAxis, label="", tag=self.y_axis_tag)
-
+      dpg.add_plot_axis(dpg.mvXAxis, no_label=True, tag=self.x_axis_tag)
+      dpg.add_plot_axis(dpg.mvYAxis, no_label=True, tag=self.y_axis_tag)
       timeline_series_tag = dpg.add_inf_line_series(x=[0], label="Timeline", parent=self.y_axis_tag, tag=self.timeline_indicator_tag)
       dpg.bind_item_theme(timeline_series_tag, "global_timeline_theme")
 
-    # Restore series from preserved data
-    if self._preserved_series_data:
-      self.plotted_series.clear()
-      for series_path, (rel_time_array, value_array) in self._preserved_series_data:
-        self._add_series_with_data(series_path, rel_time_array, value_array)
-      self._preserved_series_data = []
+    for series_path in list(self._series_data.keys()):
+      self.add_series(series_path)
 
     self._ui_created = True
 
@@ -83,99 +65,68 @@ class TimeSeriesPanel(ViewPanel):
     if not self._ui_created or not dpg.does_item_exist(self.timeline_indicator_tag):
       return
 
-    dpg.set_value(self.timeline_indicator_tag, [[current_time_s], [0]])  # vertical line position
+    dpg.set_value(self.timeline_indicator_tag, [[current_time_s], [0]])
 
-    if self.plotted_series:  # update legend labels with current values
-      for series_path in self.plotted_series:
-        value = self.data_manager.get_value_at(series_path, current_time_s)
+    for series_path, (rel_time_array, value_array) in self._series_data.items():
+      position = np.searchsorted(rel_time_array, current_time_s, side='right') - 1
+      value = None
 
-        if value is not None:
-          if isinstance(value, (int, float)):
-            if isinstance(value, float):
-              formatted_value = f"{value:.4f}" if abs(value) < 1000 else f"{value:.3e}"
-            else:
-              formatted_value = str(value)
-          else:
-            formatted_value = str(value)
+      if position >= 0 and (current_time_s - rel_time_array[position]) <= 1.0:
+        value = value_array[position]
 
-          series_tag = f"series_{self.panel_id}_{series_path.replace('/', '_')}"
-          legend_label = f"{series_path}: {formatted_value}"
+      if value is not None:
+        if isinstance(value, float):
+          formatted_value = f"{value:.4f}" if abs(value) < 1000 else f"{value:.3e}"
+        else:
+          formatted_value = str(value)
 
-          if dpg.does_item_exist(series_tag):
-            dpg.configure_item(series_tag, label=legend_label)
+        series_tag = f"series_{self.panel_id}_{series_path}"
+        legend_label = f"{series_path}: {formatted_value}"
 
-  def _add_series_with_data(self, series_path: str, rel_time_array, value_array) -> bool:
-    if series_path in self.plotted_series:
-      return False
+        if dpg.does_item_exist(series_tag):
+          dpg.configure_item(series_tag, label=legend_label)
 
-    series_tag = f"series_{self.panel_id}_{series_path.replace('/', '_')}"
-    line_series_tag = dpg.add_line_series(x=rel_time_array.tolist(), y=value_array.tolist(), label=series_path, parent=self.y_axis_tag, tag=series_tag)
+  def add_series(self, series_path: str, update: bool = False) -> bool:
+    if update or series_path not in self._series_data:
+      self._series_data[series_path] = self.data_manager.get_timeseries(series_path)
 
-    dpg.bind_item_theme(line_series_tag, "global_line_theme")
+    rel_time_array, value_array = self._series_data[series_path]
+    series_tag = f"series_{self.panel_id}_{series_path}"
 
-    self.plotted_series.add(series_path)
-    dpg.fit_axis_data(self.x_axis_tag)
-    dpg.fit_axis_data(self.y_axis_tag)
+    if dpg.does_item_exist(series_tag):
+      dpg.set_value(series_tag, [rel_time_array, value_array])
+    else:
+      line_series_tag = dpg.add_line_series(x=rel_time_array, y=value_array, label=series_path, parent=self.y_axis_tag, tag=series_tag)
+      dpg.bind_item_theme(line_series_tag, "global_line_theme")
+      dpg.fit_axis_data(self.x_axis_tag)
+      dpg.fit_axis_data(self.y_axis_tag)
     return True
 
   def destroy_ui(self):
     if self.plot_tag and dpg.does_item_exist(self.plot_tag):
       dpg.delete_item(self.plot_tag)
-
-    self._series_legend_tags.clear()
     self._ui_created = False
 
   def get_panel_type(self) -> str:
     return "timeseries"
 
-  def add_series(self, series_path: str) -> bool:
-    if series_path in self.plotted_series:
-      return False
-
-    time_value_data = self.data_manager.get_timeseries(series_path)
-    if time_value_data is None:
-      return False
-
-    rel_time_array, value_array = time_value_data
-    return self._add_series_with_data(series_path, rel_time_array, value_array)
-
   def clear_all_series(self):
-    for series_path in self.plotted_series.copy():
+    for series_path in list(self._series_data.keys()):
       self.remove_series(series_path)
 
   def remove_series(self, series_path: str):
-    if series_path in self.plotted_series:
-      series_tag = f"series_{self.panel_id}_{series_path.replace('/', '_')}"
+    if series_path in self._series_data:
+      series_tag = f"series_{self.panel_id}_{series_path}"
       if dpg.does_item_exist(series_tag):
         dpg.delete_item(series_tag)
-      self.plotted_series.remove(series_path)
-      if series_path in self._series_legend_tags:
-        del self._series_legend_tags[series_path]
+      del self._series_data[series_path]
 
   def on_data_loaded(self, data: dict):
-    for series_path in self.plotted_series.copy():
-      self._update_series_data(series_path)
-
-  def _update_series_data(self, series_path: str) -> bool:
-    time_value_data = self.data_manager.get_timeseries(series_path)
-    if time_value_data is None:
-      return False
-
-    rel_time_array, value_array = time_value_data
-    series_tag = f"series_{self.panel_id}_{series_path.replace('/', '_')}"
-
-    if dpg.does_item_exist(series_tag):
-      dpg.set_value(series_tag, [rel_time_array.tolist(), value_array.tolist()])
-      dpg.fit_axis_data(self.x_axis_tag)
-      dpg.fit_axis_data(self.y_axis_tag)
-      return True
-    else:
-      self.plotted_series.discard(series_path)
-      return False
+    for series_path in list(self._series_data.keys()):
+      self.add_series(series_path, update=True)
 
   def _on_series_drop(self, sender, app_data, user_data):
-    series_path = app_data
-    self.add_series(series_path)
+    self.add_series(app_data)
 
 
 class DataTreeNode:
