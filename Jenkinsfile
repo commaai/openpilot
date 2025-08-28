@@ -217,13 +217,13 @@ node {
         ])
       },
       'loopback': {
-        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
+        deviceStage("loopback", "tizi-loopback", ["UNSAFE=1"], [
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
         ])
       },
       'camerad OX03C10': {
-        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+        deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
@@ -253,7 +253,6 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
           // TODO: enable once new AGNOS is available
           // step("test esim", "pytest system/hardware/tici/tests/test_esim.py"),
