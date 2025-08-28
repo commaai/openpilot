@@ -223,7 +223,7 @@ node {
         ])
       },
       'camerad OX03C10': {
-        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+        deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
