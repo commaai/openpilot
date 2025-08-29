@@ -28,6 +28,9 @@ class ViewPanel(ABC):
   def get_panel_type(self) -> str:
     pass
 
+  def update(self):
+    pass
+
 
 class TimeSeriesPanel(ViewPanel):
   def __init__(self, data_manager: DataManager, playback_manager, panel_id: str | None = None):
@@ -60,6 +63,10 @@ class TimeSeriesPanel(ViewPanel):
       self.add_series(series_path)
 
     self._ui_created = True
+
+  def update(self):
+    if self._ui_created:
+      self.update_timeline_indicator(self.playback_manager.current_time_s)
 
   def update_timeline_indicator(self, current_time_s: float):
     if not self._ui_created or not dpg.does_item_exist(self.timeline_indicator_tag):
@@ -149,7 +156,7 @@ class DataTreeView:
     self.ui_lock = ui_lock
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
-    self.ui_render_queue: deque[tuple[DataTreeNode, str, str, bool]] = deque() # (node, parent_tag, search_term, is_leaf)
+    self.ui_render_queue: deque[tuple[DataTreeNode, str, str, bool]] = deque()  # (node, parent_tag, search_term, is_leaf)
     self.visible_expanded_nodes: set[str] = set()
     self.created_leaf_paths: set[str] = set()
     self._all_paths_cache: list[str] = []
@@ -175,7 +182,6 @@ class DataTreeView:
     self.data_tree = self._add_paths_to_tree(self._all_paths_cache, incremental=False)
     for child in sorted(self.data_tree.children.values(), key=self._natural_sort_key):
       self.ui_render_queue.append((child, "data_tree_container", search_term, child.is_leaf))
-
 
   def _add_paths_to_tree(self, paths, incremental=False):
     search_term = self.current_search.strip().lower()
@@ -228,7 +234,7 @@ class DataTreeView:
 
   def update_frame(self):
     items_processed = 0
-    while self.ui_render_queue and items_processed < self.MAX_ITEMS_PER_FRAME: # process up to MAX_ITEMS_PER_FRAME to maintain performance
+    while self.ui_render_queue and items_processed < self.MAX_ITEMS_PER_FRAME:  # process up to MAX_ITEMS_PER_FRAME to maintain performance
       node, parent_tag, search_term, is_leaf = self.ui_render_queue.popleft()
       if is_leaf:
         self._create_leaf_ui(node, parent_tag)
@@ -269,7 +275,7 @@ class DataTreeView:
     node.ui_tag = node_tag
 
     label = f"{node.name} ({node.child_count} fields)"
-    should_open = (bool(search_term) and len(search_term) > 1 and any(search_term in path for path in self._get_descendant_paths(node)))
+    should_open = bool(search_term) and len(search_term) > 1 and any(search_term in path for path in self._get_descendant_paths(node))
 
     with dpg.tree_node(label=label, parent=parent_tag, tag=node_tag, default_open=should_open, open_on_arrow=True, open_on_double_click=True) as tree_node:
       with dpg.item_handler_registry() as handler:

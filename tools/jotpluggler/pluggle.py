@@ -9,7 +9,7 @@ import numpy as np
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.views import DataTreeView
-from openpilot.tools.jotpluggler.layout import PlotLayoutManager, SplitterNode, LeafNode
+from openpilot.tools.jotpluggler.layout import PlotLayoutManager
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
@@ -173,12 +173,12 @@ class MainController:
 
       dpg.set_value("fps_counter", f"{dpg.get_frame_rate():.1f} FPS")
 
-  def _update_visible_set(self): # for some reason, dpg has no way to easily check for visibility, and checking is slow...
+  def _update_visible_set(self):  # for some reason, dpg has no way to easily check for visibility, and checking is slow...
     all_paths = list(self.data_tree_view.created_leaf_paths)
     if not all_paths:
       self.visible_paths.clear()
       return
-    chunk_size = min(50, len(all_paths)) # check up to 50 paths per frame
+    chunk_size = min(50, len(all_paths))  # check up to 50 paths per frame
     end_index = min(self.check_index + chunk_size, len(all_paths))
     for i in range(self.check_index, end_index):
       path = all_paths[i]
@@ -192,7 +192,7 @@ class MainController:
   def _update_data_values(self):
     value_column_width = dpg.get_item_rect_size("data_pool_window")[0] // 2
 
-    for path in self.visible_paths.copy(): # avoid modification during iteration
+    for path in self.visible_paths.copy():  # avoid modification during iteration
       value_tag = f"value_{path}"
       group_tag = f"group_{path}"
 
@@ -207,16 +207,7 @@ class MainController:
         dpg.set_value(value_tag, formatted_value)
 
   def _update_timeline_indicators(self, current_time_s: float):
-    def update_node_recursive(node):
-      if isinstance(node, LeafNode):
-        if hasattr(node.panel, 'update_timeline_indicator'):
-          node.panel.update_timeline_indicator(current_time_s)
-      elif isinstance(node, SplitterNode):
-        for child in node.children:
-          update_node_recursive(child)
-
-    if self.plot_layout_manager.root_node:
-      update_node_recursive(self.plot_layout_manager.root_node)
+    self.plot_layout_manager.update_all_panels()
 
 
 def main(route_to_load=None):
