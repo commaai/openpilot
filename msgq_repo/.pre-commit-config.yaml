@@ -1,0 +1,48 @@
+files: ^msgq/
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+    -   id: check-ast
+    -   id: check-yaml
+    -   id: check-executables-have-shebangs
+    -   id: check-shebang-scripts-are-executable
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.9.0
+    hooks:
+    -   id: mypy
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.3.5
+    hooks:
+    -   id: ruff
+-   repo: local
+    hooks:
+    -   id: cppcheck
+        name: cppcheck
+        entry: cppcheck
+        language: system
+        types: [c++]
+        exclude: '^(msgq/msgq_tests.cc|msgq/test_runner.cc)'
+        args:
+        - --error-exitcode=1
+        - --inline-suppr
+        - --language=c++
+        - --force
+        - --quiet
+        - -j4
+-   repo: https://github.com/cpplint/cpplint
+    rev: 1.6.1
+    hooks:
+    -   id: cpplint
+        args:
+        - --quiet
+        - --counting=detailed
+        - --linelength=240
+        - --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces
+-   repo: https://github.com/codespell-project/codespell
+    rev: v2.2.6
+    hooks:
+    -   id: codespell
+        args:
+        - -L ned
+        - --builtins clear,rare,informal,usage,code,names,en-GB_to_en-US
