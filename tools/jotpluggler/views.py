@@ -17,6 +17,10 @@ class ViewPanel(ABC):
     self.title = "Untitled Panel"
 
   @abstractmethod
+  def clear(self):
+    pass
+
+  @abstractmethod
   def create_ui(self, parent_tag: str):
     pass
 
@@ -28,6 +32,7 @@ class ViewPanel(ABC):
   def get_panel_type(self) -> str:
     pass
 
+  @abstractmethod
   def update(self):
     pass
 
@@ -117,7 +122,7 @@ class TimeSeriesPanel(ViewPanel):
   def get_panel_type(self) -> str:
     return "timeseries"
 
-  def clear_all_series(self):
+  def clear(self):
     for series_path in list(self._series_data.keys()):
       self.remove_series(series_path)
 
