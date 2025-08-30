@@ -15,7 +15,7 @@ class PlotLayoutManager:
     self.active_panels: list = []
 
     initial_panel = TimeSeriesPanel(data_manager, playback_manager)
-    self.layout = {"type": "panel", "panel": initial_panel}
+    self.layout: dict = {"type": "panel", "panel": initial_panel}
 
   def create_ui(self, parent_tag: str):
     if dpg.does_item_exist(self.container_tag):
@@ -63,7 +63,7 @@ class PlotLayoutManager:
         child_path = path + [i]
         container_tag = self._path_to_tag(child_path, "container")
 
-        size = [width, height]  # pass through since get_item_rect_size is unavailble until rendered
+        size = [width, height]  # pass through since get_item_rect_size is unavailable until rendered
         fill_size = [-1, -1]  # fill up to the border upon resize
         calculated_size = max(min_pane_size, int((size[orientation] - (num_grips * grip_size)) * proportion))
         size[orientation] = fill_size[orientation] = calculated_size
@@ -151,17 +151,13 @@ class PlotLayoutManager:
       if panel in self.active_panels:
         self.active_panels.remove(panel)
     else:
-      # Clean up grip handler registries for splits BEFORE recursing
       for i in range(len(layout["children"]) - 1):
-        grip_tag = self._path_to_tag(path, f"grip_{i}")
-        handler_tag = f"{grip_tag}_handler"
+        handler_tag = f"{self._path_to_tag(path, f'grip_{i}')}_handler"
         if dpg.does_item_exist(handler_tag):
           dpg.delete_item(handler_tag)
 
-      # Recursively cleanup children
       for i, child in enumerate(layout["children"]):
-        child_path = path + [i]
-        self._cleanup_ui_recursive(child, child_path)
+        self._cleanup_ui_recursive(child, path + [i])
 
   def update_all_panels(self):
     for panel in self.active_panels:
@@ -270,4 +266,3 @@ class PlotLayoutManager:
   def _on_grip_end(self, sender, app_data, user_data):
     path, _, _ = user_data
     self._get_layout_at_path(path).pop("_drag_data", None)
-
