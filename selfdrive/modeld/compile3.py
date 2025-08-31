@@ -1,3 +1,4 @@
+#ruff: noqa
 import os, sys, pickle, time
 import numpy as np
 if "FLOAT16" not in os.environ: os.environ["FLOAT16"] = "1"
