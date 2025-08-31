@@ -56,13 +56,10 @@ class SimulatorState:
   @property
   def speed(self):
     return math.sqrt(self.velocity.x ** 2 + self.velocity.y ** 2 + self.velocity.z ** 2)
-    
 sim_state = SimulatorState()
-sim_state.velocity = vec3(3.25, 10.50, 0) 
+sim_state.velocity = vec3(3.25, 10.50, 0)
 sim_state.bearing = 72.51
 sim_state.steering_angle = 7.87
-
-
 class World(ABC):
   def __init__(self, dual_camera):
     self.dual_camera = dual_camera
@@ -111,7 +108,7 @@ class World(ABC):
         imu.accelerometer = vec3(0.0, 0.0, 0.0)
         imu.gyroscope = vec3(0.0, 0.0, 0.0)
     else:
-        dt = max(1e-3, now - prev["t"])  
+        dt = max(1e-3, now - prev["t"])
         dvx = v.x - prev["vx"]
         dvy = v.y - prev["vy"]
         dvz = v.z - prev["vz"]
