@@ -1,4 +1,3 @@
-# ruff: noqa
 import os, sys, pickle, time
 import numpy as np
 if "FLOAT16" not in os.environ: os.environ["FLOAT16"] = "1"
@@ -6,29 +5,26 @@ if "IMAGE" not in os.environ: os.environ["IMAGE"] = "2"
 if "NOLOCALS" not in os.environ: os.environ["NOLOCALS"] = "1"
 if "JIT_BATCH_SIZE" not in os.environ: os.environ["JIT_BATCH_SIZE"] = "0"
 
-from tinygrad import fetch, Tensor, TinyJit, Context, GlobalCounters, Device
+from tinygrad import fetch, Tensor, TinyJit, Context, GlobalCounters, Device, dtypes
 from tinygrad.helpers import DEBUG, getenv
-from tinygrad.tensor import _from_np_dtype
 from tinygrad.engine.realize import CompiledRunner
 
 import onnx
-from onnx.helper import tensor_dtype_to_np_dtype
-from tinygrad.frontend.onnx import OnnxRunner, onnx_load
+from tinygrad.frontend.onnx import OnnxRunner
 
 OPENPILOT_MODEL = sys.argv[1] if len(sys.argv) > 1 else "https://github.com/commaai/openpilot/raw/v0.9.7/selfdrive/modeld/models/supercombo.onnx"
 OUTPUT = sys.argv[2] if len(sys.argv) > 2 else "/tmp/openpilot.pkl"
 
 def compile(onnx_file):
-  onnx_model = onnx_load(onnx_file)
-  run_onnx = OnnxRunner(onnx_model)
+  run_onnx = OnnxRunner(onnx_file)
   print("loaded model")
 
-  input_shapes = {inp.name:tuple(x.dim_value for x in inp.type.tensor_type.shape.dim) for inp in onnx_model.graph.input}
-  input_types = {inp.name: tensor_dtype_to_np_dtype(inp.type.tensor_type.elem_type) for inp in onnx_model.graph.input}
+  input_shapes = {name: spec.shape for name, spec in run_onnx.graph_inputs.items()}
+  input_types = {name: spec.dtype for name, spec in run_onnx.graph_inputs.items()}
   # Float inputs and outputs to tinyjits for openpilot are always float32
-  input_types = {k:(np.float32 if v==np.float16 else v) for k,v in input_types.items()}
+  input_types = {k:(dtypes.float32 if v is dtypes.float16 else v) for k,v in input_types.items()}
   Tensor.manual_seed(100)
-  new_inputs = {k:Tensor.randn(*shp, dtype=_from_np_dtype(input_types[k])).mul(8).realize() for k,shp in sorted(input_shapes.items())}
+  new_inputs = {k:Tensor.randn(*shp, dtype=input_types[k]).mul(8).realize() for k,shp in sorted(input_shapes.items())}
   new_inputs_numpy = {k:v.numpy() for k,v in new_inputs.items()}
   print("created tensors")
 
@@ -58,11 +54,11 @@ def compile(onnx_file):
       gated_read_image_count += ei.prg.p.src.count("?read_image")
   print(f"{kernel_count=},  {read_image_count=}, {gated_read_image_count=}")
   if (allowed_kernel_count:=getenv("ALLOWED_KERNEL_COUNT", -1)) != -1:
-    assert kernel_count <= allowed_kernel_count, f"too many kernels! {kernel_count=}, {allowed_kernel_count=}"
+    assert kernel_count == allowed_kernel_count, f"different kernels! {kernel_count=}, {allowed_kernel_count=}"
   if (allowed_read_image:=getenv("ALLOWED_READ_IMAGE", -1)) != -1:
     assert read_image_count == allowed_read_image, f"different read_image! {read_image_count=}, {allowed_read_image=}"
   if (allowed_gated_read_image:=getenv("ALLOWED_GATED_READ_IMAGE", -1)) != -1:
-    assert gated_read_image_count <= allowed_gated_read_image, f"too many gated read_image! {gated_read_image_count=}, {allowed_gated_read_image=}"
+    assert gated_read_image_count == allowed_gated_read_image, f"different gated read_image! {gated_read_image_count=}, {allowed_gated_read_image=}"
 
   with open(OUTPUT, "wb") as f:
     pickle.dump(run_onnx_jit, f)
