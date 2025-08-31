@@ -1,11 +1,11 @@
 import pyray as rl
 from dataclasses import dataclass
-from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
+from openpilot.common.constants import CV
 from openpilot.selfdrive.ui.onroad.exp_button import ExpButton
+from openpilot.selfdrive.ui.ui_state import ui_state, UIStatus
 from openpilot.system.ui.lib.application import gui_app, FontWeight
 from openpilot.system.ui.lib.text_measure import measure_text_cached
-from openpilot.common.conversions import Conversions as CV
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 # Constants
 SET_SPEED_NA = 255
@@ -34,7 +34,7 @@ class FontSizes:
 
 @dataclass(frozen=True)
 class Colors:
-  white: rl.Color = rl.Color(255, 255, 255, 255)
+  white: rl.Color = rl.WHITE
   disengaged: rl.Color = rl.Color(145, 155, 149, 255)
   override: rl.Color = rl.Color(145, 155, 149, 255)  # Added
   engaged: rl.Color = rl.Color(128, 216, 166, 255)
@@ -47,7 +47,7 @@ class Colors:
   white_translucent: rl.Color = rl.Color(255, 255, 255, 200)
   border_translucent: rl.Color = rl.Color(255, 255, 255, 75)
   header_gradient_start: rl.Color = rl.Color(0, 0, 0, 114)
-  header_gradient_end: rl.Color = rl.Color(0, 0, 0, 0)
+  header_gradient_end: rl.Color = rl.BLANK
 
 
 UI_CONFIG = UIConfig()

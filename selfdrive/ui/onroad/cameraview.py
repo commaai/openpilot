@@ -2,12 +2,12 @@ import platform
 import numpy as np
 import pyray as rl
 
-from openpilot.system.hardware import TICI
 from msgq.visionipc import VisionIpcClient, VisionStreamType, VisionBuf
 from openpilot.common.swaglog import cloudlog
+from openpilot.system.hardware import TICI
 from openpilot.system.ui.lib.application import gui_app
 from openpilot.system.ui.lib.egl import init_egl, create_egl_image, destroy_egl_image, bind_egl_image_to_texture, EGLImage
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 CONNECTION_RETRY_INTERVAL = 0.2  # seconds between connection attempts
 
@@ -141,6 +141,9 @@ class CameraView(Widget):
 
     self.client = None
 
+  def __del__(self):
+    self.close()
+
   def _calc_frame_matrix(self, rect: rl.Rectangle) -> np.ndarray:
     if not self.frame:
       return np.eye(3)
@@ -179,6 +182,9 @@ class CameraView(Widget):
 
     transform = self._calc_frame_matrix(rect)
     src_rect = rl.Rectangle(0, 0, float(self.frame.width), float(self.frame.height))
+    # Flip driver camera horizontally
+    if self._stream_type == VisionStreamType.VISION_STREAM_DRIVER:
+      src_rect.width = -src_rect.width
 
     # Calculate scale
     scale_x = rect.width * transform[0, 0]  # zx
@@ -334,16 +340,7 @@ class CameraView(Widget):
 
 
 if __name__ == "__main__":
-  gui_app.init_window("watch3")
-  road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
-  driver_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_DRIVER)
-  wide_road_camera_view = CameraView("camerad", VisionStreamType.VISION_STREAM_WIDE_ROAD)
-  try:
-    for _ in gui_app.render():
-      road_camera_view.render(rl.Rectangle(gui_app.width // 4, 0, gui_app.width // 2, gui_app.height // 2))
-      driver_camera_view.render(rl.Rectangle(0, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
-      wide_road_camera_view.render(rl.Rectangle(gui_app.width // 2, gui_app.height // 2, gui_app.width // 2, gui_app.height // 2))
-  finally:
-    road_camera_view.close()
-    driver_camera_view.close()
-    wide_road_camera_view.close()
+  gui_app.init_window("camera view")
+  road = CameraView("camerad", VisionStreamType.VISION_STREAM_ROAD)
+  for _ in gui_app.render():
+    road.render(rl.Rectangle(0, 0, gui_app.width, gui_app.height))

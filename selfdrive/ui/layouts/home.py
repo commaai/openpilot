@@ -9,7 +9,7 @@ from openpilot.selfdrive.ui.widgets.prime import PrimeWidget
 from openpilot.selfdrive.ui.widgets.setup import SetupWidget
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.application import gui_app, FontWeight, DEFAULT_TEXT_COLOR
-from openpilot.system.ui.lib.widget import Widget
+from openpilot.system.ui.widgets import Widget
 
 HEADER_HEIGHT = 80
 HEAD_BUTTON_FONT_SIZE = 40
@@ -67,7 +67,7 @@ class HomeLayout(Widget):
     self.current_state = state
 
   def _render(self, rect: rl.Rectangle):
-    current_time = time.time()
+    current_time = time.monotonic()
     if current_time - self.last_refresh >= REFRESH_INTERVAL:
       self._refresh()
       self.last_refresh = current_time
@@ -210,5 +210,5 @@ class HomeLayout(Widget):
 
   def _get_version_text(self) -> str:
     brand = "openpilot"
-    description = self.params.get("UpdaterCurrentDescription", encoding='utf-8')
+    description = self.params.get("UpdaterCurrentDescription")
     return f"{brand} {description}" if description else brand

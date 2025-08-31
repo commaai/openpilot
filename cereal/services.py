@@ -72,9 +72,11 @@ _services: dict[str, tuple] = {
   "navRoute": (True, 0.),
   "navThumbnail": (True, 0.),
   "qRoadEncodeIdx": (False, 20.),
-  "userFlag": (True, 0., 1),
+  "userBookmark": (True, 0., 1),
   "soundPressure": (True, 10., 10),
   "rawAudioData": (False, 20.),
+  "bookmarkButton": (True, 0., 1),
+  "audioFeedback": (True, 0., 1),
 
   # debug
   "uiDebug": (True, 0., 1),
@@ -107,12 +109,12 @@ def build_header():
   h += "#include <map>\n"
   h += "#include <string>\n"
 
-  h += "struct service { std::string name; bool should_log; int frequency; int decimation; };\n"
+  h += "struct service { std::string name; bool should_log; float frequency; int decimation; };\n"
   h += "static std::map<std::string, service> services = {\n"
   for k, v in SERVICE_LIST.items():
     should_log = "true" if v.should_log else "false"
     decimation = -1 if v.decimation is None else v.decimation
-    h += '  { "%s", {"%s", %s, %d, %d}},\n' % \
+    h += '  { "%s", {"%s", %s, %f, %d}},\n' % \
          (k, k, should_log, v.frequency, decimation)
   h += "};\n"
 

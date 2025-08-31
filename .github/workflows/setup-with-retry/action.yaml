@@ -10,9 +10,17 @@ inputs:
     required: false
     default: 30
 
+outputs:
+  duration:
+    description: 'Duration of the setup process in seconds'
+    value: ${{ steps.get_duration.outputs.duration }}
+
 runs:
   using: "composite"
   steps:
+    - id: start_time
+      shell: bash
+      run: echo "START_TIME=$(date +%s)" >> $GITHUB_ENV
     - id: setup1
       uses: ./.github/workflows/setup
       continue-on-error: true
@@ -35,3 +43,10 @@ runs:
       uses: ./.github/workflows/setup
       with:
         is_retried: true
+    - id: get_duration
+      shell: bash
+      run: |
+        END_TIME=$(date +%s)
+        DURATION=$((END_TIME - START_TIME))
+        echo "Total duration: $DURATION seconds"
+        echo "duration=$DURATION" >> $GITHUB_OUTPUT

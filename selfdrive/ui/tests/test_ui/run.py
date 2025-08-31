@@ -29,7 +29,7 @@ UI_DELAY = 0.1 # may be slower on CI?
 TEST_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
 STREAMS: list[tuple[VisionStreamType, CameraConfig, bytes]] = []
-OFFROAD_ALERTS = ['Offroad_StorageMissing', 'Offroad_IsTakingSnapshot']
+OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot', ]
 DATA: dict[str, capnp.lib.capnp._DynamicStructBuilder] = dict.fromkeys(
   ["carParams", "deviceState", "pandaStates", "controlsState", "selfdriveState",
   "liveCalibration", "modelV2", "radarState", "driverMonitoringState", "carState",
@@ -299,9 +299,9 @@ def create_screenshots():
       params = Params()
       params.put("DongleId", "123456789012345")
       if name == 'prime':
-        params.put('PrimeType', '1')
+        params.put('PrimeType', 1)
       elif name == 'pair_device':
-        params.put('ApiCache_Device', '{"is_paired":0, "prime_type":-1}')
+        params.put('ApiCache_Device', {"is_paired":0, "prime_type":-1})
 
       t.test_ui(name, setup)
 
