@@ -176,7 +176,9 @@ env = Environment(
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
     "#third_party/json11",
-    "#third_party/linux/include",
+    # IMPORTANT: this bionic shim conflicts with system headers on host.
+    # Keep it OUT of host builds; add only for larch64 below as -isystem.
+    # "#third_party/linux/include",
     "#third_party",
     "#msgq",
   ],
@@ -202,6 +204,16 @@ env = Environment(
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+
+# Always link C++ artifacts with the C++ linker (handles prebuilt .o/.os)
+env['LINK'] = env['CXX']
+env['SHLINK'] = env['CXX']
+env.Append(LIBS=['stdc++'])
+
+# On larch64 only, include bionic shim as a *system* include to avoid shadowing stdint.h on host
+if arch == "larch64":
+  env.Append(CXXFLAGS=['-isystem', Dir('#third_party/linux/include').abspath])
+  env.Append(CCFLAGS=['-isystem', Dir('#third_party/linux/include').abspath])
 
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
@@ -234,12 +246,24 @@ envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
 if arch == "Darwin":
+  darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
   envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
+
+# Specialized env for third_party/json11 (relax -Werror, silence strict clang warn)
+json_env = env.Clone()
+if '-Werror' in json_env['CCFLAGS']:
+  json_env['CCFLAGS'].remove('-Werror')
+if '-Werror' in json_env['CXXFLAGS']:
+  json_env['CXXFLAGS'].remove('-Werror')
+json_env.Append(CXXFLAGS=[
+  '-Wno-tautological-constant-out-of-range-compare',
+  '-Wno-sign-compare',
+])
 
 # Qt build environment
 qt_env = env.Clone()
@@ -302,7 +326,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch')
+Export('env', 'qt_env', 'arch', 'real_arch', 'json_env')
 
 # Build common module
 SConscript(['common/SConscript'])
@@ -360,3 +384,4 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
   SConscript([external_sconscript])
+

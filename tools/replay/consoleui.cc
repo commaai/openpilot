@@ -9,6 +9,7 @@
 #include "common/ratekeeper.h"
 #include "common/util.h"
 #include "common/version.h"
+#include "cereal/gen/cpp/log.capnp.h"  // for cereal::Event::LIVE_PARAMETERS
 
 namespace {
 
@@ -163,16 +164,32 @@ void ConsoleUI::updateStatus() {
 
   auto [status_str, status_color] = status_text[status];
   write_item(0, 0, "STATUS:    ", status_str, "      ", false, status_color);
-  auto cur_ts = replay->routeDateTime() + (int)replay->currentSeconds();
-  char *time_string = ctime(&cur_ts);
-  std::string current_segment = " - " + std::to_string((int)(replay->currentSeconds() / 60));
-  write_item(0, 25, "TIME:  ", time_string, current_segment, true);
 
-  auto p = sm["liveParameters"].getLiveParameters();
-  write_item(1, 0, "STIFFNESS: ", util::string_format("%.2f %%", p.getStiffnessFactor() * 100), "  ");
+  // Safe TIME string (avoid std::string(nullptr) from ctime)
+  time_t cur_ts = static_cast<time_t>(replay->routeDateTime() + static_cast<time_t>(replay->currentSeconds()));
+  char tbuf[32] = {0};
+  const char *ctime_ret = ctime_r(&cur_ts, tbuf);
+  std::string time_str = ctime_ret ? std::string(ctime_ret) : std::string("unknown\n");
+  std::string current_segment = " - " + std::to_string(static_cast<int>(replay->currentSeconds() / 60));
+  write_item(0, 25, "TIME:  ", time_str, current_segment, true);
+
+  // LiveParameters may be absent on some routes; guard the union arm.
+  std::string stiffness_str = "N/A";
+  std::string steer_ratio_str = "N/A";
+  std::string angle_offsets = "N/A";
+  if (sm.updated("liveParameters")) {
+    auto evt = sm["liveParameters"];
+    if (evt.which() == cereal::Event::LIVE_PARAMETERS) {
+      auto p = evt.getLiveParameters();
+      stiffness_str = util::string_format("%.2f %%", p.getStiffnessFactor() * 100);
+      steer_ratio_str = util::string_format("%.2f", p.getSteerRatio());
+      angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
+    }
+  }
+
+  write_item(1, 0, "STIFFNESS: ", stiffness_str, "  ");
   write_item(1, 25, "SPEED: ", util::string_format("%.2f", sm["carState"].getCarState().getVEgo()), " m/s");
-  write_item(2, 0, "STEER RATIO: ", util::string_format("%.2f", p.getSteerRatio()), "");
-  auto angle_offsets = util::string_format("%.2f|%.2f", p.getAngleOffsetAverageDeg(), p.getAngleOffsetDeg());
+  write_item(2, 0, "STEER RATIO: ", steer_ratio_str, "");
   write_item(2, 25, "ANGLE OFFSET(AVG|INSTANT): ", angle_offsets, " deg");
 
   wrefresh(w[Win::CarState]);
@@ -380,3 +397,4 @@ int ConsoleUI::exec() {
   }
   return 0;
 }
+
