@@ -470,10 +470,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation type="unfinished"></translation>
     </message>
     <message>
-        <source>NVMe drive not mounted.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation type="unfinished"></translation>
     </message>
@@ -1022,16 +1018,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     </message>
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Record Audio Feedback with LKAS button</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
-
-Note that this feature is only compatible with select cars.</source>
         <translation type="unfinished"></translation>
     </message>
 </context>
