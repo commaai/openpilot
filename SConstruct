@@ -61,6 +61,15 @@ AddOption('--minimal',
           default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
+# Check for arch linux as release
+def is_arch_linux():
+    if os.path.exists("/etc/os-release"):
+        with open("/etc/os-release") as f:
+            data = f.read()
+        return "ID=arch" in data
+    return False
+
+
 ## Architecture name breakdown (arch)
 ## - larch64: linux tici aarch64
 ## - aarch64: linux pc aarch64
@@ -241,6 +250,18 @@ else:
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
+# JSON build environment
+json_env = env.Clone()
+
+# Arch Linux: GCC/Clang on Arch ships with stricter defaults,
+# so suppress a few noisy warnings and ensure <stdint.h> is included.
+if is_arch_linux():
+    json_env.Append(CXXFLAGS=[
+      '-Wno-tautological-constant-out-of-range-compare',
+      '-Wno-sign-compare',
+      '-include', 'stdint.h',
+    ])
+
 # Qt build environment
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
@@ -302,7 +323,7 @@ if GetOption("clazy"):
   qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
   qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
 
-Export('env', 'qt_env', 'arch', 'real_arch')
+Export('env', 'qt_env', 'arch', 'real_arch', 'json_env')
 
 # Build common module
 SConscript(['common/SConscript'])
@@ -360,3 +381,4 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
   SConscript([external_sconscript])
+
