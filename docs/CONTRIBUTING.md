@@ -6,7 +6,7 @@ Development is coordinated through [Discord](https://discord.comma.ai) and GitHu
 
 ### Getting Started
 
-* Setup your [development environment](/tools/)
+* Set up your [development environment](/tools/)
 * Join our [Discord](https://discord.comma.ai)
 * Docs are at https://docs.comma.ai and https://blog.comma.ai
 
@@ -39,7 +39,7 @@ All of these are examples of good PRs:
 ### First contribution
 
 [Projects / openpilot bounties](https://github.com/orgs/commaai/projects/26/views/1?pane=info) is the best place to get started and goes in-depth on what's expected when working on a bounty.
-There's lot of bounties that don't require a comma 3/3X or a car.
+There's lot of bounties that don't require a comma 3X or a car.
 
 ## Pull Requests
 

@@ -13,7 +13,6 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle
 from openpilot.system.ui.widgets.label import gui_label, gui_text_box
 
-NVME = "/dev/nvme0n1"
 USERDATA = "/dev/disk/by-partlabel/userdata"
 TIMEOUT = 3*60
 
@@ -48,10 +47,6 @@ class Reset(Widget):
   def _do_erase(self):
     if PC:
       return
-
-    # Best effort to wipe NVME
-    os.system(f"sudo umount {NVME}")
-    os.system(f"yes | sudo mkfs.ext4 {NVME}")
 
     # Removing data and formatting
     rm = os.system("sudo rm -rf /data/*")

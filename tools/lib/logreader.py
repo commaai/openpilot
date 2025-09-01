@@ -12,16 +12,15 @@ import urllib.parse
 import warnings
 import zstandard as zstd
 
-from collections.abc import Callable, Iterable, Iterator
+from collections.abc import Iterable, Iterator
 from typing import cast
 from urllib.parse import parse_qs, urlparse
 
 from cereal import log as capnp_log
 from openpilot.common.swaglog import cloudlog
-from openpilot.tools.lib.comma_car_segments import get_url as get_comma_segments_url
-from openpilot.tools.lib.openpilotci import get_url
-from openpilot.tools.lib.filereader import DATA_ENDPOINT, FileReader, file_exists, internal_source_available
-from openpilot.tools.lib.route import Route, SegmentRange, FileName
+from openpilot.tools.lib.filereader import FileReader
+from openpilot.tools.lib.file_sources import comma_api_source, internal_source, openpilotci_source, comma_car_segments_source, Source
+from openpilot.tools.lib.route import SegmentRange, FileName
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
 
 LogMessage = type[capnp._DynamicStructReader]
@@ -39,6 +38,7 @@ def save_log(dest, log_msgs, compress=True):
 
   with open(dest, "wb") as f:
     f.write(dat)
+
 
 def decompress_stream(data: bytes):
   dctx = zstd.ZstdDecompressor()
@@ -139,68 +139,15 @@ class ReadMode(enum.StrEnum):
   AUTO_INTERACTIVE = "i"  # default to rlogs, fallback to qlogs with a prompt from the user
 
 
-LogPath = str | None
-LogFileName = tuple[str, ...]
-Source = Callable[[SegmentRange, list[int], LogFileName], dict[int, LogPath]]
-
-InternalUnavailableException = Exception("Internal source not available")
-
-
 class LogsUnavailable(Exception):
   pass
-
-
-def comma_api_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
-  route = Route(sr.route_name)
-
-  # comma api will have already checked if the file exists
-  if fns == FileName.RLOG:
-    return {seg: route.log_paths()[seg] for seg in seg_idxs}
-  else:
-    return {seg: route.qlog_paths()[seg] for seg in seg_idxs}
-
-
-def internal_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName, endpoint_url: str = DATA_ENDPOINT) -> dict[int, LogPath]:
-  if not internal_source_available(endpoint_url):
-    raise InternalUnavailableException
-
-  def get_internal_url(sr: SegmentRange, seg, file):
-    return f"{endpoint_url.rstrip('/')}/{sr.dongle_id}/{sr.log_id}/{seg}/{file}"
-
-  return eval_source({seg: [get_internal_url(sr, seg, fn) for fn in fns] for seg in seg_idxs})
-
-
-def openpilotci_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
-  return eval_source({seg: [get_url(sr.route_name, seg, fn) for fn in fns] for seg in seg_idxs})
-
-
-def comma_car_segments_source(sr: SegmentRange, seg_idxs: list[int], fns: LogFileName) -> dict[int, LogPath]:
-  return eval_source({seg: get_comma_segments_url(sr.route_name, seg) for seg in seg_idxs})
 
 
 def direct_source(file_or_url: str) -> list[str]:
   return [file_or_url]
 
 
-def eval_source(files: dict[int, list[str] | str]) -> dict[int, LogPath]:
-  # Returns valid file URLs given a list of possible file URLs for each segment (e.g. rlog.bz2, rlog.zst)
-  valid_files: dict[int, LogPath] = {}
-
-  for seg_idx, urls in files.items():
-    if isinstance(urls, str):
-      urls = [urls]
-
-    # Add first valid file URL or None
-    for url in urls:
-      if file_exists(url):
-        valid_files[seg_idx] = url
-        break
-    else:
-      valid_files[seg_idx] = None
-
-  return valid_files
-
-
+# TODO this should apply to camera files as well
 def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) -> list[str]:
   exceptions = {}
 
@@ -219,37 +166,35 @@ def auto_source(identifier: str, sources: list[Source], default_mode: ReadMode) 
 
   # Build a dict of valid files as we evaluate each source. May contain mix of rlogs, qlogs, and None.
   # This function only returns when we've sourced all files, or throws an exception
-  valid_files: dict[int, LogPath] = {}
+  valid_files: dict[int, str] = {}
   for fn in try_fns:
     for source in sources:
       try:
         files = source(sr, needed_seg_idxs, fn)
 
         # Build a dict of valid files
-        for idx, f in files.items():
-          if valid_files.get(idx) is None:
-            valid_files[idx] = f
+        valid_files |= files
 
         # Don't check for segment files that have already been found
-        needed_seg_idxs = [idx for idx in needed_seg_idxs if valid_files.get(idx) is None]
+        needed_seg_idxs = [idx for idx in needed_seg_idxs if idx not in valid_files]
 
         # We've found all files, return them
-        if all(f is not None for f in valid_files.values()):
+        if len(needed_seg_idxs) == 0:
           return cast(list[str], list(valid_files.values()))
 
       except Exception as e:
         exceptions[source.__name__] = e
 
     if fn == try_fns[0]:
-      missing_logs = list(valid_files.values()).count(None)
+      missing_logs = len(needed_seg_idxs)
       if mode == ReadMode.AUTO:
-        cloudlog.warning(f"{missing_logs}/{len(valid_files)} rlogs were not found, falling back to qlogs for those segments...")
+        cloudlog.warning(f"{missing_logs}/{len(sr.seg_idxs)} rlogs were not found, falling back to qlogs for those segments...")
       elif mode == ReadMode.AUTO_INTERACTIVE:
-        if input(f"{missing_logs}/{len(valid_files)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
+        if input(f"{missing_logs}/{len(sr.seg_idxs)} rlogs were not found, would you like to fallback to qlogs for those segments? (y/N) ").lower() != "y":
           break
 
-  missing_logs = list(valid_files.values()).count(None)
-  raise LogsUnavailable(f"{missing_logs}/{len(valid_files)} logs were not found, please ensure all logs " +
+  missing_logs = len(needed_seg_idxs)
+  raise LogsUnavailable(f"{missing_logs}/{len(sr.seg_idxs)} logs were not found, please ensure all logs " +
                         "are uploaded. You can fall back to qlogs with '/a' selector at the end of the route name.\n\n" +
                         "Exceptions for sources:\n  - " + "\n  - ".join([f"{k}: {repr(v)}" for k, v in exceptions.items()]))
 
@@ -352,6 +297,7 @@ class LogReader:
   @property
   def time_series(self):
     return msgs_to_time_series(self)
+
 
 if __name__ == "__main__":
   import codecs

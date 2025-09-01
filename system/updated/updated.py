@@ -243,7 +243,7 @@ class Updater:
     if b is None:
       b = self.get_branch(BASEDIR)
     b = {
-      ("tici", "release3"): "release-tici"
+      ("tizi", "release3"): "release-tizi",
     }.get((HARDWARE.get_device_type(), b), b)
     return b
 

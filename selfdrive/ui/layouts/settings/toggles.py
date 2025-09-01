@@ -23,10 +23,6 @@ DESCRIPTIONS = {
   'RecordFront': "Upload data from the driver facing camera and help improve the driver monitoring algorithm.",
   "IsMetric": "Display speed in km/h instead of mph.",
   "RecordAudio": "Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.",
-  "RecordAudioFeedback": (
-    "Press the LKAS button to record audio feedback about openpilot. When this toggle is disabled, the button acts as a bookmark button. " +
-    "The event will be highlighted in comma connect and the segment will be preserved on your device's storage."
-  ),
 }
 
 
@@ -83,12 +79,6 @@ class TogglesLayout(Widget):
         "Record Microphone Audio",
         DESCRIPTIONS["RecordAudio"],
         self._params.get_bool("RecordAudio"),
-        icon="microphone.png",
-      ),
-      toggle_item(
-        "Record Audio Feedback with LKAS button",
-        DESCRIPTIONS["RecordAudioFeedback"],
-        self._params.get_bool("RecordAudioFeedback"),
         icon="microphone.png",
       ),
       toggle_item(

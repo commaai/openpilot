@@ -105,10 +105,7 @@ class UIState:
     # Handle wide road camera state updates
     if self.sm.updated["wideRoadCameraState"]:
       cam_state = self.sm["wideRoadCameraState"]
-
-      # Scale factor based on sensor type
-      scale = 6.0 if cam_state.sensor == 'ar0231' else 1.0
-      self.light_sensor = max(100.0 - scale * cam_state.exposureValPercent, 0.0)
+      self.light_sensor = max(100.0 - cam_state.exposureValPercent, 0.0)
     elif not self.sm.alive["wideRoadCameraState"] or not self.sm.valid["wideRoadCameraState"]:
       self.light_sensor = -1
 

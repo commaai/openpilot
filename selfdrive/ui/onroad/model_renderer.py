@@ -187,9 +187,9 @@ class ModelRenderer(Widget):
       self._path.raw_points, 0.9, self._path_offset_z, max_idx, allow_invert=False
     )
 
-    self._update_experimental_gradient(self._rect.height)
+    self._update_experimental_gradient()
 
-  def _update_experimental_gradient(self, height):
+  def _update_experimental_gradient(self):
     """Pre-calculate experimental mode gradient colors"""
     if not self._experimental_mode:
       return
@@ -201,22 +201,21 @@ class ModelRenderer(Widget):
 
     i = 0
     while i < max_len:
-      track_idx = max_len - i - 1  # flip idx to start from bottom right
-      track_y = self._path.projected_points[track_idx][1]
-      if track_y < 0 or track_y > height:
+      # Some points (screen space) are out of frame (rect space)
+      track_y = self._path.projected_points[i][1]
+      if track_y < self._rect.y or track_y > (self._rect.y + self._rect.height):
         i += 1
         continue
 
-      # Calculate color based on acceleration
-      lin_grad_point = (height - track_y) / height
+      # Calculate color based on acceleration (0 is bottom, 1 is top)
+      lin_grad_point = 1 - (track_y - self._rect.y) / self._rect.height
 
       # speed up: 120, slow down: 0
-      path_hue = max(min(60 + self._acceleration_x[i] * 35, 120), 0)
-      path_hue = int(path_hue * 100 + 0.5) / 100
+      path_hue = np.clip(60 + self._acceleration_x[i] * 35, 0, 120)
 
       saturation = min(abs(self._acceleration_x[i] * 1.5), 1)
-      lightness = self._map_val(saturation, 0.0, 1.0, 0.95, 0.62)
-      alpha = self._map_val(lin_grad_point, 0.75 / 2.0, 0.75, 0.4, 0.0)
+      lightness = np.interp(saturation, [0.0, 1.0], [0.95, 0.62])
+      alpha = np.interp(lin_grad_point, [0.75 / 2.0, 0.75], [0.4, 0.0])
 
       # Use HSL to RGB conversion
       color = self._hsla_to_color(path_hue / 360.0, saturation, lightness, alpha)
@@ -280,7 +279,7 @@ class ModelRenderer(Widget):
 
     if self._experimental_mode:
       # Draw with acceleration coloring
-      if len(self._exp_gradient['colors']) > 2:
+      if len(self._exp_gradient['colors']) > 1:
         draw_polygon(self._rect, self._path.projected_points, gradient=self._exp_gradient)
       else:
         draw_polygon(self._rect, self._path.projected_points, rl.Color(255, 255, 255, 30))
@@ -408,13 +407,6 @@ class ModelRenderer(Widget):
       right_screen = right_screen[:, keep]
 
     return np.vstack((left_screen.T, right_screen[:, ::-1].T)).astype(np.float32)
-
-  @staticmethod
-  def _map_val(x, x0, x1, y0, y1):
-    x = np.clip(x, x0, x1)
-    ra = x1 - x0
-    rb = y1 - y0
-    return (x - x0) * rb / ra + y0 if ra != 0 else y0
 
   @staticmethod
   def _hsla_to_color(h, s, l, a):

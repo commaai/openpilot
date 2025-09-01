@@ -178,7 +178,7 @@ node {
 
   try {
     if (env.BRANCH_NAME == 'devel-staging') {
-      deviceStage("build release3-staging", "tici-needs-can", [], [
+      deviceStage("build release3-staging", "tizi-needs-can", [], [
         step("build release3-staging", "RELEASE_BRANCH=release3-staging $SOURCE_DIR/release/build_release.sh"),
       ])
     }
@@ -186,12 +186,12 @@ node {
     if (env.BRANCH_NAME == '__nightly') {
       parallel (
         'nightly': {
-          deviceStage("build nightly", "tici-needs-can", [], [
+          deviceStage("build nightly", "tizi-needs-can", [], [
             step("build nightly", "RELEASE_BRANCH=nightly $SOURCE_DIR/release/build_release.sh"),
           ])
         },
         'nightly-dev': {
-          deviceStage("build nightly-dev", "tici-needs-can", [], [
+          deviceStage("build nightly-dev", "tizi-needs-can", [], [
             step("build nightly-dev", "PANDA_DEBUG_BUILD=1 RELEASE_BRANCH=nightly-dev $SOURCE_DIR/release/build_release.sh"),
           ])
         },
@@ -200,39 +200,30 @@ node {
 
     if (!env.BRANCH_NAME.matches(excludeRegex)) {
     parallel (
-      // tici tests
       'onroad tests': {
-        deviceStage("onroad", "tici-needs-can", ["UNSAFE=1"], [
+        deviceStage("onroad", "tizi-needs-can", ["UNSAFE=1"], [
           step("build openpilot", "cd system/manager && ./build.py"),
           step("check dirty", "release/check-dirty.sh"),
           step("onroad tests", "pytest selfdrive/test/test_onroad.py -s", [timeout: 60]),
         ])
       },
       'HW + Unit Tests': {
-        deviceStage("tici-hardware", "tici-common", ["UNSAFE=1"], [
+        deviceStage("tizi-hardware", "tizi-common", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test power draw", "pytest -s system/hardware/tici/tests/test_power_draw.py"),
           step("test encoder", "LD_LIBRARY_PATH=/usr/local/lib pytest system/loggerd/tests/test_encoder.py", [diffPaths: ["system/loggerd/"]]),
-          step("test pigeond", "pytest system/ubloxd/tests/test_pigeond.py", [diffPaths: ["system/ubloxd/"]]),
           step("test manager", "pytest system/manager/test/test_manager.py"),
         ])
       },
       'loopback': {
-        deviceStage("loopback", "tici-loopback", ["UNSAFE=1"], [
+        deviceStage("loopback", "tizi-loopback", ["UNSAFE=1"], [
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
         ])
       },
-      'camerad AR0231': {
-        deviceStage("AR0231", "tici-ar0231", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py"),
-          step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
-          step("test exposure", "pytest system/camerad/test/test_exposure.py"),
-        ])
-      },
       'camerad OX03C10': {
-        deviceStage("OX03C10", "tici-ox03c10", ["UNSAFE=1"], [
+        deviceStage("OX03C10", "tizi-ox03c10", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test camerad", "pytest system/camerad/test/test_camerad.py", [timeout: 60]),
           step("test exposure", "pytest system/camerad/test/test_exposure.py"),
@@ -246,17 +237,13 @@ node {
         ])
       },
       'sensord': {
-        deviceStage("LSM + MMC", "tici-lsmc", ["UNSAFE=1"], [
-          step("build", "cd system/manager && ./build.py"),
-          step("test sensord", "pytest system/sensord/tests/test_sensord.py"),
-        ])
-        deviceStage("BMX + LSM", "tici-bmx-lsm", ["UNSAFE=1"], [
+        deviceStage("LSM + MMC", "tizi-lsmc", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py"),
           step("test sensord", "pytest system/sensord/tests/test_sensord.py"),
         ])
       },
       'replay': {
-        deviceStage("model-replay", "tici-replay", ["UNSAFE=1"], [
+        deviceStage("model-replay", "tizi-replay", ["UNSAFE=1"], [
           step("build", "cd system/manager && ./build.py", [diffPaths: ["selfdrive/modeld/", "tinygrad_repo", "selfdrive/test/process_replay/model_replay.py"]]),
           step("model replay", "selfdrive/test/process_replay/model_replay.py", [diffPaths: ["selfdrive/modeld/", "tinygrad_repo", "selfdrive/test/process_replay/model_replay.py"]]),
         ])
@@ -266,7 +253,6 @@ node {
           step("build openpilot", "cd system/manager && ./build.py"),
           step("test pandad loopback", "SINGLE_PANDA=1 pytest selfdrive/pandad/tests/test_pandad_loopback.py"),
           step("test pandad spi", "pytest selfdrive/pandad/tests/test_pandad_spi.py"),
-          step("test pandad", "pytest selfdrive/pandad/tests/test_pandad.py", [diffPaths: ["panda", "selfdrive/pandad/"]]),
           step("test amp", "pytest system/hardware/tici/tests/test_amplifier.py"),
           // TODO: enable once new AGNOS is available
           // step("test esim", "pytest system/hardware/tici/tests/test_esim.py"),

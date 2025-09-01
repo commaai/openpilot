@@ -403,6 +403,7 @@ function op_switch() {
   fi
   BRANCH="$1"
 
+  git config --replace-all remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   git fetch "$REMOTE" "$BRANCH"
   git checkout -f FETCH_HEAD
   git checkout -B "$BRANCH" --track "$REMOTE"/"$BRANCH"

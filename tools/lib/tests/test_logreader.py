@@ -10,7 +10,8 @@ import requests
 from parameterized import parameterized
 
 from cereal import log as capnp_log
-from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, comma_api_source, parse_indirect, ReadMode, InternalUnavailableException
+from openpilot.tools.lib.logreader import LogsUnavailable, LogIterable, LogReader, parse_indirect, ReadMode
+from openpilot.tools.lib.file_sources import comma_api_source, InternalUnavailableException
 from openpilot.tools.lib.route import SegmentRange
 from openpilot.tools.lib.url_file import URLFileException
 
@@ -40,7 +41,7 @@ def setup_source_scenario(mocker, is_internal=False):
   else:
     internal_source_mock.side_effect = InternalUnavailableException
 
-  openpilotci_source_mock.return_value = {3: None}
+  openpilotci_source_mock.return_value = {}
   comma_api_source_mock.return_value = {3: QLOG_FILE}
 
   yield
@@ -90,7 +91,7 @@ class TestLogReader:
 
   @pytest.mark.parametrize("cache_enabled", [True, False])
   def test_direct_parsing(self, mocker, cache_enabled):
-    file_exists_mock = mocker.patch("openpilot.tools.lib.logreader.file_exists")
+    file_exists_mock = mocker.patch("openpilot.tools.lib.filereader.file_exists")
     os.environ["FILEREADER_CACHE"] = "1" if cache_enabled else "0"
     qlog = tempfile.NamedTemporaryFile(mode='wb', delete=False)
 
@@ -208,13 +209,12 @@ class TestLogReader:
       assert qlog_len == log_len
 
   @pytest.mark.parametrize("is_internal", [True, False])
-  @pytest.mark.slow
   def test_auto_source_scenarios(self, mocker, is_internal):
     lr = LogReader(QLOG_FILE)
     qlog_len = len(list(lr))
 
     with setup_source_scenario(mocker, is_internal=is_internal):
-      lr = LogReader(f"{TEST_ROUTE}/0/q")
+      lr = LogReader(f"{TEST_ROUTE}/3/q")
       log_len = len(list(lr))
       assert qlog_len == log_len
 
