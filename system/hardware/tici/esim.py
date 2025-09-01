@@ -71,9 +71,17 @@ class TiciLPA(LPABase):
     **note**: this is a **very** destructive operation. you **must** purchase a new comma SIM in order
               to use comma prime.
     """
+    if self._is_bootstrapped():
+      return
+
     for p in self.list_profiles():
       if self.is_comma_profile(p.iccid):
+        self._disable_profile(p.iccid)
         self.delete_profile(p.iccid)
+
+  def _disable_profile(self, iccid: str) -> None:
+    self._validate_successful(self._invoke('profile', 'disable', iccid))
+    self._process_notifications()
 
   def _check_bootstrapped(self) -> None:
     assert self._is_bootstrapped(), 'eUICC is not bootstrapped, please bootstrap before performing this operation'
