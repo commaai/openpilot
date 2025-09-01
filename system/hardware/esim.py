@@ -44,6 +44,7 @@ if __name__ == '__main__':
   lpa = HARDWARE.get_sim_lpa()
   if args.bootstrap:
     bootstrap(lpa)
+    mutated = True
   elif args.switch:
     lpa.switch_profile(args.switch)
     mutated = True

@@ -94,7 +94,7 @@ class LPABase(ABC):
     pass
 
   def is_comma_profile(self, iccid: str) -> bool:
-    return any(iccid.startswith(prefix) for prefix in ('8985235'))
+    return any(iccid.startswith(prefix) for prefix in ('8985235',))
 
 class HardwareBase(ABC):
   @staticmethod
