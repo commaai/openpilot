@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-#set -e
+set -e
 trap restore_root ERR
 ORG_PWD="$PWD"
 
@@ -21,6 +21,7 @@ commit_root() {
 
     sudo rm -rf /base /newroot /work
 
+    # finally, create the rootfs diff tarball (to be pushed into the CI native cache)
     mkdir -p /tmp/rootfs_cache
     sudo rm -f "$CACHE_ROOTFS_TARBALL_PATH" # remove the old tarball from previous run, if exists
     cd /upper
@@ -31,6 +32,7 @@ commit_root() {
 
     unpack_rootfs_tarball
 
+    # before the next tasks are run, finalize the environment for them
     prepare_mounts
 
     exit $ec
@@ -179,9 +181,3 @@ rm pyproject.toml uv.lock install_python_dependencies.sh
 
 # add a git safe directory for compiling openpilot
 sudo git config --global --add safe.directory /tmp/openpilot
-
-# finally, create the rootfs diff tarball (to be pushed into the CI native cache)
-
-
-# before the next tasks are run, finalize the environment for them
-#prepare_mounts
