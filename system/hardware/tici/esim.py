@@ -4,7 +4,7 @@ import shutil
 import subprocess
 from typing import Literal
 
-from openpilot.system.hardware.base import LPABase, LPAError, LPAProfileNotFoundError, Profile
+from openpilot.system.hardware.base import LPABase, LPAError, Profile
 
 class TiciLPA(LPABase):
   def __init__(self, interface: Literal['qmi', 'at'] = 'qmi'):
@@ -32,6 +32,7 @@ class TiciLPA(LPABase):
     return next((p for p in self.list_profiles() if p.enabled), None)
 
   def delete_profile(self, iccid: str) -> None:
+    self._validate_iccid(iccid)
     self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest is not None and latest.iccid == iccid:
@@ -39,9 +40,13 @@ class TiciLPA(LPABase):
     self._validate_successful(self._invoke('profile', 'delete', iccid))
     self._process_notifications()
 
-  def download_profile(self, qr: str, nickname: str | None = None) -> None:
+  def download_profile(self, lpa_activation_code: str, nickname: str | None = None) -> None:
     self._check_bootstrapped()
-    msgs = self._invoke('profile', 'download', '-a', qr)
+    self._validate_lpa_activation_code(lpa_activation_code)
+    if nickname:
+      self._validate_nickname(nickname)
+
+    msgs = self._invoke('profile', 'download', '-a', lpa_activation_code)
     self._validate_successful(msgs)
     new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
     if new_profile is None:
@@ -51,11 +56,14 @@ class TiciLPA(LPABase):
     self._process_notifications()
 
   def nickname_profile(self, iccid: str, nickname: str) -> None:
+    self._validate_iccid(iccid)
     self._validate_profile_exists(iccid)
+    self._validate_nickname(nickname)
     self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
   def switch_profile(self, iccid: str) -> None:
     self._check_bootstrapped()
+    self._validate_iccid(iccid)
     self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest and latest.iccid == iccid:
@@ -126,10 +134,3 @@ class TiciLPA(LPABase):
     Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
     """
     self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
-
-  def _validate_profile_exists(self, iccid: str) -> None:
-    if not any(p.iccid == iccid for p in self.list_profiles()):
-      raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
-
-  def _validate_successful(self, msgs: list[dict]) -> None:
-    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
