@@ -98,6 +98,7 @@ class LPABase(ABC):
     return any(iccid.startswith(prefix) for prefix in ('8985235',))
 
   def _validate_iccid(self, iccid: str) -> None:
+    # https://en.wikipedia.org/wiki/E.118#ICCID
     assert re.match(r'^89\d{17,18}$', iccid), 'invalid ICCID format. expected format: 8988303000000614227'
 
   def _validate_lpa_activation_code(self, lpa_activation_code: str) -> None:
