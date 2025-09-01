@@ -1,10 +1,40 @@
 #!/usr/bin/env bash
 #set -e
-trap restore_roota ERR
+trap restore_root ERR
 ORG_PWD="$PWD"
 
 REPO="$HOME/work/openpilot/openpilot"
 CACHE_ROOTFS_TARBALL_PATH="/tmp/rootfs_cache.tar"
+
+unpack_rootfs_tarball() {
+    cd /
+    sudo tar -xf "$CACHE_ROOTFS_TARBALL_PATH" 2>/dev/null || true
+    cd
+}
+
+commit_root() {
+    sudo mkdir -p /base /newroot /upper /work
+    
+    sudo unshare -f --kill-child -m $ORG_PWD/selfdrive/test/build.sh build_inside_namespace
+    ec=$?
+    echo "end of ns"
+
+    sudo rm -rf /base /newroot /work
+
+    mkdir -p /tmp/rootfs_cache
+    sudo rm -f "$CACHE_ROOTFS_TARBALL_PATH" # remove the old tarball from previous run, if exists
+    cd /upper
+    sudo tar -cf "$CACHE_ROOTFS_TARBALL_PATH" .
+    cd
+
+    sudo rm -rf /upper
+
+    unpack_rootfs_tarball
+
+    prepare_mounts
+
+    exit $ec
+}
 
 prepare_mounts() {
     # create and mount the required volumes where they're expected
@@ -19,124 +49,45 @@ prepare_mounts() {
     sudo chmod 755 /sys/fs/pstore
 }
 
-commit_root() {
-
-    sudo mkdir -p /base /newroot /upper /work
-    
-    sudo unshare -f --kill-child -m $ORG_PWD/selfdrive/test/build_inside.sh
-    ec=$?
-    echo "end of ns"
-
-    sudo rm -rf /base /newroot /work
-
-    mkdir -p /tmp/rootfs_cache
-    sudo rm -f "$CACHE_ROOTFS_TARBALL_PATH" # remove the old tarball from previous run, if exists
-    cd /upper
-    sudo tar -cf "$CACHE_ROOTFS_TARBALL_PATH" .
-    cd
-
-    sudo rm -rf /upper
-
-    cd /
-    sudo tar -xf "$CACHE_ROOTFS_TARBALL_PATH" 2>/dev/null || true
-    cd
-
-    prepare_mounts
-
-    exit $ec
-
-
-}
-
-#declare -a mounts
-commit_root_old() {
-
-    sudo mkdir -p /upper /work /overlay # prepare directories for overlayfs
-    org_mounts="$(cat /proc/mounts)" # save the original mounts table
-
-    target="/overlay"
-    sudo mkdir -p /lower
-    sudo mount --bind / /lower
-    mounts+=("/lower")
-    sudo mount -t overlay overlay -o lowerdir=/lower,upperdir=/upper,workdir=/work "$target" # mount the overlayfs
-    mounts+=("/")
-
-    while read line # bind-mount any mounts under the old rootfs into the new one (overlayfs isn't recursive like e.g. `mount --rbind`)
-    do
-        echo DOING $line
-        if [ "$line" != "/" ] # except the rootfs base, to avoid infinite mountpoint loops
-        then
-            target="/overlay$line"
-            sudo mount --bind "$line" "$target" || true
-            mounts+=("$line")
-        fi
-    done < <(echo "$org_mounts" | cut -d" " -f2)
-
-    # remove the MS_SHARED flag from the original rootfs mount, which isn't supported by pivot_root(8) and would cause it to fail (see: https://lxc-users.linuxcontainers.narkive.com/pNQKxcnN/pivot-root-failures-when-is-mounted-as-shared)
-    sudo mount --make-rprivate /
-
-    # prepare for the pivot_root(8) and execute, swapping places of the original rootfs and the new one on overlayfs (with its lowerdir still being the original one)
-    # (what this achieves is committing the state of the original rootfs and making it read-only, while creating a new, virtual read-write rootfs with all changes written into a separate directory, the upperdir)
-    cd /overlay
-    sudo mkdir -p old
-    sudo pivot_root . old # once this finishes, the system is moved to the new rootfs and all newly open file descriptors will point to it
-    #sudo systemctl daemon-reexec
-    cd
-
-    mount
-
-    ls /home/runner
-
-    sudo touch /root_commited
-
-    exec "$ORG_PWD/$0" "$@"
-
-
-}
-
-restore_roota() {
-
-    echo failed at ${BASH_LINENO[0]}
-
-}
-
 restore_root() {
-
     echo failed at ${BASH_LINENO[0]}
-
-    echo mounts "${mounts[@]}"
-
-    cd /old
-    sudo mkdir -p new
-    sudo pivot_root . new
-    #sudo systemctl daemon-reexec
-    cd
-
-
-    for (( i=${#mounts[@]}-1; i>=0; i-- ))
-    do
-        #sudo lsof "/new/${mounts[i]}" || true
-        sudo umount -l "/lower/overlay/${mounts[i]}" || true
-        sudo umount -l "/new/${mounts[i]}" || true
-    done
-
-    mount
-
-    rm -f /root_commited
-
 }
 
-echo AAA
-mount
-echo BBB
+build_inside_namespace() {
+    mount --bind / /base
+    mount -t overlay overlay -o lowerdir=/base,upperdir=/upper,workdir=/work /newroot
+    rm -f /newroot/etc/resolv.conf
+    touch /newroot/etc/resolv.conf
+    cat /etc/resolv.conf > /newroot/etc/resolv.conf
+
+    mkdir -p /newroot/old
+    cd /newroot
+    pivot_root . old
+
+    mount -t proc proc /proc
+    mount -t devtmpfs devtmpfs /dev
+    mkdir -p /dev/pts
+    mount -t devpts devpts /dev/pts
+    mount -t proc proc /proc
+    mount -t sysfs sysfs /sys
+
+    touch /root_committed
+    sudo -u runner /home/runner/work/openpilot/openpilot/selfdrive/test/build.sh
+    ec=$?
+    exit $ec
+}
+
+if [ "$1" = "build_inside_namespace" ]
+then
+    build_inside_namespace
+    exit
+fi
 
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
     # if the rootfs diff tarball (also created by this script) got restored from the CI native cache, unpack it, upgrading the rootfs
     echo "restoring rootfs from the native build cache"
-    cd /
-    sudo tar -xf "$CACHE_ROOTFS_TARBALL_PATH" 2>/dev/null || true
-    cd
+    unpack_rootfs_tarball
     rm "$CACHE_ROOTFS_TARBALL_PATH"
 
     # before the next tasks are run, finalize the environment for them
@@ -149,19 +100,13 @@ else
     echo "no native build cache entry restored, rebuilding"
 fi
 
-# in case this script was run on the same instance before, umount any overlays which were mounted by the previous runs
-#tac /proc/mounts | grep overlay | grep -v "overlay / " | cut -d" " -f2 | while read line; do sudo umount "$line" || true; done
-
 # in order to be able to build a diff rootfs tarball, we need to commit its initial state by moving it on-the-fly to overlayfs;
 # below, we prepare the system and the new rootfs itself
-
 
 if ! [ -e /root_committed ]
 then
 commit_root
 fi
-
-
 
 # -------- at this point, the original rootfs was committed and all the changes to it done below will be saved to the newly created rootfs diff tarball --------
 
@@ -219,32 +164,17 @@ NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
 QTWEBENGINE_DISABLE_SANDBOX=1
 
 # install and set up the Python dependencies needed
-
-#sudo useradd -m -s /bin/bash -u 1002 test
 sudo cp "/home/runner/work/openpilot/openpilot/pyproject.toml" "/home/runner/work/openpilot/openpilot/uv.lock" "/home/runner/work/openpilot/openpilot/tools/install_python_dependencies.sh" \
     /home/runner/
-#sudo chown -R test:test /home/test
 
 cd
-#chown -R runner:run
-
 rm -rf .venv
 
 mkdir aaa
 cd aaa
 ../install_python_dependencies.sh
 cd
-
-
-#sudo -u test bash -c " export HOME=/home/test ; export XDG_CONFIG_HOME=/home/test/.config ; cd /home/test ; ./install_python_dependencies.sh"
-#sudo chown -R runner:runner /home/test
-
-#cd /home/test ; rm pyproject.toml uv.lock install_python_dependencies.sh ; ls -la ; cd
 rm pyproject.toml uv.lock install_python_dependencies.sh
-
-#sudo rsync -aL /home/test/.venv/ /home/runner/.venv/
-#sudo rsync -aL /home/test/.local/ /home/runner/.local/
-#sudo rm -rf /home/test
 
 
 # add a git safe directory for compiling openpilot
