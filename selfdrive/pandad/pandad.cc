@@ -152,7 +152,6 @@ void fill_panda_state(cereal::PandaState::Builder &ps, cereal::PandaState::Panda
   ps.setHarnessStatus(cereal::PandaState::HarnessStatus(health.car_harness_status_pkt));
   ps.setInterruptLoad(health.interrupt_load_pkt);
   ps.setFanPower(health.fan_power);
-  ps.setFanStallCount(health.fan_stall_count);
   ps.setSafetyRxChecksInvalid((bool)(health.safety_rx_checks_invalid_pkt));
   ps.setSpiErrorCount(health.spi_error_count_pkt);
   ps.setSbu1Voltage(health.sbu1_voltage_mV / 1000.0f);
