@@ -17,16 +17,12 @@ def bootstrap(lpa: LPABase) -> None:
   print('│ comma prime subscription.                                                    │')
   print('└──────────────────────────────────────────────────────────────────────────────┘')
   print()
-  print('are you sure you want to proceed? (y/N) ', end='')
-  confirm = input()
-  if confirm != 'y':
-    print('aborting')
-    exit(0)
-  print('are you 100% sure you want to proceed? please acknowledge again. (y/N) ', end='')
-  confirm = input()
-  if confirm != 'y':
-    print('aborting')
-    exit(0)
+  for severity in ('sure', '100% sure'):
+    print(f'are you {severity} you want to proceed? (y/N) ', end='')
+    confirm = input()
+    if confirm != 'y':
+      print('aborting')
+      exit(0)
   lpa.bootstrap()
 
 
