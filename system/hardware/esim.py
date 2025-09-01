@@ -13,8 +13,8 @@ def bootstrap(lpa: LPABase) -> None:
   print('│ this is an irreversible operation that will remove the comma-provisioned     │')
   print('│ profile.                                                                     │')
   print('│                                                                              │')
-  print('│ you must purchase a new eSIM from comma in order to use the full comma       │')
-  print('│ comma prime subscription.                                                    │')
+  print('│ after this operation, you must purchase a new eSIM from comma in order to    │')
+  print('│ use the comma prime subscription again.                                      │')
   print('└──────────────────────────────────────────────────────────────────────────────┘')
   print()
   for severity in ('sure', '100% sure'):
