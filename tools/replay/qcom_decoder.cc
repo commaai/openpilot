@@ -1,4 +1,4 @@
-#include "decoder.h"
+#include "qcom_decoder.h"
 
 #include <assert.h>
 #include "third_party/linux/include/v4l2-controls.h"

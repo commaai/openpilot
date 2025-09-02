@@ -6,7 +6,7 @@
 #include "msgq/visionipc/visionbuf.h"
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
-#include "tools/replay/qcom/decoder.h"
+#include "tools/replay/qcom_decoder.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
