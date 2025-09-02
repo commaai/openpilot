@@ -129,3 +129,10 @@ class Widget(abc.ABC):
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     """Optionally handle mouse release events."""
     return False
+
+  def show_event(self):
+    """Optionally handle show event. Parent must manually call this"""
+
+  def hide_event(self):
+    """Optionally handle hide event. Parent must manually call this"""
+

@@ -149,7 +149,7 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   meta.hardBrakePredicted = hard_brake_predicted.item()
 
   # confidence
-  if vipc_frame_id % (2*ModelConstants.MODEL_FREQ) == 0:
+  if vipc_frame_id % (2*ModelConstants.MODEL_RUN_FREQ) == 0:
     # any disengage prob
     brake_disengage_probs = net_output_data['meta'][0,Meta.BRAKE_DISENGAGE]
     gas_disengage_probs = net_output_data['meta'][0,Meta.GAS_DISENGAGE]

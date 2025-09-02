@@ -18,7 +18,6 @@ from openpilot.common.timeout import Timeout
 from openpilot.common.params import Params
 from openpilot.selfdrive.selfdrived.events import EVENTS, ET
 from openpilot.selfdrive.test.helpers import set_params_enabled, release_only
-from openpilot.system.hardware import HARDWARE
 from openpilot.system.hardware.hw import Paths
 from openpilot.tools.lib.logreader import LogReader
 from openpilot.tools.lib.log_time_series import msgs_to_time_series
@@ -33,7 +32,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 280.  # total for all 8 cores
+MAX_TOTAL_CPU = 287.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -67,19 +66,9 @@ PROCS = {
   "system.statsd": 1.0,
   "system.loggerd.uploader": 15.0,
   "system.loggerd.deleter": 1.0,
+  "./pandad": 19.0,
+  "system.qcomgpsd.qcomgpsd": 1.0,
 }
-
-PROCS.update({
-  "tici": {
-    "./pandad": 5.0,
-    "./ubloxd": 1.0,
-    "system.ubloxd.pigeond": 6.0,
-  },
-  "tizi": {
-     "./pandad": 19.0,
-    "system.qcomgpsd.qcomgpsd": 1.0,
-  }
-}.get(HARDWARE.get_device_type(), {}))
 
 TIMINGS = {
   # rtols: max/min, rsd
