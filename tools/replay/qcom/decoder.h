@@ -1,6 +1,9 @@
 #pragma once
 
-#include "sde_rotator.h"
+#include <linux/videodev2.h>
+#include <poll.h>
+
+#include "msgq/visionipc/visionbuf.h"
 #include "third_party/linux/include/media/msm_vidc.h"
 
 extern "C" {
@@ -59,8 +62,6 @@ private:
   bool out_buf_flag[OUTPUT_BUFFER_COUNT] = {false};
   const int out_buf_cnt = OUTPUT_BUFFER_COUNT;
 
-  uint32_t cap_buf_format = 0;
-
   const int subscriptions[2] = {
     V4L2_EVENT_MSM_VIDC_FLUSH_DONE,
     V4L2_EVENT_MSM_VIDC_PORT_SETTINGS_CHANGED_INSUFFICIENT
@@ -87,6 +88,4 @@ private:
   int handleSignal();
   bool handleOutput();
   bool handleEvent();
-
-  SdeRotator rotator;
 };

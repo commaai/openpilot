@@ -8,6 +8,14 @@
 #include "common/swaglog.h"
 #include "common/util.h"
 
+// echo "0xFFFF" > /sys/kernel/debug/msm_vidc/debug_level
+
+static void copyBuffer(VisionBuf *src_buf, VisionBuf *dst_buf) {
+  // Copy Y plane
+  memcpy(dst_buf->y, src_buf->y, src_buf->height * src_buf->stride);
+  // Copy UV plane
+  memcpy(dst_buf->uv, src_buf->uv, src_buf->height / 2 * src_buf->stride);
+}
 
 static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) {
   struct v4l2_requestbuffers reqbuf = {
@@ -44,8 +52,7 @@ bool MsmVidc::init(const char* dev, size_t width, size_t height, uint64_t codec)
   util::safe_ioctl(fd, VIDIOC_STREAMON, &out_type, "VIDIOC_STREAMON OUTPUT failed");
   restartCapture();
   setupPolling();
-  rotator.init();
-  rotator.configUBWCtoNV12(width, height);
+
   this->initialized = true;
   return true;
 }
@@ -117,25 +124,13 @@ VisionBuf* MsmVidc::handleCapture() {
   buf.length        = 1;
   util::safe_ioctl(this->fd, VIDIOC_DQBUF, &buf, "VIDIOC_DQBUF CAPTURE failed");
 
-  if (buf.m.planes[0].bytesused) {
-    static size_t cap_cnt = 0;
-    cap_cnt++;
-    if (cap_cnt % 240 == 0) {
-      LOGD("Dequeued %zu capture buffers", cap_cnt);
-    }
-    if (!this->reconfigure_pending) {
-      rotator.putFrame(&cap_bufs[buf.index]);
-      VisionBuf *rotated = rotator.getFrame(100);
-      queueCaptureBuffer(buf.index);
-      if (rotated) {
-        rotator.convertStride(rotated, this->current_output_buf);
-        return this->current_output_buf;
-      }
-    }
-  } else {
-    LOGE("Dequeued empty capture buffer %d", buf.index);
+  if (this->reconfigure_pending || buf.m.planes[0].bytesused == 0) {
+    return nullptr;
   }
-  return nullptr;
+
+  copyBuffer(&cap_bufs[buf.index], this->current_output_buf);
+  queueCaptureBuffer(buf.index);
+  return this->current_output_buf;
 }
 
 bool MsmVidc::subscribeEvents() {
@@ -149,12 +144,16 @@ bool MsmVidc::subscribeEvents() {
 bool MsmVidc::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
   struct v4l2_format fmt = {.type = type};
   struct v4l2_pix_format_mplane *pix = &fmt.fmt.pix_mp;
-  *pix = { .width = (__u32)this->w, .height = (__u32)this->h, .pixelformat = fourcc };
+  *pix = {
+    .width = (__u32)this->w,
+    .height = (__u32)this->h,
+    .pixelformat = fourcc
+  };
   util::safe_ioctl(fd, VIDIOC_S_FMT, &fmt, "VIDIOC_S_FMT failed");
   if (type == V4L2_BUF_TYPE_VIDEO_OUTPUT_MPLANE) {
     this->out_buf_size = pix->plane_fmt[0].sizeimage;
     int ion_size = this->out_buf_size * OUTPUT_BUFFER_COUNT; // Output (input) buffers are ION buffer.
-    this->out_buf.allocate_no_cache(ion_size); // mmap rw
+    this->out_buf.allocate(ion_size); // mmap rw
     for (int i = 0; i < OUTPUT_BUFFER_COUNT; i++) {
       this->out_buf_off[i] = i * this->out_buf_size;
       this->out_buf_addr[i] = (char *)this->out_buf.addr + this->out_buf_off[i];
@@ -164,11 +163,15 @@ bool MsmVidc::setPlaneFormat(enum v4l2_buf_type type, uint32_t fourcc) {
   } else if (type == V4L2_BUF_TYPE_VIDEO_CAPTURE_MPLANE) {
     request_buffers(this->fd, type, CAPTURE_BUFFER_COUNT);
     util::safe_ioctl(fd, VIDIOC_G_FMT, &fmt, "VIDIOC_G_FMT failed");
+    const __u32 y_size    = pix->plane_fmt[0].sizeimage;
+    const __u32 y_stride  = pix->plane_fmt[0].bytesperline;
     for (int i = 0; i < CAPTURE_BUFFER_COUNT; i++) {
-      this->cap_bufs[i].allocate_no_cache(pix->plane_fmt[0].sizeimage);
-      this->cap_bufs[i].init_yuv(pix->width, pix->height, pix->plane_fmt[0].bytesperline, 0);
+      size_t uv_offset = (size_t)y_stride * pix->height;
+      size_t required = uv_offset + (y_stride * pix->height / 2); // enough for Y + UV. For linear NV12, UV plane starts at y_stride * height.
+      size_t alloc_size = std::max<size_t>(y_size, required);
+      this->cap_bufs[i].allocate(alloc_size);
+      this->cap_bufs[i].init_yuv(pix->width, pix->height, y_stride, uv_offset);
     }
-    this->cap_buf_format = pix->pixelformat;
     LOGD("Set capture buffer size to %d, count %d, addr %p, extradata size %d",
       pix->plane_fmt[0].sizeimage, CAPTURE_BUFFER_COUNT, this->cap_bufs[0].addr, pix->plane_fmt[1].sizeimage);
   }
@@ -201,7 +204,7 @@ bool MsmVidc::restartCapture() {
   }
   // setup, start and queue capture buffers
   setDBP();
-  setPlaneFormat(type, V4L2_PIX_FMT_NV12_UBWC);
+  setPlaneFormat(type, V4L2_PIX_FMT_NV12);
   util::safe_ioctl(this->fd, VIDIOC_STREAMON, &type, "VIDIOC_STREAMON CAPTURE failed");
   for (size_t i = 0; i < CAPTURE_BUFFER_COUNT; ++i) {
     queueCaptureBuffer(i);
@@ -259,7 +262,7 @@ bool MsmVidc::setDBP() {
   struct v4l2_ext_control control[2] = {0};
   struct v4l2_ext_controls controls = {0};
   control[0].id           = V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_MODE;
-  control[0].value        = 0; // V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_PRIMARY
+  control[0].value        = 1; // V4L2_CID_MPEG_VIDC_VIDEO_STREAM_OUTPUT_SECONDARY
   control[1].id           = V4L2_CID_MPEG_VIDC_VIDEO_DPB_COLOR_FORMAT;
   control[1].value        = 0; // V4L2_MPEG_VIDC_VIDEO_DPB_COLOR_FMT_NONE
   controls.count          = 2;
