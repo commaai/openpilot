@@ -498,6 +498,14 @@ class Tici(HardwareBase):
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
 
+  def reboot_modem(self):
+    modem = self.get_modem()
+    for state in (0, 1):
+      try:
+        modem.Command(f'AT+CFUN={state}', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      except Exception:
+        pass
+
   def get_networks(self):
     r = {}
 
