@@ -76,7 +76,7 @@ int SdeRotator::configUBWCtoNV12(int width, int height) {
     cap_buf.free();
   }
   cap_buf = VisionBuf();
-  cap_buf.allocate_no_cache(fmt_cap.fmt.pix.sizeimage);
+  cap_buf.allocate(fmt_cap.fmt.pix.sizeimage);
   cap_buf.addr = mmap(nullptr,
                       fmt_cap.fmt.pix.sizeimage,
                       PROT_READ | PROT_WRITE,
