@@ -296,7 +296,6 @@ bool QcomVideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   reader->prev_idx = idx;
   bool result = false;
   AVPacket pkt;
-  msm_vidc.avctx = reader->input_ctx;
   for (int i = from_idx; i <= idx; ++i) {
     if (av_read_frame(reader->input_ctx, &pkt) == 0) {
       result = msm_vidc.decodeFrame(&pkt, buf) && (i == idx);
