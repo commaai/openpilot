@@ -1,5 +1,4 @@
 import os
-import queue
 import re
 import uuid
 import threading
@@ -50,10 +49,10 @@ class TimeSeriesPanel(ViewPanel):
     self.y_axis_tag = f"{self.plot_tag}_y_axis"
     self.timeline_indicator_tag = f"{self.plot_tag}_timeline"
     self._ui_created = False
-    self._series_data = {}
+    self._series_data: dict[str, tuple[list, list]] = {}
     self._last_plot_duration = 0
     self._update_lock = threading.RLock()
-    self.results_queue = queue.Queue()
+    self.results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
 
   def create_ui(self, parent_tag: str):
@@ -74,20 +73,19 @@ class TimeSeriesPanel(ViewPanel):
       if not self._ui_created:
         return
 
-      if self._new_data:
+      if self._new_data:  # handle new data in main thread
         self._new_data = False
         for series_path in list(self._series_data.keys()):
           self.add_series(series_path, update=True)
 
-      try:  # check downsample result queue
-        results = self.results_queue.get_nowait()
+      while self.results_deque:  # handle downsampled results in main thread
+        results = self.results_deque.popleft()
         for series_path, downsampled_time, downsampled_values in results:
           series_tag = f"series_{self.panel_id}_{series_path}"
           if dpg.does_item_exist(series_tag):
             dpg.set_value(series_tag, [downsampled_time, downsampled_values])
-      except queue.Empty:
-        pass
 
+      # update timeline
       current_time_s = self.playback_manager.current_time_s
       dpg.set_value(self.timeline_indicator_tag, [[current_time_s], [0]])
 
@@ -127,7 +125,7 @@ class TimeSeriesPanel(ViewPanel):
 
     if work_items:
       self.worker_manager.submit_task(
-        TimeSeriesPanel._downsample_worker, work_items, callback=lambda results: self.results_queue.put(results), task_id=f"downsample_{self.panel_id}"
+        TimeSeriesPanel._downsample_worker, work_items, callback=lambda results: self.results_deque.append(results), task_id=f"downsample_{self.panel_id}"
       )
 
   def add_series(self, series_path: str, update: bool = False):
