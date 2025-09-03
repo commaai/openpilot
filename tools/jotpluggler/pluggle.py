@@ -5,6 +5,9 @@ import pyautogui
 import subprocess
 import dearpygui.dearpygui as dpg
 import threading
+import multiprocessing
+import uuid
+import signal
 import numpy as np
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
@@ -12,6 +15,50 @@ from openpilot.tools.jotpluggler.views import DataTreeView
 from openpilot.tools.jotpluggler.layout import PlotLayoutManager
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
+
+
+class WorkerManager:
+  def __init__(self, max_workers=None):
+    self.pool = multiprocessing.Pool(max_workers or min(4, multiprocessing.cpu_count()), initializer=WorkerManager.worker_initializer)
+    self.active_tasks = {}
+
+  def submit_task(self, func, args_list, callback=None, task_id=None):
+    task_id = task_id or str(uuid.uuid4())
+
+    if task_id in self.active_tasks:
+      try:
+        self.active_tasks[task_id].terminate()
+      except Exception:
+        pass
+
+    def handle_success(result):
+      self.active_tasks.pop(task_id, None)
+      if callback:
+        try:
+          callback(result)
+        except Exception as e:
+          print(f"Callback for task {task_id} failed: {e}")
+
+    def handle_error(error):
+      self.active_tasks.pop(task_id, None)
+      print(f"Task {task_id} failed: {error}")
+
+    async_result = self.pool.starmap_async(func, args_list, callback=handle_success, error_callback=handle_error)
+    self.active_tasks[task_id] = async_result
+    return task_id
+
+  @staticmethod
+  def worker_initializer():
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+  def shutdown(self):
+    for task in self.active_tasks.values():
+      try:
+        task.terminate()
+      except Exception:
+        pass
+    self.pool.terminate()
+    self.pool.join()
 
 
 class PlaybackManager:
@@ -62,9 +109,10 @@ class MainController:
     self.scale = scale
     self.data_manager = DataManager()
     self.playback_manager = PlaybackManager()
+    self.worker_manager = WorkerManager()
     self._create_global_themes()
     self.data_tree_view = DataTreeView(self.data_manager, self.ui_lock)
-    self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, scale=self.scale)
+    self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, self.worker_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
     self.avg_char_width = None
     self.visible_paths: set[str] = set()
@@ -209,6 +257,9 @@ class MainController:
   def _update_timeline_indicators(self, current_time_s: float):
     self.plot_layout_manager.update_all_panels()
 
+  def shutdown(self):
+    self.worker_manager.shutdown()
+
 
 def main(route_to_load=None):
   dpg.create_context()
@@ -241,12 +292,13 @@ def main(route_to_load=None):
   dpg.show_viewport()
 
   # Main loop
-  while dpg.is_dearpygui_running():
-    controller.update_frame(default_font)
-    dpg.render_dearpygui_frame()
-
-  dpg.destroy_context()
-
+  try:
+    while dpg.is_dearpygui_running():
+      controller.update_frame(default_font)
+      dpg.render_dearpygui_frame()
+  finally:
+    controller.shutdown()
+    dpg.destroy_context()
 
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for visualizing openpilot logs.")

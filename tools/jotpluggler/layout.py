@@ -7,14 +7,15 @@ MIN_PANE_SIZE = 60
 
 
 class PlotLayoutManager:
-  def __init__(self, data_manager: DataManager, playback_manager, scale: float = 1.0):
+  def __init__(self, data_manager: DataManager, playback_manager, worker_manager, scale: float = 1.0):
     self.data_manager = data_manager
     self.playback_manager = playback_manager
+    self.worker_manager = worker_manager
     self.scale = scale
     self.container_tag = "plot_layout_container"
     self.active_panels: list = []
 
-    initial_panel = TimeSeriesPanel(data_manager, playback_manager)
+    initial_panel = TimeSeriesPanel(data_manager, playback_manager, worker_manager)
     self.layout: dict = {"type": "panel", "panel": initial_panel}
 
   def create_ui(self, parent_tag: str):
@@ -82,7 +83,7 @@ class PlotLayoutManager:
       old_panel = self.layout["panel"]
       old_panel.destroy_ui()
       self.active_panels.remove(old_panel)
-      new_panel = TimeSeriesPanel(self.data_manager, self.playback_manager)
+      new_panel = TimeSeriesPanel(self.data_manager, self.playback_manager, self.worker_manager)
       self.layout = {"type": "panel", "panel": new_panel}
       self._rebuild_ui_at_path([])
       return
@@ -112,7 +113,7 @@ class PlotLayoutManager:
   def split_panel(self, panel_path: list[int], orientation: int):
     current_layout = self._get_layout_at_path(panel_path)
     existing_panel = current_layout["panel"]
-    new_panel = TimeSeriesPanel(self.data_manager, self.playback_manager)
+    new_panel = TimeSeriesPanel(self.data_manager, self.playback_manager, self.worker_manager)
     parent, child_index = self._get_parent_and_index(panel_path)
 
     if parent is None:  # Root split

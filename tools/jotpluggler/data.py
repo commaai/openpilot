@@ -246,6 +246,11 @@ class DataManager:
     with self._lock:
       self._observers.append(callback)
 
+  def remove_observer(self, callback):
+    with self._lock:
+      if callback in self._observers:
+        self._observers.remove(callback)
+
   def _reset(self):
     with self._lock:
       self.loading = True
@@ -261,7 +266,8 @@ class DataManager:
         cloudlog.warning(f"Warning: No log segments found for route: {route}")
         return
 
-      with multiprocessing.Pool() as pool, tqdm.tqdm(total=len(lr.logreader_identifiers), desc="Processing Segments") as pbar:
+      num_processes = max(1, multiprocessing.cpu_count() // 2)
+      with multiprocessing.Pool(processes=num_processes) as pool, tqdm.tqdm(total=len(lr.logreader_identifiers), desc="Processing Segments") as pbar:
         for segment_result, start_time, end_time in pool.imap(_process_segment, lr.logreader_identifiers):
           pbar.update(1)
           if segment_result:
