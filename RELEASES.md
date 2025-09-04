@@ -1,5 +1,9 @@
 Version 0.10.1 (2025-09-08)
 ========================
+* New driving model
+  * World Model: removed global localization inputs
+  * World Model: 2x the number of parameters
+  * World Model: trained on 4x the number of segments
 * Record driving feedback using LKAS button
 * Honda City 2023 support thanks to drFritz!
 

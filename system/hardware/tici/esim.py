@@ -40,6 +40,7 @@ class TiciLPA(LPABase):
     self._process_notifications()
 
   def download_profile(self, qr: str, nickname: str | None = None) -> None:
+    self._check_bootstrapped()
     msgs = self._invoke('profile', 'download', '-a', qr)
     self._validate_successful(msgs)
     new_profile = next((m for m in msgs if m['payload']['message'] == 'es8p_meatadata_parse'), None)
@@ -54,12 +55,40 @@ class TiciLPA(LPABase):
     self._validate_successful(self._invoke('profile', 'nickname', iccid, nickname))
 
   def switch_profile(self, iccid: str) -> None:
+    self._check_bootstrapped()
     self._validate_profile_exists(iccid)
     latest = self.get_active_profile()
     if latest and latest.iccid == iccid:
       return
     self._validate_successful(self._invoke('profile', 'enable', iccid))
     self._process_notifications()
+
+  def bootstrap(self) -> None:
+    """
+    find all comma-provisioned profiles and delete them. they conflict with user-provisioned profiles
+    and must be deleted.
+
+    **note**: this is a **very** destructive operation. you **must** purchase a new comma SIM in order
+              to use comma prime again.
+    """
+    if self._is_bootstrapped():
+      return
+
+    for p in self.list_profiles():
+      if self.is_comma_profile(p.iccid):
+        self._disable_profile(p.iccid)
+        self.delete_profile(p.iccid)
+
+  def _disable_profile(self, iccid: str) -> None:
+    self._validate_successful(self._invoke('profile', 'disable', iccid))
+    self._process_notifications()
+
+  def _check_bootstrapped(self) -> None:
+    assert self._is_bootstrapped(), 'eUICC is not bootstrapped, please bootstrap before performing this operation'
+
+  def _is_bootstrapped(self) -> bool:
+    """ check if any comma provisioned profiles are on the eUICC """
+    return not any(self.is_comma_profile(iccid) for iccid in (p.iccid for p in self.list_profiles()))
 
   def _invoke(self, *cmd: str):
     proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)

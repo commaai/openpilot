@@ -17,29 +17,23 @@ rm -rf $TARGET_DIR
 mkdir -p $TARGET_DIR
 cd $TARGET_DIR
 cp -r $SOURCE_DIR/.git $TARGET_DIR
-pre-commit uninstall || true
 
-echo "[-] bringing __nightly and devel in sync T=$SECONDS"
+echo "[-] setting up stripped branch sync T=$SECONDS"
 cd $TARGET_DIR
 
-git fetch --depth 1 origin __nightly
-git fetch --depth 1 origin devel
-
-git checkout -f --track origin/__nightly
-git reset --hard __nightly
-git checkout __nightly
-git reset --hard origin/devel
-git clean -xdff
-git submodule foreach --recursive git clean -xdff
-git lfs uninstall
+# tmp branch
+git checkout --orphan tmp
 
 # remove everything except .git
 echo "[-] erasing old openpilot T=$SECONDS"
+git submodule deinit -f --all
+git rm -rf --cached .
 find . -maxdepth 1 -not -path './.git' -not -name '.' -not -name '..' -exec rm -rf '{}' \;
 
-# reset source tree
+# cleanup before the copy
 cd $SOURCE_DIR
 git clean -xdff
+git submodule foreach --recursive git clean -xdff
 
 # do the files copy
 echo "[-] copying files T=$SECONDS"
@@ -48,6 +42,7 @@ cp -pR --parents $(./release/release_files.py) $TARGET_DIR/
 
 # in the directory
 cd $TARGET_DIR
+rm -rf .git/modules/
 rm -f panda/board/obj/panda.bin.signed
 
 # include source commit hash and build date in commit
@@ -86,7 +81,7 @@ fi
 
 if [ ! -z "$BRANCH" ]; then
   echo "[-] Pushing to $BRANCH T=$SECONDS"
-  git push -f origin __nightly:$BRANCH
+  git push -f origin tmp:$BRANCH
 fi
 
 echo "[-] done T=$SECONDS, ready at $TARGET_DIR"

@@ -213,6 +213,7 @@ class ListItem(Widget):
 
     self.set_rect(rl.Rectangle(0, 0, ITEM_BASE_WIDTH, ITEM_BASE_HEIGHT))
     self._font = gui_app.font(FontWeight.NORMAL)
+    self._icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE) if self.icon else None
 
     # Cached properties for performance
     self._prev_max_width: int = 0
@@ -261,8 +262,7 @@ class ListItem(Widget):
     if self.title:
       # Draw icon if present
       if self.icon:
-        icon_texture = gui_app.texture(os.path.join("icons", self.icon), ICON_SIZE, ICON_SIZE)
-        rl.draw_texture(icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - icon_texture.width) // 2), rl.WHITE)
+        rl.draw_texture(self._icon_texture, int(content_x), int(self._rect.y + (ITEM_BASE_HEIGHT - self._icon_texture.width) // 2), rl.WHITE)
         text_x += ICON_SIZE + ITEM_PADDING
 
       # Draw main text

@@ -19,7 +19,7 @@ from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import Button, ButtonStyle, ButtonRadio
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import Label, TextAlignment
-from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManagerWrapper
+from openpilot.system.ui.widgets.network import WifiManagerUI, WifiManager
 
 NetworkType = log.DeviceState.NetworkType
 
@@ -72,8 +72,7 @@ class Setup(Widget):
     self.download_url = ""
     self.download_progress = 0
     self.download_thread = None
-    self.wifi_manager = WifiManagerWrapper()
-    self.wifi_ui = WifiManagerUI(self.wifi_manager)
+    self.wifi_ui = WifiManagerUI(WifiManager())
     self.keyboard = Keyboard()
     self.selected_radio = None
     self.warning = gui_app.texture("icons/warning.png", 150, 150)
