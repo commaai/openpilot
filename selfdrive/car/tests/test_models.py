@@ -192,6 +192,7 @@ class TestCarModelBase(unittest.TestCase):
     can_invalid_cnt = 0
     CC = structs.CarControl().as_reader()
 
+    checks = defaultdict(int)
     for i, msg in enumerate(self.can_msgs):
       CS = self.CI.update(msg)
       self.CI.apply(CC, msg[0])
@@ -200,7 +201,12 @@ class TestCarModelBase(unittest.TestCase):
       if i > 250:
         can_invalid_cnt += not CS.canValid
 
+      checks['standstill'] += CS.standstill != (CS.vEgoRaw == 0.0)
+
     self.assertEqual(can_invalid_cnt, 0)
+
+    failed_checks = {k: v for k, v in checks.items() if v > 0}
+    self.assertFalse(len(failed_checks), f"car interface checks failed: {failed_checks}")
 
   def test_radar_interface(self):
     RI = self.CarInterface.RadarInterface(self.CP)
