@@ -4,7 +4,6 @@
 #include <poll.h>
 
 #include "msgq/visionipc/visionbuf.h"
-#include "third_party/linux/include/media/msm_vidc.h"
 
 extern "C" {
   #include <libavcodec/avcodec.h>
