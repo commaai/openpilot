@@ -80,7 +80,7 @@ class TiciLPA(LPABase):
     **note**: this is a **very** destructive operation. you **must** purchase a new comma SIM in order
               to use comma prime again.
     """
-    if self._is_bootstrapped():
+    if self.is_bootstrapped():
       return
 
     for p in self.list_profiles():
