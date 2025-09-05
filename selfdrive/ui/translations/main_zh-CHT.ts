@@ -473,10 +473,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
         <translation>一個有關操作系統的更新正在後台下載中。當更新準備好安裝時，您將收到提示進行更新。</translation>
     </message>
     <message>
-        <source>NVMe drive not mounted.</source>
-        <translation>NVMe 固態硬碟未被掛載。</translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation>openpilot 無法識別您的車輛。您的車輛可能未被支援，或是其電控單元 (ECU) 未被識別。請提交一個 Pull Request 為您的車輛添加正確的韌體版本。需要幫助嗎？請加入 discord.comma.ai 。</translation>
     </message>
@@ -1030,18 +1026,6 @@ Firehose Mode allows you to maximize your training data uploads to improve openp
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>在駕駛時錄製並儲存麥克風音訊。此音訊將會收錄在 comma connect 的行車記錄器影片中。</translation>
-    </message>
-    <message>
-        <source>Record Audio Feedback with LKAS button</source>
-        <translation>使用「車道維持」按鈕錄製音訊回饋</translation>
-    </message>
-    <message>
-        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
-
-Note that this feature is only compatible with select cars.</source>
-        <translation>按下「車道維持」按鈕，即可錄製並分享駕駛回饋給 openpilot 團隊。當此開關停用時，該按鈕的功能將轉為書籤按鈕。該事件將會在 comma connect 中被標註，且對應的路段影像將保留在您的裝置儲存空間中。
-
-請注意，此功能僅與特定車款相容。</translation>
     </message>
 </context>
 <context>
