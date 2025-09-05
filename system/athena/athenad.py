@@ -561,6 +561,12 @@ def getNetworks():
 
 
 @dispatcher.add_method
+def bootstrapSim(acknowledged: bool):
+  assert acknowledged, 'you must acknowledge the operation to proceed'
+  HARDWARE.get_sim_lpa().bootstrap()
+
+
+@dispatcher.add_method
 def describeSim():
   lpa = HARDWARE.get_sim_lpa()
   profiles = [asdict(p) for p in lpa.list_profiles()]
@@ -569,12 +575,6 @@ def describeSim():
     "profiles": profiles,
     "is_bootstrapped": is_bootstrapped
   }
-
-
-@dispatcher.add_method
-def bootstrapSim(acknowledged: bool):
-  assert acknowledged, 'you must acknowledge the operation to proceed'
-  HARDWARE.get_sim_lpa().bootstrap()
 
 
 @dispatcher.add_method
