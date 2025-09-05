@@ -3,7 +3,7 @@
 #include <assert.h>
 #include "third_party/linux/include/v4l2-controls.h"
 #include <linux/videodev2.h>
-#include <sys/signalfd.h>
+
 
 #include "common/swaglog.h"
 #include "common/util.h"
@@ -29,9 +29,6 @@ static void request_buffers(int fd, v4l2_buf_type buf_type, unsigned int count) 
 MsmVidc::~MsmVidc() {
   if (fd > 0) {
     close(fd);
-  }
-  if (sigfd > 0) {
-    close(sigfd);
   }
 }
 
@@ -105,9 +102,6 @@ VisionBuf* MsmVidc::processEvents() {
       if (revents & POLLPRI) {
         handleEvent();
       }
-    } else if (idx == ev[EV_SIGNAL]) {
-      handleSignal();
-      return nullptr; // Signal received, abort
     } else {
       LOGE("Unexpected event on fd %d", pfd[idx].fd);
     }
@@ -273,23 +267,10 @@ bool MsmVidc::setDBP() {
 }
 
 bool MsmVidc::setupPolling() {
-  // Setup signals
-  sigset_t sigmask;
-  sigemptyset(&sigmask);
-  sigaddset(&sigmask, SIGINT);
-  sigaddset(&sigmask, SIGTERM);
-  sigprocmask(SIG_BLOCK, &sigmask, nullptr);
-  sigfd = signalfd(-1, &sigmask, SFD_CLOEXEC);
-  assert(sigfd > 0);
-
   // Initialize poll array
   pfd[EV_VIDEO] = {fd, POLLIN | POLLOUT | POLLWRNORM | POLLRDNORM | POLLPRI, 0};
-  pfd[EV_SIGNAL] = {sigfd, POLLIN, 0};
   ev[EV_VIDEO] = EV_VIDEO;
-  ev[EV_SIGNAL] = EV_SIGNAL;
-  nfds = 2;
-
-  LOGD("Setup polling: video_fd=%d, signal_fd=%d", fd, sigfd);
+  nfds = 1;
   return true;
 }
 
@@ -313,24 +294,6 @@ int MsmVidc::getBufferUnlocked() {
   return -1;
 }
 
-int MsmVidc::handleSignal() {
-  struct signalfd_siginfo siginfo;
-  sigset_t sigmask;
-  if (read(this->sigfd, &siginfo, sizeof (siginfo)) < 0) {
-    return -1;
-  }
-  sigemptyset(&sigmask);
-  sigaddset(&sigmask, siginfo.ssi_signo);
-  sigprocmask(SIG_UNBLOCK, &sigmask, NULL);
-  LOGD("Received signal %d, cleaning up", siginfo.ssi_signo);
-  if (fd > 0) {
-    close(fd);
-  }
-  if (sigfd > 0) {
-    close(sigfd);
-  }
-  return 0;
-}
 
 bool MsmVidc::handleOutput() {
   struct v4l2_buffer buf = {0};

@@ -36,7 +36,6 @@ public:
 
   AVFormatContext* avctx = nullptr;
   int fd = 0;
-  int sigfd = 0;
 
 private:
   bool initialized = false;
@@ -67,9 +66,9 @@ private:
     V4L2_EVENT_MSM_VIDC_PORT_SETTINGS_CHANGED_INSUFFICIENT
   };
 
-  enum { EV_VIDEO, EV_SIGNAL, EV_COUNT };
+  enum { EV_VIDEO, EV_COUNT };
   struct pollfd pfd[EV_COUNT] = {0};
-  int ev[EV_COUNT] = {-1, -1};
+  int ev[EV_COUNT] = {-1};
   int nfds = 0;
 
   VisionBuf* processEvents();
@@ -85,7 +84,6 @@ private:
   bool sendPacket(int buf_index, AVPacket* pkt);
   int getBufferUnlocked();
   VisionBuf* handleCapture();
-  int handleSignal();
   bool handleOutput();
   bool handleEvent();
 };
