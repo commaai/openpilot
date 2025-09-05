@@ -42,7 +42,7 @@ class TiciLPA(LPABase):
 
   def download_profile(self, lpa_activation_code: str, nickname: str | None = None) -> None:
     self._check_bootstrapped()
-    self._validate_lpa_activation_code(lpa_activation_code)
+    self.validate_lpa_activation_code(lpa_activation_code)
     if nickname:
       self.validate_nickname(nickname)
 
