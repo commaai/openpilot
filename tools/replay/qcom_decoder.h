@@ -22,7 +22,7 @@ extern "C" {
 
 #define VIDEO_DEVICE "/dev/video32"
 #define OUTPUT_BUFFER_COUNT 	8
-#define CAPTURE_BUFFER_COUNT 	4
+#define CAPTURE_BUFFER_COUNT 	8
 #define FPS 									20
 
 
