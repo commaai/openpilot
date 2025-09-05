@@ -573,7 +573,7 @@ def describeSim():
 
 @dispatcher.add_method
 def bootstrapSim(acknowledged: bool):
-  assert acknowledged, 'you must acknowledge the risks of this operation'
+  assert acknowledged, 'you must acknowledge the operation to proceed'
   HARDWARE.get_sim_lpa().bootstrap()
 
 
