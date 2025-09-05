@@ -1,0 +1,11 @@
+CM_ "IMPORT _honda_common.dbc";
+CM_ "IMPORT _nidec_common.dbc";
+CM_ "IMPORT _nidec_scm_group_a.dbc";
+CM_ "IMPORT _steering_control_a.dbc";
+CM_ "IMPORT _steering_sensors_b.dbc";
+CM_ "IMPORT _gearbox_common.dbc";
+
+BO_ 545 ECON_STATUS: 5 XXX
+ SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" EON
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" EON
