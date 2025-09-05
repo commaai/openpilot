@@ -87,16 +87,16 @@ class TiciLPA(LPABase):
         self._disable_profile(p.iccid)
         self.delete_profile(p.iccid)
 
+  def is_bootstrapped(self) -> bool:
+    """ check if any comma provisioned profiles are on the eUICC """
+    return not any(self.is_comma_profile(iccid) for iccid in (p.iccid for p in self.list_profiles()))
+
   def _disable_profile(self, iccid: str) -> None:
     self._validate_successful(self._invoke('profile', 'disable', iccid))
     self._process_notifications()
 
   def _check_bootstrapped(self) -> None:
-    assert self._is_bootstrapped(), 'eUICC is not bootstrapped, please bootstrap before performing this operation'
-
-  def _is_bootstrapped(self) -> bool:
-    """ check if any comma provisioned profiles are on the eUICC """
-    return not any(self.is_comma_profile(iccid) for iccid in (p.iccid for p in self.list_profiles()))
+    assert self.is_bootstrapped(), 'eUICC is not bootstrapped, please bootstrap before performing this operation'
 
   def _invoke(self, *cmd: str):
     proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)

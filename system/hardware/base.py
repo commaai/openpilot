@@ -65,6 +65,9 @@ class ThermalConfig:
 class LPABase(ABC):
   @abstractmethod
   def bootstrap(self) -> None:
+
+  @abstractmethod
+  def is_bootstrapped(self) -> bool:
     pass
 
   @abstractmethod

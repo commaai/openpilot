@@ -561,8 +561,14 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def getEsimProfiles():
-  return [asdict(p) for p in HARDWARE.get_sim_lpa().list_profiles()]
+def getEsim():
+  lpa = HARDWARE.get_sim_lpa()
+  profiles = [asdict(p) for p in lpa.list_profiles()]
+  is_bootstrapped = lpa.is_bootstrapped()
+  return {
+    "profiles": profiles,
+    "is_bootstrapped": is_bootstrapped
+  }
 
 
 @dispatcher.add_method
