@@ -54,8 +54,7 @@ static void update_state(UIState *s) {
   }
   if (sm.updated("wideRoadCameraState")) {
     auto cam_state = sm["wideRoadCameraState"].getWideRoadCameraState();
-    float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
-    scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
+    scene.light_sensor = std::max(100.0f - cam_state.getExposureValPercent(), 0.0f);
   } else if (!sm.allAliveAndValid({"wideRoadCameraState"})) {
     scene.light_sensor = -1;
   }
