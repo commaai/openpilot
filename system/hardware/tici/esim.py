@@ -134,3 +134,7 @@ class TiciLPA(LPABase):
     Process notifications stored on the eUICC, typically to activate/deactivate the profile with the carrier.
     """
     self._validate_successful(self._invoke('notification', 'process', '-a', '-r'))
+
+  def _validate_successful(self, msgs: list[dict]) -> None:
+    assert len(msgs) > 0, 'expected at least one message'
+    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'

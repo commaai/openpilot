@@ -10,9 +10,6 @@ NetworkType = log.DeviceState.NetworkType
 class LPAError(RuntimeError):
   pass
 
-class LPAProfileNotFoundError(LPAError):
-  pass
-
 @dataclass
 class Profile:
   iccid: str
@@ -97,24 +94,19 @@ class LPABase(ABC):
   def is_comma_profile(self, iccid: str) -> bool:
     return any(iccid.startswith(prefix) for prefix in ('8985235',))
 
-  def _validate_iccid(self, iccid: str) -> None:
+  def validate_iccid(self, iccid: str) -> None:
     # https://en.wikipedia.org/wiki/E.118#ICCID
     assert re.match(r'^89\d{17,18}$', iccid), 'invalid ICCID format. expected format: 8988303000000614227'
 
-  def _validate_lpa_activation_code(self, lpa_activation_code: str) -> None:
+  def validate_lpa_activation_code(self, lpa_activation_code: str) -> None:
     assert re.match(r'^LPA:1\$.+\$.+$', lpa_activation_code), 'invalid LPA activation code format. expected format: LPA:1$domain$code'
 
-  def _validate_nickname(self, nickname: str) -> None:
+  def validate_nickname(self, nickname: str) -> None:
     assert len(nickname) >= 1 and len(nickname) <= 16, 'nickname must be between 1 and 16 characters'
     assert re.match(r'^[a-zA-Z0-9-_ ]+$', nickname), 'nickname must contain only alphanumeric characters, hyphens, underscores, and spaces'
 
-  def _validate_profile_exists(self, iccid: str) -> None:
-    if not any(p.iccid == iccid for p in self.list_profiles()):
-      raise LPAProfileNotFoundError(f'profile {iccid} does not exist')
-
-  def _validate_successful(self, msgs: list[dict]) -> None:
-    assert len(msgs) > 0, 'expected at least one message'
-    assert msgs[-1]['payload']['message'] == 'success', 'expected success notification'
+  def validate_profile_exists(self, iccid: str) -> None:
+    assert any(p.iccid == iccid for p in self.list_profiles()), f'profile {iccid} does not exist'
 
 class HardwareBase(ABC):
   @staticmethod

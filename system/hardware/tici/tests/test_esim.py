@@ -1,7 +1,6 @@
 import pytest
 
 from openpilot.system.hardware import HARDWARE, TICI
-from openpilot.system.hardware.base import LPAProfileNotFoundError
 
 # https://euicc-manual.osmocom.org/docs/rsp/known-test-profile
 # iccid is always the same for the given activation code
@@ -14,7 +13,7 @@ def cleanup():
   lpa = HARDWARE.get_sim_lpa()
   try:
     lpa.delete_profile(TEST_ICCID)
-  except LPAProfileNotFoundError:
+  except AssertionError:
     pass
   lpa.process_notifications()
 
