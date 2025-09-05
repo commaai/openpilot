@@ -567,12 +567,18 @@ def getEsimProfiles():
 
 @dispatcher.add_method
 def downloadEsimProfile(lpa_activation_code: str, profile_name: str):
-  HARDWARE.get_sim_lpa().download_profile(lpa_activation_code, profile_name)
+  lpa = HARDWARE.get_sim_lpa()
+  lpa.validate_lpa_activation_code(lpa_activation_code)
+  lpa.validate_nickname(profile_name)
+  lpa.download_profile(lpa_activation_code, profile_name)
 
 
 @dispatcher.add_method
 def setEsimProfile(iccid: str):
-  HARDWARE.get_sim_lpa().switch_profile(iccid)
+  lpa = HARDWARE.get_sim_lpa()
+  lpa.validate_iccid(iccid)
+  lpa.validate_profile_exists(iccid)
+  lpa.switch_profile(iccid)
   HARDWARE.reboot_modem()
 
 
