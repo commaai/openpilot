@@ -561,7 +561,7 @@ def getNetworks():
 
 
 @dispatcher.add_method
-def getEsim():
+def describeSim():
   lpa = HARDWARE.get_sim_lpa()
   profiles = [asdict(p) for p in lpa.list_profiles()]
   is_bootstrapped = lpa.is_bootstrapped()
@@ -577,7 +577,7 @@ def bootstrapEsim():
 
 
 @dispatcher.add_method
-def downloadEsimProfile(lpa_activation_code: str, profile_name: str):
+def downloadSimProfile(lpa_activation_code: str, profile_name: str):
   lpa = HARDWARE.get_sim_lpa()
   lpa.validate_lpa_activation_code(lpa_activation_code)
   lpa.validate_nickname(profile_name)
@@ -585,7 +585,7 @@ def downloadEsimProfile(lpa_activation_code: str, profile_name: str):
 
 
 @dispatcher.add_method
-def setEsimProfile(iccid: str):
+def setSimProfile(iccid: str):
   lpa = HARDWARE.get_sim_lpa()
   lpa.validate_iccid(iccid)
   lpa.validate_profile_exists(iccid)
