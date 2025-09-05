@@ -6,7 +6,6 @@ def retry(attempts=3, delay=1.0, ignore_failure=False):
   def decorator(func):
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-
       for _ in range(attempts):
         try:
           return func(*args, **kwargs)
