@@ -572,6 +572,11 @@ def getEsim():
 
 
 @dispatcher.add_method
+def bootstrapEsim():
+  HARDWARE.get_sim_lpa().bootstrap()
+
+
+@dispatcher.add_method
 def downloadEsimProfile(lpa_activation_code: str, profile_name: str):
   lpa = HARDWARE.get_sim_lpa()
   lpa.validate_lpa_activation_code(lpa_activation_code)
