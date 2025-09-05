@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from typing import Literal
 
+from openpilot.common.retry import retry
 from openpilot.system.hardware.base import LPABase, LPAError, Profile
 
 class TiciLPA(LPABase):
@@ -99,7 +100,11 @@ class TiciLPA(LPABase):
   def _check_bootstrapped(self) -> None:
     assert self.is_bootstrapped(), 'eUICC is not bootstrapped, please bootstrap before performing this operation'
 
+  @retry(attempts=3, delay=1.)
   def _invoke(self, *cmd: str):
+    """
+    the lpac command sometimes fails if the eUICC is busy, so we retry a few times
+    """
     proc = subprocess.Popen(['sudo', '-E', 'lpac'] + list(cmd), stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=self.env)
     try:
       out, err = proc.communicate(timeout=self.timeout_sec)
