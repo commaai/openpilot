@@ -205,11 +205,15 @@ def migrate_controlsState(msgs):
 def migrate_carState(msgs):
   ops = []
   last_cs = None
+  need_migration = False
   for index, msg in msgs:
     if msg.which() == 'controlsState':
       last_cs = msg
     elif msg.which() == 'carState' and last_cs is not None:
-      if last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
+      if not need_migration and last_cs.controlsState.vCruiseDEPRECATED - msg.carState.vCruise > 0.1:
+        need_migration = True
+
+      if need_migration:
         msg = msg.as_builder()
         msg.carState.vCruise = last_cs.controlsState.vCruiseDEPRECATED
         msg.carState.vCruiseCluster = last_cs.controlsState.vCruiseClusterDEPRECATED
