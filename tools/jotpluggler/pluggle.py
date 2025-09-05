@@ -4,11 +4,9 @@ import os
 import pyautogui
 import subprocess
 import dearpygui.dearpygui as dpg
-import threading
 import multiprocessing
 import uuid
 import signal
-import numpy as np
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.views import DataTreeView
@@ -88,35 +86,16 @@ class PlaybackManager:
     return self.current_time_s
 
 
-def calculate_avg_char_width(font):
-  sample_text = "abcdefghijklmnopqrstuvwxyz0123456789"
-  if size := dpg.get_text_size(sample_text, font=font):
-    return size[0] / len(sample_text)
-  return None
-
-
-def format_and_truncate(value, available_width: float, avg_char_width: float) -> str:
-  s = f"{value:.5f}" if np.issubdtype(type(value), np.floating) else str(value)
-  max_chars = int(available_width / avg_char_width) - 3
-  if len(s) > max_chars:
-    return s[: max(0, max_chars)] + "..."
-  return s
-
-
 class MainController:
   def __init__(self, scale: float = 1.0):
-    self.ui_lock = threading.Lock()
     self.scale = scale
     self.data_manager = DataManager()
     self.playback_manager = PlaybackManager()
     self.worker_manager = WorkerManager()
     self._create_global_themes()
-    self.data_tree_view = DataTreeView(self.data_manager, self.ui_lock)
+    self.data_tree_view = DataTreeView(self.data_manager, self.playback_manager)
     self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, self.worker_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
-    self.avg_char_width = None
-    self.visible_paths: set[str] = set()
-    self.check_index = 0
 
   def _create_global_themes(self):
     with dpg.theme(tag="global_line_theme"):
@@ -204,58 +183,15 @@ class MainController:
     dpg.configure_item("play_pause_button", label="Play")
 
   def update_frame(self, font):
-    with self.ui_lock:
-      if self.avg_char_width is None:
-        self.avg_char_width = calculate_avg_char_width(font)
-      self.data_tree_view.update_frame()
+    self.data_tree_view.update_frame(font)
 
-      new_time = self.playback_manager.update_time(dpg.get_delta_time())
-      if not dpg.is_item_active("timeline_slider"):
-        dpg.set_value("timeline_slider", new_time)
+    new_time = self.playback_manager.update_time(dpg.get_delta_time())
+    if not dpg.is_item_active("timeline_slider"):
+      dpg.set_value("timeline_slider", new_time)
 
-      self._update_timeline_indicators(new_time)
-
-      if self.avg_char_width:
-        self._update_visible_set()
-        self._update_data_values()
-
-      dpg.set_value("fps_counter", f"{dpg.get_frame_rate():.1f} FPS")
-
-  def _update_visible_set(self):  # for some reason, dpg has no way to easily check for visibility, and checking is slow...
-    all_paths = list(self.data_tree_view.created_leaf_paths)
-    if not all_paths:
-      self.visible_paths.clear()
-      return
-    chunk_size = min(50, len(all_paths))  # check up to 50 paths per frame
-    end_index = min(self.check_index + chunk_size, len(all_paths))
-    for i in range(self.check_index, end_index):
-      path = all_paths[i]
-      value_tag = f"value_{path}"
-      if dpg.does_item_exist(value_tag) and dpg.is_item_visible(value_tag):
-        self.visible_paths.add(path)
-      else:
-        self.visible_paths.discard(path)
-    self.check_index = end_index if end_index < len(all_paths) else 0
-
-  def _update_data_values(self):
-    value_column_width = dpg.get_item_rect_size("data_pool_window")[0] // 2
-
-    for path in self.visible_paths.copy():  # avoid modification during iteration
-      value_tag = f"value_{path}"
-      group_tag = f"group_{path}"
-
-      if not dpg.does_item_exist(value_tag) or not dpg.does_item_exist(group_tag):
-        self.visible_paths.discard(path)
-        continue
-
-      dpg.configure_item(group_tag, xoffset=value_column_width)
-      value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
-      if value is not None:
-        formatted_value = format_and_truncate(value, value_column_width, self.avg_char_width)
-        dpg.set_value(value_tag, formatted_value)
-
-  def _update_timeline_indicators(self, current_time_s: float):
     self.plot_layout_manager.update_all_panels()
+
+    dpg.set_value("fps_counter", f"{dpg.get_frame_rate():.1f} FPS")
 
   def shutdown(self):
     self.worker_manager.shutdown()

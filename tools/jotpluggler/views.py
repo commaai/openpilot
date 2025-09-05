@@ -6,7 +6,6 @@ import numpy as np
 from collections import deque
 import dearpygui.dearpygui as dpg
 from abc import ABC, abstractmethod
-from openpilot.tools.jotpluggler.data import DataManager
 
 
 class ViewPanel(ABC):
@@ -213,20 +212,21 @@ class DataTreeNode:
 class DataTreeView:
   MAX_ITEMS_PER_FRAME = 50
 
-  def __init__(self, data_manager: DataManager, ui_lock: threading.Lock):
+  def __init__(self, data_manager, playback_manager):
     self.data_manager = data_manager
-    self.ui_lock = ui_lock
+    self.playback_manager = playback_manager
+    self.lock = threading.RLock()
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
-    self.ui_render_queue: deque[tuple[DataTreeNode, str, str, bool]] = deque()  # (node, parent_tag, search_term, is_leaf)
+    self.ui_render_queue: deque[tuple[DataTreeNode, str, str, bool]] = deque()
     self.visible_expanded_nodes: set[str] = set()
-    self.created_leaf_paths: set[str] = set()
     self._all_paths_cache: list[str] = []
     self._previous_paths_set: set[str] = set()
+    self.avg_char_width = None
     self.data_manager.add_observer(self._on_data_loaded)
 
   def _on_data_loaded(self, data: dict):
-    with self.ui_lock:
+    with self.lock:
       if data.get('segment_added'):
         current_paths = set(self.data_manager.get_all_paths())
         new_paths = current_paths - self._previous_paths_set
@@ -253,8 +253,6 @@ class DataTreeView:
     if not filtered_paths:
       return target_tree
 
-    nodes_to_update = set() if incremental else None
-
     for path in sorted(filtered_paths):
       parts = path.split('/')
       current_node = target_tree
@@ -262,20 +260,12 @@ class DataTreeView:
 
       for i, part in enumerate(parts):
         current_path_prefix = f"{current_path_prefix}/{part}" if current_path_prefix else part
-
         if part not in current_node.children:
           current_node.children[part] = DataTreeNode(name=part, full_path=current_path_prefix)
-          if incremental:
-            nodes_to_update.add(current_node)
-
         current_node = current_node.children[part]
-        if incremental and i < len(parts) - 1:
-          nodes_to_update.add(current_node)
 
       if not current_node.is_leaf:
         current_node.is_leaf = True
-        if incremental:
-          nodes_to_update.add(current_node)
 
     self._calculate_child_counts(target_tree)
     if incremental:
@@ -294,27 +284,33 @@ class DataTreeView:
             node = node.children[part]
           self.ui_render_queue.append((node, parent_tag, search_term, True))
 
-  def update_frame(self):
-    items_processed = 0
-    while self.ui_render_queue and items_processed < self.MAX_ITEMS_PER_FRAME:  # process up to MAX_ITEMS_PER_FRAME to maintain performance
-      node, parent_tag, search_term, is_leaf = self.ui_render_queue.popleft()
-      if is_leaf:
-        self._create_leaf_ui(node, parent_tag)
-      else:
-        self._create_node_ui(node, parent_tag, search_term)
-      items_processed += 1
+  def update_frame(self, font):
+    with self.lock:
+      if self.avg_char_width is None and dpg.is_dearpygui_running():
+        self.avg_char_width = self.calculate_avg_char_width(font)
+
+      items_processed = 0
+      while self.ui_render_queue and items_processed < self.MAX_ITEMS_PER_FRAME:
+        node, parent_tag, search_term, is_leaf = self.ui_render_queue.popleft()
+        if is_leaf:
+          self._create_leaf_ui(node, parent_tag)
+        else:
+          self._create_node_ui(node, parent_tag, search_term)
+        items_processed += 1
 
   def search_data(self, search_term: str):
-    self.current_search = search_term
-    self._all_paths_cache = self.data_manager.get_all_paths()
-    self._previous_paths_set = set(self._all_paths_cache)  # Reset tracking after search
-    self._populate_tree()
+    with self.lock:
+      self.current_search = search_term
+      self._all_paths_cache = self.data_manager.get_all_paths()
+      self._previous_paths_set = set(self._all_paths_cache)
+      self._populate_tree()
 
   def _clear_ui(self):
-    dpg.delete_item("data_tree_container", children_only=True)
+    if dpg.does_item_exist("data_tree_container"):
+      dpg.delete_item("data_tree_container", children_only=True)
+
     self.ui_render_queue.clear()
     self.visible_expanded_nodes.clear()
-    self.created_leaf_paths.clear()
 
   def _calculate_child_counts(self, node: DataTreeNode):
     if node.is_leaf:
@@ -342,7 +338,7 @@ class DataTreeView:
     with dpg.tree_node(label=label, parent=parent_tag, tag=node_tag, default_open=should_open, open_on_arrow=True, open_on_double_click=True) as tree_node:
       with dpg.item_handler_registry() as handler:
         dpg.add_item_toggled_open_handler(callback=lambda s, d, u: self._on_node_expanded(node, search_term))
-      dpg.bind_item_handler_registry(tree_node, handler)
+        dpg.bind_item_handler_registry(tree_node, handler)
 
     node.ui_created = True
 
@@ -357,17 +353,34 @@ class DataTreeView:
     with dpg.group(parent=parent_tag, horizontal=True, xoffset=half_split_size, tag=f"group_{node.full_path}") as draggable_group:
       dpg.add_text(node.name)
       dpg.add_text("N/A", tag=f"value_{node.full_path}")
-
       if node.is_plottable_cached is None:
         node.is_plottable_cached = self.data_manager.is_plottable(node.full_path)
-
       if node.is_plottable_cached:
         with dpg.drag_payload(parent=draggable_group, drag_data=node.full_path, payload_type="TIMESERIES_PAYLOAD"):
           dpg.add_text(f"Plot: {node.full_path}")
 
+      with dpg.item_handler_registry() as handler:
+        dpg.add_item_visible_handler(callback=self._on_item_visible, user_data=node.full_path)
+        dpg.bind_item_handler_registry(draggable_group, handler)
+
     node.ui_created = True
     node.ui_tag = f"value_{node.full_path}"
-    self.created_leaf_paths.add(node.full_path)
+
+  def _on_item_visible(self, sender, app_data, user_data):
+    path = user_data
+    if not path or not self.avg_char_width:
+      return
+
+    value_tag = f"value_{path}"
+    value_column_width = dpg.get_item_rect_size("data_pool_window")[0] // 2
+    dpg.configure_item(f"group_{path}", xoffset=value_column_width)
+
+    value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
+    if value is not None:
+      formatted_value = self.format_and_truncate(value, value_column_width, self.avg_char_width)
+      dpg.set_value(value_tag, formatted_value)
+    else:
+      dpg.set_value(value_tag, "N/A")
 
   def _queue_children(self, node: DataTreeNode, parent_tag: str, search_term: str):
     for child in sorted(node.children.values(), key=self._natural_sort_key):
@@ -390,10 +403,10 @@ class DataTreeView:
 
   def _remove_children_from_queue(self, collapsed_node_path: str):
     new_queue: deque[tuple] = deque()
-    for node, parent_tag, search_term, is_leaf in self.ui_render_queue:
-      # Keep items that are not children of the collapsed node
+    for item in self.ui_render_queue:
+      node = item[0]
       if not node.full_path.startswith(collapsed_node_path + "/"):
-        new_queue.append((node, parent_tag, search_term, is_leaf))
+        new_queue.append(item)
     self.ui_render_queue = new_queue
 
   def _should_show_path(self, path: str, search_term: str) -> bool:
@@ -414,3 +427,18 @@ class DataTreeView:
       else:
         for path in self._get_descendant_paths(child_node):
           yield f"{child_name_lower}/{path}"
+
+  @staticmethod
+  def calculate_avg_char_width(font):
+    sample_text = "abcdefghijklmnopqrstuvwxyz0123456789"
+    if size := dpg.get_text_size(sample_text, font=font):
+      return size[0] / len(sample_text)
+    return 10.0
+
+  @staticmethod
+  def format_and_truncate(value, available_width: float, avg_char_width: float) -> str:
+    s = f"{value:.5f}" if np.issubdtype(type(value), np.floating) else str(value)
+    max_chars = int(available_width / avg_char_width) - 3
+    if len(s) > max_chars:
+      return s[: max(0, max_chars)] + "..."
+    return s
