@@ -16,6 +16,7 @@ class Profile:
   nickname: str
   enabled: bool
   provider: str
+  is_comma_profile: bool
 
 @dataclass
 class ThermalZone:

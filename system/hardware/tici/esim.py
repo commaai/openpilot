@@ -25,7 +25,8 @@ class TiciLPA(LPABase):
       iccid=p['iccid'],
       nickname=p['profileNickname'],
       enabled=p['profileState'] == 'enabled',
-      provider=p['serviceProviderName']
+      provider=p['serviceProviderName'],
+      is_comma_profile=self.is_comma_profile(p['iccid'])
     ) for p in msgs[-1]['payload']['data']]
 
   def get_active_profile(self) -> Profile | None:
