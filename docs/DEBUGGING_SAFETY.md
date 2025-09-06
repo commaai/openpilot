@@ -1,26 +1,25 @@
 # Debugging Panda Safety with Replay Drive + LLDB
 
-## Debugging Workflow
+## 1. Start the debugger in VS Code
 
-1. **Start the debugger in VS Code**
+* Select **Replay drive + Safety LLDB**.
+* Enter the route or segment when prompted.
+![alt text](assets/debug-safety-vscode-example.png)
 
-    * Select **Replay drive + Safety LLDB**.
-    * Enter the route or segment when prompted.
+## 2. Attach LLDB
 
-2. **Attach LLDB**
-
-    * When prompted, pick the running **`replay_drive` process**.
-    * ⚠️ Attach quickly, or `replay_drive` will start consuming messages.
+* When prompted, pick the running **`replay_drive` process**.
+* ⚠️ Attach quickly, or `replay_drive` will start consuming messages.
 
 > [!TIP]
 > Add a Python breakpoint at the start of `replay_drive.py` to pause execution and give yourself time to attach LLDB.
 
-3. **Set breakpoints in VS Code**
-   Breakpoints can be set directly in `libsafety.c` (or any C file).
-   No extra LLDB commands are required — just place breakpoints in the editor.
+## 3. Set breakpoints in VS Code
+Breakpoints can be set directly in `libsafety.c` (or any C file).
+No extra LLDB commands are required — just place breakpoints in the editor.
 
-4. **Resume execution**
-   Once attached, you can step through both Python and C safety code as CAN logs are replayed.
+## 4. Resume execution
+Once attached, you can step through both Python and C safety code as CAN logs are replayed.
 
 > [!NOTE]
 > * Use short routes for quicker iteration.
