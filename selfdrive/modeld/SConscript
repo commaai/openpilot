@@ -1,0 +1,70 @@
+import os
+import glob
+
+Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+lenv = env.Clone()
+lenvCython = envCython.Clone()
+
+libs = [cereal, messaging, visionipc, gpucommon, common, 'capnp', 'kj', 'pthread']
+frameworks = []
+
+common_src = [
+  "models/commonmodel.cc",
+  "transforms/loadyuv.cc",
+  "transforms/transform.cc",
+]
+
+# OpenCL is a framework on Mac
+if arch == "Darwin":
+  frameworks += ['OpenCL']
+else:
+  libs += ['OpenCL']
+
+# Set path definitions
+for pathdef, fn in {'TRANSFORM': 'transforms/transform.cl', 'LOADYUV': 'transforms/loadyuv.cl'}.items():
+  for xenv in (lenv, lenvCython):
+    xenv['CXXFLAGS'].append(f'-D{pathdef}_PATH=\\"{File(fn).abspath}\\"')
+
+# Compile cython
+cython_libs = envCython["LIBS"] + libs
+commonmodel_lib = lenv.Library('commonmodel', common_src)
+lenvCython.Program('models/commonmodel_pyx.so', 'models/commonmodel_pyx.pyx', LIBS=[commonmodel_lib, *cython_libs], FRAMEWORKS=frameworks)
+tinygrad_files = ["#"+x for x in glob.glob(env.Dir("#tinygrad_repo").relpath + "/**", recursive=True, root_dir=env.Dir("#").abspath) if 'pycache' not in x]
+
+# Get model metadata
+for model_name in ['driving_vision', 'driving_policy']:
+  fn = File(f"models/{model_name}").abspath
+  script_files = [File(Dir("#selfdrive/modeld").File("get_model_metadata.py").abspath)]
+  cmd = f'python3 {Dir("#selfdrive/modeld").abspath}/get_model_metadata.py {fn}.onnx'
+  lenv.Command(fn + "_metadata.pkl", [fn + ".onnx"] + tinygrad_files + script_files, cmd)
+
+def tg_compile(flags, model_name):
+  pythonpath_string = 'PYTHONPATH="${PYTHONPATH}:' + env.Dir("#tinygrad_repo").abspath + '"'
+  fn = File(f"models/{model_name}").abspath
+  return lenv.Command(
+    fn + "_tinygrad.pkl",
+    [fn + ".onnx"] + tinygrad_files,
+    f'{pythonpath_string} {flags} python3 {Dir("#tinygrad_repo").abspath}/examples/openpilot/compile3.py {fn}.onnx {fn}_tinygrad.pkl'
+  )
+
+# Compile small models
+for model_name in ['driving_vision', 'driving_policy', 'dmonitoring_model']:
+  flags = {
+    'larch64': 'DEV=QCOM',
+    'Darwin': 'DEV=CPU IMAGE=0',
+  }.get(arch, 'DEV=LLVM IMAGE=0')
+  tg_compile(flags, model_name)
+
+# Compile BIG model if USB GPU is available
+if "USBGPU" in os.environ:
+  import subprocess
+  # because tg doesn't support multi-process
+  devs = subprocess.check_output('python3 -c "from tinygrad import Device; print(list(Device.get_available_devices()))"', shell=True, cwd=env.Dir('#').abspath)
+  if b"AMD" in devs:
+    print("USB GPU detected... building")
+    flags = "DEV=AMD AMD_IFACE=USB AMD_LLVM=1 NOLOCALS=0 IMAGE=0"
+    bp = tg_compile(flags, "big_driving_policy")
+    bv = tg_compile(flags, "big_driving_vision")
+    lenv.SideEffect('lock', [bp, bv])  # tg doesn't support multi-process so build serially
+  else:
+    print("USB GPU not detected... skipping")
