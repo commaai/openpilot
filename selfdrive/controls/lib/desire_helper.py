@@ -62,7 +62,7 @@ class DesireHelper:
 
       # LaneChangeState.preLaneChange
       elif self.lane_change_state == LaneChangeState.preLaneChange:
-        # Set lane change direction
+        # Update lane change direction
         self.lane_change_direction = self.get_lane_change_direction(carstate)
 
         torque_applied = carstate.steeringPressed and \
