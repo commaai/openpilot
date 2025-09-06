@@ -1,0 +1,32 @@
+name: 'setup-cache'
+
+inputs:
+  docker_hub_pat:
+    description: 'Auth token for Docker Hub, required for BuildJet jobs'
+    required: false
+    default: ''
+  sleep_time:
+    description: 'Time to sleep between retries'
+    required: false
+    default: 30
+
+outputs:
+  duration:
+    description: 'Duration of the setup process in seconds'
+    value: ${{ steps.get_duration.outputs.duration }}
+
+runs:
+  using: "composite"
+  steps:
+    # build cache
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV ; echo "CACHE_FILE_HASHES=$(sha256sum selfdrive/test/build.sh tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh | cut -d" " -f1 | tr '\n' '_')" >> $GITHUB_ENV
+    - shell: bash
+      run: echo "$CACHE_COMMIT_DATE"
+    - name: Save rootfs cache
+      uses: actions/upload-artifact@v4
+      #if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/rootfs_cache.tar
+        name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
