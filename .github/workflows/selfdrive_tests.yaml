@@ -88,17 +88,6 @@ jobs:
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: 30
 
-  setup-cache:
-    name: setup cache
-    runs-on: ubuntu-24.04
-    needs: ["build"]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-      - name: setup-cache
-        uses: ./.github/workflows/setup-cache
-
   build_mac:
     name: build macOS
     if: false  # temp disable since homebrew install is getting stuck

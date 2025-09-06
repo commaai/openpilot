@@ -55,4 +55,10 @@ runs:
     # build our rootfs image
     - shell: bash
       run: eval ${{ env.BUILD }}
-
+    # try to save rootfs image cache
+    - name: Save rootfs cache
+      uses: actions/upload-artifact@v4
+      #if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/rootfs_cache.tar
+        name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
