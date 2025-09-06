@@ -1,0 +1,28 @@
+output:
+  - meta           # Print lefthook version
+  - summary        # Print summary block (successful and failed steps)
+  - empty_summary  # Print summary heading when there are no steps to run
+  - success        # Print successful steps
+  - failure        # Print failed steps printing
+  - execution      # Print any execution logs
+  #- execution_out  # Print execution output
+  #- execution_info # Print `EXECUTE > ...` logging
+  - skips          # Print "skip" (i.e. no files matched)
+
+test:
+  parallel: true
+  commands:
+    # *** static analysis
+    ruff:
+      run: ruff check .
+    codespell:
+      run: codespell {files} -L tge,stdio -S *.dbc
+      files: git ls-tree -r HEAD --name-only
+    cpplint:
+      run: cpplint --exclude=opendbc/safety/tests/misra/cppcheck/ --exclude=opendbc/can/*_pyx.cpp --recursive --quiet --counting=detailed --linelength=240 --filter=-build,-legal,-readability,-runtime,-whitespace,+build/include_subdir,+build/forward_decl,+build/include_what_you_use,+build/deprecated,+whitespace/comma,+whitespace/line_length,+whitespace/empty_if_body,+whitespace/empty_loop_body,+whitespace/empty_conditional_body,+whitespace/forcolon,+whitespace/parens,+whitespace/semicolon,+whitespace/tab,+readability/braces opendbc/
+    misra:
+      run: opendbc/safety/tests/misra/test_misra.sh
+
+    # *** tests ***
+    pytest:
+      run: pytest -n8
