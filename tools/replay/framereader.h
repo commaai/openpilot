@@ -6,6 +6,7 @@
 #include "msgq/visionipc/visionbuf.h"
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
+#include "tools/replay/qcom_decoder.h"
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -40,11 +41,18 @@ public:
 
 class VideoDecoder {
 public:
-  VideoDecoder();
-  ~VideoDecoder();
-  bool open(AVCodecParameters *codecpar, bool hw_decoder);
-  bool decode(FrameReader *reader, int idx, VisionBuf *buf);
+  virtual ~VideoDecoder() = default;
+  virtual bool open(AVCodecParameters *codecpar, bool hw_decoder) = 0;
+  virtual bool decode(FrameReader *reader, int idx, VisionBuf *buf) = 0;
   int width = 0, height = 0;
+};
+
+class FFmpegVideoDecoder : public VideoDecoder {
+public:
+  FFmpegVideoDecoder();
+  ~FFmpegVideoDecoder() override;
+  bool open(AVCodecParameters *codecpar, bool hw_decoder) override;
+  bool decode(FrameReader *reader, int idx, VisionBuf *buf) override;
 
 private:
   bool initHardwareDecoder(AVHWDeviceType hw_device_type);
@@ -55,4 +63,15 @@ private:
   AVCodecContext *decoder_ctx = nullptr;
   AVPixelFormat hw_pix_fmt = AV_PIX_FMT_NONE;
   AVBufferRef *hw_device_ctx = nullptr;
+};
+
+class QcomVideoDecoder : public VideoDecoder {
+public:
+  QcomVideoDecoder() {};
+  ~QcomVideoDecoder() override {};
+  bool open(AVCodecParameters *codecpar, bool hw_decoder) override;
+  bool decode(FrameReader *reader, int idx, VisionBuf *buf) override;
+
+private:
+  MsmVidc msm_vidc = MsmVidc();
 };
