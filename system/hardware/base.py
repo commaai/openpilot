@@ -232,3 +232,12 @@ class HardwareBase(ABC):
 
   def get_modem_data_usage(self):
     return -1, -1
+
+  def get_voltage(self) -> float:
+    return 0.
+
+  def get_current(self) -> float:
+    return 0.
+
+  def set_ir_power(self, percent: int):
+    pass
