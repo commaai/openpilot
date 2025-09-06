@@ -1,8 +1,6 @@
 import time
 import functools
 
-from openpilot.common.swaglog import cloudlog
-
 
 def retry(attempts=3, delay=1.0, ignore_failure=False):
   def decorator(func):
@@ -12,10 +10,12 @@ def retry(attempts=3, delay=1.0, ignore_failure=False):
         try:
           return func(*args, **kwargs)
         except Exception:
+          from openpilot.common.swaglog import cloudlog
           cloudlog.exception(f"{func.__name__} failed, trying again")
           time.sleep(delay)
 
       if ignore_failure:
+        from openpilot.common.swaglog import cloudlog
         cloudlog.error(f"{func.__name__} failed after retry")
       else:
         raise Exception(f"{func.__name__} failed after retry")
