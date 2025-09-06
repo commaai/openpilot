@@ -12,8 +12,8 @@
     * When prompted, pick the running **`replay_drive` process**.
     * ⚠️ Attach quickly, or `replay_drive` will start consuming messages.
 
-   > [!TIP]
-   > ✅ Tip: Add a Python breakpoint at the start of `replay_drive.py` to pause execution and give yourself time to attach LLDB.
+> [!TIP]
+> ✅ Tip: Add a Python breakpoint at the start of `replay_drive.py` to pause execution and give yourself time to attach LLDB.
 
 3. **Set breakpoints in VS Code**
    Breakpoints can be set directly in `libsafety.c` (or any C file).
