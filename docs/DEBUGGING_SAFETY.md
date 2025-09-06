@@ -4,8 +4,6 @@
 
 * Select **Replay drive + Safety LLDB**.
 * Enter the route or segment when prompted.
-![example of how to do it on vscode](assets/debug-safety-vscode-example.png)
-
 [<img src="https://github.com/user-attachments/assets/b0cc320a-083e-46a7-a9f8-ca775bbe5604">](https://github.com/user-attachments/assets/b0cc320a-083e-46a7-a9f8-ca775bbe5604)
 
 ## 2. Attach LLDB
