@@ -61,4 +61,4 @@ runs:
       #if: github.ref == 'refs/heads/master'
       with:
         path: /tmp/rootfs_cache.tar
-        name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
+        name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}-${{ github.run_id }}
