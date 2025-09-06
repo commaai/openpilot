@@ -4,7 +4,7 @@
 
 * Select **Replay drive + Safety LLDB**.
 * Enter the route or segment when prompted.
-![alt text](assets/debug-safety-vscode-example.png)
+![example of how to do it on vscode](assets/debug-safety-vscode-example.png)
 
 ## 2. Attach LLDB
 
@@ -15,11 +15,11 @@
 > Add a Python breakpoint at the start of `replay_drive.py` to pause execution and give yourself time to attach LLDB.
 
 ## 3. Set breakpoints in VS Code
-Breakpoints can be set directly in `libsafety.c` (or any C file).
+Breakpoints can be set directly in `modes/xxx.h` (or any C file).
 No extra LLDB commands are required — just place breakpoints in the editor.
 
 ## 4. Resume execution
-Once attached, you can step through both Python and C safety code as CAN logs are replayed.
+Once attached, you can step through both Python (on the replay) and C safety code as CAN logs are replayed.
 
 > [!NOTE]
 > * Use short routes for quicker iteration.
