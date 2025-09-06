@@ -13,7 +13,7 @@
     * ⚠️ Attach quickly, or `replay_drive` will start consuming messages.
 
 > [!TIP]
-> ✅ Tip: Add a Python breakpoint at the start of `replay_drive.py` to pause execution and give yourself time to attach LLDB.
+> Add a Python breakpoint at the start of `replay_drive.py` to pause execution and give yourself time to attach LLDB.
 
 3. **Set breakpoints in VS Code**
    Breakpoints can be set directly in `libsafety.c` (or any C file).
@@ -22,13 +22,10 @@
 4. **Resume execution**
    Once attached, you can step through both Python and C safety code as CAN logs are replayed.
 
----
+> [!NOTE]
+> * Use short routes for quicker iteration.
+> * Pause `replay_drive` early to avoid wasting log messages.
 
-## Notes
-
-* Use short routes for quicker iteration.
-* Pause `replay_drive` early to avoid wasting log messages.
-
-### Video
+## Video
 
 View a demo of this workflow on the PR that added it: https://github.com/commaai/openpilot/pull/36055#issue-3352911578
