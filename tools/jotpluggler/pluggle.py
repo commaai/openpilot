@@ -129,18 +129,13 @@ class MainController:
     with dpg.window(tag="Primary Window"):
       with dpg.group(horizontal=True):
         # Left panel - Data tree
-        with dpg.child_window(label="Data Pool", width=300 * self.scale, tag="data_pool_window", border=True, resizable_x=True):
+        with dpg.child_window(label="Sidebar", width=300 * self.scale, tag="sidebar_window", border=True, resizable_x=True):
           with dpg.group(horizontal=True):
             dpg.add_input_text(tag="route_input", width=-75 * self.scale, hint="Enter route name...")
             dpg.add_button(label="Load", callback=self.load_route, tag="load_button", width=-1)
           dpg.add_text("Ready to load route", tag="load_status")
           dpg.add_separator()
-          dpg.add_text("Available Data")
-          dpg.add_separator()
-          dpg.add_input_text(tag="search_input", width=-1, hint="Search fields...", callback=self.search_data)
-          dpg.add_separator()
-          with dpg.group(tag="data_tree_container", track_offset=True):
-            pass
+          self.data_tree_view.create_ui("sidebar_window")
 
         # Right panel - Plots and timeline
         with dpg.group():
@@ -168,10 +163,6 @@ class MainController:
       dpg.set_value("load_status", "Loading route...")
       dpg.configure_item("load_button", enabled=False)
       self.data_manager.load_route(route_name)
-
-  def search_data(self):
-    search_term = dpg.get_value("search_input")
-    self.data_tree_view.search_data(search_term)
 
   def toggle_play_pause(self, sender):
     self.playback_manager.toggle_play_pause()
