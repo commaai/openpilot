@@ -425,9 +425,6 @@ class Tici(HardwareBase):
 
     # pandad core
     affine_irq(3, "spi_geni")         # SPI
-    if "tici" in self.get_device_type():
-      affine_irq(3, "xhci-hcd:usb3")  # aux panda USB (or potentially anything else on USB)
-      affine_irq(3, "xhci-hcd:usb1")  # internal panda USB (also modem)
     try:
       pid = subprocess.check_output(["pgrep", "-f", "spi0"], encoding='utf8').strip()
       subprocess.call(["sudo", "chrt", "-f", "-p", "1", pid])
@@ -446,22 +443,20 @@ class Tici(HardwareBase):
 
     cmds = []
 
-    if self.get_device_type() in ("tici", "tizi"):
+    if self.get_device_type() in ("tizi", ):
       # clear out old blue prime initial APN
       os.system('mmcli -m any --3gpp-set-initial-eps-bearer-settings="apn="')
 
       cmds += [
+        # SIM hot swap
+        'AT+QSIMDET=1,0',
+        'AT+QSIMSTAT=1',
+
         # configure modem as data-centric
         'AT+QNVW=5280,0,"0102000000000000"',
         'AT+QNVFW="/nv/item_files/ims/IMS_enable",00',
         'AT+QNVFW="/nv/item_files/modem/mmode/ue_usage_setting",01',
       ]
-      if self.get_device_type() == "tizi":
-        # SIM hot swap, not routed on tici
-        cmds += [
-          'AT+QSIMDET=1,0',
-          'AT+QSIMSTAT=1',
-        ]
     elif manufacturer == 'Cavli Inc.':
       cmds += [
         'AT^SIMSWAP=1',     # use SIM slot, instead of internal eSIM
@@ -492,7 +487,7 @@ class Tici(HardwareBase):
 
     # eSIM prime
     dest = "/etc/NetworkManager/system-connections/esim.nmconnection"
-    if sim_id.startswith('8985235') and not os.path.exists(dest):
+    if self.get_sim_lpa().is_comma_profile(sim_id) and not os.path.exists(dest):
       with open(Path(__file__).parent/'esim.nmconnection') as f, tempfile.NamedTemporaryFile(mode='w') as tf:
         dat = f.read()
         dat = dat.replace("sim-id=", f"sim-id={sim_id}")
@@ -502,6 +497,14 @@ class Tici(HardwareBase):
         # needs to be root
         os.system(f"sudo cp {tf.name} {dest}")
       os.system(f"sudo nmcli con load {dest}")
+
+  def reboot_modem(self):
+    modem = self.get_modem()
+    for state in (0, 1):
+      try:
+        modem.Command(f'AT+CFUN={state}', math.ceil(TIMEOUT), dbus_interface=MM_MODEM, timeout=TIMEOUT)
+      except Exception:
+        pass
 
   def get_networks(self):
     r = {}

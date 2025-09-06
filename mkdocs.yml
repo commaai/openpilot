@@ -21,7 +21,7 @@ nav:
     - What is openpilot?: getting-started/what-is-openpilot.md
   - How-to:
     - Turn the speed blue: how-to/turn-the-speed-blue.md
-    - Connect to a comma 3/3X: how-to/connect-to-comma.md
+    - Connect to a comma 3X: how-to/connect-to-comma.md
     # - Make your first pull request: how-to/make-first-pr.md
     #- Replay a drive: how-to/replay-a-drive.md
   - Concepts:

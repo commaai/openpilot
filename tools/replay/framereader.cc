@@ -8,6 +8,7 @@
 #include "common/util.h"
 #include "third_party/libyuv/include/libyuv.h"
 #include "tools/replay/util.h"
+#include "system/hardware/hw.h"
 
 #ifdef __APPLE__
 #define HW_DEVICE_TYPE AV_HWDEVICE_TYPE_VIDEOTOOLBOX
@@ -37,7 +38,13 @@ struct DecoderManager {
       return it->second.get();
     }
 
-    auto decoder = std::make_unique<VideoDecoder>();
+    std::unique_ptr<VideoDecoder> decoder;
+    if (Hardware::TICI() && hw_decoder) {
+      decoder = std::make_unique<QcomVideoDecoder>();
+    } else {
+      decoder = std::make_unique<FFmpegVideoDecoder>();
+    }
+
     if (!decoder->open(codecpar, hw_decoder)) {
       decoder.reset(nullptr);
     }
@@ -114,19 +121,19 @@ bool FrameReader::get(int idx, VisionBuf *buf) {
 
 // class VideoDecoder
 
-VideoDecoder::VideoDecoder() {
+FFmpegVideoDecoder::FFmpegVideoDecoder() {
   av_frame_ = av_frame_alloc();
   hw_frame_ = av_frame_alloc();
 }
 
-VideoDecoder::~VideoDecoder() {
+FFmpegVideoDecoder::~FFmpegVideoDecoder() {
   if (hw_device_ctx) av_buffer_unref(&hw_device_ctx);
   if (decoder_ctx) avcodec_free_context(&decoder_ctx);
   av_frame_free(&av_frame_);
   av_frame_free(&hw_frame_);
 }
 
-bool VideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
+bool FFmpegVideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
   const AVCodec *decoder = avcodec_find_decoder(codecpar->codec_id);
   if (!decoder) return false;
 
@@ -149,7 +156,7 @@ bool VideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
   return true;
 }
 
-bool VideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
+bool FFmpegVideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   const AVCodecHWConfig *config = nullptr;
   for (int i = 0; (config = avcodec_get_hw_config(decoder_ctx->codec, i)) != nullptr; i++) {
     if (config->methods & AV_CODEC_HW_CONFIG_METHOD_HW_DEVICE_CTX && config->device_type == hw_device_type) {
@@ -175,7 +182,7 @@ bool VideoDecoder::initHardwareDecoder(AVHWDeviceType hw_device_type) {
   return true;
 }
 
-bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
+bool FFmpegVideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   int current_idx = idx;
   if (idx != reader->prev_idx + 1) {
     // seeking to the nearest key frame
@@ -219,7 +226,7 @@ bool VideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   return false;
 }
 
-AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
+AVFrame *FFmpegVideoDecoder::decodeFrame(AVPacket *pkt) {
   int ret = avcodec_send_packet(decoder_ctx, pkt);
   if (ret < 0) {
     rError("Error sending a packet for decoding: %d", ret);
@@ -239,7 +246,7 @@ AVFrame *VideoDecoder::decodeFrame(AVPacket *pkt) {
   return (av_frame_->format == hw_pix_fmt) ? hw_frame_ : av_frame_;
 }
 
-bool VideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
+bool FFmpegVideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
   if (hw_pix_fmt == HW_PIX_FMT) {
     for (int i = 0; i < height/2; i++) {
       memcpy(buf->y + (i*2 + 0)*buf->stride, f->data[0] + (i*2 + 0)*f->linesize[0], width);
@@ -255,4 +262,46 @@ bool VideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
                        width, height);
   }
   return true;
+}
+
+bool QcomVideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
+  if (codecpar->codec_id != AV_CODEC_ID_HEVC) {
+    rError("Hardware decoder only supports HEVC codec");
+    return false;
+  }
+  width = codecpar->width;
+  height = codecpar->height;
+  msm_vidc.init(VIDEO_DEVICE, width, height, V4L2_PIX_FMT_HEVC);
+  return true;
+}
+
+bool QcomVideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
+  int from_idx = idx;
+  if (idx != reader->prev_idx + 1) {
+    // seeking to the nearest key frame
+    for (int i = idx; i >= 0; --i) {
+      if (reader->packets_info[i].flags & AV_PKT_FLAG_KEY) {
+        from_idx = i;
+        break;
+      }
+    }
+
+    auto pos = reader->packets_info[from_idx].pos;
+    int ret = avformat_seek_file(reader->input_ctx, 0, pos, pos, pos, AVSEEK_FLAG_BYTE);
+    if (ret < 0) {
+      rError("Failed to seek to byte position %lld: %d", pos, AVERROR(ret));
+      return false;
+    }
+  }
+  reader->prev_idx = idx;
+  bool result = false;
+  AVPacket pkt;
+  msm_vidc.avctx = reader->input_ctx;
+  for (int i = from_idx; i <= idx; ++i) {
+    if (av_read_frame(reader->input_ctx, &pkt) == 0) {
+      result = msm_vidc.decodeFrame(&pkt, buf) && (i == idx);
+      av_packet_unref(&pkt);
+    }
+  }
+  return result;
 }

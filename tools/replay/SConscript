@@ -12,7 +12,7 @@ else:
   base_libs.append('OpenCL')
 
 replay_lib_src = ["replay.cc", "consoleui.cc", "camera.cc", "filereader.cc", "logreader.cc", "framereader.cc",
-                  "route.cc", "util.cc", "seg_mgr.cc", "timeline.cc", "api.cc"]
+                  "route.cc", "util.cc", "seg_mgr.cc", "timeline.cc", "api.cc", "qcom_decoder.cc"]
 replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')
 replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'ncurses'] + base_libs

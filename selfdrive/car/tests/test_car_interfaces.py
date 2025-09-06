@@ -1,15 +1,12 @@
 import os
-import math
 import hypothesis.strategies as st
 from hypothesis import Phase, given, settings
 from parameterized import parameterized
 
 from cereal import car
 from opendbc.car import DT_CTRL
-from opendbc.car.car_helpers import interfaces
 from opendbc.car.structs import CarParams
-from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface_args
-from opendbc.car.fw_versions import FW_VERSIONS, FW_QUERY_CONFIGS
+from opendbc.car.tests.test_car_interfaces import get_fuzzy_car_interface
 from opendbc.car.mock.values import CAR as MOCK
 from opendbc.car.values import PLATFORMS
 from openpilot.selfdrive.controls.lib.latcontrol_angle import LatControlAngle
@@ -17,11 +14,6 @@ from openpilot.selfdrive.controls.lib.latcontrol_pid import LatControlPID
 from openpilot.selfdrive.controls.lib.latcontrol_torque import LatControlTorque
 from openpilot.selfdrive.controls.lib.longcontrol import LongControl
 from openpilot.selfdrive.test.fuzzy_generation import FuzzyGenerator
-
-ALL_ECUS = {ecu for ecus in FW_VERSIONS.values() for ecu in ecus.keys()}
-ALL_ECUS |= {ecu for config in FW_QUERY_CONFIGS.values() for ecu in config.extra_ecus}
-
-ALL_REQUESTS = {tuple(r.request) for config in FW_QUERY_CONFIGS.values() for r in config.requests}
 
 MAX_EXAMPLES = int(os.environ.get('MAX_EXAMPLES', '60'))
 
@@ -34,39 +26,8 @@ class TestCarInterfaces:
             phases=(Phase.reuse, Phase.generate, Phase.shrink))
   @given(data=st.data())
   def test_car_interfaces(self, car_name, data):
-    CarInterface = interfaces[car_name]
-
-    args = get_fuzzy_car_interface_args(data.draw)
-
-    car_params = CarInterface.get_params(car_name, args['fingerprints'], args['car_fw'],
-                                         alpha_long=args['alpha_long'], is_release=False, docs=False)
-    car_params = car_params.as_reader()
-    car_interface = CarInterface(car_params)
-    assert car_params
-    assert car_interface
-
-    assert car_params.mass > 1
-    assert car_params.wheelbase > 0
-    # centerToFront is center of gravity to front wheels, assert a reasonable range
-    assert car_params.wheelbase * 0.3 < car_params.centerToFront < car_params.wheelbase * 0.7
-    assert car_params.maxLateralAccel > 0
-
-    # Longitudinal sanity checks
-    assert len(car_params.longitudinalTuning.kpV) == len(car_params.longitudinalTuning.kpBP)
-    assert len(car_params.longitudinalTuning.kiV) == len(car_params.longitudinalTuning.kiBP)
-
-    # Lateral sanity checks
-    if car_params.steerControlType != CarParams.SteerControlType.angle:
-      tune = car_params.lateralTuning
-      if tune.which() == 'pid':
-        if car_name != MOCK.MOCK:
-          assert not math.isnan(tune.pid.kf) and tune.pid.kf > 0
-          assert len(tune.pid.kpV) > 0 and len(tune.pid.kpV) == len(tune.pid.kpBP)
-          assert len(tune.pid.kiV) > 0 and len(tune.pid.kiV) == len(tune.pid.kiBP)
-
-      elif tune.which() == 'torque':
-        assert not math.isnan(tune.torque.kf) and tune.torque.kf > 0
-        assert not math.isnan(tune.torque.friction) and tune.torque.friction > 0
+    car_interface = get_fuzzy_car_interface(car_name, data.draw)
+    car_params = car_interface.CP.as_reader()
 
     cc_msg = FuzzyGenerator.get_random_msg(data.draw, car.CarControl, real_floats=True)
     # Run car interface

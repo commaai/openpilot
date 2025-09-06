@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import sys
-from openpilot.tools.lib.logreader import LogReader
+from openpilot.tools.lib.logreader import LogReader, ReadMode
 
 
 def main():
@@ -9,7 +9,7 @@ def main():
     sys.exit(1)
 
   log_path = sys.argv[1]
-  lr = LogReader(log_path, sort_by_time=True)
+  lr = LogReader(log_path, default_mode=ReadMode.AUTO, sort_by_time=True)
   print("\n".join(lr.logreader_identifiers))
 
 
