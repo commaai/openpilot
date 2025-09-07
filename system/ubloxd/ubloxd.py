@@ -251,6 +251,10 @@ class UBXMessageProcessor:
     velN = data[20]         # NED north velocity (mm/s)
     velE = data[21]         # NED east velocity (mm/s)
     velD = data[22]         # NED down velocity (mm/s)
+
+    # Debug: log raw values for first few messages
+    if msg.log_time < 55:  # Only for first few seconds to avoid spam
+        cloudlog.debug(f"Raw vel values: velN={velN}, velE={velE}, velD={velD}")
     gSpeed = data[23]       # Ground speed (mm/s)
     headMot = data[24]      # Heading of motion (1e-5 deg)
     sAcc = data[25]         # Speed accuracy estimate (mm/s)
@@ -283,11 +287,12 @@ class UBXMessageProcessor:
     loc.bearingAccuracyDeg = headAcc * 1e-5 # Convert to degrees
 
     # Set velocity vector (vNED) - match C++ exactly
-    import ctypes
-    # Convert to float32 exactly like C++: float f[] = { msg->vel_n() * 1e-03f, ... }
-    velN_f32 = ctypes.c_float(velN * 1e-3).value
-    velE_f32 = ctypes.c_float(velE * 1e-3).value
-    velD_f32 = ctypes.c_float(velD * 1e-3).value
+    # C++: float f[] = { msg->vel_n() * 1e-03f, msg->vel_e() * 1e-03f, msg->vel_d() * 1e-03f };
+    import numpy as np
+    # Use numpy float32 for exact IEEE 754 single precision arithmetic
+    velN_f32 = float(np.float32(velN) * np.float32(1e-3))
+    velE_f32 = float(np.float32(velE) * np.float32(1e-3))
+    velD_f32 = float(np.float32(velD) * np.float32(1e-3))
     loc.vNED = [velN_f32, velE_f32, velD_f32]
 
     # Fix status - match C++ logic exactly: (flags % 2) == 1
