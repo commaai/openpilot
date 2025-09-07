@@ -97,7 +97,7 @@ def _parse_proc_stat(stat: str) -> ProcStat | None:
     return {
       'name': name,
       'pid': int(parts[_STAT_POS['pid'] - 1]),
-      'state': parts[_STAT_POS['state'] - 1],
+      'state': parts[_STAT_POS['state'] - 1][0],
       'ppid': int(parts[_STAT_POS['ppid'] - 1]),
       'utime': int(parts[_STAT_POS['utime'] - 1]),
       'stime': int(parts[_STAT_POS['stime'] - 1]),
