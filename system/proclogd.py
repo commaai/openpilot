@@ -7,7 +7,7 @@ from openpilot.common.realtime import Ratekeeper
 from openpilot.common.swaglog import cloudlog
 
 JIFFY = os.sysconf(os.sysconf_names['SC_CLK_TCK'])
-PAGE_SIZE = os.sysconf('SC_PAGE_SIZE')
+PAGE_SIZE = os.sysconf(os.sysconf_names['SC_PAGE_SIZE'])
 
 
 def _cpu_times() -> list[dict[str, float]]:
