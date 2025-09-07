@@ -50,7 +50,6 @@ cereal/services.h
 cereal/gen
 cereal/messaging/bridge
 selfdrive/mapd/default_speeds_by_region.json
-system/proclogd/proclogd
 selfdrive/ui/translations/tmp
 selfdrive/test/longitudinal_maneuvers/out
 selfdrive/car/tests/cars_dump
