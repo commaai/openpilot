@@ -117,7 +117,6 @@ class UbloxMsgParser:
     # Quick header parse
     msg_type = int.from_bytes(frame[2:4], 'big')
     payload = frame[6:-2]
-    # Dispatch by msg_type like C++
     if msg_type == 0x0107:
       body = Ubx.NavPvt.from_bytes(payload)
       return self._gen_nav_pvt(body)
@@ -195,7 +194,7 @@ class UbloxMsgParser:
     return ('gpsLocationExternal', dat)
 
   # RXM-SFRBX dispatch to GPS or GLONASS ephemeris
-  def _gen_rxm_sfrbx(self, msg: Ubx.RxmSfrbx) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder] | None:
+  def _gen_rxm_sfrbx(self, msg) -> tuple[str, capnp.lib.capnp._DynamicStructBuilder] | None:
     if msg.gnss_id == Ubx.GnssType.gps:
       return self._parse_gps_ephemeris(msg)
     if msg.gnss_id == Ubx.GnssType.glonass:
