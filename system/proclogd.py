@@ -16,7 +16,7 @@ def _cpu_times() -> list[dict[str, float]]:
     with open('/proc/stat') as f:
       lines = f.readlines()[1:]
     for line in lines:
-      if not line.startswith('cpu') or not line[3].isdigit():
+      if not line.startswith('cpu') or len(line) < 4 or not line[3].isdigit():
         break
       parts = line.split()
       cpu_times.append({
@@ -136,7 +136,7 @@ def _get_proc_extra(pid: int, name: str) -> ProcExtra:
       pass
     try:
       with open(f'/proc/{pid}/cmdline', 'rb') as f:
-        cmdline = [c.decode() for c in f.read().split(b'\0') if c]
+        cmdline = [c.decode('utf-8', errors='replace') for c in f.read().split(b'\0') if c]
     except OSError:
       pass
     cache = {'pid': pid, 'name': name, 'exe': exe, 'cmdline': cmdline}
