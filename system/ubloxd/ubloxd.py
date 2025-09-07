@@ -155,8 +155,43 @@ class UbloxMsgParser:
       body = Ubx.MonHw2.from_bytes(payload)
       return self._gen_mon_hw2(body)
     if msg_type == 0x0135:
-      body = Ubx.NavSat.from_bytes(payload)
-      return self._gen_nav_sat(body)
+      # Manually parse NAV-SAT for robustness
+      if len(payload) < 8:
+        return None
+      itow = int.from_bytes(payload[0:4], 'little')
+      # version = payload[4]
+      num_svs = payload[5]
+      # bytes 6-7 reserved
+      expected = 8 + 12 * num_svs
+      if len(payload) != expected:
+        return None
+      svs: list[tuple[int,int,int,int,int,int,int]] = []
+      off = 8
+      for _ in range(num_svs):
+        gnss_id = payload[off]
+        sv_id = payload[off+1]
+        cno = payload[off+2]
+        elev = int.from_bytes(payload[off+3:off+4], 'little', signed=True)
+        azim = int.from_bytes(payload[off+4:off+6], 'little', signed=True)
+        pr_res = int.from_bytes(payload[off+6:off+8], 'little', signed=True)
+        flags = int.from_bytes(payload[off+8:off+12], 'little')
+        svs.append((gnss_id, sv_id, cno, elev, azim, pr_res, flags))
+        off += 12
+
+      # build capnp
+      dat = messaging.new_message('ubloxGnss', valid=True)
+      sr = dat.ubloxGnss.init('satReport')
+      sr.iTow = itow
+      out = sr.init('svs', num_svs)
+      for i,(gnss_id, sv_id, cno, elev, azim, pr_res, flags) in enumerate(svs):
+        out[i].svId = sv_id
+        out[i].gnssId = gnss_id
+        out[i].flagsBitfield = flags
+        out[i].cno = cno
+        out[i].elevationDeg = elev
+        out[i].azimuthDeg = azim
+        out[i].pseudorangeResidual = pr_res * 0.1
+      return ('ubloxGnss', dat)
     return None
 
   # NAV-PVT -> gpsLocationExternal
