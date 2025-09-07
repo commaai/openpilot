@@ -8,6 +8,7 @@ from dataclasses import dataclass
 import subprocess
 import shlex
 from pathlib import Path
+from typing import BinaryIO, cast
 
 import zstandard as zstd
 
@@ -105,7 +106,7 @@ def build_init_data() -> bytes:
     res = b""
   commands[0].value = res
 
-  return msg.to_bytes()
+  return cast(bytes, msg.to_bytes())
 
 
 def build_sentinel(s_type: capnp_log.Sentinel.SentinelType, signal_num: int = 0) -> bytes:
@@ -113,13 +114,13 @@ def build_sentinel(s_type: capnp_log.Sentinel.SentinelType, signal_num: int = 0)
   s = m.init("sentinel")
   s.type = s_type
   s.signal = signal_num
-  return m.to_bytes()
+  return cast(bytes, m.to_bytes())
 
 
 @dataclass
 class WriterPair:
-  rfile: any
-  qfile: any
+  rfile: BinaryIO
+  qfile: BinaryIO
   cctx: zstd.ZstdCompressor
 
 
@@ -226,7 +227,8 @@ def main() -> int:
     is_encoder = lower.endswith("encodedata") and not lower.startswith("livestream")
     is_audio = (name == "rawAudioData") and record_audio_enabled
     if s.should_log or is_encoder or is_audio:
-      services.append((name, s.decimation))
+      dec = -1 if s.decimation is None else s.decimation
+      services.append((name, dec))
 
   # set up sockets and counters
   poller = messaging.Poller()
@@ -291,9 +293,11 @@ def main() -> int:
           set_preserve_attr(Path(state.segment_path_str()))
 
         # qlog decimation by service
-        dec = SERVICE_LIST[which].decimation if which in SERVICE_LIST else -1
-        dec = -1 if dec is None else dec
-        in_qlog = (dec != -1) and (counters.get(which, 0) % max(dec, 1) == 0)
+        qdec: int = -1
+        if which in SERVICE_LIST:
+          d = SERVICE_LIST[which].decimation
+          qdec = -1 if d is None else d
+        in_qlog = (qdec != -1) and (counters.get(which, 0) % max(qdec, 1) == 0)
         state.write(dat, in_qlog=in_qlog)
         if which is not None:
           counters[which] = counters.get(which, 0) + 1

@@ -7,6 +7,7 @@ import string
 import subprocess
 import time
 from pathlib import Path
+from typing import cast
 
 import zstandard as zstd
 
@@ -142,7 +143,7 @@ def build_init_data() -> bytes:
     res = b""
   commands[0].value = res
 
-  return msg.to_bytes()
+  return cast(bytes, msg.to_bytes())
 
 
 def build_boot_log() -> bytes:
@@ -166,7 +167,7 @@ def build_boot_log() -> bytes:
   except Exception:
     boot.launchLog = ""
 
-  return msg.to_bytes()
+  return cast(bytes, msg.to_bytes())
 
 
 def main() -> int:
