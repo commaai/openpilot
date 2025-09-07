@@ -222,29 +222,56 @@ class UBXMessageProcessor:
       cloudlog.warning("NAV-PVT message too short")
       return None
 
-    # Unpack NAV-PVT payload
+    # Unpack NAV-PVT payload - match C++ structure exactly
+    # Ensure all velocity fields are properly signed 32-bit integers
     data = struct.unpack('<IHBBBBBBIiBBBBiiiiIIiiiiiIIHHHHHHBBBB', msg.payload[:92])
 
-    fixType = data[10]
-    numSV = data[13]  # Number of satellites
+    iTOW = data[0]       # GPS time of week (ms)
+    year = data[1]       # Year (UTC)
+    month = data[2]      # Month (UTC) 1-12
+    day = data[3]        # Day (UTC) 1-31
+    hour = data[4]       # Hour (UTC) 0-23
+    minute = data[5]     # Minute (UTC) 0-59
+    sec = data[6]        # Second (UTC) 0-59
+    valid = data[7]      # Validity flags
+    tAcc = data[8]       # Time accuracy estimate (ns)
+    nano = data[9]       # Fraction of second (-1e9..1e9 ns)
+    fixType = data[10]   # GNSS fix type
+    flags = data[11]     # Fix status flags
+    flags2 = data[12]    # Additional flags
+    numSV = data[13]     # Number of satellites
 
-    lon = data[14] * 1e-7  # Longitude (deg)
-    lat = data[15] * 1e-7  # Latitude (deg)
-    height = data[16]      # Height above ellipsoid (mm)
-    hAcc = data[18]        # Horizontal accuracy estimate (mm)
-    vAcc = data[19]        # Vertical accuracy estimate (mm)
+    lon = data[14] * 1e-7   # Longitude (deg)
+    lat = data[15] * 1e-7   # Latitude (deg)
+    height = data[16]       # Height above ellipsoid (mm)
+    hMSL = data[17]         # Height above mean sea level (mm)
+    hAcc = data[18]         # Horizontal accuracy estimate (mm)
+    vAcc = data[19]         # Vertical accuracy estimate (mm)
 
-    gSpeed = data[23]      # Ground speed (mm/s)
-    headMot = data[24]     # Heading of motion (1e-5 deg)
-    sAcc = data[25]        # Speed accuracy estimate (mm/s)
-    headAcc = data[26]     # Heading accuracy estimate (1e-5 deg)
+    velN = data[20]         # NED north velocity (mm/s)
+    velE = data[21]         # NED east velocity (mm/s)
+    velD = data[22]         # NED down velocity (mm/s)
+    gSpeed = data[23]       # Ground speed (mm/s)
+    headMot = data[24]      # Heading of motion (1e-5 deg)
+    sAcc = data[25]         # Speed accuracy estimate (mm/s)
+    headAcc = data[26]      # Heading accuracy estimate (1e-5 deg)
 
     # Create GPS location message
     evt = messaging.new_message('gpsLocationExternal', valid=True)
     loc = evt.gpsLocationExternal
 
+    # Calculate Unix timestamp from GPS time (match C++ exactly)
+    import calendar
+    import datetime
+    try:
+      dt = datetime.datetime(year, month, day, hour, minute, sec, tzinfo=datetime.UTC)
+      utc_timestamp = calendar.timegm(dt.timetuple())
+      loc.unixTimestampMillis = int(utc_timestamp * 1e3 + nano * 1e-6)
+    except (ValueError, OverflowError):
+      # Fallback to log time if GPS time is invalid
+      loc.unixTimestampMillis = int(msg.log_time * 1000)
+
     # Basic location data
-    loc.unixTimestampMillis = int(msg.log_time * 1000)
     loc.latitude = lat
     loc.longitude = lon
     loc.altitude = height * 1e-3  # Convert mm to m
@@ -255,10 +282,17 @@ class UBXMessageProcessor:
     loc.speedAccuracy = sAcc * 1e-3         # Convert mm/s to m/s
     loc.bearingAccuracyDeg = headAcc * 1e-5 # Convert to degrees
 
-    # Validity flags
-    valid_fix = (fixType >= 2)  # 2D or 3D fix
+    # Set velocity vector (vNED) - match C++ exactly
+    import ctypes
+    # Convert to float32 exactly like C++: float f[] = { msg->vel_n() * 1e-03f, ... }
+    velN_f32 = ctypes.c_float(velN * 1e-3).value
+    velE_f32 = ctypes.c_float(velE * 1e-3).value
+    velD_f32 = ctypes.c_float(velD * 1e-3).value
+    loc.vNED = [velN_f32, velE_f32, velD_f32]
 
-    loc.hasFix = valid_fix
+    # Fix status - match C++ logic exactly: (flags % 2) == 1
+    loc.flags = flags
+    loc.hasFix = (flags % 2) == 1
     loc.satelliteCount = numSV
     loc.source = log.GpsLocationData.SensorSource.ublox
 
@@ -290,14 +324,15 @@ class UBXMessageProcessor:
 
   def process_rxm_sfrbx(self, msg: UBXMessage):
     """Process RXM-SFRBX (Subframe buffer) message"""
-    # Create minimal valid ubloxGnss message with ephemeris field
-    evt = messaging.new_message('ubloxGnss', valid=True)
-    eph = evt.ubloxGnss.init('ephemeris')
-    eph.svId = 1  # Dummy value
-    return evt
+    # Match C++ behavior: only handle GPS and GLONASS, return None for others
+    # Since we don't have kaitai parsing yet, return None to avoid sending events
+    return None
 
   def process_mon_hw(self, msg: UBXMessage):
     """Process MON-HW (Hardware status) message"""
+    if len(msg.payload) < 60:  # Expected size for MON-HW
+      return None
+
     # Create minimal valid ubloxGnss message with hwStatus field
     evt = messaging.new_message('ubloxGnss', valid=True)
     hw = evt.ubloxGnss.init('hwStatus')
@@ -306,6 +341,9 @@ class UBXMessageProcessor:
 
   def process_mon_hw2(self, msg: UBXMessage):
     """Process MON-HW2 (Extended hardware status) message"""
+    if len(msg.payload) < 28:  # Expected size for MON-HW2
+      return None
+
     # Create minimal valid ubloxGnss message with hwStatus2 field
     evt = messaging.new_message('ubloxGnss', valid=True)
     hw2 = evt.ubloxGnss.init('hwStatus2')
@@ -314,6 +352,9 @@ class UBXMessageProcessor:
 
   def process_nav_sat(self, msg: UBXMessage):
     """Process NAV-SAT (Satellite status) message"""
+    if len(msg.payload) < 8:  # Expected minimum size for NAV-SAT
+      return None
+
     # Create minimal valid ubloxGnss message with satReport field
     evt = messaging.new_message('ubloxGnss', valid=True)
     sat = evt.ubloxGnss.init('satReport')
@@ -395,7 +436,7 @@ def main():
       if message_ready:
         # Parse and process complete message
         msg = parser.parse_message()
-        if msg:  # Skip checksum validation for now
+        if msg and msg.checksum_valid:  # Only process messages with valid checksums
           events = processor.process_message(msg)
 
           # Send processed events
