@@ -168,7 +168,7 @@ def build_proc_log_message(msg) -> None:
   for i, r in enumerate(procs):
     proc = l[i]
     proc.pid = r['pid']
-    proc.state = ord(r['state'])
+    proc.state = ord(r['state'][0])
     proc.ppid = r['ppid']
     proc.cpuUser = r['utime'] / JIFFY
     proc.cpuSystem = r['stime'] / JIFFY
