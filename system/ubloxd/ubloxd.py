@@ -5,7 +5,6 @@ from enum import IntEnum
 
 from cereal import messaging, log
 from openpilot.common.swaglog import cloudlog
-from openpilot.common.realtime import config_realtime_process
 
 
 # UBLOX protocol constants
@@ -365,38 +364,24 @@ class UBXMessageProcessor:
 
 
 def main():
-  """Main ubloxd daemon loop"""
-  cloudlog.warning("Starting ubloxd (Python)")
-
-  # Set up process priority
-  config_realtime_process([1, 2, 3], 5)
-
-  # Initialize messaging
   pm = messaging.PubMaster(['ubloxGnss', 'gpsLocationExternal'])
-  sm = messaging.SubMaster(['ubloxRaw'])
+  sock = messaging.sub_sock('ubloxRaw', timeout=100, conflate=False)
 
   # Initialize parser and processor
   parser = UBXMessageParser()
   processor = UBXMessageProcessor()
 
-  cloudlog.warning("ubloxd ready")
-
   while True:
-    sm.update(timeout=100)
-
-    if not sm.updated['ubloxRaw']:
+    msg = messaging.recv_one_or_none(sock)
+    if msg is None:
       continue
 
-    # Get raw UBLOX data
-    if not sm.valid['ubloxRaw']:
-      continue
-
-    ublox_raw_data = sm['ubloxRaw']
+    ublox_raw_data = msg.ubloxRaw
     if len(ublox_raw_data) == 0:
       continue
 
     raw_data = bytes(ublox_raw_data)
-    log_time = sm.logMonoTime['ubloxRaw'] * 1e-9
+    log_time = msg.logMonoTime * 1e-9
 
     # Parse messages from raw data
     data_offset = 0
