@@ -214,8 +214,6 @@ def build_proc_log_message(msg) -> None:
 
 
 def main() -> NoReturn:
-  # TODO: did this work in the C version or was it failing silently?
-  #os.setpriority(os.PRIO_PROCESS, 0, -15)
   pm = messaging.PubMaster(['procLog'])
   rk = Ratekeeper(0.5)
   while True:
