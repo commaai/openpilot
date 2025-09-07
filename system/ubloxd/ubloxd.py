@@ -1,17 +1,13 @@
 #!/usr/bin/env python3
 import math
+import capnp
+import calendar
 import numpy as np
-import signal
-import time
 from collections import defaultdict
 from dataclasses import dataclass
 
-import capnp
 from cereal import log
-
 from cereal import messaging
-from cereal.services import SERVICE_LIST
-
 from openpilot.system.ubloxd.generated.ubx import Ubx
 from openpilot.system.ubloxd.generated.gps import Gps
 from openpilot.system.ubloxd.generated.glonass import Glonass
@@ -181,9 +177,8 @@ class UbloxMsgParser:
 
     # build UTC timestamp millis (NAV-PVT is in UTC)
     # tolerate invalid or unset date values like C++ timegm
-    import calendar as _cal
     try:
-      utc_tt = _cal.timegm((msg.year, msg.month, msg.day, msg.hour, msg.min, msg.sec, 0, 0, 0))
+      utc_tt = calendar.timegm((msg.year, msg.month, msg.day, msg.hour, msg.min, msg.sec, 0, 0, 0))
     except Exception:
       utc_tt = 0
     gps.unixTimestampMillis = int(utc_tt * 1e3 + (msg.nano * 1e-6))
@@ -498,29 +493,18 @@ class UbloxMsgParser:
     return ('ubloxGnss', dat)
 
 
-def main() -> None:
+def main():
   parser = UbloxMsgParser()
   pm = messaging.PubMaster(['ubloxGnss', 'gpsLocationExternal'])
-  sm = messaging.SubMaster(['ubloxRaw'])
+  sock = messaging.sub_sock('ubloxRaw', timeout=100, conflate=False)
 
-  running = True
-
-  def _sigint(_sig: int, _frame) -> None:
-    nonlocal running
-    running = False
-
-  signal.signal(signal.SIGINT, _sigint)
-
-  # match C++ poll behavior roughly
-  poll_dt = int(1000.0 / max(1.0, SERVICE_LIST['ubloxRaw'].frequency))
-
-  while running:
-    sm.update(poll_dt)
-    if not sm.updated['ubloxRaw']:
+  while True:
+    msg = messaging.recv_one_or_none(sock)
+    if msg is None:
       continue
 
-    data = bytes(sm['ubloxRaw'])
-    log_time = sm.logMonoTime['ubloxRaw'] * 1e-9
+    data = bytes(msg.ubloxRaw)
+    log_time = msg.logMonoTime * 1e-9
     frames = parser.framer.add_data(log_time, data)
     for frame in frames:
       try:
@@ -529,13 +513,8 @@ def main() -> None:
         continue
       if not res:
         continue
-      topic, dat = res
-      pm.send(topic, dat)
-
-    # avoid spinning if nothing else
-    if not frames:
-      time.sleep(0.001)
-
+      service, dat = res
+      pm.send(service, dat)
 
 if __name__ == '__main__':
   main()
