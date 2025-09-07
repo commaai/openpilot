@@ -59,7 +59,7 @@ PROCS = {
   "system.proclogd": 3.0,
   "system.logmessaged": 1.0,
   "system.tombstoned": 0,
-  "./logcatd": 1.0,
+  "system.journald": 1.0,
   "system.micd": 5.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
