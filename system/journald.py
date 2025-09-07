@@ -3,6 +3,7 @@ import json
 import subprocess
 
 import cereal.messaging as messaging
+from openpilot.common.swaglog import cloudlog
 
 
 def main():
@@ -18,6 +19,7 @@ def main():
       try:
         kv = json.loads(line)
       except json.JSONDecodeError:
+        cloudlog.exception("failed to parse journalctl output")
         continue
 
       msg = messaging.new_message('androidLog')
