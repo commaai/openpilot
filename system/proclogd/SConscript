@@ -1,6 +1,0 @@
-Import('env', 'messaging', 'common')
-libs = [messaging, 'pthread', common]
-env.Program('proclogd', ['main.cc', 'proclog.cc'], LIBS=libs)
-
-if GetOption('extras'):
-  env.Program('tests/test_proclog', ['tests/test_proclog.cc', 'proclog.cc'], LIBS=libs)

@@ -158,7 +158,6 @@ testpaths = [
   "system/camerad",
   "system/hardware",
   "system/loggerd",
-  "system/proclogd",
   "system/tests",
   "system/ubloxd",
   "system/webrtc",
