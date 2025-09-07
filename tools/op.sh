@@ -123,22 +123,33 @@ function op_check_git() {
 function op_check_os() {
   echo "Checking for compatible os version..."
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-
     if [ -f "/etc/os-release" ]; then
       source /etc/os-release
-      case "$VERSION_CODENAME" in
-        "jammy" | "kinetic" | "noble" | "focal")
-          echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
+      case "$ID" in
+        ubuntu)
+          case "$VERSION_CODENAME" in
+            "jammy" | "kinetic" | "noble" | "focal")
+              echo -e " ↳ [${GREEN}✔${NC}] Ubuntu $VERSION_CODENAME detected."
+              ;;
+            *)
+              echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
+              loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
+              return 1
+              ;;
+          esac
           ;;
-        * )
-          echo -e " ↳ [${RED}✗${NC}] Incompatible Ubuntu version $VERSION_CODENAME detected!"
-          loge "ERROR_INCOMPATIBLE_UBUNTU" "$VERSION_CODENAME"
+        arch)
+          echo -e " ↳ [${GREEN}✔${NC}] Arch-based distro ($NAME) detected."
+          ;;
+        *)
+          echo -e " ↳ [${RED}✗${NC}] Unsupported Linux distro: $ID ($VERSION_ID)"
+          loge "ERROR_UNKNOWN_LINUX_DISTRO" "$ID"
           return 1
           ;;
       esac
     else
-      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, or similar!"
-      loge "ERROR_UNKNOWN_UBUNTU"
+      echo -e " ↳ [${RED}✗${NC}] No /etc/os-release on your system. Make sure you're running on Ubuntu, Arch, or similar!"
+      loge "ERROR_UNKNOWN_LINUX"
       return 1
     fi
 
@@ -150,6 +161,7 @@ function op_check_os() {
     return 1
   fi
 }
+
 
 function op_check_python() {
   echo "Checking for compatible python version..."
@@ -216,12 +228,37 @@ function op_setup() {
 
   echo "Installing dependencies..."
   st="$(date +%s)"
+
+  SETUP_SCRIPT=""
   if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    SETUP_SCRIPT="tools/ubuntu_setup.sh"
+    if [[ -r /etc/os-release ]]; then
+      . /etc/os-release
+      case "$ID" in
+        ubuntu)
+          SETUP_SCRIPT="tools/ubuntu_setup.sh"
+          ;;
+        arch)
+          SETUP_SCRIPT="tools/arch_setup.sh"
+          ;;
+        *)
+          echo -e " ↳ [${RED}✗${NC}] Unknown linux platform"
+          loge "ERROR_UNSUPPORTED_OS"
+          return 1
+          ;;
+      esac
+    else
+      echo "/etc/os-release not found/readable; defaulting to Ubuntu script."
+      SETUP_SCRIPT="tools/ubuntu_setup.sh"
+    fi
   elif [[ "$OSTYPE" == "darwin"* ]]; then
     SETUP_SCRIPT="tools/mac_setup.sh"
+  else
+    echo "Unsupported OSTYPE='$OSTYPE'"
+    loge "ERROR_UNSUPPORTED_OS"
+    return 1
   fi
-  if ! $OPENPILOT_ROOT/$SETUP_SCRIPT; then
+
+  if ! "$OPENPILOT_ROOT/$SETUP_SCRIPT"; then
     echo -e " ↳ [${RED}✗${NC}] Dependencies installation failed!"
     loge "ERROR_DEPENDENCIES_INSTALLATION"
     return 1
