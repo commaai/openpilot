@@ -58,6 +58,8 @@ segments = [
   ("FORD", "regen755D8CB1E1F|2025-04-08--23-13-43--0"),
   ("RIVIAN", "regen5FCAC896BBE|2025-04-08--23-13-35--0"),
   ("TESLA", "2c912ca5de3b1ee9|0000025d--6eb6bcbca4--4"),
+
+  #("UBLOX", "f3a9f3d7b4dbda70|00000367--1c2d025845--42"),
 ]
 
 # dashcamOnly makes don't need to be tested until a full port is done
@@ -191,12 +193,12 @@ if __name__ == "__main__":
         continue
 
       for cfg in CONFIGS:
-        if cfg.proc_name not in tested_procs:
+        if cfg.proc_name not in tested_procs or cfg.proc_name != "ubloxd":
           continue
 
         # to speed things up, we only test all segments on card
-        if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
-          continue
+        #if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
+        #  continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated
