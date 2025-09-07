@@ -4,6 +4,7 @@ import re
 import random
 import string
 import subprocess
+import sys
 import time
 from collections import defaultdict
 from pathlib import Path
@@ -54,7 +55,7 @@ class TestLoggerd:
 
   def _gen_bootlog(self):
     with Timeout(5):
-      out = subprocess.check_output("./bootlog", cwd=os.path.join(BASEDIR, "system/loggerd"), encoding='utf-8')
+      out = subprocess.check_output([sys.executable, "bootlog.py"], cwd=os.path.join(BASEDIR, "system/loggerd"), encoding='utf-8')
 
     log_fn = self._get_log_fn(out)
 
