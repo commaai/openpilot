@@ -1,20 +1,11 @@
-Import('env', 'common', 'messaging')
-
-loc_libs = [messaging, common, 'kaitai', 'pthread']
+Import('env')
 
 if GetOption('kaitai'):
-  generated = Dir('generated').srcnode().abspath
-  cmd = f"kaitai-struct-compiler --target cpp_stl --outdir {generated} $SOURCES"
-  env.Command(['generated/ubx.cpp', 'generated/ubx.h'], 'ubx.ksy', cmd)
-  env.Command(['generated/gps.cpp', 'generated/gps.h'], 'gps.ksy', cmd)
-  glonass = env.Command(['generated/glonass.cpp', 'generated/glonass.h'], 'glonass.ksy', cmd)
-
+  current_dir = Dir('./generated/').srcnode().abspath
+  python_cmd = f"kaitai-struct-compiler --target python --outdir {current_dir} $SOURCES"
+  env.Command(File('./generated/ubx.py'), 'ubx.ksy', python_cmd)
+  env.Command(File('./generated/gps.py'), 'gps.ksy', python_cmd)
+  env.Command(File('./generated/glonass.py'), 'glonass.ksy', python_cmd)
   # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
-  patch = env.Command(None, 'glonass_fix.patch', 'git apply $SOURCES')
-  env.Depends(patch, glonass)
-
-glonass_obj = env.Object('generated/glonass.cpp')
-env.Program("ubloxd", ["ubloxd.cc", "ublox_msg.cc", "generated/ubx.cpp", "generated/gps.cpp",  glonass_obj], LIBS=loc_libs)
-
-if GetOption('extras'):
-  env.Program("tests/test_glonass_runner", ['tests/test_glonass_runner.cc', 'tests/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])
+  py_glonass_fix = env.Command(None, File('./generated/glonass.py'), "sed -i 's/self._io.align_to_byte()/# self._io.align_to_byte()/' $SOURCES")
+  env.Depends(py_glonass_fix, File('./generated/glonass.py'))
