@@ -1,12 +1,10 @@
 Import('env')
 
-current_dir = Dir('./generated/').srcnode().abspath
-python_cmd = f"kaitai-struct-compiler --target python --outdir {current_dir} $SOURCES"
-env.Command(File('./generated/ubx.py'), 'ubx.ksy', python_cmd)
-env.Command(File('./generated/gps.py'), 'gps.ksy', python_cmd)
-env.Command(File('./generated/glonass.py'), 'glonass.ksy', python_cmd)
-
+# TODO: look into this
 # kaitai issue: https://github.com/kaitai-io/kaitai_struct/issues/910
-
-#if GetOption('extras'):
-#  env.Program("tests/test_glonass_runner", ['tests/test_glonass_runner.cc', 'tests/test_glonass_kaitai.cc', glonass_obj], LIBS=[loc_libs])
+if GetOption('kaitai'):
+  current_dir = Dir('./generated/').srcnode().abspath
+  python_cmd = f"kaitai-struct-compiler --target python --outdir {current_dir} $SOURCES"
+  env.Command(File('./generated/ubx.py'), 'ubx.ksy', python_cmd)
+  env.Command(File('./generated/gps.py'), 'gps.ksy', python_cmd)
+  env.Command(File('./generated/glonass.py'), 'glonass.ksy', python_cmd)

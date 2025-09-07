@@ -217,7 +217,7 @@ class UBXMessageProcessor:
   def __init__(self):
     pass
 
-  def process_nav_pvt(self, msg: UBXMessage) -> log.Event | None:
+  def process_nav_pvt(self, msg: UBXMessage):
     """Process NAV-PVT (Position Velocity Time) message"""
     if len(msg.payload) < 92:
       cloudlog.warning("NAV-PVT message too short")
@@ -265,7 +265,7 @@ class UBXMessageProcessor:
 
     return evt
 
-  def process_rxm_rawx(self, msg: UBXMessage) -> log.Event | None:
+  def process_rxm_rawx(self, msg: UBXMessage):
     """Process RXM-RAWX (Raw measurement data) message"""
     if len(msg.payload) < 16:
       return None
@@ -289,7 +289,7 @@ class UBXMessageProcessor:
     rs.clkReset = bool(recStat & 0x04)
     return evt
 
-  def process_rxm_sfrbx(self, msg: UBXMessage) -> log.Event | None:
+  def process_rxm_sfrbx(self, msg: UBXMessage):
     """Process RXM-SFRBX (Subframe buffer) message"""
     # Create minimal valid ubloxGnss message with ephemeris field
     evt = messaging.new_message('ubloxGnss', valid=True)
@@ -297,7 +297,7 @@ class UBXMessageProcessor:
     eph.svId = 1  # Dummy value
     return evt
 
-  def process_mon_hw(self, msg: UBXMessage) -> log.Event | None:
+  def process_mon_hw(self, msg: UBXMessage):
     """Process MON-HW (Hardware status) message"""
     # Create minimal valid ubloxGnss message with hwStatus field
     evt = messaging.new_message('ubloxGnss', valid=True)
@@ -305,7 +305,7 @@ class UBXMessageProcessor:
     hw.noisePerMS = 0
     return evt
 
-  def process_mon_hw2(self, msg: UBXMessage) -> log.Event | None:
+  def process_mon_hw2(self, msg: UBXMessage):
     """Process MON-HW2 (Extended hardware status) message"""
     # Create minimal valid ubloxGnss message with hwStatus2 field
     evt = messaging.new_message('ubloxGnss', valid=True)
@@ -313,7 +313,7 @@ class UBXMessageProcessor:
     hw2.ofsI = 0
     return evt
 
-  def process_nav_sat(self, msg: UBXMessage) -> log.Event | None:
+  def process_nav_sat(self, msg: UBXMessage):
     """Process NAV-SAT (Satellite status) message"""
     # Create minimal valid ubloxGnss message with satReport field
     evt = messaging.new_message('ubloxGnss', valid=True)
