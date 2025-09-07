@@ -622,10 +622,10 @@ name = "gymnasium"
 version = "1.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "cloudpickle" },
-    { name = "farama-notifications" },
-    { name = "numpy" },
-    { name = "typing-extensions" },
+    { name = "cloudpickle", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "farama-notifications", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/fd/17/c2a0e15c2cd5a8e788389b280996db927b923410de676ec5c7b2695e9261/gymnasium-1.2.0.tar.gz", hash = "sha256:344e87561012558f603880baf264ebc97f8a5c997a957b0c9f910281145534b0", size = 821142, upload-time = "2025-06-27T08:21:20.262Z" }
 wheels = [
@@ -718,6 +718,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/6d/9e/59f4a5b7855ced7346ebf40a2e9a8942863f644378d956f68bcef2c88b90/json-rpc-1.15.0.tar.gz", hash = "sha256:e6441d56c1dcd54241c937d0a2dcd193bdf0bdc539b5316524713f554b7f85b9", size = 28854, upload-time = "2023-06-11T09:45:49.078Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/94/9e/820c4b086ad01ba7d77369fb8b11470a01fac9b4977f02e18659cf378b6b/json_rpc-1.15.0-py2.py3-none-any.whl", hash = "sha256:4a4668bbbe7116feb4abbd0f54e64a4adcf4b8f648f19ffa0848ad0f6606a9bf", size = 39450, upload-time = "2023-06-11T09:45:47.136Z" },
+]
+
+[[package]]
+name = "kaitaistruct"
+version = "0.10"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/04/dd60b9cb65d580ef6cb6eaee975ad1bdd22d46a3f51b07a1e0606710ea88/kaitaistruct-0.10.tar.gz", hash = "sha256:a044dee29173d6afbacf27bcac39daf89b654dd418cfa009ab82d9178a9ae52a", size = 7061, upload-time = "2022-07-09T00:34:06.729Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4e/bf/88ad23efc08708bda9a2647169828e3553bb2093a473801db61f75356395/kaitaistruct-0.10-py2.py3-none-any.whl", hash = "sha256:a97350919adbf37fda881f75e9365e2fb88d04832b7a4e57106ec70119efb235", size = 7013, upload-time = "2022-07-09T00:34:03.905Z" },
 ]
 
 [[package]]
@@ -903,22 +912,22 @@ name = "metadrive-simulator"
 version = "0.4.2.4"
 source = { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" }
 dependencies = [
-    { name = "filelock" },
-    { name = "gymnasium" },
-    { name = "lxml" },
-    { name = "matplotlib" },
-    { name = "numpy" },
-    { name = "opencv-python-headless" },
-    { name = "panda3d" },
-    { name = "panda3d-gltf" },
-    { name = "pillow" },
-    { name = "progressbar" },
-    { name = "psutil" },
-    { name = "pygments" },
-    { name = "requests" },
-    { name = "shapely" },
-    { name = "tqdm" },
-    { name = "yapf" },
+    { name = "filelock", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "gymnasium", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "lxml", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "matplotlib", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "opencv-python-headless", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d-gltf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "pillow", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "progressbar", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "psutil", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "pygments", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "requests", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "shapely", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "tqdm", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "yapf", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 wheels = [
     { url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl", hash = "sha256:fbf0ea9be67e65cd45d38ff930e3d49f705dd76c9ddbd1e1482e3f87b61efcef" },
@@ -1240,6 +1249,7 @@ dependencies = [
     { name = "future-fstrings" },
     { name = "inputs" },
     { name = "json-rpc" },
+    { name = "kaitaistruct" },
     { name = "libusb1" },
     { name = "numpy" },
     { name = "onnx" },
@@ -1334,6 +1344,7 @@ requires-dist = [
     { name = "jeepney", marker = "extra == 'dev'" },
     { name = "jinja2", marker = "extra == 'docs'" },
     { name = "json-rpc" },
+    { name = "kaitaistruct" },
     { name = "libusb1" },
     { name = "matplotlib", marker = "extra == 'dev'" },
     { name = "metadrive-simulator", marker = "platform_machine != 'aarch64' and extra == 'tools'", url = "https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl" },
@@ -1422,8 +1433,8 @@ name = "panda3d-gltf"
 version = "0.13"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d" },
-    { name = "panda3d-simplepbr" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "panda3d-simplepbr", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/07/7f/9f18fc3fa843a080acb891af6bcc12262e7bdf1d194a530f7042bebfc81f/panda3d-gltf-0.13.tar.gz", hash = "sha256:d06d373bdd91cf530909b669f43080e599463bbf6d3ef00c3558bad6c6b19675", size = 25573, upload-time = "2021-05-21T05:46:32.738Z" }
 wheels = [
@@ -1435,8 +1446,8 @@ name = "panda3d-simplepbr"
 version = "0.13.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "panda3d" },
-    { name = "typing-extensions" },
+    { name = "panda3d", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/0d/be/c4d1ded04c22b357277cf6e6a44c1ab4abb285a700bd1991460460e05b99/panda3d_simplepbr-0.13.1.tar.gz", hash = "sha256:c83766d7c8f47499f365a07fe1dff078fc8b3054c2689bdc8dceabddfe7f1a35", size = 6216055, upload-time = "2025-03-30T16:57:41.087Z" }
 wheels = [
@@ -4173,9 +4184,9 @@ name = "pyopencl"
 version = "2025.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
-    { name = "platformdirs" },
-    { name = "pytools" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "pytools", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/28/88/0ac460d3e2def08b2ad6345db6a13613815f616bbbd60c6f4bdf774f4c41/pyopencl-2025.1.tar.gz", hash = "sha256:0116736d7f7920f87b8db4b66a03f27b1d930d2e37ddd14518407cc22dd24779", size = 422510, upload-time = "2025-01-22T00:16:58.421Z" }
 wheels = [
@@ -4351,7 +4362,7 @@ wheels = [
 
 [[package]]
 name = "pytest-xdist"
-version = "3.7.1.dev24+g2b4372bd6"
+version = "3.7.1.dev24+g2b4372b"
 source = { git = "https://github.com/sshane/pytest-xdist?rev=2b4372bd62699fb412c4fe2f95bf9f01bd2018da#2b4372bd62699fb412c4fe2f95bf9f01bd2018da" }
 dependencies = [
     { name = "execnet" },
@@ -4393,9 +4404,9 @@ name = "pytools"
 version = "2024.1.10"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs" },
-    { name = "siphash24" },
-    { name = "typing-extensions" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "siphash24", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
+    { name = "typing-extensions", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ee/0f/56e109c0307f831b5d598ad73976aaaa84b4d0e98da29a642e797eaa940c/pytools-2024.1.10.tar.gz", hash = "sha256:9af6f4b045212c49be32bb31fe19606c478ee4b09631886d05a32459f4ce0a12", size = 81741, upload-time = "2024-07-17T18:47:38.287Z" }
 wheels = [
@@ -4719,7 +4730,7 @@ name = "shapely"
 version = "2.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
+    { name = "numpy", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/ca/3c/2da625233f4e605155926566c0e7ea8dda361877f48e8b1655e53456f252/shapely-2.1.1.tar.gz", hash = "sha256:500621967f2ffe9642454808009044c21e5b35db89ce69f8a2042c2ffd0e2772", size = 315422, upload-time = "2025-05-19T11:04:41.265Z" }
 wheels = [
@@ -4948,7 +4959,7 @@ name = "yapf"
 version = "0.43.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "platformdirs" },
+    { name = "platformdirs", marker = "platform_machine != 'aarch64' or sys_platform != 'linux'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/23/97/b6f296d1e9cc1ec25c7604178b48532fa5901f721bcf1b8d8148b13e5588/yapf-0.43.0.tar.gz", hash = "sha256:00d3aa24bfedff9420b2e0d5d9f5ab6d9d4268e72afbf59bb3fa542781d5218e", size = 254907, upload-time = "2024-11-14T00:11:41.584Z" }
 wheels = [
