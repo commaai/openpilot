@@ -1,8 +1,8 @@
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 libs = [common, messaging, visionipc,
-        'avformat', 'avcodec', 'avutil',
-        'yuv', 'OpenCL', 'pthread']
+        'avformat', 'avcodec', 'avutil','yuv',
+        'OpenCL', 'pthread', 'jpeg']
 
 src = ['encoderd.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch != "larch64":
@@ -15,4 +15,4 @@ if arch == "Darwin":
   # exclude v4l
   del src[src.index('encoder/v4l_encoder.cc')]
 
-env.Program('encoderd', src, LIBS=libs + ["jpeg"])
+env.Program('encoderd', src, LIBS=libs)
