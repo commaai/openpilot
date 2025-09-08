@@ -6,6 +6,12 @@ import shutil
 import subprocess
 import time
 from pathlib import Path
+import threading
+
+import numpy as np
+import cereal.messaging as messaging
+from msgq.visionipc import VisionIpcServer, VisionStreamType
+from openpilot.common.transformations.camera import DEVICE_CAMERAS
 
 from parameterized import parameterized
 from tqdm import trange
@@ -31,7 +37,6 @@ CAMERAS = [
 FILE_SIZE_TOLERANCE = 0.7
 
 
-@pytest.mark.tici # TODO: all of loggerd should work on PC
 class TestEncoder:
 
   def setup_method(self):
@@ -56,11 +61,49 @@ class TestEncoder:
     Params().put_bool("RecordFront", record_front)
 
     managed_processes['sensord'].start()
+
+    # setup a fake VisionIPC server and publish frames in a background thread (before starting encoders)
+    d = DEVICE_CAMERAS[("tici", "ar0231")]
+    streams = [
+      (VisionStreamType.VISION_STREAM_ROAD, (d.fcam.width, d.fcam.height, 2048 * 2346, 2048, 2048 * 1216), "roadCameraState"),
+      (VisionStreamType.VISION_STREAM_DRIVER, (d.dcam.width, d.dcam.height, 2048 * 2346, 2048, 2048 * 1216), "driverCameraState"),
+      (VisionStreamType.VISION_STREAM_WIDE_ROAD, (d.ecam.width, d.ecam.height, 2048 * 2346, 2048, 2048 * 1216), "wideRoadCameraState"),
+    ]
+
+    vipc_server = VisionIpcServer("camerad")
+    for stream_type, frame_spec, _ in streams:
+      vipc_server.create_buffers_with_sizes(stream_type, 40, *(frame_spec))
+    vipc_server.start_listener()
+
+    pm = messaging.PubMaster([s for _, _, s in streams])
+
     managed_processes['loggerd'].start()
     managed_processes['encoderd'].start()
+    # ensure loggerd is connected to camera state topics
+    assert pm.wait_for_readers_to_update("roadCameraState", timeout=5)
 
-    time.sleep(1.0)
-    managed_processes['camerad'].start()
+    stop_event = threading.Event()
+
+    def publisher():
+      fps = 20
+      n = 0
+      while not stop_event.is_set():
+        n += 1
+        t = n / fps
+        for stream_type, frame_spec, state in streams:
+          dat = np.empty(frame_spec[2], dtype=np.uint8)
+          vipc_server.send(stream_type, dat[:].flatten().tobytes(), n, t, t)
+
+          camera_state = messaging.new_message(state)
+          frame = getattr(camera_state, state)
+          frame.frameId = n
+          pm.send(state, camera_state)
+
+        # keep ~20 FPS
+        time.sleep(1.0 / fps)
+
+    pub_thread = threading.Thread(target=publisher, daemon=True)
+    pub_thread.start()
 
     num_segments = int(os.getenv("SEGMENTS", random.randint(2, 8)))
 
@@ -146,7 +189,8 @@ class TestEncoder:
             time.sleep(0.1)
         check_seg(i)
     finally:
+      stop_event.set()
+      pub_thread.join(timeout=5)
       managed_processes['loggerd'].stop()
       managed_processes['encoderd'].stop()
-      managed_processes['camerad'].stop()
       managed_processes['sensord'].stop()
