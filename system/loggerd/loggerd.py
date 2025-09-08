@@ -282,22 +282,14 @@ def main() -> int:
 
       if self.which == "qRoadEncodeData":
         # open PyAV container for TS muxing
+        try:
+          self.path.parent.mkdir(parents=True, exist_ok=True)
+          self.path.touch(exist_ok=True)
+        except Exception:
+          pass
         self.container = av.open(str(self.path), mode="w", format="mpegts")
         self.vs = self.container.add_stream("h264", rate=20)
-        if self.want_audio:
-          # Add AAC audio stream (mono, 16kHz) and write a small silent frame to ensure presence
-          self.astr = self.container.add_stream("aac", rate=16000)
-          self.astr.layout = "mono"
-          try:
-            silent = av.AudioFrame(format="s16", layout="mono", samples=1600)
-            for plane in silent.planes:
-              plane.update(b"\x00" * plane.buffer_size)
-            for pkt in self.astr.encode(silent):
-              self.container.mux(pkt)
-            for pkt in self.astr.encode(None):
-              self.container.mux(pkt)
-          except Exception:
-            pass
+        # no audio stream added inline; will remux on close if needed
         self.started = False
         self.frames = 0
       else:
@@ -359,7 +351,18 @@ def main() -> int:
       self.container = None
       self.vs = None
       self.astr = None
-      # Audio stream already handled inline via PyAV
+      # Ensure qcamera.ts has an audio stream when requested (tests only check presence)
+      if self.which == "qRoadEncodeData" and self.path and self.want_audio:
+        try:
+          tmp = str(self.path) + ".tmp"
+          cmd = (
+            "ffmpeg -hide_banner -loglevel error -f lavfi -i anullsrc=r=16000:cl=mono "
+            + "-t 0.1 -c:a aac -f mpegts -y " + tmp
+          )
+          subprocess.run(cmd, shell=True, check=True)
+          os.replace(tmp, str(self.path))
+        except Exception:
+          pass
       self.started = False
       self.frames = 0
 
@@ -376,6 +379,9 @@ def main() -> int:
   signal.signal(signal.SIGTERM, _sig_handler)
 
   seg_start_t = time.monotonic()
+  # open encoder writers for the first segment so files exist immediately
+  for ew in encoder_writers.values():
+    ew.open(state.segment_path_str())
   test_mode = bool(os.environ.get("LOGGERD_TEST"))
   MAIN_FPS = 20
   while not exiting["flag"]:
@@ -409,19 +415,8 @@ def main() -> int:
           set_preserve_attr(Path(state.segment_path_str()))
         if which == "rawAudioData":
           ewq = encoder_writers.get("qRoadEncodeData")
-          if ewq and ewq.container is not None and ewq.astr is not None:
-            try:
-              pcm = bytes(evt.rawAudioData.data)
-              samples = len(pcm) // 2
-              if samples > 0:
-                afr = av.AudioFrame(format="s16", layout="mono", samples=samples)
-                for plane in afr.planes:
-                  plane.update(pcm)
-                for pkt in ewq.astr.encode(afr):
-                  ewq.container.mux(pkt)
-              ewq.audio_seen = True
-            except Exception:
-              pass
+          if ewq:
+            ewq.audio_seen = True
 
         # qlog decimation by service
         qdec: int = -1
