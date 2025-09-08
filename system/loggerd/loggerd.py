@@ -6,11 +6,11 @@ import signal
 import time
 from dataclasses import dataclass
 import subprocess
-import shlex
 from pathlib import Path
 from typing import BinaryIO, cast
 
 import zstandard as zstd
+import av  # PyAV for muxing qcamera.ts
 
 from cereal import log as capnp_log
 from cereal.services import SERVICE_LIST
@@ -244,15 +244,128 @@ def main() -> int:
 
   counters: dict[str, int] = {name: 0 for name, _ in services}
 
-  # minimal encoder file mapping (publish_name -> filename)
+  # encoder writers per stream
   record_front = Params().get_bool("RecordFront")
-  encoder_files = {
-    "roadEncodeData": "fcamera.hevc",
-    "driverEncodeData": "dcamera.hevc" if record_front else None,
-    "wideRoadEncodeData": "ecamera.hevc",
-    "qRoadEncodeData": "qcamera.ts",
+  V4L2_BUF_FLAG_KEYFRAME = 0x0008
+
+  class EncWriter:
+    def __init__(self, which: str):
+      self.which = which
+      self.path: Path | None = None
+      self.file: BinaryIO | None = None
+      self.ffmpeg: subprocess.Popen | None = None
+      self.container: av.container.OutputContainer | None = None
+      self.vs: av.stream.Stream | None = None
+      self.astr: av.stream.Stream | None = None
+      self.started = False
+      self.frames = 0
+      self.want_audio = Params().get_bool("RecordAudio")
+      self.audio_seen = False
+
+    def open(self, seg_path: str):
+      if self.which == "roadEncodeData":
+        self.path = Path(seg_path) / "fcamera.hevc"
+      elif self.which == "driverEncodeData":
+        if record_front:
+          self.path = Path(seg_path) / "dcamera.hevc"
+        else:
+          self.path = None
+      elif self.which == "wideRoadEncodeData":
+        self.path = Path(seg_path) / "ecamera.hevc"
+      elif self.which == "qRoadEncodeData":
+        self.path = Path(seg_path) / "qcamera.ts"
+      else:
+        self.path = None
+
+      if self.path is None:
+        return
+
+      if self.which == "qRoadEncodeData":
+        # open PyAV container for TS muxing
+        self.container = av.open(str(self.path), mode="w", format="mpegts")
+        self.vs = self.container.add_stream("h264", rate=20)
+        if self.want_audio:
+          # Add AAC audio stream (mono, 16kHz) and write a small silent frame to ensure presence
+          self.astr = self.container.add_stream("aac", rate=16000)
+          self.astr.layout = "mono"
+          try:
+            silent = av.AudioFrame(format="s16", layout="mono", samples=1600)
+            for plane in silent.planes:
+              plane.update(b"\x00" * plane.buffer_size)
+            for pkt in self.astr.encode(silent):
+              self.container.mux(pkt)
+            for pkt in self.astr.encode(None):
+              self.container.mux(pkt)
+          except Exception:
+            pass
+        self.started = False
+        self.frames = 0
+      else:
+        self.file = open(self.path, "ab")
+      self.started = False
+      self.frames = 0
+
+    def write(self, header: bytes, data: bytes, flags: int):
+      if self.path is None:
+        return
+      # start on keyframe
+      if not self.started:
+        if (flags & V4L2_BUF_FLAG_KEYFRAME) == 0:
+          return
+        # write header first
+        if self.which == "qRoadEncodeData":
+          if self.vs is not None:
+            # Put SPS/PPS into extradata for H264 stream
+            try:
+              self.vs.codec_context.extradata = header
+            except Exception:
+              pass
+        else:
+          if self.file:
+            self.file.write(header)
+        self.started = True
+      # write frame
+      if self.which == "qRoadEncodeData":
+        if self.container is not None and self.vs is not None:
+          try:
+            pkt = av.packet.Packet(data)
+            # Set PTS/DTS in stream time_base
+            pkt.stream = self.vs
+            pkt.pts = self.frames
+            pkt.dts = self.frames
+            pkt.time_base = self.vs.time_base
+            self.container.mux(pkt)
+            self.frames += 1
+          except Exception:
+            pass
+      else:
+        if self.file:
+          self.file.write(data)
+          self.frames += 1
+
+    def close(self):
+      if self.file:
+        try:
+          self.file.flush()
+          self.file.close()
+        except Exception:
+          pass
+      self.file = None
+      if self.container is not None:
+        try:
+          self.container.close()
+        except Exception:
+          pass
+      self.container = None
+      self.vs = None
+      self.astr = None
+      # Audio stream already handled inline via PyAV
+      self.started = False
+      self.frames = 0
+
+  encoder_writers: dict[str, EncWriter] = {
+    k: EncWriter(k) for k in ("roadEncodeData", "driverEncodeData", "wideRoadEncodeData", "qRoadEncodeData")
   }
-  created_in_segment: set[str] = set()
 
   # signal handling
   exiting = {"flag": False, "sig": 0}
@@ -265,13 +378,16 @@ def main() -> int:
   seg_start_t = time.monotonic()
   test_mode = bool(os.environ.get("LOGGERD_TEST"))
   MAIN_FPS = 20
-  frames_seen = 0
   while not exiting["flag"]:
     # rotate by time
     if (time.monotonic() - seg_start_t) >= seg_len:
+      # rotate
       state.next()
       seg_start_t = time.monotonic()
-      created_in_segment.clear()
+      # close encoders and reopen
+      for ew in encoder_writers.values():
+        ew.close()
+        ew.open(state.segment_path_str())
 
     for sock in poller.poll(1000):
 
@@ -291,6 +407,21 @@ def main() -> int:
         # preserve markers
         if which in ("userBookmark", "audioFeedback"):
           set_preserve_attr(Path(state.segment_path_str()))
+        if which == "rawAudioData":
+          ewq = encoder_writers.get("qRoadEncodeData")
+          if ewq and ewq.container is not None and ewq.astr is not None:
+            try:
+              pcm = bytes(evt.rawAudioData.data)
+              samples = len(pcm) // 2
+              if samples > 0:
+                afr = av.AudioFrame(format="s16", layout="mono", samples=samples)
+                for plane in afr.planes:
+                  plane.update(pcm)
+                for pkt in ewq.astr.encode(afr):
+                  ewq.container.mux(pkt)
+              ewq.audio_seen = True
+            except Exception:
+              pass
 
         # qlog decimation by service
         qdec: int = -1
@@ -302,39 +433,37 @@ def main() -> int:
         if which is not None:
           counters[which] = counters.get(which, 0) + 1
 
-        # touch encoder output files when we see encoder data
-        if which in encoder_files:
-          fn = encoder_files[which]
-          if fn is not None and fn not in created_in_segment:
-            try:
-              p = Path(state.segment_path_str()) / fn
-              p.touch(exist_ok=True)
-              created_in_segment.add(fn)
-              # add minimal audio stream to qcamera.ts if recording audio
-              if fn == "qcamera.ts" and Params().get_bool("RecordAudio"):
-                cmd = (
-                  "ffmpeg -hide_banner -loglevel error -f lavfi -i anullsrc=r=16000:cl=mono "
-                  + f"-t 0.1 -c:a aac -f mpegts -y {shlex.quote(str(p))}"
-                )
-                try:
-                  subprocess.run(cmd, shell=True, check=True)
-                except Exception:
-                  pass
-            except Exception:
-              pass
-          # in test mode, rotate based on frame count instead of wall time
+        # consume encoder data and write video
+        if which in encoder_writers:
+          try:
+            edata = getattr(evt, which)
+            header = bytes(edata.header)
+            data = bytes(edata.data)
+            flags = int(edata.idx.flags)
+          except Exception:
+            header = b""
+            data = b""
+            flags = 0
+          ew = encoder_writers[which]
+          if ew.path is None or (state.segment_path_str() and (ew.path is None or str(ew.path.parent) != state.segment_path_str())):
+            ew.open(state.segment_path_str())
+          ew.write(header, data, flags)
+
+          # in test mode, rotate based on road frames
           if test_mode and which == "roadEncodeData":
-            frames_seen += 1
-            if frames_seen >= seg_len * MAIN_FPS:
+            if ew.frames >= seg_len * MAIN_FPS:
               state.next()
               seg_start_t = time.monotonic()
-              created_in_segment.clear()
-              frames_seen = 0
+              for eww in encoder_writers.values():
+                eww.close()
+                eww.open(state.segment_path_str())
         cnt += 1
         if cnt >= 200:
           break
 
   state.close(exiting["sig"])
+  for ew in encoder_writers.values():
+    ew.close()
   return 0
 
 
