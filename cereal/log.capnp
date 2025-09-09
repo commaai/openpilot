@@ -1018,7 +1018,7 @@ struct DrivingModelData {
   modelExecutionTime @7 :Float32;
 
   action @2 :ModelDataV2.Action;
-  rawAction @8: :ModelDataV2.Action;
+  rawAction @8 :ModelDataV2.Action;
 
   laneLineMeta @3 :LaneLineMeta;
   meta @4 :MetaData;
