@@ -123,9 +123,15 @@ class Controls:
     curvature_limited = curvature_limited or raw_curvature_limited
 
     actuators.curvature = self.desired_curvature
-    steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
-                                                       self.steer_limited_by_safety, self.desired_curvature, new_raw_desired_curvature,
-                                                       curvature_limited)  # TODO what if not available
+
+    if self.CP.lateralTuning.which() == 'torque':
+      steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
+                                                        self.steer_limited_by_safety, self.desired_curvature, new_raw_desired_curvature,
+                                                        curvature_limited)  # TODO what if not available
+    else:
+      steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
+                                                      self.steer_limited_by_safety, self.desired_curvature,
+                                                      curvature_limited)  # TODO what if not available
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
     # Ensure no NaNs/Infs
