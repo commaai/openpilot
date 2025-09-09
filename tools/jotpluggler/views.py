@@ -49,7 +49,7 @@ class TimeSeriesPanel(ViewPanel):
     self._series_data: dict[str, tuple[list, list]] = {}
     self._last_plot_duration = 0
     self._update_lock = threading.RLock()
-    self.results_deque: deque[tuple[str, list, list]] = deque()
+    self._results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
 
   def create_ui(self, parent_tag: str):
@@ -75,12 +75,12 @@ class TimeSeriesPanel(ViewPanel):
         for series_path in list(self._series_data.keys()):
           self.add_series(series_path, update=True)
 
-      while self.results_deque:  # handle downsampled results in main thread
-        results = self.results_deque.popleft()
+      while self._results_deque:  # handle downsampled results in main thread
+        results = self._results_deque.popleft()
         for series_path, downsampled_time, downsampled_values in results:
           series_tag = f"series_{self.panel_id}_{series_path}"
           if dpg.does_item_exist(series_tag):
-            dpg.set_value(series_tag, [downsampled_time, downsampled_values])
+            dpg.set_value(series_tag, (downsampled_time, downsampled_values.astype(float)))
 
       # update timeline
       current_time_s = self.playback_manager.current_time_s
@@ -118,11 +118,11 @@ class TimeSeriesPanel(ViewPanel):
         target_points = max(int(target_points_per_second * series_duration), plot_width)
         work_items.append((series_path, time_array, value_array, target_points))
       elif dpg.does_item_exist(f"series_{self.panel_id}_{series_path}"):
-        dpg.set_value(f"series_{self.panel_id}_{series_path}", [time_array, value_array])
+        dpg.set_value(f"series_{self.panel_id}_{series_path}", (time_array, value_array.astype(float)))
 
     if work_items:
       self.worker_manager.submit_task(
-        TimeSeriesPanel._downsample_worker, work_items, callback=lambda results: self.results_deque.append(results), task_id=f"downsample_{self.panel_id}"
+        TimeSeriesPanel._downsample_worker, work_items, callback=lambda results: self._results_deque.append(results), task_id=f"downsample_{self.panel_id}"
       )
 
   def add_series(self, series_path: str, update: bool = False):
@@ -133,9 +133,9 @@ class TimeSeriesPanel(ViewPanel):
       time_array, value_array = self._series_data[series_path]
       series_tag = f"series_{self.panel_id}_{series_path}"
       if dpg.does_item_exist(series_tag):
-        dpg.set_value(series_tag, [time_array, value_array])
+        dpg.set_value(series_tag, (time_array, value_array.astype(float)))
       else:
-        line_series_tag = dpg.add_line_series(x=time_array, y=value_array, label=series_path, parent=self.y_axis_tag, tag=series_tag)
+        line_series_tag = dpg.add_line_series(x=time_array, y=value_array.astype(float), label=series_path, parent=self.y_axis_tag, tag=series_tag)
         dpg.bind_item_theme(line_series_tag, "global_line_theme")
         dpg.fit_axis_data(self.x_axis_tag)
         dpg.fit_axis_data(self.y_axis_tag)
