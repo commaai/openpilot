@@ -109,11 +109,21 @@ class MainController:
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, scaled_thickness, category=dpg.mvThemeCat_Plots)
         dpg.add_theme_color(dpg.mvPlotCol_Line, (255, 0, 0, 128), category=dpg.mvThemeCat_Plots)
 
+
   def on_data_loaded(self, data: dict):
     duration = data.get('duration', 0.0)
     self.playback_manager.set_route_duration(duration)
 
-    if data.get('loading_complete'):
+    if data.get('reset'):
+      self.playback_manager.current_time_s = 0.0
+      self.playback_manager.duration_s = 0.0
+      self.playback_manager.is_playing = False
+      dpg.set_value("load_status", "Loading...")
+      dpg.set_value("timeline_slider", 0.0)
+      dpg.configure_item("timeline_slider", max_value=0.0)
+      dpg.configure_item("play_pause_button", label="Play")
+      dpg.configure_item("load_button", enabled=True)
+    elif data.get('loading_complete'):
       num_paths = len(self.data_manager.get_all_paths())
       dpg.set_value("load_status", f"Loaded {num_paths} data paths")
       dpg.configure_item("load_button", enabled=True)

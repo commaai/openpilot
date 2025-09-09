@@ -258,6 +258,10 @@ class DataManager:
       self._segment_starts.clear()
       self._paths.clear()
       self._start_time = self._duration = 0.0
+      observers = self._observers.copy()
+
+    for callback in observers:
+      callback({'reset': True})
 
   def _load_async(self, route: str):
     try:

@@ -47,8 +47,13 @@ class DataTree:
         pass
 
   def _on_data_loaded(self, data: dict):
-    if data.get('segment_added'):
-      self.new_data = True
+    with self._ui_lock:
+      if data.get('segment_added'):
+        self.new_data = True
+      elif data.get('reset'):
+        self._all_paths_cache = set()
+        self.new_data = True
+
 
   def _populate_tree(self):
     self._clear_ui()
@@ -96,13 +101,12 @@ class DataTree:
       if self.new_data:
         current_paths = set(self.data_manager.get_all_paths())
         new_paths = current_paths - self._all_paths_cache
-        if new_paths:
-          all_paths_empty = not self._all_paths_cache
-          self._all_paths_cache = current_paths
-          if all_paths_empty:
-            self._populate_tree()
-          else:
-            self._add_paths_to_tree(new_paths, incremental=True)
+        all_paths_empty = not self._all_paths_cache
+        self._all_paths_cache = current_paths
+        if all_paths_empty:
+          self._populate_tree()
+        elif new_paths:
+          self._add_paths_to_tree(new_paths, incremental=True)
         self.new_data = False
         return
 
