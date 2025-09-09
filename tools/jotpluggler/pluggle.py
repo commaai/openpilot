@@ -9,7 +9,7 @@ import uuid
 import signal
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
-from openpilot.tools.jotpluggler.views import DataTreeView
+from openpilot.tools.jotpluggler.datatree import DataTree
 from openpilot.tools.jotpluggler.layout import PlotLayoutManager
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
@@ -93,7 +93,7 @@ class MainController:
     self.playback_manager = PlaybackManager()
     self.worker_manager = WorkerManager()
     self._create_global_themes()
-    self.data_tree_view = DataTreeView(self.data_manager, self.playback_manager)
+    self.data_tree = DataTree(self.data_manager, self.playback_manager)
     self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, self.worker_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
 
@@ -135,7 +135,7 @@ class MainController:
             dpg.add_button(label="Load", callback=self.load_route, tag="load_button", width=-1)
           dpg.add_text("Ready to load route", tag="load_status")
           dpg.add_separator()
-          self.data_tree_view.create_ui("sidebar_window")
+          self.data_tree.create_ui("sidebar_window")
 
         # Right panel - Plots and timeline
         with dpg.group():
@@ -174,7 +174,7 @@ class MainController:
     dpg.configure_item("play_pause_button", label="Play")
 
   def update_frame(self, font):
-    self.data_tree_view.update_frame(font)
+    self.data_tree.update_frame(font)
 
     new_time = self.playback_manager.update_time(dpg.get_delta_time())
     if not dpg.is_item_active("timeline_slider"):
