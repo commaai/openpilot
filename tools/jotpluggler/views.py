@@ -205,7 +205,7 @@ class DataTreeNode:
     self.children: dict[str, DataTreeNode] = {}
     self.is_leaf = False
     self.child_count = 0
-    self.is_plottable_cached: bool | None = None
+    self.is_plottable: bool | None = None
     self.ui_created = False
     self.children_ui_created = False
     self.ui_tag: str | None = None
@@ -234,7 +234,7 @@ class DataTreeView:
       dpg.add_separator()
       dpg.add_input_text(tag="search_input", width=-1, hint="Search fields...", callback=self.search_data)
       dpg.add_separator()
-      with dpg.group(tag="data_tree_container", track_offset=True):
+      with dpg.group(tag="data_tree_container"):
         pass
 
   def _on_data_loaded(self, data: dict):
@@ -345,31 +345,36 @@ class DataTreeView:
     node.ui_tag = tag
     label = f"{node.name} ({node.child_count} fields)"
     search_term = self.current_search.strip().lower()
-    should_open = bool(search_term) and len(search_term) > 1 and any(search_term in path for path in self._get_descendant_paths(node))
-    if should_open and node.parent and node.parent.child_count > 100 and node.child_count > 2: # don't fully autoexpand large lists (only affects procLog rn)
+    expand = bool(search_term) and len(search_term) > 1 and any(search_term in path for path in self._get_descendant_paths(node))
+    if expand and node.parent and node.parent.child_count > 100 and node.child_count > 2:  # don't fully autoexpand large lists (only affects procLog rn)
       label += " (+)"
-      should_open = False
+      expand = False
 
-    with dpg.tree_node(label=label, parent=parent_tag, tag=tag, default_open=should_open, open_on_arrow=True, open_on_double_click=True, before=before):
+    with dpg.tree_node(
+      label=label, parent=parent_tag, tag=tag, default_open=expand, open_on_arrow=True, open_on_double_click=True, before=before, delay_search=True
+    ):
       with dpg.item_handler_registry() as handler_tag:
-        dpg.add_item_toggled_open_handler(callback=lambda s, a, u: self._request_children_build(node, handler_tag))
-        dpg.add_item_visible_handler(callback=lambda s, a, u: self._request_children_build(node, handler_tag))
+        dpg.add_item_toggled_open_handler(callback=lambda s, a, u: self._request_children_build(node))
+        dpg.add_item_visible_handler(callback=lambda s, a, u: self._request_children_build(node))
       dpg.bind_item_handler_registry(tag, handler_tag)
       self._item_handlers.add(handler_tag)
 
     node.ui_created = True
 
   def _create_leaf_ui(self, node: DataTreeNode, parent_tag: str, before: str | int):
-    half_split_size = dpg.get_item_rect_size("sidebar_window")[0] // 2
+    with dpg.group(parent=parent_tag, tag=f"leaf_{node.full_path}", before=before, delay_search=True) as draggable_group:
+      with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp, delay_search=True):
+        dpg.add_table_column(init_width_or_weight=0.5)
+        dpg.add_table_column(init_width_or_weight=0.5)
+        with dpg.table_row():
+          dpg.add_text(node.name)
+          dpg.add_text("N/A", tag=f"value_{node.full_path}")
 
-    with dpg.group(parent=parent_tag, horizontal=True, xoffset=half_split_size, tag=f"group_{node.full_path}", before=before) as draggable_group:
-      dpg.add_text(node.name)
-      dpg.add_text("N/A", tag=f"value_{node.full_path}")
-      if node.is_plottable_cached is None:
-        node.is_plottable_cached = self.data_manager.is_plottable(node.full_path)
-      if node.is_plottable_cached:
-        with dpg.drag_payload(parent=draggable_group, drag_data=node.full_path, payload_type="TIMESERIES_PAYLOAD"):
-          dpg.add_text(f"Plot: {node.full_path}")
+    if node.is_plottable is None:
+      node.is_plottable = self.data_manager.is_plottable(node.full_path)
+    if node.is_plottable:
+      with dpg.drag_payload(parent=draggable_group, drag_data=node.full_path, payload_type="TIMESERIES_PAYLOAD"):
+        dpg.add_text(f"Plot: {node.full_path}")
 
     with dpg.item_handler_registry() as handler_tag:
       dpg.add_item_visible_handler(callback=self._on_item_visible, user_data=node.full_path)
@@ -382,15 +387,8 @@ class DataTreeView:
   def _on_item_visible(self, sender, app_data, user_data):
     with self._ui_lock:
       path = user_data
-      group_tag = f"group_{path}"
       value_tag = f"value_{path}"
-
-      if not self.avg_char_width or not dpg.does_item_exist(group_tag) or not dpg.does_item_exist(value_tag):
-        return
-
       value_column_width = dpg.get_item_rect_size("sidebar_window")[0] // 2
-      dpg.configure_item(group_tag, xoffset=value_column_width)
-
       value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
       if value is not None:
         formatted_value = self.format_and_truncate(value, value_column_width, self.avg_char_width)
@@ -398,22 +396,25 @@ class DataTreeView:
       else:
         dpg.set_value(value_tag, "N/A")
 
-  def _request_children_build(self, node: DataTreeNode, handler_tag=None):
+  def _request_children_build(self, node: DataTreeNode):
     with self._ui_lock:
       if not node.children_ui_created and (node.name == "root" or (node.ui_tag is not None and dpg.get_value(node.ui_tag))):  # check root or node expanded
         parent_tag = "data_tree_container" if node.name == "root" else node.ui_tag
         sorted_children = sorted(node.children.values(), key=self._natural_sort_key)
+        next_existing: list[int | str] = [0] * len(sorted_children)
+        current_before_tag: int | str = 0
+
+        for i in range(len(sorted_children) - 1, -1, -1):  # calculate "before_tag" for correct ordering when incrementally building tree
+          child = sorted_children[i]
+          next_existing[i] = current_before_tag
+          if child.ui_created:
+            candidate_tag = f"leaf_{child.full_path}" if child.is_leaf else f"tree_{child.full_path}"
+            if dpg.does_item_exist(candidate_tag):
+              current_before_tag = candidate_tag
 
         for i, child_node in enumerate(sorted_children):
           if not child_node.ui_created:
-            before_tag: int | str = 0
-            for j in range(i + 1, len(sorted_children)):  # when incrementally building get "before_tag" for correct ordering
-              next_child = sorted_children[j]
-              if next_child.ui_created:
-                candidate_tag = f"group_{next_child.full_path}" if next_child.is_leaf else f"tree_{next_child.full_path}"
-                if dpg.does_item_exist(candidate_tag):
-                  before_tag = candidate_tag
-                  break
+            before_tag = next_existing[i]
             self.build_queue.append((child_node, parent_tag, before_tag))
         node.children_ui_created = True
 
