@@ -46,7 +46,7 @@ class TimeSeriesPanel(ViewPanel):
     self.y_axis_tag = f"{self.plot_tag}_y_axis"
     self.timeline_indicator_tag = f"{self.plot_tag}_timeline"
     self._ui_created = False
-    self._series_data: dict[str, tuple[list, list]] = {}
+    self._series_data: dict[str, tuple[np.ndarray, np.ndarray]] = {}
     self._last_plot_duration = 0
     self._update_lock = threading.RLock()
     self._results_deque: deque[tuple[str, list, list]] = deque()
