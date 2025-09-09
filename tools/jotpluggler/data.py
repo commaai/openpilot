@@ -137,6 +137,7 @@ def msgs_to_time_series(msgs):
 
     flat_dict = flatten_dict(msg_dict)
     flat_dict['_valid'] = msg.valid
+    field_types[f"{typ}/_valid"] = 'bool'
 
     type_data = collected_data[typ]
     columns, sparse_fields = type_data['columns'], type_data['sparse_fields']
