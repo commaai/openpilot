@@ -36,6 +36,9 @@ dependencies = [
   "pyopenssl < 24.3.0",
   "pyaudio",
 
+  # ubloxd (TODO: just use struct)
+  "kaitaistruct",
+
   # panda
   "libusb1",
   "spidev; platform_system == 'Linux'",
@@ -121,6 +124,7 @@ dev = [
 
 tools = [
   "metadrive-simulator @ https://github.com/commaai/metadrive/releases/download/MetaDrive-minimal-0.4.2.4/metadrive_simulator-0.4.2.4-py3-none-any.whl ; (platform_machine != 'aarch64')",
+  "dearpygui>=2.1.0",
 ]
 
 [project.urls]
@@ -158,7 +162,6 @@ testpaths = [
   "system/camerad",
   "system/hardware",
   "system/loggerd",
-  "system/proclogd",
   "system/tests",
   "system/ubloxd",
   "system/webrtc",
@@ -247,6 +250,7 @@ exclude = [
   "teleoprtc_repo",
   "third_party",
   "*.ipynb",
+  "generated",
 ]
 lint.flake8-implicit-str-concat.allow-multiline = false
 

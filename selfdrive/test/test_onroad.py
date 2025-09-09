@@ -32,7 +32,7 @@ CPU usage budget
 TEST_DURATION = 25
 LOG_OFFSET = 8
 
-MAX_TOTAL_CPU = 287.  # total for all 8 cores
+MAX_TOTAL_CPU = 300.  # total for all 8 cores
 PROCS = {
   # Baseline CPU usage by process
   "selfdrive.controls.controlsd": 16.0,
@@ -56,10 +56,10 @@ PROCS = {
   "selfdrive.ui.soundd": 3.0,
   "selfdrive.ui.feedback.feedbackd": 1.0,
   "selfdrive.monitoring.dmonitoringd": 4.0,
-  "./proclogd": 2.0,
+  "system.proclogd": 3.0,
   "system.logmessaged": 1.0,
   "system.tombstoned": 0,
-  "./logcatd": 1.0,
+  "system.journald": 1.0,
   "system.micd": 5.0,
   "system.timed": 0,
   "selfdrive.pandad.pandad": 0,
