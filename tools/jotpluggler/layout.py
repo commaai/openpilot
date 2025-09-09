@@ -15,6 +15,9 @@ class PlotLayoutManager:
     self.container_tag = "plot_layout_container"
     self.active_panels: list = []
 
+    self.grip_size = int(GRIP_SIZE * self.scale)
+    self.min_pane_size = int(MIN_PANE_SIZE * self.scale)
+
     initial_panel = TimeSeriesPanel(data_manager, playback_manager, worker_manager)
     self.layout: dict = {"type": "panel", "panel": initial_panel}
 
@@ -54,25 +57,17 @@ class PlotLayoutManager:
 
   def _create_split_ui(self, layout: dict, parent_tag: str, path: list[int], width: int, height: int):
     split_tag = self._path_to_tag(path, "split")
-    orientation = layout["orientation"]
-    min_pane_size = int(MIN_PANE_SIZE * self.scale)
-    grip_size = int(GRIP_SIZE * self.scale)
-    num_grips = len(layout["children"]) - 1
+    orientation, _, pane_sizes = self._get_split_geometry(layout, (width, height))
 
     with dpg.group(tag=split_tag, parent=parent_tag, horizontal=orientation == 0):
-      for i, (child_layout, proportion) in enumerate(zip(layout["children"], layout["proportions"], strict=True)):
+      for i, child_layout in enumerate(layout["children"]):
         child_path = path + [i]
         container_tag = self._path_to_tag(child_path, "container")
-
-        size = [width, height]  # pass through since get_item_rect_size is unavailable until rendered
-        fill_size = [-1, -1]  # fill up to the border upon resize
-        calculated_size = max(min_pane_size, int((size[orientation] - (num_grips * grip_size)) * proportion))
-        size[orientation] = fill_size[orientation] = calculated_size
-
-        with dpg.child_window(tag=container_tag, width=fill_size[0], height=fill_size[1], border=False, no_scrollbar=True):
-          self._create_ui_recursive(child_layout, container_tag, child_path, size[0], size[1])
-
-        if i < len(layout["children"]) - 1:  # Add grip between panes (except after the last pane)
+        pane_width, pane_height = [(pane_sizes[i], -1), (-1, pane_sizes[i])][orientation] # fill 2nd dim up to the border
+        with dpg.child_window(tag=container_tag, width=pane_width, height=pane_height, border=False, no_scrollbar=True):
+          child_width, child_height = [(pane_sizes[i], height), (width, pane_sizes[i])][orientation]
+          self._create_ui_recursive(child_layout, container_tag, child_path, child_width, child_height)
+        if i < len(layout["children"]) - 1:
           self._create_grip(split_tag, path, i, orientation)
 
   def clear_panel(self, panel):
@@ -167,25 +162,28 @@ class PlotLayoutManager:
   def on_viewport_resize(self):
     self._resize_splits_recursive(self.layout, [])
 
-  def _resize_splits_recursive(self, layout: dict, path: list[int]):
+  def _resize_splits_recursive(self, layout: dict, path: list[int], width: int | None = None, height: int | None = None):
     if layout["type"] == "split":
       split_tag = self._path_to_tag(path, "split")
       if dpg.does_item_exist(split_tag):
-        parent_tag = dpg.get_item_parent(split_tag)
-        grip_size = int(GRIP_SIZE * self.scale)
-        min_pane_size = int(MIN_PANE_SIZE * self.scale)
-        num_grips = len(layout["children"]) - 1
-        orientation = layout["orientation"]
-        available_sizes = dpg.get_item_rect_size(parent_tag)
+        available_sizes = (width, height) if width and height else dpg.get_item_rect_size(dpg.get_item_parent(split_tag))
+        orientation, _, pane_sizes = self._get_split_geometry(layout, available_sizes)
         size_properties = ("width", "height")
 
-        for i, proportion in enumerate(layout["proportions"]):
+        for i, child_layout in enumerate(layout["children"]):
           child_path = path + [i]
           container_tag = self._path_to_tag(child_path, "container")
           if dpg.does_item_exist(container_tag):
-            new_size = max(min_pane_size, int((available_sizes[orientation] - (num_grips * grip_size)) * proportion))
-            dpg.configure_item(container_tag, **{size_properties[orientation]: new_size})
-          self._resize_splits_recursive(layout["children"][i], child_path)
+            dpg.configure_item(container_tag, **{size_properties[orientation]: pane_sizes[i]})
+            child_width, child_height = [(pane_sizes[i], available_sizes[1]), (available_sizes[0], pane_sizes[i])][orientation]
+            self._resize_splits_recursive(child_layout, child_path, child_width, child_height)
+
+  def _get_split_geometry(self, layout: dict, available_size: tuple[int, int]) -> tuple[int, int, list[int]]:
+    orientation = layout["orientation"]
+    num_grips = len(layout["children"]) - 1
+    usable_size = max(self.min_pane_size, available_size[orientation] - (num_grips * self.grip_size))
+    pane_sizes = [max(self.min_pane_size, int(usable_size * prop)) for prop in layout["proportions"]]
+    return orientation, usable_size, pane_sizes
 
   def _get_layout_at_path(self, path: list[int]) -> dict:
     current = self.layout
@@ -209,9 +207,7 @@ class PlotLayoutManager:
 
   def _create_grip(self, parent_tag: str, path: list[int], grip_index: int, orientation: int):
     grip_tag = self._path_to_tag(path, f"grip_{grip_index}")
-    grip_size = int(GRIP_SIZE * self.scale)
-    width = grip_size if orientation == 0 else -1
-    height = grip_size if orientation == 1 else -1
+    width, height = [(self.grip_size, -1), (-1, self.grip_size)][orientation]
 
     with dpg.child_window(tag=grip_tag, parent=parent_tag, width=width, height=height, no_scrollbar=True, border=False):
       button_tag = dpg.add_button(label="", width=-1, height=-1)
@@ -231,22 +227,19 @@ class PlotLayoutManager:
       return
 
     drag_data = layout["_drag_data"]
-    current_coord = dpg.get_mouse_pos(local=False)[orientation]
-    delta = current_coord - drag_data["start_mouse"]
-
     split_tag = self._path_to_tag(path, "split")
     if not dpg.does_item_exist(split_tag):
       return
-    total_size = dpg.get_item_rect_size(split_tag)[orientation]
-    num_grips = len(layout["children"]) - 1
-    usable_size = max(100, total_size - (num_grips * int(GRIP_SIZE * self.scale)))
 
+    _, usable_size, _ = self._get_split_geometry(layout, dpg.get_item_rect_size(split_tag))
+    current_coord = dpg.get_mouse_pos(local=False)[orientation]
+    delta = current_coord - drag_data["start_mouse"]
     delta_prop = delta / usable_size
 
     left_idx = grip_index
     right_idx = left_idx + 1
     initial = drag_data["initial_proportions"]
-    min_prop = int(MIN_PANE_SIZE * self.scale) / usable_size
+    min_prop = self.min_pane_size / usable_size
 
     new_left = max(min_prop, initial[left_idx] + delta_prop)
     new_right = max(min_prop, initial[right_idx] - delta_prop)

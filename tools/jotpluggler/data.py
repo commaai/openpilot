@@ -180,11 +180,11 @@ class DataManager:
     self._duration = 0.0
     self._paths = set()
     self._observers = []
-    self.loading = False
+    self._loading = False
     self._lock = threading.RLock()
 
   def load_route(self, route: str) -> None:
-    if self.loading:
+    if self._loading:
       return
     self._reset()
     threading.Thread(target=self._load_async, args=(route,), daemon=True).start()
@@ -210,6 +210,7 @@ class DataManager:
 
   def get_value_at(self, path: str, time: float):
     with self._lock:
+      MAX_LOOKBACK = 5.0 # seconds
       absolute_time = self._start_time + time
       message_type, field = path.split('/', 1)
       current_index = bisect.bisect_right(self._segment_starts, absolute_time) - 1
@@ -220,10 +221,10 @@ class DataManager:
         if not segment or field not in segment:
           continue
         times = segment['t']
-        if len(times) == 0 or (index != current_index and absolute_time - times[-1] > 1):
+        if len(times) == 0 or (index != current_index and absolute_time - times[-1] > MAX_LOOKBACK):
           continue
         position = np.searchsorted(times, absolute_time, 'right') - 1
-        if position >= 0 and absolute_time - times[position] <= 1:
+        if position >= 0 and absolute_time - times[position] <= MAX_LOOKBACK:
           return segment[field][position]
       return None
 
@@ -253,7 +254,7 @@ class DataManager:
 
   def _reset(self):
     with self._lock:
-      self.loading = True
+      self._loading = True
       self._segments.clear()
       self._segment_starts.clear()
       self._paths.clear()
@@ -302,7 +303,7 @@ class DataManager:
 
   def _finalize_loading(self):
     with self._lock:
-      self.loading = False
+      self._loading = False
       observers = self._observers.copy()
       duration = self._duration
 

@@ -28,14 +28,14 @@ class DataTree:
     self.playback_manager = playback_manager
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
-    self.build_queue: deque[tuple[DataTreeNode, str | None, str | int]] = deque()
+    self._build_queue: deque[tuple[DataTreeNode, str | None, str | int]] = deque()
     self._all_paths_cache: set[str] = set()
     self._item_handlers: set[str] = set()
-    self.avg_char_width = None
-    self.data_manager.add_observer(self._on_data_loaded)
-    self.queued_search = None
-    self.new_data = False
+    self._avg_char_width = None
+    self._queued_search = None
+    self._new_data = False
     self._ui_lock = threading.RLock()
+    self.data_manager.add_observer(self._on_data_loaded)
 
   def create_ui(self, parent_tag: str):
     with dpg.child_window(parent=parent_tag, border=False, width=-1, height=-1):
@@ -49,10 +49,10 @@ class DataTree:
   def _on_data_loaded(self, data: dict):
     with self._ui_lock:
       if data.get('segment_added'):
-        self.new_data = True
+        self._new_data = True
       elif data.get('reset'):
         self._all_paths_cache = set()
-        self.new_data = True
+        self._new_data = True
 
 
   def _populate_tree(self):
@@ -95,10 +95,10 @@ class DataTree:
 
   def update_frame(self, font):
     with self._ui_lock:
-      if self.avg_char_width is None and dpg.is_dearpygui_running():
-        self.avg_char_width = self.calculate_avg_char_width(font)
+      if self._avg_char_width is None and dpg.is_dearpygui_running():
+        self._avg_char_width = self.calculate_avg_char_width(font)
 
-      if self.new_data:
+      if self._new_data:
         current_paths = set(self.data_manager.get_all_paths())
         new_paths = current_paths - self._all_paths_cache
         all_paths_empty = not self._all_paths_cache
@@ -107,19 +107,19 @@ class DataTree:
           self._populate_tree()
         elif new_paths:
           self._add_paths_to_tree(new_paths, incremental=True)
-        self.new_data = False
+        self._new_data = False
         return
 
-      if self.queued_search is not None:
-        self.current_search = self.queued_search
+      if self._queued_search is not None:
+        self.current_search = self._queued_search
         self._all_paths_cache = set(self.data_manager.get_all_paths())
         self._populate_tree()
-        self.queued_search = None
+        self._queued_search = None
         return
 
       nodes_processed = 0
-      while self.build_queue and nodes_processed < self.MAX_NODES_PER_FRAME:
-        child_node, parent_tag, before_tag = self.build_queue.popleft()
+      while self._build_queue and nodes_processed < self.MAX_NODES_PER_FRAME:
+        child_node, parent_tag, before_tag = self._build_queue.popleft()
         if not child_node.ui_created:
           if child_node.is_leaf:
             self._create_leaf_ui(child_node, parent_tag, before_tag)
@@ -128,7 +128,7 @@ class DataTree:
         nodes_processed += 1
 
   def search_data(self):
-    self.queued_search = dpg.get_value("search_input")
+    self._queued_search = dpg.get_value("search_input")
 
   def _clear_ui(self):
     for handler_tag in self._item_handlers:
@@ -139,7 +139,7 @@ class DataTree:
     if dpg.does_item_exist("data_tree_container"):
       dpg.delete_item("data_tree_container", children_only=True)
 
-    self.build_queue.clear()
+    self._build_queue.clear()
 
   def _delete_handlers(self, sender, app_data, user_data):
     for handler in user_data:
@@ -204,7 +204,7 @@ class DataTree:
       value_column_width = dpg.get_item_rect_size("sidebar_window")[0] // 2
       value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
       if value is not None:
-        formatted_value = self.format_and_truncate(value, value_column_width, self.avg_char_width)
+        formatted_value = self.format_and_truncate(value, value_column_width, self._avg_char_width)
         dpg.set_value(value_tag, formatted_value)
       else:
         dpg.set_value(value_tag, "N/A")
@@ -228,7 +228,7 @@ class DataTree:
         for i, child_node in enumerate(sorted_children):
           if not child_node.ui_created:
             before_tag = next_existing[i]
-            self.build_queue.append((child_node, parent_tag, before_tag))
+            self._build_queue.append((child_node, parent_tag, before_tag))
         node.children_ui_created = True
 
   def _should_show_path(self, path: str, search_term: str) -> bool:

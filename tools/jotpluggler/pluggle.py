@@ -134,8 +134,6 @@ class MainController:
     dpg.configure_item("timeline_slider", max_value=duration)
 
   def setup_ui(self):
-    dpg.set_viewport_resize_callback(callback=self.on_viewport_resize)
-
     with dpg.window(tag="Primary Window"):
       with dpg.group(horizontal=True):
         # Left panel - Data tree
@@ -148,7 +146,7 @@ class MainController:
           self.data_tree.create_ui("sidebar_window")
 
         # Right panel - Plots and timeline
-        with dpg.group():
+        with dpg.group(tag="right_panel"):
           with dpg.child_window(label="Plot Window", border=True, height=-(30 + 13 * self.scale), tag="main_plot_area"):
             self.plot_layout_manager.create_ui("main_plot_area")
 
@@ -161,10 +159,13 @@ class MainController:
                 dpg.add_button(label="Play", tag="play_pause_button", callback=self.toggle_play_pause, width=int(50 * self.scale))
                 dpg.add_slider_float(tag="timeline_slider", default_value=0.0, label="", width=-1, callback=self.timeline_drag)
                 dpg.add_text("", tag="fps_counter")
+            with dpg.item_handler_registry(tag="plot_resize_handler"):
+              dpg.add_item_resize_handler(callback=self.on_plot_resize)
+            dpg.bind_item_handler_registry("right_panel", "plot_resize_handler")
 
     dpg.set_primary_window("Primary Window", True)
 
-  def on_viewport_resize(self):
+  def on_plot_resize(self, sender, app_data, user_data):
     self.plot_layout_manager.on_viewport_resize()
 
   def load_route(self):
