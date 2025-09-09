@@ -180,6 +180,9 @@ def msgs_to_time_series(msgs):
             non_none_indices.append(i)
             non_none_values.append(value)
 
+        if non_none_values: # check if indices > uint16 max, currently would require a 1000+ Hz signal since indices are within segments
+          assert max(non_none_indices) <= 65535, f"Sparse field {typ}/{field_name} has timestamp indices exceeding uint16 max. Max: {max(non_none_indices)}"
+
         typ_result[field_name] = {
           'values': _convert_to_optimal_dtype(non_none_values, capnp_type),
           'sparse': True,
