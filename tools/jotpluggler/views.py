@@ -198,7 +198,7 @@ class TimeSeriesPanel(ViewPanel):
 
 
 class DataTreeNode:
-  def __init__(self, name: str, full_path: str = "", parent = None):
+  def __init__(self, name: str, full_path: str = "", parent=None):
     self.name = name
     self.full_path = full_path
     self.parent = parent
@@ -295,12 +295,14 @@ class DataTreeView:
           else:
             self._add_paths_to_tree(new_paths, incremental=True)
         self.new_data = False
+        return
 
       if self.queued_search is not None:
         self.current_search = self.queued_search
         self._all_paths_cache = set(self.data_manager.get_all_paths())
         self._populate_tree()
         self.queued_search = None
+        return
 
       nodes_processed = 0
       while self.build_queue and nodes_processed < self.MAX_NODES_PER_FRAME:
@@ -316,10 +318,19 @@ class DataTreeView:
     self.queued_search = dpg.get_value("search_input")
 
   def _clear_ui(self):
+    for handler_tag in self._item_handlers:
+      dpg.configure_item(handler_tag, show=False)
+    dpg.set_frame_callback(dpg.get_frame_count() + 1, callback=self._delete_handlers, user_data=list(self._item_handlers))
+    self._item_handlers.clear()
+
     if dpg.does_item_exist("data_tree_container"):
       dpg.delete_item("data_tree_container", children_only=True)
 
     self.build_queue.clear()
+
+  def _delete_handlers(self, sender, app_data, user_data):
+    for handler in user_data:
+      dpg.delete_item(handler)
 
   def _calculate_child_counts(self, node: DataTreeNode):
     if node.is_leaf:
@@ -332,32 +343,24 @@ class DataTreeView:
   def _create_tree_node_ui(self, node: DataTreeNode, parent_tag: str, before: str | int):
     tag = f"tree_{node.full_path}"
     node.ui_tag = tag
-    handler_tag = f"handler_tree_{node.full_path}"
-    self._item_handlers.add(handler_tag)
-    if dpg.does_item_exist(handler_tag):
-      dpg.delete_item(handler_tag)
-
     label = f"{node.name} ({node.child_count} fields)"
     search_term = self.current_search.strip().lower()
     should_open = bool(search_term) and len(search_term) > 1 and any(search_term in path for path in self._get_descendant_paths(node))
-    if should_open and node.parent and node.parent.child_count > 100 and node.child_count > 2:
+    if should_open and node.parent and node.parent.child_count > 100 and node.child_count > 2: # don't fully autoexpand large lists (only affects procLog rn)
       label += " (+)"
       should_open = False
 
     with dpg.tree_node(label=label, parent=parent_tag, tag=tag, default_open=should_open, open_on_arrow=True, open_on_double_click=True, before=before):
-      with dpg.item_handler_registry(tag=handler_tag):
+      with dpg.item_handler_registry() as handler_tag:
         dpg.add_item_toggled_open_handler(callback=lambda s, a, u: self._request_children_build(node, handler_tag))
         dpg.add_item_visible_handler(callback=lambda s, a, u: self._request_children_build(node, handler_tag))
-      dpg.bind_item_handler_registry(tag, dpg.last_container())
+      dpg.bind_item_handler_registry(tag, handler_tag)
+      self._item_handlers.add(handler_tag)
 
     node.ui_created = True
 
   def _create_leaf_ui(self, node: DataTreeNode, parent_tag: str, before: str | int):
     half_split_size = dpg.get_item_rect_size("sidebar_window")[0] // 2
-    handler_tag = f"handler_leaf_{node.full_path}"
-    self._item_handlers.add(handler_tag)
-    if dpg.does_item_exist(handler_tag):
-      dpg.delete_item(handler_tag)
 
     with dpg.group(parent=parent_tag, horizontal=True, xoffset=half_split_size, tag=f"group_{node.full_path}", before=before) as draggable_group:
       dpg.add_text(node.name)
@@ -368,9 +371,10 @@ class DataTreeView:
         with dpg.drag_payload(parent=draggable_group, drag_data=node.full_path, payload_type="TIMESERIES_PAYLOAD"):
           dpg.add_text(f"Plot: {node.full_path}")
 
-    with dpg.item_handler_registry(tag=handler_tag):
+    with dpg.item_handler_registry() as handler_tag:
       dpg.add_item_visible_handler(callback=self._on_item_visible, user_data=node.full_path)
-    dpg.bind_item_handler_registry(draggable_group, dpg.last_container())
+    dpg.bind_item_handler_registry(draggable_group, handler_tag)
+    self._item_handlers.add(handler_tag)
 
     node.ui_created = True
     node.ui_tag = f"value_{node.full_path}"
