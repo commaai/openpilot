@@ -81,10 +81,13 @@ class LatControlTorque(LatControl):
       ff += get_friction(desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5 or counter_damping
-      output_lataccel = self.pid.update(pid_log.error,
-                                      feedforward=ff,
-                                      speed=CS.vEgo,
-                                      freeze_integrator=freeze_integrator)
+
+      pi_controlled_output_lataccel = self.pid.update(pid_log.error,
+                                                      feedforward=ff,
+                                                      speed=CS.vEgo,
+                                                      freeze_integrator=freeze_integrator)
+
+      output_lataccel = pi_controlled_output_lataccel if not counter_damping else ff
       output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
 
       pid_log.active = True
