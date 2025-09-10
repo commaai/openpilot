@@ -32,6 +32,7 @@ class LatControlTorque(LatControl):
                              k_f=self.torque_params.kf)
     self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
+    self.errors_towards_center = 0
 
   def update_live_torque_params(self, latAccelFactor, latAccelOffset, friction):
     self.torque_params.latAccelFactor = latAccelFactor
@@ -60,16 +61,26 @@ class LatControlTorque(LatControl):
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
-      gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
+
+      # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
+      gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation - self.torque_params.latAccelOffset
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(setpoint - measurement)
-      ff = gravity_adjusted_lateral_accel
-      # latAccelOffset corrects roll compensation bias from device roll misalignment relative to car roll
-      ff -= self.torque_params.latAccelOffset
+
+      # experiment for heavily damped EPS, null out the main feedforward and send only friction+PI, pushes actuator past zero
+      # this will be rate-limited in the car port, so bouncing all the way down and back up won't be instant
+      COUNTER_DAMPING_TRIGGER_FRAMES = 10
+      if pid_log.error * setpoint < 0:  # error sign is opposite to setpoint sign
+        self.errors_towards_center += 1
+      else:
+        self.errors_towards_center = 0
+      counter_damping = self.errors_towards_center > COUNTER_DAMPING_TRIGGER_FRAMES
+      ff = gravity_adjusted_lateral_accel if not counter_damping else 0.
+
       ff += get_friction(desired_lateral_accel - actual_lateral_accel, lateral_accel_deadzone, FRICTION_THRESHOLD, self.torque_params)
 
-      freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
+      freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5 or counter_damping
       output_lataccel = self.pid.update(pid_log.error,
                                       feedforward=ff,
                                       speed=CS.vEgo,
