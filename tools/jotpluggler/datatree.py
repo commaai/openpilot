@@ -4,12 +4,14 @@ import threading
 import numpy as np
 import dearpygui.dearpygui as dpg
 
+
 class DataTreeNode:
   def __init__(self, name: str, full_path: str = "", parent=None):
     self.name = name
     self.full_path = full_path
     self.parent = parent
     self.children: dict[str, DataTreeNode] = {}
+    self.active_children: dict[str, DataTreeNode] = {}
     self.is_leaf = False
     self.is_plottable: bool | None = None
     self.ui_queued = False
@@ -27,7 +29,6 @@ class DataTree:
     self.current_search = ""
     self.data_tree = DataTreeNode(name="root")
     self._build_queue: dict[str, tuple[DataTreeNode, str | None, str | int]] = {}
-    self._all_paths_cache: set[str] = set()
     self._current_filtered_paths: set[str] = set()
     self._item_handlers: dict[str, str] = {}  # ui_tag -> handler_tag
     self._avg_char_width = None
@@ -50,23 +51,46 @@ class DataTree:
       if data.get('segment_added'):
         self._new_data = True
       elif data.get('reset'):
-        self._all_paths_cache = set()
         self._current_filtered_paths = set()
         self._new_data = True
+
+  def update_frame(self, font):
+    with self._ui_lock:
+      if self._avg_char_width is None and dpg.is_dearpygui_running():
+        self._avg_char_width = self.calculate_avg_char_width(font)
+
+      if self._new_data:
+        self._process_path_change()
+        self._new_data = False
+        return
+
+      if self._queued_search is not None:
+        self.current_search = self._queued_search
+        self._process_path_change()
+        self._queued_search = None
+        return
+
+      nodes_processed = 0
+      while self._build_queue and nodes_processed < self.MAX_NODES_PER_FRAME:
+        first_key = next(iter(self._build_queue))
+        child_node, parent_tag, before_tag = self._build_queue.pop(first_key)
+        if not child_node.ui_created:
+          if child_node.is_leaf:
+            self._create_leaf_ui(child_node, parent_tag, before_tag)
+          else:
+            self._create_tree_node_ui(child_node, parent_tag, before_tag)
+          child_node.ui_queued = False
+        nodes_processed += 1
 
   def _process_path_change(self):
     search_term = self.current_search.strip().lower()
     all_paths = set(self.data_manager.get_all_paths())
     new_filtered_paths = {path for path in all_paths if self._should_show_path(path, search_term)}
-
     paths_to_remove = self._current_filtered_paths - new_filtered_paths
     paths_to_add = new_filtered_paths - self._current_filtered_paths
 
-    print("add", len(paths_to_add), "remove", len(paths_to_remove))
-
     if paths_to_remove:
       self._remove_paths_from_tree(paths_to_remove)
-
     if paths_to_add:
       self._add_paths_to_tree(paths_to_add)
 
@@ -82,17 +106,19 @@ class DataTree:
         current_node = current_node.children[part]
 
       part_array_index = -1
-      while len(current_node.children) == 0 and part_array_index >= -len(parts):
+      while len(current_node.active_children) == 0 and part_array_index >= -len(parts):
         if current_node.full_path in self._build_queue:
           self._build_queue.pop(current_node.full_path)
           current_node.ui_queued = False
         if item_handler_tag := self._item_handlers.get(current_node.ui_tag):
-          dpg.configure_item(item_handler_tag, show=False)  # deactivate item handler
           item_handlers_to_delete.append(item_handler_tag)  # queue item handler for deletion
           del self._item_handlers[current_node.ui_tag]
         dpg.delete_item(current_node.ui_tag)  # delete item
+        current_node.ui_created = False
+        current_node.ui_tag = None
+        current_node.children_ui_created = False
         current_node = current_node.parent
-        del current_node.children[parts[part_array_index]]  # delete node
+        del current_node.active_children[parts[part_array_index]]
         part_array_index -= 1
 
     dpg.set_frame_callback(dpg.get_frame_count() + 1, callback=self._delete_handlers, user_data=item_handlers_to_delete)
@@ -110,6 +136,7 @@ class DataTree:
           parent_nodes_to_recheck.add(current_node)  # for incremental changes from new data
         if part not in current_node.children:
           current_node.children[part] = DataTreeNode(name=part, full_path=current_path_prefix, parent=current_node)
+        current_node.active_children[part] = current_node.children[part]
         current_node = current_node.children[part]
 
       if not current_node.is_leaf:
@@ -119,61 +146,25 @@ class DataTree:
       p_node.children_ui_created = False
       self._request_children_build(p_node)
 
+  def _get_node_label_and_expand(self, node: DataTreeNode, search_term: str):
+    label = f"{node.name} ({len(node.active_children)} fields)"
+    expand = len(search_term) > 0 and any(search_term in path for path in self._get_descendant_paths(node))
+    if expand and node.parent and len(node.parent.active_children) > 100 and len(node.active_children) > 2:
+      label += " (+)" # symbol for large lists which aren't fully expanded for performance (only affects procLog rn)
+      expand = False
+    return label, expand
+
   def _apply_expansion_to_tree(self, node: DataTreeNode, search_term: str):
     if node.ui_created and not node.is_leaf and node.ui_tag and dpg.does_item_exist(node.ui_tag):
-      label = f"{node.name} ({len(node.children)} fields)"
-      expand = bool(search_term) and len(search_term) > 0 and any(search_term in path for path in self._get_descendant_paths(node))
-      if expand and node.parent and len(node.parent.children) > 100 and len(node.children) > 2:  # don't fully autoexpand large lists (only affects procLog rn)
-        label += " (+)"
-        expand = False
+      label, expand = self._get_node_label_and_expand(node, search_term)
       dpg.set_item_label(node.ui_tag, label)
       dpg.set_value(node.ui_tag, expand)
 
-    for child in node.children.values():
+    for child in node.active_children.values():
       self._apply_expansion_to_tree(child, search_term)
-
-  def update_frame(self, font):
-    with self._ui_lock:
-      if self._avg_char_width is None and dpg.is_dearpygui_running():
-        self._avg_char_width = self.calculate_avg_char_width(font)
-
-      if self._new_data:
-        self._process_path_change()
-        self._new_data = False
-        return
-
-      if self._queued_search is not None:
-        self.current_search = self._queued_search
-        self._all_paths_cache = set(self.data_manager.get_all_paths())
-        self._process_path_change()
-        self._queued_search = None
-        return
-
-      nodes_processed = 0
-      while self._build_queue and nodes_processed < self.MAX_NODES_PER_FRAME:
-        first_key = next(iter(self._build_queue))
-        child_node, parent_tag, before_tag = self._build_queue.pop(first_key)
-        if not child_node.ui_created:
-          if child_node.is_leaf:
-            self._create_leaf_ui(child_node, parent_tag, before_tag)
-          else:
-            self._create_tree_node_ui(child_node, parent_tag, before_tag)
-          child_node.ui_queued = False
-        nodes_processed += 1
 
   def search_data(self):
     self._queued_search = dpg.get_value("search_input")
-
-  def _clear_ui(self):
-    for _, handler_tag in self._item_handlers:
-      dpg.configure_item(handler_tag, show=False)
-    dpg.set_frame_callback(dpg.get_frame_count() + 1, callback=self._delete_handlers, user_data=list(self._item_handlers))
-    self._item_handlers.clear()
-
-    if dpg.does_item_exist("data_tree_container"):
-      dpg.delete_item("data_tree_container", children_only=True)
-
-    self._build_queue.clear()
 
   def _delete_handlers(self, sender, app_data, user_data):
     for handler in user_data:
@@ -182,12 +173,8 @@ class DataTree:
   def _create_tree_node_ui(self, node: DataTreeNode, parent_tag: str, before: str | int):
     tag = f"tree_{node.full_path}"
     node.ui_tag = tag
-    label = f"{node.name} ({len(node.children)} fields)"
     search_term = self.current_search.strip().lower()
-    expand = bool(search_term) and len(search_term) > 0 and any(search_term in path for path in self._get_descendant_paths(node))
-    if expand and node.parent and len(node.parent.children) > 100 and len(node.children) > 2:  # don't fully autoexpand large lists (only affects procLog rn)
-      label += " (+)"
-      expand = False
+    label, expand = self._get_node_label_and_expand(node, search_term)
 
     with dpg.tree_node(
       label=label, parent=parent_tag, tag=tag, default_open=expand, open_on_arrow=True, open_on_double_click=True, before=before, delay_search=True
@@ -241,7 +228,7 @@ class DataTree:
     with self._ui_lock:
       if not node.children_ui_created and (node.name == "root" or (node.ui_tag is not None and dpg.get_value(node.ui_tag))):  # check root or node expanded
         parent_tag = "data_tree_container" if node.name == "root" else node.ui_tag
-        sorted_children = sorted(node.children.values(), key=self._natural_sort_key)
+        sorted_children = sorted(node.active_children.values(), key=self._natural_sort_key)
         next_existing: list[int | str] = [0] * len(sorted_children)
         current_before_tag: int | str = 0
 
@@ -271,7 +258,7 @@ class DataTree:
     return (node_type_key, parts)
 
   def _get_descendant_paths(self, node: DataTreeNode):
-    for child_name, child_node in node.children.items():
+    for child_name, child_node in node.active_children.items():
       child_name_lower = child_name.lower()
       if child_node.is_leaf:
         yield child_name_lower
