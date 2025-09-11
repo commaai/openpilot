@@ -7,6 +7,7 @@ Version 0.10.1 (2025-09-08)
   * Driving Vision Model: trained on 4x the number of segments
 * Record driving feedback using LKAS button
 * Honda City 2023 support thanks to drFritz!
+* Honda Odyssey 2021-25 support thanks to vanillagorillaa and MVL!
 
 Version 0.10.0 (2025-08-05)
 ========================
