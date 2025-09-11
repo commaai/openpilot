@@ -36,8 +36,7 @@ dependencies = [
   "pyopenssl < 24.3.0",
   "pyaudio",
 
-  # ubloxd (TODO: just use struct)
-  "kaitaistruct",
+  # ubloxd parsers use struct
 
   # panda
   "libusb1",

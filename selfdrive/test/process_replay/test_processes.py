@@ -191,12 +191,14 @@ if __name__ == "__main__":
         continue
 
       for cfg in CONFIGS:
+        if cfg.proc_name != "ubloxd":
+          continue
         if cfg.proc_name not in tested_procs:
           continue
 
         # to speed things up, we only test all segments on card
-        if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
-          continue
+        #if cfg.proc_name not in ('card', 'controlsd', 'lagd') and car_brand not in ('HYUNDAI', 'TOYOTA'):
+        #  continue
 
         cur_log_fn = os.path.join(FAKEDATA, f"{segment}_{cfg.proc_name}_{cur_commit}.zst")
         if args.update_refs:  # reference logs will not exist if routes were just regenerated

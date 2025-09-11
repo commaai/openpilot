@@ -8,9 +8,9 @@ from dataclasses import dataclass
 
 from cereal import log
 from cereal import messaging
-from openpilot.system.ubloxd.generated.ubx import Ubx
-from openpilot.system.ubloxd.generated.gps import Gps
-from openpilot.system.ubloxd.generated.glonass import Glonass
+from openpilot.system.ubloxd.parsers.ubx import Ubx
+from openpilot.system.ubloxd.parsers.gps import Gps
+from openpilot.system.ubloxd.parsers.glonass import Glonass
 
 
 SECS_IN_MIN = 60

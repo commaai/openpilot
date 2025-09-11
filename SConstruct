@@ -19,9 +19,7 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
-AddOption('--kaitai',
-          action='store_true',
-          help='Regenerate kaitai struct parsers')
+# Kaitai no longer used for ubloxd
 
 AddOption('--asan',
           action='store_true',
