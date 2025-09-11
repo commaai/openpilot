@@ -27,8 +27,10 @@ if [[ ! -d "$DIR/src/x264/" ]]; then
   git clone --depth=1 --branch "stable" https://code.videolan.org/videolan/x264.git "$DIR/src/x264/"
 fi
 cd $DIR/src/x264
+git fetch origin b35605ace3ddf7c1a5d67a2eb553f034aef41d55
+git checkout -f FETCH_HEAD
 ./configure --prefix="$PREFIX" --enable-static --disable-opencl --enable-pic --disable-cli
-make -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
+make -j8
 make install
 cp -a "$PREFIX/include/." "$DIR/include/"
 
@@ -88,7 +90,7 @@ case "$ARCHNAME" in
     ;;
 esac
 
-make -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
+make -j$(nproc)
 make install
 cp -a "$PREFIX/include/." "$DIR/include/"
 
