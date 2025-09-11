@@ -2,6 +2,7 @@
 set -e
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null && pwd)"
+cd $DIR
 
 # Detect arch
 ARCHNAME="x86_64"
@@ -12,8 +13,7 @@ if [[ "$OSTYPE" == "darwin"* ]]; then
   ARCHNAME="Darwin"
 fi
 
-# Pinned FFmpeg version (LTS)
-VERSION="6.1.1"
+VERSION="6.1.1"  # LTS
 PREFIX="$DIR/$ARCHNAME"
 SRC_DIR="$DIR/src/ffmpeg-$VERSION"
 BUILD_DIR="$DIR/build/$ARCHNAME"
@@ -91,6 +91,5 @@ make -C "$BUILD_DIR" -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
 make -C "$BUILD_DIR" install
 mkdir -p "$DIR/include"
 cp -a "$PREFIX/include/." "$DIR/include/"
-rm -rf "$PREFIX/share" "$PREFIX/doc" "$PREFIX/man" "$PREFIX/share/doc" "$PREFIX/share/man" "$PREFIX/examples" "$PREFIX/include"
-rm -f "$PREFIX/lib/libavfilter.a"
-popd
+rm -rf "$PREFIX/share" "$PREFIX/doc" "$PREFIX/man" "$PREFIX/share/doc" "$PREFIX/share/man" "$PREFIX/examples" "$PREFIX/include" "$PREFIX/lib/pkgconfig"
+rm -f "$PREFIX/lib/libavfilter*" "$DIR/include/libavfilter*"
