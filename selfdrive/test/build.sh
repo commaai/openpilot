@@ -13,6 +13,7 @@ source "$SCRIPT_DIR/build_common.sh"
 echo a
 echo "$CACHE_ROOTFS_TARBALL_PATH"
 echo b
+exit 1
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
     # apply it, upgrading the rootfs
