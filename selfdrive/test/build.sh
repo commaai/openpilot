@@ -16,6 +16,14 @@ ls "$CACHE_ROOTFS_TARBALL_PATH" || true
 file "$CACHE_ROOTFS_TARBALL_PATH" || true
 file "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" || true
 echo b
+
+if [ -d "$CACHE_ROOTFS_TARBALL_PATH" ]
+then
+    mv "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH/../"
+    rmdir "$CACHE_ROOTFS_TARBALL_PATH"
+    mv "$CACHE_ROOTFS_TARBALL_PATH/../rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH"
+fi
+
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
     # apply it, upgrading the rootfs
