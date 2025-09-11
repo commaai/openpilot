@@ -43,7 +43,7 @@ class LatControlTorque(LatControl):
     self.pid.set_limits(self.lateral_accel_from_torque(self.steer_max, self.torque_params),
                         self.lateral_accel_from_torque(-self.steer_max, self.torque_params))
 
-  def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, raw_desired_curvature, curvature_limited):
+  def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -54,12 +54,11 @@ class LatControlTorque(LatControl):
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
 
       desired_lateral_accel = desired_curvature * CS.vEgo ** 2
-      raw_desired_lateral_accel = raw_desired_curvature * CS.vEgo ** 2 # current time desired lateral acceleration
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
 
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
-      setpoint = raw_desired_lateral_accel + low_speed_factor * desired_curvature
+      setpoint = desired_lateral_accel + low_speed_factor * desired_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = desired_lateral_accel - roll_compensation
 
