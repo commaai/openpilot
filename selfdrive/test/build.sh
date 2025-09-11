@@ -13,6 +13,8 @@ source "$SCRIPT_DIR/build_common.sh"
 echo a
 stat "$CACHE_ROOTFS_TARBALL_PATH" || true
 ls "$CACHE_ROOTFS_TARBALL_PATH" || true
+file "$CACHE_ROOTFS_TARBALL_PATH" || true
+file "$CACHE_ROOTFS_TARBALL_PATH/rootfs.tar" || true
 echo b
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
