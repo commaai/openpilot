@@ -15,38 +15,30 @@ fi
 
 VERSION="6.1.1"  # LTS
 PREFIX="$DIR/$ARCHNAME"
-SRC_DIR="$DIR/src/ffmpeg-$VERSION"
-BUILD_DIR="$DIR/build/$ARCHNAME"
+BUILD_DIR="$DIR/build/"
 
 mkdir -p "$BUILD_DIR"
+rm -rf include/ && mkdir -p include/
 rm -rf "$PREFIX" && mkdir -p "$PREFIX"
 
-# Fetch source
+# *** build x264 ***
+if [[ ! -d "$DIR/src/x264/" ]]; then
+  # TODO: pin to a commit
+  git clone --depth=1 --branch "stable" https://code.videolan.org/videolan/x264.git "$DIR/src/x264/"
+fi
+cd $DIR/src/x264
+./configure --prefix="$PREFIX" --enable-static --disable-opencl --enable-pic --disable-cli
+make -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
+make install
+cp -a "$PREFIX/include/." "$DIR/include/"
+
+# *** build ffmpeg ***
 mkdir -p "$DIR/src"
-set -x
 if [[ ! -d "$DIR/src/ffmpeg-$VERSION" ]]; then
   echo "Downloading FFmpeg $VERSION ..."
   curl -L "https://ffmpeg.org/releases/ffmpeg-${VERSION}.tar.xz" -o "$DIR/src/ffmpeg-${VERSION}.tar.xz"
   tar -C "$DIR/src" -xf "$DIR/src/ffmpeg-${VERSION}.tar.xz"
 fi
-if [[ ! -d "$DIR/src/x264/" ]]; then
-  # TODO: pin to a commit
-  git clone --depth=1 --branch "stable" https://code.videolan.org/videolan/x264.git "$DIR/src/x264/"
-fi
-
-
-# *** build x264 ***
-cd $DIR/src/x264
-./configure --prefix="$PREFIX" --enable-static --disable-opencl --enable-pic --disable-cli
-make -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
-make install
-
-# copy headers to common include and prune extras
-mkdir -p "$DIR/include"
-cp -a "$PREFIX/include/." "$DIR/include/"
-
-export BUILD="$BUILD_DIR"
-export PREFIX
 
 cd $BUILD_DIR
 case "$ARCHNAME" in
@@ -96,11 +88,11 @@ case "$ARCHNAME" in
     ;;
 esac
 
-make -C "$BUILD_DIR" -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
-make -C "$BUILD_DIR" install
-mkdir -p "$DIR/include"
+make -j"$(getconf _NPROCESSORS_ONLN || echo 4)"
+make install
 cp -a "$PREFIX/include/." "$DIR/include/"
 
-# cleanup
-rm -rf "$PREFIX/share" "$PREFIX/doc" "$PREFIX/man" "$PREFIX/share/doc" "$PREFIX/share/man" "$PREFIX/examples" "$PREFIX/include" "$PREFIX/lib/pkgconfig"
-rm -f "$PREFIX/lib/libavfilter*" "$DIR/include/libavfilter*"
+# *** cleanup ***
+cd $PREFIX
+rm -rf share/ doc/ man/ examples/ examples/ include/ lib/pkgconfig/
+rm -f lib/libavfilter* "$DIR/include/libavfilter*"
