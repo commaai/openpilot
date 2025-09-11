@@ -14,7 +14,7 @@ echo a
 stat "$CACHE_ROOTFS_TARBALL_PATH" || true
 ls "$CACHE_ROOTFS_TARBALL_PATH" || true
 file "$CACHE_ROOTFS_TARBALL_PATH" || true
-file "$CACHE_ROOTFS_TARBALL_PATH/rootfs.tar" || true
+file "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" || true
 echo b
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
