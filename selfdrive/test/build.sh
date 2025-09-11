@@ -11,7 +11,8 @@ source "$SCRIPT_DIR/build_common.sh"
 
 # if the rootfs diff tarball (also created by this script) got restored from the CI native cache
 echo a
-echo "$CACHE_ROOTFS_TARBALL_PATH"
+stat "$CACHE_ROOTFS_TARBALL_PATH" || true
+ls "$CACHE_ROOTFS_TARBALL_PATH" || true
 echo b
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
