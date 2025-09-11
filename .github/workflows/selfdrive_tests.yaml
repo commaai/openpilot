@@ -91,7 +91,6 @@ jobs:
 
   build_mac:
     name: build macOS
-    if: false  # temp disable since homebrew install is getting stuck
     runs-on: ${{ ((github.repository == 'commaai/openpilot') && ((github.event_name != 'pull_request') || (github.event.pull_request.head.repo.full_name == 'commaai/openpilot'))) && 'namespace-profile-macos-8x14' || 'macos-latest' }}
     steps:
     - uses: actions/checkout@v4
@@ -109,8 +108,8 @@ jobs:
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
-        # package install has DeprecationWarnings
-        PYTHONWARNINGS: default
+        PYTHONWARNINGS: default  # package install has DeprecationWarnings
+        HOMEBREW_DISPLAY_INSTALL_TIMES: 1
     - run: git lfs pull
     - name: Getting scons cache
       uses: ./.github/workflows/auto-cache
