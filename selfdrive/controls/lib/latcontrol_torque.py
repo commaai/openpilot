@@ -68,7 +68,7 @@ class LatControlTorque(LatControl):
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(setpoint - measurement)
 
-      # experiment for heavily damped EPS, null out the main feedforward and send only friction+PI, pushes actuator past zero
+      # experiment for heavily damped EPS, zero output if we're not falling toward center fast enough
       # this will be rate-limited in the car port, so bouncing all the way down and back up won't be instant
       COUNTER_DAMPING_TRIGGER_FRAMES = 10
       if pid_log.error * setpoint < 0:  # error sign is opposite to setpoint sign
@@ -82,12 +82,12 @@ class LatControlTorque(LatControl):
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5 or counter_damping
 
-      pi_controlled_output_lataccel = self.pid.update(pid_log.error,
+      pi_controlled_lataccel = self.pid.update(pid_log.error,
                                                       feedforward=ff,
                                                       speed=CS.vEgo,
                                                       freeze_integrator=freeze_integrator)
 
-      output_lataccel = pi_controlled_output_lataccel if not counter_damping else ff
+      output_lataccel = pi_controlled_lataccel if not counter_damping else 0.
       output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
 
       pid_log.active = True
