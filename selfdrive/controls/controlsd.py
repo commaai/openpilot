@@ -120,8 +120,8 @@ class Controls:
 
     actuators.curvature = self.desired_curvature
     steer, steeringAngleDeg, lac_log = self.LaC.update(CC.latActive, CS, self.VM, lp,
-                                                      self.steer_limited_by_safety, self.desired_curvature,
-                                                      curvature_limited)  # TODO what if not available
+                                                       self.steer_limited_by_safety, self.desired_curvature,
+                                                       curvature_limited)  # TODO what if not available
     actuators.torque = float(steer)
     actuators.steeringAngleDeg = float(steeringAngleDeg)
     # Ensure no NaNs/Infs
