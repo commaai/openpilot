@@ -108,8 +108,8 @@ jobs:
     - name: Install dependencies
       run: ./tools/mac_setup.sh
       env:
-        # package install has DeprecationWarnings
-        PYTHONWARNINGS: default
+        PYTHONWARNINGS: default  # package install has DeprecationWarnings
+        HOMEBREW_DISPLAY_INSTALL_TIMES: 1
     - run: git lfs pull
     - name: Getting scons cache
       uses: ./.github/workflows/auto-cache
