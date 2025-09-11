@@ -4,6 +4,10 @@ libs = [common, messaging, visionipc,
         'avformat', 'avcodec', 'avutil',
         'yuv', 'OpenCL', 'pthread', 'zstd']
 
+# When using vendored static FFmpeg on desktop Linux, add x264 dependency
+if arch == 'x86_64' and env.get('FFMPEG_VENDOR'):
+  libs += ['x264']
+
 src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch != "larch64":
   src += ['encoder/ffmpeg_encoder.cc']

@@ -1,0 +1,14 @@
+prefix=/home/batman/fourpilot/third_party/ffmpeg/x86_64
+exec_prefix=${prefix}
+libdir=/home/batman/fourpilot/third_party/ffmpeg/x86_64/lib
+includedir=/home/batman/fourpilot/third_party/ffmpeg/x86_64/include
+
+Name: libavutil
+Description: FFmpeg utility library
+Version: 58.29.100
+Requires: 
+Requires.private: 
+Conflicts:
+Libs: -L${libdir}  -lavutil -pthread -lm -latomic
+Libs.private: 
+Cflags: -I${includedir}

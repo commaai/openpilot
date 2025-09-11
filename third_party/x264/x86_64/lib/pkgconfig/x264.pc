@@ -1,0 +1,11 @@
+prefix=/home/batman/fourpilot/third_party/x264/x86_64
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: x264
+Description: H.264 (MPEG4 AVC) encoder library
+Version: 0.165.x
+Libs: -L${exec_prefix}/lib -lx264 -lpthread -lm
+Libs.private: 
+Cflags: -I${prefix}/include 
