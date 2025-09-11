@@ -32,10 +32,11 @@ runs:
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
           scons-${{ runner.arch }}
-    # as suggested here: https://github.com/moby/moby/issues/32816#issuecomment-910030001
-    - id: normalize-file-permissions
-      shell: bash
-      name: Normalize file permissions to ensure a consistent docker build cache
-      run: |
-        find . -type f -executable -not -perm 755 -exec chmod 755 {} \;
-        find . -type f -not -executable -not -perm 644 -exec chmod 644 {} \;
+    - uses: ./.github/workflows/setup-with-retry
+    # try to save rootfs image cache
+    - name: Save rootfs cache
+      uses: actions/upload-artifact@v4
+      #if: github.ref == 'refs/heads/master'
+      with:
+        path: /tmp/rootfs_cache.tar
+        name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
