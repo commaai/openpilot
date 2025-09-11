@@ -489,7 +489,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
 
   EventName.steerTempUnavailableSilent: {
     ET.WARNING: Alert(
-      "Steering Temporarily Unavailable",
+      "Steering Assist Temporarily Unavailable",
       "",
       AlertStatus.userPrompt, AlertSize.small,
       Priority.LOW, VisualAlert.steerRequired, AudibleAlert.prompt, 1.8),
@@ -735,7 +735,7 @@ EVENTS: dict[int, dict[str, Alert | AlertCallbackType]] = {
   },
 
   EventName.steerTempUnavailable: {
-    ET.SOFT_DISABLE: soft_disable_alert("Steering Temporarily Unavailable"),
+    ET.SOFT_DISABLE: soft_disable_alert("Steering Assist Temporarily Unavailable"),
     ET.NO_ENTRY: NoEntryAlert("Steering Temporarily Unavailable"),
   },
 
