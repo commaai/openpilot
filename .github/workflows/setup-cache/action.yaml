@@ -40,3 +40,4 @@ runs:
       with:
         path: /tmp/rootfs_cache.tar
         name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
+        compression-level: 0
