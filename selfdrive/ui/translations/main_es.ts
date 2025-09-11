@@ -479,10 +479,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
         <translation>Se está descargando una actualización del sistema operativo de su dispositivo en segundo plano. Se le pedirá que actualice cuando esté listo para instalarse.</translation>
     </message>
     <message>
-        <source>NVMe drive not mounted.</source>
-        <translation>Unidad NVMe no montada.</translation>
-    </message>
-    <message>
         <source>openpilot was unable to identify your car. Your car is either unsupported or its ECUs are not recognized. Please submit a pull request to add the firmware versions to the proper vehicle. Need help? Join discord.comma.ai.</source>
         <translation>openpilot no pudo identificar su automóvil. Su automóvil no es compatible o no se reconocen sus ECU. Por favor haga un pull request para agregar las versiones de firmware del vehículo adecuado. ¿Necesita ayuda? Únase a discord.comma.ai.</translation>
     </message>
@@ -1035,16 +1031,6 @@ El Modo Firehose te permite maximizar las subidas de datos de entrenamiento para
     <message>
         <source>Record and store microphone audio while driving. The audio will be included in the dashcam video in comma connect.</source>
         <translation>Graba y almacena el audio del micrófono mientras conduces. El audio se incluirá en el video de la cámara del tablero en comma connect.</translation>
-    </message>
-    <message>
-        <source>Record Audio Feedback with LKAS button</source>
-        <translation type="unfinished"></translation>
-    </message>
-    <message>
-        <source>Press the LKAS button to record and share driving feedback with the openpilot team. When this toggle is disabled, the button acts as a bookmark button. The event will be highlighted in comma connect and the segment will be preserved on your device&apos;s storage.
-
-Note that this feature is only compatible with select cars.</source>
-        <translation type="unfinished"></translation>
     </message>
 </context>
 <context>
