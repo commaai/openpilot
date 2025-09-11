@@ -218,7 +218,7 @@ def main(route_to_load=None):
     scale = 1
 
   with dpg.font_registry():
-    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/Inter-Regular.ttf"), int(13 * scale))
+    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale))
   dpg.bind_font(default_font)
 
   viewport_width, viewport_height = int(1200 * scale), int(800 * scale)

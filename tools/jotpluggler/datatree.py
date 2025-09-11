@@ -34,7 +34,7 @@ class DataTree:
     self._path_to_node: dict[str, DataTreeNode] = {}  # full_path -> node
     self._expanded_tags: set[str] = set()
     self._item_handlers: dict[str, str] = {}  # ui_tag -> handler_tag
-    self._avg_char_width = None
+    self._char_width = None
     self._queued_search = None
     self._new_data = False
     self._ui_lock = threading.RLock()
@@ -64,8 +64,9 @@ class DataTree:
         self._handlers_to_delete.clear()
 
     with self._ui_lock:
-      if self._avg_char_width is None and dpg.is_dearpygui_running():
-        self._avg_char_width = self.calculate_avg_char_width(font)
+      if self._char_width is None:
+        if size := dpg.get_text_size(" ", font=font):
+          self._char_width = size[0]
 
       if self._new_data:
         self._process_path_change()
@@ -256,10 +257,10 @@ class DataTree:
       value_tag = f"value_{path}"
       if not dpg.does_item_exist(value_tag):
         return
-      value_column_width = dpg.get_item_rect_size("sidebar_window")[0] // 2
+      value_column_width = dpg.get_item_rect_size(f"leaf_{path}")[0] // 2
       value = self.data_manager.get_value_at(path, self.playback_manager.current_time_s)
       if value is not None:
-        formatted_value = self.format_and_truncate(value, value_column_width, self._avg_char_width)
+        formatted_value = self.format_and_truncate(value, value_column_width, self._char_width)
         dpg.set_value(value_tag, formatted_value)
       else:
         dpg.set_value(value_tag, "N/A")
@@ -305,16 +306,9 @@ class DataTree:
           yield f"{child_name_lower}/{path}"
 
   @staticmethod
-  def calculate_avg_char_width(font):
-    sample_text = "abcdefghijklmnopqrstuvwxyz0123456789"
-    if size := dpg.get_text_size(sample_text, font=font):
-      return size[0] / len(sample_text)
-    return None
-
-  @staticmethod
-  def format_and_truncate(value, available_width: float, avg_char_width: float) -> str:
+  def format_and_truncate(value, available_width: float, char_width: float) -> str:
     s = f"{value:.5f}" if np.issubdtype(type(value), np.floating) else str(value)
-    max_chars = int(available_width / avg_char_width) - 3
+    max_chars = int(available_width / char_width)
     if len(s) > max_chars:
-      return s[: max(0, max_chars)] + "..."
+      return s[: max(0, max_chars - 3)] + "..."
     return s

@@ -46,8 +46,8 @@ class PlotLayoutManager:
         dpg.add_combo(items=["Time Series"], default_value="Time Series", width=int(100 * self.scale))
         dpg.add_button(label="Clear", callback=lambda: self.clear_panel(panel), width=int(40 * self.scale))
         dpg.add_button(label="Delete", callback=lambda: self.delete_panel(path), width=int(40 * self.scale))
-        dpg.add_button(label="Split H", callback=lambda: self.split_panel(path, 0), width=int(40 * self.scale))
-        dpg.add_button(label="Split V", callback=lambda: self.split_panel(path, 1), width=int(40 * self.scale))
+        dpg.add_button(label="Split H", callback=lambda: self.split_panel(path, 0), width=int(50 * self.scale))
+        dpg.add_button(label="Split V", callback=lambda: self.split_panel(path, 1), width=int(50 * self.scale))
 
       dpg.add_separator()
 
