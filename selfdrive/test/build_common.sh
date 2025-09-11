@@ -69,6 +69,7 @@ commit_root() {
 }
 
 reexecute() {
+    set +e
     touch /root_committed
     sudo -u runner "$SELF_PATH"
     ec=$?
