@@ -19,9 +19,9 @@ echo b
 
 if [ -d "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
-    mv "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH/../"
+    mv "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH/../file"
     rmdir "$CACHE_ROOTFS_TARBALL_PATH"
-    mv "$CACHE_ROOTFS_TARBALL_PATH/../rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH"
+    mv "$CACHE_ROOTFS_TARBALL_PATH/../file" "$CACHE_ROOTFS_TARBALL_PATH"
 fi
 
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
@@ -86,6 +86,8 @@ sudo mkdir -p /etc/OpenCL/vendors
 sudo bash -c "echo /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libintelocl.so > /etc/OpenCL/vendors/intel_expcpu.icd"
 cd /opt/intel
 sudo tar -zxvf /tmp/opencl-driver-intel/oneapi-tbb-2021.12.0-lin.tgz
+sudo rm -f /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libtbbmalloc.so \
+    /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64/libtbb.so.12 /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so.2
 sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
 sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbbmalloc.so /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
 sudo ln -s /opt/intel/oneapi-tbb-2021.12.0/lib/intel64/gcc4.8/libtbb.so.12 /opt/intel/oclcpuexp_2024.17.3.0.09_rel/x64
