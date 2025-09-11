@@ -56,7 +56,7 @@ def fill_lane_line_meta(builder, lane_lines, lane_line_probs):
   builder.rightProb = lane_line_probs[2]
 
 def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._DynamicStructBuilder,
-                   net_output_data: dict[str, np.ndarray], action: log.ModelDataV2.Action, raw_action: log.ModelDataV2.Action,
+                   net_output_data: dict[str, np.ndarray], action: log.ModelDataV2.Action,
                    publish_state: PublishState, vipc_frame_id: int, vipc_frame_id_extra: int,
                    frame_id: int, frame_drop: float, timestamp_eof: int, model_execution_time: float,
                    valid: bool) -> None:
@@ -73,7 +73,6 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
   driving_model_data.modelExecutionTime = model_execution_time
 
   driving_model_data.action = action
-  driving_model_data.rawAction = raw_action
 
   modelV2 = extended_msg.modelV2
   modelV2.frameId = vipc_frame_id
@@ -95,7 +94,6 @@ def fill_model_msg(base_msg: capnp._DynamicStructBuilder, extended_msg: capnp._D
 
   # action
   modelV2.action = action
-  modelV2.rawAction = raw_action
 
   # times at X_IDXS of edges and lines aren't used
   LINE_T_IDXS: list[float] = []
