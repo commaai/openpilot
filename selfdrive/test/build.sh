@@ -21,7 +21,7 @@ if [ -d "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
     mv "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH/../file"
     rmdir "$CACHE_ROOTFS_TARBALL_PATH"
-    mv "/tmp/../file" "$CACHE_ROOTFS_TARBALL_PATH"
+    mv "/tmp/file" "$CACHE_ROOTFS_TARBALL_PATH"
 fi
 
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
