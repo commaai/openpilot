@@ -6,7 +6,10 @@
 #include "msgq/visionipc/visionbuf.h"
 #include "tools/replay/filereader.h"
 #include "tools/replay/util.h"
+
+#ifndef __APPLE__
 #include "tools/replay/qcom_decoder.h"
+#endif
 
 extern "C" {
 #include <libavcodec/avcodec.h>
@@ -65,6 +68,7 @@ private:
   AVBufferRef *hw_device_ctx = nullptr;
 };
 
+#ifndef __APPLE__
 class QcomVideoDecoder : public VideoDecoder {
 public:
   QcomVideoDecoder() {};
@@ -75,3 +79,4 @@ public:
 private:
   MsmVidc msm_vidc = MsmVidc();
 };
+#endif

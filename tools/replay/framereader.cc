@@ -39,9 +39,12 @@ struct DecoderManager {
     }
 
     std::unique_ptr<VideoDecoder> decoder;
+    #ifndef __APPLE__
     if (Hardware::TICI() && hw_decoder) {
       decoder = std::make_unique<QcomVideoDecoder>();
-    } else {
+    } else
+    #endif
+    {
       decoder = std::make_unique<FFmpegVideoDecoder>();
     }
 
@@ -264,6 +267,7 @@ bool FFmpegVideoDecoder::copyBuffer(AVFrame *f, VisionBuf *buf) {
   return true;
 }
 
+#ifndef __APPLE__
 bool QcomVideoDecoder::open(AVCodecParameters *codecpar, bool hw_decoder) {
   if (codecpar->codec_id != AV_CODEC_ID_HEVC) {
     rError("Hardware decoder only supports HEVC codec");
@@ -305,3 +309,4 @@ bool QcomVideoDecoder::decode(FrameReader *reader, int idx, VisionBuf *buf) {
   }
   return result;
 }
+#endif
