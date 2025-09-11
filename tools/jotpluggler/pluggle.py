@@ -111,7 +111,6 @@ class MainController:
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, scaled_thickness, category=dpg.mvThemeCat_Plots)
         dpg.add_theme_color(dpg.mvPlotCol_Line, (255, 0, 0, 128), category=dpg.mvThemeCat_Plots)
 
-
   def on_data_loaded(self, data: dict):
     duration = data.get('duration', 0.0)
     self.playback_manager.set_route_duration(duration)
@@ -141,8 +140,10 @@ class MainController:
       print(os.path.join(script_dir, "assets", "play.png"))
       play_texture = dpg.load_image(os.path.join(script_dir, "assets", "play.png"))
       pause_texture = dpg.load_image(os.path.join(script_dir, "assets", "pause.png"))
+      x_texture = dpg.load_image(os.path.join(script_dir, "assets", "x.png"))
       dpg.add_static_texture(width=play_texture[0], height=play_texture[1], default_value=play_texture[3], tag="play_texture")
       dpg.add_static_texture(width=pause_texture[0], height=pause_texture[1], default_value=pause_texture[3], tag="pause_texture")
+      dpg.add_static_texture(width=x_texture[0], height=x_texture[1], default_value=x_texture[3], tag="x_texture")
 
     with dpg.window(tag="Primary Window"):
       with dpg.group(horizontal=True):
