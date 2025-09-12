@@ -51,9 +51,11 @@ class TimeSeriesPanel(ViewPanel):
     self._update_lock = threading.RLock()
     self._results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
+    self._last_x_limits = None
 
   def create_ui(self, parent_tag: str):
     self.data_manager.add_observer(self.on_data_loaded)
+    self.playback_manager.add_x_axis_observer(self._on_x_axis_sync)
     with dpg.plot(height=-1, width=-1, tag=self.plot_tag, parent=parent_tag, drop_callback=self._on_series_drop, payload_type="TIMESERIES_PAYLOAD"):
       dpg.add_plot_legend()
       dpg.add_plot_axis(dpg.mvXAxis, no_label=True, tag=self.x_axis_tag)
@@ -69,6 +71,16 @@ class TimeSeriesPanel(ViewPanel):
     with self._update_lock:
       if not self._ui_created:
         return
+
+      current_limits = dpg.get_axis_limits(self.x_axis_tag)
+      # downsample if plot zoom changed significantly
+      plot_duration = current_limits[1] - current_limits[0]
+      if plot_duration > self._last_plot_duration * 2 or plot_duration < self._last_plot_duration * 0.5:
+        self._downsample_all_series(plot_duration)
+      # sync x-axis if changed by user
+      if self._last_x_limits != current_limits:
+        self.playback_manager.set_x_axis_bounds(current_limits[0], current_limits[1], source_panel=self)
+        self._last_x_limits = current_limits
 
       if self._new_data:  # handle new data in main thread
         self._new_data = False
@@ -96,10 +108,14 @@ class TimeSeriesPanel(ViewPanel):
           if dpg.does_item_exist(series_tag):
             dpg.configure_item(series_tag, label=f"{series_path}: {formatted_value}")
 
-      # downsample if plot zoom changed significantly
-      plot_duration = dpg.get_axis_limits(self.x_axis_tag)[1] - dpg.get_axis_limits(self.x_axis_tag)[0]
-      if plot_duration > self._last_plot_duration * 2 or plot_duration < self._last_plot_duration * 0.5:
-        self._downsample_all_series(plot_duration)
+  def _on_x_axis_sync(self, min_time: float, max_time: float, source_panel):
+    with self._update_lock:
+      if source_panel == self or not self._ui_created:
+        return
+      dpg.set_axis_limits(self.x_axis_tag, min_time, max_time)
+      dpg.render_dearpygui_frame()
+      dpg.set_axis_limits_auto(self.x_axis_tag)
+      self._last_x_limits = (min_time, max_time)
 
   def _downsample_all_series(self, plot_duration):
     plot_width = dpg.get_item_rect_size(self.plot_tag)[0]
@@ -145,6 +161,7 @@ class TimeSeriesPanel(ViewPanel):
   def destroy_ui(self):
     with self._update_lock:
       self.data_manager.remove_observer(self.on_data_loaded)
+      self.playback_manager.remove_x_axis_observer(self._on_x_axis_sync)
       if dpg.does_item_exist(self.plot_tag):
         dpg.delete_item(self.plot_tag)
       self._ui_created = False
