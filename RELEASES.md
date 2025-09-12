@@ -1,6 +1,6 @@
 Version 0.10.1 (2025-09-08)
 ========================
-* New driving model
+* New driving model #36087
   * World Model: removed global localization inputs
   * World Model: 2x the number of parameters
   * World Model: trained on 4x the number of segments
