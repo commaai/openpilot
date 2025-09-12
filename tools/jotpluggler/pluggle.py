@@ -65,6 +65,10 @@ class PlaybackManager:
     self.current_time_s = 0.0
     self.duration_s = 0.0
 
+    self.x_axis_bounds = (0.0, 0.0)  # (min_time, max_time)
+    self.x_axis_observers = []  # callbacks for x-axis changes
+    self._updating_x_axis = False
+
   def set_route_duration(self, duration: float):
     self.duration_s = duration
     self.seek(min(self.current_time_s, duration))
@@ -87,6 +91,33 @@ class PlaybackManager:
         dpg.configure_item("play_pause_button", texture_tag="play_texture")
     return self.current_time_s
 
+  def set_x_axis_bounds(self, min_time: float, max_time: float, source_panel=None):
+    if self._updating_x_axis:
+      return
+
+    new_bounds = (min_time, max_time)
+    if new_bounds == self.x_axis_bounds:
+      return
+
+    self.x_axis_bounds = new_bounds
+    self._updating_x_axis = True  # prevent recursive updates
+
+    try:
+      for callback in self.x_axis_observers:
+        try:
+          callback(min_time, max_time, source_panel)
+        except Exception as e:
+          print(f"Error in x-axis sync callback: {e}")
+    finally:
+      self._updating_x_axis = False
+
+  def add_x_axis_observer(self, callback):
+    if callback not in self.x_axis_observers:
+      self.x_axis_observers.append(callback)
+
+  def remove_x_axis_observer(self, callback):
+    if callback in self.x_axis_observers:
+      self.x_axis_observers.remove(callback)
 
 class MainController:
   def __init__(self, scale: float = 1.0):
