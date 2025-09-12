@@ -230,10 +230,10 @@ class LongitudinalPlanner:
     ## and then treat that as a stopped car/obstacle at this new distance.
     #lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     #lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
-    
+
     desired_follow_distance = get_desired_follow_distance(v_ego, lead_xv_0[0,1], get_T_FOLLOW())
     true_follow_distance = lead_xv_0[0,0]
-    
+
     follow_distance_error = true_follow_distance - desired_follow_distance
     lead_accel = np.clip(0.2 * follow_distance_error, -3.5, 2.0)
 
@@ -248,7 +248,7 @@ class LongitudinalPlanner:
     for idx in range(2):
       accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
     self.prev_accel_clip = accel_clip
-    
+
     output_a_target = np.min([x for x, _ in out_accels.values()])
     self.output_should_stop = np.all([x for _, x in out_accels.values()])
     self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
