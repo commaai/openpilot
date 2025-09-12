@@ -13,6 +13,7 @@ from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
 #from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
+from openpilot.selfdrive.controls.lib.drive_helpers import smooth_value
 
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
@@ -129,7 +130,6 @@ class LongitudinalPlanner:
 
     self.a_desired = init_a
     self.v_desired_filter = FirstOrderFilter(init_v, 2.0, self.dt)
-    self.prev_accel_clip = [ACCEL_MIN, ACCEL_MAX]
     self.output_a_target = 0.0
     self.output_should_stop = False
 
@@ -177,7 +177,7 @@ class LongitudinalPlanner:
     if reset_state:
       self.v_desired_filter.x = v_ego
       # Clip aEgo to cruise limits to prevent large accelerations when becoming active
-      self.a_desired = np.clip(sm['carState'].aEgo, accel_clip[0], accel_clip[1])
+      self.output_a_target = np.clip(sm['carState'].aEgo, accel_clip[0], accel_clip[1])
 
     # Prevent divergence, smooth in current v_ego
     self.v_desired_filter.x = max(0.0, self.v_desired_filter.update(v_ego))
@@ -210,6 +210,7 @@ class LongitudinalPlanner:
     cruise_max = np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
     cruise_accel = 0.5*(v_cruise - v_ego)
     cruise_accel = np.clip(cruise_accel, cruise_min, cruise_max)
+    cruise_accel = smooth_value(cruise_accel, self.output_a_target, 1.0)
     out_accels['cruise'] = (cruise_accel, False)
 
 
@@ -217,8 +218,6 @@ class LongitudinalPlanner:
     lead_xv_0 = process_lead(v_ego, sm['radarState'].leadOne)
     #lead_xv_1 = process_lead(v_ego, sm['radarState'].leadTwo)
 
-
-    get_safe_obstacle_distance(v_ego, get_T_FOLLOW())
 
     ## To estimate a safe distance from a moving lead, we calculate how much stopping
     ## distance that lead needs as a minimum. We can add that to the current distance
@@ -230,19 +229,15 @@ class LongitudinalPlanner:
     true_follow_distance = lead_xv_0[0,0]
 
     follow_distance_error = true_follow_distance - desired_follow_distance
-    lead_accel = np.clip(0.2 * follow_distance_error, -3.5, 2.0)
+    follow_distance_cost_signed = (follow_distance_error / (v_ego + 10))**2 * np.sign(follow_distance_error)
+    lead_accel = np.clip(2*follow_distance_cost_signed, -3.5, 2.0)
+    lead_accel = smooth_value(lead_accel, self.output_a_target, 0.5)
 
     out_accels['lead'] = (lead_accel, False)
 
 
     if mode == 'blended':
       out_accels['model']= (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
-
-
-    # smoothing opn the clip #TODO do better?
-    for idx in range(2):
-      accel_clip[idx] = np.clip(accel_clip[idx], self.prev_accel_clip[idx] - 0.05, self.prev_accel_clip[idx] + 0.05)
-    self.prev_accel_clip = accel_clip
 
     output_a_target = np.min([x for x, _ in out_accels.values()])
     self.output_should_stop = np.all([x for _, x in out_accels.values()])
