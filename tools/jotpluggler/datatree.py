@@ -154,7 +154,7 @@ class DataTree:
 
       for i, part in enumerate(parts):
         current_path_prefix = f"{current_path_prefix}/{part}" if current_path_prefix else part
-        if i < len(parts) - 1:
+        if i < len(parts):
           parent_nodes_to_recheck.add(current_node)  # for incremental changes from new data
         if part not in current_node.children:
           current_node.children[part] = DataTreeNode(name=part, full_path=current_path_prefix, parent=current_node)
