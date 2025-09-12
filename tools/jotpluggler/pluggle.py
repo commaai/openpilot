@@ -65,6 +65,10 @@ class PlaybackManager:
     self.current_time_s = 0.0
     self.duration_s = 0.0
 
+    self.x_axis_bounds = (0.0, 0.0)  # (min_time, max_time)
+    self.x_axis_observers = []  # callbacks for x-axis changes
+    self._updating_x_axis = False
+
   def set_route_duration(self, duration: float):
     self.duration_s = duration
     self.seek(min(self.current_time_s, duration))
@@ -73,9 +77,10 @@ class PlaybackManager:
     if not self.is_playing and self.current_time_s >= self.duration_s:
       self.seek(0.0)
     self.is_playing = not self.is_playing
+    texture_tag = "pause_texture" if self.is_playing else "play_texture"
+    dpg.configure_item("play_pause_button", texture_tag=texture_tag)
 
   def seek(self, time_s: float):
-    self.is_playing = False
     self.current_time_s = max(0.0, min(time_s, self.duration_s))
 
   def update_time(self, delta_t: float):
@@ -83,8 +88,36 @@ class PlaybackManager:
       self.current_time_s = min(self.current_time_s + delta_t, self.duration_s)
       if self.current_time_s >= self.duration_s:
         self.is_playing = False
+        dpg.configure_item("play_pause_button", texture_tag="play_texture")
     return self.current_time_s
 
+  def set_x_axis_bounds(self, min_time: float, max_time: float, source_panel=None):
+    if self._updating_x_axis:
+      return
+
+    new_bounds = (min_time, max_time)
+    if new_bounds == self.x_axis_bounds:
+      return
+
+    self.x_axis_bounds = new_bounds
+    self._updating_x_axis = True  # prevent recursive updates
+
+    try:
+      for callback in self.x_axis_observers:
+        try:
+          callback(min_time, max_time, source_panel)
+        except Exception as e:
+          print(f"Error in x-axis sync callback: {e}")
+    finally:
+      self._updating_x_axis = False
+
+  def add_x_axis_observer(self, callback):
+    if callback not in self.x_axis_observers:
+      self.x_axis_observers.append(callback)
+
+  def remove_x_axis_observer(self, callback):
+    if callback in self.x_axis_observers:
+      self.x_axis_observers.remove(callback)
 
 class MainController:
   def __init__(self, scale: float = 1.0):
@@ -109,7 +142,6 @@ class MainController:
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, scaled_thickness, category=dpg.mvThemeCat_Plots)
         dpg.add_theme_color(dpg.mvPlotCol_Line, (255, 0, 0, 128), category=dpg.mvThemeCat_Plots)
 
-
   def on_data_loaded(self, data: dict):
     duration = data.get('duration', 0.0)
     self.playback_manager.set_route_duration(duration)
@@ -121,7 +153,7 @@ class MainController:
       dpg.set_value("load_status", "Loading...")
       dpg.set_value("timeline_slider", 0.0)
       dpg.configure_item("timeline_slider", max_value=0.0)
-      dpg.configure_item("play_pause_button", label="Play")
+      dpg.configure_item("play_pause_button", texture_tag="play_texture")
       dpg.configure_item("load_button", enabled=True)
     elif data.get('loading_complete'):
       num_paths = len(self.data_manager.get_all_paths())
@@ -134,6 +166,12 @@ class MainController:
     dpg.configure_item("timeline_slider", max_value=duration)
 
   def setup_ui(self):
+    with dpg.texture_registry():
+      script_dir = os.path.dirname(os.path.realpath(__file__))
+      for image in ["play", "pause", "x", "split_h", "split_v"]:
+        texture = dpg.load_image(os.path.join(script_dir, "assets", f"{image}.png"))
+        dpg.add_static_texture(width=texture[0], height=texture[1], default_value=texture[3], tag=f"{image}_texture")
+
     with dpg.window(tag="Primary Window"):
       with dpg.group(horizontal=True):
         # Left panel - Data tree
@@ -147,16 +185,17 @@ class MainController:
 
         # Right panel - Plots and timeline
         with dpg.group(tag="right_panel"):
-          with dpg.child_window(label="Plot Window", border=True, height=-(30 + 13 * self.scale), tag="main_plot_area"):
+          with dpg.child_window(label="Plot Window", border=True, height=-(32 + 13 * self.scale), tag="main_plot_area"):
             self.plot_layout_manager.create_ui("main_plot_area")
 
           with dpg.child_window(label="Timeline", border=True):
             with dpg.table(header_row=False, borders_innerH=False, borders_innerV=False, borders_outerH=False, borders_outerV=False):
-              dpg.add_table_column(width_fixed=True, init_width_or_weight=int(50 * self.scale))  # Play button
+              btn_size = int(13 * self.scale)
+              dpg.add_table_column(width_fixed=True, init_width_or_weight=(btn_size + 8))  # Play button
               dpg.add_table_column(width_stretch=True)  # Timeline slider
               dpg.add_table_column(width_fixed=True, init_width_or_weight=int(50 * self.scale))  # FPS counter
               with dpg.table_row():
-                dpg.add_button(label="Play", tag="play_pause_button", callback=self.toggle_play_pause, width=int(50 * self.scale))
+                dpg.add_image_button(texture_tag="play_texture", tag="play_pause_button", callback=self.toggle_play_pause, width=btn_size, height=btn_size)
                 dpg.add_slider_float(tag="timeline_slider", default_value=0.0, label="", width=-1, callback=self.timeline_drag)
                 dpg.add_text("", tag="fps_counter")
             with dpg.item_handler_registry(tag="plot_resize_handler"):
@@ -177,12 +216,9 @@ class MainController:
 
   def toggle_play_pause(self, sender):
     self.playback_manager.toggle_play_pause()
-    label = "Pause" if self.playback_manager.is_playing else "Play"
-    dpg.configure_item(sender, label=label)
 
   def timeline_drag(self, sender, app_data):
     self.playback_manager.seek(app_data)
-    dpg.configure_item("play_pause_button", label="Play")
 
   def update_frame(self, font):
     self.data_tree.update_frame(font)
@@ -210,7 +246,7 @@ def main(route_to_load=None):
     scale = 1
 
   with dpg.font_registry():
-    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/Inter-Regular.ttf"), int(13 * scale))
+    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale))
   dpg.bind_font(default_font)
 
   viewport_width, viewport_height = int(1200 * scale), int(800 * scale)
