@@ -114,6 +114,7 @@ else:
     libpath = [
       f"#third_party/libyuv/{arch}/lib",
       f"#third_party/acados/{arch}/lib",
+      f"#third_party/ffmpeg/{arch}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
@@ -130,6 +131,7 @@ else:
     libpath = [
       f"#third_party/acados/{arch}/lib",
       f"#third_party/libyuv/{arch}/lib",
+      f"#third_party/ffmpeg/{arch}/lib",
       "/usr/lib",
       "/usr/local/lib",
     ]
@@ -177,6 +179,7 @@ env = Environment(
     "#third_party/libyuv/include",
     "#third_party/json11",
     "#third_party/linux/include",
+    "#third_party/ffmpeg/include",
     "#third_party",
     "#msgq",
   ],
@@ -203,36 +206,10 @@ env = Environment(
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
-# Use vendored FFmpeg only; require it on x86_64
-ffmpeg_inc = f"#third_party/ffmpeg/include"
-ffmpeg_lib = f"#third_party/ffmpeg/{arch}/lib"
-if arch == 'x86_64':
-  if not (Dir(ffmpeg_inc).exists() and Dir(ffmpeg_lib).exists()):
-    raise SCons.Errors.StopError(
-      f"Vendored FFmpeg not found for {arch}. Build it with: ./third_party/ffmpeg/build.sh")
-  env.Prepend(CPPPATH=[ffmpeg_inc])
-  env.Prepend(LIBPATH=[ffmpeg_lib])
-  env.AppendUnique(LIBS=['z', 'm', 'dl'])
-  # x264 vendored (for H.264 encoder used on desktop)
-  x264_lib = f"#third_party/x264/{arch}/lib"
-  env.Prepend(LIBPATH=[x264_lib])
-else:
-  # Prefer vendored if present (other platforms to be handled separately)
-  if Dir(ffmpeg_inc).exists() and Dir(ffmpeg_lib).exists():
-    env.Prepend(CPPPATH=[ffmpeg_inc])
-    env.Prepend(LIBPATH=[ffmpeg_lib])
-    if arch != "Darwin":
-      env.AppendUnique(LIBS=['z', 'm', 'dl'])
-    else:
-      env.AppendUnique(LIBS=['z'])
-
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
   darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
   env["LINKFLAGS"] += darwin_rpath_link_flags
-  # Link frameworks required by FFmpeg's VideoToolbox hwaccel when vendored
-  if env.get('FFMPEG_VENDOR'):
-    env['FRAMEWORKS'] += ['VideoToolbox', 'CoreMedia', 'CoreVideo', 'CoreFoundation']
 
 env.CompilationDatabase('compile_commands.json')
 
