@@ -51,7 +51,7 @@ class TimeSeriesPanel(ViewPanel):
     self._update_lock = threading.RLock()
     self._results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
-    self._last_x_limits = None
+    self._last_x_limits = (0.0, 0.0)
 
   def create_ui(self, parent_tag: str):
     self.data_manager.add_observer(self.on_data_loaded)
