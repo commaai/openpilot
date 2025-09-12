@@ -43,12 +43,13 @@ class DataTree:
 
   def create_ui(self, parent_tag: str):
     with dpg.child_window(parent=parent_tag, border=False, width=-1, height=-1):
-      dpg.add_text("Available Data")
+      dpg.add_text("Timeseries List")
       dpg.add_separator()
       dpg.add_input_text(tag="search_input", width=-1, hint="Search fields...", callback=self.search_data)
       dpg.add_separator()
-      with dpg.group(tag="data_tree_container"):
-        pass
+      with dpg.child_window(border=False, width=-1, height=-1):
+        with dpg.group(tag="data_tree_container"):
+          pass
 
   def _on_data_loaded(self, data: dict):
     with self._ui_lock:

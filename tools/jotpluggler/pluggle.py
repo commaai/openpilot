@@ -162,13 +162,13 @@ class MainController:
 
         # Right panel - Plots and timeline
         with dpg.group(tag="right_panel"):
-          with dpg.child_window(label="Plot Window", border=True, height=-(30 + 13 * self.scale), tag="main_plot_area"):
+          with dpg.child_window(label="Plot Window", border=True, height=-(32 + 13 * self.scale), tag="main_plot_area"):
             self.plot_layout_manager.create_ui("main_plot_area")
 
           with dpg.child_window(label="Timeline", border=True):
             with dpg.table(header_row=False, borders_innerH=False, borders_innerV=False, borders_outerH=False, borders_outerV=False):
               btn_size = int(13 * self.scale)
-              dpg.add_table_column(width_fixed=True, init_width_or_weight=(btn_size + 5))  # Play button
+              dpg.add_table_column(width_fixed=True, init_width_or_weight=(btn_size + 8))  # Play button
               dpg.add_table_column(width_stretch=True)  # Timeline slider
               dpg.add_table_column(width_fixed=True, init_width_or_weight=int(50 * self.scale))  # FPS counter
               with dpg.table_row():
