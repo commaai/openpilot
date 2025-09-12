@@ -56,10 +56,6 @@ dependencies = [
   "json-rpc",
   "websocket_client",
 
-  # acados deps
-  "casadi >=3.6.6",  # 3.12 fixed in 3.6.6
-  "future-fstrings",
-
   # joystickd
   "inputs",
 
