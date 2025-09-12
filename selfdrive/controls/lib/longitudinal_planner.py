@@ -10,9 +10,8 @@ from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.common.realtime import DT_MDL
 from openpilot.selfdrive.modeld.constants import ModelConstants
 from openpilot.selfdrive.controls.lib.longcontrol import LongCtrlState
-from openpilot.selfdrive.controls.lib.drive_helpers import CONTROL_N, get_accel_from_plan
 from openpilot.selfdrive.car.cruise import V_CRUISE_MAX, V_CRUISE_UNSET
-from openpilot.common.swaglog import cloudlog
+#from openpilot.common.swaglog import cloudlog
 from openpilot.selfdrive.controls.radard import _LEAD_ACCEL_TAU
 
 A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
@@ -20,7 +19,6 @@ A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN_VALS = [-1.2,]
 A_CRUISE_MIN_BP = [0., ]
 
-CONTROL_N_T_IDX = ModelConstants.T_IDXS[:CONTROL_N]
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
 
@@ -135,9 +133,6 @@ class LongitudinalPlanner:
     self.output_a_target = 0.0
     self.output_should_stop = False
 
-    self.v_desired_trajectory = np.zeros(CONTROL_N)
-    self.a_desired_trajectory = np.zeros(CONTROL_N)
-    self.j_desired_trajectory = np.zeros(CONTROL_N)
     self.solverExecutionTime = 0.0
 
   @staticmethod
@@ -170,7 +165,7 @@ class LongitudinalPlanner:
     reset_state = reset_state or not v_cruise_initialized
 
     # No change cost when user is controlling the speed, or when standstill
-    prev_accel_constraint = not (reset_state or sm['carState'].standstill)
+    #prev_accel_constraint = not (reset_state or sm['carState'].standstill)
 
     if mode == 'acc':
       accel_clip = [ACCEL_MIN, get_max_accel(v_ego)]
@@ -209,7 +204,7 @@ class LongitudinalPlanner:
     #self.a_desired = float(np.interp(self.dt, CONTROL_N_T_IDX, self.a_desired_trajectory))
     #self.v_desired_filter.x = self.v_desired_filter.x + self.dt * (self.a_desired + a_prev) / 2.0
 
-    action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
+    #action_t =  self.CP.longitudinalActuatorDelay + DT_MDL
     out_accels = {}
     cruise_min = np.interp(v_ego, A_CRUISE_MIN_BP, A_CRUISE_MIN_VALS)
     cruise_max = np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
