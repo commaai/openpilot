@@ -25,29 +25,33 @@ class PlotLayoutManager:
     if dpg.does_item_exist(self.container_tag):
       dpg.delete_item(self.container_tag)
 
-    with dpg.child_window(tag=self.container_tag, parent=parent_tag, border=False, width=-1, height=-1, no_scrollbar=True):
+    with dpg.child_window(tag=self.container_tag, parent=parent_tag, border=False, width=-1, height=-1, no_scrollbar=True, no_scroll_with_mouse=True):
       container_width, container_height = dpg.get_item_rect_size(self.container_tag)
       self._create_ui_recursive(self.layout, self.container_tag, [], container_width, container_height)
 
   def _create_ui_recursive(self, layout: dict, parent_tag: str, path: list[int], width: int, height: int):
     if layout["type"] == "panel":
-      self._create_panel_ui(layout, parent_tag, path)
+      self._create_panel_ui(layout, parent_tag, path, width, height)
     else:
       self._create_split_ui(layout, parent_tag, path, width, height)
 
-  def _create_panel_ui(self, layout: dict, parent_tag: str, path: list[int]):
+  def _create_panel_ui(self, layout: dict, parent_tag: str, path: list[int], width: int, height:int):
     panel_tag = self._path_to_tag(path, "panel")
     panel = layout["panel"]
     self.active_panels.append(panel)
+    text_size = int(13 * self.scale)
+    bar_height = (text_size+24) if width < int(279 * self.scale + 80) else (text_size+8) # adjust height to allow for scrollbar
 
-    with dpg.child_window(tag=panel_tag, parent=parent_tag, border=True, width=-1, height=-1, no_scrollbar=True):
+    with dpg.child_window(parent=parent_tag, border=True, width=-1, height=-1, no_scrollbar=True):
       with dpg.group(horizontal=True):
-        dpg.add_input_text(default_value=panel.title, width=int(100 * self.scale), callback=lambda s, v: setattr(panel, "title", v))
-        dpg.add_combo(items=["Time Series"], default_value="Time Series", width=int(100 * self.scale))
-        dpg.add_button(label="Clear", callback=lambda: self.clear_panel(panel), width=int(40 * self.scale))
-        dpg.add_button(label="Delete", callback=lambda: self.delete_panel(path), width=int(40 * self.scale))
-        dpg.add_button(label="Split H", callback=lambda: self.split_panel(path, 0), width=int(40 * self.scale))
-        dpg.add_button(label="Split V", callback=lambda: self.split_panel(path, 1), width=int(40 * self.scale))
+        with dpg.child_window(tag=panel_tag, width=-(text_size + 16), height=bar_height, horizontal_scrollbar=True, no_scroll_with_mouse=True, border=False):
+          with dpg.group(horizontal=True):
+            dpg.add_input_text(default_value=panel.title, width=int(100 * self.scale), callback=lambda s, v: setattr(panel, "title", v))
+            dpg.add_combo(items=["Time Series"], default_value="Time Series", width=int(100 * self.scale))
+            dpg.add_button(label="Clear", callback=lambda: self.clear_panel(panel), width=int(40 * self.scale))
+            dpg.add_image_button(texture_tag="split_h_texture", callback=lambda: self.split_panel(path, 0), width=text_size, height=text_size)
+            dpg.add_image_button(texture_tag="split_v_texture", callback=lambda: self.split_panel(path, 1), width=text_size, height=text_size)
+        dpg.add_image_button(texture_tag="x_texture", callback=lambda: self.delete_panel(path), width=text_size, height=text_size)
 
       dpg.add_separator()
 
@@ -177,11 +181,17 @@ class PlotLayoutManager:
             dpg.configure_item(container_tag, **{size_properties[orientation]: pane_sizes[i]})
             child_width, child_height = [(pane_sizes[i], available_sizes[1]), (available_sizes[0], pane_sizes[i])][orientation]
             self._resize_splits_recursive(child_layout, child_path, child_width, child_height)
+    else: # leaf node/panel - adjust bar height to allow for scrollbar
+      panel_tag = self._path_to_tag(path, "panel")
+      if width is not None and width < int(279 * self.scale + 80):  # scaled widths of the elements in top bar + fixed 8 padding on left and right of each item
+        dpg.configure_item(panel_tag, height=(int(13*self.scale) + 24))
+      else:
+        dpg.configure_item(panel_tag, height=(int(13*self.scale) + 8))
 
   def _get_split_geometry(self, layout: dict, available_size: tuple[int, int]) -> tuple[int, int, list[int]]:
     orientation = layout["orientation"]
     num_grips = len(layout["children"]) - 1
-    usable_size = max(self.min_pane_size, available_size[orientation] - (num_grips * self.grip_size))
+    usable_size = max(self.min_pane_size, available_size[orientation] - (num_grips * (self.grip_size + 8 * (2-orientation)))) # approximate, scaling is weird
     pane_sizes = [max(self.min_pane_size, int(usable_size * prop)) for prop in layout["proportions"]]
     return orientation, usable_size, pane_sizes
 
