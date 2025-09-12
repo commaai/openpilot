@@ -43,52 +43,35 @@ if [[ ! -d "$DIR/src/ffmpeg-$VERSION" ]]; then
 fi
 
 cd $BUILD_DIR
-case "$ARCHNAME" in
-  x86_64)
-    # Ensure vendored x264 for libx264 encoder used in encoderd on PC
-    export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
-    export EXTRA_CFLAGS="-I$PREFIX/include ${EXTRA_CFLAGS:-}"
-    export EXTRA_LDFLAGS="-L$PREFIX/lib ${EXTRA_LDFLAGS:-}"
-    # Configure minimal static FFmpeg for desktop Linux tools
-    "$DIR/src/ffmpeg-$VERSION/configure" \
-      --prefix="$PREFIX" \
-      --datadir="$PREFIX" \
-      --docdir="$PREFIX" \
-      --mandir="$PREFIX" \
-      --enable-static --disable-shared \
-      --disable-programs --disable-doc --disable-debug \
-      --disable-network \
-      --disable-avdevice --disable-swscale --disable-swresample --disable-postproc --disable-avfilter \
-      --disable-autodetect --disable-iconv \
-      --enable-avcodec --enable-avformat --enable-avutil \
-      --enable-protocol=file \
-      --pkg-config-flags=--static \
-      --enable-gpl --enable-libx264 \
-      --disable-decoders --enable-decoder=h264,hevc,aac \
-      --disable-encoders --enable-encoder=libx264,ffvhuff,aac \
-      --disable-demuxers --enable-demuxer=mpegts,hevc,h264,matroska,mov \
-      --disable-muxers   --enable-muxer=matroska,mpegts \
-      --disable-parsers  --enable-parser=h264,hevc,aac,vorbis \
-      --disable-bsfs \
-      --enable-small \
-      --extra-cflags="${EXTRA_CFLAGS:-}" \
-      --extra-ldflags="${EXTRA_LDFLAGS:-}"
-    ;;
-  larch64)
-    echo "Device (larch64) build is handled separately."
-    echo "Please provide your cross toolchain and config, then update this script."
-    exit 1
-    ;;
-  Darwin)
-    echo "macOS build is handled separately."
-    echo "Please update this script with your HW accel and universal build settings."
-    exit 1
-    ;;
-  *)
-    echo "Unsupported ARCHNAME: $ARCHNAME" >&2
-    exit 1
-    ;;
-esac
+
+export PKG_CONFIG_PATH="$PREFIX/lib/pkgconfig:${PKG_CONFIG_PATH:-}"
+export EXTRA_CFLAGS="-I$PREFIX/include ${EXTRA_CFLAGS:-}"
+export EXTRA_LDFLAGS="-L$PREFIX/lib ${EXTRA_LDFLAGS:-}"
+# Configure minimal static FFmpeg for desktop Linux tools
+"$DIR/src/ffmpeg-$VERSION/configure" \
+  --prefix="$PREFIX" \
+  --datadir="$PREFIX" \
+  --docdir="$PREFIX" \
+  --mandir="$PREFIX" \
+  --enable-static --disable-shared \
+  --disable-programs --disable-doc --disable-debug \
+  --disable-network \
+  --disable-avdevice --disable-swscale --disable-swresample --disable-postproc --disable-avfilter \
+  --disable-autodetect --disable-iconv \
+  --enable-avcodec --enable-avformat --enable-avutil \
+  --enable-protocol=file \
+  --pkg-config-flags=--static \
+  --enable-gpl --enable-libx264 \
+  --disable-decoders --enable-decoder=h264,hevc,aac \
+  --disable-encoders --enable-encoder=libx264,ffvhuff,aac \
+  --disable-demuxers --enable-demuxer=mpegts,hevc,h264,matroska,mov \
+  --disable-muxers   --enable-muxer=matroska,mpegts \
+  --disable-parsers  --enable-parser=h264,hevc,aac,vorbis \
+  --disable-bsfs \
+  --enable-small \
+  --extra-cflags="${EXTRA_CFLAGS:-}" \
+  --extra-ldflags="${EXTRA_LDFLAGS:-}"
+
 
 make -j$(nproc)
 make install
