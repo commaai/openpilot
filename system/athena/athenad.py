@@ -561,6 +561,40 @@ def getNetworks():
 
 
 @dispatcher.add_method
+def bootstrapSim(acknowledged: bool):
+  assert acknowledged, 'you must acknowledge the operation to proceed'
+  HARDWARE.get_sim_lpa().bootstrap()
+
+
+@dispatcher.add_method
+def describeSim():
+  lpa = HARDWARE.get_sim_lpa()
+  profiles = [asdict(p) for p in lpa.list_profiles()]
+  is_bootstrapped = lpa.is_bootstrapped()
+  return {
+    "profiles": profiles,
+    "is_bootstrapped": is_bootstrapped
+  }
+
+
+@dispatcher.add_method
+def downloadSimProfile(lpa_activation_code: str, profile_name: str):
+  lpa = HARDWARE.get_sim_lpa()
+  lpa.validate_lpa_activation_code(lpa_activation_code)
+  lpa.validate_nickname(profile_name)
+  lpa.download_profile(lpa_activation_code, profile_name)
+
+
+@dispatcher.add_method
+def setSimProfile(iccid: str):
+  lpa = HARDWARE.get_sim_lpa()
+  lpa.validate_iccid(iccid)
+  lpa.validate_profile_exists(iccid)
+  lpa.switch_profile(iccid)
+  HARDWARE.reboot_modem()
+
+
+@dispatcher.add_method
 def takeSnapshot() -> str | dict[str, str] | None:
   from openpilot.system.camerad.snapshot import jpeg_write, snapshot
   ret = snapshot()
