@@ -137,17 +137,9 @@ class MainController:
   def setup_ui(self):
     with dpg.texture_registry():
       script_dir = os.path.dirname(os.path.realpath(__file__))
-      print(os.path.join(script_dir, "assets", "play.png"))
-      play_texture = dpg.load_image(os.path.join(script_dir, "assets", "play.png"))
-      pause_texture = dpg.load_image(os.path.join(script_dir, "assets", "pause.png"))
-      x_texture = dpg.load_image(os.path.join(script_dir, "assets", "x.png"))
-      split_h_texture = dpg.load_image(os.path.join(script_dir, "assets", "split_h.png"))
-      split_v_texture = dpg.load_image(os.path.join(script_dir, "assets", "split_v.png"))
-      dpg.add_static_texture(width=play_texture[0], height=play_texture[1], default_value=play_texture[3], tag="play_texture")
-      dpg.add_static_texture(width=pause_texture[0], height=pause_texture[1], default_value=pause_texture[3], tag="pause_texture")
-      dpg.add_static_texture(width=x_texture[0], height=x_texture[1], default_value=x_texture[3], tag="x_texture")
-      dpg.add_static_texture(width=split_h_texture[0], height=split_h_texture[1], default_value=split_h_texture[3], tag="split_h_texture")
-      dpg.add_static_texture(width=split_v_texture[0], height=split_v_texture[1], default_value=split_v_texture[3], tag="split_v_texture")
+      for image in ["play", "pause", "x", "split_h", "split_v"]:
+        texture = dpg.load_image(os.path.join(script_dir, "assets", f"{image}.png"))
+        dpg.add_static_texture(width=texture[0], height=texture[1], default_value=texture[3], tag=f"{image}_texture")
 
     with dpg.window(tag="Primary Window"):
       with dpg.group(horizontal=True):
