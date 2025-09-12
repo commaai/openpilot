@@ -81,9 +81,11 @@ class TimeSeriesPanel(ViewPanel):
       if self._last_x_limits != current_limits:
         self.playback_manager.set_x_axis_bounds(current_limits[0], current_limits[1], source_panel=self)
         self._last_x_limits = current_limits
+        self._fit_y_axis(current_limits[0], current_limits[1])
 
       if self._new_data:  # handle new data in main thread
         self._new_data = False
+        dpg.set_axis_limits_constraints(self.x_axis_tag, -10, (self.playback_manager.duration_s + 10))
         for series_path in list(self._series_data.keys()):
           self.add_series(series_path, update=True)
 
@@ -116,6 +118,42 @@ class TimeSeriesPanel(ViewPanel):
       dpg.render_dearpygui_frame()
       dpg.set_axis_limits_auto(self.x_axis_tag)
       self._last_x_limits = (min_time, max_time)
+      self._fit_y_axis(min_time, max_time)
+
+  def _fit_y_axis(self, x_min: float, x_max: float):
+    if not self._series_data:
+      dpg.set_axis_limits(self.y_axis_tag, -1, 1)
+      return
+
+    global_min = float('inf')
+    global_max = float('-inf')
+    found_data = False
+
+    for time_array, value_array in self._series_data.values():
+      if len(time_array) == 0:
+        continue
+      start_idx, end_idx = np.searchsorted(time_array, [x_min, x_max])
+      end_idx = min(end_idx, len(time_array) - 1)
+      if start_idx <= end_idx:
+        y_slice = value_array[start_idx:end_idx + 1]
+        series_min, series_max = np.min(y_slice), np.max(y_slice)
+        global_min = min(global_min, series_min)
+        global_max = max(global_max, series_max)
+        found_data = True
+
+    if not found_data:
+      dpg.set_axis_limits(self.y_axis_tag, -1, 1)
+      return
+
+    if global_min == global_max:
+      padding = max(abs(global_min) * 0.1, 1.0)
+      y_min, y_max = global_min - padding, global_max + padding
+    else:
+      range_size = global_max - global_min
+      padding = range_size * 0.1
+      y_min, y_max = global_min - padding, global_max + padding
+
+    dpg.set_axis_limits(self.y_axis_tag, y_min, y_max)
 
   def _downsample_all_series(self, plot_duration):
     plot_width = dpg.get_item_rect_size(self.plot_tag)[0]
