@@ -213,12 +213,9 @@ if arch == 'x86_64':
   env.Prepend(CPPPATH=[ffmpeg_inc])
   env.Prepend(LIBPATH=[ffmpeg_lib])
   env.AppendUnique(LIBS=['z', 'm', 'dl'])
-  env['FFMPEG_VENDOR'] = '1'
   # x264 vendored (for H.264 encoder used on desktop)
   x264_lib = f"#third_party/x264/{arch}/lib"
-  if Dir(x264_lib).exists():
-    env.Prepend(LIBPATH=[x264_lib])
-    env['X264_VENDOR'] = '1'
+  env.Prepend(LIBPATH=[x264_lib])
 else:
   # Prefer vendored if present (other platforms to be handled separately)
   if Dir(ffmpeg_inc).exists() and Dir(ffmpeg_lib).exists():
@@ -228,7 +225,6 @@ else:
       env.AppendUnique(LIBS=['z', 'm', 'dl'])
     else:
       env.AppendUnique(LIBS=['z'])
-    env['FFMPEG_VENDOR'] = '1'
 
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
