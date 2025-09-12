@@ -225,11 +225,11 @@ class LongitudinalPlanner:
     #lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
     #lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
 
-    desired_follow_distance = get_desired_follow_distance(v_ego, lead_xv_0[0,1], get_T_FOLLOW())
+    desired_follow_distance = get_desired_follow_distance(v_ego, lead_xv_0[0,1], get_T_FOLLOW(sm['selfdriveState'].personality))
     true_follow_distance = lead_xv_0[0,0]
 
     follow_distance_error = true_follow_distance - desired_follow_distance
-    follow_distance_cost_signed = (follow_distance_error / (v_ego + 10))**2 * np.sign(follow_distance_error)
+    follow_distance_cost_signed = (follow_distance_error / (v_ego + 1))**2 * np.sign(follow_distance_error)
     lead_accel = np.clip(2*follow_distance_cost_signed, -3.5, 2.0)
     lead_accel = smooth_value(lead_accel, self.output_a_target, 0.5)
 
