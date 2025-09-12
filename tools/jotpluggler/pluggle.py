@@ -10,7 +10,7 @@ import signal
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.datatree import DataTree
-from openpilot.tools.jotpluggler.layout import PlotLayoutManager
+from openpilot.tools.jotpluggler.layout import LayoutManager
 
 DEMO_ROUTE = "a2a0ccea32023010|2023-07-27--13-01-19"
 
@@ -127,7 +127,7 @@ class MainController:
     self.worker_manager = WorkerManager()
     self._create_global_themes()
     self.data_tree = DataTree(self.data_manager, self.playback_manager)
-    self.plot_layout_manager = PlotLayoutManager(self.data_manager, self.playback_manager, self.worker_manager, scale=self.scale)
+    self.layout_manager = LayoutManager(self.data_manager, self.playback_manager, self.worker_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
 
   def _create_global_themes(self):
@@ -168,7 +168,7 @@ class MainController:
   def setup_ui(self):
     with dpg.texture_registry():
       script_dir = os.path.dirname(os.path.realpath(__file__))
-      for image in ["play", "pause", "x", "split_h", "split_v"]:
+      for image in ["play", "pause", "x", "split_h", "split_v", "plus"]:
         texture = dpg.load_image(os.path.join(script_dir, "assets", f"{image}.png"))
         dpg.add_static_texture(width=texture[0], height=texture[1], default_value=texture[3], tag=f"{image}_texture")
 
@@ -186,7 +186,7 @@ class MainController:
         # Right panel - Plots and timeline
         with dpg.group(tag="right_panel"):
           with dpg.child_window(label="Plot Window", border=True, height=-(32 + 13 * self.scale), tag="main_plot_area"):
-            self.plot_layout_manager.create_ui("main_plot_area")
+            self.layout_manager.create_ui("main_plot_area")
 
           with dpg.child_window(label="Timeline", border=True):
             with dpg.table(header_row=False, borders_innerH=False, borders_innerV=False, borders_outerH=False, borders_outerV=False):
@@ -205,7 +205,7 @@ class MainController:
     dpg.set_primary_window("Primary Window", True)
 
   def on_plot_resize(self, sender, app_data, user_data):
-    self.plot_layout_manager.on_viewport_resize()
+    self.layout_manager.on_viewport_resize()
 
   def load_route(self):
     route_name = dpg.get_value("route_input").strip()
@@ -227,7 +227,7 @@ class MainController:
     if not dpg.is_item_active("timeline_slider"):
       dpg.set_value("timeline_slider", new_time)
 
-    self.plot_layout_manager.update_all_panels()
+    self.layout_manager.update_all_panels()
 
     dpg.set_value("fps_counter", f"{dpg.get_frame_rate():.1f} FPS")
 

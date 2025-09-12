@@ -52,7 +52,7 @@ class TimeSeriesPanel(ViewPanel):
     self._results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
     self._last_x_limits = (0.0, 0.0)
-    self._queued_x_sync = None
+    self._queued_x_sync: tuple | None = None
     self._queued_reallow_x_zoom = False
 
   def create_ui(self, parent_tag: str):
@@ -65,8 +65,7 @@ class TimeSeriesPanel(ViewPanel):
       timeline_series_tag = dpg.add_inf_line_series(x=[0], label="Timeline", parent=self.y_axis_tag, tag=self.timeline_indicator_tag)
       dpg.bind_item_theme(timeline_series_tag, "global_timeline_theme")
 
-    for series_path in list(self._series_data.keys()):
-      self.add_series(series_path)
+    self._new_data = True
     self._ui_created = True
 
   def update(self):
