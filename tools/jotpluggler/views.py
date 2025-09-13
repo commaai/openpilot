@@ -33,6 +33,15 @@ class ViewPanel(ABC):
   def update(self):
     pass
 
+  @abstractmethod
+  def to_dict(self) -> dict:
+    pass
+
+  @classmethod
+  @abstractmethod
+  def load_from_dict(cls, data: dict, data_manager, playback_manager, worker_manager):
+    pass
+
 
 class TimeSeriesPanel(ViewPanel):
   def __init__(self, data_manager, playback_manager, worker_manager, panel_id: str | None = None):
@@ -55,6 +64,20 @@ class TimeSeriesPanel(ViewPanel):
     self._queued_x_sync: tuple | None = None
     self._queued_reallow_x_zoom = False
 
+  def to_dict(self) -> dict:
+    return {
+      "type": "timeseries",
+      "title": self.title,
+      "series_paths": list(self._series_data.keys())
+    }
+
+  @classmethod
+  def load_from_dict(cls, data: dict, data_manager, playback_manager, worker_manager):
+    panel = cls(data_manager, playback_manager, worker_manager)
+    panel.title = data.get("title", "Time Series Plot")
+    panel._series_data = {path: (np.array([]), np.array([])) for path in data.get("series_paths", [])}
+    return panel
+
   def create_ui(self, parent_tag: str):
     self.data_manager.add_observer(self.on_data_loaded)
     self.playback_manager.add_x_axis_observer(self._on_x_axis_sync)
@@ -63,7 +86,7 @@ class TimeSeriesPanel(ViewPanel):
       dpg.add_plot_axis(dpg.mvXAxis, no_label=True, tag=self.x_axis_tag)
       dpg.add_plot_axis(dpg.mvYAxis, no_label=True, tag=self.y_axis_tag)
       timeline_series_tag = dpg.add_inf_line_series(x=[0], label="Timeline", parent=self.y_axis_tag, tag=self.timeline_indicator_tag)
-      dpg.bind_item_theme(timeline_series_tag, "global_timeline_theme")
+      dpg.bind_item_theme(timeline_series_tag, "timeline_theme")
 
     self._new_data = True
     self._ui_created = True
@@ -199,7 +222,7 @@ class TimeSeriesPanel(ViewPanel):
         dpg.set_value(series_tag, (time_array, value_array.astype(float)))
       else:
         line_series_tag = dpg.add_line_series(x=time_array, y=value_array.astype(float), label=series_path, parent=self.y_axis_tag, tag=series_tag)
-        dpg.bind_item_theme(line_series_tag, "global_line_theme")
+        dpg.bind_item_theme(line_series_tag, "line_theme")
         dpg.fit_axis_data(self.x_axis_tag)
         dpg.fit_axis_data(self.y_axis_tag)
       plot_duration = dpg.get_axis_limits(self.x_axis_tag)[1] - dpg.get_axis_limits(self.x_axis_tag)[0]
