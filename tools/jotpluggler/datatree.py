@@ -67,7 +67,7 @@ class DataTree:
     with self._ui_lock:
       if self._char_width is None:
         if size := dpg.get_text_size(" ", font=font):
-          self._char_width = size[0]
+          self._char_width = size[0] / 2 # we scale font 2x and downscale to fix hidpi bug
 
       if self._new_data:
         self._process_path_change()
