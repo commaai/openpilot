@@ -66,7 +66,7 @@ Panda *connect(std::string serial="", uint32_t index=0) {
   }
   //panda->enable_deepsleep();
 
-  for (int i = 0; i < PANDA_BUS_CNT; i++) {
+  for (int i = 0; i < PANDA_CAN_CNT; i++) {
     panda->set_can_fd_auto(i, true);
   }
 
