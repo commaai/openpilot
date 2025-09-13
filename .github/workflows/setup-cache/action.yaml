@@ -24,7 +24,7 @@ runs:
     # build cache
     - id: date
       shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV ; echo "CACHE_FILE_HASHES=$(sha256sum selfdrive/test/build.sh tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh | cut -d" " -f1 | tr '\n' '_')" >> $GITHUB_ENV
     - shell: bash
       run: echo "$CACHE_COMMIT_DATE"
     - id: scons-cache
