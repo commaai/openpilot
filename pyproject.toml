@@ -23,18 +23,18 @@ dependencies = [
   # core
   "cffi",
   "scons",
-  "pycapnp",
+  "pycapnp<2.0.0",
   "Cython",
   "setuptools",
   "numpy >=2.0",
 
   # body / webrtcd
-  "aiohttp",
-  "aiortc",
+  #"aiohttp",
+  #"aiortc",
   # aiortc does not put an upper bound on pyopenssl and is now incompatible
   # with the latest release
-  "pyopenssl < 24.3.0",
-  "pyaudio",
+  #"pyopenssl < 24.3.0",
+  #"pyaudio",
 
   # ubloxd (TODO: just use struct)
   "kaitaistruct",
