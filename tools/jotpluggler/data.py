@@ -314,6 +314,12 @@ class DataManager:
         cloudlog.warning(f"Warning: No log segments found for route: {route}")
         return
 
+      total_segments = len(lr.logreader_identifiers)
+      with self._lock:
+        observers = self._observers.copy()
+      for callback in observers:
+        callback({'metadata_loaded': True, 'total_segments': total_segments})
+
       num_processes = max(1, multiprocessing.cpu_count() // 2)
       with multiprocessing.Pool(processes=num_processes) as pool, tqdm(total=len(lr.logreader_identifiers), desc="Processing Segments") as pbar:
         for segment_result, start_time, end_time in pool.imap(_process_segment, lr.logreader_identifiers):
