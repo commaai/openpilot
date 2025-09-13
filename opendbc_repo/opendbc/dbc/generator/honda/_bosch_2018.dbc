@@ -1,0 +1,226 @@
+BO_ 148 KINEMATICS: 8 XXX
+ SG_ LAT_ACCEL : 7|10@0+ (-0.035,17.92) [-20|20] "m/s2" EON
+ SG_ LONG_ACCEL : 25|10@0+ (-0.035,17.92) [-20|20] "m/s2" EON
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" EON
+
+BO_ 228 STEERING_CONTROL: 5 EON
+ SG_ STEER_TORQUE : 7|16@0- (1,0) [-4096|4096] "" EPS
+ SG_ DRIVER_OVERRIDE : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ STEER_TORQUE_REQUEST : 23|1@0+ (1,0) [0|1] "" EPS
+ SG_ CONTROL_STATE : 26|3@0+ (1,0) [0|7] "" XXX
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" EPS
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" EPS
+ SG_ STEER_DOWN_TO_ZERO : 38|1@0+ (1,0) [0|1] "" EPS
+ SG_ HAPTIC_WARNING : 39|1@0+ (1,0) [0|1] "" XXX
+
+BO_ 229 BOSCH_SUPPLEMENTAL_1: 8 XXX
+ SG_ SET_ME_X04 : 0|8@1+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X00 : 8|8@1+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X80 : 16|8@1+ (1,0) [0|255] "" XXX
+ SG_ SET_ME_X10 : 24|8@1+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 232 BRAKE_HOLD: 7 XXX
+ SG_ XMISSION_SPEED : 7|14@0- (1,0) [1|0] "" XXX
+ SG_ COMPUTER_BRAKE : 39|16@0+ (1,0) [0|0] "" XXX
+ SG_ COMPUTER_BRAKE_REQUEST : 29|1@0+ (1,0) [0|0] "" XXX
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 399 STEER_STATUS: 7 EPS
+ SG_ STEER_TORQUE_SENSOR : 7|16@0- (-1,0) [-31000|31000] "tbd" EON
+ SG_ STEER_ANGLE_RATE : 23|16@0- (-0.1,0) [-31000|31000] "deg/s" EON
+ SG_ STEER_STATUS : 39|4@0+ (1,0) [0|15] "" EON
+ SG_ STEER_CONTROL_ACTIVE : 35|1@0+ (1,0) [0|1] "" EON
+ SG_ STEER_CONFIG_INDEX : 43|4@0+ (1,0) [0|15] "" EON
+ SG_ COUNTER : 53|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 51|4@0+ (1,0) [0|15] "" EON
+
+BO_ 446 BRAKE_MODULE: 3 VSA
+ SG_ BRAKE_PRESSED : 4|1@0+ (1,0) [0|1] "" XXX
+ SG_ CRUISE_FAULT : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ COUNTER : 21|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 19|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 506 LEGACY_BRAKE_COMMAND: 8 ADAS
+ SG_ CHIME : 40|8@1+ (1,0) [0|255] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+
+BO_ 545 ECON_STATUS: 6 SCM
+ SG_ ECON_ON : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ DRIVE_MODE : 37|2@0+ (1,0) [0|3] "" XXX
+ SG_ COUNTER : 45|2@0+ (1,0) [0|3] "" BDY
+ SG_ CHECKSUM : 43|4@0+ (1,0) [0|15] "" BDY
+
+BO_ 576 LEFT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 577 LEFT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 579 RIGHT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 580 RIGHT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 582 ADJACENT_LEFT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 583 ADJACENT_LEFT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 585 ADJACENT_RIGHT_LANE_LINE_1: 8 CAM
+ SG_ LINE_DISTANCE_VISIBLE : 39|9@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_PROBABILITY : 46|6@0+ (0.015625,0) [0|1] "" XXX
+ SG_ LINE_OFFSET : 23|12@0+ (0.004,-8.192) [0|1] "Meters" XXX
+ SG_ LINE_ANGLE : 7|12@0+ (0.0005,-1.024) [0|1] "" XXX
+ SG_ FRAME_INDEX : 8|4@1+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 586 ADJACENT_RIGHT_LANE_LINE_2: 8 CAM
+ SG_ LINE_FAR_EDGE_POSITION : 55|8@0+ (1,-128) [0|1] "" XXX
+ SG_ LINE_SOLID : 13|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_DASHED : 14|1@0+ (1,0) [0|1] "" XXX
+ SG_ LINE_CURVATURE : 23|12@0+ (0.00001,-0.02048) [0|1] "" XXX
+ SG_ LINE_PARAMETER : 39|12@0+ (1,0) [0|1] "" XXX
+ SG_ FRAME_INDEX : 7|4@0+ (1,0) [0|15] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|1] "" XXX
+
+BO_ 662 SCM_BUTTONS: 4 SCM
+ SG_ CRUISE_BUTTONS : 7|3@0+ (1,0) [0|7] "" EON
+ SG_ CRUISE_SETTING : 3|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 29|2@0+ (1,0) [0|3] "" EON
+ SG_ CHECKSUM : 27|4@0+ (1,0) [0|15] "" EON
+
+BO_ 806 SCM_FEEDBACK: 8 SCM
+ SG_ DRIVERS_DOOR_OPEN : 17|1@0+ (1,0) [0|1] "" XXX
+ SG_ REVERSE_LIGHT : 18|1@0+ (1,0) [0|1] "" EON
+ SG_ PARKING_BRAKE_ON : 29|1@0+ (1,0) [0|1] "" XXX
+ SG_ MAIN_ON : 28|1@0+ (1,0) [0|1] "" EON
+ SG_ RIGHT_BLINKER : 27|1@0+ (1,0) [0|1] "" EON
+ SG_ LEFT_BLINKER : 26|1@0+ (1,0) [0|1] "" EON
+ SG_ CMBS_STATES : 22|2@0+ (1,0) [0|3] "" EON
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 927 RADAR_HUD: 8 RADAR
+ SG_ ZEROS_BOH : 7|10@0+ (1,0) [0|127] "" BDY
+ SG_ CMBS_OFF : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ RESUME_INSTRUCTION : 21|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_TO_1 : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ ZEROS_BOH2 : 11|4@0+ (1,0) [0|1] "" XXX
+ SG_ APPLY_BRAKES_FOR_CANC : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ ACC_ALERTS : 20|5@0+ (1,0) [0|1] "" BDY
+ SG_ SET_TO_0 : 22|1@0+ (1,0) [0|1] "" XXX
+ SG_ HUD_LEAD : 40|1@0+ (1,0) [0|1] "" XXX
+ SG_ SET_TO_64 : 31|8@0+ (1,0) [0|255] "" XXX
+ SG_ LEAD_DISTANCE : 39|8@0+ (1,0) [0|255] "" XXX
+ SG_ ZEROS_BOH3 : 47|7@0+ (1,0) [0|127] "" XXX
+ SG_ ZEROS_BOH4 : 55|8@0+ (1,0) [0|255] "" XXX
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" XXX
+
+BO_ 13274 LKAS_HUD_A: 5 ADAS
+ SG_ LKAS_READY : 0|1@0+ (1,0) [0|127] "" BDY
+ SG_ LKAS_STATE_CHANGE : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_HUD : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_HUD_2 : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ RDM_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_ON : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ RDM_ON_2 : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LANE_ASSIST_BEEP_OFF : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ CHECKSUM : 35|4@0+ (1,0) [0|15] "" BDY
+ SG_ COUNTER : 37|2@0+ (1,0) [0|3] "" BDY
+
+BO_ 13275 LKAS_HUD_B: 8 ADAS
+ SG_ LKAS_READY : 0|1@0+ (1,0) [0|127] "" BDY
+ SG_ LKAS_STATE_CHANGE : 6|1@0+ (1,0) [0|1] "" XXX
+ SG_ CAM_TEMP_HIGH : 7|1@0+ (1,0) [0|255] "" BDY
+ SG_ DASHED_LANES : 14|1@0+ (1,0) [0|1] "" BDY
+ SG_ DTC : 13|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_PROBLEM : 12|1@0+ (1,0) [0|1] "" BDY
+ SG_ LKAS_OFF : 11|1@0+ (1,0) [0|1] "" BDY
+ SG_ SOLID_LANES : 10|1@0+ (1,0) [0|1] "" BDY
+ SG_ CLEAN_WINDSHIELD : 26|1@0+ (1,0) [0|1] "" BDY
+ SG_ STEERING_REQUIRED : 8|1@0+ (1,0) [0|1] "" BDY
+ SG_ BEEP : 17|2@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_PROBLEM : 21|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_HUD : 9|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_HUD_2 : 23|1@0+ (1,0) [0|1] "" XXX
+ SG_ RDM_OFF : 27|1@0+ (1,0) [0|1] "" BDY
+ SG_ RDM_ON : 20|1@0+ (1,0) [0|1] "" XXX
+ SG_ RDM_ON_2 : 28|1@0+ (1,0) [0|1] "" BDY
+ SG_ LANE_ASSIST_BEEP_OFF : 30|1@0+ (1,0) [0|1] "" XXX
+ SG_ LANE_LINES : 36|2@0+ (1,0) [0|3] "" XXX
+ SG_ CHECKSUM : 59|4@0+ (1,0) [0|15] "" BDY
+ SG_ COUNTER : 61|2@0+ (1,0) [0|3] "" BDY
+
+CM_ SG_ 228 DRIVER_OVERRIDE "Appears to acknowledge STEER_STATUS.NO_TORQUE_ALERT_1";
+CM_ SG_ 576 LINE_DISTANCE_VISIBLE "Length of line visible, undecoded";
+CM_ SG_ 577 LINE_FAR_EDGE_POSITION "Appears to be a measure of line thickness, indicates location of the portion of the line furthest from the car, undecoded";
+CM_ SG_ 577 LINE_PARAMETER "Unclear if this is low quality line curvature rate or if this is something else, but it is correlated with line curvature, undecoded";
+CM_ SG_ 577 LINE_DASHED "1 = line is dashed";
+CM_ SG_ 577 LINE_SOLID "1 = line is solid";
+
+VAL_ 228 CONTROL_STATE 0 "init" 1 "standby" 2 "lka_active" 3 "driver_override" 5 "rdm_active";
+VAL_ 399 STEER_STATUS 6 "tmp_fault" 5 "fault_1" 4 "no_torque_alert_2" 3 "low_speed_lockout" 2 "no_torque_alert_1" 0 "normal";
+VAL_ 662 CRUISE_BUTTONS 7 "tbd" 6 "tbd" 5 "tbd" 4 "accel_res" 3 "decel_set" 2 "cancel" 1 "main" 0 "none" ;
+VAL_ 662 CRUISE_SETTING 3 "distance_adj" 2 "tbd" 1 "lkas_button" 0 "none" ;
+VAL_ 806 CMBS_STATES 3 "pressed" 0 "released" ;
+VAL_ 862 SPEED_LIMIT_SIGN 97 "SPEED_LIMIT_5" 98 "SPEED_LIMIT_10" 99 "SPEED_LIMIT_15" 100 "SPEED_LIMIT_20" 101 "SPEED_LIMIT_25" 102 "SPEED_LIMIT_30" 103 "SPEED_LIMIT_35" 104 "SPEED_LIMIT_40" 105 "SPEED_LIMIT_45" 106 "SPEED_LIMIT_50" 107 "SPEED_LIMIT_55" 108 "SPEED_LIMIT_60" 109 "SPEED_LIMIT_65" 110 "SPEED_LIMIT_70" 111 "SPEED_LIMIT_75" 112 "SPEED_LIMIT_80" 113 "SPEED_LIMIT_85" 125 "SPEED_LIMIT_NA" 0 "STOP_SIGN";
+VAL_ 862 ROAD_SIGN 0 "NO_SIGN" 89 "STOP_SIGN";
