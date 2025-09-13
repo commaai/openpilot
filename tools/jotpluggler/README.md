@@ -1,4 +1,4 @@
-l# JotPluggler
+# JotPluggler
 
 JotPluggler is a tool to quickly visualize openpilot logs.
 
