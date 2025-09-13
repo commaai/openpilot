@@ -7,6 +7,8 @@ import dearpygui.dearpygui as dpg
 import multiprocessing
 import uuid
 import signal
+import yaml
+from openpilot.common.swaglog import cloudlog
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
 from openpilot.tools.jotpluggler.datatree import DataTree
@@ -131,16 +133,26 @@ class MainController:
     self.data_manager.add_observer(self.on_data_loaded)
 
   def _create_global_themes(self):
-    with dpg.theme(tag="global_line_theme"):
+    with dpg.theme(tag="line_theme"):
       with dpg.theme_component(dpg.mvLineSeries):
         scaled_thickness = max(1.0, self.scale)
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, scaled_thickness, category=dpg.mvThemeCat_Plots)
 
-    with dpg.theme(tag="global_timeline_theme"):
+    with dpg.theme(tag="timeline_theme"):
       with dpg.theme_component(dpg.mvInfLineSeries):
         scaled_thickness = max(1.0, self.scale)
         dpg.add_theme_style(dpg.mvPlotStyleVar_LineWeight, scaled_thickness, category=dpg.mvThemeCat_Plots)
         dpg.add_theme_color(dpg.mvPlotCol_Line, (255, 0, 0, 128), category=dpg.mvThemeCat_Plots)
+
+    for tag, color in (("active_tab_theme", (37, 37, 38, 255)), ("inactive_tab_theme", (70, 70, 75, 255))):
+      with dpg.theme(tag=tag):
+        for cmp, target in ((dpg.mvChildWindow, dpg.mvThemeCol_ChildBg), (dpg.mvInputText, dpg.mvThemeCol_FrameBg), (dpg.mvImageButton, dpg.mvThemeCol_Button)):
+          with dpg.theme_component(cmp):
+            dpg.add_theme_color(target, color)
+
+    with dpg.theme(tag="tab_bar_theme"):
+      with dpg.theme_component(dpg.mvChildWindow):
+        dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (51, 51, 55, 255))
 
   def on_data_loaded(self, data: dict):
     duration = data.get('duration', 0.0)
@@ -165,6 +177,56 @@ class MainController:
 
     dpg.configure_item("timeline_slider", max_value=duration)
 
+  def save_layout_to_yaml(self, filepath: str):
+    layout_dict = self.layout_manager.to_dict()
+    with open(filepath, 'w') as f:
+      yaml.dump(layout_dict, f, default_flow_style=False, sort_keys=False)
+
+  def load_layout_from_yaml(self, filepath: str):
+    with open(filepath) as f:
+      layout_dict = yaml.safe_load(f)
+    self.layout_manager.clear_and_load_from_dict(layout_dict)
+    self.layout_manager.create_ui("main_plot_area")
+
+  def save_layout_dialog(self):
+    if dpg.does_item_exist("save_layout_dialog"):
+      dpg.delete_item("save_layout_dialog")
+    with dpg.file_dialog(
+      directory_selector=False, show=True, callback=self._save_layout_callback,
+      tag="save_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale),
+      default_filename="layout", default_path="layouts"
+    ):
+      dpg.add_file_extension(".yaml")
+
+  def load_layout_dialog(self):
+    if dpg.does_item_exist("load_layout_dialog"):
+      dpg.delete_item("load_layout_dialog")
+    with dpg.file_dialog(
+      directory_selector=False, show=True, callback=self._load_layout_callback,
+      tag="load_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale), default_path="layouts"
+    ):
+      dpg.add_file_extension(".yaml")
+
+  def _save_layout_callback(self, sender, app_data):
+    filepath = app_data['file_path_name']
+    try:
+      self.save_layout_to_yaml(filepath)
+      dpg.set_value("load_status", f"Layout saved to {os.path.basename(filepath)}")
+    except Exception:
+      dpg.set_value("load_status", "Error saving layout")
+      cloudlog.exception(f"Error saving layout to {filepath}")
+    dpg.delete_item("save_layout_dialog")
+
+  def _load_layout_callback(self, sender, app_data):
+    filepath = app_data['file_path_name']
+    try:
+      self.load_layout_from_yaml(filepath)
+      dpg.set_value("load_status", f"Layout loaded from {os.path.basename(filepath)}")
+    except Exception:
+      dpg.set_value("load_status", "Error loading layout")
+      cloudlog.exception(f"Error loading layout from {filepath}:")
+    dpg.delete_item("load_layout_dialog")
+
   def setup_ui(self):
     with dpg.texture_registry():
       script_dir = os.path.dirname(os.path.realpath(__file__))
@@ -175,21 +237,30 @@ class MainController:
     with dpg.window(tag="Primary Window"):
       with dpg.group(horizontal=True):
         # Left panel - Data tree
-        with dpg.child_window(label="Sidebar", width=300 * self.scale, tag="sidebar_window", border=True, resizable_x=True):
+        with dpg.child_window(label="Sidebar", width=int(300 * self.scale), tag="sidebar_window", border=True, resizable_x=True):
           with dpg.group(horizontal=True):
-            dpg.add_input_text(tag="route_input", width=-75 * self.scale, hint="Enter route name...")
+            dpg.add_input_text(tag="route_input", width=int(-75 * self.scale), hint="Enter route name...")
             dpg.add_button(label="Load", callback=self.load_route, tag="load_button", width=-1)
           dpg.add_text("Ready to load route", tag="load_status")
           dpg.add_separator()
+
+          with dpg.table(header_row=False, policy=dpg.mvTable_SizingStretchProp):
+            dpg.add_table_column(init_width_or_weight=0.5)
+            dpg.add_table_column(init_width_or_weight=0.5)
+            with dpg.table_row():
+              dpg.add_button(label="Save Layout", callback=self.save_layout_dialog, width=-1)
+              dpg.add_button(label="Load Layout", callback=self.load_layout_dialog, width=-1)
+          dpg.add_separator()
+
           self.data_tree.create_ui("sidebar_window")
 
         # Right panel - Plots and timeline
         with dpg.group(tag="right_panel"):
-          with dpg.child_window(label="Plot Window", border=True, height=-(32 + 13 * self.scale), tag="main_plot_area"):
+          with dpg.child_window(label="Plot Window", border=True, height=int(-(32 + 13 * self.scale)), tag="main_plot_area"):
             self.layout_manager.create_ui("main_plot_area")
 
           with dpg.child_window(label="Timeline", border=True):
-            with dpg.table(header_row=False, borders_innerH=False, borders_innerV=False, borders_outerH=False, borders_outerV=False):
+            with dpg.table(header_row=False):
               btn_size = int(13 * self.scale)
               dpg.add_table_column(width_fixed=True, init_width_or_weight=(btn_size + 8))  # Play button
               dpg.add_table_column(width_stretch=True)  # Timeline slider
