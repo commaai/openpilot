@@ -66,6 +66,7 @@ class PlaybackManager:
     self.is_playing = False
     self.current_time_s = 0.0
     self.duration_s = 0.0
+    self.num_segments = 0
 
     self.x_axis_bounds = (0.0, 0.0)  # (min_time, max_time)
     self.x_axis_observers = []  # callbacks for x-axis changes
@@ -131,6 +132,7 @@ class MainController:
     self.data_tree = DataTree(self.data_manager, self.playback_manager)
     self.layout_manager = LayoutManager(self.data_manager, self.playback_manager, self.worker_manager, scale=self.scale)
     self.data_manager.add_observer(self.on_data_loaded)
+    self._total_segments = 0
 
   def _create_global_themes(self):
     with dpg.theme(tag="line_theme"):
@@ -158,10 +160,15 @@ class MainController:
     duration = data.get('duration', 0.0)
     self.playback_manager.set_route_duration(duration)
 
-    if data.get('reset'):
+    if data.get('metadata_loaded'):
+      self.playback_manager.num_segments = data.get('total_segments', 0)
+      self._total_segments = data.get('total_segments', 0)
+      dpg.set_value("load_status", f"Loading... 0/{self._total_segments} segments processed")
+    elif data.get('reset'):
       self.playback_manager.current_time_s = 0.0
       self.playback_manager.duration_s = 0.0
       self.playback_manager.is_playing = False
+      self._total_segments = 0
       dpg.set_value("load_status", "Loading...")
       dpg.set_value("timeline_slider", 0.0)
       dpg.configure_item("timeline_slider", max_value=0.0)
@@ -173,7 +180,7 @@ class MainController:
       dpg.configure_item("load_button", enabled=True)
     elif data.get('segment_added'):
       segment_count = data.get('segment_count', 0)
-      dpg.set_value("load_status", f"Loading... {segment_count} segments processed")
+      dpg.set_value("load_status", f"Loading... {segment_count}/{self._total_segments} segments processed")
 
     dpg.configure_item("timeline_slider", max_value=duration)
 
