@@ -312,7 +312,7 @@ class MainController:
     self.worker_manager.shutdown()
 
 
-def main(route_to_load=None):
+def main(route_to_load=None, layout_to_load=None):
   dpg.create_context()
 
   # TODO: find better way of calculating display scaling
@@ -337,6 +337,14 @@ def main(route_to_load=None):
   controller = MainController(scale=scale)
   controller.setup_ui()
 
+  if layout_to_load:
+    try:
+      controller.load_layout_from_yaml(layout_to_load)
+      print(f"Loaded layout from {layout_to_load}")
+    except Exception as e:
+      print(f"Failed to load layout from {layout_to_load}: {e}")
+      cloudlog.exception(f"Error loading layout from {layout_to_load}")
+
   if route_to_load:
     dpg.set_value("route_input", route_to_load)
     controller.load_route()
@@ -355,7 +363,8 @@ def main(route_to_load=None):
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description="A tool for visualizing openpilot logs.")
   parser.add_argument("--demo", action="store_true", help="Use the demo route instead of providing one")
+  parser.add_argument("--layout", type=str, help="Path to YAML layout file to load on startup")
   parser.add_argument("route", nargs='?', default=None, help="Optional route name to load on startup.")
   args = parser.parse_args()
   route = DEMO_ROUTE if args.demo else args.route
-  main(route_to_load=route)
+  main(route_to_load=route, layout_to_load=args.layout)
