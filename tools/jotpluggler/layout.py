@@ -5,15 +5,135 @@ from openpilot.tools.jotpluggler.views import TimeSeriesPanel
 GRIP_SIZE = 4
 MIN_PANE_SIZE = 60
 
-
-class PlotLayoutManager:
-  def __init__(self, data_manager: DataManager, playback_manager, worker_manager, scale: float = 1.0):
+class LayoutManager:
+  def __init__(self, data_manager, playback_manager, worker_manager, scale: float = 1.0):
     self.data_manager = data_manager
     self.playback_manager = playback_manager
     self.worker_manager = worker_manager
     self.scale = scale
     self.container_tag = "plot_layout_container"
+    self.tab_bar_tag = "tab_bar_container"
+    self.tab_content_tag = "tab_content_area"
+
+    self.active_tab = 0
+    initial_panel_layout = PanelLayoutManager(data_manager, playback_manager, worker_manager, scale)
+    self.tabs: dict = {0: {"name": "Tab 1", "panel_layout": initial_panel_layout}}
+    self._next_tab_id = self.active_tab + 1
+
+    self._create_tab_themes()
+
+  def _create_tab_themes(self):
+    for tag, color in (("active_tab_theme", (37, 37, 38, 255)), ("inactive_tab_theme", (70, 70, 75, 255))):
+      with dpg.theme(tag=tag):
+        for cmp, target in ((dpg.mvChildWindow, dpg.mvThemeCol_ChildBg), (dpg.mvInputText, dpg.mvThemeCol_FrameBg), (dpg.mvImageButton, dpg.mvThemeCol_Button)):
+          with dpg.theme_component(cmp):
+            dpg.add_theme_color(target, color)
+    with dpg.theme(tag="tab_bar_theme"):
+      with dpg.theme_component(dpg.mvChildWindow):
+        dpg.add_theme_color(dpg.mvThemeCol_ChildBg, (51, 51, 55, 255))
+
+  def create_ui(self, parent_tag: str):
+    if dpg.does_item_exist(self.container_tag):
+      dpg.delete_item(self.container_tag)
+
+    with dpg.child_window(tag=self.container_tag, parent=parent_tag, border=False, width=-1, height=-1, no_scrollbar=True, no_scroll_with_mouse=True):
+      self._create_tab_bar()
+      self._create_tab_content()
+    dpg.bind_item_theme(self.tab_bar_tag, "tab_bar_theme")
+
+  def _create_tab_bar(self):
+    text_size = int(13 * self.scale)
+    with dpg.child_window(tag=self.tab_bar_tag, parent=self.container_tag, height=(text_size + 8), border=False, horizontal_scrollbar=True):
+      with dpg.group(horizontal=True, tag="tab_bar_group"):
+        for tab_id, tab_data in self.tabs.items():
+          self._create_tab_ui(tab_id, tab_data["name"])
+        dpg.add_image_button(texture_tag="plus_texture", callback=self.add_tab, width=text_size, height=text_size, tag="add_tab_button")
+    dpg.bind_item_theme("add_tab_button", "inactive_tab_theme")
+
+  def _create_tab_ui(self, tab_id: int, tab_name: str):
+    text_size = int(13 * self.scale)
+    tab_width = int(120 * self.scale)
+    with dpg.child_window(width=tab_width, height=-1, border=False, no_scrollbar=True, tag=f"tab_window_{tab_id}", parent="tab_bar_group"):
+      with dpg.group(horizontal=True, tag=f"tab_group_{tab_id}"):
+        dpg.add_input_text(
+          default_value=tab_name, width=tab_width - text_size - 16, callback=lambda s, v, u: self.rename_tab(u, v), user_data=tab_id, tag=f"tab_input_{tab_id}"
+        )
+        dpg.add_image_button(
+          texture_tag="x_texture", callback=lambda s, a, u: self.close_tab(u), user_data=tab_id, width=text_size, height=text_size, tag=f"tab_close_{tab_id}"
+        )
+      with dpg.item_handler_registry(tag=f"tab_handler_{tab_id}"):
+        dpg.add_item_clicked_handler(callback=lambda s, a, u: self.switch_tab(u), user_data=tab_id)
+      dpg.bind_item_handler_registry(f"tab_group_{tab_id}", f"tab_handler_{tab_id}")
+
+    theme_tag = "active_tab_theme" if tab_id == self.active_tab else "inactive_tab_theme"
+    dpg.bind_item_theme(f"tab_window_{tab_id}", theme_tag)
+
+  def _create_tab_content(self):
+    with dpg.child_window(tag=self.tab_content_tag, parent=self.container_tag, border=False, width=-1, height=-1, no_scrollbar=True, no_scroll_with_mouse=True):
+      active_panel_layout = self.tabs[self.active_tab]["panel_layout"]
+      active_panel_layout.create_ui()
+
+  def add_tab(self):
+    new_panel_layout = PanelLayoutManager(self.data_manager, self.playback_manager, self.worker_manager, self.scale)
+    new_tab = {"name": f"Tab {self._next_tab_id + 1}", "panel_layout": new_panel_layout}
+    self.tabs[ self._next_tab_id] = new_tab
+    self._create_tab_ui( self._next_tab_id, new_tab["name"])
+    dpg.move_item("add_tab_button", parent="tab_bar_group")  # move plus button to end
+    self.switch_tab( self._next_tab_id)
+    self._next_tab_id += 1
+
+  def close_tab(self, tab_id: int):
+    if len(self.tabs) <= 1:
+      return  # don't allow closing the last tab
+
+    tab_to_close = self.tabs[tab_id]
+    tab_to_close["panel_layout"].destroy_ui()
+    for suffix in ["window", "group", "input", "close", "handler"]:
+      tag = f"tab_{suffix}_{tab_id}"
+      if dpg.does_item_exist(tag):
+        dpg.delete_item(tag)
+    del self.tabs[tab_id]
+
+    if self.active_tab == tab_id: # switch to another tab if we closed the active one
+      self.active_tab = next(iter(self.tabs.keys()))
+      self._switch_tab_content()
+      dpg.bind_item_theme(f"tab_window_{self.active_tab}", "active_tab_theme")
+
+  def switch_tab(self, tab_id: int):
+    if tab_id == self.active_tab or tab_id not in self.tabs:
+      return
+
+    current_panel_layout = self.tabs[self.active_tab]["panel_layout"]
+    current_panel_layout.destroy_ui()
+    dpg.bind_item_theme(f"tab_window_{self.active_tab}", "inactive_tab_theme")  # deactivate old tab
+    self.active_tab = tab_id
+    dpg.bind_item_theme(f"tab_window_{tab_id}", "active_tab_theme")  # activate new tab
+    self._switch_tab_content()
+
+  def _switch_tab_content(self):
+    dpg.delete_item(self.tab_content_tag, children_only=True)
+    active_panel_layout = self.tabs[self.active_tab]["panel_layout"]
+    active_panel_layout.create_ui()
+    active_panel_layout.update_all_panels()
+
+  def rename_tab(self, tab_id: int, new_name: str):
+    if tab_id in self.tabs:
+      self.tabs[tab_id]["name"] = new_name
+
+  def update_all_panels(self):
+    self.tabs[self.active_tab]["panel_layout"].update_all_panels()
+
+  def on_viewport_resize(self):
+    self.tabs[self.active_tab]["panel_layout"].on_viewport_resize()
+
+class PanelLayoutManager:
+  def __init__(self, data_manager: DataManager, playback_manager, worker_manager, scale: float = 1.0):
+    self.data_manager = data_manager
+    self.playback_manager = playback_manager
+    self.worker_manager = worker_manager
+    self.scale = scale
     self.active_panels: list = []
+    self.parent_tag = "tab_content_area"
 
     self.grip_size = int(GRIP_SIZE * self.scale)
     self.min_pane_size = int(MIN_PANE_SIZE * self.scale)
@@ -21,13 +141,18 @@ class PlotLayoutManager:
     initial_panel = TimeSeriesPanel(data_manager, playback_manager, worker_manager)
     self.layout: dict = {"type": "panel", "panel": initial_panel}
 
-  def create_ui(self, parent_tag: str):
-    if dpg.does_item_exist(self.container_tag):
-      dpg.delete_item(self.container_tag)
+  def create_ui(self):
+    self.active_panels.clear()
 
-    with dpg.child_window(tag=self.container_tag, parent=parent_tag, border=False, width=-1, height=-1, no_scrollbar=True, no_scroll_with_mouse=True):
-      container_width, container_height = dpg.get_item_rect_size(self.container_tag)
-      self._create_ui_recursive(self.layout, self.container_tag, [], container_width, container_height)
+    if dpg.does_item_exist(self.parent_tag):
+      dpg.delete_item(self.parent_tag, children_only=True)
+
+    container_width, container_height = dpg.get_item_rect_size(self.parent_tag)
+    self._create_ui_recursive(self.layout, self.parent_tag, [], container_width, container_height)
+
+  def destroy_ui(self):
+    self._cleanup_ui_recursive(self.layout, [])
+    self.active_panels.clear()
 
   def _create_ui_recursive(self, layout: dict, parent_tag: str, path: list[int], width: int, height: int):
     if layout["type"] == "panel":
@@ -35,14 +160,14 @@ class PlotLayoutManager:
     else:
       self._create_split_ui(layout, parent_tag, path, width, height)
 
-  def _create_panel_ui(self, layout: dict, parent_tag: str, path: list[int], width: int, height:int):
+  def _create_panel_ui(self, layout: dict, parent_tag: str, path: list[int], width: int, height: int):
     panel_tag = self._path_to_tag(path, "panel")
     panel = layout["panel"]
     self.active_panels.append(panel)
     text_size = int(13 * self.scale)
-    bar_height = (text_size+24) if width < int(279 * self.scale + 80) else (text_size+8) # adjust height to allow for scrollbar
+    bar_height = (text_size + 24) if width < int(279 * self.scale + 64) else (text_size + 8)  # adjust height to allow for scrollbar
 
-    with dpg.child_window(parent=parent_tag, border=True, width=-1, height=-1, no_scrollbar=True):
+    with dpg.child_window(parent=parent_tag, border=False, width=-1, height=-1, no_scrollbar=True):
       with dpg.group(horizontal=True):
         with dpg.child_window(tag=panel_tag, width=-(text_size + 16), height=bar_height, horizontal_scrollbar=True, no_scroll_with_mouse=True, border=False):
           with dpg.group(horizontal=True):
@@ -67,7 +192,7 @@ class PlotLayoutManager:
       for i, child_layout in enumerate(layout["children"]):
         child_path = path + [i]
         container_tag = self._path_to_tag(child_path, "container")
-        pane_width, pane_height = [(pane_sizes[i], -1), (-1, pane_sizes[i])][orientation] # fill 2nd dim up to the border
+        pane_width, pane_height = [(pane_sizes[i], -1), (-1, pane_sizes[i])][orientation]  # fill 2nd dim up to the border
         with dpg.child_window(tag=container_tag, width=pane_width, height=pane_height, border=False, no_scrollbar=True):
           child_width, child_height = [(pane_sizes[i], height), (width, pane_sizes[i])][orientation]
           self._create_ui_recursive(child_layout, container_tag, child_path, child_width, child_height)
@@ -137,7 +262,7 @@ class PlotLayoutManager:
     if path:
       container_tag = self._path_to_tag(path, "container")
     else:  # Root update
-      container_tag = self.container_tag
+      container_tag = self.parent_tag
 
     self._cleanup_ui_recursive(layout, path)
     dpg.delete_item(container_tag, children_only=True)
@@ -181,17 +306,17 @@ class PlotLayoutManager:
             dpg.configure_item(container_tag, **{size_properties[orientation]: pane_sizes[i]})
             child_width, child_height = [(pane_sizes[i], available_sizes[1]), (available_sizes[0], pane_sizes[i])][orientation]
             self._resize_splits_recursive(child_layout, child_path, child_width, child_height)
-    else: # leaf node/panel - adjust bar height to allow for scrollbar
+    else:  # leaf node/panel - adjust bar height to allow for scrollbar
       panel_tag = self._path_to_tag(path, "panel")
-      if width is not None and width < int(279 * self.scale + 80):  # scaled widths of the elements in top bar + fixed 8 padding on left and right of each item
-        dpg.configure_item(panel_tag, height=(int(13*self.scale) + 24))
+      if width is not None and width < int(279 * self.scale + 64):  # scaled widths of the elements in top bar + fixed 8 padding on left and right of each item
+        dpg.configure_item(panel_tag, height=(int(13 * self.scale) + 24))
       else:
-        dpg.configure_item(panel_tag, height=(int(13*self.scale) + 8))
+        dpg.configure_item(panel_tag, height=(int(13 * self.scale) + 8))
 
   def _get_split_geometry(self, layout: dict, available_size: tuple[int, int]) -> tuple[int, int, list[int]]:
     orientation = layout["orientation"]
     num_grips = len(layout["children"]) - 1
-    usable_size = max(self.min_pane_size, available_size[orientation] - (num_grips * (self.grip_size + 8 * (2-orientation)))) # approximate, scaling is weird
+    usable_size = max(self.min_pane_size, available_size[orientation] - (num_grips * (self.grip_size + 8 * (2 - orientation))))  # approximate, scaling is weird
     pane_sizes = [max(self.min_pane_size, int(usable_size * prop)) for prop in layout["proportions"]]
     return orientation, usable_size, pane_sizes
 

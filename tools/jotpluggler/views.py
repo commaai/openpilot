@@ -52,6 +52,8 @@ class TimeSeriesPanel(ViewPanel):
     self._results_deque: deque[tuple[str, list, list]] = deque()
     self._new_data = False
     self._last_x_limits = (0.0, 0.0)
+    self._queued_x_sync: tuple | None = None
+    self._queued_reallow_x_zoom = False
 
   def create_ui(self, parent_tag: str):
     self.data_manager.add_observer(self.on_data_loaded)
@@ -63,14 +65,26 @@ class TimeSeriesPanel(ViewPanel):
       timeline_series_tag = dpg.add_inf_line_series(x=[0], label="Timeline", parent=self.y_axis_tag, tag=self.timeline_indicator_tag)
       dpg.bind_item_theme(timeline_series_tag, "global_timeline_theme")
 
-    for series_path in list(self._series_data.keys()):
-      self.add_series(series_path)
+    self._new_data = True
     self._ui_created = True
 
   def update(self):
     with self._update_lock:
       if not self._ui_created:
         return
+
+      if self._queued_x_sync:
+        min_time, max_time = self._queued_x_sync
+        self._queued_x_sync = None
+        dpg.set_axis_limits(self.x_axis_tag, min_time, max_time)
+        self._last_x_limits = (min_time, max_time)
+        self._fit_y_axis(min_time, max_time)
+        self._queued_reallow_x_zoom = True # must wait a frame before allowing user changes so that axis limits take effect
+        return
+
+      if self._queued_reallow_x_zoom:
+        self._queued_reallow_x_zoom = False
+        dpg.set_axis_limits_auto(self.x_axis_tag)
 
       current_limits = dpg.get_axis_limits(self.x_axis_tag)
       # downsample if plot zoom changed significantly
@@ -112,13 +126,8 @@ class TimeSeriesPanel(ViewPanel):
 
   def _on_x_axis_sync(self, min_time: float, max_time: float, source_panel):
     with self._update_lock:
-      if source_panel == self or not self._ui_created:
-        return
-      dpg.set_axis_limits(self.x_axis_tag, min_time, max_time)
-      dpg.render_dearpygui_frame()
-      dpg.set_axis_limits_auto(self.x_axis_tag)
-      self._last_x_limits = (min_time, max_time)
-      self._fit_y_axis(min_time, max_time)
+      if source_panel != self:
+        self._queued_x_sync = (min_time, max_time)
 
   def _fit_y_axis(self, x_min: float, x_max: float):
     if not self._series_data:
