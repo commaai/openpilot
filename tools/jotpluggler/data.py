@@ -5,6 +5,7 @@ import bisect
 from collections import defaultdict
 from tqdm import tqdm
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import _LogFileReader, LogReader
 
 
@@ -199,7 +200,8 @@ def msgs_to_time_series(msgs):
 def _process_segment(segment_identifier: str):
   try:
     lr = _LogFileReader(segment_identifier, sort_by_time=True)
-    return msgs_to_time_series(lr)
+    migrated_msgs = migrate_all(lr)
+    return msgs_to_time_series(migrated_msgs)
   except Exception as e:
     cloudlog.warning(f"Warning: Failed to process segment {segment_identifier}: {e}")
     return {}, 0.0, 0.0
