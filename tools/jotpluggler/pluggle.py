@@ -7,7 +7,7 @@ import dearpygui.dearpygui as dpg
 import multiprocessing
 import uuid
 import signal
-import yaml
+import yaml  # type: ignore
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.basedir import BASEDIR
 from openpilot.tools.jotpluggler.data import DataManager
