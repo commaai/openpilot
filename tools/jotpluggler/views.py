@@ -63,6 +63,7 @@ class TimeSeriesPanel(ViewPanel):
     self._last_x_limits = (0.0, 0.0)
     self._queued_x_sync: tuple | None = None
     self._queued_reallow_x_zoom = False
+    self._total_segments = self.playback_manager.num_segments
 
   def to_dict(self) -> dict:
     return {
@@ -89,6 +90,7 @@ class TimeSeriesPanel(ViewPanel):
       dpg.bind_item_theme(timeline_series_tag, "timeline_theme")
 
     self._new_data = True
+    self._queued_x_sync = self.playback_manager.x_axis_bounds
     self._ui_created = True
 
   def update(self):
@@ -107,7 +109,19 @@ class TimeSeriesPanel(ViewPanel):
 
       if self._queued_reallow_x_zoom:
         self._queued_reallow_x_zoom = False
-        dpg.set_axis_limits_auto(self.x_axis_tag)
+        if tuple(dpg.get_axis_limits(self.x_axis_tag)) == self._last_x_limits:
+          dpg.set_axis_limits_auto(self.x_axis_tag)
+        else:
+          self._queued_x_sync = self._last_x_limits # retry, likely too early
+          return
+
+      if self._new_data:  # handle new data in main thread
+        self._new_data = False
+        if self._total_segments > 0:
+          dpg.set_axis_limits_constraints(self.x_axis_tag, -10, self._total_segments * 60 + 10)
+        self._fit_y_axis(*dpg.get_axis_limits(self.x_axis_tag))
+        for series_path in list(self._series_data.keys()):
+          self.add_series(series_path, update=True)
 
       current_limits = dpg.get_axis_limits(self.x_axis_tag)
       # downsample if plot zoom changed significantly
@@ -119,12 +133,6 @@ class TimeSeriesPanel(ViewPanel):
         self.playback_manager.set_x_axis_bounds(current_limits[0], current_limits[1], source_panel=self)
         self._last_x_limits = current_limits
         self._fit_y_axis(current_limits[0], current_limits[1])
-
-      if self._new_data:  # handle new data in main thread
-        self._new_data = False
-        dpg.set_axis_limits_constraints(self.x_axis_tag, -10, (self.playback_manager.duration_s + 10))
-        for series_path in list(self._series_data.keys()):
-          self.add_series(series_path, update=True)
 
       while self._results_deque:  # handle downsampled results in main thread
         results = self._results_deque.popleft()
@@ -223,8 +231,7 @@ class TimeSeriesPanel(ViewPanel):
       else:
         line_series_tag = dpg.add_line_series(x=time_array, y=value_array.astype(float), label=series_path, parent=self.y_axis_tag, tag=series_tag)
         dpg.bind_item_theme(line_series_tag, "line_theme")
-        dpg.fit_axis_data(self.x_axis_tag)
-        dpg.fit_axis_data(self.y_axis_tag)
+      self._fit_y_axis(*dpg.get_axis_limits(self.x_axis_tag))
       plot_duration = dpg.get_axis_limits(self.x_axis_tag)[1] - dpg.get_axis_limits(self.x_axis_tag)[0]
       self._downsample_all_series(plot_duration)
 
@@ -252,7 +259,12 @@ class TimeSeriesPanel(ViewPanel):
         del self._series_data[series_path]
 
   def on_data_loaded(self, data: dict):
-    self._new_data = True
+    with self._update_lock:
+      self._new_data = True
+      if data.get('metadata_loaded'):
+        self._total_segments = data.get('total_segments', 0)
+        limits = (-10, self._total_segments * 60 + 10)
+        self._queued_x_sync = limits
 
   def _on_series_drop(self, sender, app_data, user_data):
     self.add_series(app_data)
