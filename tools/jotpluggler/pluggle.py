@@ -324,8 +324,9 @@ def main(route_to_load=None):
     scale = 1
 
   with dpg.font_registry():
-    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale))
+    default_font = dpg.add_font(os.path.join(BASEDIR, "selfdrive/assets/fonts/JetBrainsMono-Medium.ttf"), int(13 * scale * 2)) # 2x then scale for hidpi
   dpg.bind_font(default_font)
+  dpg.set_global_font_scale(0.5)
 
   viewport_width, viewport_height = int(1200 * scale), int(800 * scale)
   mouse_x, mouse_y = pyautogui.position()  # TODO: find better way of creating the window where the user is (default dpg behavior annoying on multiple displays)
