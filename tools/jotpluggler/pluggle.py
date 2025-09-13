@@ -199,9 +199,8 @@ class MainController:
     if dpg.does_item_exist("save_layout_dialog"):
       dpg.delete_item("save_layout_dialog")
     with dpg.file_dialog(
-      directory_selector=False, show=True, callback=self._save_layout_callback,
-      tag="save_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale),
-      default_filename="layout", default_path="layouts"
+      callback=self._save_layout_callback, tag="save_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale),
+      default_filename="layout", default_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "layouts")
     ):
       dpg.add_file_extension(".yaml")
 
@@ -209,8 +208,8 @@ class MainController:
     if dpg.does_item_exist("load_layout_dialog"):
       dpg.delete_item("load_layout_dialog")
     with dpg.file_dialog(
-      directory_selector=False, show=True, callback=self._load_layout_callback,
-      tag="load_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale), default_path="layouts"
+      callback=self._load_layout_callback, tag="load_layout_dialog", width=int(700 * self.scale), height=int(400 * self.scale),
+      default_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "layouts")
     ):
       dpg.add_file_extension(".yaml")
 
