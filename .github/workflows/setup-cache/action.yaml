@@ -18,6 +18,9 @@ outputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
     # build cache
     - id: date
       shell: bash
