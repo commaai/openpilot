@@ -18,23 +18,7 @@ outputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-      with:
-        submodules: true
     # build cache
-    - id: date
-      shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV ; echo "CACHE_FILE_HASHES=$(sha256sum selfdrive/test/build.sh tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh | cut -d" " -f1 | tr '\n' '_')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
     - uses: ./.github/workflows/setup-with-retry
     # try to save rootfs image cache
     - name: Save rootfs cache
