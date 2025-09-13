@@ -19,6 +19,8 @@ A_CRUISE_MAX_VALS = [1.6, 1.2, 0.8, 0.6]
 A_CRUISE_MAX_BP = [0., 10.0, 25., 40.]
 A_CRUISE_MIN_VALS = [-1.2,]
 A_CRUISE_MIN_BP = [0., ]
+ACC_ACCEL_MAX = 2.0
+ACCEL_MIN = -3.5
 
 ALLOW_THROTTLE_THRESHOLD = 0.4
 MIN_ALLOW_THROTTLE_SPEED = 2.5
@@ -33,9 +35,11 @@ STOP_DISTANCE = 6.0
 _A_TOTAL_MAX_V = [1.7, 3.2]
 _A_TOTAL_MAX_BP = [20., 40.]
 
+
 T_IDXS = np.array(ModelConstants.T_IDXS)
 FCW_IDXS = T_IDXS < 5.0
-T_DIFFS = np.diff(T_IDXS, prepend=[0.])
+T_IDXS_LEAD = np.arange(0., 2.5, 0.1)
+T_DIFFS_LEAD = np.diff(T_IDXS_LEAD, prepend=[0.])
 
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
@@ -78,9 +82,9 @@ def get_coast_accel(pitch):
   return np.sin(pitch) * -5.65 - 0.3  # fitted from data using xx/projects/allow_throttle/compute_coast_accel.py
 
 def extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau):
-  a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS**2)/2.)
-  v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS * a_lead_traj), 0.0, 1e8)
-  x_lead_traj = x_lead + np.cumsum(T_DIFFS * v_lead_traj)
+  a_lead_traj = a_lead * np.exp(-a_lead_tau * (T_IDXS_LEAD**2)/2.)
+  v_lead_traj = np.clip(v_lead + np.cumsum(T_DIFFS_LEAD * a_lead_traj), 0.0, 1e8)
+  x_lead_traj = x_lead + np.cumsum(T_DIFFS_LEAD * v_lead_traj)
   lead_xv = np.column_stack((x_lead_traj, v_lead_traj))
   return lead_xv
 
@@ -96,6 +100,21 @@ def process_lead(v_ego, lead):
     v_lead = v_ego + 10.0
     a_lead = 0.0
     a_lead_tau = _LEAD_ACCEL_TAU
+
+  # MPC will not converge if immediate crash is expected
+  # Clip lead distance to what is still possible to brake for
+  min_x_lead = ((v_ego + v_lead)/2) * (v_ego - v_lead) / (-ACCEL_MIN * 2)
+  x_lead = np.clip(x_lead, min_x_lead, 1e8)
+  v_lead = np.clip(v_lead, 0.0, 1e8)
+  a_lead = np.clip(a_lead, -10., 5.)
+  lead_xv = extrapolate_lead(x_lead, v_lead, a_lead, a_lead_tau)
+  return lead_xv
+
+def process_ego(v_ego, a_ego):
+  x_lead = 0.0
+  v_lead = v_ego
+  a_lead = a_ego
+  a_lead_tau = _LEAD_ACCEL_TAU
 
   # MPC will not converge if immediate crash is expected
   # Clip lead distance to what is still possible to brake for
@@ -215,33 +234,34 @@ class LongitudinalPlanner:
 
 
 
-    lead_xv_0 = process_lead(v_ego, sm['radarState'].leadOne)
-    #lead_xv_1 = process_lead(v_ego, sm['radarState'].leadTwo)
+    lead_info = {'lead0': sm['radarState'].leadOne, 'lead1': sm['radarState'].leadTwo}
+    ego_xv = process_ego(v_ego, sm['carState'].aEgo)
+    for key in lead_info.keys():
+      lead_xv = process_lead(v_ego, lead_info[key])
+      
 
+      ## To estimate a safe distance from a moving lead, we calculate how much stopping
+      ## distance that lead needs as a minimum. We can add that to the current distance
+      ## and then treat that as a stopped car/obstacle at this new distance.
+      desired_follow_distance = np.array([get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)])
 
-    ## To estimate a safe distance from a moving lead, we calculate how much stopping
-    ## distance that lead needs as a minimum. We can add that to the current distance
-    ## and then treat that as a stopped car/obstacle at this new distance.
-    #lead_0_obstacle = lead_xv_0[:,0] + get_stopped_equivalence_factor(lead_xv_0[:,1])
-    #lead_1_obstacle = lead_xv_1[:,0] + get_stopped_equivalence_factor(lead_xv_1[:,1])
+      error_weights = np.linspace(1.0, 0.0, len(desired_follow_distance))
+      error_weights = error_weights / np.sum(error_weights)
 
-    desired_follow_distance = get_desired_follow_distance(v_ego, lead_xv_0[0,1], get_T_FOLLOW(sm['selfdriveState'].personality))
-    true_follow_distance = lead_xv_0[0,0]
+      follow_distance_error =  np.sum(error_weights*(lead_xv[:,0] - desired_follow_distance))
 
-    follow_distance_error = true_follow_distance - desired_follow_distance
-    follow_distance_cost_signed = (follow_distance_error / (v_ego + 1))**2 * np.sign(follow_distance_error)
-    lead_accel = np.clip(2*follow_distance_cost_signed, -3.5, 2.0)
-    lead_accel = smooth_value(lead_accel, self.output_a_target, 0.5)
+      follow_distance_cost_signed = (follow_distance_error / (v_ego + 1))**2 * np.sign(follow_distance_error)
+      lead_accel = np.clip(2*follow_distance_cost_signed, ACCEL_MIN, ACCEL_MAX)
+      lead_accel = smooth_value(lead_accel, self.output_a_target, 0.5)
 
-    out_accels['lead'] = (lead_accel, False)
-
+      out_accels[key] = (lead_accel, False)
 
     if mode == 'blended':
       out_accels['model']= (sm['modelV2'].action.desiredAcceleration, sm['modelV2'].action.shouldStop)
 
     output_a_target = np.min([x for x, _ in out_accels.values()])
     self.output_should_stop = np.all([x for _, x in out_accels.values()])
-    self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
+    self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1]) 
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
