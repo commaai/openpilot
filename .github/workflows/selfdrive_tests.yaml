@@ -63,6 +63,23 @@ jobs:
       timeout-minutes: 1
       run: TARGET_DIR=$STRIPPED_DIR release/build_devel.sh
     - uses: ./.github/workflows/setup-with-retry
+    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
+    - shell: bash
+      run: git lfs pull
+    # restore scons cache
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV ; echo "CACHE_FILE_HASHES=$(sha256sum selfdrive/test/build.sh tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh | cut -d" " -f1 | tr '\n' '_')" >> $GITHUB_ENV
+    - shell: bash
+      run: echo "$CACHE_COMMIT_DATE" ; echo "$CACHE_FILE_HASHES"
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
     - name: Build openpilot and run checks
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
@@ -169,6 +186,23 @@ jobs:
         submodules: true
     - uses: ./.github/workflows/setup-with-retry
       id: setup-step
+    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
+    - shell: bash
+      run: git lfs pull
+    # restore scons cache
+    - id: date
+      shell: bash
+      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV ; echo "CACHE_FILE_HASHES=$(sha256sum selfdrive/test/build.sh tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh | cut -d" " -f1 | tr '\n' '_')" >> $GITHUB_ENV
+    - shell: bash
+      run: echo "$CACHE_COMMIT_DATE" ; echo "$CACHE_FILE_HASHES"
+    - id: scons-cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: .ci_cache/scons_cache
+        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}
     - name: Build openpilot
       run: ${{ env.RUN }} "scons -j$(nproc)"
     - name: Run unit tests

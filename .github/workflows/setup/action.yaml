@@ -26,25 +26,6 @@ runs:
           exit 1
         fi
 
-    # do this after checkout to ensure our custom LFS config is used to pull from GitLab
-    - shell: bash
-      run: git lfs pull
-
-    # restore scons cache
-    - id: date
-      shell: bash
-      run: echo "CACHE_COMMIT_DATE=$(git log -1 --pretty='format:%cd' --date=format:'%Y-%m-%d-%H:%M')" >> $GITHUB_ENV ; echo "CACHE_FILE_HASHES=$(sha256sum selfdrive/test/build.sh tools/install_ubuntu_dependencies.sh tools/install_python_dependencies.sh | cut -d" " -f1 | tr '\n' '_')" >> $GITHUB_ENV
-    - shell: bash
-      run: echo "$CACHE_COMMIT_DATE" ; echo "$CACHE_FILE_HASHES"
-    - id: scons-cache
-      uses: ./.github/workflows/auto-cache
-      with:
-        path: .ci_cache/scons_cache
-        key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
-        restore-keys: |
-          scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
-          scons-${{ runner.arch }}
-
     # restore rootfs image cache
     - id: rootfs-cache
       uses: actions/cache/restore@v4
@@ -54,4 +35,3 @@ runs:
     # build our rootfs image
     - shell: bash
       run: eval ${{ env.BUILD }}
-
