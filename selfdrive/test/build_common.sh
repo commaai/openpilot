@@ -48,7 +48,7 @@ commit_root() {
     then
         # prepare directories
         sudo mkdir -p /base /newroot /upper /work
-        
+
         # re-execute the main script (causing it to go straight to `build_inside_namespace`), but
         # inside the newly created namespace, in a way which would cause all mounts
         # created to automatically umount before it exits
