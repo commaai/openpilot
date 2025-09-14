@@ -21,9 +21,9 @@ prepare_build() {
     mkdir -p /tmp/openpilot /tmp/scons_cache /tmp/comma_download_cache /tmp/openpilot_cache
     sudo mount --bind "$REPO" /tmp/openpilot
 
-    sudo mount --bind "$REPO/.ci_cache/scons_cache" /tmp/scons_cache || true
-    sudo mount --bind "$REPO/.ci_cache/comma_download_cache" /tmp/comma_download_cache || true
-    sudo mount --bind "$REPO/.ci_cache/openpilot_cache" /tmp/openpilot_cache || true
+    sudo mount --bind "$REPO/.ci_cache/scons_cache" /tmp/scons_cache 2>/dev/null || true
+    sudo mount --bind "$REPO/.ci_cache/comma_download_cache" /tmp/comma_download_cache 2>/dev/null || true
+    sudo mount --bind "$REPO/.ci_cache/openpilot_cache" /tmp/openpilot_cache 2>/dev/null || true
 
     # needed for the unit tests not to fail
     sudo chmod 755 /sys/fs/pstore
