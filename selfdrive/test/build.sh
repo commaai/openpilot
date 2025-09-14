@@ -9,21 +9,6 @@ CACHE_ROOTFS_TARBALL_PATH="/tmp/rootfs_cache.tar"
 
 source "$SCRIPT_DIR/build_common.sh"
 
-# if the rootfs diff tarball (also created by this script) got restored from the CI native cache
-echo a
-stat "$CACHE_ROOTFS_TARBALL_PATH" || true
-ls "$CACHE_ROOTFS_TARBALL_PATH" || true
-file "$CACHE_ROOTFS_TARBALL_PATH" || true
-file "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" || true
-echo b
-
-if [ -d "$CACHE_ROOTFS_TARBALL_PATH" ]
-then
-    mv "$CACHE_ROOTFS_TARBALL_PATH/rootfs_cache.tar" "$CACHE_ROOTFS_TARBALL_PATH/../file"
-    rmdir "$CACHE_ROOTFS_TARBALL_PATH"
-    mv "/tmp/file" "$CACHE_ROOTFS_TARBALL_PATH"
-fi
-
 if [ -f "$CACHE_ROOTFS_TARBALL_PATH" ]
 then
     # apply it, upgrading the rootfs
