@@ -113,6 +113,15 @@ jobs:
         echo "PUSH_IMAGE=true" >> "$GITHUB_ENV"
         $DOCKER_LOGIN
     - uses: ./.github/workflows/setup-with-retry
+    - run: git lfs pull
+    - name: Getting scons cache
+      uses: ./.github/workflows/auto-cache
+      with:
+        path: /tmp/scons_cache
+        key: scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
+        restore-keys: |
+          scons-${{ runner.arch }}-macos-${{ env.CACHE_COMMIT_DATE }}
+          scons-${{ runner.arch }}-macos
     - uses: ./.github/workflows/compile-openpilot
       timeout-minutes: 30
 
