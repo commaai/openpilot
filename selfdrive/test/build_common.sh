@@ -6,13 +6,13 @@ trap error_handler ERR
 create_rootfs_diff() {
     sudo rm -f "$CACHE_ROOTFS_TARBALL_PATH" # remove the old diff tarball from previous run, if exists
     cd /upper
-    sudo tar -Izstd -cf "$CACHE_ROOTFS_TARBALL_PATH" .
+    sudo tar -cf "$CACHE_ROOTFS_TARBALL_PATH" .
     cd
 }
 
 apply_rootfs_diff() {
     cd /
-    sudo tar -Izstd -xf "$CACHE_ROOTFS_TARBALL_PATH" 2>/dev/null || true
+    sudo tar -xf "$CACHE_ROOTFS_TARBALL_PATH" 2>/dev/null || true
     cd
 }
 
