@@ -47,11 +47,10 @@ runs:
 
     # restore rootfs image cache
     - id: rootfs-cache
-      uses: actions/download-artifact@v4
+      uses: actions/cache/restore@v4
       with:
         path: /tmp/rootfs_cache.tar
-        name: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
-      continue-on-error: true
+        key: rootfs-${{ runner.arch }}-${{ env.CACHE_FILE_HASHES }}
     # build our rootfs image
     - shell: bash
       run: eval ${{ env.BUILD }}
