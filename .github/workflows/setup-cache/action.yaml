@@ -1,20 +1,5 @@
 name: 'setup-cache'
 
-inputs:
-  docker_hub_pat:
-    description: 'Auth token for Docker Hub, required for BuildJet jobs'
-    required: false
-    default: ''
-  sleep_time:
-    description: 'Time to sleep between retries'
-    required: false
-    default: 30
-
-outputs:
-  duration:
-    description: 'Duration of the setup process in seconds'
-    value: ${{ steps.get_duration.outputs.duration }}
-
 runs:
   using: "composite"
   steps:
