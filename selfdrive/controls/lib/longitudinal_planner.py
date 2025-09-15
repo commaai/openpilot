@@ -75,6 +75,19 @@ def get_desired_follow_distance(v_ego, v_lead, t_follow=None):
   return get_safe_obstacle_distance(v_ego, t_follow) - get_stopped_equivalence_factor(v_lead)
 
 
+
+def rss_min_distance(v_ego, v_lead, reaction_time=0.3,
+                     a_ego_acc_max=2,   # ego accel during reaction
+                     a_ego_brake_min=4, # comfortable or guaranteed
+                     a_lead_brake_max=8.0 # worst-case lead hard brake
+                     ):
+  # all accel params are positive magnitudes (m/s^2)
+  term_react = v_ego*reaction_time + 0.5*a_ego_acc_max*reaction_time**2
+  term_ego_stop = v_ego**2/(2*a_ego_brake_min)
+  term_lead_stop = v_lead**2/(2*a_lead_brake_max)
+  return term_react + term_ego_stop - term_lead_stop + STOP_DISTANCE
+
+
 def get_max_accel(v_ego):
   return np.interp(v_ego, A_CRUISE_MAX_BP, A_CRUISE_MAX_VALS)
 
@@ -238,12 +251,13 @@ class LongitudinalPlanner:
     ego_xv = process_ego(v_ego, sm['carState'].aEgo)
     for key in lead_info.keys():
       lead_xv = process_lead(v_ego, lead_info[key])
-      
+
 
       ## To estimate a safe distance from a moving lead, we calculate how much stopping
       ## distance that lead needs as a minimum. We can add that to the current distance
       ## and then treat that as a stopped car/obstacle at this new distance.
-      desired_follow_distance = np.array([get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)])
+      # desired_follow_distance = np.array([get_desired_follow_distance(v_ego, lead_xv[0,1], get_T_FOLLOW(sm['selfdriveState'].personality)) for v, vl in zip(ego_xv, lead_xv)])
+      desired_follow_distance = np.array([rss_min_distance(v_ego, lead_xv[0,1]) for v, vl in zip(ego_xv, lead_xv)])
 
       error_weights = np.linspace(1.0, 0.0, len(desired_follow_distance))
       error_weights = error_weights / np.sum(error_weights)
@@ -261,7 +275,7 @@ class LongitudinalPlanner:
 
     output_a_target = np.min([x for x, _ in out_accels.values()])
     self.output_should_stop = np.all([x for _, x in out_accels.values()])
-    self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1]) 
+    self.output_a_target = np.clip(output_a_target, accel_clip[0], accel_clip[1])
 
   def publish(self, sm, pm):
     plan_send = messaging.new_message('longitudinalPlan')
