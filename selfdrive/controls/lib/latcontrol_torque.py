@@ -47,7 +47,7 @@ class LatControlTorque(LatControl):
     self.pid.set_limits(self.lateral_accel_from_torque(self.steer_max, self.torque_params),
                         self.lateral_accel_from_torque(-self.steer_max, self.torque_params))
 
-  def update(self, active, CS, VM, params, steer_limited_by_safety: bool, desired_curvature, curvature_limited: bool, lat_delay: float):
+  def update(self, active, CS, VM, params, steer_limited_by_safety, desired_curvature, curvature_limited, lat_delay: float):
     pid_log = log.ControlsState.LateralTorqueState.new_message()
     if not active:
       output_torque = 0.0
@@ -59,8 +59,8 @@ class LatControlTorque(LatControl):
 
       delay_frames = int(lat_delay / DT_CTRL)
       lag_compensated_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
-      self.requested_lateral_accel_buffer.appendleft(lag_compensated_desired_lateral_accel)
-      current_expected_lateral_accel = self.requested_lateral_accel_buffer[delay_frames]
+      self.requested_lateral_accel_buffer.append(lag_compensated_desired_lateral_accel)
+      current_expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
       current_expected_curvature = current_expected_lateral_accel / (CS.vEgo ** 2)
       actual_lateral_accel = actual_curvature * CS.vEgo ** 2
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
