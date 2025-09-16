@@ -316,18 +316,8 @@ class TestLoggerd:
     self._publish_camera_and_audio_messages()
 
     qcamera_ts_path = os.path.join(self._get_latest_log_dir(), 'qcamera.ts')
-
-    # simplest heuristic: look for AAC ADTS syncwords in the TS file
-    def ts_has_audio_stream(ts_path: str) -> bool:
-      try:
-        with open(ts_path, 'rb') as f:
-          data = f.read()
-        # ADTS headers typically start with 0xFFF1 or 0xFFF9
-        return (b"\xFF\xF1" in data) or (b"\xFF\xF9" in data)
-      except Exception:
-        return False
-
-    has_audio_stream = ts_has_audio_stream(qcamera_ts_path)
+    ffprobe_cmd = f"ffprobe -i {qcamera_ts_path} -show_streams -select_streams a -loglevel error"
+    has_audio_stream = subprocess.run(ffprobe_cmd, shell=True, capture_output=True).stdout.strip() != b''
     assert has_audio_stream == record_audio
 
     raw_audio_in_rlog = any(m.which() == 'rawAudioData' for m in LogReader(os.path.join(self._get_latest_log_dir(), 'rlog.zst')))

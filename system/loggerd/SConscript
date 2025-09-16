@@ -1,8 +1,8 @@
 Import('env', 'arch', 'messaging', 'common', 'visionipc')
 
 libs = [common, messaging, visionipc,
-        'yuv', 'OpenCL', 'pthread', 'zstd',
-        'avformat', 'avcodec', 'avutil', 'x264']
+        'avformat', 'avcodec', 'avutil',
+        'yuv', 'OpenCL', 'pthread', 'zstd']
 
 src = ['logger.cc', 'zstd_writer.cc', 'video_writer.cc', 'encoder/encoder.cc', 'encoder/v4l_encoder.cc', 'encoder/jpeg_encoder.cc']
 if arch != "larch64":

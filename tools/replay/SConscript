@@ -17,7 +17,7 @@ if arch != "Darwin":
   replay_lib_src.append("qcom_decoder.cc")
 replay_lib = replay_env.Library("replay", replay_lib_src, LIBS=base_libs, FRAMEWORKS=base_frameworks)
 Export('replay_lib')
-replay_libs = [replay_lib, 'avformat', 'avcodec', 'avutil', 'bz2', 'zstd', 'curl', 'yuv', 'ncurses', 'x264'] + base_libs
+replay_libs = [replay_lib, 'avutil', 'avcodec', 'avformat', 'bz2', 'zstd', 'curl', 'yuv', 'ncurses'] + base_libs
 replay_env.Program("replay", ["main.cc"], LIBS=replay_libs, FRAMEWORKS=base_frameworks)
 
 if GetOption('extras'):
