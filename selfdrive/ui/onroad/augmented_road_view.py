@@ -50,10 +50,10 @@ class AugmentedRoadView(CameraView):
     self.driver_state_renderer = DriverStateRenderer()
 
     # Callbacks
-    self._click_callback: Callable | None = None
+    self.__click_callback: Callable | None = None
 
   def set_callbacks(self, on_click: Callable | None = None):
-    self._click_callback = on_click
+    self.__click_callback = on_click
 
   def _render(self, rect):
     # Only render when system is started to avoid invalid data access
@@ -102,9 +102,9 @@ class AugmentedRoadView(CameraView):
 
     # Handle click events if no HUD interaction occurred
     if not self._hud_renderer.handle_mouse_event():
-      if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if self.__click_callback is not None and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
         if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
-          self._click_callback()
+          self.__click_callback()
 
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
