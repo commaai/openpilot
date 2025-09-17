@@ -21,6 +21,7 @@ class Widget(abc.ABC):
     self._enabled: bool | Callable[[], bool] = True
     self._is_visible: bool | Callable[[], bool] = True
     self._touch_valid_callback: Callable[[], bool] | None = None
+    self._click_callback: Callable[[], None] | None = None
     self._multi_touch = False
 
   @property
@@ -55,6 +56,10 @@ class Widget(abc.ABC):
 
   def set_visible(self, visible: bool | Callable[[], bool]) -> None:
     self._is_visible = visible
+
+  def set_click_callback(self, click_callback: Callable[[], None] | None) -> None:
+    """Set a callback to be called when the widget is clicked."""
+    self._click_callback = click_callback
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     """Set a callback to determine if the widget can be clicked."""
@@ -128,6 +133,8 @@ class Widget(abc.ABC):
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     """Optionally handle mouse release events."""
+    if self._click_callback:
+      self._click_callback()
     return False
 
   def show_event(self):

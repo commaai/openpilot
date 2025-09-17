@@ -165,7 +165,6 @@ def gui_button(
 class Button(Widget):
   def __init__(self,
                text: str,
-               click_callback: Callable[[], None] = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                font_weight: FontWeight = FontWeight.MEDIUM,
                button_style: ButtonStyle = ButtonStyle.NORMAL,
@@ -184,15 +183,10 @@ class Button(Widget):
     self._label = Label(text, font_size, font_weight, text_alignment, text_padding,
                         BUTTON_TEXT_COLOR[self._button_style], icon=icon)
 
-    self._click_callback = click_callback
     self._multi_touch = multi_touch
 
   def set_text(self, text):
     self._label.set_text(text)
-
-  def _handle_mouse_release(self, mouse_pos: MousePos):
-    if self._click_callback and self.enabled:
-      self._click_callback()
 
   def _update_state(self):
     if self.enabled:
@@ -215,14 +209,13 @@ class ButtonRadio(Button):
   def __init__(self,
                text: str,
                icon,
-               click_callback: Callable[[], None] = None,
                font_size: int = DEFAULT_BUTTON_FONT_SIZE,
                text_alignment: TextAlignment = TextAlignment.LEFT,
                border_radius: int = 10,
                text_padding: int = 20,
                ):
 
-    super().__init__(text, click_callback=click_callback, font_size=font_size,
+    super().__init__(text, font_size=font_size,
                      border_radius=border_radius, text_padding=text_padding,
                      text_alignment=text_alignment)
     self._text_padding = text_padding
@@ -230,9 +223,9 @@ class ButtonRadio(Button):
     self.selected = False
 
   def _handle_mouse_release(self, mouse_pos: MousePos):
+    super()._handle_mouse_release(mouse_pos)
     self.selected = not self.selected
-    if self._click_callback:
-      self._click_callback()
+    print('btn clicked')
 
   def _update_state(self):
     if self.selected:

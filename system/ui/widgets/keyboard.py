@@ -77,9 +77,11 @@ class Keyboard(Widget):
     self._backspace_last_repeat: float = 0.0
 
     self._render_return_status = -1
-    self._cancel_button = Button("Cancel", self._cancel_button_callback)
+    self._cancel_button = Button("Cancel")
+    self._cancel_button.set_click_callback(self._cancel_button_callback)
 
-    self._eye_button = Button("", self._eye_button_callback, button_style=ButtonStyle.TRANSPARENT)
+    self._eye_button = Button("", button_style=ButtonStyle.TRANSPARENT)
+    self._eye_button.set_click_callback(self._eye_button_callback)
 
     self._eye_open_texture = gui_app.texture("icons/eye_open.png", 81, 54)
     self._eye_closed_texture = gui_app.texture("icons/eye_closed.png", 81, 54)
@@ -97,12 +99,13 @@ class Keyboard(Widget):
         for _, key in enumerate(keys):
           if key in self._key_icons:
             texture = self._key_icons[key]
-            self._all_keys[key] = Button("", partial(self._key_callback, key), icon=texture,
-                                        button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
+            self._all_keys[key] = Button("", icon=texture, button_style=ButtonStyle.PRIMARY if key == ENTER_KEY else ButtonStyle.KEYBOARD, multi_touch=True)
+            self._all_keys[key].set_click_callback(partial(self._key_callback, key))
           else:
-            self._all_keys[key] = Button(key, partial(self._key_callback, key), button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
-    self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
-                                           button_style=ButtonStyle.KEYBOARD, multi_touch=True)
+            self._all_keys[key] = Button(key, button_style=ButtonStyle.KEYBOARD, font_size=85, multi_touch=True)
+            self._all_keys[key].set_click_callback(partial(self._key_callback, key))
+    self._all_keys[CAPS_LOCK_KEY] = Button("", icon=self._key_icons[CAPS_LOCK_KEY], button_style=ButtonStyle.KEYBOARD, multi_touch=True)
+    self._all_keys[CAPS_LOCK_KEY].set_click_callback(partial(self._key_callback, CAPS_LOCK_KEY))
 
   @property
   def text(self):
