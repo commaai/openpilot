@@ -57,7 +57,7 @@ class LatControlTorque(LatControl):
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
 
-      delay_frames = int(lat_delay / DT_CTRL)
+      delay_frames = int(0.5 * lat_delay / DT_CTRL)
       lag_compensated_desired_lateral_accel = desired_curvature * CS.vEgo ** 2
       self.requested_lateral_accel_buffer.append(lag_compensated_desired_lateral_accel)
       current_expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
