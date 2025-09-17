@@ -1,39 +1,30 @@
 FROM ubuntu:24.04
 
 ENV PYTHONUNBUFFERED=1
-
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends sudo tzdata locales ssh pulseaudio xvfb x11-xserver-utils gnome-screenshot python3-tk python3-dev && \
-    rm -rf /var/lib/apt/lists/*
 
-RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
 ENV LANG=en_US.UTF-8
 ENV LANGUAGE=en_US:en
 ENV LC_ALL=en_US.UTF-8
 
-COPY tools/install_ubuntu_dependencies.sh /tmp/tools/
-RUN /tmp/tools/install_ubuntu_dependencies.sh && \
-    rm -rf /var/lib/apt/lists/* /tmp/* && \
-    cd /usr/lib/gcc/arm-none-eabi/* && \
-    rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
+ENV NVIDIA_VISIBLE_DEVICES=all
+ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
+ENV QTWEBENGINE_DISABLE_SANDBOX=1
 
-# Add OpenCL
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    apt-utils \
-    alien \
-    unzip \
-    tar \
-    curl \
-    xz-utils \
-    dbus \
-    gcc-arm-none-eabi \
-    tmux \
-    vim \
-    libx11-6 \
-    wget \
-  && rm -rf /var/lib/apt/lists/*
+ENV VIRTUAL_ENV=/home/$USER/.venv
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
+RUN sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
+RUN dbus-uuidgen > /etc/machine-id
+
+ARG USER=batman
+ARG USER_UID=1001
+RUN useradd -m -s /bin/bash -u $USER_UID $USER
+RUN usermod -aG sudo $USER
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+USER $USER
+
+# Add OpenCL manually
 RUN mkdir -p /tmp/opencl-driver-intel && \
     cd /tmp/opencl-driver-intel && \
     wget https://github.com/intel/llvm/releases/download/2024-WW14/oclcpuexp-2024.17.3.0.09_rel.tar.gz && \
@@ -55,24 +46,40 @@ RUN mkdir -p /tmp/opencl-driver-intel && \
     cd / && \
     rm -rf /tmp/opencl-driver-intel
 
-ENV NVIDIA_VISIBLE_DEVICES=all
-ENV NVIDIA_DRIVER_CAPABILITIES=graphics,utility,compute
-ENV QTWEBENGINE_DISABLE_SANDBOX=1
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    sudo \
+    tzdata \
+    locales \
+    ssh \
+    pulseaudio \
+    xvfb \
+    x11-xserver-utils \
+    gnome-screenshot \
+    python3-tk \
+    python3-dev \
+    apt-utils \
+    alien \
+    unzip \
+    tar \
+    curl \
+    xz-utils \
+    dbus \
+    gcc-arm-none-eabi \
+    tmux \
+    vim \
+    libx11-6 \
+    wget
 
-RUN dbus-uuidgen > /etc/machine-id
+COPY --chown=$USER tools/install_ubuntu_dependencies.sh /tmp/tools/
 
-ARG USER=batman
-ARG USER_UID=1001
-RUN useradd -m -s /bin/bash -u $USER_UID $USER
-RUN usermod -aG sudo $USER
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-USER $USER
+RUN /tmp/tools/install_ubuntu_dependencies.sh && \
+    rm -rf /var/lib/apt/lists/* /tmp/* && \
+    cd /usr/lib/gcc/arm-none-eabi/* && \
+    rm -rf arm/ thumb/nofp thumb/v6* thumb/v8* thumb/v7+fp thumb/v7-r+fp.sp
 
 COPY --chown=$USER pyproject.toml uv.lock /home/$USER
 COPY --chown=$USER tools/install_python_dependencies.sh /home/$USER/tools/
 
-ENV VIRTUAL_ENV=/home/$USER/.venv
-ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 RUN cd /home/$USER && \
     tools/install_python_dependencies.sh && \
     rm -rf tools/ pyproject.toml uv.lock .cache
