@@ -21,7 +21,7 @@ fi
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
 
-  # normal stuff, mostly for the bare docker
+  # normal stuff, mostly for the bare docker image
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
     clang \
