@@ -58,6 +58,7 @@ jobs:
       timeout-minutes: ${{ ((steps.restore-scons-cache.outputs.cache-hit == 'true') && 10 || 30) }} # allow more time when we missed the scons cache
       run: |
         cd $STRIPPED_DIR
+        rm -rf /tmp/scons_cache
         ${{ env.RUN }} "python3 system/manager/build.py"
     - name: Run tests
       timeout-minutes: 1

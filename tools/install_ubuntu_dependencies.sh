@@ -45,6 +45,7 @@ function install_ubuntu_common_requirements() {
     libavdevice-dev \
     libavutil-dev \
     libavfilter-dev \
+    libbz2-dev \
     libeigen3-dev \
     libffi-dev \
     libgles2-mesa-dev \
