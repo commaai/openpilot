@@ -67,9 +67,11 @@ class LatControlTorque(LatControl):
 
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       # pid error calculated as difference between expected and measured lateral acceleration
-      setpoint = current_expected_lateral_accel + low_speed_factor * current_expected_curvature
+      setpoint = lag_compensated_desired_lateral_accel + low_speed_factor * lag_compensated_desired_lateral_accel
+      setpoint_expected = current_expected_lateral_accel + low_speed_factor * current_expected_lateral_accel
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = lag_compensated_desired_lateral_accel - roll_compensation
+      error_expected = float(setpoint_expected - measurement)
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(setpoint - measurement)
@@ -80,9 +82,10 @@ class LatControlTorque(LatControl):
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
-                                      feedforward=ff,
-                                      speed=CS.vEgo,
-                                      freeze_integrator=freeze_integrator)
+                                        feedforward=ff,
+                                        speed=CS.vEgo,
+                                        freeze_integrator=freeze_integrator,
+                                        error_expected=error_expected)
       output_torque = self.torque_from_lateral_accel(output_lataccel, self.torque_params)
 
       pid_log.active = True
