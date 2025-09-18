@@ -37,7 +37,6 @@ function install_ubuntu_common_requirements() {
   # TODO: vendor the rest of these in third_party/
   $SUDO apt-get install -y --no-install-recommends \
     gcc-arm-none-eabi \
-    liblzma-dev \
     capnproto \
     libcapnp-dev \
     ffmpeg \
@@ -46,10 +45,8 @@ function install_ubuntu_common_requirements() {
     libavdevice-dev \
     libavutil-dev \
     libavfilter-dev \
-    libbz2-dev \
     libeigen3-dev \
     libffi-dev \
-    libglew-dev \
     libgles2-mesa-dev \
     libglfw3-dev \
     libglib2.0-0 \

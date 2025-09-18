@@ -34,13 +34,11 @@ fi
 
 brew bundle --file=- <<-EOS
 brew "git-lfs"
-brew "zlib"
 brew "capnp"
 brew "coreutils"
 brew "eigen"
 brew "ffmpeg"
 brew "glfw"
-brew "libarchive"
 brew "libusb"
 brew "libtool"
 brew "llvm"
