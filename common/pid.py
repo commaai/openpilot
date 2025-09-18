@@ -44,13 +44,15 @@ class PIDController:
     self.pos_limit = pos_limit
     self.neg_limit = neg_limit
 
-  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False):
+  def update(self, error, error_rate=0.0, speed=0.0, feedforward=0., freeze_integrator=False, error_expected = None):
     self.speed = speed
     self.p = float(error) * self.k_p
     self.f = feedforward * self.k_f
     self.d = error_rate * self.k_d
 
     if not freeze_integrator:
+      if error_expected_error is not None:
+        error = error_expected_error
       i = self.i + error * self.k_i * self.i_rate
 
       # Don't allow windup if already clipping
