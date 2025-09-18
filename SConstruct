@@ -356,3 +356,10 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
 external_sconscript = GetOption('external_sconscript')
 if external_sconscript:
   SConscript([external_sconscript])
+
+
+# add dependency on
+def add_global_dependencies(target, source, env):
+  for t in target:
+    env.Depends(t, env.File('tools/install_ubuntu_dependencies.sh'))
+env.AddPostAction(None, add_global_dependencies)
