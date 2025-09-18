@@ -116,6 +116,7 @@ else:
       f"#third_party/acados/{arch}/lib",
       f"{brew_prefix}/lib",
       f"{brew_prefix}/opt/openssl@3.0/lib",
+      f"{brew_prefix}/opt/llvm/lib/c++",
       "/System/Library/Frameworks/OpenGL.framework/Libraries",
     ]
 
