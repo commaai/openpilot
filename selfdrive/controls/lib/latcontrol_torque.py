@@ -67,8 +67,8 @@ class LatControlTorque(LatControl):
 
       low_speed_factor = np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y)**2
       # pid error calculated as difference between expected and measured lateral acceleration
-      setpoint = lag_compensated_desired_lateral_accel + low_speed_factor * lag_compensated_desired_lateral_accel
-      setpoint_expected = current_expected_lateral_accel + low_speed_factor * current_expected_lateral_accel
+      setpoint = lag_compensated_desired_lateral_accel + low_speed_factor * desired_curvature
+      setpoint_expected = current_expected_lateral_accel + low_speed_factor * current_expected_curvature
       measurement = actual_lateral_accel + low_speed_factor * actual_curvature
       gravity_adjusted_lateral_accel = lag_compensated_desired_lateral_accel - roll_compensation
       error_expected = float(setpoint_expected - measurement)
@@ -95,7 +95,7 @@ class LatControlTorque(LatControl):
       pid_log.f = float(self.pid.f)
       pid_log.output = float(-output_torque)  # TODO: log lat accel?
       pid_log.actualLateralAccel = float(actual_lateral_accel)
-      pid_log.desiredLateralAccel = float(current_expected_lateral_accel)
+      pid_log.desiredLateralAccel = float(lag_compensated_desired_lateral_accel)
       pid_log.saturated = bool(self._check_saturation(self.steer_max - abs(output_torque) < 1e-3, CS, steer_limited_by_safety, curvature_limited))
 
     # TODO left is positive in this convention
