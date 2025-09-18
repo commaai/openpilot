@@ -102,9 +102,12 @@ class AugmentedRoadView(CameraView):
 
     # Handle click events if no HUD interaction occurred
     if not self._hud_renderer.handle_mouse_event():
-      if self._click_callback and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
+      if self._click_callback is not None and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
         if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
           self._click_callback()
+
+  def _handle_mouse_release(self, _):
+    pass
 
   def _draw_border(self, rect: rl.Rectangle):
     border_color = BORDER_COLORS.get(ui_state.status, BORDER_COLORS[UIStatus.DISENGAGED])
