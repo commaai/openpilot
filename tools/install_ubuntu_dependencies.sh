@@ -20,18 +20,26 @@ fi
 # Install common packages
 function install_ubuntu_common_requirements() {
   $SUDO apt-get update
+
+  # normal stuff, mostly for the bare docker
   $SUDO apt-get install -y --no-install-recommends \
     ca-certificates \
     clang \
     build-essential \
+    curl \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    locales \
+    git \
+    git-lfs \
+    xvfb
+
+  # TODO: vendor the rest of these in third_party/
+  $SUDO apt-get install -y --no-install-recommends \
     gcc-arm-none-eabi \
     liblzma-dev \
     capnproto \
     libcapnp-dev \
-    curl \
-    libcurl4-openssl-dev \
-    git \
-    git-lfs \
     ffmpeg \
     libavformat-dev \
     libavcodec-dev \
@@ -48,12 +56,10 @@ function install_ubuntu_common_requirements() {
     libjpeg-dev \
     libqt5charts5-dev \
     libncurses5-dev \
-    libssl-dev \
     libusb-1.0-0-dev \
     libzmq3-dev \
     libzstd-dev \
     libsqlite3-dev \
-    locales \
     opencl-headers \
     ocl-icd-libopencl1 \
     ocl-icd-opencl-dev \
@@ -62,8 +68,7 @@ function install_ubuntu_common_requirements() {
     libqt5svg5-dev \
     libqt5serialbus5-dev  \
     libqt5x11extras5-dev \
-    libqt5opengl5-dev \
-    xvfb
+    libqt5opengl5-dev
 }
 
 # Install Ubuntu 24.04 LTS packages
@@ -73,8 +78,6 @@ function install_ubuntu_lts_latest_requirements() {
   $SUDO apt-get install -y --no-install-recommends \
     g++-12 \
     qtbase5-dev \
-    qtchooser \
-    qt5-qmake \
     qtbase5-dev-tools \
     python3-dev \
     python3-venv
