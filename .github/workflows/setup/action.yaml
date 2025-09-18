@@ -39,7 +39,7 @@ runs:
     - id: scons-cache
       uses: ./.github/workflows/auto-cache
       with:
-        path: .ci_cache/scons_cache
+        path: .ci_cache/scons_cache_not
         key: scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}-${{ github.sha }}
         restore-keys: |
           scons-${{ runner.arch }}-${{ env.CACHE_COMMIT_DATE }}
