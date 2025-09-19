@@ -101,6 +101,7 @@ void main() {
 
   bool inside = isPointInsidePolygon(pixel);
   float sd = (inside ? 1.0 : -1.0) * distanceToEdge(pixel);
+
   // ~1 pixel wide anti-aliasing
   float w = max(0.75, fwidth(sd));
 
