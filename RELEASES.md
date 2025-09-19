@@ -8,6 +8,7 @@ Version 0.10.1 (2025-09-08)
 * Honda City 2023 support thanks to vanillagorillaa and drFritz!
 * Honda N-Box 2018 support thanks to miettal!
 * Honda Odyssey 2021-25 support thanks to csouers and MVL!
+* Honda Passport 2026 support thanks to vanillagorillaa and MVL!
 
 Version 0.10.0 (2025-08-05)
 ========================
