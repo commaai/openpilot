@@ -99,19 +99,12 @@ float distanceToEdge(vec2 p) {
 void main() {
   vec2 pixel = fragTexCoord * resolution;
 
-  // Compute pixel size for anti-aliasing
-  vec2 pixelGrad = vec2(dFdx(pixel.x), dFdy(pixel.y));
-  float pixelSize = length(pixelGrad);
-  float aaWidth = max(0.5, pixelSize * 1.5);
-
   bool inside = isPointInsidePolygon(pixel);
-  if (inside) {
-    finalColor = useGradient == 1 ? getGradientColor(pixel) : fillColor;
-    return;
-  }
+  float sd = (inside ? 1.0 : -1.0) * distanceToEdge(pixel);
+  // ~1 pixel wide anti-aliasing
+  float w = max(0.75, fwidth(sd));
 
-  float sd = -distanceToEdge(pixel);
-  float alpha = smoothstep(-aaWidth, aaWidth, sd);
+  float alpha = smoothstep(-w, w, sd);
   if (alpha > 0.0){
     vec4 color = useGradient == 1 ? getGradientColor(pixel) : fillColor;
     finalColor = vec4(color.rgb, color.a * alpha);
