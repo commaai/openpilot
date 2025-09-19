@@ -178,7 +178,7 @@ class TestLoggerd:
     assert logged_params['AccessToken'] == b'', f"DONT_LOG param value was logged: {repr(logged_params['AccessToken'])}"
     for param_key, initData_key, v in fake_params:
       assert getattr(initData, initData_key) == v
-      assert logged_params[param_key].decode() == v
+      assert logged_params[param_key].tobytes().decode() == v
 
   @pytest.mark.xdist_group("camera_encoder_tests")  # setting xdist group ensures tests are run in same worker, prevents encoderd from crashing
   def test_rotation(self):

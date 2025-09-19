@@ -30,7 +30,7 @@ class LiveStreamVideoStreamTrack(TiciVideoStreamTrack):
 
     evta = getattr(msg, msg.which())
 
-    packet = av.Packet(evta.header + evta.data)
+    packet = av.Packet(evta.header.tobytes() + evta.data.tobytes())
     packet.time_base = self._time_base
     packet.pts = self._pts
 
