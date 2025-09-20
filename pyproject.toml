@@ -43,9 +43,6 @@ dependencies = [
   "libusb1",
   "spidev; platform_system == 'Linux'",
 
-  # modeld
-  "onnx >= 1.14.0",
-
   # logging
   "pyzmq",
   "sentry-sdk",
