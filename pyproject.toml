@@ -50,6 +50,8 @@ dependencies = [
   "pyzmq",
   "sentry-sdk",
   "xattr", # used in place of 'os.getxattr' for macos compatibility
+  "av",
+  "jpeglib",
 
   # athena
   "PyJWT",
@@ -101,7 +103,6 @@ testing = [
 ]
 
 dev = [
-  "av",
   "azure-identity",
   "azure-storage-blob",
   "dbus-next", # TODO: remove once we moved everything to jeepney
