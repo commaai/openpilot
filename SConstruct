@@ -5,7 +5,6 @@ import sysconfig
 import platform
 import numpy as np
 import panda
-import pathlib
 
 import SCons.Errors
 
@@ -206,9 +205,7 @@ env = Environment(
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
-panda_pkg = pathlib.Path(panda.__file__).parent.resolve()
-panda_root = panda_pkg.parent
-env.Append(CPPPATH=[str(panda_root)])
+env.AppendUnique(CPPPATH=[panda.INCLUDE_PATH])
 
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
