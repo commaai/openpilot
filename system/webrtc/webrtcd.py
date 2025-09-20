@@ -22,13 +22,6 @@ from openpilot.system.webrtc.schema import generate_field
 from cereal import messaging, log
 
 
-# pycapnp 2.2.0+ is using memoryview instead of bytes for data fields
-def memoryview_fallback(obj):
-  if isinstance(obj, memoryview):
-    return obj.tobytes().decode()
-  return obj
-
-
 class CerealOutgoingMessageProxy:
   def __init__(self, sm: messaging.SubMaster):
     self.sm = sm
@@ -44,8 +37,6 @@ class CerealOutgoingMessageProxy:
       msg_dict = [self.to_json(msg) for msg in msg_content]
     elif isinstance(msg_content, bytes):
       msg_dict = msg_content.decode()
-    elif isinstance(msg_content, memoryview):
-      msg_dict = msg_content.tobytes().decode()
     else:
       msg_dict = msg_content
 
@@ -60,7 +51,7 @@ class CerealOutgoingMessageProxy:
       msg_dict = self.to_json(self.sm[service])
       mono_time, valid = self.sm.logMonoTime[service], self.sm.valid[service]
       outgoing_msg = {"type": service, "logMonoTime": mono_time, "valid": valid, "data": msg_dict}
-      encoded_msg = json.dumps(outgoing_msg, default=memoryview_fallback).encode()
+      encoded_msg = json.dumps(outgoing_msg).encode()
       for channel in self.channels:
         channel.send(encoded_msg)
 
