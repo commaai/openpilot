@@ -121,7 +121,7 @@ class V4LEncoder(VideoEncoder):
     self._free_in = list(range(req_out.count))
     self._free_lock = threading.Lock()
     self._free_cv = threading.Condition(self._free_lock)
-    self._extras = []  # (frame_id, ts_sof, ts_eof)
+    self._extras: list[tuple[int, int, int]] = []  # (frame_id, ts_sof, ts_eof)
     self._extras_lock = threading.Lock()
     self._header = None
 

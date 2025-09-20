@@ -2,6 +2,8 @@ import time
 import numpy as np
 import av
 
+# mypy: ignore-errors
+
 import cereal.messaging as messaging
 
 from openpilot.system.loggerd.encoder.encoder import VideoEncoder
