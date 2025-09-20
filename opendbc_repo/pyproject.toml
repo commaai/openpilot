@@ -1,0 +1,131 @@
+[project]
+name = "opendbc"
+version = "0.2.1"
+description = "CAN bus databases and tools"
+license = { file = "LICENSE" }
+authors = [{ name = "Vehicle Researcher", email = "user@comma.ai" }]
+readme = "README.md"
+requires-python = ">=3.9,<3.13"  # pycapnp doesn't work with 3.13
+
+urls = { "homepage" = "https://github.com/commaai/opendbc" }
+
+dependencies = [
+  "scons",
+  "numpy",
+  "crcmod",
+  "tqdm",
+  "pycapnp==2.1.0",
+  "pycryptodome",
+]
+
+[project.optional-dependencies]
+testing = [
+  "cffi",
+  "gcovr",
+  "pytest",
+  "pytest-coverage",
+  "pytest-mock",
+  "pytest-randomly",
+  # https://github.com/pytest-dev/pytest-xdist/pull/1229
+  "pytest-xdist @ git+https://github.com/sshane/pytest-xdist@2b4372bd62699fb412c4fe2f95bf9f01bd2018da",
+  "pytest-subtests",
+  "hypothesis==6.47.*",
+  "parameterized>=0.8,<0.9",
+
+  # static analysis
+  "ruff",
+  "ty",
+  "lefthook",
+  "cpplint",
+  "codespell",
+]
+docs = [
+  "Jinja2",
+  "natsort",
+]
+examples = [
+  "inputs",
+  "matplotlib",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.pytest.ini_options]
+addopts = "-Werror --strict-config --strict-markers --durations=10 -n auto"
+python_files = "test_*.py"
+testpaths = [
+  "opendbc"
+]
+
+[tool.codespell]
+quiet-level = 3
+ignore-words-list = "alo,ba,bu,deque,hda,grey,arange"
+builtin = "clear,rare,informal,code,names,en-GB_to_en-US"
+check-hidden = true
+
+[tool.mypy]
+# helpful warnings
+warn_redundant_casts=true
+warn_unreachable=true
+warn_unused_ignores=true
+
+# restrict dynamic typing
+warn_return_any=true
+
+# allow implicit optionals for default args
+implicit_optional = true
+
+explicit_package_bases=true
+
+# https://beta.ruff.rs/docs/configuration/#using-pyprojecttoml
+[tool.ruff]
+line-length = 160
+indent-width = 2
+target-version="py311"
+
+[tool.ruff.lint]
+preview = true
+select = [
+  "E", "F", "W", "PIE", "C4", "ISC", "A", "B",
+  "NPY", # numpy
+  "UP",  # pyupgrade
+  "TRY203", "TRY400", "TRY401", # try/excepts
+  "RUF008", "RUF100",
+  "TID251",
+  "PLR1704",
+  "INP001",
+]
+ignore = [
+  "W292",
+  "E741",
+  "E402",
+  "C408",
+  "ISC003",
+  "B027",
+  "B024",
+  "UP031",
+  "NPY002",  # new numpy random syntax is worse
+  "C420",
+  "E111", "E114", "E226", "E241",
+  "E221", "E265", "E266", "E261",
+  "E252", "E251", "E231", "E225",
+  "E262", "C419",
+]
+flake8-implicit-str-concat.allow-multiline=false
+
+[tool.ruff.lint.per-file-ignores]
+"site_scons/*" = ["ALL"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"pytest.main".msg = "pytest.main requires special handling that is easy to mess up!"
+"numpy.mean".msg = "Sum and divide. np.mean is slow"
+# TODO: re-enable when all tests are converted to pytest
+#"unittest".msg = "Use pytest"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.package-data]
+"opendbc.safety" = ["*.h", "board/*.h", "board/drivers/*.h", "modes/*.h"]
