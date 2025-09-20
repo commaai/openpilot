@@ -3,8 +3,9 @@ import threading
 import multiprocessing
 import bisect
 from collections import defaultdict
-import tqdm
+from tqdm import tqdm
 from openpilot.common.swaglog import cloudlog
+from openpilot.selfdrive.test.process_replay.migration import migrate_all
 from openpilot.tools.lib.logreader import _LogFileReader, LogReader
 
 
@@ -70,9 +71,6 @@ def extract_field_types(schema, prefix, field_types_dict):
 
 
 def _convert_to_optimal_dtype(values_list, capnp_type):
-  if not values_list:
-    return np.array([])
-
   dtype_mapping = {
     'bool': np.bool_, 'int8': np.int8, 'int16': np.int16, 'int32': np.int32, 'int64': np.int64,
     'uint8': np.uint8, 'uint16': np.uint16, 'uint32': np.uint32, 'uint64': np.uint64,
@@ -80,8 +78,8 @@ def _convert_to_optimal_dtype(values_list, capnp_type):
     'enum': object, 'anyPointer': object,
   }
 
-  target_dtype = dtype_mapping.get(capnp_type)
-  return np.array(values_list, dtype=target_dtype) if target_dtype else np.array(values_list)
+  target_dtype = dtype_mapping.get(capnp_type, object)
+  return np.array(values_list, dtype=target_dtype)
 
 
 def _match_field_type(field_path, field_types):
@@ -92,6 +90,21 @@ def _match_field_type(field_path, field_types):
   template_parts = [p if not p.isdigit() else '*' for p in path_parts]
   template_path = '/'.join(template_parts)
   return field_types.get(template_path)
+
+
+def _get_field_times_values(segment, field_name):
+  if field_name not in segment:
+    return None, None
+
+  field_data = segment[field_name]
+  segment_times = segment['t']
+
+  if field_data['sparse']:
+    if len(field_data['t_index']) == 0:
+      return None, None
+    return segment_times[field_data['t_index']], field_data['values']
+  else:
+    return segment_times, field_data['values']
 
 
 def msgs_to_time_series(msgs):
@@ -110,16 +123,22 @@ def msgs_to_time_series(msgs):
       max_time = timestamp
 
     sub_msg = getattr(msg, typ)
-    if not hasattr(sub_msg, 'to_dict') or typ in ('qcomGnss', 'ubloxGnss'):
+    if not hasattr(sub_msg, 'to_dict'):
       continue
 
     if hasattr(sub_msg, 'schema') and typ not in extracted_schemas:
       extract_field_types(sub_msg.schema, typ, field_types)
       extracted_schemas.add(typ)
 
-    msg_dict = sub_msg.to_dict(verbose=True)
+    try:
+      msg_dict = sub_msg.to_dict(verbose=True)
+    except Exception as e:
+      cloudlog.warning(f"Failed to convert sub_msg.to_dict() for message of type: {typ}: {e}")
+      continue
+
     flat_dict = flatten_dict(msg_dict)
     flat_dict['_valid'] = msg.valid
+    field_types[f"{typ}/_valid"] = 'bool'
 
     type_data = collected_data[typ]
     columns, sparse_fields = type_data['columns'], type_data['sparse_fields']
@@ -152,11 +171,26 @@ def msgs_to_time_series(msgs):
         values = [None] * (len(data['timestamps']) - len(values)) + values
         sparse_fields.add(field_name)
 
-      if field_name in sparse_fields:
-        typ_result[field_name] = np.array(values, dtype=object)
-      else:
-        capnp_type = _match_field_type(f"{typ}/{field_name}", field_types)
-        typ_result[field_name] = _convert_to_optimal_dtype(values, capnp_type)
+      capnp_type = _match_field_type(f"{typ}/{field_name}", field_types)
+
+      if field_name in sparse_fields:  # extract non-None values and their indices
+        non_none_indices = []
+        non_none_values = []
+        for i, value in enumerate(values):
+          if value is not None:
+            non_none_indices.append(i)
+            non_none_values.append(value)
+
+        if non_none_values: # check if indices > uint16 max, currently would require a 1000+ Hz signal since indices are within segments
+          assert max(non_none_indices) <= 65535, f"Sparse field {typ}/{field_name} has timestamp indices exceeding uint16 max. Max: {max(non_none_indices)}"
+
+        typ_result[field_name] = {
+          'values': _convert_to_optimal_dtype(non_none_values, capnp_type),
+          'sparse': True,
+          't_index': np.array(non_none_indices, dtype=np.uint16),
+        }
+      else:  # dense representation
+        typ_result[field_name] = {'values': _convert_to_optimal_dtype(values, capnp_type), 'sparse': False}
 
     final_result[typ] = typ_result
 
@@ -166,7 +200,8 @@ def msgs_to_time_series(msgs):
 def _process_segment(segment_identifier: str):
   try:
     lr = _LogFileReader(segment_identifier, sort_by_time=True)
-    return msgs_to_time_series(lr)
+    migrated_msgs = migrate_all(lr)
+    return msgs_to_time_series(migrated_msgs)
   except Exception as e:
     cloudlog.warning(f"Warning: Failed to process segment {segment_identifier}: {e}")
     return {}, 0.0, 0.0
@@ -195,22 +230,31 @@ class DataManager:
       times, values = [], []
 
       for segment in self._segments:
-        if msg_type in segment and field in segment[msg_type]:
-          times.append(segment[msg_type]['t'])
-          values.append(segment[msg_type][field])
+        if msg_type in segment:
+          field_times, field_values = _get_field_times_values(segment[msg_type], field)
+          if field_times is not None:
+            times.append(field_times)
+            values.append(field_values)
 
       if not times:
-        return [], []
+        return np.array([]), np.array([])
 
       combined_times = np.concatenate(times) - self._start_time
-      if len(values) > 1 and any(arr.dtype != values[0].dtype for arr in values):
-        values = [arr.astype(object) for arr in values]
 
-      return combined_times, np.concatenate(values)
+      if len(values) > 1:
+        first_dtype = values[0].dtype
+        if all(arr.dtype == first_dtype for arr in values):  # check if all arrays have compatible dtypes
+          combined_values = np.concatenate(values)
+        else:
+          combined_values = np.concatenate([arr.astype(object) for arr in values])
+      else:
+        combined_values = values[0] if values else np.array([])
+
+      return combined_times, combined_values
 
   def get_value_at(self, path: str, time: float):
     with self._lock:
-      MAX_LOOKBACK = 5.0 # seconds
+      MAX_LOOKBACK = 5.0  # seconds
       absolute_time = self._start_time + time
       message_type, field = path.split('/', 1)
       current_index = bisect.bisect_right(self._segment_starts, absolute_time) - 1
@@ -218,14 +262,14 @@ class DataManager:
         if not 0 <= index < len(self._segments):
           continue
         segment = self._segments[index].get(message_type)
-        if not segment or field not in segment:
+        if not segment:
           continue
-        times = segment['t']
-        if len(times) == 0 or (index != current_index and absolute_time - times[-1] > MAX_LOOKBACK):
+        times, values = _get_field_times_values(segment, field)
+        if times is None or len(times) == 0 or (index != current_index and absolute_time - times[-1] > MAX_LOOKBACK):
           continue
         position = np.searchsorted(times, absolute_time, 'right') - 1
         if position >= 0 and absolute_time - times[position] <= MAX_LOOKBACK:
-          return segment[field][position]
+          return values[position]
       return None
 
   def get_all_paths(self):
@@ -237,10 +281,9 @@ class DataManager:
       return self._duration
 
   def is_plottable(self, path: str):
-    data = self.get_timeseries(path)
-    if data is None:
+    _, values = self.get_timeseries(path)
+    if len(values) == 0:
       return False
-    _, values = data
     return np.issubdtype(values.dtype, np.number) or np.issubdtype(values.dtype, np.bool_)
 
   def add_observer(self, callback):
@@ -271,8 +314,14 @@ class DataManager:
         cloudlog.warning(f"Warning: No log segments found for route: {route}")
         return
 
+      total_segments = len(lr.logreader_identifiers)
+      with self._lock:
+        observers = self._observers.copy()
+      for callback in observers:
+        callback({'metadata_loaded': True, 'total_segments': total_segments})
+
       num_processes = max(1, multiprocessing.cpu_count() // 2)
-      with multiprocessing.Pool(processes=num_processes) as pool, tqdm.tqdm(total=len(lr.logreader_identifiers), desc="Processing Segments") as pbar:
+      with multiprocessing.Pool(processes=num_processes) as pool, tqdm(total=len(lr.logreader_identifiers), desc="Processing Segments") as pbar:
         for segment_result, start_time, end_time in pool.imap(_process_segment, lr.logreader_identifiers):
           pbar.update(1)
           if segment_result:
@@ -292,9 +341,9 @@ class DataManager:
       self._duration = end_time - self._start_time
 
       for msg_type, data in segment_data.items():
-        for field in data.keys():
-          if field != 't':
-            self._paths.add(f"{msg_type}/{field}")
+        for field_name in data.keys():
+          if field_name != 't':
+            self._paths.add(f"{msg_type}/{field_name}")
 
       observers = self._observers.copy()
 
