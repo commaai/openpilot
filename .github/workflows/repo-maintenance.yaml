@@ -47,7 +47,10 @@ jobs:
         python3 -m ensurepip --upgrade
         pip3 install uv
         uv lock --upgrade 2>&1 | tee uv_output
-        echo "UPDATES=$(tail -n +3 uv_output)" >> $GITHUB_ENV
+        echo 'UPDATES<<EOF' >> $GITHUB_ENV
+        tail -n +3 uv_output >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
+        echo $UPDATES
         rm uv_output
     - name: bump submodules
       run: |
