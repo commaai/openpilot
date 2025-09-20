@@ -46,7 +46,10 @@ jobs:
       run: |
         python3 -m ensurepip --upgrade
         pip3 install uv
-        uv lock --upgrade
+        uv lock --upgrade 2>&1 | tee uv_output
+        echo 'UPDATES:<<EOF' >> $GITHUB_ENV
+        tail -n +3 uv_output >> $GITHUB_ENV
+        echo 'EOF' >> $GITHUB_ENV
     - name: bump submodules
       run: |
         git config --global --add safe.directory '*'
@@ -68,5 +71,10 @@ jobs:
         branch: auto-package-updates
         base: master
         delete-branch: true
-        body: 'Automatic PR from repo-maintenance -> package_updates'
+        body: |
+          Automatic PR from repo-maintenance -> package_updates
+
+          ```
+          ${{ env.UPDATES }}
+          ```
         labels: bot
