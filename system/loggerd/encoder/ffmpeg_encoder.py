@@ -1,8 +1,9 @@
 import time
 import numpy as np
-import av
+import av as _av
+from typing import Any, cast
+av: Any = _av
 
-# mypy: ignore-errors
 
 import cereal.messaging as messaging
 
@@ -10,6 +11,10 @@ from openpilot.system.loggerd.encoder.encoder import VideoEncoder
 
 
 class FfmpegEncoder(VideoEncoder):
+  def __init__(self, *args, **kwargs) -> None:
+    super().__init__(*args, **kwargs)
+    self.codec: Any | None = None
+
   def open(self) -> None:
     settings = self.encoder_info.get_settings(self.in_width)
     codec_name = "h264" if settings.encode_type in ("QCAMERA_H264", "LIVESTREAM_H264") else "hevc"
@@ -25,7 +30,7 @@ class FfmpegEncoder(VideoEncoder):
     self.counter = 0
 
   def close(self) -> None:
-    if hasattr(self, "codec") and self.codec:
+    if self.codec:
       try:
         for _ in self.codec.encode(None):
           pass
@@ -68,13 +73,14 @@ class FfmpegEncoder(VideoEncoder):
     uv = np.asarray(buf.data[buf.uv_offset:buf.uv_offset + uv_rows * S], dtype=np.uint8).reshape((uv_rows, S))[:, :W].copy(order="C")
 
     frame = av.VideoFrame(W, H, "nv12")
-    frame.planes[0].update(y)
-    frame.planes[1].update(uv)
+    frame.planes[0].update(cast(bytes, y))
+    frame.planes[1].update(cast(bytes, uv))
 
-    if self.codec.pix_fmt.name != "nv12":
+    if self.codec and self.codec.pix_fmt.name != "nv12":
       frame = frame.reformat(format=self.codec.pix_fmt.name, width=self.out_width, height=self.out_height)
 
     ret = 0
+    assert self.codec is not None
     for pkt in self.codec.encode(frame):
       self._publish_packet(pkt, frame_id, timestamp_sof, timestamp_eof)
       ret = self.counter
