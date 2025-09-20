@@ -16,6 +16,7 @@ dependencies = [
   "sympy",        # rednose + friends
   "crcmod",       # cars + qcomgpsd
   "tqdm",         # cars (fw_versions.py) on start + many one-off uses
+  "pandacan @ git+https://github.com/prayanshchh/panda@proper_pip_package",
 
   # hardwared
   "smbus2", # configuring amp
