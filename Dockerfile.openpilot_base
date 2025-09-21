@@ -32,6 +32,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     vim \
     libx11-6 \
     wget \
+    scons \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir -p /tmp/opencl-driver-intel && \

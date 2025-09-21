@@ -1387,7 +1387,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0" },
     { name = "onnx", specifier = ">=1.14.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
-    { name = "pandacan", git = "https://github.com/prayanshchh/panda?rev=proper_pip_package" },
+    { name = "pandacan", path = "../panda/dist/pandacan-0.0.10-py3-none-any.whl" },
     { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8,<0.9" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
@@ -1491,11 +1491,33 @@ wheels = [
 [[package]]
 name = "pandacan"
 version = "0.0.10"
-source = { git = "https://github.com/prayanshchh/panda?rev=proper_pip_package#6fe5e5fa6bd146fc4b8a58d91953c628ca5dd534" }
+source = { path = "../panda/dist/pandacan-0.0.10-py3-none-any.whl" }
 dependencies = [
     { name = "libusb1" },
     { name = "opendbc" },
 ]
+wheels = [
+    { filename = "pandacan-0.0.10-py3-none-any.whl", hash = "sha256:f8365a8b25add01729afaf9722c80ca3da11cbce46135b93a7ef4db5c2be46be" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "cffi", marker = "extra == 'dev'" },
+    { name = "flaky", marker = "extra == 'dev'" },
+    { name = "libusb1" },
+    { name = "mypy", marker = "extra == 'dev'" },
+    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=master" },
+    { name = "pytest", marker = "extra == 'dev'" },
+    { name = "pytest-mock", marker = "extra == 'dev'" },
+    { name = "pytest-randomly", marker = "extra == 'dev'" },
+    { name = "pytest-timeout", marker = "extra == 'dev'" },
+    { name = "ruff", marker = "extra == 'dev'" },
+    { name = "scons", marker = "extra == 'dev'" },
+    { name = "setuptools", marker = "extra == 'dev'" },
+    { name = "spidev", marker = "sys_platform == 'linux' and extra == 'dev'" },
+    { name = "spidev2", marker = "sys_platform == 'linux' and extra == 'dev'" },
+]
+provides-extras = ["dev"]
 
 [[package]]
 name = "parameterized"
