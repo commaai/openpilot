@@ -4,6 +4,7 @@ import sys
 import sysconfig
 import platform
 import numpy as np
+import panda
 
 import SCons.Errors
 
@@ -204,6 +205,8 @@ env = Environment(
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
+env.AppendUnique(CPPPATH=[panda.INCLUDE_PATH])
+
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
   darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
@@ -326,10 +329,6 @@ SConscript(['cereal/SConscript'])
 Import('socketmaster', 'msgq')
 messaging = [socketmaster, msgq, 'capnp', 'kj',]
 Export('messaging')
-
-
-# Build other submodules
-SConscript(['panda/SConscript'])
 
 # Build rednose library
 SConscript(['rednose/SConscript'])
