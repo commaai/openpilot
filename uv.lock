@@ -1387,7 +1387,7 @@ requires-dist = [
     { name = "numpy", specifier = ">=2.0" },
     { name = "onnx", specifier = ">=1.14.0" },
     { name = "opencv-python-headless", marker = "extra == 'dev'" },
-    { name = "pandacan", path = "../panda/dist/pandacan-0.0.10-py3-none-any.whl" },
+    { name = "pandacan", git = "https://github.com/prayanshchh/panda?rev=proper_pip_package" },
     { name = "parameterized", marker = "extra == 'dev'", specifier = ">=0.8,<0.9" },
     { name = "pre-commit-hooks", marker = "extra == 'testing'" },
     { name = "psutil" },
@@ -1491,33 +1491,11 @@ wheels = [
 [[package]]
 name = "pandacan"
 version = "0.0.10"
-source = { path = "../panda/dist/pandacan-0.0.10-py3-none-any.whl" }
+source = { git = "https://github.com/prayanshchh/panda?rev=proper_pip_package#b3f487c84131c79ba12a6fc4196beead6c30bf2f" }
 dependencies = [
     { name = "libusb1" },
     { name = "opendbc" },
 ]
-wheels = [
-    { filename = "pandacan-0.0.10-py3-none-any.whl", hash = "sha256:f8365a8b25add01729afaf9722c80ca3da11cbce46135b93a7ef4db5c2be46be" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "cffi", marker = "extra == 'dev'" },
-    { name = "flaky", marker = "extra == 'dev'" },
-    { name = "libusb1" },
-    { name = "mypy", marker = "extra == 'dev'" },
-    { name = "opendbc", git = "https://github.com/commaai/opendbc.git?rev=master" },
-    { name = "pytest", marker = "extra == 'dev'" },
-    { name = "pytest-mock", marker = "extra == 'dev'" },
-    { name = "pytest-randomly", marker = "extra == 'dev'" },
-    { name = "pytest-timeout", marker = "extra == 'dev'" },
-    { name = "ruff", marker = "extra == 'dev'" },
-    { name = "scons", marker = "extra == 'dev'" },
-    { name = "setuptools", marker = "extra == 'dev'" },
-    { name = "spidev", marker = "sys_platform == 'linux' and extra == 'dev'" },
-    { name = "spidev2", marker = "sys_platform == 'linux' and extra == 'dev'" },
-]
-provides-extras = ["dev"]
 
 [[package]]
 name = "parameterized"
@@ -4281,11 +4259,11 @@ wheels = [
 
 [[package]]
 name = "pyparsing"
-version = "3.2.4"
+version = "3.2.5"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/98/c9/b4594e6a81371dfa9eb7a2c110ad682acf985d96115ae8b25a1d63b4bf3b/pyparsing-3.2.4.tar.gz", hash = "sha256:fff89494f45559d0f2ce46613b419f632bbb6afbdaed49696d322bcf98a58e99", size = 1098809, upload-time = "2025-09-13T05:47:19.732Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/f2/a5/181488fc2b9d093e3972d2a472855aae8a03f000592dbfce716a512b3359/pyparsing-3.2.5.tar.gz", hash = "sha256:2df8d5b7b2802ef88e8d016a2eb9c7aeaa923529cd251ed0fe4608275d4105b6", size = 1099274, upload-time = "2025-09-21T04:11:06.277Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/53/b8/fbab973592e23ae313042d450fc26fa24282ebffba21ba373786e1ce63b4/pyparsing-3.2.4-py3-none-any.whl", hash = "sha256:91d0fcde680d42cd031daf3a6ba20da3107e08a75de50da58360e7d94ab24d36", size = 113869, upload-time = "2025-09-13T05:47:17.863Z" },
+    { url = "https://files.pythonhosted.org/packages/10/5e/1aa9a93198c6b64513c9d7752de7422c06402de6600a8767da1524f9570b/pyparsing-3.2.5-py3-none-any.whl", hash = "sha256:e38a4f02064cf41fe6593d328d0512495ad1f3d8a91c4f73fc401b3079a59a5e", size = 113890, upload-time = "2025-09-21T04:11:04.117Z" },
 ]
 
 [[package]]
