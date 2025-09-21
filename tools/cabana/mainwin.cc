@@ -122,7 +122,7 @@ void MainWindow::createActions() {
   auto undo_act = UndoStack::instance()->createUndoAction(this, tr("&Undo"));
   undo_act->setShortcuts(QKeySequence::Undo);
   edit_menu->addAction(undo_act);
-  auto redo_act = UndoStack::instance()->createRedoAction(this, tr("&Rndo"));
+  auto redo_act = UndoStack::instance()->createRedoAction(this, tr("&Redo"));
   redo_act->setShortcuts(QKeySequence::Redo);
   edit_menu->addAction(redo_act);
   edit_menu->addSeparator();
