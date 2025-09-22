@@ -113,7 +113,6 @@ def setup_git_options(cwd: str) -> None:
     ("protocol.version", "2"),
     ("gc.auto", "0"),
     ("gc.autoDetach", "false"),
-    ("remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -390,7 +389,6 @@ class Updater:
     cloudlog.info("git reset in progress")
     cmds = [
       ["git", "checkout", "--force", "--no-recurse-submodules", "-B", branch, "FETCH_HEAD"],
-      ["git", "branch", "--set-upstream-to", f"origin/{branch}"],
       ["git", "reset", "--hard"],
       ["git", "clean", "-xdff"],
       ["git", "submodule", "sync"],

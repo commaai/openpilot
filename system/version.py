@@ -37,7 +37,9 @@ def is_prebuilt(path: str = BASEDIR) -> bool:
 
 @cache
 def is_dirty(cwd: str = BASEDIR) -> bool:
-  if not get_origin() or not get_short_branch():
+  origin = get_origin()
+  branch = get_branch()
+  if not origin or not branch:
     return True
 
   dirty = False
@@ -50,9 +52,6 @@ def is_dirty(cwd: str = BASEDIR) -> bool:
       except subprocess.CalledProcessError:
         pass
 
-      branch = get_branch()
-      if not branch:
-        return True
       dirty = (subprocess.call(["git", "diff-index", "--quiet", branch, "--"], cwd=cwd)) != 0
   except subprocess.CalledProcessError:
     cloudlog.exception("git subprocess failed while checking dirty")
