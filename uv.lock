@@ -729,6 +729,26 @@ wheels = [
 ]
 
 [[package]]
+name = "jpeglib"
+version = "1.0.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "numpy" },
+    { name = "setuptools" },
+    { name = "wheel" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/99/d7/5cadeb5790320923e205e5d682acdc63740bf40973d6bf15f7625a149eb8/jpeglib-1.0.2.tar.gz", hash = "sha256:25eadd5497c94771c53deb6aa6646f0030ac24509fa9c3b89e984e11390bf3d9", size = 5671347, upload-time = "2025-09-18T16:45:49.463Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8f/bd/1e49f362ad057d237f27a5c4ef7bc35adc6e1928dab51dce3c565ad44d79/jpeglib-1.0.2-cp38-abi3-macosx_10_9_universal2.whl", hash = "sha256:fa065e7239664facd4a4c8910968ca729c75ad811aa36b23e3b8dba14d3163b2", size = 14453096, upload-time = "2025-09-18T16:45:34.228Z" },
+    { url = "https://files.pythonhosted.org/packages/33/54/d55db299c1572199847ef0707e1855e5a9f1d33abebc3148405c0760446d/jpeglib-1.0.2-cp38-abi3-macosx_10_9_x86_64.whl", hash = "sha256:7d160a4b0169e737fef2b3a8e58074ccb463425baf47725ff480818fd26dd4ff", size = 10690880, upload-time = "2025-09-18T16:45:36.643Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/9e/3e72638f1baf356edc683aad86c08034b5facdec912253be846dc0a60ccd/jpeglib-1.0.2-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:1e97ed4c232d0a76b80d823ac8a72ce0e8c68003929de599c27423dfdacf5e96", size = 10533860, upload-time = "2025-09-18T16:45:38.651Z" },
+    { url = "https://files.pythonhosted.org/packages/b4/b5/d3f0560b0b420aa5dccac348598217be8691e6cdd5a5269c805b85fe2e36/jpeglib-1.0.2-cp38-abi3-manylinux2010_i686.manylinux2014_i686.manylinux_2_12_i686.manylinux_2_17_i686.whl", hash = "sha256:e03cc447815efaf4cf0c22333ec207a9a8a0b9245bd0bafd15b30c2156ed1290", size = 22136496, upload-time = "2025-09-18T16:45:40.962Z" },
+    { url = "https://files.pythonhosted.org/packages/5a/f4/d7b8c2d3934208963fd2388cf4316043cb6c8e8c7d55780b8d9a45b4f8b2/jpeglib-1.0.2-cp38-abi3-manylinux2014_x86_64.manylinux_2_17_x86_64.whl", hash = "sha256:feef6e94c34cf8b27f7a888c1c8567c34686c32b1e6edb16716931e4ee18fece", size = 22754356, upload-time = "2025-09-18T16:45:43.727Z" },
+    { url = "https://files.pythonhosted.org/packages/a8/c5/7d9d2e594b897b6c24fae5dcdd345bbcd3098f65e26943a12cb48a5d687d/jpeglib-1.0.2-cp38-abi3-win32.whl", hash = "sha256:0b2d25da03f8710181367a4f1143215ad872c63b61dcad6665258b7ed051a5fb", size = 9394019, upload-time = "2025-09-18T16:45:45.942Z" },
+    { url = "https://files.pythonhosted.org/packages/bb/5b/542403cdd0330733eeef421e4adc833d9862ed9b071f1607defe1f5cbe87/jpeglib-1.0.2-cp38-abi3-win_amd64.whl", hash = "sha256:abcc0be1c0b6adbff02b3b42805474fddbf6ac3182d619117a7e7c5cfa8f9bd2", size = 9852148, upload-time = "2025-09-18T16:45:47.928Z" },
+]
+
+[[package]]
 name = "json-rpc"
 version = "1.15.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1261,12 +1281,14 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "aiortc" },
+    { name = "av" },
     { name = "casadi" },
     { name = "cffi" },
     { name = "crcmod" },
     { name = "cython" },
     { name = "future-fstrings" },
     { name = "inputs" },
+    { name = "jpeglib" },
     { name = "json-rpc" },
     { name = "kaitaistruct" },
     { name = "libusb1" },
@@ -1298,7 +1320,6 @@ dependencies = [
 
 [package.optional-dependencies]
 dev = [
-    { name = "av" },
     { name = "azure-identity" },
     { name = "azure-storage-blob" },
     { name = "dbus-next" },
@@ -1348,7 +1369,7 @@ tools = [
 requires-dist = [
     { name = "aiohttp" },
     { name = "aiortc" },
-    { name = "av", marker = "extra == 'dev'" },
+    { name = "av" },
     { name = "azure-identity", marker = "extra == 'dev'" },
     { name = "azure-storage-blob", marker = "extra == 'dev'" },
     { name = "casadi", specifier = ">=3.6.6" },
@@ -1364,6 +1385,7 @@ requires-dist = [
     { name = "inputs" },
     { name = "jeepney", marker = "extra == 'dev'" },
     { name = "jinja2", marker = "extra == 'docs'" },
+    { name = "jpeglib" },
     { name = "json-rpc" },
     { name = "kaitaistruct" },
     { name = "libusb1" },
@@ -4947,6 +4969,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e6/30/fba0d96b4b5fbf5948ed3f4681f7da2f9f64512e1d303f94b4cc174c24a5/websocket_client-1.8.0.tar.gz", hash = "sha256:3239df9f44da632f96012472805d40a23281a991027ce11d2f45a6f24ac4c3da", size = 54648, upload-time = "2024-04-23T22:16:16.976Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/84/44687a29792a70e111c5c477230a72c4b957d88d16141199bf9acb7537a3/websocket_client-1.8.0-py3-none-any.whl", hash = "sha256:17b44cc997f5c498e809b22cdf2d9c7a9e71c02c8cc2b6c56e7c2d1239bfa526", size = 58826, upload-time = "2024-04-23T22:16:14.422Z" },
+]
+
+[[package]]
+name = "wheel"
+version = "0.45.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/98/2d9906746cdc6a6ef809ae6338005b3f21bb568bea3165cfc6a243fdc25c/wheel-0.45.1.tar.gz", hash = "sha256:661e1abd9198507b1409a20c02106d9670b2576e916d58f520316666abca6729", size = 107545, upload-time = "2024-11-23T00:18:23.513Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/0b/2c/87f3254fd8ffd29e4c02732eee68a83a1d3c346ae39bc6822dcbcb697f2b/wheel-0.45.1-py3-none-any.whl", hash = "sha256:708e7481cc80179af0e556bbf0cc00b8444c7321e2700b8d8580231d13017248", size = 72494, upload-time = "2024-11-23T00:18:21.207Z" },
 ]
 
 [[package]]
