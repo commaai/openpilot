@@ -318,6 +318,12 @@ class GuiApplication:
   def height(self):
     return self._height
 
+  def _load_languages(self):
+    LANGUAGE_DIR = os.path.join(BASEDIR, "selfdrive", "ui", "translations")
+    for file in os.listdir(LANGUAGE_DIR):
+      if file.endswith(".ts"):
+        pass
+
   def _load_fonts(self):
     # Create a character set from our keyboard layouts
     from openpilot.system.ui.widgets.keyboard import KEYBOARD_LAYOUTS
