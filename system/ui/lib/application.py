@@ -12,6 +12,7 @@ from typing import NamedTuple
 from importlib.resources import as_file, files
 from openpilot.common.swaglog import cloudlog
 from openpilot.system.hardware import HARDWARE, PC
+from openpilot.system.ui.lib.multilang import Multilang
 from openpilot.common.realtime import Ratekeeper
 
 DEFAULT_FPS = int(os.getenv("FPS", "60"))
@@ -135,6 +136,7 @@ class GuiApplication:
     self._window_close_requested = False
     self._trace_log_callback = None
     self._modal_overlay = ModalOverlay()
+    self._multilang = Multilang()
 
     self._mouse = MouseState(self._scale)
     self._mouse_events: list[MouseEvent] = []
@@ -318,11 +320,6 @@ class GuiApplication:
   def height(self):
     return self._height
 
-  def _load_languages(self):
-    LANGUAGE_DIR = os.path.join(BASEDIR, "selfdrive", "ui", "translations")
-    for file in os.listdir(LANGUAGE_DIR):
-      if file.endswith(".ts"):
-        pass
 
   def _load_fonts(self):
     # Create a character set from our keyboard layouts
