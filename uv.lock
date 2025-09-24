@@ -1491,7 +1491,7 @@ wheels = [
 [[package]]
 name = "pandacan"
 version = "0.0.10"
-source = { git = "https://github.com/prayanshchh/panda?rev=proper_pip_package#2a135f0e5c4a43b8904136d59507d29345b2c8ff" }
+source = { git = "https://github.com/prayanshchh/panda?rev=proper_pip_package#c93a96abe3d0e9db0b7a580b11e4c53e4bb0cfea" }
 dependencies = [
     { name = "libusb1" },
     { name = "opendbc" },
