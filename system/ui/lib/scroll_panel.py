@@ -1,8 +1,8 @@
-import time
+import os
 import pyray as rl
-from collections import deque
 from enum import IntEnum
-from openpilot.system.ui.lib.application import gui_app, MouseEvent, MousePos
+from openpilot.system.ui.lib.application import gui_app, MouseEvent
+from collections import deque
 
 # Scroll constants for smooth scrolling behavior
 MOUSE_WHEEL_SCROLL_SPEED = 30
@@ -15,12 +15,15 @@ MAX_BOUNCE_DISTANCE = 150      # Maximum distance for bounce effect
 FLICK_MULTIPLIER = 1.8         # Multiplier for flick gestures
 VELOCITY_HISTORY_SIZE = 5      # Track velocity over multiple frames for smoother motion
 
+DEBUG = os.getenv("DEBUG_SCROLL", "0") == "1"
 
+
+# from https://ariya.io/2011/10/flick-list-with-its-momentum-scrolling-and-deceleration
 class ScrollState(IntEnum):
-  IDLE = 0
-  DRAGGING_CONTENT = 1
-  DRAGGING_SCROLLBAR = 2
-  BOUNCING = 3
+  STEADY = 0
+  PRESSED = 1
+  MANUAL_SCROLL = 2
+  AUTO_SCROLL = 3
 
 
 class GuiScrollPanel:
