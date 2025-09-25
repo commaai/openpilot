@@ -12,7 +12,7 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.list_view import text_item, button_item, dual_button_item, TextAction, ListItem
+from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item, dual_button_item, TextAction, ListItem, ToggleAction
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -113,21 +113,34 @@ class AdvancedNetworkSettings(Widget):
 
     # action =
 
-    self._ip_address = text_item("IP Address", lambda: self._wifi_manager.ipv4_address)
+    # enable tethering, tethering password, ~ip address~, wifi network metered, hidden network
 
-    # enable tethering, tethering password, ip address, wifi network metered, hidden network
+    # # tethering = toggle_item("Enable Tethering", initial_state=wifi_manager
+    # tethering = toggle_item("Enable Tethering", callback=self._wifi_manager)#, initial_state=wifi_manager
+
+    self._tethering_action = ToggleAction(initial_state=False, enabled=True)
+    self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._tethering_toggled)
 
     items = [
-      self._ip_address
+      self._tethering_btn,
+      text_item("IP Address", lambda: self._wifi_manager.ipv4_address)
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
-    # self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+    self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
 
-  # def _on_network_updated(self, networks: list[Network]):
-  #   ip_address = self._wifi_manager.ipv4_address
-  #   self._ip_address.title = ip_address if ip_address else "N/A"
+  def _on_network_updated(self, networks: list[Network]):
+    self._tethering_action.set_enabled(True)
+    # ip_address = self._wifi_manager.ipv4_address
+    # self._ip_address.title = ip_address if ip_address else "N/A"
+
+  def _tethering_toggled(self):
+    checked = self._tethering_action.state
+    print("Tethering toggled:", checked)
+    if checked:
+      self._tethering_action.set_enabled(False)
+    self._wifi_manager.set_tethering_active(checked)
 
   def _initialize_items(self):
     items = [

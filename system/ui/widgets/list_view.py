@@ -41,6 +41,9 @@ class ItemAction(Widget, ABC):
     self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
 
+  def set_enabled(self, enabled: bool | Callable[[], bool]):
+    self._enabled_source = enabled
+
   @property
   def enabled(self):
     return _resolve_value(self._enabled_source, False)
@@ -51,6 +54,7 @@ class ToggleAction(ItemAction):
     super().__init__(width, enabled)
     self.toggle = Toggle(initial_state=initial_state)
     self.state = initial_state
+    self._prev_state = initial_state
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -59,7 +63,11 @@ class ToggleAction(ItemAction):
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
     self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
-    return False
+
+    self.state = self.toggle.get_state()
+    changed = self.state != self._prev_state
+    self._prev_state = self.state
+    return changed
 
   def set_state(self, state: bool):
     self.state = state
