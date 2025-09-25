@@ -132,6 +132,7 @@ class WifiManager:
 
     # State
     self._connecting_to_ssid: str = ""
+    self._ipv4_address: str = ""
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
 
@@ -409,8 +410,32 @@ class WifiManager:
       networks.sort(key=lambda n: (-n.is_connected, -n.strength, n.ssid.lower()))
       self._networks = networks
 
+      self._update_ipv4_address()
+
       if self._networks_updated is not None:
         self._enqueue_callback(self._networks_updated, self._networks)
+
+  def _update_ipv4_address(self):
+    if self._wifi_device is None:
+      cloudlog.warning("No WiFi device found")
+      return
+
+    self._ipv4_address = ""
+
+    for conn_path in self._get_active_connections():
+      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+      conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
+      if conn_type == '802-11-wireless':
+        ip4config_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('Ip4Config')).body[0][1]
+
+        if ip4config_path != "/":
+          ip4config_addr = DBusAddress(ip4config_path, bus_name=NM, interface=NM_IP4_CONFIG_IFACE)
+          address_data = self._router_main.send_and_get_reply(Properties(ip4config_addr).get('AddressData')).body[0][1]
+
+          for entry in address_data:
+            if 'address' in entry:
+              self._ipv4_address = entry['address'][1]
+              return
 
   def __del__(self):
     self.stop()

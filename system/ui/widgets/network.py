@@ -11,6 +11,8 @@ from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
+from openpilot.system.ui.widgets.scroller import Scroller
+from openpilot.system.ui.widgets.list_view import text_item, button_item, dual_button_item, TextAction, ListItem
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -26,12 +28,120 @@ STRENGTH_ICONS = [
 ]
 
 
+class PanelType(IntEnum):
+  WIFI = 0
+  ADVANCED = 1
+
+
 class UIState(IntEnum):
   IDLE = 0
   CONNECTING = 1
   NEEDS_AUTH = 2
   SHOW_FORGET_CONFIRM = 3
   FORGETTING = 4
+
+
+class NavButton(Widget):
+  def __init__(self, text: str):
+    super().__init__()
+    self._text = text
+    self.set_rect(rl.Rectangle(0, 0, 400, 100))
+
+  def set_text(self, text: str):
+    self._text = text
+
+  def _render(self, _):
+    color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
+    rl.draw_rectangle_rounded(self._rect, 0.6, 10, color)
+    gui_label(self.rect, self._text, font_size=60, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+
+
+class WifiUi(Widget):
+  def __init__(self, wifi_manager: WifiManager):
+    super().__init__()
+    self.wifi_manager = wifi_manager
+    self._current_panel: PanelType = PanelType.WIFI
+    self._wifi_panel = WifiManagerUI(wifi_manager)
+    self._advanced_panel = AdvancedNetworkSettings()
+    self._nav_button = NavButton("Advanced")
+    self._nav_button.set_click_callback(self._cycle_panel)
+
+  def show_event(self):
+    self._set_current_panel(PanelType.WIFI)
+    self._wifi_panel.show_event()
+
+  def hide_event(self):
+    self._wifi_panel.hide_event()
+
+  def _cycle_panel(self):
+    if self._current_panel == PanelType.WIFI:
+      self._set_current_panel(PanelType.ADVANCED)
+    else:
+      self._set_current_panel(PanelType.WIFI)
+
+  def _render(self, _):
+    # subtract button
+    content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 20,
+                              self._rect.width, self._rect.height - self._nav_button.rect.height - 20)
+    if self._current_panel == PanelType.WIFI:
+      self._nav_button.set_text("Advanced")
+      self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 10)
+      self._wifi_panel.render(content_rect)
+    else:
+      self._nav_button.set_text("Back")
+      self._nav_button.set_position(self._rect.x, self._rect.y + 10)
+      self._advanced_panel.render(content_rect)
+
+    self._nav_button.render()
+
+  def _set_current_panel(self, panel: PanelType):
+    self._current_panel = panel
+
+
+class AdvancedNetworkSettings(Widget):
+  def __init__(self):
+    super().__init__()
+    #
+    # self._params = Params()
+    # self._select_language_dialog: MultiOptionDialog | None = None
+    # self._driver_camera: DriverCameraDialog | None = None
+    # self._pair_device_dialog: PairingDialog | None = None
+    # self._fcc_dialog: HtmlRenderer | None = None
+
+    # items = self._initialize_items()
+
+    # action =
+
+    action = TextAction(text="", color=rl.Color(170, 170, 170, 255))
+    self._ip_address_btn = ListItem(title="IP Address", action_item=action)
+
+    # enable tethering, tethering password, ip address, wifi network metered, hidden network
+
+    items = [
+      self._ip_address_btn
+    ]
+
+    self._scroller = Scroller(items, line_separator=True, spacing=0)
+
+  def _initialize_items(self):
+    items = [
+
+      text_item("Dongle ID", dongle_id),
+      # text_item("Serial", serial),
+      # button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
+      # button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
+      # button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
+      # regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
+      # button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
+      # button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
+      # dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
+    ]
+    # regulatory_btn.set_visible(TICI)
+    return items
+
+  def _render(self, _):
+    self._scroller.render(self._rect)
+    # gui_label(rect, "Advanced Network Settings (Not Implemented)", font_size=50, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
 class WifiManagerUI(Widget):
@@ -213,7 +323,7 @@ class WifiManagerUI(Widget):
     self._networks = networks
     for n in self._networks:
       self._networks_buttons[n.ssid] = Button(n.ssid, partial(self._networks_buttons_callback, n), font_size=55, text_alignment=TextAlignment.LEFT,
-                                              button_style=ButtonStyle.NO_EFFECT)
+                                              button_style=ButtonStyle.TRANSPARENT_WHITE)
       self._forget_networks_buttons[n.ssid] = Button("Forget", partial(self._forget_networks_buttons_callback, n), button_style=ButtonStyle.FORGET_WIFI,
                                                      font_size=45)
 
@@ -235,6 +345,7 @@ class WifiManagerUI(Widget):
   def _on_disconnected(self):
     if self.state == UIState.CONNECTING:
       self.state = UIState.IDLE
+
 
 
 def main():

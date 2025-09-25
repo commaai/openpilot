@@ -14,6 +14,7 @@ class ButtonStyle(IntEnum):
   PRIMARY = 1  # For main actions
   DANGER = 2  # For critical actions, like reboot or delete
   TRANSPARENT = 3  # For buttons with transparent background and border
+  TRANSPARENT_WHITE = 3  # For buttons with transparent background and border
   ACTION = 4
   LIST_ACTION = 5  # For list items with action buttons
   NO_EFFECT = 6
@@ -23,8 +24,6 @@ class ButtonStyle(IntEnum):
 
 ICON_PADDING = 15
 DEFAULT_BUTTON_FONT_SIZE = 60
-BUTTON_DISABLED_TEXT_COLOR = rl.Color(228, 228, 228, 51)
-BUTTON_DISABLED_BACKGROUND_COLOR = rl.Color(51, 51, 51, 255)
 ACTION_BUTTON_FONT_SIZE = 48
 
 BUTTON_TEXT_COLOR = {
@@ -32,6 +31,7 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.PRIMARY: rl.Color(228, 228, 228, 255),
   ButtonStyle.DANGER: rl.Color(228, 228, 228, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.TRANSPARENT_WHITE: rl.WHITE,
   ButtonStyle.ACTION: rl.BLACK,
   ButtonStyle.LIST_ACTION: rl.Color(228, 228, 228, 255),
   ButtonStyle.NO_EFFECT: rl.Color(228, 228, 228, 255),
@@ -39,11 +39,16 @@ BUTTON_TEXT_COLOR = {
   ButtonStyle.FORGET_WIFI: rl.Color(51, 51, 51, 255),
 }
 
+BUTTON_DISABLED_TEXT_COLORS = {
+  ButtonStyle.TRANSPARENT_WHITE: rl.WHITE,
+}
+
 BUTTON_BACKGROUND_COLORS = {
   ButtonStyle.NORMAL: rl.Color(51, 51, 51, 255),
   ButtonStyle.PRIMARY: rl.Color(70, 91, 234, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.TRANSPARENT_WHITE: rl.BLANK,
   ButtonStyle.ACTION: rl.Color(189, 189, 189, 255),
   ButtonStyle.LIST_ACTION: rl.Color(57, 57, 57, 255),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
@@ -56,11 +61,16 @@ BUTTON_PRESSED_BACKGROUND_COLORS = {
   ButtonStyle.PRIMARY: rl.Color(48, 73, 244, 255),
   ButtonStyle.DANGER: rl.Color(255, 36, 36, 255),
   ButtonStyle.TRANSPARENT: rl.BLACK,
+  ButtonStyle.TRANSPARENT_WHITE: rl.BLANK,
   ButtonStyle.ACTION: rl.Color(130, 130, 130, 255),
   ButtonStyle.LIST_ACTION: rl.Color(74, 74, 74, 74),
   ButtonStyle.NO_EFFECT: rl.Color(51, 51, 51, 255),
   ButtonStyle.KEYBOARD: rl.Color(51, 51, 51, 255),
   ButtonStyle.FORGET_WIFI: rl.Color(130, 130, 130, 255),
+}
+
+BUTTON_DISABLED_BACKGROUND_COLORS = {
+  ButtonStyle.TRANSPARENT_WHITE: rl.BLANK,
 }
 
 _pressed_buttons: set[str] = set()  # Track mouse press state globally
@@ -156,7 +166,7 @@ def gui_button(
 
   # Draw the button text if any
   if text:
-    color = BUTTON_TEXT_COLOR[button_style] if is_enabled else BUTTON_DISABLED_TEXT_COLOR
+    color = BUTTON_TEXT_COLOR[button_style] if is_enabled else BUTTON_DISABLED_TEXT_COLORS.get(button_style, rl.Color(228, 228, 228, 51))
     rl.draw_text_ex(font, text, text_pos, font_size, 0, color)
 
   return result
@@ -198,8 +208,8 @@ class Button(Widget):
       else:
         self._background_color = BUTTON_BACKGROUND_COLORS[self._button_style]
     elif self._button_style != ButtonStyle.NO_EFFECT:
-      self._background_color = BUTTON_DISABLED_BACKGROUND_COLOR
-      self._label.set_text_color(BUTTON_DISABLED_TEXT_COLOR)
+      self._background_color = BUTTON_DISABLED_BACKGROUND_COLORS.get(self._button_style, rl.Color(51, 51, 51, 255))
+      self._label.set_text_color(BUTTON_DISABLED_TEXT_COLORS.get(self._button_style, rl.Color(228, 228, 228, 51)))
 
   def _render(self, _):
     roundness = self._border_radius / (min(self._rect.width, self._rect.height) / 2)
