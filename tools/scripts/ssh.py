@@ -50,7 +50,7 @@ if __name__ == "__main__":
   if args.debug:
     command += ["-v"]
   command += [
-    f"comma@{dongle_id}",
+    f"comma@comma-{dongle_id}",
   ]
   if args.debug:
     print(" ".join([f"'{c}'" if " " in c else c for c in command]))
