@@ -13,6 +13,11 @@ class Multilang:
     self._load_languages()
     self._hook_draw_text()
 
+  def translate(self, text: str) -> str:
+    if self._language not in self._translations:
+      return text
+    return self._translations[self._language].get(text, text)
+
   def _load_languages(self):
     self._language = Params().get("LanguageSetting")
 
@@ -20,11 +25,6 @@ class Multilang:
     for file in os.listdir(LANGUAGE_DIR):
       if file.endswith(".ts"):
         pass
-
-  def _get_translated_text(self, text: str) -> str:
-    if self._language not in self._translations:
-      return text
-    return self._translations[self._language].get(text, text)
 
   def _hook_draw_text(self):
     # hook rl.draw_text* to get text for multilang

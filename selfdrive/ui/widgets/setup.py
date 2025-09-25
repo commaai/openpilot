@@ -2,7 +2,7 @@ import pyray as rl
 from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 from openpilot.selfdrive.ui.ui_state import ui_state
 from openpilot.selfdrive.ui.widgets.pairing_dialog import PairingDialog
-from openpilot.system.ui.lib.application import gui_app, FontWeight
+from openpilot.system.ui.lib.application import tr, gui_app, FontWeight
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
@@ -38,7 +38,7 @@ class SetupWidget(Widget):
     y += 113  # 75 + 38 spacing
 
     # Description
-    desc = "Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer."
+    desc = tr("Pair your device with comma connect (connect.comma.ai) and claim your comma prime offer.")
     light_font = gui_app.font(FontWeight.LIGHT)
     wrapped = wrap_text(light_font, desc, 50, int(w))
     for line in wrapped:
@@ -62,7 +62,7 @@ class SetupWidget(Widget):
 
     # Title with fire emojis
     title_font = gui_app.font(FontWeight.MEDIUM)
-    title_text = "Firehose Mode"
+    title_text = tr('Firehose Mode1')
     rl.draw_text_ex(title_font, title_text, rl.Vector2(x, y), 64, 0, rl.WHITE)
     y += 64 + spacing
 
