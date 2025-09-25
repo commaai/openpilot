@@ -104,6 +104,10 @@ class TextAction(ItemAction):
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
+  def _update_state(self):
+    text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
+    self._rect.width = int(text_width + TEXT_PADDING)
+
   def _render(self, rect: rl.Rectangle) -> bool:
     current_text = self.text
     text_size = measure_text_cached(self._font, current_text, ITEM_TEXT_FONT_SIZE)

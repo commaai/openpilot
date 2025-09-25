@@ -23,8 +23,8 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
                                                     NM_DEVICE_TYPE_WIFI, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
-                                                    NM_DEVICE_STATE_REASON_NEW_ACTIVATION,
-                                                    NMDeviceState)
+                                                    NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
+                                                    NM_IP4_CONFIG_IFACE, NMDeviceState)
 
 TETHERING_IP_ADDRESS = "192.168.43.1"
 DEFAULT_TETHERING_PASSWORD = "swagswagcomma"
@@ -137,11 +137,11 @@ class WifiManager:
     self._callback_queue: list[Callable] = []
 
     # Callbacks
-    self._need_auth: Callable[[str], None] | None = None
-    self._activated: Callable[[], None] | None = None
-    self._forgotten: Callable[[], None] | None = None
-    self._networks_updated: Callable[[list[Network]], None] | None = None
-    self._disconnected: Callable[[], None] | None = None
+    self._need_auth: list[Callable[[str], None]] = []
+    self._activated: list[Callable[[], None]] = []
+    self._forgotten: list[Callable[[], None]] = []
+    self._networks_updated: list[Callable[[list[Network]], None]] = []
+    self._disconnected: list[Callable[[], None]] = []
 
     self._lock = threading.Lock()
 
@@ -153,16 +153,25 @@ class WifiManager:
 
     atexit.register(self.stop)
 
-  def set_callbacks(self, need_auth: Callable[[str], None],
-                    activated: Callable[[], None] | None,
-                    forgotten: Callable[[], None],
-                    networks_updated: Callable[[list[Network]], None],
-                    disconnected: Callable[[], None]):
-    self._need_auth = need_auth
-    self._activated = activated
-    self._forgotten = forgotten
-    self._networks_updated = networks_updated
-    self._disconnected = disconnected
+  def set_callbacks(self, need_auth: Callable[[str], None] | None = None,
+                    activated: Callable[[], None] | None = None,
+                    forgotten: Callable[[], None] | None = None,
+                    networks_updated: Callable[[list[Network]], None] | None = None,
+                    disconnected: Callable[[], None] | None = None):
+    if need_auth is not None:
+      self._need_auth.append(need_auth)
+    if activated is not None:
+      self._activated.append(activated)
+    if forgotten is not None:
+      self._forgotten.append(forgotten)
+    if networks_updated is not None:
+      self._networks_updated.append(networks_updated)
+    if disconnected is not None:
+      self._disconnected.append(disconnected)
+
+  @property
+  def ipv4_address(self) -> str:
+    return self._ipv4_address
 
   def _enqueue_callback(self, cb: Callable, *args):
     self._callback_queue.append(lambda: cb(*args))
@@ -212,20 +221,21 @@ class WifiManager:
         # BAD PASSWORD
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
           self.forget_connection(self._connecting_to_ssid, block=True)
-          if self._need_auth is not None:
-            self._enqueue_callback(self._need_auth, self._connecting_to_ssid)
+          for cb in self._need_auth:
+            self._enqueue_callback(cb, self._connecting_to_ssid)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.ACTIVATED:
-          if self._activated is not None:
+          if len(self._activated):
             self._update_networks()
-            self._enqueue_callback(self._activated)
+          for cb in self._activated:
+            self._enqueue_callback(cb)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
           self._connecting_to_ssid = ""
-          if self._disconnected is not None:
-            self._enqueue_callback(self._disconnected)
+          for cb in self._forgotten:
+            self._enqueue_callback(cb)
 
   def _network_scanner(self):
     self._wait_for_wifi_device()
@@ -286,6 +296,9 @@ class WifiManager:
           conns[ssid] = conn_path
     return conns
 
+  def _get_active_connections(self):
+    return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
+
   def connect_to_network(self, ssid: str, password: str):
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
@@ -333,9 +346,10 @@ class WifiManager:
         conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
         self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Delete'))
 
-        if self._forgotten is not None:
+        if len(self._forgotten):
           self._update_networks()
-          self._enqueue_callback(self._forgotten)
+        for cb in self._forgotten:
+          self._enqueue_callback(cb)
 
     if block:
       worker()
@@ -412,8 +426,8 @@ class WifiManager:
 
       self._update_ipv4_address()
 
-      if self._networks_updated is not None:
-        self._enqueue_callback(self._networks_updated, self._networks)
+      for cb in self._networks_updated:
+        self._enqueue_callback(cb, self._networks)
 
   def _update_ipv4_address(self):
     if self._wifi_device is None:

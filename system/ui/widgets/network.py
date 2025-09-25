@@ -62,7 +62,7 @@ class WifiUi(Widget):
     self.wifi_manager = wifi_manager
     self._current_panel: PanelType = PanelType.WIFI
     self._wifi_panel = WifiManagerUI(wifi_manager)
-    self._advanced_panel = AdvancedNetworkSettings()
+    self._advanced_panel = AdvancedNetworkSettings(wifi_manager)
     self._nav_button = NavButton("Advanced")
     self._nav_button.set_click_callback(self._cycle_panel)
 
@@ -99,8 +99,9 @@ class WifiUi(Widget):
 
 
 class AdvancedNetworkSettings(Widget):
-  def __init__(self):
+  def __init__(self, wifi_manager: WifiManager):
     super().__init__()
+    self._wifi_manager = wifi_manager
     #
     # self._params = Params()
     # self._select_language_dialog: MultiOptionDialog | None = None
@@ -112,16 +113,22 @@ class AdvancedNetworkSettings(Widget):
 
     # action =
 
-    action = TextAction(text="", color=rl.Color(170, 170, 170, 255))
-    self._ip_address_btn = ListItem(title="IP Address", action_item=action)
+    action = TextAction(text=lambda: self._wifi_manager.ipv4_address, color=rl.Color(170, 170, 170, 255))
+    self._ip_address = ListItem(title="IP Address", action_item=action)
 
     # enable tethering, tethering password, ip address, wifi network metered, hidden network
 
     items = [
-      self._ip_address_btn
+      self._ip_address
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
+
+    # self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+
+  # def _on_network_updated(self, networks: list[Network]):
+  #   ip_address = self._wifi_manager.ipv4_address
+  #   self._ip_address.title = ip_address if ip_address else "N/A"
 
   def _initialize_items(self):
     items = [
