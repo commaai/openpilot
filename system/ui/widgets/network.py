@@ -66,6 +66,9 @@ class WifiUi(Widget):
     self._nav_button = NavButton("Advanced")
     self._nav_button.set_click_callback(self._cycle_panel)
 
+  def _update_state(self):
+    self.wifi_manager.process_callbacks()
+
   def show_event(self):
     self._set_current_panel(PanelType.WIFI)
     self._wifi_panel.show_event()
@@ -132,6 +135,7 @@ class AdvancedNetworkSettings(Widget):
 
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
+    self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
     # ip_address = self._wifi_manager.ipv4_address
     # self._ip_address.title = ip_address if ip_address else "N/A"
 
@@ -198,8 +202,6 @@ class WifiManagerUI(Widget):
       gui_app.texture(icon, ICON_SIZE, ICON_SIZE)
 
   def _render(self, rect: rl.Rectangle):
-    self.wifi_manager.process_callbacks()
-
     if not self._networks:
       gui_label(rect, "Scanning Wi-Fi networks...", 72, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
       return
