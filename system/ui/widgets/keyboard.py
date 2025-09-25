@@ -104,6 +104,9 @@ class Keyboard(Widget):
     self._all_keys[CAPS_LOCK_KEY] = Button("", partial(self._key_callback, CAPS_LOCK_KEY), icon=self._key_icons[CAPS_LOCK_KEY],
                                            button_style=ButtonStyle.KEYBOARD, multi_touch=True)
 
+  def set_text(self, text: str):
+    self._input_box.text = text
+
   @property
   def text(self):
     return self._input_box.text

@@ -134,6 +134,7 @@ class WifiManager:
     # State
     self._connecting_to_ssid: str = ""
     self._ipv4_address: str = ""
+    self._tethering_password: str = ""
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
 
@@ -179,6 +180,10 @@ class WifiManager:
   def ipv4_address(self) -> str:
     return self._ipv4_address
 
+  @property
+  def tethering_password(self) -> str:
+    return self._tethering_password
+
   def _enqueue_callback(self, cb: Callable, *args):
     self._callback_queue.append(lambda: cb(*args))
 
@@ -196,9 +201,12 @@ class WifiManager:
       self._last_network_update = 0.0
 
   def _monitor_state(self):
+    # TODO: make an initialize function to only wait in one place
     device_path = self._wait_for_wifi_device()
     if device_path is None:
       return
+
+    self._tethering_password = self._get_tethering_password()
 
     rule = MatchRule(
       type="signal",
@@ -305,6 +313,14 @@ class WifiManager:
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
+  def _get_connection_settings(self, conn_path: str) -> dict:
+    conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+    reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'GetSettings'))
+    if reply.header.message_type == MessageType.error:
+      cloudlog.warning(f'Failed to get connection settings: {reply}')
+      return {}
+    return dict(reply.body[0])
+
   def connect_to_network(self, ssid: str, password: str):
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
@@ -397,6 +413,53 @@ class WifiManager:
       if network.is_connected:
         return bool(network.ssid == self._tethering_ssid)
     return False
+
+  def set_tethering_password(self, password: str):
+    def worker():
+      conn_path = self._get_connections().get(self._tethering_ssid, None)
+      if conn_path is None:
+        cloudlog.warning('No tethering connection found')
+        return
+
+      settings = self._get_connection_settings(conn_path)
+      if len(settings) == 0:
+        cloudlog.warning(f'Failed to get tethering settings for {conn_path}')
+        return
+
+      settings['802-11-wireless-security']['psk'] = ('s', password)
+
+      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+      reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
+      if reply.header.message_type == MessageType.error:
+        cloudlog.warning(f'Failed to update tethering settings: {reply}')
+        return
+
+      self._tethering_password = password
+      if self.is_tethering_active():
+        self.activate_connection(self._tethering_ssid, block=True)
+
+    threading.Thread(target=worker, daemon=True).start()
+
+  def _get_tethering_password(self) -> str:
+    conn_path = self._get_connections().get(self._tethering_ssid, None)
+    if conn_path is None:
+      cloudlog.warning('No tethering connection found')
+      return ''
+
+    reply = self._router_main.send_and_get_reply(new_method_call(
+      DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE),
+      'GetSecrets', 's', ('802-11-wireless-security',)
+    ))
+
+    if reply.header.message_type == MessageType.error:
+      cloudlog.warning(f'Failed to get tethering password: {reply}')
+      return ''
+
+    secrets = reply.body[0]
+    if '802-11-wireless-security' not in secrets:
+      return ''
+
+    return str(secrets['802-11-wireless-security'].get('psk', ('s', ''))[1])
 
   def set_tethering_active(self, active: bool):
     def worker():

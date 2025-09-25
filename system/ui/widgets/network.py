@@ -105,6 +105,9 @@ class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
     self._wifi_manager = wifi_manager
+
+    self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
+    self._keyboard.set_title("Enter new tethering password")
     #
     # self._params = Params()
     # self._select_language_dialog: MultiOptionDialog | None = None
@@ -116,7 +119,7 @@ class AdvancedNetworkSettings(Widget):
 
     # action =
 
-    # enable tethering, tethering password, ~ip address~, wifi network metered, hidden network
+    # ~enable tethering~, tethering password, ~ip address~, wifi network metered, hidden network
 
     # # tethering = toggle_item("Enable Tethering", initial_state=wifi_manager
     # tethering = toggle_item("Enable Tethering", callback=self._wifi_manager)#, initial_state=wifi_manager
@@ -124,8 +127,11 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._tethering_toggled)
 
+    self._tethering_password = button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password)
+
     items = [
       self._tethering_btn,
+      self._tethering_password,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address)
     ]
 
@@ -145,6 +151,18 @@ class AdvancedNetworkSettings(Widget):
     if checked:
       self._tethering_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
+
+  def _edit_tethering_password(self):
+    def update_password(result):
+      if result != 1:
+        return
+
+      password = self._keyboard.text
+      self._wifi_manager.set_tethering_password(password)
+
+    self._keyboard.reset()
+    self._keyboard.set_text(self._wifi_manager.tethering_password)
+    gui_app.set_modal_overlay(self._keyboard, update_password)
 
   def _initialize_items(self):
     items = [
