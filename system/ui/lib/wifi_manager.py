@@ -153,11 +153,11 @@ class WifiManager:
 
     atexit.register(self.stop)
 
-  def set_callbacks(self, need_auth: Callable[[str], None] | None = None,
-                    activated: Callable[[], None] | None = None,
-                    forgotten: Callable[[], None] | None = None,
-                    networks_updated: Callable[[list[Network]], None] | None = None,
-                    disconnected: Callable[[], None] | None = None):
+  def set_callbacks(self, need_auth: Callable[[str], None] | None,
+                    activated: Callable[[], None] | None,
+                    forgotten: Callable[[], None] | None,
+                    networks_updated: Callable[[list[Network]], None] | None,
+                    disconnected: Callable[[], None] | None):
     if need_auth is not None:
       self._need_auth.append(need_auth)
     if activated is not None:

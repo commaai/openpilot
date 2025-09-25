@@ -113,8 +113,7 @@ class AdvancedNetworkSettings(Widget):
 
     # action =
 
-    action = TextAction(text=lambda: self._wifi_manager.ipv4_address, color=rl.Color(170, 170, 170, 255))
-    self._ip_address = ListItem(title="IP Address", action_item=action)
+    self._ip_address = text_item("IP Address", lambda: self._wifi_manager.ipv4_address)
 
     # enable tethering, tethering password, ip address, wifi network metered, hidden network
 
