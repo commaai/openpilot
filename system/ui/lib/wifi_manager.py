@@ -313,6 +313,7 @@ class WifiManager:
   def _get_active_connections(self):
     return self._router_main.send_and_get_reply(Properties(self._nm).get('ActiveConnections')).body[0][1]
 
+  # TODO: use this
   def _get_connection_settings(self, conn_path: str) -> dict:
     conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
     reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'GetSettings'))
@@ -370,6 +371,7 @@ class WifiManager:
 
         if len(self._forgotten):
           self._update_networks()
+        # TODO: move the for loop to enqueue_callback
         for cb in self._forgotten:
           self._enqueue_callback(cb)
 
