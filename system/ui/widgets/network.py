@@ -44,16 +44,13 @@ class UIState(IntEnum):
 class NavButton(Widget):
   def __init__(self, text: str):
     super().__init__()
-    self._text = text
+    self.text = text
     self.set_rect(rl.Rectangle(0, 0, 400, 100))
-
-  def set_text(self, text: str):
-    self._text = text
 
   def _render(self, _):
     color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
     rl.draw_rectangle_rounded(self._rect, 0.6, 10, color)
-    gui_label(self.rect, self._text, font_size=60, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
+    gui_label(self.rect, self.text, font_size=60, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
 class WifiUi(Widget):
@@ -87,11 +84,11 @@ class WifiUi(Widget):
     content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 20,
                               self._rect.width, self._rect.height - self._nav_button.rect.height - 20)
     if self._current_panel == PanelType.WIFI:
-      self._nav_button.set_text("Advanced")
+      self._nav_button.text = "Advanced"
       self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 10)
       self._wifi_panel.render(content_rect)
     else:
-      self._nav_button.set_text("Back")
+      self._nav_button.text = "Back"
       self._nav_button.set_position(self._rect.x, self._rect.y + 10)
       self._advanced_panel.render(content_rect)
 
