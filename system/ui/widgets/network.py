@@ -115,11 +115,7 @@ class AdvancedNetworkSettings(Widget):
     # self._pair_device_dialog: PairingDialog | None = None
     # self._fcc_dialog: HtmlRenderer | None = None
 
-    # items = self._initialize_items()
-
-    # action =
-
-    # ~enable tethering~, tethering password, ~ip address~, wifi network metered, hidden network
+    # ~enable tethering~, ~tethering password~, ~ip address~, wifi network metered, hidden network, (lte settings?)
 
     # # tethering = toggle_item("Enable Tethering", initial_state=wifi_manager
     # tethering = toggle_item("Enable Tethering", callback=self._wifi_manager)#, initial_state=wifi_manager
@@ -127,11 +123,9 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._tethering_toggled)
 
-    self._tethering_password = button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password)
-
     items = [
       self._tethering_btn,
-      self._tethering_password,
+      button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address)
     ]
 
@@ -163,22 +157,6 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard.reset()
     self._keyboard.set_text(self._wifi_manager.tethering_password)
     gui_app.set_modal_overlay(self._keyboard, update_password)
-
-  def _initialize_items(self):
-    items = [
-
-      text_item("Dongle ID", dongle_id),
-      # text_item("Serial", serial),
-      # button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
-      # button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
-      # button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
-      # regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),
-      # button_item("Review Training Guide", "REVIEW", DESCRIPTIONS['review_guide'], self._on_review_training_guide),
-      # button_item("Change Language", "CHANGE", callback=self._show_language_selection, enabled=ui_state.is_offroad),
-      # dual_button_item("Reboot", "Power Off", left_callback=self._reboot_prompt, right_callback=self._power_off_prompt),
-    ]
-    # regulatory_btn.set_visible(TICI)
-    return items
 
   def _render(self, _):
     self._scroller.render(self._rect)
