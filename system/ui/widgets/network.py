@@ -3,7 +3,8 @@ from functools import partial
 from typing import cast
 
 import pyray as rl
-from openpilot.system.ui.lib.application import gui_app
+from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.system.ui.lib.application import gui_app, DEFAULT_FPS
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network
 from openpilot.system.ui.widgets import Widget
@@ -46,6 +47,16 @@ class NavButton(Widget):
     super().__init__()
     self.text = text
     self.set_rect(rl.Rectangle(0, 0, 400, 100))
+    self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
+    self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
+
+  def set_position(self, x: float, y: float) -> None:
+    x = self._x_pos_filter.update(x)
+    y = self._y_pos_filter.update(y)
+    changed = (self._rect.x != x or self._rect.y != y)
+    self._rect.x, self._rect.y = x, y
+    if changed:
+      self._update_layout_rects()
 
   def _render(self, _):
     color = rl.Color(74, 74, 74, 255) if self.is_pressed else rl.Color(57, 57, 57, 255)
@@ -117,8 +128,12 @@ class AdvancedNetworkSettings(Widget):
     # # tethering = toggle_item("Enable Tethering", initial_state=wifi_manager
     # tethering = toggle_item("Enable Tethering", callback=self._wifi_manager)#, initial_state=wifi_manager
 
+    # Tethering
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._tethering_toggled)
+
+    # Metered
+
 
     items = [
       self._tethering_btn,

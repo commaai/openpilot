@@ -41,6 +41,12 @@ class SecurityType(IntEnum):
   UNSUPPORTED = 4
 
 
+class MeteredType(IntEnum):
+  UNKNOWN = 0
+  YES = 1
+  NO = 2
+
+
 def get_security_type(flags: int, wpa_flags: int, rsn_flags: int) -> SecurityType:
   wpa_props = wpa_flags | rsn_flags
 
@@ -115,7 +121,7 @@ class AccessPoint:
 
 class WifiManager:
   def __init__(self):
-    self._networks = []  # a network can be comprised of multiple APs
+    self._networks: list[Network] = []  # a network can be comprised of multiple APs
     self._active = True  # used to not run when not in settings
     self._exit = False
 
@@ -134,6 +140,7 @@ class WifiManager:
     # State
     self._connecting_to_ssid: str = ""
     self._ipv4_address: str = ""
+    self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
@@ -179,6 +186,10 @@ class WifiManager:
   @property
   def ipv4_address(self) -> str:
     return self._ipv4_address
+
+  @property
+  def current_network_metered(self) -> MeteredType:
+    return self._current_network_metered
 
   @property
   def tethering_password(self) -> str:
@@ -469,6 +480,62 @@ class WifiManager:
         self.activate_connection(self._tethering_ssid, block=True)
       else:
         self._deactivate_connection(self._tethering_ssid)
+
+    threading.Thread(target=worker, daemon=True).start()
+
+  def _update_current_network_metered(self) -> None:
+    if self._wifi_device is None:
+      cloudlog.warning("No WiFi device found")
+      return
+
+    self._current_network_metered = MeteredType.UNKNOWN
+    for active_conn in self._get_active_connections():
+      conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+      conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
+
+      if conn_type == '802-11-wireless':
+        conn_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('Connection')).body[0][1]
+        if conn_path == "/":
+          continue
+
+        settings = self._get_connection_settings(conn_path)
+
+        if len(settings) == 0:
+          cloudlog.warning(f'Failed to get connection settings for {conn_path}')
+          continue
+
+        metered_prop = settings['connection'].get('metered', ('i', 0))[1]
+        if metered_prop == MeteredType.YES:
+          self._current_network_metered = MeteredType.YES
+        elif metered_prop == MeteredType.NO:
+          self._current_network_metered = MeteredType.NO
+        print('current_network_metered', self._current_network_metered)
+        return
+
+  def set_current_network_metered(self, metered: MeteredType):
+    def worker():
+      for active_conn in self._get_active_connections():
+        conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+        conn_type = self._router_main.send_and_get_reply(Properties(conn_addr).get('Type')).body[0][1]
+
+        if conn_type == '802-11-wireless' and not self.is_tethering_active():
+          conn_path = self._router_main.send_and_get_reply(Properties(conn_addr).get('Connection')).body[0][1]
+          if conn_path == "/":
+            continue
+
+          settings = self._get_connection_settings(conn_path)
+
+          if len(settings) == 0:
+            cloudlog.warning(f'Failed to get connection settings for {conn_path}')
+            return
+
+          settings['connection']['metered'] = ('i', int(metered))
+
+          conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+          reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'Update', 'a{sa{sv}}', (settings,)))
+          if reply.header.message_type == MessageType.error:
+            cloudlog.warning(f'Failed to update tethering settings: {reply}')
+            return
 
     threading.Thread(target=worker, daemon=True).start()
 
