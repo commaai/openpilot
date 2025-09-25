@@ -37,7 +37,7 @@ class MultiOptionDialog(Widget):
     options_y = content_rect.y + TITLE_FONT_SIZE + ITEM_SPACING
     options_h = content_rect.height - TITLE_FONT_SIZE - BUTTON_HEIGHT - 2 * ITEM_SPACING
     view_rect = rl.Rectangle(content_rect.x, options_y, content_rect.width, options_h)
-    content_h = len(self.options) * (ITEM_HEIGHT + 10)
+    content_h = len(self.options) * (ITEM_HEIGHT + LIST_ITEM_SPACING)
     list_content_rect = rl.Rectangle(content_rect.x, options_y, content_rect.width, content_h)
 
     # Scroll and render options
