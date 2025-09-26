@@ -3,6 +3,7 @@ import subprocess
 import sys
 import sysconfig
 import platform
+import shlex
 import numpy as np
 
 import SCons.Errors
@@ -39,70 +40,6 @@ elif arch == "aarch64" and TICI:
   arch = "larch64"
 assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
-rpath = []
-if arch == "larch64":
-  cpppath = [
-    "#third_party/opencl/include",
-  ]
-
-  libpath = [
-    "/usr/local/lib",
-    "/system/vendor/lib64",
-    f"#third_party/acados/{arch}/lib",
-  ]
-
-  libpath += [
-    "#third_party/libyuv/larch64/lib",
-    "/usr/lib/aarch64-linux-gnu"
-  ]
-  cflags = ["-D__TICI__", "-mcpu=cortex-a57"]
-  cxxflags = ["-D__TICI__", "-mcpu=cortex-a57"]
-  rpath += ["/usr/local/lib"]
-else:
-  cflags = []
-  cxxflags = []
-  cpppath = []
-
-  # MacOS
-  if arch == "Darwin":
-    libpath = [
-      f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/acados/{arch}/lib",
-      f"{brew_prefix}/lib",
-      f"{brew_prefix}/opt/openssl@3.0/lib",
-      f"{brew_prefix}/opt/llvm/lib/c++",
-      "/System/Library/Frameworks/OpenGL.framework/Libraries",
-    ]
-
-    cflags += ["-DGL_SILENCE_DEPRECATION"]
-    cxxflags += ["-DGL_SILENCE_DEPRECATION"]
-    cpppath += [
-      f"{brew_prefix}/include",
-      f"{brew_prefix}/opt/openssl@3.0/include",
-    ]
-  # Linux
-  else:
-    libpath = [
-      f"#third_party/acados/{arch}/lib",
-      f"#third_party/libyuv/{arch}/lib",
-      "/usr/lib",
-      "/usr/local/lib",
-    ]
-
-ccflags = []
-ldflags = []
-if GetOption('asan'):
-  ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
-  ldflags = ["-fsanitize=address"]
-elif GetOption('ubsan'):
-  ccflags = ["-fsanitize=undefined"]
-  ldflags = ["-fsanitize=undefined"]
-ccflags += GetOption('ccflags').split(' ')
-
-# no --as-needed on mac linker
-if arch != "Darwin":
-  ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
-
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
@@ -111,6 +48,8 @@ env = Environment(
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
     "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
   },
+  CC='clang',
+  CXX='clang++',
   CCFLAGS=[
     "-g",
     "-fPIC",
@@ -123,9 +62,10 @@ env = Environment(
     "-Wno-c99-designator",
     "-Wno-reorder-init-list",
     "-Wno-vla-cxx-extension",
-  ] + cflags + ccflags,
-
-  CPPPATH=cpppath + [
+  ],
+  CFLAGS=["-std=gnu11"],
+  CXXFLAGS=["-std=c++1z"],
+  CPPPATH=[
     "#",
     "#third_party/acados/include",
     "#third_party/acados/include/blasfeo/include",
@@ -137,28 +77,85 @@ env = Environment(
     "#third_party",
     "#msgq",
   ],
-
-  CC='clang',
-  CXX='clang++',
-  LINKFLAGS=ldflags,
-
-  RPATH=rpath,
-
-  CFLAGS=["-std=gnu11"] + cflags,
-  CXXFLAGS=["-std=c++1z"] + cxxflags,
-  LIBPATH=libpath + [
+  LIBPATH=[
     "#msgq_repo",
     "#third_party",
     "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
   ],
+  RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
   tools=["default", "cython", "compilation_db", "rednose_filter"],
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
+
+# Arch-specific flags and paths
+if arch == "larch64":
+  env.Append(CPPPATH=["#third_party/opencl/include"])
+  env.Append(LIBPATH=[
+    "/usr/local/lib",
+    "/system/vendor/lib64",
+    f"#third_party/acados/{arch}/lib",
+    "#third_party/libyuv/larch64/lib",
+    "/usr/lib/aarch64-linux-gnu",
+  ])
+  env.Append(RPATH=["/usr/local/lib"])
+  _arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
+  env.Append(CCFLAGS=_arch_flags)
+  env.Append(CFLAGS=_arch_flags)
+  env.Append(CXXFLAGS=_arch_flags)
+else:
+  if arch == "Darwin":
+    env.Append(LIBPATH=[
+      f"#third_party/libyuv/{arch}/lib",
+      f"#third_party/acados/{arch}/lib",
+      f"{brew_prefix}/lib",
+      f"{brew_prefix}/opt/openssl@3.0/lib",
+      f"{brew_prefix}/opt/llvm/lib/c++",
+      "/System/Library/Frameworks/OpenGL.framework/Libraries",
+    ])
+    env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
+    env.Append(CFLAGS=["-DGL_SILENCE_DEPRECATION"])
+    env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
+    env.Append(CPPPATH=[
+      f"{brew_prefix}/include",
+      f"{brew_prefix}/opt/openssl@3.0/include",
+    ])
+  else:
+    env.Append(LIBPATH=[
+      f"#third_party/acados/{arch}/lib",
+      f"#third_party/libyuv/{arch}/lib",
+      "/usr/lib",
+      "/usr/local/lib",
+    ])
+
+# Common library search roots
+env.Append(LIBPATH=[
+  "#msgq_repo",
+  "#third_party",
+  "#selfdrive/pandad",
+  "#common",
+  "#rednose/helpers",
+])
+
+# Sanitizers and extra CCFLAGS from CLI
+if GetOption('asan'):
+  env.Append(CCFLAGS=["-fsanitize=address", "-fno-omit-frame-pointer"])
+  env.Append(LINKFLAGS=["-fsanitize=address"])
+elif GetOption('ubsan'):
+  env.Append(CCFLAGS=["-fsanitize=undefined"])
+  env.Append(LINKFLAGS=["-fsanitize=undefined"])
+
+_extra_cc = shlex.split(GetOption('ccflags') or '')
+if _extra_cc:
+  env.Append(CCFLAGS=_extra_cc)
+
+# no --as-needed on mac linker
+if arch != "Darwin":
+  env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
 
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
