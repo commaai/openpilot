@@ -10,8 +10,6 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
-TICI = os.path.isfile('/TICI')
-
 Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
@@ -27,18 +25,19 @@ AddOption('--minimal',
           default=os.path.exists(File('#.lfsconfig').abspath), # minimal by default on release branch (where there's no LFS)
           help='the minimum build to run openpilot. no tests, tools, etc.')
 
-## Architecture name breakdown (arch)
-## - larch64: linux tici aarch64
-## - aarch64: linux pc aarch64
-## - x86_64:  linux pc x64
-## - Darwin:  mac arm64 (x86 not supported)
+# Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-elif arch == "aarch64" and TICI:
+elif arch == "aarch64" and os.path.isfile('/TICI'):
   arch = "larch64"
-assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
+assert arch in [
+  "larch64",  # linux tici arm64
+  "aarch64",  # linux pc arm64
+  "x86_64",   # linux pc x64
+  "Darwin",   # macOS arm64 (x86 not supported)
+]
 
 env = Environment(
   ENV={
@@ -67,21 +66,21 @@ env = Environment(
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
     "#",
+    "#msgq",
+    "#third_party",
+    "#third_party/json11",
+    "#third_party/linux/include",
     "#third_party/acados/include",
     "#third_party/acados/include/blasfeo/include",
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
-    "#third_party/json11",
-    "#third_party/linux/include",
-    "#third_party",
-    "#msgq",
   ],
   LIBPATH=[
+    "#common",
     "#msgq_repo",
     "#third_party",
     "#selfdrive/pandad",
-    "#common",
     "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
@@ -219,7 +218,7 @@ qt_env['LIBS'] = qt_libs
 Export('env', 'qt_env', 'arch')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
