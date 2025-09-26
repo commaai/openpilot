@@ -63,7 +63,7 @@ class ToggleAction(ItemAction):
     self.toggle.set_enabled(self.enabled)
     clicked = self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
     self.state = self.toggle.get_state()
-    return clicked
+    return bool(clicked)
 
   def set_state(self, state: bool):
     self.state = state

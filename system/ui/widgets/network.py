@@ -13,7 +13,7 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item, dual_button_item, TextAction, ListItem, ToggleAction, multiple_button_item, MultipleButtonAction, ButtonAction
+from openpilot.system.ui.widgets.list_view import text_item, button_item, ListItem, ToggleAction, MultipleButtonAction, ButtonAction
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -131,7 +131,7 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
                                       action_item=self._wifi_metered_action)
 
-    items = [
+    items: list[Widget] = [
       self._tethering_btn,
       self._tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
@@ -252,7 +252,7 @@ class WifiManagerUI(Widget):
       return
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
-      self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}", "")
+      self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
