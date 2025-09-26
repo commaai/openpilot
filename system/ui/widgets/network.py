@@ -13,7 +13,7 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item, dual_button_item, TextAction, ListItem, ToggleAction, multiple_button_item, MultipleButtonAction
+from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item, dual_button_item, TextAction, ListItem, ToggleAction, multiple_button_item, MultipleButtonAction, ButtonAction
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -145,9 +145,15 @@ class AdvancedNetworkSettings(Widget):
     #   # icon="speed_limit.png"
     # )
 
+    self._tethering_password_action = ButtonAction(text="EDIT")
+    self._tethering_password_btn = ListItem(title="Tethering Password", description=None, action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+
+    # button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
+
     items = [
       self._tethering_btn,
-      button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
+      # button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
+      self._tethering_password_btn
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
       self._wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
@@ -160,6 +166,7 @@ class AdvancedNetworkSettings(Widget):
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
+    self._tethering_password_action.set_enabled(True)
 
     if self._wifi_manager.is_tethering_active() or self._wifi_manager.ipv4_address == "":
       self._wifi_metered_action.set_enabled(False)
@@ -233,6 +240,7 @@ class AdvancedNetworkSettings(Widget):
       password = self._keyboard.text
       self._wifi_manager.set_tethering_password(password)
 
+    self._tethering_password_action.set_enabled(False)
     self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
     self._keyboard.set_title("Enter new tethering password", "")
     self._keyboard.set_text(self._wifi_manager.tethering_password)
