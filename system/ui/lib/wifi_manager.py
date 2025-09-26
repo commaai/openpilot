@@ -589,6 +589,7 @@ class WifiManager:
       self._networks = networks
 
       self._update_ipv4_address()
+      self._update_current_network_metered()
 
       for cb in self._networks_updated:
         self._enqueue_callback(cb, self._networks)

@@ -133,7 +133,7 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Metered
-    self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._wifi_metered_toggled)
+    self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
     self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection", icon=None, action_item=self._wifi_metered_action)
 
     # self._metered_button = multiple_button_item(
@@ -177,7 +177,7 @@ class AdvancedNetworkSettings(Widget):
       self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
 
-  def _wifi_metered_toggled(self, metered):
+  def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
     self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_current_network_metered(metered_type)
