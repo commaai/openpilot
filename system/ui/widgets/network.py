@@ -115,7 +115,6 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager = wifi_manager
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
-    self._keyboard.set_title("Enter new tethering password")
     #
     # self._params = Params()
     # self._select_language_dialog: MultiOptionDialog | None = None
@@ -235,6 +234,7 @@ class AdvancedNetworkSettings(Widget):
       self._wifi_manager.set_tethering_password(password)
 
     self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
+    self._keyboard.set_title("Enter new tethering password", "")
     self._keyboard.set_text(self._wifi_manager.tethering_password)
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
@@ -283,7 +283,7 @@ class WifiManagerUI(Widget):
       return
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
-      self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
+      self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}", "")
       self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
