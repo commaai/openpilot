@@ -657,6 +657,7 @@ class WifiManager:
 
   def update_gsm_settings(self, roaming: bool, apn: str, metered: bool):
     """Update GSM settings for cellular connection"""
+
     def worker():
       try:
         lte_connection_path = self._get_lte_connection_path()

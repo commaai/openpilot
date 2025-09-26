@@ -146,7 +146,7 @@ class AdvancedNetworkSettings(Widget):
     # Wi-Fi metered toggle
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
     wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
-                                      action_item=self._wifi_metered_action)
+                                action_item=self._wifi_metered_action)
 
     items: list[Widget] = [
       tethering_btn,
