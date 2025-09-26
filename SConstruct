@@ -18,8 +18,8 @@ SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 AddOption('--kaitai', action='store_true', help='Regenerate kaitai struct parsers')
 AddOption('--asan', action='store_true', help='turn on ASAN')
 AddOption('--ubsan', action='store_true', help='turn on UBSan')
-AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--mutation', action='store_true', help='generate mutation-ready code')
+AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -100,23 +100,19 @@ else:
       "/usr/local/lib",
     ]
 
+ccflags = []
+ldflags = []
 if GetOption('asan'):
   ccflags = ["-fsanitize=address", "-fno-omit-frame-pointer"]
   ldflags = ["-fsanitize=address"]
 elif GetOption('ubsan'):
   ccflags = ["-fsanitize=undefined"]
   ldflags = ["-fsanitize=undefined"]
-else:
-  ccflags = []
-  ldflags = []
+ccflags += GetOption('ccflags').split(' ')
 
 # no --as-needed on mac linker
 if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
-
-ccflags_option = GetOption('ccflags')
-if ccflags_option:
-  ccflags += ccflags_option.split(' ')
 
 env = Environment(
   ENV=lenv,
@@ -174,14 +170,13 @@ if arch == "Darwin":
   darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
   env["LINKFLAGS"] += darwin_rpath_link_flags
 
-
+# progress output
 node_interval = 5
 node_count = 0
 def progress_function(node):
   global node_count
   node_count += node_interval
   sys.stderr.write("progress: %d\n" % node_count)
-
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
