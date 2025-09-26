@@ -90,7 +90,7 @@ class ButtonAction(ItemAction):
       border_radius=BUTTON_BORDER_RADIUS,
       click_callback=pressed,
     )
-    self._button.set_enabled(_resolve_value(enabled))
+    self.set_enabled(enabled)
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -102,6 +102,7 @@ class ButtonAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self._button.set_text(self.text)
+    self._button.set_enabled(_resolve_value(self.enabled))
     button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.render(button_rect)
 
