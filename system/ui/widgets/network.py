@@ -162,11 +162,13 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
 
-    metered = self._wifi_manager.current_network_metered
-    self._wifi_metered_action.set_enabled(True)
-    self._wifi_metered_action.selected_button = int(metered) if metered in (MeteredType.UNKNOWN, MeteredType.YES, MeteredType.NO) else 0
-    # ip_address = self._wifi_manager.ipv4_address
-    # self._ip_address.title = ip_address if ip_address else "N/A"
+    if self._wifi_manager.is_tethering_active() or self._wifi_manager.ipv4_address == "":
+      self._wifi_metered_action.set_enabled(False)
+      self._wifi_metered_action.selected_button = 0
+    elif self._wifi_manager.ipv4_address != "":
+      metered = self._wifi_manager.current_network_metered
+      self._wifi_metered_action.set_enabled(True)
+      self._wifi_metered_action.selected_button = int(metered) if metered in (MeteredType.UNKNOWN, MeteredType.YES, MeteredType.NO) else 0
 
   def _tethering_toggled(self):
     checked = self._tethering_action.state
