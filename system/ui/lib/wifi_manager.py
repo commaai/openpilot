@@ -666,43 +666,37 @@ class WifiManager:
           return
 
         changes = False
-        auto_config = not apn  # auto_config is True when apn is empty
+        auto_config = apn == ""
 
-        # Check and update gsm.auto-config
-        current_auto_config = settings.get('gsm', {}).get('auto-config', [False, False])[1]
+        # Ensure groups exist when needed
+        if 'gsm' not in settings:
+          settings['gsm'] = {}
+        if 'connection' not in settings:
+          settings['connection'] = {}
+
+        # gsm.auto-config
+        current_auto_config = settings.get('gsm', {}).get('auto-config', ('b', False))[1]
         if current_auto_config != auto_config:
-          cloudlog.info(f"Changing gsm.auto-config to {auto_config}")
-          if 'gsm' not in settings:
-            settings['gsm'] = {}
           settings['gsm']['auto-config'] = ('b', auto_config)
           changes = True
 
-        # Check and update gsm.apn
-        current_apn = settings.get('gsm', {}).get('apn', ['s', ''])[1]
+        # gsm.apn
+        current_apn = settings.get('gsm', {}).get('apn', ('s', ''))[1]
         if current_apn != apn:
-          cloudlog.info(f"Changing gsm.apn to {apn}")
-          if 'gsm' not in settings:
-            settings['gsm'] = {}
           settings['gsm']['apn'] = ('s', apn)
           changes = True
 
-        # Check and update gsm.home-only (roaming is opposite of home-only)
-        current_home_only = settings.get('gsm', {}).get('home-only', [False, False])[1]
+        # gsm.home-only (invert roaming)
+        current_home_only = settings.get('gsm', {}).get('home-only', ('b', False))[1]
         new_home_only = not roaming
         if current_home_only != new_home_only:
-          cloudlog.info(f"Changing gsm.home-only to {new_home_only}")
-          if 'gsm' not in settings:
-            settings['gsm'] = {}
           settings['gsm']['home-only'] = ('b', new_home_only)
           changes = True
 
-        # Check and update connection.metered
-        metered_int = 0 if metered else 2  # NM_METERED_UNKNOWN : NM_METERED_NO
-        current_metered = settings.get('connection', {}).get('metered', [0, 0])[1]
+        # connection.metered (metered True -> UNKNOWN, False -> NO)
+        metered_int = 0 if metered else 2
+        current_metered = settings.get('connection', {}).get('metered', ('i', 0))[1]
         if current_metered != metered_int:
-          cloudlog.info(f"Changing connection.metered to {metered_int}")
-          if 'connection' not in settings:
-            settings['connection'] = {}
           settings['connection']['metered'] = ('i', metered_int)
           changes = True
 
@@ -720,9 +714,6 @@ class WifiManager:
           # Deactivate and reactivate the connection (exactly like C++ code)
           self._deactivate_connection(lte_connection_path)
           self._activate_modem_connection(lte_connection_path)
-
-          # trigger UI refresh callbacks so toggles can re-enable
-          self._enqueue_callbacks(self._networks_updated, self._networks)
 
       except Exception as e:
         cloudlog.exception(f"Error updating GSM settings: {e}")

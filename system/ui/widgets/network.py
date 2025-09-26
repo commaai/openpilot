@@ -179,7 +179,7 @@ class AdvancedNetworkSettings(Widget):
     self._roaming_action.set_enabled(False)
     self._params.put_bool("GsmRoaming", roaming_state)
     # Get current APN and metered settings
-    apn = self._params.get("GsmApn", "").decode('utf-8') if self._params.get("GsmApn") else ""
+    apn = self._params.get("GsmApn", "")
     metered = self._params.get_bool("GsmMetered")
     self._wifi_manager.update_gsm_settings(roaming_state, apn, metered)
 
