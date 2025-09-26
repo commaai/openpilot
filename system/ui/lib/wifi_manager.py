@@ -512,7 +512,7 @@ class WifiManager:
 
         if not self._ipv4_forward:
           time.sleep(5)
-          cloudlog.info("net.ipv4.ip_forward = 0")
+          cloudlog.warning("net.ipv4.ip_forward = 0")
           subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
@@ -680,24 +680,24 @@ class WifiManager:
         auto_config = apn == ""
 
         if settings['gsm'].get('auto-config', ('b', False))[1] != auto_config:
-          cloudlog.info(f'Changing gsm.auto-config to {auto_config}')
+          cloudlog.warning(f'Changing gsm.auto-config to {auto_config}')
           settings['gsm']['auto-config'] = ('b', auto_config)
           changes = True
 
         if settings['gsm'].get('apn', ('s', ''))[1] != apn:
-          cloudlog.info(f'Changing gsm.apn to {apn}')
+          cloudlog.warning(f'Changing gsm.apn to {apn}')
           settings['gsm']['apn'] = ('s', apn)
           changes = True
 
         if settings['gsm'].get('home-only', ('b', False))[1] == roaming:
-          cloudlog.info(f'Changing gsm.home-only to {not roaming}')
+          cloudlog.warning(f'Changing gsm.home-only to {not roaming}')
           settings['gsm']['home-only'] = ('b', not roaming)
           changes = True
 
         # Unknown means NetworkManager decides
         metered_int = int(MeteredType.UNKNOWN if metered else MeteredType.NO)
         if settings['connection'].get('metered', ('i', 0))[1] != metered_int:
-          cloudlog.info(f'Changing connection.metered to {metered_int}')
+          cloudlog.warning(f'Changing connection.metered to {metered_int}')
           settings['connection']['metered'] = ('i', metered_int)
           changes = True
 
