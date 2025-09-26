@@ -41,6 +41,9 @@ class ItemAction(Widget, ABC):
     self.set_rect(rl.Rectangle(0, 0, width, 0))
     self._enabled_source = enabled
 
+  def set_enabled(self, enabled: bool | Callable[[], bool]):
+    self._enabled_source = enabled
+
   @property
   def enabled(self):
     return _resolve_value(self._enabled_source, False)
@@ -58,8 +61,9 @@ class ToggleAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self.toggle.set_enabled(self.enabled)
-    self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
-    return False
+    clicked = self.toggle.render(rl.Rectangle(rect.x, rect.y + (rect.height - TOGGLE_HEIGHT) / 2, self._rect.width, TOGGLE_HEIGHT))
+    self.state = self.toggle.get_state()
+    return bool(clicked)
 
   def set_state(self, state: bool):
     self.state = state
@@ -86,7 +90,7 @@ class ButtonAction(ItemAction):
       border_radius=BUTTON_BORDER_RADIUS,
       click_callback=pressed,
     )
-    self._button.set_enabled(_resolve_value(enabled))
+    self.set_enabled(enabled)
 
   def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
     super().set_touch_valid_callback(touch_callback)
@@ -98,6 +102,7 @@ class ButtonAction(ItemAction):
 
   def _render(self, rect: rl.Rectangle) -> bool:
     self._button.set_text(self.text)
+    self._button.set_enabled(_resolve_value(self.enabled))
     button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
     self._button.render(button_rect)
 
@@ -120,6 +125,10 @@ class TextAction(ItemAction):
   @property
   def text(self):
     return _resolve_value(self._text_source, "Error")
+
+  def _update_state(self):
+    text_width = measure_text_cached(self._font, self.text, ITEM_TEXT_FONT_SIZE).x
+    self._rect.width = int(text_width + TEXT_PADDING)
 
   def _render(self, rect: rl.Rectangle) -> bool:
     current_text = self.text
@@ -183,7 +192,7 @@ class MultipleButtonAction(ItemAction):
 
       # Check button state
       mouse_pos = rl.get_mouse_position()
-      is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect)
+      is_hovered = rl.check_collision_point_rec(mouse_pos, button_rect) and self.enabled
       is_pressed = is_hovered and rl.is_mouse_button_down(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed
       is_selected = i == self.selected_button
 
@@ -195,6 +204,9 @@ class MultipleButtonAction(ItemAction):
       else:
         bg_color = rl.Color(57, 57, 57, 255)  # Gray
 
+      if not self.enabled:
+        bg_color = rl.Color(bg_color.r, bg_color.g, bg_color.b, 150)  # Dim
+
       # Draw button
       rl.draw_rectangle_rounded(button_rect, 1.0, 20, bg_color)
 
@@ -202,7 +214,8 @@ class MultipleButtonAction(ItemAction):
       text_size = measure_text_cached(self._font, text, 40)
       text_x = button_x + (self.button_width - text_size.x) / 2
       text_y = button_y + (BUTTON_HEIGHT - text_size.y) / 2
-      rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, rl.Color(228, 228, 228, 255))
+      text_color = rl.Color(228, 228, 228, 255) if self.enabled else rl.Color(150, 150, 150, 255)
+      rl.draw_text_ex(self._font, text, rl.Vector2(text_x, text_y), 40, 0, text_color)
 
       # Handle click
       if is_hovered and rl.is_mouse_button_released(rl.MouseButton.MOUSE_BUTTON_LEFT) and self.is_pressed:
