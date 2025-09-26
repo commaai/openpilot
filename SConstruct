@@ -10,7 +10,6 @@ import SCons.Errors
 SCons.Warnings.warningAsException(True)
 
 TICI = os.path.isfile('/TICI')
-AGNOS = TICI
 
 Decider('MD5-timestamp')
 
@@ -53,7 +52,7 @@ real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rst
 if platform.system() == "Darwin":
   arch = "Darwin"
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-elif arch == "aarch64" and AGNOS:
+elif arch == "aarch64" and TICI:
   arch = "larch64"
 assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
@@ -195,7 +194,7 @@ if arch == "Darwin":
 env.CompilationDatabase('compile_commands.json')
 
 # Setup cache dir
-cache_dir = '/data/scons_cache' if AGNOS else '/tmp/scons_cache'
+cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
