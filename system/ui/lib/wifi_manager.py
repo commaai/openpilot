@@ -23,7 +23,7 @@ from openpilot.system.ui.lib.networkmanager import (NM, NM_WIRELESS_IFACE, NM_80
                                                     NM_802_11_AP_FLAGS_PRIVACY, NM_802_11_AP_FLAGS_WPS,
                                                     NM_PATH, NM_IFACE, NM_ACCESS_POINT_IFACE, NM_SETTINGS_PATH,
                                                     NM_SETTINGS_IFACE, NM_CONNECTION_IFACE, NM_DEVICE_IFACE,
-                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
+                                                    NM_DEVICE_TYPE_WIFI, NM_DEVICE_TYPE_MODEM, NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT,
                                                     NM_DEVICE_STATE_REASON_NEW_ACTIVATION, NM_ACTIVE_CONNECTION_IFACE,
                                                     NM_IP4_CONFIG_IFACE, NMDeviceState)
 
@@ -277,25 +277,29 @@ class WifiManager:
 
   def _wait_for_wifi_device(self):
     while not self._exit:
-      device_path = self._get_wifi_device()
+      # Cache and wait for a WiFi adapter path
+      device_path = self._get_adapter(NM_DEVICE_TYPE_WIFI)
       if device_path is not None:
+        self._wifi_device = device_path
         break
       time.sleep(1)
 
-  def _get_wifi_device(self) -> str | None:
-    if self._wifi_device is not None:
-      return self._wifi_device
+  def _get_adapter(self, adapter_type: int) -> str | None:
+    """Return the first NetworkManager device path matching adapter_type, or None.
 
-    device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
-    for device_path in device_paths:
-      dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
-      dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
+    Mirrors the behavior of the C++ getAdapter helper.
+    """
+    try:
+      device_paths = self._router_main.send_and_get_reply(new_method_call(self._nm, 'GetDevices')).body[0]
+      for device_path in device_paths:
+        dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
+        dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
+        if dev_type == adapter_type:
+          return device_path
+    except Exception as e:
+      cloudlog.exception(f"Error getting adapter type {adapter_type}: {e}")
+    return None
 
-      if dev_type == NM_DEVICE_TYPE_WIFI:
-        self._wifi_device = device_path
-        break
-
-    return self._wifi_device
 
   def _get_connections(self) -> dict[str, str]:
     settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
@@ -644,6 +648,135 @@ class WifiManager:
 
   def __del__(self):
     self.stop()
+
+  def update_gsm_settings(self, roaming: bool, apn: str, metered: bool):
+    """Update GSM settings for cellular connection"""
+    def worker():
+      try:
+        # Find the LTE connection
+        lte_connection_path = self._get_lte_connection_path()
+        if not lte_connection_path:
+          cloudlog.warning("No LTE connection found")
+          return
+
+        # Get current connection settings
+        settings = self._get_connection_settings(lte_connection_path)
+        if not settings:
+          cloudlog.warning(f"Failed to get connection settings for {lte_connection_path}")
+          return
+
+        changes = False
+        auto_config = not apn  # auto_config is True when apn is empty
+
+        # Check and update gsm.auto-config
+        current_auto_config = settings.get('gsm', {}).get('auto-config', [False, False])[1]
+        if current_auto_config != auto_config:
+          cloudlog.info(f"Changing gsm.auto-config to {auto_config}")
+          if 'gsm' not in settings:
+            settings['gsm'] = {}
+          settings['gsm']['auto-config'] = ('b', auto_config)
+          changes = True
+
+        # Check and update gsm.apn
+        current_apn = settings.get('gsm', {}).get('apn', ['s', ''])[1]
+        if current_apn != apn:
+          cloudlog.info(f"Changing gsm.apn to {apn}")
+          if 'gsm' not in settings:
+            settings['gsm'] = {}
+          settings['gsm']['apn'] = ('s', apn)
+          changes = True
+
+        # Check and update gsm.home-only (roaming is opposite of home-only)
+        current_home_only = settings.get('gsm', {}).get('home-only', [False, False])[1]
+        new_home_only = not roaming
+        if current_home_only != new_home_only:
+          cloudlog.info(f"Changing gsm.home-only to {new_home_only}")
+          if 'gsm' not in settings:
+            settings['gsm'] = {}
+          settings['gsm']['home-only'] = ('b', new_home_only)
+          changes = True
+
+        # Check and update connection.metered
+        metered_int = 0 if metered else 2  # NM_METERED_UNKNOWN : NM_METERED_NO
+        current_metered = settings.get('connection', {}).get('metered', [0, 0])[1]
+        if current_metered != metered_int:
+          cloudlog.info(f"Changing connection.metered to {metered_int}")
+          if 'connection' not in settings:
+            settings['connection'] = {}
+          settings['connection']['metered'] = ('i', metered_int)
+          changes = True
+
+        if changes:
+          # Update the connection settings (temporary update)
+          conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+          reply = self._router_main.send_and_get_reply(
+            new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,))
+          )
+
+          if reply.header.message_type == MessageType.error:
+            cloudlog.warning(f"Failed to update GSM settings: {reply}")
+            return
+
+          # Deactivate and reactivate the connection (exactly like C++ code)
+          self._deactivate_connection(lte_connection_path)
+          self._activate_modem_connection(lte_connection_path)
+
+          # trigger UI refresh callbacks so toggles can re-enable
+          self._enqueue_callbacks(self._networks_updated, self._networks)
+
+      except Exception as e:
+        cloudlog.exception(f"Error updating GSM settings: {e}")
+
+    threading.Thread(target=worker, daemon=True).start()
+
+  def _get_lte_connection_path(self) -> str | None:
+    """Find the LTE connection path by looking for connection with id='lte'"""
+    try:
+      settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
+      known_connections = self._router_main.send_and_get_reply(
+        new_method_call(settings_addr, 'ListConnections')
+      ).body[0]
+
+      for conn_path in known_connections:
+        settings = self._get_connection_settings(conn_path)
+        if settings and settings.get('connection', {}).get('id', ['s', ''])[1] == 'lte':
+          return conn_path
+
+      return None
+    except Exception as e:
+      cloudlog.exception(f"Error finding LTE connection: {e}")
+      return None
+
+  def _deactivate_connection(self, connection_path: str):
+    """Deactivate a connection by path (matches C++ deactivateConnection)"""
+    try:
+      # Find active connections and deactivate the one matching the path
+      active_connections = self._get_active_connections()
+      for active_conn in active_connections:
+        conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+        conn_path = self._router_main.send_and_get_reply(
+          Properties(conn_addr).get('Connection')
+        ).body[0][1]
+
+        if conn_path == connection_path:
+          self._router_main.send_and_get_reply(
+            new_method_call(self._nm, 'DeactivateConnection', 'o', (active_conn,))
+          )
+          break
+    except Exception as e:
+      cloudlog.exception(f"Error deactivating connection: {e}")
+
+  def _activate_modem_connection(self, connection_path: str):
+    """Activate modem connection (matches C++ activateModemConnection)"""
+    try:
+      modem_device = self._get_adapter(NM_DEVICE_TYPE_MODEM)
+      # Activate connection with modem device (matches C++ asyncCall)
+      if modem_device and connection_path:
+        self._router_main.send_and_get_reply(
+          new_method_call(self._nm, 'ActivateConnection', 'ooo', (connection_path, modem_device, "/"))
+        )
+    except Exception as e:
+      cloudlog.exception(f"Error activating modem connection: {e}")
 
   def stop(self):
     if not self._exit:

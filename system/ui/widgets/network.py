@@ -4,6 +4,7 @@ from typing import cast
 
 import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
+from openpilot.common.params import Params
 from openpilot.system.ui.lib.application import gui_app, DEFAULT_FPS
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
@@ -114,6 +115,7 @@ class AdvancedNetworkSettings(Widget):
     super().__init__()
     self._wifi_manager = wifi_manager
     self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
+    self._params = Params()
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
@@ -125,7 +127,12 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_password_action = ButtonAction(text="EDIT")
     self._tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
-    # TODO: Roaming toggle, edit APN settings, and cellular metered toggle
+    # Roaming toggle
+    roaming_enabled = self._params.get_bool("GsmRoaming")
+    self._roaming_action = ToggleAction(initial_state=roaming_enabled)
+    self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
+
+    # TODO: edit APN settings, and cellular metered toggle
 
     # Metered
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
@@ -136,6 +143,7 @@ class AdvancedNetworkSettings(Widget):
       self._tethering_btn,
       self._tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
+      self._roaming_btn,
       self._wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
     ]
@@ -146,6 +154,9 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
     self._tethering_password_action.set_enabled(True)
+
+    # Re-enable roaming toggle after updates complete
+    self._roaming_action.set_enabled(True)
 
     if self._wifi_manager.is_tethering_active() or self._wifi_manager.ipv4_address == "":
       self._wifi_metered_action.set_enabled(False)
@@ -161,6 +172,16 @@ class AdvancedNetworkSettings(Widget):
     if checked:
       self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
+
+  def _toggle_roaming(self):
+    roaming_state = self._roaming_action.state
+    # Disable until update finishes
+    self._roaming_action.set_enabled(False)
+    self._params.put_bool("GsmRoaming", roaming_state)
+    # Get current APN and metered settings
+    apn = self._params.get("GsmApn", "").decode('utf-8') if self._params.get("GsmApn") else ""
+    metered = self._params.get_bool("GsmMetered")
+    self._wifi_manager.update_gsm_settings(roaming_state, apn, metered)
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
