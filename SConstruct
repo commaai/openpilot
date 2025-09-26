@@ -86,6 +86,7 @@ env = Environment(
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
   ],
+  RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
