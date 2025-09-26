@@ -40,7 +40,7 @@ struct DecoderManager {
 
     std::unique_ptr<VideoDecoder> decoder;
     #ifndef __APPLE__
-    if (Hardware::TICI() && hw_decoder) {
+    if (Hardware::IS_TICI() && hw_decoder) {
       decoder = std::make_unique<QcomVideoDecoder>();
     } else
     #endif
