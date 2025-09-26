@@ -13,7 +13,8 @@
 
 class HardwareTici : public HardwareNone {
 public:
-  static bool IS_TICI() { return true; }
+  static bool TICI() { return true; }
+  static bool AGNOS() { return true; }
   static std::string get_os_version() {
     return "AGNOS " + util::read_file("/VERSION");
   }
