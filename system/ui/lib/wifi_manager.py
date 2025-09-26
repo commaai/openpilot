@@ -708,8 +708,8 @@ class WifiManager:
             cloudlog.warning(f"Failed to update GSM settings: {reply}")
             return
 
-          # Deactivate and reactivate the connection (exactly like C++ code)
-          self._deactivate_connection_by_path(lte_connection_path)
+          # Try to activate the connection directly first
+          # If it's already active, NetworkManager should handle it gracefully
           self._activate_modem_connection(lte_connection_path)
 
       except Exception as e:
@@ -733,6 +733,23 @@ class WifiManager:
       return None
     except Exception as e:
       cloudlog.exception(f"Error finding LTE connection: {e}")
+      return None
+
+  def _find_active_connection_by_path(self, connection_path: str) -> str | None:
+    """Find the active connection path for a given connection path"""
+    try:
+      active_connections = self._get_active_connections()
+      for active_conn in active_connections:
+        conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
+        conn_path = self._router_main.send_and_get_reply(
+          Properties(conn_addr).get('Connection')
+        ).body[0][1]
+
+        if conn_path == connection_path:
+          return active_conn
+      return None
+    except Exception as e:
+      cloudlog.exception(f"Error finding active connection: {e}")
       return None
 
   def _deactivate_connection_by_path(self, connection_path: str):
