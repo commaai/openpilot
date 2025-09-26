@@ -20,11 +20,6 @@ AddOption('--asan', action='store_true', help='turn on ASAN')
 AddOption('--ubsan', action='store_true', help='turn on UBSan')
 AddOption('--mutation', action='store_true', help='generate mutation-ready code')
 AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
-AddOption('--kaitai', action='store_true', help='Regenerate kaitai struct parsers')
-AddOption('--asan', action='store_true', help='turn on ASAN')
-AddOption('--ubsan', action='store_true', help='turn on UBSan')
-AddOption('--mutation', action='store_true', help='generate mutation-ready code')
-AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -33,12 +28,9 @@ AddOption('--minimal',
 
 # Detect platform
 arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
-# Detect platform
-arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
-elif arch == "aarch64" and os.path.isfile('/TICI'):
 elif arch == "aarch64" and os.path.isfile('/TICI'):
   arch = "larch64"
 assert arch in [
@@ -47,23 +39,7 @@ assert arch in [
   "x86_64",   # linux pc x64
   "Darwin",   # macOS arm64 (x86 not supported)
 ]
-assert arch in [
-  "larch64",  # linux tici arm64
-  "aarch64",  # linux pc arm64
-  "x86_64",   # linux pc x64
-  "Darwin",   # macOS arm64 (x86 not supported)
-]
 
-env = Environment(
-  ENV={
-    "PATH": os.environ['PATH'],
-    "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
-    "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
-    "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-    "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
-  },
-  CC='clang',
-  CXX='clang++',
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'],
@@ -90,15 +66,7 @@ env = Environment(
   CFLAGS=["-std=gnu11"],
   CXXFLAGS=["-std=c++1z"],
   CPPPATH=[
-  ],
-  CFLAGS=["-std=gnu11"],
-  CXXFLAGS=["-std=c++1z"],
-  CPPPATH=[
     "#",
-    "#msgq",
-    "#third_party",
-    "#third_party/json11",
-    "#third_party/linux/include",
     "#msgq",
     "#third_party",
     "#third_party/json11",
@@ -120,10 +88,7 @@ env = Environment(
     "#rednose/helpers",
     f"#third_party/libyuv/{arch}/lib",
     f"#third_party/acados/{arch}/lib",
-    f"#third_party/libyuv/{arch}/lib",
-    f"#third_party/acados/{arch}/lib",
   ],
-  RPATH=[],
   RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
@@ -132,53 +97,6 @@ env = Environment(
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
-# Arch-specific flags and paths
-if arch == "larch64":
-  env.Append(CPPPATH=["#third_party/opencl/include"])
-  env.Append(LIBPATH=[
-    "/usr/local/lib",
-    "/system/vendor/lib64",
-    "/usr/lib/aarch64-linux-gnu",
-  ])
-  arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
-  env.Append(CCFLAGS=arch_flags)
-  env.Append(CXXFLAGS=arch_flags)
-elif arch == "Darwin":
-  env.Append(LIBPATH=[
-    f"{brew_prefix}/lib",
-    f"{brew_prefix}/opt/openssl@3.0/lib",
-    f"{brew_prefix}/opt/llvm/lib/c++",
-    "/System/Library/Frameworks/OpenGL.framework/Libraries",
-  ])
-  env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
-  env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-  env.Append(CPPPATH=[
-    f"{brew_prefix}/include",
-    f"{brew_prefix}/opt/openssl@3.0/include",
-  ])
-else:
-  env.Append(LIBPATH=[
-    "/usr/lib",
-    "/usr/local/lib",
-  ])
-
-# Sanitizers and extra CCFLAGS from CLI
-if GetOption('asan'):
-  env.Append(CCFLAGS=["-fsanitize=address", "-fno-omit-frame-pointer"])
-  env.Append(LINKFLAGS=["-fsanitize=address"])
-elif GetOption('ubsan'):
-  env.Append(CCFLAGS=["-fsanitize=undefined"])
-  env.Append(LINKFLAGS=["-fsanitize=undefined"])
-
-_extra_cc = shlex.split(GetOption('ccflags') or '')
-if _extra_cc:
-  env.Append(CCFLAGS=_extra_cc)
-
-# no --as-needed on mac linker
-if arch != "Darwin":
-  env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
-
-# progress output
 env.AppendUnique(CPPPATH=[panda.INCLUDE_PATH])
 
 # Arch-specific flags and paths
@@ -238,7 +156,6 @@ if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
 # ********** Cython build environment **********
-# ********** Cython build environment **********
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
@@ -248,14 +165,12 @@ envCython["CCFLAGS"].remove("-Werror")
 envCython["LIBS"] = []
 if arch == "Darwin":
   envCython["LINKFLAGS"] = env["LINKFLAGS"] + ["-bundle", "-undefined", "dynamic_lookup"]
-  envCython["LINKFLAGS"] = env["LINKFLAGS"] + ["-bundle", "-undefined", "dynamic_lookup"]
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-# ********** Qt build environment **********
 # ********** Qt build environment **********
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
@@ -314,14 +229,6 @@ CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
 # ********** start building stuff **********
-Export('env', 'qt_env', 'arch')
-
-# Setup cache dir
-cache_dir = '/data/scons_cache' if arch == "larch64" else '/tmp/scons_cache'
-CacheDir(cache_dir)
-Clean(["."], cache_dir)
-
-# ********** start building stuff **********
 
 # Build common module
 SConscript(['common/SConscript'])
@@ -366,7 +273,5 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
   if arch != "larch64":
     SConscript(['tools/cabana/SConscript'])
 
-
-env.CompilationDatabase('compile_commands.json')
 
 env.CompilationDatabase('compile_commands.json')
