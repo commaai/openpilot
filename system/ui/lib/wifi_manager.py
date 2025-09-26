@@ -539,7 +539,6 @@ class WifiManager:
           self._current_network_metered = MeteredType.YES
         elif metered_prop == MeteredType.NO:
           self._current_network_metered = MeteredType.NO
-        print('current_network_metered', self._current_network_metered)
         return
 
   def set_current_network_metered(self, metered: MeteredType):
