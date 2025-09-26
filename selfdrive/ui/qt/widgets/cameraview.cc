@@ -27,7 +27,7 @@ const char frame_vertex_shader[] =
   "}\n";
 
 const char frame_fragment_shader[] =
-#ifdef TICI
+#ifdef QCOM2
   "#version 300 es\n"
   "#extension GL_OES_EGL_image_external_essl3 : enable\n"
   "precision mediump float;\n"
@@ -79,7 +79,7 @@ CameraWidget::~CameraWidget() {
     glDeleteVertexArrays(1, &frame_vao);
     glDeleteBuffers(1, &frame_vbo);
     glDeleteBuffers(1, &frame_ibo);
-#ifndef TICI
+#ifndef QCOM2
     glDeleteTextures(2, textures);
 #endif
   }
@@ -137,7 +137,7 @@ void CameraWidget::initializeGL() {
 
   glUseProgram(program->programId());
 
-#ifdef TICI
+#ifdef QCOM2
   glUniform1i(program->uniformLocation("uTexture"), 0);
 #else
   glGenTextures(2, textures);
@@ -165,7 +165,7 @@ void CameraWidget::stopVipcThread() {
     vipc_thread = nullptr;
   }
 
-#ifdef TICI
+#ifdef QCOM2
   EGLDisplay egl_display = eglGetCurrentDisplay();
   assert(egl_display != EGL_NO_DISPLAY);
   for (auto &pair : egl_images) {
@@ -226,7 +226,7 @@ void CameraWidget::paintGL() {
   glUseProgram(program->programId());
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-#ifdef TICI
+#ifdef QCOM2
   // no frame copy
   glActiveTexture(GL_TEXTURE0);
   glEGLImageTargetTexture2DOES(GL_TEXTURE_EXTERNAL_OES, egl_images[frame->idx]);
@@ -263,7 +263,7 @@ void CameraWidget::vipcConnected(VisionIpcClient *vipc_client) {
   stream_height = vipc_client->buffers[0].height;
   stream_stride = vipc_client->buffers[0].stride;
 
-#ifdef TICI
+#ifdef QCOM2
   EGLDisplay egl_display = eglGetCurrentDisplay();
   assert(egl_display != EGL_NO_DISPLAY);
   for (auto &pair : egl_images) {
