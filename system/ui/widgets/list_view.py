@@ -105,15 +105,6 @@ class ButtonAction(ItemAction):
     pressed = self._pressed
     self._pressed = False
     return pressed
-    # return gui_button(
-    #   rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
-    #   self.text,
-    #   border_radius=BUTTON_BORDER_RADIUS,
-    #   font_weight=BUTTON_FONT_WEIGHT,
-    #   font_size=BUTTON_FONT_SIZE,
-    #   button_style=ButtonStyle.LIST_ACTION,
-    #   is_enabled=self.enabled,
-    # ) == 1
 
 
 class TextAction(ItemAction):
