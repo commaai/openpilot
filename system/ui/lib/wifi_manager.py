@@ -711,7 +711,6 @@ class WifiManager:
             return
 
           self._activate_modem_connection(lte_connection_path)
-
       except Exception as e:
         cloudlog.exception(f"Error updating GSM settings: {e}")
 
