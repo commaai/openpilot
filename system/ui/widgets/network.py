@@ -3,7 +3,7 @@ from functools import partial
 from typing import cast
 
 import pyray as rl
-from openpilot.common.filter_simple import FirstOrderFilter, BounceFilter
+from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, DEFAULT_FPS
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
 from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
@@ -47,16 +47,12 @@ class NavButton(Widget):
     super().__init__()
     self.text = text
     self.set_rect(rl.Rectangle(0, 0, 400, 100))
-    # self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
-    # self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
-    self._x_pos_filter = BounceFilter(0.0, 0.1, 1 / DEFAULT_FPS, initialized=False)
-    self._y_pos_filter = BounceFilter(0.0, 0.1, 1 / DEFAULT_FPS, initialized=False)
-    # self._x_pos_filter = SecondOrderFilter(0.0, response=0.05, dt=1 / DEFAULT_FPS, initialized=False)
-    # self._y_pos_filter = SecondOrderFilter(0.0, response=0.28, dt=1 / DEFAULT_FPS, initialized=False)
+    self._x_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
+    self._y_pos_filter = FirstOrderFilter(0.0, 0.05, 1 / DEFAULT_FPS, initialized=False)
 
   def set_position(self, x: float, y: float) -> None:
     x = self._x_pos_filter.update(x)
-    y = y  # self._y_pos_filter.update(y)
+    y = self._y_pos_filter.update(y)
     changed = (self._rect.x != x or self._rect.y != y)
     self._rect.x, self._rect.y = x, y
     if changed:
