@@ -76,6 +76,7 @@ env = Environment(
     "#third_party/acados/include/hpipm/include",
     "#third_party/catch2/include",
     "#third_party/libyuv/include",
+    "#third_party/capnproto/include",
   ],
   LIBPATH=[
     "#common",
