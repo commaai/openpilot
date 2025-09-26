@@ -246,7 +246,9 @@ class Keyboard(Widget):
       if not self._caps_lock and self._layout_name == "uppercase":
         self._layout_name = "lowercase"
 
-  def reset(self):
+  def reset(self, min_text_size: int | None = None):
+    if min_text_size is not None:
+      self._min_text_size = min_text_size
     self._render_return_status = -1
     self.clear()
 

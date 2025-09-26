@@ -123,7 +123,7 @@ class AdvancedNetworkSettings(Widget):
     # self._pair_device_dialog: PairingDialog | None = None
     # self._fcc_dialog: HtmlRenderer | None = None
 
-    # ~enable tethering~, ~tethering password~, ~ip address~, wifi network metered, hidden network, (lte settings?)
+    # ~enable tethering~, ~tethering password~, ~ip address~, ~wifi network metered~, ~hidden network~, (lte settings?)
 
     # # tethering = toggle_item("Enable Tethering", initial_state=wifi_manager
     # tethering = toggle_item("Enable Tethering", callback=self._wifi_manager)#, initial_state=wifi_manager
@@ -151,6 +151,7 @@ class AdvancedNetworkSettings(Widget):
       button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
       self._wifi_metered_btn,
+      button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -179,6 +180,50 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_current_network_metered(metered_type)
 
+  def _connect_to_hidden_network(self):
+    """
+    hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
+    connect(hiddenNetworkButton, &ButtonControl::clicked, [=]() {
+      QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false, 1);
+      if (!ssid.isEmpty()) {
+        QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, -1);
+        Network hidden_network;
+        hidden_network.ssid = ssid.toUtf8();
+        if (!pass.isEmpty()) {
+          hidden_network.security_type = SecurityType::WPA;
+          wifi->connect(hidden_network, true, pass);
+        } else {
+          wifi->connect(hidden_network, true);
+        }
+        emit requestWifiScreen();
+      }
+    });
+    """
+    def connect_hidden(result):
+      if result != 1:
+        return
+
+      ssid = self._keyboard.text
+      if not ssid:
+        return
+
+      def enter_password(result):
+        password = self._keyboard.text
+        if password == "":
+          # connect without password
+          self._wifi_manager.connect_to_network(ssid, "", hidden=True)
+          return
+
+        self._wifi_manager.connect_to_network(ssid, password, hidden=True)
+
+      self._keyboard.reset(min_text_size=0)
+      self._keyboard.set_title("Enter password", f"for \"{ssid}\"")
+      gui_app.set_modal_overlay(self._keyboard, enter_password)
+
+    self._keyboard.reset(min_text_size=1)
+    self._keyboard.set_title("Enter SSID", "")
+    gui_app.set_modal_overlay(self._keyboard, connect_hidden)
+
   def _edit_tethering_password(self):
     def update_password(result):
       if result != 1:
@@ -187,7 +232,7 @@ class AdvancedNetworkSettings(Widget):
       password = self._keyboard.text
       self._wifi_manager.set_tethering_password(password)
 
-    self._keyboard.reset()
+    self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
     self._keyboard.set_text(self._wifi_manager.tethering_password)
     gui_app.set_modal_overlay(self._keyboard, update_password)
 
@@ -237,7 +282,7 @@ class WifiManagerUI(Widget):
 
     if self.state == UIState.NEEDS_AUTH and self._state_network:
       self.keyboard.set_title("Wrong password" if self._password_retry else "Enter password", f"for {self._state_network.ssid}")
-      self.keyboard.reset()
+      self.keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
       gui_app.set_modal_overlay(self.keyboard, lambda result: self._on_password_entered(cast(Network, self._state_network), result))
     elif self.state == UIState.SHOW_FORGET_CONFIRM and self._state_network:
       self._confirm_dialog.set_text(f'Forget Wi-Fi Network "{self._state_network.ssid}"?')

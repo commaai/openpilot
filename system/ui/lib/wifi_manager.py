@@ -333,13 +333,11 @@ class WifiManager:
       return {}
     return dict(reply.body[0])
 
-  def connect_to_network(self, ssid: str, password: str):
+  def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
     def worker():
       # Clear all connections that may already exist to the network we are connecting to
       self._connecting_to_ssid = ssid
       self.forget_connection(ssid, block=True)
-
-      is_hidden = False
 
       connection = {
         'connection': {
@@ -350,7 +348,7 @@ class WifiManager:
         },
         '802-11-wireless': {
           'ssid': ('ay', ssid.encode("utf-8")),
-          'hidden': ('b', is_hidden),
+          'hidden': ('b', hidden),
           'mode': ('s', 'infrastructure'),
         },
         'ipv4': {
