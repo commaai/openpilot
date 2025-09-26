@@ -230,7 +230,6 @@ Clean(["."], cache_dir)
 # Build common module
 SConscript(['common/SConscript'])
 Import('_common')
-
 common = [_common, 'json11', 'zmq']
 Export('common')
 
