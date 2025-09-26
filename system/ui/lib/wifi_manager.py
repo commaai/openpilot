@@ -725,11 +725,9 @@ class WifiManager:
         settings = self._get_connection_settings(conn_path)
         if settings and settings.get('connection', {}).get('id', ('s', ''))[1] == 'lte':
           return str(conn_path)
-
-      return None
     except Exception as e:
       cloudlog.exception(f"Error finding LTE connection: {e}")
-      return None
+    return None
 
   def _activate_modem_connection(self, connection_path: str):
     try:
