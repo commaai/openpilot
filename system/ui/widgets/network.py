@@ -177,7 +177,7 @@ class AdvancedNetworkSettings(Widget):
     roaming_state = self._roaming_action.state
     self._roaming_action.set_enabled(False)
     self._params.put_bool("GsmRoaming", roaming_state)
-    self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn"), self._params.get_bool("GsmMetered"))
+    self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
