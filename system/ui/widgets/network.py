@@ -14,7 +14,7 @@ from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.list_view import text_item, button_item, ListItem, ToggleAction, MultipleButtonAction, ButtonAction
+from openpilot.system.ui.widgets.list_view import text_item, button_item, ListItem, ToggleAction, MultipleButtonAction, ButtonAction, toggle_item
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -121,39 +121,36 @@ class AdvancedNetworkSettings(Widget):
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False)
-    self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
+    tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Edit tethering password
     self._tethering_password_action = ButtonAction(text="EDIT")
-    self._tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+    tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
     # Roaming toggle
     roaming_enabled = self._params.get_bool("GsmRoaming")
     self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
-
-    # APN settings
-    self._apn_btn = ListItem(title="APN Setting", action_item=ButtonAction(text="EDIT"), callback=self._edit_apn)
+    roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
 
     # Cellular metered toggle
     cellular_metered = self._params.get_bool("GsmMetered")
     self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
-    self._cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
+    cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
                                           action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
 
     # Wi-Fi metered toggle
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
-    self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
+    wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
                                       action_item=self._wifi_metered_action)
 
     items: list[Widget] = [
-      self._tethering_btn,
-      self._tethering_password_btn,
+      tethering_btn,
+      tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
-      self._roaming_btn,
-      self._apn_btn,
-      self._cellular_metered_btn,
-      self._wifi_metered_btn,
+      roaming_btn,
+      button_item("APN Setting", "EDIT", callback=self._edit_apn),
+      cellular_metered_btn,
+      wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
     ]
 
