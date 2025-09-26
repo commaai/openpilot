@@ -11,14 +11,14 @@ from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
 
 class PrimeType(IntEnum):
-  UNKNOWN = -2,
-  UNPAIRED = -1,
-  NONE = 0,
-  MAGENTA = 1,
-  LITE = 2,
-  BLUE = 3,
-  MAGENTA_NEW = 4,
-  PURPLE = 5,
+  UNKNOWN = -2
+  UNPAIRED = -1
+  NONE = 0
+  MAGENTA = 1
+  LITE = 2
+  BLUE = 3
+  MAGENTA_NEW = 4
+  PURPLE = 5
 
 
 class PrimeState:
@@ -90,6 +90,7 @@ class PrimeState:
 
   def get_type(self) -> PrimeType:
     with self._lock:
+      print('type', self.prime_type)
       return self.prime_type
 
   def is_prime(self) -> bool:
