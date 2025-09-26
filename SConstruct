@@ -65,8 +65,8 @@ if arch == "larch64":
     "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu"
   ]
-  cflags = ["-DQCOM2", "-mcpu=cortex-a57"]
-  cxxflags = ["-DQCOM2", "-mcpu=cortex-a57"]
+  cflags = ["-DTICI", "-mcpu=cortex-a57"]
+  cxxflags = ["-DTICI", "-mcpu=cortex-a57"]
   rpath += ["/usr/local/lib"]
 else:
   cflags = []

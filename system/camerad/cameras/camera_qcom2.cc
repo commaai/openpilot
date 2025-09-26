@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-#ifdef QCOM2
+#ifdef TICI
 #include "CL/cl_ext_qcom.h"
 #else
 #define CL_PRIORITY_HINT_HIGH_QCOM NULL

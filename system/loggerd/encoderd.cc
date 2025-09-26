@@ -3,7 +3,7 @@
 #include "system/loggerd/loggerd.h"
 #include "system/loggerd/encoder/jpeg_encoder.h"
 
-#ifdef QCOM2
+#ifdef TICI
 #include "system/loggerd/encoder/v4l_encoder.h"
 #define Encoder V4LEncoder
 #else

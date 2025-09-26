@@ -6,7 +6,7 @@
 #include <QScreen>
 #include <QWidget>
 
-#ifdef QCOM2
+#ifdef TICI
 #include <qpa/qplatformnativeinterface.h>
 #include <wayland-client-protocol.h>
 #include <QPlatformSurfaceEvent>
