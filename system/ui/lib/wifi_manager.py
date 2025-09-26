@@ -195,8 +195,9 @@ class WifiManager:
   def tethering_password(self) -> str:
     return self._tethering_password
 
-  def _enqueue_callback(self, cb: Callable, *args):
-    self._callback_queue.append(lambda: cb(*args))
+  def _enqueue_callbacks(self, cbs: list[Callable], *args):
+    for cb in cbs:
+      self._callback_queue.append(lambda _cb=cb: _cb(*args))
 
   def process_callbacks(self):
     # Call from UI thread to run any pending callbacks
@@ -246,21 +247,18 @@ class WifiManager:
         # BAD PASSWORD
         if new_state == NMDeviceState.NEED_AUTH and change_reason == NM_DEVICE_STATE_REASON_SUPPLICANT_DISCONNECT and len(self._connecting_to_ssid):
           self.forget_connection(self._connecting_to_ssid, block=True)
-          for cb in self._need_auth:
-            self._enqueue_callback(cb, self._connecting_to_ssid)
+          self._enqueue_callbacks(self._need_auth, self._connecting_to_ssid)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.ACTIVATED:
           if len(self._activated):
             self._update_networks()
-          for cb in self._activated:
-            self._enqueue_callback(cb)
+          self._enqueue_callbacks(self._activated)
           self._connecting_to_ssid = ""
 
         elif new_state == NMDeviceState.DISCONNECTED and change_reason != NM_DEVICE_STATE_REASON_NEW_ACTIVATION:
           self._connecting_to_ssid = ""
-          for cb in self._forgotten:
-            self._enqueue_callback(cb)
+          self._enqueue_callbacks(self._forgotten)
 
   def _network_scanner(self):
     self._wait_for_wifi_device()
@@ -380,9 +378,7 @@ class WifiManager:
 
         if len(self._forgotten):
           self._update_networks()
-        # TODO: move the for loop to enqueue_callback
-        for cb in self._forgotten:
-          self._enqueue_callback(cb)
+        self._enqueue_callbacks(self._forgotten)
 
     if block:
       worker()
@@ -591,8 +587,7 @@ class WifiManager:
       self._update_ipv4_address()
       self._update_current_network_metered()
 
-      for cb in self._networks_updated:
-        self._enqueue_callback(cb, self._networks)
+      self._enqueue_callbacks(self._networks_updated, self._networks)
 
   def _update_ipv4_address(self):
     if self._wifi_device is None:
