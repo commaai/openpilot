@@ -93,7 +93,7 @@ class NetworkUI(Widget):
   def _render(self, _):
     # subtract button
     content_rect = rl.Rectangle(self._rect.x, self._rect.y + self._nav_button.rect.height + 20,
-                              self._rect.width, self._rect.height - self._nav_button.rect.height - 20)
+                                self._rect.width, self._rect.height - self._nav_button.rect.height - 20)
     if self._current_panel == PanelType.WIFI:
       self._nav_button.text = "Advanced"
       self._nav_button.set_position(self._rect.x + self._rect.width - self._nav_button.rect.width, self._rect.y + 10)
@@ -229,10 +229,10 @@ class WifiManagerUI(Widget):
     self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
 
     self._wifi_manager.set_callbacks(need_auth=self._on_need_auth,
-                                    activated=self._on_activated,
-                                    forgotten=self._on_forgotten,
-                                    networks_updated=self._on_network_updated,
-                                    disconnected=self._on_disconnected)
+                                     activated=self._on_activated,
+                                     forgotten=self._on_forgotten,
+                                     networks_updated=self._on_network_updated,
+                                     disconnected=self._on_disconnected)
 
   def show_event(self):
     # start/stop scanning when widget is visible
