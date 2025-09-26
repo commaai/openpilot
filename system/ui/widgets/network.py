@@ -153,7 +153,7 @@ class AdvancedNetworkSettings(Widget):
     items = [
       self._tethering_btn,
       # button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
-      self._tethering_password_btn
+      self._tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
       self._wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
@@ -239,8 +239,8 @@ class AdvancedNetworkSettings(Widget):
 
       password = self._keyboard.text
       self._wifi_manager.set_tethering_password(password)
+      self._tethering_password_action.set_enabled(False)
 
-    self._tethering_password_action.set_enabled(False)
     self._keyboard.reset(min_text_size=MIN_PASSWORD_LENGTH)
     self._keyboard.set_title("Enter new tethering password", "")
     self._keyboard.set_text(self._wifi_manager.tethering_password)
