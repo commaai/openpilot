@@ -15,28 +15,11 @@ Decider('MD5-timestamp')
 
 SetOption('num_jobs', max(1, int(os.cpu_count()/2)))
 
-AddOption('--kaitai',
-          action='store_true',
-          help='Regenerate kaitai struct parsers')
-
-AddOption('--asan',
-          action='store_true',
-          help='turn on ASAN')
-
-AddOption('--ubsan',
-          action='store_true',
-          help='turn on UBSan')
-
-AddOption('--ccflags',
-          action='store',
-          type='string',
-          default='',
-          help='pass arbitrary flags over the command line')
-
-AddOption('--mutation',
-          action='store_true',
-          help='generate mutation-ready code')
-
+AddOption('--kaitai', action='store_true', help='Regenerate kaitai struct parsers')
+AddOption('--asan', action='store_true', help='turn on ASAN')
+AddOption('--ubsan', action='store_true', help='turn on UBSan')
+AddOption('--ccflags', action='store', type='string', default='', help='pass arbitrary flags over the command line')
+AddOption('--mutation', action='store_true', help='generate mutation-ready code')
 AddOption('--minimal',
           action='store_false',
           dest='extras',
@@ -191,12 +174,6 @@ if arch == "Darwin":
   darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
   env["LINKFLAGS"] += darwin_rpath_link_flags
 
-env.CompilationDatabase('compile_commands.json')
-
-# Setup cache dir
-cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
-CacheDir(cache_dir)
-Clean(["."], cache_dir)
 
 node_interval = 5
 node_count = 0
@@ -276,6 +253,13 @@ qt_env['LIBS'] = qt_libs
 
 Export('env', 'qt_env', 'arch', 'real_arch')
 
+# Setup cache dir
+cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
+CacheDir(cache_dir)
+Clean(["."], cache_dir)
+
+# *** start building stuff ***
+
 # Build common module
 SConscript(['common/SConscript'])
 Import('_common')
@@ -320,3 +304,6 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   if arch != "larch64":
     SConscript(['tools/cabana/SConscript'])
+
+
+env.CompilationDatabase('compile_commands.json')
