@@ -158,14 +158,25 @@ class WifiManager:
     self._disconnected: list[Callable[[], None]] = []
 
     self._lock = threading.Lock()
-
     self._scan_thread = threading.Thread(target=self._network_scanner, daemon=True)
-    self._scan_thread.start()
-
     self._state_thread = threading.Thread(target=self._monitor_state, daemon=True)
-    self._state_thread.start()
-
+    self._initialize()
     atexit.register(self.stop)
+
+  def _initialize(self):
+    def worker():
+      self._wait_for_wifi_device()
+
+      self._scan_thread.start()
+      self._state_thread.start()
+
+      if self._tethering_ssid not in self._get_connections():
+        self._add_tethering_connection()
+
+      self._tethering_password = self._get_tethering_password()
+      cloudlog.debug("WifiManager initialized")
+
+    threading.Thread(target=worker, daemon=True).start()
 
   def set_callbacks(self, need_auth: Callable[[str], None] | None = None,
                     activated: Callable[[], None] | None = None,
@@ -213,18 +224,11 @@ class WifiManager:
       self._last_network_update = 0.0
 
   def _monitor_state(self):
-    # TODO: make an initialize function to only wait in one place
-    device_path = self._wait_for_wifi_device()
-    if device_path is None:
-      return
-
-    self._tethering_password = self._get_tethering_password()
-
     rule = MatchRule(
       type="signal",
       interface=NM_DEVICE_IFACE,
       member="StateChanged",
-      path=device_path,
+      path=self._wifi_device,
     )
 
     # Filter for StateChanged signal
@@ -261,8 +265,6 @@ class WifiManager:
           self._enqueue_callbacks(self._forgotten)
 
   def _network_scanner(self):
-    self._wait_for_wifi_device()
-
     while not self._exit:
       if self._active:
         if time.monotonic() - self._last_network_update > SCAN_PERIOD_SECONDS:
@@ -273,15 +275,12 @@ class WifiManager:
           self._last_network_update = time.monotonic()
       time.sleep(1 / 2.)
 
-  def _wait_for_wifi_device(self) -> str | None:
-    with self._lock:
-      device_path: str | None = None
-      while not self._exit:
-        device_path = self._get_wifi_device()
-        if device_path is not None:
-          break
-        time.sleep(1)
-      return device_path
+  def _wait_for_wifi_device(self):
+    while not self._exit:
+      device_path = self._get_wifi_device()
+      if device_path is not None:
+        break
+      time.sleep(1)
 
   def _get_wifi_device(self) -> str | None:
     if self._wifi_device is not None:
@@ -330,6 +329,43 @@ class WifiManager:
       cloudlog.warning(f'Failed to get connection settings: {reply}')
       return {}
     return dict(reply.body[0])
+
+  def _add_tethering_connection(self):
+    connection = {
+      'connection': {
+        'type': ('s', '802-11-wireless'),
+        'uuid': ('s', str(uuid.uuid4())),
+        'id': ('s', 'Hotspot'),
+        'autoconnect-retries': ('i', 0),
+        'interface-name': ('s', 'wlan0'),
+        'autoconnect': ('b', False),
+      },
+      '802-11-wireless': {
+        'band': ('s', 'bg'),
+        'mode': ('s', 'ap'),
+        'ssid': ('ay', self._tethering_ssid.encode("utf-8")),
+      },
+      '802-11-wireless-security': {
+        'group': ('as', ['ccmp']),
+        'key-mgmt': ('s', 'wpa-psk'),
+        'pairwise': ('as', ['ccmp']),
+        'proto': ('as', ['rsn']),
+        'psk': ('s', DEFAULT_TETHERING_PASSWORD),
+      },
+      'ipv4': {
+        'method': ('s', 'shared'),
+        'address-data': ('aa{sv}', [[
+          ('address', ('s', TETHERING_IP_ADDRESS)),
+          ('prefix', ('u', 24)),
+        ]]),
+        'gateway': ('s', TETHERING_IP_ADDRESS),
+        'never-default': ('b', True),
+      },
+      'ipv6': {'method': ('s', 'ignore')},
+    }
+
+    settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
+    self._router_main.send_and_get_reply(new_method_call(settings_addr, 'AddConnection', 'a{sa{sv}}', (connection,)))
 
   def connect_to_network(self, ssid: str, password: str, hidden: bool = False):
     def worker():
