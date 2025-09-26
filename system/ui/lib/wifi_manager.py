@@ -303,15 +303,12 @@ class WifiManager:
 
     conns: dict[str, str] = {}
     for conn_path in known_connections:
-      conn_addr = DBusAddress(conn_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-      reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, "GetSettings"))
+      settings = self._get_connection_settings(conn_path)
 
-      # ignore connections removed during iteration (need auth, etc.)
-      if reply.header.message_type == MessageType.error:
-        cloudlog.warning(f"Failed to get connection properties for {conn_path}")
+      if len(settings) == 0:
+        cloudlog.warning(f'Failed to get connection settings for {conn_path}')
         continue
 
-      settings = reply.body[0]
       if "802-11-wireless" in settings:
         ssid = settings['802-11-wireless']['ssid'][1].decode("utf-8", "replace")
         if ssid != "":
