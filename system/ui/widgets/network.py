@@ -117,18 +117,19 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
     # Tethering
-    self._tethering_action = ToggleAction(initial_state=False, enabled=True)
+    self._tethering_action = ToggleAction(initial_state=False)
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Tethering Password
     self._tethering_password_action = ButtonAction(text="EDIT")
-    self._tethering_password_btn = ListItem(title="Tethering Password", description=None, action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+    self._tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
     # TODO: Roaming toggle, edit APN settings, and cellular metered toggle
 
     # Metered
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
-    self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection", icon=None, action_item=self._wifi_metered_action)
+    self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
+                                      action_item=self._wifi_metered_action)
 
     items = [
       self._tethering_btn,
@@ -410,7 +411,6 @@ class WifiManagerUI(Widget):
   def _on_disconnected(self):
     if self.state == UIState.CONNECTING:
       self.state = UIState.IDLE
-
 
 
 def main():

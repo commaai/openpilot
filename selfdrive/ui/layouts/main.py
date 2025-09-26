@@ -34,9 +34,6 @@ class MainLayout(Widget):
     # Set callbacks
     self._setup_callbacks()
 
-    self._on_settings_clicked()
-
-
   def _render(self, _):
     self._handle_onroad_transition()
     self._render_main_content()

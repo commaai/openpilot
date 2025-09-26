@@ -51,7 +51,7 @@ class PanelInfo:
 class SettingsLayout(Widget):
   def __init__(self):
     super().__init__()
-    self._current_panel = PanelType.NETWORK
+    self._current_panel = PanelType.DEVICE
 
     # Panel configuration
     wifi_manager = WifiManager()
@@ -152,7 +152,6 @@ class SettingsLayout(Widget):
     return False
 
   def set_current_panel(self, panel_type: PanelType):
-    panel_type = PanelType.NETWORK
     if panel_type != self._current_panel:
       self._panels[self._current_panel].instance.hide_event()
       self._current_panel = panel_type
