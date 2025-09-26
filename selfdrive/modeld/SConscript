@@ -1,11 +1,11 @@
 import os
 import glob
 
-Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'gpucommon', 'visionipc', 'transformations')
+Import('env', 'envCython', 'arch', 'cereal', 'messaging', 'common', 'visionipc', 'transformations')
 lenv = env.Clone()
 lenvCython = envCython.Clone()
 
-libs = [cereal, messaging, visionipc, gpucommon, common, 'capnp', 'kj', 'pthread']
+libs = [cereal, messaging, visionipc, common, 'capnp', 'kj', 'pthread']
 frameworks = []
 
 common_src = [

@@ -269,11 +269,11 @@ class GuiApplication:
             raise Exception
 
           if result >= 0:
-            # Execute callback with the result and clear the overlay
-            if self._modal_overlay.callback is not None:
-              self._modal_overlay.callback(result)
-
+            # Clear the overlay and execute the callback
+            original_modal = self._modal_overlay
             self._modal_overlay = ModalOverlay()
+            if original_modal.callback is not None:
+              original_modal.callback(result)
         else:
           yield
 

@@ -113,7 +113,6 @@ def setup_git_options(cwd: str) -> None:
     ("protocol.version", "2"),
     ("gc.auto", "0"),
     ("gc.autoDetach", "false"),
-    ("remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"),
   ]
   for option, value in git_cfg:
     run(["git", "config", option, value], cwd)
@@ -382,6 +381,8 @@ class Updater:
     self.params.put_bool("UpdateAvailable", False)
 
     setup_git_options(OVERLAY_MERGED)
+
+    run(["git", "config", "--replace-all", "remote.origin.fetch", "+refs/heads/*:refs/remotes/origin/*"], OVERLAY_MERGED)
 
     branch = self.target_branch
     git_fetch_output = run(["git", "fetch", "origin", branch], OVERLAY_MERGED)
