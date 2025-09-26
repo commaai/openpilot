@@ -9,9 +9,6 @@ import SCons.Errors
 
 SCons.Warnings.warningAsException(True)
 
-# pending upstream fix - https://github.com/SCons/scons/issues/4461
-#SetOption('warn', 'all')
-
 TICI = os.path.isfile('/TICI')
 AGNOS = TICI
 
@@ -51,7 +48,7 @@ AddOption('--minimal',
 ## - larch64: linux tici aarch64
 ## - aarch64: linux pc aarch64
 ## - x86_64:  linux pc x64
-## - Darwin:  mac x64 or arm64
+## - Darwin:  mac arm64 (x86 not supported)
 real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
