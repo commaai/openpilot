@@ -116,7 +116,7 @@ class AdvancedNetworkSettings(Widget):
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
-    # ~enable tethering~, ~tethering password~, ~ip address~, ~wifi network metered~, ~hidden network~, (lte settings?)
+    # ~enable tethering~, ~tethering password~, ~ip address~, roaming toggle, edit APN, cellular metered, ~wifi network metered~, ~hidden network~
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
