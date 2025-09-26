@@ -51,8 +51,8 @@ class PIDController:
     self.d = error_rate * self.k_d
 
     if not freeze_integrator:
-      if error_expected is not None:
-        error = error_expected
+      #if error_expected is not None:
+      #  error = error_expected
       i = self.i + error * self.k_i * self.i_rate
 
       # Don't allow windup if already clipping
