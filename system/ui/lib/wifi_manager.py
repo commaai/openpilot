@@ -2,6 +2,7 @@ import atexit
 import threading
 import time
 import uuid
+import subprocess
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import IntEnum
@@ -142,6 +143,8 @@ class WifiManager:
     self._ipv4_address: str = ""
     self._current_network_metered: MeteredType = MeteredType.UNKNOWN
     self._tethering_password: str = ""
+    self._ipv4_forward = False
+
     self._last_network_update: float = 0.0
     self._callback_queue: list[Callable] = []
 
@@ -499,10 +502,18 @@ class WifiManager:
 
     return str(secrets['802-11-wireless-security'].get('psk', ('s', ''))[1])
 
+  def set_ipv4_forward(self, enabled: bool):
+    self._ipv4_forward = enabled
+
   def set_tethering_active(self, active: bool):
     def worker():
       if active:
         self.activate_connection(self._tethering_ssid, block=True)
+
+        if not self._ipv4_forward:
+          time.sleep(5)
+          cloudlog.info("net.ipv4.ip_forward = 0")
+          subprocess.run(["sudo", "sysctl", "net.ipv4.ip_forward=0"], check=False)
       else:
         self._deactivate_connection(self._tethering_ssid)
 

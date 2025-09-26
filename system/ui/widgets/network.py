@@ -15,6 +15,8 @@ from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
 from openpilot.system.ui.widgets.list_view import ButtonAction, ListItem, MultipleButtonAction, ToggleAction, button_item, text_item
+from openpilot.selfdrive.ui.ui_state import ui_state
+from openpilot.selfdrive.ui.lib.prime_state import PrimeType
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -130,13 +132,16 @@ class AdvancedNetworkSettings(Widget):
     # Roaming toggle
     roaming_enabled = self._params.get_bool("GsmRoaming")
     self._roaming_action = ToggleAction(initial_state=roaming_enabled)
-    roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
+    self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
 
     # Cellular metered toggle
     cellular_metered = self._params.get_bool("GsmMetered")
     self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
-    cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
+    self._cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
                                           action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
+
+    # APN setting
+    self._apn_btn = button_item("APN Setting", "EDIT", callback=self._edit_apn)
 
     # Wi-Fi metered toggle
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
@@ -147,9 +152,9 @@ class AdvancedNetworkSettings(Widget):
       tethering_btn,
       tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
-      roaming_btn,
-      button_item("APN Setting", "EDIT", callback=self._edit_apn),
-      cellular_metered_btn,
+      self._roaming_btn,
+      self._apn_btn,
+      self._cellular_metered_btn,
       wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
     ]
@@ -253,6 +258,14 @@ class AdvancedNetworkSettings(Widget):
     self._keyboard.set_title("Enter new tethering password", "")
     self._keyboard.set_text(self._wifi_manager.tethering_password)
     gui_app.set_modal_overlay(self._keyboard, update_password)
+
+  def _update_state(self):
+    # If not using prime SIM, show GSM settings and enable IPv4 forwarding
+    show_cell_settings = ui_state.prime_state.get_type() in (PrimeType.NONE, PrimeType.LITE)
+    self._roaming_btn.set_visible(show_cell_settings)
+    self._apn_btn.set_visible(show_cell_settings)
+    self._cellular_metered_btn.set_visible(show_cell_settings)
+    self._wifi_manager.set_ipv4_forward(show_cell_settings)
 
   def _render(self, _):
     self._scroller.render(self._rect)
