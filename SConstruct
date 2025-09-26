@@ -42,6 +42,7 @@ assert arch in [
 env = Environment(
   ENV={
     "PATH": os.environ['PATH'] + ":" + Dir(f"#third_party/capnproto/{arch}/bin/").abspath,
+    "LD_LIBRARY_PATH": os.environ['LD_LIBRARY_PATH'] + ":" + Dir(f"#third_party/capnproto/{arch}/lib/").abspath,
     "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
     "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
     "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,

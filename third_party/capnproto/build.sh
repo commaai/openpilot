@@ -59,29 +59,26 @@ mv $DIR/$ARCHNAME/include/ $DIR/
 
 # Optionally prune non-core libs and headers while keeping reflection
 LIBDIR="$DIR/$ARCHNAME/lib"
-# Keep: libcapnp, libkj (+ capnp tool in bin)
-# Remove: RPC/JSON/WebSocket + KJ async/HTTP/TLS/GZip/Test + capnpc compiler lib
-rm -f "$LIBDIR"/libcapnp-rpc* || true
-rm -f "$LIBDIR"/libcapnp-websocket* || true
-rm -f "$LIBDIR"/libcapnp-json* || true
-rm -f "$LIBDIR"/libcapnpc* || true
-rm -f "$LIBDIR"/libkj-async* || true
-rm -f "$LIBDIR"/libkj-http* || true
-rm -f "$LIBDIR"/libkj-tls* || true
-rm -f "$LIBDIR"/libkj-gzip* || true
-rm -f "$LIBDIR"/libkj-test* || true
+#rm -f "$LIBDIR"/libcapnp-rpc* || true
+#rm -f "$LIBDIR"/libcapnp-websocket* || true
+#rm -f "$LIBDIR"/libcapnp-json* || true
+#rm -f "$LIBDIR"/libkj-async* || true
+#rm -f "$LIBDIR"/libkj-http* || true
+#rm -f "$LIBDIR"/libkj-tls* || true
+#rm -f "$LIBDIR"/libkj-gzip* || true
+#rm -f "$LIBDIR"/libkj-test* || true
 
 rm -rf $INSTALL_PREFIX/lib/cmake/
 rm -rf $INSTALL_PREFIX/lib/pkgconfig
 
 # Prune headers for omitted components to avoid accidental use
-rm -f "$DIR/include/capnp/compat/json.h" || true
-rm -f "$DIR/include/capnp/compat/websocket-rpc.h" || true
-rm -rf "$DIR/include/kj/async"* || true
-rm -rf "$DIR/include/kj/compat/http"* || true
-rm -rf "$DIR/include/kj/tls"* || true
-rm -rf "$DIR/include/kj/gzip"* || true
-rm -rf "$DIR/include/kj/test"* || true
+#rm -f "$DIR/include/capnp/compat/json.h" || true
+#rm -f "$DIR/include/capnp/compat/websocket-rpc.h" || true
+#rm -rf "$DIR/include/kj/async"* || true
+#rm -rf "$DIR/include/kj/compat/http"* || true
+#rm -rf "$DIR/include/kj/tls"* || true
+#rm -rf "$DIR/include/kj/gzip"* || true
+#rm -rf "$DIR/include/kj/test"* || true
 
 echo "capnproto installed to: $INSTALL_PREFIX"
 echo "- bin: $INSTALL_PREFIX/bin"
