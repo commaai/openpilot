@@ -39,17 +39,7 @@ elif arch == "aarch64" and TICI:
   arch = "larch64"
 assert arch in ["larch64", "aarch64", "x86_64", "Darwin"]
 
-lenv = {
-  "PATH": os.environ['PATH'],
-  "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
-
-  "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
-  "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
-  "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
-}
-
 rpath = []
-
 if arch == "larch64":
   cpppath = [
     "#third_party/opencl/include",
@@ -72,7 +62,6 @@ else:
   cflags = []
   cxxflags = []
   cpppath = []
-  rpath += []
 
   # MacOS
   if arch == "Darwin":
@@ -115,7 +104,13 @@ if arch != "Darwin":
   ldflags += ["-Wl,--as-needed", "-Wl,--no-undefined"]
 
 env = Environment(
-  ENV=lenv,
+  ENV={
+    "PATH": os.environ['PATH'],
+    "PYTHONPATH": Dir("#").abspath + ':' + Dir(f"#third_party/acados").abspath,
+    "ACADOS_SOURCE_DIR": Dir("#third_party/acados").abspath,
+    "ACADOS_PYTHON_INTERFACE_PATH": Dir("#third_party/acados/acados_template").abspath,
+    "TERA_PATH": Dir("#").abspath + f"/third_party/acados/{arch}/t_renderer"
+  },
   CCFLAGS=[
     "-g",
     "-fPIC",
