@@ -123,7 +123,7 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action = ToggleAction(initial_state=False)
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
-    # Tethering Password
+    # Edit tethering password
     self._tethering_password_action = ButtonAction(text="EDIT")
     self._tethering_password_btn = ListItem(title="Tethering Password", action_item=self._tethering_password_action, callback=self._edit_tethering_password)
 
@@ -132,9 +132,17 @@ class AdvancedNetworkSettings(Widget):
     self._roaming_action = ToggleAction(initial_state=roaming_enabled)
     self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
 
-    # TODO: edit APN settings, and cellular metered toggle
+    # APN settings
+    self._apn_action = ButtonAction(text="EDIT")
+    self._apn_btn = ListItem(title="APN Setting", action_item=self._apn_action, callback=self._edit_apn)
 
-    # Metered
+    # Cellular metered toggle
+    cellular_metered = self._params.get_bool("GsmMetered")
+    self._cellular_metered_action = ToggleAction(initial_state=cellular_metered)
+    self._cellular_metered_btn = ListItem(title="Cellular Metered", description="Prevent large data uploads when on a metered cellular connection",
+                                          action_item=self._cellular_metered_action, callback=self._toggle_cellular_metered)
+
+    # Wi-Fi metered toggle
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
     self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection",
                                       action_item=self._wifi_metered_action)
@@ -144,6 +152,8 @@ class AdvancedNetworkSettings(Widget):
       self._tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
       self._roaming_btn,
+      self._apn_btn,
+      self._cellular_metered_btn,
       self._wifi_metered_btn,
       button_item("Hidden Network", "CONNECT", callback=self._connect_to_hidden_network),
     ]
@@ -182,6 +192,42 @@ class AdvancedNetworkSettings(Widget):
     self._roaming_action.set_enabled(False)
     self._params.put_bool("GsmRoaming", roaming_state)
     self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
+
+  def _edit_apn(self):
+    """
+    const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
+    QString apn = InputDialog::getText(tr("Enter APN"), this, tr("leave blank for automatic configuration"), false, -1, cur_apn).trimmed();
+
+    if (apn.isEmpty()) {
+      params.remove("GsmApn");
+    } else {
+      params.put("GsmApn", apn.toStdString());
+    }
+    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmMetered"));
+    """
+    def update_apn(result):
+      if result != 1:
+        return
+
+      apn = self._keyboard.text.strip()
+      if apn == "":
+        self._params.remove("GsmApn")
+      else:
+        self._params.put("GsmApn", apn)
+
+      self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), apn, self._params.get_bool("GsmMetered"))
+
+    current_apn = self._params.get("GsmApn") or ""
+    self._keyboard.reset(min_text_size=0)
+    self._keyboard.set_title("Enter APN", "leave blank for automatic configuration")
+    self._keyboard.set_text(current_apn)
+    gui_app.set_modal_overlay(self._keyboard, update_apn)
+
+  def _toggle_cellular_metered(self):
+    metered = self._cellular_metered_action.state
+    self._cellular_metered_action.set_enabled(False)
+    self._params.put_bool("GsmMetered", metered)
+    self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), self._params.get("GsmApn") or "", metered)
 
   def _toggle_wifi_metered(self, metered):
     metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
