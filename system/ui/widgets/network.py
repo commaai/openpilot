@@ -133,8 +133,7 @@ class AdvancedNetworkSettings(Widget):
     self._roaming_btn = ListItem(title="Enable Roaming", action_item=self._roaming_action, callback=self._toggle_roaming)
 
     # APN settings
-    self._apn_action = ButtonAction(text="EDIT")
-    self._apn_btn = ListItem(title="APN Setting", action_item=self._apn_action, callback=self._edit_apn)
+    self._apn_btn = ListItem(title="APN Setting", action_item=ButtonAction(text="EDIT"), callback=self._edit_apn)
 
     # Cellular metered toggle
     cellular_metered = self._params.get_bool("GsmMetered")
@@ -169,9 +168,6 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
     self._tethering_password_action.set_enabled(True)
 
-    # Re-enable roaming toggle after updates complete
-    self._roaming_action.set_enabled(True)
-
     if self._wifi_manager.is_tethering_active() or self._wifi_manager.ipv4_address == "":
       self._wifi_metered_action.set_enabled(False)
       self._wifi_metered_action.selected_button = 0
@@ -189,7 +185,6 @@ class AdvancedNetworkSettings(Widget):
 
   def _toggle_roaming(self):
     roaming_state = self._roaming_action.state
-    self._roaming_action.set_enabled(False)
     self._params.put_bool("GsmRoaming", roaming_state)
     self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
 
@@ -225,7 +220,6 @@ class AdvancedNetworkSettings(Widget):
 
   def _toggle_cellular_metered(self):
     metered = self._cellular_metered_action.state
-    self._cellular_metered_action.set_enabled(False)
     self._params.put_bool("GsmMetered", metered)
     self._wifi_manager.update_gsm_settings(self._params.get_bool("GsmRoaming"), self._params.get("GsmApn") or "", metered)
 

@@ -690,6 +690,7 @@ class WifiManager:
           settings['gsm']['home-only'] = ('b', not roaming)
           changes = True
 
+        # Unknown means NetworkManager decides
         metered_int = int(MeteredType.UNKNOWN if metered else MeteredType.NO)
         if settings['connection'].get('metered', ('i', 0))[1] != metered_int:
           cloudlog.info(f'Changing connection.metered to {metered_int}')
