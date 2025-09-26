@@ -68,6 +68,7 @@ class Toggle(Widget):
     knob_y = self._rect.y + HEIGHT / 2
     rl.draw_circle(int(knob_x), int(knob_y), HEIGHT / 2, knob_color)
 
+    # TODO: use click callback
     clicked = self._clicked
     self._clicked = False
     return clicked
