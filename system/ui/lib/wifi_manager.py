@@ -719,14 +719,12 @@ class WifiManager:
   def _get_lte_connection_path(self) -> str | None:
     try:
       settings_addr = DBusAddress(NM_SETTINGS_PATH, bus_name=NM, interface=NM_SETTINGS_IFACE)
-      known_connections = self._router_main.send_and_get_reply(
-        new_method_call(settings_addr, 'ListConnections')
-      ).body[0]
+      known_connections = self._router_main.send_and_get_reply(new_method_call(settings_addr, 'ListConnections')).body[0]
 
       for conn_path in known_connections:
         settings = self._get_connection_settings(conn_path)
         if settings and settings.get('connection', {}).get('id', ('s', ''))[1] == 'lte':
-          return conn_path
+          return str(conn_path)
 
       return None
     except Exception as e:
@@ -736,7 +734,6 @@ class WifiManager:
   def _activate_modem_connection(self, connection_path: str):
     try:
       modem_device = self._get_adapter(NM_DEVICE_TYPE_MODEM)
-      # Activate connection with modem device
       if modem_device and connection_path:
         self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo', (connection_path, modem_device, "/")))
     except Exception as e:
