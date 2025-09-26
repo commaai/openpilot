@@ -130,7 +130,7 @@ class AdvancedNetworkSettings(Widget):
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
-    self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._tethering_toggled)
+    self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
     # Metered
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._wifi_metered_toggled)
@@ -170,11 +170,11 @@ class AdvancedNetworkSettings(Widget):
       self._wifi_metered_action.set_enabled(True)
       self._wifi_metered_action.selected_button = int(metered) if metered in (MeteredType.UNKNOWN, MeteredType.YES, MeteredType.NO) else 0
 
-  def _tethering_toggled(self):
+  def _toggle_tethering(self):
     checked = self._tethering_action.state
-    print("Tethering toggled:", checked)
+    self._tethering_action.set_enabled(False)
     if checked:
-      self._tethering_action.set_enabled(False)
+      self._wifi_metered_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
 
   def _wifi_metered_toggled(self, metered):
