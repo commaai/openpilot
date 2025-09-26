@@ -79,9 +79,6 @@ env = Environment(
   ],
   LIBPATH=[
     "#common",
-  ],
-  LIBPATH=[
-    "#common",
     "#msgq_repo",
     "#third_party",
     "#selfdrive/pandad",
@@ -233,9 +230,8 @@ Clean(["."], cache_dir)
 # Build common module
 SConscript(['common/SConscript'])
 Import('_common')
-Import('_common')
+
 common = [_common, 'json11', 'zmq']
-Export('common')
 Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
