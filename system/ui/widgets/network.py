@@ -6,14 +6,14 @@ import pyray as rl
 from openpilot.common.filter_simple import FirstOrderFilter
 from openpilot.system.ui.lib.application import gui_app, DEFAULT_FPS
 from openpilot.system.ui.lib.scroll_panel import GuiScrollPanel
-from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network
+from openpilot.system.ui.lib.wifi_manager import WifiManager, SecurityType, Network, MeteredType
 from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.widgets.button import ButtonStyle, Button
 from openpilot.system.ui.widgets.confirm_dialog import ConfirmDialog
 from openpilot.system.ui.widgets.keyboard import Keyboard
 from openpilot.system.ui.widgets.label import TextAlignment, gui_label
 from openpilot.system.ui.widgets.scroller import Scroller
-from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item, dual_button_item, TextAction, ListItem, ToggleAction
+from openpilot.system.ui.widgets.list_view import toggle_item, text_item, button_item, dual_button_item, TextAction, ListItem, ToggleAction, multiple_button_item, MultipleButtonAction
 
 NM_DEVICE_STATE_NEED_AUTH = 60
 MIN_PASSWORD_LENGTH = 8
@@ -133,12 +133,24 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._tethering_toggled)
 
     # Metered
+    self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._wifi_metered_toggled)
+    self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection", icon=None, action_item=self._wifi_metered_action)
 
+    # self._metered_button = multiple_button_item(
+    #   "Wi-Fi Network Metered",
+    #   "Prevent large data uploads when on a metered Wi-Fi connection",
+    #   buttons=["default", "metered", "unmetered"],
+    #   button_width=255,
+    #   # callback=self._set_longitudinal_personality,
+    #   selected_index=0,  # self._params.get("LongitudinalPersonality", return_default=True),
+    #   # icon="speed_limit.png"
+    # )
 
     items = [
       self._tethering_btn,
       button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
-      text_item("IP Address", lambda: self._wifi_manager.ipv4_address)
+      text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
+      self._wifi_metered_btn,
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
@@ -148,6 +160,10 @@ class AdvancedNetworkSettings(Widget):
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())
+
+    metered = self._wifi_manager.current_network_metered
+    self._wifi_metered_action.set_enabled(True)
+    self._wifi_metered_action.selected_button = int(metered) if metered in (MeteredType.UNKNOWN, MeteredType.YES, MeteredType.NO) else 0
     # ip_address = self._wifi_manager.ipv4_address
     # self._ip_address.title = ip_address if ip_address else "N/A"
 
@@ -157,6 +173,11 @@ class AdvancedNetworkSettings(Widget):
     if checked:
       self._tethering_action.set_enabled(False)
     self._wifi_manager.set_tethering_active(checked)
+
+  def _wifi_metered_toggled(self, metered):
+    metered_type = {0: MeteredType.UNKNOWN, 1: MeteredType.YES, 2: MeteredType.NO}.get(metered, MeteredType.UNKNOWN)
+    self._wifi_metered_action.set_enabled(False)
+    self._wifi_manager.set_current_network_metered(metered_type)
 
   def _edit_tethering_password(self):
     def update_password(result):
