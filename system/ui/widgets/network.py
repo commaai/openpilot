@@ -115,17 +115,8 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager = wifi_manager
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
-    #
-    # self._params = Params()
-    # self._select_language_dialog: MultiOptionDialog | None = None
-    # self._driver_camera: DriverCameraDialog | None = None
-    # self._pair_device_dialog: PairingDialog | None = None
-    # self._fcc_dialog: HtmlRenderer | None = None
 
     # ~enable tethering~, ~tethering password~, ~ip address~, ~wifi network metered~, ~hidden network~, (lte settings?)
-
-    # # tethering = toggle_item("Enable Tethering", initial_state=wifi_manager
-    # tethering = toggle_item("Enable Tethering", callback=self._wifi_manager)#, initial_state=wifi_manager
 
     # Tethering
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
@@ -177,24 +168,6 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager.set_current_network_metered(metered_type)
 
   def _connect_to_hidden_network(self):
-    """
-    hiddenNetworkButton = new ButtonControl(tr("Hidden Network"), tr("CONNECT"));
-    connect(hiddenNetworkButton, &ButtonControl::clicked, [=]() {
-      QString ssid = InputDialog::getText(tr("Enter SSID"), this, "", false, 1);
-      if (!ssid.isEmpty()) {
-        QString pass = InputDialog::getText(tr("Enter password"), this, tr("for \"%1\"").arg(ssid), true, -1);
-        Network hidden_network;
-        hidden_network.ssid = ssid.toUtf8();
-        if (!pass.isEmpty()) {
-          hidden_network.security_type = SecurityType::WPA;
-          wifi->connect(hidden_network, true, pass);
-        } else {
-          wifi->connect(hidden_network, true);
-        }
-        emit requestWifiScreen();
-      }
-    });
-    """
     def connect_hidden(result):
       if result != 1:
         return
@@ -236,7 +209,6 @@ class AdvancedNetworkSettings(Widget):
 
   def _render(self, _):
     self._scroller.render(self._rect)
-    # gui_label(rect, "Advanced Network Settings (Not Implemented)", font_size=50, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
 class WifiManagerUI(Widget):
