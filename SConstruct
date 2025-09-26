@@ -31,25 +31,11 @@ AddOption('--ubsan',
           action='store_true',
           help='turn on UBSan')
 
-AddOption('--coverage',
-          action='store_true',
-          help='build with test coverage options')
-
-AddOption('--clazy',
-          action='store_true',
-          help='build with clazy')
-
 AddOption('--ccflags',
           action='store',
           type='string',
           default='',
           help='pass arbitrary flags over the command line')
-
-AddOption('--external-sconscript',
-          action='store',
-          metavar='FILE',
-          dest='external_sconscript',
-          help='add an external SConscript to the build')
 
 AddOption('--mutation',
           action='store_true',
@@ -303,17 +289,6 @@ qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
-if GetOption("clazy"):
-  checks = [
-    "level0",
-    "level1",
-    "no-range-loop",
-    "no-non-pod-global-static",
-  ]
-  qt_env['CXX'] = 'clazy'
-  qt_env['ENV']['CLAZY_IGNORE_DIRS'] = qt_dirs[0]
-  qt_env['ENV']['CLAZY_CHECKS'] = ','.join(checks)
-
 Export('env', 'qt_env', 'arch', 'real_arch')
 
 # Build common module
@@ -363,7 +338,3 @@ if Dir('#tools/cabana/').exists() and GetOption('extras'):
   SConscript(['tools/replay/SConscript'])
   if arch != "larch64":
     SConscript(['tools/cabana/SConscript'])
-
-external_sconscript = GetOption('external_sconscript')
-if external_sconscript:
-  SConscript([external_sconscript])

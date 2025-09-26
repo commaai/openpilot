@@ -6,7 +6,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.button import gui_button, ButtonStyle
+from openpilot.system.ui.widgets.button import Button, gui_button, ButtonStyle
 from openpilot.system.ui.widgets.toggle import Toggle, WIDTH as TOGGLE_WIDTH, HEIGHT as TOGGLE_HEIGHT
 
 ITEM_BASE_WIDTH = 600
@@ -73,21 +73,38 @@ class ButtonAction(ItemAction):
   def __init__(self, text: str | Callable[[], str], width: int = BUTTON_WIDTH, enabled: bool | Callable[[], bool] = True):
     super().__init__(width, enabled)
     self._text_source = text
+    self._pressed = False
+
+    def pressed():
+      self._pressed = True
+
+    self._button = Button(
+      self.text,
+      font_size=BUTTON_FONT_SIZE,
+      font_weight=BUTTON_FONT_WEIGHT,
+      button_style=ButtonStyle.LIST_ACTION,
+      border_radius=BUTTON_BORDER_RADIUS,
+      click_callback=pressed,
+    )
+    self._button.set_enabled(_resolve_value(enabled))
+
+  def set_touch_valid_callback(self, touch_callback: Callable[[], bool]) -> None:
+    super().set_touch_valid_callback(touch_callback)
+    self._button.set_touch_valid_callback(touch_callback)
 
   @property
   def text(self):
     return _resolve_value(self._text_source, "Error")
 
   def _render(self, rect: rl.Rectangle) -> bool:
-    return gui_button(
-      rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT),
-      self.text,
-      border_radius=BUTTON_BORDER_RADIUS,
-      font_weight=BUTTON_FONT_WEIGHT,
-      font_size=BUTTON_FONT_SIZE,
-      button_style=ButtonStyle.LIST_ACTION,
-      is_enabled=self.enabled,
-    ) == 1
+    self._button.set_text(self.text)
+    button_rect = rl.Rectangle(rect.x, rect.y + (rect.height - BUTTON_HEIGHT) / 2, BUTTON_WIDTH, BUTTON_HEIGHT)
+    self._button.render(button_rect)
+
+    # TODO: just use the generic Widget click callbacks everywhere, no returning from render
+    pressed = self._pressed
+    self._pressed = False
+    return pressed
 
 
 class TextAction(ItemAction):
