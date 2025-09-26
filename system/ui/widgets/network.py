@@ -150,6 +150,10 @@ class AdvancedNetworkSettings(Widget):
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
 
+    # Set initial config
+    metered = self._params.get_bool("GsmMetered")
+    self._wifi_manager.update_gsm_settings(roaming_enabled, self._params.get("GsmApn") or "", metered)
+
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
     self._tethering_action.set_state(self._wifi_manager.is_tethering_active())

@@ -696,6 +696,33 @@ class WifiManager:
           settings['connection']['metered'] = ('i', metered_int)
           changes = True
 
+        """
+        if (changes) {
+          QDBusPendingCall pending_call = asyncCall(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
+          QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
+          QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
+            deactivateConnection(lteConnectionPath);
+            activateModemConnection(lteConnectionPath);
+            watcher->deleteLater();
+          });
+        }
+        """
+
+        if changes:
+          # Update the connection settings (temporary update)
+          conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+          reply = self._router_main.send_and_get_reply(
+            new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,))
+          )
+
+          if reply.header.message_type == MessageType.error:
+            cloudlog.warning(f"Failed to update GSM settings: {reply}")
+            return
+
+          # Deactivate and reactivate the connection (exactly like C++ code)
+          self._deactivate_connection(lte_connection_path)
+          self._activate_modem_connection(lte_connection_path)
+
         # # Ensure groups exist when needed
         # if 'gsm' not in settings:
         #   settings['gsm'] = {}
