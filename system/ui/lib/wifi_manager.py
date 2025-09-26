@@ -653,15 +653,16 @@ class WifiManager:
     """Update GSM settings for cellular connection"""
     def worker():
       try:
-        # Find the LTE connection
         lte_connection_path = self._get_lte_connection_path()
         if not lte_connection_path:
           cloudlog.warning("No LTE connection found")
           return
 
-        # Get current connection settings
         settings = self._get_connection_settings(lte_connection_path)
-        if not settings:
+
+        print('settings', settings)
+
+        if len(settings) == 0:
           cloudlog.warning(f"Failed to get connection settings for {lte_connection_path}")
           return
 
