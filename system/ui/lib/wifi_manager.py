@@ -294,7 +294,7 @@ class WifiManager:
         dev_addr = DBusAddress(device_path, bus_name=NM, interface=NM_DEVICE_IFACE)
         dev_type = self._router_main.send_and_get_reply(Properties(dev_addr).get('DeviceType')).body[0][1]
         if dev_type == adapter_type:
-          return device_path
+          return str(device_path)
     except Exception as e:
       cloudlog.exception(f"Error getting adapter type {adapter_type}: {e}")
     return None
