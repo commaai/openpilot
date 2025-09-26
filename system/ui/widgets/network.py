@@ -186,17 +186,6 @@ class AdvancedNetworkSettings(Widget):
     self._wifi_manager.update_gsm_settings(roaming_state, self._params.get("GsmApn") or "", self._params.get_bool("GsmMetered"))
 
   def _edit_apn(self):
-    """
-    const QString cur_apn = QString::fromStdString(params.get("GsmApn"));
-    QString apn = InputDialog::getText(tr("Enter APN"), this, tr("leave blank for automatic configuration"), false, -1, cur_apn).trimmed();
-
-    if (apn.isEmpty()) {
-      params.remove("GsmApn");
-    } else {
-      params.put("GsmApn", apn.toStdString());
-    }
-    wifi->updateGsmSettings(params.getBool("GsmRoaming"), apn, params.getBool("GsmMetered"));
-    """
     def update_apn(result):
       if result != 1:
         return
