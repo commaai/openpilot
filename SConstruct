@@ -83,8 +83,9 @@ env = Environment(
     "#selfdrive/pandad",
     "#common",
     "#rednose/helpers",
+    f"#third_party/libyuv/{arch}/lib",
+    f"#third_party/acados/{arch}/lib",
   ],
-  RPATH=[],
   CYTHONCFILESUFFIX=".cpp",
   COMPILATIONDB_USE_ABSPATH=True,
   REDNOSE_ROOT="#",
@@ -98,48 +99,29 @@ if arch == "larch64":
   env.Append(LIBPATH=[
     "/usr/local/lib",
     "/system/vendor/lib64",
-    f"#third_party/acados/{arch}/lib",
-    "#third_party/libyuv/larch64/lib",
     "/usr/lib/aarch64-linux-gnu",
   ])
-  env.Append(RPATH=["/usr/local/lib"])
-  _arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
-  env.Append(CCFLAGS=_arch_flags)
-  env.Append(CFLAGS=_arch_flags)
-  env.Append(CXXFLAGS=_arch_flags)
+  arch_flags = ["-D__TICI__", "-mcpu=cortex-a57"]
+  env.Append(CCFLAGS=arch_flags)
+  env.Append(CXXFLAGS=arch_flags)
+elif arch == "Darwin":
+  env.Append(LIBPATH=[
+    f"{brew_prefix}/lib",
+    f"{brew_prefix}/opt/openssl@3.0/lib",
+    f"{brew_prefix}/opt/llvm/lib/c++",
+    "/System/Library/Frameworks/OpenGL.framework/Libraries",
+  ])
+  env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
+  env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
+  env.Append(CPPPATH=[
+    f"{brew_prefix}/include",
+    f"{brew_prefix}/opt/openssl@3.0/include",
+  ])
 else:
-  if arch == "Darwin":
-    env.Append(LIBPATH=[
-      f"#third_party/libyuv/{arch}/lib",
-      f"#third_party/acados/{arch}/lib",
-      f"{brew_prefix}/lib",
-      f"{brew_prefix}/opt/openssl@3.0/lib",
-      f"{brew_prefix}/opt/llvm/lib/c++",
-      "/System/Library/Frameworks/OpenGL.framework/Libraries",
-    ])
-    env.Append(CCFLAGS=["-DGL_SILENCE_DEPRECATION"])
-    env.Append(CFLAGS=["-DGL_SILENCE_DEPRECATION"])
-    env.Append(CXXFLAGS=["-DGL_SILENCE_DEPRECATION"])
-    env.Append(CPPPATH=[
-      f"{brew_prefix}/include",
-      f"{brew_prefix}/opt/openssl@3.0/include",
-    ])
-  else:
-    env.Append(LIBPATH=[
-      f"#third_party/acados/{arch}/lib",
-      f"#third_party/libyuv/{arch}/lib",
-      "/usr/lib",
-      "/usr/local/lib",
-    ])
-
-# Common library search roots
-env.Append(LIBPATH=[
-  "#msgq_repo",
-  "#third_party",
-  "#selfdrive/pandad",
-  "#common",
-  "#rednose/helpers",
-])
+  env.Append(LIBPATH=[
+    "/usr/lib",
+    "/usr/local/lib",
+  ])
 
 # Sanitizers and extra CCFLAGS from CLI
 if GetOption('asan'):
@@ -156,10 +138,6 @@ if _extra_cc:
 # no --as-needed on mac linker
 if arch != "Darwin":
   env.Append(LINKFLAGS=["-Wl,--as-needed", "-Wl,--no-undefined"])
-
-if arch == "Darwin":
-  # RPATH is not supported on macOS, instead use the linker flags
-  env["LINKFLAGS"] += [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
 
 # progress output
 node_interval = 5
