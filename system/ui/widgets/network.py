@@ -67,7 +67,7 @@ class NavButton(Widget):
 class WifiUi(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
-    self.wifi_manager = wifi_manager
+    self._wifi_manager = wifi_manager
     self._current_panel: PanelType = PanelType.WIFI
     self._wifi_panel = WifiManagerUI(wifi_manager)
     self._advanced_panel = AdvancedNetworkSettings(wifi_manager)
@@ -75,7 +75,7 @@ class WifiUi(Widget):
     self._nav_button.set_click_callback(self._cycle_panel)
 
   def _update_state(self):
-    self.wifi_manager.process_callbacks()
+    self._wifi_manager.process_callbacks()
 
   def show_event(self):
     self._set_current_panel(PanelType.WIFI)
@@ -113,6 +113,7 @@ class AdvancedNetworkSettings(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
     self._wifi_manager = wifi_manager
+    self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
 
     self._keyboard = Keyboard(max_text_size=MAX_PASSWORD_LENGTH, min_text_size=MIN_PASSWORD_LENGTH, show_password_toggle=True)
 
@@ -140,8 +141,6 @@ class AdvancedNetworkSettings(Widget):
     ]
 
     self._scroller = Scroller(items, line_separator=True, spacing=0)
-
-    self._wifi_manager.set_callbacks(networks_updated=self._on_network_updated)
 
   def _on_network_updated(self, networks: list[Network]):
     self._tethering_action.set_enabled(True)
@@ -215,7 +214,7 @@ class AdvancedNetworkSettings(Widget):
 class WifiManagerUI(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
-    self.wifi_manager = wifi_manager
+    self._wifi_manager = wifi_manager
     self.state: UIState = UIState.IDLE
     self._state_network: Network | None = None  # for CONNECTING / NEEDS_AUTH / SHOW_FORGET_CONFIRM / FORGETTING
     self._password_retry: bool = False  # for NEEDS_AUTH
@@ -229,7 +228,7 @@ class WifiManagerUI(Widget):
     self._forget_networks_buttons: dict[str, Button] = {}
     self._confirm_dialog = ConfirmDialog("", "Forget", "Cancel")
 
-    self.wifi_manager.set_callbacks(need_auth=self._on_need_auth,
+    self._wifi_manager.set_callbacks(need_auth=self._on_need_auth,
                                     activated=self._on_activated,
                                     forgotten=self._on_forgotten,
                                     networks_updated=self._on_network_updated,
@@ -237,10 +236,10 @@ class WifiManagerUI(Widget):
 
   def show_event(self):
     # start/stop scanning when widget is visible
-    self.wifi_manager.set_active(True)
+    self._wifi_manager.set_active(True)
 
   def hide_event(self):
-    self.wifi_manager.set_active(False)
+    self._wifi_manager.set_active(False)
 
   def _load_icons(self):
     for icon in STRENGTH_ICONS + ["icons/checkmark.png", "icons/circled_slash.png", "icons/lock_closed.png"]:
@@ -376,14 +375,14 @@ class WifiManagerUI(Widget):
     self.state = UIState.CONNECTING
     self._state_network = network
     if network.is_saved and not password:
-      self.wifi_manager.activate_connection(network.ssid)
+      self._wifi_manager.activate_connection(network.ssid)
     else:
-      self.wifi_manager.connect_to_network(network.ssid, password)
+      self._wifi_manager.connect_to_network(network.ssid, password)
 
   def forget_network(self, network: Network):
     self.state = UIState.FORGETTING
     self._state_network = network
-    self.wifi_manager.forget_connection(network.ssid)
+    self._wifi_manager.forget_connection(network.ssid)
 
   def _on_network_updated(self, networks: list[Network]):
     self._networks = networks
