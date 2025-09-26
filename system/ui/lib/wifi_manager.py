@@ -666,55 +666,82 @@ class WifiManager:
           cloudlog.warning(f"Failed to get connection settings for {lte_connection_path}")
           return
 
-        changes = False
-        auto_config = apn == ""
-
-        # Ensure groups exist when needed
+        # Ensure dicts exist
         if 'gsm' not in settings:
           settings['gsm'] = {}
         if 'connection' not in settings:
           settings['connection'] = {}
 
-        # gsm.auto-config
-        current_auto_config = settings.get('gsm', {}).get('auto-config', ('b', False))[1]
-        if current_auto_config != auto_config:
+        changes = False
+        auto_config = apn == ""
+
+        if settings['gsm'].get('auto-config', ('b', False))[1] != auto_config:
+          cloudlog.info(f'Changing gsm.auto-config to {auto_config}')
           settings['gsm']['auto-config'] = ('b', auto_config)
           changes = True
 
-        # gsm.apn
-        current_apn = settings.get('gsm', {}).get('apn', ('s', ''))[1]
-        if current_apn != apn:
+        if settings['gsm'].get('apn', ('s', ''))[1] != apn:
+          cloudlog.info(f'Changing gsm.apn to {apn}')
           settings['gsm']['apn'] = ('s', apn)
           changes = True
 
-        # gsm.home-only (invert roaming)
-        current_home_only = settings.get('gsm', {}).get('home-only', ('b', False))[1]
-        new_home_only = not roaming
-        if current_home_only != new_home_only:
-          settings['gsm']['home-only'] = ('b', new_home_only)
+        if settings['gsm'].get('home-only', ('b', False))[1] == roaming:
+          cloudlog.info(f'Changing gsm.home-only to {not roaming}')
+          settings['gsm']['home-only'] = ('b', not roaming)
           changes = True
 
-        # connection.metered (metered True -> UNKNOWN, False -> NO)
-        metered_int = 0 if metered else 2
-        current_metered = settings.get('connection', {}).get('metered', ('i', 0))[1]
-        if current_metered != metered_int:
+        metered_int = int(MeteredType.UNKNOWN if metered else MeteredType.NO)
+        if settings['connection'].get('metered', ('i', 0))[1] != metered_int:
+          cloudlog.info(f'Changing connection.metered to {metered_int}')
           settings['connection']['metered'] = ('i', metered_int)
           changes = True
 
-        if changes:
-          # Update the connection settings (temporary update)
-          conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-          reply = self._router_main.send_and_get_reply(
-            new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,))
-          )
-
-          if reply.header.message_type == MessageType.error:
-            cloudlog.warning(f"Failed to update GSM settings: {reply}")
-            return
-
-          # Deactivate and reactivate the connection (exactly like C++ code)
-          self._deactivate_connection(lte_connection_path)
-          self._activate_modem_connection(lte_connection_path)
+        # # Ensure groups exist when needed
+        # if 'gsm' not in settings:
+        #   settings['gsm'] = {}
+        # if 'connection' not in settings:
+        #   settings['connection'] = {}
+        #
+        # # gsm.auto-config
+        # current_auto_config = settings.get('gsm', {}).get('auto-config', ('b', False))[1]
+        # if current_auto_config != auto_config:
+        #   settings['gsm']['auto-config'] = ('b', auto_config)
+        #   changes = True
+        #
+        # # gsm.apn
+        # current_apn = settings.get('gsm', {}).get('apn', ('s', ''))[1]
+        # if current_apn != apn:
+        #   settings['gsm']['apn'] = ('s', apn)
+        #   changes = True
+        #
+        # # gsm.home-only (invert roaming)
+        # current_home_only = settings.get('gsm', {}).get('home-only', ('b', False))[1]
+        # new_home_only = not roaming
+        # if current_home_only != new_home_only:
+        #   settings['gsm']['home-only'] = ('b', new_home_only)
+        #   changes = True
+        #
+        # # connection.metered (metered True -> UNKNOWN, False -> NO)
+        # metered_int = 0 if metered else 2
+        # current_metered = settings.get('connection', {}).get('metered', ('i', 0))[1]
+        # if current_metered != metered_int:
+        #   settings['connection']['metered'] = ('i', metered_int)
+        #   changes = True
+        #
+        # if changes:
+        #   # Update the connection settings (temporary update)
+        #   conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
+        #   reply = self._router_main.send_and_get_reply(
+        #     new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,))
+        #   )
+        #
+        #   if reply.header.message_type == MessageType.error:
+        #     cloudlog.warning(f"Failed to update GSM settings: {reply}")
+        #     return
+        #
+        #   # Deactivate and reactivate the connection (exactly like C++ code)
+        #   self._deactivate_connection(lte_connection_path)
+        #   self._activate_modem_connection(lte_connection_path)
 
       except Exception as e:
         cloudlog.exception(f"Error updating GSM settings: {e}")
