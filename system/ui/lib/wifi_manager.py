@@ -448,7 +448,7 @@ class WifiManager:
         ap_ssid = bytes(self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid')).body[0][1]).decode("utf-8", "replace")
 
         if ap_ssid == ssid:
-          self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (conn_path,)))
+          self._deactivate_connection_by_path(conn_path)
           return
 
   def is_tethering_active(self) -> bool:
@@ -709,7 +709,7 @@ class WifiManager:
             return
 
           # Deactivate and reactivate the connection (exactly like C++ code)
-          self._deactivate_connection(lte_connection_path)
+          self._deactivate_connection_by_path(lte_connection_path)
           self._activate_modem_connection(lte_connection_path)
 
       except Exception as e:
@@ -735,34 +735,15 @@ class WifiManager:
       cloudlog.exception(f"Error finding LTE connection: {e}")
       return None
 
-  def _deactivate_connection(self, connection_path: str):
-    """Deactivate a connection by path (matches C++ deactivateConnection)"""
-    try:
-      # Find active connections and deactivate the one matching the path
-      active_connections = self._get_active_connections()
-      for active_conn in active_connections:
-        conn_addr = DBusAddress(active_conn, bus_name=NM, interface=NM_ACTIVE_CONNECTION_IFACE)
-        conn_path = self._router_main.send_and_get_reply(
-          Properties(conn_addr).get('Connection')
-        ).body[0][1]
-
-        if conn_path == connection_path:
-          self._router_main.send_and_get_reply(
-            new_method_call(self._nm, 'DeactivateConnection', 'o', (active_conn,))
-          )
-          break
-    except Exception as e:
-      cloudlog.exception(f"Error deactivating connection: {e}")
+  def _deactivate_connection_by_path(self, connection_path: str):
+    self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (connection_path,)))
 
   def _activate_modem_connection(self, connection_path: str):
-    """Activate modem connection (matches C++ activateModemConnection)"""
     try:
       modem_device = self._get_adapter(NM_DEVICE_TYPE_MODEM)
       # Activate connection with modem device (matches C++ asyncCall)
       if modem_device and connection_path:
-        self._router_main.send_and_get_reply(
-          new_method_call(self._nm, 'ActivateConnection', 'ooo', (connection_path, modem_device, "/"))
-        )
+        self._router_main.send_and_get_reply(new_method_call(self._nm, 'ActivateConnection', 'ooo', (connection_path, modem_device, "/")))
     except Exception as e:
       cloudlog.exception(f"Error activating modem connection: {e}")
 
