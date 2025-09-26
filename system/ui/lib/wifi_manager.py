@@ -277,7 +277,6 @@ class WifiManager:
 
   def _wait_for_wifi_device(self):
     while not self._exit:
-      # Cache and wait for a WiFi adapter path
       device_path = self._get_adapter(NM_DEVICE_TYPE_WIFI)
       if device_path is not None:
         self._wifi_device = device_path
@@ -444,7 +443,7 @@ class WifiManager:
         ap_ssid = bytes(self._router_main.send_and_get_reply(Properties(ap_addr).get('Ssid')).body[0][1]).decode("utf-8", "replace")
 
         if ap_ssid == ssid:
-          self._deactivate_connection_by_path(conn_path)
+          self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (conn_path,)))
           return
 
   def is_tethering_active(self) -> bool:
@@ -656,8 +655,6 @@ class WifiManager:
 
         settings = self._get_connection_settings(lte_connection_path)
 
-        print('settings', settings)
-
         if len(settings) == 0:
           cloudlog.warning(f"Failed to get connection settings for {lte_connection_path}")
           return
@@ -693,8 +690,6 @@ class WifiManager:
           settings['connection']['metered'] = ('i', metered_int)
           changes = True
 
-        print('new settings', settings)
-
         if changes:
           # Update the connection settings (temporary update)
           conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
@@ -727,9 +722,6 @@ class WifiManager:
     except Exception as e:
       cloudlog.exception(f"Error finding LTE connection: {e}")
       return None
-
-  def _deactivate_connection_by_path(self, connection_path: str):
-    self._router_main.send_and_get_reply(new_method_call(self._nm, 'DeactivateConnection', 'o', (connection_path,)))
 
   def _activate_modem_connection(self, connection_path: str):
     try:
