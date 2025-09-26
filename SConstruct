@@ -31,7 +31,7 @@ AddOption('--minimal',
 ## - aarch64: linux pc aarch64
 ## - x86_64:  linux pc x64
 ## - Darwin:  mac arm64 (x86 not supported)
-real_arch = arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
+arch = subprocess.check_output(["uname", "-m"], encoding='utf8').rstrip()
 if platform.system() == "Darwin":
   arch = "Darwin"
   brew_prefix = subprocess.check_output(['brew', '--prefix'], encoding='utf8').strip()
@@ -167,8 +167,7 @@ env = Environment(
 
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
-  darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
-  env["LINKFLAGS"] += darwin_rpath_link_flags
+  env["LINKFLAGS"] += [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
 
 # progress output
 node_interval = 5
@@ -180,7 +179,7 @@ def progress_function(node):
 if os.environ.get('SCONS_PROGRESS'):
   Progress(progress_function, interval=node_interval)
 
-# Cython build environment
+# ********** Cython build environment **********
 py_include = sysconfig.get_paths()['include']
 envCython = env.Clone()
 envCython["CPPPATH"] += [py_include, np.get_include()]
@@ -189,14 +188,14 @@ envCython["CCFLAGS"].remove("-Werror")
 
 envCython["LIBS"] = []
 if arch == "Darwin":
-  envCython["LINKFLAGS"] = ["-bundle", "-undefined", "dynamic_lookup"] + darwin_rpath_link_flags
+  envCython["LINKFLAGS"] = env["LINKFLAGS"] + ["-bundle", "-undefined", "dynamic_lookup"]
 else:
   envCython["LINKFLAGS"] = ["-pthread", "-shared"]
 
 np_version = SCons.Script.Value(np.__version__)
 Export('envCython', 'np_version')
 
-# Qt build environment
+# ********** Qt build environment **********
 qt_env = env.Clone()
 qt_modules = ["Widgets", "Gui", "Core", "Network", "Concurrent", "DBus", "Xml"]
 
@@ -246,14 +245,14 @@ qt_env['CXXFLAGS'] += qt_flags
 qt_env['LIBPATH'] += ['#selfdrive/ui', ]
 qt_env['LIBS'] = qt_libs
 
-Export('env', 'qt_env', 'arch', 'real_arch')
+Export('env', 'qt_env', 'arch')
 
 # Setup cache dir
 cache_dir = '/data/scons_cache' if TICI else '/tmp/scons_cache'
 CacheDir(cache_dir)
 Clean(["."], cache_dir)
 
-# *** start building stuff ***
+# ********** start building stuff **********
 
 # Build common module
 SConscript(['common/SConscript'])
