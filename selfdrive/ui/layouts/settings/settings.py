@@ -11,7 +11,7 @@ from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
 from openpilot.system.ui.lib.text_measure import measure_text_cached
 from openpilot.system.ui.lib.wifi_manager import WifiManager
 from openpilot.system.ui.widgets import Widget
-from openpilot.system.ui.widgets.network import WifiUi
+from openpilot.system.ui.widgets.network import NetworkUi
 
 # Settings close button
 SETTINGS_CLOSE_TEXT = "×"
@@ -59,7 +59,7 @@ class SettingsLayout(Widget):
 
     self._panels = {
       PanelType.DEVICE: PanelInfo("Device", DeviceLayout()),
-      PanelType.NETWORK: PanelInfo("Network", WifiUi(wifi_manager)),
+      PanelType.NETWORK: PanelInfo("Network", NetworkUi(wifi_manager)),
       PanelType.TOGGLES: PanelInfo("Toggles", TogglesLayout()),
       PanelType.SOFTWARE: PanelInfo("Software", SoftwareLayout()),
       PanelType.FIREHOSE: PanelInfo("Firehose", FirehoseLayout()),
