@@ -131,28 +131,16 @@ class AdvancedNetworkSettings(Widget):
     self._tethering_action = ToggleAction(initial_state=False, enabled=True)
     self._tethering_btn = ListItem(title="Enable Tethering", action_item=self._tethering_action, callback=self._toggle_tethering)
 
+    # Tethering Password
+    self._tethering_password_action = ButtonAction(text="EDIT")
+    self._tethering_password_btn = ListItem(title="Tethering Password", description=None, action_item=self._tethering_password_action, callback=self._edit_tethering_password)
+
     # Metered
     self._wifi_metered_action = MultipleButtonAction(["default", "metered", "unmetered"], 255, 0, callback=self._toggle_wifi_metered)
     self._wifi_metered_btn = ListItem(title="Wi-Fi Network Metered", description="Prevent large data uploads when on a metered Wi-Fi connection", icon=None, action_item=self._wifi_metered_action)
 
-    # self._metered_button = multiple_button_item(
-    #   "Wi-Fi Network Metered",
-    #   "Prevent large data uploads when on a metered Wi-Fi connection",
-    #   buttons=["default", "metered", "unmetered"],
-    #   button_width=255,
-    #   # callback=self._set_longitudinal_personality,
-    #   selected_index=0,  # self._params.get("LongitudinalPersonality", return_default=True),
-    #   # icon="speed_limit.png"
-    # )
-
-    self._tethering_password_action = ButtonAction(text="EDIT")
-    self._tethering_password_btn = ListItem(title="Tethering Password", description=None, action_item=self._tethering_password_action, callback=self._edit_tethering_password)
-
-    # button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
-
     items = [
       self._tethering_btn,
-      # button_item("Tethering Password", "EDIT", callback=self._edit_tethering_password),
       self._tethering_password_btn,
       text_item("IP Address", lambda: self._wifi_manager.ipv4_address),
       self._wifi_metered_btn,
