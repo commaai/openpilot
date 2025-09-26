@@ -204,6 +204,17 @@ env = Environment(
   toolpath=["#site_scons/site_tools", "#rednose_repo/site_scons/site_tools"],
 )
 
+## Vendor: capnproto (compiler + libs)
+# Prefer vendored capnproto in third_party/capnproto over system installs
+capnp_bin_dir = Dir(f"#third_party/capnproto/{arch}/bin").abspath
+capnp_lib_dir = f"#third_party/capnproto/{arch}/lib"
+capnp_inc_dir = "#third_party/capnproto/include"
+
+env.PrependENVPath('PATH', capnp_bin_dir)
+env['LIBPATH'] = [capnp_lib_dir] + env['LIBPATH']
+env['CPPPATH'] = [capnp_inc_dir] + env['CPPPATH']
+env.Append(RPATH=[Dir(capnp_lib_dir).abspath])
+
 if arch == "Darwin":
   # RPATH is not supported on macOS, instead use the linker flags
   darwin_rpath_link_flags = [f"-Wl,-rpath,{path}" for path in env["RPATH"]]
