@@ -64,7 +64,7 @@ class NavButton(Widget):
     gui_label(self.rect, self.text, font_size=60, alignment=rl.GuiTextAlignment.TEXT_ALIGN_CENTER)
 
 
-class NetworkUi(Widget):
+class NetworkUI(Widget):
   def __init__(self, wifi_manager: WifiManager):
     super().__init__()
     self._wifi_manager = wifi_manager
