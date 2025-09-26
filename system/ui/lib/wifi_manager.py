@@ -696,24 +696,12 @@ class WifiManager:
           settings['connection']['metered'] = ('i', metered_int)
           changes = True
 
-        """
-        if (changes) {
-          QDBusPendingCall pending_call = asyncCall(lteConnectionPath.path(), NM_DBUS_INTERFACE_SETTINGS_CONNECTION, "UpdateUnsaved", QVariant::fromValue(settings));  // update is temporary
-          QDBusPendingCallWatcher *watcher = new QDBusPendingCallWatcher(pending_call);
-          QObject::connect(watcher, &QDBusPendingCallWatcher::finished, this, [this, watcher]() {
-            deactivateConnection(lteConnectionPath);
-            activateModemConnection(lteConnectionPath);
-            watcher->deleteLater();
-          });
-        }
-        """
+        print('new settings', settings)
 
         if changes:
           # Update the connection settings (temporary update)
           conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-          reply = self._router_main.send_and_get_reply(
-            new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,))
-          )
+          reply = self._router_main.send_and_get_reply(new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,)))
 
           if reply.header.message_type == MessageType.error:
             cloudlog.warning(f"Failed to update GSM settings: {reply}")
@@ -722,53 +710,6 @@ class WifiManager:
           # Deactivate and reactivate the connection (exactly like C++ code)
           self._deactivate_connection(lte_connection_path)
           self._activate_modem_connection(lte_connection_path)
-
-        # # Ensure groups exist when needed
-        # if 'gsm' not in settings:
-        #   settings['gsm'] = {}
-        # if 'connection' not in settings:
-        #   settings['connection'] = {}
-        #
-        # # gsm.auto-config
-        # current_auto_config = settings.get('gsm', {}).get('auto-config', ('b', False))[1]
-        # if current_auto_config != auto_config:
-        #   settings['gsm']['auto-config'] = ('b', auto_config)
-        #   changes = True
-        #
-        # # gsm.apn
-        # current_apn = settings.get('gsm', {}).get('apn', ('s', ''))[1]
-        # if current_apn != apn:
-        #   settings['gsm']['apn'] = ('s', apn)
-        #   changes = True
-        #
-        # # gsm.home-only (invert roaming)
-        # current_home_only = settings.get('gsm', {}).get('home-only', ('b', False))[1]
-        # new_home_only = not roaming
-        # if current_home_only != new_home_only:
-        #   settings['gsm']['home-only'] = ('b', new_home_only)
-        #   changes = True
-        #
-        # # connection.metered (metered True -> UNKNOWN, False -> NO)
-        # metered_int = 0 if metered else 2
-        # current_metered = settings.get('connection', {}).get('metered', ('i', 0))[1]
-        # if current_metered != metered_int:
-        #   settings['connection']['metered'] = ('i', metered_int)
-        #   changes = True
-        #
-        # if changes:
-        #   # Update the connection settings (temporary update)
-        #   conn_addr = DBusAddress(lte_connection_path, bus_name=NM, interface=NM_CONNECTION_IFACE)
-        #   reply = self._router_main.send_and_get_reply(
-        #     new_method_call(conn_addr, 'UpdateUnsaved', 'a{sa{sv}}', (settings,))
-        #   )
-        #
-        #   if reply.header.message_type == MessageType.error:
-        #     cloudlog.warning(f"Failed to update GSM settings: {reply}")
-        #     return
-        #
-        #   # Deactivate and reactivate the connection (exactly like C++ code)
-        #   self._deactivate_connection(lte_connection_path)
-        #   self._activate_modem_connection(lte_connection_path)
 
       except Exception as e:
         cloudlog.exception(f"Error updating GSM settings: {e}")
