@@ -282,12 +282,9 @@ Export('env', 'qt_env', 'arch', 'real_arch')
 
 # Build common module
 SConscript(['common/SConscript'])
-Import('_common', '_gpucommon')
-
+Import('_common')
 common = [_common, 'json11', 'zmq']
-gpucommon = [_gpucommon]
-
-Export('common', 'gpucommon')
+Export('common')
 
 # Build messaging (cereal + msgq + socketmaster + their dependencies)
 # Enable swaglog include in submodules
