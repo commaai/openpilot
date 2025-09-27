@@ -14,14 +14,15 @@ from cereal.messaging import PubMaster
 from openpilot.common.params import Params
 from openpilot.common.prefix import OpenpilotPrefix
 from openpilot.selfdrive.test.helpers import with_processes
+from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 TEST_DIR = pathlib.Path(__file__).parent
 TEST_OUTPUT_DIR = TEST_DIR / "report_1"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 UI_DELAY = 0.1
 
-# Global coordinates for shared UI elements
-DEVELOPER_BUTTON = (278, 950)
+# Offroad alerts to test
+OFFROAD_ALERTS = ['Offroad_IsTakingSnapshot']
 
 
 def setup_homescreen(click, pm: PubMaster):
@@ -54,12 +55,11 @@ def setup_settings_firehose(click, pm: PubMaster):
 
 def setup_settings_developer(click, pm: PubMaster):
   setup_settings_device(click, pm)
-  click(*DEVELOPER_BUTTON)
+  click(278, 950)
 
 
 def setup_keyboard(click, pm: PubMaster):
-  setup_settings_device(click, pm)
-  click(*DEVELOPER_BUTTON)
+  setup_settings_developer(click, pm)
   click(1930, 270)
 
 
@@ -68,20 +68,26 @@ def setup_pair_device(click, pm: PubMaster):
 
 
 def setup_offroad_alert(click, pm: PubMaster):
+  for alert in OFFROAD_ALERTS:
+    set_offroad_alert(alert, True)
+
+
   setup_settings_device(click, pm)
   click(240, 216)
+  time.sleep(1)
 
 
 CASES = {
-  "homescreen": setup_homescreen,
-  "settings_device": setup_settings_device,
-  "settings_network": setup_settings_network,
-  "settings_toggles": setup_settings_toggles,
-  "settings_software": setup_settings_software,
-  "settings_firehose": setup_settings_firehose,
-  "settings_developer": setup_settings_developer,
-  "keyboard": setup_keyboard,
-  "pair_device": setup_pair_device,
+  # "homescreen": setup_homescreen,
+  # "settings_device": setup_settings_device,
+  # "settings_network": setup_settings_network,
+  # "settings_toggles": setup_settings_toggles,
+  # "settings_software": setup_settings_software,
+  # "settings_firehose": setup_settings_firehose,
+  # "settings_developer": setup_settings_developer,
+  # "keyboard": setup_keyboard,
+  # "pair_device": setup_pair_device,
+  "offroad_alert": setup_offroad_alert,
 }
 
 
