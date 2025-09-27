@@ -13,11 +13,12 @@ class DriverCameraDialog(CameraView):
     super().__init__("camerad", VisionStreamType.VISION_STREAM_DRIVER)
     self.driver_state_renderer = DriverStateRenderer()
 
+  def _handle_mouse_release(self, _):
+    super()._handle_mouse_release(_)
+    gui_app.set_modal_overlay(None)
+
   def _render(self, rect):
     super()._render(rect)
-
-    if rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
-      return 1
 
     if not self.frame:
       gui_label(
