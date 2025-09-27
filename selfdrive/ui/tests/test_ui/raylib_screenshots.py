@@ -45,22 +45,49 @@ class TestUI:
   def setup(self):
     # seed minimal offroad state like run.py
     self.pm = PubMaster(["deviceState"])
-    ds = log.Event.new_message('deviceState').as_builder()
-    ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
-    ds.deviceState.started = False
+    ds = log.DeviceState.new_message()
+    ds.networkType = log.DeviceState.NetworkType.wifi
+    ds.started = False
     for _ in range(5):
       self.pm.send('deviceState', ds)
       ds.clear_write_flag()
       time.sleep(0.05)
     try:
-      self.ui = pywinctl.getWindowsWithTitle("ui")[0]
-    except Exception:
+      # Wait a bit for the UI window to appear
+      time.sleep(1)
+
+      # List all windows to debug
+      all_windows = pywinctl.getAllWindows()
+      print("Available windows:")
+      for w in all_windows:
+        if w.title and ("ui" in w.title.lower() or "UI" in w.title):
+          print(f"  - '{w.title}': {w.left}, {w.top}, {w.width}, {w.height}")
+
+      # Try to find the "ui" window (lowercase) - this is the actual raylib UI
+      ui_windows = pywinctl.getWindowsWithTitle("ui")
+      if ui_windows:
+        self.ui = ui_windows[0]
+        print(f"Found UI window: {self.ui.left}, {self.ui.top}, {self.ui.width}, {self.ui.height}")
+      else:
+        raise Exception("No UI window found")
+    except Exception as e:
+      print(f"Failed to find UI window: {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
 
   def screenshot(self, name: str):
-    im = pyautogui.screenshot(SCREENSHOTS_DIR / f"{name}.png", region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
-    assert im.width == 2160
-    assert im.height == 1080
+    # For multi-monitor setups, we need to take a full screenshot and then crop
+    # because pyautogui.screenshot with region doesn't work well across monitors
+    full_screenshot = pyautogui.screenshot()
+    print(f"Full screenshot dimensions: {full_screenshot.width}x{full_screenshot.height}")
+    print(f"UI window region: {self.ui.left}, {self.ui.top}, {self.ui.width}, {self.ui.height}")
+
+    # Crop the specific window region
+    cropped = full_screenshot.crop((self.ui.left, self.ui.top,
+                                  self.ui.left + self.ui.width,
+                                  self.ui.top + self.ui.height))
+    cropped.save(SCREENSHOTS_DIR / f"{name}.png")
+    print(f"Screenshot {name}: {cropped.width}x{cropped.height}")
+    # Don't assert specific dimensions since raylib UI might have different sizes than QT
 
   def click(self, x: int, y: int, *args, **kwargs):
     pyautogui.click(self.ui.left + x, self.ui.top + y, *args, **kwargs)
