@@ -6,8 +6,6 @@ class FirstOrderFilter:
     self.initialized = initialized
 
   def update_dt(self, dt):
-    if dt == self._dt:
-      return
     self._dt = dt
     self.update_alpha(self._rc)
 
