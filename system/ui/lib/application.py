@@ -177,8 +177,8 @@ class GuiApplication:
     return self._target_fps
 
   def set_target_fps(self, fps: int):
-    self._target_fps = fps
     rl.set_target_fps(fps)
+    self._target_fps = fps
 
   def set_modal_overlay(self, overlay, callback: Callable | None = None):
     self._modal_overlay = ModalOverlay(overlay=overlay, callback=callback)
