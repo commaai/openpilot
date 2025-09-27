@@ -27,7 +27,7 @@ class Scroller(Widget):
     super().__init__()
     self._items: list[Widget] = []
     self._spacing = spacing
-    self._line_separator = line_separator
+    self._line_separator = LineSeparator() if line_separator else None
     self._pad_end = pad_end
 
     self.scroll_panel = GuiScrollPanel()
@@ -36,8 +36,6 @@ class Scroller(Widget):
       self.add_widget(item)
 
   def add_widget(self, item: Widget) -> None:
-    if self._line_separator and len(self._items) > 0:
-      self._items.append(LineSeparator())
     self._items.append(item)
     item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
@@ -51,6 +49,11 @@ class Scroller(Widget):
 
     rl.begin_scissor_mode(int(self._rect.x), int(self._rect.y),
                           int(self._rect.width), int(self._rect.height))
+
+    if self._line_separator is not None:
+      l = len(visible_items)
+      for i in range(1, len(visible_items)):
+        visible_items.insert(l - i, self._line_separator)
 
     cur_height = 0
     for idx, item in enumerate(visible_items):
@@ -70,5 +73,13 @@ class Scroller(Widget):
       item.set_position(x, y)
       item.set_parent_rect(self._rect)
       item.render()
+
+      # draw line sep
+      # if self._line_separator and len(self._items) > 0:
+      #   self._items.append(LineSeparator())
+      # if self._line_separator:
+      #   sep = LineSeparator()
+      #   sep.set_position(x, y + item.rect.height + self._spacing // 2)
+      #   sep.render()
 
     rl.end_scissor_mode()

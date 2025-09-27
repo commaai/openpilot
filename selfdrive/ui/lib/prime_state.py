@@ -99,6 +99,7 @@ class PrimeState:
 
   def is_paired(self) -> bool:
     with self._lock:
+      return os.path.exists('/tmp/paired')
       return self.prime_type > PrimeType.UNPAIRED
 
   def __del__(self):
