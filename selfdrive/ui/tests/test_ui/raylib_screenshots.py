@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os
+import sys
 import shutil
 import time
 import pathlib
@@ -93,7 +94,6 @@ CASES = {
 class TestUI:
   def __init__(self):
     os.environ["SCALE"] = os.getenv("SCALE", "1")
-    import sys
     sys.modules["mouseinfo"] = False
 
   def setup(self):
@@ -101,28 +101,21 @@ class TestUI:
     self.pm = PubMaster(["deviceState"])
     ds = messaging.new_message('deviceState')
     ds.deviceState.networkType = log.DeviceState.NetworkType.wifi
-    ds.deviceState.started = False
     for _ in range(5):
       self.pm.send('deviceState', ds)
       ds.clear_write_flag()
       time.sleep(0.05)
-
-    # Find the raylib UI window
-    time.sleep(1)  # Wait for UI to appear
-    ui_windows = pywinctl.getWindowsWithTitle("UI")
-    if ui_windows:
-      self.ui = ui_windows[0]
-    else:
-      # Fallback to default dimensions
+    time.sleep(0.5)
+    try:
+      self.ui = pywinctl.getWindowsWithTitle("UI")[0]
+    except Exception as e:
+      print(f"failed to find ui window, assuming that it's in the top left (for Xvfb) {e}")
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
 
   def screenshot(self, name: str):
-    # Take full screenshot and crop to UI window (handles multi-monitor setups)
-    full_screenshot = pyautogui.screenshot()
-    cropped = full_screenshot.crop((self.ui.left, self.ui.top,
-                                    self.ui.left + self.ui.width,
-                                    self.ui.top + self.ui.height))
-    cropped.save(SCREENSHOTS_DIR / f"{name}.png")
+    im = pyautogui.screenshot(SCREENSHOTS_DIR / f"{name}.png", region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
+    assert im.width == 2160
+    assert im.height == 1080
 
   def click(self, x: int, y: int, *args, **kwargs):
     pyautogui.mouseDown(self.ui.left + x, self.ui.top + y, *args, **kwargs)
