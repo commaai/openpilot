@@ -101,7 +101,9 @@ class AugmentedRoadView(CameraView):
     rl.end_scissor_mode()
 
     # Handle click events if no HUD interaction occurred
-    if not self._hud_renderer.handle_mouse_event():
+    hud_handled = self._hud_renderer.handle_mouse_event()
+    print('hud handled', hud_handled)
+    if not hud_handled:
       if self._click_callback is not None and rl.is_mouse_button_pressed(rl.MouseButton.MOUSE_BUTTON_LEFT):
         if rl.check_collision_point_rec(rl.get_mouse_position(), self._content_rect):
           self._click_callback()
