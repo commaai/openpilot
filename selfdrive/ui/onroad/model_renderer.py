@@ -50,7 +50,7 @@ class ModelRenderer(Widget):
     super().__init__()
     self._longitudinal_control = False
     self._experimental_mode = False
-    self._blend_filter = FirstOrderFilter(1.0, 0.2, 1 / DEFAULT_FPS)
+    self._blend_filter = FirstOrderFilter(1.0, 0.25, 1 / DEFAULT_FPS)
     self._prev_allow_throttle = True
     self._lane_line_probs = np.zeros(4, dtype=np.float32)
     self._road_edge_stds = np.zeros(2, dtype=np.float32)
