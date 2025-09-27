@@ -96,6 +96,7 @@ class Widget(abc.ABC):
         # Allows touch to leave the rect and come back in focus if mouse did not release
         if mouse_event.left_pressed and self._touch_valid():
           if rl.check_collision_point_rec(mouse_event.pos, self._rect):
+            self._handle_mouse_press(mouse_event.pos)
             self.__is_pressed[mouse_event.slot] = True
             self.__tracking_is_pressed[mouse_event.slot] = True
 
@@ -130,6 +131,10 @@ class Widget(abc.ABC):
 
   def _update_layout_rects(self) -> None:
     """Optionally update any layout rects on Widget rect change."""
+
+  def _handle_mouse_press(self, mouse_pos: MousePos) -> bool:
+    """Optionally handle mouse press events."""
+    return False
 
   def _handle_mouse_release(self, mouse_pos: MousePos) -> bool:
     """Optionally handle mouse release events."""
