@@ -45,7 +45,7 @@ class DeviceLayout(Widget):
     serial = self._params.get("HardwareSerial") or "N/A"
 
     self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
-    self._pair_device_btn.set_visible(not ui_state.prime_state.is_paired())
+    self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
 
     items = [
       text_item("Dongle ID", dongle_id),
@@ -60,9 +60,6 @@ class DeviceLayout(Widget):
     ]
     regulatory_btn.set_visible(TICI)
     return items
-
-  def _update_state(self):
-    self._pair_device_btn.set_visible(not ui_state.prime_state.is_paired())
 
   def _render(self, rect):
     self._scroller.render(rect)
