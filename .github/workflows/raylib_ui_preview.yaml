@@ -7,16 +7,15 @@ on:
     types: [assigned, opened, synchronize, reopened, edited]
     branches:
       - 'master'
-#    paths:
-#      - 'selfdrive/ui/**'
-#      - 'system/ui/**'
+    paths:
+      - 'selfdrive/ui/**'
+      - 'system/ui/**'
   workflow_dispatch:
 
 env:
   UI_JOB_NAME: "Create raylib UI Report"
-  REPORT_NAME: "master"  # ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
-  #SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
-  SHA: ${{ github.sha }}
+  REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
+  SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
   BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-raylib-ui"
 
 jobs:
@@ -40,7 +39,7 @@ jobs:
           check-name: ${{ env.UI_JOB_NAME }}
           repo-token: ${{ secrets.GITHUB_TOKEN }}
           allowed-conclusions: success
-#          wait-interval: 20
+          wait-interval: 20
 
       - name: Getting workflow run ID
         id: get_run_id
@@ -81,7 +80,7 @@ jobs:
           git push origin openpilot_master_ui_raylib --force
 
       - name: Finding diff
-        #if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         id: find_diff
         run: >-
           sudo apt-get update && sudo apt-get install -y imagemagick
@@ -150,7 +149,7 @@ jobs:
           echo "DIFF=$DIFF$TABLE" >> "$GITHUB_OUTPUT"
 
       - name: Saving proposed ui
-        #if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
           git config user.name "GitHub Actions Bot"
@@ -163,7 +162,7 @@ jobs:
           git push origin ${{ env.BRANCH_NAME }} --force
 
       - name: Comment Screenshots on PR
-        #if: github.event_name == 'pull_request_target'
+        if: github.event_name == 'pull_request_target'
         uses: thollander/actions-comment-pull-request@v2
         with:
           message: |
@@ -171,5 +170,5 @@ jobs:
             ## raylib UI Preview
             ${{ steps.find_diff.outputs.DIFF }}
           comment_tag: run_id_screenshots_raylib
-          pr_number: 36216
+          pr_number: ${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

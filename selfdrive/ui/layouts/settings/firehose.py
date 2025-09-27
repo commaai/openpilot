@@ -13,7 +13,7 @@ from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.widgets import Widget
 from openpilot.selfdrive.ui.lib.api_helpers import get_token
 
-TITLE = "Firehose Mode!!!"
+TITLE = "Firehose Mode"
 DESCRIPTION = (
   "openpilot learns to drive by watching humans, like you, drive.\n\n"
   + "Firehose Mode allows you to maximize your training data uploads to improve "
