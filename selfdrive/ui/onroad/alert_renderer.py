@@ -76,7 +76,7 @@ class AlertRenderer(Widget):
     # Check if selfdriveState messages have stopped arriving
     if not sm.updated['selfdriveState']:
       recv_frame = sm.recv_frame['selfdriveState']
-      time_since_onroad = (sm.frame - ui_state.started_frame) / gui_app.target_fps
+      time_since_onroad = time.monotonic() - ui_state.started_time
 
       # 1. Never received selfdriveState since going onroad
       waiting_for_startup = recv_frame < ui_state.started_frame
