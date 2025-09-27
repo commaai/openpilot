@@ -1,11 +1,7 @@
-import os
-import json
 import pyray as rl
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass
-from openpilot.common.swaglog import cloudlog
-from openpilot.common.basedir import BASEDIR
 from openpilot.common.params import Params
 from openpilot.system.hardware import HARDWARE
 from openpilot.system.ui.lib.application import gui_app, FontWeight, MousePos
