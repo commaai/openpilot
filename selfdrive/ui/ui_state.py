@@ -163,7 +163,6 @@ class Device:
     self._interactive_timeout_callbacks.append(callback)
 
   def update(self):
-    print('were here')
     # do initial reset
     if self._interaction_time <= 0:
       self.reset_interactive_timeout()
