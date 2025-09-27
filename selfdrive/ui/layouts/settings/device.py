@@ -44,10 +44,13 @@ class DeviceLayout(Widget):
     dongle_id = self._params.get("DongleId") or "N/A"
     serial = self._params.get("HardwareSerial") or "N/A"
 
+    self._pair_device_btn = button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device)
+    self._pair_device_btn.set_visible(lambda: not ui_state.prime_state.is_paired())
+
     items = [
       text_item("Dongle ID", dongle_id),
       text_item("Serial", serial),
-      button_item("Pair Device", "PAIR", DESCRIPTIONS['pair_device'], callback=self._pair_device),
+      self._pair_device_btn,
       button_item("Driver Camera", "PREVIEW", DESCRIPTIONS['driver_camera'], callback=self._show_driver_camera, enabled=ui_state.is_offroad),
       button_item("Reset Calibration", "RESET", DESCRIPTIONS['reset_calibration'], callback=self._reset_calibration_prompt),
       regulatory_btn := button_item("Regulatory", "VIEW", callback=self._on_regulatory),

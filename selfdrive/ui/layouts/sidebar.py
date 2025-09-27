@@ -189,11 +189,11 @@ class Sidebar(Widget):
     # Draw colored left edge (clipped rounded rectangle)
     edge_rect = rl.Rectangle(metric_rect.x + 4, metric_rect.y + 4, 100, 118)
     rl.begin_scissor_mode(int(metric_rect.x + 4), int(metric_rect.y), 18, int(metric_rect.height))
-    rl.draw_rectangle_rounded(edge_rect, 0.18, 10, metric.color)
+    rl.draw_rectangle_rounded(edge_rect, 0.3, 10, metric.color)
     rl.end_scissor_mode()
 
     # Draw border
-    rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.15, 10, 2, Colors.METRIC_BORDER)
+    rl.draw_rectangle_rounded_lines_ex(metric_rect, 0.3, 10, 2, Colors.METRIC_BORDER)
 
     # Draw label and value
     labels = [metric.label, metric.value]

@@ -27,7 +27,7 @@ class Scroller(Widget):
     super().__init__()
     self._items: list[Widget] = []
     self._spacing = spacing
-    self._line_separator = line_separator
+    self._line_separator = LineSeparator() if line_separator else None
     self._pad_end = pad_end
 
     self.scroll_panel = GuiScrollPanel()
@@ -36,14 +36,19 @@ class Scroller(Widget):
       self.add_widget(item)
 
   def add_widget(self, item: Widget) -> None:
-    if self._line_separator and len(self._items) > 0:
-      self._items.append(LineSeparator())
     self._items.append(item)
     item.set_touch_valid_callback(self.scroll_panel.is_touch_valid)
 
   def _render(self, _):
     # TODO: don't draw items that are not in the viewport
     visible_items = [item for item in self._items if item.is_visible]
+
+    # Add line separator between items
+    if self._line_separator is not None:
+      l = len(visible_items)
+      for i in range(1, len(visible_items)):
+        visible_items.insert(l - i, self._line_separator)
+
     content_height = sum(item.rect.height for item in visible_items) + self._spacing * (len(visible_items))
     if not self._pad_end:
       content_height -= self._spacing

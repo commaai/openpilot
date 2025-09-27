@@ -6,17 +6,20 @@ import time
 from openpilot.common.api import Api
 from openpilot.common.swaglog import cloudlog
 from openpilot.common.params import Params
+from openpilot.system.ui.widgets import Widget
 from openpilot.system.ui.lib.application import FontWeight, gui_app
 from openpilot.system.ui.lib.wrap_text import wrap_text
 from openpilot.system.ui.lib.text_measure import measure_text_cached
+from openpilot.selfdrive.ui.ui_state import ui_state
 
 
-class PairingDialog:
+class PairingDialog(Widget):
   """Dialog for device pairing with QR code."""
 
   QR_REFRESH_INTERVAL = 300  # 5 minutes in seconds
 
   def __init__(self):
+    super().__init__()
     self.params = Params()
     self.qr_texture: rl.Texture | None = None
     self.last_qr_generation = 0
@@ -60,7 +63,11 @@ class PairingDialog:
       self._generate_qr_code()
       self.last_qr_generation = current_time
 
-  def render(self, rect: rl.Rectangle) -> int:
+  def _update_state(self):
+    if ui_state.prime_state.is_paired():
+      gui_app.set_modal_overlay(None)
+
+  def _render(self, rect: rl.Rectangle) -> int:
     rl.clear_background(rl.Color(224, 224, 224, 255))
 
     self._check_qr_refresh()
