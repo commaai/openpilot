@@ -114,9 +114,7 @@ class TestUI:
 
   def screenshot(self, name: str):
     full_screenshot = pyautogui.screenshot()
-    cropped = full_screenshot.crop((self.ui.left, self.ui.top,
-                                    self.ui.left + self.ui.width,
-                                    self.ui.top + self.ui.height))
+    cropped = full_screenshot.crop((self.ui.left, self.ui.top, self.ui.left + self.ui.width, self.ui.top + self.ui.height))
     cropped.save(SCREENSHOTS_DIR / f"{name}.png")
 
   def click(self, x: int, y: int, *args, **kwargs):
