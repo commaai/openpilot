@@ -1,60 +1,29 @@
 name: "raylib ui preview"
 on:
   push:
-    branches: [ master ]
-    paths:
-      - 'selfdrive/ui/**'
-      - 'system/ui/**'
+    branches:
+      - master
   pull_request_target:
     types: [assigned, opened, synchronize, reopened, edited]
-    branches: [ master ]
+    branches:
+      - 'master'
     paths:
       - 'selfdrive/ui/**'
       - 'system/ui/**'
   workflow_dispatch:
 
 env:
-  UI_JOB_NAME: "Create Raylib UI Report"
+  UI_JOB_NAME: "Create raylib UI Report"
   REPORT_NAME: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && 'master' || github.event.number }}
   SHA: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.sha || github.event.pull_request.head.sha }}
   BRANCH_NAME: "openpilot/pr-${{ github.event.number }}-raylib-ui"
 
 jobs:
-  create_report:
-    name: ${{ env.UI_JOB_NAME }}
-    if: github.repository == 'commaai/openpilot'
-    runs-on: ubuntu-24.04
-    timeout-minutes: 25
-    permissions:
-      contents: read
-      pull-requests: write
-      actions: read
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: true
-
-      - uses: ./.github/workflows/setup-with-retry
-        id: setup-step
-
-      - name: Build openpilot
-        run: |
-          ${{ env.RUN }} "scons -j$(nproc)"
-
-      - name: Generate raylib screenshots
-        run: |
-          ${{ env.RUN }} "python3 selfdrive/ui/tests/test_ui/raylib_screenshots.py"
-
-      - name: Upload screenshots artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: raylib-report-${{ env.REPORT_NAME }}
-          path: selfdrive/ui/tests/test_ui/raylib_report/screenshots/*.png
-
   preview:
-    needs: create_report
     if: github.repository == 'commaai/openpilot'
-    runs-on: ubuntu-24.04
+    name: preview
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
     permissions:
       contents: read
       pull-requests: write
@@ -92,12 +61,12 @@ jobs:
         with:
           repository: commaai/ci-artifacts
           ssh-key: ${{ secrets.CI_ARTIFACTS_DEPLOY_KEY }}
-          path: ${{ github.workspace }}/master_ui
+          path: ${{ github.workspace }}/master_ui_raylib
           ref: openpilot_master_ui_raylib
 
       - name: Saving new master ui
         if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-        working-directory: ${{ github.workspace }}/master_ui
+        working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
           git checkout --orphan=new_master_ui_raylib
           git rm -rf *
@@ -116,7 +85,7 @@ jobs:
         run: >-
           sudo apt-get update && sudo apt-get install -y imagemagick
 
-          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1)
+          scenes=$(find ${{ github.workspace }}/pr_ui/*.png -type f -printf "%f\n" | cut -d '.' -f 1 | grep -v 'pair_device')
           A=($scenes)
 
           DIFF=""
@@ -126,7 +95,7 @@ jobs:
           for ((i=0; i<${#A[*]}; i=i+1));
           do
             # Check if the master file exists
-            if [ ! -f "${{ github.workspace }}/master_ui/${A[$i]}.png" ]; then
+            if [ ! -f "${{ github.workspace }}/master_ui_raylib/${A[$i]}.png" ]; then
               # This is a new file in PR UI that doesn't exist in master
               DIFF="${DIFF}<details open>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{cyan}\\text{NEW}}\$\$</summary>"
@@ -138,9 +107,12 @@ jobs:
 
               DIFF="${DIFF}</table>"
               DIFF="${DIFF}</details>"
-            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+            elif ! compare -fuzz 2% -highlight-color DeepSkyBlue1 -lowlight-color Black -compose Src ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png; then
+              convert ${{ github.workspace }}/pr_ui/${A[$i]}_diff.png -transparent black mask.png
+              composite mask.png ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png
+              convert -delay 100 ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png composite_diff.png -loop 0 ${{ github.workspace }}/pr_ui/${A[$i]}_diff.gif
 
-              mv ${{ github.workspace }}/master_ui/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
+              mv ${{ github.workspace }}/master_ui_raylib/${A[$i]}.png ${{ github.workspace }}/pr_ui/${A[$i]}_master_ref.png
 
               DIFF="${DIFF}<details open>"
               DIFF="${DIFF}<summary>${A[$i]} : \$\${\\color{red}\\text{DIFFERENT}}\$\$</summary>"
@@ -153,6 +125,7 @@ jobs:
 
               DIFF="${DIFF}<tr>"
               DIFF="${DIFF}  <td> diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.png\"> </td>"
+              DIFF="${DIFF}  <td> composite diff <img src=\"https://raw.githubusercontent.com/commaai/ci-artifacts/${{ env.BRANCH_NAME }}/${A[$i]}_diff.gif\"> </td>"
               DIFF="${DIFF}</tr>"
 
               DIFF="${DIFF}</table>"
@@ -177,7 +150,7 @@ jobs:
 
       - name: Saving proposed ui
         if: github.event_name == 'pull_request_target'
-        working-directory: ${{ github.workspace }}/master_ui
+        working-directory: ${{ github.workspace }}/master_ui_raylib
         run: |
           git config user.name "GitHub Actions Bot"
           git config user.email "<>"
@@ -194,10 +167,8 @@ jobs:
         with:
           message: |
             <!-- _(run_id_screenshots_raylib **${{ github.run_id }}**)_ -->
-            ## Raylib UI Preview
+            ## raylib UI Preview
             ${{ steps.find_diff.outputs.DIFF }}
           comment_tag: run_id_screenshots_raylib
           pr_number: ${{ github.event.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-
