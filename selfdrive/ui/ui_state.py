@@ -51,6 +51,7 @@ class UIState:
         "managerState",
         "selfdriveState",
         "longitudinalPlan",
+        "rawAudioData",
       ]
     )
 
