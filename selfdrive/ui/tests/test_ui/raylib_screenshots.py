@@ -17,7 +17,7 @@ from openpilot.selfdrive.test.helpers import with_processes
 from openpilot.selfdrive.selfdrived.alertmanager import set_offroad_alert
 
 TEST_DIR = pathlib.Path(__file__).parent
-TEST_OUTPUT_DIR = TEST_DIR / "report_1"
+TEST_OUTPUT_DIR = TEST_DIR / "raylib_report"
 SCREENSHOTS_DIR = TEST_OUTPUT_DIR / "screenshots"
 UI_DELAY = 0.1
 

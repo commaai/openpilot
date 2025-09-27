@@ -47,8 +47,8 @@ jobs:
       - name: Upload screenshots artifact
         uses: actions/upload-artifact@v4
         with:
-          name: report-1-${{ env.REPORT_NAME }}
-          path: selfdrive/ui/tests/test_ui/report_1/screenshots/*.png
+          name: raylib-report-${{ env.REPORT_NAME }}
+          path: selfdrive/ui/tests/test_ui/raylib_report/screenshots/*.png
 
   comment:
     needs: preview
@@ -74,7 +74,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           run_id: ${{ steps.get_run_id.outputs.run_id }}
           search_artifacts: true
-          name: report-1-${{ env.REPORT_NAME }}
+          name: raylib-report-${{ env.REPORT_NAME }}
           path: ${{ github.workspace }}/pr_ui
 
       - name: Checkout master raylib refs
