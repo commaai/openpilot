@@ -113,9 +113,11 @@ class TestUI:
       self.ui = namedtuple("bb", ["left", "top", "width", "height"])(0, 0, 2160, 1080)
 
   def screenshot(self, name: str):
-    im = pyautogui.screenshot(SCREENSHOTS_DIR / f"{name}.png", region=(self.ui.left, self.ui.top, self.ui.width, self.ui.height))
-    assert im.width == 2160
-    assert im.height == 1080
+    full_screenshot = pyautogui.screenshot()
+    cropped = full_screenshot.crop((self.ui.left, self.ui.top,
+                                    self.ui.left + self.ui.width,
+                                    self.ui.top + self.ui.height))
+    cropped.save(SCREENSHOTS_DIR / f"{name}.png")
 
   def click(self, x: int, y: int, *args, **kwargs):
     pyautogui.mouseDown(self.ui.left + x, self.ui.top + y, *args, **kwargs)
